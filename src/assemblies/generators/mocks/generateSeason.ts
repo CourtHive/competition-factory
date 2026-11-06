@@ -1,4 +1,4 @@
-import { completeDrawMatchUps } from '@Mutate/simulation/completeDrawMatchUps';
+import { completeDrawMatchUps } from '@Generators/simulation/completeDrawMatchUps';
 import { generateTournamentRecord } from './generateTournamentRecord';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { generateRange } from '@Tools/arrays';

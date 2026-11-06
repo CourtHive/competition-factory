@@ -1,6 +1,6 @@
 import { POLICY_RATINGS_ELO_538_NFL } from '@Fixtures/policies/POLICY_RATINGS_ELO_538_NFL';
 import { POLICY_RATINGS_ELO_538_NBA } from '@Fixtures/policies/POLICY_RATINGS_ELO_538_NBA';
-import { marginMultiplier } from '@Generators/scales/ratingsPolicyRules';
+import { marginMultiplier } from '@Helpers/ratings/ratingsPolicyRules';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';
@@ -8,8 +8,8 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_RATINGS } from '@Constants/policyConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 // FiveThirtyEight's NFL and NBA Elo, against the numbers their methodology pages publish
 

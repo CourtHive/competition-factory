@@ -1,15 +1,16 @@
 import { buildIndividualIdsMap, getSharedIndividualConflicts } from '@Query/participants/individualParticipantIds';
 import { addVoluntaryConsolationStructure } from '@Mutate/drawDefinitions/addVoluntaryConsolationStructure';
 import { remapDrawDefinitionMatchUpIds } from '@Mutate/drawDefinitions/remapDrawDefinitionMatchUpIds';
-import { addPlayoffStructures } from '@Mutate/drawDefinitions/addPlayoffStructures';
+import { addPlayoffStructures } from '@Generators/drawDefinitions/structures/addPlayoffStructures';
+import { hydrateRoundNames } from '@Mutate/drawDefinitions/hydrateRoundNames';
 import { getDrawFormat } from '@Generators/drawDefinitions/getDrawFormat';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { withDraftWrites } from '@Global/state/withDraftWrites';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { generateOrGetExisting } from './generateOrGetExisting';
 import { entriesNotPlacedWarnings } from './entriesNotPlaced';
 import { qualifyingGeneration } from './qualifyingGeneration';
-import { hydrateRoundNames } from './hydrateRoundNames';
 import { constantToString } from '@Tools/strings';
 import {
   getFilteredEntries,
@@ -25,7 +26,18 @@ import { LOSER } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
-export function generateDrawDefinition(params: GenerateDrawDefinitionArgs): ResultType & {
+/**
+ * Builds on a draft (the caller attaches the result later), so whatever the mutate helpers it builds with announce
+ * is discarded with the draft (`withDraftWrites`): no notice for a draw that is not attached reaches a subscriber,
+ * and the loaded record is not stamped as modified.
+ */
+export function generateDrawDefinition(
+  params: GenerateDrawDefinitionArgs,
+): ReturnType<typeof generateDrawDefinitionDraft> {
+  return withDraftWrites(() => generateDrawDefinitionDraft(params));
+}
+
+function generateDrawDefinitionDraft(params: GenerateDrawDefinitionArgs): ResultType & {
   existingDrawDefinition?: boolean;
   drawDefinition?: DrawDefinition;
   qualifyingConflicts?: any[];

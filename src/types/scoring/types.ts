@@ -125,6 +125,9 @@ export interface Score {
   scoreStringSide2?: string;
 }
 
+/** a value per side, side 1 first: sets won, a set's games, a period's totals */
+export type Pair = [number, number];
+
 export type ScoringPhase = 'REGULATION' | 'OVERTIME' | 'DECIDER';
 export interface ScoringPeriod {
   phase: ScoringPhase;
@@ -903,3 +906,11 @@ export interface Episode {
   /** Whether the match is complete after this point */
   complete: boolean;
 }
+
+// One declaration: the competition format's (closed `timing` and `allowedMatchUpTypes`)
+export type { SubstitutionRules } from '@Types/competitionFormat';
+/** Why substitute() refused: each would leave the lineUp naming the wrong players. */
+export type SubstitutionError = 'NO_LINEUP' | 'OUT_NOT_ON_SIDE' | 'IN_ALREADY_ON_COURT' | 'SAME_PARTICIPANT';
+export type SubstitutionResult = { success: true } | { success: false; error: SubstitutionError };
+/** A competition substitution rule a substitution made now would break. */
+export type SubstitutionViolation = 'NOT_ALLOWED' | 'MAX_PER_MATCHUP' | 'MAX_PER_SEGMENT' | 'TIMING' | 'MATCHUP_TYPE';

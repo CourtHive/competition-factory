@@ -352,7 +352,7 @@ export interface TimeItem {
 // accepts any string so new sports (VOLLEYBALL, PADEL, …) need no factory release. The
 // `& {}` on the string arm preserves literal autocomplete for the known values (a bare
 // `| string` would collapse the union). Constrain to a whitelist via the `allowedDisciplines`
-// policy, and normalize input with `normalizeDiscipline` (@Helpers/coercedDiscipline).
+// policy, and normalize input with `normalizeDiscipline` (@Tools/coercedDiscipline).
 /**
  * The KNOWN disciplines. The vocabulary is deliberately OPEN — see
  * planning/DISCIPLINE_EXTENSIBILITY.md — so DisciplineUnion keeps its

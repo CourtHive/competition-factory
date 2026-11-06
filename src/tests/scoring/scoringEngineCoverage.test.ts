@@ -6,13 +6,13 @@
  * WINNER_SERVES, formatGameScore edge cases, and more.
  */
 
-import { calculatePointsTo, calcPointsToGameInTiebreak } from '@Mutate/scoring/pointsToCalculator';
+import { calculatePointsTo, calcPointsToGameInTiebreak } from '@Scoring/v1/pointsToCalculator';
 import { createMatchUp, addPoint, getScore } from '@Assemblies/governors/scoreGovernor';
+import { resolveSetType } from '@Helpers/matchUpFormatCode/formatUtilities';
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
-import { resolveSetType } from '@Tools/scoring/scoringUtilities';
 import type { SetFormatStructure } from '@Types/scoring/types';
-import { formatGameScore } from '@Mutate/scoring/addPoint';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { formatGameScore } from '@Scoring/v1/addPoint';
 import { describe, test, expect, vi } from 'vitest';
 
 // constants

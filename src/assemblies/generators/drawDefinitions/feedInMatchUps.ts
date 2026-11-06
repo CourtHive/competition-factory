@@ -1,6 +1,6 @@
+import { addFinishingRounds } from '@Query/structure/addFinishingRounds';
 import { generateRange, instanceCount } from '@Tools/arrays';
 import { pushGlobalLog } from '@Functions/global/globalLog';
-import { addFinishingRounds } from './addFinishingRounds';
 import { buildFeedRound } from './buildFeedRound';
 import { nearestPowerOf2 } from '@Tools/math';
 import { buildRound } from './buildRound';

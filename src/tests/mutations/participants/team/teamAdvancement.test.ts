@@ -1,5 +1,5 @@
-import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { generateTieMatchUpScore } from '@Query/matchUp/tieMatchUpScore/generateTieMatchUpScore';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { generateTeamTournament } from './generateTestTeamTournament';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';

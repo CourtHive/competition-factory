@@ -1,5 +1,5 @@
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
-import tieFormatDefaults from '@Generators/templates/tieFormatDefaults';
+import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { coercedGender } from '@Helpers/coercedGender';
 import { isGendered } from '@Validators/isGendered';
 import { isMixed } from '@Validators/isMixed';

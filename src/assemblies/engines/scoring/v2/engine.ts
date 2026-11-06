@@ -1,18 +1,19 @@
+import { createContext, initialState, positionOf, serverOf, step, INVALID_FORMAT } from '@Scoring/kernel/reduce';
 import { overtimeLayout, scoringPeriod, segmentClosed } from '@Helpers/matchUpFormatCode/overtimeContext';
-import { createContext, initialState, positionOf, serverOf, step, INVALID_FORMAT } from './reduce';
-import { configuredFormat, DEFAULT_MATCHUP_FORMAT, finalGoverns, takesInput } from './format';
-import { readChallenge, readPoint, readServer, CALCULATED_POINT_FIELDS } from './actions';
-import { replayLegacy, LEGACY_IGNORED_INPUT, LEGACY_REFUSED_INPUT } from './legacy';
+import { readChallenge, readPoint, readServer, CALCULATED_POINT_FIELDS } from '@Scoring/kernel/actions';
+import { replayLegacy, LEGACY_IGNORED_INPUT, LEGACY_REFUSED_INPUT } from '@Scoring/kernel/legacy';
+import { configuredFormat, DEFAULT_MATCHUP_FORMAT, takesInput } from '@Scoring/kernel/format';
 import { calculateMatchStatistics } from '@Query/scoring/statistics/standalone';
 import { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
-import { createMatchUp } from '@Mutate/scoring/createMatchUp';
-import { getScoreboard } from '@Query/scoring/getScoreboard';
+import { finalGoverns } from '@Helpers/matchUpFormatCode/matchRule';
+import { ruleInPlay, scoreOf } from '@Scoring/kernel/score';
+import { createMatchUp } from '@Scoring/v1/createMatchUp';
+import { getScoreboard } from '@Scoring/v1/getScoreboard';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
-import { getEpisodes } from '@Query/scoring/getEpisodes';
-import { ruleInPlay, scoreOf } from './score';
-import { materialize } from './record';
+import { getEpisodes } from '@Scoring/v1/getEpisodes';
+import { materialize } from '@Scoring/kernel/record';
+import { setsWon } from '@Scoring/kernel/decide';
 import { nowIso } from '@Tools/clock';
-import { setsWon } from './decide';
 import {
   copyLineUps,
   hasLineUps,
@@ -21,15 +22,15 @@ import {
   substitutionError,
   substitutionViolations,
   type LineUps,
-} from './lineUps';
+} from '@Scoring/kernel/lineUps';
 
 // constants and types
 import type { MatchStatistics, StatisticsOptions, StatObject } from '@Query/scoring/statistics/types';
 import type { FormatStructure, SetFormatStructure, TeamCompetitor } from '@Types/scoring/types';
-import type { Side, ScoringState, StepOutcome, TimelineEntry } from './types';
+import type { Side, ScoringState, StepOutcome, TimelineEntry } from '@Scoring/kernel/types';
 import type { PointMultiplier } from '@Types/competitionFormat';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
-import type { ReducerContext } from './reduce';
+import type { ReducerContext } from '@Scoring/kernel/reduce';
 import type {
   AddGameOptions,
   AddPointOptions,

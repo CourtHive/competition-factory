@@ -1,5 +1,5 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
+import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 
 // constants and types
 import { INVALID_STRUCTURE, MISSING_STRUCTURE_ID, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';

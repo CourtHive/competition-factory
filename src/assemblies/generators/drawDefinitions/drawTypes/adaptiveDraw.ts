@@ -1,4 +1,4 @@
-import structureTemplate from '@Generators/templates/structureTemplate';
+import structureTemplate from '@Helpers/drawTopology/templates/structureTemplate';
 import { luckyDraw, luckyRoundProfiles } from './luckyDraw';
 import { isPowerOf2 } from '@Tools/math';
 

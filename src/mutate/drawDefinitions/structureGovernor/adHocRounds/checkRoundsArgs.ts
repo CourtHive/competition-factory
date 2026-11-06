@@ -1,9 +1,9 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
-import { matchUpsOf } from '@Acquire/structureMembers';
 
 // constants and types
 import { INVALID_STRUCTURE, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';

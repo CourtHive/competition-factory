@@ -1,5 +1,5 @@
 import { generateTournamentRecord } from '@Assemblies/generators/mocks/generateTournamentRecord';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { removeExtension } from '@Mutate/extensions/removeExtension';
 import { addNotes, removeNotes } from '@Mutate/base/addRemoveNotes';
 import { addExtension } from '@Mutate/extensions/addExtension';

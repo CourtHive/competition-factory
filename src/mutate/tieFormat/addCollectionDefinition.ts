@@ -1,10 +1,10 @@
 import { addMatchUpsNotice, modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { generateCollectionMatchUps } from '@Assemblies/generators/drawDefinitions/tieMatchUps';
+import { generateCollectionMatchUps } from '@Helpers/drawTopology/templates/tieMatchUps';
 import { validateCollectionDefinition } from '@Validators/validateCollectionDefinition';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { calculateWinCriteria } from '@Helpers/tieFormats/calculateWinCriteria';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { getTieFormat } from '@Query/hierarchical/tieFormats/getTieFormat';
-import { calculateWinCriteria } from '@Query/matchUp/calculateWinCriteria';
 import { tieFormatTelemetry } from '@Mutate/tieFormat/tieFormatTelemetry';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { withEventChangeNotice } from '@Mutate/events/eventChangeNotice';

@@ -1,0 +1,7 @@
+{
+  "tools/clock.ts -> global/state/globalState.ts": 1,
+  "tools/composeThenWrite.ts -> global/state/globalState.ts": 1,
+  "tools/definedAttributes.ts -> global/state/globalState.ts": 1,
+  "tools/makeDeepCopy.ts -> global/state/globalState.ts": 1,
+  "tools/prng.ts -> global/state/globalState.ts": 1
+}

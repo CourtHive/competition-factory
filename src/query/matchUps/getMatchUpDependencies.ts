@@ -3,7 +3,7 @@
  * Optionally builds up an exhaustive map of all potential participantIds for each matchUpId
  */
 
-import { isRoundWinnerLink, traversesByFinishingPosition } from '@Query/drawDefinition/linkTraversal';
+import { isRoundWinnerLink, traversesByFinishingPosition } from '@Helpers/drawTopology/linkTraversal';
 import { getIndividualParticipantIds } from '@Query/matchUp/getIndividualParticipantIds';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import { derivedGoesToOrLinkError, GoesToMap } from '@Query/matchUps/addGoesTo';

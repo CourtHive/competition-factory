@@ -1,6 +1,6 @@
 import { savePersonRequests } from '@Mutate/matchUps/schedule/scheduleMatchUps/personRequests/savePersonRequests';
 import { transitionCertificationStatus } from '@Mutate/officiating/transitionCertificationStatus';
-import { generateTimeSlots } from '@Assemblies/generators/scheduling/generateTimeSlots';
+import { generateTimeSlots } from '@Helpers/scheduling/generateTimeSlots';
 import { getAvailableReports } from '@Query/reports/getAvailableReports';
 import { getDailyLimit } from '@Query/extensions/getMatchUpDailyLimits';
 import { address } from '@Assemblies/generators/mocks/address';

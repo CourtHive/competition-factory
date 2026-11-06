@@ -103,6 +103,7 @@ export default defineConfig({
       './src/tests/testHarness/schedulingProperties.ts',
       './src/tests/testHarness/schedulingViewRoundTrip.ts',
       './src/tests/testHarness/rethrowCaughtErrors.ts',
+      './src/tests/testHarness/queryPurity.ts',
     ],
     coverage: {
       reporter: ['html', 'json-summary'],
@@ -133,6 +134,8 @@ export default defineConfig({
         // typed async engine fixtures: checked by tsc and by a lint regression, never executed
         'src/tests/engines/typedAsyncEngine.contract.ts',
         'src/tests/engines/typedAsyncEngine.lint.fixture.ts',
+        // compile-time type assertions: checked by tsc (and the hard-union ratchet), never executed
+        'src/tests/typeAssertions/**',
         'src/assemblies/governors/**',
         'src/assemblies/tools/**',
         'src/fixtures/data/**',

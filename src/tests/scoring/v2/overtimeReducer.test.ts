@@ -1,9 +1,9 @@
-import { createContext, initialState, reduce, step } from '@Assemblies/engines/scoring/v2/reduce';
-import { finalGoverns, resolveFormat, ruleForSet } from '@Assemblies/engines/scoring/v2/format';
+import { finalGoverns, resolveFormat, ruleForSet } from '@Helpers/matchUpFormatCode/matchRule';
+import { createContext, initialState, reduce, step } from '@Scoring/kernel/reduce';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { describe, expect, it } from 'vitest';
 
-import type { TimelineEntry } from '@Assemblies/engines/scoring/v2/types';
+import type { TimelineEntry } from '@Scoring/kernel/types';
 
 const OPTIONS = { allowOvertime: true };
 const REGULATION = 'SET2XA-S:T10P';

@@ -1,4 +1,4 @@
-import { findExtension } from '@Acquire/findExtension';
+import { findExtension } from '@Helpers/extensions/findExtension';
 import { nowIso } from '@Tools/clock';
 
 // constants and types

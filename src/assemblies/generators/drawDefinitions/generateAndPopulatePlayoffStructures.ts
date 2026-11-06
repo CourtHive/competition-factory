@@ -5,21 +5,22 @@ import { NamingEntry, generatePlayoffStructures } from './drawTypes/playoffStruc
 import { directParticipants } from '@Mutate/matchUps/drawPositions/directParticipants';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { generateTieMatchUps } from '@Helpers/drawTopology/templates/tieMatchUps';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
 import { processPlayoffGroups } from './drawTypes/processPlayoffGroups';
 import { getSourceRounds } from '@Query/drawDefinition/getSourceRounds';
+import { structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { isConvertableInteger, nextPowerOf2 } from '@Tools/math';
+import { withDraftWrites } from '@Global/state/withDraftWrites';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { pushGlobalLog } from '@Functions/global/globalLog';
-import { structuresOf } from '@Acquire/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
 import { addGoesTo } from '@Query/matchUps/addGoesTo';
-import { generateTieMatchUps } from './tieMatchUps';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { ensureInt } from '@Tools/ensureInt';
 
@@ -57,7 +58,19 @@ type GenerateAndPopulateArgs = {
   uuids?: string[];
   event?: Event;
 };
-export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulateArgs): ResultType & {
+
+/**
+ * Builds on a draft (the caller attaches the result later), so whatever the mutate helpers it builds with announce
+ * is discarded with the draft (`withDraftWrites`): no notice for a structure that is not attached reaches a subscriber,
+ * and the loaded record is not stamped as modified.
+ */
+export function generateAndPopulatePlayoffStructures(
+  params: GenerateAndPopulateArgs,
+): ReturnType<typeof generateAndPopulatePlayoffStructuresDraft> {
+  return withDraftWrites(() => generateAndPopulatePlayoffStructuresDraft(params));
+}
+
+function generateAndPopulatePlayoffStructuresDraft(params: GenerateAndPopulateArgs): ResultType & {
   drawDefinition?: DrawDefinition;
   matchUpModifications?: any[];
   structures?: Structure[];

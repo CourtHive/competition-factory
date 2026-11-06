@@ -1,11 +1,12 @@
-import { generateTieMatchUps } from '@Assemblies/generators/drawDefinitions/tieMatchUps';
 import { getGenerators } from '@Assemblies/generators/drawDefinitions/getGenerators';
 import { automatedPositioning } from '@Mutate/drawDefinitions/automatedPositioning';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
+import { generateTieMatchUps } from '@Helpers/drawTopology/templates/tieMatchUps';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { getStageEntries } from '@Query/drawDefinition/stageGetter';
 import { validateTieFormat } from '@Validators/validateTieFormat';
+import { withDraftWrites } from '@Global/state/withDraftWrites';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { getDrawStructures } from '@Acquire/findStructure';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
@@ -71,8 +72,18 @@ type GenerateVoluntaryConsolationArgs = {
  * 1. Call this method to generate structures/links
  * 2. Send the result through attachConsolationStructures via mutationRequest
  * This ensures both client and server receive identical structure/matchUp UUIDs.
+ *
+ * Builds on a draft (the caller attaches the result later), so whatever the mutate helpers it builds with announce
+ * is discarded with the draft (`withDraftWrites`): no notice for a structure that is not attached reaches a subscriber,
+ * and the loaded record is not stamped as modified.
  */
-export function generateVoluntaryConsolation(params: GenerateVoluntaryConsolationArgs): {
+export function generateVoluntaryConsolation(
+  params: GenerateVoluntaryConsolationArgs,
+): ReturnType<typeof generateVoluntaryConsolationDraft> {
+  return withDraftWrites(() => generateVoluntaryConsolationDraft(params));
+}
+
+function generateVoluntaryConsolationDraft(params: GenerateVoluntaryConsolationArgs): {
   structures?: Structure[];
   links?: DrawLink[];
   success?: boolean;

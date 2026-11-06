@@ -1,8 +1,8 @@
 import { addDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';

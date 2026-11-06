@@ -32,6 +32,7 @@ import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/no
 import { structureAssignedDrawPositions, getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
 import { getUpdatedDrawPositions } from '@Mutate/drawDefinitions/matchUpGovernor/getUpdatedDrawPositions';
+import { isPropagatedExit as sharedIsPropagatedExit } from '@Helpers/drawTopology/sideExitProvenance';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { drawPositionAssignmentRefusal } from '@Query/drawDefinition/drawPositionAssignmentRefusal';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
@@ -79,7 +80,6 @@ import {
 } from '@Query/matchUps/getDrawPositionSides';
 import {
   clearResolvedSideExitProvenance,
-  isPropagatedExit as sharedIsPropagatedExit,
   participatesInExitCascade,
   isProjectedExitCode,
   policyCodeString,

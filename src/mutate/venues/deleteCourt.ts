@@ -2,8 +2,8 @@ import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentR
 import { removeCourtAssignment } from '@Mutate/matchUps/schedule/removeCourtAssignment';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getScheduledCourtMatchUps } from '@Query/venues/getScheduledCourtMatchUps';
-import { deletionMessage } from '@Assemblies/generators/matchUps/deletionMessage';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { deletionMessage } from '@Mutate/venues/deletionMessage';
 import { addNotice } from '@Global/state/globalState';
 import { findCourt } from '@Query/venues/findCourt';
 

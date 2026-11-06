@@ -1,5 +1,5 @@
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
-import { structuresOf } from '@Acquire/structureMembers';
+import { structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { isObject } from '@Tools/objects';
 
 // constants and types

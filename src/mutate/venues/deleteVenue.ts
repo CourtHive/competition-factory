@@ -1,8 +1,8 @@
 import { removeCourtAssignment } from '@Mutate/matchUps/schedule/removeCourtAssignment';
 import { checkAndUpdateSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
-import { deletionMessage } from '@Assemblies/generators/matchUps/deletionMessage';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { deletionMessage } from '@Mutate/venues/deletionMessage';
 import { addNotice } from '@Global/state/globalState';
 import { pruneVenueTransits } from './venueTransits';
 

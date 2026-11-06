@@ -1,4 +1,5 @@
 import { setSubscriptions, addNotice, getNotices, deleteNotices } from '@Global/state/globalState';
+import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
@@ -74,18 +75,23 @@ describe('keyed notice de-dup preserves identity', () => {
     setSubscriptions({ subscriptions: {} });
   });
 
-  it('END TO END: generating a draw delivers a MODIFY_DRAW_DEFINITION that carries its eventId', () => {
+  it('END TO END: positioning a draw delivers a MODIFY_DRAW_DEFINITION that carries its eventId', () => {
     // The bug in situ. Before this fix the delivered notice had neither eventId nor tournamentId,
-    // even though eight earlier emissions for the same drawId carried both.
-    const notices: any[] = [];
-    setSubscriptions({ subscriptions: { [MODIFY_DRAW_DEFINITION]: (n: any[]) => notices.push(...n) } });
-
+    // even though earlier emissions for the same drawId carried both. Positioning an attached draw
+    // emits one keyed by drawId per placement. (This test once generated the draw instead; generation
+    // builds on a draft and no longer announces it, and attaching a new draw is ADD_DRAW_DEFINITION.)
     const {
       eventIds: [eventId],
+      drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 8, drawType: SINGLE_ELIMINATION }],
+      drawProfiles: [{ drawSize: 8, drawType: SINGLE_ELIMINATION, automated: false }],
       setState: true,
     });
+    const { structureId } = tournamentEngine.getEvent({ drawId }).drawDefinition.structures[0];
+
+    const notices: any[] = [];
+    setSubscriptions({ subscriptions: { [MODIFY_DRAW_DEFINITION]: (n: any[]) => notices.push(...n) } });
+    expect(tournamentEngine.automatedPositioning({ drawId, structureId }).success).toEqual(true);
 
     expect(notices.length).toBeGreaterThan(0);
     expect(notices.filter((n: any) => !n.eventId)).toEqual([]);
@@ -101,7 +107,7 @@ describe('keyed notice de-dup preserves identity', () => {
     const fs = await import('fs');
     const path = await import('path');
 
-    const types = fs.readFileSync(path.resolve(__dirname, '../../forge/topicTypes.ts'), 'utf8');
+    const types = fs.readFileSync(path.resolve(__dirname, '../../types/topicTypes.ts'), 'utf8');
     const body = types.slice(types.indexOf('export interface NoticeIdentity'));
     const declared = [...body.slice(0, body.indexOf('\n}')).matchAll(/^\s{2}(\w+)\??:/gm)].map((m) => m[1]);
 

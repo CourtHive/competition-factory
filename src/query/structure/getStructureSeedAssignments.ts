@@ -1,6 +1,6 @@
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { getStageEntries } from '@Query/drawDefinition/stageGetter';
-import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types

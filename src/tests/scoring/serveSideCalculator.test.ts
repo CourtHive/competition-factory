@@ -24,7 +24,7 @@
  */
 
 import type { MatchUp, FormatStructure, SetScore } from '@Types/scoring/types';
-import { inferServeSide } from '@Mutate/scoring/serveSideCalculator';
+import { inferServeSide } from '@Scoring/v1/serveSideCalculator';
 import { describe, test, expect } from 'vitest';
 
 // constants

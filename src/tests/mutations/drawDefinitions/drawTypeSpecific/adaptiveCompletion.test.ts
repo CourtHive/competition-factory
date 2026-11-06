@@ -4,7 +4,7 @@
  * across all structures using lucky draw round resolution, then verifies
  * resetDrawDefinition clears all position assignments.
  */
-import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
+import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';

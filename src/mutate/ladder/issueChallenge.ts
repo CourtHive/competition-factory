@@ -1,5 +1,5 @@
+import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { getLadderPolicy, isChallengeInRange } from '@Query/ladder/getLadderPolicy';
-import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { addAdHocMatchUps } from '@Mutate/structures/addAdHocMatchUps';
 import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { isLadder } from '@Query/drawDefinition/isLadder';

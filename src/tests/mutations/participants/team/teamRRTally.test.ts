@@ -1,4 +1,4 @@
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';

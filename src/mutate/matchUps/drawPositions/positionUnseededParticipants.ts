@@ -3,8 +3,8 @@ import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAs
 import { initialMatchUpIdsOf } from '@Mutate/matchUps/drawPositions/drawPositionPlacement';
 import { assignDrawPosition } from '@Mutate/matchUps/drawPositions/positionAssignment';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { getStageEntries } from '@Query/drawDefinition/stageGetter';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { pushGlobalLog } from '@Functions/global/globalLog';

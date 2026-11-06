@@ -30,7 +30,7 @@ The refreshed source-name scan found no name mentions in the scanned product sou
 
 - **Production governor declarations:** `scoreGovernor`.
 - **Standalone package API after 8.0.0:** decision pending; this page does not establish a supported import.
-- **Implementation:** [`src/query/scoring/deduceMatchUpFormat.ts` — `deduceMatchUpFormat`](https://github.com/CourtHive/competition-factory/blob/8c2aaca6801734223ef1e0a8127872344373fbd5/src/query/scoring/deduceMatchUpFormat.ts). Source paths and aliases are not package import paths.
+- **Implementation:** `src/helpers/matchUpFormatCode/deduceMatchUpFormat.ts` — `deduceMatchUpFormat` ([as of `8c2aaca`, at its earlier path](https://github.com/CourtHive/competition-factory/blob/8c2aaca6801734223ef1e0a8127872344373fbd5/src/query/scoring/deduceMatchUpFormat.ts)). Source paths and aliases are not package import paths.
 - **Replacement workflow:** not yet established; no supported replacement is promised.
 - **Test-only adapters:** may exercise this implementation independently of production engine exports; this is not evidence of product use.
 

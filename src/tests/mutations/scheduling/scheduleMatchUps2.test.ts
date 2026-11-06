@@ -1,6 +1,6 @@
 import { removeCourtAssignment } from '@Mutate/matchUps/schedule/removeCourtAssignment';
+import { getScheduleTimes } from '@Helpers/scheduling/getScheduleTimes';
 import { writeModeMatrix } from '@Tests/testHarness/writeModeMatrix';
-import { getScheduleTimes } from '@Query/venues/getScheduleTimes';
 import { getMatchUpIds } from '@Functions/global/extractors';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';

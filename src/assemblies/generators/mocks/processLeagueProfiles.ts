@@ -1,5 +1,5 @@
-import { generateDrawDefinition } from '@Assemblies/governors/drawsGovernor';
-import tieFormatDefaults from '@Generators/templates/tieFormatDefaults';
+import { generateDrawDefinition } from '@Generators/drawDefinitions/generateDrawDefinition/generateDrawDefinition';
+import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { generateVenues } from '@Mutate/venues/generateVenues';
 import { generateParticipants } from './generateParticipants';
 import { genParticipantId } from './genParticipantId';
@@ -18,9 +18,9 @@ import {
 
 // constants and types
 import { Entry, Event, EventTypeUnion, Participant, TieFormat, Tournament } from '@Types/tournamentTypes';
+import { EVENT_NOT_FOUND, MISSING_TIE_FORMAT } from '@Constants/errorConditionConstants';
 import { AD_HOC, DOUBLE_ROUND_ROBIN, MAIN } from '@Constants/drawDefinitionConstants';
 import { ANY, FEMALE, MALE, MIXED, OTHER } from '@Constants/genderConstants';
-import { EVENT_NOT_FOUND, MISSING_TIE_FORMAT } from '@Constants/errorConditionConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
 import type { MockLeagueProfile } from '@Types/mocksTypes';

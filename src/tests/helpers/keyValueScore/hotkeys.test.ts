@@ -1,4 +1,4 @@
-import { keyValueConstants } from '@Helpers/keyValueScore/constants';
+import { keyValueConstants } from '@Constants/keyValueConstants';
 import { describe, expect, it } from 'vitest';
 
 /**

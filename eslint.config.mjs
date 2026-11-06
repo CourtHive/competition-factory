@@ -145,35 +145,13 @@ export default [
      * that can reach a mutation module rests its read-only guarantee on convention; three of them wrote to the record
      * they read until #5491 and the purity fix that added this rule.
      *
-     * `ignores` is a RATCHET, not an allow-list: the 22 files that still import a read-only helper or a type from a
-     * mutation module (measured 2026-10-17). Each leaves the list when its helper moves to `@Query`/`@Acquire`; nothing
-     * is ever added to it. A new file under src/query that needs a helper living in `@Mutate` moves the helper.
+     * `ignores` is a RATCHET, not an allow-list: the files that still import a read-only helper or a type from a
+     * mutation module (22 measured 2026-10-17; 1 after the layering moves, 2026-11-06). Each leaves the list
+     * when its helper moves to `@Query`/`@Acquire`; nothing is ever added to it. A new file under src/query that
+     * needs a helper living in `@Mutate` moves the helper.
      */
     files: ['src/query/**/*.ts'],
-    ignores: [
-      'src/query/drawDefinition/getDrawInconsistencies.ts',
-      'src/query/drawDefinition/getStructureInconsistencies.ts',
-      'src/query/drawDefinition/hasPropagatedExitDownstream.ts',
-      'src/query/drawDefinition/isActiveDownstream.ts',
-      'src/query/drawDefinition/matchUpActions/matchUpActions.ts',
-      'src/query/extensions/getMatchUpDailyLimits.ts',
-      'src/query/extensions/matchUpFormatTiming/getModifiedMatchUpTiming.ts',
-      'src/query/extensions/matchUpFormatTiming/getScheduleTiming.ts',
-      'src/query/matchUps/competitionScheduleMatchUps.ts',
-      'src/query/matchUps/scheduling/getProfileRounds.ts',
-      'src/query/matchUps/scheduling/getScenarioScheduleView.ts',
-      'src/query/matchUps/scheduling/getSchedulingProfileIssues.ts',
-      'src/query/matchUps/scheduling/getVenueSchedulingDetails.ts',
-      'src/query/practice/getPracticeRegistrations.ts',
-      'src/query/publishing/applyRoundLimit.ts',
-      'src/query/publishing/getRoundVisibilityState.ts',
-      'src/query/publishing/isEmbargoed.ts',
-      'src/query/publishing/isStructureVisible.ts',
-      'src/query/readModel/readModelPublish.ts',
-      'src/query/scoring/getScore.ts',
-      'src/query/tournaments/getTournamentInfo.ts',
-      'src/query/venues/getScheduledCourtMatchUps.ts',
-    ],
+    ignores: ['src/query/extensions/getMatchUpDailyLimits.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -206,12 +184,15 @@ export default [
      * - globalState.ts    — the default log sink, and the fallback when a custom sink throws
      * - *Validator.ts     — output sits behind a published `debug` option, default false
      * - src/server/**     — not reachable from src/index.ts and not part of the published bundle
+     * - examples/asyncEngine/asyncGlobalState.ts — the server-side state provider: its console
+     *                       IS the server's log sink, as globalState.ts is the default one
      */
     files: [
       'src/functions/global/globalLog.ts',
       'src/global/state/globalState.ts',
-      'src/validators/scoring/mcpValidator.ts',
-      'src/validators/scoring/pbpValidator.ts',
+      'src/examples/asyncEngine/asyncGlobalState.ts',
+      'src/scoring/replay/mcpValidator.ts',
+      'src/scoring/replay/pbpValidator.ts',
       'src/server/**',
       'src/tests/**',
       '**/*.test.ts',

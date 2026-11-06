@@ -89,12 +89,12 @@ export { sanctioningEngine } from './assemblies/engines/sanctioning';
 export { officiatingEngine } from './assemblies/engines/officiating';
 
 // ENGINES - For backwards compatibility ---------------------------------
-// Typed defaults — see `tests/engines/syncEngine/index.ts` for the rationale
+// Typed defaults — see `assemblies/engines/sync/assembled.ts` for the rationale
 // and for the `Untyped` opt-out variants for consumers still on the pre-5.x
 // open shape (e.g. third-party packages without TypeScript or with implicit-any
 // reliance — same runtime singleton, looser type).
-export { competitionEngine, tournamentEngine } from './tests/engines/syncEngine';
-export { competitionEngineUntyped, tournamentEngineUntyped } from './tests/engines/syncEngine';
+export { competitionEngine, tournamentEngine } from './assemblies/engines/sync/assembled';
+export { competitionEngineUntyped, tournamentEngineUntyped } from './assemblies/engines/sync/assembled';
 // Async variants — same governor surface as competitionEngine /
 // tournamentEngine, but built atop `asyncEngine()` so each consumer
 // gets per-request state isolation via Node's async_hooks. Use these
@@ -159,7 +159,7 @@ export type { StatObject, MatchStatistics, StatCounters, StatisticsOptions } fro
 // `episode.needed` is what a points-to visualization renders, so the type it renders against has to
 // be importable.
 export type { Episode, EpisodeGame, EpisodeNeeded, EpisodePoint, EpisodeSet } from './types/scoring/types';
-export type { PointsToDecoration } from './mutate/scoring/pointsToCalculator';
+export type { PointsToDecoration } from '@Scoring/v1/pointsToCalculator';
 // The payloads of `getMatchUpReadiness` and `getParticipantRest` / `getParticipantsRest`, named so a consumer rendering
 // them can type against the factory instead of redeclaring the shapes (TMX carried its own copies).
 export type {

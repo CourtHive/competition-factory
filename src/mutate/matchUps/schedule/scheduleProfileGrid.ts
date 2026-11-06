@@ -1,22 +1,23 @@
-import { getSchedulingProfile, schedulingProfileRepairRefusal } from '@Mutate/tournaments/schedulingProfile';
 import { proAutoSchedule } from '@Mutate/matchUps/schedule/schedulers/proScheduler/proAutoSchedule';
 import { overnightRestWarningsFor } from '@Query/matchUps/scheduling/getOvernightRestWarnings';
 import { clearScheduledMatchUps } from '@Mutate/matchUps/schedule/clearScheduledMatchUps';
+import { getSchedulingMatchUps } from '@Query/matchUps/scheduling/getSchedulingMatchUps';
+import { schedulingProfileRepairRefusal } from '@Mutate/tournaments/schedulingProfile';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getContainedStructures } from '@Query/drawDefinition/getContainedStructures';
-import { getSchedulingMatchUps } from '@Query/matchUps/scheduling/getSchedulingMatchUps';
-import { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
-import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
 import { eventDateResolver, EventDateReason } from '@Query/events/eventPlaysOnDate';
+import { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
+import { getSchedulingProfile } from '@Query/scheduling/getSchedulingProfile';
+import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
 import { hasByeSide } from '@Mutate/matchUps/schedule/byeScheduling';
 import { extractDate, isValidDateString } from '@Tools/dateTime';
 
 // constants and types
 import { ARRAY, OF_TYPE, SCHEDULE_DATES, TOURNAMENT_RECORDS, VALIDATE } from '@Constants/attributeConstants';
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
+import { ResultWarning, TournamentRecords } from '@Types/factoryTypes';
 import { NO_VALID_DATES } from '@Constants/errorConditionConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
-import { ResultWarning, TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 

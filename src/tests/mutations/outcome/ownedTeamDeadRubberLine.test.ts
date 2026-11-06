@@ -1,5 +1,5 @@
-import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
 import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { canonicalJson } from '@Tools/canonicalJson';
 import { afterEach, expect, it, vi } from 'vitest';

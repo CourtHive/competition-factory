@@ -2,7 +2,7 @@ import { POLICY_RATINGS_ELO_WORLD_FOOTBALL } from '@Fixtures/policies/POLICY_RAT
 import { POLICY_RATINGS_ELO_WELO_TENNIS } from '@Fixtures/policies/POLICY_RATINGS_ELO_WELO_TENNIS';
 import { POLICY_RATINGS_ELO_538_NHL } from '@Fixtures/policies/POLICY_RATINGS_ELO_538_NHL';
 import { POLICY_RATINGS_FIFA_SUM } from '@Fixtures/policies/POLICY_RATINGS_FIFA_SUM';
-import { ratedResultOf } from '@Generators/scales/ratedResult';
+import { ratedResultOf } from '@Query/scales/ratedResult';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';
@@ -10,8 +10,8 @@ import { expect, it } from 'vitest';
 
 // constants
 import { ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_RATINGS } from '@Constants/policyConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { RATING } from '@Constants/scaleConstants';
 import { ELO } from '@Constants/ratingConstants';

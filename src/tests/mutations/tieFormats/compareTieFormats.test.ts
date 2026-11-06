@@ -1,5 +1,5 @@
 import { compareTieFormats } from '@Query/hierarchical/tieFormats/compareTieFormats';
-import tieFormatDefaults from '@Assemblies/generators/templates/tieFormatDefaults';
+import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { it, expect, test } from 'vitest';
 
 // constants and types

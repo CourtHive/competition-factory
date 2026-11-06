@@ -1,6 +1,6 @@
 import { POLICY_RATINGS_FIFA_WOMEN } from '@Fixtures/policies/POLICY_RATINGS_FIFA_WOMEN';
-import { expectedResult } from '@Generators/scales/ratingUpdate';
-import { ratedResultOf } from '@Generators/scales/ratedResult';
+import { expectedResult } from '@Helpers/ratings/ratingUpdate';
+import { ratedResultOf } from '@Query/scales/ratedResult';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';
@@ -8,8 +8,8 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_RATINGS } from '@Constants/policyConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 // FIFA's women's ranking ("Women's ranking procedures", April 2023), against the document's own numbers
 

@@ -1,9 +1,9 @@
-import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
+import { matchUpScore } from '@Scoring/views/matchUpScore';
 import { randomInt, weightedRandom } from '@Tools/math';
 
 // constants and types
+import type { MatchRule, SegmentRule } from '@Helpers/matchUpFormatCode/matchRule';
 import type { MatchUpStatusUnion, Set as SetType } from '@Types/tournamentTypes';
-import type { MatchRule, SegmentRule } from '@Assemblies/engines/scoring/v2/format';
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import type { ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
 

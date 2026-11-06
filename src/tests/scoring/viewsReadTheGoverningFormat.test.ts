@@ -1,5 +1,5 @@
+import { isLiveDecidingSet } from '@Helpers/matchUpFormatCode/formatUtilities';
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
-import { isLiveDecidingSet } from '@Tools/scoring/scoringUtilities';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { describe, expect, it } from 'vitest';
 

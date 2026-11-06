@@ -1,13 +1,13 @@
+import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
+import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
+import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
+import { definedAttributes } from '@Tools/definedAttributes';
+import { findStructure } from '@Acquire/findStructure';
 import {
   mergeSideExitProvenance,
   decidesForTheSide,
   producedExitStatus,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
-import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
-import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
-import { positionAssignmentsOf } from '@Acquire/structureMembers';
-import { findStructure } from '@Acquire/findStructure';
-import { definedAttributes } from '@Tools/definedAttributes';
 
 // constants
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';

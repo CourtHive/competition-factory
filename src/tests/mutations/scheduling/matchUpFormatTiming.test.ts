@@ -1,4 +1,4 @@
-import { firstClassGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
+import { firstClassGroupLeafOrExtension } from '@Helpers/extensions/firstClassGroupLeafOrExtension';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';

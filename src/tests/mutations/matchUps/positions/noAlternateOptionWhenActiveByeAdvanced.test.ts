@@ -1,5 +1,5 @@
-import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
+import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { getDrawPosition } from '@Functions/global/extractors';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';

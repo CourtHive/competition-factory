@@ -1,7 +1,8 @@
 import { recordSourceSideProvenance } from '@Mutate/drawDefinitions/matchUpGovernor/recordSourceSideProvenance';
-import { exitOutcomeCode, getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
+import { exitOutcomeCode } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
@@ -12,7 +13,7 @@ import {
 
 // constants
 import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { OUTCOME_WALKOVER } from '@Helpers/keyValueScore/constants';
+import { OUTCOME_WALKOVER } from '@Constants/keyValueConstants';
 
 /**
  * Every code in a deployed production vocabulary must survive every shape it can take.

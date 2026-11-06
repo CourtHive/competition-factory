@@ -1,5 +1,5 @@
-import { getSideExitProvenance, isPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { getSideExitProvenance, isPropagatedExit } from '@Helpers/drawTopology/sideExitProvenance';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { isDoubleExit, isExit } from '@Validators/isExit';

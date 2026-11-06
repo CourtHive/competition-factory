@@ -1,4 +1,4 @@
-import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
+import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, expect, it } from 'vitest';

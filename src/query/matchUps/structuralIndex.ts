@@ -1,10 +1,10 @@
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
+import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { getWinnerLinkRoundNumbers } from '@Query/drawDefinition/linkGetter';
 import { annotateScoreSets, buildMatchUpSides } from './addMatchUpContext';
 import { unresolvedCollectionChoice } from '@Helpers/matchUpTypeOptions';
-import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getCollectionAssignment } from './getCollectionAssignment';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { parse } from '@Helpers/matchUpFormatCode/parse';

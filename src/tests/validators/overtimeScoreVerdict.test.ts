@@ -1,4 +1,4 @@
-import { overtimeScoreVerdict } from '@Validators/overtimeScore';
+import { overtimeScoreVerdict } from '@Scoring/analysis/overtimeScore';
 import { expect, it } from 'vitest';
 
 // constants

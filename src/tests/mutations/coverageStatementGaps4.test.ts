@@ -6,14 +6,14 @@ import { addMatchUpScheduledTime, addMatchUpTimeModifiers } from '@Mutate/matchU
 import { bulkRescheduleMatchUps, bulkReschedule } from '@Mutate/matchUps/schedule/bulkRescheduleMatchUps';
 import { createTeamsFromParticipantAttributes } from '@Mutate/participants/createTeamsFromAttributes';
 import { setEventStartDate, setEventEndDate, setEventDates } from '@Mutate/events/setEventDates';
-import { generateVirtualCourts } from '@Generators/scheduling/utils/generateVirtualCourts';
 import { orderCollectionDefinitions } from '@Mutate/tieFormat/orderCollectionDefinitions';
 import { matchUpScheduleChange } from '@Mutate/matchUps/schedule/matchUpScheduleChange';
 import { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDetails';
 import { addCollectionDefinition } from '@Mutate/tieFormat/addCollectionDefinition';
 import { getItemTieFormat } from '@Query/hierarchical/tieFormats/getItemTieFormat';
+import { generateVirtualCourts } from '@Helpers/scheduling/generateVirtualCourts';
 import { processTiebreakSet } from '@Helpers/keyValueScore/processTiebreakSet';
-import { calculateNewRatings } from '@Generators/scales/calculateNewRatings';
+import { calculateNewRatings } from '@Helpers/ratings/calculateNewRatings';
 import { validatePlayoffGroups } from '@Validators/validatePlayoffGroups';
 import { addParticipant } from '@Mutate/participants/addParticipant';
 import { getTargetMatchUp } from '@Query/matchUps/getTargetMatchUp';
@@ -32,11 +32,11 @@ import {
 // constants and fixtures
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
+import type { DrawDefinition } from '@Types/tournamentTypes';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { GEM_SCORE } from '@Constants/tallyConstants';
 import { SINGLES } from '@Constants/eventConstants';
 import { ELO } from '@Constants/ratingConstants';
-import type { DrawDefinition } from '@Types/tournamentTypes';
 import {
   INVALID_BOOKINGS,
   INVALID_DATE,

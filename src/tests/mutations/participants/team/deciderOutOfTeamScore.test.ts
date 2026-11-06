@@ -1,4 +1,4 @@
-import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
+import { generateTieMatchUpScore } from '@Query/matchUp/tieMatchUpScore/generateTieMatchUpScore';
 import { expect, it, describe } from 'vitest';
 
 // constants

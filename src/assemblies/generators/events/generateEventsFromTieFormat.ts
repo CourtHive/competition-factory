@@ -1,5 +1,6 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { addEventEntries } from '@Mutate/entries/addEventEntries';
+import { withDraftWrites } from '@Global/state/withDraftWrites';
 import { coercedGender } from '@Helpers/coercedGender';
 import { isGendered } from '@Validators/isGendered';
 import { addEvent } from '@Mutate/events/addEvent';
@@ -10,7 +11,7 @@ import { UUID, UUIDS } from '@Tools/UUID';
 import { ONE_OF, TIE_FORMAT, TIE_FORMAT_NAME, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { EntryStatusUnion, Event, TieFormat, Tournament } from '@Types/tournamentTypes';
 import { DIRECT_ACCEPTANCE, UNGROUPED } from '@Constants/entryStatusConstants';
-import tieFormatDefaults from '@Generators/templates/tieFormatDefaults';
+import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { FEMALE, MALE, OTHER } from '@Constants/genderConstants';
 import { DOUBLES_EVENT } from '@Constants/eventConstants';
@@ -53,12 +54,16 @@ export function generateEventsFromTieFormat(params: GenerateEventsFromTieFormatA
     };
 
     if (params.addEntriesFromTeams) {
-      const result: any = addTeamEntriesToEvent({
-        genderedParticipants,
-        collectionDefinition,
-        entryStatus: params.entryStatus,
-        event,
-      });
+      // the event is a draft until addEvent attaches it, and attaching announces it, entries and all: what adding
+      // entries to the draft announces is discarded with it
+      const result: any = withDraftWrites(() =>
+        addTeamEntriesToEvent({
+          genderedParticipants,
+          collectionDefinition,
+          entryStatus: params.entryStatus,
+          event,
+        }),
+      );
       if (result?.error) return result;
     }
 

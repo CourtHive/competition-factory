@@ -215,13 +215,17 @@ Generates multiple events from a tieFormat definition, typically for team compet
 
 ```js
 const { events } = engine.generateEventsFromTieFormat({
-  tieFormat, // required - tieFormat with collectionDefinitions
+  tieFormat, // required, or tieFormatName
+  tieFormatName, // a named tie format from tieFormatConstants, instead of tieFormat
   category, // optional
   gender, // optional
 });
 ```
 
 **Purpose:** Automatically create event structure for team competitions from tieFormat.
+
+A `tieFormatName` the catalogue does not hold is refused with `INVALID_VALUES`. Earlier releases accepted any non-empty
+name and built the `STANDARD` tie format for one they did not know.
 
 ---
 

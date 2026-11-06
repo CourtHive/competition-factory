@@ -895,6 +895,21 @@ It is idempotent, and a record that is already in stored shape is returned uncha
 
 `tools.buildFromSources` applies it to every record it builds.
 
+### firstClassOrExtension
+
+Read an attribute that 5.0.0 promoted from an extension to a first-class field, whatever mode the record was written
+in: the first-class value when it is defined, otherwise the legacy extension's value. It is the read every engine
+query makes; use it only where no engine method returns the attribute. See
+[Migrating to 5.0.0](/docs/migration-5.0.0#mode-agnostic-read-helper).
+
+```js
+const flightProfile = tools.firstClassOrExtension({
+  element: event,
+  attribute: 'flightProfile', // the first-class field
+  name: 'flightProfile', // the legacy extension name
+});
+```
+
 ### visualizeScheduledMatchUps
 
 Generate color-coded console output of match schedule.
@@ -947,6 +962,27 @@ True for a `WINNER` link that traverses by round: what match-by-match advancemen
 ```js
 const advancesRoundWinners = tools.isRoundWinnerLink(link, drawDefinition);
 ```
+
+### positionTargets
+
+Where a matchUp's winner, loser and bye go: the target matchUps and the `drawPosition` each takes there. It is the
+engine's own progression geometry — what `setMatchUpStatus` follows — for a tool that must place a participant its
+source left out, such as a loser who declined a consolation and was recorded as a bye.
+
+It reads a `drawDefinition` and the draw's in-context matchUps that the caller holds, rather than engine state.
+
+```js
+const { matchUps: inContextDrawMatchUps } = tournamentEngine.allDrawMatchUps({ drawId, inContext: true });
+const { targetMatchUps, targetLinks, error } = tools.positionTargets({
+  inContextDrawMatchUps,
+  drawDefinition,
+  matchUpId,
+});
+// targetMatchUps.loserMatchUp — the matchUp the loser feeds; targetMatchUps.loserTargetDrawPosition — the position
+```
+
+The targets are copies unless `asReferences: true` is passed. A malformed round link (a `WINNER` or `LOSER` link with
+no source round) is returned as `error`.
 
 ---
 

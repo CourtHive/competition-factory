@@ -2,7 +2,7 @@ import { directWinner } from '@Mutate/matchUps/drawPositions/drawPositionPlaceme
 import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { isRoundWinnerLink } from '@Query/drawDefinition/linkTraversal';
+import { isRoundWinnerLink } from '@Helpers/drawTopology/linkTraversal';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';

@@ -1,9 +1,9 @@
 import { setGlobalLog, setMethods, setStateProvider } from '@Global/state/globalState';
-import { completeDrawMatchUps } from '@Mutate/simulation/completeDrawMatchUps';
+import { completeDrawMatchUps } from '@Generators/simulation/completeDrawMatchUps';
 import asyncGlobalState from '../../../examples/asyncEngine/asyncGlobalState';
 import { factoryVersion as version } from '@Functions/global/factoryVersion';
 import { deleteDrawDefinitions } from '@Mutate/events/deleteDrawDefinitions';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { getParticipants } from '@Query/participants/getParticipants';
 import * as eventGovernor from '@Assemblies/governors/eventGovernor';
 import * as query from '@Assemblies/governors/queryGovernor';

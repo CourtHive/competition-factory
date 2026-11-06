@@ -9,7 +9,7 @@ export { generateQualifyingStructure } from '@Generators/drawDefinitions/drawTyp
 export { generateDrawStructuresAndLinks } from '@Generators/drawDefinitions/generateDrawStructuresAndLinks';
 export { generateAdHocMatchUps } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocMatchUps';
 export { generateAdHocRounds } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocRounds';
-export { roundRobinGroups } from '@Generators/drawDefinitions/drawTypes/roundRobin/roundRobinGroups';
+export { roundRobinGroups } from '@Helpers/drawTopology/roundRobin/roundRobinGroups';
 export { generateSeedingScaleItems } from '@Generators/drawDefinitions/generateSeedingScaleItems';
 export { drawMatic } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/drawMatic';
 export { generateFlightProfile } from '@Generators/drawDefinitions/generateFlightProfile';

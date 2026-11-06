@@ -1,5 +1,5 @@
 import { generateQualifyingStructures } from './drawTypes/generateQualifyingStructures';
-import { traversesByFinishingPosition } from '@Query/drawDefinition/linkTraversal';
+import { traversesByFinishingPosition } from '@Helpers/drawTopology/linkTraversal';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { generateQualifyingLink } from './links/generateQualifyingLink';
 import { decorateResult } from '@Functions/global/decorateResult';

@@ -20,6 +20,8 @@
 
 import type { EngineMethod } from './factoryTypes';
 
+import type { getRotatingPartnerRoundPreview } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/getRotatingPartnerRoundPreview';
+import type { generateRotatingPartnerRound } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/generateRotatingPartnerRound';
 import type { generateAmericanoPairings } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/generateAmericanoPairings';
 import type { generateMexicanoPairings } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/generateMexicanoPairings';
 import type { getEligibleVoluntaryConsolationParticipants } from '@Query/drawDefinition/getEligibleVoluntaryConsolationParticipants';
@@ -47,7 +49,6 @@ import type { getModifiedMatchUpFormatTiming } from '@Query/extensions/matchUpFo
 import type { repairMalformedLink, repairMalformedLinks } from '@Mutate/drawDefinitions/links/repairMalformedLinks';
 import type { withdrawParticipantAtDrawPosition } from '@Mutate/drawDefinitions/withdrawParticipantAtDrawPosition';
 import type { declineEndorsement, endorseApplication, requestEndorsement } from '@Mutate/sanctioning/endorsement';
-import type { getValidGroupSizes } from '@Assemblies/generators/drawDefinitions/drawTypes/roundRobin/roundRobin';
 import type { generateDrawStructuresAndLinks } from '@Generators/drawDefinitions/generateDrawStructuresAndLinks';
 import type { addVoluntaryConsolationStructure } from '@Mutate/drawDefinitions/addVoluntaryConsolationStructure';
 import type { initializeCompetitionState } from '@Mutate/drawDefinitions/competition/initializeCompetitionState';
@@ -64,7 +65,7 @@ import type { modifyEventMatchUpFormatTiming } from '@Mutate/extensions/events/m
 import type { removeEventMatchUpFormatTiming } from '@Mutate/extensions/events/removeEventMatchUpFormatTiming';
 import type { bulkScheduleTournamentMatchUps } from '@Mutate/matchUps/schedule/bulkScheduleTournamentMatchUps';
 import type { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems/addMatchUpScheduledDate';
-import type { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
+import type { getScenarioScheduleView } from '@Assemblies/governors/scheduleGovernor/getScenarioScheduleView';
 import type { aggregateDeciderSetNumber, finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import type { setPositionAssignments } from '@Mutate/drawDefinitions/positionGovernor/setPositionAssignments';
 import type { getMatchUpsToSchedule } from '@Mutate/matchUps/schedule/scheduleMatchUps/getMatchUpsToSchedule';
@@ -77,11 +78,10 @@ import type { getCompetitionLeaderboard } from '@Query/drawDefinition/competitio
 import type { getRotatingPartnerScoringPolicy } from '@Query/drawDefinition/getRotatingPartnerScoringPolicy';
 import type { getEligibleEvents, getParticipantEligibility } from '@Query/entries/getParticipantEligibility';
 import type { getParticipantRest, getParticipantsRest } from '@Query/matchUps/scheduling/getParticipantRest';
-import type { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
+import type { addQualifyingStructure } from '@Generators/drawDefinitions/structures/addQualifyingStructure';
 import type { replaceTieMatchUpParticipantId } from '@Mutate/matchUps/lineUps/replaceTieMatchUpParticipant';
 import type { modifyParticipantsPaymentStatus } from '@Mutate/participants/modifyParticipantsPaymentStatus';
 import type { getEntryFeeRange, isIndeterminateFee, resolveEntryFee } from '@Query/entries/resolveEntryFee';
-import type { getMaxSetScore, getSetComplement, getTiebreakComplement } from '@Query/matchUp/getComplement';
 import type { getTournamentVisibleFrom, isTournamentVisible } from '@Query/publishing/tournamentVisibility';
 import type { generateAdHocRounds } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocRounds';
 import type { processCompetitionRound } from '@Mutate/drawDefinitions/competition/processCompetitionRound';
@@ -90,10 +90,8 @@ import type { remapDrawDefinitionMatchUpIds } from '@Mutate/drawDefinitions/rema
 import type { removeMatchUpCourtAssignment } from '@Mutate/matchUps/schedule/removeMatchUpCourtAssignment';
 import type { proColumnResolve } from '@Mutate/matchUps/schedule/schedulers/proScheduler/proColumnResolve';
 import type { createTeamsFromParticipantAttributes } from '@Mutate/participants/createTeamsFromAttributes';
-import type { getRotatingPartnerRoundPreview } from '@Query/drawDefinition/getRotatingPartnerRoundPreview';
 import type { getMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
 import type { getScheduleScenarioStatus } from '@Query/matchUps/scheduling/scheduleScenarioReconciliation';
-import type { getSetScoreString, validateMatchUp, validateSet } from '@Validators/scoring/validateMatchUp';
 import type { qualifierProgression } from '@Mutate/drawDefinitions/positionGovernor/qualifierProgression';
 import type { deleteFlightProfileAndFlightDraws } from '@Mutate/events/deleteFlightProfileAndFlightDraws';
 import type { assignTieMatchUpParticipantId } from '@Mutate/matchUps/lineUps/assignTieMatchUpParticipant';
@@ -103,18 +101,16 @@ import type { modifyParticipantsSignInStatus } from '@Mutate/participants/modify
 import type { addTournamentOtherId, setTournamentOtherIds } from '@Mutate/tournaments/tournamentOtherIds';
 import type { removeVenueTransit, setVenueTransit, setVenueTransits } from '@Mutate/venues/venueTransits';
 import type { getTournamentActionableMatchUps } from '@Query/tournaments/getTournamentActionableMatchUps';
-import type { exportMatchUpJSON, mcpValidator, validateMCPMatch } from '@Validators/scoring/mcpValidator';
 import type { anonymizeTournamentRecord } from '@Generators/tournamentRecords/anonymizeTournamentRecord';
-import type { generateRotatingPartnerRound } from '@Mutate/drawDefinitions/generateRotatingPartnerRound';
 import type { removeDrawPositionAssignment } from '@Mutate/drawDefinitions/removeDrawPositionAssignment';
 import type { proAutoSchedule } from '@Mutate/matchUps/schedule/schedulers/proScheduler/proAutoSchedule';
 import type { getAvailableQualifyingTargets } from '@Query/drawDefinition/getAvailableQualifyingTargets';
 import type { getRotatingPartnerTallyPolicy } from '@Query/drawDefinition/getRotatingPartnerTallyPolicy';
+import type { addPlayoffStructures } from '@Generators/drawDefinitions/structures/addPlayoffStructures';
 import type { addElementExtension, removeElementExtension } from '@Mutate/extensions/elementExtensions';
 import type { alternateDrawPositionAssignment } from '@Mutate/matchUps/drawPositions/positionAlternate';
 import type { qualifierDrawPositionAssignment } from '@Mutate/matchUps/drawPositions/positionQualifier';
 import type { removeMatchUpSideParticipant } from '@Mutate/matchUps/sides/removeMatchUpSideParticipant';
-import type { getSchedulingProfile, setSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import type { getSchedulingProfileIssues } from '@Query/matchUps/scheduling/getSchedulingProfileIssues';
 import type { generateSeedingScaleItems } from '@Generators/drawDefinitions/generateSeedingScaleItems';
 import type { automatedPlayoffPositioning } from '@Mutate/drawDefinitions/automatedPlayoffPositioning';
@@ -125,8 +121,11 @@ import type { modifyMatchUpFormatTiming } from '@Mutate/extensions/matchUps/modi
 import type { bulkUpdateCourtAssignments } from '@Mutate/matchUps/schedule/bulkUpdateCourtAssignments';
 import type { transitionCertificationStatus } from '@Mutate/officiating/transitionCertificationStatus';
 import type { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
+import type { getSetScoreString, validateMatchUp, validateSet } from '@Scoring/replay/validateMatchUp';
 import type { setEventDates, setEventEndDate, setEventStartDate } from '@Mutate/events/setEventDates';
+import type { generateTieMatchUpScore } from '@Query/matchUp/tieMatchUpScore/generateTieMatchUpScore';
 import type { getScheduledRoundsDetails } from '@Query/matchUps/scheduling/getScheduledRoundsDetails';
+import type { exportMatchUpJSON, mcpValidator, validateMCPMatch } from '@Scoring/replay/mcpValidator';
 import type { setStructureOrder } from '@Mutate/drawDefinitions/structureGovernor/setStructureOrder';
 import type { addSchedulingProfileRound } from '@Mutate/matchUps/schedule/addSchedulingProfileRound';
 import type { allocateTeamMatchUpCourts } from '@Mutate/matchUps/schedule/allocateTeamMatchUpCourts';
@@ -138,6 +137,7 @@ import type { predictDrawCompetitiveBands } from '@Query/drawDefinition/predictD
 import type { getAppliedPolicies, getPolicyDefinitions } from '@Query/extensions/getAppliedPolicies';
 import type { getApplicableAwardProfileLevels } from '@Query/scales/getApplicableAwardProfileLevels';
 import type { getAllowedDrawTypes, getAllowedMatchUpFormats } from '@Query/tournaments/allowedTypes';
+import type { validateMatchUpScore, validateSetScore } from '@Scoring/analysis/validateMatchUpScore';
 import type { scheduleMatchUps } from '@Mutate/matchUps/schedule/scheduleMatchUps/scheduleMatchUps';
 import type { addIndividualParticipantIds } from '@Mutate/participants/addIndividualParticipantIds';
 import type { predictMatchUpCompetitiveBands } from '@Query/matchUp/predictMatchUpCompetitiveBands';
@@ -160,7 +160,6 @@ import type { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assig
 import type { modifyParticipantOtherName } from '@Mutate/participants/modifyParticipantOtherName';
 import type { regenerateParticipantNames } from '@Mutate/participants/regenerateParticipantNames';
 import type { publishEventSeeding, unPublishEventSeeding } from '@Mutate/publishing/eventSeeding';
-import type { getScenarioScheduleView } from '@Query/matchUps/scheduling/getScenarioScheduleView';
 import type { getMatchUpOfficialConflicts } from '@Query/officiating/getMatchUpOfficialConflicts';
 import type { drawMatic } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/drawMatic';
 import type { getFeedInQualifyingPositions } from '@Generators/drawDefinitions/feedInQualifying';
@@ -179,13 +178,11 @@ import type { participantScheduledMatchUps } from '@Query/matchUps/participantSc
 import type { getCompetitionParticipants } from '@Query/participants/getCompetitionParticipants';
 import type { getParticipantEventDetails } from '@Query/participants/getParticipantEventDetails';
 import type { validateStatusTransition } from '@Validators/sanctioning/validateStatusTransition';
-import type { generateVirtualCourts } from '@Generators/scheduling/utils/generateVirtualCourts';
 import type { applyTournamentRankingPoints } from '@Mutate/scales/applyTournamentRankingPoints';
 import type { getMatchUpCompetitiveProfile } from '@Query/matchUp/getMatchUpCompetitiveProfile';
 import type { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 import type { getTournamentCalendarEntry } from '@Query/tournaments/getTournamentCalendarEntry';
 import type { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
-import type { generateScoreString } from '@Assemblies/generators/matchUps/generateScoreString';
 import type { generateFlightProfile } from '@Generators/drawDefinitions/generateFlightProfile';
 import type { copyTournamentRecord } from '@Generators/tournamentRecords/copyTournamentRecord';
 import type { removeSeededParticipant } from '@Mutate/drawDefinitions/removeSeededParticipant';
@@ -203,14 +200,12 @@ import type { getMatchUpFormatVariance } from '@Query/drawDefinition/getMatchUpF
 import type { getStructureCompleteness } from '@Query/drawDefinition/getStructureCompleteness';
 import type { isScheduleLocked, matchUpScheduleLocked } from '@Query/matchUp/isScheduleLocked';
 import type { competitionScheduleMatchUps } from '@Query/matchUps/competitionScheduleMatchUps';
-import type { validateMatchUpScore, validateSetScore } from '@Validators/validateMatchUpScore';
 import type { confirmResult, disputeResult, submitResult } from '@Mutate/ladder/reportResult';
 import type { removePracticeRegistration } from '@Mutate/practice/removePracticeRegistration';
 import type { setPracticeDefaultCapacity } from '@Mutate/practice/setPracticeDefaultCapacity';
 import type { updatePracticeRegistration } from '@Mutate/practice/updatePracticeRegistration';
 import type { getOfficialCertifications } from '@Query/officiating/getOfficialCertifications';
 import type { getTournamentCompleteness } from '@Query/tournaments/getTournamentCompleteness';
-import type { addQualifyingStructure } from '@Mutate/drawDefinitions/addQualifyingStructure';
 import type { destroyPairEntries, destroyPairEntry } from '@Mutate/entries/destroyPairEntry';
 import type { setEntryPosition, setEntryPositions } from '@Mutate/entries/setEntryPositions';
 import type { applyScheduleScenario } from '@Mutate/matchUps/schedule/applyScheduleScenario';
@@ -221,15 +216,19 @@ import type { openProposalRegistration } from '@Mutate/sanctioning/openProposalR
 import type { getLuckyDrawRoundStatus } from '@Query/drawDefinition/getLuckyDrawRoundStatus';
 import type { positionActions } from '@Query/drawDefinition/positionActions/positionActions';
 import type { getParticipantMembership } from '@Query/participants/getParticipantMembership';
+import type { validateSchedulingProfile } from '@Query/scheduling/validateSchedulingProfile';
 import type { tieFormatGenderValidityCheck } from '@Validators/tieFormatGenderValidityCheck';
 import type { validateCollectionDefinition } from '@Validators/validateCollectionDefinition';
+import type { checkSetIsComplete } from '@Helpers/matchUpFormatCode/setRules/setCompletion';
 import type { addDrawOtherId, setDrawOtherIds } from '@Mutate/drawDefinitions/drawOtherIds';
 import type { promoteAlternate, promoteAlternates } from '@Mutate/entries/promoteAlternate';
 import type { updateParticipantResults } from '@Mutate/structures/updateParticipantResults';
 import type { bulkUpdatePublishedEventIds } from '@Query/event/bulkUpdatePublishedEventIds';
 import type { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInParticipantIds';
+import type { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import type { getDrawTypeCoercion } from '@Generators/drawDefinitions/getDrawTypeCoercion';
 import type { generateTournamentRecord } from '@Generators/mocks/generateTournamentRecord';
+import type { getValidGroupSizes } from '@Helpers/drawTopology/roundRobin/validGroupSizes';
 import type { seedWithdrawalCascade } from '@Mutate/drawDefinitions/seedWithdrawalCascade';
 import type { substituteParticipant } from '@Mutate/drawDefinitions/substituteParticipant';
 import type { acceptChallenge, declineChallenge } from '@Mutate/ladder/respondToChallenge';
@@ -246,6 +245,7 @@ import type { mergeFacilitySchedule } from '@Query/facilitySchedule/mergeFacilit
 import type { getCompetitionPenalties } from '@Query/participants/getCompetitionPenalties';
 import type { getParticipantSchedules } from '@Query/participants/getParticipantSchedules';
 import type { validateCertification } from '@Validators/officiating/validateCertification';
+import type { deduceMatchUpFormat } from '@Helpers/matchUpFormatCode/deduceMatchUpFormat';
 import type { deleteFlightAndFlightDraw } from '@Mutate/events/deleteFlightAndFlightDraw';
 import type { adHocPositionSwap } from '@Mutate/matchUps/drawPositions/adHocPositionSwap';
 import type { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
@@ -258,8 +258,6 @@ import type { getMatchUpReadiness } from '@Query/matchUps/scheduling/getMatchUpR
 import type { getParticipantScaleItem } from '@Query/participant/getParticipantScaleItem';
 import type { getAvailableTransitions } from '@Query/sanctioning/getAvailableTransitions';
 import type { getCompetitionDateRange } from '@Query/tournaments/getCompetitionDateRange';
-import type { addFinishingRounds } from '@Generators/drawDefinitions/addFinishingRounds';
-import type { addPlayoffStructures } from '@Mutate/drawDefinitions/addPlayoffStructures';
 import type { automatedPositioning } from '@Mutate/drawDefinitions/automatedPositioning';
 import type { luckyDrawAdvancement } from '@Mutate/drawDefinitions/luckyDrawAdvancement';
 import type { modifyDrawDefinition } from '@Mutate/drawDefinitions/modifyDrawDefinition';
@@ -276,6 +274,7 @@ import type { getPositionsPlayedOff } from '@Query/drawDefinition/getPositionsPl
 import type { getTournamentPenalties } from '@Query/participants/getTournamentPenalties';
 import type { getPracticeRegistrations } from '@Query/practice/getPracticeRegistrations';
 import type { getRoundVisibilityState } from '@Query/publishing/getRoundVisibilityState';
+import type { completeDrawMatchUps } from '@Generators/simulation/completeDrawMatchUps';
 import type { resetMatchUpLineUps } from '@Mutate/matchUps/lineUps/resetMatchUpLineUps';
 import type { setMatchUpFormat } from '@Mutate/matchUps/matchUpFormat/setMatchUpFormat';
 import type { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
@@ -298,6 +297,7 @@ import type { getMatchUpFormatReport } from '@Query/tournaments/getMatchUpFormat
 import type { getRegistrationProfile } from '@Query/tournaments/getRegistrationProfile';
 import type { modifyTournamentRecord } from '@Generators/mocks/modifyTournamentRecord';
 import type { generateStatCrew } from '@Generators/tournamentRecords/generateStatCrew';
+import type { generateVirtualCourts } from '@Helpers/scheduling/generateVirtualCourts';
 import type { pruneDrawDefinition } from '@Mutate/drawDefinitions/pruneDrawDefinition';
 import type { resetDrawDefinition } from '@Mutate/drawDefinitions/resetDrawDefinition';
 import type { setDelegatedOutcome } from '@Mutate/drawDefinitions/setDelegatedOutcome';
@@ -309,8 +309,6 @@ import type { setMatchUpDailyLimits } from '@Mutate/tournaments/setMatchUpDailyL
 import type { isValidForQualifying } from '@Query/drawDefinition/isValidForQualifying';
 import type { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import type { getTournamentPointAwards } from '@Query/scales/getTournamentPointAwards';
-import type { validateSchedulingProfile } from '@Validators/validateSchedulingProfile';
-import type { generateBookings } from '@Generators/scheduling/utils/generateBookings';
 import type { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
 import type { bulkMatchUpStatusUpdate } from '@Mutate/events/bulkMatchUpStatusUpdate';
 import type { removeLadderParticipant } from '@Mutate/ladder/removeLadderParticipant';
@@ -324,6 +322,7 @@ import type { querySanctioningRecord } from '@Query/sanctioning/getSanctioningRe
 import type { getPositionAssignments } from '@Query/structure/getPositionAssignments';
 import type { getTournamentTimeZone } from '@Query/tournaments/getTournamentTimeZone';
 import type { generateEventWithDraw } from '@Generators/mocks/generateEventWithDraw';
+import type { calculateWinCriteria } from '@Helpers/tieFormats/calculateWinCriteria';
 import type { assignDrawPosition } from '@Mutate/drawDefinitions/assignDrawPosition';
 import type { initializeDraft } from '@Mutate/drawDefinitions/draft/initializeDraft';
 import type { removeStageEntries } from '@Mutate/drawDefinitions/removeStageEntries';
@@ -342,7 +341,6 @@ import type { isTournamentPublished } from '@Query/publishing/isTournamentPublis
 import type { getAggregateTeamResults } from '@Query/scales/getAggregateTeamResults';
 import type { validateScheduleScenario } from '@Validators/validateScheduleScenario';
 import type { hydrateTournamentRecord } from '@Mutate/base/hydrateTournamentRecord';
-import type { completeDrawMatchUps } from '@Mutate/simulation/completeDrawMatchUps';
 import type { removeCourtGridBooking } from '@Mutate/venues/removeCourtGridBooking';
 import type { getEntryStatusOrdinals } from '@Query/entries/getEntryStatusOrdinals';
 import type { getEventInconsistencies } from '@Query/event/getEventInconsistencies';
@@ -373,6 +371,7 @@ import type { unPublishOrderOfPlay } from '@Mutate/timeItems/unPublishOrderOfPla
 import type { setTournamentStatus } from '@Mutate/tournaments/setTournamentStatus';
 import type { getCompetitiveProfile } from '@Query/matchUps/getCompetitiveProfile';
 import type { getPredictiveAccuracy } from '@Query/matchUps/getPredictiveAccuracy';
+import type { getSchedulingProfile } from '@Query/scheduling/getSchedulingProfile';
 import type { deleteDrawDefinitions } from '@Mutate/events/deleteDrawDefinitions';
 import type { refreshEventDrawOrder } from '@Mutate/events/refreshEventDrawOrder';
 import type { deleteParticipants } from '@Mutate/participants/deleteParticipants';
@@ -380,9 +379,11 @@ import type { modifyPenalty } from '@Mutate/participants/penalties/modifyPenalty
 import type { removePenalty } from '@Mutate/participants/penalties/removePenalty';
 import type { deleteAdHocMatchUps } from '@Mutate/structures/deleteAdHocMatchUps';
 import type { removeRoundMatchUps } from '@Mutate/structures/removeRoundMatchUps';
+import type { setSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import type { getMatchUpRatingDelta } from '@Query/matchUp/getMatchUpRatingDelta';
 import type { getParticipantStats } from '@Query/participant/getParticipantStats';
 import type { getParticipantSignInStatus } from '@Query/participant/signInStatus';
+import type { categoryCanContain } from '@Helpers/categories/categoryCanContain';
 import type { setOrderOfFinish } from '@Mutate/drawDefinitions/setOrderOfFinish';
 import type { updateTeamLineUp } from '@Mutate/drawDefinitions/updateTeamLineUp';
 import type { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
@@ -406,7 +407,6 @@ import type { getSeedingThresholds } from '@Query/drawDefinition/getSeedBlocks';
 import type { getSwissChart } from '@Query/drawDefinitions/swiss/getSwissChart';
 import type { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';
 import type { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
-import type { calculateWinCriteria } from '@Query/matchUp/calculateWinCriteria';
 import type { getHomeParticipantId } from '@Query/matchUp/getHomeParticipantId';
 import type { getMatchUpContextIds } from '@Query/matchUp/getMatchUpContextIds';
 import type { retainScoreForFormat } from '@Query/matchUp/retainScoreForFormat';
@@ -425,8 +425,8 @@ import type { getResultAttestation } from '@Query/ladder/getResultAttestation';
 import type { applyDerivedRankings } from '@Query/scales/applyDerivedRankings';
 import type { getParticipantPoints } from '@Query/scales/getParticipantPoints';
 import type { getSeasonAdvancement } from '@Query/season/getSeasonAdvancement';
+import type { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import type { validatePlayoffGroups } from '@Validators/validatePlayoffGroups';
-import type { reverseScore } from '@Assemblies/generators/score/reverseScore';
 import type { generateOutcome } from '@Generators/simulation/generateOutcome';
 import type { removeOnlineResource } from '@Mutate/base/removeOnlineResource';
 import type { assignSeedPositions } from '@Mutate/events/assignSeedPositions';
@@ -438,9 +438,10 @@ import type { getEntryStatusReports } from '@Query/entries/entryStatusReport';
 import type { getMaxEntryPosition } from '@Query/entries/getMaxEntryPosition';
 import type { getEventCompleteness } from '@Query/event/getEventCompleteness';
 import type { getAvailableReports } from '@Query/reports/getAvailableReports';
-import type { deduceMatchUpFormat } from '@Query/scoring/deduceMatchUpFormat';
+import type { addFinishingRounds } from '@Query/structure/addFinishingRounds';
 import type { analyzeTournament } from '@Query/tournaments/analyzeTournament';
 import type { getTournamentInfo } from '@Query/tournaments/getTournamentInfo';
+import type { generateScoreString } from '@Scoring/views/generateScoreString';
 import type { addDrawEntries } from '@Mutate/drawDefinitions/addDrawEntries';
 import type { modifyDrawName } from '@Mutate/drawDefinitions/modifyDrawName';
 import type { resetStructure } from '@Mutate/drawDefinitions/resetStructure';
@@ -464,14 +465,11 @@ import type { publicFindParticipant } from '@Acquire/publicFindParticipant';
 import type { updateDrawIdsOrder } from '@Mutate/events/updateDrawIdsOrder';
 import type { addParticipants } from '@Mutate/participants/addParticipants';
 import type { addPenalty } from '@Mutate/participants/penalties/addPenalty';
-import type { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
 import type { addAdHocMatchUps } from '@Mutate/structures/addAdHocMatchUps';
 import type { deleteCourt, deleteCourts } from '@Mutate/venues/deleteCourt';
 import type { deleteVenue, deleteVenues } from '@Mutate/venues/deleteVenue';
 import type { isValidSeedPosition } from '@Query/drawDefinition/seedGetter';
 import type { getEventEntrySpace } from '@Query/entries/getEventEntrySpace';
-import type { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
-import type { checkSetIsComplete } from '@Query/matchUp/checkSetIsComplete';
 import type { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import type { buildReportContext } from '@Query/reports/buildReportContext';
 import type { getEligibleTiers } from '@Query/sanctioning/getEligibleTiers';
@@ -482,16 +480,14 @@ import type { getTournamentIds } from '@Query/tournaments/getTournamentIds';
 import type { validMatchUp, validMatchUps } from '@Validators/validMatchUp';
 import type { autoSeeding } from '@Generators/drawDefinitions/autoSeeding';
 import type { removeScaleValues } from '@Mutate/entries/removeScaleValues';
-import type { resolvePointValue } from '@Mutate/scoring/resolvePointValue';
 import type { getEventPlayingDates } from '@Query/events/eventPlaysOnDate';
 import type { getParticipants } from '@Query/participants/getParticipants';
+import type { generateBookings } from '@Query/scheduling/generateBookings';
 import type { getSeasonStandings } from '@Query/season/getSeasonStandings';
-import type { courtGridRows } from '@Generators/scheduling/courtGridRows';
 import type { keyValueScore } from '@Helpers/keyValueScore/keyValueScore';
 import type { applyLineUps } from '@Mutate/matchUps/lineUps/applyLineUps';
 import type { addParticipant } from '@Mutate/participants/addParticipant';
-import type { inferServeSide } from '@Mutate/scoring/serveSideCalculator';
-import type { categoryCanContain } from '@Query/event/categoryCanContain';
+import type { checkValidEntries } from '@Query/entries/checkValidEntries';
 import type { getEventProperties } from '@Query/event/getEventProperties';
 import type { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import type { getCompleteness } from '@Query/sanctioning/getCompleteness';
@@ -514,8 +510,12 @@ import type { addOnlineResource } from '@Mutate/base/addOnlineResource';
 import type { unPublishEvent } from '@Mutate/publishing/unPublishEvent';
 import type { getEvaluations } from '@Query/officiating/getEvaluations';
 import type { getScaleValues } from '@Query/participant/getScaleValues';
+import type { parseScoreString } from '@Scoring/parse/parseScoreString';
+import type { calculatePointsTo } from '@Scoring/v1/pointsToCalculator';
 import type { factoryVersion } from '@Functions/global/factoryVersion';
 import type { generateSeason } from '@Generators/mocks/generateSeason';
+import type { findExtension } from '@Helpers/extensions/findExtension';
+import type { courtGridRows } from '@Helpers/scheduling/courtGridRows';
 import type { addEventEntries } from '@Mutate/entries/addEventEntries';
 import type { addEvaluation } from '@Mutate/officiating/addEvaluation';
 import type { addSuspension } from '@Mutate/officiating/addSuspension';
@@ -525,7 +525,7 @@ import type { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
 import type { resetTieFormat } from '@Mutate/tieFormat/resetTieFormat';
 import type { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import type { getVenueTransits } from '@Query/venues/getVenueTransits';
-import type { checkValidEntries } from '@Validators/checkValidEntries';
+import type { resolvePointValue } from '@Scoring/v1/resolvePointValue';
 import type { validateTieFormat } from '@Validators/validateTieFormat';
 import type { stringify } from '@Helpers/matchUpFormatCode/stringify';
 import type { setEventDisplay } from '@Mutate/events/setEventDisplay';
@@ -537,15 +537,15 @@ import type { getScaledEntries } from '@Query/event/getScaledEntries';
 import type { getMatchUpUpset } from '@Query/matchUp/getMatchUpUpset';
 import type { eventMatchUps } from '@Query/matchUps/getEventMatchUps';
 import type { getRounds } from '@Query/matchUps/scheduling/getRounds';
+import type { inferServeSide } from '@Scoring/v1/serveSideCalculator';
 import type { getDrawData } from '@Query/drawDefinition/getDrawData';
 import type { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import type { getTieFormat } from '@Query/hierarchical/getTieFormat';
 import type { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import type { getAwardProfile } from '@Query/scales/getAwardProfile';
-import type { pbpValidator } from '@Validators/scoring/pbpValidator';
+import type { validateScore } from '@Scoring/analysis/validateScore';
 import type { validateCategory } from '@Validators/validateCategory';
 import type { validateLineUp } from '@Validators/validateTeamLineUp';
-import type { repairScore } from '@Helpers/scoreRepair/repairScore';
 import type { issueChallenge } from '@Mutate/ladder/issueChallenge';
 import type { publishEvent } from '@Mutate/publishing/publishEvent';
 import type { hasLuckyRounds } from '@Query/drawDefinition/isLucky';
@@ -556,54 +556,54 @@ import type { drawMatchUps } from '@Query/matchUps/getDrawMatchUps';
 import type { generateReport } from '@Query/reports/generateReport';
 import type { analyzeDraws } from '@Query/tournaments/analyzeDraws';
 import type { removeSeeding } from '@Mutate/entries/removeSeeding';
-import type { createMatchUp } from '@Mutate/scoring/createMatchUp';
 import type { addCourt, addCourts } from '@Mutate/venues/addCourt';
 import type { getAwardPoints } from '@Query/scales/getAwardPoints';
 import type { planNextPeriod } from '@Query/season/planNextPeriod';
+import type { analyzeScore } from '@Scoring/analysis/analyzeScore';
 import type { addPersons } from '@Mutate/participants/addPersons';
 import type { setSubOrder } from '@Mutate/structures/setSubOrder';
 import type { disableCourts } from '@Mutate/venues/disableCourts';
 import type { disableVenues } from '@Mutate/venues/disableVenues';
 import type { getDualIssues } from '@Query/matchUp/getDualIssues';
-import type { getScoreboard } from '@Query/scoring/getScoreboard';
 import type { getVenuesReport } from '@Query/venues/venuesReport';
+import type { repairScore } from '@Scoring/analysis/repairScore';
+import type { pbpValidator } from '@Scoring/replay/pbpValidator';
 import type { validateSeason } from '@Validators/validateSeason';
 import type { getDrawStructures } from '@Acquire/findStructure';
 import type { enableCourts } from '@Mutate/venues/enableCourts';
 import type { enableVenues } from '@Mutate/venues/enableVenues';
-import type { analyzeScore } from '@Query/matchUp/analyzeScore';
-import type { parseScoreString } from '@Tools/parseScoreString';
+import type { reverseScore } from '@Scoring/views/reverseScore';
 import type { deleteEvents } from '@Mutate/events/deleteEvent';
 import type { isLadder } from '@Query/drawDefinition/isLadder';
 import type { publicFindCourt } from '@Query/venues/findCourt';
 import type { getCourtInfo } from '@Query/venues/getCourtInfo';
 import type { getVenueData } from '@Query/venues/getVenueData';
-import type { validateScore } from '@Validators/validateScore';
+import type { createMatchUp } from '@Scoring/v1/createMatchUp';
+import type { getScoreboard } from '@Scoring/v1/getScoreboard';
 import type { publicFindMatchUp } from '@Acquire/findMatchUp';
 import type { parse } from '@Helpers/matchUpFormatCode/parse';
 import type { modifyEvent } from '@Mutate/events/modifyEvent';
 import type { modifyCourt } from '@Mutate/venues/modifyCourt';
 import type { modifyVenue } from '@Mutate/venues/modifyVenue';
 import type { getEventData } from '@Query/event/getEventData';
-import type { getEpisodes } from '@Query/scoring/getEpisodes';
 import type { isAdHoc } from '@Query/drawDefinition/isAdHoc';
-import type { findExtension } from '@Acquire/findExtension';
 import type { filterMatchUps } from '@Query/filterMatchUps';
 import type { analyzeSet } from '@Query/matchUp/analyzeSet';
-import type { isComplete } from '@Query/scoring/isComplete';
 import type { addGoesTo } from '@Query/matchUps/addGoesTo';
+import type { getEpisodes } from '@Scoring/v1/getEpisodes';
 import type { addFlight } from '@Mutate/events/addFlight';
-import type { getWinner } from '@Query/scoring/getWinner';
 import type { getTally } from '@Query/structure/getTally';
-import type { addPoint } from '@Mutate/scoring/addPoint';
 import type { getEvents } from '@Query/events/getEvents';
 import type { getLapses } from '@Query/ladder/getLapses';
 import type { getCourts } from '@Query/venues/getCourts';
+import type { isComplete } from '@Scoring/v1/isComplete';
 import type { addEvent } from '@Mutate/events/addEvent';
 import type { addVenue } from '@Mutate/venues/addVenue';
-import type { getScore } from '@Query/scoring/getScore';
 import type { getEvent } from '@Query/events/getEvent';
+import type { getWinner } from '@Scoring/v1/getWinner';
 import type { findPolicy } from '@Acquire/findPolicy';
+import type { addPoint } from '@Scoring/v1/addPoint';
+import type { getScore } from '@Scoring/v1/getScore';
 import type { cast } from '@Query/readModel/cast';
 import type { credits } from '@Fixtures/credits';
 import type {
@@ -651,6 +651,10 @@ import type {
   setTournamentTier,
 } from '@Mutate/tournaments/tournamentDetails';
 import type {
+  addLinkedConsolationStructure,
+  generateConsolationStructure,
+} from '@Generators/drawDefinitions/structures/addLinkedConsolationStructure';
+import type {
   getDrawDefinitionTimeItem,
   getEventTimeItem,
   getParticipantTimeItem,
@@ -670,7 +674,7 @@ import type {
   pointParser,
   shotParser,
   shotSplitter,
-} from '@Validators/scoring/mcpParser';
+} from '@Scoring/replay/mcpParser';
 import type {
   removeCompetitionProfile,
   setCompetitionProfile,
@@ -680,10 +684,6 @@ import type {
   removeIndividualParticipantIds,
   removeParticipantIdsFromAllTeams,
 } from '@Mutate/participants/removeIndividualParticipantIds';
-import type {
-  addLinkedConsolationStructure,
-  generateConsolationStructure,
-} from '@Mutate/drawDefinitions/addLinkedConsolationStructure';
 import type {
   attachConsolationStructures,
   attachPlayoffStructures,
@@ -695,6 +695,11 @@ import type {
   addTimeItem,
   addTournamentTimeItem,
 } from '@Mutate/timeItems/addTimeItem';
+import type {
+  getMaxSetScore,
+  getSetComplement,
+  getTiebreakComplement,
+} from '@Helpers/matchUpFormatCode/setRules/setComplement';
 import type {
   setTournamentDates,
   setTournamentEndDate,

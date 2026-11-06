@@ -1,15 +1,15 @@
-import { firstClassGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
+import { firstClassGroupLeafOrExtension } from '@Helpers/extensions/firstClassGroupLeafOrExtension';
 import { getCompetitionDateRange } from '@Query/tournaments/getCompetitionDateRange';
 import { getProfileRoundKey } from '@Query/matchUps/scheduling/schedulingUtils';
-import { eventDateResolver } from '@Query/events/eventPlaysOnDate';
 import { setSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import { extractDate, isValidDateString, sameDay } from '@Tools/dateTime';
+import { eventDateResolver } from '@Query/events/eventPlaysOnDate';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isObject } from '@Tools/objects';
 
 // constants and types
-import type { ProfileRound, ProfileVenue } from '@Query/matchUps/scheduling/schedulingUtils';
 import { EVENT_DATE_INACTIVE, EXISTING_ROUND, INVALID_DATE } from '@Constants/errorConditionConstants';
+import type { ProfileRound, ProfileVenue } from '@Query/matchUps/scheduling/schedulingUtils';
 import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 

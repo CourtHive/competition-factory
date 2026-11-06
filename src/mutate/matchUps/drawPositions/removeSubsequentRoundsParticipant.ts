@@ -7,6 +7,7 @@ import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides'
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
+import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
@@ -14,7 +15,6 @@ import {
   deriveExitStateFromProvenance,
   participatesInExitCascade,
   withdrawArrivalFrom,
-  carriedExitStatus,
   blankExitCodes,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 

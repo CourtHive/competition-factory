@@ -1,8 +1,8 @@
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
+import { structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { getSeedGroups } from '@Query/drawDefinition/getSeedBlocks';
 import { getSeedsCount } from '@Query/drawDefinition/getSeedsCount';
-import { structuresOf } from '@Acquire/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
 import { isConvertableInteger } from '@Tools/math';
 import { generateRange } from '@Tools/arrays';

@@ -1,12 +1,12 @@
 import { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
 import { getCompetitionPublishedDrawDetails } from './getCompetitionPublishedDrawDetails';
 import { scheduledSortedMatchUps } from '@Functions/sorters/scheduledSortedMatchUps';
-import { matchUpWillNeverBePlayed } from '@Mutate/matchUps/schedule/byeScheduling';
-import { courtGridRows } from '@Assemblies/generators/scheduling/courtGridRows';
+import { matchUpWillNeverBePlayed } from '@Helpers/scheduling/schedulePredicates';
 import { isEmbargoed, isVisiblyPublished } from '@Query/publishing/isEmbargoed';
-import { getSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
+import { getSchedulingProfile } from '@Query/scheduling/getSchedulingProfile';
 import { isStructureVisible } from '@Query/publishing/isStructureVisible';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
+import { courtGridRows } from '@Helpers/scheduling/courtGridRows';
 import { getCompetitionMatchUps } from './getCompetitionMatchUps';
 import { getTournamentId } from '@Global/state/globalState';
 import { withContextExclusion } from './contextExclusion';

@@ -1,15 +1,15 @@
 import { modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { modifyTournamentDetailNotice } from '@Mutate/tournaments/tournamentDetailNotice';
+import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
-import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { modifyVenueNotice } from '@Mutate/venues/venueNotices';
 import { removeExtension } from './removeExtension';
 import { addExtension } from './addExtension';
 
 // types
-import type { TournamentRecords } from '@Types/factoryTypes';
 import type { DrawDefinition, Tournament } from '@Types/tournamentTypes';
+import type { TournamentRecords } from '@Types/factoryTypes';
 
 type ElementParams = {
   tournamentRecords?: TournamentRecords;

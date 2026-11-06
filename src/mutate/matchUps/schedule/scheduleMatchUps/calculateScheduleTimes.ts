@@ -1,12 +1,12 @@
 import { matchUpFormatTimes, resolveTimingDetails } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
-import { recordsDefaultPeriodLength } from '@Assemblies/generators/scheduling/utils/defaultPeriodLength';
-import { calculatePeriodLength } from '@Assemblies/generators/scheduling/utils/calculatePeriodLength';
 import { getScheduleTiming } from '@Query/extensions/matchUpFormatTiming/getScheduleTiming';
 import { competitionScheduleMatchUps } from '@Query/matchUps/competitionScheduleMatchUps';
 import { extractDate, extractTime, sameDay, timeStringMinutes } from '@Tools/dateTime';
+import { recordsDefaultPeriodLength } from '@Query/scheduling/defaultPeriodLength';
+import { calculatePeriodLength } from '@Helpers/scheduling/calculatePeriodLength';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
+import { getScheduleTimes } from '@Helpers/scheduling/getScheduleTimes';
 import { addDaysToDate, endOnTheDay } from '@Tools/civilDateTime';
-import { getScheduleTimes } from '@Query/venues/getScheduleTimes';
 import { getMatchUpId } from '@Functions/global/extractors';
 
 // constants and types

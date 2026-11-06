@@ -6,7 +6,6 @@ import { getEventAlternateParticipantIds } from '@Query/drawDefinition/matchUpAc
 import { addVoluntaryConsolationStructure } from '@Mutate/drawDefinitions/addVoluntaryConsolationStructure';
 import { organizeDrawPositionOptions } from '@Query/drawDefinition/avoidance/organizeDrawPositionOptions';
 import { getCompetitionPublishedDrawDetails } from '@Query/matchUps/getCompetitionPublishedDrawDetails';
-import { calculatePeriodLength } from '@Assemblies/generators/scheduling/utils/calculatePeriodLength';
 import { setStructureOrder } from '@Mutate/drawDefinitions/structureGovernor/setStructureOrder';
 import { removeParticipantsScaleItems } from '@Mutate/participants/scaleItems/removeScaleItems';
 import { clearMatchUpSchedule } from '@Mutate/matchUps/schedule/clearMatchUpSchedule';
@@ -16,6 +15,7 @@ import { getPairedDrawPosition } from '@Query/drawDefinition/getPairedDrawPositi
 import { getEliminationDrawSize } from '@Query/participants/getEliminationDrawSize';
 import { getTournamentPenalties } from '@Query/participants/getTournamentPenalties';
 import { modifyParticipantName } from '@Mutate/participants/modifyParticipantName';
+import { calculatePeriodLength } from '@Helpers/scheduling/calculatePeriodLength';
 import { getEventIdsAndDrawIds } from '@Query/tournaments/getEventIdsAndDrawIds';
 import { getPositionRangeMap } from '@Query/drawDefinition/getPositionRangeMap';
 import { removeRatings } from '@Mutate/participants/scaleItems/removeRatings';

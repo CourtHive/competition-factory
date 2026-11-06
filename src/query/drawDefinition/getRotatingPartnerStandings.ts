@@ -1,10 +1,10 @@
-import { appliedRotatingPartnerRoundsAreIntact } from '@Validators/appliedRotatingPartnerRoundsAreIntact';
+import { appliedRotatingPartnerRoundsAreIntact } from '@Query/drawDefinition/appliedRotatingPartnerRoundsAreIntact';
 import { isRotatingPartnerDraw, validateRotatingPartnerEntrants } from '@Validators/rotatingPartnerDraw';
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { isRotatingPartnerTallyPolicy } from '@Validators/rotatingPartnerTallyPolicy';
 import { settlementMatches } from '@Validators/rotatingPartnerSettlement';
-import { validateScore } from '@Validators/validateScore';
-import { matchUpsOf } from '@Acquire/structureMembers';
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
+import { validateScore } from '@Scoring/analysis/validateScore';
 
 // constants and types
 import type { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';

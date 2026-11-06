@@ -1,5 +1,5 @@
 import { getEventPlayingDates } from '@Query/events/eventPlaysOnDate';
-import { structuresOf } from '@Acquire/structureMembers';
+import { structuresOf } from '@Helpers/drawTopology/structureMembers';
 
 import type { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
 import type { TournamentEventInfo } from '@Types/viewTypes';

@@ -1,5 +1,5 @@
 import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
+import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';

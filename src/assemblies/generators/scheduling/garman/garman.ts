@@ -1,7 +1,7 @@
-import { getCourtsAvailableAtPeriodStart } from '@Query/venues/getCourtsAvailableAtPeriodStart';
-import { generateTimeSlots } from '@Generators/scheduling/generateTimeSlots';
-import { courtGenerator } from '@Generators/scheduling/courtGenerator';
-import { getScheduleTimes } from '@Query/venues/getScheduleTimes';
+import { getCourtsAvailableAtPeriodStart } from '@Helpers/scheduling/getCourtsAvailableAtPeriodStart';
+import { generateTimeSlots } from '@Helpers/scheduling/generateTimeSlots';
+import { getScheduleTimes } from '@Helpers/scheduling/getScheduleTimes';
+import { courtGenerator } from '@Helpers/scheduling/courtGenerator';
 
 export const garman = {
   getCourtsAvailableAtPeriodStart,

@@ -1,5 +1,5 @@
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
-import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
+import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 
 // constants and types
 import { completedMatchUpStatuses, COMPLETED, DEFAULTED, RETIRED } from '@Constants/matchUpStatusConstants';

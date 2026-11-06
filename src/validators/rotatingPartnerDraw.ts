@@ -1,5 +1,5 @@
-import { isCompetitorRole } from '@Query/participant/participantRoleOf';
-import { matchUpsOf } from '@Acquire/structureMembers';
+import { isCompetitorRole } from '@Helpers/participants/participantRoleOf';
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 
 import { isCompetitionProfile } from './competitionProfile';
 

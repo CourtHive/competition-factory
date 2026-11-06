@@ -1,5 +1,5 @@
-import { mcpValidator, validateMCPMatch, exportMatchUpJSON } from '@Validators/scoring/mcpValidator';
-import { groupByMatch, parseCSV } from '@Validators/scoring/mcpParser';
+import { mcpValidator, validateMCPMatch, exportMatchUpJSON } from '@Scoring/replay/mcpValidator';
+import { groupByMatch, parseCSV } from '@Scoring/replay/mcpParser';
 import { describe, it, expect, vi } from 'vitest';
 import { readFileSync } from 'fs-extra';
 import { resolve } from 'path';

@@ -136,7 +136,7 @@
     {
       "name": "analyzeSequence",
       "source": {
-        "path": "src/validators/scoring/mcpParser.ts",
+        "path": "src/scoring/replay/mcpParser.ts",
         "symbol": "analyzeSequence",
         "line": 254
       },
@@ -307,7 +307,7 @@
     {
       "name": "categoryCanContain",
       "source": {
-        "path": "src/query/event/categoryCanContain.ts",
+        "path": "src/helpers/categories/categoryCanContain.ts",
         "symbol": "categoryCanContain",
         "line": 13
       },
@@ -486,7 +486,7 @@
     {
       "name": "createMatchUp",
       "source": {
-        "path": "src/mutate/scoring/createMatchUp.ts",
+        "path": "src/scoring/v1/createMatchUp.ts",
         "symbol": "createMatchUp",
         "line": 22
       },
@@ -510,7 +510,7 @@
     {
       "name": "deduceMatchUpFormat",
       "source": {
-        "path": "src/query/scoring/deduceMatchUpFormat.ts",
+        "path": "src/helpers/matchUpFormatCode/deduceMatchUpFormat.ts",
         "symbol": "deduceMatchUpFormat",
         "line": 18
       },
@@ -606,7 +606,7 @@
     {
       "name": "exportMatchUpJSON",
       "source": {
-        "path": "src/validators/scoring/mcpValidator.ts",
+        "path": "src/scoring/replay/mcpValidator.ts",
         "symbol": "exportMatchUpJSON",
         "line": 722
       },
@@ -1557,7 +1557,7 @@
     {
       "name": "getSetScoreString",
       "source": {
-        "path": "src/validators/scoring/validateMatchUp.ts",
+        "path": "src/scoring/replay/validateMatchUp.ts",
         "symbol": "getSetScoreString",
         "line": 188
       },
@@ -1610,7 +1610,7 @@
     {
       "name": "groupByMatch",
       "source": {
-        "path": "src/validators/scoring/mcpParser.ts",
+        "path": "src/scoring/replay/mcpParser.ts",
         "symbol": "groupByMatch",
         "line": 702
       },
@@ -1711,7 +1711,7 @@
     {
       "name": "inferServeSide",
       "source": {
-        "path": "src/mutate/scoring/serveSideCalculator.ts",
+        "path": "src/scoring/v1/serveSideCalculator.ts",
         "symbol": "inferServeSide",
         "line": 26
       },
@@ -1913,7 +1913,7 @@
     {
       "name": "mcpValidator",
       "source": {
-        "path": "src/validators/scoring/mcpValidator.ts",
+        "path": "src/scoring/replay/mcpValidator.ts",
         "symbol": "mcpValidator",
         "line": 621
       },
@@ -2033,7 +2033,7 @@
     {
       "name": "parseCSV",
       "source": {
-        "path": "src/validators/scoring/mcpParser.ts",
+        "path": "src/scoring/replay/mcpParser.ts",
         "symbol": "parseCSV",
         "line": 671
       },
@@ -2057,7 +2057,7 @@
     {
       "name": "parseMCPPoint",
       "source": {
-        "path": "src/validators/scoring/mcpParser.ts",
+        "path": "src/scoring/replay/mcpParser.ts",
         "symbol": "parseMCPPoint",
         "line": 544
       },
@@ -2110,7 +2110,7 @@
     {
       "name": "pbpValidator",
       "source": {
-        "path": "src/validators/scoring/pbpValidator.ts",
+        "path": "src/scoring/replay/pbpValidator.ts",
         "symbol": "pbpValidator",
         "line": 64
       },
@@ -2504,7 +2504,7 @@
     {
       "name": "resolvePointValue",
       "source": {
-        "path": "src/mutate/scoring/resolvePointValue.ts",
+        "path": "src/scoring/v1/resolvePointValue.ts",
         "symbol": "resolvePointValue",
         "line": 15
       },
@@ -2600,7 +2600,7 @@
     {
       "name": "shotParser",
       "source": {
-        "path": "src/validators/scoring/mcpParser.ts",
+        "path": "src/scoring/replay/mcpParser.ts",
         "symbol": "shotParser",
         "line": 338
       },
@@ -2624,7 +2624,7 @@
     {
       "name": "shotSplitter",
       "source": {
-        "path": "src/validators/scoring/mcpParser.ts",
+        "path": "src/scoring/replay/mcpParser.ts",
         "symbol": "shotSplitter",
         "line": 173
       },
@@ -3022,7 +3022,7 @@
     {
       "name": "validateMCPMatch",
       "source": {
-        "path": "src/validators/scoring/mcpValidator.ts",
+        "path": "src/scoring/replay/mcpValidator.ts",
         "symbol": "validateMCPMatch",
         "line": 369
       },
@@ -3046,7 +3046,7 @@
     {
       "name": "validateMatchUp",
       "source": {
-        "path": "src/validators/scoring/validateMatchUp.ts",
+        "path": "src/scoring/replay/validateMatchUp.ts",
         "symbol": "validateMatchUp",
         "line": 56
       },

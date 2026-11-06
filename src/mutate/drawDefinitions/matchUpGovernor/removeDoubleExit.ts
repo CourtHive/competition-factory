@@ -2,23 +2,22 @@ import { removeDirectedBye, removeDirectedWinner } from '@Mutate/matchUps/drawPo
 import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
 import { getSideDrawPosition, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
+import { getSideExitProvenance, carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { firstRoundFeedersWon } from '@Mutate/matchUps/drawPositions/drawPositionPlacement';
 import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
 import { withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/withdrawByeSeats';
 import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { byeSeatStands } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
+import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
 import { intersection, overlap } from '@Tools/arrays';
 import {
   deriveExitStateFromProvenance,
-  getSideExitProvenance,
-  carriedExitStatus,
   retainForeignProvenance,
   retainPolicyCodes,
   setSideExitProvenance,

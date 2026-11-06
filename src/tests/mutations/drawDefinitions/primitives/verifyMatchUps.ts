@@ -2,8 +2,8 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { getStructureMatchUps } from '@Query/structure/getStructureMatchUps';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
+import { parseScoreString } from '@Scoring/parse/parseScoreString';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
-import { parseScoreString } from '@Tools/parseScoreString';
 import { findStructure } from '@Acquire/findStructure';
 import type { MatchUp } from '@Types/tournamentTypes';
 import { expect } from 'vitest';

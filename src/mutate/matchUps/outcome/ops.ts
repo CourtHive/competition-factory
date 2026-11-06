@@ -1,7 +1,7 @@
 import { writeAssignmentResults } from '@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults';
 import { mergeSideExitProvenance, setSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
-import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { exchangeMatchUpPositions } from '@Mutate/matchUps/drawPositions/swapWinnerLoser';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
@@ -58,12 +58,16 @@ export type OutcomeOp =
        * schedule is left as it is: a double exit's produced exit (`doubleExitAdvancement` → `modifyMatchUpScore`)
        */
       stampsScoredTime?: false;
+      /** the retained origin and all its onward consequences are explicitly planned (S7) */
+      retainedExitPlanned?: true;
       /**
        * false where v1 writes the result with neither the tournament nor the event (a produced exit recorded beside a BYE
        * and carried on, `stampExitOnByeHeldLoserTarget`, `carryExitOnward`): the notice names neither, and the matchUp in
        * context is read without the tournament
        */
       announcesContext?: false;
+      /** A later actual score writer restores event/tournament identity after a quiet unwind (S7 certified relay). */
+      restoresNoticeIdentity?: true;
       /**
        * true where v1's notice names the tournament and the event but the matchUp it defers in context is read without
        * the tournament: a produced exit landed past a BYE-held matchUp beyond the first (`carryExitOnward`, S7)
@@ -74,10 +78,15 @@ export type OutcomeOp =
        * relabel, whose last emission is `reconcileScoredTimes` taking its `scoredTime` (S6); a convergence an unwind
        * dissolved, written again as it stands by `settleRederivedDoubleExits` after the call's own write (S6 tail);
        * a produced exit awarded on placement (`assignMatchUpDrawPosition`, without an in-context notice), or its stale
-       * relay copy reset by `withdrawProducedExits` (S7)
+       * relay copy reset by `withdrawProducedExits` (S7); an empty final reservation's `advanceWinner` notice does not
+       * defer another score callback
        */
       announcedAs?:
-        'reconcileScoredTimes' | 'settleRederivedDoubleExit' | 'assignMatchUpDrawPosition' | 'withdrawProducedExits';
+        | 'reconcileScoredTimes'
+        | 'settleRederivedDoubleExit'
+        | 'assignMatchUpDrawPosition'
+        | 'withdrawProducedExits'
+        | 'advanceWinner';
       /**
        * a TEAM dual's write after its line's result (S7), `updateTieMatchUpScore`'s: the sides it ensures and the
        * tieFormat it copies on, each present only where it changes the stored value. v1 returns the write as the
@@ -109,6 +118,8 @@ export type OutcomeOp =
        * too (v1's `removeSubsequentRoundsParticipant`, S4)
        */
       removedDrawPosition?: number;
+      /** The removed awardee leaves a separately certified pending foreign exit; position removal supplies its notice. */
+      withdrawsPendingAward?: true;
       /**
        * the position placed in by the same write, when one is: a changed winner replacing the old one (S4); a loser gone
        * on through a BYE into the matchUp an unwind left holding their position (S7), whose notice is then the last
@@ -212,6 +223,8 @@ export type OutcomeOp =
        */
       matchUpId: string;
       provenance: SideExitProvenance;
+      /** a carry recorded beside a BYE announces itself after any earlier quiet result write */
+      announcedAs?: 'progressExitStatus';
     }
   | {
       op: 'setSideExitProvenance';
@@ -270,6 +283,16 @@ export type OutcomeOp =
        * keeps its award on an empty seat), its provenance kept; a produced exit instead stays pending with no winningSide
        */
       rederived?: { matchUpStatus: MatchUpStatusUnion; winningSide?: 1 | 2 };
+      /** the relayed copy converged onward: its surviving origin is retained by the unwind's separate ops */
+      retainedOnwardMatchUpId?: string;
+      /** A final retains the actual carrier's award while this relay's produced copy is withdrawn (S7 clear or certified plain winner). */
+      retainedCarriedAward?: {
+        matchUpId: string;
+        carrierDrawPosition: number;
+        participantId: string;
+        matchUpStatus: MatchUpStatusUnion;
+        provenance: SideExitProvenance;
+      };
     }
   | {
       op: 'setParticipantResults';
@@ -476,6 +499,7 @@ function foldMatchUpWrite(
       matchUp.matchUpStatus = TO_BE_PLAYED;
       setSideExitProvenance({ matchUp, provenance: undefined });
     }
+    if (op.withdrawsPendingAward) delete matchUp.winningSide;
     if (op.withdrawsProducedExit) {
       matchUp.matchUpStatus = TO_BE_PLAYED;
       delete matchUp.winningSide;

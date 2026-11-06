@@ -7,8 +7,8 @@ export { generateQualifyingStructure } from '@Generators/drawDefinitions/drawTyp
 export { generateDrawStructuresAndLinks } from '@Generators/drawDefinitions/generateDrawStructuresAndLinks';
 export { generateAdHocMatchUps } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocMatchUps';
 export { generateAdHocRounds } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocRounds';
-export { generateConsolationStructure } from '@Mutate/drawDefinitions/addLinkedConsolationStructure';
+export { generateConsolationStructure } from '@Generators/drawDefinitions/structures/addLinkedConsolationStructure';
 export { generateSwissRound } from '@Generators/drawDefinitions/drawTypes/adHoc/swiss/generateSwissRound';
 export { drawMatic } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/drawMatic';
-export { addFinishingRounds } from '@Generators/drawDefinitions/addFinishingRounds';
+export { addFinishingRounds } from '@Query/structure/addFinishingRounds';
 export { autoSeeding } from '@Generators/drawDefinitions/autoSeeding';

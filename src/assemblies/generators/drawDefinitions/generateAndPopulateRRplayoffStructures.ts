@@ -1,12 +1,12 @@
 import { automatedPlayoffPositioning } from '@Mutate/drawDefinitions/automatedPlayoffPositioning';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
+import { generateTieMatchUps } from '@Helpers/drawTopology/templates/tieMatchUps';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { processPlayoffGroups } from './drawTypes/processPlayoffGroups';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpId } from '@Functions/global/extractors';
-import { generateTieMatchUps } from './tieMatchUps';
 
 // constants
 import { INCOMPLETE_SOURCE_STRUCTURE, MISSING_VALUE } from '@Constants/errorConditionConstants';

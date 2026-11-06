@@ -1,4 +1,4 @@
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { setSubscriptions } from '@Global/state/syncGlobalState';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';

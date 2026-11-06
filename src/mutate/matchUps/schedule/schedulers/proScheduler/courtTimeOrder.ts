@@ -1,4 +1,4 @@
-import { matchUpWillNeverBePlayed } from '@Mutate/matchUps/schedule/byeScheduling';
+import { matchUpWillNeverBePlayed } from '@Helpers/scheduling/schedulePredicates';
 import { extractTime, timeStringMinutes } from '@Tools/plainTime';
 import { ensureInt } from '@Tools/ensureInt';
 

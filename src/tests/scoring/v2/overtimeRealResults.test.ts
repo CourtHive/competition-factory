@@ -1,8 +1,8 @@
-import { createContext, initialState, reduce, step } from '@Assemblies/engines/scoring/v2/reduce';
+import { createContext, initialState, reduce, step } from '@Scoring/kernel/reduce';
 import collection from '../../fixtures/overtime/officialResults.json';
 import { describe, expect, it } from 'vitest';
 
-import type { ScoringState, TimelineEntry } from '@Assemblies/engines/scoring/v2/types';
+import type { ScoringState, TimelineEntry } from '@Scoring/kernel/types';
 
 const OPTIONS = { allowOvertime: true };
 const END: TimelineEntry = { type: 'endSegment', data: {} };

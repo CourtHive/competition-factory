@@ -1,5 +1,5 @@
-import { sumAgainstBound, describeAmount } from '@Query/sanctioning/comparePrizeMoney';
-import { isDisciplineAllowed } from '@Helpers/coercedDiscipline';
+import { sumAgainstBound, describeAmount } from '@Helpers/sanctioning/comparePrizeMoney';
+import { isDisciplineAllowed } from '@Tools/coercedDiscipline';
 import { coercedGender } from '@Helpers/coercedGender';
 import { now as clockNow } from '@Tools/clock';
 

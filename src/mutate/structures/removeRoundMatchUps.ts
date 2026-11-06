@@ -1,9 +1,9 @@
 import { deleteMatchUpsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { pushGlobalLog } from '@Functions/global/globalLog';
-import { structuresOf } from '@Acquire/structureMembers';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 import { numericSort } from '@Tools/sorting';

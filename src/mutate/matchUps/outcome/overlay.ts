@@ -1,4 +1,4 @@
-import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
+import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { buildStructuralIndex } from '@Query/matchUps/structuralIndex';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { applyOutcomeOps } from './ops';

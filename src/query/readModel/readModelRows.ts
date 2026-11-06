@@ -4,7 +4,7 @@ import { isTournamentPublished } from '@Query/publishing/isTournamentPublished';
 import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
 import { LINK_UNRESOLVED, resolvePersonLink } from './personRule';
 import { getEntryFeeRange } from '@Query/entries/resolveEntryFee';
-import { findExtension } from '@Acquire/findExtension';
+import { findExtension } from '@Helpers/extensions/findExtension';
 import { isDateObject } from '@Tools/dateTime';
 
 // types

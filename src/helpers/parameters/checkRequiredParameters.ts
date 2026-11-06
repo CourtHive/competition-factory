@@ -7,7 +7,7 @@ import { intersection } from '@Tools/arrays';
 
 // Constants and types
 import { IDENTIFIER, RESOURCE_SUB_TYPE, RESOURCE_TYPE } from '@Constants/resourceConstants';
-import tieFormatDefaults from '@Generators/templates/tieFormatDefaults';
+import { isNamedTieFormat } from '@Helpers/tieFormats/tieFormatDefaults';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/eventConstants';
 import { validStages } from '@Constants/drawDefinitionConstants';
 import { ResultType } from '@Types/factoryTypes';
@@ -98,7 +98,7 @@ type RequiredParams = {
 const validators = {
   [ONLINE_RESOURCE]: (value) =>
     intersection(Object.keys(value), [RESOURCE_SUB_TYPE, RESOURCE_TYPE, IDENTIFIER]).length === 3,
-  [TIE_FORMAT_NAME]: (value) => value && tieFormatDefaults({ namedFormat: value }),
+  [TIE_FORMAT_NAME]: isNamedTieFormat,
   [UUIDS]: (value) => !value || (Array.isArray(value) && value.every(isString)),
   [TIE_FORMAT]: (value) => !validateTieFormat({ tieFormat: value }).error,
   [EVENT_TYPE]: (value) => [SINGLES, DOUBLES, TEAM].includes(value),

@@ -1,10 +1,11 @@
 import { getStructureInconsistencies } from '@Query/drawDefinition/getStructureInconsistencies';
+import { positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
 import { isLinkObject, isMalformedRoundLink } from '@Query/drawDefinition/malformedLinks';
-import { isPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
-import { positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
+import { isPropagatedExit } from '@Helpers/drawTopology/sideExitProvenance';
 import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
-import { traversesByRound } from '@Query/drawDefinition/linkTraversal';
+import { traversesByRound } from '@Helpers/drawTopology/linkTraversal';
+import { getTargetMatchUp } from '@Query/matchUps/getTargetMatchUp';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 
 // constants and types
@@ -164,6 +165,7 @@ function droppedProgressionForLink(
   sourceStructure: Structure | undefined,
   sourceStructureMatchUps: HydratedMatchUp[],
   targetStructure: Structure,
+  feedsDisabledPosition: (matchUp: HydratedMatchUp) => boolean = () => false,
 ): Partial<Inconsistency>[] {
   const isLoserLink = link.linkType === LOSER;
   if (!isLoserLink && sourceStructure?.stage === QUALIFYING) return []; // qualifier placement is deferred (B2b)
@@ -194,7 +196,7 @@ function droppedProgressionForLink(
           loserTargetLink: link,
         })
       : true;
-    if (eligible && !targetParticipantIds.has(participantId)) {
+    if (eligible && !targetParticipantIds.has(participantId) && !feedsDisabledPosition(matchUp)) {
       inconsistencies.push({
         issueType: DROPPED_PROGRESSION,
         message: `a ${isLoserLink ? 'loser' : 'winner'} eligible to feed the linked target structure is absent from it`,
@@ -255,7 +257,31 @@ function getProgressionInconsistencies(
     const sourceStructureMatchUps = inContextDrawMatchUps.filter(
       (matchUp) => matchUp.structureId === sourceStructureId,
     );
-    return droppedProgressionForLink(link, sourceStructure, sourceStructureMatchUps, targetStructure);
+    // A target position whose links are DISABLED was overridden on purpose: an operator removed the fed participant
+    // and seated a BYE (removeDrawPositionAssignment with replaceWithBye), and the engine then feeds nobody there —
+    // a loser who declined a consolation is recorded exactly so. Absent from the target, that participant was not
+    // dropped; the engine's own lookup (getTargetMatchUp) says the position is disabled, so the scan asks it too.
+    // Found 2026-11-06: the engine's own replaceWithBye produced a state this scan refused.
+    const feedsDisabledPosition = (matchUp: HydratedMatchUp) => {
+      const sourceRoundMatchUpCount = sourceStructureMatchUps.filter(
+        (candidate) => !candidate.collectionId && candidate.roundNumber === matchUp.roundNumber,
+      ).length;
+      const target = getTargetMatchUp({
+        sourceRoundPosition: matchUp.roundPosition,
+        sourceRoundMatchUpCount,
+        inContextDrawMatchUps,
+        drawDefinition,
+        targetLink: link,
+      }) as { disabledDrawPosition?: number };
+      return !!target.disabledDrawPosition;
+    };
+    return droppedProgressionForLink(
+      link,
+      sourceStructure,
+      sourceStructureMatchUps,
+      targetStructure,
+      feedsDisabledPosition,
+    );
   });
 }
 

@@ -1,6 +1,6 @@
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { isDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { dualWinningSideChange, noWinnerNeeded } from './route';
 
 // constants and types

@@ -1,7 +1,7 @@
-import { getExitSides, isPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { ORIGIN_ON_UNDECIDED_MATCHUP } from '@Query/drawDefinition/getStructureInconsistencies';
 import { MATRIX_CELLS, playMatrixCell } from '@Tests/testHarness/exitPropagation/matrixCells';
 import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
+import { getExitSides, isPropagatedExit } from '@Helpers/drawTopology/sideExitProvenance';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';

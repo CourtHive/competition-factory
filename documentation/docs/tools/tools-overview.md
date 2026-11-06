@@ -95,6 +95,7 @@ See [Date and Time Handling](/docs/concepts/date-time-handling) for usage patter
 - **roundRobinGroups** - Generate round robin group configurations
 - **createMap** - Create lookup maps from object arrays
 - **isAdHoc** - Check if matchUp is ad-hoc (not in main draw)
+- **firstClassOrExtension** - Read an attribute promoted from an extension, in any write mode
 
 ## Complete API Reference
 

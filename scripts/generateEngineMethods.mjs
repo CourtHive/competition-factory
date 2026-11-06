@@ -12,11 +12,11 @@
  * which re-runs this and fails on any diff.
  */
 
-import * as esbuild from 'esbuild';
 import { writeFileSync, readFileSync, existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { dirname, join } from 'node:path';
 import { mkdtempSync } from 'node:fs';
+import * as esbuild from 'esbuild';
 import { tmpdir } from 'node:os';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -27,7 +27,7 @@ async function bundleEngine() {
   const tmp = mkdtempSync(join(tmpdir(), 'factory-engine-'));
   const outfile = join(tmp, 'engine.mjs');
   await esbuild.build({
-    entryPoints: [join(ROOT, 'src/tests/engines/syncEngine/index.ts')],
+    entryPoints: [join(ROOT, 'src/assemblies/engines/sync/assembled.ts')],
     bundle: true,
     platform: 'node',
     format: 'esm',
@@ -52,7 +52,7 @@ function renderUnionFile(names) {
   const banner = [
     '/**',
     ' * AUTO-GENERATED — do not edit by hand.',
-    ' * Source: src/tests/engines/syncEngine + src/assemblies/governors',
+    ' * Source: src/assemblies/engines/sync/assembled.ts + src/assemblies/governors',
     ' * Regenerate: pnpm gen:engine-methods',
     ' * Drift guard:  pnpm check:engine-methods',
     ' */',

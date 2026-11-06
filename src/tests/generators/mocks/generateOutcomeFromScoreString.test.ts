@@ -1,4 +1,4 @@
-import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
+import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { expect, it } from 'vitest';
 
 it('can generate outcomes for either winningSide', () => {

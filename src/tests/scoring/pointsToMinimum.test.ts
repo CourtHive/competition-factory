@@ -9,9 +9,9 @@
  * ScoringEngine episodes. Found by the 2026-10-17 test-infrastructure survey: 5-6 in a tiebreak to 7 reported 2
  * (the minimum is 3), and an existing exact assertion encoded the wrong value.
  */
+import { resolveSetType } from '@Helpers/matchUpFormatCode/formatUtilities';
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
-import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
-import { resolveSetType } from '@Tools/scoring/scoringUtilities';
+import { calculatePointsTo } from '@Scoring/v1/pointsToCalculator';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { describe, expect, it } from 'vitest';
 

@@ -1,9 +1,9 @@
 import { getLadderMovement, getLadderOrdering, getLadderPolicy } from '@Query/ladder/getLadderPolicy';
-import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
+import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { resolveLadderStructure } from '@Query/ladder/resolveLadderContext';
 import { isLadder } from '@Query/drawDefinition/isLadder';
 
-import { generateDynamicRatings } from '@Generators/scales/generateDynamicRatings';
+import { generateDynamicRatings } from '@Mutate/participants/scaleItems/generateDynamicRatings';
 import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
 import { getResultAttestation } from '@Query/ladder/getResultAttestation';
 import { ladderStandingNotice } from '@Mutate/ladder/ladderNotices';

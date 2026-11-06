@@ -4,7 +4,7 @@ import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventTyp
 import { getStageParticipants } from '@Query/drawDefinition/getStageParticipants';
 import { generateFlightDrawDefinitions } from './generateFlightDrawDefinitions';
 import { generateEventParticipants } from './generateEventParticipants';
-import tieFormatDefaults from '@Generators/templates/tieFormatDefaults';
+import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { resolveCompletionOptions } from './resolveCompletionOptions';
 import { addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { attachProfilePolicies } from './attachProfilePolicies';

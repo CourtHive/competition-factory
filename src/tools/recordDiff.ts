@@ -1,8 +1,8 @@
-import { generatePatch } from '../forge/jsonPatch';
 import { canonicalJson } from './canonicalJson';
+import { generatePatch } from './jsonPatch';
 
 // constants and types
-import type { JsonPatchOp } from '../forge/jsonPatch';
+import type { JsonPatchOp } from './jsonPatch';
 
 /** Capture every JSON-stored value, independently of later writes to the record. */
 export const captureRecord = (record: unknown): string => canonicalJson(record);

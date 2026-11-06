@@ -1,5 +1,5 @@
 import type { MatchUp, SetScore } from '@Types/scoring/types';
-import { getScoreboard } from '@Query/scoring/getScoreboard';
+import { getScoreboard } from '@Scoring/v1/getScoreboard';
 import { describe, expect, it } from 'vitest';
 
 // constants

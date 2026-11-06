@@ -1,4 +1,4 @@
-export { findExtension } from '@Acquire/findExtension';
+export { findExtension } from '@Helpers/extensions/findExtension';
 export { getTimeItem } from '@Query/base/timeItems';
 export { credits } from '@Fixtures/credits';
 

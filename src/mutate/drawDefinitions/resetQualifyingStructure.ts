@@ -1,11 +1,11 @@
 import { deleteMatchUpsNotice, modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
-import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
+import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 
 // Constants
 import { MISSING_DRAW_DEFINITION, SCORES_PRESENT, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 

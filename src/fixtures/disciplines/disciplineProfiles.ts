@@ -1,4 +1,4 @@
-import { normalizeDiscipline } from '@Helpers/coercedDiscipline';
+import { normalizeDiscipline } from '@Tools/coercedDiscipline';
 
 // constants and types
 import { SINGLES, DOUBLES, TEAM } from '@Constants/matchUpTypes';

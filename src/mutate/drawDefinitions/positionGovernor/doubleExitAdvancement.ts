@@ -1,6 +1,7 @@
 import { releaseAdvancedDrawPositionAcrossLinks } from '@Mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement';
 import { releaseHoldersByeFromTarget } from '@Mutate/drawDefinitions/positionGovernor/releaseHoldersByeFromTarget';
 import { advanceDrawPosition, assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
+import { carriedExitStatus, getSideExitProvenance, getExitSides } from '@Helpers/drawTopology/sideExitProvenance';
 import { getDrawPositionSideNumber, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
 import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
@@ -20,8 +21,8 @@ import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -33,14 +34,11 @@ import { overlap } from '@Tools/arrays';
 import {
   deriveExitStateFromProvenance,
   buildCarriedExitProvenance,
-  carriedExitStatus,
   collapseDoubleExitStatus,
   retainPolicyCodes,
   buildSideExitProvenance,
   mergeSideExitProvenance,
   withdrawProducedExits,
-  getSideExitProvenance,
-  getExitSides,
   deriveStatusCodes,
   producedExitStatus,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';

@@ -1,4 +1,4 @@
-import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
+import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';

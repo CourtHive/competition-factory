@@ -2,13 +2,15 @@ import { removeMatchUpSideParticipant } from '@Mutate/matchUps/sides/removeMatch
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resetMatchUpLineUps } from '@Mutate/matchUps/lineUps/resetMatchUpLineUps';
-import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
+import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
 import { getAdHocStructureDetails } from './getAdHocStructureDetails';
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { resetScorecard } from '@Mutate/matchUps/resetScorecard';
 
 // constants and types
 import { ARRAY, DRAW_DEFINITION, EVENT, MATCHUP_IDS, MESSAGE, OF_TYPE, ONE_OF } from '@Constants/attributeConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import type { ResultType } from '@Types/factoryTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -22,7 +24,7 @@ type ResetAdHocMatchUps = {
   event: Event;
 };
 
-export function resetAdHocMatchUps(params: ResetAdHocMatchUps) {
+export function resetAdHocMatchUps(params: ResetAdHocMatchUps): ResultType {
   const paramsCheck = checkRequiredParameters(params, [
     { [DRAW_DEFINITION]: true, [EVENT]: true },
     {
@@ -61,13 +63,13 @@ export function resetAdHocMatchUps(params: ResetAdHocMatchUps) {
       }
     }
 
-    const result = setMatchUpState({
-      winningSide: undefined,
-      removeScore: true,
+    const result = setMatchUpStatus({
       tournamentRecord,
       drawDefinition,
       matchUpId,
       event,
+      // the canonical blank: status, score, codes and exit provenance together (as removeMatchUpOutcome does)
+      outcome: toBePlayed,
     });
     if (result.error) return result;
 

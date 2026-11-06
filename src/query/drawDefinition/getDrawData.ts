@@ -4,6 +4,8 @@ import { isTalliedStructure, refreshParticipantResults } from './refreshParticip
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 import { getReferencedParticipants } from '@Query/participants/getReferencedParticipants';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
+import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { hydrateParticipants } from '@Query/participants/hydrateParticipants';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
@@ -11,25 +13,23 @@ import { getDrawIsPublished } from '@Query/publishing/getDrawIsPublished';
 import { isStructureVisible } from '@Query/publishing/isStructureVisible';
 import { getStructureGroups } from '@Query/structure/getStructureGroups';
 import { withContextExclusion } from '@Query/matchUps/contextExclusion';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { getExitProfiles } from '@Query/drawDefinition/getExitProfile';
 import { createHydrationCache } from '@Query/matchUps/hydrationCache';
-import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getPublishState } from '@Query/publishing/getPublishState';
 import { applyRoundLimit } from '@Query/publishing/applyRoundLimit';
 import { drawWithDerivedGoesTo } from '@Query/matchUps/addGoesTo';
+import { findExtension } from '@Helpers/extensions/findExtension';
 import { structureSort } from '@Functions/sorters/structureSort';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
-import { findExtension } from '@Acquire/findExtension';
 import { findStructure } from '@Acquire/findStructure';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { xa } from '@Tools/extractAttributes';
 
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, UNLINKED_STRUCTURES } from '@Constants/errorConditionConstants';
-import { CONSOLATION, MAIN, PLAY_OFF, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import type { DrawDataResult, DrawInfo, StructureData, StructureStub } from '@Types/viewTypes';
+import { CONSOLATION, MAIN, PLAY_OFF, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { PARTICIPANT_ID } from '@Constants/attributeConstants';
 import { DISPLAY, TALLY } from '@Constants/extensionConstants';
 import { PUBLIC_DISPLAY } from '@Constants/displayConstants';

@@ -1,6 +1,6 @@
 import { announcesAssignments, eventlessNotices } from './apply';
-import { generatePatch } from '../../../forge/jsonPatch';
 import { captureRecord } from '@Tools/recordDiff';
+import { generatePatch } from '@Tools/jsonPatch';
 import { applyOutcomeOps } from './ops';
 
 // constants and types
@@ -81,6 +81,8 @@ export function compareShadow({
  * event (none in the suite) would diverge here, loudly. The differential passed while a dual's notices differed in `eventId` (S7 item 13).
  */
 export function plannedNotices({ ops, matchUpId }: { ops: OutcomeOp[]; matchUpId: string }): Set<string> {
+  // A satisfied double exit has an empty plan: v1 writes and announces nothing.
+  if (!ops.length) return new Set();
   const eventless = eventlessNotices(ops);
   const marked = (topic: string, key: string, unevented: boolean) => `${topic}|${key}${unevented ? NO_EVENT : ''}`;
   const notices = new Set<string>([`${UPDATE_INCONTEXT_MATCHUP}|${matchUpId}`]);

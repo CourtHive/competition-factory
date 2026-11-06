@@ -1,11 +1,11 @@
+import { eventDateResolver, EventDateReason } from '@Query/events/eventPlaysOnDate';
 import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
-import { getSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
-import { eventDateResolver, EventDateReason } from '@Query/events/eventPlaysOnDate';
+import { getSchedulingProfile } from '@Query/scheduling/getSchedulingProfile';
 import { getScheduledRoundsDetails } from './getScheduledRoundsDetails';
 import { getProfileRoundKey, ProfileRound } from './schedulingUtils';
-import { intersection, unique } from '@Tools/arrays';
 import { extractDate, isValidDateString } from '@Tools/dateTime';
+import { intersection, unique } from '@Tools/arrays';
 
 // constants and types
 import { INVALID_DATE, INVALID_TOURNAMENT_RECORD, INVALID_VALUES } from '@Constants/errorConditionConstants';

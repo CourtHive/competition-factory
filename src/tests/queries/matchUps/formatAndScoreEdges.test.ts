@@ -1,5 +1,5 @@
 import { resolveCompetitiveBands, resolveDeltaBands } from '@Query/matchUp/resolveCompetitiveBands';
-import { parseScoreString } from '@Tools/parseScoreString';
+import { parseScoreString } from '@Scoring/parse/parseScoreString';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';

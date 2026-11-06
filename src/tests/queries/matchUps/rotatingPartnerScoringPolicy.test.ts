@@ -1,6 +1,6 @@
 import { getRotatingPartnerScoringPolicy } from '@Query/drawDefinition/getRotatingPartnerScoringPolicy';
+import { analyzeRotatingPartnerScore } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { isRotatingPartnerScoringPolicy } from '@Validators/rotatingPartnerScoringPolicy';
-import { analyzeRotatingPartnerScore } from '@Query/matchUp/rotatingPartnerScore';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 

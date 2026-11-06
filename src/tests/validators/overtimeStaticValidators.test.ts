@@ -1,10 +1,10 @@
+import { validateMatchUpScore } from '@Scoring/analysis/validateMatchUpScore';
+import { checkScoreCompleteness } from '@Scoring/analysis/scoreCompleteness';
 import { retainScoreForFormat } from '@Query/matchUp/retainScoreForFormat';
-import { validateMatchUpScore } from '@Validators/validateMatchUpScore';
-import { checkScoreCompleteness } from '@Validators/scoreCompleteness';
-import { formatCanEndTied } from '@Validators/tiedFormatCompatibility';
-import { setPlayedAfterDecision } from '@Validators/setCount';
-import { analyzeScore } from '@Query/matchUp/analyzeScore';
-import { validateScore } from '@Validators/validateScore';
+import { formatCanEndTied } from '@Helpers/matchUpFormatCode/tiedFormat';
+import { setPlayedAfterDecision } from '@Scoring/analysis/setCount';
+import { validateScore } from '@Scoring/analysis/validateScore';
+import { analyzeScore } from '@Scoring/analysis/analyzeScore';
 import { expect, it } from 'vitest';
 
 // constants

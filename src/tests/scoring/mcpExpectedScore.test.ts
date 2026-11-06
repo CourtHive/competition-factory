@@ -8,13 +8,13 @@
  */
 
 import { chartToCSV, generateChart, MCP_POINTS_HEADER, parseSetScores } from '@Tests/helpers/mcpChart';
-import { extractFinalScore, mcpValidator, validateMCPMatch } from '@Validators/scoring/mcpValidator';
-import { groupByMatch, parseCSV } from '@Validators/scoring/mcpParser';
+import { extractFinalScore, mcpValidator, validateMCPMatch } from '@Scoring/replay/mcpValidator';
+import { groupByMatch, parseCSV } from '@Scoring/replay/mcpParser';
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs-extra';
 import { resolve } from 'path';
 
-import type { MCPPoint } from '@Validators/scoring/mcpParser';
+import type { MCPPoint } from '@Scoring/replay/mcpParser';
 
 // constants
 import { COMPLETED } from '@Constants/matchUpStatusConstants';

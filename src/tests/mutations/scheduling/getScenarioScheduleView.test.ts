@@ -1,8 +1,10 @@
+import { setSubscriptions } from '@Global/state/globalState';
 import competitionEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
 // constants
+import { MODIFY_DRAW_DEFINITION, MODIFY_MATCHUP, MODIFY_VENUE } from '@Constants/topicConstants';
 import { SCHEDULE_SCENARIO_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
@@ -89,4 +91,36 @@ it('getScenarioScheduleView errors for an unknown scenario', () => {
     scenarioId: 'nope',
   });
   expect(result.error).toEqual(SCHEDULE_SCENARIO_NOT_FOUND);
+});
+
+it('getScenarioScheduleView announces nothing: the draft scheduling neither notifies nor stamps the record', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8, drawType: SINGLE_ELIMINATION }],
+    endDate: '2024-05-03',
+    venueProfiles,
+    startDate,
+  });
+  competitionEngine.setState([tournamentRecord]);
+  const { tournamentId } = tournamentRecord;
+  const courtId = competitionEngine.getVenuesAndCourts().courts[0].courtId;
+  const [a] = competitionEngine.allCompetitionMatchUps().matchUps.filter((m: any) => m.roundNumber === 1);
+  const schedule = { scheduledDate: startDate, scheduledTime: '10:00', courtId, courtOrder: 1, venueId };
+  const { scenarioId } = competitionEngine.addScheduleScenario({
+    scenario: { scenarioName: 'Plan', placements: [{ tournamentId, matchUpId: a.matchUpId, schedule }] },
+    tournamentId,
+  });
+
+  const heard: string[] = [];
+  const subscriptions = Object.fromEntries(
+    [MODIFY_MATCHUP, MODIFY_DRAW_DEFINITION, MODIFY_VENUE].map((topic) => [topic, () => heard.push(topic)]),
+  );
+  setSubscriptions({ subscriptions });
+  const stampBefore = JSON.stringify(competitionEngine.getTournament({ tournamentId }).tournamentRecord);
+
+  const view = competitionEngine.getScenarioScheduleView({ tournamentId, scenarioId });
+  expect(view.plannedMatchUpIds).toEqual([a.matchUpId]);
+
+  expect(heard).toEqual([]);
+  expect(JSON.stringify(competitionEngine.getTournament({ tournamentId }).tournamentRecord)).toEqual(stampBefore);
+  setSubscriptions({ subscriptions: {} });
 });

@@ -1,5 +1,5 @@
 import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
-import { tiebreakMargin } from '@Tools/scoring/scoringUtilities';
+import { tiebreakMargin } from '@Helpers/matchUpFormatCode/formatUtilities';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { arrayIndices } from '@Tools/arrays';
 
@@ -10,7 +10,7 @@ import {
   MATCH_TIEBREAK_JOINER,
   SPACE_CHARACTER,
   WINNING_STATUSES,
-} from './constants';
+} from '@Constants/keyValueConstants';
 
 export function addOutcome({ scoreString, lowSide, outcome }) {
   ({ scoreString } = removeOutcome({ scoreString }));

@@ -1,4 +1,4 @@
-import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
+import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { addGoesTo } from '@Query/matchUps/addGoesTo';
 
 // types

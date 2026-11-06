@@ -1,5 +1,5 @@
+import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { getUnearnedLinkAdvancements } from '@Query/drawDefinition/getUnearnedLinkAdvancements';
-import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
 import { getByeCrossings } from '@Query/drawDefinition/getByeCrossings';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
@@ -9,7 +9,7 @@ import {
   getSideExitProvenance,
   arrivedByResult,
   getExitSides,
-} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+} from '@Helpers/drawTopology/sideExitProvenance';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, PositionAssignment, Structure, Tournament } from '@Types/tournamentTypes';

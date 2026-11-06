@@ -1,4 +1,4 @@
-import { carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';

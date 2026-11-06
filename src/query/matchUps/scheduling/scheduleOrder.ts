@@ -1,7 +1,7 @@
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
 import { scheduledMatchUpTime } from '@Query/matchUp/scheduledMatchUpTime';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { extractDate, extractTime } from '@Tools/dateTime';
 

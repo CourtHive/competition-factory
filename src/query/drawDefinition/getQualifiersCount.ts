@@ -2,7 +2,7 @@
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 
 // Acquire
-import { structuresOf } from '@Acquire/structureMembers';
+import { structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants

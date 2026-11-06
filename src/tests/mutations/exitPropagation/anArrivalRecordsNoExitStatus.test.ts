@@ -1,6 +1,6 @@
-import { carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
+import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
 import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, expect, it } from 'vitest';

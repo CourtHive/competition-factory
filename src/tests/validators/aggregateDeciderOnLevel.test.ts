@@ -1,4 +1,4 @@
-import { validateMatchUpScore } from '@Validators/validateMatchUpScore';
+import { validateMatchUpScore } from '@Scoring/analysis/validateMatchUpScore';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';

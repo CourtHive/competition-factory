@@ -5,12 +5,12 @@ import { getDrawIsPublished } from '@Query/publishing/getDrawIsPublished';
 import { isStructureVisible } from '@Query/publishing/isStructureVisible';
 import { getTournamentInfo } from '@Query/tournaments/getTournamentInfo';
 import { withContextExclusion } from '@Query/matchUps/contextExclusion';
+import { constrainedPlayingDates } from '@Query/event/extractEventInfo';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { getPublishState } from '@Query/publishing/getPublishState';
+import { findExtension } from '@Helpers/extensions/findExtension';
 import { getDrawData } from '@Query/drawDefinition/getDrawData';
 import { getVenueData } from '@Query/venues/getVenueData';
-import { constrainedPlayingDates } from '@Query/event/extractEventInfo';
-import { findExtension } from '@Acquire/findExtension';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { findEvent } from '@Acquire/findEvent';
 

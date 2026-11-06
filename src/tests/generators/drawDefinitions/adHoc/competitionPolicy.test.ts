@@ -1,8 +1,8 @@
 // Generators
-import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
-import { deriveCountables } from '@Generators/scales/competition/deriveCountables';
-import { computeActualOutput } from '@Generators/scales/competition/actualOutput';
-import { expectedResult, LOGISTIC_400 } from '@Generators/scales/ratingUpdate';
+import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
+import { deriveCountables } from '@Helpers/ratings/competition/deriveCountables';
+import { computeActualOutput } from '@Helpers/ratings/competition/actualOutput';
+import { expectedResult, LOGISTIC_400 } from '@Helpers/ratings/ratingUpdate';
 
 // Fixtures
 import { POLICY_COMPETITION_PRESSURE } from '@Fixtures/policies/POLICY_COMPETITION_PRESSURE';

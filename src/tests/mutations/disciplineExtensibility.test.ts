@@ -1,5 +1,5 @@
 import { getDisciplineProfile, registerDisciplineProfile } from '@Fixtures/disciplines/disciplineProfiles';
-import { normalizeDiscipline, isKnownDiscipline, isDisciplineAllowed } from '@Helpers/coercedDiscipline';
+import { normalizeDiscipline, isKnownDiscipline, isDisciplineAllowed } from '@Tools/coercedDiscipline';
 import { tournamentEngine } from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';

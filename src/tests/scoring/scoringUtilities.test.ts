@@ -1,3 +1,4 @@
+import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
 import type { FormatStructure, SetFormatStructure } from '@Types/scoring/types';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { describe, expect, it } from 'vitest';
@@ -6,13 +7,12 @@ import {
   extractFormatProperties,
   getFormatDescription,
   areFormatsEquivalent,
-  isAggregateFormat,
   resolveSetType,
   getPointsToGame,
   getMinPointsToSetCompletion,
   getMinPointsToMatchCompletion,
   hasCountablePoints,
-} from '@Tools/scoring/scoringUtilities';
+} from '@Helpers/matchUpFormatCode/formatUtilities';
 
 // constants
 import { CONSECUTIVE } from '@Constants/matchUpFormatConstants';

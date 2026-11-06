@@ -1,4 +1,4 @@
-import { buildFromSources } from '@Tools/buildFromSources/buildFromSources';
+import { buildFromSources } from '@Generators/ingestion/buildFromSources/buildFromSources';
 import { randomSource, setRandomSource } from '@Tools/prng';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';

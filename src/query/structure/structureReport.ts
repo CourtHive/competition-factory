@@ -1,8 +1,8 @@
 import { getTieFormatDesc } from '@Query/hierarchical/tieFormats/getTieFormatDescription';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { findExtension } from '@Helpers/extensions/findExtension';
 import { getDetailsWTN } from '@Query/scales/getDetailsWTN';
 import { getAccessorValue } from '@Tools/getAccessorValue';
-import { findExtension } from '@Acquire/findExtension';
 import { getTimeItem } from '@Query/base/timeItems';
 import { getAvgWTN } from '@Query/scales/getAvgWTN';
 

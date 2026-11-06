@@ -11,6 +11,7 @@ A further check, `verify:ecosystem`, runs downstream consumer tests against the 
 | `verify:generated`         | a generated module (enum exports/constants, engine methods, method signatures) is stale; and `check:request-shapes` — a request shape reaching for bare `any` or bare `string` where a closed union exists; and `verify:any-count` — a directory gaining `any`; and `verify:constant-names` — a test using a constant's NAME as its value                       | ~2 s   |
 | `verify:types`             | type errors anywhere in `src`, test files included (`tsconfig.tests.json`); and `verify:implicit-any` — a directory gaining implicit `any`                                                                                                                                                                                                                      | ~25 s  |
 | `verify:lint`              | style + cognitive-complexity violations; zero-warnings rule                                                                                                                                                                                                                                                                                                     | ~5 s   |
+| `verify:layers`            | a runtime import into a higher layer that `baseline/layers.json` does not hold, or a baseline entry the source no longer has (lower it in the same PR); a production file outside every layer; an internal import that resolves to nothing                                                                                                                      | ~1 s   |
 | `verify:exit-tenant`       | a NEW file in `src/` reaching for `matchUpStatusCodes` — the LEGACY array whose per-side exit tenant was evicted (P37); reads `sideExitProvenance` instead. Allowlisted by FILE, with a reason each, and a stale entry fails so the list ratchets down                                                                                                          | ~0 s   |
 | `verify:outcome-spec`      | outcome v2 deciding by a name its spec does not state: every `Route` id named in `outcome-pipeline.md` § 3, every refusal row `refusals.ts` raises a row of § 2 (outcome v2 executor plan G5); `--self-test` first                                                                                                                                              | ~0 s   |
 | `verify:coverage`          | regressions below `95/97/87/97.5` statements/functions/branches/lines                                                                                                                                                                                                                                                                                           | ~100 s |
@@ -150,6 +151,24 @@ this ratchet is the only thing holding the count; the plan that lowers it is
   in the baseline diff, never silently.
 - `pnpm verify:any-count --self-test` proves it fires on a rise and stays quiet on a fall.
 
+## `verify:layers` — imports into a higher layer may only go down
+
+`scripts/verify/layers.mjs` assigns every production file in `src/` a layer by the longest matching path prefix
+(the table is `LAYERS` in the script, from `Mentat/planning/FACTORY_LAYERING_PLAN.md`): contracts 0, primitives 1,
+formats 2.1, scoring 2.2, domain helpers 2.3, queries 3, mutations 4, generators 5, assemblies 6. A runtime import
+(static, re-export, literal `import()`/`require()`; type-only forms excluded) into a higher layer is a violation.
+Production code importing a test harness or the dev server (`src/tests/`, `src/server/`) is one too: shipped
+code must not live there.
+
+`scripts/verify/baseline/layers.json` holds every violating import as `from -> to` with its count.
+
+- A key above its baseline fails, so a new violation fails even when another was removed and the total holds.
+- A baseline key the source no longer has fails: run `node scripts/verify/layers.mjs --update-baseline` in the PR
+  that removes it. It refuses to write a rise unless `--accept-rise` is given.
+- A file outside every layer fails (give its directory a layer in `LAYERS`), and so does an internal import that
+  resolves to nothing, since an edge the check cannot see is a violation it cannot count.
+- `--list` prints every violation grouped by layer pair; `--self-test` plants violations and asserts each fires.
+
 ## `verify:constant-names` — a test must use a constant's value, not its name
 
 `scripts/verify/constantNames.mjs` fails on a quoted string in a `*.test.ts` that is the NAME of an
@@ -188,7 +207,7 @@ directory, deletes the `never` fields that make `Structure` and `DrawLink` "soft
 copy, and counts tsc errors per directory in non-test `src` against `baseline/tsc-hard-union.json` (44 at the start,
 all in the 14 unconverted writes and the areas another workstream holds). A read added the old way —
 `structure.matchUps` without narrowing — raises the count; read it through `matchUpsOf` / `positionAssignmentsOf` /
-`structuresOf` (`@Acquire/structureMembers`) or narrow on `structureType`. `src/types/typeAssertions` is not counted:
+`structuresOf` (`@Helpers/drawTopology/structureMembers`) or narrow on `structureType`. `src/tests/typeAssertions` is not counted:
 its soft-form assertions fail under the hard form by design. When the count is 0 everywhere, 8.0.0 deletes the
 `never` fields (Mentat/planning/FACTORY_STRUCTURE_UNIONS_8_0_0.md). The transform refuses to run unless each `never`
 line is found exactly once, so a reshaped `tournamentTypes.ts` fails loudly instead of silently counting the soft form.

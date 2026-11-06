@@ -3,7 +3,7 @@ import { removePracticeRegistration } from '@Mutate/practice/removePracticeRegis
 import { updatePracticeRegistration } from '@Mutate/practice/updatePracticeRegistration';
 import { addPracticeRegistration } from '@Mutate/practice/addPracticeRegistration';
 import { addExtension } from '@Mutate/extensions/addExtension';
-import { createMatchUp } from '@Mutate/scoring/createMatchUp';
+import { createMatchUp } from '@Scoring/v1/createMatchUp';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';

@@ -8,8 +8,8 @@ import { findOwedByeAdvance } from '@Mutate/matchUps/matchUpStatus/reconcileByeA
 import { hasForwardWork } from '@Mutate/matchUps/matchUpStatus/settleForwardConsequences';
 import { findOwedCarry } from '@Mutate/matchUps/matchUpStatus/reconcileCarriesPastByes';
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
-import { carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getDeciderSnapshot } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
+import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 
@@ -90,7 +90,9 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
   // a convergence the plan dissolves and writes as the pass would, re-announced under its name (S6 tail): planned
   const rederived = new Set(
     ops.flatMap((op) =>
-      op.op === 'setMatchUpResult' && op.announcedAs === 'settleRederivedDoubleExit' ? [op.matchUpId] : [],
+      op.op === 'setMatchUpResult' && (op.announcedAs === 'settleRederivedDoubleExit' || op.retainedExitPlanned)
+        ? [op.matchUpId]
+        : [],
     ),
   );
   const work: Record<SettleSite, () => boolean> = {
@@ -141,7 +143,15 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
   // holds the propagation as ops (a carried exit's entry, S5), when each pass is asked of the draw the carry leaves; or
   // the carry already stands where the loser is, the same exit entered again, which v1 leaves as it is (S6 tail)
   const carryPlanned = ops.some((op) => op.op === 'mergeSideExitProvenance') || carryStands(view, args.matchUpId);
-  if (!carryPlanned && results.some((op) => propagatesExit(op.matchUpStatus, args)))
+  if (
+    !carryPlanned &&
+    results.some(
+      (op) =>
+        !op.retainedExitPlanned &&
+        op.announcedAs !== 'settleRederivedDoubleExit' &&
+        propagatesExit(op.matchUpStatus, args),
+    )
+  )
     return Object.keys(work) as SettleSite[];
   return (Object.keys(work) as SettleSite[]).filter((site) => work[site]());
 }

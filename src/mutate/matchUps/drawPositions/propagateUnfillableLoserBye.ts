@@ -1,10 +1,10 @@
-import { carriedExitStatus, getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { carriedExitStatus, getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
 import { assignDrawPositionBye, assignFedDrawPositionBye } from './assignDrawPositionBye';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
-import { matchUpsOf } from '@Acquire/structureMembers';
 import { isExit } from '@Validators/isExit';
 
 // constants and types

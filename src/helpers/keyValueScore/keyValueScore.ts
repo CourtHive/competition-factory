@@ -1,6 +1,6 @@
 import { getMatchUpWinner, removeFromScore, getHighTiebreakValue } from './keyValueUtilities';
+import { getLeadingSide } from '@Helpers/matchUpFormatCode/setRules/setCompletion';
 import { processIncompleteSetScore } from './processIncompleteSetScore';
-import { getLeadingSide } from '@Query/matchUp/checkSetIsComplete';
 import { keyValueTimedSetScore } from './keyValueTimedSetScore';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { processTiebreakSet } from './processTiebreakSet';
@@ -31,7 +31,7 @@ import {
   STATUS_SUSPENDED,
   STATUS_INTERRUPTED,
   STATUS_ABANDONED,
-} from './constants';
+} from '@Constants/keyValueConstants';
 
 export function keyValueMatchUpScore(params) {
   const { auto, checkFormat, shiftFirst, lowSide, value, matchUp } = params;

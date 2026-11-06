@@ -1,4 +1,4 @@
-import { overtimeScoreVerdict } from '@Validators/overtimeScore';
+import { overtimeScoreVerdict } from '@Scoring/analysis/overtimeScore';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';

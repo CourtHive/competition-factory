@@ -1,7 +1,7 @@
 import { buildIndividualIdsMap, idsShareIndividual } from '@Query/participants/individualParticipantIds';
+import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { collectionChoiceRefusal } from '@Query/matchUp/collectionChoice';
-import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';

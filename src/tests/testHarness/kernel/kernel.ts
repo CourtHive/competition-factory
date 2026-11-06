@@ -13,7 +13,19 @@ import { dayMinutesToTimeString, extractTime, tidyTime, timeStringMinutes } from
 import { addMinutesWithinDay } from '@Mutate/matchUps/schedule/scheduleMatchUps/timeWithinDay';
 import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import { buildSchedulingView } from '@Mutate/matchUps/schedule/pipeline/view';
+import { resolveSetType } from '@Helpers/matchUpFormatCode/formatUtilities';
 import { planGridDate } from '@Mutate/matchUps/schedule/pipeline/gridPlan';
+import { addMinutesToDateTime, endOnTheDay } from '@Tools/civilDateTime';
+import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
+import { planSchedule } from '@Mutate/matchUps/schedule/pipeline/plan';
+import { calculatePointsTo } from '@Scoring/v1/pointsToCalculator';
+import { stringify } from '@Helpers/matchUpFormatCode/stringify';
+import { normativeReduction } from './normativeReduction';
+import { addMinutesToTimeString } from '@Tools/dateTime';
+import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { extractDate, sameDay } from '@Tools/plainDate';
+import { normativePlan } from './normativePlan';
+import { VIEW_OPTIONS } from './viewOptions';
 import {
   buildConflictsView,
   checkConflicts,
@@ -21,18 +33,6 @@ import {
   conflictsViewFromData,
   requiredConflictsViewKeys,
 } from '@Mutate/matchUps/schedule/pipeline/gridConflicts';
-import { addMinutesToDateTime, endOnTheDay } from '@Tools/civilDateTime';
-import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
-import { planSchedule } from '@Mutate/matchUps/schedule/pipeline/plan';
-import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
-import { stringify } from '@Helpers/matchUpFormatCode/stringify';
-import { resolveSetType } from '@Tools/scoring/scoringUtilities';
-import { normativeReduction } from './normativeReduction';
-import { addMinutesToTimeString } from '@Tools/dateTime';
-import { parse } from '@Helpers/matchUpFormatCode/parse';
-import { extractDate, sameDay } from '@Tools/plainDate';
-import { normativePlan } from './normativePlan';
-import { VIEW_OPTIONS } from './viewOptions';
 import {
   planningViewData,
   planningViewFromData,

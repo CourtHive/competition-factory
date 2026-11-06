@@ -14,7 +14,7 @@
  * a validator that says "fine" to an impossible score is why `courthive-components` ended up
  * hand-rolling its own maximum — and getting `SET1-S:TB10` wrong in the shipping dialog.
  */
-import { validateSetScore } from '@Validators/validateMatchUpScore';
+import { validateSetScore } from '@Scoring/analysis/validateMatchUpScore';
 import { describe, it, expect } from 'vitest';
 
 /** Every case here is an UNFINISHED set: `allowIncomplete` is the whole subject. */

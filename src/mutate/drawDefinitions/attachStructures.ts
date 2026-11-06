@@ -1,8 +1,8 @@
 import { addMatchUpsNotice, modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
-import { structuresOf } from '@Acquire/structureMembers';
 import { addGoesTo } from '@Query/matchUps/addGoesTo';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { xa } from '@Tools/extractAttributes';

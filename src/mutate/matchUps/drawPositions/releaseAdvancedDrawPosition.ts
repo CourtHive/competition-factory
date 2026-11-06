@@ -2,6 +2,7 @@ import { ClearDrawPosition, withdrawByeSeats } from '@Mutate/matchUps/matchUpSta
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { bringCarryHome, carryLeavingWith } from '@Mutate/matchUps/drawPositions/carryHome';
 import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
+import { getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
@@ -10,7 +11,6 @@ import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { awardStands } from './awardStands';
 import {
   deriveExitStateFromProvenance,
-  getSideExitProvenance,
   withdrawArrivalFrom,
   withdrawRelayedExit,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';

@@ -1,7 +1,7 @@
-import { reduce, serverOf, createContext } from '@Assemblies/engines/scoring/v2/reduce';
+import { reduce, serverOf, createContext } from '@Scoring/kernel/reduce';
 
 // types
-import type { ScoringConfiguration, StepOutcome, TimelineEntry } from '@Assemblies/engines/scoring/v2/types';
+import type { ScoringConfiguration, StepOutcome, TimelineEntry } from '@Scoring/kernel/types';
 
 /** what one timeline entry did: recorded, ignored (with its code), or refused (with its code; the message is prose) */
 function outcomeOf(outcome: StepOutcome) {

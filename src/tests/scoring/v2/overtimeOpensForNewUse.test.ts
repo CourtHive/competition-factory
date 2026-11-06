@@ -1,6 +1,6 @@
 import { harvestFormats } from '@Tests/testHarness/scoringConformance/harvestFormats';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
-import { resolveFormat } from '@Assemblies/engines/scoring/v2/format';
+import { resolveFormat } from '@Helpers/matchUpFormatCode/matchRule';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { describe, expect, it } from 'vitest';
 

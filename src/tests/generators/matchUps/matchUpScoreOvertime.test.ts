@@ -1,7 +1,7 @@
-import { generateOutcomeFromScoreString } from '@Assemblies/generators/simulation/generateOutcomeFromScoreString';
-import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
+import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { annotateScoreSets } from '@Query/matchUps/addMatchUpContext';
-import { parseScoreString } from '@Tools/parseScoreString';
+import { parseScoreString } from '@Scoring/parse/parseScoreString';
+import { matchUpScore } from '@Scoring/views/matchUpScore';
 import { expect, it } from 'vitest';
 
 // constants

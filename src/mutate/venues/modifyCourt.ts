@@ -1,6 +1,6 @@
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
-import courtTemplate from '@Assemblies/generators/templates/courtTemplate';
 import { requireParams } from '@Helpers/parameters/requireParams';
+import courtTemplate from '@Helpers/scheduling/courtTemplate';
 import { modifyCourtAvailability } from './courtAvailability';
 import { addNotice } from '@Global/state/globalState';
 import { findCourt } from '@Query/venues/findCourt';

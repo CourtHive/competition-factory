@@ -1,8 +1,8 @@
 import { getParticipantResults } from '@Query/matchUps/roundRobinTally/getParticipantResults';
 import { overtimeResultString } from '@Helpers/matchUpFormatCode/overtimeContext';
 import { validateTallyPolicy } from '@Validators/validateTallyPolicy';
+import { validateScore } from '@Scoring/analysis/validateScore';
 import { setOutcomePipeline } from '@Global/state/globalState';
-import { validateScore } from '@Validators/validateScore';
 import { afterEach, describe, expect, it } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';

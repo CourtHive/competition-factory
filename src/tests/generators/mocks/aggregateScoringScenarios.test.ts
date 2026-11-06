@@ -3,9 +3,9 @@
  * Tests parseScoreString, generateOutcomeFromScoreString, and analyzeScore
  * for aggregate formats like SET3XA-S:T10
  */
-import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
-import { analyzeScore } from '@Query/matchUp/analyzeScore';
-import { parseScoreString } from '@Tools/parseScoreString';
+import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
+import { parseScoreString } from '@Scoring/parse/parseScoreString';
+import { analyzeScore } from '@Scoring/analysis/analyzeScore';
 import { describe, it, expect } from 'vitest';
 
 // constants

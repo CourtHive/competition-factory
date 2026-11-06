@@ -1,8 +1,8 @@
 import { generateTeamTournament } from '@Tests/mutations/participants/team/generateTestTeamTournament';
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { nonScheduleActionTypes } from '@Tests/helpers/nonScheduleActionTypes';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { validateLineUp } from '@Validators/validateTeamLineUp';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';

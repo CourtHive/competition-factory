@@ -1,6 +1,11 @@
-import { validateDrawTallyOptions } from '@Query/matchUps/roundRobinTally/drawnResults';
+import { DECIDED_BY_METHODS, DECIDED_IN } from '@Scoring/analysis/decidedResult';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { DECIDED_BY_METHODS, DECIDED_IN } from './decidedResult';
+
+// constants and types
+import type { RoundRobinTallyPolicy } from '@Types/roundRobinTallyPolicy';
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+import type { ResultType } from '@Types/factoryTypes';
+import { SUCCESS } from '@Constants/resultConstants';
 import {
   GRAPH_MEASURES,
   RATIO_MEASURES,
@@ -8,12 +13,7 @@ import {
   TALLY_MEASURES,
   V1_PRIMARY_KEYS,
   V2_MEASURES,
-} from '@Query/standings/fromV1';
-
-// constants and types
-import type { RoundRobinTallyPolicy } from '@Types/roundRobinTallyPolicy';
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
-import type { ResultType } from '@Types/factoryTypes';
+} from '@Constants/tallyMeasureConstants';
 
 type ValidateTallyPolicyArgs = {
   tallyPolicy?: RoundRobinTallyPolicy;
@@ -269,4 +269,31 @@ function directiveGateErrors(directive: Record<string, unknown>, index: number):
     }
   }
   return errors;
+}
+
+/** The draw-related options of a round-robin tally policy: draw credit, outcome points, and the standings points they feed. */
+export function validateDrawTallyOptions(policy?: RoundRobinTallyPolicy): ResultType {
+  if (
+    policy?.drawCredit !== undefined &&
+    (typeof policy.drawCredit !== 'number' ||
+      !Number.isFinite(policy.drawCredit) ||
+      policy.drawCredit < 0 ||
+      policy.drawCredit > 1)
+  )
+    return { error: INVALID_VALUES, info: 'drawCredit must be a finite number between 0 and 1' };
+  if (
+    policy?.outcomePoints !== undefined &&
+    (!policy.outcomePoints ||
+      (['win', 'draw', 'loss'] as const).some(
+        (key) => typeof policy.outcomePoints?.[key] !== 'number' || !Number.isFinite(policy.outcomePoints[key]),
+      ))
+  )
+    return { error: INVALID_VALUES, info: 'outcomePoints requires finite win, draw and loss values' };
+  const usesStandingsPoints =
+    policy?.groupOrderKey === 'standingsPoints' ||
+    (Array.isArray(policy?.tallyDirectives) &&
+      policy.tallyDirectives.some((directive) => directive?.attribute === 'standingsPoints'));
+  if (usesStandingsPoints && !policy?.outcomePoints)
+    return { error: INVALID_VALUES, info: 'standingsPoints ranking requires outcomePoints' };
+  return { ...SUCCESS };
 }

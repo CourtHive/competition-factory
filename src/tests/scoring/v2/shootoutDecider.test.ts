@@ -1,20 +1,21 @@
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
-import { validateSetScore } from '@Validators/validateMatchUpScore';
-import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
-import { keyValueScore } from '@Helpers/keyValueScore/keyValueScore';
-import { addPoint } from '@Mutate/scoring/addPoint';
 import { shootoutTallyRefusal } from '@Helpers/matchUpFormatCode/shootout';
-import { resolveFormat, takesInput } from '@Assemblies/engines/scoring/v2/format';
+import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { validateSetScore } from '@Scoring/analysis/validateMatchUpScore';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
+import { overtimeScoreVerdict } from '@Scoring/analysis/overtimeScore';
+import { keyValueScore } from '@Helpers/keyValueScore/keyValueScore';
+import { resolveFormat } from '@Helpers/matchUpFormatCode/matchRule';
 import { stringify } from '@Helpers/matchUpFormatCode/stringify';
-import { overtimeScoreVerdict } from '@Validators/overtimeScore';
-import { reduce } from '@Assemblies/engines/scoring/v2/reduce';
+import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { takesInput } from '@Scoring/kernel/format';
+import { addPoint } from '@Scoring/v1/addPoint';
+import { reduce } from '@Scoring/kernel/reduce';
 import { describe, expect, it } from 'vitest';
 
 // constants and types
-import type { TimelineEntry } from '@Assemblies/engines/scoring/v2/types';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
+import type { TimelineEntry } from '@Scoring/kernel/types';
 
 /**
  * `-F:SO{n}`, a shootout of n rounds (overtime activation S5, Ruling 3, CA 2026-11-04). Every `F:TB` race is wrong

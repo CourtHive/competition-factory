@@ -1,4 +1,5 @@
-import { getCourtDateAvailability } from '@Query/venues/getCourtDateAvailability';
+import { getCourtDateAvailability } from '@Helpers/scheduling/getCourtDateAvailability';
+import { deriveBookingId } from '@Helpers/scheduling/bookingId';
 import { findCourt } from '@Query/venues/findCourt';
 
 // constants and types
@@ -55,16 +56,4 @@ export function findPracticeBooking({
   booking.bookingId ??= bookingId;
 
   return { court, venue, availability, booking };
-}
-
-export function deriveBookingId({
-  courtId,
-  date,
-  startTime,
-}: {
-  courtId: string;
-  date?: string;
-  startTime?: string;
-}): string {
-  return `${courtId}-${date ?? ''}-${startTime ?? ''}`;
 }

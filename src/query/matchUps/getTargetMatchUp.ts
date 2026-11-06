@@ -1,7 +1,7 @@
 import { indexedRound, indexedStructure, TargetIndex } from '@Query/matchUp/targetIndex';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { reduceGroupedOrder } from './reduceGroupedOrder';
 import { chunkArray, generateRange } from '@Tools/arrays';

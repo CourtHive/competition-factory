@@ -1,9 +1,9 @@
 import { addMatchUpsNotice, deleteMatchUpsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { generateCollectionMatchUps } from '@Assemblies/generators/drawDefinitions/tieMatchUps';
+import { generateCollectionMatchUps } from '@Helpers/drawTopology/templates/tieMatchUps';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
-import { resolveFromParameters } from '@Helpers/parameters/resolveFromParameters';
 import { removeOrphanedTieFormats } from '@Mutate/tieFormat/writeTieFormat';
+import { resolveFromParameters } from '@Acquire/resolveFromParameters';
 import { NOT_IMPLEMENTED } from '@Constants/errorConditionConstants';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getMatchUpId } from '@Functions/global/extractors';

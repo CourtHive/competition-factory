@@ -12,7 +12,7 @@ export { flightConstants } from './flightConstants';
 export { genderConstants } from './genderConstants';
 export { homeParticipantConstants } from './homeParticipantConstants';
 export type { HomeParticipantBasis } from './homeParticipantConstants';
-export { keyValueConstants } from '@Helpers/keyValueScore/constants';
+export { keyValueConstants } from '@Constants/keyValueConstants';
 export { matchUpActionConstants } from './matchUpActionConstants';
 export { matchUpTypes } from './matchUpTypes';
 export { participantConstants, participantTypes } from './participantConstants';

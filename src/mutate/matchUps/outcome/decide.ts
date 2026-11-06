@@ -2,14 +2,14 @@ import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDive
 import { planOutcome, type DualCall, type OutcomePlan, type PlanShape, type RebuildView } from './plan';
 import { addedNotices, compareNotices, compareShadow, plannedNotices } from './shadow';
 import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
-import { carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { PREDICTED_CALL, predictSettleWork, type SettleSite } from './settleWork';
+import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
+import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { addGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
 import { convergence, isRelabel, planDirection } from './direction';
 import { compareIndex, type IndexComparison } from './indexOracle';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
-import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { cloneState, restoreState } from '@Tools/cloneState';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';

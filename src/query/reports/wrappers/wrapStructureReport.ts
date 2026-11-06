@@ -1,5 +1,5 @@
+import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { getStructureReports } from '@Query/structure/structureReport';
-import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { nowIso } from '@Tools/clock';
 
 // constants and types

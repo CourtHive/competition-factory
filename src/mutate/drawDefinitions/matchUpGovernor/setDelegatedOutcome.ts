@@ -1,7 +1,7 @@
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
-import { generateScoreString } from '@Generators/matchUps/generateScoreString';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { collectionChoiceRefusal } from '@Query/matchUp/collectionChoice';
+import { generateScoreString } from '@Scoring/views/generateScoreString';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 
 // constants

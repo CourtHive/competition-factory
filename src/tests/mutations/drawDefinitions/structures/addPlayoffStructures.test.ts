@@ -1,6 +1,6 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
+import { addPlayoffStructures } from '@Generators/drawDefinitions/structures/addPlayoffStructures';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
-import { addPlayoffStructures } from '@Mutate/drawDefinitions/addPlayoffStructures';
 import { expect, it } from 'vitest';
 
 // constants and types

@@ -1,8 +1,8 @@
 import { generateQualifyingLink } from '@Generators/drawDefinitions/links/generateQualifyingLink';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
-import structureTemplate from '@Assemblies/generators/templates/structureTemplate';
+import structureTemplate from '@Helpers/drawTopology/templates/structureTemplate';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import { generateTieMatchUps } from '@Generators/drawDefinitions/tieMatchUps';
+import { generateTieMatchUps } from '@Helpers/drawTopology/templates/tieMatchUps';
 import { getStructureGroups } from '@Query/structure/getStructureGroups';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { coerceEven, isConvertableInteger } from '@Tools/math';

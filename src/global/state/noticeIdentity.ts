@@ -1,4 +1,4 @@
-import { NoticeIdentity } from '@Forge/topicTypes';
+import { NoticeIdentity } from '@Types/topicTypes';
 
 // constants
 import { AUDIT, DATA_ISSUE } from '@Constants/topicConstants';

@@ -1,11 +1,10 @@
+import { isPropagatedExit, getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
 import { setSchemaWriteMode } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, expect, it } from 'vitest';
 import {
   buildSideExitProvenance,
-  isPropagatedExit,
-  getSideExitProvenance,
   producedExitStatus,
   setSideExitProvenance,
   exitOutcomeCode,
@@ -13,7 +12,7 @@ import {
 
 // constants
 import { BYE, DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { OUTCOME_DEFAULT, OUTCOME_RETIREMENT, OUTCOME_WALKOVER } from '@Helpers/keyValueScore/constants';
+import { OUTCOME_DEFAULT, OUTCOME_RETIREMENT, OUTCOME_WALKOVER } from '@Constants/keyValueConstants';
 import { LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';
 
 afterEach(() => setSchemaWriteMode(NATIVE));

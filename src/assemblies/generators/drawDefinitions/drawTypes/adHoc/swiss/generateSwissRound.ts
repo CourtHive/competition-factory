@@ -8,13 +8,13 @@ import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 // Generators
 import { getParticipantIds } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/getParticipantIds';
 import { generateAdHocMatchUps } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocMatchUps';
-import { getAdHocRatings } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/getAdHocRatings';
-import { formRatingsPolicy } from '@Generators/scales/competition/formRatingsPolicy';
+import { formRatingsPolicy } from '@Helpers/ratings/competition/formRatingsPolicy';
+import { swissPolicyOf } from '@Query/drawDefinitions/swiss/swissPolicyOf';
+import { getAdHocRatings } from '@Query/participants/getAdHocRatings';
 import { generateSwissPairings } from './swissPairing';
-import { swissPolicyOf } from './swissPolicyOf';
 
 // Acquire
-import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
+import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants

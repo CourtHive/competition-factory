@@ -1,4 +1,4 @@
-import { getDateTimeBoundary } from '@Generators/scheduling/utils/getTimeBoundary';
+import { getDateTimeBoundary } from '@Helpers/scheduling/getTimeBoundary';
 import { expect, test } from 'vitest';
 
 test('time boundaries for startTime / endTime correctly deduced', () => {

@@ -1,8 +1,8 @@
 import { countGames, countPoints } from '@Query/matchUps/roundRobinTally/scoreCounters';
-import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
-import { checkSetIsComplete } from '@Query/matchUp/checkSetIsComplete';
+import { checkSetIsComplete } from '@Helpers/matchUpFormatCode/setRules/setCompletion';
+import { inputLevels } from '@Helpers/matchUpFormatCode/formatUtilities';
 import { getSetWinningSide } from '@Query/matchUp/getSetWinningSide';
-import { inputLevels } from '@Tools/scoring/scoringUtilities';
+import { calculatePointsTo } from '@Scoring/v1/pointsToCalculator';
 import { ScoringEngine } from '@Assemblies/engines/scoring';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { describe, expect, it } from 'vitest';

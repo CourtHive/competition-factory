@@ -1,4 +1,4 @@
-import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
+import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { expect, test } from 'vitest';
 
 // types

@@ -4,13 +4,12 @@
  */
 import { getValidModifyAssignedPairAction } from '@Query/drawDefinition/positionActions/getValidModifyAssignedPairAction';
 import { getEventAlternateParticipantIds } from '@Query/drawDefinition/matchUpActions/getEventAlternateParticipantids';
-import { hydrateRoundNames } from '@Assemblies/generators/drawDefinitions/generateDrawDefinition/hydrateRoundNames';
 import { generateAdHocRounds } from '@Assemblies/generators/drawDefinitions/drawTypes/adHoc/generateAdHocRounds';
 import { resetVoluntaryConsolationStructure } from '@Mutate/drawDefinitions/resetVoluntaryConsolationStructure';
 import { getScheduledCourtMatchUps, getScheduledVenueMatchUps } from '@Query/venues/getScheduledCourtMatchUps';
 import { organizeDrawPositionOptions } from '@Query/drawDefinition/avoidance/organizeDrawPositionOptions';
 import { removeMatchUpCourtAssignment } from '@Mutate/matchUps/schedule/removeMatchUpCourtAssignment';
-import { getCourtsAvailableAtPeriodStart } from '@Query/venues/getCourtsAvailableAtPeriodStart';
+import { getCourtsAvailableAtPeriodStart } from '@Helpers/scheduling/getCourtsAvailableAtPeriodStart';
 import { getCompetitionParticipants } from '@Query/participants/getCompetitionParticipants';
 import { getParticipantEventDetails } from '@Query/participants/getParticipantEventDetails';
 import { removeSeededParticipant } from '@Mutate/drawDefinitions/removeSeededParticipant';
@@ -19,6 +18,7 @@ import { autoSeeding } from '@Assemblies/generators/drawDefinitions/autoSeeding'
 import { getPersonRequests } from '@Query/matchUps/scheduling/getPersonRequests';
 import { removeEntry } from '@Mutate/drawDefinitions/entryGovernor/removeEntry';
 import { getSwapOptions } from '@Query/drawDefinition/avoidance/getSwapOptions';
+import { hydrateRoundNames } from '@Mutate/drawDefinitions/hydrateRoundNames';
 import { refreshEventDrawOrder } from '@Mutate/events/refreshEventDrawOrder';
 import { updateTeamLineUp } from '@Mutate/drawDefinitions/updateTeamLineUp';
 import { getStageEntries } from '@Query/drawDefinition/getStageEntries';

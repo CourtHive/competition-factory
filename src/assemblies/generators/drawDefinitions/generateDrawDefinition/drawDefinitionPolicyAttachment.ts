@@ -1,4 +1,4 @@
-import { attachPolicies } from '@Assemblies/governors/policyGovernor';
+import { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
 import { decorateResult } from '@Functions/global/decorateResult';
 
 // constants and fixtures

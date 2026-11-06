@@ -1,13 +1,13 @@
 // Generators
-import { fallbackFormPolicy, formRatingsPolicy } from '@Generators/scales/competition/formRatingsPolicy';
-import { deriveCountables } from '@Generators/scales/competition/deriveCountables';
-import { computeActualOutput } from '@Generators/scales/competition/actualOutput';
-import { expectedResult, ratingUpdate } from '@Generators/scales/ratingUpdate';
-import { kOf, winnerActualOf } from '@Generators/scales/ratingsPolicyRules';
+import { fallbackFormPolicy, formRatingsPolicy } from '@Helpers/ratings/competition/formRatingsPolicy';
+import { deriveCountables } from '@Helpers/ratings/competition/deriveCountables';
+import { computeActualOutput } from '@Helpers/ratings/competition/actualOutput';
+import { expectedResult, ratingUpdate } from '@Helpers/ratings/ratingUpdate';
+import { kOf, winnerActualOf } from '@Helpers/ratings/ratingsPolicyRules';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // Acquire
-import { matchUpsOf } from '@Acquire/structureMembers';
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 
 // constants and types
 import type { CompetitionParticipantState, CompetitionPolicy, CompetitionState } from '@Types/competitionPolicyTypes';

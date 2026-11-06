@@ -1,8 +1,8 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { validatePlayoffGroups } from '@Validators/validatePlayoffGroups';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';

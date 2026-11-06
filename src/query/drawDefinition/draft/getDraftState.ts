@@ -1,4 +1,4 @@
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 
 // constants and types
 import { MISSING_DRAW_DEFINITION, NOT_FOUND } from '@Constants/errorConditionConstants';

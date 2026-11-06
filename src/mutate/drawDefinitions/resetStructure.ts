@@ -2,20 +2,20 @@ import { clearDisableLinks, resetStructureMatchUps } from '@Mutate/drawDefinitio
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
+import { structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { structuresOf } from '@Acquire/structureMembers';
 
 // constants and types
+import { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
+import { MAIN } from '@Constants/drawDefinitionConstants';
+import { SUCCESS } from '@Constants/resultConstants';
+import { ResultType } from '@Types/factoryTypes';
 import {
   CANNOT_RESET_STRUCTURE,
   MISSING_DRAW_DEFINITION,
   STRUCTURE_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
-import { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
-import { MAIN } from '@Constants/drawDefinitionConstants';
-import { SUCCESS } from '@Constants/resultConstants';
-import { ResultType } from '@Types/factoryTypes';
 
 interface ResetStructureArgs {
   tournamentRecord?: Tournament;

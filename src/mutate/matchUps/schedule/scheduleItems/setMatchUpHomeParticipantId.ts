@@ -1,6 +1,6 @@
 import { setMatchUpFirstClassOrTimeItem } from '@Mutate/timeItems/matchUps/setMatchUpFirstClassOrTimeItem';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { resolveFromParameters } from '@Helpers/parameters/resolveFromParameters';
+import { resolveFromParameters } from '@Acquire/resolveFromParameters';
 
 // constants and types
 import { INVALID_PARTICIPANT_ID, MISSING_PARTICIPANT_ID } from '@Constants/errorConditionConstants';

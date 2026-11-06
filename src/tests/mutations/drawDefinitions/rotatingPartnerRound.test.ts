@@ -1,10 +1,10 @@
-import { getRotatingPartnerRoundPreview } from '@Query/drawDefinition/getRotatingPartnerRoundPreview';
+import { getRotatingPartnerRoundPreview } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/getRotatingPartnerRoundPreview';
+import { generateRotatingPartnerRound } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/generateRotatingPartnerRound';
 import { setSubscriptions, deleteNotices, getPayloads, setDeepCopy } from '@Global/state/globalState';
-import { generateRotatingPartnerRound } from '@Mutate/drawDefinitions/generateRotatingPartnerRound';
 import { removeCompetitionProfile } from '@Mutate/drawDefinitions/competitionProfile';
 import { writeModeMatrix } from '@Tests/testHarness/writeModeMatrix';
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import schema from '@Global/schema/tournament.schema.json';
-import { matchUpsOf } from '@Acquire/structureMembers';
 import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, expect, it, vi } from 'vitest';
 import addFormats from 'ajv-formats';

@@ -8,7 +8,7 @@ import type { DerivedStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStat
 import { finishingOrderUpdates, getDualLines } from '@Query/matchUp/finishingOrder';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
