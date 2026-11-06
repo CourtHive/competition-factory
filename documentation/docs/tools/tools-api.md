@@ -986,6 +986,61 @@ no source round) is returned as `error`.
 
 ---
 
+## Mutation Footprints
+
+For a storage layer that keeps a tournament in parts (a shell, one row per drawDefinition, one row per participant)
+rather than as one document. Both are pure: they read their arguments, never engine state, so a server calls them
+before it has loaded anything. Storing a record whole needs neither, and nothing in the engine changes when they are
+not used.
+
+### getMutationFootprint
+
+What part of a record an executionQueue reads and may write: the union of its methods' footprints.
+
+```js
+const footprint = tools.getMutationFootprint({
+  methods: [{ method: 'setMatchUpStatus', params: { drawId, matchUpId, outcome } }],
+  outcomePipeline: 'v2', // optional; which outcome pipeline will run
+});
+// { tournament: false, shards: ['shell', 'draw'], drawIds: [drawId], eventIds: [], wholeRecordMethods: [] }
+```
+
+The shards are:
+
+| Shard              | What it holds                                                                                          |
+| ------------------ | ------------------------------------------------------------------------------------------------------ |
+| `shell`            | The tournament without its participants, and its events without their drawDefinitions. Always present. |
+| `draw`             | The drawDefinitions named in `drawIds`.                                                                |
+| `drawParticipants` | The participants those draws reference, with their individuals and groupings.                          |
+| `eventDraws`       | Every drawDefinition of the events named in `eventIds`.                                                |
+| `participants`     | Every participant.                                                                                     |
+| `tournament`       | The whole record.                                                                                      |
+
+`tournament: true` means load the whole record. That is the answer for a method with no declared footprint, for one
+whose params leave its scope open (a `matchUpId` without its `drawId`), and for an empty queue; `wholeRecordMethods`
+names the methods responsible. A footprint depends on params as well as the method: `entryStatus: WITHDRAWN` on
+`removeDrawPositionAssignment` widens it to the event's draws and every participant, and `proConflictDetection` on a
+schedule change widens it to the whole record.
+
+Score entry includes `participants` unless `outcomePipeline: 'v2'` is passed: the v1 pipeline resolves a TEAM
+collection line's sides against the tournament's participants.
+
+Declared today: `setMatchUpStatus`, `assignDrawPosition`, `assignDrawPositionBye`, `removeDrawPositionAssignment`, the
+matchUp schedule methods (`addMatchUpScheduleItems`, `addMatchUpScheduledDate`, `addMatchUpScheduledTime`,
+`addMatchUpCourtOrder`, the start, end, stop and resume times, `assignMatchUpCourt`, `assignMatchUpVenue`),
+`checkInParticipant`, `checkOutParticipant` and `setMatchUpFormat`. Every other method needs the whole record.
+
+### reduceRecordToFootprint
+
+The partial record a footprint names, as one record the engine can load: a copy of the shell with only the footprint's
+drawDefinitions (inside their own events) and participants.
+
+```js
+const partial = tools.reduceRecordToFootprint({ tournamentRecord, footprint });
+```
+
+---
+
 ## Not in tools Module
 
 The following functions are available through **governors**, not the tools module:
