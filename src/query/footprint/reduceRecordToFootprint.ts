@@ -5,7 +5,7 @@ import { MutationFootprint } from './getMutationFootprint';
 import { DrawDefinition, Tournament } from '@Types/tournamentTypes';
 
 type ReduceRecordToFootprintArgs = {
-  footprint: Pick<MutationFootprint, 'tournament' | 'shards' | 'drawIds' | 'eventIds'>;
+  footprint: MutationFootprint;
   tournamentRecord: Tournament;
 };
 
