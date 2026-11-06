@@ -950,7 +950,43 @@ const TERMINAL_TRUE_CAPTURES: [string, Scenario][] = TERMINAL_RELAY_CAPTURES.map
 const TERMINAL_TRUE_CLEARS = TERMINAL_TRUE_CAPTURES.filter(([label]) => label.endsWith('/clear'));
 const TERMINAL_TRUE_WINNERS = TERMINAL_TRUE_CAPTURES.filter(([label]) => !label.endsWith('/clear'));
 
+// These first-match losers have one earlier BYE but zero qualifying wins; policy-off lacks the own BYE withdrawal.
+const FIRST_MATCHUP_CAPTURES: [string, Scenario][] = [1, 2].flatMap((roundPosition) =>
+  [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((source) =>
+    [1, 2].flatMap((winningSide) =>
+      [false, true].flatMap((propagateExitStatus) =>
+        [false, true].map((policyOff): [string, Scenario] => [
+          `FMLC FIRST_MATCHUP: r2/${roundPosition} ${source} winner${winningSide} propagate${propagateExitStatus} policyOff${policyOff}`,
+          {
+            drawProfile: { drawSize: 8, participantsCount: 4, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+            nonRandom: 9000579,
+            randomSeed: 2187201951,
+            policyDefinitions: policyOff ? POLICY_OFF : undefined,
+            setup: [
+              {
+                target: { roundNumber: 2, roundPosition, structureName: 'Main' },
+                outcome: { matchUpStatus: source },
+                params: { propagateExitStatus },
+              },
+            ],
+            steps: [
+              {
+                target: { roundNumber: 2, roundPosition, structureName: 'Main' },
+                outcome: { winningSide },
+                params: { propagateExitStatus },
+              },
+            ],
+          },
+        ]),
+      ),
+    ),
+  ),
+);
+const FIRST_MATCHUP_OWNED = FIRST_MATCHUP_CAPTURES.filter(([label]) => label.endsWith('policyOfffalse'));
+const FIRST_MATCHUP_FALLBACK = FIRST_MATCHUP_CAPTURES.filter(([label]) => label.endsWith('policyOfftrue'));
+
 const SCENARIOS: [string, Scenario][] = [
+  ...FIRST_MATCHUP_OWNED,
   ...TERMINAL_RELAY_CAPTURES,
   ...TERMINAL_TRUE_CLEARS,
   ...OCCUPIED_FINAL_RELAY_CAPTURES,
@@ -3679,6 +3715,31 @@ describe('S7 converged produced relays compare subscribed differential notices',
     expect(compared.results).toEqual(v1.results);
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
+  });
+});
+
+describe('S7 FMLC FIRST_MATCHUP default-policy arrivals compare subscribed differential notices', () => {
+  it.each(FIRST_MATCHUP_OWNED)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
+});
+
+describe('S7 FMLC FIRST_MATCHUP policy-off branches remain v1s', () => {
+  it.each(FIRST_MATCHUP_FALLBACK)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    expect(v1.v1Writes).toEqual(1);
+    for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+      const compared = play(mode, scenario);
+      expect(compared.v1Writes).toEqual(1);
+      expect(compared.results).toEqual(v1.results);
+      expect(compared.record).toEqual(v1.record);
+      expect(compared.notices).toEqual(v1.notices);
+    }
   });
 });
 
