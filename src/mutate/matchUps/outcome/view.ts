@@ -55,7 +55,7 @@ import {
 import {
   missingDrawPositionsRefusal,
   type MissingDrawPositionsParams,
-} from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
+} from '@Query/matchUp/missingDrawPositionsRefusal';
 
 // constants and types
 import type { BuildViewArgs, OutcomeRequest, OutcomeScore, OutcomeView, Reservation, ThroughBye } from './types';
