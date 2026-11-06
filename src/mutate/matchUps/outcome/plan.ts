@@ -1159,13 +1159,19 @@ function carriedOps(
   // the entry a side carrying the exit is given: its origin the matchUp the carrier lost, and what that matchUp was
   const carried = (exitingSideNumber: 1 | 2, sourceMatchUpId?: string, previousMatchUpStatus?: MatchUpStatusUnion) =>
     buildCarriedExitProvenance({ previousMatchUpStatus, sourceMatchUpId, matchUpStatus: exit, exitingSideNumber });
-  const provenanceOps = (matchUpId: string, provenance?: ReturnType<typeof carried>): OutcomeOp[] =>
-    provenance ? [{ op: 'mergeSideExitProvenance', matchUpId, provenance }] : [];
+  const provenanceOps = (
+    matchUpId: string,
+    provenance?: ReturnType<typeof carried>,
+    announcedAs?: 'progressExitStatus',
+  ): OutcomeOp[] =>
+    provenance
+      ? [{ op: 'mergeSideExitProvenance', matchUpId, provenance, ...(announcedAs ? { announcedAs } : {}) }]
+      : [];
   const source = { matchUpId: request.matchUpId, status: write.matchUpStatus as MatchUpStatusUnion };
   // RULE 1: each BYE matchUp passed stays a BYE and records the carry beside its BYE, announced by itself
   const relayed = (at: CarriedLanding, sourceMatchUpId?: string, previousMatchUpStatus?: MatchUpStatusUnion) =>
     (at.relays ?? []).flatMap(({ matchUpId, sideNumber }): OutcomeOp[] => [
-      ...provenanceOps(matchUpId, carried(sideNumber, sourceMatchUpId, previousMatchUpStatus)),
+      ...provenanceOps(matchUpId, carried(sideNumber, sourceMatchUpId, previousMatchUpStatus), 'progressExitStatus'),
       { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
     ]);
   const relay = relayed(landing, source.matchUpId, source.status);

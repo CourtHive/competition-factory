@@ -798,7 +798,31 @@ const AWARDED_PRODUCED_RELAY: [string, Scenario][] = [FEED_IN_CHAMPIONSHIP, FEED
     ),
 );
 
+// M1 notice contract: the unwind writes the BYE quietly before the carrier records a fresh exit beside it.
+const NOTICE_RELAY_CARRIES: [string, Scenario][] = [
+  [
+    'FEED_IN_CHAMPIONSHIP_TO_SF: a carry after the quiet unwind names its own writer and hydrates its final landing',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 11, drawType: FEED_IN_CHAMPIONSHIP_TO_SF },
+      nonRandom: 20473821,
+      policyDefinitions: POLICY_OFF,
+      setup: [
+        { target: R1(5, 'Main'), outcome: { winningSide: 2 }, params: CARRIED },
+        {
+          target: { roundNumber: 2, roundPosition: 3, structureName: 'Main' },
+          outcome: { matchUpStatus: DOUBLE_WALKOVER },
+          params: CARRIED,
+        },
+      ],
+      steps: [
+        { target: { roundNumber: 2, roundPosition: 3, structureName: 'Main' }, outcome: walkover(1), params: CARRIED },
+      ],
+    },
+  ],
+];
+
 const SCENARIOS: [string, Scenario][] = [
+  ...NOTICE_RELAY_CARRIES,
   ...AWARDED_PRODUCED_RELAY,
   ...PRODUCED_RELAY,
   ...UNWOUND_CONVERGENCE,
@@ -3493,6 +3517,17 @@ describe('under v2, the first direction is v2s, and leaves exactly what v1 leave
     expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
     expect(v2.notices).toEqual(v1.notices);
+  });
+});
+
+describe('M1 notice contracts also compare with in-context subscribers under differential', () => {
+  const noops = SCENARIOS.filter(([label]) => label.includes('asked for again'));
+  it.each([...noops, ...NOTICE_RELAY_CARRIES])('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results.every((result: any) => result.success)).toEqual(true);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
   });
 });
 
