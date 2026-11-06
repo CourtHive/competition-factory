@@ -984,7 +984,40 @@ const FIRST_MATCHUP_CAPTURES: [string, Scenario][] = [1, 2].flatMap((roundPositi
 );
 const FIRST_MATCHUP_OWNED = FIRST_MATCHUP_CAPTURES;
 
+// Captured CURTIS standing-BYE boundary: the corrected source does not own the deeper opponent's BYE.
+// Preserve raw capture labels producer/source/trigger from variants.json; all four public setups propagate exits.
+const STANDING_BYE_CAPTURES: [string, Scenario][] = [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((producer) =>
+  [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((source) =>
+    ['clear', 'winner'].map((trigger): [string, Scenario] => [
+      `CURTIS standing BYE: ${producer}/${source}/${trigger}`,
+      {
+        drawProfile: { drawSize: 32, participantsCount: 27, drawType: CURTIS_CONSOLATION },
+        nonRandom: 9000062,
+        randomSeed: 2722004236,
+        setup: [
+          { target: R1(7, 'Main'), outcome: { matchUpStatus: WALKOVER, winningSide: 1 }, params: CARRIED },
+          { target: R1(8, 'Main'), outcome: { matchUpStatus: WALKOVER, winningSide: 2 }, params: CARRIED },
+          {
+            target: { roundNumber: 2, roundPosition: 4, structureName: 'Main' },
+            outcome: { matchUpStatus: producer },
+            params: CARRIED,
+          },
+          { target: R1(3, 'Main'), outcome: { matchUpStatus: source }, params: CARRIED },
+        ],
+        steps: [
+          {
+            target: R1(3, 'Main'),
+            outcome: trigger === 'clear' ? cleared : { matchUpStatus: WALKOVER, winningSide: 1 },
+            params: CARRIED,
+          },
+        ],
+      },
+    ]),
+  ),
+);
+
 const SCENARIOS: [string, Scenario][] = [
+  ...STANDING_BYE_CAPTURES,
   ...FIRST_MATCHUP_OWNED,
   ...TERMINAL_RELAY_CAPTURES,
   ...TERMINAL_TRUE_CLEARS,
@@ -3711,6 +3744,17 @@ describe('S7 converged produced relays compare subscribed differential notices',
   it.each(CONVERGED_RELAY_CAPTURES)('%s', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
+});
+
+describe('S7 CURTIS standing BYE compares subscribed differential notices', () => {
+  it.each(STANDING_BYE_CAPTURES)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
     expect(compared.results).toEqual(v1.results);
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
