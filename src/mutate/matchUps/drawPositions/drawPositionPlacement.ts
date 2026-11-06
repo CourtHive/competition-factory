@@ -32,6 +32,7 @@ import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/no
 import { structureAssignedDrawPositions, getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
 import { getUpdatedDrawPositions } from '@Mutate/drawDefinitions/matchUpGovernor/getUpdatedDrawPositions';
+import { firstRoundFeedersWon as indexedFirstRoundFeedersWon } from '@Query/matchUp/firstRoundFeedersWon';
 import { isPropagatedExit as sharedIsPropagatedExit } from '@Helpers/drawTopology/sideExitProvenance';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { drawPositionAssignmentRefusal } from '@Query/drawDefinition/drawPositionAssignmentRefusal';
@@ -45,7 +46,6 @@ import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { SeedingProfile, MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { updateSideLineUp } from '@Mutate/matchUps/lineUps/updateSideLineUp';
 import { propagateUnfillableLoserBye } from './propagateUnfillableLoserBye';
-import { isUnscoredOutcome } from '@Query/matchUp/getDrawPositionWinCount';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getTargetMatchUps } from '@Query/matchUps/getTargetMatchUps';
 import { resetLineUps } from '@Mutate/matchUps/lineUps/resetLineUps';
@@ -63,7 +63,6 @@ import { clearDrawPosition } from './positionClear';
 import { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
 import { isExit } from '@Validators/isExit';
-import { overlap } from '@Tools/arrays';
 import {
   DrawDefinition,
   Event,
@@ -968,9 +967,10 @@ export function firstRoundFeedersWon({
   structureId: string;
   matchUpsMap: MatchUpsMap;
 }): boolean {
-  return getMappedStructureMatchUps({ structureId, matchUpsMap })
-    .filter(({ drawPositions: fed, roundNumber }) => roundNumber === 1 && overlap(fed, drawPositions))
-    .every(({ matchUpStatus, winningSide, score }) => !!winningSide && !isUnscoredOutcome({ matchUpStatus, score }));
+  return indexedFirstRoundFeedersWon({
+    matchUps: getMappedStructureMatchUps({ structureId, matchUpsMap }),
+    drawPositions,
+  });
 }
 
 export function propagateConsolationBye({
