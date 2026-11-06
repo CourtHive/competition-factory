@@ -3175,7 +3175,31 @@ function pendingAwardRemoval(
   if (!scoreless(foreign) || foreign.matchUpStatusCodes?.length || Object.keys(foreign.sideExitProvenance ?? {}).length)
     return undefined;
   if (at.matchUpStatus !== status || Number(kept[0]) === at.winningSide) return undefined;
+  if (foreign.structureId !== at.structureId || !pendingAwardSeatStands(view, at)) return undefined;
   return { drawPosition: held[0], provenance: { [Number(kept[0])]: kept[1] } };
+}
+
+/** The award becoming pending still sends nobody to its already unfillable loser seat. */
+function pendingAwardSeatStands(view: OutcomeView, source: HydratedMatchUp): boolean {
+  const seat = view.targets.unwindLoserSeats?.find((level) => level.matchUpId === source.matchUpId)?.loserSeat;
+  if (!seat || seat.linkCondition || !seat.seat?.bye || !seat.seat.byeFromPropagation) return false;
+  const target = indexed(view, seat.matchUpId);
+  if (!target || target.matchUpId !== source.loserMatchUpId || target.structureId !== seat.structureId) return false;
+  if (target.matchUpStatus !== BYE || target.winningSide || target.loserMatchUpId || !scoreless(target)) return false;
+  if (target.matchUpStatusCodes?.length || Object.keys(target.sideExitProvenance ?? {}).length) return false;
+  const positions = positionsOf(target);
+  if (positions.length !== 1 || positions[0] !== seat.drawPosition) return false;
+  if (target.sides?.some((side) => side.participantId || side.qualifier)) return false;
+  const next = indexed(view, target.winnerMatchUpId);
+  return (
+    !!next &&
+    next.structureId === target.structureId &&
+    !next.winningSide &&
+    !next.winnerMatchUpId &&
+    !next.loserMatchUpId &&
+    !positionsOf(next).length &&
+    unwoundClean(next, new Set())
+  );
 }
 
 /** An empty double-produced reservation reached this feed relay through exactly one standing BYE. Clear only. */
