@@ -7,6 +7,7 @@ import {
   LOCAL_STATUSES,
   cleanWinnerTarget,
   pendingProducedArrival,
+  plainByeArrival,
   directedBothSides,
   directsElsewhere,
   standingAwardArrival,
@@ -51,7 +52,12 @@ export function plainLoserReason(view: OutcomeView, direction: DirectionPlan): A
     return standingAwardArrival(view, loser) ? undefined : 'cascade';
   // opposite a BYE the loser goes on at once: planned when the matchUp they go on into is clean (`loserThroughBye`), or a
   // carried exit's loser goes on through the BYE-held matchUps past it (`loserByePassage`, S6 tail)
-  if (targets.loserTargetSeat.opponentBye && !targets.loserThroughBye && !(loser.exit && targets.loserByePassage))
+  if (
+    targets.loserTargetSeat.opponentBye &&
+    !targets.loserThroughBye &&
+    !(loser.exit && targets.loserByePassage) &&
+    !plainByeArrival(view, loser)
+  )
     return 'cascade';
   return undefined;
 }
