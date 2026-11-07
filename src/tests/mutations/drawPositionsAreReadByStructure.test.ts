@@ -56,10 +56,22 @@ const ALLOWED: Record<string, { count: number; why: string }> = {
       'did misread, now read structurally.)',
   },
   'mutate/matchUps/outcome/plan.ts': {
-    count: 6,
+    count: 2,
     why:
       '`view.targets.sideDrawPositions[side]` is not a matchUp array: it is a record keyed by side number (1 and 2) ' +
       'that the view resolves from the matchUp in context, so a lone position cannot be misread by index.',
+  },
+  'mutate/matchUps/outcome/plan/directionReasons.ts': {
+    count: 1,
+    why:
+      '`view.targets.sideDrawPositions[side]` is not a matchUp array: it is a record keyed by side number (1 and 2) ' +
+      'that the view resolves from the matchUp in context, so a lone position cannot be misread by index. Moved here from plan.ts with the split.',
+  },
+  'mutate/matchUps/outcome/plan/directionOps.ts': {
+    count: 3,
+    why:
+      '`view.targets.sideDrawPositions[side]` is not a matchUp array: it is a record keyed by side number (1 and 2) ' +
+      'that the view resolves from the matchUp in context, so a lone position cannot be misread by index. Moved here from plan.ts with the split.',
   },
   'mutate/matchUps/outcome/plan/planShared.ts': {
     count: 1,

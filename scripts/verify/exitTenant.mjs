@@ -108,6 +108,12 @@ const ALLOWED = {
     'PLUMBING — the BYE chain abstains where a matchUp it would write holds codes, and writes [] where v1 writes it; decides nothing on them',
   'mutate/matchUps/outcome/plan/convergence.ts':
     'PLUMBING — a convergence keeps the codes as they stood and writes [] into what it produces, as v1 does; decides nothing on them',
+  'mutate/matchUps/outcome/plan/directionReasons.ts':
+    "PLUMBING — abstains where a loser's seat holds codes v1 would re-derive (removedLoserReason); decides nothing on them",
+  'mutate/matchUps/outcome/plan/directionOps.ts':
+    "PLUMBING — re-derives the codes as [] where v1's removeDirectedLoser writes them; decides nothing on them",
+  'mutate/matchUps/outcome/plan/carriedExit.ts':
+    "PLUMBING — a carried exit's landing writes the codes v1's progressExitStatus derives ([]) and abstains where a landing holds codes; decides nothing on them",
   'mutate/matchUps/outcome/types.ts': 'PLUMBING — the v2 request carries the submitted array to the write',
   'mutate/matchUps/outcome/unwindWalk.ts':
     'PLUMBING — abstains where a matchUp its removal would write carries codes, so v1 writes it; decides nothing on them',
