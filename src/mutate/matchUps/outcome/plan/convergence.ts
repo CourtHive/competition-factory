@@ -1,5 +1,5 @@
+import { BLANK_SCORE, SINGLE_EXITS, carriedStatus, indexed, isSettleWrite, sideOf } from './planShared';
 import { producedTarget, producedTargetOps, producedTargetReason } from './producedTarget';
-import { BLANK_SCORE, SINGLE_EXITS, carriedStatus, indexed, sideOf } from './planShared';
 import { ownByeChain, unfillableByeChain, walkChain } from './byeChain';
 import { isDoubleExit } from '@Validators/isExit';
 import {
@@ -167,10 +167,8 @@ export function convergenceOps(
 }
 
 /** a walk's ops but the writes v1's `reconcileScoredTimes` pass makes, which it announces after everything else */
-const unreconciled = (ops: OutcomeOp[]) =>
-  ops.filter((op) => !(op.op === 'setMatchUpResult' && op.announcedAs === 'reconcileScoredTimes'));
-const reconciled = (ops: OutcomeOp[]) =>
-  ops.filter((op) => op.op === 'setMatchUpResult' && op.announcedAs === 'reconcileScoredTimes');
+const unreconciled = (ops: OutcomeOp[]) => ops.filter((op) => !isSettleWrite(op));
+const reconciled = (ops: OutcomeOp[]) => ops.filter((op) => isSettleWrite(op));
 
 type ProducedConvergence = {
   /** this matchUp's own loser seat: a BYE and its chain, placed first (`handleLoserMatchUp`) */
