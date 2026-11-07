@@ -108,4 +108,30 @@ describe('getMutationFootprint', () => {
     expect(bulk([]).tournament).toEqual(true);
     expect(bulk(undefined).tournament).toEqual(true);
   });
+
+  it("asked for one tournament, answers for that tournament's part of the queue", () => {
+    const forTournament = (methods: any[], tournamentId: string, activeTournamentId?: string) =>
+      getMutationFootprint({ methods, tournamentId, activeTournamentId, outcomePipeline: OUTCOME_PIPELINE_V2 });
+    const outcome = (tournamentId?: string, drawId = 'D1') => ({ tournamentId, eventId: 'E1', drawId, matchUpId: 'M' });
+    const bulk = (outcomes: any[]) => ({ method: 'bulkMatchUpStatusUpdate', params: { outcomes } });
+
+    // bulk: each tournament its own outcomes' draws; a tournament with none, its shell
+    const queue = [bulk([outcome('T1', 'D1'), outcome('T2', 'D2')])];
+    expect(forTournament(queue, 'T1').drawIds).toEqual(['D1']);
+    expect(forTournament(queue, 'T2').drawIds).toEqual(['D2']);
+    expect(forTournament(queue, 'T3').shards).toEqual(['shell']);
+    // an outcome that names no tournament could be any of them
+    expect(forTournament([bulk([outcome('T1'), outcome(undefined)])], 'T1').tournament).toEqual(true);
+
+    // a single-tournament method: its own tournament, else the active one; another tournament needs only its shell
+    const scoreIn = (tournamentId?: string) => ({ ...score, params: { ...score.params, tournamentId } });
+    expect(forTournament([scoreIn('T2')], 'T1').shards).toEqual(['shell']);
+    expect(forTournament([scoreIn('T2')], 'T2').drawIds).toEqual(['D1']);
+    expect(forTournament([scoreIn()], 'T1', 'T2').shards).toEqual(['shell']);
+    expect(forTournament([scoreIn()], 'T2', 'T2').drawIds).toEqual(['D1']);
+    // no tournament to name: answered as if it ran against this one
+    expect(forTournament([scoreIn()], 'T1').drawIds).toEqual(['D1']);
+    // an undeclared method needs every record whole
+    expect(forTournament([{ method: 'addEvent', params: { tournamentId: 'T2' } }], 'T1').tournament).toEqual(true);
+  });
 });

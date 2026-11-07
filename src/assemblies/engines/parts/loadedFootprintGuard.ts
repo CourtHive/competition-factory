@@ -23,14 +23,25 @@ export function checkLoadedFootprint({
   tournamentRecords,
   tournamentId,
 }: CheckLoadedFootprintArgs) {
-  const recordId = params?.tournamentId ?? tournamentId;
-  const tournamentRecord = recordId ? tournamentRecords?.[recordId] : undefined;
-  const loaded = getLoadedFootprint(tournamentRecord);
-  if (!loaded) return undefined;
+  // every marked record, each against what the method needs of THAT tournament: a method can reach beyond the one it
+  // runs against (bulk outcomes across linked tournaments), and checking only that one let a partial second record
+  // through unchecked
+  for (const [recordId, tournamentRecord] of Object.entries(tournamentRecords ?? {})) {
+    const loaded = getLoadedFootprint(tournamentRecord);
+    if (!loaded) continue;
 
-  const required = getMethodFootprint(methodName, params, { outcomePipeline: getOutcomePipeline() });
-  const missing = footprintCovers({ required, loaded, tournamentRecord });
-  if (!missing.length) return undefined;
+    const required = getMethodFootprint(methodName, params, {
+      outcomePipeline: getOutcomePipeline(),
+      activeTournamentId: tournamentId,
+      tournamentId: recordId,
+    });
+    const missing = footprintCovers({ required, loaded, tournamentRecord });
+    if (!missing.length) continue;
 
-  return { error: FOOTPRINT_NOT_LOADED, context: { methodName, missing, drawIds: required.drawIds } };
+    return {
+      error: FOOTPRINT_NOT_LOADED,
+      context: { methodName, missing, drawIds: required.drawIds, tournamentId: recordId },
+    };
+  }
+  return undefined;
 }
