@@ -95,10 +95,12 @@ export function getDrawFit(params: GetDrawFitArgs): DrawFitResult {
 
   // ── A trial acceptance goes in as the EVENT's entries, on a copy ──
   //
-  // The generator treats the two ways of being given entries differently when the stage is over-full (measured
-  // 2026-11-08): from `event.entries` it places what fits and warns ENTRIES_NOT_PLACED for the rest; from `drawEntries`
-  // it refuses ("No stage space available"). Over-full is exactly what a fit must report rather than refuse, so the
-  // trial entries are handed over the first way — on a shallow copy of the event, never the event itself.
+  // The generator answers an over-full stage two ways, by design. Entries read from `event.entries` are not promised to
+  // this draw (an event can feed several draws or flights), so it places what fits and reports the rest as
+  // ENTRIES_NOT_PLACED, the surplus staying on the event (`entriesNotPlaced.ts`). Explicit `drawEntries` say "these
+  // are this draw's entries", so a stage that cannot hold them is refused ("No stage space available"). A fit asks
+  // the first question — how would these entries fill this draw — so the trial entries are handed over the first way,
+  // on a shallow copy of the event, never the event itself.
   const { drawEntries: _drawEntries, ...generationParams } = params;
   const generation = generateDrawDefinition({
     ...(generationParams as GenerateDrawDefinitionArgs),
