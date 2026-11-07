@@ -1,13 +1,22 @@
-import { CLEAR_SCORE, DOUBLE_EXIT, LINE_SCORE, REMOVE_DIRECTED, indexed, plainByeArrival } from './planShared';
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { ensuredDualSides } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { isDoubleExit } from '@Validators/isExit';
 
+import {
+  CLEAR_SCORE,
+  DOUBLE_EXIT,
+  LINE_SCORE,
+  REMOVE_DIRECTED,
+  indexed,
+  heldByeLoser,
+  loserByeArrival,
+} from './planShared';
+
 // constants and types
 import { COMPLETED, DEAD_RUBBER, DEFAULTED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import type { DrawDefinition, Score } from '@Types/tournamentTypes';
+import type { DrawDefinition, Score, Side } from '@Types/tournamentTypes';
 import { LINEUPS } from '@Constants/extensionConstants';
 import type { LineUp } from '@Types/factoryTypes';
 import type { OutcomeOp } from '../ops';
@@ -228,7 +237,7 @@ export function loserLineUpCarry({
 export function loserLineUpBeyond({ dual, drawDefinition }: { dual: DualCall; drawDefinition: DrawDefinition }) {
   const loser = dual.direction?.loser;
   const { loserThroughBye, loserTargetDrawPosition } = dual.view.targets;
-  const passage = plainByeArrival(dual.view, loser);
+  const passage = loserByeArrival(dual.view, loser, dual.route, dual.write);
   const through = loser?.arrives ? (loserThroughBye ?? passage?.through) : undefined;
   const reached = [through?.matchUpId, ...(passage?.byes.toReversed() ?? [])].filter((id): id is string => !!id);
   if (!loser || !reached.length) return undefined;
@@ -260,7 +269,7 @@ function assignedLineUpOps(
   drawDefinition: DrawDefinition,
   participantId: string,
   through?: { matchUpId: string },
-  plainPassage?: ReturnType<typeof plainByeArrival>,
+  plainPassage?: ReturnType<typeof loserByeArrival>,
 ): OutcomeOp[] | false {
   const { loserMatchUpId, loserTargetDrawPosition, loserByePassage } = view.targets;
   const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }) ?? {};
@@ -304,7 +313,13 @@ export function dualLineUpOps(
 ): OutcomeOp[] | false {
   const { view, drawDefinition } = args;
   const arrived = loser?.arrives
-    ? assignedLineUpOps(view, drawDefinition, loser.participantId, loserThrough, plainByeArrival(view, loser))
+    ? assignedLineUpOps(
+        view,
+        drawDefinition,
+        loser.participantId,
+        loserThrough,
+        loserByeArrival(view, loser, args.route, args.write),
+      )
     : [];
   return arrived && [...winnerLineUpOps(args), ...arrived];
 }
@@ -384,10 +399,36 @@ export function carriedDualLanding(
 }
 
 /** a matchUp's sides as stored (not hydrated), read off the draw's structures */
-function storedSides(drawDefinition: DrawDefinition, matchUpId: string): unknown[] | undefined {
+function storedSides(drawDefinition: DrawDefinition, matchUpId: string): Side[] | undefined {
   for (const structure of drawDefinition.structures ?? []) {
     const found = matchUpsOf(structure)?.find((matchUp) => matchUp.matchUpId === matchUpId);
     if (found) return found.sides;
   }
   return undefined;
+}
+
+/** C21: a line un-decides its dual; v1 deletes the losing team's entry line-up after releasing its seat. */
+export function removedByeLineUpOps(view: OutcomeView, drawDefinition: DrawDefinition): OutcomeOp[] | false {
+  const held = heldByeLoser(view);
+  if (!held) return [];
+  const index = held.entry.sides?.findIndex((side) => side.drawPosition === held.drawPosition) ?? -1;
+  const sides = storedSides(drawDefinition, held.entry.matchUpId);
+  const target = index >= 0 ? sides?.[index] : undefined;
+  // v1 writes nothing when the stored side is absent; an unnumbered or duplicate side stays its own shape.
+  if (!target) return [];
+  const sideNumber = target.sideNumber;
+  if ((sideNumber !== 1 && sideNumber !== 2) || sides?.filter((side) => side.sideNumber === sideNumber).length !== 1)
+    return false;
+  return [
+    {
+      op: 'setSideLineUp',
+      matchUpId: held.entry.matchUpId,
+      sideNumber,
+      lineUp: undefined,
+      clearsLineUp: true,
+      announcedAs: 'removeDirectedLoser',
+    },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: held.entry.matchUpId },
+    { op: 'stampUpdatedAt', entity: 'structure', id: held.entry.structureId },
+  ];
 }
