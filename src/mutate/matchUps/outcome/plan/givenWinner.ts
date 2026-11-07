@@ -12,6 +12,8 @@ import { producedTarget } from './producedTarget';
 import {
   DIRECTED_STATUSES,
   carriedStatus,
+  directsElsewhere,
+  exitWriteIsV1s,
   hasRetainedRelay,
   indexed,
   positionsOf,
@@ -23,7 +25,7 @@ import {
 } from './planShared';
 
 // constants and types
-import { BYE, DEFAULTED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import type { RetainedRelayReservation } from './producedTarget';
 import type { HydratedMatchUp } from '@Types/hydrated';
@@ -60,9 +62,8 @@ import type {
 export function givenWinnerReason(args: ExitReasonArgs): AbstainReason | undefined {
   const { request, view, write, direction } = args;
   if (!write?.winningSide || !DIRECTED_STATUSES.has(write.matchUpStatus)) return 'exit';
-  if (request.matchUpStatus && request.matchUpStatus !== write.matchUpStatus) return 'exit';
-  if (write.matchUpStatus === DEFAULTED && view.draw.defaultProcessCodes) return 'exit';
-  if (direction?.produced || direction?.converged || direction?.decider) return 'exit';
+  if (exitWriteIsV1s(request, view, write)) return 'exit';
+  if (directsElsewhere(direction)) return 'exit';
   if (standaloneBareWinnerOps(args) || standaloneCarriedWinnerOps(args)) return undefined;
   const standing = standingReservationPrograms(args);
   const levels = unwoundPath(view, request.matchUpId, args.drawDefinition, false, false, standing);

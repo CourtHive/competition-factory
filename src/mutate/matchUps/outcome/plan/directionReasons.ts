@@ -1,6 +1,15 @@
-import { DIRECTED_STATUSES, LINE_SCORE, LOCAL_ROUTES, LOCAL_STATUSES, heldInTarget, storedLoserId } from './planShared';
 import { relabelCarryReason, withdrawnReason } from './carriedExit';
 import { isDoubleExit } from '@Validators/isExit';
+import {
+  DIRECTED_STATUSES,
+  LINE_SCORE,
+  LOCAL_ROUTES,
+  LOCAL_STATUSES,
+  cleanWinnerTarget,
+  directedBothSides,
+  directsElsewhere,
+  storedLoserId,
+} from './planShared';
 
 // constants and types
 import type { AbstainReason, DirectionPlan, MatchUpWrite, OutcomeRequest, OutcomeView, Route } from '../types';
@@ -107,11 +116,7 @@ export function removalReason(view: OutcomeView, direction?: DirectionPlan): Abs
   if (targets.byeTarget) return 'loser';
   const target = targets.winner;
   if (!target) return targets.winnerLink ? 'link' : undefined;
-  if (target.structureId !== targets.source.structureId) return 'link';
-  if (target.hasBye || target.carriesExit || target.carriedStatuses.length || target.holdsResult) return 'cascade';
-  if (target.matchUpStatus !== TO_BE_PLAYED) return 'route';
-  if (!heldInTarget(view, existing.winningSide as 1 | 2)) return 'route';
-  return undefined;
+  return cleanWinnerTarget(view, target, existing.winningSide as 1 | 2);
 }
 
 /**
@@ -148,12 +153,11 @@ export function reenteredReason(
   direction?: DirectionPlan,
 ): AbstainReason | undefined {
   const { targets } = view;
-  if (!write?.winningSide || !DIRECTED_STATUSES.has(write.matchUpStatus)) return 'route';
   // S6: a single exit that carried nothing is re-entered as a played result is. A status that changes is refreshed on
   // the arrivals the first entry sent on (v1's `refreshArrivals`), and an arrival records it only beside a double
   // exit's produced exit, where the target carries an exit (`cascade` below)
-  if (!DIRECTED_STATUSES.has(view.existing.matchUpStatus)) return 'route';
-  if (direction?.decider || direction?.produced || direction?.converged) return 'route';
+  if (!directedBothSides(view, write)) return 'route';
+  if (directsElsewhere(direction)) return 'route';
   const loser = direction?.loser;
   if (loser || targets.loserMatchUpId) {
     const seat = targets.loserTargetSeat;
@@ -169,11 +173,7 @@ export function reenteredReason(
   }
   const target = targets.winner;
   if (!target) return targets.winnerLink || direction?.winner ? 'link' : undefined;
-  if (target.structureId !== targets.source.structureId) return 'link';
-  if (target.hasBye || target.carriesExit || target.carriedStatuses.length || target.holdsResult) return 'cascade';
-  if (target.matchUpStatus !== TO_BE_PLAYED) return 'route';
-  if (!heldInTarget(view, write.winningSide as 1 | 2)) return 'route';
-  return undefined;
+  return cleanWinnerTarget(view, target, write.winningSide as 1 | 2);
 }
 
 /**
@@ -188,10 +188,9 @@ export function changedWinnerReason(
   write?: MatchUpWrite,
   direction?: DirectionPlan,
 ): AbstainReason | undefined {
-  const { targets, existing } = view;
-  if (!write?.winningSide || !DIRECTED_STATUSES.has(write.matchUpStatus)) return 'route';
-  if (!DIRECTED_STATUSES.has(existing.matchUpStatus)) return 'route';
-  if (direction?.decider || direction?.produced || direction?.converged) return 'route';
+  const { targets } = view;
+  if (!directedBothSides(view, write)) return 'route';
+  if (directsElsewhere(direction)) return 'route';
   const removal = removalReason(view);
   if (removal) return removal;
   if (targets.winner ? !direction?.winner : direction?.winner) return 'route';
