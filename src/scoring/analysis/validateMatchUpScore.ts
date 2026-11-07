@@ -397,12 +397,23 @@ function validateTiebreakMarker(set: SetType): { isValid: boolean; error?: strin
 /**
  * Validate a single set score against matchUpFormat rules
  */
+const UNREADABLE_SETS = 'sets must be an array of set scores: validateMatchUpScore(sets, matchUpFormat, matchUpStatus)';
+const UNREADABLE_SET = 'set must be a set score object: validateSetScore(set, matchUpFormat, isDecidingSet)';
+const UNREADABLE_FORMAT = 'matchUpFormat must be a matchUpFormat code string';
+
+function unreadableFormat(matchUpFormat: unknown): boolean {
+  return matchUpFormat !== undefined && matchUpFormat !== null && typeof matchUpFormat !== 'string';
+}
+
 export function validateSetScore(
   set: any,
   matchUpFormat?: string,
   isDecidingSet?: boolean,
   allowIncomplete?: boolean,
 ): { isValid: boolean; error?: string } {
+  // input it cannot read is refused, never passed as valid: through an engine a params object arrived as `set`
+  if (!set || typeof set !== 'object' || Array.isArray(set)) return { isValid: false, error: UNREADABLE_SET };
+  if (unreadableFormat(matchUpFormat)) return { isValid: false, error: UNREADABLE_FORMAT };
   if (!matchUpFormat) return { isValid: true };
 
   const parsed = parse(matchUpFormat);
@@ -496,6 +507,9 @@ export function validateMatchUpScore(
   if (matchUpStatus !== undefined && !isMatchUpStatus(matchUpStatus)) {
     return { isValid: false, error: `Unknown matchUpStatus: ${matchUpStatus}` };
   }
+  // input it cannot read is refused, never passed as valid: through an engine a params object arrived as `sets`
+  if (sets !== undefined && sets !== null && !Array.isArray(sets)) return { isValid: false, error: UNREADABLE_SETS };
+  if (unreadableFormat(matchUpFormat)) return { isValid: false, error: UNREADABLE_FORMAT };
   if (!sets || sets.length === 0) {
     return { isValid: true }; // Empty is valid (not an error, just incomplete)
   }
