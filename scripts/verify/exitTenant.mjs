@@ -118,8 +118,6 @@ const ALLOWED = {
     "PLUMBING — the unwind's seat programs write [] where v1's removal re-derives codes and abstain where a seat's matchUp holds codes; decide nothing on them",
   'mutate/matchUps/outcome/plan/unwindPath.ts':
     "PLUMBING — the unwind's path writes [] where v1's removeDoubleExit re-derives codes and abstains where a matchUp on the path holds codes; decides nothing on them",
-  'mutate/matchUps/outcome/plan/standingReservation.ts':
-    'PLUMBING — certifies an untouched reservation seat by its absent codes; decides nothing on them',
   'mutate/matchUps/outcome/plan/givenWinner.ts':
     "PLUMBING — a double exit given a winner abstains where the unwound seat's matchUp holds codes; decides nothing on them",
   'mutate/matchUps/outcome/plan/terminalAward.ts':
