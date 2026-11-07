@@ -224,7 +224,7 @@ export type OutcomeOp =
       matchUpId: string;
       provenance: SideExitProvenance;
       /** a carry recorded beside a BYE announces itself after any earlier quiet result write */
-      announcedAs?: 'progressExitStatus';
+      announcedAs?: 'progressExitStatus' | 'refreshArrivals' | 'refreshArrivalsFrom';
     }
   | {
       op: 'setSideExitProvenance';

@@ -1,11 +1,20 @@
-import { REMOVE_DIRECTED, SINGLE_EXITS, directedBothSides, directsElsewhere, exitWriteIsV1s } from './planShared';
+import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { relabelCarryReason, withdrawnReason } from './carriedExit';
+import {
+  APPLY_VALUES,
+  REMOVE_DIRECTED,
+  SINGLE_EXITS,
+  directedBothSides,
+  directsElsewhere,
+  exitWriteIsV1s,
+} from './planShared';
 
 // constants and types
+import type { MatchUpStatusUnion, SideExitProvenance } from '@Types/tournamentTypes';
+import { BYE, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { ExitReasonArgs, MatchUpWrite, OutcomeView, Route } from '../types';
-import { IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
+import type { OutcomeOp } from '../ops';
 
 /**
  * A stored single exit or played result corrected on the winner's route (S6): cleared, re-entered, relabelled or given
@@ -100,7 +109,7 @@ export function relabelledExit(args: ExitReasonArgs): boolean {
   // a swap's direction names the new winner, whose path the relabel exchanges (`swapOps`); a relabel places nobody
   if (direction?.winner && args.route !== 'swap') return false;
   // a status that changes is refreshed on the arrivals the first entry sent on (v1's `refreshArrivals`): v1's
-  if (arrivalsRefreshed(view, request.matchUpId, write.matchUpStatus)) return false;
+  if (arrivalsRefreshed(view, request.matchUpId, write.matchUpStatus) && !refreshedArrivalOps(args)) return false;
   const loser = direction?.loser;
   // no link: the write alone
   if (!loser) return true;
@@ -122,6 +131,73 @@ export function relabelledExit(args: ExitReasonArgs): boolean {
     !targets.loserTargetSeat?.opponentBye &&
     !targets.loserMatchUpRecord?.provenance
   );
+}
+
+/** C23: v1 refreshes native arrival origins after the source result, preserving every other field. */
+export function refreshedArrivalOps(args: ExitReasonArgs): OutcomeOp[] | undefined {
+  const { view, request, write, route, drawDefinition } = args;
+  if (route !== APPLY_VALUES && route !== 'swap') return [];
+  if (!write?.matchUpStatus || !request.matchUpId) return [];
+  if (!SINGLE_EXITS.has(write.matchUpStatus) && !SINGLE_EXITS.has(view.existing.matchUpStatus)) return [];
+  const arrivals = (view.inContextDrawMatchUps ?? []).filter((matchUp) =>
+    Object.values(matchUp.sideExitProvenance ?? {}).some(
+      (entry) =>
+        entry?.sourceMatchUpId === request.matchUpId &&
+        !carriedExitStatus(entry) &&
+        !!entry.previousMatchUpStatus &&
+        entry.previousMatchUpStatus !== write.matchUpStatus,
+    ),
+  );
+  if (!arrivals.length) return [];
+  const structureId = view.targets.source.structureId;
+  const structure = drawDefinition?.structures?.find((candidate) => candidate.structureId === structureId);
+  if (
+    view.isTeam ||
+    view.line ||
+    !structure ||
+    structuresOf(structure)?.length ||
+    arrivals.some((matchUp) => matchUp.structureId !== structureId || matchUp.matchUpStatus === BYE)
+  )
+    return undefined;
+  const arrivalIds = new Set(arrivals.map((matchUp) => matchUp.matchUpId));
+  const stored = (matchUpsOf(structure) ?? []).filter((matchUp) => arrivalIds.has(matchUp.matchUpId));
+  if (stored.length !== arrivals.length) return undefined;
+  const ops: OutcomeOp[] = [];
+  for (const matchUp of stored) {
+    const provenance: SideExitProvenance = {};
+    for (const side of [1, 2] as const) {
+      const entry = matchUp.sideExitProvenance?.[side];
+      if (
+        entry?.sourceMatchUpId === request.matchUpId &&
+        !carriedExitStatus(entry) &&
+        entry.previousMatchUpStatus &&
+        entry.previousMatchUpStatus !== write.matchUpStatus
+      )
+        provenance[side] = { ...entry, previousMatchUpStatus: write.matchUpStatus };
+    }
+    if (
+      !Object.keys(provenance).length ||
+      matchUp.matchUpStatus === BYE ||
+      Object.values(matchUp.sideExitProvenance ?? {}).some(
+        (entry) =>
+          entry.sourceMatchUpId === request.matchUpId &&
+          !carriedExitStatus(entry) &&
+          entry.previousMatchUpStatus !== view.existing.matchUpStatus,
+      )
+    )
+      return undefined;
+    ops.push(
+      {
+        op: 'mergeSideExitProvenance',
+        matchUpId: matchUp.matchUpId,
+        provenance,
+        announcedAs: route === 'swap' ? 'refreshArrivalsFrom' : 'refreshArrivals',
+      },
+      { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUp.matchUpId },
+      { op: 'stampUpdatedAt', entity: 'structure', id: structure.structureId },
+    );
+  }
+  return ops;
 }
 
 /** an arrival entry naming this matchUp (how a side got where it is) records a status the relabel would change */
