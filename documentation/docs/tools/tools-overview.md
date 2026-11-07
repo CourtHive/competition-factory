@@ -10,6 +10,32 @@ The **tools** module provides utility functions for working with tournament data
 import { tools } from 'tods-competition-factory';
 ```
 
+## Domains: stateless functions by subject
+
+Some functions read no tournament state and take positional arguments, for example
+`validateMatchUpScore(sets, matchUpFormat)` and `parse(matchUpFormatCode)`. Their home is `tools`, grouped by domain,
+not a governor. A governor export becomes an engine method, and an engine calls every method with one params object,
+so a positional function cannot be called correctly through an engine.
+
+- **`tools.formats`:** matchUpFormat codes: `parse`, `stringify`, `isAggregateFormat`, `finalSetGoverns`,
+  `aggregateDeciderSetNumber`.
+- **`tools.scoring`:** score validators (`validateMatchUpScore`, `validateSetScore`, `deduceMatchUpFormat`), readers of
+  a scoring-engine matchUp state (`getScore`, `getScoreboard`, `isComplete`, `getWinner`, `getEpisodes`, `addPoint`, …)
+  and point and statistics parsers (`parseMCPPoint`, `shotParser`, `calculateMatchStatistics`, …).
+- **Availability:** the availability helpers (`hhmmToMinutes`, `generateCapacityCurve`, …) are exported from the
+  standalone `availability` namespace, beside `AvailabilityEngine`.
+
+```js
+import { tools } from 'tods-competition-factory';
+
+const { isValid } = tools.scoring.validateMatchUpScore(sets, 'SET3-S:6/TB7');
+const format = tools.formats.parse('SET3-S:6/TB7-F:TB10');
+```
+
+In 7.x the same functions are still exported by their governors (`scoreGovernor`, `matchUpFormatGovernor`). In 8.0.0
+they leave the governors and the engines: import them from `tools` (see
+[migration to 8.0.0](/docs/migration-8.0.0)).
+
 ## Categories
 
 ### Data Transformation
