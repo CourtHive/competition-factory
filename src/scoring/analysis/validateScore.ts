@@ -1,6 +1,6 @@
+import { formatForSet, withoutZeroZeroTiebreak } from '@Helpers/matchUpFormatCode/setRules/tiebreakSetShape';
 import { decidedResultRefusal, isDecidedOutsideScore } from '@Scoring/analysis/decidedResult';
 import { isTiebreakGamesScore } from '@Helpers/matchUpFormatCode/setRules/tiebreakAtRules';
-import { formatForSet } from '@Helpers/matchUpFormatCode/setRules/tiebreakSetShape';
 import { checkScoreCompleteness } from '@Scoring/analysis/scoreCompleteness';
 import { analyzeScore } from '@Scoring/analysis/analyzeScore';
 import { isMatchUpStatus } from '@Constants/isMatchUpStatus';
@@ -33,7 +33,8 @@ function setsDecidedByTiebreakWithoutPoints(sets: SetType[], matchUpFormat?: str
   const parsed = matchUpFormat ? parse(matchUpFormat) : undefined;
   if (!parsed) return [];
   return sets
-    .map((set, index) => {
+    .map((raw, index) => {
+      const set = raw && withoutZeroZeroTiebreak(raw);
       const setFormat = formatForSet(parsed, set?.setNumber ?? index + 1);
       const { setTo, tiebreakAt } = setFormat ?? {};
       const hasPoints = [set?.side1TiebreakScore, set?.side2TiebreakScore].some((v) => v !== undefined && v !== null);

@@ -190,6 +190,12 @@ const hasWinningSide = scoreGovernor.checkSetIsComplete({
 });
 ```
 
+A set decided by its tiebreak with no points recorded is complete: `7-6` under `S:6/TB7`, `13-12`
+under `S:6/TB7@12`. The games are the one score a tiebreak produces, and the record accepts them
+alone (`TIEBREAK_POINTS_NOT_RECORDED`). `6-6` is a tiebreak still being played and is not complete.
+A `0-0` pair in the tiebreak-point fields reads as no points. Points on one side only, or a pair the
+set winner did not win, leave the set incomplete. (Since 7.33.0; CA, 2026-11-07.)
+
 ---
 
 ## generateScoreString
@@ -539,6 +545,11 @@ const set = { side1Score: 11, side2Score: 13 };
 const { isValid } = scoreGovernor.validateSetScore(set, 'SET1-S:TB10');
 // isValid: true - TB10 set with valid win-by-2 score
 ```
+
+A `7-6` with no tiebreak points is valid, and so is one whose tiebreak-point fields both read `0`:
+a `0-0` pair is no points, the same empty default `setMatchUpStatus` drops before recording the
+set (since 7.33.0). Any other impossible pair (`0-3`, `7-7`, or points the set winner did not win)
+is refused.
 
 ---
 

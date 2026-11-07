@@ -69,8 +69,12 @@ describe('a set decided by a tiebreak is complete when the tiebreak is', () => {
     expect(setTiebreak(7, 6, 'SET3-S:6/TB7NOAD')).toBe(true);
   });
 
-  it('still refuses a 7-6 with no points at all, and still honours ignoreTiebreak', () => {
-    expect(checkSetIsComplete({ matchUpFormat: STANDARD, set: { side1Score: 7, side2Score: 6 } })).toBe(false);
+  it('a 7-6 with no points at all is a finished set whose points were not recorded; ignoreTiebreak still holds', () => {
+    // This read FALSE until 2026-11-07, while the record (ruling V11) accepted the same set: a score-entry
+    // interface asking here could never submit it. CA: one rule everywhere — see `bareTiebreakSetIsComplete.test.ts`.
+    expect(checkSetIsComplete({ matchUpFormat: STANDARD, set: { side1Score: 7, side2Score: 6 } })).toBe(true);
+    // six-all is a tiebreak in progress, and nobody has won it
+    expect(checkSetIsComplete({ matchUpFormat: STANDARD, set: { side1Score: 6, side2Score: 6 } })).toBe(false);
     expect(
       checkSetIsComplete({ matchUpFormat: STANDARD, ignoreTiebreak: true, set: { side1Score: 7, side2Score: 6 } }),
     ).toBe(true);

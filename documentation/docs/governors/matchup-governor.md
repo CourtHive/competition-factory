@@ -1207,8 +1207,12 @@ history, an abandoned line — pass `disableScoreValidation: true`. It skips bot
 Three tiebreak records are settled (CA, 2026-10-02):
 
 - **`7-6` with no tiebreak points is a finished set.** It is recorded, and `validateScore` names
-  the set in a `TIEBREAK_POINTS_NOT_RECORDED` warning. Score entry still asks for the points: the
-  completeness check used while typing does not call a bare `7-6` finished.
+  the set in a `TIEBREAK_POINTS_NOT_RECORDED` warning. Since 7.33.0 the analysis agrees with the
+  record (CA, 2026-11-07): `checkSetIsComplete` calls the tiebreak games score finished with no
+  points, `getSetWinningSide` and `analyzeSet` name the games leader, and a score-entry interface
+  delegating to them can submit the score the engine records. `6-6` is a tiebreak still being
+  played and names nobody; points on one side only, or a pair the set winner did not win, are
+  still refused.
 - **A match tiebreak recorded as `1-0` in its game fields** is a finished set whose points were not
   kept. `1-0` in the tiebreak-point fields is refused, except under `TB1`.
 - **Impossible tiebreak points are refused**, such as `7-6(10-7)` with a tiebreak to seven. An
@@ -1217,7 +1221,10 @@ Three tiebreak records are settled (CA, 2026-10-02):
 - **`0` and `0` in the tiebreak-point fields are not recorded points** (CA, 2026-11-04). No
   tiebreak finishes 0-0, so `setMatchUpStatus` drops the pair before validating and storing the
   set. A `6-7` sent with `0`/`0` is recorded as a bare `7-6`, with the
-  `TIEBREAK_POINTS_NOT_RECORDED` warning, and its score string reads `6-7`, not `6-7(0)`.
+  `TIEBREAK_POINTS_NOT_RECORDED` warning, and its score string reads `6-7`, not `6-7(0)`. Since
+  7.33.0 every reader applies the same rule: `validateSetScore`, `checkSetIsComplete`, `analyzeSet`
+  and `generateScoreString` read a `0-0` pair as no points, so a score carrying one is analysed
+  exactly as it will be recorded.
 
 ### Score strings are derived, never trusted
 

@@ -36,8 +36,10 @@ describe('an advantage set is complete by two clear games, however far it runs',
   });
 
   it('a set WITH a tiebreak still wants it at six-all — the control', () => {
+    // 8-6 is two games past a tiebreak the format plays at six-all: no such set exists
     expect(checkSetIsComplete({ set: won(8, 6), matchUpFormat: 'SET3-S:6/TB7' })).toBe(false);
-    expect(checkSetIsComplete({ set: won(7, 6), matchUpFormat: 'SET3-S:6/TB7' })).toBe(false);
+    // 7-6 is the set a tiebreak at six-all produces: finished, its points not recorded (CA, 2026-11-07)
+    expect(checkSetIsComplete({ set: won(7, 6), matchUpFormat: 'SET3-S:6/TB7' })).toBe(true);
     expect(
       checkSetIsComplete({
         set: won(7, 6, { side1TiebreakScore: 7, side2TiebreakScore: 3 }),
