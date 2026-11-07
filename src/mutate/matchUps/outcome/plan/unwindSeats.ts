@@ -67,6 +67,27 @@ export function convergedChain(
   return !matchUp && chain.some((level) => level.rederived) ? chain : undefined;
 }
 
+type ClearMatchUpBye = Extract<OutcomeOp, { op: 'clearMatchUpBye' }>;
+
+/**
+ * The three ops every relay program opens with (Mentat assessment/2026-11-07-outcome-refactor-debates.md, ruling 2):
+ * the seat's withdrawal, the BYE's home cleared and re-derived to the retained copy's status with the program's own
+ * binding for the writer it hands the copy to, and the home's stamp. The programs stay apart; only this header is shared.
+ */
+function retainedHomeOps(
+  bye: HydratedMatchUp,
+  drawPosition: number,
+  status: MatchUpStatusUnion,
+  withdraw: OutcomeOp,
+  binding: Partial<Pick<ClearMatchUpBye, 'retainedOnwardMatchUpId' | 'retainedCarriedAward'>> = {},
+): OutcomeOp[] {
+  return [
+    withdraw,
+    { op: 'clearMatchUpBye', matchUpId: bye.matchUpId, drawPosition, rederived: { matchUpStatus: status }, ...binding },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: bye.matchUpId },
+  ];
+}
+
 /** An empty double-produced reservation reached this feed relay through exactly one standing BYE. Clear only. */
 function indirectProducedRelaySeatOps(
   view: OutcomeView,
@@ -151,9 +172,7 @@ function indirectProducedRelaySeatOps(
   if (beyond && (beyond.structureId !== bye.structureId || positionsOf(beyond).includes(winner.drawPosition)))
     return undefined;
   return [
-    withdraw,
-    { op: 'clearMatchUpBye', matchUpId: bye.matchUpId, drawPosition, rederived: { matchUpStatus: status } },
-    { op: 'stampUpdatedAt', entity: 'matchUp', id: bye.matchUpId },
+    ...retainedHomeOps(bye, drawPosition, status, withdraw),
     {
       op: 'setMatchUpDrawPositions',
       matchUpId: successor.matchUpId,
@@ -428,11 +447,7 @@ function producedRelaySeatOps(
   const beyond = indexed(view, next.winnerMatchUpId);
   if (beyond && (beyond.structureId !== bye.structureId || !unwoundClean(beyond, withdrawn) || beyond.winningSide))
     return undefined;
-  return [
-    withdraw,
-    { op: 'clearMatchUpBye', matchUpId: bye.matchUpId, drawPosition, rederived: { matchUpStatus: status } },
-    { op: 'stampUpdatedAt', entity: 'matchUp', id: bye.matchUpId },
-  ];
+  return retainedHomeOps(bye, drawPosition, status, withdraw);
 }
 
 /** A terminal feed-round relay retains its direct producer's pending exit when its propagated BYE is withdrawn. */
@@ -448,11 +463,7 @@ function terminalProducedRelaySeatOps(
   const origin = indexed(view, entry?.sourceMatchUpId);
   if (!status || !origin || origin.structureId !== bye.structureId) return undefined;
   if (origin.matchUpStatus !== entry.previousMatchUpStatus || origin.matchUpStatusCodes?.length) return undefined;
-  return [
-    withdraw,
-    { op: 'clearMatchUpBye', matchUpId: bye.matchUpId, drawPosition, rederived: { matchUpStatus: status } },
-    { op: 'stampUpdatedAt', entity: 'matchUp', id: bye.matchUpId },
-  ];
+  return retainedHomeOps(bye, drawPosition, status, withdraw);
 }
 
 /** An awarded copy loses its exit on the unwind, before the arriving loser can read it (S7). */
@@ -500,9 +511,7 @@ function awardedProducedRelaySeatOps(
       return undefined;
   }
   return [
-    withdraw,
-    { op: 'clearMatchUpBye', matchUpId: bye.matchUpId, drawPosition, rederived: { matchUpStatus: status } },
-    { op: 'stampUpdatedAt', entity: 'matchUp', id: bye.matchUpId },
+    ...retainedHomeOps(bye, drawPosition, status, withdraw),
     {
       op: 'setMatchUpDrawPositions',
       matchUpId: next.matchUpId,
@@ -562,15 +571,7 @@ function convergedProducedRelaySeatOps(
   if (!copy) return undefined;
   const { status, next, successor, kept } = copy;
   return [
-    withdraw,
-    {
-      op: 'clearMatchUpBye',
-      matchUpId: bye.matchUpId,
-      drawPosition,
-      rederived: { matchUpStatus: status },
-      retainedOnwardMatchUpId: next.matchUpId,
-    },
-    { op: 'stampUpdatedAt', entity: 'matchUp', id: bye.matchUpId },
+    ...retainedHomeOps(bye, drawPosition, status, withdraw, { retainedOnwardMatchUpId: next.matchUpId }),
     {
       op: 'setMatchUpResult',
       matchUpId: next.matchUpId,
@@ -675,12 +676,7 @@ function occupiedFinalRelaySeatOps(
   if (!occupiedFinalCarrier(view, next, kept, carrier.drawPosition, carrier.participantId, withdrawn)) return undefined;
   const provenance = { [side]: kept };
   return [
-    withdraw,
-    {
-      op: 'clearMatchUpBye',
-      matchUpId: bye.matchUpId,
-      drawPosition,
-      rederived: { matchUpStatus: status },
+    ...retainedHomeOps(bye, drawPosition, status, withdraw, {
       retainedCarriedAward: {
         matchUpId: next.matchUpId,
         carrierDrawPosition: carrier.drawPosition,
@@ -688,8 +684,7 @@ function occupiedFinalRelaySeatOps(
         matchUpStatus: carried,
         provenance,
       },
-    },
-    { op: 'stampUpdatedAt', entity: 'matchUp', id: bye.matchUpId },
+    }),
     {
       op: 'setMatchUpResult',
       matchUpId: next.matchUpId,
