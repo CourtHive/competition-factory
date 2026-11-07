@@ -17,6 +17,7 @@ import {
   hasRetainedRelay,
   indexed,
   positionsOf,
+  cleanByeHome,
   scoreless,
   seatBye,
   sideOf,
@@ -166,16 +167,7 @@ export function unwoundKeptOutOps(
   if (bye.structureId !== targets.loserStructureId || bye.drawPosition !== targets.loserTargetDrawPosition)
     return undefined;
   const home = indexed(view, targets.loserMatchUpId);
-  if (
-    !home ||
-    home.matchUpStatus !== BYE ||
-    home.winningSide ||
-    !scoreless(home) ||
-    home.matchUpStatusCodes?.length ||
-    Object.keys(home.sideExitProvenance ?? {}).length ||
-    home.loserMatchUpId
-  )
-    return undefined;
+  if (!cleanByeHome(home)) return undefined;
   const freed = program.some(
     (op) => op.op === 'withdrawBye' && op.structureId === bye.structureId && op.drawPosition === bye.drawPosition,
   );

@@ -1,11 +1,11 @@
-import { indexed, positionsOf, scoreless, unwoundClean } from './planShared';
+import { cleanByeHome, indexed, positionsOf, unwoundClean } from './planShared';
 import { firstRoundFeedersWon } from '@Query/matchUp/firstRoundFeedersWon';
 import { isDoubleExit } from '@Validators/isExit';
 
 // constants and types
 import { FIRST_MATCH_LOSER_CONSOLATION, FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import type { OutcomeView, PlanArgs, WinnerLoserSeat } from '../types';
-import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { OutcomeOp } from '../ops';
 
@@ -100,17 +100,7 @@ function standingReservationSeat(view: OutcomeView, source: HydratedMatchUp, sea
     seat.seat.opponentBye
   )
     return false;
-  if (
-    !home ||
-    home.structureId !== seat.structureId ||
-    home.structureId === source.structureId ||
-    home.matchUpStatus !== BYE ||
-    home.winningSide ||
-    !scoreless(home) ||
-    home.matchUpStatusCodes?.length ||
-    Object.keys(home.sideExitProvenance ?? {}).length ||
-    home.loserMatchUpId
-  )
+  if (!cleanByeHome(home) || home.structureId !== seat.structureId || home.structureId === source.structureId)
     return false;
   const positions = positionsOf(home);
   if (!positions.includes(seat.drawPosition) || Math.min(...positions) !== seat.drawPosition || positions.length > 2)

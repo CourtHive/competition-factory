@@ -181,6 +181,19 @@ export const scoreless = (matchUp: HydratedMatchUp) =>
   !matchUp.score?.scoreStringSide1 && !matchUp.score?.scoreStringSide2 && !matchUp.score?.sets?.length;
 export const unplaced = (matchUp: HydratedMatchUp) => !(matchUp.drawPositions ?? []).some(Boolean);
 /**
+ * a loser's home that is a BYE holding nothing else of a result: no winner, score, codes, side provenance or loser
+ * link. The seven conjuncts `unwoundKeptOutOps` and `standingReservationSeat` share (Mentat
+ * assessment/2026-11-07-outcome-refactor-debates.md, ruling 9); each keeps its own seat and structure walls
+ */
+export const cleanByeHome = (home: HydratedMatchUp | undefined): home is HydratedMatchUp =>
+  !!home &&
+  home.matchUpStatus === BYE &&
+  !home.winningSide &&
+  scoreless(home) &&
+  !home.matchUpStatusCodes?.length &&
+  !Object.keys(home.sideExitProvenance ?? {}).length &&
+  !home.loserMatchUpId;
+/**
  * a settle write v1's `reconcileScoredTimes` pass makes, announced after everything else: the one predicate the plan
  * modules share for it (Mentat assessment/2026-11-07-outcome-refactor-debates.md, ruling 7)
  */
