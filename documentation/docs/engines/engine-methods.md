@@ -986,7 +986,9 @@ them, because on a partial record a read of missing data gives a wrong answer ra
 
 Off unless called. The mark belongs to the record object in state, so installing a record again (`setState`) clears
 it, and it is never saved with the record. No footprint clears it. The second argument names the tournament when more
-than one is loaded. A missing record is refused with `MISSING_TOURNAMENT_RECORD`, and a footprint without a `shards`
+than one is loaded: mark each with its own footprint (`getMutationFootprint` with that `tournamentId`). Every marked
+record is checked against what the method needs of that tournament, so a method that reaches beyond the one it runs
+against (bulk outcomes across linked tournaments) is refused if any of them lacks its part. A missing record is refused with `MISSING_TOURNAMENT_RECORD`, and a footprint without a `shards`
 array with `INVALID_VALUES`.
 
 ```js

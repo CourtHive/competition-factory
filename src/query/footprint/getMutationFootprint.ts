@@ -24,15 +24,25 @@ const SHARD_ORDER: FootprintShard[] = ['shell', 'draw', 'drawParticipants', 'eve
  * Pure: reads only `methods` and their params, never engine state, so a server can call it before it has fetched
  * anything. A method with no declared footprint, or one whose params leave its scope open (no `drawId`), needs the
  * whole record.
+ *
+ * With several tournaments loaded, ask once per tournament with `tournamentId`: a declared method that runs against
+ * another tournament (`params.tournamentId`, else `activeTournamentId`) needs only this one's shell, and
+ * `bulkMatchUpStatusUpdate` needs the draws of this tournament's outcomes. Without `tournamentId` the answer is the
+ * queue's whole reach, and outcomes across tournaments need the whole record.
  */
-export function getMutationFootprint({ methods, outcomePipeline }: GetMutationFootprintArgs): MutationFootprint {
+export function getMutationFootprint({
+  activeTournamentId,
+  outcomePipeline,
+  tournamentId,
+  methods,
+}: GetMutationFootprintArgs): MutationFootprint {
   const shards = new Set<FootprintShard>();
   const drawIds = new Set<string>();
   const eventIds = new Set<string>();
   const wholeRecordMethods: string[] = [];
 
   for (const { method, params } of Array.isArray(methods) ? methods : []) {
-    const footprint = getMethodFootprint(method, params, { outcomePipeline });
+    const footprint = getMethodFootprint(method, params, { outcomePipeline, tournamentId, activeTournamentId });
     if (footprint.shards.includes('tournament') && !wholeRecordMethods.includes(method))
       wholeRecordMethods.push(method);
     footprint.shards.forEach((shard) => shards.add(shard));
