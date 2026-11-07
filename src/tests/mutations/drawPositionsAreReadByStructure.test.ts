@@ -68,11 +68,11 @@ const ALLOWED: Record<string, { count: number; why: string }> = {
       'that the view resolves from the matchUp in context, so a lone position cannot be misread by index. Moved here from plan.ts with the split.',
   },
   'mutate/matchUps/outcome/plan/directionOps.ts': {
-    count: 4,
+    count: 3,
     why:
       '`view.targets.sideDrawPositions[side]` is not a matchUp array: it is a record keyed by side number (1 and 2) ' +
       'that the view resolves from the matchUp in context, so a lone position cannot be misread by index. Moved here from plan.ts with the split; ' +
-      'the fourth read is `removalOps`, the shared removal body hoisted from plan.ts.',
+      'the third read is `removalOps`, the shared removal body hoisted from plan.ts (C17 removed the `removedOps` guard that read it a fourth time).',
   },
   'mutate/matchUps/outcome/plan/planShared.ts': {
     count: 1,
