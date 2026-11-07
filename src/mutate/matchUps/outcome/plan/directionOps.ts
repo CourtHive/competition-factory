@@ -1,7 +1,9 @@
+import { buildSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import {
   APPLY_VALUES,
   changesWinner,
   positionsOf,
+  pendingProducedArrival,
   reentersWinner,
   removesDirection,
   standingAwardArrival,
@@ -31,6 +33,8 @@ export function winnerPlacementOps(
   const target = view.targets.winner;
   const position = write.winningSide ? view.targets.sideDrawPositions[write.winningSide as 1 | 2] : undefined;
   if (!winner || !position || !target) return [];
+  const award = route === 'winner' ? pendingProducedArrival(view, write) : undefined;
+  if (award) return pendingProducedArrivalOps(write, award);
   const replaced = changesWinner(view, route, write)
     ? view.targets.sideDrawPositions[view.existing.winningSide as 1 | 2]
     : undefined;
@@ -197,6 +201,45 @@ export function awardedArrivalOps(view: OutcomeView, loser?: DirectionPlan['lose
             drawPositions: onward.drawPositions,
             placedDrawPosition: drawPosition,
           },
+          { op: 'stampUpdatedAt', entity: 'matchUp', id: onward.matchUpId },
+        ] as OutcomeOp[])
+      : []),
+  ];
+}
+
+/** C19: applyPositionToMatchUp's award, source origin, placement and advanceIntoWinnerMatchUp. */
+function pendingProducedArrivalOps(
+  write: MatchUpWrite,
+  {
+    entry,
+    matchUpStatus,
+    drawPosition,
+    side,
+    onward,
+    sourceMatchUpId,
+  }: NonNullable<ReturnType<typeof pendingProducedArrival>>,
+): OutcomeOp[] {
+  const provenance = buildSideExitProvenance({
+    sourceMatchUpStatus: write.matchUpStatus,
+    sourceMatchUpId,
+    sourceSideNumber: side,
+  });
+  return [
+    {
+      op: 'setMatchUpResult',
+      matchUpId: entry.matchUpId,
+      matchUpStatus,
+      winningSide: side,
+      matchUpStatusCodes: [],
+      stampsScoredTime: false,
+      announcedAs: 'assignMatchUpDrawPosition',
+    },
+    ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId: entry.matchUpId, provenance }] : []),
+    { op: 'setMatchUpDrawPositions', matchUpId: entry.matchUpId, drawPositions: [drawPosition] },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: entry.matchUpId },
+    ...(onward
+      ? ([
+          { op: 'setMatchUpDrawPositions', matchUpId: onward.matchUpId, drawPositions: onward.drawPositions },
           { op: 'stampUpdatedAt', entity: 'matchUp', id: onward.matchUpId },
         ] as OutcomeOp[])
       : []),

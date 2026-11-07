@@ -6994,3 +6994,120 @@ describe('C18 the loser arriving where a carried exit stands awarded to their se
     expect(v2.record).toEqual(v1.record);
   });
 });
+
+/** C19: the winner takes the single produced exit pending in their target and goes on, exact notices included. */
+const PENDING_WINNER_DRAWS: [string, number, string][] = [
+  [FIRST_ROUND_LOSER_CONSOLATION, 8, 'Main'],
+  [OLYMPIC, 8, 'East'],
+  [CURTIS_CONSOLATION, 16, 'Main'],
+  [MODIFIED_FEED_IN_CHAMPIONSHIP, 16, 'Main'],
+  [FEED_IN_CHAMPIONSHIP_TO_SF, 16, 'Main'],
+  [SINGLE_ELIMINATION, 4, 'Main'],
+  [SINGLE_ELIMINATION, 8, 'Main'],
+  [SINGLE_ELIMINATION, 16, 'Main'],
+  [FEED_IN_CHAMPIONSHIP, 8, 'Main'],
+  [DOUBLE_ELIMINATION, 8, 'Main'],
+  [COMPASS, 8, 'East'],
+  [FIRST_MATCH_LOSER_CONSOLATION, 8, 'Main'],
+];
+const PENDING_WINNERS: [string, Scenario][] = PENDING_WINNER_DRAWS.flatMap(([drawType, drawSize, structureName]) =>
+  [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((doubleExit) =>
+    [false, true].flatMap((policyOff) =>
+      [false, true].flatMap((propagateExitStatus) =>
+        [1, 2].flatMap((arrival): [string, Scenario][] =>
+          policyOff && drawType === SINGLE_ELIMINATION
+            ? []
+            : [
+                [
+                  `${drawType} ${drawSize}: ${doubleExit}, policy ${policyOff ? 'off' : 'on'}, propagation ${propagateExitStatus}, arrival ${arrival}`,
+                  {
+                    drawProfile: { drawSize, drawType },
+                    ...(policyOff ? { policyDefinitions: POLICY_OFF } : {}),
+                    setup: [
+                      {
+                        target: R1(3 - arrival, structureName),
+                        outcome: { matchUpStatus: doubleExit },
+                        params: { propagateExitStatus },
+                      },
+                    ],
+                    steps: [{ target: R1(arrival, structureName), outcome: won(1), params: { propagateExitStatus } }],
+                  },
+                ],
+              ],
+        ),
+      ),
+    ),
+  ),
+);
+
+// These also meet a pending exit at the LOSER's linked target (C18's produced-pending control), a separate wall.
+const pendingWinnerIsOwned = (scenario: Scenario) =>
+  !scenario.policyDefinitions && scenario.drawProfile.drawType !== FIRST_MATCH_LOSER_CONSOLATION;
+
+// The generator's outcome fixtures can leave the produced exit's score absent. Arrival preserves that shape too.
+const GENERATED_PENDING_WINNERS: [string, Scenario][] = PENDING_WINNERS.filter(([, scenario]) =>
+  pendingWinnerIsOwned(scenario),
+).map(([label, scenario]) => [
+  `generated ${label}`,
+  {
+    ...scenario,
+    drawProfile: {
+      ...scenario.drawProfile,
+      outcomes: [
+        {
+          roundNumber: 1,
+          roundPosition: scenario.setup?.[0].target.roundPosition,
+          ...scenario.setup?.[0].outcome,
+        },
+      ],
+    },
+    setup: [],
+  },
+]);
+
+describe('C19 a winner arrives at a pending produced exit', () => {
+  it.each([...PENDING_WINNERS.filter(([, scenario]) => pendingWinnerIsOwned(scenario)), ...GENERATED_PENDING_WINNERS])(
+    '%s',
+    (_label, scenario) => {
+      const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+      expect(v1.results.every((result: any) => result.success)).toEqual(true);
+      const tally = () => ({
+        applied: getDifferentialTally()['shadow:applied']?.compared ?? 0,
+        cascade: getDifferentialTally()['shadow:abstain:cascade']?.deferred ?? 0,
+      });
+      const before = tally();
+      const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+      expect(compared.results).toEqual(v1.results);
+      expect(compared.record).toEqual(v1.record);
+      expect(compared.notices).toEqual(v1.notices);
+      expect(tally()).toEqual({ applied: before.applied + 1, cascade: before.cascade });
+      const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+      expect(v2.v1Writes).toEqual(0);
+      expect(v2.results).toEqual(v1.results);
+      expect(v2.record).toEqual(v1.record);
+      expect(v2.notices).toEqual(v1.notices);
+    },
+  );
+});
+
+describe('C19 controls: the loser also meets a pending produced exit', () => {
+  it.each(PENDING_WINNERS.filter(([, scenario]) => !pendingWinnerIsOwned(scenario)))(
+    '%s stays v1s',
+    (_label, scenario) => {
+      const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+      expect(v1.results.every((result: any) => result.success)).toEqual(true);
+      const deferred = () => getDifferentialTally()['shadow:abstain:cascade']?.deferred ?? 0;
+      const before = deferred();
+      const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+      expect(compared.results).toEqual(v1.results);
+      expect(compared.record).toEqual(v1.record);
+      expect(compared.notices).toEqual(v1.notices);
+      expect(deferred()).toEqual(before + 1);
+      const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+      expect(v2.v1Writes).toBeGreaterThan(0);
+      expect(v2.results).toEqual(v1.results);
+      expect(v2.record).toEqual(v1.record);
+      expect(v2.notices).toEqual(v1.notices);
+    },
+  );
+});
