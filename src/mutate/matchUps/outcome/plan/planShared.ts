@@ -423,3 +423,66 @@ export function plainByeArrival(view: OutcomeView, loser?: DirectionPlan['loser'
   } else if (last.winnerMatchUpId) return undefined;
   return { byes: passage.byes, through: passage.through };
 }
+
+/** C21: the old loser still holds an unconditional seat opposite a structural BYE. */
+export function heldByeLoser(view: OutcomeView) {
+  const { targets } = view;
+  const drawPosition = targets.loserTargetDrawPosition;
+  const participantId = storedLoserId(view);
+  const record = targets.loserMatchUpRecord;
+  if (
+    !participantId ||
+    !drawPosition ||
+    targets.loserLink?.linkCondition ||
+    targets.loserTargetSeat?.participantId !== participantId ||
+    !targets.loserTargetSeat.opponentBye ||
+    targets.loserMatchUpHasResult ||
+    targets.loserMatchUpCarriesExit ||
+    !record ||
+    record.provenance ||
+    record.matchUpStatusCodes?.length
+  )
+    return undefined;
+  const passage = targets.loserThroughBye
+    ? { byes: [] as string[], through: targets.loserThroughBye }
+    : targets.loserByeTraversal;
+  if (!passage) return undefined;
+  const entry = indexed(view, targets.loserMatchUpId);
+  const chain = [entry, ...passage.byes.map((id) => indexed(view, id))];
+  for (const [index, matchUp] of chain.entries()) {
+    const side = sideOf(matchUp, drawPosition);
+    if (
+      !matchUp ||
+      !side ||
+      matchUp.structureId !== targets.loserStructureId ||
+      matchUp.matchUpStatus !== BYE ||
+      matchUp.winningSide ||
+      !scoreless(matchUp) ||
+      matchUp.matchUpStatusCodes?.length ||
+      Object.keys(matchUp.sideExitProvenance ?? {}).length ||
+      matchUp.sides?.find((s) => s.sideNumber === side)?.participantId !== participantId ||
+      !matchUp.sides?.some((s) => s.sideNumber !== side && s.bye) ||
+      (index && chain[index - 1]?.winnerMatchUpId !== matchUp.matchUpId)
+    )
+      return undefined;
+  }
+  const last = chain[chain.length - 1];
+  if (!entry || !last) return undefined;
+  if (passage.through) {
+    const next = indexed(view, passage.through.matchUpId);
+    if (!next || last.winnerMatchUpId !== next.matchUpId || next.structureId !== last.structureId) return undefined;
+  } else if (last.winnerMatchUpId) return undefined;
+  return { ...passage, entry, drawPosition };
+}
+
+/** A plain loser arriving for the first time, or replacing the old loser on a correction (C20/C21). */
+export function loserByeArrival(
+  view: OutcomeView,
+  loser: DirectionPlan['loser'] | undefined,
+  route?: Route,
+  write?: MatchUpWrite,
+) {
+  if (!loser?.arrives || loser.exit || loser.converged || loser.carriedPast || loser.bye || loser.withdrawn)
+    return undefined;
+  return plainByeArrival(view, loser) ?? (changesWinner(view, route, write) ? heldByeLoser(view) : undefined);
+}

@@ -23,7 +23,8 @@ import {
   changesWinner,
   directsElsewhere,
   isSettleWrite,
-  plainByeArrival,
+  loserByeArrival,
+  heldByeLoser,
   reentersWinner,
   satisfiedDoubleExit,
   seatBye,
@@ -45,6 +46,7 @@ import {
   lineExitReason,
   lineUpCarry,
   loserLineUpBeyond,
+  removedByeLineUpOps,
   loserLineUpCarry,
   teamReason,
 } from './plan/teamPlan';
@@ -231,6 +233,31 @@ function resultToDoubleExit(args: PlanArgs): OutcomePlan {
   if (!after) return { abstain: 'exit' };
   const produced = planOps({ ...args, view: after.view, direction: after.direction, route: DOUBLE_EXIT });
   if (!produced.ops) return produced;
+  // C21: the BYE entry's code-removal notice survives the double-exit placement further on. v1 announces
+  // the source result before that notice; the source prefix and the other matchUps' removal writes commute.
+  const held = heldByeLoser(view);
+  if (held) {
+    const ownResult = produced.ops.findIndex(
+      (op) => op.op === 'setMatchUpResult' && op.matchUpId === request.matchUpId,
+    );
+    const ownStamp = produced.ops.findIndex(
+      (op, index) =>
+        index > ownResult && op.op === 'stampUpdatedAt' && op.entity === 'matchUp' && op.id === request.matchUpId,
+    );
+    if (ownResult < 0 || ownStamp < 0) return { abstain: 'exit' };
+    // A quiet produced write on that entry keeps the identity of its earlier removal notice in v1.
+    const tail = produced.ops
+      .slice(ownStamp + 1)
+      .map((op): OutcomeOp =>
+        op.op === 'setMatchUpResult' && op.matchUpId === held.entry.matchUpId && op.announcesContext === false
+          ? { ...op, restoresNoticeIdentity: true }
+          : op,
+      );
+    return {
+      ops: [...produced.ops.slice(0, ownStamp + 1), ...removal, ...tail],
+      shape: produced.shape,
+    };
+  }
   return { ops: [...removal, ...produced.ops], shape: produced.shape };
 }
 
@@ -344,6 +371,8 @@ function undecidingLineOps(args: PlanArgs & { dual: DualCall; drawDefinition: Dr
   if (!dualPlan.ops) return dualPlan;
   // the dual's removal writes it as its tally leaves it (the projected score, no winner); `scoreModification` returns
   // no `tieMatchUpResult`
+  const removedLineUps = removedByeLineUpOps(dual.view, args.drawDefinition);
+  if (removedLineUps === false) return { abstain: 'team' };
   const dualOps = dualPlan.ops.map((op): OutcomeOp =>
     op.op === 'setMatchUpResult' && op.matchUpId === line.dualMatchUpId
       ? { ...op, dualTally: { ...op.dualTally, unreturned: true } }
@@ -358,6 +387,11 @@ function undecidingLineOps(args: PlanArgs & { dual: DualCall; drawDefinition: Dr
   return {
     ops: [
       ...dualOps.filter((op) => !ownsDual(op)),
+      ...removedLineUps.filter(
+        (op) =>
+          op.op !== 'stampUpdatedAt' ||
+          !dualOps.some((held) => held.op === 'stampUpdatedAt' && held.entity === op.entity && held.id === op.id),
+      ),
       ...resultOps(request, write, request.matchUpId as string),
       ...dualOps.filter(ownsDual),
     ],
@@ -453,7 +487,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition): Outcom
   const loser = placing?.loser;
   const { loserMatchUpId } = view.targets;
   const arrival = arrivalOps(view, loser);
-  const plainPassage = plainByeArrival(view, loser);
+  const plainPassage = loserByeArrival(view, loser, args.route, write);
   // a participant placed opposite a BYE goes on through it, a loser fed onto the seat or a winner into a BYE-held
   // target: their position joins the next matchUp, which is stamped
   const loserThrough =

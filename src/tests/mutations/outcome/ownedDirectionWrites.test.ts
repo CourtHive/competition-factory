@@ -7269,3 +7269,176 @@ describe('C20 deciding TEAM lines send their loser through BYEs', () => {
     }
   });
 });
+
+// C21 captures cover one to four structural BYEs, a clean landing or a final BYE, and linked winner controls.
+const HELD_BYE_RECIPES: [string, number, number, number, number][] = [
+  [FEED_IN_CHAMPIONSHIP, 4, 3, 1, 2],
+  [FEED_IN_CHAMPIONSHIP, 8, 7, 1, 2],
+  [FEED_IN_CHAMPIONSHIP, 8, 3, 2, 1],
+  [FEED_IN_CHAMPIONSHIP, 8, 2, 3, 1],
+  [FIRST_ROUND_LOSER_CONSOLATION, 4, 3, 1, 2],
+  [FIRST_ROUND_LOSER_CONSOLATION, 8, 7, 1, 2],
+  [FIRST_ROUND_LOSER_CONSOLATION, 8, 5, 1, 3],
+  [FIRST_ROUND_LOSER_CONSOLATION, 16, 10, 1, 2],
+  [FIRST_ROUND_LOSER_CONSOLATION, 16, 9, 1, 7],
+  [COMPASS, 8, 7, 1, 2],
+  [COMPASS, 8, 5, 1, 3],
+  [COMPASS, 8, 3, 2, 1],
+  [OLYMPIC, 8, 7, 1, 2],
+  [OLYMPIC, 8, 5, 1, 3],
+  [OLYMPIC, 8, 3, 2, 1],
+  [DOUBLE_ELIMINATION, 8, 7, 1, 2],
+  [DOUBLE_ELIMINATION, 8, 3, 2, 1],
+  [DOUBLE_ELIMINATION, 8, 2, 3, 1],
+  [CURTIS_CONSOLATION, 16, 15, 1, 2],
+  [CURTIS_CONSOLATION, 16, 3, 3, 1],
+  [MODIFIED_FEED_IN_CHAMPIONSHIP, 16, 15, 1, 2],
+  [FEED_IN_CHAMPIONSHIP_TO_SF, 16, 15, 1, 2],
+  [FEED_IN_CHAMPIONSHIP_TO_SF, 16, 3, 3, 1],
+  [FIRST_MATCH_LOSER_CONSOLATION, 8, 7, 1, 2],
+  [FIRST_ROUND_LOSER_CONSOLATION, 32, 17, 1, 8],
+];
+const HELD_BYE_REMOVALS: [string, Scenario, boolean][] = HELD_BYE_RECIPES.flatMap(
+  ([drawType, drawSize, participantsCount, roundNumber, roundPosition]) => {
+    const target = {
+      structureName: [COMPASS, OLYMPIC].includes(drawType) ? 'East' : 'Main',
+      roundNumber,
+      roundPosition,
+    };
+    const drawProfile = { drawType, drawSize, participantsCount };
+    const linkedWinner = drawType === DOUBLE_ELIMINATION && participantsCount === 2;
+    return ([1, 2] as const).flatMap((side) => {
+      const actions: [string, Record<string, unknown>, Record<string, unknown>, boolean][] = [
+        ['clear', won(side), cleared, !linkedWinner],
+        ['correct', won(side), won(side === 1 ? 2 : 1), !linkedWinner],
+        [
+          DOUBLE_WALKOVER,
+          won(side),
+          { matchUpStatus: DOUBLE_WALKOVER },
+          !linkedWinner && !(drawType === DOUBLE_ELIMINATION && participantsCount === 3),
+        ],
+        [
+          DOUBLE_DEFAULT,
+          won(side),
+          { matchUpStatus: DOUBLE_DEFAULT },
+          !linkedWinner && !(drawType === DOUBLE_ELIMINATION && participantsCount === 3),
+        ],
+        ['carried WALKOVER clear control', walkover(side), cleared, false],
+        ['retired correct', retired(side), won(side === 1 ? 2 : 1), !linkedWinner],
+      ];
+      return actions.flatMap(([action, initial, outcome, owned]): [string, Scenario, boolean][] => {
+        const label = `C21 ${drawType} ${participantsCount}/${drawSize} R${roundNumber}/${roundPosition} side ${side}: ${action}`;
+        const scenario: Scenario = {
+          drawProfile,
+          setup: [{ target, outcome: initial, params: CARRIED }],
+          steps: [{ target, outcome }],
+        };
+        const cases: [string, Scenario, boolean][] = [[label, scenario, owned]];
+        if ([DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(action)) {
+          // Policy-off propagation at this later FIC source reaches an existing exit refusal.
+          const exitControl = drawType === FEED_IN_CHAMPIONSHIP && participantsCount === 3 && drawSize === 8;
+          cases.push([`${label}, policy off`, { ...scenario, policyDefinitions: POLICY_OFF }, owned && !exitControl]);
+        }
+        return cases;
+      });
+    });
+  },
+);
+
+describe('C21 removing or relabelling a loser held beside a structural BYE', () => {
+  it.each(HELD_BYE_REMOVALS)('%s', (_label, scenario, owned) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v2.v1Writes === 0).toEqual(owned);
+    for (const actual of [compared, v2]) {
+      expect(actual.results).toEqual(v1.results);
+      expect(actual.record).toEqual(v1.record);
+      expect(actual.notices).toEqual(v1.notices);
+    }
+  });
+});
+
+const HELD_BYE_TEAMS = HELD_BYE_RECIPES.filter(
+  ([drawType, , participantsCount]) =>
+    // These public TEAM recipes leave the selected source unpopulated.
+    !(drawType === FIRST_ROUND_LOSER_CONSOLATION && [10, 17].includes(participantsCount)) &&
+    !([CURTIS_CONSOLATION, FEED_IN_CHAMPIONSHIP_TO_SF].includes(drawType) && participantsCount === 3),
+).flatMap(([drawType, drawSize, participantsCount, roundNumber, roundPosition]) =>
+  ([1, 2] as const).flatMap((side) =>
+    ['correct', 'undecide', 'clear control'].map((action) => ({
+      label: `C21 TEAM ${drawType} ${participantsCount}/${drawSize} R${roundNumber}/${roundPosition} side ${side}: ${action}`,
+      drawProfile: { drawType, drawSize, participantsCount, eventType: 'TEAM', tieFormatName: 'USTA_COLLEGE' },
+      target: { structureName: [COMPASS, OLYMPIC].includes(drawType) ? 'East' : 'Main', roundNumber, roundPosition },
+      side,
+      action,
+    })),
+  ),
+);
+// Canonical JSON omits undefined: separately pin deletion of the stored TEAM side property.
+function storedLineUpFields() {
+  const fields: [string, boolean][] = [];
+  const visit = (value: any, path: string) => {
+    if (!value || typeof value !== 'object') return;
+    if (Array.isArray(value.sides))
+      value.sides.forEach((side: any, i: number) => fields.push([`${path}.sides.${i}`, Object.hasOwn(side, 'lineUp')]));
+    for (const [key, child] of Object.entries(value)) visit(child, `${path}.${key}`);
+  };
+  visit(tournamentEngine.getTournament().tournamentRecord, 'record');
+  return fields;
+}
+
+describe('C21 TEAM correction and a fresh line undoing a decided dual', () => {
+  it.each(HELD_BYE_TEAMS.map((testCase) => [testCase.label, testCase] as const))(
+    '%s',
+    (_label, { drawProfile, target, side, action }) => {
+      setOutcomePipeline(OUTCOME_PIPELINE_V1);
+      setClock('2026-10-25T00:00:00.000Z');
+      setSubscriptions({ subscriptions: {} });
+      mocksEngine.generateTournamentRecord({
+        drawProfiles: [{ ...drawProfile, drawId: 'd' }],
+        nonRandom: 1,
+        setState: true,
+      });
+      expect(
+        tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: 'd' }).success,
+      ).toEqual(true);
+      expect(
+        tournamentEngine.setMatchUpStatus({
+          drawId: 'd',
+          matchUpId: findTarget(target),
+          outcome: { winningSide: side },
+        }).success,
+      ).toEqual(true);
+      const prepared = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+      let outcome: Record<string, unknown> = cleared;
+      if (action === 'undecide') outcome = won(side);
+      if (action === 'correct') outcome = { winningSide: side === 1 ? 2 : 1 };
+      const scenario: Scenario = {
+        drawProfile,
+        steps: [
+          {
+            target: action === 'undecide' ? { ...target, singlesLine: 0 } : target,
+            outcome,
+          },
+        ],
+      };
+      const v1 = play(OUTCOME_PIPELINE_V1, scenario, { prepared });
+      const v1LineUpFields = storedLineUpFields();
+      const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario, { prepared });
+      const v2 = play(OUTCOME_PIPELINE_V2, scenario, { prepared });
+      expect(storedLineUpFields()).toEqual(v1LineUpFields);
+      expect(v1.results.every((result: any) => result.success)).toEqual(true);
+      expect(v2.v1Writes === 0).toEqual(
+        action !== 'clear control' &&
+          !(drawProfile.drawType === DOUBLE_ELIMINATION && drawProfile.participantsCount === 2),
+      );
+      for (const actual of [compared, v2]) {
+        expect(actual.results).toEqual(v1.results);
+        expect(actual.record).toEqual(v1.record);
+        expect(actual.notices).toEqual(v1.notices);
+      }
+    },
+  );
+});

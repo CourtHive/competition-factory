@@ -8,6 +8,7 @@ import {
   cleanWinnerTarget,
   pendingProducedArrival,
   plainByeArrival,
+  heldByeLoser,
   directedBothSides,
   directsElsewhere,
   standingAwardArrival,
@@ -143,7 +144,8 @@ function removedLoserReason(view: OutcomeView): AbstainReason | undefined {
   const seat = targets.loserTargetSeat;
   if (!loserId || !targets.loserStructureId || !targets.loserTargetDrawPosition || seat?.participantId !== loserId)
     return 'loser';
-  if (seat.opponentBye || targets.loserMatchUpStatus !== TO_BE_PLAYED) return 'cascade';
+  if (seat.opponentBye || targets.loserMatchUpStatus !== TO_BE_PLAYED)
+    return heldByeLoser(view) ? undefined : 'cascade';
   if (targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit) return 'cascade';
   const record = targets.loserMatchUpRecord;
   if (!record || record.provenance || record.matchUpStatusCodes?.length) return 'provenance';

@@ -1778,3 +1778,24 @@ and each one that keeps shapes apart is repeated as a comment beside them.
   cascades.
 - [drawPositions](./draw-positions.md): the rules direction relies on.
 - `corpus/INVARIANTS.md` and `corpus/README.md`: the properties and the scenarios that pin this page.
+
+### A removed loser held beside a structural BYE (C21)
+
+A removal or changed winner can own the old loser's seat beside a BYE when that seat holds the old
+loser, has no result, codes or exit provenance, and its BYE passage stays in the same structure.
+Every relay is scoreless, has no winner or provenance, and holds that position opposite a BYE;
+the passage ends at a clean arrival or a last-round BYE. Conditional loser links and linked winner
+continuations keep their existing refusal boundaries.
+
+Removing the old loser clears its assignment and derives status codes as v1 does, preserving the
+structural BYE placements. A correction announces the new loser's placement through the passage.
+When the new result is a double exit, its own result notice precedes the surviving loser-removal
+notice; the new exit's placements follow. A quiet produced write on the entry retains the event and
+tournament identity of that removal notice, while its deferred in-context read stays bare.
+Exact ordered notice pins enforce both policy settings.
+
+For a fresh TEAM line undoing a decided dual, the entry side's old line-up is deleted. The
+`setSideLineUp` op's explicit `clearsLineUp` mode deletes that property on the existing stored side,
+without synthesizing sides, and announces `removeDirectedLoser` with the event and tournament.
+The entry matchUp and its structure are stamped. A dual-own-call clear retains its earlier TEAM
+refusal; corrections and line-driven undo use the certified passage.
