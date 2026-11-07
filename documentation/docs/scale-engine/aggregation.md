@@ -249,6 +249,27 @@ const days = tools.rankings.rollingPeriodDaysFrom(policy.aggregationRules); // t
 _Changed in 7.33:_ the window had no upper bound and no default, and awards without an `endDate` were always included.
 Before 7.33 a list dated in the past counted results from after its date.
 
+## Authority filter and weights
+
+A rank list can admit only some issuing authorities, and weight the points of each. Every award carries its
+`pointsAuthority` (stamped by its award profile or policy). These are properties of the consuming rank list, not of the
+policy, so they are arguments to `generateRankingList`:
+
+```js
+generateRankingList({
+  pointAwards: allAwards,
+  asOfDate: '2025-12-31',
+  authorityFilter: ['ATP', 'ITF', 'TENNIS_EUROPE'], // a hybrid list admits only these
+  authorityWeights: { ITF: 1.0, USTA: 0.5 }, // and counts USTA points at half
+});
+```
+
+- An award with no `pointsAuthority` counts as `UNSPECIFIED`. List `'UNSPECIFIED'` to admit those awards.
+- A weight scales every point component an award carries (`points`, `positionPoints`, `perWinPoints`,
+  `qualityWinPoints`, `bonusPoints`, `linePoints`), so the breakdown still sums to its points. An authority with no
+  weight counts at 1.
+- They apply before everything else, to native and carried awards alike. Stored awards are never changed.
+
 ## Point Decay
 
 A policy can make older results count for less than recent ones. Decay is applied after the rolling-period filter, to native and carried awards alike, using each award's age: the days from its `endDate` to `asOfDate`.

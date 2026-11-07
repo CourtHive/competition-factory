@@ -1,5 +1,6 @@
 import { computeAwardWindow, isAwardInWindow, rollingPeriodDaysFrom, type AwardWindow } from './awardWindow';
 import { applyRetentionAfterAging, RankingParticipantContext } from './retentionAfterAging';
+import { applyAuthorityRules, type AuthorityRules } from './authorityRules';
 import { DEFAULT_POINT_COMPONENTS } from '@Constants/rankingConstants';
 import { applyEligibleSourceWindow } from './eligibleSourceWindow';
 import { processBucketResults } from './processBucketResults';
@@ -30,7 +31,7 @@ type CategoryFilter = {
   eventTypes?: string[];
 };
 
-type GenerateRankingListArgs = {
+type GenerateRankingListArgs = AuthorityRules & {
   pointAwards: RankingListAward[];
   aggregationRules?: AggregationRules;
   categoryFilter?: CategoryFilter;
@@ -64,7 +65,9 @@ type GenerateRankingListArgs = {
 };
 
 export function generateRankingList({
-  pointAwards,
+  pointAwards: awards,
+  authorityFilter,
+  authorityWeights,
   aggregationRules = {},
   categoryFilter,
   asOfDate,
@@ -81,6 +84,9 @@ export function generateRankingList({
     bestOfCount,
     categoryAggregation = [],
   } = aggregationRules;
+
+  // the rank list's authority rules first, so native and carried awards are scoped and weighted alike (authorityRules.ts)
+  const pointAwards = applyAuthorityRules(awards, { authorityFilter, authorityWeights });
 
   // the one rolling window, for native and carried awards alike (awardWindow.ts)
   const window = computeAwardWindow(asOfDate, rollingPeriodDaysFrom(aggregationRules));
