@@ -68,6 +68,17 @@ export type Convergence = {
   seats?: OutcomeOp[];
 };
 
+// Two RULE 4 rules, kept apart on purpose (Mentat assessment/2026-11-07-outcome-refactor-debates.md, ruling 3).
+// `convergenceAt` mirrors `progressExitStatus`: a CARRIED exit arriving where a single exit is AWARDED to the
+// carrier's seat, any carried origin standing opposite, written as `setMatchUpState` writes it (`deriveStatusCodes`,
+// `scoredTime` stamped). `producedConvergedReason` mirrors `conditionallyAdvanceDrawPosition`'s `existingExit`: a
+// PRODUCED exit arriving where a PENDING exit a double exit produced stands with no winner and no positions, written
+// as `modifyMatchUpScore` writes it (codes `[]`, no `scoredTime`). The off-diagonal cells are refused by both and are
+// v1's: a produced exit onto a carried award (`recordedExitAwaitingThisSeat`; FEED_IN_CHAMPIONSHIP 8, Main 2/1
+// WALKOVER carried onto Consolation 2/2, then Consolation 1/2 a DOUBLE_WALKOVER: both abstain `exit`, differential
+// clean) and a carried exit onto a pending produced exit (`convergeCarriedExit`). A merge parameterised by the
+// arrival would branch at the award, the standing origin, the positions, the seats, the codes, the stamp and the
+// score guard.
 /**
  * RULE 4 at the matchUp a carrier lands in (`progressExitStatus`), at the first level (S5) or a deeper one (S6 tail): the
  * matchUp holds a single exit (not a retirement) awarded to the carrier's seat, carried in on the other side and on that
@@ -174,6 +185,7 @@ type ProducedConvergence = {
   onward?: ProducedTarget;
 };
 
+// The produced twin of `convergenceAt`: a separate RULE 4 by the same ruling (see the comment there).
 /**
  * S5: a double exit whose produced exit meets an exit standing in the next matchUp (`conditionallyAdvanceDrawPosition`'s
  * `existingExit`): the two converge there (`collapseDoubleExitStatus`: two defaults a `DOUBLE_DEFAULT`, anything else a

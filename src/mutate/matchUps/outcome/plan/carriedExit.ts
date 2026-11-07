@@ -244,6 +244,15 @@ function passedLanding(
   return landing ? { ...landing, relays, beyond, passes: relays.length + 1 } : undefined;
 }
 
+// The carry's landing (`landingAt`, `passedLanding`, `levelLanding`) and the held exit's landing (`heldLoser`,
+// `heldLanding`, `heldAward`, `heldBeyond` in `byeChain.ts`) read the same geometry through `indexed`, `sideOf` and
+// `onwardFrom`, and the sharing ends there (Mentat assessment/2026-11-07-outcome-refactor-debates.md, ruling 11).
+// They mirror two v1 paths with different rules: the carry reads the carrier's side off the hydrated matchUp and
+// awards an empty side (`progressExitStatus` RULE 2); the held exit reads `feedRound ? 1 : side`, leaves an empty
+// side pending and asks the other feeder (`carryExitOnward`). The carry admits a BYE relay on its shape alone
+// (`byePassage`); the held exit refuses one holding a winner, score, codes or provenance. A landing that links its
+// loser on is required to go deeper by the carry and refused by `heldAward`, and the held join derives its side from
+// positions an earlier op places. Do not fold these into one reader: a shared body needs a family argument.
 /** a carried exit's landing at a matchUp, the carrier on `drawPosition`: their side, who is opposite, and what follows */
 function landingAt(
   view: OutcomeView,
@@ -324,6 +333,14 @@ function levelLanding(view: OutcomeView, level: CarryLevel, carried: MatchUpStat
   return landingAt(view, matchUpId, drawPosition);
 }
 
+// The carry's relay and landing writes are not the relay op triple the `doubleExitAdvancement`-lineage writers share
+// (Mentat assessment/2026-11-07-outcome-refactor-debates.md, ruling 5). v1's `recordCarryBesideBye` rewrites no state
+// at a relay: the BYE matchUp keeps its status, codes and score, and only the entry is merged and announced as
+// `progressExitStatus`; a `setMatchUpResult` there would be a score write and defer an in-context notice v1 never
+// emits. The landing is v1's RULE 2 through `setMatchUpState`, which stamps `scoredTime`, where every
+// `doubleExitAdvancement` writer passes `stampsScoredTime: false`. The entry is `buildCarriedExitProvenance`, which
+// keeps `matchUpStatus` for a single-exit source (a RETIRED carried as WALKOVER); `buildSideExitProvenance` would
+// drop it.
 /**
  * The carried exit's write on the loser's matchUp, as v1's `progressExitStatus` makes it (RULES 2 and 3): the status,
  * the award to the side opposite the carrier (nobody yet, or the participant standing there, who then goes on), the codes it derives (`[]`), the score a WALKOVER blanks, then the carrier's

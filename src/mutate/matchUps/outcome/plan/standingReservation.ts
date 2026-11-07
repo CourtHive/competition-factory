@@ -75,6 +75,15 @@ function standingReservationFeeders(view: OutcomeView, source: HydratedMatchUp):
   });
 }
 
+// Four sites read the FIRST_MATCHUP reservation and they are kept separate on purpose (Mentat
+// assessment/2026-11-07-outcome-refactor-debates.md, ruling 9). `reservationReason` reads the winner target's fed
+// seat with this call's result projected; `keptOutReason` and `recordedPlanOps` read this call's fed seat and treat
+// any BYE as nothing to place, as v1's `assignDrawPositionBye` no-ops on any BYE; this reader requires the BYE to
+// carry `byeFromPropagation`, as v1's `removeDoubleExit` withdraws only a marked BYE; `unwoundKeptOutOps` reads the
+// seat on the unwound view, where it is free, and consumes the own program's ops that `standingReservationPrograms`
+// shapes as the unwind's input. One reader with one seat wall would write a marker onto an unmarked BYE v1 leaves
+// alone, or leave a withdrawn BYE unrestored. Only the feeders' predicate (`firstRoundFeedersWon`) and the
+// clean-BYE-home test are shared.
 /** The original untouched reservation and its already-standing advance, across a distinct structure. */
 function standingReservationSeat(view: OutcomeView, source: HydratedMatchUp, seat: WinnerLoserSeat): boolean {
   const home = indexed(view, seat.matchUpId);

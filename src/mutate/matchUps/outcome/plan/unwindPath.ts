@@ -34,6 +34,14 @@ import type { OutcomeOp } from '../ops';
  * readings of each seat, and the view with the unwind folded in.
  */
 
+// This is the plan's one "unwind, then re-plan" composition (Mentat
+// assessment/2026-11-07-outcome-refactor-debates.md, ruling 6): its arguments are the caller's facts (`args`,
+// `releasedLandings`), and the plain-winner sites call it. The sites that call `rebuild` directly (the standalone and
+// terminal programs, the geometry probes) fold a different ops set (`clearing`, `clearOnly`, extra ops) and must not
+// be routed through here. It is deliberately not memoised: a per-call cache of the unwind and its rebuilt views would
+// save walks and rebuilds that no gate measures (`pipelineCost` counts hydrations, and a rebuild hydrates nothing),
+// at the cost of state in a module of pure functions. That saving is Phase 3 work, proven by a paired perf-compare
+// run, never by a structural PR.
 /** the view with a double exit's unwind folded in, and the direction planned on it (`rebuild`); undefined where none */
 export function unwoundView(
   args: {

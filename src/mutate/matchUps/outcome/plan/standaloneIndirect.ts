@@ -65,6 +65,14 @@ function standaloneIndirectRemoval(args: PlanArgs) {
   return { unwind, clear, reset, after, structureId };
 }
 
+// Two rules, not one with a flag (Mentat assessment/2026-11-07-outcome-refactor-debates.md, ruling 1). The bare
+// arrival mirrors v1's assignment path (`resolvePropagatedExitOnAdvance`: the standing exit awarded to the arriver,
+// score absent, no `setMatchUpState`); the carried arrival below mirrors `progressExitStatus` RULE 4 (a nested
+// `setMatchUpState`, score blanked, then `doubleExitAdvancement`). Each admits by the literal request status, not by
+// what the loser carries: a RETIRED trigger under `propagateRetirementAsExit` carries WALKOVER (`carriedExit`) yet is
+// refused by both and kept v1's, because these programs pass `request.matchUpStatus` raw where `convergedOps`
+// normalises through `carriedStatus`. Keying on `loser.converged` would admit it. Only the six-read relay certificate
+// and the nine-op tail they share are to be hoisted.
 /** The bare winner's ordinary arrivals after its certified shared removal. */
 export function standaloneBareWinnerOps(args: PlanArgs): OutcomeOp[] | undefined {
   const { request, write, view, drawDefinition } = args;
@@ -112,6 +120,9 @@ function standaloneArrivalStands(view: OutcomeView, args: PlanArgs, direction: D
   return !directionReason({ ...args, view, direction });
 }
 
+// The carried twin of `standaloneBareWinnerOps`: a separate rule by the same ruling (see the comment there). It
+// admits WALKOVER and DEFAULTED by their literal status and passes the request status raw into the pending
+// convergence.
 /** A real carried exit meets the exact pending foreign origin; it was never temporarily awarded. */
 export function standaloneCarriedWinnerOps(args: PlanArgs): OutcomeOp[] | undefined {
   const { request, write, view, drawDefinition } = args;
