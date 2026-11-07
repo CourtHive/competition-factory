@@ -100,6 +100,14 @@ const ALLOWED = {
     'PLUMBING — the clean and scoreless predicates abstain where a matchUp carries codes, so v1 writes it; decide nothing on them',
   'mutate/matchUps/outcome/plan/resultOps.ts':
     'PLUMBING — carries the planned array into the result op, as plan.ts did before the split; decides nothing on it',
+  'mutate/matchUps/outcome/plan/producedExit.ts':
+    "PLUMBING — the produced exit's writes carry the codes doubleExitAdvancement stores ([]); abstain where a target holds codes; decide nothing on them",
+  'mutate/matchUps/outcome/plan/producedTarget.ts':
+    "PLUMBING — the produced target's write carries [] and its reader abstains where the target holds codes; decides nothing on them",
+  'mutate/matchUps/outcome/plan/byeChain.ts':
+    'PLUMBING — the BYE chain abstains where a matchUp it would write holds codes, and writes [] where v1 writes it; decides nothing on them',
+  'mutate/matchUps/outcome/plan/convergence.ts':
+    'PLUMBING — a convergence keeps the codes as they stood and writes [] into what it produces, as v1 does; decides nothing on them',
   'mutate/matchUps/outcome/types.ts': 'PLUMBING — the v2 request carries the submitted array to the write',
   'mutate/matchUps/outcome/unwindWalk.ts':
     'PLUMBING — abstains where a matchUp its removal would write carries codes, so v1 writes it; decides nothing on them',
