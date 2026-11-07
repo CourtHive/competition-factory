@@ -174,9 +174,10 @@ award in the rolling window, regardless of which annual policy was in effect"
 The authority weight a federated rank list applies (e.g. Tennis Europe weights
 ITF at `1.0` and TENNIS_EUROPE at `1.0`, while a USTA-internal list might weight
 external authorities at `0.5`) is **not** part of the policy. It belongs to the
-consuming rank list and is applied at aggregation time, downstream of the
-factory. See the [`courthive-rankings`](https://github.com/CourtHive/courthive-rankings)
-`AggregateArgs.authorityWeights` and `AggregateArgs.authorityFilter` inputs.
+consuming rank list and is applied at aggregation time: pass it to
+`generateRankingList` as `authorityFilter` and `authorityWeights` (see
+[Multi-Tournament Aggregation](/docs/scale-engine/aggregation#authority-filter-and-weights)).
+_Since 7.33:_ this was previously applied outside factory, by the rankings service.
 
 ## Award Profiles
 

@@ -19,9 +19,9 @@
  * One policy, three profiles, each profile stamping its issuing authority
  * onto the awards it matches. The factory's `getTournamentPoints`
  * resolves `award.pointsAuthority = matchedProfile.pointsAuthority ??
- * policy.pointsAuthority`. The rankings pipeline's `authorityFilter` and
- * `authorityWeights` (courthive-rankings AggregateArgs) then scope and
- * weight at snapshot generation.
+ * policy.pointsAuthority`. A rank list's `authorityFilter` and
+ * `authorityWeights`, arguments to `generateRankingList`, then scope and
+ * weight those awards at aggregation time.
  *
  * Real-world use: copy this file, replace the placeholder point values
  * with figures from the actual published rulebook, and update profile
