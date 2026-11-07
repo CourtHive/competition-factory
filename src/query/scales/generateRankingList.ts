@@ -1,8 +1,8 @@
+import { computeAwardWindow, isAwardInWindow, rollingPeriodDaysFrom, type AwardWindow } from './awardWindow';
 import { applyRetentionAfterAging, RankingParticipantContext } from './retentionAfterAging';
 import { DEFAULT_POINT_COMPONENTS } from '@Constants/rankingConstants';
 import { applyEligibleSourceWindow } from './eligibleSourceWindow';
 import { processBucketResults } from './processBucketResults';
-import { computeAwardWindow, isAwardInWindow, rollingPeriodDaysFrom, type AwardWindow } from './awardWindow';
 import { applyPointDecay } from './applyPointDecay';
 import type {
   RankingListBucketBreakdown,
