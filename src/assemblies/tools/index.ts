@@ -99,3 +99,8 @@ export {
   subSort,
   unique,
 } from '@Tools/arrays';
+
+// Stateless positional functions by domain (CA 2026-11-07): their home, rather than a governor that mounts them on
+// engines which call every method with one params object. See formats.ts and scoring.ts.
+export * as formats from './formats';
+export * as scoring from './scoring';

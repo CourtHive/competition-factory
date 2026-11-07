@@ -12,6 +12,32 @@ See the [engine API transition manifest and per-method guidance](/docs/implement
 
 Engine-route removal, standalone package-export retention and internal implementation status are separate decisions. Test-only conformance-harness access does not require a production governor export. No unsupported deep import is recommended.
 
+### Stateless functions move to tools
+
+Governor functions that read no tournament state and take positional arguments leave the governors and the engines in
+8.0.0. An engine calls every method with one params object, so it could never call them correctly. Import them from
+their domain in `tools`, available from 7.33:
+
+```js
+import { tools } from 'tods-competition-factory';
+
+// 7.33 and later; the only route in 8.0.0
+tools.scoring.validateMatchUpScore(sets, 'SET3-S:6/TB7');
+tools.formats.parse('SET3-S:6/TB7');
+// 7.x only
+scoreGovernor.validateMatchUpScore(sets, 'SET3-S:6/TB7');
+```
+
+- `tools.formats` replaces the matchUpFormat governor's `parse`, `stringify`, `isAggregateFormat`, `finalSetGoverns` and
+  `aggregateDeciderSetNumber`, and the score governor's aliases `parseMatchUpFormat` / `stringifyMatchUpFormat`.
+- `tools.scoring` replaces the score governor's validators, scoring-engine state readers and point and statistics
+  parsers.
+- The availability helpers stay on the `availability` export and leave the engines.
+- The rest (publishing predicates, fee helpers, draw-type predicates, `validMatchUp(s)`) are being classified. Their
+  destination is added here before 8.0.0.
+
+The 8.0.0 release notes list every function this moves, by governor.
+
 ### Progression edges: addGoesTo
 
 Use [the supported storage, ingest, draw-addition and read-projection routes](/docs/implementation/records/addGoesTo#supported-migration-routes). The old helper mutates stored matchUps despite its query-governor placement and is not a safe read-only API.
