@@ -6596,11 +6596,11 @@ describe('under v2, notes on a double exit are v1s (S7: v1 forwards the calls pa
   });
 });
 
-describe('a cleared Main final whose loser a link fed is v1s (ruling 10: the one input where the shared removal differs)', () => {
-  // `removalOps` emits a final's loser leg alone, as `resultToDoubleExit` needs; `removedOps` guards a final out before
-  // it, and that empty plan is what the settle check abstains on. Without the guard v2 owned this call (the record
-  // equal to v1's), so the pin holds the abstention: an ownership that wide is a family, not a hoist.
-  it('FIC 8, Main played out, the final cleared: differential abstains `settle`, and v2 leaves exactly what v1 leaves', () => {
+describe('C17 a cleared Main final whose loser a link fed is v2s (decision 5; ruling 10 found the shape)', () => {
+  // `removalOps` emits a final's loser leg alone, as `resultToDoubleExit` needs; until C17 `removedOps` guarded a final
+  // out before it, and that empty plan left the fed seat occupied, which the settle check abstained on. The guard is
+  // gone: v1's `removeDirectedLoser` clears the seat and announces the consolation matchUp, and v2 plans the same.
+  it('FIC 8, Main played out, the final cleared: v2 owns it, and leaves exactly what v1 leaves', () => {
     const scenario: Scenario = {
       drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
       setup: [MAIN(1, 1), MAIN(1, 2), MAIN(1, 3), MAIN(1, 4), MAIN(2, 1), MAIN(2, 2), MAIN(3, 1)].map((target) => ({
@@ -6611,17 +6611,21 @@ describe('a cleared Main final whose loser a link fed is v1s (ruling 10: the one
     };
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
-    const deferred = () => getDifferentialTally()['shadow:abstain:settle']?.deferred ?? 0;
-    const before = deferred();
+    const tally = () => ({
+      applied: getDifferentialTally()['shadow:applied']?.compared ?? 0,
+      settle: getDifferentialTally()['shadow:abstain:settle']?.deferred ?? 0,
+    });
+    const before = tally();
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
     expect(compared.results).toEqual(v1.results);
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
-    expect(deferred()).toEqual(before + 1);
+    expect(tally()).toEqual({ applied: before.applied + 1, settle: before.settle });
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
-    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.v1Writes).toEqual(0);
     expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
   });
 });
 

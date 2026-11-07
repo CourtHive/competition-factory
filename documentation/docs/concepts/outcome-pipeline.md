@@ -562,7 +562,10 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   still hold the seat the link fed, in a matchUp they have not played (no result, exit, provenance or
   BYE beside them): the seat is emptied and their seed entry there goes, and, when the call names a
   status, the matchUp's codes are re-derived from its provenance, as v1's `removeDirectedLoser`
-  writes them (`[]` where it stored none, which announces the matchUp). A `FIRST_MATCHUP` link, whose
+  writes them (`[]` where it stored none, which announces the matchUp). A cleared **final** whose loser a
+  link fed (FEED_IN_CHAMPIONSHIP's Main final into the consolation's last round) takes that seat back the
+  same way, with no winner's position to take back (C17); until then `removedOps` planned nothing for a
+  final, the fed seat stayed occupied, and the settle check abstained the call. A `FIRST_MATCHUP` link, whose
   removal may take a BYE back, stays v1's. So does a winner cleared in a structure that feeds its
   playoffs by finishing position (`WIN_RATIO`): v1 answers it with the playoff structures it reaches
   (`connectedStructures`, from `checkConnectedStructures`), a read of the whole structure. The same
