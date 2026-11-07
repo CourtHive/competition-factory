@@ -125,6 +125,19 @@ describe('getDrawFit — the ledger, and qualifying', () => {
     expect(after.entries.filter((e: any) => e.entryStatus === ALTERNATE)).toHaveLength(0);
   });
 
+  it('an over-full trial acceptance is OVER, not refused — as an over-full event is', () => {
+    // The generator refuses over-full `drawEntries` ("No stage space available") where it warns for the same entries
+    // read from the event. A fit must report the excess either way: the topology passes `drawEntries`.
+    const eventId = eventWith([{ count: 26 }]);
+    const { event } = tournamentEngine.getEvent({ eventId });
+    const fit: any = tournamentEngine.getDrawFit({ eventId, drawSize: 16, drawEntries: event.entries });
+    expect(fit.error).toBeUndefined();
+    expect(main(fit)).toMatchObject({ placed: 16, notPlaced: 10, status: 'OVER' });
+    expect(fit.notPlaced).toHaveLength(10);
+    // and the event is as it was
+    expect(tournamentEngine.getEvent({ eventId }).event.entries).toHaveLength(26);
+  });
+
   it('a round robin counts its groups’ positions', () => {
     const eventId = eventWith([{ count: 30 }]);
     const fit: any = tournamentEngine.getDrawFit({

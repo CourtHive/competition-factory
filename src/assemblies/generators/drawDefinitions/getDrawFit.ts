@@ -93,10 +93,17 @@ export function getDrawFit(params: GetDrawFitArgs): DrawFitResult {
   const entries: Entry[] = params.drawEntries ?? event.entries ?? [];
   const ledger = ledgerOf(entries);
 
+  // ── A trial acceptance goes in as the EVENT's entries, on a copy ──
+  //
+  // The generator treats the two ways of being given entries differently when the stage is over-full (measured
+  // 2026-11-08): from `event.entries` it places what fits and warns ENTRIES_NOT_PLACED for the rest; from `drawEntries`
+  // it refuses ("No stage space available"). Over-full is exactly what a fit must report rather than refuse, so the
+  // trial entries are handed over the first way — on a shallow copy of the event, never the event itself.
+  const { drawEntries: _drawEntries, ...generationParams } = params;
   const generation = generateDrawDefinition({
-    ...(params as GenerateDrawDefinitionArgs),
+    ...(generationParams as GenerateDrawDefinitionArgs),
+    event: params.drawEntries ? { ...event, entries: params.drawEntries } : event,
     tournamentRecord,
-    event,
   });
   if (generation.error) return { error: generation.error, ...(generation.context && { context: generation.context }) };
 
