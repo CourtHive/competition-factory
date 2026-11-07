@@ -162,6 +162,9 @@ outcome: {
   recorded outside the format.
 - Where a winner must advance, a level result without that record is refused with `ERR_UNDECIDED_LEVEL_RESULT`. There
   is no status for a result awaiting a decision: the matchUp stays as it was until the decision is entered.
+- A TEAM dual's score is the aggregate its lines produce. A decision recorded on a level dual needs only the record
+  (`score: { overtime: { decidedIn: 'EXTERNAL', decidedBy } }`): a score given to a dual without `sets` is laid over the
+  aggregate, which is kept as played, and does not replace it. An explicit clear (both score strings `''`) still clears.
 - In a round robin a level result is a draw; one decided outside the score is the winner's win, and a standings rule
   can award it differently (`decidedIn`, `decidedBy`: see the
   [round robin tally policy](../policies/roundRobinTallyPolicy.md)).

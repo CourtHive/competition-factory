@@ -28,6 +28,7 @@ import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat'
 import { validateDrawTallyOptions } from '@Validators/validateTallyPolicy';
 import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { isPartialDualScore } from '@Scoring/analysis/isPartialDualScore';
 import { tiebreakPointsWarnings } from '@Scoring/analysis/validateScore';
 import { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
 import { decideOutcomeV2 } from '@Mutate/matchUps/outcome/decide';
@@ -386,6 +387,9 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     outcome.score = scoreObject;
   }
 
+  // once, here, so the v2 decision and v1's writes read the same score
+  keepDualAggregate({ enableAutoCalc, matchUpsMap, matchUpId, outcome });
+
   // read BEFORE the mutation: `reconcileDeciders` acts only on a final whose winner has changed
   const finalsBefore = getDeciderFinals(drawDefinition);
   // and the decider structures themselves: the cascade can re-seat a decider while the final's winner stays the same
@@ -581,6 +585,22 @@ const PROPAGATION_CONTEXT_KEYS = [
   'loserMatchUp',
   'matchUpsMap',
 ];
+
+type KeepDualAggregateArgs = Pick<SetMatchUpStatusArgs, 'enableAutoCalc' | 'outcome'> & {
+  matchUpsMap: MatchUpsMap;
+  matchUpId: string;
+};
+
+/**
+ * A dual given a score without sets keeps its aggregate: the score is laid over the dual's own (`isPartialDualScore`).
+ * Swapped for it, a level tie's aggregate was wiped when its decision was recorded.
+ */
+function keepDualAggregate({ enableAutoCalc, matchUpsMap, matchUpId, outcome }: KeepDualAggregateArgs) {
+  // enabling auto-calc projects the dual's whole score from its lines (`handleTeamAutoCalc`)
+  if (!outcome || enableAutoCalc || !isPartialDualScore(outcome.score)) return;
+  const dual = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === matchUpId);
+  if (dual?.matchUpType === TEAM) outcome.score = { ...dual.score, ...outcome.score };
+}
 
 /**
  * A RESULT CARRIES NO PLUMBING. A call whose exit propagated returned the propagation's context to its caller: the
