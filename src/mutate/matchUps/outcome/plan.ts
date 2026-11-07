@@ -455,7 +455,9 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition): Outcom
   // target: their position joins the next matchUp, which is stamped
   const loserThrough =
     loser?.arrives && view.targets.loserTargetSeat?.opponentBye
-      ? (view.targets.loserThroughBye ?? view.targets.loserByePassage?.through ?? unwoundThrough(view, unwound))
+      ? (view.targets.loserThroughBye ??
+        view.targets.loserByePassage?.through ??
+        unwoundThrough(view, unwound, request.matchUpId))
       : undefined;
   // the loser's own position, where the unwind left it standing in the matchUp beyond (`unwoundThrough`)
   const placedThrough = loserThrough && !view.targets.loserThroughBye && !view.targets.loserByePassage?.through;

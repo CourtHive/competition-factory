@@ -6846,3 +6846,70 @@ describe('C15 superseded own relay material and notice contracts', () => {
     }
   });
 });
+
+/**
+ * C16: THE LOSER BESIDE AN OPPONENT BYE GOES ON THROUGH THE CHAIN TO THE PASSAGE'S LANDING (census w2 9100153,
+ * FIRST_ROUND_LOSER_CONSOLATION 16/11, seed 9100153, `doubleExitPropagateBye: false`). Main 1/4 a DOUBLE_DEFAULT: its
+ * produced DEFAULTED passed Consolation 1/2's and 2/1's BYEs (RULE 1) and stood pending at Consolation 3/1. Given a
+ * winner, v1 unwinds the passage (`removeDoubleExit`: each BYE matchUp keeps its BYE with the carry's provenance
+ * withdrawn, the landing written back to be played, quietly, the carrier's position standing in it), writes the result,
+ * and places the loser on seat 4: `assignDrawPosition` announces Consolation 2/1 and the landing as the position goes
+ * on through both BYEs (`unwoundThrough`'s `onward`, read off the unwind's own ops: `unwoundLanding`). The eleven setup
+ * entries are the census replay's accepted entries, in order (two of its thirteen were skipped or refused and wrote
+ * nothing); the reduced setup was checked to leave the replay's record byte for byte.
+ */
+const CONSOLATION = (roundNumber: number, roundPosition: number): Target => ({
+  roundNumber,
+  roundPosition,
+  structureName: 'Consolation',
+});
+const W2_9100153: Scenario = {
+  drawProfile: { drawSize: 16, participantsCount: 11, drawType: FIRST_ROUND_LOSER_CONSOLATION },
+  nonRandom: 9100153,
+  policyDefinitions: POLICY_OFF,
+  setup: (
+    [
+      [MAIN(1, 7), { matchUpStatus: WALKOVER, winningSide: 2 }],
+      [MAIN(2, 1), { winningSide: 2 }],
+      [MAIN(1, 5), { winningSide: 2 }],
+      [CONSOLATION(2, 2), { matchUpStatus: WALKOVER, winningSide: 1 }],
+      [MAIN(1, 4), { matchUpStatus: DOUBLE_DEFAULT }],
+      [MAIN(1, 5), { matchUpStatus: DOUBLE_DEFAULT }],
+      [MAIN(2, 1), { winningSide: 2 }],
+      [MAIN(1, 5), { winningSide: 2 }],
+      [MAIN(1, 7), { winningSide: 2 }],
+      [MAIN(2, 4), { winningSide: 2 }],
+      [MAIN(2, 3), { matchUpStatus: WALKOVER, winningSide: 1 }],
+    ] as [Target, Record<string, unknown>][]
+  ).map(([target, outcome]) => ({ target, outcome, params: CARRIED })),
+  steps: [{ target: MAIN(1, 4), outcome: { winningSide: 1 }, params: CARRIED }],
+};
+
+describe('C16 the loser beside an opponent BYE goes on through the chain to the landing the unwind writes back', () => {
+  it('census w2 9100153 (FRLC 16/11, policy off): v2 owns Main 1/4 given a winner and leaves exactly what v1 leaves', () => {
+    const v1 = play(OUTCOME_PIPELINE_V1, W2_9100153);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    expect(v1.v1Writes).toBeGreaterThan(0);
+    // the landing as v1 leaves it: Consolation 3/1 to be played, the loser's position standing in it alone
+    const consolation = consolationRecord(v1.record)[0].matchUps;
+    const landing = consolation.find((matchUp: any) => matchUp.roundNumber === 3 && matchUp.roundPosition === 1);
+    expect(landing.matchUpStatus).toEqual(TO_BE_PLAYED);
+    expect(landing.drawPositions).toEqual([4]);
+    expect(landing.sideExitProvenance).toBeUndefined();
+    const tally = () => ({
+      applied: getDifferentialTally()['shadow:applied']?.compared ?? 0,
+      exit: getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0,
+    });
+    const before = tally();
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, W2_9100153);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+    expect(tally()).toEqual({ applied: before.applied + 1, exit: before.exit });
+    const v2 = play(OUTCOME_PIPELINE_V2, W2_9100153);
+    expect(v2.v1Writes).toEqual(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+  });
+});
