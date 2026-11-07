@@ -96,6 +96,10 @@ const ALLOWED = {
   'mutate/matchUps/outcome/ops.ts': 'WRITE — the reducer stores the array the plan carries, as modifyMatchUpScore does',
   'mutate/matchUps/outcome/plan.ts':
     'PLUMBING — abstains when a client sent the array, so v1 writes it; carries the planned array into the op; decides nothing on it',
+  'mutate/matchUps/outcome/plan/planShared.ts':
+    'PLUMBING — the clean and scoreless predicates abstain where a matchUp carries codes, so v1 writes it; decide nothing on them',
+  'mutate/matchUps/outcome/plan/resultOps.ts':
+    'PLUMBING — carries the planned array into the result op, as plan.ts did before the split; decides nothing on it',
   'mutate/matchUps/outcome/types.ts': 'PLUMBING — the v2 request carries the submitted array to the write',
   'mutate/matchUps/outcome/unwindWalk.ts':
     'PLUMBING — abstains where a matchUp its removal would write carries codes, so v1 writes it; decides nothing on them',
