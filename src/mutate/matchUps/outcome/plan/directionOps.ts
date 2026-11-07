@@ -92,12 +92,9 @@ export function removedOps(
   matchUpStatus?: MatchUpStatusUnion,
 ): OutcomeOp[] {
   if (changesWinner(view, route, write) || !removesDirection(view, route, write)) return [];
-  // A final (no winner matchUp) takes back nothing here, its loser's fed seat included: that empty plan is what lets
-  // the settle check abstain the call to v1. Hoisting the body (ruling 10) kept this guard because dropping it made
-  // v2 own a cleared FIC 8 final (record equal to v1's there, unproven beyond), which is new ownership, not a hoist.
-  const { targets, existing } = view;
-  const position = existing.winningSide ? targets.sideDrawPositions[existing.winningSide as 1 | 2] : undefined;
-  if (!position || !targets.winner || !targets.winnerMatchUpId) return [];
+  // A cleared final (no winner matchUp) takes back its loser's fed seat alone (C17, decision 5 of the refactor status):
+  // `removalOps` emits no winner leg for it. The guard that returned nothing here until then left the fed seat
+  // occupied, which is what the settle check abstained on (ruling 10's amendment).
   return removalOps(view, matchUpStatus);
 }
 
@@ -105,7 +102,7 @@ export function removedOps(
  * S4's removal of the stored result's direction, whatever the route (ruling 10): the winner's position out of the next
  * matchUp, if there is one, then the loser's seat. The two reasons in front of it (`removalReason` on a cleared result,
  * `resultRemovalReason` on a result turned double exit) stay apart; this is only what they both take back. A final's
- * loser leg alone is emitted for the double-exit route; the cleared route guards it out above.
+ * loser leg alone is emitted on both routes (the cleared route since C17).
  */
 export function removalOps(view: OutcomeView, matchUpStatus?: MatchUpStatusUnion): OutcomeOp[] {
   const { targets, existing } = view;
