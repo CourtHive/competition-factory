@@ -154,6 +154,48 @@ export function onwardFrom(
   return { matchUpId: next.matchUpId, drawPositions: already ? held : [...held, drawPosition].sort((a, b) => a - b) };
 }
 
+/**
+ * C18: A STANDING AWARD THE ARRIVING LOSER TAKES. The matchUp the loser's link feeds already holds a carried single
+ * exit awarded to the seat they are placed on: the carrier's WALKOVER or DEFAULTED came down the link first
+ * (`progressExitStatus`), stands as the matchUp's status with `winningSide` naming the empty seat, and its provenance
+ * sits on the carrier's side. v1's `assignDrawPosition` then treats the arrival as the award's winner
+ * (`participantArrivesAtExit`): the matchUp is written back as it stands with its codes re-derived (`[]`) and announced
+ * as the assignment, and the arriving position goes on into the next matchUp of the structure
+ * (`advanceIntoWinnerMatchUp`), a clean arrival there (`onwardFrom`), or nowhere from the structure's last round.
+ * Certified only for that exact shape: a single exit (never a double exit's produced one, which has no winner until
+ * somebody arrives), the award on the arriving seat, exactly the carrier's provenance, scoreless, no codes stored, the
+ * carrier present and no BYE beside, the loser carrying nothing, a plain winner's call (an unwind's arrival is
+ * `unwoundArrivalOps`), and the position not yet standing onward. Anything else stays v1's (`cascade`).
+ */
+export function standingAwardArrival(
+  view: OutcomeView,
+  loser?: DirectionPlan['loser'],
+):
+  | { entry: HydratedMatchUp; drawPosition: number; onward?: { matchUpId: string; drawPositions: number[] } }
+  | undefined {
+  const { targets, existing } = view;
+  const { loserMatchUpId, loserTargetDrawPosition: drawPosition, loserTargetSeat: seat } = targets;
+  if (!loser?.arrives || loser.exit || loser.converged || loser.carriedPast || loser.bye || loser.withdrawn)
+    return undefined;
+  if (isDoubleExit(existing.matchUpStatus) || targets.loserLink?.linkCondition) return undefined;
+  const entry = indexed(view, loserMatchUpId);
+  if (!entry || !drawPosition || !seat?.free || seat.opponentBye || !seat.opponentHeld) return undefined;
+  if (entry.matchUpStatus !== WALKOVER && entry.matchUpStatus !== DEFAULTED) return undefined;
+  const side = sideOf(entry, drawPosition);
+  if (!side || entry.winningSide !== side) return undefined;
+  if (entry.score?.scoreStringSide1 || entry.matchUpStatusCodes?.length) return undefined;
+  const provenance = entry.sideExitProvenance ?? {};
+  const carrier = provenance[(3 - side) as 1 | 2];
+  if (Object.keys(provenance).length !== 1 || carrier?.matchUpStatus !== entry.matchUpStatus) return undefined;
+  if (isDoubleExit(carrier.previousMatchUpStatus)) return undefined;
+  if (positionsOf(entry).length !== 2 || !positionsOf(entry).includes(drawPosition)) return undefined;
+  if (!entry.winnerMatchUpId) return { entry, drawPosition };
+  const next = indexed(view, entry.winnerMatchUpId);
+  if (!next || positionsOf(next).some((position) => positionsOf(entry).includes(position))) return undefined;
+  const onward = onwardFrom(view, entry, drawPosition);
+  return onward ? { entry, drawPosition, onward } : undefined;
+}
+
 /** beside another position, the side a position takes: the numerically lower is side 1 */
 export const lowerFirst = (positions: number[], drawPosition: number): 1 | 2 =>
   drawPosition === Math.min(...positions) ? 1 : 2;

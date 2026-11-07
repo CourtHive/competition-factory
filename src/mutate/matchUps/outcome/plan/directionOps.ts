@@ -1,4 +1,12 @@
-import { APPLY_VALUES, changesWinner, reentersWinner, removesDirection, storedLoserId } from './planShared';
+import {
+  APPLY_VALUES,
+  changesWinner,
+  positionsOf,
+  reentersWinner,
+  removesDirection,
+  standingAwardArrival,
+  storedLoserId,
+} from './planShared';
 
 // constants and types
 import type { DirectionPlan, MatchUpWrite, OutcomeView, Route } from '../types';
@@ -159,4 +167,38 @@ export function arrivalOps(view: OutcomeView, loser?: DirectionPlan['loser']): O
         },
       ]
     : [];
+}
+
+/**
+ * C18: the loser placed on a seat whose matchUp holds a carried exit awarded to it takes the award: v1's
+ * `assignDrawPosition` writes the matchUp back as it stands with its codes re-derived and announces it as the
+ * assignment (`applyPositionToMatchUp`, `participantArrivesAtExit`), then sends the position on into the next matchUp
+ * (`advanceIntoWinnerMatchUp`), announced and stamped as any placement; from the structure's last round nobody goes
+ * on. Nothing where the seat's matchUp holds no such award (the plain arrival, `arrivalOps`, is all there is).
+ */
+export function awardedArrivalOps(view: OutcomeView, loser?: DirectionPlan['loser']): OutcomeOp[] {
+  const award = standingAwardArrival(view, loser);
+  if (!award) return [];
+  const { entry, drawPosition, onward } = award;
+  return [
+    {
+      op: 'setMatchUpDrawPositions',
+      matchUpId: entry.matchUpId,
+      drawPositions: positionsOf(entry),
+      placedDrawPosition: drawPosition,
+      rederivesCodes: true,
+    },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: entry.matchUpId },
+    ...(onward
+      ? ([
+          {
+            op: 'setMatchUpDrawPositions',
+            matchUpId: onward.matchUpId,
+            drawPositions: onward.drawPositions,
+            placedDrawPosition: drawPosition,
+          },
+          { op: 'stampUpdatedAt', entity: 'matchUp', id: onward.matchUpId },
+        ] as OutcomeOp[])
+      : []),
+  ];
 }

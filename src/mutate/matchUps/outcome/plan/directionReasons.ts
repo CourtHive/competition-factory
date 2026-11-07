@@ -8,6 +8,7 @@ import {
   cleanWinnerTarget,
   directedBothSides,
   directsElsewhere,
+  standingAwardArrival,
   storedLoserId,
 } from './planShared';
 
@@ -44,7 +45,9 @@ export function plainLoserReason(view: OutcomeView, direction: DirectionPlan): A
   if (!targets.loserStructureId || !targets.loserTargetDrawPosition || !targets.loserTargetSeat?.free) return 'loser';
   // v1's `propagateLoserSeed` writes a seeded loser's seed into the structure they are placed in: not an op yet
   if (loser.participantId && targets.seededParticipantIds?.includes(loser.participantId)) return 'loser';
-  if (targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit) return 'cascade';
+  // a carried exit standing there, awarded to the seat the loser takes: they take it and go on (C18)
+  if (targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit)
+    return standingAwardArrival(view, loser) ? undefined : 'cascade';
   // opposite a BYE the loser goes on at once: planned when the matchUp they go on into is clean (`loserThroughBye`), or a
   // carried exit's loser goes on through the BYE-held matchUps past it (`loserByePassage`, S6 tail)
   if (targets.loserTargetSeat.opponentBye && !targets.loserThroughBye && !(loser.exit && targets.loserByePassage))
