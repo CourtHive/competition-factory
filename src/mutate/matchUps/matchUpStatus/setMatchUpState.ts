@@ -31,6 +31,7 @@ import { validateDrawTallyOptions } from '@Validators/validateTallyPolicy';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
+import { isPartialDualScore } from '@Scoring/analysis/isPartialDualScore';
 import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -954,6 +955,11 @@ function handleTeamAutoCalc({
 }) {
   let dualWinningSideChange;
   let autoCalcValue: true | undefined;
+
+  // A score without sets (a record of how a level tie was decided, or the strings alone) keeps the dual's aggregate
+  if (!enableAutoCalc && isPartialDualScore(params.score)) {
+    Object.assign(params, { score: { ...matchUp.score, ...params.score } });
+  }
 
   if (disableAutoCalc) {
     autoCalcValue = true;
