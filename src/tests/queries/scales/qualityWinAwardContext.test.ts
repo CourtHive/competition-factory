@@ -101,6 +101,8 @@ describe('quality-win points ride on the award for their draw', () => {
     const entries: any = scaleEngine.generateRankingList({
       pointAwards,
       categoryFilter: { ageCategoryCodes: ['U16'], genders: ['MALE'] },
+      // judged when the tournament is over: an award dated after the list's own date does not count yet
+      asOfDate: tournamentRecord.endDate,
       aggregationRules: {
         countingBuckets: [
           { bucketName: 'Singles', pointComponents: ['positionPoints', 'perWinPoints', 'bonusPoints'] },

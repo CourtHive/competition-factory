@@ -30,6 +30,10 @@ export const KNOWN_WRITERS: Record<string, KnownWriter | KnownWriter[]> = {
     when: { addEvents: undefined },
     disposition: `${OPT_IN}. Attaches by DEFAULT: only \`addEvents: false\` asks for no write`,
   },
+  // Found by the purity sweep (queryPuritySweep.test.ts, 2026-11-08): on a record without stored edges it writes
+  // `winnerMatchUpId` / `loserMatchUpId` and finishing ranges onto stored matchUps, with no notice. A query in name only
+  // (CA 2026-11-08: "add" says it modifies); retired at 8.0.0 in favour of the migration and read-projection routes.
+  addGoesTo: { disposition: 'a writer placed in query; retired at 8.0.0 (role inventory, CA 2026-11-08)' },
   generateTournamentRecord: {
     disposition:
       'routed through an engine, the mocks generator adds its events to the loaded record (7.15.0 behaviour, pinned ' +

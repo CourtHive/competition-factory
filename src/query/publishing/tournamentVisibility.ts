@@ -1,7 +1,7 @@
 import { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
 import { isTournamentPublished } from '@Query/publishing/isTournamentPublished';
 import { isISODateString } from '@Tools/dateTime';
-import { competitionNowMs } from '@Tools/clock';
+import { asOfTime } from './asOfTime';
 
 /**
  * WHEN a published tournament becomes publicly visible — the read-time half of the publish model.
@@ -43,12 +43,6 @@ interface VisibilityArgs {
   tournamentRecord: any;
   /** The instant to judge against. Defaults to now; pass it to make a test independent of the clock. */
   asOf?: Date | string;
-}
-
-function asTime(asOf?: Date | string): number {
-  if (asOf instanceof Date) return asOf.getTime();
-  if (typeof asOf === 'string' && isISODateString(asOf)) return new Date(asOf).getTime();
-  return competitionNowMs();
 }
 
 /** A future, well-formed ISO embargo instant; anything else is no embargo at all. */
@@ -98,7 +92,7 @@ export function getTournamentVisibleFrom({ tournamentRecord, asOf }: VisibilityA
   if (!tournamentRecord || !isTournamentPublished(tournamentRecord)) return null;
 
   const status: any = getTournamentPublishStatus({ tournamentRecord });
-  const embargo = futureEmbargo(status?.info?.embargo, asTime(asOf));
+  const embargo = futureEmbargo(status?.info?.embargo, asOfTime(asOf));
   if (!embargo) return null;
 
   // Information is embargoed — but only its own visibility is at stake if something else is published.
@@ -110,5 +104,5 @@ export function isTournamentVisible({ tournamentRecord, asOf }: VisibilityArgs):
   if (!isTournamentPublished(tournamentRecord)) return false;
   const visibleFrom = getTournamentVisibleFrom({ tournamentRecord, asOf });
   if (!visibleFrom) return true;
-  return new Date(visibleFrom).getTime() <= asTime(asOf);
+  return new Date(visibleFrom).getTime() <= asOfTime(asOf);
 }

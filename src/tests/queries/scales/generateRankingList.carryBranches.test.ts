@@ -68,8 +68,10 @@ describe('generateRankingList — what a carry rule takes as its source', () => 
     const windowed = list14U(pointAwards, carryTo14U(), { rollingPeriodDays: 365, asOfDate: '2026-10-01' });
     expect(pointsOf(windowed)).toEqual(200);
 
-    // CONTROL: without the window both count
-    expect(pointsOf(list14U(pointAwards, carryTo14U()))).toEqual(1100);
+    // CONTROL: with a window wide enough, both count (there is always a window: 365 days by default)
+    expect(pointsOf(list14U(pointAwards, carryTo14U(), { rollingPeriodDays: 3650, asOfDate: '2026-10-01' }))).toEqual(
+      1100,
+    );
   });
 
   it('scopes the source by gender, read from the category or the award', () => {

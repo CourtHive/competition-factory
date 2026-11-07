@@ -15,6 +15,7 @@ import { setClock } from '@Tools/clock';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
+import type { Tournament } from '@Types/tournamentTypes';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
@@ -93,7 +94,13 @@ const retired = (winningSide: 1 | 2) =>
   generateOutcomeFromScoreString({ scoreString: '6-1 2-0', matchUpStatus: RETIRED, winningSide }).outcome;
 
 // a round robin's matchUps have no roundPosition: `nth` picks the nth of the round in the structure instead
-type Target = { structureName?: string; roundNumber: number; roundPosition?: number; nth?: number };
+type Target = {
+  structureName?: string;
+  roundNumber: number;
+  roundPosition?: number;
+  nth?: number;
+  singlesLine?: number;
+};
 // `params`: further setMatchUpStatus arguments (a swap's `allowChangePropagation`)
 type Step = { target: Target; outcome: Record<string, unknown>; params?: Record<string, unknown> };
 // `setup`: steps played under v1 before the comparison starts, for a state the owned steps need but do not own;
@@ -121,6 +128,12 @@ const R1 = (roundPosition: number, structureName?: string): Target => ({
   roundNumber: 1,
   roundPosition,
   structureName,
+});
+/** a Main structure matchUp by round and position (the ruling 2 and ruling 10 pins) */
+const MAIN = (roundNumber: number, roundPosition: number): Target => ({
+  roundNumber,
+  roundPosition,
+  structureName: 'Main',
 });
 
 /** an 8-draw's Main round 1 played: its losers fill the consolation's first round (S6 tail, family 7) */
@@ -2976,7 +2989,80 @@ const FMLC_STANDING_OUTSIDE: [string, Scenario][] = FMLC_STANDING_RESERVATIONS.f
   ),
 );
 
+const supersededRelayOutcome = (requested: string, winningSide: 1 | 2) => {
+  if (requested === 'clear') return {};
+  return { winningSide, ...(requested === 'bare' ? {} : { matchUpStatus: requested }) };
+};
+const SUPERSEDED_OWN_RELAY_TABLE: [string, Scenario][] = [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((stored) =>
+  [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((producer) =>
+    ([WALKOVER, DEFAULTED, 'bare', 'clear'] as const).flatMap((requested) =>
+      (requested === 'clear' ? ([1] as const) : ([1, 2] as const)).map((winningSide): [string, Scenario] => [
+        `C15 superseded own relay/${stored}/${producer}/${requested}/side${winningSide}`,
+        {
+          drawProfile: { drawType: FEED_IN_CHAMPIONSHIP_TO_SF, drawSize: 16, participantsCount: 13 },
+          nonRandom: 20733977,
+          randomSeed: 3488028307,
+          setup: [
+            { target: R1(4, 'Main'), outcome: { winningSide: 2 }, params: SWAP_CARRIED },
+            { target: R1(5, 'Main'), outcome: { winningSide: 2 }, params: SWAP_CARRIED },
+            {
+              target: R1(6, 'Main'),
+              outcome: { matchUpStatus: RETIRED, winningSide: 1, score: { sets: [{ side1Score: 6, side2Score: 3 }] } },
+              params: SWAP_CARRIED,
+            },
+            { target: R1(7, 'Main'), outcome: { winningSide: 1 }, params: SWAP_CARRIED },
+            {
+              target: { structureName: 'Main', roundNumber: 2, roundPosition: 2 },
+              outcome: { matchUpStatus: stored },
+              params: SWAP_CARRIED,
+            },
+            { target: R1(2, 'Main'), outcome: { matchUpStatus: DEFAULTED, winningSide: 1 }, params: SWAP_CARRIED },
+            { target: R1(3, 'Consolation'), outcome: { matchUpStatus: producer }, params: SWAP_CARRIED },
+          ],
+          steps: [
+            {
+              target: { structureName: 'Main', roundNumber: 2, roundPosition: 2 },
+              outcome: supersededRelayOutcome(requested, winningSide),
+              params: SWAP_CARRIED,
+            },
+          ],
+        },
+      ]),
+    ),
+  ),
+);
+const ORIGINAL_SUPERSEDED_OWN_RELAYS = SUPERSEDED_OWN_RELAY_TABLE.filter(
+  ([, scenario]) => !!scenario.steps[0].outcome.matchUpStatus,
+);
+// Public 16-participant mirror: the newly produced exit supersedes provenance on side 2.
+const MIRRORED_SUPERSEDED_OWN_RELAYS: [string, Scenario][] = ORIGINAL_SUPERSEDED_OWN_RELAYS.map(([label, scenario]) => [
+  label.replace('C15 superseded own relay/', 'C15 superseded own relay/mirror/'),
+  {
+    ...scenario,
+    drawProfile: { ...scenario.drawProfile, participantsCount: 16 },
+    setup: [
+      ...Array.from({ length: 8 }, (_, index) => ({
+        target: R1(index + 1, 'Main'),
+        outcome: { winningSide: 1 },
+        params: SWAP_CARRIED,
+      })),
+      {
+        target: { structureName: 'Main', roundNumber: 2, roundPosition: 3 },
+        outcome: scenario.setup![4].outcome,
+        params: SWAP_CARRIED,
+      },
+      { target: R1(2, 'Consolation'), outcome: scenario.setup![6].outcome, params: SWAP_CARRIED },
+    ],
+    steps: [{ ...scenario.steps[0], target: { structureName: 'Main', roundNumber: 2, roundPosition: 3 } }],
+  },
+]);
+const SUPERSEDED_OWN_RELAYS = [...ORIGINAL_SUPERSEDED_OWN_RELAYS, ...MIRRORED_SUPERSEDED_OWN_RELAYS];
+const SUPERSEDED_OWN_RELAY_OUTSIDE = SUPERSEDED_OWN_RELAY_TABLE.filter(
+  ([, scenario]) => !scenario.steps[0].outcome.matchUpStatus,
+);
+
 const SCENARIOS: [string, Scenario][] = [
+  ...SUPERSEDED_OWN_RELAYS,
   ...FMLC_STANDING_WINNERS,
   ...FMLC_NO_ARRIVAL_WINNERS,
   ...FMLC_NO_ARRIVAL_REAL,
@@ -5618,14 +5704,17 @@ function findTarget(target: Target): string {
       (target.roundPosition === undefined || matchUp.roundPosition === target.roundPosition) &&
       (!target.structureName || matchUp.structureName === target.structureName),
   );
-  return candidates[target.nth ?? 0].matchUpId;
+  const matchUp: any = candidates[target.nth ?? 0];
+  return target.singlesLine === undefined
+    ? matchUp.matchUpId
+    : matchUp.tieMatchUps.filter((line: any) => line.matchUpType === 'SINGLES')[target.singlesLine].matchUpId;
 }
 
 /** the steps from a fresh record, every topic subscribed and the clock fixed */
 function play(
   mode: OutcomePipelineMode,
   { drawProfile, steps, setup = [], policyDefinitions, nonRandom = 1, randomSeed }: Scenario,
-  { realClock }: { realClock?: boolean } = {},
+  { realClock, prepared }: { realClock?: boolean; prepared?: Tournament } = {},
 ) {
   // Pin the capture RNG and restore it even when setup or comparison throws; absent seeds leave old behavior alone.
   const previousRandom = randomSeed === undefined ? undefined : Math.random;
@@ -5649,6 +5738,7 @@ function play(
       });
       if (!result.success) throw new Error(`setup step failed: ${JSON.stringify(target)}`);
     }
+    if (prepared) tournamentEngine.setState(structuredClone(prepared));
     deleteNotices();
     const notices: string[] = [];
     setSubscriptions({
@@ -6018,21 +6108,6 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     } finally {
       SETTLE_PASS_LIMITS.exitLevels = saved;
     }
-  });
-
-  it('S6 tail: a loser who carries nothing, placed opposite a BYE with BYE-held matchUps beyond, is v1s', () => {
-    // COMPASS 16/10: a retirement the policy does not propagate is directed as played; its loser goes on through two BYEs
-    const scenario: Scenario = {
-      drawProfile: { drawSize: 16, participantsCount: 10, drawType: COMPASS },
-      steps: [{ target: R1(2, 'East'), outcome: retired(1), params: CARRIED }],
-    };
-    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
-    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
-    expect(v1.results[0].success).toEqual(true);
-    expect(v2.v1Writes).toBeGreaterThan(0);
-    expect(v2.results).toEqual(v1.results);
-    expect(v2.record).toEqual(v1.record);
-    expect(v2.notices).toEqual(v1.notices);
   });
 
   it('S6 tail: a double walkover under policy off cleared while another double exit holds a BYE on its consolation path is v1s', () => {
@@ -6517,6 +6592,76 @@ describe('under v2, notes on a double exit are v1s (S7: v1 forwards the calls pa
   });
 });
 
+describe('C17 a cleared Main final whose loser a link fed is v2s (decision 5; ruling 10 found the shape)', () => {
+  // `removalOps` emits a final's loser leg alone, as `resultToDoubleExit` needs; until C17 `removedOps` guarded a final
+  // out before it, and that empty plan left the fed seat occupied, which the settle check abstained on. The guard is
+  // gone: v1's `removeDirectedLoser` clears the seat and announces the consolation matchUp, and v2 plans the same.
+  it('FIC 8, Main played out, the final cleared: v2 owns it, and leaves exactly what v1 leaves', () => {
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [MAIN(1, 1), MAIN(1, 2), MAIN(1, 3), MAIN(1, 4), MAIN(2, 1), MAIN(2, 2), MAIN(3, 1)].map((target) => ({
+        target,
+        outcome: won(1),
+      })),
+      steps: [{ target: MAIN(3, 1), outcome: cleared }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    const tally = () => ({
+      applied: getDifferentialTally()['shadow:applied']?.compared ?? 0,
+      settle: getDifferentialTally()['shadow:abstain:settle']?.deferred ?? 0,
+    });
+    const before = tally();
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+    expect(tally()).toEqual({ applied: before.applied + 1, settle: before.settle });
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v2.v1Writes).toEqual(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+  });
+});
+
+describe('the convergence beyond a relayed copy that feeds on is v1s (ruling 2: the geometry wall held by a test)', () => {
+  // Consolation 3/1 converges to a double walkover holding the carrier alone, but feeds Consolation 4/1, which v1 also
+  // rewrites (and takes a participant back out of 5/1). Every relay program refuses it; only `occupiedFinalRelaySeatOps`'s
+  // `next.winnerMatchUpId` clause tells it from the occupied final. A classifier on the copy's content alone would own it.
+  it('FIC_TO_SF 16 of 15 (seed 1): Main 2/3 cleared after Main 2/4 and Consolation 1/2 double walkovers abstains `exit`, and v2 leaves exactly what v1 leaves', () => {
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 16, participantsCount: 15, drawType: FEED_IN_CHAMPIONSHIP_TO_SF },
+      nonRandom: 1,
+      setup: [
+        { target: MAIN(1, 2), outcome: walkover(1), params: CARRIED },
+        ...[3, 4, 5, 6, 7, 8].map((roundPosition) => ({
+          target: MAIN(1, roundPosition),
+          outcome: won(1),
+          params: CARRIED,
+        })),
+        { target: MAIN(2, 4), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED },
+        { target: R1(2, 'Consolation'), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED },
+        { target: MAIN(2, 3), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED },
+      ],
+      steps: [{ target: MAIN(2, 3), outcome: cleared, params: CARRIED }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    const deferred = () => getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0;
+    const before = deferred();
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+    expect(deferred()).toEqual(before + 1);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+  });
+});
+
 describe('C13 no-arrival public writers and subscribed differential notices', () => {
   it.each([...FMLC_NO_ARRIVAL_WINNERS, ...FMLC_NO_ARRIVAL_REAL])('%s v1 oracle', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
@@ -6611,6 +6756,689 @@ describe('C14 standing reservations preserve their original stored records', () 
       expect(
         actual.notices.some((notice) => notice.includes('setMatchUpStatusBye') && notice.includes(after.matchUpId)),
       ).toEqual(true);
+    },
+  );
+});
+
+describe('C15 superseded own relay material and notice contracts', () => {
+  it.each(SUPERSEDED_OWN_RELAYS)('%s subscribed differential', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
+  it.each(materialModes(SUPERSEDED_OWN_RELAYS))(
+    '%s independent stored and writer contract',
+    (_label, scenario, mode) => {
+      const actual = play(mode, scenario);
+      expect(actual.results.every((result: any) => result.success)).toEqual(true);
+      const before = consolationRecord(actual.recordBefore)[0].matchUps;
+      const after = consolationRecord(actual.record)[0].matchUps;
+      const at = (list: any[], roundNumber: number, roundPosition: number) =>
+        list.find((matchUp: any) => matchUp.roundNumber === roundNumber && matchUp.roundPosition === roundPosition);
+      const mirrored = _label.includes('/mirror/');
+      const producedSide = mirrored ? 2 : 1;
+      const relay = at(after, 2, mirrored ? 2 : 3);
+      const target = at(after, 3, mirrored ? 1 : 2);
+      const targetBefore = at(before, 3, mirrored ? 1 : 2);
+      const producer = at(before, 1, mirrored ? 2 : 3);
+      const isDefault =
+        producer.matchUpStatus === DOUBLE_DEFAULT && scenario.steps[0].outcome.matchUpStatus === DEFAULTED;
+      const producedStatus = isDefault ? DEFAULTED : WALKOVER;
+      const doubleStatus = isDefault ? DOUBLE_DEFAULT : DOUBLE_WALKOVER;
+      expect(targetBefore.sideExitProvenance?.[producedSide]?.sourceMatchUpId).toEqual(producer.matchUpId);
+      expect(relay.matchUpStatus).toEqual(doubleStatus);
+      expect(relay.score).toEqual({ scoreStringSide1: '', scoreStringSide2: '' });
+      expect(relay.schedule.scoredTime).toEqual('2026-10-25T00:01:00.000Z');
+      expect(target.drawPositions).toEqual([]);
+      expect(target.matchUpStatus).toEqual(producedStatus);
+      expect(target).not.toHaveProperty('winningSide');
+      expect(target.score).toEqual({ scoreStringSide1: '', scoreStringSide2: '' });
+      expect(target.matchUpStatusCodes).toEqual([]);
+      expect(target.schedule ?? {}).not.toHaveProperty('scoredTime');
+      expect(target.sideExitProvenance).toEqual({
+        [producedSide]: {
+          matchUpStatus: producedStatus,
+          previousMatchUpStatus: doubleStatus,
+          sourceMatchUpId: relay.matchUpId,
+        },
+      });
+      expect(at(after, 4, mirrored ? 1 : 2)).toEqual(at(before, 4, mirrored ? 1 : 2));
+      expect(at(after, 2, mirrored ? 1 : 4)).toEqual(at(before, 2, mirrored ? 1 : 4));
+      expect(actual.v1Writes).toEqual(mode === OUTCOME_PIPELINE_V1 ? 2 : 0);
+      const notices = actual.notices.map((notice) => {
+        const split = notice.indexOf(' ');
+        return { topic: notice.slice(0, split), payload: JSON.parse(notice.slice(split + 1)) };
+      });
+      expect(notices.map(({ topic }) => topic)).toEqual([
+        MODIFY_DRAW_DEFINITION,
+        MODIFY_POSITION_ASSIGNMENTS,
+        ...Array(6).fill(MODIFY_MATCHUP),
+        ...Array(5).fill(UPDATE_INCONTEXT_MATCHUP),
+      ]);
+      expect(notices.filter(({ topic }) => topic === MODIFY_MATCHUP).map(({ payload }) => payload.context)).toEqual([
+        'modifyMatchUpScore',
+        mirrored ? 'removeDrawPosition-2' : 'removeDrawPosition-1',
+        'modifyMatchUpScore',
+        'assignMatchUpDrawPosition',
+        'modifyMatchUpScore',
+        'modifyMatchUpScore',
+      ]);
+      expect(notices[6].payload.matchUp.matchUpId).toEqual(relay.matchUpId);
+      expect(notices[7].payload.matchUp.matchUpId).toEqual(target.matchUpId);
+    },
+  );
+  it.each(SUPERSEDED_OWN_RELAY_OUTSIDE)('%s preserves existing boundary', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+      const compared = play(mode, scenario);
+      expect(compared.results).toEqual(v1.results);
+      expect(compared.record).toEqual(v1.record);
+      expect(compared.notices).toEqual(v1.notices);
+      // A locally owned clear still runs v1 in differential's comparison shadow.
+      expect(compared.v1Writes).toEqual(_label.includes('/clear/') && mode === OUTCOME_PIPELINE_V2 ? 0 : 1);
+    }
+  });
+});
+
+/**
+ * C16: THE LOSER BESIDE AN OPPONENT BYE GOES ON THROUGH THE CHAIN TO THE PASSAGE'S LANDING (census w2 9100153,
+ * FIRST_ROUND_LOSER_CONSOLATION 16/11, seed 9100153, `doubleExitPropagateBye: false`). Main 1/4 a DOUBLE_DEFAULT: its
+ * produced DEFAULTED passed Consolation 1/2's and 2/1's BYEs (RULE 1) and stood pending at Consolation 3/1. Given a
+ * winner, v1 unwinds the passage (`removeDoubleExit`: each BYE matchUp keeps its BYE with the carry's provenance
+ * withdrawn, the landing written back to be played, quietly, the carrier's position standing in it), writes the result,
+ * and places the loser on seat 4: `assignDrawPosition` announces Consolation 2/1 and the landing as the position goes
+ * on through both BYEs (`unwoundThrough`'s `onward`, read off the unwind's own ops: `unwoundLanding`). The eleven setup
+ * entries are the census replay's accepted entries, in order (two of its thirteen were skipped or refused and wrote
+ * nothing); the reduced setup was checked to leave the replay's record byte for byte.
+ */
+const CONSOLATION = (roundNumber: number, roundPosition: number): Target => ({
+  roundNumber,
+  roundPosition,
+  structureName: 'Consolation',
+});
+const W2_9100153: Scenario = {
+  drawProfile: { drawSize: 16, participantsCount: 11, drawType: FIRST_ROUND_LOSER_CONSOLATION },
+  nonRandom: 9100153,
+  policyDefinitions: POLICY_OFF,
+  setup: (
+    [
+      [MAIN(1, 7), { matchUpStatus: WALKOVER, winningSide: 2 }],
+      [MAIN(2, 1), { winningSide: 2 }],
+      [MAIN(1, 5), { winningSide: 2 }],
+      [CONSOLATION(2, 2), { matchUpStatus: WALKOVER, winningSide: 1 }],
+      [MAIN(1, 4), { matchUpStatus: DOUBLE_DEFAULT }],
+      [MAIN(1, 5), { matchUpStatus: DOUBLE_DEFAULT }],
+      [MAIN(2, 1), { winningSide: 2 }],
+      [MAIN(1, 5), { winningSide: 2 }],
+      [MAIN(1, 7), { winningSide: 2 }],
+      [MAIN(2, 4), { winningSide: 2 }],
+      [MAIN(2, 3), { matchUpStatus: WALKOVER, winningSide: 1 }],
+    ] as [Target, Record<string, unknown>][]
+  ).map(([target, outcome]) => ({ target, outcome, params: CARRIED })),
+  steps: [{ target: MAIN(1, 4), outcome: { winningSide: 1 }, params: CARRIED }],
+};
+
+describe('C16 the loser beside an opponent BYE goes on through the chain to the landing the unwind writes back', () => {
+  it('census w2 9100153 (FRLC 16/11, policy off): v2 owns Main 1/4 given a winner and leaves exactly what v1 leaves', () => {
+    const v1 = play(OUTCOME_PIPELINE_V1, W2_9100153);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    expect(v1.v1Writes).toBeGreaterThan(0);
+    // the landing as v1 leaves it: Consolation 3/1 to be played, the loser's position standing in it alone
+    const consolation = consolationRecord(v1.record)[0].matchUps;
+    const landing = consolation.find((matchUp: any) => matchUp.roundNumber === 3 && matchUp.roundPosition === 1);
+    expect(landing.matchUpStatus).toEqual(TO_BE_PLAYED);
+    expect(landing.drawPositions).toEqual([4]);
+    expect(landing.sideExitProvenance).toBeUndefined();
+    const tally = () => ({
+      applied: getDifferentialTally()['shadow:applied']?.compared ?? 0,
+      exit: getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0,
+    });
+    const before = tally();
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, W2_9100153);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+    expect(tally()).toEqual({ applied: before.applied + 1, exit: before.exit });
+    const v2 = play(OUTCOME_PIPELINE_V2, W2_9100153);
+    expect(v2.v1Writes).toEqual(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+  });
+});
+
+/**
+ * C18: THE LOSER ARRIVES WHERE A CARRIED EXIT STANDS AWARDED TO THEIR SEAT, TAKES IT AND GOES ON. Main 1/1 a WALKOVER
+ * (or DEFAULTED) carried across the loser link: the consolation matchUp it feeds stands as that exit, its `winningSide`
+ * naming the empty seat, the carrier's provenance on the other side. Main 1/2 then played: its loser is placed on that
+ * seat, and v1's `assignDrawPosition` reads the arrival as the award's winner (`participantArrivesAtExit`): the matchUp
+ * is written back as it stands with its codes re-derived and announced as the assignment, and the arriving position
+ * goes on into the next matchUp of the structure (`advanceIntoWinnerMatchUp`), or nowhere from the structure's last
+ * round (a 4-draw's one-matchUp consolation). v2 plans the same (`standingAwardArrival`, `awardedArrivalOps`). A
+ * produced exit standing pending (a double exit under `doubleExitPropagateBye: false`, no winner until somebody
+ * arrives) is not this shape and stays v1's.
+ */
+const AWARD_DRAWS: [string, number, string][] = [
+  [FEED_IN_CHAMPIONSHIP, 8, 'Main'],
+  [FIRST_ROUND_LOSER_CONSOLATION, 8, 'Main'],
+  [FEED_IN_CHAMPIONSHIP, 16, 'Main'],
+  [FIRST_ROUND_LOSER_CONSOLATION, 4, 'Main'],
+  [FEED_IN_CHAMPIONSHIP, 4, 'Main'],
+  [CURTIS_CONSOLATION, 16, 'Main'],
+  [MODIFIED_FEED_IN_CHAMPIONSHIP, 16, 'Main'],
+  [COMPASS, 8, 'East'],
+  [OLYMPIC, 8, 'East'],
+  [DOUBLE_ELIMINATION, 8, 'Main'],
+];
+const STANDING_AWARDS: [string, Scenario][] = AWARD_DRAWS.flatMap(([drawType, drawSize, structureName]) =>
+  ([WALKOVER, DEFAULTED] as const).map((exit): [string, Scenario] => [
+    `${drawType} ${drawSize}: R1/1 a carried ${exit}, R1/2 played, its loser takes the standing award`,
+    {
+      drawProfile: { drawSize, drawType },
+      setup: [{ target: R1(1, structureName), outcome: exited(exit, 1), params: CARRIED }],
+      steps: [{ target: R1(2, structureName), outcome: won(1), params: CARRIED }],
+    },
+  ]),
+);
+const PRODUCED_PENDING: [string, Scenario][] = ([DOUBLE_WALKOVER, DOUBLE_DEFAULT] as const).map(
+  (doubleExit): [string, Scenario] => [
+    `FEED_IN_CHAMPIONSHIP 8 (policy off): R1/1 a ${doubleExit}, its produced exit pending, R1/2 played`,
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      policyDefinitions: POLICY_OFF,
+      setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: doubleExit }, params: CARRIED }],
+      steps: [{ target: R1(2, 'Main'), outcome: won(1), params: CARRIED }],
+    },
+  ],
+);
+
+describe('C18 the loser arriving where a carried exit stands awarded to their seat takes it and goes on', () => {
+  it.each(STANDING_AWARDS)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    const tally = () => ({
+      applied: getDifferentialTally()['shadow:applied']?.compared ?? 0,
+      cascade: getDifferentialTally()['shadow:abstain:cascade']?.deferred ?? 0,
+    });
+    const before = tally();
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+    expect(tally()).toEqual({ applied: before.applied + 1, cascade: before.cascade });
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v2.v1Writes).toEqual(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+  });
+  it.each(PRODUCED_PENDING)('%s: a produced exit pending is not a standing award, v1s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    const deferred = () => getDifferentialTally()['shadow:abstain:cascade']?.deferred ?? 0;
+    const before = deferred();
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+    expect(deferred()).toEqual(before + 1);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.record).toEqual(v1.record);
+  });
+});
+
+/** C19: the winner takes the single produced exit pending in their target and goes on, exact notices included. */
+const PENDING_WINNER_DRAWS: [string, number, string][] = [
+  [FIRST_ROUND_LOSER_CONSOLATION, 8, 'Main'],
+  [OLYMPIC, 8, 'East'],
+  [CURTIS_CONSOLATION, 16, 'Main'],
+  [MODIFIED_FEED_IN_CHAMPIONSHIP, 16, 'Main'],
+  [FEED_IN_CHAMPIONSHIP_TO_SF, 16, 'Main'],
+  [SINGLE_ELIMINATION, 4, 'Main'],
+  [SINGLE_ELIMINATION, 8, 'Main'],
+  [SINGLE_ELIMINATION, 16, 'Main'],
+  [FEED_IN_CHAMPIONSHIP, 8, 'Main'],
+  [DOUBLE_ELIMINATION, 8, 'Main'],
+  [COMPASS, 8, 'East'],
+  [FIRST_MATCH_LOSER_CONSOLATION, 8, 'Main'],
+];
+const PENDING_WINNERS: [string, Scenario][] = PENDING_WINNER_DRAWS.flatMap(([drawType, drawSize, structureName]) =>
+  [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((doubleExit) =>
+    [false, true].flatMap((policyOff) =>
+      [false, true].flatMap((propagateExitStatus) =>
+        [1, 2].flatMap((arrival): [string, Scenario][] =>
+          policyOff && drawType === SINGLE_ELIMINATION
+            ? []
+            : [
+                [
+                  `${drawType} ${drawSize}: ${doubleExit}, policy ${policyOff ? 'off' : 'on'}, propagation ${propagateExitStatus}, arrival ${arrival}`,
+                  {
+                    drawProfile: { drawSize, drawType },
+                    ...(policyOff ? { policyDefinitions: POLICY_OFF } : {}),
+                    setup: [
+                      {
+                        target: R1(3 - arrival, structureName),
+                        outcome: { matchUpStatus: doubleExit },
+                        params: { propagateExitStatus },
+                      },
+                    ],
+                    steps: [{ target: R1(arrival, structureName), outcome: won(1), params: { propagateExitStatus } }],
+                  },
+                ],
+              ],
+        ),
+      ),
+    ),
+  ),
+);
+
+// These also meet a pending exit at the LOSER's linked target (C18's produced-pending control), a separate wall.
+const pendingWinnerIsOwned = (scenario: Scenario) =>
+  !scenario.policyDefinitions && scenario.drawProfile.drawType !== FIRST_MATCH_LOSER_CONSOLATION;
+
+// The generator's outcome fixtures can leave the produced exit's score absent. Arrival preserves that shape too.
+const GENERATED_PENDING_WINNERS: [string, Scenario][] = PENDING_WINNERS.filter(([, scenario]) =>
+  pendingWinnerIsOwned(scenario),
+).map(([label, scenario]) => [
+  `generated ${label}`,
+  {
+    ...scenario,
+    drawProfile: {
+      ...scenario.drawProfile,
+      outcomes: [
+        {
+          roundNumber: 1,
+          roundPosition: scenario.setup?.[0].target.roundPosition,
+          ...scenario.setup?.[0].outcome,
+        },
+      ],
+    },
+    setup: [],
+  },
+]);
+
+describe('C19 a winner arrives at a pending produced exit', () => {
+  it.each([...PENDING_WINNERS.filter(([, scenario]) => pendingWinnerIsOwned(scenario)), ...GENERATED_PENDING_WINNERS])(
+    '%s',
+    (_label, scenario) => {
+      const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+      expect(v1.results.every((result: any) => result.success)).toEqual(true);
+      const tally = () => ({
+        applied: getDifferentialTally()['shadow:applied']?.compared ?? 0,
+        cascade: getDifferentialTally()['shadow:abstain:cascade']?.deferred ?? 0,
+      });
+      const before = tally();
+      const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+      expect(compared.results).toEqual(v1.results);
+      expect(compared.record).toEqual(v1.record);
+      expect(compared.notices).toEqual(v1.notices);
+      expect(tally()).toEqual({ applied: before.applied + 1, cascade: before.cascade });
+      const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+      expect(v2.v1Writes).toEqual(0);
+      expect(v2.results).toEqual(v1.results);
+      expect(v2.record).toEqual(v1.record);
+      expect(v2.notices).toEqual(v1.notices);
+    },
+  );
+});
+
+describe('C19 controls: the loser also meets a pending produced exit', () => {
+  it.each(PENDING_WINNERS.filter(([, scenario]) => !pendingWinnerIsOwned(scenario) && !!scenario.policyDefinitions))(
+    '%s stays v1s',
+    (_label, scenario) => {
+      const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+      expect(v1.results.every((result: any) => result.success)).toEqual(true);
+      const deferred = () => getDifferentialTally()['shadow:abstain:cascade']?.deferred ?? 0;
+      const before = deferred();
+      const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+      expect(compared.results).toEqual(v1.results);
+      expect(compared.record).toEqual(v1.record);
+      expect(compared.notices).toEqual(v1.notices);
+      expect(deferred()).toEqual(before + 1);
+      const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+      expect(v2.v1Writes).toBeGreaterThan(0);
+      expect(v2.results).toEqual(v1.results);
+      expect(v2.record).toEqual(v1.record);
+      expect(v2.notices).toEqual(v1.notices);
+    },
+  );
+});
+
+/** C20: a plain loser passes BYEs within the linked structure, including a last-round BYE. */
+const PLAIN_BYE_RECIPES: [string, number, number, number, number, boolean][] = [
+  [FEED_IN_CHAMPIONSHIP, 4, 3, 1, 2, true],
+  [FEED_IN_CHAMPIONSHIP, 8, 3, 2, 1, true],
+  [FEED_IN_CHAMPIONSHIP, 8, 2, 3, 1, true],
+  [FEED_IN_CHAMPIONSHIP, 16, 3, 3, 1, false],
+  [FEED_IN_CHAMPIONSHIP, 16, 2, 4, 1, true],
+  [FIRST_ROUND_LOSER_CONSOLATION, 4, 3, 1, 2, true],
+  [FIRST_ROUND_LOSER_CONSOLATION, 8, 5, 1, 3, true],
+  [FIRST_ROUND_LOSER_CONSOLATION, 16, 10, 1, 2, false],
+  [FIRST_ROUND_LOSER_CONSOLATION, 16, 10, 1, 7, true],
+  [FIRST_ROUND_LOSER_CONSOLATION, 16, 9, 1, 7, true],
+  [COMPASS, 8, 5, 1, 3, true],
+  [COMPASS, 8, 3, 2, 1, true],
+  [OLYMPIC, 8, 5, 1, 3, true],
+  [OLYMPIC, 8, 3, 2, 1, true],
+  [DOUBLE_ELIMINATION, 8, 3, 2, 1, true],
+  [DOUBLE_ELIMINATION, 8, 2, 3, 1, true],
+  [CURTIS_CONSOLATION, 16, 3, 3, 1, false],
+  [FEED_IN_CHAMPIONSHIP_TO_SF, 16, 3, 3, 1, false],
+  [FIRST_MATCH_LOSER_CONSOLATION, 8, 3, 2, 1, true],
+  [FIRST_ROUND_LOSER_CONSOLATION, 32, 20, 1, 4, false],
+  [FIRST_ROUND_LOSER_CONSOLATION, 32, 20, 1, 8, true],
+  [FIRST_ROUND_LOSER_CONSOLATION, 32, 20, 1, 11, true],
+  [FIRST_ROUND_LOSER_CONSOLATION, 32, 20, 1, 13, true],
+  [FIRST_ROUND_LOSER_CONSOLATION, 32, 17, 1, 8, false],
+  [FEED_IN_CHAMPIONSHIP, 32, 3, 4, 2, true],
+  [FEED_IN_CHAMPIONSHIP, 32, 2, 5, 1, true],
+];
+const PLAIN_BYE_ARRIVALS: [string, Scenario][] = PLAIN_BYE_RECIPES.flatMap(
+  ([drawType, drawSize, participantsCount, roundNumber, roundPosition, reachesTeam]) =>
+    [false, true].flatMap((team) =>
+      team && !reachesTeam
+        ? []
+        : [false, true].flatMap((policyOff) =>
+            [1, 2].map((winningSide): [string, Scenario] => [
+              `${drawType} ${participantsCount}/${drawSize} R${roundNumber}/${roundPosition}, TEAM ${team}, policy off ${policyOff}, side ${winningSide}`,
+              {
+                nonRandom: 1,
+                drawProfile: {
+                  drawType,
+                  drawSize,
+                  participantsCount,
+                  ...(team ? { eventType: 'TEAM', tieFormatName: 'USTA_COLLEGE' } : {}),
+                },
+                ...(policyOff ? { policyDefinitions: POLICY_OFF } : {}),
+                steps: [
+                  {
+                    target: {
+                      structureName: drawType === COMPASS || drawType === OLYMPIC ? 'East' : 'Main',
+                      roundNumber,
+                      roundPosition,
+                    },
+                    outcome: { winningSide },
+                  },
+                ],
+              },
+            ]),
+          ),
+    ),
+);
+const plainByeIsOwned = (scenario: Scenario) =>
+  !(scenario.drawProfile.drawType === DOUBLE_ELIMINATION && scenario.drawProfile.participantsCount === 2);
+
+describe('C20 a plain loser goes on through a BYE chain or a last-round BYE', () => {
+  it.each(PLAIN_BYE_ARRIVALS)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    const tally = () => ({
+      applied: getDifferentialTally()['shadow:applied']?.compared ?? 0,
+      cascade: getDifferentialTally()['shadow:abstain:cascade']?.deferred ?? 0,
+    });
+    const before = tally();
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+    const owned = plainByeIsOwned(scenario);
+    expect(tally()).toEqual({ applied: before.applied + Number(owned), cascade: before.cascade + Number(!owned) });
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v2.v1Writes === 0).toEqual(owned);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+  });
+});
+
+describe('C20 previously deferred BYE arrivals', () => {
+  it('C20: a retirement carrying no exit sends its loser through two BYEs', () => {
+    // COMPASS 16/10: a retirement the policy does not propagate is directed as played; its loser goes on through two BYEs
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 16, participantsCount: 10, drawType: COMPASS },
+      steps: [{ target: R1(2, 'East'), outcome: retired(1), params: CARRIED }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v1.results[0].success).toEqual(true);
+    expect(v2.v1Writes).toEqual(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+  });
+});
+
+describe('C20 the pending-exit winner whose loser passes a last-round BYE', () => {
+  it.each(PENDING_WINNERS.filter(([, scenario]) => !pendingWinnerIsOwned(scenario) && !scenario.policyDefinitions))(
+    '%s',
+    (_label, scenario) => {
+      const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+      const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+      const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+      expect(v1.results.every((result: any) => result.success)).toEqual(true);
+      expect(v2.v1Writes).toEqual(0);
+      for (const actual of [compared, v2]) {
+        expect(actual.results).toEqual(v1.results);
+        expect(actual.record).toEqual(v1.record);
+        expect(actual.notices).toEqual(v1.notices);
+      }
+    },
+  );
+});
+
+// Prepare TEAM line-ups once: pair participants can receive fresh ids during the public setup.
+describe('C20 deciding TEAM lines send their loser through BYEs', () => {
+  it.each(PLAIN_BYE_ARRIVALS.filter(([, scenario]) => !!scenario.drawProfile.eventType))('%s', (_label, scenario) => {
+    setOutcomePipeline(OUTCOME_PIPELINE_V1);
+    setClock('2026-10-25T00:00:00.000Z');
+    setSubscriptions({ subscriptions: {} });
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ ...scenario.drawProfile, drawId: 'd' }],
+      nonRandom: 1,
+      setState: true,
+    });
+    if (scenario.policyDefinitions) tournamentEngine.attachPolicies({ policyDefinitions: scenario.policyDefinitions });
+    expect(
+      tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: 'd' }).success,
+    ).toEqual(true);
+    const step = scenario.steps[0];
+    for (const singlesLine of [0, 1, 2]) {
+      expect(
+        tournamentEngine.setMatchUpStatus({
+          drawId: 'd',
+          matchUpId: findTarget({ ...step.target, singlesLine }),
+          outcome: step.outcome,
+        }).success,
+      ).toEqual(true);
+    }
+    const prepared = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+    const lineScenario = { ...scenario, steps: [{ ...step, target: { ...step.target, singlesLine: 3 } }] };
+    const v1 = play(OUTCOME_PIPELINE_V1, lineScenario, { prepared });
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, lineScenario, { prepared });
+    const v2 = play(OUTCOME_PIPELINE_V2, lineScenario, { prepared });
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    expect(v2.v1Writes === 0).toEqual(plainByeIsOwned(scenario));
+    for (const actual of [compared, v2]) {
+      expect(actual.results).toEqual(v1.results);
+      expect(actual.record).toEqual(v1.record);
+      expect(actual.notices).toEqual(v1.notices);
+    }
+  });
+});
+
+// C21 captures cover one to four structural BYEs, a clean landing or a final BYE, and linked winner controls.
+const HELD_BYE_RECIPES: [string, number, number, number, number][] = [
+  [FEED_IN_CHAMPIONSHIP, 4, 3, 1, 2],
+  [FEED_IN_CHAMPIONSHIP, 8, 7, 1, 2],
+  [FEED_IN_CHAMPIONSHIP, 8, 3, 2, 1],
+  [FEED_IN_CHAMPIONSHIP, 8, 2, 3, 1],
+  [FIRST_ROUND_LOSER_CONSOLATION, 4, 3, 1, 2],
+  [FIRST_ROUND_LOSER_CONSOLATION, 8, 7, 1, 2],
+  [FIRST_ROUND_LOSER_CONSOLATION, 8, 5, 1, 3],
+  [FIRST_ROUND_LOSER_CONSOLATION, 16, 10, 1, 2],
+  [FIRST_ROUND_LOSER_CONSOLATION, 16, 9, 1, 7],
+  [COMPASS, 8, 7, 1, 2],
+  [COMPASS, 8, 5, 1, 3],
+  [COMPASS, 8, 3, 2, 1],
+  [OLYMPIC, 8, 7, 1, 2],
+  [OLYMPIC, 8, 5, 1, 3],
+  [OLYMPIC, 8, 3, 2, 1],
+  [DOUBLE_ELIMINATION, 8, 7, 1, 2],
+  [DOUBLE_ELIMINATION, 8, 3, 2, 1],
+  [DOUBLE_ELIMINATION, 8, 2, 3, 1],
+  [CURTIS_CONSOLATION, 16, 15, 1, 2],
+  [CURTIS_CONSOLATION, 16, 3, 3, 1],
+  [MODIFIED_FEED_IN_CHAMPIONSHIP, 16, 15, 1, 2],
+  [FEED_IN_CHAMPIONSHIP_TO_SF, 16, 15, 1, 2],
+  [FEED_IN_CHAMPIONSHIP_TO_SF, 16, 3, 3, 1],
+  [FIRST_MATCH_LOSER_CONSOLATION, 8, 7, 1, 2],
+  [FIRST_ROUND_LOSER_CONSOLATION, 32, 17, 1, 8],
+];
+const HELD_BYE_REMOVALS: [string, Scenario, boolean][] = HELD_BYE_RECIPES.flatMap(
+  ([drawType, drawSize, participantsCount, roundNumber, roundPosition]) => {
+    const target = {
+      structureName: [COMPASS, OLYMPIC].includes(drawType) ? 'East' : 'Main',
+      roundNumber,
+      roundPosition,
+    };
+    const drawProfile = { drawType, drawSize, participantsCount };
+    const linkedWinner = drawType === DOUBLE_ELIMINATION && participantsCount === 2;
+    return ([1, 2] as const).flatMap((side) => {
+      const actions: [string, Record<string, unknown>, Record<string, unknown>, boolean][] = [
+        ['clear', won(side), cleared, !linkedWinner],
+        ['correct', won(side), won(side === 1 ? 2 : 1), !linkedWinner],
+        [
+          DOUBLE_WALKOVER,
+          won(side),
+          { matchUpStatus: DOUBLE_WALKOVER },
+          !linkedWinner && !(drawType === DOUBLE_ELIMINATION && participantsCount === 3),
+        ],
+        [
+          DOUBLE_DEFAULT,
+          won(side),
+          { matchUpStatus: DOUBLE_DEFAULT },
+          !linkedWinner && !(drawType === DOUBLE_ELIMINATION && participantsCount === 3),
+        ],
+        ['carried WALKOVER clear control', walkover(side), cleared, false],
+        ['retired correct', retired(side), won(side === 1 ? 2 : 1), !linkedWinner],
+      ];
+      return actions.flatMap(([action, initial, outcome, owned]): [string, Scenario, boolean][] => {
+        const label = `C21 ${drawType} ${participantsCount}/${drawSize} R${roundNumber}/${roundPosition} side ${side}: ${action}`;
+        const scenario: Scenario = {
+          drawProfile,
+          setup: [{ target, outcome: initial, params: CARRIED }],
+          steps: [{ target, outcome }],
+        };
+        const cases: [string, Scenario, boolean][] = [[label, scenario, owned]];
+        if ([DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(action)) {
+          // Policy-off propagation at this later FIC source reaches an existing exit refusal.
+          const exitControl = drawType === FEED_IN_CHAMPIONSHIP && participantsCount === 3 && drawSize === 8;
+          cases.push([`${label}, policy off`, { ...scenario, policyDefinitions: POLICY_OFF }, owned && !exitControl]);
+        }
+        return cases;
+      });
+    });
+  },
+);
+
+describe('C21 removing or relabelling a loser held beside a structural BYE', () => {
+  it.each(HELD_BYE_REMOVALS)('%s', (_label, scenario, owned) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v2.v1Writes === 0).toEqual(owned);
+    for (const actual of [compared, v2]) {
+      expect(actual.results).toEqual(v1.results);
+      expect(actual.record).toEqual(v1.record);
+      expect(actual.notices).toEqual(v1.notices);
+    }
+  });
+});
+
+const HELD_BYE_TEAMS = HELD_BYE_RECIPES.filter(
+  ([drawType, , participantsCount]) =>
+    // These public TEAM recipes leave the selected source unpopulated.
+    !(drawType === FIRST_ROUND_LOSER_CONSOLATION && [10, 17].includes(participantsCount)) &&
+    !([CURTIS_CONSOLATION, FEED_IN_CHAMPIONSHIP_TO_SF].includes(drawType) && participantsCount === 3),
+).flatMap(([drawType, drawSize, participantsCount, roundNumber, roundPosition]) =>
+  ([1, 2] as const).flatMap((side) =>
+    ['correct', 'undecide', 'clear control'].map((action) => ({
+      label: `C21 TEAM ${drawType} ${participantsCount}/${drawSize} R${roundNumber}/${roundPosition} side ${side}: ${action}`,
+      drawProfile: { drawType, drawSize, participantsCount, eventType: 'TEAM', tieFormatName: 'USTA_COLLEGE' },
+      target: { structureName: [COMPASS, OLYMPIC].includes(drawType) ? 'East' : 'Main', roundNumber, roundPosition },
+      side,
+      action,
+    })),
+  ),
+);
+// Canonical JSON omits undefined: separately pin deletion of the stored TEAM side property.
+function storedLineUpFields() {
+  const fields: [string, boolean][] = [];
+  const visit = (value: any, path: string) => {
+    if (!value || typeof value !== 'object') return;
+    if (Array.isArray(value.sides))
+      value.sides.forEach((side: any, i: number) => fields.push([`${path}.sides.${i}`, Object.hasOwn(side, 'lineUp')]));
+    for (const [key, child] of Object.entries(value)) visit(child, `${path}.${key}`);
+  };
+  visit(tournamentEngine.getTournament().tournamentRecord, 'record');
+  return fields;
+}
+
+describe('C21 TEAM correction and a fresh line undoing a decided dual', () => {
+  it.each(HELD_BYE_TEAMS.map((testCase) => [testCase.label, testCase] as const))(
+    '%s',
+    (_label, { drawProfile, target, side, action }) => {
+      setOutcomePipeline(OUTCOME_PIPELINE_V1);
+      setClock('2026-10-25T00:00:00.000Z');
+      setSubscriptions({ subscriptions: {} });
+      mocksEngine.generateTournamentRecord({
+        drawProfiles: [{ ...drawProfile, drawId: 'd' }],
+        nonRandom: 1,
+        setState: true,
+      });
+      expect(
+        tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: 'd' }).success,
+      ).toEqual(true);
+      expect(
+        tournamentEngine.setMatchUpStatus({
+          drawId: 'd',
+          matchUpId: findTarget(target),
+          outcome: { winningSide: side },
+        }).success,
+      ).toEqual(true);
+      const prepared = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+      let outcome: Record<string, unknown> = cleared;
+      if (action === 'undecide') outcome = won(side);
+      if (action === 'correct') outcome = { winningSide: side === 1 ? 2 : 1 };
+      const scenario: Scenario = {
+        drawProfile,
+        steps: [
+          {
+            target: action === 'undecide' ? { ...target, singlesLine: 0 } : target,
+            outcome,
+          },
+        ],
+      };
+      const v1 = play(OUTCOME_PIPELINE_V1, scenario, { prepared });
+      const v1LineUpFields = storedLineUpFields();
+      const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario, { prepared });
+      const v2 = play(OUTCOME_PIPELINE_V2, scenario, { prepared });
+      expect(storedLineUpFields()).toEqual(v1LineUpFields);
+      expect(v1.results.every((result: any) => result.success)).toEqual(true);
+      expect(v2.v1Writes === 0).toEqual(
+        action !== 'clear control' &&
+          !(drawProfile.drawType === DOUBLE_ELIMINATION && drawProfile.participantsCount === 2),
+      );
+      for (const actual of [compared, v2]) {
+        expect(actual.results).toEqual(v1.results);
+        expect(actual.record).toEqual(v1.record);
+        expect(actual.notices).toEqual(v1.notices);
+      }
     },
   );
 });

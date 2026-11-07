@@ -12,6 +12,44 @@ See the [engine API transition manifest and per-method guidance](/docs/implement
 
 Engine-route removal, standalone package-export retention and internal implementation status are separate decisions. Test-only conformance-harness access does not require a production governor export. No unsupported deep import is recommended.
 
+### Stateless functions move to tools
+
+Governor functions that read no tournament state and take positional arguments leave the governors and the engines in
+8.0.0. An engine calls every method with one params object, so it could never call them correctly. Import them from
+their domain in `tools`, available from 7.33:
+
+```js
+import { tools } from 'tods-competition-factory';
+
+// 7.33 and later; the only route in 8.0.0
+tools.scoring.validateMatchUpScore(sets, 'SET3-S:6/TB7');
+tools.formats.parse('SET3-S:6/TB7');
+// 7.x only
+scoreGovernor.validateMatchUpScore(sets, 'SET3-S:6/TB7');
+```
+
+- `tools.formats` replaces the matchUpFormat governor's `parse`, `stringify`, `isAggregateFormat`, `finalSetGoverns` and
+  `aggregateDeciderSetNumber`, and the score governor's aliases `parseMatchUpFormat` / `stringifyMatchUpFormat`.
+- `tools.scoring` replaces the score governor's validators, scoring-engine state readers and point and statistics
+  parsers.
+- The availability helpers stay on the `availability` export and leave the engines.
+- `tools.publishing` replaces the publishing governor's `isEmbargoed`, `isVisiblyPublished` and
+  `getRoundVisibilityState`. Each takes the instant as `asOf`, which is optional in 7.x (it falls back to the
+  competition clock) and required in 8.0.0.
+- `tools.entries`, `tools.draws` and `tools.matchUps` replace the entries governor's fee helpers, the draws governor's
+  `isAdHocType` / `isLadder`, and the matchUp governor's `validMatchUp` / `validMatchUps`.
+- `tools.rankings.deriveRankingList` replaces the ranking governor's `applyDerivedRankings` (the same function, named
+  for what it does). The rolling award window is `tools.rankings.computeAwardWindow`.
+- `publishingGovernor.isTournamentPublished(tournamentRecord)` is retired. It takes a whole record, so it is neither a
+  query nor a tool. Use the `getPublishState` query.
+
+The 8.0.0 release notes list every function this moves, by governor.
+
+### `utilities` is removed
+
+`utilities` is a deprecated alias of `tools` (`export * as utilities` beside `export * as tools`). It is removed in
+8.0.0, so replace `utilities.` with `tools.`. Nothing else changes.
+
 ### Progression edges: addGoesTo
 
 Use [the supported storage, ingest, draw-addition and read-projection routes](/docs/implementation/records/addGoesTo#supported-migration-routes). The old helper mutates stored matchUps despite its query-governor placement and is not a safe read-only API.

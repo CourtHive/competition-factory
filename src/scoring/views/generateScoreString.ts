@@ -1,3 +1,4 @@
+import { withoutZeroZeroTiebreak } from '@Helpers/matchUpFormatCode/setRules/tiebreakSetShape';
 import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { isNumeric } from '@Tools/math';
@@ -63,7 +64,9 @@ export function generateScoreString(
   if (winningSide === 2) return `${outcomeString} ${setScores}`;
   return `${setScores} ${outcomeString}`;
 
-  function setString(currentSet) {
+  function setString(set) {
+    // a 0-0 pair is no points, so it is never printed as `(0)` — the record it would describe has dropped it
+    const currentSet = withoutZeroZeroTiebreak(set);
     const isFinalSet = finalSetGoverns(parsedFormat, currentSet.setNumber, !!bestOf && currentSet.setNumber === bestOf);
     const format = isFinalSet && finalSetFormat ? finalSetFormat : setFormat;
     const hasGameScores = (set) => isNumeric(set?.side1Score) || isNumeric(set?.side2Score);

@@ -523,11 +523,37 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   v2 also owns the **first direction**: a result naming a winner, not an exit, whose winner goes
   into the next matchUp of the same structure (holding no exit or result) and whose loser, if
   a link takes them, arrives on a free seat carrying nothing, with no settle work after. A loser
+  arriving where a carried single exit already stands awarded to their seat (the carrier's WALKOVER
+  or DEFAULTED came down the link first, its `winningSide` naming the empty seat) takes the award as
+  v1's `assignDrawPosition` gives it (`participantArrivesAtExit`, C18): that matchUp is written back as
+  it stands with its codes re-derived (`[]`) and announced as the assignment, and the loser's position
+  goes on into the next matchUp of the structure, a clean arrival there, or nowhere from the
+  structure's last round (`standingAwardArrival`). A produced exit standing pending (no winner until
+  somebody arrives), an award on the other side, codes stored, a BYE beside the seat or a position
+  already standing onward stay v1's. The **winner** arriving at a single produced exit pending in their
+  same-structure target takes that exit (C19, `pendingProducedArrival`): exactly one provenance entry
+  names the paired feeder's double exit, the target has no winner, positions, BYE, score or codes, and
+  the arriving side is empty. Its status is retained, its winner becomes the arriving side, codes are
+  `[]`, the stored scoreless shape is kept (blank strings or absent), and no scored time is stamped. The arrival's source origin is
+  merged into provenance, the position is placed, and the award is announced as
+  `assignMatchUpDrawPosition` with the event and tournament. The arriving position goes on into a
+  clean next matchUp (`onwardFrom`), announced and stamped, or nowhere from the structure's last round.
+  A loser also meeting a pending produced exit across their link remains v1's at the earlier loser wall.
+  A loser
   placed opposite a BYE goes on through it at once, as v1 sends them (`advanceIntoWinnerMatchUp`):
   their position joins the next matchUp of that structure, or occupies it there when it was advanced
   structurally while their seat stood empty, and that matchUp is announced. Only a clean next matchUp
   is planned (`TO_BE_PLAYED`, no BYE, exit, carry, provenance or result, no earlier advance of the
-  BYE's position to replace, and no FIRST_MATCHUP reservation it would then raise). A winner whose
+  BYE's position to replace, and no FIRST_MATCHUP reservation it would then raise). C20 also plans a
+  first plain loser's arrival through a chain of BYEs or at a last-round BYE (`plainByeArrival`). Each
+  BYE remains scoreless, without a winner, codes or provenance, and holds the arriving position opposite
+  a BYE in the loser's linked structure. The entry is written on position assignments; every later
+  BYE and the clean landing is announced as an assignment and stamped. No result is awarded and no
+  provenance is created. A last-round BYE has no onward placement. A winner link crossing into another
+  structure remains v1's. For a TEAM dual's own call, draw line-ups are assigned from the furthest
+  reached matchUp back toward the entry, whose line-up notice has no event. A deciding TEAM line
+  assigns draw line-ups beyond the entry in the same reverse order, then carries the losing side's
+  held line-up onto the entry, announced `directLoser` with the event. A winner whose
   next matchUp holds a BYE (a consolation seat a reservation filled) goes on past it the same way,
   under the same conditions. An ad hoc matchUp's winner directs nothing, and its structure's tally is
   planned when it holds one round (a Swiss's later rounds stay v1's). A result in a lucky draw's
@@ -562,7 +588,10 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   still hold the seat the link fed, in a matchUp they have not played (no result, exit, provenance or
   BYE beside them): the seat is emptied and their seed entry there goes, and, when the call names a
   status, the matchUp's codes are re-derived from its provenance, as v1's `removeDirectedLoser`
-  writes them (`[]` where it stored none, which announces the matchUp). A `FIRST_MATCHUP` link, whose
+  writes them (`[]` where it stored none, which announces the matchUp). A cleared **final** whose loser a
+  link fed (FEED_IN_CHAMPIONSHIP's Main final into the consolation's last round) takes that seat back the
+  same way, with no winner's position to take back (C17); until then `removedOps` planned nothing for a
+  final, the fed seat stayed occupied, and the settle check abstained the call. A `FIRST_MATCHUP` link, whose
   removal may take a BYE back, stays v1's. So does a winner cleared in a structure that feeds its
   playoffs by finishing position (`WIN_RATIO`): v1 answers it with the playoff structures it reaches
   (`connectedStructures`, from `checkConnectedStructures`), a read of the whole structure. The same
@@ -1165,7 +1194,12 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   (`assignMatchUpDrawPosition`, with the event) and stamps: where the unwind withdrew that matchUp's BYE, or where it is
   the structure's last round (COMPASS's West: a BYE still, by the other standing BYE), or where it is a BYE still and the
   loser goes on through each BYE after it to the structure's last round, every matchUp passed announced and stamped the
-  same way (COMPASS / OLYMPIC / FIRST_ROUND_LOSER_CONSOLATION 9 of 16: West's first round, West 2/2, West 3/1). Stay v1's: a convergence the unwind dissolves (the winner would be
+  same way (COMPASS / OLYMPIC / FIRST_ROUND_LOSER_CONSOLATION 9 of 16: West's first round, West 2/2, West 3/1), or
+  through each BYE to the passage's landing (C16, `unwoundLanding`): under `doubleExitPropagateBye: false` the double
+  exit's produced exit had been sent past those BYEs and stood pending where it landed, the unwind writes that landing
+  back to be played with the carrier's position standing in it (`unwoundPassage`), and the loser arrives there, announced
+  as above; the landing is read off the unwind's own ops, not the stored view, which still shows the carry
+  (FIRST_ROUND_LOSER_CONSOLATION 11 of 16, census w2 9100153: Consolation 1/2, 2/1, into 3/1). Stay v1's: a convergence the unwind dissolves (the winner would be
   awarded the re-derived pending exit), a loser the new result would carry, a BYE that had gone on further than the next
   matchUp (FMLC's second round), and every seat shape the clear leaves to v1.
 
@@ -1511,6 +1545,28 @@ group and uncertified custom geometry remain outside this bounded certificate. I
 controls also retain the neighboring restoration's actual BYE write and timestamp change, so the two
 programs cannot become equivalent through a shared-predicate error. No operation or view field is added.
 
+A produced exit can supersede its own stale relay after a given-winner unwind (S7). The original
+loser home holds this source's propagated BYE beside a foreign double exit's origin. Its actual
+own-seat program withdraws that BYE, and the rebuilt home holds the foreign single exit pending,
+without a winner. The arriving carried WALKOVER or DEFAULTED genuinely converges with that opposite
+origin. A source-bound `Convergence` program certifies the actual pending landing, canonical side,
+collapsed status and projected codes; it carries the measured blank relay score, including for a
+DOUBLE_DEFAULT. The generic convergence reader still requires its existing awarded-winner shape.
+The produced target is a canonical nonfeed next matchUp with no positions, winner, reason codes,
+BYE or loser link. Its sole origin stands on the produced arrival side and exactly matches the
+foreign origin retained at the home, with both canonical producer edges bound. Original and folded
+target status, positions, provenance, winner, score, codes and schedule agree. The undecided paired
+feeder can hold positions; it has not delivered a winner into this empty target.
+The existing convergence and produced-target operations write the real double exit, then replace the
+target's same-side origin with this landing's produced exit. The target gains no scored time and
+nothing advances or converges beyond it. The same actual program prevents only its own-level late
+relay-copy reset from being generated, tied to the actual clear operation and exact home/target IDs;
+other late reconciliation paths retain their order. Both canonical produced sides are captured,
+with two legacy writers, thirteen ordered notices and five callbacks in v1. Independent controls
+pin the relay's blank score, target origin and absent scored time, paired feeder and untouched onward
+matchUp. Bare and clear requests receive no new program. TEAM, conditioned links and uncertified
+origins or geometry remain outside this certificate. No operation or view field is added.
+
 ## 7.2 The plan as ops (S1)
 
 A quiet produced-award placement can put back the exact position a preceding release removed. Its final
@@ -1671,6 +1727,29 @@ the route 582 → 534, 1.3 a call); forced idle, 4 mutation tests fail under v1.
 predicate asks the same detector, exact where it was scope (any result in a round such a link reads); forced idle, 20
 mutation tests fail under v1.
 
+### 7.2.1 Where the plan lives
+
+`planOutcome` and the dispatch (`abstainReason`, `shapeReason`, `exitReason`, `recordReason`, `planOps`,
+`recordedPlanOps`, the TEAM line composition that re-enters `planOps`, and `resultToDoubleExit`) are
+`src/mutate/matchUps/outcome/plan.ts`. Every shape family is a module under `outcome/plan/`, imported by `plan.ts`
+and never the other way, in layers (lowest first):
+
+- vocabulary: `planShared` (the route and status sets, the index readers, the clean and scoreless predicates,
+  `seatBye` and `structureStamps`), `resultOps` (the call's own result write), `tallyOps` (a round robin group's
+  tally);
+- readers: `producedTarget`, `byeChain`, `standingReservation`, `schedulePlan`, `directionOps`, `teamPlan`,
+  `unwindSeats`;
+- the S5 shapes: `convergence`, `producedExit`, `carriedExit`;
+- the S3, S4 and S6 shapes: `directionReasons`, `exitCorrections`, `unwindPath` (with `unwoundView`, the one
+  "unwind, then re-plan" composition);
+- the given-winner families: `supersededRelay`, `terminalAward`, `standaloneIndirect`, then `givenWinner`.
+
+The split was mechanical (2026-11-07, factory #6273 to #6278): every declaration kept its text and order, proven by a
+plan-ops trace over the census in all three modes and the full gate. The module map, with the import graph and the
+placement decisions, is Mentat `planning/OUTCOME_V2_PLAN_MODULE_MAP.md`. Where two shapes look like one rule in two
+spellings, a debate ruled on merging them; the rulings are Mentat `assessment/2026-11-07-outcome-refactor-debates.md`
+and each one that keeps shapes apart is repeated as a comment beside them.
+
 ## 8. What the corpus pins
 
 |                                   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -1699,3 +1778,24 @@ mutation tests fail under v1.
   cascades.
 - [drawPositions](./draw-positions.md): the rules direction relies on.
 - `corpus/INVARIANTS.md` and `corpus/README.md`: the properties and the scenarios that pin this page.
+
+### A removed loser held beside a structural BYE (C21)
+
+A removal or changed winner can own the old loser's seat beside a BYE when that seat holds the old
+loser, has no result, codes or exit provenance, and its BYE passage stays in the same structure.
+Every relay is scoreless, has no winner or provenance, and holds that position opposite a BYE;
+the passage ends at a clean arrival or a last-round BYE. Conditional loser links and linked winner
+continuations keep their existing refusal boundaries.
+
+Removing the old loser clears its assignment and derives status codes as v1 does, preserving the
+structural BYE placements. A correction announces the new loser's placement through the passage.
+When the new result is a double exit, its own result notice precedes the surviving loser-removal
+notice; the new exit's placements follow. A quiet produced write on the entry retains the event and
+tournament identity of that removal notice, while its deferred in-context read stays bare.
+Exact ordered notice pins enforce both policy settings.
+
+For a fresh TEAM line undoing a decided dual, the entry side's old line-up is deleted. The
+`setSideLineUp` op's explicit `clearsLineUp` mode deletes that property on the existing stored side,
+without synthesizing sides, and announces `removeDirectedLoser` with the event and tournament.
+The entry matchUp and its structure are stamped. A dual-own-call clear retains its earlier TEAM
+refusal; corrections and line-driven undo use the certified passage.

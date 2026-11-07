@@ -15,6 +15,7 @@ import { checkMatchUpFormatApplication } from '@Mutate/matchUps/matchUpFormat/ap
 import { settleHeldExits } from '@Mutate/drawDefinitions/positionGovernor/doubleExitAdvancement';
 import { announceGoesTo, setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { observePass, recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
+import { withoutZeroZeroTiebreak } from '@Helpers/matchUpFormatCode/setRules/tiebreakSetShape';
 import { reconcileScoredTimes } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import type { DeciderSnapshot } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
@@ -28,6 +29,7 @@ import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat'
 import { validateDrawTallyOptions } from '@Validators/validateTallyPolicy';
 import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { isPartialDualScore } from '@Scoring/analysis/isPartialDualScore';
 import { tiebreakPointsWarnings } from '@Scoring/analysis/validateScore';
 import { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
 import { decideOutcomeV2 } from '@Mutate/matchUps/outcome/decide';
@@ -386,6 +388,9 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     outcome.score = scoreObject;
   }
 
+  // once, here, so the v2 decision and v1's writes read the same score
+  keepDualAggregate({ enableAutoCalc, matchUpsMap, matchUpId, outcome });
+
   // read BEFORE the mutation: `reconcileDeciders` acts only on a final whose winner has changed
   const finalsBefore = getDeciderFinals(drawDefinition);
   // and the decider structures themselves: the cascade can re-seat a decider while the final's winner stays the same
@@ -582,6 +587,22 @@ const PROPAGATION_CONTEXT_KEYS = [
   'matchUpsMap',
 ];
 
+type KeepDualAggregateArgs = Pick<SetMatchUpStatusArgs, 'enableAutoCalc' | 'outcome'> & {
+  matchUpsMap: MatchUpsMap;
+  matchUpId: string;
+};
+
+/**
+ * A dual given a score without sets keeps its aggregate: the score is laid over the dual's own (`isPartialDualScore`).
+ * Swapped for it, a level tie's aggregate was wiped when its decision was recorded.
+ */
+function keepDualAggregate({ enableAutoCalc, matchUpsMap, matchUpId, outcome }: KeepDualAggregateArgs) {
+  // enabling auto-calc projects the dual's whole score from its lines (`handleTeamAutoCalc`)
+  if (!outcome || enableAutoCalc || !isPartialDualScore(outcome.score)) return;
+  const dual = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === matchUpId);
+  if (dual?.matchUpType === TEAM) outcome.score = { ...dual.score, ...outcome.score };
+}
+
 /**
  * A RESULT CARRIES NO PLUMBING. A call whose exit propagated returned the propagation's context to its caller: the
  * whole draw's live `matchUpsMap` and a hydrated matchUp in the result of a `setMatchUpStatus`, which an
@@ -596,15 +617,6 @@ function withoutPropagationContext(result: ResultType): ResultType {
   return { ...result, context };
 }
 
-/**
- * 0-0 TIEBREAK POINTS ARE NOT RECORDED POINTS (CA, 2026-11-04). No tiebreak finishes 0-0, and the engine refuses
- * tiebreak points on a set that has not finished, so a set whose tiebreak fields both read 0 carries no tiebreak
- * result: a feed's empty default. Prod 2026-11-04: an integration sent `6-7` with `0`/`0` and was refused ("Tiebreak
- * winner must reach 7 points, got 0"). Dropping the pair records it as a bare `7-6`, accepted with
- * TIEBREAK_POINTS_NOT_RECORDED (ruling V11), and the score string no longer reads `7-6(0)`, which says the loser won
- * no points. Any other impossible tiebreak (`0-3`, `7-7`) is still refused.
- */
-type TiebreakPoints = { side1TiebreakScore?: unknown; side2TiebreakScore?: unknown };
 const setHasValue = (set: SetType) =>
   !!(
     set.side1Score ||
@@ -642,12 +654,6 @@ function recordedSets(
 }
 
 const isZero = (value: unknown) => value !== null && value !== '' && value !== undefined && Number(value) === 0;
-
-function withoutZeroZeroTiebreak<T extends TiebreakPoints>(set: T): T {
-  if (!isZero(set.side1TiebreakScore) || !isZero(set.side2TiebreakScore)) return set;
-  const { side1TiebreakScore: _side1, side2TiebreakScore: _side2, ...rest } = set;
-  return rest as unknown as T;
-}
 
 /**
  * A WARNING IN THE SUCCESS PAYLOAD: the score was recorded, and a set in it was decided by its tiebreak

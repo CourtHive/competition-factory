@@ -11,7 +11,7 @@ The aggregation layer combines point awards from multiple tournaments into ranki
        |
   1. Category Filter     ageCategoryCodes, genders, eventTypes
        |
-  2. Rolling Period       Exclude awards older than rollingPeriodDays
+  2. Rolling Period       Keep awards ending within [asOfDate - rollingPeriodDays, asOfDate]
        |
   3. Group by Person      Collect all awards per personId
        |
@@ -218,15 +218,57 @@ aggregationRules: {
 }
 ```
 
-Awards are filtered by their `endDate` field. Awards without an `endDate` are always included. The cutoff is calculated from `asOfDate`:
+Awards are filtered by their `endDate`, as calendar days, inclusive at both ends:
+
+- **The window ends at `asOfDate`.** A result dated after the list's own date has not happened as far as that list is
+  concerned, so it does not count. That matters for a list dated in the past: a snapshot, a historical list, a re-run.
+- **It reaches back `rollingPeriodDays`.** A list that declares none (or a value that is not a positive number) gets
+  **365 days**.
+- **`asOfDate` is an input.** In 7.x it falls back to the competition clock's date when omitted. Pass it to judge a
+  list at a known date.
+- **An award without an `endDate` is outside every window**, because it cannot be placed in time.
 
 ```js
 generateRankingList({
   pointAwards: allAwards,
   aggregationRules: { rollingPeriodDays: 365 },
-  asOfDate: '2025-12-31', // only awards ending after 2024-12-31
+  asOfDate: '2025-12-31', // awards ending 2024-12-31 through 2025-12-31
 });
 ```
+
+The window is exported as a tool, so a service that pre-filters its own store before calling `generateRankingList`
+uses the same definition:
+
+```js
+import { tools } from 'tods-competition-factory';
+
+const { from, to } = tools.rankings.computeAwardWindow('2025-12-31', 365); // { from: '2024-12-31', to: '2025-12-31' }
+const days = tools.rankings.rollingPeriodDaysFrom(policy.aggregationRules); // the declared period, or 365
+```
+
+_Changed in 7.33:_ the window had no upper bound and no default, and awards without an `endDate` were always included.
+Before 7.33 a list dated in the past counted results from after its date.
+
+## Authority filter and weights
+
+A rank list can admit only some issuing authorities, and weight the points of each. Every award carries its
+`pointsAuthority` (stamped by its award profile or policy). These are properties of the consuming rank list, not of the
+policy, so they are arguments to `generateRankingList`:
+
+```js
+generateRankingList({
+  pointAwards: allAwards,
+  asOfDate: '2025-12-31',
+  authorityFilter: ['ATP', 'ITF', 'TENNIS_EUROPE'], // a hybrid list admits only these
+  authorityWeights: { ITF: 1.0, USTA: 0.5 }, // and counts USTA points at half
+});
+```
+
+- An award with no `pointsAuthority` counts as `UNSPECIFIED`. List `'UNSPECIFIED'` to admit those awards.
+- A weight scales every point component an award carries (`points`, `positionPoints`, `perWinPoints`,
+  `qualityWinPoints`, `bonusPoints`, `linePoints`), so the breakdown still sums to its points. An authority with no
+  weight counts at 1.
+- They apply before everything else, to native and carried awards alike. Stored awards are never changed.
 
 ## Point Decay
 

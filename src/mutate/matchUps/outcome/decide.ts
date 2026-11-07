@@ -1,5 +1,4 @@
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
-import { planOutcome, type DualCall, type OutcomePlan, type PlanShape, type RebuildView } from './plan';
 import { addedNotices, compareNotices, compareShadow, plannedNotices } from './shadow';
 import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
 import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
@@ -24,6 +23,7 @@ import { stampedInThisCall } from './ops';
 import { buildOutcomeView } from './view';
 import { applyOwnedPlan } from './apply';
 import { chooseRoute } from './route';
+import { planOutcome } from './plan';
 import {
   getNoticeBuffer,
   getOutcomePipeline,
@@ -42,8 +42,12 @@ import type { OutcomeOp } from './ops';
 import type {
   BuildViewArgs,
   DirectionPlan,
+  DualCall,
+  OutcomePlan,
   OutcomeRequest,
   OutcomeView,
+  PlanShape,
+  RebuildView,
   Refusal,
   Route,
   WithdrawnCarry,

@@ -96,6 +96,36 @@ const ALLOWED = {
   'mutate/matchUps/outcome/ops.ts': 'WRITE — the reducer stores the array the plan carries, as modifyMatchUpScore does',
   'mutate/matchUps/outcome/plan.ts':
     'PLUMBING — abstains when a client sent the array, so v1 writes it; carries the planned array into the op; decides nothing on it',
+  'mutate/matchUps/outcome/plan/planShared.ts':
+    'PLUMBING — the clean and scoreless predicates abstain where a matchUp carries codes, so v1 writes it; decide nothing on them',
+  'mutate/matchUps/outcome/plan/resultOps.ts':
+    'PLUMBING — carries the planned array into the result op, as plan.ts did before the split; decides nothing on it',
+  'mutate/matchUps/outcome/plan/producedExit.ts':
+    "PLUMBING — the produced exit's writes carry the codes doubleExitAdvancement stores ([]); abstain where a target holds codes; decide nothing on them",
+  'mutate/matchUps/outcome/plan/producedTarget.ts':
+    "PLUMBING — the produced target's write carries [] and its reader abstains where the target holds codes; decides nothing on them",
+  'mutate/matchUps/outcome/plan/byeChain.ts':
+    'PLUMBING — the BYE chain abstains where a matchUp it would write holds codes, and writes [] where v1 writes it; decides nothing on them',
+  'mutate/matchUps/outcome/plan/convergence.ts':
+    'PLUMBING — a convergence keeps the codes as they stood and writes [] into what it produces, as v1 does; decides nothing on them',
+  'mutate/matchUps/outcome/plan/directionReasons.ts':
+    "PLUMBING — abstains where a loser's seat holds codes v1 would re-derive (removedLoserReason); decides nothing on them",
+  'mutate/matchUps/outcome/plan/directionOps.ts':
+    "PLUMBING — re-derives the codes as [] where v1's removeDirectedLoser writes them; decides nothing on them",
+  'mutate/matchUps/outcome/plan/carriedExit.ts':
+    "PLUMBING — a carried exit's landing writes the codes v1's progressExitStatus derives ([]) and abstains where a landing holds codes; decides nothing on them",
+  'mutate/matchUps/outcome/plan/unwindSeats.ts':
+    "PLUMBING — the unwind's seat programs write [] where v1's removal re-derives codes and abstain where a seat's matchUp holds codes; decide nothing on them",
+  'mutate/matchUps/outcome/plan/unwindPath.ts':
+    "PLUMBING — the unwind's path writes [] where v1's removeDoubleExit re-derives codes and abstains where a matchUp on the path holds codes; decides nothing on them",
+  'mutate/matchUps/outcome/plan/givenWinner.ts':
+    "PLUMBING — a double exit given a winner abstains where the unwound seat's matchUp holds codes; decides nothing on them",
+  'mutate/matchUps/outcome/plan/terminalAward.ts':
+    'PLUMBING — the occupied-final program certifies its relay and award by their absent codes; decides nothing on them',
+  'mutate/matchUps/outcome/plan/supersededRelay.ts':
+    'PLUMBING — the superseded relay certifies the original relay and its stale copy by their absent codes; decides nothing on them',
+  'mutate/matchUps/outcome/plan/standaloneIndirect.ts':
+    'PLUMBING — the standalone indirect programs certify the removal and the arrival seats by their absent codes; decide nothing on them',
   'mutate/matchUps/outcome/types.ts': 'PLUMBING — the v2 request carries the submitted array to the write',
   'mutate/matchUps/outcome/unwindWalk.ts':
     'PLUMBING — abstains where a matchUp its removal would write carries codes, so v1 writes it; decides nothing on them',

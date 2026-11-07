@@ -10,6 +10,46 @@ The **tools** module provides utility functions for working with tournament data
 import { tools } from 'tods-competition-factory';
 ```
 
+## Domains: stateless functions by subject
+
+Some functions read no tournament state and take positional arguments, for example
+`validateMatchUpScore(sets, matchUpFormat)` and `parse(matchUpFormatCode)`. Their home is `tools`, grouped by domain,
+not a governor. A governor export becomes an engine method, and an engine calls every method with one params object,
+so a positional function cannot be called correctly through an engine.
+
+- **`tools.formats`:** matchUpFormat codes: `parse`, `stringify`, `isAggregateFormat`, `finalSetGoverns`,
+  `aggregateDeciderSetNumber`.
+- **`tools.scoring`:** score validators (`validateMatchUpScore`, `validateSetScore`, `deduceMatchUpFormat`), readers of
+  a scoring-engine matchUp state (`getScore`, `getScoreboard`, `isComplete`, `getWinner`, `getEpisodes`, `addPoint`, …)
+  and point and statistics parsers (`parseMCPPoint`, `shotParser`, `calculateMatchStatistics`, …).
+- **`tools.publishing`:** predicates over a publish detail you hold: `isEmbargoed(detail, asOf)`,
+  `isVisiblyPublished(detail, asOf)`, `getRoundVisibilityState(structureDetail, matchUps, asOf)`.
+- **`tools.entries`:** entry fee helpers: `resolveEntryFee`, `getEntryFeeRange`, `isIndeterminateFee`.
+- **`tools.draws`:** draw-type predicates: `isAdHocType`, `isLadder`.
+- **`tools.matchUps`:** matchUp shape validators: `validMatchUp`, `validMatchUps`.
+- **`tools.rankings`:** the rolling award window (`computeAwardWindow`, `isAwardInWindow`, `rollingPeriodDaysFrom`)
+  that `generateRankingList` applies, and `deriveRankingList`, which derives a sub-list (an age or category cut) from
+  ranked entries.
+- **Availability:** the availability helpers (`hhmmToMinutes`, `generateCapacityCurve`, …) are exported from the
+  standalone `availability` namespace, beside `AvailabilityEngine`.
+
+```js
+import { tools } from 'tods-competition-factory';
+
+const { isValid } = tools.scoring.validateMatchUpScore(sets, 'SET3-S:6/TB7');
+const format = tools.formats.parse('SET3-S:6/TB7-F:TB10');
+```
+
+**A clock is an input.** A tool that depends on time takes the instant to judge against as `asOf` (a `Date` or an ISO
+string). In 7.x it falls back to the competition clock when omitted. In 8.0.0 the instant is required.
+
+**A tool or a query?** A query assumes the tournament record is loaded in an engine's state. A tool takes values or
+fragments you hold (a publish detail, a fee, a format code, a set of scores) and needs no engine.
+
+In 7.x the same functions are still exported by their governors (`scoreGovernor`, `matchUpFormatGovernor`). In 8.0.0
+they leave the governors and the engines: import them from `tools` (see
+[migration to 8.0.0](/docs/migration-8.0.0)).
+
 ## Categories
 
 ### Data Transformation

@@ -318,7 +318,9 @@ export type OutcomeOp =
       sideNumber: number;
       lineUp: unknown;
       /** the v1 writer that announces it (`updateSideLineUp`'s context is spelled so) */
-      announcedAs: 'directWinner' | 'directLoser' | 'updateSidLineUp';
+      announcedAs: 'directWinner' | 'directLoser' | 'updateSidLineUp' | 'removeDirectedLoser';
+      /** C21: delete the line-up on an existing stored side, preserving the sides array. */
+      clearsLineUp?: true;
       /** false where v1's writer names no event (`assignTeamLineUp` hands `updateSideLineUp` none) */
       announcesEvent?: false;
     }
@@ -556,6 +558,11 @@ function foldClearPosition(op: OpOf<'clearPosition'>, { structures }: DrawIndex)
 function foldSideLineUp(op: OpOf<'setSideLineUp'>, { matchUps }: DrawIndex): Folded {
   const matchUp = matchUps.get(op.matchUpId);
   if (!matchUp) return { error: `setSideLineUp: no matchUp ${op.matchUpId}` };
+  if (op.clearsLineUp) {
+    const target = matchUp.sides?.find((side) => side.sideNumber === op.sideNumber);
+    if (target) delete target.lineUp;
+    return {};
+  }
   const lineUp = structuredClone(op.lineUp) as TeamCompetitor[];
   matchUp.sides = [1, 2].map((sideNumber) => ({
     ...(matchUp.sides?.find((each) => each.sideNumber === sideNumber) ?? {}),

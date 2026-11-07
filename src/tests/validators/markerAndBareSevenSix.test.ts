@@ -147,9 +147,14 @@ describe('V11: a 7-6 with no tiebreak points is a finished set, accepted with a 
     expect(result.warnings).toEqual([{ code: TIEBREAK_POINTS_NOT_RECORDED, setNumbers: [1] }]);
   });
 
-  it('live entry is still asked for the points: the completeness check does not call a bare 7-6 finished', () => {
-    // key-value entry and the score card ask this as the operator types — a 7-6 there means "now the tiebreak"
-    expect(checkSetIsComplete({ set: bare(1), matchUpScoringFormat: scoring })).toBe(false);
+  it('the completeness check agrees with the record: a bare 7-6 is finished (CA, 2026-11-07)', () => {
+    // This read FALSE until 7.33.0, so the score card, which asks it as the operator types, could never submit
+    // the set the engine records. A 7-6 now means "finished, points not recorded"; the key-value helper keeps
+    // its own "now the tiebreak" convention while its bracket is open (`keyValueScore/winningSide.ts`).
+    expect(checkSetIsComplete({ set: bare(1), matchUpScoringFormat: scoring })).toBe(true);
+    expect(
+      checkSetIsComplete({ set: { ...bare(1), side1Score: 6, side2Score: 6 }, matchUpScoringFormat: scoring }),
+    ).toBe(false);
   });
 
   it("one side's points without the other's is still refused", () => {

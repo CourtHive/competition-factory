@@ -1025,7 +1025,33 @@ schedule change widens it to the whole record.
 Score entry includes `participants` unless `outcomePipeline: 'v2'` is passed: the v1 pipeline resolves a TEAM
 collection line's sides against the tournament's participants.
 
-Declared today: `setMatchUpStatus`, `assignDrawPosition`, `assignDrawPositionBye`, `removeDrawPositionAssignment`, the
+`bulkMatchUpStatusUpdate` is score entry in every draw its outcomes name, however many draws and events that spans.
+An outcome without a `drawId` needs the whole record, and so do outcomes from more than one tournament, unless the
+footprint is asked for one tournament at a time (below).
+
+With several tournaments loaded, pass `tournamentId` to get that tournament's part of the queue, once per tournament:
+
+```js
+const footprints = Object.fromEntries(
+  tournamentIds.map((tournamentId) => [
+    tournamentId,
+    tools.getMutationFootprint({ methods, tournamentId, activeTournamentId, outcomePipeline }),
+  ]),
+);
+```
+
+A declared method runs against `params.tournamentId`, else `activeTournamentId`; asked for any other tournament it needs
+only that tournament's shell. `bulkMatchUpStatusUpdate` needs, in each tournament, the draws of that tournament's
+outcomes. A method whose tournament cannot be named is answered as if it ran against the one asked about, and a method
+with no declared footprint needs every record whole. In partial-record mode, mark each record with its own footprint
+(`engine.loadedFootprint(footprint, tournamentId)`): every marked record is checked, not only the active one.
+
+`addMatchUpOfficial` is the matchUp's draw and every participant: officials are participants, and the
+conflict-of-interest gate reads their groupings. `applyLineUps` needs `eventId` as well as `drawId`: one player, one
+team, per event reads the rosters among the participants and the lineUps of every draw of the event, and a doubles pair
+the lineUp names is created among the participants.
+
+Declared today: `setMatchUpStatus`, `bulkMatchUpStatusUpdate`, `applyLineUps`, `addMatchUpOfficial`, `assignDrawPosition`, `assignDrawPositionBye`, `removeDrawPositionAssignment`, the
 matchUp schedule methods (`addMatchUpScheduleItems`, `addMatchUpScheduledDate`, `addMatchUpScheduledTime`,
 `addMatchUpCourtOrder`, the start, end, stop and resume times, `assignMatchUpCourt`, `assignMatchUpVenue`),
 `checkInParticipant`, `checkOutParticipant` and `setMatchUpFormat`. Every other method needs the whole record.

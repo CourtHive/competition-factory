@@ -2,6 +2,7 @@ import { reduceRecordToFootprint } from '@Query/footprint/reduceRecordToFootprin
 import { getMutationFootprint } from '@Query/footprint/getMutationFootprint';
 import methodKinds from '@Tests/testHarness/queryPurity/methodKinds.json';
 import { mutationFootprints } from '@Query/footprint/mutationFootprints';
+import { POLICY_OFFICIATING_CONFLICT_OF_INTEREST } from '@Fixtures/policies/POLICY_OFFICIATING_CONFLICT_OF_INTEREST';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { setRandomSource } from '@Tools/prng';
@@ -11,6 +12,8 @@ import { setClock } from '@Tools/clock';
 // constants
 import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/eventConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
+import { OFFICIAL } from '@Constants/participantRoles';
 import { WITHDRAWN } from '@Constants/entryStatusConstants';
 
 /**
@@ -25,6 +28,7 @@ import { WITHDRAWN } from '@Constants/entryStatusConstants';
  */
 
 const START_DATE = '2026-06-01';
+const OFFICIAL_ID = 'OFFICIAL-1';
 const CLOCK = '2026-06-02T10:00:00.000Z';
 
 // keys a run writes from the clock or the random source when it consumes them in a different order
@@ -53,7 +57,23 @@ function fixture() {
   });
   // collection lines with players on them: without line-ups a TEAM line has no sides to score
   tournamentEngine.setState(tournamentRecord);
-  const result: any = tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: 'D4' });
+  let result: any = tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: 'D4' });
+  expect(result.success).toEqual(true);
+  // an official, grouped with a player of D1's first matchUp: the conflict-of-interest gate reads that grouping
+  result = tournamentEngine.addParticipant({
+    participant: {
+      participantId: OFFICIAL_ID,
+      participantRole: OFFICIAL,
+      participantType: INDIVIDUAL,
+      person: { standardFamilyName: 'Umpire', standardGivenName: 'Chair' },
+    },
+  });
+  expect(result.success).toEqual(true);
+  const player = findMatchUp(tournamentEngine.getTournament().tournamentRecord, 'D1').sides[0].participantId;
+  result = tournamentEngine.createGroupParticipant({
+    individualParticipantIds: [OFFICIAL_ID, player],
+    groupName: 'Club',
+  });
   expect(result.success).toEqual(true);
   return tournamentEngine.getTournament().tournamentRecord;
 }
@@ -130,6 +150,27 @@ const outcome = {
   matchUpStatus: 'COMPLETED',
 };
 
+const teamMatchUp = (record: any) => {
+  tournamentEngine.setState(structuredClone(record));
+  const { matchUps } = tournamentEngine.allTournamentMatchUps({ matchUpFilters: { drawIds: ['D4'] } });
+  const matchUp = matchUps.find(
+    (m: any) => m.matchUpType === TEAM && m.sides?.every((side: any) => side.participantId),
+  );
+  // the lineUps generateLineUps attached to the draw, one per side's team
+  const lineUps = matchUp.sides.map(
+    ({ participantId }: any) => tournamentEngine.getTeamLineUp({ drawId: 'D4', participantId }).lineUp,
+  );
+  return { matchUpId: matchUp.matchUpId, lineUps };
+};
+
+const bulkOutcome = (record: any, eventId: string, drawId: string) => ({
+  ...outcome,
+  matchUpId: findMatchUp(record, drawId).matchUpId,
+  tournamentId: record.tournamentId,
+  eventId,
+  drawId,
+});
+
 const scheduled = (record: any, schedule: any) => {
   const matchUp = findMatchUp(record, 'D1');
   return { drawId: 'D1', matchUpId: matchUp.matchUpId, schedule };
@@ -178,6 +219,42 @@ const SCENARIOS: Scenario[] = [
     method: 'setMatchUpStatus',
     params: (r) => ({ drawId: 'D4', matchUpId: collectionLine(r).matchUpId, outcome }),
     pipelines: [OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2],
+  },
+  {
+    name: 'bulk scores, two draws of one event',
+    method: 'bulkMatchUpStatusUpdate',
+    params: (r) => ({ outcomes: [bulkOutcome(r, 'E1', 'D1'), bulkOutcome(r, 'E1', 'D2')] }),
+    pipelines: [OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2],
+  },
+  {
+    name: 'bulk scores, draws of two events',
+    method: 'bulkMatchUpStatusUpdate',
+    params: (r) => ({ outcomes: [bulkOutcome(r, 'E1', 'D1'), bulkOutcome(r, 'E2', 'D3')] }),
+    pipelines: [OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2],
+  },
+  {
+    name: 'assign an official',
+    method: 'addMatchUpOfficial',
+    params: (r) => ({ drawId: 'D1', matchUpId: findMatchUp(r, 'D1').matchUpId, participantId: OFFICIAL_ID }),
+  },
+  {
+    name: 'assign an official, conflict-of-interest gate',
+    method: 'addMatchUpOfficial',
+    params: (r) => ({
+      policyDefinitions: POLICY_OFFICIATING_CONFLICT_OF_INTEREST,
+      matchUpId: findMatchUp(r, 'D1').matchUpId,
+      participantId: OFFICIAL_ID,
+      drawId: 'D1',
+    }),
+  },
+  {
+    name: 'TEAM lineUps',
+    method: 'applyLineUps',
+    params: (r) => {
+      const { matchUpId, lineUps } = teamMatchUp(r);
+      expect(lineUps.every((lineUp: any) => lineUp?.length)).toEqual(true);
+      return { matchUpId, lineUps, eventId: 'E3', drawId: 'D4' };
+    },
   },
   {
     name: 'score with a schedule',
