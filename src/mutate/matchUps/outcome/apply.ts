@@ -11,10 +11,9 @@ import {
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
+import type { BuildViewArgs, PlanShape } from './types';
 import type { ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import type { BuildViewArgs } from './types';
-import type { PlanShape } from './plan';
 import type { OutcomeOp } from './ops';
 
 /**

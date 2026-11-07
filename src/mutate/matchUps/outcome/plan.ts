@@ -39,13 +39,19 @@ import type {
   Tournament,
 } from '@Types/tournamentTypes';
 import type {
+  AbstainReason,
   ByePassage,
   ByeWalk,
   CarryLevel,
   DirectionPlan,
+  DualCall,
+  ExitReasonArgs,
   MatchUpWrite,
+  OutcomePlan,
   OutcomeRequest,
   OutcomeView,
+  PlanArgs,
+  RebuildView,
   Route,
   ThroughBye,
   WinnerLoserSeat,
@@ -81,31 +87,6 @@ import {
  *  - the FIRST DIRECTION: a played result naming a winner where none stood, whose only consequence is the winner's
  *    drawPosition in the next matchUp of the same structure (no loser link, nothing waiting there to send them on).
  */
-export type AbstainReason =
-  | 'route' // a route S1 does not plan as ops
-  | 'winner' // a winner taken away or changed: unwinding what it directed (S4)
-  | 'loser' // the loser has somewhere to go: a loser link (S3)
-  | 'link' // the winner goes into another structure (S3)
-  | 'cascade' // the winner's target holds a BYE, an exit or a result: the winner goes on, or meets it (S5)
-  | 'exit' // an exit status, before or after: provenance and the cascade (S5)
-  | 'status-codes' // the client's positional codes, split into side codes at the write
-  | 'provenance' // the matchUp holds provenance the score write may clear or rescue
-  | 'team' // a dual or a line: tieMatchUps and auto-calc (S7)
-  | 'tallied' // a round robin, ad hoc or lucky structure: the tally (S3)
-  | 'schedule' // the call carries a schedule (§ 3.5.8)
-  | 'notes' // the call carries notes
-  | 'no-record' // the draw is not held in the tournament record's events: nothing to fold the plan into
-  | 'edges' // the draw stores no edges, which v1 writes first (`ensureGoesTo`): S2's setEdges
-  | 'clock' // no captured instant (a call outside the engine): the timestamps a write takes cannot be reproduced
-  | 'settle' // a settle pass has work on the working view (S2's has-work predicates, `settleWork.ts`)
-  | 'write-mode' // LEGACY or BRIDGE: v1 writes `scoredTime` as a timeItem there, which the reducer does not (F6)
-  | 'competition'; // a per-matchUp competition policy: v1 processes ratings on a result (`processCompetitionMatchUp`)
-
-/** which of the allowlist's shapes a complete plan is: `local` (the matchUp's own result) or the first `direction` */
-export type PlanShape = 'local' | 'direction';
-export type OutcomePlan =
-  | { ops: OutcomeOp[]; shape: PlanShape; abstain?: undefined }
-  | { abstain: AbstainReason; ops?: undefined; shape?: undefined };
 
 const REMOVE_DIRECTED: Route = 'remove-directed';
 const LINE_SCORE: Route = 'line-score';
@@ -114,25 +95,6 @@ const CLEAR_SCORE: Route = 'clear-score';
 const APPLY_VALUES: Route = 'apply-values';
 const RESULT_TO_DOUBLE_EXIT: Route = 'completed-to-double-exit';
 
-/**
- * The view of the draw as `ops` leave it, with the direction a route plans on it: the working view (§ 3.2) folded and
- * read again, on the call's one hydration (the structural index re-indexed where the ops touched it). How a plan composes
- * one step on another (S6: a result turned into a double exit plans the double exit on the draw its removal leaves).
- */
-/** S7: the dual's own call a deciding line makes, planned on a view of the dual (`decide.ts` `decidedDualCall`) */
-export type DualCall = {
-  request: OutcomeRequest;
-  direction?: DirectionPlan;
-  rebuild?: RebuildView;
-  write?: MatchUpWrite;
-  view: OutcomeView;
-  route?: Route;
-};
-
-export type RebuildView = (
-  ops: OutcomeOp[],
-  route: Route,
-) => { view: OutcomeView; direction?: DirectionPlan } | undefined;
 const LOCAL_ROUTES = new Set<Route>(['clear', CLEAR_SCORE, REMOVE_DIRECTED, 'only-score']);
 const LOCAL_STATUSES = new Set<string | undefined>([IN_PROGRESS, SUSPENDED, AWAITING_RESULT, INCOMPLETE, TO_BE_PLAYED]);
 const SINGLE_EXITS = new Set<string | undefined>([WALKOVER, DEFAULTED, RETIRED]);
@@ -508,16 +470,7 @@ function groupTally(
  * (`directionReason`). A DEFAULTED under a scoring policy's `incompleteAssignmentsOnDefault` writes `processCodes`
  * (`modifyMatchUpScore`), not an op. Anything else with an exit before or after is v1's.
  */
-function exitReason(args: {
-  drawDefinition?: DrawDefinition;
-  request: OutcomeRequest;
-  view: OutcomeView;
-  route?: Route;
-  write?: MatchUpWrite;
-  direction?: DirectionPlan;
-  rebuild?: RebuildView;
-  asDual?: true;
-}): AbstainReason | undefined {
+function exitReason(args: ExitReasonArgs): AbstainReason | undefined {
   const { request, view, route, write, direction } = args;
   const { existing } = view;
   if (!isAnyExit(request.matchUpStatus) && !isAnyExit(existing.matchUpStatus) && !isAnyExit(write?.matchUpStatus))
@@ -571,7 +524,7 @@ function lineExitReason(view: OutcomeView, write?: MatchUpWrite): AbstainReason 
  * (`unwoundLoserReason`). The direction's own checks follow
  * (`directionReason`, which reads the next matchUp as the unwind leaves it).
  */
-function givenWinnerReason(args: Parameters<typeof exitReason>[0]): AbstainReason | undefined {
+function givenWinnerReason(args: ExitReasonArgs): AbstainReason | undefined {
   const { request, view, write, direction } = args;
   if (!write?.winningSide || !DIRECTED_STATUSES.has(write.matchUpStatus)) return 'exit';
   if (request.matchUpStatus && request.matchUpStatus !== write.matchUpStatus) return 'exit';
@@ -658,7 +611,7 @@ function standingReservationPrograms({
   view,
   request,
   route,
-}: Pick<Parameters<typeof planOutcome>[0], 'view' | 'request' | 'route'>): Map<number, OutcomeOp[]> | undefined {
+}: Pick<PlanArgs, 'view' | 'request' | 'route'>): Map<number, OutcomeOp[]> | undefined {
   if (
     route !== 'winner' ||
     (request.winningSide !== 1 && request.winningSide !== 2) ||
@@ -870,7 +823,7 @@ function unwoundKeptOutOps(
  * fresh carry (converged with a re-derived exit), and whatever a fresh carry's own checks keep v1's.
  */
 function unwoundCarryReason(
-  args: Parameters<typeof exitReason>[0],
+  args: ExitReasonArgs,
   loser: NonNullable<DirectionPlan['loser']>,
 ): AbstainReason | undefined {
   const { view, write } = args;
@@ -887,7 +840,7 @@ function unwoundCarryReason(
  * gone, its matchUp re-derived to the standing carry, and the relay it produces into is left as the unwind wrote it.
  * Everything a fresh convergence refuses stays v1's, including an occupied seat or an unclean produced target.
  */
-function unwoundConvergedReason(args: Parameters<typeof exitReason>[0]): AbstainReason | undefined {
+function unwoundConvergedReason(args: ExitReasonArgs): AbstainReason | undefined {
   const { view, request, write } = args;
   if (view.targets.loserLink?.linkCondition) return 'exit';
   const after = unwoundView(args, { releasedLandings: true });
@@ -919,7 +872,7 @@ function supersededRelayOrigin(view: OutcomeView, home: HydratedMatchUp, target:
 
 /** Original own propagated BYE, actually withdrawn, then a genuine convergence superseding its stale relay. */
 function supersededOwnRelayConvergence(
-  args: Parameters<typeof exitReason>[0],
+  args: ExitReasonArgs,
   after: NonNullable<ReturnType<RebuildView>>,
 ): Convergence | undefined {
   const { view, request, write } = args;
@@ -1020,7 +973,7 @@ function supersededOwnRelayConvergence(
 }
 
 /** The shared removeDoubleExit program has no actual source clear/result in it. */
-function standaloneIndirectRemoval(args: Parameters<typeof planOutcome>[0]) {
+function standaloneIndirectRemoval(args: PlanArgs) {
   const { view, request, write, drawDefinition } = args;
   const structureId = view.targets.source.structureId;
   if (!structureId || args.route !== 'winner' || !args.rebuild || !drawDefinition || view.isTeam || view.group)
@@ -1046,7 +999,7 @@ function standaloneIndirectRemoval(args: Parameters<typeof planOutcome>[0]) {
 }
 
 /** The bare winner's ordinary arrivals after its certified shared removal. */
-function standaloneBareWinnerOps(args: Parameters<typeof planOutcome>[0]): OutcomeOp[] | undefined {
+function standaloneBareWinnerOps(args: PlanArgs): OutcomeOp[] | undefined {
   const { request, write, view, drawDefinition } = args;
   if (write?.matchUpStatus !== COMPLETED || !write.winningSide || request.matchUpStatus || !drawDefinition)
     return undefined;
@@ -1082,11 +1035,7 @@ function standaloneBareWinnerOps(args: Parameters<typeof planOutcome>[0]): Outco
 }
 
 /** A free canonical arrival, without an unmodelled seed, conditioned link, BYE or reservation. */
-function standaloneArrivalStands(
-  view: OutcomeView,
-  args: Parameters<typeof planOutcome>[0],
-  direction: DirectionPlan,
-): boolean {
+function standaloneArrivalStands(view: OutcomeView, args: PlanArgs, direction: DirectionPlan): boolean {
   const target = view.targets;
   if (!target.loserTargetSeat?.free || target.loserLink?.linkCondition || target.loserTargetSeat.opponentBye)
     return false;
@@ -1097,7 +1046,7 @@ function standaloneArrivalStands(
 }
 
 /** A real carried exit meets the exact pending foreign origin; it was never temporarily awarded. */
-function standaloneCarriedWinnerOps(args: Parameters<typeof planOutcome>[0]): OutcomeOp[] | undefined {
+function standaloneCarriedWinnerOps(args: PlanArgs): OutcomeOp[] | undefined {
   const { request, write, view, drawDefinition } = args;
   if (
     (request.matchUpStatus !== WALKOVER && request.matchUpStatus !== DEFAULTED) ||
@@ -1317,7 +1266,7 @@ function terminalMainAward(
 }
 
 /** The captured occupied-final winner program: a terminal Main award, then its loser's retained relay award. */
-function terminalOccupiedWinnerOps(args: Parameters<typeof planOutcome>[0]): OutcomeOp[] | undefined {
+function terminalOccupiedWinnerOps(args: PlanArgs): OutcomeOp[] | undefined {
   const { view, request, write, drawDefinition } = args;
   if (args.route !== 'winner' || !args.rebuild || !drawDefinition || view.isTeam || view.group) return undefined;
   if (!isDoubleExit(view.existing.matchUpStatus) || write?.matchUpStatus !== COMPLETED || !write.winningSide)
@@ -1536,7 +1485,7 @@ function clearedSingleExit(view: OutcomeView, route?: Route, write?: MatchUpWrit
  * carried status in a target, a BYE beside the loser, and this matchUp's own side provenance (`provenance`). A loser
  * the new exit would carry across their link is v1's here; a DEFAULTED under `incompleteAssignmentsOnDefault` too.
  */
-function correctedSingleExit(args: Parameters<typeof exitReason>[0]): boolean {
+function correctedSingleExit(args: ExitReasonArgs): boolean {
   const { request, view, route, write, direction } = args;
   const { existing } = view;
   if (route !== 'winner' || !existing.winningSide || !write?.winningSide) return false;
@@ -1573,7 +1522,7 @@ function correctedSingleExit(args: Parameters<typeof exitReason>[0]): boolean {
  * carry the awardee or the carrier has played on from, a carry that converged or was carried past, a loser kept out, and a
  * DEFAULTED under `incompleteAssignmentsOnDefault`. `applyValuesReason` then vets the write itself.
  */
-function relabelledExit(args: Parameters<typeof exitReason>[0]): boolean {
+function relabelledExit(args: ExitReasonArgs): boolean {
   const { request, view, write, direction } = args;
   const { existing } = view;
   if (!write?.winningSide || !existing.winningSide) return false;
@@ -5704,18 +5653,7 @@ function notesReason(request: OutcomeRequest, view: OutcomeView, route?: Route):
   return !NOTED_ROUTES.has(route);
 }
 
-function abstainReason(args: {
-  tournamentRecord?: Tournament;
-  drawDefinition?: DrawDefinition;
-  request: OutcomeRequest;
-  view: OutcomeView;
-  route?: Route;
-  write?: MatchUpWrite;
-  direction?: DirectionPlan;
-  rebuild?: RebuildView;
-  dual?: DualCall;
-  asDual?: true;
-}): AbstainReason | undefined {
+function abstainReason(args: PlanArgs): AbstainReason | undefined {
   const { request, view, write, direction } = args;
   const team = teamReason(args);
   if (team) return team;
@@ -5765,7 +5703,7 @@ function abstainReason(args: {
 
 /** the reason the call's own shape is not planned, by the shape `abstainReason` found it to be */
 function shapeReason(
-  args: Parameters<typeof abstainReason>[0],
+  args: PlanArgs,
   shape: { sameWinner: boolean; reentered: boolean; changing: boolean; swapping: boolean },
 ): AbstainReason | undefined {
   const { request, view, write, direction } = args;
@@ -5968,7 +5906,7 @@ function structureStamps(ops: OutcomeOp[], structureId: string): OutcomeOp[] {
  * double exit is planned there as on a matchUp holding no result. The write is the route's own: a DOUBLE_WALKOVER blanks
  * the score, a DOUBLE_DEFAULT keeps it (CA, 2026-10-02).
  */
-function resultToDoubleExit(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
+function resultToDoubleExit(args: PlanArgs): OutcomePlan {
   const { view, request, rebuild } = args;
   const removing = resultRemovalReason(view);
   if (removing) return { abstain: removing };
@@ -6024,7 +5962,7 @@ function resultRemovalOps(view: OutcomeView, matchUpStatus?: MatchUpStatusUnion)
  */
 function carriedFor(
   view: OutcomeView,
-  args: Parameters<typeof planOutcome>[0],
+  args: PlanArgs,
   loser?: DirectionPlan['loser'],
 ): { relay: OutcomeOp[]; landing: OutcomeOp[] } {
   const write = args.write as MatchUpWrite;
@@ -6058,7 +5996,7 @@ function carriedFor(
  */
 function unwoundCarriedFor(
   view: OutcomeView,
-  args: Parameters<typeof planOutcome>[0],
+  args: PlanArgs,
   loser?: DirectionPlan['loser'],
 ): ReturnType<typeof carriedFor> {
   const after = loser?.exit && isDoubleExit(view.existing.matchUpStatus) ? unwoundView(args) : undefined;
@@ -6068,7 +6006,7 @@ function unwoundCarriedFor(
 /** RULE 4's writes, read after the unwind and its released landings where this call replaces a double exit (S7). */
 function unwoundConvergedFor(
   view: OutcomeView,
-  args: Parameters<typeof planOutcome>[0],
+  args: PlanArgs,
   loser?: DirectionPlan['loser'],
 ): { ops: OutcomeOp[]; superseded?: Convergence } {
   if (!loser?.converged) return { ops: [] };
@@ -6108,7 +6046,7 @@ const PLANNED_SCHEDULE = new Set(['scheduledDate', 'scheduledTime', 'courtId', '
  * exit is planned through `planOps` too, so it carries the schedule. A TEAM line is held in its dual's `tieMatchUps`, not
  * a structure's matchUps, so `scheduledFor` finds none and it stays v1's.
  */
-function scheduleReason(args: Parameters<typeof abstainReason>[0]): boolean {
+function scheduleReason(args: PlanArgs): boolean {
   const schedule = args.request.carries?.schedule;
   if (!schedule) return false;
   if (Object.keys(schedule).some((key) => !PLANNED_SCHEDULE.has(key))) return true;
@@ -6129,8 +6067,7 @@ function scheduledFor({
   tournamentRecord,
   drawDefinition,
   request,
-}: Pick<Parameters<typeof abstainReason>[0], 'tournamentRecord' | 'drawDefinition' | 'request'>):
-  MatchUpSchedule | undefined {
+}: Pick<PlanArgs, 'tournamentRecord' | 'drawDefinition' | 'request'>): MatchUpSchedule | undefined {
   if (scheduled.has(request)) return scheduled.get(request);
   const schedule = request.carries?.schedule;
   const matchUpId = request.matchUpId;
@@ -6160,7 +6097,7 @@ function holdingStructure(structures: Structure[] | undefined, matchUpId: string
   return undefined;
 }
 
-function scheduleOps(args: Parameters<typeof planOutcome>[0], matchUpId: string): OutcomeOp[] {
+function scheduleOps(args: PlanArgs, matchUpId: string): OutcomeOp[] {
   const schedule = args.request.carries?.schedule && scheduledFor(args);
   return schedule ? [{ op: 'setMatchUpSchedule', matchUpId, schedule }] : [];
 }
@@ -6181,20 +6118,7 @@ function recordReason({
   return undefined;
 }
 
-export function planOutcome(args: {
-  tournamentRecord?: Tournament;
-  drawDefinition?: DrawDefinition;
-  direction?: DirectionPlan;
-  request: OutcomeRequest;
-  write?: MatchUpWrite;
-  view: OutcomeView;
-  route?: Route;
-  rebuild?: RebuildView;
-  /** S7: the dual's call a deciding line makes */
-  dual?: DualCall;
-  /** S7: this call is a deciding line's dual, planned as part of the line's plan: its TEAM shape is the line's to vet */
-  asDual?: true;
-}): OutcomePlan {
+export function planOutcome(args: PlanArgs): OutcomePlan {
   const plan = args.route === RESULT_TO_DOUBLE_EXIT ? resultToDoubleExit(args) : planOps(args);
   // a TEAM line's result numbers it in its collection's finishing order (a deciding line's dual is planned in its plan)
   if (!plan.ops || args.asDual) return plan;
@@ -6265,7 +6189,7 @@ function resultOps(
  * lines.
  */
 function lineDualPlan(
-  args: Parameters<typeof planOutcome>[0] & { dual: DualCall; drawDefinition: DrawDefinition },
+  args: PlanArgs & { dual: DualCall; drawDefinition: DrawDefinition },
   line: NonNullable<OutcomeView['line']>,
   write: MatchUpWrite,
 ): OutcomePlan {
@@ -6315,9 +6239,7 @@ function lineDualPlan(
  * the dual's own removal (`undecidedDualCall`, routed `remove-directed`) as v1's tally writes it. A removal that is not
  * clean abstains as any removal does (`removalReason`).
  */
-function undecidingLineOps(
-  args: Parameters<typeof planOutcome>[0] & { dual: DualCall; drawDefinition: DrawDefinition },
-): OutcomePlan {
+function undecidingLineOps(args: PlanArgs & { dual: DualCall; drawDefinition: DrawDefinition }): OutcomePlan {
   const { dual, view, request } = args;
   const line = view.line;
   const write = args.write;
@@ -6348,15 +6270,11 @@ function undecidingLineOps(
 }
 
 /** S7: a line's result that makes its dual's own call: deciding it, or un-deciding it (`line-score`) */
-function lineDualOps(
-  args: Parameters<typeof planOutcome>[0] & { dual: DualCall; drawDefinition: DrawDefinition },
-): OutcomePlan {
+function lineDualOps(args: PlanArgs & { dual: DualCall; drawDefinition: DrawDefinition }): OutcomePlan {
   return args.route === LINE_SCORE ? undecidingLineOps(args) : decidingLineOps(args);
 }
 
-function decidingLineOps(
-  args: Parameters<typeof planOutcome>[0] & { dual: DualCall; drawDefinition: DrawDefinition },
-): OutcomePlan {
+function decidingLineOps(args: PlanArgs & { dual: DualCall; drawDefinition: DrawDefinition }): OutcomePlan {
   const { dual, view, request, drawDefinition } = args;
   const line = view.line;
   const write = args.write;
@@ -6527,7 +6445,7 @@ function assignedLineUpOps(
  * drawPosition (v1's).
  */
 function dualLineUpOps(
-  args: Parameters<typeof planOutcome>[0] & { drawDefinition: DrawDefinition },
+  args: PlanArgs & { drawDefinition: DrawDefinition },
   loser?: DirectionPlan['loser'],
   loserThrough?: { matchUpId: string },
 ): OutcomeOp[] | false {
@@ -6543,7 +6461,7 @@ function dualLineUpOps(
  * a line-up a deciding line carried there is replaced. A first entry, or a changed winner, writes none: the drawPosition
  * is not yet sided there (v1's view is read before the assignment).
  */
-function winnerLineUpOps(args: Parameters<typeof planOutcome>[0] & { drawDefinition: DrawDefinition }): OutcomeOp[] {
+function winnerLineUpOps(args: PlanArgs & { drawDefinition: DrawDefinition }): OutcomeOp[] {
   const { view, write, direction, drawDefinition, request } = args;
   const next = direction?.winner;
   if (!next) return [];
@@ -6766,7 +6684,7 @@ function arrivalOps(view: OutcomeView, loser?: DirectionPlan['loser']): OutcomeO
 
 /** Reserve beside the retained carrier on the folded clear, preserving v1's score and deferred-writer order. */
 function retainedCarriedAwardOps(
-  args: Parameters<typeof planOutcome>[0],
+  args: PlanArgs,
   unwound: OutcomeOp[],
   arrival?: { ops: OutcomeOp[]; participantId: string },
 ): OutcomeOp[] | undefined {
@@ -6922,7 +6840,7 @@ function producedRelayAfterOps(
 }
 
 /** the call's plan as ops, or the reason it is v1's */
-function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
+function planOps(args: PlanArgs): OutcomePlan {
   const reason = abstainReason(args);
   if (reason) return { abstain: reason };
   const { request, view, drawDefinition } = args;
@@ -6935,7 +6853,7 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
 }
 
 /** A recorded single-call plan after the shared refusal, dual and no-op gates. */
-function recordedPlanOps(args: Parameters<typeof planOutcome>[0], drawDefinition: DrawDefinition): OutcomePlan {
+function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition): OutcomePlan {
   const { request, view } = args;
   const write = args.write as MatchUpWrite;
   const matchUpId = request.matchUpId as string;
