@@ -91,21 +91,38 @@ export function removedOps(
   write: MatchUpWrite,
   matchUpStatus?: MatchUpStatusUnion,
 ): OutcomeOp[] {
-  if (changesWinner(view, route, write)) return [];
+  if (changesWinner(view, route, write) || !removesDirection(view, route, write)) return [];
+  // A final (no winner matchUp) takes back nothing here, its loser's fed seat included: that empty plan is what lets
+  // the settle check abstain the call to v1. Hoisting the body (ruling 10) kept this guard because dropping it made
+  // v2 own a cleared FIC 8 final (record equal to v1's there, unproven beyond), which is new ownership, not a hoist.
   const { targets, existing } = view;
   const position = existing.winningSide ? targets.sideDrawPositions[existing.winningSide as 1 | 2] : undefined;
-  if (!removesDirection(view, route, write) || !position || !targets.winner || !targets.winnerMatchUpId) return [];
-  const drawPositions = targets.winner.drawPositions.filter((candidate) => candidate !== position);
-  return [
-    {
-      op: 'setMatchUpDrawPositions',
-      matchUpId: targets.winnerMatchUpId,
-      drawPositions,
-      removedDrawPosition: position,
-    },
-    { op: 'stampUpdatedAt', entity: 'matchUp', id: targets.winnerMatchUpId },
-    ...removedLoserOps(view, matchUpStatus),
-  ];
+  if (!position || !targets.winner || !targets.winnerMatchUpId) return [];
+  return removalOps(view, matchUpStatus);
+}
+
+/**
+ * S4's removal of the stored result's direction, whatever the route (ruling 10): the winner's position out of the next
+ * matchUp, if there is one, then the loser's seat. The two reasons in front of it (`removalReason` on a cleared result,
+ * `resultRemovalReason` on a result turned double exit) stay apart; this is only what they both take back. A final's
+ * loser leg alone is emitted for the double-exit route; the cleared route guards it out above.
+ */
+export function removalOps(view: OutcomeView, matchUpStatus?: MatchUpStatusUnion): OutcomeOp[] {
+  const { targets, existing } = view;
+  const position = targets.sideDrawPositions[existing.winningSide as 1 | 2];
+  const winner: OutcomeOp[] =
+    position && targets.winner && targets.winnerMatchUpId
+      ? [
+          {
+            op: 'setMatchUpDrawPositions',
+            matchUpId: targets.winnerMatchUpId,
+            drawPositions: targets.winner.drawPositions.filter((candidate) => candidate !== position),
+            removedDrawPosition: position,
+          },
+          { op: 'stampUpdatedAt', entity: 'matchUp', id: targets.winnerMatchUpId },
+        ]
+      : [];
+  return [...winner, ...removedLoserOps(view, matchUpStatus)];
 }
 
 /**
