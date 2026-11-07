@@ -1,7 +1,7 @@
 import { isDoubleExit } from '@Validators/isExit';
 
 // constants and types
-import type { MatchUpWrite, OutcomeRequest, OutcomeView, Route } from '../types';
+import type { AbstainReason, DirectionPlan, MatchUpWrite, OutcomeRequest, OutcomeView, Route } from '../types';
 import type { MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { OutcomeOp } from '../ops';
@@ -68,6 +68,49 @@ export function storedLoserId(view: OutcomeView): string | undefined {
 export function heldInTarget(view: OutcomeView, winningSide: 1 | 2): boolean {
   const position = view.targets.sideDrawPositions[winningSide];
   return !!position && !!view.targets.winner?.drawPositions.includes(position);
+}
+
+/**
+ * Both sides of a correction are directed results: the write names a winner with a played or single-exit status, over
+ * a stored one. The frame every correction detector opens with, S4 and S6 alike (Mentat
+ * assessment/2026-11-07-outcome-refactor-debates.md, ruling 8).
+ */
+export const directedBothSides = (
+  view: OutcomeView,
+  write?: MatchUpWrite,
+): write is MatchUpWrite & { winningSide: number } =>
+  !!write?.winningSide &&
+  DIRECTED_STATUSES.has(write.matchUpStatus) &&
+  DIRECTED_STATUSES.has(view.existing.matchUpStatus);
+
+/**
+ * An exit write that stays v1's: the request names a status other than the write's, or the write is a DEFAULTED under a
+ * scoring policy's `incompleteAssignmentsOnDefault` (v1 writes the process codes). Ruling 8.
+ */
+export const exitWriteIsV1s = (request: OutcomeRequest, view: OutcomeView, write: MatchUpWrite): boolean =>
+  (!!request.matchUpStatus && request.matchUpStatus !== write.matchUpStatus) ||
+  (write.matchUpStatus === DEFAULTED && !!view.draw.defaultProcessCodes);
+
+/** the direction names a decider, a produced exit or a convergence: more than a winner and a loser to place. Ruling 8. */
+export const directsElsewhere = (direction?: DirectionPlan): boolean =>
+  !!direction?.decider || !!direction?.produced || !!direction?.converged;
+
+/**
+ * The winner's target as a clean next matchUp of the same structure holding the winning side's position: the reason it
+ * is not, or undefined. Shared by the removal and the re-entered winner (ruling 8); each caller reads the missing target
+ * its own way first.
+ */
+export function cleanWinnerTarget(
+  view: OutcomeView,
+  target: NonNullable<OutcomeView['targets']['winner']>,
+  side: 1 | 2,
+): AbstainReason | undefined {
+  const { targets } = view;
+  if (target.structureId !== targets.source.structureId) return 'link';
+  if (target.hasBye || target.carriesExit || target.carriedStatuses.length || target.holdsResult) return 'cascade';
+  if (target.matchUpStatus !== TO_BE_PLAYED) return 'route';
+  if (!heldInTarget(view, side)) return 'route';
+  return undefined;
 }
 
 export const hasRetainedRelay = (ops: OutcomeOp[]) =>

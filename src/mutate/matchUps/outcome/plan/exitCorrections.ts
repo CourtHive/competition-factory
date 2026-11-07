@@ -1,10 +1,10 @@
-import { DIRECTED_STATUSES, REMOVE_DIRECTED, SINGLE_EXITS } from './planShared';
+import { REMOVE_DIRECTED, SINGLE_EXITS, directedBothSides, directsElsewhere, exitWriteIsV1s } from './planShared';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { relabelCarryReason, withdrawnReason } from './carriedExit';
 
 // constants and types
-import { DEFAULTED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { ExitReasonArgs, MatchUpWrite, OutcomeView, Route } from '../types';
+import { IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 
 /**
@@ -56,11 +56,9 @@ export function clearedSingleExit(view: OutcomeView, route?: Route, write?: Matc
 export function correctedSingleExit(args: ExitReasonArgs): boolean {
   const { request, view, route, write, direction } = args;
   const { existing } = view;
-  if (route !== 'winner' || !existing.winningSide || !write?.winningSide) return false;
-  if (!DIRECTED_STATUSES.has(existing.matchUpStatus) || !DIRECTED_STATUSES.has(write.matchUpStatus)) return false;
-  if (request.matchUpStatus && request.matchUpStatus !== write.matchUpStatus) return false;
-  if (write.matchUpStatus === DEFAULTED && view.draw.defaultProcessCodes) return false;
-  if (direction?.produced || direction?.converged || direction?.decider) return false;
+  if (route !== 'winner' || !existing.winningSide || !directedBothSides(view, write)) return false;
+  if (exitWriteIsV1s(request, view, write)) return false;
+  if (directsElsewhere(direction)) return false;
   const loser = direction?.loser;
   // the same winner relabelled an exit its loser carries across their link: the carry lands where they stand
   // (`relabelCarryReason`)
@@ -96,10 +94,9 @@ export function relabelledExit(args: ExitReasonArgs): boolean {
   if (!write?.winningSide || !existing.winningSide) return false;
   if (args.route === 'swap' ? write.winningSide === existing.winningSide : write.winningSide !== existing.winningSide)
     return false;
-  if (!DIRECTED_STATUSES.has(existing.matchUpStatus) || !DIRECTED_STATUSES.has(write.matchUpStatus)) return false;
-  if (request.matchUpStatus && request.matchUpStatus !== write.matchUpStatus) return false;
-  if (write.matchUpStatus === DEFAULTED && view.draw.defaultProcessCodes) return false;
-  if (direction?.produced || direction?.converged || direction?.decider) return false;
+  if (!directedBothSides(view, write)) return false;
+  if (exitWriteIsV1s(request, view, write)) return false;
+  if (directsElsewhere(direction)) return false;
   // a swap's direction names the new winner, whose path the relabel exchanges (`swapOps`); a relabel places nobody
   if (direction?.winner && args.route !== 'swap') return false;
   // a status that changes is refreshed on the arrivals the first entry sent on (v1's `refreshArrivals`): v1's

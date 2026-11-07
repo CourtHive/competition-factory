@@ -21,6 +21,7 @@ import {
   RESULT_TO_DOUBLE_EXIT,
   SINGLE_EXITS,
   changesWinner,
+  directsElsewhere,
   isSettleWrite,
   reentersWinner,
   satisfiedDoubleExit,
@@ -128,7 +129,7 @@ function exitReason(args: ExitReasonArgs): AbstainReason | undefined {
   if (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide) return 'exit';
   if (write.matchUpStatus === DEFAULTED && view.draw.defaultProcessCodes) return 'exit';
   const loser = direction?.loser;
-  if (direction?.produced || direction?.converged || direction?.decider) return 'exit';
+  if (directsElsewhere(direction)) return 'exit';
   if (loser?.carriedPast || loser?.withdrawn) return 'exit';
   if (loser?.converged) return convergedReason(view, request, write, loser);
   if (loser?.exit) return carriedReason(view, write);
