@@ -196,6 +196,48 @@ export function standingAwardArrival(
   return onward ? { entry, drawPosition, onward } : undefined;
 }
 
+/**
+ * C19: a winner arriving opposite a double exit's single produced exit, still pending. v1 awards the held exit to
+ * the arrival, records their origin and sends them on. Only the empty arrival seat, exactly the paired feeder's
+ * double-exit provenance, no result, score, codes or BYE, and a clean onward arrival (or the last round).
+ */
+export function pendingProducedArrival(view: OutcomeView, write: MatchUpWrite) {
+  // An unwind or a result already written on a rebuilt view has its own award program.
+  if (view.existing.winningSide || isDoubleExit(view.existing.matchUpStatus)) return undefined;
+  const { targets } = view;
+  const entry = indexed(view, targets.winnerMatchUpId);
+  const paired = pairedFeeder(view);
+  const sourcePosition = targets.source.roundPosition;
+  const source = view.inContextDrawMatchUps?.find(
+    (matchUp) =>
+      matchUp.structureId === targets.source.structureId &&
+      matchUp.roundNumber === targets.source.roundNumber &&
+      matchUp.roundPosition === sourcePosition,
+  );
+  const drawPosition = source?.sides?.find((side) => side.sideNumber === write.winningSide)?.drawPosition;
+  if (!entry || !drawPosition || !paired || !source || !sourcePosition || !paired.roundPosition) return undefined;
+  if (entry.structureId !== targets.source.structureId || paired.winnerMatchUpId !== entry.matchUpId) return undefined;
+  if (entry.matchUpStatus !== WALKOVER && entry.matchUpStatus !== DEFAULTED) return undefined;
+  if (entry.winningSide || !scoreless(entry) || entry.matchUpStatusCodes?.length) return undefined;
+  if (entry.sides?.some((side) => side.bye) || positionsOf(entry).length) return undefined;
+  const side: 1 | 2 = sourcePosition < paired.roundPosition ? 1 : 2;
+  const provenance = entry.sideExitProvenance ?? {};
+  const origin = provenance[(3 - side) as 1 | 2];
+  if (
+    Object.keys(provenance).length !== 1 ||
+    origin?.matchUpStatus !== entry.matchUpStatus ||
+    !isDoubleExit(origin.previousMatchUpStatus) ||
+    origin.sourceMatchUpId !== paired.matchUpId
+  )
+    return undefined;
+  if (!entry.winnerMatchUpId)
+    return { entry, matchUpStatus: entry.matchUpStatus, drawPosition, side, sourceMatchUpId: source.matchUpId };
+  const onward = onwardFrom(view, entry, drawPosition);
+  return onward
+    ? { entry, matchUpStatus: entry.matchUpStatus, drawPosition, side, sourceMatchUpId: source.matchUpId, onward }
+    : undefined;
+}
+
 /** beside another position, the side a position takes: the numerically lower is side 1 */
 export const lowerFirst = (positions: number[], drawPosition: number): 1 | 2 =>
   drawPosition === Math.min(...positions) ? 1 : 2;

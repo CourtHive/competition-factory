@@ -530,7 +530,16 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   goes on into the next matchUp of the structure, a clean arrival there, or nowhere from the
   structure's last round (`standingAwardArrival`). A produced exit standing pending (no winner until
   somebody arrives), an award on the other side, codes stored, a BYE beside the seat or a position
-  already standing onward stay v1's. A loser
+  already standing onward stay v1's. The **winner** arriving at a single produced exit pending in their
+  same-structure target takes that exit (C19, `pendingProducedArrival`): exactly one provenance entry
+  names the paired feeder's double exit, the target has no winner, positions, BYE, score or codes, and
+  the arriving side is empty. Its status is retained, its winner becomes the arriving side, codes are
+  `[]`, the stored scoreless shape is kept (blank strings or absent), and no scored time is stamped. The arrival's source origin is
+  merged into provenance, the position is placed, and the award is announced as
+  `assignMatchUpDrawPosition` with the event and tournament. The arriving position goes on into a
+  clean next matchUp (`onwardFrom`), announced and stamped, or nowhere from the structure's last round.
+  A loser also meeting a pending produced exit across their link remains v1's at the earlier loser wall.
+  A loser
   placed opposite a BYE goes on through it at once, as v1 sends them (`advanceIntoWinnerMatchUp`):
   their position joins the next matchUp of that structure, or occupies it there when it was advanced
   structurally while their seat stood empty, and that matchUp is announced. Only a clean next matchUp

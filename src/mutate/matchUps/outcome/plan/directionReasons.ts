@@ -6,6 +6,7 @@ import {
   LOCAL_ROUTES,
   LOCAL_STATUSES,
   cleanWinnerTarget,
+  pendingProducedArrival,
   directedBothSides,
   directsElsewhere,
   standingAwardArrival,
@@ -277,6 +278,8 @@ export function directionReason(args: {
   const target = targets.winner;
   if (!target || target.structureId !== targets.source.structureId) return 'link';
   if (reservationReason(view, write.winningSide as 1 | 2)) return 'cascade';
+  // C19: the produced exit pending in this winner's target is awarded as the winner arrives.
+  if (!unwound && pendingProducedArrival(view, write)) return undefined;
   // a target holding a BYE sends the winner on past it: planned when where they go is clean (`winnerThroughBye`)
   const through = target.hasBye ? targets.winnerThroughBye?.[write.winningSide as 1 | 2] : undefined;
   // an unwound call's next matchUp is on the unwind's path, written back to be played before the winner arrives: a
