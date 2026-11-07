@@ -71,3 +71,49 @@ describe('tools.scoring', () => {
     expect(tools.scoring.validateMatchUpScore(impossible, 'SET3-S:6/TB7').isValid).toEqual(false);
   });
 });
+
+const DOMAINS = {
+  publishing: {
+    governor: 'publishingGovernor',
+    names: ['getRoundVisibilityState', 'isEmbargoed', 'isVisiblyPublished'],
+  },
+  entries: { governor: 'entriesGovernor', names: ['getEntryFeeRange', 'isIndeterminateFee', 'resolveEntryFee'] },
+  draws: { governor: 'drawsGovernor', names: ['isAdHocType', 'isLadder'] },
+  matchUps: { governor: 'matchUpGovernor', names: ['validMatchUp', 'validMatchUps'] },
+};
+
+describe.each(Object.entries(DOMAINS))('tools.%s', (domain, { governor, names }) => {
+  it('holds exactly its functions', () => {
+    expect(Object.keys(tools[domain]).sort()).toEqual([...names].sort());
+  });
+
+  it.each(names)(`%s is the ${governor} function`, (name) => {
+    expect(tools[domain][name]).toBe(governors[governor][name]);
+  });
+});
+
+describe('tools.publishing takes the instant as an input', () => {
+  const { getRoundVisibilityState, isEmbargoed, isVisiblyPublished } = tools.publishing;
+  const embargo = '2026-11-07T12:00:00.000Z';
+  const before = '2026-11-07T11:00:00.000Z';
+  const after = new Date('2026-11-07T13:00:00.000Z');
+
+  it('judges an embargo at asOf, as an ISO instant or a Date', () => {
+    expect(isEmbargoed({ embargo }, before)).toEqual(true);
+    expect(isEmbargoed({ embargo }, after)).toEqual(false);
+    expect(isVisiblyPublished({ published: true, embargo }, before)).toEqual(false);
+    expect(isVisiblyPublished({ published: true, embargo }, after)).toEqual(true);
+  });
+
+  it('falls back to the competition clock without asOf (7.x)', () => {
+    expect(isEmbargoed({ embargo: '2000-01-01T00:00:00.000Z' })).toEqual(false);
+    expect(isEmbargoed({ embargo: '2999-01-01T00:00:00.000Z' })).toEqual(true);
+  });
+
+  it('applies asOf to every round', () => {
+    const structureDetail = { scheduledRounds: { 2: { embargo } } };
+    const matchUps = [{ roundNumber: 1 }, { roundNumber: 2 }];
+    expect(getRoundVisibilityState(structureDetail, matchUps, before)).toEqual({ 2: { embargoed: true } });
+    expect(getRoundVisibilityState(structureDetail, matchUps, after)).toBeUndefined();
+  });
+});

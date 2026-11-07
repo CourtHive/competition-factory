@@ -98,18 +98,14 @@ export const POSITIONAL_GOVERNOR_FUNCTIONS = {
     'validateMatchUpScore',
     'validateSetScore',
   ],
-  /** tool or query is decided by the role classification first: record-held predicates, fees, shapes */
-  unclassified: [
-    'getEntryFeeRange',
-    'getRoundVisibilityState',
-    'isAdHocType',
-    'isEmbargoed',
-    'isIndeterminateFee',
-    'isLadder',
-    'isTournamentPublished',
-    'isVisiblyPublished',
-    'resolveEntryFee',
-    'validMatchUp',
-    'validMatchUps',
-  ],
+  /** `tools.publishing`: predicates over a publish detail the caller holds, each taking `asOf` */
+  publishing: ['getRoundVisibilityState', 'isEmbargoed', 'isVisiblyPublished'],
+  /** `tools.entries`: fee helpers over fee values */
+  entries: ['getEntryFeeRange', 'isIndeterminateFee', 'resolveEntryFee'],
+  /** `tools.draws`: draw-type predicates */
+  draws: ['isAdHocType', 'isLadder'],
+  /** `tools.matchUps`: matchUp shape validators (the `contracts` package at 8.0.0) */
+  matchUps: ['validMatchUp', 'validMatchUps'],
+  /** retired at 8.0.0: takes a whole record, so neither tool nor query; use the `getPublishState` query */
+  retiring: ['isTournamentPublished'],
 } as const satisfies Record<string, readonly string[]>;
