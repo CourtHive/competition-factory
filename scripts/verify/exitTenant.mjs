@@ -114,6 +114,12 @@ const ALLOWED = {
     "PLUMBING — re-derives the codes as [] where v1's removeDirectedLoser writes them; decides nothing on them",
   'mutate/matchUps/outcome/plan/carriedExit.ts':
     "PLUMBING — a carried exit's landing writes the codes v1's progressExitStatus derives ([]) and abstains where a landing holds codes; decides nothing on them",
+  'mutate/matchUps/outcome/plan/unwindSeats.ts':
+    "PLUMBING — the unwind's seat programs write [] where v1's removal re-derives codes and abstain where a seat's matchUp holds codes; decide nothing on them",
+  'mutate/matchUps/outcome/plan/unwindPath.ts':
+    "PLUMBING — the unwind's path writes [] where v1's removeDoubleExit re-derives codes and abstains where a matchUp on the path holds codes; decides nothing on them",
+  'mutate/matchUps/outcome/plan/standingReservation.ts':
+    'PLUMBING — certifies an untouched reservation seat by its absent codes; decides nothing on them',
   'mutate/matchUps/outcome/types.ts': 'PLUMBING — the v2 request carries the submitted array to the write',
   'mutate/matchUps/outcome/unwindWalk.ts':
     'PLUMBING — abstains where a matchUp its removal would write carries codes, so v1 writes it; decides nothing on them',
