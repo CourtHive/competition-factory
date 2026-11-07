@@ -1,8 +1,16 @@
-import { readTiebreakSet, withPointsInTiebreakFields } from '@Helpers/matchUpFormatCode/setRules/tiebreakSetShape';
-import { isTiebreakWon, reachedTiebreak } from '@Helpers/matchUpFormatCode/setRules/tiebreakAtRules';
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { shootoutTallyRefusal } from '@Helpers/matchUpFormatCode/shootout';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
+import {
+  isTiebreakGamesScore,
+  isTiebreakWon,
+  reachedTiebreak,
+} from '@Helpers/matchUpFormatCode/setRules/tiebreakAtRules';
+import {
+  readTiebreakSet,
+  withPointsInTiebreakFields,
+  withoutZeroZeroTiebreak,
+} from '@Helpers/matchUpFormatCode/setRules/tiebreakSetShape';
 
 // constants
 import { MISSING_VALUE } from '@Constants/errorConditionConstants';
@@ -39,7 +47,7 @@ export function checkSetIsComplete({
   // the 1-0 marker alone records a finished tiebreak set (CA, V11)
   if (reading.isMarker) return true;
   isTiebreakSet ??= reading.isTiebreakSet;
-  set = withPointsInTiebreakFields(set, setFormat);
+  set = withoutZeroZeroTiebreak(withPointsInTiebreakFields(set, setFormat));
   const { side1Score, side2Score } = set;
   const { setTo, tiebreakAt } = setFormat;
   const hasScore = side1Score || side2Score;
@@ -65,8 +73,26 @@ export function checkSetIsComplete({
     (leadingSide === 1 && set.side1TiebreakScore > set.side2TiebreakScore) ||
     (leadingSide === 2 && set.side2TiebreakScore > set.side1TiebreakScore);
 
+  // ── A tiebreak games score with no points is a finished set (CA, 2026-11-07) ──
+  //
+  // `7-6` alone has been a recorded result since ruling V11 (CA, 2026-10-02): `setMatchUpStatus` accepts it with
+  // TIEBREAK_POINTS_NOT_RECORDED, `validateSetScore` passes it and `analyzeSet` validates its outcome. This function
+  // alone called it unfinished, so `getSetWinningSide` named no winner, `analyzeMatchUp` found none, and a score-entry
+  // interface delegating to the analysis could never submit the score the engine would record. The games decide:
+  // `7-6` under a tiebreak at six is the one score a tiebreak produces, `13-12` under `@12` likewise, while `6-6` is a
+  // tiebreak still being played and names nobody. Points typed on one side only, or a pair the leader did not win,
+  // are still refused, as the validator refuses them.
+  const hasTiebreakPoints = typeof set.side1TiebreakScore === 'number' || typeof set.side2TiebreakScore === 'number';
+  const tiebreakPointsNotRecorded =
+    requiresTiebreak &&
+    !isTiebreakSet &&
+    !hasTiebreakPoints &&
+    isTiebreakGamesScore(Math.max(side1Score, side2Score), Math.min(side1Score, side2Score), { setTo, tiebreakAt });
+
   const tiebreakIsValid =
-    ignoreTiebreak || (requiresTiebreak && leaderHoldsTiebreak && tiebreakReachesTarget(set, setFormat, isTiebreakSet));
+    ignoreTiebreak ||
+    tiebreakPointsNotRecorded ||
+    (requiresTiebreak && leaderHoldsTiebreak && tiebreakReachesTarget(set, setFormat, isTiebreakSet));
 
   // ── The margin is two games, a declared `winBy`, or one through a tiebreak — never `NoAD` ──
   //

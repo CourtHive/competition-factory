@@ -31,6 +31,27 @@ import type { Set as SetType } from '@Types/tournamentTypes';
 
 const isNumber = (value: unknown): value is number => typeof value === 'number' && !Number.isNaN(value);
 
+/**
+ * 0-0 TIEBREAK POINTS ARE NOT RECORDED POINTS (CA, 2026-11-04). No tiebreak finishes 0-0, and the engine refuses
+ * tiebreak points on a set that has not finished, so a set whose tiebreak fields both read 0 carries no tiebreak
+ * result: a feed's empty default. Prod 2026-11-04: an integration sent `6-7` with `0`/`0` and was refused ("Tiebreak
+ * winner must reach 7 points, got 0"). Dropping the pair records it as a bare `7-6`, accepted with
+ * TIEBREAK_POINTS_NOT_RECORDED (ruling V11), and the score string no longer reads `7-6(0)`, which says the loser won
+ * no points. Any other impossible tiebreak (`0-3`, `7-7`) is still refused.
+ *
+ * One rule for the whole engine (CA, 2026-11-07). This lived in `setMatchUpStatus` alone, so the write path recorded
+ * a `0-0` pair as no points while `validateSetScore` refused it, `checkSetIsComplete` called the set unfinished and
+ * `generateScoreString` printed `7-6(0)`: a score-entry interface that asks the analysis as the operator types was
+ * told the opposite of what the record would say. Every reader of a set's tiebreak points goes through here.
+ */
+type TiebreakPoints = { side1TiebreakScore?: unknown; side2TiebreakScore?: unknown };
+const isZeroPoints = (value: unknown) => value !== null && value !== '' && value !== undefined && Number(value) === 0;
+export function withoutZeroZeroTiebreak<T extends TiebreakPoints>(set: T): T {
+  if (!isZeroPoints(set.side1TiebreakScore) || !isZeroPoints(set.side2TiebreakScore)) return set;
+  const { side1TiebreakScore: _side1, side2TiebreakScore: _side2, ...rest } = set;
+  return rest as unknown as T;
+}
+
 /** The format a given set is played to: the final set's where the format names one and this is it. */
 export function formatForSet(matchUpScoringFormat: ParsedFormat | undefined, setNumber?: number) {
   const { bestOf, exactly, finalSetFormat, setFormat } = matchUpScoringFormat ?? {};
@@ -79,6 +100,8 @@ export type TiebreakSetReading = {
  * the hydration marker.
  */
 export function readTiebreakSet(set: any, setFormat?: any): TiebreakSetReading {
+  // a 0-0 pair is no points, whatever shape the set arrived in
+  if (set) set = withoutZeroZeroTiebreak(set);
   const sideGameScores: SideValues = [set?.side1Score, set?.side2Score];
   const sideTiebreakScores: SideValues = [set?.side1TiebreakScore, set?.side2TiebreakScore];
   const hasGameScores = sideGameScores.some(isNumber);

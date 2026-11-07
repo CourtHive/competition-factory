@@ -6,8 +6,8 @@ import { shootoutTallyRefusal } from '@Helpers/matchUpFormatCode/shootout';
  * PROTOTYPE: This logic will be moved to tods-competition-factory
  * Currently implemented in TMX for testing and refinement before factory integration
  */
+import { isTiebreakMarker, withoutZeroZeroTiebreak } from '@Helpers/matchUpFormatCode/setRules/tiebreakSetShape';
 import { finalSetGoverns, unlevelDeciderRefusal } from '@Helpers/matchUpFormatCode/aggregateDecider';
-import { isTiebreakMarker } from '@Helpers/matchUpFormatCode/setRules/tiebreakSetShape';
 import { getMaxSetScore } from '@Helpers/matchUpFormatCode/setRules/setComplement';
 import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
 import { tiebreakMargin } from '@Helpers/matchUpFormatCode/formatUtilities';
@@ -414,6 +414,8 @@ export function validateSetScore(
   // input it cannot read is refused, never passed as valid: through an engine a params object arrived as `set`
   if (!set || typeof set !== 'object' || Array.isArray(set)) return { isValid: false, error: UNREADABLE_SET };
   if (unreadableFormat(matchUpFormat)) return { isValid: false, error: UNREADABLE_FORMAT };
+  // a 0-0 pair is no points: the set is validated as the write path records it (see `tiebreakSetShape`)
+  set = withoutZeroZeroTiebreak(set);
   if (!matchUpFormat) return { isValid: true };
 
   const parsed = parse(matchUpFormat);
