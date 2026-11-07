@@ -122,6 +122,12 @@ const R1 = (roundPosition: number, structureName?: string): Target => ({
   roundPosition,
   structureName,
 });
+/** a Main structure matchUp by round and position (the ruling 2 and ruling 10 pins) */
+const MAIN = (roundNumber: number, roundPosition: number): Target => ({
+  roundNumber,
+  roundPosition,
+  structureName: 'Main',
+});
 
 /** an 8-draw's Main round 1 played: its losers fill the consolation's first round (S6 tail, family 7) */
 const MAIN_R1_8: Step[] = [1, 2, 3, 4].map((roundPosition) => ({ target: R1(roundPosition, 'Main'), outcome: won(1) }));
@@ -6595,22 +6601,54 @@ describe('a cleared Main final whose loser a link fed is v1s (ruling 10: the one
   // it, and that empty plan is what the settle check abstains on. Without the guard v2 owned this call (the record
   // equal to v1's), so the pin holds the abstention: an ownership that wide is a family, not a hoist.
   it('FIC 8, Main played out, the final cleared: differential abstains `settle`, and v2 leaves exactly what v1 leaves', () => {
-    const main = (roundNumber: number, roundPosition: number): Target => ({
-      roundNumber,
-      roundPosition,
-      structureName: 'Main',
-    });
     const scenario: Scenario = {
       drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
-      setup: [main(1, 1), main(1, 2), main(1, 3), main(1, 4), main(2, 1), main(2, 2), main(3, 1)].map((target) => ({
+      setup: [MAIN(1, 1), MAIN(1, 2), MAIN(1, 3), MAIN(1, 4), MAIN(2, 1), MAIN(2, 2), MAIN(3, 1)].map((target) => ({
         target,
         outcome: won(1),
       })),
-      steps: [{ target: main(3, 1), outcome: cleared }],
+      steps: [{ target: MAIN(3, 1), outcome: cleared }],
     };
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
     const deferred = () => getDifferentialTally()['shadow:abstain:settle']?.deferred ?? 0;
+    const before = deferred();
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+    expect(deferred()).toEqual(before + 1);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+  });
+});
+
+describe('the convergence beyond a relayed copy that feeds on is v1s (ruling 2: the geometry wall held by a test)', () => {
+  // Consolation 3/1 converges to a double walkover holding the carrier alone, but feeds Consolation 4/1, which v1 also
+  // rewrites (and takes a participant back out of 5/1). Every relay program refuses it; only `occupiedFinalRelaySeatOps`'s
+  // `next.winnerMatchUpId` clause tells it from the occupied final. A classifier on the copy's content alone would own it.
+  it('FIC_TO_SF 16 of 15 (seed 1): Main 2/3 cleared after Main 2/4 and Consolation 1/2 double walkovers abstains `exit`, and v2 leaves exactly what v1 leaves', () => {
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 16, participantsCount: 15, drawType: FEED_IN_CHAMPIONSHIP_TO_SF },
+      nonRandom: 1,
+      setup: [
+        { target: MAIN(1, 2), outcome: walkover(1), params: CARRIED },
+        ...[3, 4, 5, 6, 7, 8].map((roundPosition) => ({
+          target: MAIN(1, roundPosition),
+          outcome: won(1),
+          params: CARRIED,
+        })),
+        { target: MAIN(2, 4), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED },
+        { target: R1(2, 'Consolation'), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED },
+        { target: MAIN(2, 3), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED },
+      ],
+      steps: [{ target: MAIN(2, 3), outcome: cleared, params: CARRIED }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    const deferred = () => getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0;
     const before = deferred();
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
     expect(compared.results).toEqual(v1.results);
