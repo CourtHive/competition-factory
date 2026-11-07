@@ -9,6 +9,7 @@
  *   Contains optional `roundLimit` and `scheduledRounds` with per-round embargo dates.
  * @param matchUps - Array of matchUp objects for the structure. Only `roundNumber` is read;
  *   used to determine the maximum round number.
+ * @param asOf - The instant to judge embargoes against (a clock is an input). Defaults to the competition clock.
  * @returns A map from round number to `{ hidden?, embargoed? }`, or `undefined` when
  *   no rounds have visibility restrictions.
  */
@@ -24,6 +25,7 @@ export interface RoundVisibility {
 export function getRoundVisibilityState(
   structureDetail?: PublishingDetail,
   matchUps?: { roundNumber?: number }[],
+  asOf?: Date | string,
 ): Record<number, RoundVisibility> | undefined {
   if (!structureDetail || !matchUps?.length) return undefined;
 
@@ -42,7 +44,7 @@ export function getRoundVisibilityState(
       hasState = true;
     }
     const rd = scheduledRounds[rn];
-    if (rd && isEmbargoed(rd)) {
+    if (rd && isEmbargoed(rd, asOf)) {
       entry.embargoed = true;
       hasState = true;
     }

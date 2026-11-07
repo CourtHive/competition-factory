@@ -33,8 +33,13 @@ scoreGovernor.validateMatchUpScore(sets, 'SET3-S:6/TB7');
 - `tools.scoring` replaces the score governor's validators, scoring-engine state readers and point and statistics
   parsers.
 - The availability helpers stay on the `availability` export and leave the engines.
-- The rest (publishing predicates, fee helpers, draw-type predicates, `validMatchUp(s)`) are being classified. Their
-  destination is added here before 8.0.0.
+- `tools.publishing` replaces the publishing governor's `isEmbargoed`, `isVisiblyPublished` and
+  `getRoundVisibilityState`. Each takes the instant as `asOf`, which is optional in 7.x (it falls back to the
+  competition clock) and required in 8.0.0.
+- `tools.entries`, `tools.draws` and `tools.matchUps` replace the entries governor's fee helpers, the draws governor's
+  `isAdHocType` / `isLadder`, and the matchUp governor's `validMatchUp` / `validMatchUps`.
+- `publishingGovernor.isTournamentPublished(tournamentRecord)` is retired. It takes a whole record, so it is neither a
+  query nor a tool. Use the `getPublishState` query.
 
 The 8.0.0 release notes list every function this moves, by governor.
 

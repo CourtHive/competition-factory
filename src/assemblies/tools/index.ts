@@ -101,6 +101,10 @@ export {
 } from '@Tools/arrays';
 
 // Stateless positional functions by domain (CA 2026-11-07): their home, rather than a governor that mounts them on
-// engines which call every method with one params object. See formats.ts and scoring.ts.
+// engines which call every method with one params object. Each module says what its domain holds.
+export * as publishing from './publishing';
+export * as matchUps from './matchUps';
 export * as formats from './formats';
 export * as scoring from './scoring';
+export * as entries from './entries';
+export * as draws from './draws';
