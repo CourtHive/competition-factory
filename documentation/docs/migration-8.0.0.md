@@ -43,6 +43,11 @@ scoreGovernor.validateMatchUpScore(sets, 'SET3-S:6/TB7');
 
 The 8.0.0 release notes list every function this moves, by governor.
 
+### `utilities` is removed
+
+`utilities` is a deprecated alias of `tools` (`export * as utilities` beside `export * as tools`). It is removed in
+8.0.0, so replace `utilities.` with `tools.`. Nothing else changes.
+
 ### Progression edges: addGoesTo
 
 Use [the supported storage, ingest, draw-addition and read-projection routes](/docs/implementation/records/addGoesTo#supported-migration-routes). The old helper mutates stored matchUps despite its query-governor placement and is not a safe read-only API.
