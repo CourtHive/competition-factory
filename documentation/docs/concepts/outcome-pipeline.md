@@ -1821,3 +1821,18 @@ accept it as a completed result. That control retains v1's prefix and error unti
 refusal program owns the same writes, notices and terminal error. It is explicitly unfinished
 v2 work, and must be owned before v1 retirement. The requireParticipantsForScoring=false policy
 remains accepted and owned. A clean early error would not preserve the captured prefix.
+
+### A corrected result refreshes its recorded arrival (C23)
+
+A source relabelled beneath an active onward matchUp refreshes the arrival origin that names
+its earlier result. For native non-TEAM matchUps in the same flat structure, certify stored
+non-BYE arrivals whose previousMatchUpStatus still equals the source's stored status. After
+the source result, merge only the changed previousMatchUpStatus, preserve the rest of each
+entry, and stamp the arrival and its structure. Announce as refreshArrivals on apply-values,
+or refreshArrivalsFrom on a swap, with the event and tournament. No score, codes or positions
+are rewritten by the refresh. Foreign, nested, stale or BYE arrivals remain owed.
+
+The existing carry, withdrawal and swap-path certificates still apply. Admission past the
+arrival-label wall does not own a call that reaches a later refusal. Refused TEAM winner
+changes can differ in their mutation prefix before CANNOT_CHANGE_WINNING_SIDE; they join the
+explicit terminal-error program obligation before v1 retirement.

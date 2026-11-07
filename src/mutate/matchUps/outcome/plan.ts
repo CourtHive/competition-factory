@@ -1,4 +1,4 @@
-import { clearedSingleExit, correctedSingleExit, relabelledExit } from './plan/exitCorrections';
+import { clearedSingleExit, correctedSingleExit, refreshedArrivalOps, relabelledExit } from './plan/exitCorrections';
 import { producedRelayAfterOps, unwoundOps, unwoundPath, unwoundView } from './plan/unwindPath';
 import { standaloneBareWinnerOps, standaloneCarriedWinnerOps } from './plan/standaloneIndirect';
 import { retainedCarriedAwardOps, terminalOccupiedWinnerOps } from './plan/terminalAward';
@@ -470,6 +470,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition): Outcom
     // a schedule the call carries, written before the result as v1 writes it before `applyScoredTime` (S7)
     ...scheduleOps(args, matchUpId),
     ...resultOps(request, write, matchUpId, view.dualSides, autoCalcWrite(request, view)),
+    ...(refreshedArrivalOps(args) ?? []),
     // a convergence the unwind dissolved, re-announced by v1's settle pass after the call's own write (S6 tail)
     ...reannounced,
     ...dualTallyOps(view.line, args.route),
