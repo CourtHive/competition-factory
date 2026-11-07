@@ -31,7 +31,7 @@ const REFUSALS = 'src/mutate/matchUps/outcome/refusals.ts';
 const UNIONS = [
   { name: 'Route', file: TYPES, section: '3' },
   { name: 'OutcomeOpName', file: 'src/mutate/matchUps/outcome/ops.ts', section: '7.2' },
-  { name: 'AbstainReason', file: 'src/mutate/matchUps/outcome/plan.ts', section: '7.2' },
+  { name: 'AbstainReason', file: TYPES, section: '7.2' },
 ];
 
 /** a `## N.` (or `## N.M `) section of the spec, up to the next `## ` heading */

@@ -1,6 +1,7 @@
 import type { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
 import type { ErrorType } from '@Constants/errorConditionConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
+import type { OutcomeOp } from './ops';
 import type {
   DrawDefinition,
   Event,
@@ -578,3 +579,80 @@ export type CarryLevel = {
   /** a single exit standing there that links its loser on: the seats the convergence's double exit takes (S6 tail) */
   walk?: { own?: ByeWalk; unfillable?: ByeWalk };
 };
+
+/**
+ * Why a call is not planned as ops (plan.ts): a plan is COMPLETE only when every write the call makes is an op v2
+ * holds; otherwise `planOutcome` ABSTAINS, naming the reason, and the call stays v1's whole (executor plan § 3.7,
+ * fail-closed). Each reason is a shape a later slice took on, and the abstention tally (`abstain:<reason>`) is the work
+ * list. Every member is named in the spec's § 7.2 (`verify:outcome-spec`).
+ */
+export type AbstainReason =
+  | 'route' // a route S1 does not plan as ops
+  | 'winner' // a winner taken away or changed: unwinding what it directed (S4)
+  | 'loser' // the loser has somewhere to go: a loser link (S3)
+  | 'link' // the winner goes into another structure (S3)
+  | 'cascade' // the winner's target holds a BYE, an exit or a result: the winner goes on, or meets it (S5)
+  | 'exit' // an exit status, before or after: provenance and the cascade (S5)
+  | 'status-codes' // the client's positional codes, split into side codes at the write
+  | 'provenance' // the matchUp holds provenance the score write may clear or rescue
+  | 'team' // a dual or a line: tieMatchUps and auto-calc (S7)
+  | 'tallied' // a round robin, ad hoc or lucky structure: the tally (S3)
+  | 'schedule' // the call carries a schedule (§ 3.5.8)
+  | 'notes' // the call carries notes
+  | 'no-record' // the draw is not held in the tournament record's events: nothing to fold the plan into
+  | 'edges' // the draw stores no edges, which v1 writes first (`ensureGoesTo`): S2's setEdges
+  | 'clock' // no captured instant (a call outside the engine): the timestamps a write takes cannot be reproduced
+  | 'settle' // a settle pass has work on the working view (S2's has-work predicates, `settleWork.ts`)
+  | 'write-mode' // LEGACY or BRIDGE: v1 writes `scoredTime` as a timeItem there, which the reducer does not (F6)
+  | 'competition'; // a per-matchUp competition policy: v1 processes ratings on a result (`processCompetitionMatchUp`)
+
+/** which of the allowlist's shapes a complete plan is: `local` (the matchUp's own result) or the first `direction` */
+export type PlanShape = 'local' | 'direction';
+export type OutcomePlan =
+  | { ops: OutcomeOp[]; shape: PlanShape; abstain?: undefined }
+  | { abstain: AbstainReason; ops?: undefined; shape?: undefined };
+
+/**
+ * The view of the draw as `ops` leave it, with the direction a route plans on it: the working view (§ 3.2) folded and
+ * read again, on the call's one hydration (the structural index re-indexed where the ops touched it). How a plan composes
+ * one step on another (S6: a result turned into a double exit plans the double exit on the draw its removal leaves).
+ */
+/** S7: the dual's own call a deciding line makes, planned on a view of the dual (`decide.ts` `decidedDualCall`) */
+export type DualCall = {
+  request: OutcomeRequest;
+  direction?: DirectionPlan;
+  rebuild?: RebuildView;
+  write?: MatchUpWrite;
+  view: OutcomeView;
+  route?: Route;
+};
+
+export type RebuildView = (
+  ops: OutcomeOp[],
+  route: Route,
+) => { view: OutcomeView; direction?: DirectionPlan } | undefined;
+
+/**
+ * `planOutcome`'s arguments (plan.ts): the call planned against its view, what `planWrite` and `planDirection` decided
+ * for it, and the composition points a plan folds one step on another with.
+ */
+export type PlanArgs = {
+  tournamentRecord?: Tournament;
+  drawDefinition?: DrawDefinition;
+  direction?: DirectionPlan;
+  request: OutcomeRequest;
+  write?: MatchUpWrite;
+  view: OutcomeView;
+  route?: Route;
+  rebuild?: RebuildView;
+  /** S7: the dual's call a deciding line makes */
+  dual?: DualCall;
+  /** S7: this call is a deciding line's dual, planned as part of the line's plan: its TEAM shape is the line's to vet */
+  asDual?: true;
+};
+
+/** the arguments the exit shapes read (plan.ts `exitReason`): a plan's, without the record and the dual */
+export type ExitReasonArgs = Pick<
+  PlanArgs,
+  'drawDefinition' | 'request' | 'view' | 'route' | 'write' | 'direction' | 'rebuild' | 'asDual'
+>;
