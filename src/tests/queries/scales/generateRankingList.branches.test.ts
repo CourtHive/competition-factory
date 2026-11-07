@@ -1,9 +1,15 @@
 import { generateRankingList } from '@Query/scales/generateRankingList';
-import { describe, expect, it } from 'vitest';
+import { setClock } from '@Tools/clock';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 // constants
 import { SINGLES, DOUBLES } from '@Constants/eventConstants';
 import { MALE, FEMALE } from '@Constants/genderConstants';
+
+// The list is judged as of a date inside these fixtures' era: a ranking list now has a rolling window (default 365
+// days back from its as-of date, which falls back to the competition clock), and the awards here are dated 2025.
+beforeAll(() => setClock('2025-12-31T12:00:00Z'));
+afterAll(() => setClock());
 
 function makeAward(overrides: Record<string, any> = {}) {
   return {
@@ -169,7 +175,8 @@ describe('generateRankingList — branch coverage', () => {
   });
 
   describe('rolling period branches', () => {
-    it('includes awards without endDate even when rolling period is set', () => {
+    // CA 2026-11-08: an award with no end date cannot be placed in time, so it is outside every window
+    it('excludes awards without endDate when a rolling window applies', () => {
       const awards = [
         makeAward({ personId: 'p1', points: 100, endDate: undefined }),
         makeAward({ personId: 'p1', points: 200, endDate: '2025-06-01' }),
@@ -183,12 +190,13 @@ describe('generateRankingList — branch coverage', () => {
       });
 
       const p1 = result.find((e) => e.personId === 'p1');
-      // 100 (no date, included) + 200 (within range) = 300
-      expect(p1?.totalPoints).toEqual(300);
-      expect(p1?.countingResults.length).toEqual(2);
+      // 200 only: the undated award is outside the window, and 2024-01-01 is too old
+      expect(p1?.totalPoints).toEqual(200);
+      expect(p1?.countingResults.length).toEqual(1);
     });
 
-    it('does not filter by rolling period when only rollingPeriodDays is set (no asOfDate)', () => {
+    // CA 2026-11-08: a clock is an input; without asOfDate the window ends at the competition clock's date (pinned above)
+    it('without asOfDate, ends the window at the competition clock date', () => {
       const awards = [
         makeAward({ personId: 'p1', points: 100, endDate: '2020-01-01' }),
         makeAward({ personId: 'p1', points: 200, endDate: '2025-06-01' }),
@@ -197,15 +205,15 @@ describe('generateRankingList — branch coverage', () => {
       const result = generateRankingList({
         pointAwards: awards,
         aggregationRules: { rollingPeriodDays: 365 },
-        // no asOfDate
+        // no asOfDate: the clock is pinned to 2025-12-31, so the window is 2024-12-31 to 2025-12-31
       });
 
       const p1 = result.find((e) => e.personId === 'p1');
-      // Both included because asOfDate not provided
-      expect(p1?.totalPoints).toEqual(300);
+      expect(p1?.totalPoints).toEqual(200);
     });
 
-    it('does not filter by rolling period when only asOfDate is set (no rollingPeriodDays)', () => {
+    // CA 2026-11-08: a list that declares no rolling period gets 365 days
+    it('without rollingPeriodDays, defaults the window to 365 days', () => {
       const awards = [
         makeAward({ personId: 'p1', points: 100, endDate: '2020-01-01' }),
         makeAward({ personId: 'p1', points: 200, endDate: '2025-06-01' }),
@@ -214,11 +222,11 @@ describe('generateRankingList — branch coverage', () => {
       const result = generateRankingList({
         pointAwards: awards,
         asOfDate: '2025-07-01',
-        // no rollingPeriodDays
+        // no rollingPeriodDays: 2024-07-01 to 2025-07-01
       });
 
       const p1 = result.find((e) => e.personId === 'p1');
-      expect(p1?.totalPoints).toEqual(300);
+      expect(p1?.totalPoints).toEqual(200);
     });
   });
 

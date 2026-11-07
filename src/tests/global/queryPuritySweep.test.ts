@@ -94,7 +94,7 @@ const MISNAMED: Record<string, string> = {
     'a draw-generation helper that writes finishingRound / finishingPositionRange onto the matchUps it is given',
   addGoesTo: 'a writer (knownWriters.ts); retired at 8.0.0',
   applyDerivedRankings:
-    'pure: returns a new, renumbered list; named for what it does to its input, takes values (a tool)',
+    'pure: returns a new, renumbered list; a tool, tools.rankings.deriveRankingList; the governor name goes at 8.0.0',
   createFollowByEvaluator: 'builds a new evaluator object: construction, not mutation (an availability tool)',
   createTournamentRecord: 'builds a new record, stored nowhere: generation, not mutation',
 };
