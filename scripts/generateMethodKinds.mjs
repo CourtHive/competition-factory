@@ -96,6 +96,8 @@ const UNNAMESPACED = {
     'generateQualifyingStructure',
     'generateSwissRound',
     'generateVoluntaryConsolation',
+    // runs the draw generator without attaching: a read, checked like one
+    'getDrawFit',
   ],
   // scoreGovernor's `helpers` namespace and its parsers: functions of their arguments
   query: [
