@@ -29,7 +29,7 @@ import { INVALID_VALUES, MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND } from '@C
 import { DrawDefinition, DrawLink, Event, Structure, Tournament } from '@Types/tournamentTypes';
 import { CONTAINER, LOSER, PLAY_OFF, TOP_DOWN } from '@Constants/drawDefinitionConstants';
 import type { PlayoffGroupConfig } from '@Validators/validatePlayoffGroups';
-import { RoundProfile, ResultType } from '@Types/factoryTypes';
+import { ResultType } from '@Types/factoryTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { TEAM } from '@Constants/matchUpTypes';
@@ -42,7 +42,12 @@ type GenerateAndPopulateArgs = {
   finishingPositionLimit?: number;
   tournamentRecord: Tournament;
   drawDefinition: DrawDefinition;
-  roundProfiles?: RoundProfile[];
+  /**
+   * `{ [sourceRoundNumber]: depth }` per entry: `[{ 2: 1 }]` plays off round 2's losers one structure deep. Typed as the
+   * matchUp-per-round `RoundProfile` until 2026-11-08, which no caller sends and the reader (`roundProfile[roundNumber]`
+   * added to a stage sequence) does not read; `WithPlayoffsArgs.roundProfiles` already had this shape.
+   */
+  roundProfiles?: { [sourceRoundNumber: number]: number }[];
   playoffPositions?: number[];
   roundOffsetLimit?: number;
   exitProfileLimit?: boolean;
