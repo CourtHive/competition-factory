@@ -43,6 +43,9 @@ export function plainLoserReason(view: OutcomeView, direction: DirectionPlan): A
   return undefined;
 }
 
+// One of the four FIRST_MATCHUP reservation readers kept apart by ruling 9 (see `standingReservationSeat` in
+// `standingReservation.ts`): any BYE on the fed seat is nothing to place, as v1's `assignDrawPositionBye` no-ops on
+// any BYE.
 /**
  * A loser an FMLC feed keeps out (they have won before) leaves a BYE on the seat they would have taken, as v1's
  * `directLoser` places it. Planned on the seat the link feeds when it is already that BYE (a reservation placed it) or is
@@ -79,6 +82,16 @@ function reservationReason(view: OutcomeView, winningSide: 1 | 2): boolean {
   );
 }
 
+// Three "a direction taken back" rules are kept apart on purpose (Mentat
+// assessment/2026-11-07-outcome-refactor-debates.md, ruling 10). This one and `resultRemovalReason` (`plan.ts`) will
+// share the op builder but not their walls: this route walls `tallied` as `tallied && !group` with a dual exempt from
+// `link`, the other as `group || tallied` with no exemption, and the two name `link` and `tallied` in opposite order,
+// so one reason would move the `abstain:<reason>` tally. `pendingAwardRemoval` (`unwindPath.ts`) is v1's
+// `removeDoubleExit` through `removeDirectedWinner` with no record: it edits `winningSide` on a matchUp holding an
+// award, which both removals here refuse (`cascade`), announces with no tournament, and leaves a propagated BYE on
+// the fed seat where these empty a participant. Verified: a COMPLETED feeder cleared under a standing award
+// (SINGLE_ELIMINATION 8) and a loser's seat emptied under a carried award (FEED_IN_CHAMPIONSHIP 8, policy off) both
+// abstain `cascade` here; v1 drops the first award and keeps the second's `winningSide` over the empty seat.
 /**
  * A cleared result's direction taken back, planned only where all it directed is the winner's position in a clean next
  * matchUp of the same structure, and the loser, if a link took them, on the seat it fed in a matchUp they have not

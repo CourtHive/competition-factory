@@ -12,6 +12,16 @@ import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
  * to the other side, where neither side carries anything on.
  */
 
+// These three functions are admission gates run before the S4 detectors (`exitReason`, then `shapeReason`), and the
+// order is load-bearing (Mentat assessment/2026-11-07-outcome-refactor-debates.md, ruling 8): `reenteredReason` takes
+// `loser.withdrawn` straight to `withdrawnReason` and has no label guard of its own, so `correctedSingleExit`
+// refusing a withdrawal whose write is a single exit is what keeps a same-label re-entry over a standing carry v1's.
+// The guard lives here because `withdrawnCarry` reports a withdrawal whenever the direction carries nothing, which is
+// wider than v1's `validExitToPropagate`; moving it into `withdrawnCarry` would let v2 own a non-propagating
+// retirement's withdrawal and is a separate slice. The `apply-values` and `swap` loser checks (`relabelledExit`) and
+// the winner-route ones (`reenteredReason`) are not the same test: they answer `refreshArrivals` differently and
+// split on `propagateExitStatus` off. Verified with a retirement flag flipped between entry and re-entry on
+// FEED_IN_CHAMPIONSHIP 16: v1 withdraws, both routes here abstain `exit`.
 /**
  * S6: a single exit cleared back to be played. Where it carried nothing on, v1 takes it back as it takes back a played
  * result (`removeDirectedParticipants`): the winner out of the next matchUp and the loser out of the seat their link

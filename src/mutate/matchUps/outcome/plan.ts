@@ -567,6 +567,14 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition): Outcom
   // The convergence writes a fresh produced exit into the released landing. v1's scored-time reconciliation then
   // leaves that exit standing, including its existing stamp, rather than resetting the emptied award it replaced.
   const convergedWrites = new Set(converging.filter((op) => op.op === 'setMatchUpResult').map((op) => op.matchUpId));
+  // v1's `reconcileScoredTimes` runs last and skips any matchUp `matchUpIsScored` finds scored, so a reconcile write is
+  // faithful only where the matchUp's LAST result write leaves it unscored. A convergence's write is always a double
+  // exit in `completedMatchUpStatuses`, stamping by default, so `convergedWrites` is a proof of "scored at the end"
+  // without reading the end state. Keyed on the convergence rather than on "any later result write of the same matchUp"
+  // (Mentat assessment/2026-11-07-outcome-refactor-debates.md, ruling 7): a later write that stamps or is scored agrees
+  // with that rule, but a later unscored write carrying `stampsScoredTime: false` would need the reconcile write kept
+  // and moved after it, and position alone cannot tell the two apart. Before widening this to one end-of-plan pass,
+  // assert over the census that no candidate's matchUp takes a non-convergence result write later in the plan.
   const superseded = new Set(
     reannounced.filter(
       (op) =>

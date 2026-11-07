@@ -180,6 +180,15 @@ function indirectProducedRelaySeatOps(
  */
 export type UnwindRelay = { sourceId: string; cleared: Set<string>; reset: Set<string>; retained: Map<string, string> };
 
+// `carriedBesideBye` with `carriedOpposite` and `carrierSentOn` read a participant's carried exit beside the
+// withdrawn BYE; `producedBesideBye` reads a double exit's produced copy there. They share seven predicates and the
+// kind test `isDoubleExit(entry.previousMatchUpStatus)` (as v1's `carriedEntryAt` and `awardStands` read it), which
+// is the one read to be hoisted (Mentat assessment/2026-11-07-outcome-refactor-debates.md, ruling 12). The read ends
+// there. `producedBesideBye`'s walls (feed round, one position, no loser link, a live origin feeding this matchUp
+// directly) belong to the five direct programs, not to the kind: `indirectProducedRelaySeatOps` owns a produced copy
+// beside a two-position BYE fed indirectly, and a loser link is tolerated here yet refused by `carrierSentOn`. The
+// onward paths are never shared: the carry walks the carrier's position through BYE relays; the copy is read one hop
+// by source id, and `producedRelayAfterOps` recomputes that hop from the home.
 /**
  * A participant's carried exit standing beside the BYE in the structure's last round (S7): the one provenance entry, on
  * the side opposite the BYE's, a carried exit a participant brought (not a double exit's produced one), the matchUp a
@@ -387,6 +396,16 @@ function producedBesideBye(
   return carriedExitStatus(kept[1]);
 }
 
+// Five relay programs follow (`producedRelaySeatOps`, `terminalProducedRelaySeatOps`, `awardedProducedRelaySeatOps`,
+// `convergedProducedRelaySeatOps`, `occupiedFinalRelaySeatOps`), one shared wall (`producedBesideBye`) and one shared
+// three-op header. They are kept apart on purpose (Mentat assessment/2026-11-07-outcome-refactor-debates.md, ruling
+// 2): each is distinguished by the geometry beyond the copy (a next matchUp or none, a final or a round before it, a
+// successor that is the final), not by what the copy holds, and each hands its copy to a different writer under a
+// different marker (`retainedOnwardMatchUpId`, `retainedCarriedAward`, `withdrawsProducedExit`) that other modules
+// key on. A classifier on the copy's content returns `occupied` for FIC_TO_SF 16 of 15 (clear Main 2/3 after
+// Consolation 1/2 and Main 2/4 double walkovers): Consolation 3/1 converges holding the carrier alone but feeds
+// Consolation 4/1, which v1 also rewrites, and only the occupied program's `next.winnerMatchUpId` clause refuses it.
+// Their order in `unwoundSeatOps` is not load-bearing: the predicates are disjoint.
 /** The produced copy stands pending and alone, and whatever lies beyond is clean as the unwind leaves it. */
 function producedRelaySeatOps(
   view: OutcomeView,

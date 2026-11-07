@@ -1693,6 +1693,29 @@ the route 582 → 534, 1.3 a call); forced idle, 4 mutation tests fail under v1.
 predicate asks the same detector, exact where it was scope (any result in a round such a link reads); forced idle, 20
 mutation tests fail under v1.
 
+### 7.2.1 Where the plan lives
+
+`planOutcome` and the dispatch (`abstainReason`, `shapeReason`, `exitReason`, `recordReason`, `planOps`,
+`recordedPlanOps`, the TEAM line composition that re-enters `planOps`, and `resultToDoubleExit`) are
+`src/mutate/matchUps/outcome/plan.ts`. Every shape family is a module under `outcome/plan/`, imported by `plan.ts`
+and never the other way, in layers (lowest first):
+
+- vocabulary: `planShared` (the route and status sets, the index readers, the clean and scoreless predicates,
+  `seatBye` and `structureStamps`), `resultOps` (the call's own result write), `tallyOps` (a round robin group's
+  tally);
+- readers: `producedTarget`, `byeChain`, `standingReservation`, `schedulePlan`, `directionOps`, `teamPlan`,
+  `unwindSeats`;
+- the S5 shapes: `convergence`, `producedExit`, `carriedExit`;
+- the S3, S4 and S6 shapes: `directionReasons`, `exitCorrections`, `unwindPath` (with `unwoundView`, the one
+  "unwind, then re-plan" composition);
+- the given-winner families: `supersededRelay`, `terminalAward`, `standaloneIndirect`, then `givenWinner`.
+
+The split was mechanical (2026-11-07, factory #6273 to #6278): every declaration kept its text and order, proven by a
+plan-ops trace over the census in all three modes and the full gate. The module map, with the import graph and the
+placement decisions, is Mentat `planning/OUTCOME_V2_PLAN_MODULE_MAP.md`. Where two shapes look like one rule in two
+spellings, a debate ruled on merging them; the rulings are Mentat `assessment/2026-11-07-outcome-refactor-debates.md`
+and each one that keeps shapes apart is repeated as a comment beside them.
+
 ## 8. What the corpus pins
 
 |                                   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |

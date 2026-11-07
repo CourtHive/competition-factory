@@ -492,6 +492,8 @@ export function unfillableByeChain(
   return byeChain(view, first, from.levels, false, doubled, joined, heldOnward);
 }
 
+// The held exit's landing readers (`heldLoser`, `heldLanding`, `heldAward`, `heldBeyond`) are kept apart from the
+// carry's (`landingAt` and its siblings in `carriedExit.ts`) by ruling 11; the comment there says why.
 /**
  * Under `doubleExitPropagateBye: false`, a loser seat opposite a BYE (its matchUp a BYE already): v1 records the exit the
  * double exit produces on the BYE matchUp, on the seat's side, its score removed (`stampExitOnByeHeldLoserTarget`), and
