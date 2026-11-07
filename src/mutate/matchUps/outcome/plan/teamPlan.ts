@@ -77,7 +77,7 @@ export function teamReason({
 }): AbstainReason | undefined {
   if (asDual) return undefined;
   if (!view.isTeam && !view.line && !view.matchUpTieId && !view.existing.collectionId) return undefined;
-  if (view.isTeam && !view.line) return dualCallReason(view, route);
+  if (view.isTeam && !view.line) return dualCallReason(view, route, request);
   const { line, existing } = view;
   // a line's result with a winner, or its double exit (written as it stands, `only-score`, its dual tallied without it)
   if (!line || view.isTeam) return 'team';
@@ -120,9 +120,27 @@ export function teamReason({
  * enabling call whose lines project no winner (not the winner's route), and a dual holding no winner and neither to be
  * played nor in progress (a double exit). A dual in a round robin takes its group's tally (`groupTally`).
  */
-function dualCallReason(view: OutcomeView, route?: Route): AbstainReason | undefined {
+function dualCallReason(
+  view: OutcomeView,
+  route: Route | undefined,
+  request: OutcomeRequest,
+): AbstainReason | undefined {
   const { existing } = view;
   if (route !== 'winner' && route !== DOUBLE_EXIT) return 'team';
+  // C22 control: v1's late assignment check refuses this bare half-arrived dual after ensuring its sides.
+  // Keep its side/stamp prefix and error in v1; the scoring-policy override still permits the call.
+  if (
+    existing.matchUpStatus === TO_BE_PLAYED &&
+    !existing.winningSide &&
+    view.participants.requireForScoring &&
+    view.participants.required &&
+    view.participants.count === 1 &&
+    !view.draw.isAdHoc &&
+    request.winningSide &&
+    !request.matchUpStatus &&
+    !request.score
+  )
+    return 'team';
   // a dual decided is planned as any decided matchUp is (its winner entered again or changed); one holding another
   // status (a double exit, or neither to be played nor in progress) stays v1's
   const open = existing.matchUpStatus === TO_BE_PLAYED || existing.matchUpStatus === IN_PROGRESS;
