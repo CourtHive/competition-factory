@@ -92,7 +92,7 @@ export function givenWinnerReason(args: ExitReasonArgs): AbstainReason | undefin
     loserTargetSeat?.opponentBye &&
     !loserThroughBye &&
     !loserByePassage?.through &&
-    !unwoundThrough(view, unwound)
+    !unwoundThrough(view, unwound, request.matchUpId)
   )
     return 'exit';
   return unwoundLoserReason(
@@ -399,7 +399,11 @@ export function unwoundConvergedFor(
  * at that position (`doubleByeSeatOps`, family 5: it is then to be played) or the next matchUp is the structure's last
  * round (COMPASS's West: a BYE still, by the other standing BYE, and nothing further to advance into).
  */
-export function unwoundThrough(view: OutcomeView, unwound: OutcomeOp[]): ThroughBye | undefined {
+export function unwoundThrough(
+  view: OutcomeView,
+  unwound: OutcomeOp[],
+  sourceMatchUpId?: string,
+): ThroughBye | undefined {
   const { loserMatchUpId, loserStructureId, loserTargetDrawPosition: drawPosition } = view.targets;
   const next = indexed(view, indexed(view, loserMatchUpId)?.winnerMatchUpId);
   if (!next || !drawPosition) return undefined;
@@ -422,20 +426,28 @@ export function unwoundThrough(view: OutcomeView, unwound: OutcomeOp[]): Through
   if (cleared || landed || !next.winnerMatchUpId) return { matchUpId: next.matchUpId, drawPositions };
   // a BYE still, by another standing BYE: the loser goes on through it, and through each BYE after it, to the structure's
   // last round, and v1 announces each matchUp passed as it announces the first (S7)
-  const onward = byeChainOnward(view, next, drawPosition);
+  const onward = byeChainOnward(view, next, drawPosition, unwound, sourceMatchUpId);
   return onward ? { matchUpId: next.matchUpId, drawPositions, onward } : undefined;
 }
 
 /**
  * The BYE-held matchUps a position passes after `from` (walls, never reached refusing: a matchUp no BYE holds, no
  * standing BYE, the position not there, a structure crossed), each a BYE by another standing BYE and holding the position
- * already (the BYEs advanced it structurally), to the structure's last round. Undefined where the chain meets anything
- * else (a matchUp to be played, a structure crossed): v1's.
+ * already (the BYEs advanced it structurally), to the structure's last round, or to the passage's landing the unwind
+ * writes back to be played (`unwoundLanding`, C16). Undefined where the chain meets anything else (a matchUp to be
+ * played that this unwind did not write back, a structure crossed): v1's.
  */
-function byeChainOnward(view: OutcomeView, from: HydratedMatchUp, drawPosition: number): ThroughBye[] | undefined {
+function byeChainOnward(
+  view: OutcomeView,
+  from: HydratedMatchUp,
+  drawPosition: number,
+  unwound: OutcomeOp[] = [],
+  sourceMatchUpId?: string,
+): ThroughBye[] | undefined {
   const hops: ThroughBye[] = [];
   let at: HydratedMatchUp | undefined = from;
   for (let hop = 0; at && hop < 8; hop += 1) {
+    if (hop > 0 && unwoundLanding(at, drawPosition, unwound, sourceMatchUpId)) return hops;
     const standing = at.sides?.some((side) => side.bye && side.drawPosition !== drawPosition);
     if (at.matchUpStatus !== BYE || !standing || !positionsOf(at).includes(drawPosition)) return undefined;
     const next = indexed(view, at.winnerMatchUpId);
@@ -445,6 +457,34 @@ function byeChainOnward(view: OutcomeView, from: HydratedMatchUp, drawPosition: 
     at = next;
   }
   return undefined;
+}
+
+/**
+ * C16 (census w2 9100153, FIRST_ROUND_LOSER_CONSOLATION 16/11, `doubleExitPropagateBye: false`): the double exit's
+ * carried exit was sent past a chain of BYEs and stood pending where it landed, and the unwind takes the passage back
+ * (`unwoundPassage`: each BYE matchUp keeps its BYE, the landing is written back to be played, quietly, the carrier's
+ * position standing in it). Given a winner, the loser then arrives on the seat beside the first BYE and goes on through
+ * each BYE to that landing, where v1's `assignDrawPosition` announces them (the position already stands there). The
+ * landing is read off the unwind's own ops, not the stored view, which still shows the carry there: the matchUp whose
+ * entry on the loser's side names the call's matchUp as its source, and which this unwind writes back to be played.
+ */
+function unwoundLanding(
+  at: HydratedMatchUp,
+  drawPosition: number,
+  unwound: OutcomeOp[],
+  sourceMatchUpId?: string,
+): boolean {
+  const side = sideOf(at, drawPosition);
+  const entry = side ? at.sideExitProvenance?.[side] : undefined;
+  if (!sourceMatchUpId || entry?.sourceMatchUpId !== sourceMatchUpId) return false;
+  if (!positionsOf(at).includes(drawPosition)) return false;
+  return unwound.some(
+    (op) =>
+      op.op === 'setMatchUpResult' &&
+      op.matchUpId === at.matchUpId &&
+      op.matchUpStatus === TO_BE_PLAYED &&
+      op.announcesContext === false,
+  );
 }
 
 /**
