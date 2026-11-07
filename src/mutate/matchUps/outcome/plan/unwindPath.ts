@@ -8,6 +8,7 @@ import {
   BLANK_SCORE,
   CLEAR_SCORE,
   indexed,
+  isSettleWrite,
   pairedFeeder,
   positionsOf,
   scoreless,
@@ -62,8 +63,7 @@ export function unwoundView(
 }
 
 /** Only the released-landing writes belong before a fresh direction; other deferred writers remain late. */
-export const earlyReleasedLandings = (ops: OutcomeOp[]) =>
-  ops.filter((op) => op.op === 'setMatchUpResult' && op.announcedAs === 'reconcileScoredTimes');
+export const earlyReleasedLandings = (ops: OutcomeOp[]) => ops.filter((op) => isSettleWrite(op));
 
 /** The ordinary award certified by the produced-exit reader, retained for a standalone clear. */
 type ProducedAward = {
@@ -873,8 +873,7 @@ export function unwoundOps(
   // a seat's advance through a standing BYE is v1's `reconcileByeAdvancements`, after the call's own write; so is a
   // released landing's write back to be played (`carrierHomeOps`), announced by `reconcileScoredTimes` after everything
   const deferred = (op: OutcomeOp) =>
-    (op.op === 'setMatchUpDrawPositions' && !!op.advancesThroughBye) ||
-    (op.op === 'setMatchUpResult' && op.announcedAs === 'reconcileScoredTimes');
+    (op.op === 'setMatchUpDrawPositions' && !!op.advancesThroughBye) || isSettleWrite(op);
   const pendingOps: OutcomeOp[] = levels.flatMap(({ matchUpId, pendingRemoval }) =>
     pendingRemoval
       ? [

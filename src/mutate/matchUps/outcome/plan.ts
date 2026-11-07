@@ -21,6 +21,7 @@ import {
   RESULT_TO_DOUBLE_EXIT,
   SINGLE_EXITS,
   changesWinner,
+  isSettleWrite,
   reentersWinner,
   satisfiedDoubleExit,
   seatBye,
@@ -575,12 +576,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition): Outcom
   // with that rule, but a later unscored write carrying `stampsScoredTime: false` would need the reconcile write kept
   // and moved after it, and position alone cannot tell the two apart. Before widening this to one end-of-plan pass,
   // assert over the census that no candidate's matchUp takes a non-convergence result write later in the plan.
-  const superseded = new Set(
-    reannounced.filter(
-      (op) =>
-        op.op === 'setMatchUpResult' && op.announcedAs === 'reconcileScoredTimes' && convergedWrites.has(op.matchUpId),
-    ),
-  );
+  const superseded = new Set(reannounced.filter((op) => isSettleWrite(op) && convergedWrites.has(op.matchUpId)));
   const writes = ops.filter((op) => !superseded.has(op));
   return {
     ops: [

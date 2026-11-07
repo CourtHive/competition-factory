@@ -137,6 +137,12 @@ export const BLANK_SCORE: Score = { scoreStringSide1: '', scoreStringSide2: '' }
 export const scoreless = (matchUp: HydratedMatchUp) =>
   !matchUp.score?.scoreStringSide1 && !matchUp.score?.scoreStringSide2 && !matchUp.score?.sets?.length;
 export const unplaced = (matchUp: HydratedMatchUp) => !(matchUp.drawPositions ?? []).some(Boolean);
+/**
+ * a settle write v1's `reconcileScoredTimes` pass makes, announced after everything else: the one predicate the plan
+ * modules share for it (Mentat assessment/2026-11-07-outcome-refactor-debates.md, ruling 7)
+ */
+export const isSettleWrite = (op: OutcomeOp): op is Extract<OutcomeOp, { op: 'setMatchUpResult' }> =>
+  op.op === 'setMatchUpResult' && op.announcedAs === 'reconcileScoredTimes';
 export const undecided = (matchUp: HydratedMatchUp, loserLinked?: boolean) =>
   !matchUp.winningSide &&
   scoreless(matchUp) &&
