@@ -120,6 +120,14 @@ const ALLOWED = {
     "PLUMBING — the unwind's path writes [] where v1's removeDoubleExit re-derives codes and abstains where a matchUp on the path holds codes; decides nothing on them",
   'mutate/matchUps/outcome/plan/standingReservation.ts':
     'PLUMBING — certifies an untouched reservation seat by its absent codes; decides nothing on them',
+  'mutate/matchUps/outcome/plan/givenWinner.ts':
+    "PLUMBING — a double exit given a winner abstains where the unwound seat's matchUp holds codes; decides nothing on them",
+  'mutate/matchUps/outcome/plan/terminalAward.ts':
+    'PLUMBING — the occupied-final program certifies its relay and award by their absent codes; decides nothing on them',
+  'mutate/matchUps/outcome/plan/supersededRelay.ts':
+    'PLUMBING — the superseded relay certifies the original relay and its stale copy by their absent codes; decides nothing on them',
+  'mutate/matchUps/outcome/plan/standaloneIndirect.ts':
+    'PLUMBING — the standalone indirect programs certify the removal and the arrival seats by their absent codes; decide nothing on them',
   'mutate/matchUps/outcome/types.ts': 'PLUMBING — the v2 request carries the submitted array to the write',
   'mutate/matchUps/outcome/unwindWalk.ts':
     'PLUMBING — abstains where a matchUp its removal would write carries codes, so v1 writes it; decides nothing on them',
