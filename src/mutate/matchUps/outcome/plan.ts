@@ -59,7 +59,7 @@ import {
 import {
   arrivalOps,
   placedDirection,
-  removedLoserOps,
+  removalOps,
   removedOps,
   replacedLoserOps,
   swapOps,
@@ -67,7 +67,7 @@ import {
 } from './plan/directionOps';
 
 // constants and types
-import type { DrawDefinition, MatchUpStatusUnion, Score, Tournament } from '@Types/tournamentTypes';
+import type { DrawDefinition, Score, Tournament } from '@Types/tournamentTypes';
 import { DEFAULTED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { OutcomeOp } from './ops';
 import type {
@@ -218,7 +218,7 @@ function resultToDoubleExit(args: PlanArgs): OutcomePlan {
   const { view, request, rebuild } = args;
   const removing = resultRemovalReason(view);
   if (removing) return { abstain: removing };
-  const removal = resultRemovalOps(view, request.matchUpStatus);
+  const removal = removalOps(view, request.matchUpStatus);
   const undecided: OutcomeOp = {
     op: 'setMatchUpResult',
     matchUpId: request.matchUpId as string,
@@ -243,25 +243,6 @@ function resultRemovalReason(view: OutcomeView): AbstainReason | undefined {
   if (view.draw.winRatio) return 'link';
   if (view.existing.hasSideExitProvenance || view.existing.carriedExit) return 'provenance';
   return removalReason(view);
-}
-
-/** S4's removal of the stored result's direction, whatever the route: the winner's position, then the loser's seat */
-function resultRemovalOps(view: OutcomeView, matchUpStatus?: MatchUpStatusUnion): OutcomeOp[] {
-  const { targets, existing } = view;
-  const position = targets.sideDrawPositions[existing.winningSide as 1 | 2];
-  const winner: OutcomeOp[] =
-    position && targets.winner && targets.winnerMatchUpId
-      ? [
-          {
-            op: 'setMatchUpDrawPositions',
-            matchUpId: targets.winnerMatchUpId,
-            drawPositions: targets.winner.drawPositions.filter((candidate) => candidate !== position),
-            removedDrawPosition: position,
-          },
-          { op: 'stampUpdatedAt', entity: 'matchUp', id: targets.winnerMatchUpId },
-        ]
-      : [];
-  return [...winner, ...removedLoserOps(view, matchUpStatus)];
 }
 
 /** a plan is folded into the record; a draw held outside it, or a call with no captured instant, cannot be compared */

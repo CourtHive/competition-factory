@@ -6590,6 +6590,40 @@ describe('under v2, notes on a double exit are v1s (S7: v1 forwards the calls pa
   });
 });
 
+describe('a cleared Main final whose loser a link fed is v1s (ruling 10: the one input where the shared removal differs)', () => {
+  // `removalOps` emits a final's loser leg alone, as `resultToDoubleExit` needs; `removedOps` guards a final out before
+  // it, and that empty plan is what the settle check abstains on. Without the guard v2 owned this call (the record
+  // equal to v1's), so the pin holds the abstention: an ownership that wide is a family, not a hoist.
+  it('FIC 8, Main played out, the final cleared: differential abstains `settle`, and v2 leaves exactly what v1 leaves', () => {
+    const main = (roundNumber: number, roundPosition: number): Target => ({
+      roundNumber,
+      roundPosition,
+      structureName: 'Main',
+    });
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [main(1, 1), main(1, 2), main(1, 3), main(1, 4), main(2, 1), main(2, 2), main(3, 1)].map((target) => ({
+        target,
+        outcome: won(1),
+      })),
+      steps: [{ target: main(3, 1), outcome: cleared }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    const deferred = () => getDifferentialTally()['shadow:abstain:settle']?.deferred ?? 0;
+    const before = deferred();
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+    expect(deferred()).toEqual(before + 1);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+  });
+});
+
 describe('C13 no-arrival public writers and subscribed differential notices', () => {
   it.each([...FMLC_NO_ARRIVAL_WINNERS, ...FMLC_NO_ARRIVAL_REAL])('%s v1 oracle', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
