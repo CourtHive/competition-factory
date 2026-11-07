@@ -2,6 +2,7 @@ import { applyRetentionAfterAging, RankingParticipantContext } from './retention
 import { DEFAULT_POINT_COMPONENTS } from '@Constants/rankingConstants';
 import { applyEligibleSourceWindow } from './eligibleSourceWindow';
 import { processBucketResults } from './processBucketResults';
+import { computeAwardWindow, isAwardInWindow, rollingPeriodDaysFrom, type AwardWindow } from './awardWindow';
 import { applyPointDecay } from './applyPointDecay';
 import type {
   RankingListBucketBreakdown,
@@ -73,7 +74,6 @@ export function generateRankingList({
   headToHead,
 }: GenerateRankingListArgs): RankingListEntry[] {
   const {
-    rollingPeriodDays,
     countingBuckets,
     tiebreakCriteria = [],
     minCountableResults = 0,
@@ -82,8 +82,11 @@ export function generateRankingList({
     categoryAggregation = [],
   } = aggregationRules;
 
+  // the one rolling window, for native and carried awards alike (awardWindow.ts)
+  const window = computeAwardWindow(asOfDate, rollingPeriodDaysFrom(aggregationRules));
+
   // Native awards — those matching the categoryFilter directly.
-  const nativeFiltered = filterAwards(pointAwards, categoryFilter, rollingPeriodDays, asOfDate);
+  const nativeFiltered = filterAwards(pointAwards, categoryFilter, window);
   const nativeByPerson = groupByPerson(nativeFiltered);
 
   // Carried contributions from categoryAggregation rules whose target matches
@@ -95,7 +98,7 @@ export function generateRankingList({
           pointAwards,
           rules: categoryAggregation,
           categoryFilter,
-          rollingPeriodDays,
+          window,
           asOfDate,
           onWarning,
           participantContext,
@@ -135,8 +138,7 @@ export function generateRankingList({
 function filterAwards(
   pointAwards: RankingListAward[],
   categoryFilter: CategoryFilter | undefined,
-  rollingPeriodDays: number | undefined,
-  asOfDate: string | undefined,
+  window: AwardWindow,
 ): RankingListAward[] {
   let filtered = pointAwards;
 
@@ -157,14 +159,7 @@ function filterAwards(
     });
   }
 
-  if (rollingPeriodDays && asOfDate) {
-    const cutoff = new Date(asOfDate);
-    cutoff.setDate(cutoff.getDate() - rollingPeriodDays);
-    const cutoffTime = cutoff.getTime();
-    filtered = filtered.filter((award) => !award.endDate || new Date(award.endDate).getTime() >= cutoffTime);
-  }
-
-  return filtered;
+  return filtered.filter((award) => isAwardInWindow(award, window));
 }
 
 function groupByPerson(filtered: RankingListAward[]): Record<string, RankingListAward[]> {
@@ -184,7 +179,7 @@ function expandCarriedContributions({
   pointAwards,
   rules,
   categoryFilter,
-  rollingPeriodDays,
+  window,
   asOfDate,
   onWarning,
   participantContext,
@@ -192,7 +187,7 @@ function expandCarriedContributions({
   pointAwards: RankingListAward[];
   rules: CategoryAggregationRule[];
   categoryFilter: CategoryFilter | undefined;
-  rollingPeriodDays: number | undefined;
+  window: AwardWindow;
   asOfDate: string | undefined;
   onWarning?: (warning: RankingListWarning) => void;
   participantContext?: RankingParticipantContext;
@@ -231,7 +226,7 @@ function expandCarriedContributions({
     });
 
     // Apply rolling window before per-person grouping.
-    const inWindow = applyRollingWindow(retained, rollingPeriodDays, asOfDate);
+    const inWindow = retained.filter((award) => isAwardInWindow(award, window));
 
     // Group, multiply, cap per (personId, rule).
     const perPersonForRule: Record<string, RankingListAward[]> = {};
@@ -309,18 +304,6 @@ function sourceFilterDisqualifies(award: RankingListAward, filters: SourceFilter
     // personService integration; treat as non-disqualifying for now.
     return false;
   });
-}
-
-function applyRollingWindow(
-  awards: RankingListAward[],
-  rollingPeriodDays: number | undefined,
-  asOfDate: string | undefined,
-): RankingListAward[] {
-  if (!rollingPeriodDays || !asOfDate) return awards;
-  const cutoff = new Date(asOfDate);
-  cutoff.setDate(cutoff.getDate() - rollingPeriodDays);
-  const cutoffTime = cutoff.getTime();
-  return awards.filter((a) => !a.endDate || new Date(a.endDate).getTime() >= cutoffTime);
 }
 
 function buildCarriedAward(source: RankingListAward, rule: CategoryAggregationRule): RankingListAward {

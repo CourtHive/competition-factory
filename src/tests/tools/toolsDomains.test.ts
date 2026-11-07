@@ -117,3 +117,25 @@ describe('tools.publishing takes the instant as an input', () => {
     expect(getRoundVisibilityState(structureDetail, matchUps, after)).toBeUndefined();
   });
 });
+
+describe('tools.rankings', () => {
+  it('holds the award window and the derived-list function', () => {
+    expect(Object.keys(tools.rankings).sort()).toEqual(
+      [
+        'DEFAULT_ROLLING_PERIOD_DAYS',
+        'computeAwardWindow',
+        'deriveRankingList',
+        'isAwardInWindow',
+        'rollingPeriodDaysFrom',
+      ].sort(),
+    );
+  });
+
+  it('deriveRankingList is the ranking governor applyDerivedRankings, under a derivation name', () => {
+    expect(tools.rankings.deriveRankingList).toBe(governors.rankingGovernor.applyDerivedRankings);
+  });
+
+  it('is the window generateRankingList applies', () => {
+    expect(tools.rankings.computeAwardWindow('2025-12-31', 365)).toEqual({ from: '2024-12-31', to: '2025-12-31' });
+  });
+});

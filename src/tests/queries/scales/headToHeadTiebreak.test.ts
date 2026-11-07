@@ -1,9 +1,15 @@
 import { generateRankingList } from '@Query/scales/generateRankingList';
 import type { AggregationRules } from '@Types/rankingTypes';
-import { describe, expect, it } from 'vitest';
+import { setClock } from '@Tools/clock';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 // constants
 import { SINGLES } from '@Constants/eventConstants';
+
+// The list is judged as of a date inside these fixtures' era: a ranking list now has a rolling window (default 365
+// days back from its as-of date, which falls back to the competition clock), and the awards here are dated 2025.
+beforeAll(() => setClock('2025-12-31T12:00:00Z'));
+afterAll(() => setClock());
 
 const award = (personId: string, points: number) => ({ personId, eventType: SINGLES, points, endDate: '2025-06-01' });
 

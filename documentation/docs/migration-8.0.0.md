@@ -38,6 +38,8 @@ scoreGovernor.validateMatchUpScore(sets, 'SET3-S:6/TB7');
   competition clock) and required in 8.0.0.
 - `tools.entries`, `tools.draws` and `tools.matchUps` replace the entries governor's fee helpers, the draws governor's
   `isAdHocType` / `isLadder`, and the matchUp governor's `validMatchUp` / `validMatchUps`.
+- `tools.rankings.deriveRankingList` replaces the ranking governor's `applyDerivedRankings` (the same function, named
+  for what it does). The rolling award window is `tools.rankings.computeAwardWindow`.
 - `publishingGovernor.isTournamentPublished(tournamentRecord)` is retired. It takes a whole record, so it is neither a
   query nor a tool. Use the `getPublishState` query.
 

@@ -27,6 +27,9 @@ so a positional function cannot be called correctly through an engine.
 - **`tools.entries`:** entry fee helpers: `resolveEntryFee`, `getEntryFeeRange`, `isIndeterminateFee`.
 - **`tools.draws`:** draw-type predicates: `isAdHocType`, `isLadder`.
 - **`tools.matchUps`:** matchUp shape validators: `validMatchUp`, `validMatchUps`.
+- **`tools.rankings`:** the rolling award window (`computeAwardWindow`, `isAwardInWindow`, `rollingPeriodDaysFrom`)
+  that `generateRankingList` applies, and `deriveRankingList`, which derives a sub-list (an age or category cut) from
+  ranked entries.
 - **Availability:** the availability helpers (`hhmmToMinutes`, `generateCapacityCurve`, …) are exported from the
   standalone `availability` namespace, beside `AvailabilityEngine`.
 
