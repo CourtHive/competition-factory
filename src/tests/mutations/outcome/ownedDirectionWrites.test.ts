@@ -6913,3 +6913,84 @@ describe('C16 the loser beside an opponent BYE goes on through the chain to the 
     expect(v2.notices).toEqual(v1.notices);
   });
 });
+
+/**
+ * C18: THE LOSER ARRIVES WHERE A CARRIED EXIT STANDS AWARDED TO THEIR SEAT, TAKES IT AND GOES ON. Main 1/1 a WALKOVER
+ * (or DEFAULTED) carried across the loser link: the consolation matchUp it feeds stands as that exit, its `winningSide`
+ * naming the empty seat, the carrier's provenance on the other side. Main 1/2 then played: its loser is placed on that
+ * seat, and v1's `assignDrawPosition` reads the arrival as the award's winner (`participantArrivesAtExit`): the matchUp
+ * is written back as it stands with its codes re-derived and announced as the assignment, and the arriving position
+ * goes on into the next matchUp of the structure (`advanceIntoWinnerMatchUp`), or nowhere from the structure's last
+ * round (a 4-draw's one-matchUp consolation). v2 plans the same (`standingAwardArrival`, `awardedArrivalOps`). A
+ * produced exit standing pending (a double exit under `doubleExitPropagateBye: false`, no winner until somebody
+ * arrives) is not this shape and stays v1's.
+ */
+const AWARD_DRAWS: [string, number, string][] = [
+  [FEED_IN_CHAMPIONSHIP, 8, 'Main'],
+  [FIRST_ROUND_LOSER_CONSOLATION, 8, 'Main'],
+  [FEED_IN_CHAMPIONSHIP, 16, 'Main'],
+  [FIRST_ROUND_LOSER_CONSOLATION, 4, 'Main'],
+  [FEED_IN_CHAMPIONSHIP, 4, 'Main'],
+  [CURTIS_CONSOLATION, 16, 'Main'],
+  [MODIFIED_FEED_IN_CHAMPIONSHIP, 16, 'Main'],
+  [COMPASS, 8, 'East'],
+  [OLYMPIC, 8, 'East'],
+  [DOUBLE_ELIMINATION, 8, 'Main'],
+];
+const STANDING_AWARDS: [string, Scenario][] = AWARD_DRAWS.flatMap(([drawType, drawSize, structureName]) =>
+  ([WALKOVER, DEFAULTED] as const).map((exit): [string, Scenario] => [
+    `${drawType} ${drawSize}: R1/1 a carried ${exit}, R1/2 played, its loser takes the standing award`,
+    {
+      drawProfile: { drawSize, drawType },
+      setup: [{ target: R1(1, structureName), outcome: exited(exit, 1), params: CARRIED }],
+      steps: [{ target: R1(2, structureName), outcome: won(1), params: CARRIED }],
+    },
+  ]),
+);
+const PRODUCED_PENDING: [string, Scenario][] = ([DOUBLE_WALKOVER, DOUBLE_DEFAULT] as const).map(
+  (doubleExit): [string, Scenario] => [
+    `FEED_IN_CHAMPIONSHIP 8 (policy off): R1/1 a ${doubleExit}, its produced exit pending, R1/2 played`,
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      policyDefinitions: POLICY_OFF,
+      setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: doubleExit }, params: CARRIED }],
+      steps: [{ target: R1(2, 'Main'), outcome: won(1), params: CARRIED }],
+    },
+  ],
+);
+
+describe('C18 the loser arriving where a carried exit stands awarded to their seat takes it and goes on', () => {
+  it.each(STANDING_AWARDS)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    const tally = () => ({
+      applied: getDifferentialTally()['shadow:applied']?.compared ?? 0,
+      cascade: getDifferentialTally()['shadow:abstain:cascade']?.deferred ?? 0,
+    });
+    const before = tally();
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+    expect(tally()).toEqual({ applied: before.applied + 1, cascade: before.cascade });
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v2.v1Writes).toEqual(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+  });
+  it.each(PRODUCED_PENDING)('%s: a produced exit pending is not a standing award, v1s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    const deferred = () => getDifferentialTally()['shadow:abstain:cascade']?.deferred ?? 0;
+    const before = deferred();
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+    expect(deferred()).toEqual(before + 1);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.record).toEqual(v1.record);
+  });
+});

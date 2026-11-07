@@ -58,6 +58,7 @@ import {
 } from './plan/directionReasons';
 import {
   arrivalOps,
+  awardedArrivalOps,
   placedDirection,
   removalOps,
   removedOps,
@@ -503,7 +504,14 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition): Outcom
   const doubleExitSeated = seatOps?.ops ?? [];
   const producedExit = args.route === DOUBLE_EXIT ? producedExitOps(view, request, write, args.direction) : [];
   // ...and, seated beside a carried exit whose carrier the unwind released back, awarded it and sent on (S7)
-  const seated = [...arrival, ...unwoundArrivalOps(view, unwound, loser), ...keptOutBye, ...reserved];
+  // ...or seated where a carried exit stands awarded to them, taken and sent on (C18)
+  const seated = [
+    ...arrival,
+    ...awardedArrivalOps(view, loser),
+    ...unwoundArrivalOps(view, unwound, loser),
+    ...keptOutBye,
+    ...reserved,
+  ];
   const line = view.line;
   // a TEAM line's group is its dual's: the dual is tallied with the line's result in place, its lines and its tally (S7)
   const tallied = line

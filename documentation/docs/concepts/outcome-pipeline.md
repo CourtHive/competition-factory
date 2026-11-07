@@ -523,6 +523,14 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   v2 also owns the **first direction**: a result naming a winner, not an exit, whose winner goes
   into the next matchUp of the same structure (holding no exit or result) and whose loser, if
   a link takes them, arrives on a free seat carrying nothing, with no settle work after. A loser
+  arriving where a carried single exit already stands awarded to their seat (the carrier's WALKOVER
+  or DEFAULTED came down the link first, its `winningSide` naming the empty seat) takes the award as
+  v1's `assignDrawPosition` gives it (`participantArrivesAtExit`, C18): that matchUp is written back as
+  it stands with its codes re-derived (`[]`) and announced as the assignment, and the loser's position
+  goes on into the next matchUp of the structure, a clean arrival there, or nowhere from the
+  structure's last round (`standingAwardArrival`). A produced exit standing pending (no winner until
+  somebody arrives), an award on the other side, codes stored, a BYE beside the seat or a position
+  already standing onward stay v1's. A loser
   placed opposite a BYE goes on through it at once, as v1 sends them (`advanceIntoWinnerMatchUp`):
   their position joins the next matchUp of that structure, or occupies it there when it was advanced
   structurally while their seat stood empty, and that matchUp is announced. Only a clean next matchUp
