@@ -13,6 +13,7 @@ import {
   directsElsewhere,
   standingAwardArrival,
   storedLoserId,
+  unreachedWinner,
 } from './planShared';
 
 // constants and types
@@ -267,22 +268,22 @@ export function directionReason(args: {
   // link may take the loser
   const final = !targets.winner && !targets.winnerLink && !!direction && !direction.winner;
   // an ad hoc matchUp directs nothing: its winner goes nowhere and it has no loser link (planDirection plans none)
-  if (view.draw.isAdHoc && view.group?.adHoc && !direction && !targets.winner && !targets.loserMatchUpId)
-    return undefined;
+  if (view.draw.isAdHoc && !direction && !targets.winner && !targets.loserMatchUpId) return undefined;
   // nor does a lucky draw's pre-feed round: v1 advances no one from it (`directParticipants`), the advancement is chosen
   // later (`luckyDrawAdvancement`)
-  if (targets.luckyPreFeed && !direction && !targets.loserMatchUpId) return undefined;
+  if (targets.luckyPreFeed && !direction) return undefined;
   // nor does a TEAM line: its result reaches the draw through its dual's tally, which `teamReason` vetted (S7). Its
   // targets are its dual's (a line takes the dual's positions), and `planDirection` directs no line
   if (view.line && !direction) return undefined;
-  if (!direction?.winner && !final) return 'route';
+  const unreached = unreachedWinner(view, write, direction);
+  if (!direction || (!direction.winner && !final && !unreached)) return 'route';
   // S6: a double exit given a winner unwinds first (`givenWinnerReason`): the next matchUp held only its produced exit,
   // and is to be played again when the winner arrives; the loser's seat, freed of the double exit's BYE, was vetted there
   const unwound = isDoubleExit(view.existing.matchUpStatus);
   const loserReason = unwound ? undefined : plainLoserReason(view, direction);
   if (loserReason) return loserReason;
   if (direction.decider || direction.produced || direction.converged) return 'route';
-  if (final) return undefined;
+  if (final || unreached) return undefined;
   const target = targets.winner;
   if (!target || target.structureId !== targets.source.structureId) return 'link';
   if (reservationReason(view, write.winningSide as 1 | 2)) return 'cascade';

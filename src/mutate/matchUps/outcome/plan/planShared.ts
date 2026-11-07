@@ -486,3 +486,21 @@ export function loserByeArrival(
     return undefined;
   return plainByeArrival(view, loser) ?? (changesWinner(view, route, write) ? heldByeLoser(view) : undefined);
 }
+
+/** C22: a fresh single exit awards an unreached side; there is no winner participant to direct yet. */
+export function unreachedWinner(view: OutcomeView, write: MatchUpWrite, direction?: DirectionPlan): boolean {
+  const { existing, targets } = view;
+  const side = write.winningSide;
+  if (!direction || direction.winner || (side !== 1 && side !== 2)) return false;
+  return (
+    (write.matchUpStatus === WALKOVER || write.matchUpStatus === DEFAULTED) &&
+    existing.matchUpStatus === TO_BE_PLAYED &&
+    !existing.winningSide &&
+    !existing.scoreHasValue &&
+    !existing.carriedExit &&
+    !existing.hasSideExitProvenance &&
+    !existing.matchUpStatusCodes?.length &&
+    !targets.sideParticipantIds[side] &&
+    !!targets.sideParticipantIds[side === 1 ? 2 : 1]
+  );
+}
