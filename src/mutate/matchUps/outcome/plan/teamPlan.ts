@@ -1,4 +1,4 @@
-import { CLEAR_SCORE, DOUBLE_EXIT, LINE_SCORE, REMOVE_DIRECTED, indexed } from './planShared';
+import { CLEAR_SCORE, DOUBLE_EXIT, LINE_SCORE, REMOVE_DIRECTED, indexed, plainByeArrival } from './planShared';
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { ensuredDualSides } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
@@ -228,21 +228,25 @@ export function loserLineUpCarry({
 export function loserLineUpBeyond({ dual, drawDefinition }: { dual: DualCall; drawDefinition: DrawDefinition }) {
   const loser = dual.direction?.loser;
   const { loserThroughBye, loserTargetDrawPosition } = dual.view.targets;
-  // the dual's own plan goes through the BYE only into a clean matchUp beyond (`loserThroughBye`), or abstains
-  const through = loser?.arrives ? loserThroughBye : undefined;
-  if (!loser || !through) return undefined;
+  const passage = plainByeArrival(dual.view, loser);
+  const through = loser?.arrives ? (loserThroughBye ?? passage?.through) : undefined;
+  const reached = [through?.matchUpId, ...(passage?.byes.toReversed() ?? [])].filter((id): id is string => !!id);
+  if (!loser || !reached.length) return undefined;
   const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }) ?? {};
-  const lineUp = lineUps[loser.participantId];
-  const target = dual.view.inContextDrawMatchUps?.find(({ matchUpId }) => matchUpId === through.matchUpId);
-  const sideNumber = target?.sides?.find((side) => side.drawPosition === loserTargetDrawPosition)?.sideNumber;
-  if (!sideNumber) return false;
-  return {
-    op: 'setSideLineUp' as const,
-    matchUpId: through.matchUpId,
-    sideNumber,
-    lineUp,
-    announcedAs: 'updateSidLineUp' as const,
-  };
+  const ops: OutcomeOp[] = [];
+  for (const matchUpId of reached) {
+    const target = indexed(dual.view, matchUpId);
+    const sideNumber = target?.sides?.find((side) => side.drawPosition === loserTargetDrawPosition)?.sideNumber;
+    if (!sideNumber) return false;
+    ops.push({
+      op: 'setSideLineUp',
+      matchUpId,
+      sideNumber,
+      lineUp: lineUps[loser.participantId],
+      announcedAs: 'updateSidLineUp',
+    });
+  }
+  return ops;
 }
 
 /**
@@ -256,13 +260,17 @@ function assignedLineUpOps(
   drawDefinition: DrawDefinition,
   participantId: string,
   through?: { matchUpId: string },
+  plainPassage?: ReturnType<typeof plainByeArrival>,
 ): OutcomeOp[] | false {
   const { loserMatchUpId, loserTargetDrawPosition, loserByePassage } = view.targets;
   const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }) ?? {};
   const ops: OutcomeOp[] = [];
-  // a passage's BYE matchUps past the first hold the loser's drawPosition too, and take the line-up after the first
+  // Carried passages keep their established order; a plain arrival returns from the furthest dual first (C20).
   const passed = loserByePassage?.byes ?? [];
-  for (const matchUpId of [through?.matchUpId, loserMatchUpId, ...passed]) {
+  const reached = plainPassage
+    ? [through?.matchUpId, ...plainPassage.byes.toReversed(), loserMatchUpId]
+    : [through?.matchUpId, loserMatchUpId, ...passed];
+  for (const matchUpId of reached) {
     if (!matchUpId) continue;
     const target = view.inContextDrawMatchUps?.find((matchUp) => matchUp.matchUpId === matchUpId);
     const sideNumber = target?.sides?.find((side) => side.drawPosition === loserTargetDrawPosition)?.sideNumber;
@@ -295,7 +303,9 @@ export function dualLineUpOps(
   loserThrough?: { matchUpId: string },
 ): OutcomeOp[] | false {
   const { view, drawDefinition } = args;
-  const arrived = loser?.arrives ? assignedLineUpOps(view, drawDefinition, loser.participantId, loserThrough) : [];
+  const arrived = loser?.arrives
+    ? assignedLineUpOps(view, drawDefinition, loser.participantId, loserThrough, plainByeArrival(view, loser))
+    : [];
   return arrived && [...winnerLineUpOps(args), ...arrived];
 }
 

@@ -374,3 +374,52 @@ export function structureStamps(ops: OutcomeOp[], structureId: string): OutcomeO
   );
   return [...new Set(seatedIn)].map((id) => ({ op: 'stampUpdatedAt', entity: 'structure', id }));
 }
+
+/** C20: a first plain loser arrival through same-structure BYEs, ending cleanly or in the last round. */
+export function plainByeArrival(view: OutcomeView, loser?: DirectionPlan['loser']) {
+  const { targets, existing } = view;
+  const passage = targets.loserByeTraversal;
+  const drawPosition = targets.loserTargetDrawPosition;
+  if (
+    existing.winningSide ||
+    isDoubleExit(existing.matchUpStatus) ||
+    !loser?.arrives ||
+    loser.exit ||
+    loser.converged ||
+    loser.carriedPast ||
+    loser.bye ||
+    loser.withdrawn ||
+    !targets.loserTargetSeat?.free ||
+    !targets.loserTargetSeat.opponentBye ||
+    targets.loserThroughBye ||
+    !passage ||
+    !drawPosition
+  )
+    return undefined;
+  const home = indexed(view, targets.loserMatchUpId);
+  const chain = [home, ...passage.byes.map((id) => indexed(view, id))];
+  for (const [index, entry] of chain.entries()) {
+    const side = sideOf(entry, drawPosition);
+    if (
+      !entry ||
+      !side ||
+      entry.structureId !== targets.loserStructureId ||
+      entry.matchUpStatus !== BYE ||
+      entry.winningSide ||
+      !scoreless(entry) ||
+      entry.matchUpStatusCodes?.length ||
+      Object.keys(entry.sideExitProvenance ?? {}).length ||
+      entry.sides?.find((s) => s.sideNumber === side)?.participantId ||
+      !entry.sides?.some((s) => s.sideNumber !== side && s.bye) ||
+      (index && chain[index - 1]?.winnerMatchUpId !== entry.matchUpId)
+    )
+      return undefined;
+  }
+  const last = chain[chain.length - 1];
+  if (!last) return undefined;
+  if (passage.through) {
+    const next = indexed(view, passage.through.matchUpId);
+    if (!next || last.winnerMatchUpId !== next.matchUpId || next.structureId !== last.structureId) return undefined;
+  } else if (last.winnerMatchUpId) return undefined;
+  return { byes: passage.byes, through: passage.through };
+}

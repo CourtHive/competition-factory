@@ -23,6 +23,7 @@ import {
   changesWinner,
   directsElsewhere,
   isSettleWrite,
+  plainByeArrival,
   reentersWinner,
   satisfiedDoubleExit,
   seatBye,
@@ -391,7 +392,7 @@ function decidingLineOps(args: PlanArgs & { dual: DualCall; drawDefinition: Draw
   // the dual the loser lands in, otherwise untouched (the arrival is written on its structure's assignments), is stamped
   // by the carry's notice
   // past a BYE, the dual beyond takes the losing team's line-up first (its assignment's), as v1 announces the two
-  if (beyond) ops.push(beyond);
+  if (beyond) ops.push(...beyond);
   if (loserCarry) ops.push(loserCarry, { op: 'stampUpdatedAt', entity: 'matchUp', id: loserCarry.matchUpId });
   return { ops: [...resultOps(request, write, request.matchUpId as string), ...ops], shape: dualPlan.shape };
 }
@@ -452,16 +453,19 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition): Outcom
   const loser = placing?.loser;
   const { loserMatchUpId } = view.targets;
   const arrival = arrivalOps(view, loser);
+  const plainPassage = plainByeArrival(view, loser);
   // a participant placed opposite a BYE goes on through it, a loser fed onto the seat or a winner into a BYE-held
   // target: their position joins the next matchUp, which is stamped
   const loserThrough =
     loser?.arrives && view.targets.loserTargetSeat?.opponentBye
       ? (view.targets.loserThroughBye ??
         view.targets.loserByePassage?.through ??
+        plainPassage?.through ??
         unwoundThrough(view, unwound, request.matchUpId))
       : undefined;
   // the loser's own position, where the unwind left it standing in the matchUp beyond (`unwoundThrough`)
-  const placedThrough = loserThrough && !view.targets.loserThroughBye && !view.targets.loserByePassage?.through;
+  const placedThrough =
+    loserThrough && !view.targets.loserThroughBye && !view.targets.loserByePassage?.through && !plainPassage?.through;
   const winnerThrough =
     winner && view.targets.winner?.hasBye ? view.targets.winnerThroughBye?.[write.winningSide as 1 | 2] : undefined;
   // a dual's own call: its loser's assignment writes the team's line-up where it lands (S7)
@@ -473,20 +477,26 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition): Outcom
   const carried = unwoundCarriedFor(view, args, loser);
   const landing = dualCall ? carriedDualLanding(view, drawDefinition, carried.landing, loser) : carried.landing;
   if (!landing) return { abstain: 'team' };
-  const throughBye = [loserThrough, ...(loserThrough?.onward ?? []), winnerThrough].flatMap((through): OutcomeOp[] =>
-    through
-      ? [
-          {
-            op: 'setMatchUpDrawPositions',
-            matchUpId: through.matchUpId,
-            drawPositions: through.drawPositions,
-            ...(placedThrough && through === loserThrough
-              ? { placedDrawPosition: view.targets.loserTargetDrawPosition }
-              : {}),
-          },
-          { op: 'stampUpdatedAt', entity: 'matchUp', id: through.matchUpId },
-        ]
-      : [],
+  const plainRelays =
+    plainPassage?.byes.map((matchUpId) => ({
+      matchUpId,
+      drawPositions: view.inContextDrawMatchUps?.find((m) => m.matchUpId === matchUpId)?.drawPositions ?? [],
+    })) ?? [];
+  const throughBye = [...plainRelays, loserThrough, ...(loserThrough?.onward ?? []), winnerThrough].flatMap(
+    (through): OutcomeOp[] =>
+      through
+        ? [
+            {
+              op: 'setMatchUpDrawPositions',
+              matchUpId: through.matchUpId,
+              drawPositions: through.drawPositions,
+              ...(placedThrough && through === loserThrough
+                ? { placedDrawPosition: view.targets.loserTargetDrawPosition }
+                : {}),
+            },
+            { op: 'stampUpdatedAt', entity: 'matchUp', id: through.matchUpId },
+          ]
+        : [],
   );
   // a kept-out loser's BYE on the seat the link feeds (v1's `directLoser`), unless a reservation placed it already
   const keptOut = loser?.bye && !loser.arrives && !view.targets.loserTargetSeat?.bye ? loser.bye : undefined;

@@ -1,9 +1,9 @@
-import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { getSideExitProvenance, carriedExitStatus, isPropagatedExit } from '@Helpers/drawTopology/sideExitProvenance';
 import { scheduleRefusal as scheduleWriteRefusal } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { removalMissingDrawPositions } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { fedLoserPlacementRefusal } from '@Mutate/matchUps/drawPositions/reconcileFedLoserEligibility';
+import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { isValidMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { generateTieMatchUpScore } from '@Query/matchUp/tieMatchUpScore/generateTieMatchUpScore';
@@ -869,6 +869,15 @@ function loserByePassage(
   draw: DrawContext,
 ): ByePassage | undefined {
   if (!carriesOn(request, targetData)) return undefined;
+  return loserByeTraversal(drawDefinition, targetData, draw);
+}
+
+/** The same structural BYE passage, without requiring a carried exit (C20). */
+function loserByeTraversal(
+  drawDefinition: DrawDefinition,
+  targetData: PositionTargetsResult | undefined,
+  draw: DrawContext,
+): ByePassage | undefined {
   const loserMatchUp = targetData?.targetMatchUps?.loserMatchUp;
   const drawPosition = targetData?.targetMatchUps?.loserTargetDrawPosition;
   const seat = loserTargetSeat(drawDefinition, loserMatchUp?.structureId, drawPosition, loserMatchUp?.drawPositions);
@@ -1929,6 +1938,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         draw,
       ),
       loserByePassage: loserByePassage(request, drawDefinition, targetData, draw),
+      loserByeTraversal: loserByeTraversal(drawDefinition, targetData, draw),
       winnerLoserSeat: winnerLoserSeat(draw, request, targetData?.targetMatchUps?.winnerMatchUp?.matchUpId),
       unwindLoserSeats: unwindLoserSeats(draw, request, matchUp),
       byeLevels: byeLevels(draw, matchUpsMap, request, targetData),

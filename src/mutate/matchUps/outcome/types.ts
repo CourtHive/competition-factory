@@ -232,6 +232,8 @@ export type OutcomeView = {
     loserThroughBye?: ThroughBye;
     /** a carried exit's loser placed opposite a BYE with no clean matchUp beyond it: the BYEs it passes after (S6 tail) */
     loserByePassage?: ByePassage;
+    /** A plain loser passing a chain of BYEs or a last-round BYE (C20). */
+    loserByeTraversal?: ByePassage;
     /**
      * the levels a carried exit goes on to beyond the matchUp it lands in (S5, `propagateExitFrom`): each loser link its
      * carrier crosses next, as v1 directs them from the landing. Read only for a call that may carry; `bounded` when the

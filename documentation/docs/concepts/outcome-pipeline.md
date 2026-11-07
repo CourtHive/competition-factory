@@ -544,7 +544,16 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   their position joins the next matchUp of that structure, or occupies it there when it was advanced
   structurally while their seat stood empty, and that matchUp is announced. Only a clean next matchUp
   is planned (`TO_BE_PLAYED`, no BYE, exit, carry, provenance or result, no earlier advance of the
-  BYE's position to replace, and no FIRST_MATCHUP reservation it would then raise). A winner whose
+  BYE's position to replace, and no FIRST_MATCHUP reservation it would then raise). C20 also plans a
+  first plain loser's arrival through a chain of BYEs or at a last-round BYE (`plainByeArrival`). Each
+  BYE remains scoreless, without a winner, codes or provenance, and holds the arriving position opposite
+  a BYE in the loser's linked structure. The entry is written on position assignments; every later
+  BYE and the clean landing is announced as an assignment and stamped. No result is awarded and no
+  provenance is created. A last-round BYE has no onward placement. A winner link crossing into another
+  structure remains v1's. For a TEAM dual's own call, draw line-ups are assigned from the furthest
+  reached matchUp back toward the entry, whose line-up notice has no event. A deciding TEAM line
+  assigns draw line-ups beyond the entry in the same reverse order, then carries the losing side's
+  held line-up onto the entry, announced `directLoser` with the event. A winner whose
   next matchUp holds a BYE (a consolation seat a reservation filled) goes on past it the same way,
   under the same conditions. An ad hoc matchUp's winner directs nothing, and its structure's tally is
   planned when it holds one round (a Swiss's later rounds stay v1's). A result in a lucky draw's
