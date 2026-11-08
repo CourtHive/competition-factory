@@ -4,6 +4,7 @@ import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import {
   BYE,
+  COMPLETED,
   DEAD_RUBBER,
   DEFAULTED,
   DOUBLE_DEFAULT,
@@ -49,7 +50,12 @@ export function planDirection(request: OutcomeRequest, view: OutcomeView, route:
  * the loser has a participant; when they do not arrive, a propagated BYE takes their place on the
  * feed's lower drawPosition.
  */
-function planLoser(request: OutcomeRequest, view: OutcomeView, loserSide: 1 | 2): DirectionPlan['loser'] {
+function planLoser(
+  request: OutcomeRequest,
+  view: OutcomeView,
+  loserSide: 1 | 2,
+  relabelled = false,
+): DirectionPlan['loser'] {
   const matchUpId = view.targets.loserMatchUpId;
   const participantId = view.targets.sideParticipantIds[loserSide];
   if (!matchUpId || !participantId || !view.targets.loserLink) return undefined;
@@ -60,7 +66,7 @@ function planLoser(request: OutcomeRequest, view: OutcomeView, loserSide: 1 | 2)
   const structureId = view.targets.loserStructureId;
   const bye =
     !arrives && positions.length && structureId ? { structureId, drawPosition: Math.min(...positions) } : undefined;
-  const carried = arrives ? carriedExit(request, view) : undefined;
+  const carried = arrives ? carriedExit(request, view, relabelled) : undefined;
   // the carried exit meets one already there (its status, or carried in on the other side): they converge
   const standing = view.targets.loserMatchUpCarriedStatuses; // this matchUp's own product excluded
   // ...unless the exit standing there decided the seat awaiting the loser, over a result recorded below: the
@@ -107,7 +113,7 @@ function withdrawnCarry(request: OutcomeRequest, view: OutcomeView): WithdrawnCa
  * as itself (a retirement as a WALKOVER). Where an exit already stands in the target the two
  * converge (planLoser); a target already a double exit is a third arrival and is not modelled.
  */
-function carriedExit(request: OutcomeRequest, view: OutcomeView) {
+function carriedExit(request: OutcomeRequest, view: OutcomeView, relabelled: boolean) {
   const { matchUpStatus, flags } = request;
   if (!flags.propagateExitStatus || !matchUpStatus) return undefined;
   const propagating = flags.propagateRetirementAsExit ? [RETIRED, WALKOVER, DEFAULTED] : [WALKOVER, DEFAULTED];
@@ -116,12 +122,13 @@ function carriedExit(request: OutcomeRequest, view: OutcomeView) {
   // a RELABEL, the winner unchanged (a COMPLETED result re-entered as a WALKOVER): the exit is carried to the
   // loser already directed, except where their next matchUp has a result of its own (CA, 2026-10-02): but the carry
   // this matchUp made there, standing alone, which the relabel rewrites in place (`relabelsTheCarry`) or leaves as it
-  // is (S6 tail, `loserMatchUpCarryHeld`). Past a BYE the loser's next matchUp is the holder's onward one, which the view
-  // does not read: not planned
+  // is (S6 tail, `loserMatchUpCarryHeld`). C24 reads a clean passage past a held BYE for a played
+  // result relabelled where its winner stands; other BYE corrections remain unplanned
   if (
     isRelabel(request, view) &&
     !view.targets.loserMatchUpCarryHeld &&
-    (view.targets.loserMatchUpHasResult || view.targets.loserMatchUpStatus === BYE)
+    (view.targets.loserMatchUpHasResult || view.targets.loserMatchUpStatus === BYE) &&
+    !(relabelled && freshByeCarry(view))
   )
     return undefined;
   // a final's winner and loser both go to its decider; whether the decider is played, and so what it
@@ -140,8 +147,26 @@ function planRelabelled(request: OutcomeRequest, view: OutcomeView): DirectionPl
   if (!isRelabel(request, view) || view.line || view.matchUpTieId || view.isTeam) return undefined;
   const winningSide = request.winningSide;
   if (winningSide !== 1 && winningSide !== 2) return undefined;
-  const loser = planLoser(request, view, winningSide === 1 ? 2 : 1);
+  const loser = planLoser(request, view, winningSide === 1 ? 2 : 1, true);
   return loser ? { loser } : undefined;
+}
+
+/** C24: a played result's loser already passed a BYE into a clean same-structure passage. */
+export function freshByeCarry(view: OutcomeView): boolean {
+  const { targets, existing } = view;
+  const participantId = targets.sideParticipantIds[existing.winningSide === 1 ? 2 : 1];
+  return (
+    existing.matchUpStatus === COMPLETED &&
+    !!existing.winningSide &&
+    !!participantId &&
+    targets.loserTargetSeat?.participantId === participantId &&
+    !!targets.loserMatchUpRecord &&
+    targets.loserMatchUpStatus === BYE &&
+    !!targets.loserTargetSeat?.opponentBye &&
+    !targets.loserMatchUpCarriesExit &&
+    !targets.loserMatchUpRecord?.provenance &&
+    !!(targets.loserThroughBye ?? targets.loserByePassage?.through)
+  );
 }
 
 /** the call keeps the winner the matchUp already has */

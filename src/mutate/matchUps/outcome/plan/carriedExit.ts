@@ -1,6 +1,7 @@
 import { buildCarriedExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
 import { convergenceAt, convergenceOps } from './convergence';
+import { freshByeCarry } from '../direction';
 import {
   carriedStatus,
   indexed,
@@ -87,7 +88,8 @@ export function relabelCarryReason(view: OutcomeView, write: MatchUpWrite): Abst
   if (!record || record.matchUpStatusCodes?.length) return 'exit';
   // the carry this matchUp made there, standing alone: rewritten in place, or left as it is (S6 tail)
   const held = targets.loserMatchUpCarryHeld;
-  if (!held && (record.provenance || targets.loserMatchUpStatus !== TO_BE_PLAYED)) return 'exit';
+  if (!held && !freshByeCarry(view) && (record.provenance || targets.loserMatchUpStatus !== TO_BE_PLAYED))
+    return 'exit';
   const landing = carriedLanding(view);
   if (!landing || (landing.carriesOn && !deeperLandings(view, landing, carriedStatus(write.matchUpStatus))))
     return 'exit';
