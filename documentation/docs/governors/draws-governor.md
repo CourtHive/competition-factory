@@ -592,6 +592,55 @@ further tolerance belongs in a provider's policy.
 
 ---
 
+## getDrawFitProposals
+
+Offers a bounded set of **Cut**, **Grow** and **Feed-in** configurations without changing entries or attaching a draw.
+Every returned `fit` is a real [getDrawFit](#getdrawfit) result; no placement or BYE formula is duplicated.
+
+```js
+const { proposals, error } = tournamentEngine.getDrawFitProposals({
+  eventId,
+  drawSize: 32,
+  drawType, // optional; defaults to SINGLE_ELIMINATION
+  rankedEntries, // optional, best first; otherwise the event/drawEntries order is used
+  seedsCount,
+  qualifyingProfiles,
+  structureOptions, // ROUND_ROBIN uses groupSize, default 4
+  drawEntries, // optional trial acceptance; the record is never changed
+});
+```
+
+`rankedEntries` supplies order only: the query does not change stages/statuses based on that array, and it never
+calculates a ranking itself. A supplied ranking must contain each selected MAIN entry exactly once. The host should
+pass its active ranking when a Cut should remove the lowest-ranked entrants. Existing QUALIFYING entries stay in
+their stage, unchanged.
+
+Each proposal has `kind`, `label`, `drawSize`, `drawType`, `entryChanges`, `fit`, and `consequence`:
+
+- **Cut**: the largest power of two at or below the entrant count, or the preceding round-robin group step. Its
+  ranked tail becomes MAIN ALTERNATE in `entryChanges`. Qualifier slots remain reserved. Only a fitting Cut is offered.
+- **Grow**: the next standard size that holds everyone, when larger than the current draw. Its real `fit` can remain
+  `SHORT`: `consequence.byesBeyondSeeds` reports the extra BYEs rather than disguising them as a fit.
+- **Feed-in**: the exact entrant count (including reserved qualifier positions), for elimination draws only. The
+  generator's feed-in geometry supplies `consequence.fedIn`; a feed-free or non-fitting candidate is not offered.
+
+`consequence.cutToAlternate` counts the changed entries. No entries or an already fitting main draw returns an empty
+proposal list. Invalid current-generation parameters return the generator's error; invalid or incomplete rankings
+return `INVALID_VALUES`. Returned snapshots can be displayed as previews; applying `entryChanges` and generating the
+draw remain separate host actions.
+
+The applicable sanctioning record (or legacy sanctioning extension) bounds every candidate: `drawSize`, per-stage
+`maxWildcards`/`maxAlternates`, and MAIN `maxQualifiers`. The existing sanctioned-entry validator is reused even when
+the caller supplies a generator escape flag. A caller cannot disable these limits with `sanctioned: false` or a
+director role. This first version has no sanctioned-override API; any future override must be explicitly permitted
+by the sanctioning record. Without applicable constraints the search is free.
+
+The implementation is beside `getDrawFit` in the generator layer: importing that generator-backed operation from the
+query layer would violate the dependency layering rule. It remains a read, registered and checked by the query-purity
+sweep. At most the current draw and three candidate fits are generated, plus one feed-in geometry template.
+
+---
+
 ## getAssignedParticipantIds
 
 Returns all participant IDs assigned to positions in a draw.

@@ -13,3 +13,4 @@ export { drawMatic } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic
 export { addFinishingRounds } from '@Query/structure/addFinishingRounds';
 export { autoSeeding } from '@Generators/drawDefinitions/autoSeeding';
 export { getDrawFit } from '@Generators/drawDefinitions/getDrawFit';
+export { getDrawFitProposals } from '@Generators/drawDefinitions/getDrawFitProposals';

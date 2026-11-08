@@ -226,6 +226,7 @@ import type { updateParticipantResults } from '@Mutate/structures/updateParticip
 import type { bulkUpdatePublishedEventIds } from '@Query/event/bulkUpdatePublishedEventIds';
 import type { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInParticipantIds';
 import type { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
+import type { getDrawFitProposals } from '@Generators/drawDefinitions/getDrawFitProposals';
 import type { getDrawTypeCoercion } from '@Generators/drawDefinitions/getDrawTypeCoercion';
 import type { generateTournamentRecord } from '@Generators/mocks/generateTournamentRecord';
 import type { getValidGroupSizes } from '@Helpers/drawTopology/roundRobin/validGroupSizes';
@@ -995,6 +996,7 @@ export interface MethodSignatures {
   getDrawData: EngineMethod<typeof getDrawData>;
   getDrawDefinitionTimeItem: EngineMethod<typeof getDrawDefinitionTimeItem>;
   getDrawFit: EngineMethod<typeof getDrawFit>;
+  getDrawFitProposals: EngineMethod<typeof getDrawFitProposals>;
   getDrawInconsistencies: EngineMethod<typeof getDrawInconsistencies>;
   getDrawParticipantRepresentativeIds: EngineMethod<typeof getDrawParticipantRepresentativeIds>;
   getDrawStructures: EngineMethod<typeof getDrawStructures>;
