@@ -826,8 +826,13 @@ export type Substitution = {
   participantId: string;
 };
 
+/**
+ * A structure-naming map for generated playoff structures. `abbreviation` is optional: the generators read it with
+ * `?.` and the structure's `structureAbbreviation` is optional, so a name alone — what the Add playoffs dialog sends —
+ * is a complete entry. It was declared required, and three typed call sites cast to send a name.
+ */
 export type PlayoffAttributes = {
-  [key: string | number]: { name: string; abbreviation: string };
+  [key: string | number]: { name: string; abbreviation?: string };
 };
 
 /**
@@ -837,7 +842,7 @@ export type PlayoffAttributes = {
  * structure's id rather than letting the generator mint one.
  */
 export type NamingEntry = {
-  [key: string]: { name: string; abbreviation: string; structureId?: string };
+  [key: string]: { name: string; abbreviation?: string; structureId?: string };
 };
 
 /**

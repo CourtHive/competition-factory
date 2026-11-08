@@ -1799,3 +1799,40 @@ For a fresh TEAM line undoing a decided dual, the entry side's old line-up is de
 without synthesizing sides, and announces `removeDirectedLoser` with the event and tournament.
 The entry matchUp and its structure are stamped. A dual-own-call clear retains its earlier TEAM
 refusal; corrections and line-driven undo use the certified passage.
+
+### A winner with no arrival to direct (C22)
+
+A fresh WALKOVER or DEFAULTED can name the side that has not arrived. The certificate requires
+TO_BE_PLAYED, no stored winner, score value, exit provenance, carry or codes, and exactly the
+opposite side holding a participant. The winner has no participant to send onward. The source
+result is written normally; any loser direction passes its existing arrival/exit/BYE walls.
+The unused winner target does not need to be empty, because no winner arrives there yet.
+
+A lucky pre-feed round defers both directions, including an existing loser link, until lucky
+selection resolves the round. Its result is local. A propagating exit may still meet the
+later conservative settle wall, which remains owed. No feeder-win rule changes.
+
+AD_HOC without a winner or loser direction needs no group certificate for the direction itself.
+A missing required tally frame still refuses at the tally wall; that write remains owed.
+
+A bare half-arrived TEAM decision under the default scoring policy can reach v1's late
+MISSING_ASSIGNMENTS check after side preparation has written metadata and stamps. V2 must not
+accept it as a completed result. That control retains v1's prefix and error until a typed v2
+refusal program owns the same writes, notices and terminal error. It is explicitly unfinished
+v2 work, and must be owned before v1 retirement. The requireParticipantsForScoring=false policy
+remains accepted and owned. A clean early error would not preserve the captured prefix.
+
+### A corrected result refreshes its recorded arrival (C23)
+
+A source relabelled beneath an active onward matchUp refreshes the arrival origin that names
+its earlier result. For native non-TEAM matchUps in the same flat structure, certify stored
+non-BYE arrivals whose previousMatchUpStatus still equals the source's stored status. After
+the source result, merge only the changed previousMatchUpStatus, preserve the rest of each
+entry, and stamp the arrival and its structure. Announce as refreshArrivals on apply-values,
+or refreshArrivalsFrom on a swap, with the event and tournament. No score, codes or positions
+are rewritten by the refresh. Foreign, nested, stale or BYE arrivals remain owed.
+
+The existing carry, withdrawal and swap-path certificates still apply. Admission past the
+arrival-label wall does not own a call that reaches a later refusal. Refused TEAM winner
+changes can differ in their mutation prefix before CANNOT_CHANGE_WINNING_SIDE; they join the
+explicit terminal-error program obligation before v1 retirement.

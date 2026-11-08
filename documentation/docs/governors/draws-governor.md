@@ -558,6 +558,40 @@ engine.luckyLoserDrawPositionAssignment({
 
 ---
 
+## getDrawFit
+
+Whether an event's entries fit a draw, structure by structure — **without making it**. Takes the same parameters as
+[generateDrawDefinition](#generatedrawdefinition) and runs the generator, attaching nothing, so every count is the
+generator's own placement. Nothing is written to the record. Since 7.33.0.
+
+```js
+const { ledger, structures, notPlaced, drawSize } = tournamentEngine.getDrawFit({
+  eventId, // required
+  drawSize, // optional - derived from the entries when omitted
+  drawType, // optional
+  seedsCount, // optional
+  qualifyingProfiles, // optional
+  drawEntries, // optional - try a different acceptance without changing the event's entries
+});
+```
+
+`ledger` counts the entries by stage, grouped as the factory groups them for a draw: `selected` (by status, the
+entries that take a position), `alternates`, `withdrawn`, and `other`.
+
+Each of `structures` reports `positions`, `placed`, `byes`, `seedByes`, `byesBeyondSeeds`, `seedsCount`,
+`qualifierSlots`, `open` and `notPlaced`, and a `status`:
+
+- `FITS` — every position is taken by an entry or a qualifier slot, or left a BYE the seeds are owed
+- `OVER` — selected entries the stage had no place for (listed in `notPlaced`, with the reason)
+- `SHORT` — BYEs beyond the seeds' share: the draw is larger than its entries
+- `EMPTY` — nothing entered yet
+
+`SHORT` is measured against the seeds, not a threshold. No governing body publishes a maximum number of BYEs; all give
+BYEs to the seeds first, and the tours fix that share by draw size (a 96 draw with 32 seeds and 32 BYEs is full). Any
+further tolerance belongs in a provider's policy.
+
+---
+
 ## getAssignedParticipantIds
 
 Returns all participant IDs assigned to positions in a draw.

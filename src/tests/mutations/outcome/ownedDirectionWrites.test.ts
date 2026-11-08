@@ -12,8 +12,8 @@ import { createSeededRandom } from '@Tools/prng';
 import { setClock } from '@Tools/clock';
 
 // constants
+import { MISSING_ASSIGNMENTS, SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
-import { SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import type { Tournament } from '@Types/tournamentTypes';
 import {
@@ -33,6 +33,7 @@ import {
   WALKOVER,
 } from '@Constants/matchUpStatusConstants';
 import {
+  ADAPTIVE,
   AD_HOC,
   COMPASS,
   CURTIS_CONSOLATION,
@@ -7441,4 +7442,379 @@ describe('C21 TEAM correction and a fresh line undoing a decided dual', () => {
       }
     },
   );
+});
+
+// C22 v1-first recipes: one populated R1 source leaves the winning side of the target unreached.
+// TEAM, draw type, size/count, source structure/position, target round/structure/position, empty side, ownership by carry.
+const UNREACHED_WINNER_RECIPES: [
+  boolean,
+  string,
+  number,
+  number,
+  string,
+  number,
+  number,
+  string,
+  number,
+  1 | 2,
+  boolean,
+  boolean,
+][] = [
+  [false, SINGLE_ELIMINATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
+  [false, FEED_IN_CHAMPIONSHIP, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
+  [false, FIRST_ROUND_LOSER_CONSOLATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
+  [false, FIRST_ROUND_LOSER_CONSOLATION, 16, 15, 'Main', 2, 2, 'Consolation', 1, 2, true, true],
+  [false, COMPASS, 8, 8, 'East', 1, 2, 'East', 1, 2, true, true],
+  [false, COMPASS, 16, 15, 'East', 2, 2, 'West', 1, 2, true, true],
+  [false, OLYMPIC, 8, 8, 'East', 1, 2, 'East', 1, 2, true, true],
+  [false, OLYMPIC, 16, 15, 'East', 2, 2, 'West', 1, 2, true, true],
+  [false, DOUBLE_ELIMINATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
+  [false, CURTIS_CONSOLATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
+  [false, MODIFIED_FEED_IN_CHAMPIONSHIP, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
+  [false, FEED_IN_CHAMPIONSHIP_TO_SF, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
+  [false, FIRST_MATCH_LOSER_CONSOLATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, false],
+  [true, SINGLE_ELIMINATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
+  [true, FEED_IN_CHAMPIONSHIP, 8, 8, 'Main', 1, 1, 'Consolation', 1, 2, true, true],
+  [true, FEED_IN_CHAMPIONSHIP, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, false],
+  [true, FEED_IN_CHAMPIONSHIP, 16, 15, 'Main', 2, 2, 'Consolation', 1, 1, true, true],
+  [true, FIRST_ROUND_LOSER_CONSOLATION, 8, 8, 'Main', 1, 1, 'Consolation', 1, 2, true, true],
+  [true, FIRST_ROUND_LOSER_CONSOLATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
+  [true, FIRST_ROUND_LOSER_CONSOLATION, 16, 15, 'Main', 2, 2, 'Consolation', 1, 2, true, true],
+  [true, COMPASS, 8, 8, 'East', 1, 1, 'West', 1, 2, true, true],
+  [true, COMPASS, 8, 8, 'East', 1, 2, 'East', 1, 2, true, true],
+  [true, COMPASS, 16, 15, 'East', 2, 2, 'West', 1, 2, true, true],
+  [true, OLYMPIC, 8, 8, 'East', 1, 1, 'West', 1, 2, true, true],
+  [true, OLYMPIC, 8, 8, 'East', 1, 2, 'East', 1, 2, true, true],
+  [true, OLYMPIC, 16, 15, 'East', 2, 2, 'West', 1, 2, true, true],
+  [true, DOUBLE_ELIMINATION, 8, 8, 'Main', 1, 1, 'Backdraw', 2, 2, true, true],
+  [true, DOUBLE_ELIMINATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, false],
+  [true, DOUBLE_ELIMINATION, 16, 15, 'Main', 2, 2, 'Backdraw', 4, 1, true, true],
+  [true, CURTIS_CONSOLATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
+  [true, CURTIS_CONSOLATION, 16, 15, 'Main', 2, 2, 'Consolation 1', 1, 1, true, true],
+  [true, MODIFIED_FEED_IN_CHAMPIONSHIP, 8, 8, 'Main', 1, 1, 'Consolation', 1, 2, true, true],
+  [true, MODIFIED_FEED_IN_CHAMPIONSHIP, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, false],
+  [true, MODIFIED_FEED_IN_CHAMPIONSHIP, 16, 15, 'Main', 2, 2, 'Consolation', 1, 1, true, true],
+  [true, FEED_IN_CHAMPIONSHIP_TO_SF, 8, 8, 'Main', 1, 1, 'Consolation', 1, 2, true, true],
+  [true, FEED_IN_CHAMPIONSHIP_TO_SF, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, false],
+  [true, FEED_IN_CHAMPIONSHIP_TO_SF, 16, 15, 'Main', 2, 2, 'Consolation', 1, 1, true, true],
+  [true, FIRST_MATCH_LOSER_CONSOLATION, 8, 8, 'Main', 1, 1, 'Consolation', 1, 2, true, true],
+  [true, FIRST_MATCH_LOSER_CONSOLATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, false],
+  [true, FIRST_MATCH_LOSER_CONSOLATION, 16, 15, 'Main', 2, 2, 'Consolation', 1, 1, true, true],
+];
+
+function prepareUnreachedWinner(
+  recipe: (typeof UNREACHED_WINNER_RECIPES)[number],
+  policyDefinitions?: Record<string, unknown>,
+) {
+  const [team, drawType, drawSize, participantsCount, sourceStructure, sourcePosition] = recipe;
+  const drawProfile = {
+    drawType,
+    drawSize,
+    participantsCount,
+    ...(team ? { eventType: 'TEAM', tieFormatName: 'USTA_COLLEGE' } : {}),
+  };
+  setOutcomePipeline(OUTCOME_PIPELINE_V1);
+  setClock('2026-10-25T00:00:00.000Z');
+  setSubscriptions({ subscriptions: {} });
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ ...drawProfile, drawId: 'd' }],
+    nonRandom: 1,
+    setState: true,
+  });
+  if (policyDefinitions) tournamentEngine.attachPolicies({ policyDefinitions });
+  if (team)
+    expect(
+      tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: 'd' }).success,
+    ).toEqual(true);
+  expect(
+    tournamentEngine.setMatchUpStatus({
+      drawId: 'd',
+      matchUpId: findTarget(R1(sourcePosition, sourceStructure)),
+      outcome: team ? { winningSide: 1 } : won(1),
+    }).success,
+  ).toEqual(true);
+  return { drawProfile, prepared: structuredClone(tournamentEngine.getTournament().tournamentRecord) };
+}
+
+function compareUndirectedWinner(scenario: Scenario, owned: boolean, prepared?: Tournament) {
+  const v1 = play(OUTCOME_PIPELINE_V1, scenario, { prepared });
+  const before = getDifferentialTally()['shadow:applied']?.compared ?? 0;
+  const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario, { prepared });
+  expect((getDifferentialTally()['shadow:applied']?.compared ?? 0) - before).toEqual(Number(owned));
+  const v2 = play(OUTCOME_PIPELINE_V2, scenario, { prepared });
+  expect(v2.v1Writes === 0).toEqual(owned);
+  for (const actual of [compared, v2]) {
+    expect(actual.results).toEqual(v1.results);
+    expect(actual.record).toEqual(v1.record);
+    expect(actual.notices).toEqual(v1.notices);
+  }
+  return { v1, v2 };
+}
+
+const UNREACHED_WINNERS = UNREACHED_WINNER_RECIPES.flatMap((recipe) =>
+  [WALKOVER, DEFAULTED].flatMap((status) =>
+    [false, true].map((carry) => {
+      const [team, drawType, size, count, , , round, structure, position, side, plainOwned, carriedOwned] = recipe;
+      const policyOff = (status === WALKOVER) === carry;
+      return [
+        `C22 ${team ? 'TEAM ' : ''}${drawType} ${count}/${size} ${structure} ${round}/${position}: ${status} side ${side}, carry ${carry}, policy off ${policyOff}`,
+        recipe,
+        status,
+        carry,
+        policyOff,
+        carry ? carriedOwned : plainOwned,
+      ] as const;
+    }),
+  ),
+);
+
+describe('C22 a recorded single exit awards the side that has not arrived', () => {
+  it.each(UNREACHED_WINNERS)('%s', (_label, recipe, status, carry, policyOff, owned) => {
+    const policyDefinitions = policyOff ? POLICY_OFF : undefined;
+    const { drawProfile, prepared } = prepareUnreachedWinner(recipe, policyDefinitions);
+    const [, , , , , , roundNumber, structureName, roundPosition, side] = recipe;
+    const scenario: Scenario = {
+      drawProfile,
+      policyDefinitions,
+      steps: [
+        {
+          target: { structureName, roundNumber, roundPosition },
+          outcome: exited(status, side),
+          params: { propagateExitStatus: carry },
+        },
+      ],
+    };
+    const { v1 } = compareUndirectedWinner(scenario, owned, prepared);
+    expect(v1.results[0].success).toEqual(true);
+  });
+});
+
+function undirectedOutcome(status: string, side: 1 | 2): Record<string, unknown> {
+  if (status === 'bare') return { winningSide: side };
+  return status === COMPLETED ? won(side) : exited(status, side);
+}
+
+const LINKED_PRE_FEEDS = [14, 18].flatMap((drawSize) =>
+  [1, 2].flatMap((position) =>
+    [COMPLETED, WALKOVER, DEFAULTED, 'bare'].flatMap((status) =>
+      ([1, 2] as const).flatMap((side) =>
+        [false, true].map(
+          (carry) =>
+            [
+              `C22 ADAPTIVE ${drawSize} R1/${position}: ${status} side ${side}, carry ${carry}`,
+              drawSize,
+              position,
+              status,
+              side,
+              carry,
+            ] as const,
+        ),
+      ),
+    ),
+  ),
+);
+describe('C22 lucky pre-feed defers its loser link with its winner', () => {
+  it.each(LINKED_PRE_FEEDS)('%s', (_label, drawSize, position, status, side, carry) => {
+    const outcome = undirectedOutcome(status, side);
+    const scenario: Scenario = {
+      drawProfile: { drawType: ADAPTIVE, drawSize, participantsCount: drawSize },
+      steps: [{ target: R1(position, 'East'), outcome, params: { propagateExitStatus: carry } }],
+    };
+    const owned = !carry || status === COMPLETED || status === 'bare';
+    expect(compareUndirectedWinner(scenario, owned).v1.results[0].success).toEqual(true);
+  });
+  it.each(
+    [6, 10].flatMap((size) =>
+      [WALKOVER, DEFAULTED].flatMap((status) => ([1, 2] as const).map((side) => [size, status, side] as const)),
+    ),
+  )('C22 LUCKY_DRAW %s %s side %s remains owned without a loser link', (drawSize, status, side) => {
+    const scenario: Scenario = {
+      drawProfile: { drawType: LUCKY_DRAW, drawSize, participantsCount: drawSize },
+      steps: [{ target: R1(1), outcome: exited(status, side) }],
+    };
+    expect(compareUndirectedWinner(scenario, true).v1.results[0].success).toEqual(true);
+  });
+});
+
+const REFUSAL_PREFIX_KEYS = new Set([
+  'FEED_IN_CHAMPIONSHIP|8|8|Consolation|1|1',
+  'FEED_IN_CHAMPIONSHIP|16|15|Consolation|2|1',
+  'FIRST_ROUND_LOSER_CONSOLATION|8|8|Consolation|1|1',
+  'DOUBLE_ELIMINATION|8|8|Backdraw|1|2',
+  'DOUBLE_ELIMINATION|16|15|Backdraw|2|4',
+  'CURTIS_CONSOLATION|16|15|Consolation 1|2|1',
+  'MODIFIED_FEED_IN_CHAMPIONSHIP|8|8|Consolation|1|1',
+  'MODIFIED_FEED_IN_CHAMPIONSHIP|16|15|Consolation|2|1',
+  'FEED_IN_CHAMPIONSHIP_TO_SF|8|8|Consolation|1|1',
+  'FEED_IN_CHAMPIONSHIP_TO_SF|16|15|Consolation|2|1',
+  'FIRST_MATCH_LOSER_CONSOLATION|8|8|Consolation|1|1',
+  'FIRST_MATCH_LOSER_CONSOLATION|16|15|Consolation|2|1',
+]);
+const UNREACHED_TEAM_REFUSALS = UNREACHED_WINNER_RECIPES.filter(
+  ([team, type, size, count, , , round, structure, position]) =>
+    team && REFUSAL_PREFIX_KEYS.has(`${type}|${size}|${count}|${structure}|${round}|${position}`),
+).flatMap((recipe) =>
+  [true, false].map(
+    (requireParticipants) =>
+      [
+        `C22 TEAM refusal prefix ${recipe[1]} ${recipe[3]}/${recipe[2]} ${recipe[7]} ${recipe[6]}/${recipe[8]}, require participants ${requireParticipants}`,
+        recipe,
+        requireParticipants,
+      ] as const,
+  ),
+);
+
+describe('C22 the TEAM refusal prefix remains owed, while the scoring-policy override is owned', () => {
+  it.each(UNREACHED_TEAM_REFUSALS)('%s', (_label, recipe, requireParticipants) => {
+    const policyDefinitions = { scoring: { requireParticipantsForScoring: requireParticipants } };
+    const { drawProfile, prepared } = prepareUnreachedWinner(recipe, policyDefinitions);
+    const [, , , , , , roundNumber, structureName, roundPosition, emptySide] = recipe;
+    const side = (emptySide === 1 ? 2 : 1) as 1 | 2;
+    const scenario: Scenario = {
+      drawProfile,
+      policyDefinitions,
+      steps: [{ target: { structureName, roundNumber, roundPosition }, outcome: { winningSide: side } }],
+    };
+    const { v1 } = compareUndirectedWinner(scenario, !requireParticipants, prepared);
+    if (requireParticipants) {
+      expect(v1.results[0].error).toEqual(MISSING_ASSIGNMENTS);
+      expect(v1.record).not.toEqual(v1.recordBefore);
+    } else expect(v1.results[0].success).toEqual(true);
+  });
+});
+
+const UNLINKED_AD_HOC_CALLS = ['SINGLES', 'DOUBLES'].flatMap((eventType) =>
+  [1, 3].flatMap((roundsCount) =>
+    [COMPLETED, WALKOVER, DEFAULTED, 'bare'].flatMap((status) =>
+      ([1, 2] as const).map(
+        (side) =>
+          [
+            `C22 AD_HOC ${eventType} ${roundsCount} rounds: ${status} side ${side}`,
+            eventType,
+            roundsCount,
+            status,
+            side,
+          ] as const,
+      ),
+    ),
+  ),
+);
+describe('C22 AD_HOC with no directions still owes its missing group frame', () => {
+  it.each(UNLINKED_AD_HOC_CALLS)('%s', (_label, eventType, roundsCount, status, side) => {
+    setOutcomePipeline(OUTCOME_PIPELINE_V1);
+    setClock('2026-10-25T00:00:00.000Z');
+    setSubscriptions({ subscriptions: {} });
+    const {
+      eventIds: [eventId],
+    } = mocksEngine.generateTournamentRecord({
+      eventProfiles: [{ eventType, participantsProfile: { participantsCount: 8 } }],
+      nonRandom: 1,
+      setState: true,
+    });
+    const generated = tournamentEngine.generateDrawDefinition({
+      eventId,
+      drawId: 'd',
+      drawType: AD_HOC,
+      automated: true,
+      roundsCount,
+    });
+    expect(tournamentEngine.addDrawDefinition({ eventId, drawDefinition: generated.drawDefinition }).success).toEqual(
+      true,
+    );
+    const prepared = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+    const outcome = undirectedOutcome(status, side);
+    const scenario: Scenario = {
+      drawProfile: { drawType: AD_HOC, drawSize: 8, eventType, automated: true, roundsCount },
+      steps: [{ target: { roundNumber: 1, nth: 1 }, outcome }],
+    };
+    // A multi-round AD_HOC call reaches the later tally wall; it is not claimed as a new owned write.
+    expect(compareUndirectedWinner(scenario, roundsCount === 1, prepared).v1.results[0].success).toEqual(true);
+  });
+});
+
+describe('C22 a bare TEAM winner with both teams present stays owned', () => {
+  it.each(
+    [SINGLE_ELIMINATION, FEED_IN_CHAMPIONSHIP].flatMap((type) =>
+      ([1, 2] as const).map((side) => [type, side] as const),
+    ),
+  )('C22 TEAM %s bare winner side %s with two teams', (drawType, side) => {
+    const drawProfile = { drawType, drawSize: 8, eventType: 'TEAM', tieFormatName: 'USTA_COLLEGE' };
+    setOutcomePipeline(OUTCOME_PIPELINE_V1);
+    setClock('2026-10-25T00:00:00.000Z');
+    setSubscriptions({ subscriptions: {} });
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ ...drawProfile, drawId: 'd' }],
+      nonRandom: 1,
+      setState: true,
+    });
+    expect(
+      tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: 'd' }).success,
+    ).toEqual(true);
+    const prepared = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+    const scenario: Scenario = { drawProfile, steps: [{ target: R1(1, 'Main'), outcome: { winningSide: side } }] };
+    expect(compareUndirectedWinner(scenario, true, prepared).v1.results[0].success).toEqual(true);
+  });
+});
+
+// C23: the winner's recorded arrival changes its origin label after an onward matchUp was played.
+// DOUBLE_DEFAULT mirrors the origin onto side 2; the v1-first capture proves both orientations.
+const REFRESHED_ARRIVAL_CASES = PENDING_WINNER_DRAWS.filter(([, size]) => size >= 8).flatMap(
+  ([drawType, drawSize, structureName]) =>
+    [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((doubleExit) =>
+      [false, true].flatMap((policyOff) =>
+        [COMPLETED, WALKOVER, DEFAULTED, RETIRED].flatMap((status) =>
+          ([1, 2] as const).flatMap((side) =>
+            [false, true].map((carry) => {
+              const arrival = doubleExit === DOUBLE_DEFAULT ? 2 : 1;
+              const scenario: Scenario = {
+                drawProfile: { drawType, drawSize },
+                ...(policyOff ? { policyDefinitions: POLICY_OFF } : {}),
+                setup: [
+                  { target: R1(3 - arrival, structureName), outcome: { matchUpStatus: doubleExit } },
+                  { target: R1(arrival, structureName), outcome: won(1) },
+                  { target: R1(3, structureName), outcome: won(1) },
+                  { target: R1(4, structureName), outcome: won(1) },
+                  { target: { structureName, roundNumber: 2, roundPosition: 2 }, outcome: won(1) },
+                  { target: { structureName, roundNumber: 3, roundPosition: 1 }, outcome: won(1) },
+                ].map((step) => ({ ...step, params: { propagateExitStatus: false } })),
+                steps: [
+                  {
+                    target: R1(arrival, structureName),
+                    outcome: status === COMPLETED ? won(side) : exited(status, side),
+                    params: { propagateExitStatus: carry, allowChangePropagation: true },
+                  },
+                ],
+              };
+              const owned = side === 1 && (!carry || status === COMPLETED || drawType === SINGLE_ELIMINATION);
+              return [
+                `C23 ${drawType} ${drawSize} origin ${arrival}: ${doubleExit}, policy off ${policyOff}, ${status} side ${side}, carry ${carry}`,
+                scenario,
+                owned,
+                status,
+              ] as const;
+            }),
+          ),
+        ),
+      ),
+    ),
+);
+
+describe('C23 relabelled arrival origins retain exact records and notice identities', () => {
+  it.each(REFRESHED_ARRIVAL_CASES)('%s', (_label, scenario, owned, status) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const before = getDifferentialTally()['shadow:applied']?.compared ?? 0;
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect((getDifferentialTally()['shadow:applied']?.compared ?? 0) - before).toEqual(Number(owned));
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    expect(v1.v1Writes).toBeGreaterThan(0);
+    expect(v2.v1Writes === 0).toEqual(owned);
+    for (const actual of [compared, v2]) {
+      expect(actual.results).toEqual(v1.results);
+      expect(actual.record).toEqual(v1.record);
+      expect(actual.notices).toEqual(v1.notices);
+    }
+    if (owned && status !== COMPLETED)
+      expect(v2.notices.some((notice) => notice.includes('"context":"refreshArrivals"'))).toEqual(true);
+  });
 });

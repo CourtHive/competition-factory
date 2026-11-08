@@ -493,6 +493,7 @@ import type { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import type { getCompleteness } from '@Query/sanctioning/getCompleteness';
 import type { getTierMovement } from '@Query/tournaments/getTierMovement';
 import type { findVenue, publicFindVenue } from '@Query/venues/findVenue';
+import type { getDrawFit } from '@Generators/drawDefinitions/getDrawFit';
 import type { addNotes, removeNotes } from '@Mutate/base/addRemoveNotes';
 import type { assignOfficial } from '@Mutate/officiating/assignOfficial';
 import type { updateProposal } from '@Mutate/sanctioning/updateProposal';
@@ -993,6 +994,7 @@ export interface MethodSignatures {
   getDrawCompleteness: EngineMethod<typeof getDrawCompleteness>;
   getDrawData: EngineMethod<typeof getDrawData>;
   getDrawDefinitionTimeItem: EngineMethod<typeof getDrawDefinitionTimeItem>;
+  getDrawFit: EngineMethod<typeof getDrawFit>;
   getDrawInconsistencies: EngineMethod<typeof getDrawInconsistencies>;
   getDrawParticipantRepresentativeIds: EngineMethod<typeof getDrawParticipantRepresentativeIds>;
   getDrawStructures: EngineMethod<typeof getDrawStructures>;
