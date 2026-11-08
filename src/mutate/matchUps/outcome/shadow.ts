@@ -1,10 +1,11 @@
 import { announcesAssignments, eventlessNotices } from './apply';
 import { captureRecord } from '@Tools/recordDiff';
 import { generatePatch } from '@Tools/jsonPatch';
+import { cloneState } from '@Tools/cloneState';
 import { applyOutcomeOps } from './ops';
 
 // constants and types
-import type { DrawDefinition, Tournament } from '@Types/tournamentTypes';
+import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import type { OutcomeOp } from './ops';
 import {
   MODIFY_DRAW_DEFINITION,
@@ -25,40 +26,47 @@ import {
 
 type Json = Record<string, unknown>;
 
-/** equal, with the shadow-applied record (what the view oracle hydrates), or the first difference */
-export type ShadowResult = { equal: true; shadow: Json } | { equal: false; path: string; v1: string; v2: string };
+/** The actual draw and optional context, copied as one graph so shared references stay shared. */
+export type ShadowScope = { drawDefinition: DrawDefinition; tournamentRecord?: Tournament; event?: Event };
+/** Equal with the shadow-applied roots, or the first stored difference. */
+export type ShadowResult =
+  { equal: true; shadow: ShadowScope } | { equal: false; path: string; v1: string; v2: string };
 
 const shown = (value: unknown) => (value === undefined ? 'absent' : JSON.stringify(value)?.slice(0, 160));
 
-/**
- * Fold `ops` into the record captured before v1 ran (`before`, from `captureRecord`), and compare it with `record`, the
- * live record after v1. Returns the first difference, by JSON Pointer, with what each side holds there.
- */
+/** Copy the exact draw and real context roots together, preserving aliases without inventing a tournament. */
+export function captureShadow({ drawDefinition, tournamentRecord, event }: ShadowScope): ShadowScope {
+  return cloneState({ drawDefinition, tournamentRecord, event }).copy;
+}
+
+/** Fold into the captured draw, then compare every supplied root; a same-ID draw is not the passed draw. */
 export function compareShadow({
   stampedBefore,
   before,
-  record,
-  drawId,
+  current,
   ops,
 }: {
   stampedBefore?: Set<string>;
-  record: Tournament;
-  before: string;
-  drawId: string;
+  before: ShadowScope;
+  current: ShadowScope;
   ops: OutcomeOp[];
 }): ShadowResult {
-  const shadow = JSON.parse(before) as Json;
-  const drawDefinition = ((shadow.events as Json[] | undefined) ?? [])
-    .flatMap((event) => (event.drawDefinitions as Json[] | undefined) ?? [])
-    .find((draw) => draw.drawId === drawId);
-  if (!drawDefinition) return { equal: false, path: `/drawDefinitions/${drawId}`, v1: 'present', v2: 'not found' };
-  const applied = applyOutcomeOps(drawDefinition as unknown as DrawDefinition, ops, stampedBefore);
+  const applied = applyOutcomeOps(before.drawDefinition, ops, stampedBefore);
   if (applied.error) return { equal: false, path: '(ops)', v1: 'applied', v2: applied.error };
 
-  const v1 = JSON.parse(captureRecord(record)) as Json;
-  const v2 = JSON.parse(captureRecord(shadow)) as Json;
+  // Keep the established record-path diagnostics for ordinary contained draws. Detached roots are compared too.
+  const held =
+    current.tournamentRecord?.events?.some((event) => event.drawDefinitions?.includes(current.drawDefinition)) &&
+    (!current.event || current.tournamentRecord.events.includes(current.event));
+  const roots = {
+    drawDefinition: current.drawDefinition,
+    tournamentRecord: current.tournamentRecord,
+    event: current.event,
+  };
+  const v1 = JSON.parse(captureRecord(held ? current.tournamentRecord : roots)) as Json;
+  const v2 = JSON.parse(captureRecord(held ? before.tournamentRecord : before)) as Json;
   const [first] = generatePatch(v2, v1);
-  if (!first) return { equal: true, shadow: v2 };
+  if (!first) return { equal: true, shadow: before };
   const at = (root: Json) =>
     first.path
       .split('/')
@@ -78,13 +86,31 @@ export function compareShadow({
  *
  * Of the payloads, whether a `modifyMatchUp` or a `modifyPositionAssignments` names the event (S7): a key whose notice
  * names none is marked `NO_EVENT`, by the rules `applyOwnedPlan` writes it with (`eventlessNotices`). A call with no
- * event (none in the suite) would diverge here, loudly. The differential passed while a dual's notices differed in `eventId` (S7 item 13).
+ * event marks every event-compared notice as eventless, without inventing context. The differential passed while a
+ * dual's notices differed in `eventId` (S7 item 13).
  */
-export function plannedNotices({ ops, matchUpId }: { ops: OutcomeOp[]; matchUpId: string }): Set<string> {
+export function plannedNotices({
+  ops,
+  matchUpId,
+  hasEvent = true,
+  prior,
+}: {
+  ops: OutcomeOp[];
+  matchUpId: string;
+  hasEvent?: boolean;
+  prior?: { topic?: string; key?: string; payload?: { eventId?: string } }[];
+}): Set<string> {
   // A satisfied double exit has an empty plan: v1 writes and announces nothing.
   if (!ops.length) return new Set();
   const eventless = eventlessNotices(ops);
-  const marked = (topic: string, key: string, unevented: boolean) => `${topic}|${key}${unevented ? NO_EVENT : ''}`;
+  // `preserveNoticeIdentity` keeps an earlier buffered event when this write supplies none.
+  const retainedEvents = new Set(
+    prior?.filter((notice) => notice.payload?.eventId).map((notice) => `${notice.topic}|${notice.key}`),
+  );
+  const marked = (topic: string, key: string, unevented: boolean) => {
+    const identity = `${topic}|${key}`;
+    return `${identity}${(!hasEvent || unevented) && !retainedEvents.has(identity) ? NO_EVENT : ''}`;
+  };
   const notices = new Set<string>([`${UPDATE_INCONTEXT_MATCHUP}|${matchUpId}`]);
   for (const op of ops) {
     // every score write announces its matchUp in context, as `apply.ts` defers it: a TEAM line's dual too (S7)

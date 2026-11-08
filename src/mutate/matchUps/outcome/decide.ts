@@ -1,5 +1,5 @@
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
-import { addedNotices, compareNotices, compareShadow, plannedNotices } from './shadow';
+import { addedNotices, captureShadow, compareNotices, compareShadow, plannedNotices } from './shadow';
 import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
 import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { PREDICTED_CALL, predictSettleWork, type SettleSite } from './settleWork';
@@ -16,7 +16,6 @@ import { compareViews, hydrateShadow } from './viewOracle';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
 import { observeWrite, planWrite } from './write';
-import { captureRecord } from '@Tools/recordDiff';
 import { createWorkingView } from './overlay';
 import { refuseOutcome } from './refusals';
 import { stampedInThisCall } from './ops';
@@ -155,7 +154,8 @@ export function decideOutcomeV2(args: BuildViewArgs): {
 
   const { planned, route, plan, direction, folded, outcome } = planCall(args, view, refusal);
   const dual = route ? planDual(args, view) : undefined;
-  const shadowBefore = outcome.ops && args.tournamentRecord ? captureRecord(args.tournamentRecord) : undefined;
+  const shadowBefore =
+    outcome.ops && args.drawDefinition ? captureShadow({ ...args, drawDefinition: args.drawDefinition }) : undefined;
   // what this engine call already stamped, which the copy cannot know (F2 (i): an entity is stamped once per call)
   const stampedBefore = shadowBefore ? stampedInThisCall(args.drawDefinition) : undefined;
   // a copy of the working view is kept for the view oracle, since a hydrated matchUp may share a nested object with the
@@ -245,11 +245,9 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   /** S1: the complete plan, folded into the record as it stood before v1, against the record v1 wrote */
   function checkShadow() {
     if (outcome.abstain) return differentialTally(`shadow:abstain:${outcome.abstain}`, 'deferred');
-    if (!shadowBefore || !args.tournamentRecord || !args.drawDefinition)
-      return differentialTally('shadow:abstain:no-record', 'deferred');
+    if (!shadowBefore || !args.drawDefinition) return differentialTally('shadow:abstain:no-record', 'deferred');
     const shadow = compareShadow({
-      drawId: args.drawDefinition.drawId,
-      record: args.tournamentRecord,
+      current: { ...args, drawDefinition: args.drawDefinition },
       before: shadowBefore,
       ops: outcome.ops,
       stampedBefore,
@@ -263,7 +261,12 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     differentialTally('shadow:applied', 'compared');
     checkViewOracle(shadow.shadow);
     const noticed = compareNotices({
-      planned: plannedNotices({ ops: outcome.ops, matchUpId: args.request.matchUpId as string }),
+      planned: plannedNotices({
+        ops: outcome.ops,
+        matchUpId: args.request.matchUpId as string,
+        hasEvent: !!args.event?.eventId,
+        prior: notices,
+      }),
       added: addedNotices(notices, getNoticeBuffer()),
       topics: getTopics().topics,
     });
@@ -272,9 +275,9 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     differentialTally('shadow:notices', 'compared');
   }
   /** § 3.2's view oracle: the working view after the plan against a hydration of the shadow-applied record */
-  function checkViewOracle(shadow: Record<string, unknown>) {
+  function checkViewOracle(shadow: NonNullable<typeof shadowBefore>) {
     if (!viewAfter || 'error' in viewAfter || !args.drawDefinition) return differentialTally('view', 'deferred');
-    const record = hydrateShadow({ shadow, drawId: args.drawDefinition.drawId });
+    const record = hydrateShadow(shadow);
     if (!record) return differentialTally('view', 'deferred');
     const compared = compareViews({ record, view: viewAfter.matchUps });
     if (!compared.equal)

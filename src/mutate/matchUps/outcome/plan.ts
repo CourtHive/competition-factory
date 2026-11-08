@@ -72,7 +72,7 @@ import {
 
 // constants and types
 import { DEFAULTED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import type { DrawDefinition, Score, Tournament } from '@Types/tournamentTypes';
+import type { DrawDefinition, Score } from '@Types/tournamentTypes';
 import type { OutcomeOp } from './ops';
 import type {
   AbstainReason,
@@ -276,18 +276,10 @@ function resultRemovalReason(view: OutcomeView): AbstainReason | undefined {
   return removalReason(view);
 }
 
-/** a plan is folded into the record; a draw held outside it, or a call with no captured instant, cannot be compared */
-function recordReason({
-  tournamentRecord,
-  drawDefinition,
-}: {
-  tournamentRecord?: Tournament;
-  drawDefinition?: DrawDefinition;
-}): AbstainReason | undefined {
-  const held = tournamentRecord?.events?.some((event) =>
-    event.drawDefinitions?.includes(drawDefinition as DrawDefinition),
-  );
-  if (!drawDefinition || !held) return 'no-record';
+/** A plan needs the draw and an existing captured instant; tournament containment is not a write prerequisite. */
+function recordReason({ drawDefinition }: { drawDefinition?: DrawDefinition }): AbstainReason | undefined {
+  if (!drawDefinition) return 'no-record';
+  // Draw-scoped callers reuse their existing capture; direct uncaptured clocks still need ordered temporal effects.
   if (getCapturedClock() === undefined) return 'clock';
   return undefined;
 }
