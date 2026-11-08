@@ -8,12 +8,16 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { setClock } from '@Tools/clock';
 
 // constants
-import { OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DEAD_RUBBER } from '@Constants/matchUpStatusConstants';
 import { TEAM } from '@Constants/eventConstants';
+import {
+  OUTCOME_PIPELINE_DIFFERENTIAL,
+  OUTCOME_PIPELINE_V1,
+  OUTCOME_PIPELINE_V2,
+} from '@Constants/outcomePipelineConstants';
 import {
   MODIFY_DRAW_DEFINITION,
   MODIFY_MATCHUP,
@@ -24,7 +28,7 @@ import {
 /**
  * S7: A LINE OF A DUAL LEFT A DEAD_RUBBER PASSES THE TEAM CHECKS. A DOUBLE_ELIMINATION decider the winners' champion
  * did not need stands a DEAD_RUBBER (`direction.ts`); its lines may still be played, and `teamReason` admits the dual
- * among those its lines tally. On this decider the re-derivation that follows the line is the settle pass's (v1's).
+ * among those its lines tally. The decider pass preserves a mutation of the decider or its own line.
  */
 const v1Writes = vi.hoisted(() => ({ count: 0 }));
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
@@ -105,17 +109,21 @@ function play(mode: OutcomePipelineMode, prepared: any, matchUpId: string) {
   };
 }
 
-it("a line of a DOUBLE_ELIMINATION decider left a DEAD_RUBBER passes the TEAM checks: here the settle pass is v1's", () => {
+it('owns a line of a DOUBLE_ELIMINATION decider left a DEAD_RUBBER, preserving the direct result', () => {
   const { record, decider } = prepare();
   // CONTROL: the decider was not needed, and none of its lines is played
   expect(decider.matchUpStatus).toEqual(DEAD_RUBBER);
   const line = decider.tieMatchUps[0];
   const deferred = (reason: string) => getDifferentialTally()[`shadow:abstain:${reason}`]?.deferred ?? 0;
   const before = { team: deferred('team'), settle: deferred('settle') };
+  const reference = play(OUTCOME_PIPELINE_V1, record, line.matchUpId);
+  expect(reference.v1Writes).toBeGreaterThan(0);
+  const owned = play(OUTCOME_PIPELINE_V2, record, line.matchUpId);
+  expect(owned.v1Writes).toEqual(0);
+  expect(owned).toEqual({ ...reference, v1Writes: 0 });
   const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, record, line.matchUpId);
   expect(compared.result.success).toEqual(true);
-  // the line is not refused as TEAM (a dual left a DEAD_RUBBER is a dual its lines may tally); the decider's
-  // re-derivation that follows is the settle pass's, v1's
+  expect(compared).toEqual(reference);
   expect(deferred('team') - before.team).toEqual(0);
-  expect(deferred('settle') - before.settle).toEqual(1);
+  expect(deferred('settle') - before.settle).toEqual(0);
 });
