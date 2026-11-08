@@ -80,6 +80,10 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
   const draw = working.drawDefinition;
   const map = working.matchUpsMap;
   const before = new Map(args.inContextDrawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
+  const own = before.get(args.matchUpId ?? '');
+  const ownLine =
+    !!own?.collectionId &&
+    before.get(own.matchUpTieId ?? '')?.tieMatchUps?.some((line) => line.matchUpId === own.matchUpId);
   const results = ops.filter((op) => op.op === 'setMatchUpResult');
   const resultOn = (predicate: (matchUp?: HydratedMatchUp) => boolean) =>
     results.some((op) => predicate(before.get(op.matchUpId)));
@@ -147,6 +151,9 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
     !carryPlanned &&
     results.some(
       (op) =>
+        // directParticipants tallies a line's dual and directs it as COMPLETED, never as the line's exit.
+        // Only that line's result is exempt: a separate dual/downstream exit still puts every pass in reach.
+        !(ownLine && op.matchUpId === args.matchUpId) &&
         !op.retainedExitPlanned &&
         op.announcedAs !== 'settleRederivedDoubleExit' &&
         propagatesExit(op.matchUpStatus, args),
