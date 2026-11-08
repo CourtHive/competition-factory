@@ -454,7 +454,7 @@ function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMat
   // the score so a re-score gets a fresh stamp
   if (matchUpIsScored(matchUp)) {
     matchUp.schedule ??= {};
-    matchUp.schedule.scoredTime ??= nowIso();
+    if (!matchUp.schedule.scoredTime) matchUp.schedule.scoredTime = nowIso();
   } else if (matchUp.schedule?.scoredTime) {
     delete matchUp.schedule.scoredTime;
   }

@@ -156,9 +156,9 @@ for (const [name, eventType, drawType] of [
     targets[0].updatedAt = new Date(name === 'team' ? '2027-01-01T00:00:00.000Z' : '2026-01-01T00:00:00.000Z');
     targets[1].updatedAt = '2026-11-08T09:01:00.000-01:00';
     targets[2].updatedAt = 'invalid prior stamp';
-    // The source becomes scored in the base program: final cleanup must preserve its existing time.
+    // The source becomes scored: v1 fills an empty time and preserves a truthy existing time.
     const own = map.drawMatchUps.find((matchUp) => matchUp.matchUpId === source.matchUpId)!;
-    own.schedule = { scoredTime: '2026-10-24T11:00:00.000Z' };
+    own.schedule = { scoredTime: name === 'singles' ? '' : '2026-10-24T11:00:00.000Z' };
     const prepared = structuredClone(record);
     const params = { drawId: 'd', matchUpId: source.matchUpId, outcome: { winningSide: 1 } };
     const reference = replay('v1', prepared, params);
@@ -171,7 +171,7 @@ for (const [name, eventType, drawType] of [
     expect(
       getMatchUpsMap({ drawDefinition: referenceDraw }).drawMatchUps.find((m) => m.matchUpId === source.matchUpId)!
         .schedule?.scoredTime,
-    ).toBe('2026-10-24T11:00:00.000Z');
+    ).toBe(name === 'singles' ? '2026-11-08T10:01:00.000Z' : '2026-10-24T11:00:00.000Z');
     const cleanup = reference.notices.filter(
       (n) => n.topic === MODIFY_MATCHUP && n.payload.context === 'reconcileScoredTimes',
     );
