@@ -188,8 +188,11 @@ export function createWorkingView({
       }
 
       // a dual's lines are built through it (its drawPositions, its sides' line-ups): what changes the dual, changes them
-      for (const matchUpId of [...affected])
-        for (const line of copiedMatchUps.get(matchUpId)?.tieMatchUps ?? []) affected.add(line.matchUpId);
+      for (const matchUpId of [...affected]) {
+        // An assignment can affect a dual without writing its stored matchUp, so it has no working copy.
+        const matchUp = copiedMatchUps.get(matchUpId) ?? base[indexOf.get(matchUpId) ?? -1];
+        for (const line of matchUp?.tieMatchUps ?? []) affected.add(line.matchUpId);
+      }
 
       view.matchUpsMap = overlayMap();
       if (!affected.size) return {};

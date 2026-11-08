@@ -1650,7 +1650,9 @@ without writing the record: what S2's has-work predicates for the settle passes 
 written. A matchUp or structure an op writes gets a stored-shape working copy, the ops are folded into the copies by
 the same reducer as the shadow apply, and the matchUps an op wrote, with those whose sides read a reassigned
 drawPosition, are derived again from the copies by indexing again the top-level structures that hold them (below),
-a TEAM draw included since S7. Each replaces its entry in v2's copy of the view's draw.
+a TEAM draw included since S7. An assignment can affect a dual without writing its stored matchUp;
+its tie lines are derived again too, since their sides read the dual's assignments. Each replaces
+its entry in v2's copy of the view's draw.
 
 **The view oracle** checks it in `differential`: after every complete plan, the working view, folded before v1 wrote,
 is compared field by field (sides, status, winner, score, drawPositions, `finishingPositionRange`, `feedRound` and
