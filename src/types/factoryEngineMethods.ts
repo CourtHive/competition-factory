@@ -298,6 +298,7 @@ export type FactoryEngineMethod =
   | 'getDrawData'
   | 'getDrawDefinitionTimeItem'
   | 'getDrawFit'
+  | 'getDrawFitProposals'
   | 'getDrawInconsistencies'
   | 'getDrawParticipantRepresentativeIds'
   | 'getDrawStructures'
@@ -1105,6 +1106,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getDrawData',
   'getDrawDefinitionTimeItem',
   'getDrawFit',
+  'getDrawFitProposals',
   'getDrawInconsistencies',
   'getDrawParticipantRepresentativeIds',
   'getDrawStructures',

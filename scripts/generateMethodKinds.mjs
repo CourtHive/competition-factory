@@ -98,6 +98,7 @@ const UNNAMESPACED = {
     'generateVoluntaryConsolation',
     // runs the draw generator without attaching: a read, checked like one
     'getDrawFit',
+    'getDrawFitProposals',
   ],
   // scoreGovernor's `helpers` namespace and its parsers: functions of their arguments
   query: [
