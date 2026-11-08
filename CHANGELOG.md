@@ -1,5 +1,43 @@
 # Changelog
 
+## [7.33.0](https://github.com/CourtHive/competition-factory/compare/v7.32.0...v7.33.0) (2026-11-08)
+
+
+### Features
+
+* a rank list's authority filter and weights in generateRankingList ([#6301](https://github.com/CourtHive/competition-factory/issues/6301)) ([5477ff2](https://github.com/CourtHive/competition-factory/commit/5477ff236bb60a419bec5a187cb7fd0423c4b395))
+* **draws:** getDrawFit — whether an event's entries fit a draw, without making it ([#6306](https://github.com/CourtHive/competition-factory/issues/6306)) ([74197af](https://github.com/CourtHive/competition-factory/commit/74197af15274f6bd155118571c18d27407149043))
+* **outcome:** a cleared final whose loser a link fed takes the fed seat back ([d244971](https://github.com/CourtHive/competition-factory/commit/d24497113cba2ce59480124bffc4b9385ebd11a4))
+* **outcome:** award a pending produced exit to the arriving winner ([977ceb9](https://github.com/CourtHive/competition-factory/commit/977ceb995f97e7f91316710da2fe802eebddca52))
+* **outcome:** own removals beside structural BYEs ([d238215](https://github.com/CourtHive/competition-factory/commit/d2382158b2407ac28be18fb47b38bb936da6a946))
+* **outcome:** own results with no winner arrival to direct ([868c447](https://github.com/CourtHive/competition-factory/commit/868c447d1cb0a471841dfc14394be427ddaea21b))
+* **outcome:** refresh a relabelled arrival origin ([1e28dd7](https://github.com/CourtHive/competition-factory/commit/1e28dd717f821ab4dd56cedebd8295d7e57fc987))
+* **outcome:** supersede pending relay after given-winner unwind ([2b9be70](https://github.com/CourtHive/competition-factory/commit/2b9be709a8388d67c1d1d37998aff3b39fc48cc7))
+* **outcome:** the loser arriving where a carried exit stands awarded to their seat takes it ([5fa9bda](https://github.com/CourtHive/competition-factory/commit/5fa9bdad9d5ea369914992a36a1b0543a5b4b378))
+* **outcome:** the loser goes on through the BYE chain to the landing the unwind writes back ([655024c](https://github.com/CourtHive/competition-factory/commit/655024cd8fcfee156172ee02cc03071d3eeb2d83))
+* plan plain loser arrivals through BYE chains ([1b28966](https://github.com/CourtHive/competition-factory/commit/1b28966b5ae3c0c80810ff1f01c1a59a14c4367e))
+* tools.formats and tools.scoring for stateless positional functions ([#6293](https://github.com/CourtHive/competition-factory/issues/6293)) ([8aeeaad](https://github.com/CourtHive/competition-factory/commit/8aeeaad7a706af1438bd54f1f0517ed47329e18d))
+* tools.publishing, entries, draws and matchUps; a clock is an input ([#6295](https://github.com/CourtHive/competition-factory/issues/6295)) ([d3684c4](https://github.com/CourtHive/competition-factory/commit/d3684c41094b59988e4a85a546a3edfa0ceee4ce))
+* **tools:** declare a bulkMatchUpStatusUpdate footprint across the draws it names ([#6269](https://github.com/CourtHive/competition-factory/issues/6269)) ([445c8a4](https://github.com/CourtHive/competition-factory/commit/445c8a4d03f06031b483e64379702e5d0994ce2e))
+* **tools:** footprints per tournament; applyLineUps and addMatchUpOfficial declared ([#6271](https://github.com/CourtHive/competition-factory/issues/6271)) ([9be83a1](https://github.com/CourtHive/competition-factory/commit/9be83a1344c788c92aa906e389ac44ae4dbb681c))
+
+
+### Bug Fixes
+
+* a ranking list's rolling window ends at its as-of date ([#6300](https://github.com/CourtHive/competition-factory/issues/6300)) ([ea5ad35](https://github.com/CourtHive/competition-factory/commit/ea5ad357453db27ecd1b2d1c94011d31d4d5e02f))
+* **deps:** update tods-competition-factory to 7.32.0 ([#6272](https://github.com/CourtHive/competition-factory/issues/6272)) ([b4aa726](https://github.com/CourtHive/competition-factory/commit/b4aa72656f2ff39e146c0923adf618e6deded886))
+* keep a TEAM dual's aggregate when its decision is recorded ([#6288](https://github.com/CourtHive/competition-factory/issues/6288)) ([7c49be8](https://github.com/CourtHive/competition-factory/commit/7c49be8eab967c552a314de182b2a95e9eda50cd))
+* **scoring:** a bare 7-6 is a finished set on the read surface; a 0-0 pair is no points everywhere ([#6297](https://github.com/CourtHive/competition-factory/issues/6297)) ([e94b2e3](https://github.com/CourtHive/competition-factory/commit/e94b2e3519ea5ec685d1c430a5051a38efe6eac6))
+* the score validators refuse input they cannot read ([#6290](https://github.com/CourtHive/competition-factory/issues/6290)) ([5f916d3](https://github.com/CourtHive/competition-factory/commit/5f916d319d10ff03a14475206ca291a820e904b6))
+* **types:** a playoff name needs no abbreviation; roundProfiles is { round: depth } ([#6303](https://github.com/CourtHive/competition-factory/issues/6303)) ([4ce8759](https://github.com/CourtHive/competition-factory/commit/4ce87592545a8abb7d1f43af77f19eb7fc9a4bf6))
+
+
+### Documentation
+
+* **draws:** getDrawFit says why the generator's two entry paths differ ([#6308](https://github.com/CourtHive/competition-factory/issues/6308)) ([15d742f](https://github.com/CourtHive/competition-factory/commit/15d742fe63e29da9064165e9f7f23dd693b64267))
+* **outcome:** the plan's module layout, and the debate rulings beside the shapes they keep apart ([d5dba28](https://github.com/CourtHive/competition-factory/commit/d5dba287821cce7568105063cfe8c808acb4af10))
+* the migration guide names the utilities alias removal at 8.0.0 ([#6296](https://github.com/CourtHive/competition-factory/issues/6296)) ([ee2eb66](https://github.com/CourtHive/competition-factory/commit/ee2eb669f7e96b0b63714b38c6f7d76675a916e1))
+
 ## [7.32.0](https://github.com/CourtHive/competition-factory/compare/v7.31.0...v7.32.0) (2026-11-06)
 
 
