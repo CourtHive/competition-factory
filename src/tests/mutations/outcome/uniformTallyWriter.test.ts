@@ -1,5 +1,5 @@
 import { deleteNotices, setOutcomePipeline, setSchemaWriteMode, setSubscriptions } from '@Global/state/globalState';
-import { addNotice, setCapturedClock, setCapturedStamps } from '@Global/state/globalState';
+import { addNotice, setCapturedClock, setCapturedStamps, setDeepCopy } from '@Global/state/globalState';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
 import { notifySubscribers } from '@Global/state/notifySubscribers';
@@ -301,6 +301,35 @@ it('multi-round tally excludes a scored sibling structure from its inputs', () =
   expect(v2.notices).toEqual(v1.notices);
   expect(v2.writes).toEqual(0);
   expect(v2.tallyFormats).toEqual(v1.tallyFormats);
+});
+
+it.each([true, false])('tally composes with final scored-time cleanup with deepCopy=%s', (deepCopy) => {
+  const fixture = prepare(singles);
+  const structure = fixture.prepared.events[0].drawDefinitions[0].structures[0];
+  const source = structure.matchUps.find((matchUp) => matchUp.matchUpId === fixture.matchUpId);
+  const other = structure.matchUps.find((matchUp) => matchUp.matchUpId !== fixture.matchUpId);
+  source.schedule = { scoredTime: '' };
+  other.schedule = { scoredTime: '2026-11-07T00:00:00.000Z' };
+  other.score = { sets: [], scoreStringSide1: '', scoreStringSide2: '' };
+  setDeepCopy(deepCopy, {});
+  try {
+    const v1 = play(OUTCOME_PIPELINE_V1, fixture, NATIVE);
+    const v2 = play(OUTCOME_PIPELINE_V2, fixture, NATIVE);
+    expect(v1.result.success).toEqual(true);
+    expect(v1.tallyFormats).toHaveLength(1);
+    expect(v2.result).toEqual(v1.result);
+    expect(JSON.parse(v2.record)).toEqual(JSON.parse(v1.record));
+    expect(v2.notices).toEqual(v1.notices);
+    const matches = JSON.parse(v1.record).events[0].drawDefinitions[0].structures[0].matchUps;
+    expect(matches.find((matchUp) => matchUp.matchUpId === other.matchUpId).schedule.scoredTime).toBeUndefined();
+    expect(matches.find((matchUp) => matchUp.matchUpId === source.matchUpId).schedule.scoredTime).toEqual(
+      '2026-11-08T00:01:00.000Z',
+    );
+    expect(v2.writes).toEqual(0);
+    expect(v2.tallyFormats).toEqual(v1.tallyFormats);
+  } finally {
+    setDeepCopy(true, {});
+  }
 });
 
 it('invalid tally preserves the score and rebuilt assignment prefix through v1', () => {
