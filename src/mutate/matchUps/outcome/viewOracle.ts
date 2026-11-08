@@ -2,8 +2,8 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { canonicalJson } from '@Tools/canonicalJson';
 
 // constants and types
-import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
+import type { ShadowScope } from './shadow';
 
 /**
  * THE VIEW ORACLE (executor plan § 3.2; S2). Test-only, `differential` only: after every complete plan, the working
@@ -52,19 +52,9 @@ function sidesOf(matchUp: HydratedMatchUp | undefined) {
   );
 }
 
-/** hydrate the shadow-applied record's draw once: the record as the plan says it stands */
-export function hydrateShadow({ shadow, drawId }: { shadow: Json; drawId: string }): HydratedMatchUp[] | undefined {
-  for (const event of (shadow.events as Json[] | undefined) ?? []) {
-    const drawDefinition = ((event.drawDefinitions as Json[] | undefined) ?? []).find((draw) => draw.drawId === drawId);
-    if (!drawDefinition) continue;
-    return getAllDrawMatchUps({
-      tournamentRecord: shadow as unknown as Tournament,
-      drawDefinition: drawDefinition as unknown as DrawDefinition,
-      event: event as unknown as Event,
-      inContext: true,
-    }).matchUps;
-  }
-  return undefined;
+/** Hydrate the exact shadow-applied draw with the caller's real optional context. */
+export function hydrateShadow({ drawDefinition, tournamentRecord, event }: ShadowScope): HydratedMatchUp[] | undefined {
+  return getAllDrawMatchUps({ tournamentRecord, drawDefinition, event, inContext: true }).matchUps;
 }
 
 /** every matchUp of the record, every field of § 3.2, against the working view: the first difference */
