@@ -321,7 +321,7 @@ export type OutcomeOp =
       announcedAs: 'directWinner' | 'directLoser' | 'updateSidLineUp' | 'removeDirectedLoser';
       /** C21: delete the line-up on an existing stored side, preserving the sides array. */
       clearsLineUp?: true;
-      /** false where v1's writer names no event (`assignTeamLineUp` hands `updateSideLineUp` none) */
+      /** false when the coalesced notice has no event; a standing award retains its assignment's identity */
       announcesEvent?: false;
     }
   | {

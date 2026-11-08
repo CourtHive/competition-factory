@@ -14,6 +14,7 @@ import { setClock } from '@Tools/clock';
 // constants
 import { MISSING_ASSIGNMENTS, SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import { DOMINANT_DUO, USTA_COLLEGE } from '@Constants/tieFormatConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import type { Tournament } from '@Types/tournamentTypes';
 import {
@@ -7680,6 +7681,199 @@ describe('C22 the TEAM refusal prefix remains owed, while the scoring-policy ove
       expect(v1.results[0].error).toEqual(MISSING_ASSIGNMENTS);
       expect(v1.record).not.toEqual(v1.recordBefore);
     } else expect(v1.results[0].success).toEqual(true);
+  });
+});
+
+// C24N: an assignment at a standing award keeps its event through the later quiet lineup notice.
+type TeamAwardNoticeCase = {
+  label: string;
+  drawProfile: Record<string, unknown>;
+  nonRandom: number;
+  setup: Step[];
+  target?: Target;
+  lineUps: boolean;
+  entered: string;
+  occupied?: boolean;
+  owned: boolean;
+};
+const teamNoticeStep = (roundNumber: number, roundPosition: number, status = 'bare'): Step => ({
+  target: { structureName: 'Main', roundNumber, roundPosition },
+  outcome: status === 'bare' ? { winningSide: 1 } : { matchUpStatus: status, winningSide: 1 },
+  params: CARRIED,
+});
+const TEAM_AWARD_NOTICE_WITNESSES: [number, number, number, Target, Step[]][] = [
+  [200061, 8, 8, R1(2, 'Main'), [teamNoticeStep(1, 1, WALKOVER)]],
+  [200083, 8, 5, MAIN(2, 2), [teamNoticeStep(1, 2, DEFAULTED), teamNoticeStep(2, 1)]],
+  [200091, 16, 16, R1(2, 'Main'), [teamNoticeStep(1, 1, WALKOVER)]],
+  [
+    200113,
+    16,
+    13,
+    MAIN(2, 4),
+    [
+      teamNoticeStep(1, 2, DEFAULTED),
+      teamNoticeStep(1, 3),
+      teamNoticeStep(1, 4),
+      teamNoticeStep(1, 5, DEFAULTED),
+      teamNoticeStep(1, 7),
+      teamNoticeStep(2, 1),
+      teamNoticeStep(2, 2, DEFAULTED),
+      teamNoticeStep(2, 3),
+    ],
+  ],
+];
+const TEAM_AWARD_NOTICE_DRAWS = [
+  FEED_IN_CHAMPIONSHIP,
+  FIRST_ROUND_LOSER_CONSOLATION,
+  COMPASS,
+  OLYMPIC,
+  DOUBLE_ELIMINATION,
+  CURTIS_CONSOLATION,
+  MODIFIED_FEED_IN_CHAMPIONSHIP,
+  FIRST_MATCH_LOSER_CONSOLATION,
+  FEED_IN_CHAMPIONSHIP_TO_SF,
+];
+const TEAM_AWARD_NOTICE_CASES: TeamAwardNoticeCase[] = [
+  ...TEAM_AWARD_NOTICE_WITNESSES.flatMap(([nonRandom, drawSize, participantsCount, target, setup]) =>
+    [false, true].flatMap((lineUps) =>
+      ['bare', COMPLETED, WALKOVER].map((entered) => ({
+        label: `C24N witness ${nonRandom}: ${entered}, lineups ${lineUps}`,
+        drawProfile: {
+          drawType: DOUBLE_ELIMINATION,
+          drawSize,
+          participantsCount,
+          eventType: 'TEAM',
+          tieFormatName: DOMINANT_DUO,
+        },
+        nonRandom,
+        setup,
+        target,
+        lineUps,
+        entered,
+        owned: true,
+      })),
+    ),
+  ),
+  ...TEAM_AWARD_NOTICE_WITNESSES.map(([nonRandom, drawSize, participantsCount, target, setup]) => ({
+    label: `C24N already occupied ${nonRandom}`,
+    drawProfile: {
+      drawType: DOUBLE_ELIMINATION,
+      drawSize,
+      participantsCount,
+      eventType: 'TEAM',
+      tieFormatName: DOMINANT_DUO,
+    },
+    nonRandom,
+    setup,
+    target,
+    lineUps: false,
+    entered: 'bare',
+    occupied: true,
+    owned: false,
+  })),
+  ...TEAM_AWARD_NOTICE_DRAWS.flatMap((drawType) =>
+    [
+      [8, 7],
+      [16, 15],
+      [16, 11],
+    ].flatMap(([drawSize, participantsCount]) =>
+      [false, true].map((lineUps) => ({
+        label: `C24N initial seat ${drawType} ${participantsCount}/${drawSize}, lineups ${lineUps}`,
+        drawProfile: { drawType, drawSize, participantsCount, eventType: 'TEAM', tieFormatName: USTA_COLLEGE },
+        nonRandom: 1,
+        setup: [],
+        lineUps,
+        entered: 'bare',
+        owned: true,
+      })),
+    ),
+  ),
+  ...TEAM_AWARD_NOTICE_DRAWS.flatMap((drawType) =>
+    [8, 16].flatMap((drawSize) =>
+      [false, true].flatMap((lineUps) =>
+        [WALKOVER, DEFAULTED].map((exit) => {
+          const structureName = drawType === COMPASS || drawType === OLYMPIC ? 'East' : 'Main';
+          return {
+            label: `C24N paired ${drawType} ${drawSize} ${exit}, lineups ${lineUps}`,
+            drawProfile: {
+              drawType,
+              drawSize,
+              participantsCount: drawSize,
+              eventType: 'TEAM',
+              tieFormatName: DOMINANT_DUO,
+            },
+            nonRandom: 1,
+            setup: [
+              { target: R1(1, structureName), outcome: { matchUpStatus: exit, winningSide: 1 }, params: CARRIED },
+            ],
+            target: R1(2, structureName),
+            lineUps,
+            entered: 'bare',
+            owned: true,
+          };
+        }),
+      ),
+    ),
+  ),
+];
+
+function prepareTeamAwardNotice(recipe: TeamAwardNoticeCase) {
+  setOutcomePipeline(OUTCOME_PIPELINE_V1);
+  setClock('2026-10-25T00:00:00.000Z');
+  setSubscriptions({ subscriptions: {} });
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ ...recipe.drawProfile, drawId: 'd' }],
+    nonRandom: recipe.nonRandom,
+    setState: true,
+  });
+  if (recipe.lineUps)
+    expect(
+      tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: 'd' }).success,
+    ).toEqual(true);
+  for (const step of recipe.setup)
+    expect(
+      tournamentEngine.setMatchUpStatus({
+        drawId: 'd',
+        matchUpId: findTarget(step.target),
+        outcome: step.outcome,
+        ...step.params,
+      }).success,
+    ).toEqual(true);
+  const first = tournamentEngine
+    .allDrawMatchUps({ drawId: 'd', inContext: true })
+    .matchUps?.find(
+      (matchUp) =>
+        !matchUp.collectionId &&
+        matchUp.roundNumber === 1 &&
+        matchUp.sides?.filter((side) => side.participantId).length === 2,
+    );
+  if (!first?.roundNumber) throw new Error('TEAM notice fixture has no populated source');
+  const target = recipe.target ?? {
+    structureName: first.structureName,
+    roundNumber: first.roundNumber,
+    roundPosition: first.roundPosition,
+  };
+  const outcome = recipe.entered === 'bare' ? { winningSide: 1 } : { matchUpStatus: recipe.entered, winningSide: 1 };
+  const params = { propagateExitStatus: recipe.entered !== WALKOVER };
+  if (recipe.occupied)
+    expect(
+      tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId: findTarget(target), outcome, ...params }).success,
+    ).toEqual(true);
+  const scenario: Scenario = {
+    drawProfile: recipe.drawProfile,
+    nonRandom: recipe.nonRandom,
+    steps: [{ target, outcome, params }],
+  };
+  return { scenario, prepared: structuredClone(tournamentEngine.getTournament().tournamentRecord) };
+}
+
+describe('C24N TEAM arrivals retain event identity at a standing awarded exit', () => {
+  it.each(TEAM_AWARD_NOTICE_CASES)('$label', (recipe) => {
+    const { scenario, prepared } = prepareTeamAwardNotice(recipe);
+    const { v1 } = compareUndirectedWinner(scenario, recipe.owned, prepared);
+    expect(v1.results[0].success).toEqual(true);
+    expect(v1.v1Writes).toBeGreaterThan(0);
+    expect(v1.notices.length).toBeGreaterThan(0);
   });
 });
 

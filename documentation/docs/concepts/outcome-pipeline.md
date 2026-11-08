@@ -1822,6 +1822,15 @@ refusal program owns the same writes, notices and terminal error. It is explicit
 v2 work, and must be owned before v1 retirement. The requireParticipantsForScoring=false policy
 remains accepted and owned. A clean early error would not preserve the captured prefix.
 
+### A TEAM arrival keeps the identity of its assignment notice (C24N)
+
+When a losing team takes an exit already awarded to its seat, the assignment announces
+the matchUp with its event. The later default-lineup write is named updateSidLineUp and
+omits the event argument, but keyed notice coalescing retains the earlier event identity.
+The standingAwardArrival certificate therefore keeps event scope on that final notice.
+Other own-seat lineup notices retain their existing quiet scope. No result, record or
+admission changes; the plan describes the notice a subscriber actually receives.
+
 ### A corrected result refreshes its recorded arrival (C23)
 
 A source relabelled beneath an active onward matchUp refreshes the arrival origin that names
