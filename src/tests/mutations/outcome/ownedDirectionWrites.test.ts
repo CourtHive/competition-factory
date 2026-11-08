@@ -8949,3 +8949,86 @@ describe('C26 an unstamped terminal home has no scored-time reconciliation', () 
     ).toEqual(true);
   });
 });
+
+const C26_REPLAY_CASES = ['SINGLES', 'DOUBLES', 'TEAM'].flatMap((eventType) =>
+  [WALKOVER, DEFAULTED, RETIRED].flatMap((carrierStatus) =>
+    [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((status) =>
+      [false, true].map(
+        (reverse) =>
+          [
+            `C26 earlier BYE ${eventType} ${carrierStatus} ${status} reverse ${reverse}`,
+            eventType,
+            carrierStatus,
+            status,
+            reverse,
+          ] as const,
+      ),
+    ),
+  ),
+);
+
+function prepareC26EarlierBye(eventType: string, carrierStatus: string, reverse: boolean) {
+  setOutcomePipeline(OUTCOME_PIPELINE_V1);
+  setClock('2026-10-25T00:00:00.000Z');
+  setSubscriptions({ subscriptions: {} });
+  const drawProfile = {
+    drawType: FEED_IN_CHAMPIONSHIP,
+    drawSize: 8,
+    participantsCount: 5,
+    eventType,
+    ...(eventType === 'TEAM' ? { tieFormatName: USTA_COLLEGE } : {}),
+  };
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ ...drawProfile, drawId: 'd' }],
+    nonRandom: 20030075,
+    setState: true,
+  });
+  if (eventType === 'TEAM')
+    expect(
+      tournamentEngine.generateLineUps({ drawId: 'd', useDefaultEventRanking: true, attach: true }).success,
+    ).toEqual(true);
+  const originId = findTarget(R1(eventType === 'SINGLES' ? 3 : 2, 'Main'));
+  expect(
+    tournamentEngine.setMatchUpStatus({
+      drawId: 'd',
+      matchUpId: originId,
+      outcome: { matchUpStatus: carrierStatus, winningSide: 2 },
+      propagateExitStatus: true,
+      propagateRetirementAsExit: true,
+    }).success,
+  ).toEqual(true);
+  const all = tournamentEngine.allDrawMatchUps({ drawId: 'd', inContext: true }).matchUps;
+  const origin = all.find((matchUp) => matchUp.matchUpId === originId)!;
+  const relay = all.find((matchUp) => matchUp.matchUpId === origin.loserMatchUpId)!;
+  const home = all.find((matchUp) => matchUp.matchUpId === relay.winnerMatchUpId)!;
+  expect(relay.matchUpStatus).toEqual(BYE);
+  expect(home.matchUpStatus).toEqual(carrierStatus === DEFAULTED ? DEFAULTED : WALKOVER);
+  expect(Object.values(relay.sideExitProvenance ?? {})).toEqual([
+    expect.objectContaining({ sourceMatchUpId: originId }),
+  ]);
+  const prepared = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+  const structure = prepared.events
+    ?.flatMap((event) => event.drawDefinitions ?? [])
+    .flatMap((draw) => draw.structures ?? [])
+    .find((entry) => entry.structureId === home.structureId);
+  expect(structure).toBeDefined();
+  if (reverse) structure!.matchUps = structure!.matchUps?.toReversed();
+  return { drawProfile, prepared };
+}
+
+describe('C26 a carry replay revisits the first stored BYE and its onward path', () => {
+  it.each(C26_REPLAY_CASES)('%s', (_label, eventType, carrierStatus, status, reverse) => {
+    const { drawProfile, prepared } = prepareC26EarlierBye(eventType, carrierStatus, reverse);
+    const scenario: Scenario = {
+      drawProfile,
+      steps: [
+        {
+          target: { structureName: 'Main', roundNumber: 2, roundPosition: eventType === 'SINGLES' ? 1 : 2 },
+          outcome: { matchUpStatus: status },
+          params: { propagateExitStatus: true },
+        },
+      ],
+    };
+    expect(compareUndirectedWinner(scenario, true, prepared).v1.results[0].success).toEqual(true);
+  });
+});
