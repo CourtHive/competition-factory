@@ -8336,3 +8336,129 @@ describe('C25 existing carries corrected past held BYEs preserve records, return
     expect(compareUndirectedWinner(scenario, true, prepared).v1.results[0].success).toEqual(true);
   });
 });
+
+// C26V: an assignment changes a dual's derived sides even when its stored matchUp is untouched.
+const ASSIGNMENT_VIEW_DRAWS = [FIRST_ROUND_LOSER_CONSOLATION, COMPASS, OLYMPIC];
+const ASSIGNMENT_VIEW_CASES = ASSIGNMENT_VIEW_DRAWS.flatMap((drawType) =>
+  ['SINGLES', 'DOUBLES', 'TEAM'].flatMap((eventType) =>
+    [false, true].flatMap((policyOff) =>
+      [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((status) =>
+        [false, true].flatMap((carry) =>
+          [0, 1].map(
+            (sourceIndex) =>
+              [
+                `C26V ${eventType} ${drawType}: ${status}, policy off ${policyOff}, carry ${carry}, source ${sourceIndex}`,
+                drawType,
+                eventType,
+                policyOff,
+                status,
+                carry,
+                sourceIndex,
+              ] as const,
+          ),
+        ),
+      ),
+    ),
+  ),
+);
+
+function assignmentViewFixture(drawType: string, eventType: string, policyOff: boolean) {
+  setOutcomePipeline(OUTCOME_PIPELINE_V1);
+  setClock('2026-10-25T00:00:00.000Z');
+  setSubscriptions({ subscriptions: {} });
+  const drawProfile = {
+    drawType,
+    eventType,
+    drawSize: 16,
+    participantsCount: 11,
+    ...(eventType === 'TEAM' ? { tieFormatName: USTA_COLLEGE } : {}),
+  };
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ ...drawProfile, drawId: 'd' }],
+    nonRandom: 1,
+    setState: true,
+  });
+  if (policyOff) tournamentEngine.attachPolicies({ policyDefinitions: POLICY_OFF });
+  if (eventType === 'TEAM')
+    expect(
+      tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: 'd' }).success,
+    ).toEqual(true);
+  const seen = new Set<string>();
+  const sources = tournamentEngine.allDrawMatchUps({ drawId: 'd', inContext: true }).matchUps.filter((matchUp) => {
+    if (
+      matchUp.collectionId ||
+      matchUp.matchUpStatus !== TO_BE_PLAYED ||
+      matchUp.sides?.filter((side) => side.participantId).length !== 2
+    )
+      return false;
+    const key = `${matchUp.structureId}:${matchUp.roundNumber}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  expect(sources.length).toEqual(2);
+  return { drawProfile, sources };
+}
+
+describe('C26V assignment changes refresh unchanged duals and every tie line', () => {
+  it.each(ASSIGNMENT_VIEW_CASES)('%s', (_label, drawType, eventType, policyOff, status, carry, sourceIndex) => {
+    const { drawProfile, sources } = assignmentViewFixture(drawType, eventType, policyOff);
+    const source = sources[sourceIndex];
+    const prepared = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+    const scenario: Scenario = {
+      drawProfile,
+      steps: [
+        {
+          target: {
+            structureName: source.structureName,
+            roundNumber: source.roundNumber,
+            roundPosition: source.roundPosition,
+          },
+          outcome: { matchUpStatus: status },
+          params: { propagateExitStatus: carry, allowChangePropagation: true },
+        },
+      ],
+    };
+    expect(compareUndirectedWinner(scenario, true, prepared).v1.results[0].success).toEqual(true);
+  });
+
+  it.each(
+    ASSIGNMENT_VIEW_DRAWS.flatMap((drawType) =>
+      [false, true].flatMap((policyOff) =>
+        [DOUBLE_WALKOVER, DOUBLE_DEFAULT].map(
+          (status) =>
+            [`C26V TEAM clear ${drawType}: ${status}, policy off ${policyOff}`, drawType, policyOff, status] as const,
+        ),
+      ),
+    ),
+  )('%s remains an explicit TEAM withdrawal obligation', (_label, drawType, policyOff, status) => {
+    const { drawProfile, sources } = assignmentViewFixture(drawType, 'TEAM', policyOff);
+    const source = sources[0];
+    expect(
+      tournamentEngine.setMatchUpStatus({
+        drawId: 'd',
+        matchUpId: source.matchUpId,
+        outcome: { matchUpStatus: status },
+        propagateExitStatus: true,
+      }).success,
+    ).toEqual(true);
+    const prepared = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+    const scenario: Scenario = {
+      drawProfile,
+      steps: [
+        {
+          target: {
+            structureName: source.structureName,
+            roundNumber: source.roundNumber,
+            roundPosition: source.roundPosition,
+          },
+          outcome: cleared,
+          params: { propagateExitStatus: true, allowChangePropagation: true },
+        },
+      ],
+    };
+    const before = getDifferentialTally()['shadow:abstain:team']?.deferred ?? 0;
+    expect(compareUndirectedWinner(scenario, false, prepared).v1.results[0].success).toEqual(true);
+    expect((getDifferentialTally()['shadow:abstain:team']?.deferred ?? 0) - before).toEqual(1);
+  });
+});
