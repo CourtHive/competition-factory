@@ -285,8 +285,6 @@ function recordReason({ drawDefinition }: { drawDefinition?: DrawDefinition }): 
 }
 
 export function planOutcome(args: PlanArgs): OutcomePlan {
-  // Tally and result notices can stamp the same entity. Without the call's ledger, ordered stamp effects remain owed.
-  if (args.view.group && !getCapturedStamps()) return { abstain: 'clock' };
   const plan = args.route === RESULT_TO_DOUBLE_EXIT ? resultToDoubleExit(args) : planOps(args);
   // a TEAM line's result numbers it in its collection's finishing order (a deciding line's dual is planned in its plan)
   if (!plan.ops || args.asDual) return plan;
@@ -575,6 +573,8 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition): Outcom
         tieMatchUps: writtenLine(line.projectedTieMatchUps, matchUpId, score),
       }
     : { matchUpId, matchUpWrite: write, score, matchUpFormat: request.matchUpFormat };
+  // Tally and result notices can stamp the same entity. Without the call's ledger, ordered stamp effects remain owed.
+  if (view.group && !getCapturedStamps()) return { abstain: 'clock' };
   const tally = view.group ? groupTally(view.group, tallied) : [];
   if (!tally) return { abstain: 'tallied' };
   // v1's tally announces the draw with no structure named (`updateAssignmentParticipantResults` → `modifyDrawNotice`),
