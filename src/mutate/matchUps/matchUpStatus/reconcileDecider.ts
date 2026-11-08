@@ -167,32 +167,39 @@ export function reconcileDeciders({
   drawDefinition,
   finalsBefore,
   event,
-}: {
-  finalsBefore: Map<string, number | undefined>;
-  deciderSnapshotBefore?: DeciderSnapshot;
+}: DeciderTriggerArgs & {
   tournamentRecord?: Tournament;
-  drawDefinition?: DrawDefinition;
-  mutatedMatchUpId?: string;
   event?: Event;
 }): ResultType {
-  if (!finalsBefore.size) return { ...SUCCESS };
-
-  const deciderChanged = deciderChangedByCascade({ deciderSnapshotBefore, drawDefinition, mutatedMatchUpId });
-
-  for (const [matchUpId, winningSide] of getDeciderFinals(drawDefinition)) {
-    if (winningSide === finalsBefore.get(matchUpId) && !deciderChanged) continue;
+  for (const work of getDeciderTriggers({ finalsBefore, deciderSnapshotBefore, drawDefinition, mutatedMatchUpId })) {
     const result = reconcileDecider({
-      winningSideBefore: finalsBefore.get(matchUpId),
+      ...work,
       tournamentRecord,
-      deciderChanged,
       drawDefinition,
-      matchUpId,
       event,
     });
     if (result.error) return result;
   }
 
   return { ...SUCCESS };
+}
+
+type DeciderTriggerArgs = {
+  finalsBefore: Map<string, number | undefined>;
+  deciderSnapshotBefore?: DeciderSnapshot;
+  drawDefinition?: DrawDefinition;
+  mutatedMatchUpId?: string;
+};
+
+/** The pass's ordered trigger selection, shared with prediction. A triggered final may still need no write. */
+export function getDeciderTriggers({ finalsBefore, ...args }: DeciderTriggerArgs) {
+  if (!finalsBefore.size) return [];
+  const deciderChanged = deciderChangedByCascade(args);
+  return [...getDeciderFinals(args.drawDefinition)].flatMap(([matchUpId, winningSide]) =>
+    winningSide === finalsBefore.get(matchUpId) && !deciderChanged
+      ? []
+      : [{ matchUpId, winningSideBefore: finalsBefore.get(matchUpId), deciderChanged }],
+  );
 }
 
 export type DeciderSnapshot = { matchUpIds: Set<string>; state: string };

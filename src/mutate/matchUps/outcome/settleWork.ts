@@ -1,4 +1,5 @@
 import { findMissedLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileMissedLinkAdvancements';
+import { getDeciderTriggers, getDeciderSnapshot } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { findReservationWork } from '@Mutate/matchUps/matchUpStatus/reconcileConsolationReservations';
 import { findMisplacedProvenance } from '@Mutate/matchUps/matchUpStatus/reconcileProvenanceSides';
 import { hasHeldExitWork } from '@Mutate/drawDefinitions/positionGovernor/doubleExitAdvancement';
@@ -8,7 +9,6 @@ import { findOwedByeAdvance } from '@Mutate/matchUps/matchUpStatus/reconcileByeA
 import { hasForwardWork } from '@Mutate/matchUps/matchUpStatus/settleForwardConsequences';
 import { findOwedCarry } from '@Mutate/matchUps/matchUpStatus/reconcileCarriesPastByes';
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
-import { getDeciderSnapshot } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
 import { isDoubleExit, isExit } from '@Validators/isExit';
@@ -119,15 +119,14 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
     reconcileMissedLinkAdvancements: () =>
       !!findMissedLinkAdvancements({ inContextDrawMatchUps: view, drawDefinition: draw }).length,
     reconcileProvenanceSides: () => !!findMisplacedProvenance({ inContextDrawMatchUps: view, matchUpsMap: map }).length,
-    // EXACT for the trigger: a final whose winner changes, or a decider the write moves
-    reconcileDeciders: () => {
-      const finalsBefore = getDeciderFinals(args.drawDefinition);
-      const finalsAfter = getDeciderFinals(draw);
-      const changed = [...finalsAfter].some(([matchUpId, winningSide]) => finalsBefore.get(matchUpId) !== winningSide);
-      return (
-        changed || JSON.stringify(getDeciderSnapshot(args.drawDefinition)) !== JSON.stringify(getDeciderSnapshot(draw))
-      );
-    },
+    // EXACT for the trigger: a changed final winner, or a decider moved by a foreign cascade.
+    reconcileDeciders: () =>
+      !!getDeciderTriggers({
+        finalsBefore: getDeciderFinals(args.drawDefinition),
+        deciderSnapshotBefore: getDeciderSnapshot(args.drawDefinition),
+        mutatedMatchUpId: args.matchUpId,
+        drawDefinition: draw,
+      }).length,
     settleForwardConsequences: () =>
       hasForwardWork({
         inContextDrawMatchUps: view,
