@@ -1,5 +1,6 @@
 import { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
 import { getDrawId, getParticipantId } from '@Functions/global/extractors';
+import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { definedAttributes } from '@Tools/definedAttributes';
@@ -11,7 +12,6 @@ import { median } from '@Tools/math';
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { STRUCTURE_SELECTED_STATUSES } from '@Constants/entryStatusConstants';
 import { Event, Tournament, EventTypeUnion } from '@Types/tournamentTypes';
-import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
@@ -73,11 +73,9 @@ function accumulateRatings(participant, eventType, target) {
     for (const rating of participant?.ratings?.[eventType] ?? []) {
       const scaleName = rating.scaleName;
       if (!target.ratings[scaleName]) target.ratings[scaleName] = [];
-      const accessor = ratingsParameters[scaleName]?.accessor;
-      if (accessor) {
-        const value = Number.parseFloat(rating.scaleValue?.[accessor]);
-        if (value) target.ratings[scaleName].push(value);
-      }
+      // a plain number (ELO 1544) or an accessor object ({ wtnRating: 12 }); a rating of 0 is a rating
+      const value = resolveScaleValueNumber(rating.scaleValue, { scaleName });
+      if (value !== undefined) target.ratings[scaleName].push(value);
     }
   }
   if (participant?.rankings?.[eventType]) {
@@ -152,11 +150,15 @@ function buildEventScaleValues({ eventCopies, scaleEventType, tournamentRecord, 
       processParticipantScales(assignedIds, participantMap, eventType, eventsMap[eventId].draws[drawId]);
     }
 
+    // A flight whose draw is not generated yet has no bucket from the loop above: it gets its own, from the flight's
+    // entries, so a planned flight reads like a generated one. Without it the ratings went to an undefined bucket.
     const flightProfile = getFlightProfile({ event }).flightProfile;
     for (const flight of flightProfile?.flights ?? []) {
       const drawId = flight.drawId;
-      if (ignoreDrawId(drawId)) continue;
-      const flightParticipantIds = flight.drawEntries.map(getParticipantId);
+      if (!drawId || ignoreDrawId(drawId)) continue;
+      eventsMap[eventId].draws[drawId] ??= { ratingsStats: {}, ratings: {}, ranking: {} };
+      processedDrawIds.push(drawId);
+      const flightParticipantIds = (flight.drawEntries ?? []).map(getParticipantId);
       processParticipantScales(flightParticipantIds, participantMap, eventType, eventsMap[eventId].draws[drawId]);
     }
 
