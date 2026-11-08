@@ -1,8 +1,8 @@
 import { clearedSingleExit, correctedSingleExit, refreshedArrivalOps, relabelledExit } from './plan/exitCorrections';
+import { getCapturedClock, getCapturedStamps, writeLegacyEnabled } from '@Global/state/globalState';
 import { producedRelayAfterOps, unwoundOps, unwoundPath, unwoundView } from './plan/unwindPath';
 import { standaloneBareWinnerOps, standaloneCarriedWinnerOps } from './plan/standaloneIndirect';
 import { retainedCarriedAwardOps, terminalOccupiedWinnerOps } from './plan/terminalAward';
-import { getCapturedClock, writeLegacyEnabled } from '@Global/state/globalState';
 import { notesReason, scheduleOps, scheduleReason } from './plan/schedulePlan';
 import { autoCalcWrite, resultOps, writtenScore } from './plan/resultOps';
 import { producedExitOps, producedReason } from './plan/producedExit';
@@ -285,6 +285,8 @@ function recordReason({ drawDefinition }: { drawDefinition?: DrawDefinition }): 
 }
 
 export function planOutcome(args: PlanArgs): OutcomePlan {
+  // Tally and result notices can stamp the same entity. Without the call's ledger, ordered stamp effects remain owed.
+  if (args.view.group && !getCapturedStamps()) return { abstain: 'clock' };
   const plan = args.route === RESULT_TO_DOUBLE_EXIT ? resultToDoubleExit(args) : planOps(args);
   // a TEAM line's result numbers it in its collection's finishing order (a deciding line's dual is planned in its plan)
   if (!plan.ops || args.asDual) return plan;
