@@ -46,8 +46,8 @@ import { isLucky } from '@Query/drawDefinition/isLucky';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 import { canonicalJson } from '@Tools/canonicalJson';
+import { overlap, unique } from '@Tools/arrays';
 import { isObject } from '@Tools/objects';
-import { overlap } from '@Tools/arrays';
 import {
   relabelledPathFeedChanges,
   relabelledPathFeedRefusal,
@@ -59,8 +59,8 @@ import {
 
 // constants and types
 import type { BuildViewArgs, OutcomeRequest, OutcomeScore, OutcomeView, Reservation, ThroughBye } from './types';
+import { FIRST_MATCHUP, CONTAINER, LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { BYE, COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { FIRST_MATCHUP, LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import type { ByePassage, ByeWalk, CarryLevel, WinnerLoserSeat } from './types';
 import type { PositionTargetsResult } from '@Query/matchUp/positionTargets';
 import type { ErrorType } from '@Constants/errorConditionConstants';
@@ -1441,91 +1441,58 @@ function firstMatchReservations({
 }
 
 /**
- * AN AD HOC STRUCTURE'S TALLY, as v1's `updateTallyIfNeeded` takes it: every matchUp of the structure, under the call's format,
- * the matchUp's, the structure's, the draw's or the event's, and assignments rebuilt as one per participant the matchUps
- * hold, in the order they appear. A dual or a line is not tallied here.
+ * The participant-results tally belonging to the score writer. A line's writer is its dual's, and a container
+ * selects the immediate child holding that actual target. Read in stored order, as getAllStructureMatchUps does;
+ * the draw-wide hydration groups by status and cannot supply assignment reconstruction order.
+ *
+ * The planner supplies the written result and projected lines. Calculation and assignment writes remain shared
+ * with v1; no extra hydration or second tally writer is introduced here.
  */
-function adHocGroup({
+function tallyGroup({
   inContextDrawMatchUps,
   inContextMatchUp,
   drawDefinition,
+  matchUpsMap,
   matchUp,
   args,
 }: {
   inContextDrawMatchUps: HydratedMatchUp[];
   inContextMatchUp?: HydratedMatchUp;
   drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
   args: BuildViewArgs;
   matchUp: MatchUp;
 }): OutcomeView['group'] {
-  const structureId = inContextMatchUp?.structureId;
-  if (!structureId || matchUp.collectionId || matchUp.tieMatchUps) return undefined;
-  const { structure } = findStructure({ drawDefinition, structureId });
-  if (!structure || !isAdHoc({ structure })) return undefined;
-  const { tournamentRecord, event, request } = args;
-  const { policyDefinitions } = getPolicyDefinitions({
-    policyTypes: [POLICY_TYPE_ROUND_ROBIN_TALLY],
-    tournamentRecord,
-    drawDefinition,
-    event,
-  });
-  // in the structure's stored order, as v1 reads them (`getAllStructureMatchUps`). One round only: across rounds (a
-  // Swiss), v1 rebuilds the assignments from round 2's pairings alone (measured, `swissIntegration`), which is not
-  // modelled here, so a multi-round structure's tally stays v1's
-  const byId = new Map(inContextDrawMatchUps.map((candidate) => [candidate.matchUpId, candidate]));
-  const matchUps = (matchUpsOf(structure) ?? [])
-    .map((stored) => byId.get(stored.matchUpId))
-    .filter((candidate): candidate is HydratedMatchUp => !!candidate);
-  if (new Set(matchUps.map((candidate) => candidate.roundNumber)).size > 1) return undefined;
-  const participantIds = [
-    ...new Set(matchUps.flatMap((candidate) => (candidate.sides ?? []).map((side) => side.participantId))),
-  ].filter((participantId): participantId is string => !!participantId);
-  return {
-    containerStructureId: structureId,
-    structureId,
-    matchUps,
-    positionAssignments: participantIds.map((participantId) => ({ participantId }) as PositionAssignment),
-    matchUpFormat:
-      request.matchUpFormat ??
-      matchUp.matchUpFormat ??
-      structure.matchUpFormat ??
-      drawDefinition.matchUpFormat ??
-      event?.matchUpFormat,
-    policyDefinitions,
-    adHoc: true,
-  };
-}
-
-/**
- * A round robin group's tally inputs, as v1's `updateTallyIfNeeded` reads them (`modifyMatchUpScore.ts`): the group's
- * matchUps (the index's entries; the planner substitutes the call's own result), its position assignments, the format
- * v1 resolves (the call's, the matchUp's own, the container's, the draw's, the event's) and the round robin tally policy
- * v1 reads with no call-level policy. A TEAM dual's group tallies its duals alone (S7), and a line's is its dual's.
- */
-function roundRobinGroup({
-  inContextDrawMatchUps,
-  inContextMatchUp,
-  drawDefinition,
-  matchUp,
-  args,
-}: {
-  inContextDrawMatchUps: HydratedMatchUp[];
-  inContextMatchUp?: HydratedMatchUp;
-  drawDefinition: DrawDefinition;
-  args: BuildViewArgs;
-  matchUp: MatchUp;
-}): OutcomeView['group'] {
-  // a TEAM dual's group, or a line's (S7): v1 tallies the group's duals alone, the line's through its dual, which carries
-  // the group (a line is hydrated in the container with none of its own, OPEN-14: hydration is not changed)
-  const team = !!(matchUp.collectionId || matchUp.tieMatchUps);
   const dualId = matchUp.collectionId ? inContextMatchUp?.matchUpTieId : undefined;
   const anchor = dualId ? inContextDrawMatchUps.find((candidate) => candidate.matchUpId === dualId) : inContextMatchUp;
-  const containerStructureId = anchor?.containerStructureId;
-  const structureId = anchor?.structureId;
-  if (!containerStructureId || !structureId) return undefined;
-  const { structure: container } = findStructure({ drawDefinition, structureId: containerStructureId });
-  const group = structuresOf(container)?.find((child) => child.structureId === structureId);
-  if (!group) return undefined;
+  const written = dualId ? matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === dualId) : matchUp;
+  const structureId = anchor?.containerStructureId ?? anchor?.structureId;
+  if (!structureId || !anchor || !written || written.collectionId) return undefined;
+  const { structure } = findStructure({ drawDefinition, structureId });
+  if (!structure) return undefined;
+  const roundRobin = structure.structureType === CONTAINER;
+  const adHoc = isAdHoc({ structure });
+  if (!roundRobin && !adHoc && !isLucky({ drawDefinition, structure })) return undefined;
+  const selected = roundRobin
+    ? (structuresOf(structure)?.find((child) =>
+        matchUpsOf(child)?.some((candidate) => candidate.matchUpId === written.matchUpId),
+      ) ?? structure)
+    : structure;
+  // v1 classifies the actual score writer by its stored type before resolving its target.
+  const team = written.matchUpType === TEAM;
+  const stored: MatchUp[] = getMappedStructureMatchUps({ matchUpsMap, structureId: selected.structureId });
+  const ordered = team ? stored : [...stored, ...stored.flatMap((candidate) => candidate.tieMatchUps ?? [])];
+  const byId = new Map(inContextDrawMatchUps.map((candidate) => [candidate.matchUpId, candidate]));
+  const matchUps = ordered.map((candidate) => byId.get(candidate.matchUpId));
+  if (matchUps.some((candidate) => !candidate)) return undefined;
+  const inputs = (matchUps as HydratedMatchUp[]).filter((candidate) => !team || candidate.matchUpType === TEAM);
+  // unique keeps the LAST occurrence, including across rounds; a Set changes v1's assignment order.
+  const positionAssignments = adHoc
+    ? unique(
+        inputs.flatMap((candidate) => (candidate.sides ?? []).map((side) => side.participantId)).filter(Boolean),
+      ).map((participantId) => ({ participantId }) as PositionAssignment)
+    : positionAssignmentsOf(selected);
+  if (!positionAssignments) return undefined;
   const { tournamentRecord, event, request } = args;
   const { policyDefinitions } = getPolicyDefinitions({
     policyTypes: [POLICY_TYPE_ROUND_ROBIN_TALLY],
@@ -1534,20 +1501,19 @@ function roundRobinGroup({
     event,
   });
   return {
-    containerStructureId,
-    structureId,
-    // the group's own matchUps: a TEAM group's are its duals, a line being hydrated in the container, not the group
-    matchUps: inContextDrawMatchUps.filter((candidate) => candidate.structureId === structureId),
-    positionAssignments: positionAssignmentsOf(group) ?? [],
-    // a dual's group is tallied under one fixed format whatever its lines' (`updateTallyIfNeeded`: `isDualMatchUp`)
+    containerStructureId: structureId,
+    structureId: selected.structureId,
+    matchUps: inputs,
+    positionAssignments,
     matchUpFormat: team
       ? DUAL_TALLY_FORMAT
       : (request.matchUpFormat ??
-        matchUp.matchUpFormat ??
-        container?.matchUpFormat ??
+        written.matchUpFormat ??
+        structure.matchUpFormat ??
         drawDefinition.matchUpFormat ??
         event?.matchUpFormat),
     policyDefinitions,
+    ...(adHoc ? { adHoc: true } : {}),
   };
 }
 
@@ -2008,9 +1974,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         targetData?.targetMatchUps?.winnerMatchUp?.matchUpId,
       ),
     },
-    group:
-      roundRobinGroup({ inContextDrawMatchUps, inContextMatchUp, drawDefinition, matchUp, args }) ??
-      adHocGroup({ inContextDrawMatchUps, inContextMatchUp, drawDefinition, matchUp, args }),
+    group: tallyGroup({ inContextDrawMatchUps, inContextMatchUp, drawDefinition, matchUpsMap, matchUp, args }),
     draw: {
       // v1's `updateTallyIfNeeded`, on the structure it reads: the container a round-robin group sits in
       tallied:

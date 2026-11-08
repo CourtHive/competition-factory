@@ -7895,7 +7895,7 @@ const UNLINKED_AD_HOC_CALLS = ['SINGLES', 'DOUBLES'].flatMap((eventType) =>
     ),
   ),
 );
-describe('C22 AD_HOC with no directions still owes its missing group frame', () => {
+describe('C22 AD_HOC with no directions uses its tally scope', () => {
   it.each(UNLINKED_AD_HOC_CALLS)('%s', (_label, eventType, roundsCount, status, side) => {
     setOutcomePipeline(OUTCOME_PIPELINE_V1);
     setClock('2026-10-25T00:00:00.000Z');
@@ -7923,8 +7923,8 @@ describe('C22 AD_HOC with no directions still owes its missing group frame', () 
       drawProfile: { drawType: AD_HOC, drawSize: 8, eventType, automated: true, roundsCount },
       steps: [{ target: { roundNumber: 1, nth: 1 }, outcome }],
     };
-    // A multi-round AD_HOC call reaches the later tally wall; it is not claimed as a new owned write.
-    expect(compareUndirectedWinner(scenario, roundsCount === 1, prepared).v1.results[0].success).toEqual(true);
+    // The shared tally scope reconstructs assignments across every stored round.
+    expect(compareUndirectedWinner(scenario, true, prepared).v1.results[0].success).toEqual(true);
   });
 });
 
