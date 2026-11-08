@@ -37,6 +37,12 @@ type Context = {
  */
 const CLEARED_EVERYWHERE = new Set(['notes', 'contacts', 'onlineResources']);
 const isOtherIdsKey = (key: string) => key.endsWith('OtherIds');
+const ADDITIONAL_ID_COLLECTIONS = new Map([
+  ['collectionDefinitions', 'collectionId'],
+  ['checkIns', 'attestationId'],
+  ['presence', 'attestationId'],
+  ['tieFormats', 'tieFormatId'],
+]);
 
 /** Tournament attributes that name or identify the real tournament, its organiser or its sanction. */
 const CLEARED_TOURNAMENT_ATTRIBUTES = [
@@ -69,7 +75,8 @@ const DROPPED_INTERNAL_EXTENSIONS = new Set([LINKED_TOURNAMENTS, MUTATION_LOCKS]
  * engine holds.
  *
  * Every id the record DEFINES (tournament, participants, persons, events, draws, structures, matchUps, venues,
- * courts) is replaced by a new one, and every reference to it, at any depth, follows: entries, positions, links,
+ * courts, tie formats, collections and presence attestations) is replaced by a new one, and every reference to
+ * it, at any depth, follows: entries, positions, links,
  * schedules and timeItems, scheduling and flight profiles, extensions, presence logs. See the mocks governor docs for
  * what is cleared and what is retained by design.
  */
@@ -124,7 +131,7 @@ export function anonymizeTournamentRecord(params?: AnonymizeTournamentRecordArgs
 function mapDefinedIds({ record, context, tournamentId, personIds }) {
   const { idMap, newId } = context;
   const add = (id: unknown, replacement?: string) => {
-    if (typeof id !== 'string' || idMap.has(id)) return idMap.get(id as string);
+    if (typeof id !== 'string' || !id || idMap.has(id)) return idMap.get(id as string);
     const mapped = replacement || newId();
     idMap.set(id, mapped);
     return mapped;
@@ -166,9 +173,33 @@ function mapDefinedIds({ record, context, tournamentId, personIds }) {
       for (const structure of drawDefinition.structures ?? []) addStructure(structure);
     }
   }
-  forEachMatchUp(record, (matchUp) => add(matchUp.matchUpId));
+  forEachMatchUp(record, (matchUp) => {
+    add(matchUp.matchUpId);
+    // Imported draws can omit a referenced matchUp. Keep the edge, with a new identity even then.
+    add(matchUp.winnerMatchUpId);
+    add(matchUp.loserMatchUpId);
+  });
+  mapAdditionalDefinedIds(record, add);
 
   return newPersonIds;
+}
+
+/** Definitions can occur at any scope, including nested tie formats and replayed presence facts. */
+function mapAdditionalDefinedIds(node: unknown, add: (id: unknown) => unknown) {
+  if (Array.isArray(node)) {
+    node.forEach((value) => mapAdditionalDefinedIds(value, add));
+    return undefined;
+  }
+  if (!node || typeof node !== 'object') return undefined;
+  for (const [key, value] of Object.entries(node)) {
+    const idKey = ADDITIONAL_ID_COLLECTIONS.get(key);
+    if (idKey && Array.isArray(value)) {
+      for (const entry of value) add(entry?.[idKey]);
+    }
+    if (key === 'tieFormat') add(value?.tieFormatId);
+    mapAdditionalDefinedIds(value, add);
+  }
+  return undefined;
 }
 
 /** Every stored matchUp: drawn (including nested structures and tieMatchUps), draw-level and tournament-level. */
