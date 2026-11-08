@@ -9,19 +9,18 @@ import mocksEngine from '@Assemblies/engines/mock';
 // constants
 import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Constants/outcomePipelineConstants';
 
-/**
- * S2's HAS-WORK PREDICATES AGAINST v1's PER-PASS WRITES, end to end (`settlePredictions.ts`, the census's tally).
- *
- * The frozen census window sched-w1 gave 949 predicted calls, every one `s2:local`: no predicted work and no pass of
- * v1's writing. That says nothing about a miss unless a miss can be seen, so this plants one. A stale `scoredTime` on
- * an unscored matchUp is leftover state v1's `reconcileScoredTimes` clears on the next call, whatever it is; a local
- * first-round score is that call. The predicate must say so, and with it silenced the tally must report the miss.
- */
-const planted = vi.hoisted(() => ({ silence: false }));
-
-vi.mock('@Mutate/matchUps/outcome/settleWork', async (importOriginal) => {
+/** The completed v2 cleanup owns the call; a faulty shadow deletion must still be detected independently. */
+const planted = vi.hoisted(() => ({ omitCleanup: false }));
+vi.mock('@Mutate/matchUps/outcome/shadow', async (importOriginal) => {
   const actual: any = await importOriginal();
-  return { ...actual, predictSettleWork: (args: any) => (planted.silence ? [] : actual.predictSettleWork(args)) };
+  return {
+    ...actual,
+    compareShadow: (args: any) =>
+      actual.compareShadow({
+        ...args,
+        ops: planted.omitCleanup ? args.ops.filter((op: any) => op.op !== 'clearMatchUpScoredTime') : args.ops,
+      }),
+  };
 });
 
 beforeEach(() => {
@@ -31,7 +30,7 @@ beforeEach(() => {
 
 afterEach(() => {
   delete process.env.SETTLE_PASSES;
-  planted.silence = false;
+  planted.omitCleanup = false;
   setOutcomePipeline();
 });
 
@@ -56,20 +55,20 @@ function scoreFirstRoundOverAStaleStamp() {
   return { observation, counts };
 }
 
-it('predicts the work v1 then does, and abstains: the stale stamp v1 clears', () => {
+it('plans and owns the final stale-time cleanup that v1 performs', () => {
   const { observation, counts } = scoreFirstRoundOverAStaleStamp();
   expect(observation.thrown).toBeUndefined();
   expect(observation.mutated).toEqual(true);
   // CONTROL: a prediction was made for the call, and v1's pass wrote what it predicted
   expect(counts['s2:predicted-call']).toEqual(1);
   expect(counts['s2:missed:reconcileScoredTimes']).toBeUndefined();
-  // S2's rule: a call that leaves a pass work is not v2's to own, so the plan abstains before the shadow
-  expect(getDifferentialTally()['shadow:abstain:settle']).toEqual({ compared: 0, deferred: 1 });
+  expect(getDifferentialTally()['shadow:abstain:settle']).toBeUndefined();
+  expect(getDifferentialTally()['shadow:applied']).toEqual({ compared: 1, deferred: 0 });
 });
 
-it('is a divergence the shadow catches when the prediction is silenced', () => {
-  planted.silence = true;
+it('catches a missing cleanup in the shadow independently of v1 and the planner', () => {
+  planted.omitCleanup = true;
   const { observation, counts } = scoreFirstRoundOverAStaleStamp();
-  expect(counts['s2:missed:reconcileScoredTimes']).toEqual(1);
+  expect(counts['s2:missed:reconcileScoredTimes']).toBeUndefined();
   expect(String(observation.thrown)).toMatch(/scoredTime = absent, v2 shadow-applied/);
 });

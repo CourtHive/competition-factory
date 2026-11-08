@@ -7,8 +7,8 @@ import { getUnearnedLinkAdvancements } from '@Query/drawDefinition/getUnearnedLi
 import { hasStaleExitOrigins } from '@Mutate/matchUps/matchUpStatus/reconcileStaleExitOrigins';
 import { findOwedByeAdvance } from '@Mutate/matchUps/matchUpStatus/reconcileByeAdvancements';
 import { hasForwardWork } from '@Mutate/matchUps/matchUpStatus/settleForwardConsequences';
+import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { findOwedCarry } from '@Mutate/matchUps/matchUpStatus/reconcileCarriesPastByes';
-import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
 import { isDoubleExit, isExit } from '@Validators/isExit';
@@ -139,8 +139,7 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
     reconcileLinkAdvancements: () =>
       !!draw.links?.length &&
       !!getUnearnedLinkAdvancements({ inContextDrawMatchUps: view, drawDefinition: draw }).length,
-    reconcileScoredTimes: () =>
-      map.drawMatchUps.some((matchUp) => !!matchUp.schedule?.scoredTime && !matchUpIsScored(matchUp)),
+    reconcileScoredTimes: () => map.drawMatchUps.some(hasStaleScoredTime),
   };
   // an exit the call propagates (`propagateExitFrom`), which no local call does: every pass is in reach, unless the plan
   // holds the propagation as ops (a carried exit's entry, S5), when each pass is asked of the draw the carry leaves; or

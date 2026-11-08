@@ -1,7 +1,7 @@
 import { getInContextMatchUp } from '@Mutate/matchUps/score/modifyMatchUpScore';
+import { applyOutcomeOps, splitScoredTimeCleanup } from './ops';
 import { findStructure } from '@Acquire/findStructure';
 import { getTopics } from '@Global/state/globalState';
-import { applyOutcomeOps } from './ops';
 import {
   deferInContextMatchUp,
   modifyMatchUpNotice,
@@ -12,6 +12,7 @@ import {
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
 import type { BuildViewArgs, PlanShape } from './types';
+import type { MatchUp } from '@Types/tournamentTypes';
 import type { ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import type { OutcomeOp } from './ops';
@@ -35,7 +36,7 @@ import type { OutcomeOp } from './ops';
 export function applyOwnedPlan({
   shape,
   args,
-  ops,
+  ops: completedOps,
 }: {
   args: BuildViewArgs;
   ops: OutcomeOp[];
@@ -43,7 +44,14 @@ export function applyOwnedPlan({
 }): ResultType {
   const { drawDefinition, tournamentRecord, event } = args;
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
-  const applied = applyOutcomeOps(drawDefinition, ops);
+  const { prefix: ops, cleanup } = splitScoredTimeCleanup(completedOps);
+  const stored = new Map(args.matchUpsMap?.drawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
+  const cleanupTargets = cleanup.flatMap(({ matchUpId }) => {
+    const matchUp = stored.get(matchUpId);
+    return matchUp ? [matchUp] : [];
+  });
+  if (cleanupTargets.length !== cleanup.length) return { error: INVALID_VALUES };
+  const applied = applyOutcomeOps(drawDefinition, completedOps);
   if (applied.error) return { error: INVALID_VALUES, info: applied.error };
 
   const tournamentId = tournamentRecord?.tournamentId;
@@ -109,7 +117,6 @@ export function applyOwnedPlan({
   // with the event (S6 tail)
   const released = releasedNotices(ops);
   const { advancedLast } = byeAndAdvance(ops);
-  const stored = new Map(args.matchUpsMap?.drawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
   const subscribed = getTopics().topics.includes(UPDATE_INCONTEXT_MATCHUP);
   // every score write announces its matchUp in context to a subscriber, as v1's `modifyMatchUpScore` does: the call's
   // own, and a carried exit's on the matchUp it lands in (S5)
@@ -166,10 +173,24 @@ export function applyOwnedPlan({
     });
   }
   announceAssignments({ ops, drawDefinition, tournamentId, event });
+  announceScoredTimeCleanup(cleanupTargets, args);
   const tieMatchUpResult = dualTallyResult(ops);
   // a winner's route returns the context `directParticipants` builds, a final's included, which carries something only
   // for an exit (S5): empty
   return shape === 'direction' ? { ...SUCCESS, context: {}, ...tieMatchUpResult } : { ...SUCCESS, ...tieMatchUpResult };
+}
+
+/** Final stored-order cleanup announces real context after ordinary writers and assignments. */
+function announceScoredTimeCleanup(matchUps: MatchUp[], { drawDefinition, tournamentRecord, event }: BuildViewArgs) {
+  for (const matchUp of matchUps)
+    modifyMatchUpNotice({
+      tournamentId: tournamentRecord?.tournamentId,
+      context: 'reconcileScoredTimes',
+      eventId: event?.eventId,
+      drawDefinition,
+      matchUp,
+      event,
+    });
 }
 
 /** Actual score writers defer an in-context callback; named settle writers do not. */

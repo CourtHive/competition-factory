@@ -346,6 +346,7 @@ export type OutcomeOp =
       matchUpId: string;
       orderOfFinish?: number;
     }
+  | { op: 'clearMatchUpScoredTime'; matchUpId: string }
   | { op: 'stampUpdatedAt'; entity: 'matchUp' | 'structure' | 'drawDefinition'; id: string };
 
 /** the op vocabulary as a literal union, which `verify:outcome-spec` holds to the spec; checked against `OutcomeOp` */
@@ -366,22 +367,38 @@ export type OutcomeOpName =
   | 'setParticipantResults'
   | 'setSideLineUp'
   | 'setMatchUpSchedule'
+  | 'clearMatchUpScoredTime'
   | 'setOrderOfFinish'
   | 'stampUpdatedAt';
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 const opNamesMatch: Same<OutcomeOpName, OutcomeOp['op']> = true;
 export const OUTCOME_OP_NAMES_MATCH = opNamesMatch;
 
+/** Cleanup is terminal; ordinary writer classification must see only the preceding program. */
+export function splitScoredTimeCleanup(ops: OutcomeOp[]) {
+  const start = ops.findIndex((op) => op.op === 'clearMatchUpScoredTime');
+  const prefix = start < 0 ? ops : ops.slice(0, start);
+  const suffix = start < 0 ? [] : ops.slice(start);
+  if (suffix.some((op) => op.op !== 'clearMatchUpScoredTime' && op.op !== 'stampUpdatedAt'))
+    throw new Error('scored-time cleanup must be terminal');
+  const cleanup = suffix.filter((op): op is OpOf<'clearMatchUpScoredTime'> => op.op === 'clearMatchUpScoredTime');
+  return { prefix, cleanup };
+}
+
 /**
  * F2 (i), CA 2026-10-19: one stamp per touched entity per call. The call's captured instant T (`nowIso()` reads it
  * inside an engine call), or the previous stamp + 1 ms when that is already T or later, so a stamp always moves on.
  */
-export function nextStamp(previous: string | undefined, now: string = nowIso()): string {
-  if (!previous || previous < now) return now;
-  return new Date(new Date(previous).getTime() + 1).toISOString();
+export function nextStamp(previous: string | Date | undefined, now: string = nowIso()): string {
+  // Match v1's epoch comparison, including Date objects, offsets and an invalid prior stamp.
+  const previousMs = typeof previous === 'string' ? new Date(previous).getTime() : previous?.getTime();
+  const currentMs = new Date(now).getTime();
+  const next =
+    previousMs !== undefined && !Number.isNaN(previousMs) && currentMs <= previousMs ? previousMs + 1 : currentMs;
+  return new Date(next).toISOString();
 }
 
-type Stamped = { updatedAt?: string };
+type Stamped = { updatedAt?: string | Date };
 
 /**
  * Once per call, as v1 (`drawNotifications.ts` `stampUpdatedAt`): an entity this engine call has already stamped keeps
@@ -583,10 +600,14 @@ function foldOrderOfFinish(op: OpOf<'setOrderOfFinish'>, { matchUps }: DrawIndex
   return {};
 }
 
-function foldSchedule(op: OpOf<'setMatchUpSchedule'>, { matchUps }: DrawIndex): Folded {
+function foldSchedule(
+  op: OpOf<'setMatchUpSchedule'> | OpOf<'clearMatchUpScoredTime'>,
+  { matchUps }: DrawIndex,
+): Folded {
   const matchUp = matchUps.get(op.matchUpId);
-  if (!matchUp) return { error: `setMatchUpSchedule: no matchUp ${op.matchUpId}` };
-  matchUp.schedule = structuredClone(op.schedule);
+  if (!matchUp) return { error: `${op.op}: no matchUp ${op.matchUpId}` };
+  if (op.op === 'setMatchUpSchedule') matchUp.schedule = structuredClone(op.schedule);
+  else if (matchUp.schedule) delete matchUp.schedule.scoredTime;
   return {};
 }
 
@@ -732,6 +753,7 @@ function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition
     case 'setSideLineUp':
       return foldSideLineUp(op, index);
     case 'setMatchUpSchedule':
+    case 'clearMatchUpScoredTime':
       return foldSchedule(op, index);
     case 'setOrderOfFinish':
       return foldOrderOfFinish(op, index);
