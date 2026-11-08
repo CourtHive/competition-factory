@@ -280,6 +280,29 @@ it('legacy lucky rounds retain assignments and clear stale subOrder through the 
   expect(v2.tallyFormats).toEqual(v1.tallyFormats);
 });
 
+it('multi-round tally excludes a scored sibling structure from its inputs', () => {
+  const fixture = prepare(singles);
+  const draw = fixture.prepared.events[0].drawDefinitions[0];
+  const sibling = structuredClone(draw.structures[0]);
+  sibling.structureId = 'scored-sibling';
+  const outcome = generateOutcomeFromScoreString({ scoreString: '1-6 1-6', winningSide: 2 }).outcome;
+  sibling.matchUps = sibling.matchUps.map((matchUp) => ({
+    ...matchUp,
+    ...outcome,
+    matchUpId: `sibling-${matchUp.matchUpId}`,
+  }));
+  draw.structures.push(sibling);
+  const v1 = play(OUTCOME_PIPELINE_V1, fixture, NATIVE);
+  const v2 = play(OUTCOME_PIPELINE_V2, fixture, NATIVE);
+  expect(v1.result.success).toEqual(true);
+  expect(v1.tallyFormats).toHaveLength(1);
+  expect(v2.result).toEqual(v1.result);
+  expect(JSON.parse(v2.record)).toEqual(JSON.parse(v1.record));
+  expect(v2.notices).toEqual(v1.notices);
+  expect(v2.writes).toEqual(0);
+  expect(v2.tallyFormats).toEqual(v1.tallyFormats);
+});
+
 it('invalid tally preserves the score and rebuilt assignment prefix through v1', () => {
   const fixture = prepare(singles);
   const structure = fixture.prepared.events[0].drawDefinitions[0].structures[0];
