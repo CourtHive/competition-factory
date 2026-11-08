@@ -762,7 +762,9 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   tournament and no event, on the side the position takes (beside another position in their order, alone the side its
   feeder's place sends it to). Planned where nobody stands there and a matchUp follows the landing (S7). Where a
   participant stands on the other side of the landing, the exit is theirs: written with them as its winner, and they go
-  on into a clean next matchUp, announced as `advanceWinner` with the event, or nowhere from the structure's final; a
+  on into a clean next matchUp, announced as `advanceWinner` with the event, or nowhere from the structure's final.
+  When an unfillable-seat BYE writes that onward matchUp later in the same call, the notice keeps the advance's event
+  and the final `setMatchUpStatusBye` context (`preserveNoticeIdentity`, C26N). A
   landing that links its loser on stays v1's (decided, nobody loses it, and v1 sends a BYE across that link too) (S7). Otherwise outside a feed round, for links with no condition, free seats with no BYE beside them (a BYE there makes a
   double BYE, below), clean matchUps, and each matchUp touched once, but where the unfillable seat's matchUp is the one the first BYE
   advanced a position into (FIRST_MATCH_LOSER_CONSOLATION): that position goes on again through the second BYE; a

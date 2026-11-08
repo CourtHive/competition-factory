@@ -183,21 +183,22 @@ const scoreWrites = (ops: OutcomeOp[]) =>
 /**
  * A matchUp given a BYE and then another BYE or an advance through one in the same call (S6 tail): v1's notice buffer
  * keeps the LAST write's context and an EARLIER write's event (`preserveNoticeIdentity`). Whether the advance came last,
- * and whether an evented BYE came before a later write that names no event (an unfillable seat's BYE, an advance).
+ * and whether a named BYE or advance came before a later write that names no event (an unfillable seat's BYE, an advance).
  */
 function byeAndAdvance(ops: OutcomeOp[]): { advancedLast: Set<string>; eventKept: Set<string> } {
   const last = new Map<string, 'bye' | 'advance'>();
-  const eventedBye = new Set<string>();
+  const evented = new Set<string>();
   const eventKept = new Set<string>();
   for (const op of ops) {
     if (op.op === 'setMatchUpBye') {
       last.set(op.matchUpId, 'bye');
-      // a second BYE naming no event (the seat a produced exit leaves unfillable) keeps an earlier BYE's event
-      if (op.announcesEvent === false && eventedBye.has(op.matchUpId)) eventKept.add(op.matchUpId);
-      if (op.announcesEvent !== false) eventedBye.add(op.matchUpId);
+      // a quiet BYE (the seat a produced exit leaves unfillable) keeps an earlier BYE or advance's event
+      if (op.announcesEvent === false && evented.has(op.matchUpId)) eventKept.add(op.matchUpId);
+      if (op.announcesEvent !== false) evented.add(op.matchUpId);
     } else if (op.op === 'setMatchUpDrawPositions' && op.advancesThroughBye) {
       last.set(op.matchUpId, 'advance');
-      if (!op.announcesEvent && eventedBye.has(op.matchUpId)) eventKept.add(op.matchUpId);
+      if (!op.announcesEvent && evented.has(op.matchUpId)) eventKept.add(op.matchUpId);
+      if (op.announcesEvent) evented.add(op.matchUpId);
     }
   }
   const advancedLast = new Set([...last].flatMap(([matchUpId, kind]) => (kind === 'advance' ? [matchUpId] : [])));
@@ -299,7 +300,7 @@ function noticeRules(ops: OutcomeOp[]) {
   // emptied, or wrote back to be played, S7): v1's `assignMatchUpDrawPosition` announces it last
   for (const matchUpId of placedAfter(ops, untournamented)) arrived.add(matchUpId);
   for (const matchUpId of arrived) unevented.delete(matchUpId);
-  // an advance through a BYE names no event, but an evented BYE written before it keeps its event (`byeAndAdvance`)
+  // a quiet BYE or advance keeps an earlier named BYE or advance's event (`byeAndAdvance`)
   for (const matchUpId of byeAndAdvance(ops).eventKept) unevented.delete(matchUpId);
   // a team's line-up written with no event, unless a result written after it announces the matchUp (`namedWriters`)
   for (const matchUpId of namedWriters(ops).lineUpUnevented) unevented.add(matchUpId);
