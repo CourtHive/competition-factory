@@ -8462,3 +8462,179 @@ describe('C26V assignment changes refresh unchanged duals and every tie line', (
     expect((getDifferentialTally()['shadow:abstain:team']?.deferred ?? 0) - before).toEqual(1);
   });
 });
+
+// C26N: a named advance keeps its event when a later unfillable-seat BYE writes the same matchUp quietly.
+const NAMED_BYE_ADVANCE_CASES = ['SINGLES', 'DOUBLES', 'TEAM'].flatMap((eventType) =>
+  [false, true].flatMap((policyOff) =>
+    ([1, 2] as const).flatMap((carrierWinningSide) =>
+      [WALKOVER, DEFAULTED, RETIRED].flatMap((carrierStatus) =>
+        [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((status) =>
+          [false, true].map(
+            (carry) =>
+              [
+                `C26N ${eventType} 8/5: ${carrierStatus} side ${carrierWinningSide}, ${status}, policy off ${policyOff}, carry ${carry}`,
+                eventType,
+                policyOff,
+                carrierWinningSide,
+                carrierStatus,
+                status,
+                carry,
+              ] as const,
+          ),
+        ),
+      ),
+    ),
+  ),
+);
+
+function prepareNamedByeAdvance(
+  eventType: string,
+  participantsCount: number,
+  policyOff: boolean,
+  carrierStatus: string,
+  carrierWinningSide: 1 | 2,
+) {
+  setOutcomePipeline(OUTCOME_PIPELINE_V1);
+  setClock('2026-10-25T00:00:00.000Z');
+  setSubscriptions({ subscriptions: {} });
+  const drawProfile = {
+    drawType: FEED_IN_CHAMPIONSHIP,
+    drawSize: 8,
+    participantsCount,
+    eventType,
+    ...(eventType === 'TEAM' ? { tieFormatName: USTA_COLLEGE } : {}),
+  };
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ ...drawProfile, drawId: 'd' }],
+    nonRandom: 1,
+    setState: true,
+  });
+  if (policyOff) tournamentEngine.attachPolicies({ policyDefinitions: POLICY_OFF });
+  if (eventType === 'TEAM')
+    expect(
+      tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: 'd' }).success,
+    ).toEqual(true);
+  const ready = () =>
+    tournamentEngine
+      .allDrawMatchUps({ drawId: 'd', inContext: true })
+      .matchUps.filter(
+        (matchUp) =>
+          !matchUp.collectionId &&
+          matchUp.matchUpStatus === TO_BE_PLAYED &&
+          matchUp.sides?.filter((side) => side.participantId).length === 2,
+      );
+  const paired = () =>
+    ready().find(
+      (matchUp) =>
+        matchUp.winnerMatchUpId &&
+        ready().some(
+          (other) =>
+            other.matchUpId !== matchUp.matchUpId &&
+            other.structureId === matchUp.structureId &&
+            other.winnerMatchUpId === matchUp.winnerMatchUpId,
+        ),
+    );
+  if (!paired()) {
+    const first = ready()[0];
+    for (const matchUp of ready().filter(
+      (entry) => entry.structureId === first.structureId && entry.roundNumber === first.roundNumber,
+    ))
+      expect(
+        tournamentEngine.setMatchUpStatus({
+          drawId: 'd',
+          matchUpId: matchUp.matchUpId,
+          outcome: eventType === 'TEAM' ? { winningSide: 1 } : won(1),
+          propagateExitStatus: false,
+        }).success,
+      ).toEqual(true);
+  }
+  const sibling = paired();
+  expect(sibling).toBeDefined();
+  const sources = ready().filter(
+    (matchUp) =>
+      matchUp.matchUpId !== sibling?.matchUpId &&
+      matchUp.structureId === sibling?.structureId &&
+      matchUp.winnerMatchUpId === sibling?.winnerMatchUpId,
+  );
+  expect(sources.length).toEqual(1);
+  expect(
+    tournamentEngine.setMatchUpStatus({
+      drawId: 'd',
+      matchUpId: sibling?.matchUpId,
+      outcome: { matchUpStatus: carrierStatus, winningSide: carrierWinningSide },
+      propagateExitStatus: true,
+      propagateRetirementAsExit: true,
+    }).success,
+  ).toEqual(true);
+  const source = sources[0];
+  return {
+    drawProfile,
+    prepared: structuredClone(tournamentEngine.getTournament().tournamentRecord),
+    target: {
+      structureName: source.structureName,
+      roundNumber: source.roundNumber,
+      roundPosition: source.roundPosition,
+    },
+  };
+}
+
+describe('C26N a named BYE advance retains event identity through a later quiet BYE', () => {
+  it.each(NAMED_BYE_ADVANCE_CASES)(
+    '%s',
+    (_label, eventType, policyOff, carrierWinningSide, carrierStatus, status, carry) => {
+      const { drawProfile, prepared, target } = prepareNamedByeAdvance(
+        eventType,
+        5,
+        policyOff,
+        carrierStatus,
+        carrierWinningSide,
+      );
+      const scenario: Scenario = {
+        drawProfile,
+        steps: [
+          {
+            target,
+            outcome: { matchUpStatus: status },
+            params: { propagateExitStatus: carry, allowChangePropagation: true },
+          },
+        ],
+      };
+      // DOUBLES 8/5 has a different occupied loser seat; its carried program is still owed.
+      const owned = eventType !== 'DOUBLES';
+      const before = getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0;
+      expect(compareUndirectedWinner(scenario, owned, prepared).v1.results[0].success).toEqual(true);
+      expect((getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0) - before).toEqual(Number(!owned));
+    },
+  );
+
+  it.each(
+    ['SINGLES', 'DOUBLES', 'TEAM'].flatMap((eventType) =>
+      [false, true].flatMap((policyOff) =>
+        ([1, 2] as const).map(
+          (side) =>
+            [
+              `C26N carried-seat control ${eventType}, policy off ${policyOff}, side ${side}`,
+              eventType,
+              policyOff,
+              side,
+            ] as const,
+        ),
+      ),
+    ),
+  )('%s remains an explicit exit obligation', (_label, eventType, policyOff, side) => {
+    const { drawProfile, prepared, target } = prepareNamedByeAdvance(eventType, 8, policyOff, WALKOVER, side);
+    const scenario: Scenario = {
+      drawProfile,
+      steps: [
+        {
+          target,
+          outcome: { matchUpStatus: DOUBLE_WALKOVER },
+          params: { propagateExitStatus: false, allowChangePropagation: true },
+        },
+      ],
+    };
+    const before = getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0;
+    expect(compareUndirectedWinner(scenario, false, prepared).v1.results[0].success).toEqual(true);
+    expect((getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0) - before).toEqual(1);
+  });
+});
