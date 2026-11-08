@@ -1,6 +1,7 @@
 import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { POLICY_SCORING_DEFAULT } from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
 import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { replayFailure } from '@Tests/testHarness/exitPropagation/sweep';
@@ -17,6 +18,7 @@ import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { DOMINANT_DUO, USTA_COLLEGE } from '@Constants/tieFormatConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import type { Tournament } from '@Types/tournamentTypes';
+import { LINEUPS } from '@Constants/extensionConstants';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
@@ -8621,7 +8623,7 @@ describe('C26N a named BYE advance retains event identity through a later quiet 
         ),
       ),
     ),
-  )('%s remains an explicit exit obligation', (_label, eventType, policyOff, side) => {
+  )('%s keeps its exact notice contract', (_label, eventType, policyOff, side) => {
     const { drawProfile, prepared, target } = prepareNamedByeAdvance(eventType, 8, policyOff, WALKOVER, side);
     const scenario: Scenario = {
       drawProfile,
@@ -8634,7 +8636,316 @@ describe('C26N a named BYE advance retains event identity through a later quiet 
       ],
     };
     const before = getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0;
-    expect(compareUndirectedWinner(scenario, false, prepared).v1.results[0].success).toEqual(true);
-    expect((getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0) - before).toEqual(1);
+    expect(compareUndirectedWinner(scenario, !policyOff, prepared).v1.results[0].success).toEqual(true);
+    expect((getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0) - before).toEqual(Number(policyOff));
+  });
+});
+
+// C26: a double exit's loser BYE reaches a standing carry before its carrier has an opponent.
+const C26_SEAT_PROFILES = [
+  [FEED_IN_CHAMPIONSHIP, 4, true],
+  [FEED_IN_CHAMPIONSHIP, 16, true],
+  [FIRST_ROUND_LOSER_CONSOLATION, 4, true],
+  [FIRST_ROUND_LOSER_CONSOLATION, 16, true],
+  [COMPASS, 4, true],
+  [COMPASS, 16, false],
+  [OLYMPIC, 4, true],
+  [OLYMPIC, 16, false],
+  [DOUBLE_ELIMINATION, 4, false],
+  [DOUBLE_ELIMINATION, 16, true],
+  [CURTIS_CONSOLATION, 4, true],
+  [CURTIS_CONSOLATION, 16, true],
+  [MODIFIED_FEED_IN_CHAMPIONSHIP, 4, true],
+  [MODIFIED_FEED_IN_CHAMPIONSHIP, 16, true],
+  [FEED_IN_CHAMPIONSHIP_TO_SF, 4, true],
+  [FEED_IN_CHAMPIONSHIP_TO_SF, 16, true],
+  [FIRST_MATCH_LOSER_CONSOLATION, 4, true],
+  [FIRST_MATCH_LOSER_CONSOLATION, 16, false],
+] as const;
+
+type C26SeatRecipe = {
+  drawType: string;
+  eventType: string;
+  size: number;
+  carrierStatus: string;
+  carrierSide: 1 | 2;
+  sourceIndex: 0 | 1;
+  status: string;
+  policyOff: boolean;
+  carry: boolean;
+  owned: boolean;
+};
+
+function c26SeatRecipes([drawType, size, direct]: (typeof C26_SEAT_PROFILES)[number]) {
+  return ['SINGLES', 'DOUBLES', 'TEAM'].flatMap((eventType) =>
+    [WALKOVER, DEFAULTED, RETIRED].flatMap((carrierStatus, flavor) =>
+      [DOUBLE_WALKOVER, DOUBLE_DEFAULT].map((status, entered): C26SeatRecipe => ({
+        drawType,
+        eventType,
+        size,
+        carrierStatus,
+        carrierSide: entered ? 2 : 1,
+        sourceIndex: flavor % 2 ? 1 : 0,
+        status,
+        policyOff: false,
+        carry: !!entered,
+        owned: direct,
+      })),
+    ),
+  );
+}
+
+const C26_SEAT_CASES = C26_SEAT_PROFILES.flatMap(c26SeatRecipes).flatMap((recipe) => {
+  const label = `${recipe.eventType} ${recipe.drawType} ${recipe.size}: ${recipe.carrierStatus} side ${recipe.carrierSide}, source ${recipe.sourceIndex}, ${recipe.status}`;
+  return [
+    [`C26 BYE beside carried award ${label}`, recipe] as const,
+    ...(recipe.size === 16 && recipe.carrierStatus === WALKOVER
+      ? [[`C26 produced convergence control ${label}`, { ...recipe, policyOff: true, owned: false }] as const]
+      : []),
+  ];
+});
+
+function prepareC26Seat(recipe: C26SeatRecipe) {
+  setOutcomePipeline(OUTCOME_PIPELINE_V1);
+  setClock('2026-10-25T00:00:00.000Z');
+  setSubscriptions({ subscriptions: {} });
+  const { drawType, eventType, size, policyOff, sourceIndex, carrierStatus, carrierSide } = recipe;
+  const drawProfile = {
+    drawType,
+    eventType,
+    drawSize: size,
+    participantsCount: size,
+    ...(eventType === 'TEAM' ? { tieFormatName: USTA_COLLEGE } : {}),
+  };
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ ...drawProfile, drawId: 'd' }],
+    nonRandom: 1,
+    setState: true,
+  });
+  if (policyOff) tournamentEngine.attachPolicies({ policyDefinitions: POLICY_OFF });
+  if (eventType === 'TEAM')
+    expect(
+      tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: 'd' }).success,
+    ).toEqual(true);
+  const all = () =>
+    tournamentEngine.allDrawMatchUps({ drawId: 'd', inContext: true }).matchUps.filter((m) => !m.collectionId);
+  const ready = all().filter(
+    (m) => m.matchUpStatus === TO_BE_PLAYED && m.sides?.filter((s) => s.participantId).length === 2,
+  );
+  const first = ready[0];
+  const pair = ready.filter((m) => m.structureId === first.structureId && m.winnerMatchUpId === first.winnerMatchUpId);
+  expect(pair.length).toEqual(2);
+  const source = pair[sourceIndex];
+  const origin = pair[1 - sourceIndex];
+  expect(
+    tournamentEngine.setMatchUpStatus({
+      drawId: 'd',
+      matchUpId: origin.matchUpId,
+      outcome: { matchUpStatus: carrierStatus, winningSide: carrierSide },
+      propagateExitStatus: true,
+      propagateRetirementAsExit: true,
+    }).success,
+  ).toEqual(true);
+  const home = all().find((m) => m.matchUpId === source.loserMatchUpId);
+  expect(home?.matchUpStatus).toEqual(carrierStatus === DEFAULTED ? DEFAULTED : WALKOVER);
+  expect(Object.keys(home?.sideExitProvenance ?? {}).length).toEqual(1);
+  return {
+    drawProfile,
+    source,
+    origin,
+    home,
+    prepared: structuredClone(tournamentEngine.getTournament().tournamentRecord),
+    target: {
+      structureName: source.structureName,
+      roundNumber: source.roundNumber,
+      roundPosition: source.roundPosition,
+    },
+  };
+}
+
+function c26SeatScenario(recipe: C26SeatRecipe, prepared: ReturnType<typeof prepareC26Seat>): Scenario {
+  return {
+    drawProfile: prepared.drawProfile,
+    steps: [
+      {
+        target: prepared.target,
+        outcome: { matchUpStatus: recipe.status },
+        params: { propagateExitStatus: recipe.carry, allowChangePropagation: true },
+      },
+    ],
+  };
+}
+
+describe('C26 a loser BYE passes a standing carry onward or ends at its final', () => {
+  it.each(C26_SEAT_CASES)('%s', (_label, recipe) => {
+    const prepared = prepareC26Seat(recipe);
+    const before = getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0;
+    expect(
+      compareUndirectedWinner(c26SeatScenario(recipe, prepared), recipe.owned, prepared.prepared).v1.results[0].success,
+    ).toEqual(true);
+    expect((getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0) - before).toEqual(Number(!recipe.owned));
+  });
+});
+
+const C26_LANDING_STAGES = [
+  'opponent-arrived',
+  'edited-lineup',
+  'renumbered-lineup',
+  'retained-completed',
+  'unstamped-home',
+] as const;
+const C26_LANDING_CASES = [FEED_IN_CHAMPIONSHIP, FIRST_ROUND_LOSER_CONSOLATION, DOUBLE_ELIMINATION].flatMap(
+  (drawType) =>
+    [WALKOVER, DEFAULTED, RETIRED].flatMap((carrierStatus, flavor) =>
+      C26_LANDING_STAGES.flatMap((stage) =>
+        ([1, 2] as const).map(
+          (carrierSide) =>
+            [
+              `C26 TEAM ${drawType} ${stage}: ${carrierStatus} side ${carrierSide}`,
+              {
+                drawType,
+                eventType: 'TEAM',
+                size: 8,
+                carrierStatus,
+                carrierSide,
+                sourceIndex: flavor % 2 ? 1 : 0,
+                status: carrierSide === 1 ? DOUBLE_WALKOVER : DOUBLE_DEFAULT,
+                policyOff: false,
+                carry: carrierSide === 2,
+                owned: true,
+              } as C26SeatRecipe,
+              stage,
+            ] as const,
+        ),
+      ),
+    ),
+);
+
+function c26Stored(record: Tournament, matchUpId?: string) {
+  return record.events
+    ?.flatMap((event) => event.drawDefinitions ?? [])
+    .flatMap((draw) => draw.structures ?? [])
+    .flatMap((structure) => structure.matchUps ?? [])
+    .find((matchUp) => matchUp.matchUpId === matchUpId);
+}
+
+function prepareC26Landing(recipe: C26SeatRecipe, stage: (typeof C26_LANDING_STAGES)[number]) {
+  const prepared = prepareC26Seat(recipe);
+  if (stage === 'retained-completed')
+    expect(
+      tournamentEngine.setMatchUpStatus({
+        drawId: 'd',
+        matchUpId: prepared.origin.matchUpId,
+        outcome: { matchUpStatus: COMPLETED, winningSide: recipe.carrierSide },
+        propagateExitStatus: false,
+      }).success,
+    ).toEqual(true);
+  const all = () =>
+    tournamentEngine.allDrawMatchUps({ drawId: 'd', inContext: true }).matchUps.filter((m) => !m.collectionId);
+  const ready = () =>
+    all().filter(
+      (m) =>
+        m.matchUpId !== prepared.source.matchUpId &&
+        m.matchUpStatus === TO_BE_PLAYED &&
+        m.sides?.filter((side) => side.participantId).length === 2,
+    );
+  for (let pass = 0; pass < 32; pass += 1) {
+    const next = ready()[0];
+    if (!next) break;
+    expect(
+      tournamentEngine.setMatchUpStatus({
+        drawId: 'd',
+        matchUpId: next.matchUpId,
+        outcome: { winningSide: 1 },
+        propagateExitStatus: false,
+      }).success,
+    ).toEqual(true);
+  }
+  expect(ready().length).toEqual(0);
+  const record = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+  const home = c26Stored(record, prepared.home?.matchUpId);
+  const landing = all().find((m) => m.matchUpId === prepared.home?.winnerMatchUpId);
+  const opponents = landing?.sides?.filter((side) => side.participantId) ?? [];
+  expect(opponents.length).toEqual(1);
+  if (stage === 'unstamped-home') {
+    expect(home?.schedule?.scoredTime).toBeDefined();
+    delete home!.schedule!.scoredTime;
+  }
+  if (stage === 'edited-lineup' || stage === 'renumbered-lineup') {
+    const draw = record.events?.flatMap((event) => event.drawDefinitions ?? []).find((entry) => entry.drawId === 'd');
+    const lineUps: any = firstClassOrExtension({ element: draw, attribute: 'lineUps', name: LINEUPS });
+    const stored = c26Stored(record, landing?.matchUpId)!;
+    stored.sides ??= [];
+    for (const opponent of opponents) {
+      const lineUp = structuredClone(lineUps[opponent.participantId]);
+      expect(lineUp.length).toBeGreaterThan(1);
+      [lineUp[0].collectionAssignments, lineUp[1].collectionAssignments] = [
+        lineUp[1].collectionAssignments,
+        lineUp[0].collectionAssignments,
+      ];
+      let side: any = stored.sides.find((candidate: any) => candidate.drawPosition === opponent.drawPosition);
+      if (!side) {
+        side = stored.sides.find(
+          (candidate: any) => !candidate.drawPosition && candidate.sideNumber === opponent.sideNumber,
+        );
+        if (!side) {
+          side = {};
+          stored.sides.push(side);
+        }
+      }
+      Object.assign(side, {
+        drawPosition: opponent.drawPosition,
+        sideNumber: opponent.sideNumber,
+        displaySideNumber: opponent.displaySideNumber,
+        lineUp,
+      });
+    }
+    if (stage === 'renumbered-lineup')
+      for (const side of stored.sides)
+        if (side.sideNumber === 1 || side.sideNumber === 2) side.sideNumber = 3 - side.sideNumber;
+  }
+  return { ...prepared, prepared: record };
+}
+
+describe('C26 TEAM landing keeps lineups and follows the actual carry origin', () => {
+  it.each(C26_LANDING_CASES)('%s', (_label, recipe, stage) => {
+    const prepared = prepareC26Landing(recipe, stage);
+    expect(
+      compareUndirectedWinner(c26SeatScenario(recipe, prepared), true, prepared.prepared).v1.results[0].success,
+    ).toEqual(true);
+  });
+});
+
+const C26_UNSTAMPED_FINALS = C26_SEAT_PROFILES.filter(([, size, owned]) => size === 4 && owned).flatMap(([drawType]) =>
+  ['SINGLES', 'DOUBLES', 'TEAM'].map(
+    (eventType) =>
+      [
+        `C26 unstamped final ${eventType} ${drawType}`,
+        {
+          drawType,
+          eventType,
+          size: 4,
+          carrierStatus: RETIRED,
+          carrierSide: 2,
+          sourceIndex: 1,
+          status: DOUBLE_DEFAULT,
+          policyOff: false,
+          carry: false,
+          owned: true,
+        } as C26SeatRecipe,
+      ] as const,
+  ),
+);
+
+describe('C26 an unstamped terminal home has no scored-time reconciliation', () => {
+  it.each(C26_UNSTAMPED_FINALS)('%s', (_label, recipe) => {
+    const prepared = prepareC26Seat(recipe);
+    expect(prepared.home?.winnerMatchUpId).toBeUndefined();
+    const home = c26Stored(prepared.prepared, prepared.home?.matchUpId);
+    expect(home?.schedule?.scoredTime).toBeDefined();
+    delete home!.schedule!.scoredTime;
+    expect(
+      compareUndirectedWinner(c26SeatScenario(recipe, prepared), true, prepared.prepared).v1.results[0].success,
+    ).toEqual(true);
   });
 });
