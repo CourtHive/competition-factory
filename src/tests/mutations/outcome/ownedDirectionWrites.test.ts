@@ -8144,3 +8144,195 @@ describe('C24 a played result carries its relabel past the loser BYE already hel
       ).toEqual(true);
   });
 });
+
+// C25: the recorded carry, including one retained through a source completion, is corrected past its BYEs.
+type HeldCarryCorrection = {
+  name: string;
+  previous: typeof WALKOVER | typeof DEFAULTED | typeof RETIRED;
+  entered: typeof WALKOVER | typeof DEFAULTED | typeof RETIRED | typeof COMPLETED | 'bare';
+  history?: 'retired' | 'completed';
+  retirement?: boolean;
+  sourceOnly?: boolean;
+  initialCarry?: false;
+  carry?: false;
+};
+const HELD_CARRY_CORRECTIONS: HeldCarryCorrection[] = [
+  { name: 'walkover becomes default', previous: WALKOVER, entered: DEFAULTED },
+  { name: 'default becomes walkover', previous: DEFAULTED, entered: WALKOVER },
+  { name: 'same carry stands', previous: WALKOVER, entered: WALKOVER, sourceOnly: true },
+  { name: 'retirement carry stands', previous: RETIRED, entered: WALKOVER, sourceOnly: true },
+  { name: 'retirement keeps default', previous: DEFAULTED, entered: RETIRED, retirement: true, sourceOnly: true },
+  { name: 'retirement withdraws carry', previous: WALKOVER, entered: RETIRED },
+  { name: 'score withdraws default', previous: DEFAULTED, entered: COMPLETED },
+  { name: 'bare winner withdraws carry', previous: WALKOVER, entered: 'bare' },
+  { name: 'retired source relabels retained default', previous: DEFAULTED, history: 'retired', entered: WALKOVER },
+  { name: 'retired source withdraws retained default', previous: DEFAULTED, history: 'retired', entered: COMPLETED },
+  { name: 'completed source withdraws retained carry', previous: WALKOVER, history: 'completed', entered: COMPLETED },
+  {
+    name: 'completed source bare winner withdraws default',
+    previous: DEFAULTED,
+    history: 'completed',
+    entered: 'bare',
+  },
+];
+type HeldCarryProfile = { drawType: string; drawSize: number; participantsCount: number; eventType: string };
+const HELD_CARRY_PROFILES: HeldCarryProfile[] = [
+  ...HELD_BYE_RELABEL_PROFILES,
+  { drawType: COMPASS, drawSize: 16, participantsCount: 15 },
+].flatMap((profile) => ['SINGLES', 'DOUBLES'].map((eventType) => ({ ...profile, eventType })));
+const HELD_CARRY_CASES = [
+  ...HELD_CARRY_PROFILES,
+  { drawType: FEED_IN_CHAMPIONSHIP, drawSize: 8, participantsCount: 7, eventType: 'TEAM' },
+].flatMap((profile) =>
+  [false, true].flatMap((policyOff) =>
+    HELD_CARRY_CORRECTIONS.filter(
+      (correction) => profile.drawType !== FIRST_MATCH_LOSER_CONSOLATION || correction.previous !== WALKOVER,
+    ).map(
+      (correction) =>
+        [
+          `C25 ${profile.eventType} ${profile.drawType} ${profile.participantsCount}/${profile.drawSize}, policy off ${policyOff}: ${correction.name}`,
+          profile,
+          correction,
+          policyOff,
+        ] as const,
+    ),
+  ),
+);
+
+function prepareHeldCarryCorrection(profile: HeldCarryProfile, correction: HeldCarryCorrection, policyOff: boolean) {
+  setOutcomePipeline(OUTCOME_PIPELINE_V1);
+  setClock('2026-10-25T00:00:00.000Z');
+  setSubscriptions({ subscriptions: {} });
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [
+      { ...profile, drawId: 'd', ...(profile.eventType === 'TEAM' ? { tieFormatName: USTA_COLLEGE } : {}) },
+    ],
+    nonRandom: 1,
+    setState: true,
+  });
+  if (policyOff) tournamentEngine.attachPolicies({ policyDefinitions: POLICY_OFF });
+  if (profile.eventType === 'TEAM')
+    expect(
+      tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: 'd' }).success,
+    ).toEqual(true);
+  const matches = () =>
+    (tournamentEngine.allDrawMatchUps({ drawId: 'd', inContext: true }).matchUps ?? []).filter(
+      (matchUp) => !matchUp.collectionId && (profile.eventType !== 'TEAM' || matchUp.matchUpType === 'TEAM'),
+    );
+  const source = matches().find(
+    (matchUp) => matchUp.roundNumber === 1 && matchUp.sides?.filter((side) => side.participantId).length === 2,
+  );
+  expect(source).toBeDefined();
+  const played = profile.eventType === 'TEAM' ? { winningSide: 1 } : won(1);
+  for (const matchUp of matches().filter(
+    (candidate) =>
+      candidate.structureId === source?.structureId &&
+      candidate.roundNumber === 1 &&
+      candidate.matchUpStatus === TO_BE_PLAYED &&
+      candidate.sides?.filter((side) => side.participantId).length === 2,
+  ))
+    expect(
+      tournamentEngine.setMatchUpStatus({
+        drawId: 'd',
+        matchUpId: matchUp.matchUpId,
+        outcome: played,
+        propagateExitStatus: false,
+      }).success,
+    ).toEqual(true);
+  expect(
+    tournamentEngine.setMatchUpStatus({
+      drawId: 'd',
+      matchUpId: source?.winnerMatchUpId,
+      outcome: played,
+      propagateExitStatus: false,
+    }).success,
+  ).toEqual(true);
+  expect(
+    tournamentEngine.setMatchUpStatus({
+      drawId: 'd',
+      matchUpId: source?.matchUpId,
+      outcome: { matchUpStatus: correction.previous, winningSide: 1 },
+      propagateExitStatus: correction.initialCarry !== false,
+      propagateRetirementAsExit: correction.initialCarry !== false,
+      allowChangePropagation: true,
+    }).success,
+  ).toEqual(true);
+  if (correction.history)
+    expect(
+      tournamentEngine.setMatchUpStatus({
+        drawId: 'd',
+        matchUpId: source?.matchUpId,
+        outcome: correction.history === 'retired' ? { matchUpStatus: RETIRED, winningSide: 1 } : played,
+        propagateExitStatus: correction.history === 'retired',
+        propagateRetirementAsExit: correction.history === 'retired',
+        allowChangePropagation: true,
+      }).success,
+    ).toEqual(true);
+  const prepared = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+  const entered =
+    correction.entered === 'bare' ? { winningSide: 1 } : { matchUpStatus: correction.entered, winningSide: 1 };
+  const outcome = correction.entered === COMPLETED ? played : entered;
+  const scenario: Scenario = {
+    drawProfile: profile,
+    steps: [
+      {
+        target: { structureName: source?.structureName, roundNumber: 1, roundPosition: source?.roundPosition },
+        outcome,
+        params: {
+          propagateExitStatus: correction.carry !== false,
+          propagateRetirementAsExit: !!correction.retirement,
+          allowChangePropagation: true,
+        },
+      },
+    ],
+  };
+  return { prepared, scenario };
+}
+
+describe('C25 existing carries corrected past held BYEs preserve records, returns and ordered notices', () => {
+  it.each(HELD_CARRY_CASES)('%s', (_label, profile, correction, policyOff) => {
+    const { prepared, scenario } = prepareHeldCarryCorrection(profile, correction, policyOff);
+    if (profile.drawType === FIRST_MATCH_LOSER_CONSOLATION && correction.entered === WALKOVER) {
+      const v1 = play(OUTCOME_PIPELINE_V1, scenario, { prepared });
+      expect(v1.results[0].error?.code).toEqual('ERR_CANNOT_CHANGE_FEED_ELIGIBILITY');
+      for (const mode of [OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V2] as const) {
+        const actual = play(mode, scenario, { prepared });
+        expect(actual.results).toEqual(v1.results);
+        expect(actual.record).toEqual(v1.record);
+        expect(actual.notices).toEqual(v1.notices);
+      }
+    } else {
+      // Captured controls: COMPASS 16/15 carries across another loser link; DOUBLES 16/11 also withdraws a downstream BYE.
+      const deeper =
+        profile.drawType === COMPASS &&
+        profile.drawSize === 16 &&
+        (profile.participantsCount === 15 || profile.eventType === 'DOUBLES');
+      const owned = profile.eventType !== 'TEAM' && (!deeper || !!correction.sourceOnly);
+      expect(compareUndirectedWinner(scenario, owned, prepared).v1.results[0].success).toEqual(true);
+    }
+  });
+
+  it.each(['SINGLES', 'DOUBLES'])('C25 %s: enabling a fresh carry after an exit remains owed', (eventType) => {
+    const profile = { drawType: FEED_IN_CHAMPIONSHIP, drawSize: 8, participantsCount: 7, eventType };
+    const correction: HeldCarryCorrection = {
+      name: 'enable fresh carry',
+      previous: WALKOVER,
+      entered: DEFAULTED,
+      initialCarry: false,
+    };
+    const { prepared, scenario } = prepareHeldCarryCorrection(profile, correction, false);
+    expect(compareUndirectedWinner(scenario, false, prepared).v1.results[0].success).toEqual(true);
+  });
+
+  it.each(['SINGLES', 'DOUBLES'])('C25 %s: disabling propagation keeps the carried record', (eventType) => {
+    const profile = { drawType: FEED_IN_CHAMPIONSHIP, drawSize: 8, participantsCount: 7, eventType };
+    const correction: HeldCarryCorrection = {
+      name: 'keep carry',
+      previous: DEFAULTED,
+      entered: COMPLETED,
+      carry: false,
+    };
+    const { prepared, scenario } = prepareHeldCarryCorrection(profile, correction, true);
+    expect(compareUndirectedWinner(scenario, true, prepared).v1.results[0].success).toEqual(true);
+  });
+});

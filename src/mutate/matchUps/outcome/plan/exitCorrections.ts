@@ -1,6 +1,6 @@
+import { heldByeCarryCorrectionOps, relabelCarryReason, withdrawnReason } from './carriedExit';
 import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
-import { relabelCarryReason, withdrawnReason } from './carriedExit';
 import { freshByeCarry } from '../direction';
 import {
   APPLY_VALUES,
@@ -111,6 +111,7 @@ export function relabelledExit(args: ExitReasonArgs): boolean {
   if (direction?.winner && args.route !== 'swap') return false;
   // a status that changes is refreshed on the arrivals the first entry sent on (v1's `refreshArrivals`): v1's
   if (arrivalsRefreshed(view, request.matchUpId, write.matchUpStatus) && !refreshedArrivalOps(args)) return false;
+  if (heldByeCarryCorrectionOps(args)) return true;
   const loser = direction?.loser;
   // no link: the write alone
   if (!loser) return true;
