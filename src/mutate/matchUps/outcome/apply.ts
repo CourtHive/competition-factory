@@ -486,7 +486,7 @@ function namedWriters(ops: OutcomeOp[]) {
   // line-up, so the carry's notice is the matchUp's, with its event
   const relayed = new Set(ops.flatMap((op) => (op.op === 'mergeSideExitProvenance' ? [op.matchUpId] : [])));
   for (const op of ops) {
-    if (op.op === 'mergeSideExitProvenance' && op.announcedAs) {
+    if ((op.op === 'mergeSideExitProvenance' || op.op === 'setSideExitProvenance') && op.announcedAs) {
       settled.set(op.matchUpId, op.announcedAs);
       lineUpUnevented.delete(op.matchUpId);
     } else if (op.op === 'setSideLineUp') {

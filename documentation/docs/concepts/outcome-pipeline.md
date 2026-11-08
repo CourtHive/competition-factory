@@ -1860,3 +1860,34 @@ A retirement without retirement propagation changes the played source alone.
 This admission does not include swaps, existing-carry corrections, TEAM, or a passage without
 a later non-BYE standing matchUp. The feed-eligibility refusal still precedes admission.
 Those shapes remain obligations before v1 can be retired.
+
+### Correcting a carry past a held loser BYE (C25)
+
+A native same-winner `apply-values` correction can relabel or withdraw an exit already
+carried past the loser's BYE passage. Each relay must still hold that participant,
+its BYE and exactly one direct carried origin from the source. The same-structure
+passage ends at a scoreless single carried award, with no other provenance or codes.
+The stored origin supplies the carry flavor: a propagating retirement can retain a
+DEFAULTED carry, and a non-propagating completion can leave either carry in place.
+A source currently marked COMPLETED therefore still requires carry reconciliation.
+
+Re-entering the same carry, or a propagating retirement, leaves the carry unchanged.
+Changing WALKOVER to DEFAULTED or the reverse writes the new carried origin on every
+BYE, announced as `progressExitStatus`, and rewrites the landing's award, codes and
+scored time. A WALKOVER blanks the landing's score. The relabel returns the empty
+direction `context` that v1's carry returns.
+
+A played result, bare winner or non-propagating retirement withdraws the carry. Every
+BYE keeps its result, positions, score and codes; `setSideExitProvenance` removes the
+origin and announces `relabelLoserExit`. The landing becomes TO_BE_PLAYED, loses its
+winner and provenance, retains its score and has its scored time reconciled, announced
+as `reconcileScoredTimes`. A clean onward position awarded by the carry is released
+first; for a relabel it is placed back and announced after the landing. All touched
+matchUps, the target structure and draw receive their required stamps.
+
+A changing or withdrawn carry must have no further loser link, and any awardee's next
+matchUp must satisfy the existing clean-release certificate. Convergences, deeper
+linked carries, a downstream BYE withdrawal, TEAM and enabling a fresh carry after an
+already recorded non-carrying exit remain separate owed shapes. The retained-COMPLETED
+check runs before the source-status shortcut, so an uncertified retained carry is
+never silently treated as a source-only write.

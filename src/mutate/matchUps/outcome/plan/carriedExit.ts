@@ -3,6 +3,8 @@ import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds'
 import { convergenceAt, convergenceOps } from './convergence';
 import { freshByeCarry } from '../direction';
 import {
+  APPLY_VALUES,
+  SINGLE_EXITS,
   carriedStatus,
   indexed,
   onwardFrom,
@@ -13,7 +15,7 @@ import {
 } from './planShared';
 
 // constants and types
-import { BYE, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { BYE, DEFAULTED, RETIRED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { Convergence } from './convergence';
@@ -23,6 +25,7 @@ import type {
   ByePassage,
   CarryLevel,
   DirectionPlan,
+  ExitReasonArgs,
   MatchUpWrite,
   OutcomeRequest,
   OutcomeView,
@@ -177,6 +180,199 @@ function withdrawnOps(view: OutcomeView): OutcomeOp[] {
     { op: 'stampUpdatedAt', entity: 'matchUp', id: loserMatchUpId },
     ...(loserStructureId && loserStructureId !== source.structureId
       ? [{ op: 'stampUpdatedAt' as const, entity: 'structure' as const, id: loserStructureId }]
+      : []),
+  ];
+}
+
+/** A carry can remain after a non-propagating completion; its origin, not the source's status, identifies it. */
+export function retainedByeCarry({ view, request, route }: ExitReasonArgs): boolean {
+  return !!(
+    route === APPLY_VALUES &&
+    !view.isTeam &&
+    !view.line &&
+    !view.matchUpTieId &&
+    request.flags.propagateExitStatus &&
+    view.targets.loserMatchUpStatus === BYE &&
+    view.targets.loserMatchUpCarriesSourceExit
+  );
+}
+
+type HeldCarryAt = { entry: HydratedMatchUp; sideNumber: 1 | 2 };
+
+/** The one carried origin on the participant's side, with no recorded result over it. */
+function heldCarryAt(
+  entry: HydratedMatchUp,
+  participantId: string,
+  sourceMatchUpId: string,
+  drawPosition: number,
+): HeldCarryAt | undefined {
+  const sideNumber = sideOf(entry, drawPosition);
+  const side = entry.sides?.find((candidate) => candidate.sideNumber === sideNumber);
+  const origin = sideNumber && entry.sideExitProvenance?.[sideNumber];
+  if (
+    !sideNumber ||
+    side?.participantId !== participantId ||
+    !origin ||
+    origin.sourceMatchUpId !== sourceMatchUpId ||
+    !SINGLE_EXITS.has(origin.previousMatchUpStatus) ||
+    (origin.matchUpStatus !== WALKOVER && origin.matchUpStatus !== DEFAULTED) ||
+    Object.keys(entry.sideExitProvenance ?? {}).length !== 1 ||
+    entry.matchUpStatusCodes?.length ||
+    !scoreless(entry)
+  )
+    return undefined;
+  const opposite = entry.sides?.find((candidate) => candidate.sideNumber === 3 - sideNumber);
+  const held =
+    entry.matchUpStatus === BYE
+      ? opposite?.bye && !entry.winningSide
+      : entry.matchUpStatus === origin.matchUpStatus && entry.winningSide === 3 - sideNumber && !opposite?.bye;
+  return held ? { entry, sideNumber } : undefined;
+}
+
+/** Follow the participant's already-held BYE passage to the single carried award it left. */
+function heldByeCarry(view: OutcomeView, sourceMatchUpId: string, participantId: string, drawPosition: number) {
+  const { loserMatchUpId, loserStructureId } = view.targets;
+  const relays: HeldCarryAt[] = [];
+  const visited = new Set<string>();
+  let entry = indexed(view, loserMatchUpId);
+  while (entry && visited.size < SETTLE_PASS_LIMITS.exitLevels) {
+    if (visited.has(entry.matchUpId) || entry.structureId !== loserStructureId) return undefined;
+    visited.add(entry.matchUpId);
+    const at = heldCarryAt(entry, participantId, sourceMatchUpId, drawPosition);
+    if (!at) return undefined;
+    if (entry.matchUpStatus !== BYE) {
+      const status = entry.matchUpStatus;
+      if (
+        !relays.length ||
+        relays.some((relay) => relay.entry.sideExitProvenance?.[relay.sideNumber]?.matchUpStatus !== status)
+      )
+        return undefined;
+      // v1 scans every carried BYE in this structure, not only the path from the direct target.
+      const outside = view.inContextDrawMatchUps?.some(
+        (matchUp) =>
+          matchUp.structureId === loserStructureId &&
+          !visited.has(matchUp.matchUpId) &&
+          matchUp.sides?.some((side) => side.participantId === participantId) &&
+          Object.values(matchUp.sideExitProvenance ?? {}).some((origin) => origin.sourceMatchUpId === sourceMatchUpId),
+      );
+      return outside ? undefined : { relays, landing: at };
+    }
+    relays.push(at);
+    entry = indexed(view, entry.winnerMatchUpId);
+  }
+  return undefined;
+}
+
+/** C25: relabel or withdraw the existing carry, keeping each BYE and its positions intact. */
+export function heldByeCarryCorrectionOps(args: ExitReasonArgs): OutcomeOp[] | undefined {
+  const { view, request, write, direction } = args;
+  const { targets, existing } = view;
+  const participantId = direction?.loser?.participantId;
+  const drawPosition = targets.loserTargetDrawPosition;
+  if (
+    !retainedByeCarry(args) ||
+    !request.matchUpId ||
+    !write?.winningSide ||
+    write.winningSide !== existing.winningSide ||
+    !direction?.loser?.arrives ||
+    !participantId ||
+    !drawPosition ||
+    targets.loserTargetSeat?.participantId !== participantId ||
+    !targets.loserTargetSeat.opponentBye ||
+    targets.loserMatchUpId === targets.winnerMatchUpId
+  )
+    return undefined;
+  const held = heldByeCarry(view, request.matchUpId, participantId, drawPosition);
+  if (!held) return undefined;
+  const { relays, landing } = held;
+  const entered = request.matchUpStatus;
+  // v1 relabels only WALKOVER <-> DEFAULTED. A propagating retirement keeps even a DEFAULTED carry.
+  if ((entered === RETIRED && request.flags.propagateRetirementAsExit) || entered === landing.entry.matchUpStatus)
+    return [];
+  // A carry across another loser link, or an award played on from, needs its complete onward program.
+  if (landing.entry.loserMatchUpId) return undefined;
+  const awarded = landing.entry.sides?.find((side) => side.sideNumber === landing.entry.winningSide);
+  const release = awarded?.participantId ? releasedAward(view, landing.entry, awarded.drawPosition) : undefined;
+  if (release === false) return undefined;
+  const relabel = entered === WALKOVER || entered === DEFAULTED;
+  const relayOps = relays.flatMap(({ entry, sideNumber }): OutcomeOp[] => {
+    const provenance = relabel
+      ? buildCarriedExitProvenance({
+          previousMatchUpStatus: entered,
+          sourceMatchUpId: request.matchUpId,
+          matchUpStatus: entered,
+          exitingSideNumber: sideNumber,
+        })
+      : undefined;
+    return [
+      ...(provenance
+        ? [
+            {
+              op: 'mergeSideExitProvenance' as const,
+              matchUpId: entry.matchUpId,
+              provenance,
+              announcedAs: 'progressExitStatus' as const,
+            },
+          ]
+        : [
+            {
+              op: 'setSideExitProvenance' as const,
+              matchUpId: entry.matchUpId,
+              announcedAs: 'relabelLoserExit' as const,
+            },
+          ]),
+      { op: 'stampUpdatedAt', entity: 'matchUp', id: entry.matchUpId },
+    ];
+  });
+  const provenance = relabel
+    ? buildCarriedExitProvenance({
+        previousMatchUpStatus: entered,
+        sourceMatchUpId: request.matchUpId,
+        matchUpStatus: entered,
+        exitingSideNumber: landing.sideNumber,
+      })
+    : undefined;
+  const releaseOps: OutcomeOp[] =
+    release && !relabel
+      ? [
+          {
+            op: 'setMatchUpDrawPositions',
+            matchUpId: release.matchUpId,
+            drawPositions: release.drawPositions,
+            releasedDrawPosition: awarded?.drawPosition,
+          },
+          { op: 'stampUpdatedAt', entity: 'matchUp', id: release.matchUpId },
+        ]
+      : [];
+  return [
+    ...releaseOps,
+    ...relayOps,
+    {
+      op: 'setMatchUpResult',
+      matchUpId: landing.entry.matchUpId,
+      matchUpStatus: relabel ? entered : TO_BE_PLAYED,
+      ...(relabel
+        ? {
+            winningSide: (3 - landing.sideNumber) as 1 | 2,
+            matchUpStatusCodes: [],
+            ...(entered === WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
+          }
+        : { announcedAs: 'reconcileScoredTimes' as const }),
+    },
+    { op: 'setSideExitProvenance', matchUpId: landing.entry.matchUpId, provenance },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: landing.entry.matchUpId },
+    ...(release && relabel && awarded?.drawPosition
+      ? [
+          {
+            op: 'setMatchUpDrawPositions' as const,
+            matchUpId: release.matchUpId,
+            drawPositions: [...release.drawPositions, awarded.drawPosition].sort((a, b) => a - b),
+          },
+          { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: release.matchUpId },
+        ]
+      : []),
+    ...(targets.loserStructureId && targets.loserStructureId !== targets.source.structureId
+      ? [{ op: 'stampUpdatedAt' as const, entity: 'structure' as const, id: targets.loserStructureId }]
       : []),
   ];
 }
@@ -443,6 +639,8 @@ export function carriedFor(
   loser?: DirectionPlan['loser'],
 ): { relay: OutcomeOp[]; landing: OutcomeOp[] } {
   const write = args.write as MatchUpWrite;
+  const correctedBye = heldByeCarryCorrectionOps(args);
+  if (correctedBye) return { relay: [], landing: correctedBye };
   if (loser?.arrives) return carriedOps(view, args.request, write, loser);
   const relabelled =
     reentersWinner(view, args.route, write) ||

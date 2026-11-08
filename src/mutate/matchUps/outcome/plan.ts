@@ -6,12 +6,12 @@ import { getCapturedClock, writeLegacyEnabled } from '@Global/state/globalState'
 import { notesReason, scheduleOps, scheduleReason } from './plan/schedulePlan';
 import { autoCalcWrite, resultOps, writtenScore } from './plan/resultOps';
 import { producedExitOps, producedReason } from './plan/producedExit';
+import { carriedReason, retainedByeCarry } from './plan/carriedExit';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { groupTally, writtenLine } from './plan/tallyOps';
 import { withFinishingOrder } from './finishingOrderOps';
 import { convergedReason } from './plan/convergence';
 import { doubleExitSeatOps } from './plan/byeChain';
-import { carriedReason } from './plan/carriedExit';
 import {
   APPLY_VALUES,
   CLEAR_SCORE,
@@ -71,8 +71,8 @@ import {
 } from './plan/directionOps';
 
 // constants and types
+import { DEFAULTED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { DrawDefinition, Score, Tournament } from '@Types/tournamentTypes';
-import { DEFAULTED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { OutcomeOp } from './ops';
 import type {
   AbstainReason,
@@ -111,6 +111,8 @@ import type {
 function exitReason(args: ExitReasonArgs): AbstainReason | undefined {
   const { request, view, route, write, direction } = args;
   const { existing } = view;
+  // A non-propagating completion can leave a carried origin beside a BYE; the next correction still owes it.
+  if (retainedByeCarry(args)) return relabelledExit(args) ? undefined : 'exit';
   if (!isAnyExit(request.matchUpStatus) && !isAnyExit(existing.matchUpStatus) && !isAnyExit(write?.matchUpStatus))
     return undefined;
   if (route === DOUBLE_EXIT) return producedReason(view, request, direction, write);
@@ -444,6 +446,17 @@ function planOps(args: PlanArgs): OutcomePlan {
   return recordedPlanOps(args, drawDefinition);
 }
 
+/** A propagated relabel returns the direction context even when its source previously held a played result. */
+function carriedDirectionContext(args: PlanArgs, landing: OutcomeOp[]): boolean {
+  return (
+    (args.route === APPLY_VALUES || args.route === 'swap') &&
+    (!!args.direction?.loser?.exit ||
+      (retainedByeCarry(args) &&
+        (args.request.matchUpStatus === WALKOVER || args.request.matchUpStatus === DEFAULTED))) &&
+    landing.length > 0
+  );
+}
+
 /** A recorded single-call plan after the shared refusal, dual and no-op gates. */
 function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition): OutcomePlan {
   const { request, view } = args;
@@ -598,10 +611,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition): Outcom
     { op: 'stampUpdatedAt', entity: 'drawDefinition', id: drawDefinition.drawId },
   );
   // a relabel where the winner stands whose carry proceeds returns v1's direction context too (`relabelWithoutDirection`)
-  const carriedOn =
-    (args.route === APPLY_VALUES || args.route === 'swap') &&
-    !!args.direction?.loser?.exit &&
-    carried.landing.length > 0;
+  const carriedOn = carriedDirectionContext(args, carried.landing);
   // The convergence writes a fresh produced exit into the released landing. v1's scored-time reconciliation then
   // leaves that exit standing, including its existing stamp, rather than resetting the emptied award it replaced.
   const convergedWrites = new Set(converging.filter((op) => op.op === 'setMatchUpResult').map((op) => op.matchUpId));

@@ -234,6 +234,8 @@ export type OutcomeOp =
        */
       matchUpId: string;
       provenance?: SideExitProvenance;
+      /** A carry removed beside a BYE announces that provenance write without rewriting the BYE's result. */
+      announcedAs?: 'relabelLoserExit';
     }
   | {
       op: 'assignBye';
