@@ -1845,3 +1845,18 @@ The existing carry, withdrawal and swap-path certificates still apply. Admission
 arrival-label wall does not own a call that reaches a later refusal. Refused TEAM winner
 changes can differ in their mutation prefix before CANNOT_CHANGE_WINNING_SIDE; they join the
 explicit terminal-error program obligation before v1 retirement.
+
+### A played source relabel carries past its loser's held BYE (C24)
+
+On apply-values with the same winner, a native COMPLETED source may become a propagated
+WALKOVER, DEFAULTED, or RETIRED carried as WALKOVER while its loser already stands beyond
+a BYE. Certify that the loser holds the entry seat opposite that BYE, with no carried exit,
+codes or provenance, and that the existing same-structure passage ends in a clean landing.
+Reuse the carried-exit program: merge the carrier's provenance on each BYE without changing
+its status, score or codes, announce progressExitStatus and stamp it; write the landing's
+carried result, provenance and onward placements under the ordinary carry certificates.
+A retirement without retirement propagation changes the played source alone.
+
+This admission does not include swaps, existing-carry corrections, TEAM, or a passage without
+a later non-BYE standing matchUp. The feed-eligibility refusal still precedes admission.
+Those shapes remain obligations before v1 can be retired.
