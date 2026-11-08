@@ -19,6 +19,7 @@ import {
 import { COMPLETED, DEAD_RUBBER, DEFAULTED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { DrawDefinition, Score, Side } from '@Types/tournamentTypes';
 import { LINEUPS } from '@Constants/extensionConstants';
+import type { HydratedMatchUp } from '@Types/hydrated';
 import type { LineUp } from '@Types/factoryTypes';
 import type { OutcomeOp } from '../ops';
 import type {
@@ -446,4 +447,13 @@ export function removedByeLineUpOps(view: OutcomeView, drawDefinition: DrawDefin
     { op: 'stampUpdatedAt', entity: 'matchUp', id: held.entry.matchUpId },
     { op: 'stampUpdatedAt', entity: 'structure', id: held.entry.structureId },
   ];
+}
+
+/** C26: the carrier has just advanced through a BYE; ensure the landing dual's stored sides. */
+export function carriedByeDualSides(drawDefinition: DrawDefinition, entry: HydratedMatchUp) {
+  return ensuredDualSides({
+    contextSides: entry.sides,
+    rawSides: storedSides(drawDefinition, entry.matchUpId),
+    lineUps: firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }),
+  });
 }

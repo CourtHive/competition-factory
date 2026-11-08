@@ -558,7 +558,8 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition): Outcom
   const convergence = unwoundConvergedFor(view, args, loser);
   const converging = convergence.ops;
   // a double exit's loser seats, BYEs (S5)
-  const seatOps = args.route === DOUBLE_EXIT ? doubleExitSeatOps(view, request, args.direction) : undefined;
+  const seatOps =
+    args.route === DOUBLE_EXIT ? doubleExitSeatOps(view, request, args.drawDefinition, args.direction) : undefined;
   const doubleExitSeated = seatOps?.ops ?? [];
   const producedExit = args.route === DOUBLE_EXIT ? producedExitOps(view, request, write, args.direction) : [];
   // ...and, seated beside a carried exit whose carrier the unwind released back, awarded it and sent on (S7)

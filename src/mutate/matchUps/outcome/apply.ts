@@ -104,9 +104,7 @@ export function applyOwnedPlan({
   const { removed, unevented, untournamented, unbyed, namedResults, arrived, byeNamed, carriedNotices } =
     noticeRules(ops);
   // a position advanced through a BYE a double exit placed: v1's `doubleExitAdvancement` announces it as `advanceWinner`
-  const advanced = new Set(
-    ops.flatMap((op) => (op.op === 'setMatchUpDrawPositions' && op.advancesThroughBye ? [op.matchUpId] : [])),
-  );
+  const advanced = advanceNotices(ops);
   // an awardee's position released when the carry they were awarded is withdrawn: v1's `releaseAdvancedDrawPosition`,
   // with the event (S6 tail)
   const released = releasedNotices(ops);
@@ -205,6 +203,16 @@ function byeAndAdvance(ops: OutcomeOp[]): { advancedLast: Set<string>; eventKept
   return { advancedLast, eventKept };
 }
 
+/** C26: a later ordinary awardee placement replaces an earlier BYE advance's notice. */
+function advanceNotices(ops: OutcomeOp[]): Set<string> {
+  const advanced = new Set<string>();
+  for (const op of ops) {
+    if (op.op === 'setMatchUpDrawPositions' && op.advancesThroughBye) advanced.add(op.matchUpId);
+    else if (plainPlacement(op)) advanced.delete(op.matchUpId);
+  }
+  return advanced;
+}
+
 /**
  * a positions write that places plainly: announced, with no withdrawal, removal or advance through a BYE named on it (a
  * release names none of those either, and is read here only where a release's own name was not asked first)
@@ -244,7 +252,10 @@ function placedAfter(ops: OutcomeOp[], quiet: Set<string>): Set<string> {
   const placed = new Set<string>();
   const seen = new Set<string>();
   for (const op of ops) {
-    if ((op.op === 'setMatchUpDrawPositions' || op.op === 'setMatchUpResult') && op.announcesContext === false)
+    if (
+      ((op.op === 'setMatchUpDrawPositions' || op.op === 'setMatchUpResult') && op.announcesContext === false) ||
+      (op.op === 'setMatchUpDrawPositions' && op.advancesThroughBye && !op.announcesEvent)
+    )
       seen.add(op.matchUpId);
     if (plainPlacement(op) && quiet.has(op.matchUpId) && seen.has(op.matchUpId)) placed.add(op.matchUpId);
   }
@@ -298,7 +309,7 @@ function noticeRules(ops: OutcomeOp[]) {
   );
   // ...as is a plain placement after a quiet write (an awardee sent on again into the matchUp an unwind's release
   // emptied, or wrote back to be played, S7): v1's `assignMatchUpDrawPosition` announces it last
-  for (const matchUpId of placedAfter(ops, untournamented)) arrived.add(matchUpId);
+  for (const matchUpId of placedAfter(ops, unevented)) arrived.add(matchUpId);
   for (const matchUpId of arrived) unevented.delete(matchUpId);
   // a quiet BYE or advance keeps an earlier named BYE or advance's event (`byeAndAdvance`)
   for (const matchUpId of byeAndAdvance(ops).eventKept) unevented.delete(matchUpId);

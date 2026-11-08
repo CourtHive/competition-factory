@@ -1895,3 +1895,34 @@ linked carries, a downstream BYE withdrawal, TEAM and enabling a fresh carry aft
 already recorded non-carrying exit remain separate owed shapes. The retained-COMPLETED
 check runs before the source-status shortcut, so an uncertified retained carry is
 never silently treated as a source-only write.
+
+### A loser BYE beside a standing carried award (C26)
+
+With double-exit BYE propagation on, a free, unconditioned loser seat can hold an
+award to its empty arriving side, opposite one participant carrying WALKOVER or
+DEFAULTED. Exactly one provenance entry names that carrier's single-exit origin;
+the home is scoreless, has no codes, BYE or further loser link. A retained carry
+still counts when its origin has since become COMPLETED.
+
+The seat takes a propagated BYE and the home becomes BYE. A terminal home keeps
+its original provenance. Otherwise the carrier advances into a clean matchUp of
+the same structure. Reconciliation records the carried flavor at both home and
+landing, normalizing a RETIRED previous status to WALKOVER. The landing receives
+the carried result, award to the opposite side, empty codes and scored time;
+WALKOVER blanks its score. TEAM landing sides use ensuredDualSides with structurally
+projected positions, retaining edited lineups by drawPosition across side renumbering.
+
+An opponent actually present at the landing advances to a clean next matchUp;
+an empty fed reservation does not. If the other unfillable-seat BYE has already
+placed a position there, the later awardee placement keeps it. Only that shared
+clean onward placement is joined; overlapping home/landing writes are excluded.
+The later ordinary assignment supplies its notice context and full identity even
+after an earlier quiet BYE advance. Each touched matchUp and structure is stamped.
+
+A home with scoredTime is reconciled last, removing that time and announcing
+reconcileScoredTimes. Without a prior scoredTime, a nonterminal home's provenance
+write is announced as progressExitStatus before the landing. Exact ordered notice
+payloads, including event and tournament, follow v1 in both cases.
+
+Policy-off convergence, linked carry withdrawals, overlapping BYE relays, deeper
+chains and dirty landings remain owed writers before v1 retirement.
