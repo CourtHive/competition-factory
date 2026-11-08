@@ -1924,5 +1924,12 @@ reconcileScoredTimes. Without a prior scoredTime, a nonterminal home's provenanc
 write is announced as progressExitStatus before the landing. Exact ordered notice
 payloads, including event and tournament, follow v1 in both cases.
 
+The carrier can have passed existing BYEs before reaching the home. Each earlier
+relay must hold that one carrier and origin, with no score, codes, scored time or
+loser link. Reconciliation starts at the first eligible BYE in stored order and
+replays its path through the home: provenance is merged, each relay is stamped,
+and progressExitStatus is announced. If the home is stored first, earlier relays
+are not revisited. A terminal home causes no carry replay.
+
 Policy-off convergence, linked carry withdrawals, overlapping BYE relays, deeper
-chains and dirty landings remain owed writers before v1 retirement.
+onward chains and dirty landings remain owed writers before v1 retirement.

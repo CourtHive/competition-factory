@@ -2,6 +2,7 @@ import { BLANK_SCORE, SINGLE_EXITS, indexed, onwardFrom, positionsOf, scoreless,
 import { buildCarriedExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getOrderedDrawPositions } from '@Query/matchUps/getOrderedDrawPositions';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
+import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { carriedByeDualSides } from './teamPlan';
 
 // constants and types
@@ -17,8 +18,9 @@ export type CarriedByeSeat = {
   drawPosition: number;
   carrier: HydratedSide;
   origin: SideExitProvenanceEntry & { matchUpStatus: typeof WALKOVER | typeof DEFAULTED };
+  relays: { entry: HydratedMatchUp; side: number }[];
   matchUpIds: string[];
-  landing?: { entry: HydratedMatchUp; placement: Placement; side: 1 | 2; onward?: Placement };
+  landing?: { entry: HydratedMatchUp; carrierArrival: Placement; side: 1 | 2; onward?: Placement };
 };
 
 /** C26: a loser BYE replaces an empty awardee. The standing carrier goes through the BYE,
@@ -51,9 +53,12 @@ export function carriedByeSeat(view: OutcomeView): CarriedByeSeat | undefined {
     drawPosition,
     carrier,
     origin: { ...origin, matchUpStatus: home.matchUpStatus },
+    relays: [],
     matchUpIds: [home.matchUpId],
   };
   if (!home.winnerMatchUpId) return result;
+  const relays = carriedByeRelays(view, result, source);
+  if (!relays) return undefined;
   const placement = onwardFrom(view, home, carrier.drawPosition);
   const next = indexed(view, home.winnerMatchUpId);
   if (!placement || !cleanLanding(next)) return undefined;
@@ -64,9 +69,49 @@ export function carriedByeSeat(view: OutcomeView): CarriedByeSeat | undefined {
   const onward = opponent?.drawPosition ? onwardFrom(view, entry, opponent.drawPosition) : undefined;
   if (opponent && entry.winnerMatchUpId && (!onward || !cleanLanding(indexed(view, entry.winnerMatchUpId))))
     return undefined;
-  result.landing = { entry, placement, side, onward };
-  result.matchUpIds.push(entry.matchUpId, ...(onward ? [onward.matchUpId] : []));
+  result.relays = relays;
+  result.landing = { entry, carrierArrival: placement, side, onward };
+  result.matchUpIds.push(
+    ...relays.map((relay) => relay.entry.matchUpId),
+    entry.matchUpId,
+    ...(onward ? [onward.matchUpId] : []),
+  );
   return result;
+}
+
+/** The carrier can already have passed BYEs before reaching the home. Reconciliation
+ * revisits that path; each relay must hold this one origin beside its existing BYE. */
+function carriedByeRelays(view: OutcomeView, seat: CarriedByeSeat, source: HydratedMatchUp) {
+  const { home, carrier, origin } = seat;
+  const relays: CarriedByeSeat['relays'] = [];
+  const seen = new Set([home.matchUpId]);
+  let entry = indexed(view, source.loserMatchUpId);
+  while (entry?.matchUpId !== home.matchUpId) {
+    if (!entry || seen.has(entry.matchUpId) || entry.structureId !== home.structureId) return undefined;
+    if (entry.matchUpStatus !== BYE || entry.winningSide || entry.loserMatchUpId || entry.schedule?.scoredTime)
+      return undefined;
+    if (!scoreless(entry) || entry.matchUpStatusCodes?.length || hasReason(entry)) return undefined;
+    const side = entry.sides?.find((candidate) => candidate.participantId === carrier.participantId);
+    if (!side?.sideNumber || side.drawPosition !== carrier.drawPosition) return undefined;
+    if (!entry.sides?.find((candidate) => candidate.sideNumber === 3 - side.sideNumber!)?.bye) return undefined;
+    const provenance = entry.sideExitProvenance ?? {};
+    const held = provenance[side.sideNumber];
+    if (Object.keys(provenance).length !== 1 || held?.sourceMatchUpId !== origin.sourceMatchUpId) return undefined;
+    if (held.matchUpStatus !== origin.matchUpStatus || !SINGLE_EXITS.has(held.previousMatchUpStatus)) return undefined;
+    relays.push({ entry, side: side.sideNumber });
+    seen.add(entry.matchUpId);
+    entry = indexed(view, entry.winnerMatchUpId);
+  }
+  return relays;
+}
+
+/** v1 starts at the first eligible BYE in stored order, then follows the carrier.
+ * A home stored before an earlier relay resolves the landing without revisiting that relay. */
+function replayedByes(seat: CarriedByeSeat, drawDefinition: DrawDefinition) {
+  const relays = [...seat.relays, { entry: seat.home, side: seat.carrier.sideNumber }];
+  const ids = new Set(relays.map(({ entry }) => entry.matchUpId));
+  const first = getMatchUpsMap({ drawDefinition }).drawMatchUps.find((entry) => ids.has(entry.matchUpId))!;
+  return relays.slice(relays.findIndex(({ entry }) => entry.matchUpId === first.matchUpId));
 }
 
 const hasReason = (entry: HydratedMatchUp) => Object.values(entry.sideStatusCodes ?? {}).some(Boolean);
@@ -119,10 +164,10 @@ function projectLanding(
 
 export function carriedByeSeatOps(
   seat: CarriedByeSeat,
-  drawDefinition: DrawDefinition | undefined,
+  drawDefinition: DrawDefinition,
   isTeam: boolean,
 ): { ops: OutcomeOp[]; after: OutcomeOp[] } {
-  const { home, drawPosition, landing, carrier, origin } = seat;
+  const { home, drawPosition, landing, origin } = seat;
   const ops: OutcomeOp[] = [
     {
       op: 'assignBye',
@@ -136,7 +181,7 @@ export function carriedByeSeatOps(
       ? [
           {
             op: 'setMatchUpDrawPositions' as const,
-            ...landing.placement,
+            ...landing.carrierArrival,
             advancesThroughBye: true as const,
             announcesEvent: true as const,
           },
@@ -154,12 +199,15 @@ export function carriedByeSeatOps(
         exitingSideNumber,
       })!;
     after.push(
-      {
-        op: 'mergeSideExitProvenance',
-        matchUpId: home.matchUpId,
-        provenance: provenance(carrier.sideNumber),
-        announcedAs: 'progressExitStatus',
-      },
+      ...replayedByes(seat, drawDefinition).flatMap(({ entry, side }): OutcomeOp[] => [
+        {
+          op: 'mergeSideExitProvenance',
+          matchUpId: entry.matchUpId,
+          provenance: provenance(side),
+          announcedAs: 'progressExitStatus',
+        },
+        { op: 'stampUpdatedAt', entity: 'matchUp', id: entry.matchUpId },
+      ]),
       {
         op: 'setMatchUpResult',
         matchUpId: landing.entry.matchUpId,

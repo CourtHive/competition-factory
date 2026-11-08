@@ -803,7 +803,7 @@ function producedLoserOps(request: OutcomeRequest, produced: ProducedLoser): Out
 export function doubleExitSeatOps(
   view: OutcomeView,
   request: OutcomeRequest,
-  drawDefinition: DrawDefinition | undefined,
+  drawDefinition: DrawDefinition,
   direction?: DirectionPlan,
 ): { ops: OutcomeOp[]; after: OutcomeOp[] } {
   const entry = direction?.produced ? indexed(view, direction.produced.matchUpId) : undefined;
