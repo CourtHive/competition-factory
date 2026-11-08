@@ -5,14 +5,15 @@ import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatu
 import { notifySubscribers } from '@Global/state/notifySubscribers';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { setClock, withCapturedClock } from '@Tools/clock';
+import { isLucky } from '@Query/drawDefinition/isLucky';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 
 // constants and types
+import { AD_HOC, ROUND_ROBIN, LUCKY_DRAW, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 import { BRIDGE, NATIVE, type SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
-import { AD_HOC, ROUND_ROBIN, LUCKY_DRAW } from '@Constants/drawDefinitionConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
@@ -68,6 +69,7 @@ type Recipe = {
   roundsCount: number;
   action: 'first' | 'deciding' | 'correct' | 'clear' | 'dual';
   reversed: boolean;
+  drawSize?: number;
 };
 
 function prepare(recipe: Recipe) {
@@ -80,7 +82,8 @@ function prepare(recipe: Recipe) {
         eventType: recipe.eventType,
         drawType: recipe.drawType,
         ...(recipe.drawType === AD_HOC ? { roundsCount: recipe.roundsCount } : {}),
-        drawSize: recipe.drawType === ROUND_ROBIN ? 8 : 4,
+        drawSize: recipe.drawSize ?? (recipe.drawType === ROUND_ROBIN ? 8 : 4),
+        ...(recipe.drawType === ROUND_ROBIN ? { participantsCount: 6 } : {}),
         drawId: 'd',
         automated: true,
         ...(recipe.eventType === 'TEAM' ? { tieFormatName: DOMINANT_DUO } : {}),
@@ -230,10 +233,11 @@ it.each(['buffered', 'draw-only', 'no-ledger', 'uncaptured'] as const)(
   },
 );
 
-it.each([ROUND_ROBIN, LUCKY_DRAW] as const)('%s retains assignments and clears stale subOrder', (drawType) => {
+it.each([ROUND_ROBIN, LUCKY_DRAW] as const)('%s preserves assignment writes and notices', (drawType) => {
   const fixture = prepare({ ...singles, drawType, reversed: false });
   const structure = fixture.prepared.events[0].drawDefinitions[0].structures[0];
   const selected = structure.structures?.[0] ?? structure;
+  if (drawType === ROUND_ROBIN) expect(selected.positionAssignments.some((assignment) => assignment.bye)).toBe(true);
   for (const assignment of selected.positionAssignments ?? []) {
     assignment.subOrder = 71;
     assignment.marker = 'retained assignment';
@@ -245,6 +249,35 @@ it.each([ROUND_ROBIN, LUCKY_DRAW] as const)('%s retains assignments and clears s
   expect(JSON.parse(v2.record)).toEqual(JSON.parse(v1.record));
   expect(v2.notices).toEqual(v1.notices);
   expect(v2.writes).toEqual(0);
+  expect(v1.tallyFormats).toHaveLength(drawType === ROUND_ROBIN ? 1 : 0);
+  expect(v2.tallyFormats).toEqual(v1.tallyFormats);
+});
+
+it('legacy lucky rounds retain assignments and clear stale subOrder through the tally writer', () => {
+  const fixture = prepare({ ...singles, drawType: LUCKY_DRAW, drawSize: 6, reversed: false });
+  const drawDefinition = fixture.prepared.events[0].drawDefinitions[0];
+  drawDefinition.drawType = SINGLE_ELIMINATION;
+  const structure = drawDefinition.structures[0];
+  expect(isLucky({ drawDefinition, structure })).toEqual(true);
+  for (const assignment of structure.positionAssignments) {
+    assignment.subOrder = 71;
+    assignment.marker = 'retained lucky assignment';
+  }
+  const v1 = play(OUTCOME_PIPELINE_V1, fixture, NATIVE);
+  const v2 = play(OUTCOME_PIPELINE_V2, fixture, NATIVE);
+  expect(v1.result.success).toEqual(true);
+  expect(v1.tallyFormats).toHaveLength(1);
+  expect(v2.result).toEqual(v1.result);
+  expect(JSON.parse(v2.record)).toEqual(JSON.parse(v1.record));
+  expect(v2.notices).toEqual(v1.notices);
+  const assignments = JSON.parse(v1.record).events[0].drawDefinitions[0].structures[0].positionAssignments;
+  expect(assignments.map(({ participantId }) => participantId)).toEqual(
+    structure.positionAssignments.map(({ participantId }) => participantId),
+  );
+  expect(assignments.every(({ marker }) => marker === 'retained lucky assignment')).toEqual(true);
+  expect(assignments.some(({ subOrder }) => subOrder === undefined)).toEqual(true);
+  expect(v2.writes).toEqual(0);
+  expect(v2.tallyFormats).toEqual(v1.tallyFormats);
 });
 
 it('invalid tally preserves the score and rebuilt assignment prefix through v1', () => {
