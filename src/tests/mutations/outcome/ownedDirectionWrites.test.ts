@@ -7805,8 +7805,18 @@ describe('C23 relabelled arrival origins retain exact records and notice identit
   it.each(REFRESHED_ARRIVAL_CASES)('%s', (_label, scenario, owned, status) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     const before = getDifferentialTally()['shadow:applied']?.compared ?? 0;
+    const exitBefore = getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0;
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
     expect((getDifferentialTally()['shadow:applied']?.compared ?? 0) - before).toEqual(Number(owned));
+    const step = scenario.steps[0];
+    if (
+      status === RETIRED &&
+      step.outcome.winningSide === 2 &&
+      step.params?.propagateExitStatus &&
+      !scenario.policyDefinitions &&
+      scenario.drawProfile.drawType !== SINGLE_ELIMINATION
+    )
+      expect((getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0) - exitBefore).toEqual(1);
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
     expect(v1.v1Writes).toBeGreaterThan(0);

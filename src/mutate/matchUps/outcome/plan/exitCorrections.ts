@@ -125,7 +125,13 @@ export function relabelledExit(args: ExitReasonArgs): boolean {
   const { targets } = view;
   if (!request.flags.propagateExitStatus) return true;
   // C24: a non-propagating retirement of a played source has no carry to withdraw past the BYE.
-  if (write.matchUpStatus === RETIRED && !request.flags.propagateRetirementAsExit && freshByeCarry(view)) return true;
+  if (
+    args.route === APPLY_VALUES &&
+    write.matchUpStatus === RETIRED &&
+    !request.flags.propagateRetirementAsExit &&
+    freshByeCarry(view)
+  )
+    return true;
   return (
     targets.loserMatchUpStatus === TO_BE_PLAYED &&
     !targets.loserMatchUpHasResult &&
