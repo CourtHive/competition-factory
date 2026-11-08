@@ -812,7 +812,7 @@ export function doubleExitSeatOps(
   const seats = entry || final ? doubleExitSeats(view, entry) : undefined;
   if (!seats) return { ops: [], after: [] };
   const { own, unfillable, producedLoser: produced, heldLoser: held } = seats;
-  const carried = seats.carriedOwn ? carriedByeSeatOps(seats.carriedOwn, drawDefinition, view) : undefined;
+  const carried = seats.carriedOwn ? carriedByeSeatOps(seats.carriedOwn, drawDefinition, view.isTeam) : undefined;
   return {
     ops: [
       ...(produced ? producedLoserOps(request, produced) : []),

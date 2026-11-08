@@ -165,7 +165,7 @@ function projectLanding(
 export function carriedByeSeatOps(
   seat: CarriedByeSeat,
   drawDefinition: DrawDefinition,
-  view: OutcomeView,
+  isTeam: boolean,
 ): { ops: OutcomeOp[]; after: OutcomeOp[] } {
   const { home, drawPosition, landing, origin } = seat;
   const ops: OutcomeOp[] = [
@@ -191,7 +191,7 @@ export function carriedByeSeatOps(
   ];
   const after: OutcomeOp[] = [];
   if (landing) {
-    const continuation = carriedContinuation(view, origin.matchUpStatus, {
+    const continuation = carriedContinuation(origin.matchUpStatus, {
       sourceMatchUpId: origin.sourceMatchUpId,
       previousMatchUpStatus: origin.matchUpStatus,
       landing: {
@@ -205,7 +205,7 @@ export function carriedByeSeatOps(
           matchUpId: entry.matchUpId,
           sideNumber: side,
         })),
-        ...(view.isTeam && drawDefinition ? { ensuredSides: carriedByeDualSides(drawDefinition, landing.entry) } : {}),
+        ...(isTeam && drawDefinition ? { ensuredSides: carriedByeDualSides(drawDefinition, landing.entry) } : {}),
       },
     })!;
     after.push(...continuation.relay, ...continuation.landing);

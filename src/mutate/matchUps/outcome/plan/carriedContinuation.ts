@@ -1,11 +1,10 @@
 import { buildCarriedExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
-import { convergenceOps } from './convergence';
 
 // constants and types
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import { WALKOVER } from '@Constants/matchUpStatusConstants';
-import type { OutcomeView, ThroughBye } from '../types';
 import type { Convergence } from './convergence';
+import type { ThroughBye } from '../types';
 import type { OutcomeOp } from '../ops';
 
 export type CarriedLanding = {
@@ -28,6 +27,8 @@ export type CarryFrame = {
   sourceMatchUpId?: string;
   previousMatchUpStatus?: MatchUpStatusUnion;
   assignment?: Omit<Extract<OutcomeOp, { op: 'assignPosition' }>, 'op'>;
+  /** Existing convergence writer's terminal program, resolved with this frame's lineage. */
+  convergence?: OutcomeOp[];
 };
 
 /** One carried origin, through BYE relays, an award or convergence, and onward loser links.
@@ -35,7 +36,6 @@ export type CarryFrame = {
  * landing; deferred callers already placed it and append the whole continuation after that prefix.
  * Produced exits have different result writes and notice contracts and do not enter this writer. */
 export function carriedContinuation(
-  view: OutcomeView,
   status: MatchUpStatusUnion,
   first: CarryFrame,
   next?: (frame: CarryFrame) => CarryFrame | undefined,
@@ -56,7 +56,7 @@ export function carriedContinuation(
     ]);
     (frame === first ? relay : landing).push(...relays);
     if (frame !== first && at.beyond) landing.push(...carryPlacement(at.beyond));
-    landing.push(...carryLanding(view, status, frame));
+    landing.push(...carryLanding(status, frame));
     if (!at.carriesOn) return { relay, landing };
     frame = next?.(frame);
   }
@@ -90,9 +90,9 @@ function carryProvenance(
   ];
 }
 
-function carryLanding(view: OutcomeView, status: MatchUpStatusUnion, frame: CarryFrame): OutcomeOp[] {
-  const { landing: at, sourceMatchUpId, previousMatchUpStatus } = frame;
-  if (at.converged) return convergenceOps(view, at.converged, status, sourceMatchUpId, previousMatchUpStatus);
+function carryLanding(status: MatchUpStatusUnion, frame: CarryFrame): OutcomeOp[] {
+  const { landing: at } = frame;
+  if (frame.convergence) return frame.convergence;
   if (at.ends) return [];
   return [
     {

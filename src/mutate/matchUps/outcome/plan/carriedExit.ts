@@ -1,7 +1,7 @@
 import { buildCarriedExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
+import { convergenceAt, convergenceOps } from './convergence';
 import { carriedContinuation } from './carriedContinuation';
-import { convergenceAt } from './convergence';
 import { freshByeCarry } from '../direction';
 import {
   APPLY_VALUES,
@@ -468,11 +468,22 @@ function continuationFor(
   const chain = view.targets.carryLevels;
   if (first.carriesOn && (!chain || chain.bounded || chain.levels[0]?.fromMatchUpId !== first.matchUpId))
     return undefined;
+  const terminal = (landing: CarriedLanding, source: Pick<CarryFrame, 'sourceMatchUpId' | 'previousMatchUpStatus'>) =>
+    landing.converged
+      ? {
+          convergence: convergenceOps(
+            view,
+            landing.converged,
+            status,
+            source.sourceMatchUpId,
+            source.previousMatchUpStatus,
+          ),
+        }
+      : {};
   let index = 0;
   return carriedContinuation(
-    view,
     status,
-    { landing: first, ...origin },
+    { landing: first, ...origin, ...terminal(first, origin) },
     () => {
       const level = chain?.levels[index++];
       const landing = level && levelLanding(view, level, status);
@@ -481,6 +492,7 @@ function continuationFor(
         landing,
         sourceMatchUpId: level.fromMatchUpId,
         previousMatchUpStatus: status,
+        ...terminal(landing, { sourceMatchUpId: level.fromMatchUpId, previousMatchUpStatus: status }),
         ...(participantId
           ? { assignment: { structureId: level.structureId, drawPosition: level.drawPosition, participantId } }
           : {}),
