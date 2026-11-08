@@ -87,6 +87,11 @@ export function createWorkingView({
   const workingDraw: DrawDefinition = { ...drawDefinition, structures: [...(drawDefinition.structures ?? [])] };
   const copiedStructures = new Set<string>();
   const copiedMatchUps = new Map<string, MatchUp>();
+  const parentOf = new Map(
+    baseMap.drawMatchUps.flatMap((matchUp) =>
+      (matchUp.tieMatchUps ?? []).map((line) => [line.matchUpId, matchUp.matchUpId]),
+    ),
+  );
 
   const copyStructure = (structure: Structure): Structure => {
     const items = structuresOf(structure);
@@ -120,13 +125,15 @@ export function createWorkingView({
 
   const ensureMatchUp = (matchUpId: string) => {
     if (copiedMatchUps.has(matchUpId)) return;
-    const structureId = structureIdOf.get(matchUpId);
+    const parentId = parentOf.get(matchUpId) ?? matchUpId;
+    const structureId = structureIdOf.get(parentId);
     ensureStructure(structureId);
     const matchUps = matchUpsOf(structureHolding(structureId));
-    const index = matchUps?.findIndex((matchUp) => matchUp.matchUpId === matchUpId) ?? -1;
+    const index = matchUps?.findIndex((matchUp) => matchUp.matchUpId === parentId) ?? -1;
     if (!matchUps || index < 0) return;
     matchUps[index] = structuredClone(matchUps[index]);
-    copiedMatchUps.set(matchUpId, matchUps[index]);
+    for (const copied of [matchUps[index], ...(matchUps[index].tieMatchUps ?? [])])
+      copiedMatchUps.set(copied.matchUpId, copied);
     work.copiedMatchUps += 1;
   };
 
@@ -170,6 +177,8 @@ export function createWorkingView({
         const { matchUpId, structureId } = namedBy(op);
         if (matchUpId) {
           ensureMatchUp(matchUpId);
+          if (!copiedMatchUps.has(matchUpId)) return { error: `working view cannot copy ${matchUpId}` };
+          affected.add(parentOf.get(matchUpId) ?? matchUpId);
           affected.add(matchUpId);
         }
         if (structureId) ensureStructure(structureId);

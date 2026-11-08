@@ -7,6 +7,7 @@ import { annotateScoreSets, buildMatchUpSides } from './addMatchUpContext';
 import { unresolvedCollectionChoice } from '@Helpers/matchUpTypeOptions';
 import { getCollectionAssignment } from './getCollectionAssignment';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { deepCopyEnabled } from '@Global/state/globalState';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { getRoundMatchUps } from './getRoundMatchUps';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
@@ -340,8 +341,14 @@ function indexMatchUp({
     ...onlyDefined(matchUp),
     // a line of a BYE dual is a BYE, over the TO_BE_PLAYED it is stored as (hydration OPEN-1)
     ...(line?.collectionBye ? { matchUpStatus: BYE } : {}),
-    // nested values are filtered with the defaults, as hydration's deep filter does: an empty `sets` stays
-    ...(matchUp.score ? { score: definedAttributes(matchUp.score, undefined, undefined, true) } : {}),
+    // Hydration filters nested score fields only in deep-copy mode; borrowed records retain empty score strings.
+    ...(matchUp.score
+      ? {
+          score: deepCopyEnabled().enabled
+            ? definedAttributes(matchUp.score, undefined, undefined, true)
+            : makeDeepCopy(matchUp.score, true, true),
+        }
+      : {}),
     sides,
   } as HydratedMatchUp;
   // a tiebreak-only or timed set reads as hydration presents it (`annotateScoreSets`), on the entry's own copy

@@ -1,8 +1,8 @@
 import { announcesAssignments, eventlessNotices } from './apply';
+import { applyOutcomeOps, splitScoredTimeCleanup } from './ops';
 import { captureRecord } from '@Tools/recordDiff';
 import { generatePatch } from '@Tools/jsonPatch';
 import { cloneState } from '@Tools/cloneState';
-import { applyOutcomeOps } from './ops';
 
 // constants and types
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
@@ -102,7 +102,9 @@ export function plannedNotices({
 }): Set<string> {
   // A satisfied double exit has an empty plan: v1 writes and announces nothing.
   if (!ops.length) return new Set();
-  const eventless = eventlessNotices(ops);
+  const { prefix, cleanup } = splitScoredTimeCleanup(ops);
+  const eventless = eventlessNotices(prefix);
+  for (const { matchUpId } of cleanup) eventless.matchUps.delete(matchUpId);
   // `preserveNoticeIdentity` keeps an earlier buffered event when this write supplies none.
   const retainedEvents = new Set(
     prior?.filter((notice) => notice.payload?.eventId).map((notice) => `${notice.topic}|${notice.key}`),
@@ -111,7 +113,7 @@ export function plannedNotices({
     const identity = `${topic}|${key}`;
     return `${identity}${(!hasEvent || unevented) && !retainedEvents.has(identity) ? NO_EVENT : ''}`;
   };
-  const notices = new Set<string>([`${UPDATE_INCONTEXT_MATCHUP}|${matchUpId}`]);
+  const notices = new Set<string>(prefix.length ? [`${UPDATE_INCONTEXT_MATCHUP}|${matchUpId}`] : []);
   for (const op of ops) {
     // every score write announces its matchUp in context, as `apply.ts` defers it: a TEAM line's dual too (S7)
     if (op.op === 'setMatchUpResult' && !op.announcedAs) notices.add(`${UPDATE_INCONTEXT_MATCHUP}|${op.matchUpId}`);

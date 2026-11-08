@@ -23,6 +23,11 @@ export function matchUpIsScored(matchUp?: MatchUp): boolean {
   );
 }
 
+/** The stored-state cleanup predicate shared by the writer and v2's final fold. */
+export function hasStaleScoredTime(matchUp?: MatchUp): boolean {
+  return !!matchUp?.schedule?.scoredTime && !matchUpIsScored(matchUp);
+}
+
 /**
  * Remove `schedule.scoredTime` from every matchUp that no longer carries a result.
  *
@@ -60,8 +65,8 @@ export function reconcileScoredTimes({
 }): void {
   for (const matchUp of matchUps) {
     // the guard that keeps the notice below from failing: a missing matchUp never reaches it
-    if (!matchUp?.schedule?.scoredTime || matchUpIsScored(matchUp)) continue;
-    delete matchUp.schedule.scoredTime;
+    if (!hasStaleScoredTime(matchUp)) continue;
+    if (matchUp.schedule) delete matchUp.schedule.scoredTime;
     modifyMatchUpNotice({
       tournamentId: tournamentRecord?.tournamentId,
       context: 'reconcileScoredTimes',

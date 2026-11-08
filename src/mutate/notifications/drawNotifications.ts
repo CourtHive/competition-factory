@@ -208,7 +208,7 @@ function resolveStructureId(drawDefinition?: DrawDefinition, matchUpId?: string)
  * The top-level structure whose subtree holds the matchUp: a round robin's container for a group's matchUp, and the
  * structure of the dual for one of its lines. The level `drawUpdatedAt` stamps at.
  */
-function topLevelStructureId(drawDefinition: DrawDefinition, matchUpId: string): string | undefined {
+export function topLevelStructureId(drawDefinition: DrawDefinition, matchUpId: string): string | undefined {
   const holds = (structure: Structure): boolean =>
     !!matchUpsOf(structure)?.some(
       (matchUp) => matchUp.matchUpId === matchUpId || matchUp.tieMatchUps?.some((line) => line.matchUpId === matchUpId),
