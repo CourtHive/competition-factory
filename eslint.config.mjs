@@ -168,7 +168,8 @@ export default [
     },
   },
   {
-    files: ['**/*.test.ts'],
+    // Relocated direction fixtures keep their original test-only duplicate-string exemption.
+    files: ['**/*.test.ts', 'src/tests/testHarness/outcome/directionFixtures.ts'],
     rules: {
       'sonarjs/no-duplicate-string': 'off',
       '@typescript-eslint/no-empty-function': 'off',

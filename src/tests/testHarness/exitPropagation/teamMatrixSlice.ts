@@ -22,26 +22,34 @@ export function teamMatrixSlice(arm: 'dual' | 'line', drawType: string): MatrixC
  * Each slice checks its OWN quarantine entries are still observed; `teamMatrix.test.ts` checks that no
  * `team matrix` quarantine key names a cell outside every slice.
  */
-export function runTeamMatrixSlice(arm: 'dual' | 'line', drawType: string): void {
+export function runTeamMatrixSlice(
+  arm: 'dual' | 'line',
+  drawType: string,
+  partition?: { exitStatus: string; controls?: boolean },
+): void {
   const cells = teamMatrixSlice(arm, drawType);
   // matrixTier.ts: a PR into dev registers a third of the cells, every exit status kept; checkpoints run all 60
   const tiered = tierCells(cells, { stratum: (cell) => cell.exitStatus });
-  const sliceKeys = new Set(tiered.map(teamLabel));
+  // Select the PR tier BEFORE partitioning: changing stratum offsets changes which original cells run.
+  const selected = partition ? tiered.filter((cell) => cell.exitStatus === partition.exitStatus) : tiered;
+  const sliceKeys = new Set(selected.map(teamLabel));
   const observedKeys = new Set<string>();
 
-  // CONTROL: the slice is not empty, so a renamed draw type cannot pass vacuously
-  test(`the TEAM ${arm} arm holds 60 ${drawType} cells`, () => {
-    expect(cells).toHaveLength(60);
-  });
+  if (!partition || partition.controls) {
+    // CONTROL: the slice is not empty, so a renamed draw type cannot pass vacuously
+    test(`the TEAM ${arm} arm holds 60 ${drawType} cells`, () => {
+      expect(cells).toHaveLength(60);
+    });
 
-  // CONTROL: the tier narrows the run, never a dimension of it
-  test(`the ${matrixTier} tier keeps every draw size, reduction, exit status and propagation of the ${drawType} cells`, () => {
-    expect(
-      sliceMissingValues(cells, tiered, ['drawSize', 'participantsCount', 'exitStatus', 'propagateExitStatus']),
-    ).toEqual([]);
-  });
+    // CONTROL: the tier narrows the run, never a dimension of it
+    test(`the ${matrixTier} tier keeps every draw size, reduction, exit status and propagation of the ${drawType} cells`, () => {
+      expect(
+        sliceMissingValues(cells, tiered, ['drawSize', 'participantsCount', 'exitStatus', 'propagateExitStatus']),
+      ).toEqual([]);
+    });
+  }
 
-  test.for(tiered)(
+  test.for(selected)(
     'team $eventType $drawType $drawSize/$participantsCount $exitStatus propagate=$propagateExitStatus lines=$lineUps',
     { timeout: 180_000 },
     (cell) => {

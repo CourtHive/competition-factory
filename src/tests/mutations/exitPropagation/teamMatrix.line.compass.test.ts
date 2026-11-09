@@ -1,5 +1,18 @@
 import { runTeamMatrixSlice } from '@Tests/testHarness/exitPropagation/teamMatrixSlice';
-import { COMPASS } from '@Constants/drawDefinitionConstants';
+import { registerTestSeedIdentity } from '@Tests/testHarness/seedMathRandom';
 
-// One slice of the TEAM exit-propagation matrix (see teamMatrix.test.ts): the line arm, COMPASS.
-runTeamMatrixSlice('line', COMPASS);
+// constants and types
+import { COMPASS } from '@Constants/drawDefinitionConstants';
+import { WALKOVER } from '@Constants/matchUpStatusConstants';
+
+// Tier selection precedes this status partition; all original cells and seed identities are preserved.
+// Register here: a shared cached helper can retain an older setup-file seed registry.
+registerTestSeedIdentity('src/tests/mutations/exitPropagation/teamMatrix.line.compass.test.ts', (title, ordinal) => ({
+  name: 'src/tests/mutations/exitPropagation/teamMatrix.line.compass.test.ts::' + title,
+  ordinal,
+}));
+
+runTeamMatrixSlice('line', COMPASS, {
+  exitStatus: WALKOVER,
+  controls: true,
+});

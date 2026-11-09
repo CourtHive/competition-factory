@@ -1,5 +1,21 @@
 import { runTeamMatrixSlice } from '@Tests/testHarness/exitPropagation/teamMatrixSlice';
-import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { registerTestSeedIdentity } from '@Tests/testHarness/seedMathRandom';
 
-// One slice of the TEAM exit-propagation matrix (see teamMatrix.test.ts): the line arm, DOUBLE_ELIMINATION.
-runTeamMatrixSlice('line', DOUBLE_ELIMINATION);
+// constants and types
+import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { WALKOVER } from '@Constants/matchUpStatusConstants';
+
+// Tier selection precedes this status partition; all original cells and seed identities are preserved.
+// Register here: a shared cached helper can retain an older setup-file seed registry.
+registerTestSeedIdentity(
+  'src/tests/mutations/exitPropagation/teamMatrix.line.doubleElimination.test.ts',
+  (title, ordinal) => ({
+    name: 'src/tests/mutations/exitPropagation/teamMatrix.line.doubleElimination.test.ts::' + title,
+    ordinal,
+  }),
+);
+
+runTeamMatrixSlice('line', DOUBLE_ELIMINATION, {
+  exitStatus: WALKOVER,
+  controls: true,
+});
