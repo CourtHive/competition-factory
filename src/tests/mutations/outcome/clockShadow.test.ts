@@ -10,7 +10,13 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { setClock } from '@Tools/clock';
 import type { OutcomeOp } from '@Mutate/matchUps/outcome/ops';
 
-const control = vi.hoisted(() => ({ active: false, fault: '', replay: false, liveError: undefined as unknown }));
+const control = vi.hoisted(() => ({
+  active: false,
+  phases: 0,
+  fault: '',
+  replay: false,
+  liveError: undefined as unknown,
+}));
 
 // This tests the oracle independently of admission: a real v1 entry against a certified ordinary final program.
 vi.mock('@Mutate/matchUps/outcome/decide', async (load) => {
@@ -79,6 +85,7 @@ vi.mock('@Mutate/matchUps/outcome/apply', async (load) => {
   return {
     ...original,
     applyTemporalPhases: (...args: Parameters<typeof original.applyTemporalPhases>) => {
+      control.phases++;
       const effects = args[3];
       if (control.fault === 'target' && effects) {
         const read = effects.notices.readClock;
@@ -131,7 +138,13 @@ afterEach(() => {
   deleteNotices();
 });
 
-function play(fault = '', throwAt = 0, surface = '') {
+function play(
+  fault = '',
+  throwAt = 0,
+  surface = '',
+  actualAdmission = false,
+  mode: 'differential' | 'v2' = 'differential',
+) {
   control.active = false;
   setOutcomePipeline('v1');
   setClock('2026-01-01T00:00:00.000Z');
@@ -195,8 +208,9 @@ function play(fault = '', throwAt = 0, surface = '') {
     return Date.parse('2026-01-02T00:00:00Z') + reads;
   });
   control.fault = fault;
-  control.active = true;
-  setOutcomePipeline('differential');
+  control.active = !actualAdmission;
+  control.phases = 0;
+  setOutcomePipeline(mode);
   let result: unknown, error: unknown;
   try {
     result = setMatchUpStatus({ tournamentRecord, drawDefinition, matchUpId: matchUp.matchUpId, outcome });
@@ -209,6 +223,7 @@ function play(fault = '', throwAt = 0, surface = '') {
     reads,
     matchUp,
     callbacks,
+    phases: control.phases,
     failures: takeVerificationFailures(),
     liveError: control.liveError,
   };
@@ -257,3 +272,12 @@ for (const surface of ['invalid-date', 'methods'])
     expect(played.callbacks).toBe(0);
     expect(played.failures).toEqual([]);
   });
+
+it.each(['differential', 'v2'] as const)('%s normal admission does not invoke custom value methods', (mode) => {
+  const played = play('', 0, 'methods', true, mode);
+  expect(played.phases).toBe(1);
+  expect(played.error).toBeUndefined();
+  expect(played.result).toMatchObject({ success: true });
+  expect(played.callbacks).toBe(0);
+  expect(played.failures).toEqual([]);
+});

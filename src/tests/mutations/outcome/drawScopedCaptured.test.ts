@@ -26,7 +26,11 @@ import {
   UPDATE_INCONTEXT_MATCHUP,
 } from '@Constants/topicConstants';
 
-const observed = vi.hoisted(() => ({ v1: 0, fault: false, plans: [] as any[] }));
+const observed = vi.hoisted(() => ({ v1: 0, fault: false, noNoticeSnapshot: false, plans: [] as any[] }));
+vi.mock('@Global/state/globalState', async (load) => {
+  const original = await load<typeof import('@Global/state/globalState')>();
+  return { ...original, getNoticeState: () => (observed.noNoticeSnapshot ? undefined : original.getNoticeState()) };
+});
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (load) => {
   const original: any = await load();
   return {
@@ -83,6 +87,7 @@ const outcome = (complete: boolean) => {
 
 afterEach(() => {
   observed.fault = false;
+  observed.noNoticeSnapshot = false;
   setOutcomePipeline('v1');
   setSubscriptions({ subscriptions: {} });
   deleteNotices();
@@ -391,6 +396,17 @@ it.each(SCOPES)('%s: uncaptured differential replay adds no clock reads and chec
 it('an uncaptured partial score remains owed without a complete temporal program', () => {
   const v1 = play('v1', 'draw-only', false, false);
   const v2 = play('v2', 'draw-only', false, false);
+  expect(v2.v1).toBe(1);
+  expect(v2.reads).toBe(v1.reads);
+  expect(v2.result).toEqual(v1.result);
+  expect(v2.roots).toEqual(v1.roots);
+  expect(v2.notices).toEqual(v1.notices);
+});
+
+it('an uncaptured provider without notice snapshots remains owed with v1 parity', () => {
+  observed.noNoticeSnapshot = true;
+  const v1 = play('v1', 'draw-only', true, false);
+  const v2 = play('v2', 'draw-only', true, false);
   expect(v2.v1).toBe(1);
   expect(v2.reads).toBe(v1.reads);
   expect(v2.result).toEqual(v1.result);
