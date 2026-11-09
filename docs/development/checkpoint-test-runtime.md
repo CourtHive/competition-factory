@@ -126,3 +126,114 @@ files, all nine outcome runner stages and TEAM arm lists are unchanged.
   double-elimination line matrix at 851.6 seconds; further runtime work should measure it.
 - Frozen C26 tests, configuration, helpers and `(arm,file,test,seq)` evidence remain
   immutable and replay separately. Never regenerate that baseline from the moved suites.
+
+## Follow-up: matrix partitions and duration drift
+
+The next isolated branch, `perf/checkpoint-matrix-runtime`, retains the verified `81af92fb65`
+source as its prerequisite. It partitions the expensive primary TEAM line double-elimination
+and compass matrices by exit status (five files each), and the main exit matrix by draw type
+(ten files). The original filenames keep their composition controls. The main matrix retains
+its independent historical cell composition; it does not switch to the census helper's copy.
+
+Both matrix tiers are selected **before** partitioning. Registration comparison against `81af`
+confirms all 725 full / 245 PR registrations, callback bodies, explicit cell seeds, effective
+`Math.random` identities and samples, timeouts and project membership are identical. The
+quarantine assertions remain in every partition, and the existing global orphan-key controls
+remain. A real PR-mode seed probe found 172 mismatches that the registration-only comparator
+missed: cached helpers held an earlier setup-file seed registry. Each test entry now registers
+its own alias directly, rather than delegating registration to a cached shared helper. Runtime
+seed observations in both isolation modes are required alongside the source comparison. No matrix cell or independent property assertion is removed. The maintained suite now
+has 2,236 files; the frozen C26 and nineteen-file TEAM arm selection are unchanged.
+
+Initial partition weights allocate the prior CI reports' per-case durations to the new files,
+scaled to their original file spans, then take the same per-tier medians. These are **derived
+estimates**, pending post-split CI observations; no local timings enter them. All other file
+weights retain the existing calibration. Both four-shard assignments remain deterministic,
+disjoint and exhaustive. The largest full estimate falls from 851.6 seconds to the remaining
+FMLC line matrix's 338.1 seconds; this is a smaller scheduling unit, not a measured CI speedup.
+
+The maintained Mentat `outcome-v2-runner.py` pins these matrices by exact filename/count.
+Its companion `perf/matrix-runtime-validator` branch must accompany this change: it accepts
+either the original C26 layout or the complete new layout, with exact per-file counts, unchanged
+family totals (601 / 62 / 62), and no duplicate case names across partitions. Missing, unknown,
+reallocated, duplicated and skipped partitions/cases are rejected. The original frozen snapshot,
+nine stages, eleven invocations, root mutation selection and special nineteen-file TEAM arm
+contract remain unchanged. The runner baseline passes 55 tests; the candidate passes 58,
+including failure injection for the new layouts.
+
+Local validation after the seed-registry correction: 379 PR tests pass, all 245 moved PR seed
+identities match; four full differential shards pass all 725 moved tests with exact observed
+seeds, and their native reports merge successfully. Focused shard times are 71.03 / 73.12 /
+74.92 / 72.18 seconds with two workers; the broader 27-file differential check passes 1,099
+tests. These local timings do not predict full checkpoint CI. Lint, types/compiler ratchets,
+generated/layer checks, build, Markdown and the timing tool's falsification tests pass.
+
+### Informational reporting
+
+Coverage shards now emit a small timing artifact alongside their unchanged native blobs.
+After the threshold-bearing four-blob merge, `shardTiming.mjs` checks four distinct timing
+reports against the complete source inventory and writes a job summary plus a downloadable
+`coverage-duration-observations-node26` artifact. It reports actual versus estimated work,
+unweighted files, the largest suites and files exceeding twice their estimate (at least five
+seconds). New observation steps are informational; test, coverage and required-check failures
+retain their existing behavior. Reporter failures produce an explicit warning.
+
+Each artifact records the CI run/attempt/commit, tier, pipeline, Node and Vitest versions,
+runner image, CPU model/count, available parallelism, memory, requested and resolved worker
+counts, observed concurrency IDs, file isolation, case fingerprints and file durations.
+Durations use Vitest's module diagnostic consistently; they are not silently mixed with the
+older JSON-span measurements. Image revisions and CPU models remain available to explain
+variation, even within the same worker-policy cohort.
+
+### Rolling calibration
+
+Download complete successful observation artifacts into separate run directories, then run:
+
+```bash
+node scripts/shardTiming.mjs calibrate full vitest.shardDurations.json \
+  .vitest/duration-history/full-*/shard-timing.json
+```
+
+Use `pr` and PR artifacts separately. The tool takes the latest five supplied independent
+verified CI runs, with at least two runs required, within one tier/pipeline/Node/tooling/worker
+cohort. The newest inventory must match the current source. Each file's median uses only
+observations with its current case fingerprint: a suite that grew cannot inherit a median of
+its smaller incarnation. New or changed suites with only one observation are listed explicitly
+in the provenance receipt. Missing, duplicate, partial, failed, local and mixed-worker evidence
+is rejected before writing weights. The other tier is preserved. Review and commit the weights
+and the generated per-tier provenance receipt; CI never rewrites committed weights itself.
+
+### Controlled worker experiment
+
+Manual dispatch adds `coverage-workers: default | 2 | 4`. Its default preserves normal behavior;
+PRs and checkpoint pushes keep the existing policy. Every option retains full matrices,
+differential coverage, isolation, four shards and the same threshold-bearing merge.
+
+Run an interleaved comparison at one source commit: default / 2 / 2 / default. First confirm
+that default resolves to a different worker count; if it already resolves to two, compare four
+instead. Compare both repetitions' maximum shard times, total elapsed shard time, import/test
+cost and environment metadata. Do not change the default based on one observation or local
+performance. If the result is inconclusive, retain the existing policy. Any policy change
+requires a new full differential validation at that exact commit.
+
+### v1 retirement prerequisites
+
+The outcome generalization plan still owes production fallback and uncaptured-clock work;
+v1 is active. This runtime change removes no comparisons and does not sunset v1. Before a
+migration-only suite can retire, its handover must identify an independent assertion for each
+behavioral contract, run that assertion directly under v2, and show that an injected violation
+is detected without consulting v1. In particular:
+
+| Contract                   | Independent evidence to retain or establish before deleting its v1 oracle               |
+| -------------------------- | --------------------------------------------------------------------------------------- |
+| Successful/refused returns | Exact result fields and error codes from the specification, including refusal atomicity |
+| Notices                    | Exact payload, identity, ordering and count; a duplicate or missing notice must fail    |
+| Stored material and stamps | C14/C15 invariants and explicit changed/unchanged timestamps                            |
+| Seating and TEAM views     | Participant provenance, lineup placement and assignment-view regressions                |
+| Clock effects              | Read/write order and throwing-write prefixes, including uncaptured direct-clock calls   |
+
+The existing transition/integrity properties, targeted regressions, fault-injection gates and
+frozen C26 replay remain required. A v1/v2 match supplies compatibility evidence, not acceptance
+of the intended behavior. Mixed suites must shed only the retired comparisons, retaining their
+independent assertions and fixtures. Actual removal waits for the outcome team's v1 acceptance
+and sunset work; it is not a runtime optimization in this branch.
