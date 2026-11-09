@@ -39,7 +39,14 @@ on:
   pull_request:
   push:
     branches: [master]
+  # Manual runs exercise the checkpoint path on the selected ref: full matrices and differential coverage.
   workflow_dispatch:
+    inputs:
+      coverage-workers:
+        description: Coverage worker experiment; default preserves the normal runner policy
+        type: choice
+        default: default
+        options: [default, '2', '4']
 
 permissions:
   contents: read
@@ -49,6 +56,7 @@ permissions:
 # warning today and de-risks the runner-side migration.
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  FACTORY_COVERAGE_WORKERS: ${{ github.event_name == 'workflow_dispatch' && inputs.coverage-workers || 'default' }}
   # MATRIX TIERS (CA, 2026-11-05; src/tests/testHarness/matrixTier.ts). An ordinary PR into dev runs a bounded,
   # stratified slice of the heavy exit-propagation matrices; a checkpoint PR into master, a push to master and a
   # manual dispatch run them in full. Only a pull_request whose base is not master gets `pr`: anything else, an
@@ -163,6 +171,11 @@ jobs:
       # `prebuild` hook (which regenerates rather than checks) never fires.
       - name: verify:generated
         run: pnpm verify:generated
+
+      - name: Verify shard timing tooling
+        run: |
+          node --test scripts/shardTiming.test.mjs
+          pnpm exec vitest run src/tests/global/childProcessDeadline.test.ts --maxWorkers=2
 
       - name: verify:types
         run: pnpm verify:types
@@ -309,9 +322,16 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - name: coverage shard ${{ matrix.shard }}/4
-        run: pnpm exec vitest run --coverage --shard=${{ matrix.shard }}/4 --reporter=default --reporter=blob
+        run: |
+          workers=()
+          case "$FACTORY_COVERAGE_WORKERS" in
+            default) ;;
+            2|4) workers=(--maxWorkers="$FACTORY_COVERAGE_WORKERS") ;;
+            *) echo "::error::unsupported coverage worker count"; exit 1 ;;
+          esac
+          pnpm exec vitest run --coverage --shard=${{ matrix.shard }}/4 --reporter=default --reporter=blob --reporter=./scripts/shardTimingReporter.mjs "${workers[@]}"
         env:
-          OUTCOME_PIPELINE: ${{ (github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'differential' || '' }}
+          OUTCOME_PIPELINE: ${{ (github.event_name == 'workflow_dispatch' || github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'differential' || '' }}
 
       # `.vitest/blob/blob-<shard>-4.json` (vitest's default); a dot-directory, hence include-hidden-files
       - uses: actions/upload-artifact@v7
@@ -321,6 +341,15 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 3
+
+      - uses: actions/upload-artifact@v7
+        continue-on-error: true
+        with:
+          name: coverage-timing-node${{ matrix.node-version }}-${{ matrix.shard }}
+          path: .vitest/timing/
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14
 
   coverage:
     needs: [scope, coverage-shard]
@@ -354,6 +383,7 @@ jobs:
       # name means. It loads the same config, so it needs the same OUTCOME_PIPELINE as the shards: that
       # env decides whether src/mutate/matchUps/outcome/** is in the measured set.
       - name: verify:coverage
+        id: coverage_verification
         run: |
           count=$(find .vitest/blob -name 'blob-*.json' | wc -l)
           if [ "$count" -ne 4 ]; then
@@ -362,7 +392,7 @@ jobs:
           fi
           pnpm exec vitest run --merge-reports=.vitest/blob --coverage --reporter=default
         env:
-          OUTCOME_PIPELINE: ${{ (github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'differential' || '' }}
+          OUTCOME_PIPELINE: ${{ (github.event_name == 'workflow_dispatch' || github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'differential' || '' }}
 
       # How much margin the merged coverage has above the floors, in items (CA, 2026-10-05: report +
       # an absolute minimum). Written to the job summary on every run, and the run fails if any metric
@@ -370,6 +400,30 @@ jobs:
       # mode skips the committed-baseline budget, which local `pnpm verify` still applies.
       - name: verify:coverage-headroom
         run: node scripts/verify/coverage-headroom.mjs --report --min=50
+
+      # Timing observations are informational. They never alter weights or coverage verdicts in CI.
+      - uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          pattern: coverage-timing-node${{ matrix.node-version }}-*
+          path: .vitest/timing
+          merge-multiple: true
+
+      - name: Report shard duration drift
+        continue-on-error: true
+        run: node scripts/shardTiming.mjs report .vitest/timing coverage/shard-timing.json
+        env:
+          COVERAGE_VERIFIED: ${{ steps.coverage_verification.outcome == 'success' }}
+
+      - uses: actions/upload-artifact@v7
+        continue-on-error: true
+        with:
+          name: coverage-duration-observations-node${{ matrix.node-version }}
+          path: |
+            coverage/shard-timing.json
+            coverage/shard-timing.json.md
+          if-no-files-found: warn
+          retention-days: 14
 
       # coverage/coverage-summary.json of the merged run, so anyone can re-run the headroom against it.
       - uses: actions/upload-artifact@v7
