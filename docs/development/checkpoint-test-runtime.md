@@ -216,6 +216,45 @@ cost and environment metadata. Do not change the default based on one observatio
 performance. If the result is inconclusive, retain the existing policy. Any policy change
 requires a new full differential validation at that exact commit.
 
+### Post-split CI comparison and calibration
+
+Four full differential measurements used the same test/tooling commit `35662029bf`, in
+interleaved default / two / two / default order. Default resolved to three workers. The table
+shows GitHub test-job elapsed times, including setup; these are distinct from per-file test
+seconds used by the balancer.
+
+| Run         | Workers | Shard 1 | Shard 2 | Shard 3 | Shard 4 | Maximum |
+| ----------- | ------: | ------: | ------: | ------: | ------: | ------: |
+| 42666285852 |       3 |   38:52 |   34:41 |   32:37 |   32:54 |   38:52 |
+| 42666326065 |       2 |   27:37 |   35:51 |   37:37 |   26:59 |   37:37 |
+| 42666334506 |       2 |   24:12 |   37:35 |   38:57 |   23:11 |   38:57 |
+| 42666343641 |       3 |   27:37 |   34:14 |   34:58 |   23:32 |   34:58 |
+
+All sixteen test shards pass. The median maximum is 36:55 with three workers versus 38:17
+with two; the paired results disagree. Runner CPU models vary within the four-vCPU hosted
+pool. Keep the existing three-worker policy; this sample does not establish a two-worker gain.
+GitHub abandoned downstream coverage jobs in several runs. Downstream-only retries recovered
+42666326065 and 42666343641 without repeating test shards. Run 42666334506's retry failed
+before creating jobs, and GitHub refuses another retry: its test timings are usable for the
+comparison, but its overall workflow is not green and it supplies no calibration evidence.
+No required gate was relaxed.
+
+Full weights now use the two successful default-worker runs above, with the new consistent
+module-diagnostic measurement. Both independently verify all 2,236 files, 31,825 passing tests
+and 1,560 existing skips, the exact 7,603 direction cases, all 725 primary matrix cases and 402
+extension cases. Both coverage merges report 95.24% statements, 98.42% functions, 88.40%
+branches and 98.18% lines. All files have two observations of their current case fingerprint;
+there are no single-observation estimates. The committed full provenance receipt records both
+runs and all eight runner contexts. The PR tier is calibrated separately as observations accrue.
+
+With refreshed weights, all four full assignments contain 559 files and approximately 4,585
+estimated test/import-overhead seconds each. The largest remaining estimate is the structure
+inconsistency corpus (522.4 seconds), followed by the FMLC line matrix (474.0). These are
+estimates of work, not predicted wall times. Final assignment changes require an ordinary PR
+check; the four measurements above precede this weight refresh. Hosted-runner variance and
+further matrix growth remain risks. Review drift after subsequent v2 development cycles rather
+than extrapolating one faster shard into a guaranteed checkpoint duration.
+
 ### v1 retirement prerequisites
 
 The outcome generalization plan still owes production fallback and uncaptured-clock work;
