@@ -14,6 +14,7 @@ import {
 
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
 import type { BuildViewArgs, OutcomeView, PlanShape, Route } from './types';
 import type { MatchUp } from '@Types/tournamentTypes';
@@ -47,10 +48,10 @@ export function compileTemporalPhases({
   if (route !== 'winner' || !sourceStructureId || !args.drawDefinition || !args.request.matchUpId) return undefined;
   if (view.isTeam || view.line || view.group || view.existing.winningSide || view.existing.hasSideExitProvenance)
     return undefined;
-  if (view.existing.matchUpStatus !== 'TO_BE_PLAYED' || args.request.carries?.schedule) return undefined;
+  if (view.existing.matchUpStatus !== TO_BE_PLAYED || args.request.carries?.schedule) return undefined;
   const result = ops[0];
   if (result?.op !== 'setMatchUpResult' || result.matchUpId !== args.request.matchUpId) return undefined;
-  if (result.matchUpStatus !== 'COMPLETED' || result.score !== args.request.score) return undefined;
+  if (result.matchUpStatus !== COMPLETED || result.score !== args.request.score) return undefined;
   if (
     Object.keys(result).some(
       (key) =>
@@ -74,7 +75,7 @@ export function compileTemporalPhases({
     const target = view.targets.winner;
     if (!target || arrival.matchUpId !== view.targets.winnerMatchUpId || arrival.matchUpId === result.matchUpId)
       return undefined;
-    if (target.matchUpStatus !== 'TO_BE_PLAYED' || target.hasBye || target.holdsResult || target.carriesExit)
+    if (target.matchUpStatus !== TO_BE_PLAYED || target.hasBye || target.holdsResult || target.carriesExit)
       return undefined;
     if (Object.keys(arrival).some((key) => !['op', 'matchUpId', 'drawPositions'].includes(key))) return undefined;
   }
