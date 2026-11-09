@@ -42,7 +42,9 @@ it('defaults to tied completion and exposes permitted organizer choices', () => 
   expect(result.selectionLocked).toBe(false);
   expect(result.scoringPolicy?.permittedVariants).toHaveLength(3);
   expect(result.contract).toEqual({ combinedPointTotal: 32, tieResolution: 'ALLOW' });
-  expect(analyzeRotatingPartnerScore({ side1Points: 16, side2Points: 16, contract: result.contract! }).tied).toBe(true);
+  const contract = result.contract!;
+  if (!('combinedPointTotal' in contract)) throw new Error('expected combined-point default');
+  expect(analyzeRotatingPartnerScore({ side1Points: 16, side2Points: 16, contract }).tied).toBe(true);
 });
 
 it('enforces a singleton policy and total restriction', () => {
@@ -52,7 +54,10 @@ it('enforces a singleton policy and total restriction', () => {
   expect(getRotatingPartnerScoringPolicy({ drawDefinition, selectedVariant: { tieResolution: 'ALLOW' } }).error).toBe(
     INVALID_VALUES,
   );
-  if (drawDefinition.competitionProfile?.format === 'AMERICANO')
+  if (
+    drawDefinition.competitionProfile?.format === 'AMERICANO' &&
+    drawDefinition.competitionProfile.scoring.kind !== 'TIMED'
+  )
     drawDefinition.competitionProfile.scoring.combinedPointTotal = 24;
   expect(getRotatingPartnerScoringPolicy({ drawDefinition }).error).toBe(INVALID_VALUES);
 });

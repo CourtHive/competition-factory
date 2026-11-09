@@ -1,4 +1,4 @@
-import { stringifyCombinedPointFormat } from '@Helpers/matchUpFormatCode/combinedPointFormat';
+import { rotatingPartnerContractFormat } from '@Helpers/rotatingPartners/scoringContract';
 import { structuresOf, matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { isRoundWinnerLink } from '@Helpers/drawTopology/linkTraversal';
 
@@ -54,9 +54,7 @@ export function checkDrawFormatCompatibility(params: {
   );
   // force strips matchUp-level formats in the writer, even when the requested format is unchanged.
   // Applied rounds keep their historical contract; force cannot erase that persisted format.
-  if (
-    rounds.some((round) => force || matchUpFormat !== `SET1-S:${stringifyCombinedPointFormat(round.scoringContract)}`)
-  )
+  if (rounds.some((round) => force || matchUpFormat !== rotatingPartnerContractFormat(round.scoringContract)))
     return { error: INVALID_VALUES, info: 'format is fixed by the applied rotating round scoring contract' };
   return {};
 }

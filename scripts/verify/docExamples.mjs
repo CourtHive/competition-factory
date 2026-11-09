@@ -31,6 +31,13 @@ const ratedAs = (values, expected) =>
 
 const cases = [
   {
+    page: 'concepts/draw-types/competition-profile.md',
+    contains: 'const timedRound =',
+    check: `if (!timedRound.success || !('success' in timedResult && timedResult.success) || timedRound.matchUps?.[0]?.matchUpFormat !== 'SET1-S:T15P') throw new Error('timed rotating round');
+const creditedPoints = (timedStandings.standings ?? []).map(row => row.pointsScored).sort((a,b) => b-a);
+if (JSON.stringify(creditedPoints) !== '[11,11,8,8]') throw new Error('timed individual points: ' + JSON.stringify(creditedPoints));`,
+  },
+  {
     page: RATINGS_OTHER_SPORTS,
     contains: 'POLICY_RATINGS_ELO_538_NBA.ratings',
     setup: recordResult,

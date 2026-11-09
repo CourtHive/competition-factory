@@ -29,7 +29,7 @@ const result = tournamentEngine.setCompetitionProfile({
 
 For Americano, use `format: 'AMERICANO'`, `pairing: { seed, algorithmVersion: 1 }` and `completion: { kind: 'PARTNERSHIP_COVERAGE' }`. Store the Americano generator's `seedUsed` or Mexicano's `baseSeed`. Seeds must be safe integers; combined point totals and round counts must be positive safe integers. Version and pairing algorithm version are currently `1`.
 
-Tie resolution belongs to the governing scoring policy, rather than the profile. Profiles store configuration; individual admission and round application use the APIs below. Manual/live fixed-total scoring and individual standings use the historical contracts saved with applied rounds.
+The governing scoring policy permits variants; the selected variant is saved in the profile and each applied round. Individual admission and round application use the APIs below. Manual/live scoring and individual standings use the historical contracts saved with applied rounds.
 
 ## Read, change and remove
 
@@ -79,15 +79,14 @@ when restricted, belong to `permittedPointTotals`.
 
 The engine default permits `ALLOW`, `DECIDING_POINT`, and `WIN_BY_MARGIN` with margin two,
 defaulting to `ALLOW`. This query validates and previews configuration; use the persistence mutation below to save a
-selection. Neither method changes manual/live scoring yet. Resolved rules must be captured when applying a round.
-Separate deciding phases remain open work; inline extra-point attribution and individual standings are supported by the rotating-partner tally policy.
+selection. Applied rounds capture the resolved rules used by manual/live scoring and individual standings. Timed scoring requires the explicit enablement below.
 
 ## Persisting the scoring choice
 
 Call `setRotatingPartnerScoring({ drawId, selectedVariant? })` before generating matchUps. Omitting
 `selectedVariant` saves the approved policy default. The mutation stores the choice in
 `competitionProfile.scoring.selectedVariant`; point total and selected variant together define the
-resolved match contract. Direct profile writes validate these choices against the governing policy.
+resolved combined-point contract. Timed minutes and the selected timed variant define a timed contract. Direct profile writes validate these choices against the governing scoring and tally policies.
 
 `getRotatingPartnerScoringContract({ drawId })` reads that saved contract without consulting current
 policies. It refuses an unconfigured profile. This is the query historical scoring must use; the
@@ -95,8 +94,130 @@ policy query remains the preview of current governing rules. Changing inherited 
 rewrite the saved contract. Repeating an identical write succeeds without effect; changing or removing
 the profile is refused once any matchUps exist. The new mutation also respects DRAWS locks.
 
-The draw-level match contract is captured in each applied round. Future-round amendments,
-separate deciding phases and tally rules remain outstanding.
+The draw-level match contract is captured in each applied round. Mixed scoring between rounds, session conclusion and timed deciding-point exclusion are separate deliveries.
+
+## Timed rounds
+
+Timed scoring stays on profile `version: 1`. Set `scoring: { kind: 'TIMED', minutes: 15 }` and save
+an approved variant with `setRotatingPartnerScoring`. Minutes must be positive safe integers.
+`ALLOW` maps to `SET1-S:T15P`; `DECIDING_POINT` maps to `SET1-S:T15P/TB1`. Timed `WIN_BY_MARGIN`,
+mixed duration/combined-total fields and timed winning margins are refused.
+
+A scoring policy must explicitly enable `timed` for the format. An omitted timed section disables
+it, including under the engine default. `timed.permittedMinutes` restricts durations when supplied;
+once explicitly enabled, omission permits any positive safe-integer minutes. Whole-policy inheritance
+and singleton variant locks apply. A known single structure contributes its inherited timed rules
+at selection; generation revalidates the selected structure's scoring and tally policies.
+
+Here is a complete factory example, using an imported `tournamentEngine`:
+
+```typescript
+const playerIds = ['a', 'b', 'c', 'd'];
+tournamentEngine.setState({
+  tournamentId: 'timed-example',
+  participants: playerIds.map((participantId) => ({
+    participantId,
+    participantType: 'INDIVIDUAL' as const,
+    participantRole: 'COMPETITOR' as const,
+  })),
+  events: [
+    {
+      eventId: 'timed-event',
+      eventType: 'DOUBLES',
+      entries: playerIds.map((participantId) => ({ participantId, entryStatus: 'UNGROUPED' as const })),
+      drawDefinitions: [
+        {
+          drawId: 'timed-draw',
+          drawType: 'AD_HOC',
+          matchUpType: 'DOUBLES',
+          entries: playerIds.map((participantId) => ({ participantId, entryStatus: 'DIRECT_ACCEPTANCE' as const })),
+          structures: [{ structureId: 'timed-court', matchUps: [] }],
+        },
+      ],
+    },
+  ],
+});
+tournamentEngine.attachPolicies({
+  policyDefinitions: {
+    scoring: {
+      rotatingPartners: {
+        AMERICANO: {
+          defaultVariant: { tieResolution: 'ALLOW' },
+          permittedVariants: [{ tieResolution: 'ALLOW' }],
+          timed: {
+            defaultVariant: { tieResolution: 'ALLOW' },
+            permittedVariants: [{ tieResolution: 'ALLOW' }, { tieResolution: 'DECIDING_POINT' }],
+            permittedMinutes: [15, 20],
+          },
+        },
+      },
+    },
+  },
+});
+const configured = tournamentEngine.setCompetitionProfile({
+  drawId: 'timed-draw',
+  competitionProfile: {
+    version: 1,
+    format: 'AMERICANO',
+    entrantScope: 'INDIVIDUAL',
+    matchUpType: 'DOUBLES',
+    scoring: { kind: 'TIMED', minutes: 15 },
+    standings: { metric: 'SIDE_POINTS', attribution: 'EACH_INDIVIDUAL' },
+    pairing: { seed: 42, algorithmVersion: 1 },
+    completion: { kind: 'PARTNERSHIP_COVERAGE' },
+  },
+});
+if (!configured.success) throw new Error('Timed profile refused');
+tournamentEngine.setRotatingPartnerScoring({ drawId: 'timed-draw' });
+const timedPreview = tournamentEngine.getRotatingPartnerRoundPreview({ drawId: 'timed-draw', roundNumber: 1 });
+if (timedPreview.error) throw new Error('Timed preview refused');
+const timedRound = tournamentEngine.generateRotatingPartnerRound({
+  drawId: 'timed-draw',
+  roundNumber: 1,
+  requestId: 'timed-round-1',
+  expectedPairings: timedPreview.round!,
+  expectedScoringContract: timedPreview.scoringContract!,
+});
+if (timedRound.error) throw new Error('Timed application refused');
+const timedResult = tournamentEngine.setMatchUpStatus({
+  drawId: 'timed-draw',
+  matchUpId: timedRound.matchUps![0].matchUpId,
+  outcome: {
+    matchUpStatus: 'COMPLETED',
+    winningSide: 1,
+    score: { sets: [{ setNumber: 1, side1Score: 11, side2Score: 8, winningSide: 1 }] },
+  },
+});
+if (timedResult.error) throw new Error('Timed result refused');
+const timedStandings = tournamentEngine.getRotatingPartnerStandings({ drawId: 'timed-draw' });
+// Both partners receive their side's actual points: 11, 11, 8, 8.
+```
+
+For Mexicano, retain the existing Mexicano pairing/completion fields and enable its own timed policy.
+Every previous result must be resolved before generating the next round. Pairing algorithms and
+individual ranking remain unchanged.
+
+Scores alone do not complete a timed match. Send an explicit `COMPLETED` outcome, or the scorer's
+completed state after ending the segment. A live 11–8 stays live; tied ALLOW finishes without a
+winner. Completed 0–0 and tied DECIDING_POINT results are refused atomically. A deciding rally must
+be included in the final totals: both manual 11–10 and a scorer-produced 10–10 plus one rally credit
+11 and 10. A one-point margin alone does not identify a deciding rally. No countdown, elapsed-time
+enforcement or automatic completion scheduler is provided.
+
+All actual rally points count. Timed DECIDING_POINT with tally `decidingPoints: 'EXCLUDE'` is refused
+at selection and generation until decided-result evidence supports exclusion. `overtimePoints`
+remains required but has no effect for timed scoring, which has no overtime phase. Existing exit
+status treatments, settlements, corrections, locks and historical Mexicano snapshots still apply.
+
+Applied rounds and exact retries use saved contracts, even after policy changes. New rounds use
+current policy. Legacy combined-point profiles and contracts may omit `kind` or explicitly name
+`COMBINED_POINTS`; these compare equally without rewriting historical JSON. Changing saved minutes,
+formats or incompatible contracts is refused.
+
+The format code owns the duration: these timed rounds report 15 minutes by default, including `/TB1`.
+Use scheduling `averageTimes` keyed by the code for venue allowances. Scoring stays fixed for the draw.
+Consumer score entry, server rollout and TMX creation require their separate compatible deliveries;
+this factory API example does not provide those integrations.
 
 ## Individual entrants and partnership sides
 
@@ -151,7 +272,7 @@ Americano supports sequential application of its complete saved rotation. Mexica
 points and uses authoritative individual standings for subsequent rounds. Every prior result must be
 settled under its saved tally contract before the next Mexicano round can be previewed.
 The roster must stay fixed after application. The round API honours DRAWS locks and participant locks
-when adding PAIRs. Court allocation uses existing scheduling methods. Each matchUp carries a fixed-total `matchUpFormat` derived from the saved round scoring contract.
+when adding PAIRs. Court allocation uses existing scheduling methods. Each matchUp carries a fixed-total or timed `matchUpFormat` derived from its saved round scoring contract.
 Applied round formats cannot be changed through matchUp, structure, draw or event scope. Scheduling
 edits and unrelated PAIR additions do not invalidate approved pairings.
 

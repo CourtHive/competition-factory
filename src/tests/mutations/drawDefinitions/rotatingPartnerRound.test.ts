@@ -348,7 +348,10 @@ it('irrelevant scheduling and unrelated pairs do not invalidate approved pairing
 it('the scoring contract is part of approval even when pairings are unchanged', () => {
   const context = setup();
   const approved = request(context);
-  if (context.drawDefinition.competitionProfile!.format !== LADDER)
+  if (
+    context.drawDefinition.competitionProfile!.format !== LADDER &&
+    context.drawDefinition.competitionProfile!.scoring.kind !== 'TIMED'
+  )
     context.drawDefinition.competitionProfile!.scoring.combinedPointTotal = 24;
   const before = structuredClone(context.tournamentRecord);
   expect(generateRotatingPartnerRound(approved).error).toBeTruthy();
@@ -408,6 +411,7 @@ it('retry identity includes pairings and score rules, and force cannot strip an 
   const context = setup();
   const approved = request(context);
   generateRotatingPartnerRound(approved);
+  if (approved.expectedScoringContract.kind === 'TIMED') throw new Error('expected combined-point fixture');
   const changed = structuredClone(approved.expectedPairings);
   changed[0].reverse();
   expect(generateRotatingPartnerRound({ ...approved, expectedPairings: changed }).error).toBeTruthy();

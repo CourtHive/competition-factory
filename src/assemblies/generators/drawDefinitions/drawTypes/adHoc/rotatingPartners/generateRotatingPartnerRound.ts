@@ -1,11 +1,14 @@
 import { generateAdHocMatchUps } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocMatchUps';
-import { stringifyCombinedPointFormat } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { addMatchUpsNotice, modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { checkMutationLock } from '@Mutate/tournaments/mutationLocks/checkMutationLock';
 import { addAdHocMatchUps } from '@Mutate/structures/addAdHocMatchUps';
 import { addParticipant } from '@Mutate/participants/addParticipant';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { addNotice } from '@Global/state/globalState';
+import {
+  rotatingPartnerContractFormat,
+  sameRotatingPartnerScoreContract,
+} from '@Helpers/rotatingPartners/scoringContract';
 import {
   appliedRotatingPartnerRoundsAreIntact,
   getRotatingPartnerRoundPreview,
@@ -14,7 +17,7 @@ import {
 // constants and types
 import type { RotatingPartnerRoundArgs } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/getRotatingPartnerRoundPreview';
 import type { RotatingPartnerRound } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/rotatingPartnerTypes';
-import type { RotatingPartnerScoreContract } from '@Types/rotatingPartnerScoring';
+import type { RotatingPartnerScoreContractWithTimed } from '@Types/rotatingPartnerScoring';
 import type { RotatingPartnerRoundRecord } from '@Types/rotatingPartnerRound';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { ADD_PARTICIPANTS } from '@Constants/topicConstants';
@@ -29,7 +32,7 @@ export function generateRotatingPartnerRound(
   params: RotatingPartnerRoundArgs & {
     requestId: string;
     expectedPairings: RotatingPartnerRound;
-    expectedScoringContract: RotatingPartnerScoreContract;
+    expectedScoringContract: RotatingPartnerScoreContractWithTimed;
     lockToken?: string;
   },
 ): ResultType & { roundRecord?: RotatingPartnerRoundRecord; matchUps?: MatchUp[]; existingRound?: boolean } {
@@ -48,7 +51,7 @@ export function generateRotatingPartnerRound(
     if (
       prior.roundNumber !== roundNumber ||
       canonicalJson(prior.pairings) !== canonicalJson(expectedPairings) ||
-      canonicalJson(prior.scoringContract) !== canonicalJson(expectedScoringContract) ||
+      !sameRotatingPartnerScoreContract(prior.scoringContract, expectedScoringContract) ||
       (params.structureId && params.structureId !== prior.structureId)
     )
       return { error: INVALID_VALUES, info: 'requestId already used for a different round request' };
@@ -63,7 +66,7 @@ export function generateRotatingPartnerRound(
   if (preview.error) return preview;
   if (
     canonicalJson(preview.round) !== canonicalJson(expectedPairings) ||
-    canonicalJson(preview.scoringContract) !== canonicalJson(expectedScoringContract)
+    !sameRotatingPartnerScoreContract(preview.scoringContract, expectedScoringContract)
   )
     return { error: INVALID_VALUES, info: 'stale rotating-partner round preview' };
   const staged = copyRoundData(tournamentRecord);
@@ -105,10 +108,10 @@ export function generateRotatingPartnerRound(
   });
   if (generated.error) return generated;
   const matchUps = generated.matchUps!;
-  const segment = stringifyCombinedPointFormat(preview.scoringContract!);
-  if (!segment) return { error: INVALID_VALUES };
+  const format = rotatingPartnerContractFormat(preview.scoringContract!);
+  if (!format) return { error: INVALID_VALUES };
   matchUps.forEach((matchUp) => {
-    matchUp.matchUpFormat = `SET1-S:${segment}`;
+    matchUp.matchUpFormat = format;
   });
   const inserted = addAdHocMatchUps({
     tournamentRecord: staged,
