@@ -13,6 +13,7 @@ import type { OutcomeOp } from '@Mutate/matchUps/outcome/ops';
 const control = vi.hoisted(() => ({
   active: false,
   phases: 0,
+  proveCompiler: false,
   fault: '',
   replay: false,
   liveError: undefined as unknown,
@@ -43,6 +44,13 @@ vi.mock('@Mutate/matchUps/outcome/decide', async (load) => {
       ];
       const phases = compileTemporalPhases({ args, view, route: 'winner', ops });
       expect(phases).toBeDefined();
+      if (control.proveCompiler) {
+        const wrongTarget = ops.map((op, index) => (index === 1 ? { ...op, id: 'foreign' } : op));
+        const reordered = [ops[0], ops[2], ops[1], ops[3]];
+        const quiet = [{ ...result, announcedAs: 'foreign' }, ...ops.slice(1)];
+        for (const candidate of [ops.slice(0, -1), [...ops, ops.at(-1)!], wrongTarget, reordered, quiet])
+          expect(compileTemporalPhases({ args, view, route: 'winner', ops: candidate as OutcomeOp[] })).toBeUndefined();
+      }
       const shadow = prepareTemporalShadow(args, phases!, 'direction');
       expect(shadow).toBeDefined();
       return {
@@ -92,6 +100,22 @@ vi.mock('@Mutate/matchUps/outcome/apply', async (load) => {
         effects.notices.readClock = (effect) => read({ ...effect, target: { ...effect.target } });
       }
       if (control.fault === 'drop-notice' && effects) effects.notices.addNotice = () => undefined;
+      if (control.fault === 'prefix-transient' && effects) {
+        const read = effects.notices.readClock;
+        let first = true;
+        effects.notices.readClock = (effect) => {
+          if (!first) return read(effect);
+          first = false;
+          const saved = Object.getOwnPropertyDescriptor(effect.target, 'matchUpStatus');
+          Object.defineProperty(effect.target, 'matchUpStatus', { value: 'DEFAULTED', configurable: true });
+          try {
+            return read(effect);
+          } finally {
+            if (saved) Object.defineProperty(effect.target, 'matchUpStatus', saved);
+            else Reflect.deleteProperty(effect.target, 'matchUpStatus');
+          }
+        };
+      }
       if (control.fault === 'score-alias') args[1].result.score = structuredClone(args[1].result.score);
       control.replay = true;
       try {
@@ -131,6 +155,7 @@ afterEach(() => {
   control.active = false;
   control.replay = false;
   control.fault = '';
+  control.proveCompiler = false;
   control.liveError = undefined;
   setClock();
   setOutcomePipeline('v1');
@@ -237,7 +262,15 @@ it('replays a real v1 final with shared Date, Set, Map, null-prototype and spars
   expect(played.failures).toEqual([]);
 });
 
-for (const fault of ['observer-before', 'observer-after', 'target', 'drop-notice', 'score-alias', 'deferred']) {
+for (const fault of [
+  'observer-before',
+  'observer-after',
+  'target',
+  'drop-notice',
+  'score-alias',
+  'deferred',
+  'prefix-transient',
+]) {
   it(`makes ${fault} independently fatal after a successful live continuation`, () => {
     const played = play(fault);
     expect(played.reads).toBe(4);
@@ -279,5 +312,13 @@ it.each(['differential', 'v2'] as const)('%s normal admission does not invoke cu
   expect(played.error).toBeUndefined();
   expect(played.result).toMatchObject({ success: true });
   expect(played.callbacks).toBe(0);
+  expect(played.failures).toEqual([]);
+});
+
+it('the phase compiler consumes every stamp and refuses foreign, reordered or quiet effects', () => {
+  control.proveCompiler = true;
+  const played = play();
+  expect(played.error).toBeUndefined();
+  expect(played.result).toMatchObject({ success: true });
   expect(played.failures).toEqual([]);
 });
