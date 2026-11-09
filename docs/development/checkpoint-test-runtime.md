@@ -1,69 +1,87 @@
-# Checkpoint test runtime, 2026-11-09
+# Checkpoint test runtime and calibration
 
-Measured on factory `68d93d3694`, on `perf/checkpoint-outcome-suites`. Outcome owner
-coordinated before editing: the prior session ended after #6339, with no held paths or
-running Button jobs. ATC found no competing factory writer. Production outcome code,
-matrices, workflow, coverage thresholds and branch protections are unchanged.
+Verified 2026-11-09 on `perf/checkpoint-outcome-suites`, based on factory `68d93d3694`.
+Outcome ownership was cleared before editing; production outcome code is unchanged.
+The 7,603-case serial file is now 15 independently shardable suites. All 51 describe
+bodies, case names, deterministic seeds and duplicate-name ordinals are preserved.
 
-## Diagnosis and measurements
+## Measured CI evidence
 
-`ownedDirectionWrites.test.ts` serializes 7,603 tests in one worker. File-level sharding
-cannot subdivide it. Its 245.3-second full-tier weight was stale by 9.6–13.3 times;
-refreshing that weight alone still leaves a 39–54-minute indivisible task.
-The three retained full/differential coverage runs contain the same 7,603 cases:
+Times below are coverage **job** durations, including setup and artifact handling, in shard
+order 1 / 2 / 3 / 4. All listed new runs and their threshold-bearing merges passed.
 
-| CI run                                                                                   | Coverage jobs, shards 1 / 2 / 3 / 4 | Direction file |
-| ---------------------------------------------------------------------------------------- | ----------------------------------- | -------------- |
-| [42536204205](https://github.com/CourtHive/competition-factory/actions/runs/42536204205) | 35:20 / 47:59 / 26:35 / 17:13       | 46:52          |
-| [42540635373](https://github.com/CourtHive/competition-factory/actions/runs/42540635373) | 18:59 / 55:32 / 30:12 / 29:24       | 54:25          |
-| [42545763712](https://github.com/CourtHive/competition-factory/actions/runs/42545763712) | 26:13 / 40:26 / 15:58 / 27:51       | 39:26          |
+| Run                                                                                      | Tier and pipeline                        | Shard times                   |
+| ---------------------------------------------------------------------------------------- | ---------------------------------------- | ----------------------------- |
+| [42540635373](https://github.com/CourtHive/competition-factory/actions/runs/42540635373) | Historical checkpoint, full/differential | 18:59 / 55:32 / 30:12 / 29:24 |
+| [42605592312](https://github.com/CourtHive/competition-factory/actions/runs/42605592312) | Unsplit PR, sampled                      | 43:41 / 7:05 / 4:22 / 6:10    |
+| [42632862284](https://github.com/CourtHive/competition-factory/actions/runs/42632862284) | Split PR, sampled, before calibration    | 6:14 / 6:47 / 12:19 / 11:07   |
+| [42632863234](https://github.com/CourtHive/competition-factory/actions/runs/42632863234) | Split full/differential sample 1         | 41:10 / 27:34 / 18:19 / 21:03 |
+| [42632872725](https://github.com/CourtHive/competition-factory/actions/runs/42632872725) | Split full/differential sample 2         | 30:11 / 37:28 / 19:02 / 26:39 |
 
-Each full report has 2,201 files. Weights now use the per-file median of these three
-reports. Relocated suites use the median of their constituent `describe` durations,
-**estimates derived from real CI**, pending direct measurement after landing.
-The v1/v2 ownership expectations have since advanced on dev; the CI cases and original
-local baseline still number 7,603. The frozen C26 baseline is neither edited nor regenerated.
+The controlled PR comparison uses identical starting source and lockfile: `79d498bcde`
+and `68d93d3694` have the same `src` tree and `pnpm-lock.yaml` hashes. The unsplit file
+itself took 42:54; the largest split file in the new PR took 6:50. Maximum PR shard time
+fell 71.8% before calibration. The historical checkpoint predates later engine changes,
+so its comparison is context, not an isolated attribution of all savings to this split.
 
-The regression now reaches dev PRs too: [42570338976](https://github.com/CourtHive/competition-factory/actions/runs/42570338976)
-(`FACTORY_MATRIX_TIER=pr`) took 47:14 / 6:48 / 8:05 / 4:37; this file took 46:18.
-It has no tier sampling. The PR weights are refreshed from that complete 2,202-file
-report (one observation, not a multi-run median).
+The initial 245.3-second full-tier weight underestimated the old file by 9.6–13.3 times.
+The initial split estimates removed that indivisible bottleneck but still left substantial
+imbalance in full CI. They are now replaced by **direct measurements**.
 
-## Change and expected reduction
+## Calibration and verification
 
-Fifteen independently shardable suites retain all 51 `describe` bodies and all 7,603
-cases. Shared fixtures/player live in `src/tests/testHarness/outcome/directionFixtures.ts`.
-Each test file keeps the original v1 writer mock and teardown. Its actual `vi.mock`
-keeps it isolated under both full and PR tiers. The mock and player share a per-file
-counter through a dependency-free leaf module. The fixture file retains the original
-test-only duplicate-string lint exemption.
+`vitest.shardDurations.json` now uses the per-file median of both new full/differential
+samples, and the new sampled PR report separately. Inputs are official Vitest JSON
+merges of exactly four native blob reports, processed by `scripts/updateShardDurations.mjs`.
+No local machine timings are mixed into CI weights. Both tiers cover 2,219 known files.
 
-| Suite suffix                                          | Cases | Full-tier estimate, seconds |
-| ----------------------------------------------------- | ----: | --------------------------: |
-| original filename (owned record/return/notice parity) | 1,171 |                       342.3 |
-| subscribed                                            |   188 |                        67.7 |
-| material                                              |   632 |                       264.8 |
-| realClock                                             | 1,171 |                       234.8 |
-| boundaries                                            |    32 |                        13.8 |
-| arrivals                                              |   272 |                        42.8 |
-| plainByes                                             |   193 |                       189.4 |
-| teamByes                                              |    80 |                       227.3 |
-| heldByes                                              |   526 |                       205.7 |
-| unreached                                             |   292 |                       111.5 |
-| relabels                                              |   698 |                       250.3 |
-| refreshed                                             |   704 |                       166.3 |
-| corrections                                           |   804 |                       232.7 |
-| views                                                 |   312 |                       202.8 |
-| seats                                                 |   528 |                       257.2 |
+Before accepting either full sample, validation checks four distinct blobs, disjoint
+file sets, no unhandled errors, all 15 direction suites isolated, and the original
+7,603-case multiset. Full reports include outcome-pipeline coverage and matrix counts
+601 / 402 / 62 for the main, extension and double-elimination line probes; sampled PRs
+have 201 / 135 / 22. Missing-blob and wrong-tier negative controls are rejected.
+The calibrated assignment itself is deterministic under input reordering and assigns
+each of the 2,219 files exactly once across four shards, for both tiers.
 
-Replay of run 42540635373's measured file/suite durations through the unchanged LPT
-assignment: shard test-work totals change from 1,846 / 6,720 / 3,595 / 3,970 seconds
-to 3,906 / 4,086 / 3,938 / 4,200. Maximum work falls 37.5%; across the other two full
-runs it falls 30.8–31.6%. The retained reports show three concurrency slots, but test-work
-is not wall time: the original indivisible file alone imposed a 54:25 floor on its
-shard. Its largest replacement measured 6:33 in that run. These are scheduling projections,
-**not candidate CI timings**. Host contention, instrumentation, test ordering and
-repeated fixture imports can change wall time.
+| Direction suite suffix | Cases | Full median seconds | PR seconds |
+| ---------------------- | ----: | ------------------: | ---------: |
+| arrivals               |   272 |                33.4 |       27.8 |
+| boundaries             |    32 |                10.5 |       11.3 |
+| corrections            |   804 |               211.1 |      384.3 |
+| heldByes               |   526 |               218.4 |      141.3 |
+| material               |   632 |               254.4 |      306.2 |
+| plainByes              |   193 |               204.0 |      219.6 |
+| realClock              | 1,171 |               250.1 |      144.1 |
+| refreshed              |   704 |               220.8 |      259.8 |
+| relabels               |   698 |               262.5 |      409.6 |
+| seats                  |   528 |               247.6 |      247.2 |
+| subscribed             |   188 |                49.5 |       42.3 |
+| teamByes               |    80 |               159.4 |      172.9 |
+| original filename      | 1,171 |               329.1 |      215.3 |
+| unreached              |   292 |               102.8 |      168.2 |
+| views                  |   312 |               227.6 |      341.5 |
+
+Manual workflow dispatch now exercises the checkpoint configuration on the selected
+branch: full matrices and differential coverage in **both** shards and merge. The four
+shards, four-blob guard, coverage thresholds, TEAM arm lists and branch protections are
+unchanged. Final verification of the calibrated assignment is recorded in
+[draft PR #6340](https://github.com/CourtHive/competition-factory/pull/6340); it must be green before merge.
+
+Local full differential coverage also passes: 2,180 files / 31,825 tests passed,
+39 files / 1,560 tests skipped by the existing configuration, zero failures. CI full
+samples report the same totals. Local and both CI coverage summaries agree at 95.24%
+statements, 98.42% functions, 88.40% branches and 98.18% lines. No floor was lowered.
+The local run took 2,213 seconds with four workers; it is correctness evidence, not a CI
+calibration sample.
+
+Additional checks: all 7,603 effective seed identities and repeated-name ordinals match
+the original file; the focused four-blob merge, 38 root mutation files / 1,225 tests,
+five sequencer tests, final 528 seat/landing cases, lint, types/compiler ratchets,
+generated/layer/attribute gates, build, formatting and Markdown lint pass.
+Moving fixtures into the harness required domain annotations for 33 implicit parameters,
+one equivalent `matchUpsOf` read, and sharing two identical reader expressions. Source
+comparison confirms unchanged test bodies and otherwise equivalent fixture expressions;
+no ratchet baseline changed.
 
 ## Behavioral evidence and retirement
 
@@ -98,36 +116,13 @@ runner scripts discover these suites by directory; historical exact-file evidenc
 the frozen `(arm,file,test,seq)` corpus stay unchanged. The 38 root mutation allow-list
 files, all nine outcome runner stages and TEAM arm lists are unchanged.
 
-## Verification and remaining work
+## Remaining limits
 
-Baseline: 7,603/7,603 full-tier differential tests pass, 639.923 seconds on one worker;
-repository lint and type checks pass. A TypeScript source comparison confirms unchanged
-51 describe bodies. Across 153 original fixture statements it permits only export/type
-annotations, two identical matchUp readers shared without changing their expression, and
-one equivalent structural read through the existing `matchUpsOf` accessor. Moving fixtures
-out of a `.test.ts` exposed 33 implicit parameters and one hard-union read: existing domain
-types, the shared reader and that accessor satisfy the stricter checks. No ratchet baseline
-changed. Runtime collection matches the original case-name multiset, including
-duplicate occurrences, and all 15 files are isolated. The source comparator is falsified
-with a changed assertion.
-
-The four focused full-tier differential runs (no coverage, two workers each, executed
-serially) passed in 103.916 / 99.260 / 114.560 / 123.061 seconds. They ran 2,261 / 1,604 /
-1,557 / 2,181 tests in 4 / 4 / 4 / 3 files. Vitest merged exactly four blob reports into
-15 files / 7,603 passing tests; the original case-name multiset is exact. All 7,603
-observed effective RNG identities, seeds and duplicate-name ordinals match the baseline.
-The 93 repeated-name occurrences are preserved, and a changed-seed control is rejected.
-The slowest focused shard is 2:03 versus the original indivisible file's 10:40 locally;
-this is not a full-suite or coverage benchmark.
-
-The 38 root mutation files (1,225 tests) and five duration-sequencer tests pass. Repository
-lint, type checking, generated gates, attribute audit, build, formatting, import ordering
-and report Markdown lint pass. The input-table inspection is a separate diagnostic probe.
-No production fault-injection test, outcome stage, root gate or matrix case is removed.
-The affected 528-case seat/landing suite passes again after the compiler-driven fixture changes.
-
-After an authorized push, run the actual checkpoint coverage gate, inspect all four
-job times and the threshold-bearing merge, then refresh estimates with
-`scripts/updateShardDurations.mjs` from the new whole-suite JSON reports. New suite
-weights must become direct measurements. PR-tier weights need more observations.
-Keep frozen C26 replay independent of maintained-suite file moves.
+- Full weights have two direct observations; PR weights have one. Runner variation is
+  visible in the two full runs. Refresh from subsequent complete reports, keeping tiers
+  separate, particularly when the outcome team adds substantial cases.
+- File-level balancing does not remove import, instrumentation, report-generation or
+  within-shard scheduling costs. The heaviest remaining full-tier estimate is the
+  double-elimination line matrix at 851.6 seconds; further runtime work should measure it.
+- Frozen C26 tests, configuration, helpers and `(arm,file,test,seq)` evidence remain
+  immutable and replay separately. Never regenerate that baseline from the moved suites.
