@@ -1,24 +1,24 @@
+import { getRotatingPartnerTallyPolicy } from '@Query/drawDefinition/getRotatingPartnerTallyPolicy';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { isCompetitionProfile } from '@Validators/competitionProfile';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import {
-  isRotatingPartnerScoringPolicy,
-  isRotatingPartnerScoringVariant,
-  sameScoringVariant,
-} from '@Validators/rotatingPartnerScoringPolicy';
+  isRotatingPartnerScoringPolicyWithTimed,
+  resolveRotatingPartnerScoringConfiguration,
+} from '@Helpers/rotatingPartners/scoringContract';
 
 // constants and types
 import { MISSING_DRAW_DEFINITION, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import type { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import type { ResultType } from '@Types/factoryTypes';
-import { SUCCESS } from '@Constants/resultConstants';
 import type {
-  RotatingPartnerScoreContract,
-  RotatingPartnerScoringPolicy,
+  RotatingPartnerScoreContractWithTimed,
+  RotatingPartnerScoringPolicyWithTimed,
   RotatingPartnerScoringVariant,
 } from '@Types/rotatingPartnerScoring';
 
-const defaultPolicy: RotatingPartnerScoringPolicy = {
+const defaultPolicy: RotatingPartnerScoringPolicyWithTimed = {
   defaultVariant: { tieResolution: 'ALLOW' },
   permittedVariants: [
     { tieResolution: 'ALLOW' },
@@ -35,14 +35,21 @@ export function getRotatingPartnerScoringPolicy(params: {
   event?: Event;
   selectedVariant?: RotatingPartnerScoringVariant;
 }): ResultType & {
-  scoringPolicy?: RotatingPartnerScoringPolicy;
-  contract?: RotatingPartnerScoreContract;
+  scoringPolicy?: RotatingPartnerScoringPolicyWithTimed;
+  contract?: RotatingPartnerScoreContractWithTimed;
   selectionLocked?: boolean;
 } {
   const profile = params.drawDefinition?.competitionProfile;
   if (!params.drawDefinition) return { error: MISSING_DRAW_DEFINITION };
-  if (!profile || profile.format === 'LADDER') return { error: INVALID_VALUES };
-  const { appliedPolicies } = getAppliedPolicies(params);
+  if (!isCompetitionProfile(profile) || profile.format === 'LADDER') return { error: INVALID_VALUES };
+  // A timed draw with one known structure resolves its inherited rules before organizer selection.
+  const structure =
+    params.structure ??
+    (profile.scoring.kind === 'TIMED' && params.drawDefinition.structures?.length === 1
+      ? params.drawDefinition.structures[0]
+      : undefined);
+  const context = { ...params, structure };
+  const { appliedPolicies } = getAppliedPolicies(context);
   const scoring = appliedPolicies?.[POLICY_TYPE_SCORING];
   const section: unknown = scoring?.rotatingPartners;
   if (scoring && Object.hasOwn(scoring, 'rotatingPartners') && section === undefined)
@@ -52,25 +59,18 @@ export function getRotatingPartnerScoringPolicy(params: {
   const configured: unknown = section === undefined ? undefined : (section as Record<string, unknown>)[profile.format];
   const hasConfigured = section !== undefined && Object.hasOwn(section, profile.format);
   const scoringPolicy = hasConfigured ? configured : defaultPolicy;
-  if (!isRotatingPartnerScoringPolicy(scoringPolicy))
+  if (!isRotatingPartnerScoringPolicyWithTimed(scoringPolicy))
     return { error: INVALID_VALUES, info: 'invalid rotating-partner scoring policy' };
-  const selectedVariant = params.selectedVariant ?? profile.scoring.selectedVariant ?? scoringPolicy.defaultVariant;
-  if (
-    !isRotatingPartnerScoringVariant(selectedVariant) ||
-    !scoringPolicy.permittedVariants.some((variant) => sameScoringVariant(variant, selectedVariant))
-  )
-    return { error: INVALID_VALUES, info: 'scoring variant is not permitted' };
-  const { combinedPointTotal } = profile.scoring;
-  if (
-    !Number.isSafeInteger(combinedPointTotal) ||
-    combinedPointTotal <= 0 ||
-    (scoringPolicy.permittedPointTotals && !new Set(scoringPolicy.permittedPointTotals).has(combinedPointTotal))
-  )
-    return { error: INVALID_VALUES, info: 'combined point total is not permitted' };
-  return {
-    ...SUCCESS,
-    scoringPolicy: makeDeepCopy(scoringPolicy, undefined, true),
-    contract: { combinedPointTotal, ...selectedVariant },
-    selectionLocked: scoringPolicy.permittedVariants.length === 1,
-  };
+  const tally = getRotatingPartnerTallyPolicy(context);
+  if (tally.error) return tally;
+  const resolved = resolveRotatingPartnerScoringConfiguration({
+    scoring: {
+      ...profile.scoring,
+      ...(params.selectedVariant === undefined ? {} : { selectedVariant: params.selectedVariant }),
+    },
+    policy: scoringPolicy,
+    tallyPolicy: tally.tallyPolicy,
+  });
+  if (resolved.error) return resolved;
+  return { ...resolved, scoringPolicy: makeDeepCopy(scoringPolicy, undefined, true) };
 }

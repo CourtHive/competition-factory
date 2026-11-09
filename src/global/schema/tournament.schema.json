@@ -5,7 +5,9 @@
     "Tournament": {
       "type": "object",
       "properties": {
-        "appliedPolicies": { "$ref": "#/definitions/PolicyDefinitions" },
+        "appliedPolicies": {
+          "$ref": "#/definitions/PolicyDefinitions"
+        },
         "createdAt": {
           "type": ["string", "object"],
           "format": "date-time"
@@ -217,7 +219,9 @@
             "$ref": "#/definitions/TournamentSanction"
           }
         },
-        "scheduling": { "$ref": "#/definitions/TournamentScheduling" },
+        "scheduling": {
+          "$ref": "#/definitions/TournamentScheduling"
+        },
         "tournamentTier": {
           "$ref": "#/definitions/TierClassification"
         },
@@ -230,7 +234,7 @@
       },
       "required": ["tournamentId"],
       "additionalProperties": true,
-      "$comment": "OPEN, and this is a KNOWN GAP rather than a decision — closing it is blocked, not declined. Measured 2026-08-28 against the 16 TODS fixtures: 13 records carry `venueIds`, 6 carry `deleted`, and `dualMatchMetadata`, `associatedOrganisations`, `rootOrganisationId`, `tournamentExternalId` and a nested `tournamentRecord` each appear. Closing this definition today fails 14 of 16 fixtures. Each undeclared field must first be resolved as either a real CODES concept (declare it in `types/tournamentTypes.ts` AND here) or as legacy data (correct the fixtures), after which this should become `false` to match the other 51."
+      "$comment": "OPEN, and this is a KNOWN GAP rather than a decision \u2014 closing it is blocked, not declined. Measured 2026-08-28 against the 16 TODS fixtures: 13 records carry `venueIds`, 6 carry `deleted`, and `dualMatchMetadata`, `associatedOrganisations`, `rootOrganisationId`, `tournamentExternalId` and a nested `tournamentRecord` each appear. Closing this definition today fails 14 of 16 fixtures. Each undeclared field must first be resolved as either a real CODES concept (declare it in `types/tournamentTypes.ts` AND here) or as legacy data (correct the fixtures), after which this should become `false` to match the other 51."
     },
     "EntryRestrictionEnum": {
       "type": "string",
@@ -418,7 +422,14 @@
         },
         "itemDate": {
           "type": "string",
-          "anyOf": [{ "format": "date" }, { "format": "date-time" }]
+          "anyOf": [
+            {
+              "format": "date"
+            },
+            {
+              "format": "date-time"
+            }
+          ]
         },
         "itemSubTypes": {
           "type": "array",
@@ -437,7 +448,9 @@
     "Event": {
       "type": "object",
       "properties": {
-        "appliedPolicies": { "$ref": "#/definitions/PolicyDefinitions" },
+        "appliedPolicies": {
+          "$ref": "#/definitions/PolicyDefinitions"
+        },
         "registrationProfile": {
           "$ref": "#/definitions/EventRegistration"
         },
@@ -780,7 +793,7 @@
     },
     "DisciplineEnum": {
       "type": "string",
-      "description": "Sport/discipline. Open, sport-agnostic vocabulary — any well-formed value is accepted so new sports need no schema release (see disciplineConstants / planning/DISCIPLINE_EXTENSIBILITY.md). Constrain via the allowedDisciplines policy where a fixed list is required. Known values are listed in examples.",
+      "description": "Sport/discipline. Open, sport-agnostic vocabulary \u2014 any well-formed value is accepted so new sports need no schema release (see disciplineConstants / planning/DISCIPLINE_EXTENSIBILITY.md). Constrain via the allowedDisciplines policy where a fixed list is required. Known values are listed in examples.",
       "examples": [
         "TENNIS",
         "BEACH_TENNIS",
@@ -796,7 +809,9 @@
     "DrawDefinition": {
       "type": "object",
       "properties": {
-        "appliedPolicies": { "$ref": "#/definitions/PolicyDefinitions" },
+        "appliedPolicies": {
+          "$ref": "#/definitions/PolicyDefinitions"
+        },
         "lineUps": {
           "type": "object"
         },
@@ -820,7 +835,10 @@
           "type": "object",
           "description": "The factory version and engine clock of the last write to this draw, written only when the engine stamps what a mutation modified (stampScope 'modified').",
           "properties": {
-            "version": { "type": "string", "description": "Factory version that last wrote the draw" },
+            "version": {
+              "type": "string",
+              "description": "Factory version that last wrote the draw"
+            },
             "timeStamp": {
               "type": "number",
               "description": "Engine clock (milliseconds since the epoch) at the last write"
@@ -942,11 +960,24 @@
         "competitionProfile": {
           "$ref": "#/definitions/CompetitionProfile"
         },
-        "competitionRoster": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
-        "competitionSettlements": { "type": "array", "items": { "$ref": "#/definitions/RotatingPartnerSettlement" } },
+        "competitionRoster": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "competitionSettlements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RotatingPartnerSettlement"
+          }
+        },
         "competitionRounds": {
           "type": "array",
-          "items": { "$ref": "#/definitions/RotatingPartnerRoundRecord" }
+          "items": {
+            "$ref": "#/definitions/RotatingPartnerRoundRecord"
+          }
         },
         "activeDates": {
           "type": "array",
@@ -1621,8 +1652,12 @@
         "scoreStringSide2": {
           "type": "string"
         },
-        "side1PointScore": { "type": ["number", "string"] },
-        "side2PointScore": { "type": ["number", "string"] },
+        "side1PointScore": {
+          "type": ["number", "string"]
+        },
+        "side2PointScore": {
+          "type": ["number", "string"]
+        },
         "sets": {
           "type": "array",
           "items": {
@@ -2185,7 +2220,10 @@
           "type": "array",
           "minItems": 2,
           "uniqueItems": true,
-          "items": { "type": "string", "enum": ["SINGLES", "DOUBLES"] }
+          "items": {
+            "type": "string",
+            "enum": ["SINGLES", "DOUBLES"]
+          }
         },
         "matchUpValue": {
           "type": "number"
@@ -2208,8 +2246,16 @@
       },
       "allOf": [
         {
-          "if": { "required": ["matchUpTypeOptions"] },
-          "then": { "properties": { "matchUpType": { "enum": ["SINGLES", "DOUBLES"] } } }
+          "if": {
+            "required": ["matchUpTypeOptions"]
+          },
+          "then": {
+            "properties": {
+              "matchUpType": {
+                "enum": ["SINGLES", "DOUBLES"]
+              }
+            }
+          }
         }
       ],
       "required": ["collectionId"],
@@ -2345,7 +2391,9 @@
     "Structure": {
       "type": "object",
       "properties": {
-        "appliedPolicies": { "$ref": "#/definitions/PolicyDefinitions" },
+        "appliedPolicies": {
+          "$ref": "#/definitions/PolicyDefinitions"
+        },
         "roundTarget": {
           "type": "integer"
         },
@@ -2456,7 +2504,9 @@
         "tieFormatId": {
           "type": "string"
         },
-        "competitionFormat": { "type": "object" }
+        "competitionFormat": {
+          "type": "object"
+        }
       },
       "required": ["structureId"],
       "additionalProperties": false
@@ -2943,7 +2993,7 @@
           "type": "string"
         }
       },
-      "$comment": "OPEN, and this is a KNOWN GAP rather than a decision — closing it is blocked, not declined. Measured 2026-08-28 against the 16 TODS fixtures: records carry `createdAt`, `updatedAt` and a nested `parentOrganisation`. Closing this definition today fails 14 of 16 fixtures. Each undeclared field must first be resolved as either a real CODES concept (declare it in `types/tournamentTypes.ts` AND here) or as legacy data (correct the fixtures), after which this should become `false` to match the other 51.",
+      "$comment": "OPEN, and this is a KNOWN GAP rather than a decision \u2014 closing it is blocked, not declined. Measured 2026-08-28 against the 16 TODS fixtures: records carry `createdAt`, `updatedAt` and a nested `parentOrganisation`. Closing this definition today fails 14 of 16 fixtures. Each undeclared field must first be resolved as either a real CODES concept (declare it in `types/tournamentTypes.ts` AND here) or as legacy data (correct the fixtures), after which this should become `false` to match the other 51.",
       "additionalProperties": true
     },
     "Participant": {
@@ -4315,7 +4365,7 @@
       "additionalProperties": false
     },
     "TournamentSanction": {
-      "$comment": "What a governing body DECIDED about a competition — the instance model from #4710. Three orthogonal axes: decision (did the application succeed), recognition (what the body asserts), classification (what grade is conferred). Before this definition existed the property was declared {\"type\": \"object\"}, so a record carrying decision: 'BANANA' validated.",
+      "$comment": "What a governing body DECIDED about a competition \u2014 the instance model from #4710. Three orthogonal axes: decision (did the application succeed), recognition (what the body asserts), classification (what grade is conferred). Before this definition existed the property was declared {\"type\": \"object\"}, so a record carrying decision: 'BANANA' validated.",
       "type": "object",
       "properties": {
         "decision": {
@@ -4369,7 +4419,9 @@
             "$ref": "#/definitions/TimeItem"
           }
         },
-        "constraints": { "$ref": "#/definitions/SanctionConstraints" },
+        "constraints": {
+          "$ref": "#/definitions/SanctionConstraints"
+        },
         "extensions": {
           "type": "array",
           "items": {
@@ -4688,7 +4740,7 @@
       },
       "required": ["venueId"],
       "additionalProperties": true,
-      "$comment": "OPEN, and this is a KNOWN GAP rather than a decision — closing it is blocked, not declined. Measured 2026-08-28 against the 16 TODS fixtures: 7 records carry `parentOrganisation`, which `Venue` does not declare. Closing this definition today fails 14 of 16 fixtures. Each undeclared field must first be resolved as either a real CODES concept (declare it in `types/tournamentTypes.ts` AND here) or as legacy data (correct the fixtures), after which this should become `false` to match the other 51."
+      "$comment": "OPEN, and this is a KNOWN GAP rather than a decision \u2014 closing it is blocked, not declined. Measured 2026-08-28 against the 16 TODS fixtures: 7 records carry `parentOrganisation`, which `Venue` does not declare. Closing this definition today fails 14 of 16 fixtures. Each undeclared field must first be resolved as either a real CODES concept (declare it in `types/tournamentTypes.ts` AND here) or as legacy data (correct the fixtures), after which this should become `false` to match the other 51."
     },
     "Disabled": {
       "description": "Closed outright (true), or closed on the dates it names ({ dates }): disableCourts writes either on a court, disableVenues writes true on a venue",
@@ -5203,10 +5255,24 @@
         "recordedAt"
       ],
       "properties": {
-        "version": { "const": 1 },
-        "requestId": { "type": "string", "minLength": 1, "pattern": "\\S" },
-        "matchUpId": { "type": "string", "minLength": 1, "pattern": "\\S" },
-        "roundNumber": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+        "version": {
+          "const": 1
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "matchUpId": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "roundNumber": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
         "expectedOutcome": {
           "type": "object",
           "additionalProperties": false,
@@ -5224,19 +5290,34 @@
                 "WALKOVER"
               ]
             },
-            "winningSide": { "enum": [1, 2] },
-            "score": { "$ref": "#/definitions/Score" }
+            "winningSide": {
+              "enum": [1, 2]
+            },
+            "score": {
+              "$ref": "#/definitions/Score"
+            }
           }
         },
-        "treatment": { "$ref": "#/definitions/RotatingPartnerStatusTreatment" },
-        "reason": { "type": "string", "pattern": "\\S" },
-        "recordedBy": { "type": "string", "pattern": "\\S" },
+        "treatment": {
+          "$ref": "#/definitions/RotatingPartnerStatusTreatment"
+        },
+        "reason": {
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "recordedBy": {
+          "type": "string",
+          "pattern": "\\S"
+        },
         "recordedAt": {
           "type": "string",
           "pattern": "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])T([01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d{1,9})?(?:Z|[+-](?:[01]\\d|2[0-3]):[0-5]\\d)$",
           "format": "date-time"
         },
-        "supersedesRequestId": { "type": "string", "pattern": "\\S" }
+        "supersedesRequestId": {
+          "type": "string",
+          "pattern": "\\S"
+        }
       }
     },
     "RotatingPartnerRoundRecord": {
@@ -5296,58 +5377,34 @@
             }
           }
         },
-        "tallyContract": { "$ref": "#/definitions/RotatingPartnerTallyPolicy" },
-        "standingsThroughRoundNumber": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+        "tallyContract": {
+          "$ref": "#/definitions/RotatingPartnerTallyPolicy"
+        },
+        "standingsThroughRoundNumber": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
         "standingsSnapshot": {
           "type": "array",
           "items": {
             "type": "object",
             "properties": {
-              "participantId": { "type": "string" },
-              "pointsScored": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
+              "participantId": {
+                "type": "string"
+              },
+              "pointsScored": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
             },
             "required": ["participantId", "pointsScored"],
             "additionalProperties": false
           }
         },
         "scoringContract": {
-          "type": "object",
-          "properties": {
-            "combinedPointTotal": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 9007199254740991
-            },
-            "tieResolution": {
-              "enum": ["ALLOW", "DECIDING_POINT", "WIN_BY_MARGIN"]
-            },
-            "winningMargin": {
-              "type": "integer",
-              "minimum": 2,
-              "maximum": 9007199254740991
-            }
-          },
-          "required": ["combinedPointTotal", "tieResolution"],
-          "additionalProperties": false,
-          "allOf": [
-            {
-              "if": {
-                "properties": {
-                  "tieResolution": {
-                    "const": "WIN_BY_MARGIN"
-                  }
-                }
-              },
-              "then": {
-                "required": ["winningMargin"]
-              },
-              "else": {
-                "not": {
-                  "required": ["winningMargin"]
-                }
-              }
-            }
-          ]
+          "$ref": "#/definitions/RotatingPartnerScoreContract"
         }
       },
       "required": [
@@ -5367,25 +5424,28 @@
       "additionalProperties": false,
       "allOf": [
         {
-          "if": { "properties": { "format": { "const": "MEXICANO" } } },
-          "then": { "required": ["standingsSnapshot", "standingsThroughRoundNumber"] }
+          "if": {
+            "properties": {
+              "format": {
+                "const": "MEXICANO"
+              }
+            }
+          },
+          "then": {
+            "required": ["standingsSnapshot", "standingsThroughRoundNumber"]
+          }
         }
       ]
     },
     "CompetitionProfileScoring": {
-      "type": "object",
-      "properties": {
-        "combinedPointTotal": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 9007199254740991
+      "oneOf": [
+        {
+          "$ref": "#/definitions/CombinedPointRotatingPartnerConfiguration"
         },
-        "selectedVariant": {
-          "$ref": "#/definitions/RotatingPartnerScoringVariant"
+        {
+          "$ref": "#/definitions/TimedRotatingPartnerConfiguration"
         }
-      },
-      "required": ["combinedPointTotal"],
-      "additionalProperties": false
+      ]
     },
     "CompetitionProfileStandings": {
       "type": "object",
@@ -5553,16 +5613,17 @@
       "oneOf": [
         {
           "type": "object",
+          "additionalProperties": false,
           "properties": {
             "tieResolution": {
               "enum": ["ALLOW", "DECIDING_POINT"]
             }
           },
-          "required": ["tieResolution"],
-          "additionalProperties": false
+          "required": ["tieResolution"]
         },
         {
           "type": "object",
+          "additionalProperties": false,
           "properties": {
             "tieResolution": {
               "const": "WIN_BY_MARGIN"
@@ -5573,8 +5634,7 @@
               "maximum": 9007199254740991
             }
           },
-          "required": ["tieResolution", "winningMargin"],
-          "additionalProperties": false
+          "required": ["tieResolution", "winningMargin"]
         }
       ]
     },
@@ -5707,7 +5767,7 @@
       "additionalProperties": false
     },
     "RatingsExpectationRule": {
-      "description": "A side's expected result against its opponent: LOGISTIC, 1 / (1 + base^((O - R) / spread)) (base 10, spread 400 in most published methods; FIFA's men's ranking 600); LINEAR, 0.5 + the gap × slope with the gap clamped to ±cap (World Rugby: 0.05, 10); ORDERED_PROBIT, the expected value of the set result, Σ P(i) × resultValues(i), P from the standard normal at the cut-points shifted by scale × the gap (FIVB: 0.008).",
+      "description": "A side's expected result against its opponent: LOGISTIC, 1 / (1 + base^((O - R) / spread)) (base 10, spread 400 in most published methods; FIFA's men's ranking 600); LINEAR, 0.5 + the gap \u00d7 slope with the gap clamped to \u00b1cap (World Rugby: 0.05, 10); ORDERED_PROBIT, the expected value of the set result, \u03a3 P(i) \u00d7 resultValues(i), P from the standard normal at the cut-points shifted by scale \u00d7 the gap (FIVB: 0.008).",
       "oneOf": [
         {
           "type": "object",
@@ -5857,8 +5917,12 @@
             },
             "values": {
               "type": "object",
-              "propertyNames": { "pattern": "^[0-9]+-[0-9]+$" },
-              "additionalProperties": { "type": "number" }
+              "propertyNames": {
+                "pattern": "^[0-9]+-[0-9]+$"
+              },
+              "additionalProperties": {
+                "type": "number"
+              }
             }
           },
           "required": ["rule", "values"],
@@ -5876,7 +5940,11 @@
               "items": {
                 "type": "array",
                 "minItems": 1,
-                "items": { "type": "number", "minimum": 0, "maximum": 1 }
+                "items": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
               }
             }
           },
@@ -5886,7 +5954,7 @@
       ]
     },
     "RatingsMarginRule": {
-      "description": "A K multiplier by the margin of victory: World Football Elo's goal-difference steps, FiveThirtyEight's autocorrelation-corrected log margin (NHL, NFL) or power margin (NBA), Weighted Elo's winner game share, or World Rugby's threshold (× 1.5 above 15 points).",
+      "description": "A K multiplier by the margin of victory: World Football Elo's goal-difference steps, FiveThirtyEight's autocorrelation-corrected log margin (NHL, NFL) or power margin (NBA), Weighted Elo's winner game share, or World Rugby's threshold (\u00d7 1.5 above 15 points).",
       "oneOf": [
         {
           "type": "object",
@@ -6094,7 +6162,9 @@
         "audit": {
           "type": "object"
         },
-        "avoidance": { "$ref": "#/definitions/AvoidancePolicy" },
+        "avoidance": {
+          "$ref": "#/definitions/AvoidancePolicy"
+        },
         "competition": {
           "$ref": "#/definitions/CompetitionPolicy"
         },
@@ -6113,7 +6183,9 @@
         "ladder": {
           "type": "object"
         },
-        "matchUpActions": { "$ref": "#/definitions/MatchUpActionsPolicy" },
+        "matchUpActions": {
+          "$ref": "#/definitions/MatchUpActionsPolicy"
+        },
         "officiatingConflict": {
           "type": "object"
         },
@@ -6139,8 +6211,12 @@
         "rotatingPartnerTally": {
           "$ref": "#/definitions/RotatingPartnerTallyPolicy"
         },
-        "roundNaming": { "$ref": "#/definitions/RoundNamingPolicy" },
-        "roundRobinTally": { "$ref": "#/definitions/RoundRobinTallyPolicy" },
+        "roundNaming": {
+          "$ref": "#/definitions/RoundNamingPolicy"
+        },
+        "roundRobinTally": {
+          "$ref": "#/definitions/RoundRobinTallyPolicy"
+        },
         "sanctioning": {
           "type": "object"
         },
@@ -6593,7 +6669,15 @@
                 },
                 "ratingsPolicy": {
                   "description": "A ratings preset by name, or a ratings policy inline with a CONSTANT K: the form rating's expectation, K and actual result. Without one, kFactor and logisticScale, else POLICY_RATINGS_COMPETITION_FORM's 24 and 400.",
-                  "oneOf": [{ "type": "string", "minLength": 1 }, { "$ref": "#/definitions/RatingsPolicy" }]
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "$ref": "#/definitions/RatingsPolicy"
+                    }
+                  ]
                 }
               },
               "required": ["enabled", "initializeFrom"],
@@ -7027,7 +7111,185 @@
         "denominator": {}
       },
       "additionalProperties": true
+    },
+    "TimedRotatingPartnerVariant": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tieResolution": {
+          "enum": ["ALLOW", "DECIDING_POINT"]
+        }
+      },
+      "required": ["tieResolution"]
+    },
+    "CombinedPointRotatingPartnerConfiguration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "COMBINED_POINTS"
+        },
+        "combinedPointTotal": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "selectedVariant": {
+          "$ref": "#/definitions/RotatingPartnerScoringVariant"
+        }
+      },
+      "required": ["combinedPointTotal"]
+    },
+    "TimedRotatingPartnerConfiguration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "TIMED"
+        },
+        "minutes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "selectedVariant": {
+          "$ref": "#/definitions/TimedRotatingPartnerVariant"
+        }
+      },
+      "required": ["kind", "minutes"]
+    },
+    "CombinedPointRotatingPartnerScoreContract": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "COMBINED_POINTS"
+            },
+            "combinedPointTotal": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "tieResolution": {
+              "enum": ["ALLOW", "DECIDING_POINT"]
+            }
+          },
+          "required": ["combinedPointTotal", "tieResolution"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "COMBINED_POINTS"
+            },
+            "combinedPointTotal": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "tieResolution": {
+              "const": "WIN_BY_MARGIN"
+            },
+            "winningMargin": {
+              "type": "integer",
+              "minimum": 2,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": ["combinedPointTotal", "tieResolution", "winningMargin"]
+        }
+      ]
+    },
+    "TimedRotatingPartnerScoreContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "TIMED"
+        },
+        "minutes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "tieResolution": {
+          "enum": ["ALLOW", "DECIDING_POINT"]
+        }
+      },
+      "required": ["kind", "minutes", "tieResolution"]
+    },
+    "RotatingPartnerScoreContract": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/CombinedPointRotatingPartnerScoreContract"
+        },
+        {
+          "$ref": "#/definitions/TimedRotatingPartnerScoreContract"
+        }
+      ]
+    },
+    "TimedRotatingPartnerPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "defaultVariant": {
+          "$ref": "#/definitions/TimedRotatingPartnerVariant"
+        },
+        "permittedVariants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TimedRotatingPartnerVariant"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "permittedMinutes": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": ["defaultVariant", "permittedVariants"]
+    },
+    "RotatingPartnerScoringPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "defaultVariant": {
+          "$ref": "#/definitions/RotatingPartnerScoringVariant"
+        },
+        "permittedVariants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RotatingPartnerScoringVariant"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "permittedPointTotals": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "timed": {
+          "$ref": "#/definitions/TimedRotatingPartnerPolicy"
+        }
+      },
+      "required": ["defaultVariant", "permittedVariants"]
     }
   },
-  "$comment": "CONVENTION: every object definition states `additionalProperties` EXPLICITLY, and the default is `false`. Every definition but the open ones listed in that test is closed. A closed definition is what makes a CODES field added to the TypeScript types but never mirrored here a LOUD failure rather than a silent one — the drift fixed in #4718 went unnoticed for exactly this reason on the open definitions. The open definitions each carry a `$comment` saying why. `codesSchemaConvention.test.ts` enforces both halves: no definition may omit the keyword, and the open set may not grow without updating that test."
+  "$comment": "CONVENTION: every object definition states `additionalProperties` EXPLICITLY, and the default is `false`. Every definition but the open ones listed in that test is closed. A closed definition is what makes a CODES field added to the TypeScript types but never mirrored here a LOUD failure rather than a silent one \u2014 the drift fixed in #4718 went unnoticed for exactly this reason on the open definitions. The open definitions each carry a `$comment` saying why. `codesSchemaConvention.test.ts` enforces both halves: no definition may omit the keyword, and the open set may not grow without updating that test."
 }

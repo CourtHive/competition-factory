@@ -5,6 +5,10 @@ import { isRotatingPartnerTallyPolicy } from '@Validators/rotatingPartnerTallyPo
 import { settlementMatches } from '@Validators/rotatingPartnerSettlement';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { validateScore } from '@Scoring/analysis/validateScore';
+import {
+  normalizeRotatingPartnerScoreContract,
+  validTimedRotatingPartnerPoints,
+} from '@Helpers/rotatingPartners/scoringContract';
 
 // constants and types
 import type { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
@@ -104,6 +108,9 @@ function tallyMatch(
   contributions?: RotatingPartnerContribution[];
   unresolved?: boolean;
 } {
+  const contract = normalizeRotatingPartnerScoreContract(round.scoringContract);
+  if (!contract) return { error: INVALID_VALUES, info: 'invalid saved scoring contract' };
+  const timed = contract.kind === 'TIMED';
   const status = matchUp.matchUpStatus ?? TO_BE_PLAYED;
   const treatment =
     override ?? (status === COMPLETED ? { kind: 'COMPLETED' as const } : round.tallyContract.statusTreatments[status]);
@@ -122,13 +129,21 @@ function tallyMatch(
       winningSide: matchUp.winningSide,
       matchUpStatus: status,
     });
-    const analysis = analyzeCombinedPointSet(set, round.scoringContract);
-    if (checked.error || !analysis.valid || (status === COMPLETED && !analysis.complete))
-      return { error: INVALID_SCORE };
+    if (checked.error) return { error: INVALID_SCORE };
+    if (timed) {
+      if (
+        !validTimedRotatingPartnerPoints(matchUp.score!) ||
+        (status === COMPLETED && contract.tieResolution === 'DECIDING_POINT' && set.side1Score === set.side2Score)
+      )
+        return { error: INVALID_SCORE };
+    } else {
+      const analysis = analyzeCombinedPointSet(set, contract);
+      if (!analysis.valid || (status === COMPLETED && !analysis.complete)) return { error: INVALID_SCORE };
+    }
   }
   const scores = hasPlayedScore ? [set!.side1Score!, set!.side2Score!] : [0, 0];
-  const extended = scores[0] + scores[1] > round.scoringContract.combinedPointTotal;
-  const extras = extended ? scores.map((points) => points - round.scoringContract.combinedPointTotal / 2) : [0, 0];
+  const extended = !timed && scores[0] + scores[1] > contract.combinedPointTotal;
+  const extras = !timed && extended ? scores.map((points) => points - contract.combinedPointTotal / 2) : [0, 0];
   const includeExtra =
     round.scoringContract.tieResolution === 'DECIDING_POINT'
       ? round.tallyContract.decidingPoints === 'INCLUDE'
@@ -168,7 +183,7 @@ function accumulate(row: RotatingPartnerStanding, contribution: RotatingPartnerC
   return Number.isSafeInteger(row.pointsScored) && Number.isSafeInteger(row.pointsConceded);
 }
 
-function outcome(matchUp: MatchUp, side: number): { outcome?: 'WON' | 'LOST' | 'TIED' } {
+function outcome(matchUp: MatchUp, side: number): Pick<RotatingPartnerContribution, 'outcome'> {
   if (matchUp.winningSide) return { outcome: side + 1 === matchUp.winningSide ? 'WON' : 'LOST' };
   return matchUp.matchUpStatus === COMPLETED ? { outcome: 'TIED' } : {};
 }

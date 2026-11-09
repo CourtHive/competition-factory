@@ -4,6 +4,7 @@ import { appliedRotatingPartnerRoundsAreIntact } from '@Query/drawDefinition/app
 import { getAvailableMatchUpsCount } from '@Generators/drawDefinitions/drawTypes/adHoc/getAvailableMatchUpsCount';
 import { getRotatingPartnerScoringContract } from '@Query/drawDefinition/getRotatingPartnerScoringContract';
 import { isRotatingPartnerDraw, validateRotatingPartnerEntrants } from '@Validators/rotatingPartnerDraw';
+import { getRotatingPartnerScoringPolicy } from '@Query/drawDefinition/getRotatingPartnerScoringPolicy';
 import { getRotatingPartnerTallyPolicy } from '@Query/drawDefinition/getRotatingPartnerTallyPolicy';
 import { getRotatingPartnerStandings } from '@Query/drawDefinition/getRotatingPartnerStandings';
 import { checkValidEntries } from '@Query/entries/checkValidEntries';
@@ -12,7 +13,7 @@ import { canonicalJson } from '@Tools/canonicalJson';
 
 // constants and types
 import type { RotatingPartnerRound } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/rotatingPartnerTypes';
-import type { RotatingPartnerScoreContract } from '@Types/rotatingPartnerScoring';
+import type { RotatingPartnerScoreContractWithTimed } from '@Types/rotatingPartnerScoring';
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import type { RotatingPartnerTallyPolicy } from '@Types/rotatingPartnerTally';
 import { STRUCTURE_SELECTED_STATUSES } from '@Constants/entryStatusConstants';
@@ -33,7 +34,7 @@ export function getRotatingPartnerRoundPreview(params: RotatingPartnerRoundArgs)
   standingsSnapshot?: { participantId: string; pointsScored: number }[];
   tallyContract?: RotatingPartnerTallyPolicy;
   standingsThroughRoundNumber?: number;
-  scoringContract?: RotatingPartnerScoreContract;
+  scoringContract?: RotatingPartnerScoreContractWithTimed;
   participantIds?: string[];
   seedUsed?: number;
   structureId?: string;
@@ -81,9 +82,9 @@ export function getRotatingPartnerRoundPreview(params: RotatingPartnerRoundArgs)
     )
   )
     return { error: INVALID_VALUES, info: 'existing matches have no rotating-partner provenance' };
-  const scoring = getRotatingPartnerScoringContract({ drawDefinition });
-  if (scoring.error) return scoring;
   const structure = drawDefinition.structures?.find((candidate) => candidate.structureId === structureId);
+  const scoring = approvedScoring({ ...params, structure });
+  if (scoring.error) return scoring;
   const tally = getRotatingPartnerTallyPolicy({ ...params, structure });
   if (tally.error) return tally;
   let standingsSnapshot = participantIds.map((participantId) => ({ participantId, pointsScored: 0 }));
@@ -122,6 +123,14 @@ export function getRotatingPartnerRoundPreview(params: RotatingPartnerRoundArgs)
     scoringContract: scoring.contract,
     seedUsed: generated.seedUsed,
   };
+}
+
+/** New rounds require both an already saved selection and today's governing policy. */
+function approvedScoring(params: Parameters<typeof getRotatingPartnerScoringPolicy>[0]) {
+  const saved = getRotatingPartnerScoringContract(params);
+  if (saved.error) return saved;
+  const governing = getRotatingPartnerScoringPolicy(params);
+  return governing.error ? governing : saved;
 }
 
 export { appliedRotatingPartnerRoundsAreIntact } from '@Query/drawDefinition/appliedRotatingPartnerRoundsAreIntact';

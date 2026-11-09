@@ -1,5 +1,4 @@
 import { getRotatingPartnerScoringPolicy } from '@Query/drawDefinition/getRotatingPartnerScoringPolicy';
-import scoringSchema from '@Global/schema/rotatingPartnerScoring.schema.json';
 import tournamentSchema from '@Global/schema/tournament.schema.json';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import tournamentEngine from '@Engines/syncEngine';
@@ -41,11 +40,11 @@ const timedContract = { ...timed, ...allow };
 const validate = (definition: string) =>
   new Ajv().compile({
     $ref: `#/definitions/${definition}`,
-    definitions: scoringSchema.definitions,
+    definitions: tournamentSchema.definitions,
   });
-const configurationSchema = validate('ScoringConfiguration');
-const contractSchema = validate('ScoreContract');
-const policySchema = validate('ScoringPolicy');
+const configurationSchema = validate('CompetitionProfileScoring');
+const contractSchema = validate('RotatingPartnerScoreContract');
+const policySchema = validate('RotatingPartnerScoringPolicy');
 const currentProfileSchema = addFormats(new Ajv({ allowUnionTypes: true })).compile({
   $ref: '#/definitions/CompetitionProfile',
   definitions: tournamentSchema.definitions,
@@ -53,7 +52,7 @@ const currentProfileSchema = addFormats(new Ajv({ allowUnionTypes: true })).comp
 const resolve = (scoring: unknown, configuredPolicy: unknown = policy, tally: unknown = tallyPolicy) =>
   resolveRotatingPartnerScoringConfiguration({ scoring, policy: configuredPolicy, tallyPolicy: tally });
 
-describe('internal scoring configuration and JSON shape', () => {
+describe('canonical scoring configuration and JSON shape', () => {
   it.each([
     { combinedPointTotal: 24 },
     { kind: 'COMBINED_POINTS', combinedPointTotal: 24, selectedVariant: margin },
@@ -284,13 +283,13 @@ function draw(): DrawDefinition {
   };
 }
 
-describe('activation boundary remains closed', () => {
-  it('does not admit the proposed timed policy through the shipped query', () => {
+describe('public activation and explicit policy enablement', () => {
+  it('accepts timed policy without changing the existing combined-point choice', () => {
     const drawDefinition = draw();
     drawDefinition.extensions = [
       { name: APPLIED_POLICIES, value: { scoring: { rotatingPartners: { AMERICANO: policy } } } },
     ];
-    expect(getRotatingPartnerScoringPolicy({ drawDefinition }).error).toBe(INVALID_VALUES);
+    expect(getRotatingPartnerScoringPolicy({ drawDefinition }).contract).toEqual({ combinedPointTotal: 24, ...allow });
   });
 
   it('matches the shipped query for every combined-point choice', () => {
@@ -302,21 +301,20 @@ describe('activation boundary remains closed', () => {
     }
   });
 
-  it('refuses a timed public profile without changing tournament state', () => {
+  it('admits timed profile JSON but refuses an unenabled timed write atomically', () => {
     const drawDefinition = draw();
     const tournamentRecord = {
       tournamentId: 'groundwork',
       events: [{ eventId: 'event', eventType: 'DOUBLES' as const, drawDefinitions: [drawDefinition] }],
     };
     const proposed = { ...drawDefinition.competitionProfile, scoring: timed };
-    expect(currentProfileSchema(proposed)).toBe(false);
+    expect(currentProfileSchema(proposed)).toBe(true);
     expect(tournamentEngine.setState(tournamentRecord).success).toBe(true);
     const before = structuredClone(tournamentEngine.getTournament().tournamentRecord);
-    // Deliberately cross the unchanged public type boundary with the proposed future shape.
     expect(
       tournamentEngine.setCompetitionProfile({
         drawId: drawDefinition.drawId,
-        competitionProfile: proposed as unknown as CompetitionProfile,
+        competitionProfile: proposed as CompetitionProfile,
       }).error,
     ).toBe(INVALID_VALUES);
     expect(tournamentEngine.getTournament().tournamentRecord).toEqual(before);
