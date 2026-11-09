@@ -82,6 +82,7 @@ import type {
   OutcomePlan,
   OutcomeView,
   PlanArgs,
+  SeatObligation,
 } from './types';
 
 /**
@@ -108,7 +109,7 @@ import type {
  * (`directionReason`). A DEFAULTED under a scoring policy's `incompleteAssignmentsOnDefault` writes `processCodes`
  * (`modifyMatchUpScore`), not an op. Anything else with an exit before or after is v1's.
  */
-function exitReason(args: ExitReasonArgs): AbstainReason | undefined {
+function exitReason(args: ExitReasonArgs): AbstainReason | SeatObligation | undefined {
   const { request, view, route, write, direction } = args;
   const { existing } = view;
   // A non-propagating completion can leave a carried origin beside a BYE; the next correction still owes it.
@@ -142,7 +143,7 @@ function exitReason(args: ExitReasonArgs): AbstainReason | undefined {
   return undefined;
 }
 
-function abstainReason(args: PlanArgs): AbstainReason | undefined {
+function abstainReason(args: PlanArgs): AbstainReason | SeatObligation | undefined {
   const { request, view, write, direction } = args;
   const team = teamReason(args);
   if (team) return team;
@@ -157,7 +158,7 @@ function abstainReason(args: PlanArgs): AbstainReason | undefined {
   // scoring policy's `incompleteAssignmentsOnDefault` writes `processCodes`, v1's)
   if (view.line && isDoubleExit(request.matchUpStatus)) return undefined;
   const exit = exitReason(args);
-  if (exit) return exit;
+  if (typeof exit === 'string') return exit;
   if (satisfiedDoubleExit(view, request, args.route)) return undefined;
   // S4: a score changed beneath an active downstream keeps its winner and re-directs nothing (`apply-values`)
   const sameWinner =
@@ -187,7 +188,7 @@ function abstainReason(args: PlanArgs): AbstainReason | undefined {
   // a round robin group's tally is planned (`setParticipantResults`, S3; a TEAM group's, S7); an ad hoc or lucky tally
   // that `view.group` does not hold is not yet
   if (view.draw.tallied && !view.group) return 'tallied';
-  return undefined;
+  return exit;
 }
 
 /** the reason the call's own shape is not planned, by the shape `abstainReason` found it to be */
@@ -233,7 +234,13 @@ function resultToDoubleExit(args: PlanArgs): OutcomePlan {
   };
   const after = rebuild?.([...removal, undecided], DOUBLE_EXIT);
   if (!after) return { abstain: 'exit' };
-  const produced = planOps({ ...args, view: after.view, direction: after.direction, route: DOUBLE_EXIT });
+  const produced = planOps({
+    ...args,
+    view: after.view,
+    direction: after.direction,
+    route: DOUBLE_EXIT,
+    project: args.project ? (prefix) => args.project?.([...removal, undecided, ...prefix]) : undefined,
+  });
   if (!produced.ops) return produced;
   // C21: the BYE entry's code-removal notice survives the double-exit placement further on. v1 announces
   // the source result before that notice; the source prefix and the other matchUps' removal writes commute.
@@ -428,14 +435,14 @@ function decidingLineOps(args: PlanArgs & { dual: DualCall; drawDefinition: Draw
 /** the call's plan as ops, or the reason it is v1's */
 function planOps(args: PlanArgs): OutcomePlan {
   const reason = abstainReason(args);
-  if (reason) return { abstain: reason };
+  if (typeof reason === 'string') return { abstain: reason };
   const { request, view, drawDefinition } = args;
   const unrecorded = recordReason(args);
   if (unrecorded || !drawDefinition) return { abstain: unrecorded ?? 'no-record' };
   if (args.dual) return lineDualOps({ ...args, dual: args.dual, drawDefinition });
   // a double exit asked for again: v1 writes nothing (`satisfiedDoubleExit`)
   if (satisfiedDoubleExit(view, request, args.route)) return { ops: [], shape: 'local' };
-  return recordedPlanOps(args, drawDefinition);
+  return recordedPlanOps(args, drawDefinition, reason);
 }
 
 /** A propagated relabel returns the direction context even when its source previously held a played result. */
@@ -449,8 +456,20 @@ function carriedDirectionContext(args: PlanArgs, landing: OutcomeOp[]): boolean 
   );
 }
 
+/** Every deferred seat obligation is discharged before an executable plan can leave the builder. */
+function certifiedSeatProgram(args: PlanArgs, prefix: OutcomeOp[], obligation?: SeatObligation) {
+  if (args.route !== DOUBLE_EXIT) return obligation ? undefined : { ops: [], after: [] };
+  const following =
+    args.route === DOUBLE_EXIT ? producedExitOps(args.view, args.request, args.write!, args.direction) : [];
+  const seats = doubleExitSeatOps(args.view, args.request, args.direction, args.project, prefix, following);
+  if (!seats) return undefined;
+  if (obligation && (seats.kind !== 'planned' || seats.targetMatchUpId !== obligation.targetMatchUpId))
+    return undefined;
+  return seats;
+}
+
 /** A recorded single-call plan after the shared refusal, dual and no-op gates. */
-function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition): OutcomePlan {
+function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObligation?: SeatObligation): OutcomePlan {
   const { request, view } = args;
   const write = args.write as MatchUpWrite;
   const matchUpId = request.matchUpId as string;
@@ -549,11 +568,6 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition): Outcom
   // two exits meeting where the loser lands (RULE 4), and what the double exit they make produces (S5)
   const convergence = unwoundConvergedFor(view, args, loser);
   const converging = convergence.ops;
-  // a double exit's loser seats, BYEs (S5)
-  const seatOps =
-    args.route === DOUBLE_EXIT ? doubleExitSeatOps(view, request, drawDefinition, args.direction) : undefined;
-  const doubleExitSeated = seatOps?.ops ?? [];
-  const producedExit = args.route === DOUBLE_EXIT ? producedExitOps(view, request, write, args.direction) : [];
   // ...and, seated beside a carried exit whose carrier the unwind released back, awarded it and sent on (S7)
   // ...or seated where a carried exit stands awarded to them, taken and sent on (C18)
   const seated = [
@@ -563,6 +577,15 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition): Outcom
     ...keptOutBye,
     ...reserved,
   ];
+  // The linked seats read the state after the literal prefix emitted below, never positional guesses.
+  const seatOps = certifiedSeatProgram(
+    args,
+    [...ops, ...seated, ...carried.relay, ...throughBye, ...lineUps, ...landing, ...converging],
+    seatObligation,
+  );
+  if (!seatOps) return { abstain: 'exit' };
+  const doubleExitSeated = seatOps?.ops ?? [];
+  const producedExit = args.route === DOUBLE_EXIT ? producedExitOps(view, request, write, args.direction) : [];
   const line = view.line;
   // a TEAM line's group is its dual's: the dual is tallied with the line's result in place, its lines and its tally (S7)
   const tallied = line

@@ -234,9 +234,7 @@ export function producedConvergedReason(
   if (!onward || !producedTargetReason(view, landing, onward, onwardLinked && view.draw.doubleExitPropagatesBye))
     return undefined;
   const seat = targets.onwardLoserSeat;
-  const onwardBye = onwardLinked
-    ? unfillableByeChain(view, onward.entry, undefined, undefined, undefined, { seat, levels: seat?.levels })
-    : undefined;
+  const onwardBye = onwardLinked ? unfillableByeChain(view, onward.entry, { seat, levels: seat?.levels }) : undefined;
   if (onwardLinked && !onwardBye) return undefined;
   return apart({ ...planned, onward, onwardBye });
 }

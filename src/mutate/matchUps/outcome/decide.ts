@@ -49,6 +49,7 @@ import type {
   OutcomeRequest,
   OutcomeView,
   PlanShape,
+  ProjectOutcome,
   RebuildView,
   Refusal,
   Route,
@@ -82,6 +83,7 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal) {
     tournamentRecord: args.tournamentRecord,
     drawDefinition: args.drawDefinition,
     rebuild: rebuildView(args, view, planned),
+    project: projectOutcome(args, view),
     dual: dualCallFor(route, args, view),
     request: planned,
     write: plan,
@@ -105,6 +107,22 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal) {
  */
 function rebuildView(args: BuildViewArgs, view: OutcomeView, request: OutcomeRequest): RebuildView {
   return (ops, route) => {
+    const working = projectOutcome(args, view)(ops);
+    if (!working) return undefined;
+    const rebuilt = buildOutcomeView({
+      ...args,
+      inContextDrawMatchUps: working.inContextDrawMatchUps,
+      drawDefinition: working.drawDefinition,
+      matchUpsMap: working.matchUpsMap,
+      structural: view.structural,
+    });
+    return { view: rebuilt, direction: planDirection(request, rebuilt, route) };
+  };
+}
+
+/** Fold only the supplied program; routing and source admission keep their original entry facts. */
+function projectOutcome(args: BuildViewArgs, view: OutcomeView): ProjectOutcome {
+  return (prefix) => {
     if (!args.drawDefinition || !args.matchUpsMap || !view.inContextDrawMatchUps) return undefined;
     const working = createWorkingView({
       inContextDrawMatchUps: view.inContextDrawMatchUps,
@@ -114,15 +132,7 @@ function rebuildView(args: BuildViewArgs, view: OutcomeView, request: OutcomeReq
       matchUpsMap: args.matchUpsMap,
       event: args.event,
     });
-    if (working.apply(ops).error) return undefined;
-    const rebuilt = buildOutcomeView({
-      ...args,
-      inContextDrawMatchUps: working.inContextDrawMatchUps,
-      drawDefinition: working.drawDefinition,
-      matchUpsMap: working.matchUpsMap,
-      structural: view.structural,
-    });
-    return { view: rebuilt, direction: planDirection(request, rebuilt, route) };
+    return working.apply(prefix).error ? undefined : working;
   };
 }
 

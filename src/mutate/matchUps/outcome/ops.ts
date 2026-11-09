@@ -1,5 +1,4 @@
 import { writeAssignmentResults } from '@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults';
-import { mergeSideExitProvenance, setSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { exchangeMatchUpPositions } from '@Mutate/matchUps/drawPositions/swapWinnerLoser';
@@ -7,6 +6,11 @@ import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExte
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { getCapturedStamps } from '@Global/state/globalState';
 import { nowIso } from '@Tools/clock';
+import {
+  mergeSideExitProvenance,
+  setSideExitProvenance,
+  blankSideExitCode,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
 import { completedMatchUpStatuses, BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
@@ -235,10 +239,21 @@ export type OutcomeOp =
       matchUpId: string;
       provenance?: SideExitProvenance;
       /** A carry removed beside a BYE announces that provenance write without rewriting the BYE's result. */
-      announcedAs?: 'relabelLoserExit';
+      announcedAs?: 'relabelLoserExit' | 'withdrawDisplacedCarry';
+      /** The displaced carrier takes the reason on this side with its provenance. */
+      blankExitSide?: 1 | 2;
+      announcesEvent?: false;
+    }
+  | {
+      op: 'announcePositionAssignments';
+      /** Return-time notice: nested BYE assignments announce before their parent. No state write. */
+      structureId: string;
+      announcesEvent?: false;
     }
   | {
       op: 'assignBye';
+      /** False when a separate return-time op announces this placement. */
+      announcesAssignments?: false;
       /** a FIRST_MATCHUP reservation (S3): the consolation seat a loser who has won can never fill */
       structureId: string;
       drawPosition: number;
@@ -252,6 +267,8 @@ export type OutcomeOp =
     }
   | {
       op: 'setMatchUpBye';
+      /** The direct BYE service preserves this field; result-writer paths clear it. */
+      preservesOrderOfFinish?: true;
       /** the matchUp the reserved seat is in: BYE, its score and winner removed (v1's `setMatchUpStatusBYE`) */
       matchUpId: string;
       /** false where v1 announces it with no event: a seat a produced exit leaves unfillable (S5) */
@@ -320,7 +337,8 @@ export type OutcomeOp =
       sideNumber: number;
       lineUp: unknown;
       /** the v1 writer that announces it (`updateSideLineUp`'s context is spelled so) */
-      announcedAs: 'directWinner' | 'directLoser' | 'updateSidLineUp' | 'removeDirectedLoser';
+      announcedAs:
+        'directWinner' | 'directLoser' | 'updateSidLineUp' | 'removeDirectedLoser' | 'assignDrawPositionBye-TEAM';
       /** C21: delete the line-up on an existing stored side, preserving the sides array. */
       clearsLineUp?: true;
       /** false when the coalesced notice has no event; a standing award retains its assignment's identity */
@@ -361,6 +379,7 @@ export type OutcomeOpName =
   | 'mergeSideExitProvenance'
   | 'setSideExitProvenance'
   | 'assignBye'
+  | 'announcePositionAssignments'
   | 'setMatchUpBye'
   | 'withdrawBye'
   | 'clearMatchUpBye'
@@ -629,6 +648,7 @@ function foldSetProvenance(op: OpOf<'setSideExitProvenance'>, { matchUps }: Draw
   const matchUp = matchUps.get(op.matchUpId);
   if (!matchUp) return { error: `setSideExitProvenance: no matchUp ${op.matchUpId}` };
   setSideExitProvenance({ matchUp, provenance: op.provenance && structuredClone(op.provenance) });
+  if (op.blankExitSide) blankSideExitCode(matchUp, op.blankExitSide);
   return {};
 }
 
@@ -651,7 +671,7 @@ function foldSetMatchUpBye(op: OpOf<'setMatchUpBye'>, { matchUps }: DrawIndex): 
   const matchUp = matchUps.get(op.matchUpId);
   if (!matchUp) return { error: `setMatchUpBye: no matchUp ${op.matchUpId}` };
   Object.assign(matchUp, { matchUpStatus: BYE, score: undefined, winningSide: undefined });
-  clearOrderOfFinishUnlessCompleted(matchUp);
+  if (!op.preservesOrderOfFinish) clearOrderOfFinishUnlessCompleted(matchUp);
   return {};
 }
 
@@ -740,6 +760,8 @@ function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition
       return foldProvenance(op, index);
     case 'setSideExitProvenance':
       return foldSetProvenance(op, index);
+    case 'announcePositionAssignments':
+      return {};
     case 'assignBye':
       return foldAssignBye(op, index);
     case 'setMatchUpBye':
