@@ -90,7 +90,7 @@ function readSource(effect?: ClockEffect): ClockValue {
   if (!clockObservers.length) return readConfiguredSource();
   const observers = clockObservers.flatMap(({ observe, errors }) => {
     try {
-      return [{ complete: observe(effect), errors }];
+      return [{ notify: observe(effect), errors }];
     } catch (error) {
       errors.push(error);
       return [];
@@ -102,9 +102,9 @@ function readSource(effect?: ClockEffect): ClockValue {
   } catch (thrown) {
     reading = { thrown };
   }
-  for (const { complete, errors } of observers) {
+  for (const { notify, errors } of observers) {
     try {
-      complete({ ...reading });
+      notify({ ...reading });
     } catch (error) {
       errors.push(error);
     }
