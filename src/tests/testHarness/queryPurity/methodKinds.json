@@ -292,6 +292,7 @@
   "getDrawData": "query",
   "getDrawDefinitionTimeItem": "query",
   "getDrawFit": "generate",
+  "getDrawFitProposals": "generate",
   "getDrawInconsistencies": "query",
   "getDrawParticipantRepresentativeIds": "query",
   "getDrawStructures": "query",

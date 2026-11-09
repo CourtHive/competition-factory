@@ -12,12 +12,14 @@ import {
   indexed,
   heldByeLoser,
   loserByeArrival,
+  standingAwardArrival,
 } from './planShared';
 
 // constants and types
 import { COMPLETED, DEAD_RUBBER, DEFAULTED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { DrawDefinition, Score, Side } from '@Types/tournamentTypes';
 import { LINEUPS } from '@Constants/extensionConstants';
+import type { HydratedMatchUp } from '@Types/hydrated';
 import type { LineUp } from '@Types/factoryTypes';
 import type { OutcomeOp } from '../ops';
 import type {
@@ -285,11 +287,13 @@ export function loserLineUpBeyond({ dual, drawDefinition }: { dual: DualCall; dr
 function assignedLineUpOps(
   view: OutcomeView,
   drawDefinition: DrawDefinition,
-  participantId: string,
+  loser: NonNullable<DirectionPlan['loser']>,
   through?: { matchUpId: string },
   plainPassage?: ReturnType<typeof loserByeArrival>,
 ): OutcomeOp[] | false {
   const { loserMatchUpId, loserTargetDrawPosition, loserByePassage } = view.targets;
+  const { participantId } = loser;
+  const awarded = standingAwardArrival(view, loser);
   const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }) ?? {};
   const ops: OutcomeOp[] = [];
   // Carried passages keep their established order; a plain arrival returns from the furthest dual first (C20).
@@ -308,9 +312,9 @@ function assignedLineUpOps(
       sideNumber,
       lineUp: lineUps[participantId],
       announcedAs: 'updateSidLineUp',
-      // the loser's own dual is announced with no event (`assignTeamLineUp` hands `updateSideLineUp` none); the dual
-      // beyond a BYE is announced with one
-      ...(matchUpId === loserMatchUpId ? { announcesEvent: false as const } : {}),
+      // The own dual's lineup writer omits the event. An assignment at a standing award already
+      // announced it, and v1 retains that identity when the keyed notices coalesce (C24N).
+      ...(matchUpId === loserMatchUpId && !awarded ? { announcesEvent: false as const } : {}),
     });
   }
   // the dual the loser lands in is otherwise untouched (the arrival is written on its structure's assignments): its
@@ -331,13 +335,7 @@ export function dualLineUpOps(
 ): OutcomeOp[] | false {
   const { view, drawDefinition } = args;
   const arrived = loser?.arrives
-    ? assignedLineUpOps(
-        view,
-        drawDefinition,
-        loser.participantId,
-        loserThrough,
-        loserByeArrival(view, loser, args.route, args.write),
-      )
+    ? assignedLineUpOps(view, drawDefinition, loser, loserThrough, loserByeArrival(view, loser, args.route, args.write))
     : [];
   return arrived && [...winnerLineUpOps(args), ...arrived];
 }
@@ -449,4 +447,13 @@ export function removedByeLineUpOps(view: OutcomeView, drawDefinition: DrawDefin
     { op: 'stampUpdatedAt', entity: 'matchUp', id: held.entry.matchUpId },
     { op: 'stampUpdatedAt', entity: 'structure', id: held.entry.structureId },
   ];
+}
+
+/** C26: the carrier has just advanced through a BYE; ensure the landing dual's stored sides. */
+export function carriedByeDualSides(drawDefinition: DrawDefinition, entry: HydratedMatchUp) {
+  return ensuredDualSides({
+    contextSides: entry.sides,
+    rawSides: storedSides(drawDefinition, entry.matchUpId),
+    lineUps: firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }),
+  });
 }

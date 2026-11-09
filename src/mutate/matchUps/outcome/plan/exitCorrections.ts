@@ -1,6 +1,7 @@
+import { heldByeCarryCorrectionOps, relabelCarryReason, withdrawnReason } from './carriedExit';
 import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
-import { relabelCarryReason, withdrawnReason } from './carriedExit';
+import { freshByeCarry } from '../direction';
 import {
   APPLY_VALUES,
   REMOVE_DIRECTED,
@@ -11,8 +12,8 @@ import {
 } from './planShared';
 
 // constants and types
+import { BYE, IN_PROGRESS, RETIRED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { MatchUpStatusUnion, SideExitProvenance } from '@Types/tournamentTypes';
-import { BYE, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { ExitReasonArgs, MatchUpWrite, OutcomeView, Route } from '../types';
 import type { OutcomeOp } from '../ops';
 
@@ -110,6 +111,7 @@ export function relabelledExit(args: ExitReasonArgs): boolean {
   if (direction?.winner && args.route !== 'swap') return false;
   // a status that changes is refreshed on the arrivals the first entry sent on (v1's `refreshArrivals`): v1's
   if (arrivalsRefreshed(view, request.matchUpId, write.matchUpStatus) && !refreshedArrivalOps(args)) return false;
+  if (heldByeCarryCorrectionOps(args)) return true;
   const loser = direction?.loser;
   // no link: the write alone
   if (!loser) return true;
@@ -123,6 +125,14 @@ export function relabelledExit(args: ExitReasonArgs): boolean {
   // (a carry recorded past a BYE, or an exit standing there, is settled by v1 where the direction planned neither)
   const { targets } = view;
   if (!request.flags.propagateExitStatus) return true;
+  // C24: a non-propagating retirement of a played source has no carry to withdraw past the BYE.
+  if (
+    args.route === APPLY_VALUES &&
+    write.matchUpStatus === RETIRED &&
+    !request.flags.propagateRetirementAsExit &&
+    freshByeCarry(view)
+  )
+    return true;
   return (
     targets.loserMatchUpStatus === TO_BE_PLAYED &&
     !targets.loserMatchUpHasResult &&

@@ -353,7 +353,7 @@ export type OutcomeView = {
     priorLosses: { 1: number; 2: number };
   };
   /** § 3: facts the routes ask */
-  /** a round robin group's tally inputs (S3: the tally planned as `setParticipantResults`); absent elsewhere */
+  /** The score writer's selected RR, ad hoc or lucky tally scope, planned as setParticipantResults. */
   group?: {
     /** the round robin's container, or the ad hoc structure itself: the top-level structure a write stamps (F2 (i)) */
     containerStructureId: string;

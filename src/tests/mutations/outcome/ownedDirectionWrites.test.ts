@@ -1,6 +1,7 @@
 import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { POLICY_SCORING_DEFAULT } from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
 import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { replayFailure } from '@Tests/testHarness/exitPropagation/sweep';
@@ -14,8 +15,10 @@ import { setClock } from '@Tools/clock';
 // constants
 import { MISSING_ASSIGNMENTS, SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import { DOMINANT_DUO, USTA_COLLEGE } from '@Constants/tieFormatConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import type { Tournament } from '@Types/tournamentTypes';
+import { LINEUPS } from '@Constants/extensionConstants';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
@@ -7683,6 +7686,199 @@ describe('C22 the TEAM refusal prefix remains owed, while the scoring-policy ove
   });
 });
 
+// C24N: an assignment at a standing award keeps its event through the later quiet lineup notice.
+type TeamAwardNoticeCase = {
+  label: string;
+  drawProfile: Record<string, unknown>;
+  nonRandom: number;
+  setup: Step[];
+  target?: Target;
+  lineUps: boolean;
+  entered: string;
+  occupied?: boolean;
+  owned: boolean;
+};
+const teamNoticeStep = (roundNumber: number, roundPosition: number, status = 'bare'): Step => ({
+  target: { structureName: 'Main', roundNumber, roundPosition },
+  outcome: status === 'bare' ? { winningSide: 1 } : { matchUpStatus: status, winningSide: 1 },
+  params: CARRIED,
+});
+const TEAM_AWARD_NOTICE_WITNESSES: [number, number, number, Target, Step[]][] = [
+  [200061, 8, 8, R1(2, 'Main'), [teamNoticeStep(1, 1, WALKOVER)]],
+  [200083, 8, 5, MAIN(2, 2), [teamNoticeStep(1, 2, DEFAULTED), teamNoticeStep(2, 1)]],
+  [200091, 16, 16, R1(2, 'Main'), [teamNoticeStep(1, 1, WALKOVER)]],
+  [
+    200113,
+    16,
+    13,
+    MAIN(2, 4),
+    [
+      teamNoticeStep(1, 2, DEFAULTED),
+      teamNoticeStep(1, 3),
+      teamNoticeStep(1, 4),
+      teamNoticeStep(1, 5, DEFAULTED),
+      teamNoticeStep(1, 7),
+      teamNoticeStep(2, 1),
+      teamNoticeStep(2, 2, DEFAULTED),
+      teamNoticeStep(2, 3),
+    ],
+  ],
+];
+const TEAM_AWARD_NOTICE_DRAWS = [
+  FEED_IN_CHAMPIONSHIP,
+  FIRST_ROUND_LOSER_CONSOLATION,
+  COMPASS,
+  OLYMPIC,
+  DOUBLE_ELIMINATION,
+  CURTIS_CONSOLATION,
+  MODIFIED_FEED_IN_CHAMPIONSHIP,
+  FIRST_MATCH_LOSER_CONSOLATION,
+  FEED_IN_CHAMPIONSHIP_TO_SF,
+];
+const TEAM_AWARD_NOTICE_CASES: TeamAwardNoticeCase[] = [
+  ...TEAM_AWARD_NOTICE_WITNESSES.flatMap(([nonRandom, drawSize, participantsCount, target, setup]) =>
+    [false, true].flatMap((lineUps) =>
+      ['bare', COMPLETED, WALKOVER].map((entered) => ({
+        label: `C24N witness ${nonRandom}: ${entered}, lineups ${lineUps}`,
+        drawProfile: {
+          drawType: DOUBLE_ELIMINATION,
+          drawSize,
+          participantsCount,
+          eventType: 'TEAM',
+          tieFormatName: DOMINANT_DUO,
+        },
+        nonRandom,
+        setup,
+        target,
+        lineUps,
+        entered,
+        owned: true,
+      })),
+    ),
+  ),
+  ...TEAM_AWARD_NOTICE_WITNESSES.map(([nonRandom, drawSize, participantsCount, target, setup]) => ({
+    label: `C24N already occupied ${nonRandom}`,
+    drawProfile: {
+      drawType: DOUBLE_ELIMINATION,
+      drawSize,
+      participantsCount,
+      eventType: 'TEAM',
+      tieFormatName: DOMINANT_DUO,
+    },
+    nonRandom,
+    setup,
+    target,
+    lineUps: false,
+    entered: 'bare',
+    occupied: true,
+    owned: false,
+  })),
+  ...TEAM_AWARD_NOTICE_DRAWS.flatMap((drawType) =>
+    [
+      [8, 7],
+      [16, 15],
+      [16, 11],
+    ].flatMap(([drawSize, participantsCount]) =>
+      [false, true].map((lineUps) => ({
+        label: `C24N initial seat ${drawType} ${participantsCount}/${drawSize}, lineups ${lineUps}`,
+        drawProfile: { drawType, drawSize, participantsCount, eventType: 'TEAM', tieFormatName: USTA_COLLEGE },
+        nonRandom: 1,
+        setup: [],
+        lineUps,
+        entered: 'bare',
+        owned: true,
+      })),
+    ),
+  ),
+  ...TEAM_AWARD_NOTICE_DRAWS.flatMap((drawType) =>
+    [8, 16].flatMap((drawSize) =>
+      [false, true].flatMap((lineUps) =>
+        [WALKOVER, DEFAULTED].map((exit) => {
+          const structureName = drawType === COMPASS || drawType === OLYMPIC ? 'East' : 'Main';
+          return {
+            label: `C24N paired ${drawType} ${drawSize} ${exit}, lineups ${lineUps}`,
+            drawProfile: {
+              drawType,
+              drawSize,
+              participantsCount: drawSize,
+              eventType: 'TEAM',
+              tieFormatName: DOMINANT_DUO,
+            },
+            nonRandom: 1,
+            setup: [
+              { target: R1(1, structureName), outcome: { matchUpStatus: exit, winningSide: 1 }, params: CARRIED },
+            ],
+            target: R1(2, structureName),
+            lineUps,
+            entered: 'bare',
+            owned: true,
+          };
+        }),
+      ),
+    ),
+  ),
+];
+
+function prepareTeamAwardNotice(recipe: TeamAwardNoticeCase) {
+  setOutcomePipeline(OUTCOME_PIPELINE_V1);
+  setClock('2026-10-25T00:00:00.000Z');
+  setSubscriptions({ subscriptions: {} });
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ ...recipe.drawProfile, drawId: 'd' }],
+    nonRandom: recipe.nonRandom,
+    setState: true,
+  });
+  if (recipe.lineUps)
+    expect(
+      tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: 'd' }).success,
+    ).toEqual(true);
+  for (const step of recipe.setup)
+    expect(
+      tournamentEngine.setMatchUpStatus({
+        drawId: 'd',
+        matchUpId: findTarget(step.target),
+        outcome: step.outcome,
+        ...step.params,
+      }).success,
+    ).toEqual(true);
+  const first = tournamentEngine
+    .allDrawMatchUps({ drawId: 'd', inContext: true })
+    .matchUps?.find(
+      (matchUp) =>
+        !matchUp.collectionId &&
+        matchUp.roundNumber === 1 &&
+        matchUp.sides?.filter((side) => side.participantId).length === 2,
+    );
+  if (!first?.roundNumber) throw new Error('TEAM notice fixture has no populated source');
+  const target = recipe.target ?? {
+    structureName: first.structureName,
+    roundNumber: first.roundNumber,
+    roundPosition: first.roundPosition,
+  };
+  const outcome = recipe.entered === 'bare' ? { winningSide: 1 } : { matchUpStatus: recipe.entered, winningSide: 1 };
+  const params = { propagateExitStatus: recipe.entered !== WALKOVER };
+  if (recipe.occupied)
+    expect(
+      tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId: findTarget(target), outcome, ...params }).success,
+    ).toEqual(true);
+  const scenario: Scenario = {
+    drawProfile: recipe.drawProfile,
+    nonRandom: recipe.nonRandom,
+    steps: [{ target, outcome, params }],
+  };
+  return { scenario, prepared: structuredClone(tournamentEngine.getTournament().tournamentRecord) };
+}
+
+describe('C24N TEAM arrivals retain event identity at a standing awarded exit', () => {
+  it.each(TEAM_AWARD_NOTICE_CASES)('$label', (recipe) => {
+    const { scenario, prepared } = prepareTeamAwardNotice(recipe);
+    const { v1 } = compareUndirectedWinner(scenario, recipe.owned, prepared);
+    expect(v1.results[0].success).toEqual(true);
+    expect(v1.v1Writes).toBeGreaterThan(0);
+    expect(v1.notices.length).toBeGreaterThan(0);
+  });
+});
+
 const UNLINKED_AD_HOC_CALLS = ['SINGLES', 'DOUBLES'].flatMap((eventType) =>
   [1, 3].flatMap((roundsCount) =>
     [COMPLETED, WALKOVER, DEFAULTED, 'bare'].flatMap((status) =>
@@ -7699,7 +7895,7 @@ const UNLINKED_AD_HOC_CALLS = ['SINGLES', 'DOUBLES'].flatMap((eventType) =>
     ),
   ),
 );
-describe('C22 AD_HOC with no directions still owes its missing group frame', () => {
+describe('C22 AD_HOC with no directions uses its tally scope', () => {
   it.each(UNLINKED_AD_HOC_CALLS)('%s', (_label, eventType, roundsCount, status, side) => {
     setOutcomePipeline(OUTCOME_PIPELINE_V1);
     setClock('2026-10-25T00:00:00.000Z');
@@ -7727,8 +7923,8 @@ describe('C22 AD_HOC with no directions still owes its missing group frame', () 
       drawProfile: { drawType: AD_HOC, drawSize: 8, eventType, automated: true, roundsCount },
       steps: [{ target: { roundNumber: 1, nth: 1 }, outcome }],
     };
-    // A multi-round AD_HOC call reaches the later tally wall; it is not claimed as a new owned write.
-    expect(compareUndirectedWinner(scenario, roundsCount === 1, prepared).v1.results[0].success).toEqual(true);
+    // The shared tally scope reconstructs assignments across every stored round.
+    expect(compareUndirectedWinner(scenario, true, prepared).v1.results[0].success).toEqual(true);
   });
 });
 
@@ -7785,7 +7981,9 @@ const REFRESHED_ARRIVAL_CASES = PENDING_WINNER_DRAWS.filter(([, size]) => size >
                   },
                 ],
               };
-              const owned = side === 1 && (!carry || status === COMPLETED || drawType === SINGLE_ELIMINATION);
+              // C24 also owns the played source whose policy-on loser already passed a BYE.
+              const owned =
+                side === 1 && (!carry || status === COMPLETED || drawType === SINGLE_ELIMINATION || !policyOff);
               return [
                 `C23 ${drawType} ${drawSize} origin ${arrival}: ${doubleExit}, policy off ${policyOff}, ${status} side ${side}, carry ${carry}`,
                 scenario,
@@ -7803,8 +8001,18 @@ describe('C23 relabelled arrival origins retain exact records and notice identit
   it.each(REFRESHED_ARRIVAL_CASES)('%s', (_label, scenario, owned, status) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     const before = getDifferentialTally()['shadow:applied']?.compared ?? 0;
+    const exitBefore = getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0;
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
     expect((getDifferentialTally()['shadow:applied']?.compared ?? 0) - before).toEqual(Number(owned));
+    const step = scenario.steps[0];
+    if (
+      status === RETIRED &&
+      step.outcome.winningSide === 2 &&
+      step.params?.propagateExitStatus &&
+      !scenario.policyDefinitions &&
+      scenario.drawProfile.drawType !== SINGLE_ELIMINATION
+    )
+      expect((getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0) - exitBefore).toEqual(1);
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
     expect(v1.v1Writes).toBeGreaterThan(0);
@@ -7816,5 +8024,1011 @@ describe('C23 relabelled arrival origins retain exact records and notice identit
     }
     if (owned && status !== COMPLETED)
       expect(v2.notices.some((notice) => notice.includes('"context":"refreshArrivals"'))).toEqual(true);
+  });
+});
+
+// C24: the loser already stands past a BYE when the played source is relabelled.
+const HELD_BYE_RELABEL_PROFILES = [
+  FEED_IN_CHAMPIONSHIP,
+  FIRST_ROUND_LOSER_CONSOLATION,
+  COMPASS,
+  OLYMPIC,
+  DOUBLE_ELIMINATION,
+  CURTIS_CONSOLATION,
+  MODIFIED_FEED_IN_CHAMPIONSHIP,
+  FIRST_MATCH_LOSER_CONSOLATION,
+].flatMap((drawType) =>
+  (drawType === CURTIS_CONSOLATION
+    ? [
+        [16, 15],
+        [16, 11],
+      ]
+    : [
+        [8, 7],
+        [16, 11],
+      ]
+  ).map(([drawSize, participantsCount]) => ({ drawType, drawSize, participantsCount })),
+);
+const HELD_BYE_RELABEL_CASES = HELD_BYE_RELABEL_PROFILES.flatMap((profile) =>
+  ['SINGLES', 'DOUBLES', ...(profile.drawType === FEED_IN_CHAMPIONSHIP ? ['TEAM'] : [])].flatMap((eventType) =>
+    [false, true].flatMap((policyOff) =>
+      [WALKOVER, DEFAULTED, RETIRED].flatMap((status) =>
+        (status === RETIRED ? [false, true] : [false]).flatMap((retirement) =>
+          [false, true].map(
+            (carry) =>
+              [
+                `C24 ${eventType} ${profile.drawType} ${profile.participantsCount}/${profile.drawSize}: ${status}, policy off ${policyOff}, carry ${carry}, retirement ${retirement}`,
+                { ...profile, eventType },
+                policyOff,
+                status,
+                carry,
+                retirement,
+              ] as const,
+          ),
+        ),
+      ),
+    ),
+  ),
+);
+
+describe('C24 a played result carries its relabel past the loser BYE already held', () => {
+  it.each(HELD_BYE_RELABEL_CASES)('%s', (_label, drawProfile, policyOff, status, carry, retirement) => {
+    setOutcomePipeline(OUTCOME_PIPELINE_V1);
+    setClock('2026-10-25T00:00:00.000Z');
+    setSubscriptions({ subscriptions: {} });
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ ...drawProfile, drawId: 'd' }],
+      nonRandom: 1,
+      setState: true,
+    });
+    if (drawProfile.eventType === 'TEAM')
+      expect(
+        tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: 'd' }).success,
+      ).toEqual(true);
+    if (policyOff) tournamentEngine.attachPolicies({ policyDefinitions: POLICY_OFF });
+    const matches = () =>
+      (tournamentEngine.allDrawMatchUps({ drawId: 'd', inContext: true }).matchUps ?? []).filter(
+        (matchUp) => !matchUp.collectionId,
+      );
+    const played = drawProfile.eventType === 'TEAM' ? { winningSide: 1 } : won(1);
+    const source = matches().find(
+      (matchUp) => matchUp.roundNumber === 1 && matchUp.sides?.filter((side) => side.participantId).length === 2,
+    );
+    expect(source).toBeDefined();
+    for (const matchUp of matches().filter(
+      (candidate) =>
+        candidate.structureId === source?.structureId &&
+        candidate.roundNumber === 1 &&
+        candidate.matchUpStatus === TO_BE_PLAYED &&
+        candidate.sides?.filter((side) => side.participantId).length === 2,
+    ))
+      expect(
+        tournamentEngine.setMatchUpStatus({
+          drawId: 'd',
+          matchUpId: matchUp.matchUpId,
+          outcome: played,
+          propagateExitStatus: false,
+        }).success,
+      ).toEqual(true);
+    const next = matches().find((matchUp) => matchUp.matchUpId === source?.winnerMatchUpId);
+    expect(next).toBeDefined();
+    expect(
+      tournamentEngine.setMatchUpStatus({
+        drawId: 'd',
+        matchUpId: next?.matchUpId,
+        outcome: played,
+        propagateExitStatus: false,
+      }).success,
+    ).toEqual(true);
+    const prepared = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+    const scenario: Scenario = {
+      drawProfile,
+      steps: [
+        {
+          target: { structureName: source?.structureName, roundNumber: 1, roundPosition: source?.roundPosition },
+          outcome: { matchUpStatus: status, winningSide: 1 },
+          params: { propagateExitStatus: carry, propagateRetirementAsExit: retirement, allowChangePropagation: true },
+        },
+      ],
+    };
+    if (drawProfile.drawType === FIRST_MATCH_LOSER_CONSOLATION && status === WALKOVER) {
+      const v1 = play(OUTCOME_PIPELINE_V1, scenario, { prepared });
+      expect(v1.results[0].error?.code).toEqual('ERR_CANNOT_CHANGE_FEED_ELIGIBILITY');
+      for (const mode of [OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V2] as const) {
+        const actual = play(mode, scenario, { prepared });
+        expect(actual.results).toEqual(v1.results);
+        expect(actual.record).toEqual(v1.record);
+        expect(actual.notices).toEqual(v1.notices);
+      }
+    } else
+      expect(
+        compareUndirectedWinner(scenario, drawProfile.eventType !== 'TEAM', prepared).v1.results[0].success,
+      ).toEqual(true);
+  });
+});
+
+// C25: the recorded carry, including one retained through a source completion, is corrected past its BYEs.
+type HeldCarryCorrection = {
+  name: string;
+  previous: typeof WALKOVER | typeof DEFAULTED | typeof RETIRED;
+  entered: typeof WALKOVER | typeof DEFAULTED | typeof RETIRED | typeof COMPLETED | 'bare';
+  history?: 'retired' | 'completed';
+  retirement?: boolean;
+  sourceOnly?: boolean;
+  initialCarry?: false;
+  carry?: false;
+};
+const HELD_CARRY_CORRECTIONS: HeldCarryCorrection[] = [
+  { name: 'walkover becomes default', previous: WALKOVER, entered: DEFAULTED },
+  { name: 'default becomes walkover', previous: DEFAULTED, entered: WALKOVER },
+  { name: 'same carry stands', previous: WALKOVER, entered: WALKOVER, sourceOnly: true },
+  { name: 'retirement carry stands', previous: RETIRED, entered: WALKOVER, sourceOnly: true },
+  { name: 'retirement keeps default', previous: DEFAULTED, entered: RETIRED, retirement: true, sourceOnly: true },
+  { name: 'retirement withdraws carry', previous: WALKOVER, entered: RETIRED },
+  { name: 'score withdraws default', previous: DEFAULTED, entered: COMPLETED },
+  { name: 'bare winner withdraws carry', previous: WALKOVER, entered: 'bare' },
+  { name: 'retired source relabels retained default', previous: DEFAULTED, history: 'retired', entered: WALKOVER },
+  { name: 'retired source withdraws retained default', previous: DEFAULTED, history: 'retired', entered: COMPLETED },
+  { name: 'completed source withdraws retained carry', previous: WALKOVER, history: 'completed', entered: COMPLETED },
+  {
+    name: 'completed source bare winner withdraws default',
+    previous: DEFAULTED,
+    history: 'completed',
+    entered: 'bare',
+  },
+];
+type HeldCarryProfile = { drawType: string; drawSize: number; participantsCount: number; eventType: string };
+const HELD_CARRY_PROFILES: HeldCarryProfile[] = [
+  ...HELD_BYE_RELABEL_PROFILES,
+  { drawType: COMPASS, drawSize: 16, participantsCount: 15 },
+].flatMap((profile) => ['SINGLES', 'DOUBLES'].map((eventType) => ({ ...profile, eventType })));
+const HELD_CARRY_CASES = [
+  ...HELD_CARRY_PROFILES,
+  { drawType: FEED_IN_CHAMPIONSHIP, drawSize: 8, participantsCount: 7, eventType: 'TEAM' },
+].flatMap((profile) =>
+  [false, true].flatMap((policyOff) =>
+    HELD_CARRY_CORRECTIONS.filter(
+      (correction) => profile.drawType !== FIRST_MATCH_LOSER_CONSOLATION || correction.previous !== WALKOVER,
+    ).map(
+      (correction) =>
+        [
+          `C25 ${profile.eventType} ${profile.drawType} ${profile.participantsCount}/${profile.drawSize}, policy off ${policyOff}: ${correction.name}`,
+          profile,
+          correction,
+          policyOff,
+        ] as const,
+    ),
+  ),
+);
+
+function prepareHeldCarryCorrection(profile: HeldCarryProfile, correction: HeldCarryCorrection, policyOff: boolean) {
+  setOutcomePipeline(OUTCOME_PIPELINE_V1);
+  setClock('2026-10-25T00:00:00.000Z');
+  setSubscriptions({ subscriptions: {} });
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [
+      { ...profile, drawId: 'd', ...(profile.eventType === 'TEAM' ? { tieFormatName: USTA_COLLEGE } : {}) },
+    ],
+    nonRandom: 1,
+    setState: true,
+  });
+  if (policyOff) tournamentEngine.attachPolicies({ policyDefinitions: POLICY_OFF });
+  if (profile.eventType === 'TEAM')
+    expect(
+      tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: 'd' }).success,
+    ).toEqual(true);
+  const matches = () =>
+    (tournamentEngine.allDrawMatchUps({ drawId: 'd', inContext: true }).matchUps ?? []).filter(
+      (matchUp) => !matchUp.collectionId && (profile.eventType !== 'TEAM' || matchUp.matchUpType === 'TEAM'),
+    );
+  const source = matches().find(
+    (matchUp) => matchUp.roundNumber === 1 && matchUp.sides?.filter((side) => side.participantId).length === 2,
+  );
+  expect(source).toBeDefined();
+  const played = profile.eventType === 'TEAM' ? { winningSide: 1 } : won(1);
+  for (const matchUp of matches().filter(
+    (candidate) =>
+      candidate.structureId === source?.structureId &&
+      candidate.roundNumber === 1 &&
+      candidate.matchUpStatus === TO_BE_PLAYED &&
+      candidate.sides?.filter((side) => side.participantId).length === 2,
+  ))
+    expect(
+      tournamentEngine.setMatchUpStatus({
+        drawId: 'd',
+        matchUpId: matchUp.matchUpId,
+        outcome: played,
+        propagateExitStatus: false,
+      }).success,
+    ).toEqual(true);
+  expect(
+    tournamentEngine.setMatchUpStatus({
+      drawId: 'd',
+      matchUpId: source?.winnerMatchUpId,
+      outcome: played,
+      propagateExitStatus: false,
+    }).success,
+  ).toEqual(true);
+  expect(
+    tournamentEngine.setMatchUpStatus({
+      drawId: 'd',
+      matchUpId: source?.matchUpId,
+      outcome: { matchUpStatus: correction.previous, winningSide: 1 },
+      propagateExitStatus: correction.initialCarry !== false,
+      propagateRetirementAsExit: correction.initialCarry !== false,
+      allowChangePropagation: true,
+    }).success,
+  ).toEqual(true);
+  if (correction.history)
+    expect(
+      tournamentEngine.setMatchUpStatus({
+        drawId: 'd',
+        matchUpId: source?.matchUpId,
+        outcome: correction.history === 'retired' ? { matchUpStatus: RETIRED, winningSide: 1 } : played,
+        propagateExitStatus: correction.history === 'retired',
+        propagateRetirementAsExit: correction.history === 'retired',
+        allowChangePropagation: true,
+      }).success,
+    ).toEqual(true);
+  const prepared = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+  const entered =
+    correction.entered === 'bare' ? { winningSide: 1 } : { matchUpStatus: correction.entered, winningSide: 1 };
+  const outcome = correction.entered === COMPLETED ? played : entered;
+  const scenario: Scenario = {
+    drawProfile: profile,
+    steps: [
+      {
+        target: { structureName: source?.structureName, roundNumber: 1, roundPosition: source?.roundPosition },
+        outcome,
+        params: {
+          propagateExitStatus: correction.carry !== false,
+          propagateRetirementAsExit: !!correction.retirement,
+          allowChangePropagation: true,
+        },
+      },
+    ],
+  };
+  return { prepared, scenario };
+}
+
+describe('C25 existing carries corrected past held BYEs preserve records, returns and ordered notices', () => {
+  it.each(HELD_CARRY_CASES)('%s', (_label, profile, correction, policyOff) => {
+    const { prepared, scenario } = prepareHeldCarryCorrection(profile, correction, policyOff);
+    if (profile.drawType === FIRST_MATCH_LOSER_CONSOLATION && correction.entered === WALKOVER) {
+      const v1 = play(OUTCOME_PIPELINE_V1, scenario, { prepared });
+      expect(v1.results[0].error?.code).toEqual('ERR_CANNOT_CHANGE_FEED_ELIGIBILITY');
+      for (const mode of [OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V2] as const) {
+        const actual = play(mode, scenario, { prepared });
+        expect(actual.results).toEqual(v1.results);
+        expect(actual.record).toEqual(v1.record);
+        expect(actual.notices).toEqual(v1.notices);
+      }
+    } else {
+      // Captured controls: COMPASS 16/15 carries across another loser link; DOUBLES 16/11 also withdraws a downstream BYE.
+      const deeper =
+        profile.drawType === COMPASS &&
+        profile.drawSize === 16 &&
+        (profile.participantsCount === 15 || profile.eventType === 'DOUBLES');
+      const owned = profile.eventType !== 'TEAM' && (!deeper || !!correction.sourceOnly);
+      expect(compareUndirectedWinner(scenario, owned, prepared).v1.results[0].success).toEqual(true);
+    }
+  });
+
+  it.each(['SINGLES', 'DOUBLES'])('C25 %s: enabling a fresh carry after an exit remains owed', (eventType) => {
+    const profile = { drawType: FEED_IN_CHAMPIONSHIP, drawSize: 8, participantsCount: 7, eventType };
+    const correction: HeldCarryCorrection = {
+      name: 'enable fresh carry',
+      previous: WALKOVER,
+      entered: DEFAULTED,
+      initialCarry: false,
+    };
+    const { prepared, scenario } = prepareHeldCarryCorrection(profile, correction, false);
+    expect(compareUndirectedWinner(scenario, false, prepared).v1.results[0].success).toEqual(true);
+  });
+
+  it.each(['SINGLES', 'DOUBLES'])('C25 %s: disabling propagation keeps the carried record', (eventType) => {
+    const profile = { drawType: FEED_IN_CHAMPIONSHIP, drawSize: 8, participantsCount: 7, eventType };
+    const correction: HeldCarryCorrection = {
+      name: 'keep carry',
+      previous: DEFAULTED,
+      entered: COMPLETED,
+      carry: false,
+    };
+    const { prepared, scenario } = prepareHeldCarryCorrection(profile, correction, true);
+    expect(compareUndirectedWinner(scenario, true, prepared).v1.results[0].success).toEqual(true);
+  });
+});
+
+// C26V: an assignment changes a dual's derived sides even when its stored matchUp is untouched.
+const ASSIGNMENT_VIEW_DRAWS = [FIRST_ROUND_LOSER_CONSOLATION, COMPASS, OLYMPIC];
+const ASSIGNMENT_VIEW_CASES = ASSIGNMENT_VIEW_DRAWS.flatMap((drawType) =>
+  ['SINGLES', 'DOUBLES', 'TEAM'].flatMap((eventType) =>
+    [false, true].flatMap((policyOff) =>
+      [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((status) =>
+        [false, true].flatMap((carry) =>
+          [0, 1].map(
+            (sourceIndex) =>
+              [
+                `C26V ${eventType} ${drawType}: ${status}, policy off ${policyOff}, carry ${carry}, source ${sourceIndex}`,
+                drawType,
+                eventType,
+                policyOff,
+                status,
+                carry,
+                sourceIndex,
+              ] as const,
+          ),
+        ),
+      ),
+    ),
+  ),
+);
+
+function assignmentViewFixture(drawType: string, eventType: string, policyOff: boolean) {
+  setOutcomePipeline(OUTCOME_PIPELINE_V1);
+  setClock('2026-10-25T00:00:00.000Z');
+  setSubscriptions({ subscriptions: {} });
+  const drawProfile = {
+    drawType,
+    eventType,
+    drawSize: 16,
+    participantsCount: 11,
+    ...(eventType === 'TEAM' ? { tieFormatName: USTA_COLLEGE } : {}),
+  };
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ ...drawProfile, drawId: 'd' }],
+    nonRandom: 1,
+    setState: true,
+  });
+  if (policyOff) tournamentEngine.attachPolicies({ policyDefinitions: POLICY_OFF });
+  if (eventType === 'TEAM')
+    expect(
+      tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: 'd' }).success,
+    ).toEqual(true);
+  const seen = new Set<string>();
+  const sources = tournamentEngine.allDrawMatchUps({ drawId: 'd', inContext: true }).matchUps.filter((matchUp) => {
+    if (
+      matchUp.collectionId ||
+      matchUp.matchUpStatus !== TO_BE_PLAYED ||
+      matchUp.sides?.filter((side) => side.participantId).length !== 2
+    )
+      return false;
+    const key = `${matchUp.structureId}:${matchUp.roundNumber}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  expect(sources.length).toEqual(2);
+  return { drawProfile, sources };
+}
+
+describe('C26V assignment changes refresh unchanged duals and every tie line', () => {
+  it.each(ASSIGNMENT_VIEW_CASES)('%s', (_label, drawType, eventType, policyOff, status, carry, sourceIndex) => {
+    const { drawProfile, sources } = assignmentViewFixture(drawType, eventType, policyOff);
+    const source = sources[sourceIndex];
+    const prepared = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+    const scenario: Scenario = {
+      drawProfile,
+      steps: [
+        {
+          target: {
+            structureName: source.structureName,
+            roundNumber: source.roundNumber,
+            roundPosition: source.roundPosition,
+          },
+          outcome: { matchUpStatus: status },
+          params: { propagateExitStatus: carry, allowChangePropagation: true },
+        },
+      ],
+    };
+    expect(compareUndirectedWinner(scenario, true, prepared).v1.results[0].success).toEqual(true);
+  });
+
+  it.each(
+    ASSIGNMENT_VIEW_DRAWS.flatMap((drawType) =>
+      [false, true].flatMap((policyOff) =>
+        [DOUBLE_WALKOVER, DOUBLE_DEFAULT].map(
+          (status) =>
+            [`C26V TEAM clear ${drawType}: ${status}, policy off ${policyOff}`, drawType, policyOff, status] as const,
+        ),
+      ),
+    ),
+  )('%s remains an explicit TEAM withdrawal obligation', (_label, drawType, policyOff, status) => {
+    const { drawProfile, sources } = assignmentViewFixture(drawType, 'TEAM', policyOff);
+    const source = sources[0];
+    expect(
+      tournamentEngine.setMatchUpStatus({
+        drawId: 'd',
+        matchUpId: source.matchUpId,
+        outcome: { matchUpStatus: status },
+        propagateExitStatus: true,
+      }).success,
+    ).toEqual(true);
+    const prepared = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+    const scenario: Scenario = {
+      drawProfile,
+      steps: [
+        {
+          target: {
+            structureName: source.structureName,
+            roundNumber: source.roundNumber,
+            roundPosition: source.roundPosition,
+          },
+          outcome: cleared,
+          params: { propagateExitStatus: true, allowChangePropagation: true },
+        },
+      ],
+    };
+    const before = getDifferentialTally()['shadow:abstain:team']?.deferred ?? 0;
+    expect(compareUndirectedWinner(scenario, false, prepared).v1.results[0].success).toEqual(true);
+    expect((getDifferentialTally()['shadow:abstain:team']?.deferred ?? 0) - before).toEqual(1);
+  });
+});
+
+// C26N: a named advance keeps its event when a later unfillable-seat BYE writes the same matchUp quietly.
+const NAMED_BYE_ADVANCE_CASES = ['SINGLES', 'DOUBLES', 'TEAM'].flatMap((eventType) =>
+  [false, true].flatMap((policyOff) =>
+    ([1, 2] as const).flatMap((carrierWinningSide) =>
+      [WALKOVER, DEFAULTED, RETIRED].flatMap((carrierStatus) =>
+        [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((status) =>
+          [false, true].map(
+            (carry) =>
+              [
+                `C26N ${eventType} 8/5: ${carrierStatus} side ${carrierWinningSide}, ${status}, policy off ${policyOff}, carry ${carry}`,
+                eventType,
+                policyOff,
+                carrierWinningSide,
+                carrierStatus,
+                status,
+                carry,
+              ] as const,
+          ),
+        ),
+      ),
+    ),
+  ),
+);
+
+function prepareNamedByeAdvance(
+  eventType: string,
+  participantsCount: number,
+  policyOff: boolean,
+  carrierStatus: string,
+  carrierWinningSide: 1 | 2,
+) {
+  setOutcomePipeline(OUTCOME_PIPELINE_V1);
+  setClock('2026-10-25T00:00:00.000Z');
+  setSubscriptions({ subscriptions: {} });
+  const drawProfile = {
+    drawType: FEED_IN_CHAMPIONSHIP,
+    drawSize: 8,
+    participantsCount,
+    eventType,
+    ...(eventType === 'TEAM' ? { tieFormatName: USTA_COLLEGE } : {}),
+  };
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ ...drawProfile, drawId: 'd' }],
+    nonRandom: 1,
+    setState: true,
+  });
+  if (policyOff) tournamentEngine.attachPolicies({ policyDefinitions: POLICY_OFF });
+  if (eventType === 'TEAM')
+    expect(
+      tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: 'd' }).success,
+    ).toEqual(true);
+  const ready = () =>
+    tournamentEngine
+      .allDrawMatchUps({ drawId: 'd', inContext: true })
+      .matchUps.filter(
+        (matchUp) =>
+          !matchUp.collectionId &&
+          matchUp.matchUpStatus === TO_BE_PLAYED &&
+          matchUp.sides?.filter((side) => side.participantId).length === 2,
+      );
+  const paired = () =>
+    ready().find(
+      (matchUp) =>
+        matchUp.winnerMatchUpId &&
+        ready().some(
+          (other) =>
+            other.matchUpId !== matchUp.matchUpId &&
+            other.structureId === matchUp.structureId &&
+            other.winnerMatchUpId === matchUp.winnerMatchUpId,
+        ),
+    );
+  if (!paired()) {
+    const first = ready()[0];
+    for (const matchUp of ready().filter(
+      (entry) => entry.structureId === first.structureId && entry.roundNumber === first.roundNumber,
+    ))
+      expect(
+        tournamentEngine.setMatchUpStatus({
+          drawId: 'd',
+          matchUpId: matchUp.matchUpId,
+          outcome: eventType === 'TEAM' ? { winningSide: 1 } : won(1),
+          propagateExitStatus: false,
+        }).success,
+      ).toEqual(true);
+  }
+  const sibling = paired();
+  expect(sibling).toBeDefined();
+  const sources = ready().filter(
+    (matchUp) =>
+      matchUp.matchUpId !== sibling?.matchUpId &&
+      matchUp.structureId === sibling?.structureId &&
+      matchUp.winnerMatchUpId === sibling?.winnerMatchUpId,
+  );
+  expect(sources.length).toEqual(1);
+  expect(
+    tournamentEngine.setMatchUpStatus({
+      drawId: 'd',
+      matchUpId: sibling?.matchUpId,
+      outcome: { matchUpStatus: carrierStatus, winningSide: carrierWinningSide },
+      propagateExitStatus: true,
+      propagateRetirementAsExit: true,
+    }).success,
+  ).toEqual(true);
+  const source = sources[0];
+  return {
+    drawProfile,
+    prepared: structuredClone(tournamentEngine.getTournament().tournamentRecord),
+    target: {
+      structureName: source.structureName,
+      roundNumber: source.roundNumber,
+      roundPosition: source.roundPosition,
+    },
+  };
+}
+
+describe('C26N a named BYE advance retains event identity through a later quiet BYE', () => {
+  it.each(NAMED_BYE_ADVANCE_CASES)(
+    '%s',
+    (_label, eventType, policyOff, carrierWinningSide, carrierStatus, status, carry) => {
+      const { drawProfile, prepared, target } = prepareNamedByeAdvance(
+        eventType,
+        5,
+        policyOff,
+        carrierStatus,
+        carrierWinningSide,
+      );
+      const scenario: Scenario = {
+        drawProfile,
+        steps: [
+          {
+            target,
+            outcome: { matchUpStatus: status },
+            params: { propagateExitStatus: carry, allowChangePropagation: true },
+          },
+        ],
+      };
+      // DOUBLES 8/5 has a different occupied loser seat; its carried program is still owed.
+      const owned = eventType !== 'DOUBLES';
+      const before = getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0;
+      expect(compareUndirectedWinner(scenario, owned, prepared).v1.results[0].success).toEqual(true);
+      expect((getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0) - before).toEqual(Number(!owned));
+    },
+  );
+
+  it.each(
+    ['SINGLES', 'DOUBLES', 'TEAM'].flatMap((eventType) =>
+      [false, true].flatMap((policyOff) =>
+        ([1, 2] as const).map(
+          (side) =>
+            [
+              `C26N carried-seat control ${eventType}, policy off ${policyOff}, side ${side}`,
+              eventType,
+              policyOff,
+              side,
+            ] as const,
+        ),
+      ),
+    ),
+  )('%s keeps its exact notice contract', (_label, eventType, policyOff, side) => {
+    const { drawProfile, prepared, target } = prepareNamedByeAdvance(eventType, 8, policyOff, WALKOVER, side);
+    const scenario: Scenario = {
+      drawProfile,
+      steps: [
+        {
+          target,
+          outcome: { matchUpStatus: DOUBLE_WALKOVER },
+          params: { propagateExitStatus: false, allowChangePropagation: true },
+        },
+      ],
+    };
+    const before = getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0;
+    expect(compareUndirectedWinner(scenario, !policyOff, prepared).v1.results[0].success).toEqual(true);
+    expect((getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0) - before).toEqual(Number(policyOff));
+  });
+});
+
+// C26: a double exit's loser BYE reaches a standing carry before its carrier has an opponent.
+const C26_SEAT_PROFILES = [
+  [FEED_IN_CHAMPIONSHIP, 4, true],
+  [FEED_IN_CHAMPIONSHIP, 16, true],
+  [FIRST_ROUND_LOSER_CONSOLATION, 4, true],
+  [FIRST_ROUND_LOSER_CONSOLATION, 16, true],
+  [COMPASS, 4, true],
+  [COMPASS, 16, false],
+  [OLYMPIC, 4, true],
+  [OLYMPIC, 16, false],
+  [DOUBLE_ELIMINATION, 4, false],
+  [DOUBLE_ELIMINATION, 16, true],
+  [CURTIS_CONSOLATION, 4, true],
+  [CURTIS_CONSOLATION, 16, true],
+  [MODIFIED_FEED_IN_CHAMPIONSHIP, 4, true],
+  [MODIFIED_FEED_IN_CHAMPIONSHIP, 16, true],
+  [FEED_IN_CHAMPIONSHIP_TO_SF, 4, true],
+  [FEED_IN_CHAMPIONSHIP_TO_SF, 16, true],
+  [FIRST_MATCH_LOSER_CONSOLATION, 4, true],
+  [FIRST_MATCH_LOSER_CONSOLATION, 16, false],
+] as const;
+
+type C26SeatRecipe = {
+  drawType: string;
+  eventType: string;
+  size: number;
+  carrierStatus: string;
+  carrierSide: 1 | 2;
+  sourceIndex: 0 | 1;
+  status: string;
+  policyOff: boolean;
+  carry: boolean;
+  owned: boolean;
+};
+
+function c26SeatRecipes([drawType, size, direct]: (typeof C26_SEAT_PROFILES)[number]) {
+  return ['SINGLES', 'DOUBLES', 'TEAM'].flatMap((eventType) =>
+    [WALKOVER, DEFAULTED, RETIRED].flatMap((carrierStatus, flavor) =>
+      [DOUBLE_WALKOVER, DOUBLE_DEFAULT].map((status, entered): C26SeatRecipe => ({
+        drawType,
+        eventType,
+        size,
+        carrierStatus,
+        carrierSide: entered ? 2 : 1,
+        sourceIndex: flavor % 2 ? 1 : 0,
+        status,
+        policyOff: false,
+        carry: !!entered,
+        owned: direct,
+      })),
+    ),
+  );
+}
+
+const C26_SEAT_CASES = C26_SEAT_PROFILES.flatMap(c26SeatRecipes).flatMap((recipe) => {
+  const label = `${recipe.eventType} ${recipe.drawType} ${recipe.size}: ${recipe.carrierStatus} side ${recipe.carrierSide}, source ${recipe.sourceIndex}, ${recipe.status}`;
+  return [
+    [`C26 BYE beside carried award ${label}`, recipe] as const,
+    ...(recipe.size === 16 && recipe.carrierStatus === WALKOVER
+      ? [[`C26 produced convergence control ${label}`, { ...recipe, policyOff: true, owned: false }] as const]
+      : []),
+  ];
+});
+
+function prepareC26Seat(recipe: C26SeatRecipe) {
+  setOutcomePipeline(OUTCOME_PIPELINE_V1);
+  setClock('2026-10-25T00:00:00.000Z');
+  setSubscriptions({ subscriptions: {} });
+  const { drawType, eventType, size, policyOff, sourceIndex, carrierStatus, carrierSide } = recipe;
+  const drawProfile = {
+    drawType,
+    eventType,
+    drawSize: size,
+    participantsCount: size,
+    ...(eventType === 'TEAM' ? { tieFormatName: USTA_COLLEGE } : {}),
+  };
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ ...drawProfile, drawId: 'd' }],
+    nonRandom: 1,
+    setState: true,
+  });
+  if (policyOff) tournamentEngine.attachPolicies({ policyDefinitions: POLICY_OFF });
+  if (eventType === 'TEAM')
+    expect(
+      tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: 'd' }).success,
+    ).toEqual(true);
+  const all = () =>
+    tournamentEngine.allDrawMatchUps({ drawId: 'd', inContext: true }).matchUps.filter((m) => !m.collectionId);
+  const ready = all().filter(
+    (m) => m.matchUpStatus === TO_BE_PLAYED && m.sides?.filter((s) => s.participantId).length === 2,
+  );
+  const first = ready[0];
+  const pair = ready.filter((m) => m.structureId === first.structureId && m.winnerMatchUpId === first.winnerMatchUpId);
+  expect(pair.length).toEqual(2);
+  const source = pair[sourceIndex];
+  const origin = pair[1 - sourceIndex];
+  expect(
+    tournamentEngine.setMatchUpStatus({
+      drawId: 'd',
+      matchUpId: origin.matchUpId,
+      outcome: { matchUpStatus: carrierStatus, winningSide: carrierSide },
+      propagateExitStatus: true,
+      propagateRetirementAsExit: true,
+    }).success,
+  ).toEqual(true);
+  const home = all().find((m) => m.matchUpId === source.loserMatchUpId);
+  expect(home?.matchUpStatus).toEqual(carrierStatus === DEFAULTED ? DEFAULTED : WALKOVER);
+  expect(Object.keys(home?.sideExitProvenance ?? {}).length).toEqual(1);
+  return {
+    drawProfile,
+    source,
+    origin,
+    home,
+    prepared: structuredClone(tournamentEngine.getTournament().tournamentRecord),
+    target: {
+      structureName: source.structureName,
+      roundNumber: source.roundNumber,
+      roundPosition: source.roundPosition,
+    },
+  };
+}
+
+function c26SeatScenario(recipe: C26SeatRecipe, prepared: ReturnType<typeof prepareC26Seat>): Scenario {
+  return {
+    drawProfile: prepared.drawProfile,
+    steps: [
+      {
+        target: prepared.target,
+        outcome: { matchUpStatus: recipe.status },
+        params: { propagateExitStatus: recipe.carry, allowChangePropagation: true },
+      },
+    ],
+  };
+}
+
+describe('C26 a loser BYE passes a standing carry onward or ends at its final', () => {
+  it.each(C26_SEAT_CASES)('%s', (_label, recipe) => {
+    const prepared = prepareC26Seat(recipe);
+    const before = getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0;
+    expect(
+      compareUndirectedWinner(c26SeatScenario(recipe, prepared), recipe.owned, prepared.prepared).v1.results[0].success,
+    ).toEqual(true);
+    expect((getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0) - before).toEqual(Number(!recipe.owned));
+  });
+});
+
+const C26_LANDING_STAGES = [
+  'opponent-arrived',
+  'edited-lineup',
+  'renumbered-lineup',
+  'retained-completed',
+  'unstamped-home',
+] as const;
+const C26_LANDING_CASES = [FEED_IN_CHAMPIONSHIP, FIRST_ROUND_LOSER_CONSOLATION, DOUBLE_ELIMINATION].flatMap(
+  (drawType) =>
+    [WALKOVER, DEFAULTED, RETIRED].flatMap((carrierStatus, flavor) =>
+      C26_LANDING_STAGES.flatMap((stage) =>
+        ([1, 2] as const).map(
+          (carrierSide) =>
+            [
+              `C26 TEAM ${drawType} ${stage}: ${carrierStatus} side ${carrierSide}`,
+              {
+                drawType,
+                eventType: 'TEAM',
+                size: 8,
+                carrierStatus,
+                carrierSide,
+                sourceIndex: flavor % 2 ? 1 : 0,
+                status: carrierSide === 1 ? DOUBLE_WALKOVER : DOUBLE_DEFAULT,
+                policyOff: false,
+                carry: carrierSide === 2,
+                owned: true,
+              } as C26SeatRecipe,
+              stage,
+            ] as const,
+        ),
+      ),
+    ),
+);
+
+function c26Stored(record: Tournament, matchUpId?: string) {
+  return record.events
+    ?.flatMap((event) => event.drawDefinitions ?? [])
+    .flatMap((draw) => draw.structures ?? [])
+    .flatMap((structure) => structure.matchUps ?? [])
+    .find((matchUp) => matchUp.matchUpId === matchUpId);
+}
+
+function prepareC26Landing(recipe: C26SeatRecipe, stage: (typeof C26_LANDING_STAGES)[number]) {
+  const prepared = prepareC26Seat(recipe);
+  if (stage === 'retained-completed')
+    expect(
+      tournamentEngine.setMatchUpStatus({
+        drawId: 'd',
+        matchUpId: prepared.origin.matchUpId,
+        outcome: { matchUpStatus: COMPLETED, winningSide: recipe.carrierSide },
+        propagateExitStatus: false,
+      }).success,
+    ).toEqual(true);
+  const all = () =>
+    tournamentEngine.allDrawMatchUps({ drawId: 'd', inContext: true }).matchUps.filter((m) => !m.collectionId);
+  const ready = () =>
+    all().filter(
+      (m) =>
+        m.matchUpId !== prepared.source.matchUpId &&
+        m.matchUpStatus === TO_BE_PLAYED &&
+        m.sides?.filter((side) => side.participantId).length === 2,
+    );
+  for (let pass = 0; pass < 32; pass += 1) {
+    const next = ready()[0];
+    if (!next) break;
+    expect(
+      tournamentEngine.setMatchUpStatus({
+        drawId: 'd',
+        matchUpId: next.matchUpId,
+        outcome: { winningSide: 1 },
+        propagateExitStatus: false,
+      }).success,
+    ).toEqual(true);
+  }
+  expect(ready().length).toEqual(0);
+  const record = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+  const home = c26Stored(record, prepared.home?.matchUpId);
+  const landing = all().find((m) => m.matchUpId === prepared.home?.winnerMatchUpId);
+  const opponents = landing?.sides?.filter((side) => side.participantId) ?? [];
+  expect(opponents.length).toEqual(1);
+  if (stage === 'unstamped-home') {
+    expect(home?.schedule?.scoredTime).toBeDefined();
+    delete home!.schedule!.scoredTime;
+  }
+  if (stage === 'edited-lineup' || stage === 'renumbered-lineup') {
+    const draw = record.events?.flatMap((event) => event.drawDefinitions ?? []).find((entry) => entry.drawId === 'd');
+    const lineUps: any = firstClassOrExtension({ element: draw, attribute: 'lineUps', name: LINEUPS });
+    const stored = c26Stored(record, landing?.matchUpId)!;
+    stored.sides ??= [];
+    for (const opponent of opponents) {
+      const lineUp = structuredClone(lineUps[opponent.participantId]);
+      expect(lineUp.length).toBeGreaterThan(1);
+      [lineUp[0].collectionAssignments, lineUp[1].collectionAssignments] = [
+        lineUp[1].collectionAssignments,
+        lineUp[0].collectionAssignments,
+      ];
+      let side: any = stored.sides.find((candidate: any) => candidate.drawPosition === opponent.drawPosition);
+      if (!side) {
+        side = stored.sides.find(
+          (candidate: any) => !candidate.drawPosition && candidate.sideNumber === opponent.sideNumber,
+        );
+        if (!side) {
+          side = {};
+          stored.sides.push(side);
+        }
+      }
+      Object.assign(side, {
+        drawPosition: opponent.drawPosition,
+        sideNumber: opponent.sideNumber,
+        displaySideNumber: opponent.displaySideNumber,
+        lineUp,
+      });
+    }
+    if (stage === 'renumbered-lineup')
+      for (const side of stored.sides)
+        if (side.sideNumber === 1 || side.sideNumber === 2) side.sideNumber = 3 - side.sideNumber;
+  }
+  return { ...prepared, prepared: record };
+}
+
+describe('C26 TEAM landing keeps lineups and follows the actual carry origin', () => {
+  it.each(C26_LANDING_CASES)('%s', (_label, recipe, stage) => {
+    const prepared = prepareC26Landing(recipe, stage);
+    expect(
+      compareUndirectedWinner(c26SeatScenario(recipe, prepared), true, prepared.prepared).v1.results[0].success,
+    ).toEqual(true);
+  });
+});
+
+const C26_UNSTAMPED_FINALS = C26_SEAT_PROFILES.filter(([, size, owned]) => size === 4 && owned).flatMap(([drawType]) =>
+  ['SINGLES', 'DOUBLES', 'TEAM'].map(
+    (eventType) =>
+      [
+        `C26 unstamped final ${eventType} ${drawType}`,
+        {
+          drawType,
+          eventType,
+          size: 4,
+          carrierStatus: RETIRED,
+          carrierSide: 2,
+          sourceIndex: 1,
+          status: DOUBLE_DEFAULT,
+          policyOff: false,
+          carry: false,
+          owned: true,
+        } as C26SeatRecipe,
+      ] as const,
+  ),
+);
+
+describe('C26 an unstamped terminal home has no scored-time reconciliation', () => {
+  it.each(C26_UNSTAMPED_FINALS)('%s', (_label, recipe) => {
+    const prepared = prepareC26Seat(recipe);
+    expect(prepared.home?.winnerMatchUpId).toBeUndefined();
+    const home = c26Stored(prepared.prepared, prepared.home?.matchUpId);
+    expect(home?.schedule?.scoredTime).toBeDefined();
+    delete home!.schedule!.scoredTime;
+    expect(
+      compareUndirectedWinner(c26SeatScenario(recipe, prepared), true, prepared.prepared).v1.results[0].success,
+    ).toEqual(true);
+  });
+});
+
+const C26_REPLAY_CASES = ['SINGLES', 'DOUBLES', 'TEAM'].flatMap((eventType) =>
+  [WALKOVER, DEFAULTED, RETIRED].flatMap((carrierStatus) =>
+    [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((status) =>
+      [false, true].map(
+        (reverse) =>
+          [
+            `C26 earlier BYE ${eventType} ${carrierStatus} ${status} reverse ${reverse}`,
+            eventType,
+            carrierStatus,
+            status,
+            reverse,
+          ] as const,
+      ),
+    ),
+  ),
+);
+
+function prepareC26EarlierBye(eventType: string, carrierStatus: string, reverse: boolean) {
+  setOutcomePipeline(OUTCOME_PIPELINE_V1);
+  setClock('2026-10-25T00:00:00.000Z');
+  setSubscriptions({ subscriptions: {} });
+  const drawProfile = {
+    drawType: FEED_IN_CHAMPIONSHIP,
+    drawSize: 8,
+    participantsCount: 5,
+    eventType,
+    ...(eventType === 'TEAM' ? { tieFormatName: USTA_COLLEGE } : {}),
+  };
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ ...drawProfile, drawId: 'd' }],
+    nonRandom: 20030075,
+    setState: true,
+  });
+  if (eventType === 'TEAM')
+    expect(
+      tournamentEngine.generateLineUps({ drawId: 'd', useDefaultEventRanking: true, attach: true }).success,
+    ).toEqual(true);
+  const originId = findTarget(R1(eventType === 'SINGLES' ? 3 : 2, 'Main'));
+  expect(
+    tournamentEngine.setMatchUpStatus({
+      drawId: 'd',
+      matchUpId: originId,
+      outcome: { matchUpStatus: carrierStatus, winningSide: 2 },
+      propagateExitStatus: true,
+      propagateRetirementAsExit: true,
+    }).success,
+  ).toEqual(true);
+  const all = tournamentEngine.allDrawMatchUps({ drawId: 'd', inContext: true }).matchUps;
+  const origin = all.find((matchUp) => matchUp.matchUpId === originId)!;
+  const relay = all.find((matchUp) => matchUp.matchUpId === origin.loserMatchUpId)!;
+  const home = all.find((matchUp) => matchUp.matchUpId === relay.winnerMatchUpId)!;
+  expect(relay.matchUpStatus).toEqual(BYE);
+  expect(home.matchUpStatus).toEqual(carrierStatus === DEFAULTED ? DEFAULTED : WALKOVER);
+  expect(Object.values(relay.sideExitProvenance ?? {})).toEqual([
+    expect.objectContaining({ sourceMatchUpId: originId }),
+  ]);
+  const prepared = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+  const structure = prepared.events
+    ?.flatMap((event) => event.drawDefinitions ?? [])
+    .flatMap((draw) => draw.structures ?? [])
+    .find((entry) => entry.structureId === home.structureId);
+  expect(structure).toBeDefined();
+  if (reverse) structure!.matchUps = structure!.matchUps?.toReversed();
+  return { drawProfile, prepared };
+}
+
+describe('C26 a carry replay revisits the first stored BYE and its onward path', () => {
+  it.each(C26_REPLAY_CASES)('%s', (_label, eventType, carrierStatus, status, reverse) => {
+    const { drawProfile, prepared } = prepareC26EarlierBye(eventType, carrierStatus, reverse);
+    const scenario: Scenario = {
+      drawProfile,
+      steps: [
+        {
+          target: { structureName: 'Main', roundNumber: 2, roundPosition: eventType === 'SINGLES' ? 1 : 2 },
+          outcome: { matchUpStatus: status },
+          params: { propagateExitStatus: true },
+        },
+      ],
+    };
+    expect(compareUndirectedWinner(scenario, true, prepared).v1.results[0].success).toEqual(true);
   });
 });

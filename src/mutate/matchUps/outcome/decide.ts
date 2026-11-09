@@ -1,9 +1,11 @@
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
-import { addedNotices, compareNotices, compareShadow, plannedNotices } from './shadow';
+import { addedNotices, captureShadow, compareNotices, compareShadow, plannedNotices } from './shadow';
+import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
 import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { PREDICTED_CALL, predictSettleWork, type SettleSite } from './settleWork';
 import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
+import { topLevelStructureId } from '@Mutate/notifications/drawNotifications';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { addGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
 import { convergence, isRelabel, planDirection } from './direction';
@@ -16,7 +18,6 @@ import { compareViews, hydrateShadow } from './viewOracle';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
 import { observeWrite, planWrite } from './write';
-import { captureRecord } from '@Tools/recordDiff';
 import { createWorkingView } from './overlay';
 import { refuseOutcome } from './refusals';
 import { stampedInThisCall } from './ops';
@@ -25,6 +26,7 @@ import { applyOwnedPlan } from './apply';
 import { chooseRoute } from './route';
 import { planOutcome } from './plan';
 import {
+  getCapturedStamps,
   getNoticeBuffer,
   getOutcomePipeline,
   getTopics,
@@ -88,9 +90,11 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal) {
     view,
   });
   // the working view after the plan (§ 3.2), folded before anything is written to the stored objects it reads
-  const folded = allowed.ops ? workingViewAfter({ args, view, ops: allowed.ops }) : undefined;
-  const settleWork = folded && 'settle' in folded ? folded.settle : [];
-  const outcome: OutcomePlan = settleWork.length ? { abstain: 'settle' } : allowed;
+  const folded = allowed.ops ? finalizePlan({ args, view, ops: allowed.ops }) : undefined;
+  let outcome: OutcomePlan = allowed;
+  if (allowed.ops)
+    outcome =
+      folded && 'ops' in folded && !folded.settle.length ? { ...allowed, ops: folded.ops } : { abstain: 'settle' };
   return { planned, route, plan, direction, folded, outcome };
 }
 
@@ -155,7 +159,8 @@ export function decideOutcomeV2(args: BuildViewArgs): {
 
   const { planned, route, plan, direction, folded, outcome } = planCall(args, view, refusal);
   const dual = route ? planDual(args, view) : undefined;
-  const shadowBefore = outcome.ops && args.tournamentRecord ? captureRecord(args.tournamentRecord) : undefined;
+  const shadowBefore =
+    outcome.ops && args.drawDefinition ? captureShadow({ ...args, drawDefinition: args.drawDefinition }) : undefined;
   // what this engine call already stamped, which the copy cannot know (F2 (i): an entity is stamped once per call)
   const stampedBefore = shadowBefore ? stampedInThisCall(args.drawDefinition) : undefined;
   // a copy of the working view is kept for the view oracle, since a hydrated matchUp may share a nested object with the
@@ -245,11 +250,9 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   /** S1: the complete plan, folded into the record as it stood before v1, against the record v1 wrote */
   function checkShadow() {
     if (outcome.abstain) return differentialTally(`shadow:abstain:${outcome.abstain}`, 'deferred');
-    if (!shadowBefore || !args.tournamentRecord || !args.drawDefinition)
-      return differentialTally('shadow:abstain:no-record', 'deferred');
+    if (!shadowBefore || !args.drawDefinition) return differentialTally('shadow:abstain:no-record', 'deferred');
     const shadow = compareShadow({
-      drawId: args.drawDefinition.drawId,
-      record: args.tournamentRecord,
+      current: { ...args, drawDefinition: args.drawDefinition },
       before: shadowBefore,
       ops: outcome.ops,
       stampedBefore,
@@ -263,7 +266,12 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     differentialTally('shadow:applied', 'compared');
     checkViewOracle(shadow.shadow);
     const noticed = compareNotices({
-      planned: plannedNotices({ ops: outcome.ops, matchUpId: args.request.matchUpId as string }),
+      planned: plannedNotices({
+        ops: outcome.ops,
+        matchUpId: args.request.matchUpId as string,
+        hasEvent: !!args.event?.eventId,
+        prior: notices,
+      }),
       added: addedNotices(notices, getNoticeBuffer()),
       topics: getTopics().topics,
     });
@@ -272,9 +280,9 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     differentialTally('shadow:notices', 'compared');
   }
   /** § 3.2's view oracle: the working view after the plan against a hydration of the shadow-applied record */
-  function checkViewOracle(shadow: Record<string, unknown>) {
+  function checkViewOracle(shadow: NonNullable<typeof shadowBefore>) {
     if (!viewAfter || 'error' in viewAfter || !args.drawDefinition) return differentialTally('view', 'deferred');
-    const record = hydrateShadow({ shadow, drawId: args.drawDefinition.drawId });
+    const record = hydrateShadow(shadow);
     if (!record) return differentialTally('view', 'deferred');
     const compared = compareViews({ record, view: viewAfter.matchUps });
     if (!compared.equal)
@@ -844,8 +852,8 @@ function toResult(refusal: Refusal, args: BuildViewArgs): ResultType {
   };
 }
 
-/** fold a complete plan into a working view of the draw as the call found it; a deep copy, for the view oracle */
-function workingViewAfter({
+/** Fold the complete program, append final cleanup, and return the authoritative executable plan and view. */
+function finalizePlan({
   args,
   view,
   ops,
@@ -853,7 +861,7 @@ function workingViewAfter({
   args: BuildViewArgs;
   view: OutcomeView;
   ops?: OutcomeOp[];
-}): { matchUps: HydratedMatchUp[]; settle: SettleSite[] } | { error: string } | undefined {
+}): { ops: OutcomeOp[]; matchUps: HydratedMatchUp[]; settle: SettleSite[] } | { error: string } | undefined {
   if (!ops || !args.drawDefinition || !args.matchUpsMap || !view.inContextDrawMatchUps) return undefined;
   const working = createWorkingView({
     inContextDrawMatchUps: view.inContextDrawMatchUps,
@@ -865,6 +873,26 @@ function workingViewAfter({
   });
   const applied = working.apply(ops);
   if (applied.error) return { error: applied.error };
+  const cleanup: OutcomeOp[] = [];
+  const staleTimes = working.matchUpsMap.drawMatchUps.filter(hasStaleScoredTime);
+  // A captured instant without its stamp ledger still needs ordered temporal effects: explicit stamps plus
+  // live notices would otherwise stamp twice. Keep that execution context owed rather than creating a ledger.
+  if (staleTimes.length && !getCapturedStamps()) return { error: 'scored-time cleanup needs ordered stamps' };
+  for (const matchUp of staleTimes) {
+    const structureId = topLevelStructureId(working.drawDefinition, matchUp.matchUpId);
+    if (!structureId) return { error: `scored-time cleanup cannot locate ${matchUp.matchUpId}` };
+    cleanup.push(
+      { op: 'clearMatchUpScoredTime', matchUpId: matchUp.matchUpId },
+      { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUp.matchUpId },
+      { op: 'stampUpdatedAt', entity: 'structure', id: structureId },
+      { op: 'stampUpdatedAt', entity: 'drawDefinition', id: working.drawDefinition.drawId },
+    );
+  }
+  if (cleanup.length) {
+    const cleared = working.apply(cleanup);
+    if (cleared.error) return { error: cleared.error };
+  }
+  const completedOps = cleanup.length ? [...ops, ...cleanup] : ops;
   // S2's has-work predicates, recorded for the census to set against v1's per-pass writes (nothing outside telemetry)
   const settle = predictSettleWork({
     propagateRetirementAsExit: args.request.flags.propagateRetirementAsExit,
@@ -879,11 +907,13 @@ function workingViewAfter({
     drawDefinition: args.drawDefinition,
     event: args.event,
     working,
-    ops,
+    ops: completedOps,
   });
   recordSettleEvent({ kind: 'predicted', site: PREDICTED_CALL });
-  for (const site of settle) recordSettleEvent({ kind: 'predicted', site });
-  return { matchUps: structuredClone(working.inContextDrawMatchUps), settle };
+  const predicted = new Set<SettleSite>(settle);
+  if (cleanup.length) predicted.add('reconcileScoredTimes');
+  for (const site of predicted) recordSettleEvent({ kind: 'predicted', site });
+  return { ops: completedOps, matchUps: structuredClone(working.inContextDrawMatchUps), settle };
 }
 
 /**

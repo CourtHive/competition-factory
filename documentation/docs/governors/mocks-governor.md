@@ -47,7 +47,7 @@ Through `mocksEngine`, `nonRandom: <seed>` supplies `random`. Two runs with the 
 
 ### What Gets Replaced
 
-**Ids.** Every id the record defines gets a new value: the tournament, participants, persons, events, draws, structures (nested ones too), matchUps (including tieMatchUps and tournament-level `matchUps`), venues (including `subVenues`) and courts. Every reference to one of these ids is remapped as well, at any depth and in any field. That includes:
+**Ids.** Every id the record defines gets a new value: the tournament, participants, persons, events, draws, structures (nested ones too), matchUps (including tieMatchUps and tournament-level `matchUps`), venues (including `subVenues`), courts, inline/named tie formats, collection definitions and presence attestation facts. Every reference to one of these ids is remapped as well, at any depth and in any field. That includes:
 
 - entries, position and seed assignments, and lineUps
 - structure links
@@ -57,7 +57,11 @@ Through `mocksEngine`, `nonRandom: <seed>` supplies `random`. Two runs with the 
 - presence logs
 - extension values, including objects keyed by an id
 
-`participant.personId` follows its replaced person.
+`participant.personId` follows its replaced person. Repeated collection/tie-format definitions share one mapping.
+Collection IDs that embed an event ID are replaced as complete identifiers, and line-up/encounter references follow.
+Dangling `winnerMatchUpId` and `loserMatchUpId` edges also get consistent new IDs without inventing missing matches.
+Presence fact IDs change while their subject, state and timestamps are preserved. Empty optional ID values remain empty;
+they do not become a mapping for every blank string in the record.
 
 **Names.** These are replaced with generated names:
 

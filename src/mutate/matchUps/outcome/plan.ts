@@ -1,17 +1,17 @@
 import { clearedSingleExit, correctedSingleExit, refreshedArrivalOps, relabelledExit } from './plan/exitCorrections';
+import { getCapturedClock, getCapturedStamps, writeLegacyEnabled } from '@Global/state/globalState';
 import { producedRelayAfterOps, unwoundOps, unwoundPath, unwoundView } from './plan/unwindPath';
 import { standaloneBareWinnerOps, standaloneCarriedWinnerOps } from './plan/standaloneIndirect';
 import { retainedCarriedAwardOps, terminalOccupiedWinnerOps } from './plan/terminalAward';
-import { getCapturedClock, writeLegacyEnabled } from '@Global/state/globalState';
 import { notesReason, scheduleOps, scheduleReason } from './plan/schedulePlan';
 import { autoCalcWrite, resultOps, writtenScore } from './plan/resultOps';
 import { producedExitOps, producedReason } from './plan/producedExit';
+import { carriedReason, retainedByeCarry } from './plan/carriedExit';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { groupTally, writtenLine } from './plan/tallyOps';
 import { withFinishingOrder } from './finishingOrderOps';
 import { convergedReason } from './plan/convergence';
 import { doubleExitSeatOps } from './plan/byeChain';
-import { carriedReason } from './plan/carriedExit';
 import {
   APPLY_VALUES,
   CLEAR_SCORE,
@@ -71,8 +71,8 @@ import {
 } from './plan/directionOps';
 
 // constants and types
-import type { DrawDefinition, Score, Tournament } from '@Types/tournamentTypes';
-import { DEFAULTED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { DEFAULTED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import type { DrawDefinition, Score } from '@Types/tournamentTypes';
 import type { OutcomeOp } from './ops';
 import type {
   AbstainReason,
@@ -111,6 +111,8 @@ import type {
 function exitReason(args: ExitReasonArgs): AbstainReason | undefined {
   const { request, view, route, write, direction } = args;
   const { existing } = view;
+  // A non-propagating completion can leave a carried origin beside a BYE; the next correction still owes it.
+  if (retainedByeCarry(args)) return relabelledExit(args) ? undefined : 'exit';
   if (!isAnyExit(request.matchUpStatus) && !isAnyExit(existing.matchUpStatus) && !isAnyExit(write?.matchUpStatus))
     return undefined;
   if (route === DOUBLE_EXIT) return producedReason(view, request, direction, write);
@@ -274,18 +276,10 @@ function resultRemovalReason(view: OutcomeView): AbstainReason | undefined {
   return removalReason(view);
 }
 
-/** a plan is folded into the record; a draw held outside it, or a call with no captured instant, cannot be compared */
-function recordReason({
-  tournamentRecord,
-  drawDefinition,
-}: {
-  tournamentRecord?: Tournament;
-  drawDefinition?: DrawDefinition;
-}): AbstainReason | undefined {
-  const held = tournamentRecord?.events?.some((event) =>
-    event.drawDefinitions?.includes(drawDefinition as DrawDefinition),
-  );
-  if (!drawDefinition || !held) return 'no-record';
+/** A plan needs the draw and an existing captured instant; tournament containment is not a write prerequisite. */
+function recordReason({ drawDefinition }: { drawDefinition?: DrawDefinition }): AbstainReason | undefined {
+  if (!drawDefinition) return 'no-record';
+  // Draw-scoped callers reuse their existing capture; direct uncaptured clocks still need ordered temporal effects.
   if (getCapturedClock() === undefined) return 'clock';
   return undefined;
 }
@@ -444,6 +438,17 @@ function planOps(args: PlanArgs): OutcomePlan {
   return recordedPlanOps(args, drawDefinition);
 }
 
+/** A propagated relabel returns the direction context even when its source previously held a played result. */
+function carriedDirectionContext(args: PlanArgs, landing: OutcomeOp[]): boolean {
+  return (
+    (args.route === APPLY_VALUES || args.route === 'swap') &&
+    (!!args.direction?.loser?.exit ||
+      (retainedByeCarry(args) &&
+        (args.request.matchUpStatus === WALKOVER || args.request.matchUpStatus === DEFAULTED))) &&
+    landing.length > 0
+  );
+}
+
 /** A recorded single-call plan after the shared refusal, dual and no-op gates. */
 function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition): OutcomePlan {
   const { request, view } = args;
@@ -545,7 +550,8 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition): Outcom
   const convergence = unwoundConvergedFor(view, args, loser);
   const converging = convergence.ops;
   // a double exit's loser seats, BYEs (S5)
-  const seatOps = args.route === DOUBLE_EXIT ? doubleExitSeatOps(view, request, args.direction) : undefined;
+  const seatOps =
+    args.route === DOUBLE_EXIT ? doubleExitSeatOps(view, request, drawDefinition, args.direction) : undefined;
   const doubleExitSeated = seatOps?.ops ?? [];
   const producedExit = args.route === DOUBLE_EXIT ? producedExitOps(view, request, write, args.direction) : [];
   // ...and, seated beside a carried exit whose carrier the unwind released back, awarded it and sent on (S7)
@@ -567,6 +573,8 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition): Outcom
         tieMatchUps: writtenLine(line.projectedTieMatchUps, matchUpId, score),
       }
     : { matchUpId, matchUpWrite: write, score, matchUpFormat: request.matchUpFormat };
+  // Tally and result notices can stamp the same entity. Without the call's ledger, ordered stamp effects remain owed.
+  if (view.group && !getCapturedStamps()) return { abstain: 'clock' };
   const tally = view.group ? groupTally(view.group, tallied) : [];
   if (!tally) return { abstain: 'tallied' };
   // v1's tally announces the draw with no structure named (`updateAssignmentParticipantResults` → `modifyDrawNotice`),
@@ -598,10 +606,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition): Outcom
     { op: 'stampUpdatedAt', entity: 'drawDefinition', id: drawDefinition.drawId },
   );
   // a relabel where the winner stands whose carry proceeds returns v1's direction context too (`relabelWithoutDirection`)
-  const carriedOn =
-    (args.route === APPLY_VALUES || args.route === 'swap') &&
-    !!args.direction?.loser?.exit &&
-    carried.landing.length > 0;
+  const carriedOn = carriedDirectionContext(args, carried.landing);
   // The convergence writes a fresh produced exit into the released landing. v1's scored-time reconciliation then
   // leaves that exit standing, including its existing stamp, rather than resetting the emptied award it replaced.
   const convergedWrites = new Set(converging.filter((op) => op.op === 'setMatchUpResult').map((op) => op.matchUpId));

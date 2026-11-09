@@ -1,4 +1,5 @@
 import { findMissedLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileMissedLinkAdvancements';
+import { getDeciderTriggers, getDeciderSnapshot } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { findReservationWork } from '@Mutate/matchUps/matchUpStatus/reconcileConsolationReservations';
 import { findMisplacedProvenance } from '@Mutate/matchUps/matchUpStatus/reconcileProvenanceSides';
 import { hasHeldExitWork } from '@Mutate/drawDefinitions/positionGovernor/doubleExitAdvancement';
@@ -6,9 +7,8 @@ import { getUnearnedLinkAdvancements } from '@Query/drawDefinition/getUnearnedLi
 import { hasStaleExitOrigins } from '@Mutate/matchUps/matchUpStatus/reconcileStaleExitOrigins';
 import { findOwedByeAdvance } from '@Mutate/matchUps/matchUpStatus/reconcileByeAdvancements';
 import { hasForwardWork } from '@Mutate/matchUps/matchUpStatus/settleForwardConsequences';
+import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { findOwedCarry } from '@Mutate/matchUps/matchUpStatus/reconcileCarriesPastByes';
-import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
-import { getDeciderSnapshot } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
 import { isDoubleExit, isExit } from '@Validators/isExit';
@@ -80,6 +80,10 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
   const draw = working.drawDefinition;
   const map = working.matchUpsMap;
   const before = new Map(args.inContextDrawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
+  const own = before.get(args.matchUpId ?? '');
+  const ownLine =
+    !!own?.collectionId &&
+    before.get(own.matchUpTieId ?? '')?.tieMatchUps?.some((line) => line.matchUpId === own.matchUpId);
   const results = ops.filter((op) => op.op === 'setMatchUpResult');
   const resultOn = (predicate: (matchUp?: HydratedMatchUp) => boolean) =>
     results.some((op) => predicate(before.get(op.matchUpId)));
@@ -115,15 +119,14 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
     reconcileMissedLinkAdvancements: () =>
       !!findMissedLinkAdvancements({ inContextDrawMatchUps: view, drawDefinition: draw }).length,
     reconcileProvenanceSides: () => !!findMisplacedProvenance({ inContextDrawMatchUps: view, matchUpsMap: map }).length,
-    // EXACT for the trigger: a final whose winner changes, or a decider the write moves
-    reconcileDeciders: () => {
-      const finalsBefore = getDeciderFinals(args.drawDefinition);
-      const finalsAfter = getDeciderFinals(draw);
-      const changed = [...finalsAfter].some(([matchUpId, winningSide]) => finalsBefore.get(matchUpId) !== winningSide);
-      return (
-        changed || JSON.stringify(getDeciderSnapshot(args.drawDefinition)) !== JSON.stringify(getDeciderSnapshot(draw))
-      );
-    },
+    // EXACT for the trigger: a changed final winner, or a decider moved by a foreign cascade.
+    reconcileDeciders: () =>
+      !!getDeciderTriggers({
+        finalsBefore: getDeciderFinals(args.drawDefinition),
+        deciderSnapshotBefore: getDeciderSnapshot(args.drawDefinition),
+        mutatedMatchUpId: args.matchUpId,
+        drawDefinition: draw,
+      }).length,
     settleForwardConsequences: () =>
       hasForwardWork({
         inContextDrawMatchUps: view,
@@ -136,8 +139,7 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
     reconcileLinkAdvancements: () =>
       !!draw.links?.length &&
       !!getUnearnedLinkAdvancements({ inContextDrawMatchUps: view, drawDefinition: draw }).length,
-    reconcileScoredTimes: () =>
-      map.drawMatchUps.some((matchUp) => !!matchUp.schedule?.scoredTime && !matchUpIsScored(matchUp)),
+    reconcileScoredTimes: () => map.drawMatchUps.some(hasStaleScoredTime),
   };
   // an exit the call propagates (`propagateExitFrom`), which no local call does: every pass is in reach, unless the plan
   // holds the propagation as ops (a carried exit's entry, S5), when each pass is asked of the draw the carry leaves; or
@@ -147,6 +149,9 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
     !carryPlanned &&
     results.some(
       (op) =>
+        // directParticipants tallies a line's dual and directs it as COMPLETED, never as the line's exit.
+        // Only that line's result is exempt: a separate dual/downstream exit still puts every pass in reach.
+        !(ownLine && op.matchUpId === args.matchUpId) &&
         !op.retainedExitPlanned &&
         op.announcedAs !== 'settleRederivedDoubleExit' &&
         propagatesExit(op.matchUpStatus, args),

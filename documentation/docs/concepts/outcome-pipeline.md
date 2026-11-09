@@ -762,7 +762,9 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   tournament and no event, on the side the position takes (beside another position in their order, alone the side its
   feeder's place sends it to). Planned where nobody stands there and a matchUp follows the landing (S7). Where a
   participant stands on the other side of the landing, the exit is theirs: written with them as its winner, and they go
-  on into a clean next matchUp, announced as `advanceWinner` with the event, or nowhere from the structure's final; a
+  on into a clean next matchUp, announced as `advanceWinner` with the event, or nowhere from the structure's final.
+  When an unfillable-seat BYE writes that onward matchUp later in the same call, the notice keeps the advance's event
+  and the final `setMatchUpStatusBye` context (`preserveNoticeIdentity`, C26N). A
   landing that links its loser on stays v1's (decided, nobody loses it, and v1 sends a BYE across that link too) (S7). Otherwise outside a feed round, for links with no condition, free seats with no BYE beside them (a BYE there makes a
   double BYE, below), clean matchUps, and each matchUp touched once, but where the unfillable seat's matchUp is the one the first BYE
   advanced a position into (FIRST_MATCH_LOSER_CONSOLATION): that position goes on again through the second BYE; a
@@ -1611,6 +1613,7 @@ says and what lands are one thing. The reducer decides nothing and refuses nothi
 | `setMatchUpSchedule`      | the matchUp's whole stored `schedule` after the call's schedule is written, as v1's `addMatchUpScheduleItems` leaves it on a copy of the matchUp (S7: a date, a time, a court, a venue or a court order; any other attribute, or a schedule v1 refuses, stays v1's), written before the result so `scoredTime` is stamped onto it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `setOrderOfFinish`        | a TEAM dual's line's place in its collection's finishing order (`orderOfFinish`), or its removal: planned for each line whose number a line's write changes, after that line's result and before the dual's, as v1's `modifyMatchUpScore` writes it. A line played to a result (COMPLETED, RETIRED, or DEFAULTED with a scored value) that had no number finishes after the others, never past the lines that can still count; a line that stops counting loses its number and the later lines move up; a score edit or a winner corrected keeps it (v1 takes a corrected result off with its number kept, `keepsFinishingOrder`); announced as `modifyMatchUpScore`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `setParticipantResults`   | a round robin group's, or a one-round ad hoc structure's, tallies on its position assignments, after the call (`writeAssignmentResults`, v1's own writer); for ad hoc the assignments are first rebuilt, one per participant its matchUps hold, as `updateTallyIfNeeded` rebuilds them; the tally stamps every top-level structure, as v1's does                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `clearMatchUpScoredTime`  | Delete only a stale `schedule.scoredTime` after the complete semantic plan. Final cleanup follows stored draw-map order, preserves its schedule object and other fields, stamps the matchUp/top-level structure/draw, and announces `reconcileScoredTimes` after ordinary and assignment notices without adding an in-context callback. All residual settle predicates must clear.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `stampUpdatedAt`          | one `updatedAt` per touched entity per call (F2 (i)): the call's captured instant, or the previous stamp + 1 ms when that is already as late                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 `planOutcome` returns a complete plan only when every write the call makes is an op; otherwise it **abstains**, naming
@@ -1633,15 +1636,24 @@ the slices that follow:
 | `route`        | takes a route, or reaches a status, that S1 does not plan as ops                                                                                                         | S2                                                                                                                                                                                                                                                                       |
 | `provenance`   | is on a matchUp holding side-exit provenance the score write may clear or rescue                                                                                         | S5                                                                                                                                                                                                                                                                       |
 | `tallied`      | is in a round-robin, ad hoc or lucky structure, whose tally the write updates                                                                                            | S3                                                                                                                                                                                                                                                                       |
-| `no-record`    | is on a draw the tournament record's events do not hold, so there is nothing to fold the plan into                                                                       | none: a shadow needs the record                                                                                                                                                                                                                                          |
+| `no-record`    | has no supplied draw definition to apply the plan to                                                                                                                     | requires a draw; tournament containment is not required                                                                                                                                                                                                                  |
 | `edges`        | is on a draw that stores no winner and loser edges, which v1 writes first (`ensureGoesTo`)                                                                               | S2 (`setEdges`)                                                                                                                                                                                                                                                          |
-| `clock`        | is made outside an engine call, with no captured instant, so the timestamps a write takes cannot be reproduced                                                           | none: production calls go through the engine                                                                                                                                                                                                                             |
+| `clock`        | has no existing captured instant; direct source reads, advancing values and throwing-write prefixes must remain ordered as in v1                                         | owed by v2: clock-free planning and ordered lazy temporal effects before uncaptured admission                                                                                                                                                                            |
 | `settle`       | leaves a settle pass work on the working view (S2's has-work predicates, `settleWork.ts`), leftover state included                                                       | none: S2 owns only a call no pass has work for                                                                                                                                                                                                                           |
 | `write-mode`   | is made in LEGACY or BRIDGE write mode, where v1 writes `scoredTime` as a timeItem, which the reducer does not                                                           | a later slice (F6: BRIDGE in with its evidence)                                                                                                                                                                                                                          |
 | `competition`  | names a winner where a per-matchUp competition policy applies: v1 updates ratings on the result (`processCompetitionMatchUp`)                                            | a later slice                                                                                                                                                                                                                                                            |
 
-**In `differential`**, a complete plan is folded into the record as it stood before v1 ran and compared with the record
-v1 wrote, every `updatedAt` by value: v1 stamps each touched entity once per call, as v2 does (F2 (i), § 5 step 6).
+**Draw scope** (D): a supplied draw can be owned with an existing captured instant even when no tournament record
+holds it. The shadow copies the exact supplied draw and its real optional event/tournament roots together, preserving
+shared references; it never fabricates a record or substitutes a same-ID draw from one. The view oracle hydrates that
+exact shadow draw with the supplied context. Notice expectations preserve absent event context and event identity
+retained from an earlier buffered notice. Every other shape guard still applies.
+
+**In `differential`**, a complete plan is folded into the captured draw as it stood before v1 ran and compared with
+v1's writes across the draw and every supplied context root, every `updatedAt` by value: within an existing capture,
+v1 stamps each touched entity once per call, as v2 does (F2 (i), § 5 step 6). Uncaptured callers still abstain on
+`clock`; wrapping them in a new capture would change their direct-read and throw-prefix contract. Their ordered
+temporal path remains v2 work before v1 can be retired.
 Until 2026-10-24 stamps were normalised there (structures left out, the draw and matchUps by presence), because v1
 stamped at each notice and every top-level structure on each.
 
@@ -1650,7 +1662,9 @@ without writing the record: what S2's has-work predicates for the settle passes 
 written. A matchUp or structure an op writes gets a stored-shape working copy, the ops are folded into the copies by
 the same reducer as the shadow apply, and the matchUps an op wrote, with those whose sides read a reassigned
 drawPosition, are derived again from the copies by indexing again the top-level structures that hold them (below),
-a TEAM draw included since S7. Each replaces its entry in v2's copy of the view's draw.
+a TEAM draw included since S7. An assignment can affect a dual without writing its stored matchUp;
+its tie lines are derived again too, since their sides read the dual's assignments. Each replaces
+its entry in v2's copy of the view's draw.
 
 **The view oracle** checks it in `differential`: after every complete plan, the working view, folded before v1 wrote,
 is compared field by field (sides, status, winner, score, drawPositions, `finishingPositionRange`, `feedRound` and
@@ -1822,6 +1836,15 @@ refusal program owns the same writes, notices and terminal error. It is explicit
 v2 work, and must be owned before v1 retirement. The requireParticipantsForScoring=false policy
 remains accepted and owned. A clean early error would not preserve the captured prefix.
 
+### A TEAM arrival keeps the identity of its assignment notice (C24N)
+
+When a losing team takes an exit already awarded to its seat, the assignment announces
+the matchUp with its event. The later default-lineup write is named updateSidLineUp and
+omits the event argument, but keyed notice coalescing retains the earlier event identity.
+The standingAwardArrival certificate therefore keeps event scope on that final notice.
+Other own-seat lineup notices retain their existing quiet scope. No result, record or
+admission changes; the plan describes the notice a subscriber actually receives.
+
 ### A corrected result refreshes its recorded arrival (C23)
 
 A source relabelled beneath an active onward matchUp refreshes the arrival origin that names
@@ -1836,3 +1859,87 @@ The existing carry, withdrawal and swap-path certificates still apply. Admission
 arrival-label wall does not own a call that reaches a later refusal. Refused TEAM winner
 changes can differ in their mutation prefix before CANNOT_CHANGE_WINNING_SIDE; they join the
 explicit terminal-error program obligation before v1 retirement.
+
+### A played source relabel carries past its loser's held BYE (C24)
+
+On apply-values with the same winner, a native COMPLETED source may become a propagated
+WALKOVER, DEFAULTED, or RETIRED carried as WALKOVER while its loser already stands beyond
+a BYE. Certify that the loser holds the entry seat opposite that BYE, with no carried exit,
+codes or provenance, and that the existing same-structure passage ends in a clean landing.
+Reuse the carried-exit program: merge the carrier's provenance on each BYE without changing
+its status, score or codes, announce progressExitStatus and stamp it; write the landing's
+carried result, provenance and onward placements under the ordinary carry certificates.
+A retirement without retirement propagation changes the played source alone.
+
+This admission does not include swaps, existing-carry corrections, TEAM, or a passage without
+a later non-BYE standing matchUp. The feed-eligibility refusal still precedes admission.
+Those shapes remain obligations before v1 can be retired.
+
+### Correcting a carry past a held loser BYE (C25)
+
+A native same-winner `apply-values` correction can relabel or withdraw an exit already
+carried past the loser's BYE passage. Each relay must still hold that participant,
+its BYE and exactly one direct carried origin from the source. The same-structure
+passage ends at a scoreless single carried award, with no other provenance or codes.
+The stored origin supplies the carry flavor: a propagating retirement can retain a
+DEFAULTED carry, and a non-propagating completion can leave either carry in place.
+A source currently marked COMPLETED therefore still requires carry reconciliation.
+
+Re-entering the same carry, or a propagating retirement, leaves the carry unchanged.
+Changing WALKOVER to DEFAULTED or the reverse writes the new carried origin on every
+BYE, announced as `progressExitStatus`, and rewrites the landing's award, codes and
+scored time. A WALKOVER blanks the landing's score. The relabel returns the empty
+direction `context` that v1's carry returns.
+
+A played result, bare winner or non-propagating retirement withdraws the carry. Every
+BYE keeps its result, positions, score and codes; `setSideExitProvenance` removes the
+origin and announces `relabelLoserExit`. The landing becomes TO_BE_PLAYED, loses its
+winner and provenance, retains its score and has its scored time reconciled, announced
+as `reconcileScoredTimes`. A clean onward position awarded by the carry is released
+first; for a relabel it is placed back and announced after the landing. All touched
+matchUps, the target structure and draw receive their required stamps.
+
+A changing or withdrawn carry must have no further loser link, and any awardee's next
+matchUp must satisfy the existing clean-release certificate. Convergences, deeper
+linked carries, a downstream BYE withdrawal, TEAM and enabling a fresh carry after an
+already recorded non-carrying exit remain separate owed shapes. The retained-COMPLETED
+check runs before the source-status shortcut, so an uncertified retained carry is
+never silently treated as a source-only write.
+
+### A loser BYE beside a standing carried award (C26)
+
+With double-exit BYE propagation on, a free, unconditioned loser seat can hold an
+award to its empty arriving side, opposite one participant carrying WALKOVER or
+DEFAULTED. Exactly one provenance entry names that carrier's single-exit origin;
+the home is scoreless, has no codes, BYE or further loser link. A retained carry
+still counts when its origin has since become COMPLETED.
+
+The seat takes a propagated BYE and the home becomes BYE. A terminal home keeps
+its original provenance. Otherwise the carrier advances into a clean matchUp of
+the same structure. Reconciliation records the carried flavor at both home and
+landing, normalizing a RETIRED previous status to WALKOVER. The landing receives
+the carried result, award to the opposite side, empty codes and scored time;
+WALKOVER blanks its score. TEAM landing sides use ensuredDualSides with structurally
+projected positions, retaining edited lineups by drawPosition across side renumbering.
+
+An opponent actually present at the landing advances to a clean next matchUp;
+an empty fed reservation does not. If the other unfillable-seat BYE has already
+placed a position there, the later awardee placement keeps it. Only that shared
+clean onward placement is joined; overlapping home/landing writes are excluded.
+The later ordinary assignment supplies its notice context and full identity even
+after an earlier quiet BYE advance. Each touched matchUp and structure is stamped.
+
+A home with scoredTime is reconciled last, removing that time and announcing
+reconcileScoredTimes. Without a prior scoredTime, a nonterminal home's provenance
+write is announced as progressExitStatus before the landing. Exact ordered notice
+payloads, including event and tournament, follow v1 in both cases.
+
+The carrier can have passed existing BYEs before reaching the home. Each earlier
+relay must hold that one carrier and origin, with no score, codes, scored time or
+loser link. Reconciliation starts at the first eligible BYE in stored order and
+replays its path through the home: provenance is merged, each relay is stamped,
+and progressExitStatus is announced. If the home is stored first, earlier relays
+are not revisited. A terminal home causes no carry replay.
+
+Policy-off convergence, linked carry withdrawals, overlapping BYE relays, deeper
+onward chains and dirty landings remain owed writers before v1 retirement.
