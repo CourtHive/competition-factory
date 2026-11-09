@@ -5,7 +5,7 @@ Outcome ownership was cleared before editing; production outcome code is unchang
 The 7,603-case serial file is now 15 independently shardable suites. All 51 describe
 bodies, case names, deterministic seeds and duplicate-name ordinals are preserved.
 
-## Measured CI evidence
+## Initial split: measured CI evidence
 
 Times below are coverage **job** durations, including setup and artifact handling, in shard
 order 1 / 2 / 3 / 4. All listed new runs and their threshold-bearing merges passed.
@@ -28,12 +28,13 @@ The initial 245.3-second full-tier weight underestimated the old file by 9.6–1
 The initial split estimates removed that indivisible bottleneck but still left substantial
 imbalance in full CI. They are now replaced by **direct measurements**.
 
-## Calibration and verification
+## Initial split: calibration and verification
 
-`vitest.shardDurations.json` now uses the per-file median of both new full/differential
-samples, and the new sampled PR report separately. Inputs are official Vitest JSON
+At prerequisite `81af92fb65`, `vitest.shardDurations.json` used the per-file median of the
+two initial full/differential samples, and the initial sampled PR report separately. Inputs are official Vitest JSON
 merges of exactly four native blob reports, processed by `scripts/updateShardDurations.mjs`.
-No local machine timings are mixed into CI weights. Both tiers cover 2,219 known files.
+No local machine timings entered those CI weights. Both tiers then covered 2,219 files;
+the follow-up below expands the inventory to 2,236 and supersedes these weights.
 
 Before accepting either full sample, validation checks four distinct blobs, disjoint
 file sets, no unhandled errors, all 15 direction suites isolated, and the original
@@ -116,14 +117,13 @@ runner scripts discover these suites by directory; historical exact-file evidenc
 the frozen `(arm,file,test,seq)` corpus stay unchanged. The 38 root mutation allow-list
 files, all nine outcome runner stages and TEAM arm lists are unchanged.
 
-## Remaining limits
+## Limits observed after the initial split
 
-- Full weights have two direct observations; PR weights have one. Runner variation is
-  visible in the two full runs. Refresh from subsequent complete reports, keeping tiers
-  separate, particularly when the outcome team adds substantial cases.
+- At `81af92fb65`, full weights had two observations and PR weights had one. The follow-up
+  below introduces rolling, tier-separated calibration and fresh post-partition observations.
 - File-level balancing does not remove import, instrumentation, report-generation or
-  within-shard scheduling costs. The heaviest remaining full-tier estimate is the
-  double-elimination line matrix at 851.6 seconds; further runtime work should measure it.
+  within-shard scheduling costs. The initial heaviest full-tier estimate was the
+  double-elimination line matrix at 851.6 seconds; the follow-up partitions it.
 - Frozen C26 tests, configuration, helpers and `(arm,file,test,seq)` evidence remain
   immutable and replay separately. Never regenerate that baseline from the moved suites.
 
@@ -245,7 +245,13 @@ and 1,560 existing skips, the exact 7,603 direction cases, all 725 primary matri
 extension cases. Both coverage merges report 95.24% statements, 98.42% functions, 88.40%
 branches and 98.18% lines. All files have two observations of their current case fingerprint;
 there are no single-observation estimates. The committed full provenance receipt records both
-runs and all eight runner contexts. The PR tier is calibrated separately as observations accrue.
+runs and all eight runner contexts. PR weights independently use runs 42666160188 and
+42675726861, with two current observations for every file and a separate provenance receipt.
+Both PR runs pass all 30,403 tests with 1,560 existing skips and retain all 245 primary matrix
+cases. Coverage is 95.74% statements, 98.42% functions, 88.27% branches and 98.30% lines.
+Their shard times are 12:35 / 10:45 / 8:36 / 5:56 and 9:37 / 8:27 / 6:20 / 10:47.
+Both complete all 25 verification jobs successfully. The final PR weight refresh follows those
+measurements; its ordinary PR verification is linked from the draft.
 
 With refreshed weights, all four full assignments contain 559 files and approximately 4,585
 estimated test/import-overhead seconds each. The largest remaining estimate is the structure
