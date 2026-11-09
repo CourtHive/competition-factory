@@ -1,5 +1,41 @@
 # Changelog
 
+## [7.34.0](https://github.com/CourtHive/competition-factory/compare/v7.33.0...v7.34.0) (2026-11-09)
+
+
+### Features
+
+* add internal timed rotating-partner scoring contracts ([#6327](https://github.com/CourtHive/competition-factory/issues/6327)) ([1e60cc5](https://github.com/CourtHive/competition-factory/commit/1e60cc593008a1326d00f28aa548c41916f1fa63))
+* correct carried exits through held loser byes in outcome v2 ([f3cdc0f](https://github.com/CourtHive/competition-factory/commit/f3cdc0ff36b422d8a9b35a579e12e7848723e789))
+* **outcome:** own captured draw-scoped writes ([6ee71b9](https://github.com/CourtHive/competition-factory/commit/6ee71b902a9ea69c52792e01fafad5659b991b20))
+* **outcome:** own loser BYEs beside standing carried awards ([18e8ec1](https://github.com/CourtHive/competition-factory/commit/18e8ec155fea7ea817fc75160739aa743f2f90a0))
+* **outcome:** plan final scored-time cleanup across draw shapes ([5d5783c](https://github.com/CourtHive/competition-factory/commit/5d5783cdb3a97d233cd8b01af57dbf1d86b96e83))
+* **outcome:** share participant tally scope across draw types ([7f52481](https://github.com/CourtHive/competition-factory/commit/7f524812efb8793391686ad58b996db30b7a20ad))
+* **outcome:** write final scored-time cleanup across draw shapes ([c6d7456](https://github.com/CourtHive/competition-factory/commit/c6d7456b05ae5e570cb02fa39d66e284892dfe33))
+* own relabelled exits past a held loser bye ([a3be1b5](https://github.com/CourtHive/competition-factory/commit/a3be1b5e7c78253656239e468a11b5d23efbcbf6))
+* propose sanctioned draw-fit alternatives ([#6325](https://github.com/CourtHive/competition-factory/issues/6325)) ([48288a9](https://github.com/CourtHive/competition-factory/commit/48288a9bdd6143d15d5e3d70f69627fa668cb91e))
+
+
+### Bug Fixes
+
+* **anonymizer:** remap structural and presence identifiers ([#6328](https://github.com/CourtHive/competition-factory/issues/6328)) ([9382aa5](https://github.com/CourtHive/competition-factory/commit/9382aa5778835b65f918f29d3b4ba8a13846fd75))
+* bound held bye retirement to the relabel route ([2fa9eab](https://github.com/CourtHive/competition-factory/commit/2fa9eabda91777376751ef422769b6091d9420b6))
+* **deps:** update tods-competition-factory to 7.33.0 ([30e5e29](https://github.com/CourtHive/competition-factory/commit/30e5e29682dd0cd21942cf2cc8afee79b6c2ca46))
+* **deps:** update tods-competition-factory to 7.33.0 ([35b1611](https://github.com/CourtHive/competition-factory/commit/35b1611f7d206494ea3d743446a2f4f5b45023a5))
+* **events:** getEvents scale values survive a flight with no generated draw ([#6311](https://github.com/CourtHive/competition-factory/issues/6311)) ([d228d65](https://github.com/CourtHive/competition-factory/commit/d228d655b6c861e4d5210838065f34d6759b5bbd))
+* **outcome:** preserve TEAM awarded-arrival notice identity ([4fa4b11](https://github.com/CourtHive/competition-factory/commit/4fa4b116e406559484f1ad7a37596513300fff5c))
+* **outcome:** stamp empty scored times like v1 ([a2812ba](https://github.com/CourtHive/competition-factory/commit/a2812ba81553a1c9798a623870741a6d45606227))
+* preserve tally refusal order and verify lucky scope ([93cb579](https://github.com/CourtHive/competition-factory/commit/93cb579e172e399d8a7bb353b0f5f786c8609e52))
+* refresh tie lines after outcome assignment changes ([cc9e2bf](https://github.com/CourtHive/competition-factory/commit/cc9e2bf6f0e423ffe435e49f4c105f33fd195a2a))
+* replay earlier byes for a produced loser seat ([f55e5de](https://github.com/CourtHive/competition-factory/commit/f55e5de02912496f04ee2332555fc75bff1da736))
+* retain events from named BYE advances ([1240b34](https://github.com/CourtHive/competition-factory/commit/1240b34c55eacf6ff37c7a08b140d12ae025a858))
+* scope TEAM line exit settlement to its own result ([d7648c3](https://github.com/CourtHive/competition-factory/commit/d7648c3c54f05d908e904ace534f78dc2001466b))
+
+
+### Documentation
+
+* **outcome:** describe captured draw scope and remaining clock work ([fd9342c](https://github.com/CourtHive/competition-factory/commit/fd9342cbbc8253e2c6f21b4077875b2b6f45ef92))
+
 ## [7.33.0](https://github.com/CourtHive/competition-factory/compare/v7.32.0...v7.33.0) (2026-11-08)
 
 
