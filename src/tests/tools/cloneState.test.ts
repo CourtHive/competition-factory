@@ -36,6 +36,24 @@ describe('cloneState', () => {
     expect(restored.when).toBe(date);
   });
 
+  it('captures and restores Date values without invoking caller method overrides', () => {
+    let calls = 0;
+    const when = new Date(12);
+    when.getTime = () => {
+      calls++;
+      return 99;
+    };
+    when.setTime = () => {
+      calls++;
+      return 99;
+    };
+    const snapshot = cloneState({ when });
+    Date.prototype.setTime.call(when, 34);
+    expect(restoreState(snapshot).when).toBe(when);
+    expect(Date.prototype.getTime.call(when)).toBe(12);
+    expect(calls).toBe(0);
+  });
+
   it('a container is an array or an object whose prototype is Object or null', () => {
     expect(isPlainContainer([])).toEqual(true);
     expect(isPlainContainer({})).toEqual(true);

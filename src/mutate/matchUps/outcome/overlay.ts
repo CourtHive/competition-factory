@@ -7,7 +7,7 @@ import { applyOutcomeOps } from './ops';
 import type { DrawDefinition, Event, MatchUp, Structure, Tournament } from '@Types/tournamentTypes';
 import type { MappedMatchUps, MatchUpsMap } from '@Types/factoryTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
-import type { OutcomeOp } from './ops';
+import type { OutcomeOp, TemporalProjection } from './ops';
 
 /**
  * The outcome pipeline, v2: THE WORKING VIEW (executor plan § 3.2; S2, CA 2026-10-24).
@@ -36,6 +36,7 @@ export type WorkingView = {
   inContextDrawMatchUps: HydratedMatchUp[];
   drawDefinition: DrawDefinition;
   matchUpsMap: MatchUpsMap;
+  temporal?: TemporalProjection;
   /** fold `ops` into the working copies, then re-derive what they touched */
   apply: (ops: OutcomeOp[]) => { error?: string };
   /** what the view did, for a test to hold to the work bound (§ 3.6) */
@@ -55,6 +56,8 @@ function namedBy(op: OutcomeOp): { matchUpId?: string; structureId?: string } {
 }
 
 type CreateWorkingViewArgs = {
+  /** Diagnostic/planning cursor only; a complete ordered executor must still certify these effects. */
+  clockFree?: boolean;
   inContextDrawMatchUps: HydratedMatchUp[];
   /** the base is the structural index (§ 3.1.1): what an op touches is indexed again, not hydrated */
   structural?: boolean;
@@ -65,6 +68,7 @@ type CreateWorkingViewArgs = {
 };
 
 export function createWorkingView({
+  clockFree,
   inContextDrawMatchUps: base,
   structural,
   tournamentRecord,
@@ -75,6 +79,7 @@ export function createWorkingView({
   const inContextDrawMatchUps = [...base];
   const indexOf = new Map(inContextDrawMatchUps.map((matchUp, index) => [matchUp.matchUpId, index]));
   const work = { copiedMatchUps: 0, copiedStructures: 0, rederived: 0, projections: 0 };
+  const temporal = clockFree ? { scoredTimes: new Set<string>(), updatedAt: new Set<string>() } : undefined;
 
   // the top-level structure a matchUp's or an item structure's id belongs to, read once from the stored draw
   const topLevelOf = new Map<string, string>();
@@ -167,6 +172,7 @@ export function createWorkingView({
     inContextDrawMatchUps,
     drawDefinition: workingDraw,
     matchUpsMap: baseMap,
+    temporal,
     work,
     apply(ops) {
       // COPY BEFORE WRITE, for every op by what it names: an object not copied here is the STORED one, and the fold
@@ -184,7 +190,7 @@ export function createWorkingView({
         if (structureId) ensureStructure(structureId);
       }
 
-      const applied = applyOutcomeOps(workingDraw, ops);
+      const applied = applyOutcomeOps(workingDraw, ops, undefined, { temporal });
       if (applied.error) return applied;
 
       // a reassigned, emptied, BYE-given or BYE-freed drawPosition changes the sides of every matchUp in that structure

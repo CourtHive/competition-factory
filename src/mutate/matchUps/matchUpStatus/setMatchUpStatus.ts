@@ -435,139 +435,143 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // S2: a call v2 owns has been written by it (`outcome/apply.ts`); v1 is not asked, and the warnings are v1's own
   if (v2.owned) return ownedResult({ owned: v2.owned, params, matchUpsMap, neverPlayedBefore, stack });
 
-  // A REFUSED CALL STORES NONE OF THE MISSING EDGES (CA, 2026-10-18: "no, a refused call does not store a draw's
-  // missing edges. v1 should no longer do so."). `setMatchUpState` writes them before deciding anything, and takes
-  // them back on its own refusal; what it held is held here too, for a refusal met after it returned.
-  const heldEdges = holdGoesTo({ drawDefinition, matchUpsMap });
-  const refuse = (refusal: ResultType) => {
-    heldEdges?.release();
-    return decorateResult({ result: refusal, stack });
-  };
+  return v2.runV1 ? v2.runV1(runV1) : runV1();
 
-  // DECISION: Delegate to setMatchUpState for core status/score setting logic
-  // WHY: Separation of concerns - setMatchUpStatus handles API/validation/orchestration,
-  // setMatchUpState handles actual state mutations and participant progression logic
-  const result = setMatchUpState({
-    matchUpStatusCodes: outcome?.matchUpStatusCodes,
-    matchUpsMap,
-    edgesHeld: !!heldEdges,
-    matchUpStatus: outcome?.matchUpStatus,
-    winningSide: outcome?.winningSide,
-    allowChangePropagation,
-    disableScoreValidation,
-    score: outcome?.score,
-    propagateExitStatus,
-    propagateRetirementAsExit,
-    tournamentRecords,
-    policyDefinitions,
-    tournamentRecord,
-    disableAutoCalc,
-    enableAutoCalc,
-    drawDefinition,
-    matchUpFormat,
-    matchUpId,
-    schedule,
-    event,
-    notes,
-  });
-  // Exit propagation: the context a direction (or a swap) returned, then any carry it queued behind it
-  for (const context of [result.context, ...(result.context?.queuedExitContexts ?? [])]) {
-    if (!context?.progressExitStatus) continue;
-    const propagated = propagateExitFrom({ context, params, propagateExitStatus });
-    if (propagated?.error) {
-      v2.compare?.(propagated);
-      return refuse(propagated);
-    }
-  }
-  // A REFUSAL CHANGES NOTHING, so nothing below it runs: no step here may repair, on a refused call, what an earlier
-  // call left (census F2, 2026-10-11: the settle step ran after `setMatchUpState` refused, and its reconciliation
-  // was the refused call's only write in 55 of 92 refusals after a write).
-  if (result.error) {
-    v2.compare?.(result);
-    return refuse(result);
-  }
-  // Everything has settled — removals, directions and exit propagation — which is the earliest point
-  // at which a carried exit's ORIGIN can be asked whether it still describes one. See
-  // `reconcileStaleExitOrigins` for the two corrections that pull the timing in opposite directions.
-  const settled = observePass('settleExitOrigins', params.drawDefinition, () =>
-    settleExitOrigins({ params, matchUpId, propagateExitStatus, doubleExitsBefore }),
-  );
-  if (settled?.error) {
-    v2.compare?.(settled);
-    return refuse(settled);
-  }
-  const drawSettled = settleDraw({ deciderSnapshotBefore, finalsBefore, params });
-  if (drawSettled.error) {
-    v2.compare?.(drawSettled);
-    return refuse(drawSettled);
-  }
-  // what forward play sends on from a result is sent on from one a removal re-derived: asked of the settled draw
-  const forward = observePass('settleForwardConsequences', params.drawDefinition, () =>
-    settleForwardConsequences({
-      tournamentRecord: params.tournamentRecord,
-      drawDefinition: params.drawDefinition,
-      event: params.event,
+  function runV1() {
+    // A REFUSED CALL STORES NONE OF THE MISSING EDGES (CA, 2026-10-18: "no, a refused call does not store a draw's
+    // missing edges. v1 should no longer do so."). `setMatchUpState` writes them before deciding anything, and takes
+    // them back on its own refusal; what it held is held here too, for a refusal met after it returned.
+    const heldEdges = holdGoesTo({ drawDefinition, matchUpsMap });
+    const refuse = (refusal: ResultType) => {
+      heldEdges?.release();
+      return decorateResult({ result: refusal, stack });
+    };
+
+    // DECISION: Delegate to setMatchUpState for core status/score setting logic
+    // WHY: Separation of concerns - setMatchUpStatus handles API/validation/orchestration,
+    // setMatchUpState handles actual state mutations and participant progression logic
+    const result = setMatchUpState({
+      matchUpStatusCodes: outcome?.matchUpStatusCodes,
+      matchUpsMap,
+      edgesHeld: !!heldEdges,
+      matchUpStatus: outcome?.matchUpStatus,
+      winningSide: outcome?.winningSide,
+      allowChangePropagation,
+      disableScoreValidation,
+      score: outcome?.score,
       propagateExitStatus,
-    }),
-  );
-  if (forward?.error) {
-    v2.compare?.(forward);
-    return refuse(forward);
-  }
-  // A direction the forward settle makes can put a BYE back in front of a carrier: a loser it directs re-forms a double
-  // exit, whose loser seat takes its BYE again. The carry past a late BYE was asked in `settleDraw`, before that BYE
-  // existed, so it is asked again (census A1 wave 3 R12, COMPASS 32: `Southeast|2|1` left TO_BE_PLAYED under its
-  // carrier; `aCarryPastAByeTheSettleReplacesIsCarriedAgain`).
-  if (forward?.settled) {
-    const carried = observePass('reconcileCarriesPastByes', params.drawDefinition, () =>
-      reconcileCarriesPastByes({
+      propagateRetirementAsExit,
+      tournamentRecords,
+      policyDefinitions,
+      tournamentRecord,
+      disableAutoCalc,
+      enableAutoCalc,
+      drawDefinition,
+      matchUpFormat,
+      matchUpId,
+      schedule,
+      event,
+      notes,
+    });
+    // Exit propagation: the context a direction (or a swap) returned, then any carry it queued behind it
+    for (const context of [result.context, ...(result.context?.queuedExitContexts ?? [])]) {
+      if (!context?.progressExitStatus) continue;
+      const propagated = propagateExitFrom({ context, params, propagateExitStatus });
+      if (propagated?.error) {
+        v2.compare?.(propagated);
+        return refuse(propagated);
+      }
+    }
+    // A REFUSAL CHANGES NOTHING, so nothing below it runs: no step here may repair, on a refused call, what an earlier
+    // call left (census F2, 2026-10-11: the settle step ran after `setMatchUpState` refused, and its reconciliation
+    // was the refused call's only write in 55 of 92 refusals after a write).
+    if (result.error) {
+      v2.compare?.(result);
+      return refuse(result);
+    }
+    // Everything has settled — removals, directions and exit propagation — which is the earliest point
+    // at which a carried exit's ORIGIN can be asked whether it still describes one. See
+    // `reconcileStaleExitOrigins` for the two corrections that pull the timing in opposite directions.
+    const settled = observePass('settleExitOrigins', params.drawDefinition, () =>
+      settleExitOrigins({ params, matchUpId, propagateExitStatus, doubleExitsBefore }),
+    );
+    if (settled?.error) {
+      v2.compare?.(settled);
+      return refuse(settled);
+    }
+    const drawSettled = settleDraw({ deciderSnapshotBefore, finalsBefore, params });
+    if (drawSettled.error) {
+      v2.compare?.(drawSettled);
+      return refuse(drawSettled);
+    }
+    // what forward play sends on from a result is sent on from one a removal re-derived: asked of the settled draw
+    const forward = observePass('settleForwardConsequences', params.drawDefinition, () =>
+      settleForwardConsequences({
         tournamentRecord: params.tournamentRecord,
         drawDefinition: params.drawDefinition,
         event: params.event,
+        propagateExitStatus,
       }),
     );
-    if (carried?.error) {
-      v2.compare?.(carried);
-      return refuse(carried);
+    if (forward?.error) {
+      v2.compare?.(forward);
+      return refuse(forward);
     }
+    // A direction the forward settle makes can put a BYE back in front of a carrier: a loser it directs re-forms a double
+    // exit, whose loser seat takes its BYE again. The carry past a late BYE was asked in `settleDraw`, before that BYE
+    // existed, so it is asked again (census A1 wave 3 R12, COMPASS 32: `Southeast|2|1` left TO_BE_PLAYED under its
+    // carrier; `aCarryPastAByeTheSettleReplacesIsCarriedAgain`).
+    if (forward?.settled) {
+      const carried = observePass('reconcileCarriesPastByes', params.drawDefinition, () =>
+        reconcileCarriesPastByes({
+          tournamentRecord: params.tournamentRecord,
+          drawDefinition: params.drawDefinition,
+          event: params.event,
+        }),
+      );
+      if (carried?.error) {
+        v2.compare?.(carried);
+        return refuse(carried);
+      }
+    }
+    // and, last, nobody stands across a link out of a matchUp that has no result. After `settleDraw`, not before:
+    // a held exit is decided there, and a placement made for it is not unearned (de 9301605, the Decider).
+    const released = observePass('reconcileLinkAdvancements', params.drawDefinition, () =>
+      reconcileLinkAdvancements({
+        drawDefinition: params.drawDefinition,
+        tournamentRecord: params.tournamentRecord,
+        event: params.event,
+      }),
+    );
+    if (released?.error) {
+      v2.compare?.(released);
+      return refuse(released);
+    }
+    // and once everything has settled, no matchUp left without a result keeps the `scoredTime` it was stamped with. Last,
+    // because the passes above can take a result away: `settleHeldExits` turns an exit holder into a BYE, and the
+    // forward settle and the link passes release what was placed. Asked before them, the stamp outlived the result
+    // until the next call, whatever that call was (`aResultTheSettleRemovesTakesItsScoredTime`).
+    observePass('reconcileScoredTimes', params.drawDefinition, () =>
+      reconcileScoredTimes({
+        matchUps: matchUpsMap.drawMatchUps,
+        drawDefinition: params.drawDefinition,
+        tournamentRecord: params.tournamentRecord,
+        event: params.event,
+      }),
+    );
+    const warnings = [
+      ...(forward?.exhausted ? [{ code: FORWARD_SETTLE_EXHAUSTED, matchUpIds: [forward.exhausted] }] : []),
+      ...callWarnings({ params, matchUpsMap, neverPlayedBefore, disableScoreValidation, outcome }),
+    ];
+    if (warnings.length) Object.assign(result, { warnings: [...(result.warnings ?? []), ...warnings] });
+
+    // nothing is refused past here: a call that wrote the draw's missing edges announces the draw, once
+    announceGoesTo({ hold: heldEdges, tournamentRecord, drawDefinition, event });
+
+    v2.compare?.(result);
+
+    return decorateResult({ result: withoutPropagationContext(result), stack });
   }
-  // and, last, nobody stands across a link out of a matchUp that has no result. After `settleDraw`, not before:
-  // a held exit is decided there, and a placement made for it is not unearned (de 9301605, the Decider).
-  const released = observePass('reconcileLinkAdvancements', params.drawDefinition, () =>
-    reconcileLinkAdvancements({
-      drawDefinition: params.drawDefinition,
-      tournamentRecord: params.tournamentRecord,
-      event: params.event,
-    }),
-  );
-  if (released?.error) {
-    v2.compare?.(released);
-    return refuse(released);
-  }
-  // and once everything has settled, no matchUp left without a result keeps the `scoredTime` it was stamped with. Last,
-  // because the passes above can take a result away: `settleHeldExits` turns an exit holder into a BYE, and the
-  // forward settle and the link passes release what was placed. Asked before them, the stamp outlived the result
-  // until the next call, whatever that call was (`aResultTheSettleRemovesTakesItsScoredTime`).
-  observePass('reconcileScoredTimes', params.drawDefinition, () =>
-    reconcileScoredTimes({
-      matchUps: matchUpsMap.drawMatchUps,
-      drawDefinition: params.drawDefinition,
-      tournamentRecord: params.tournamentRecord,
-      event: params.event,
-    }),
-  );
-  const warnings = [
-    ...(forward?.exhausted ? [{ code: FORWARD_SETTLE_EXHAUSTED, matchUpIds: [forward.exhausted] }] : []),
-    ...callWarnings({ params, matchUpsMap, neverPlayedBefore, disableScoreValidation, outcome }),
-  ];
-  if (warnings.length) Object.assign(result, { warnings: [...(result.warnings ?? []), ...warnings] });
-
-  // nothing is refused past here: a call that wrote the draw's missing edges announces the draw, once
-  announceGoesTo({ hold: heldEdges, tournamentRecord, drawDefinition, event });
-
-  v2.compare?.(result);
-
-  return decorateResult({ result: withoutPropagationContext(result), stack });
 }
 
 /**

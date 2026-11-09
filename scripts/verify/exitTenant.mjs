@@ -93,6 +93,8 @@ const ALLOWED = {
     'PLUMBING — compares the array v1 wrote with the array the plan carries, by value, never by position',
   'mutate/matchUps/outcome/view.ts':
     'PLUMBING — carries the existing array into the plan of the next write; decides nothing on it',
+  'mutate/matchUps/outcome/apply.ts':
+    'PLUMBING — the phase compiler permits the policy-code field in an op; reads no array contents',
   'mutate/matchUps/outcome/ops.ts': 'WRITE — the reducer stores the array the plan carries, as modifyMatchUpScore does',
   'mutate/matchUps/outcome/plan.ts':
     'PLUMBING — abstains when a client sent the array, so v1 writes it; carries the planned array into the op; decides nothing on it',

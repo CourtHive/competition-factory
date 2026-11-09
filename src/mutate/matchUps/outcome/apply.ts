@@ -1,21 +1,154 @@
 import { getInContextMatchUp } from '@Mutate/matchUps/score/modifyMatchUpScore';
+import { scoredTimeAction } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { applyOutcomeOps, splitScoredTimeCleanup } from './ops';
 import { findStructure } from '@Acquire/findStructure';
 import { getTopics } from '@Global/state/globalState';
 import {
+  liveNoticeEffects,
+  type NoticeEffects,
   deferInContextMatchUp,
+  deferredQuery,
   modifyMatchUpNotice,
   modifyPositionAssignmentsNotice,
 } from '@Mutate/notifications/drawNotifications';
 
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
-import type { BuildViewArgs, PlanShape } from './types';
+import type { BuildViewArgs, OutcomeView, PlanShape, Route } from './types';
 import type { MatchUp } from '@Types/tournamentTypes';
 import type { ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import type { OutcomeOp } from './ops';
+
+type ResultOp = Extract<OutcomeOp, { op: 'setMatchUpResult' }>;
+type ArrivalOp = Extract<OutcomeOp, { op: 'setMatchUpDrawPositions' }>;
+export type TemporalPhases = {
+  result: ResultOp;
+  arrival?: ArrivalOp;
+  sourceStructureId: string;
+  /** Every input op is consumed, including the batch stamp obligations replaced by actual notices. */
+  consumed: number;
+};
+
+/** Certify ordinary result/arrival occurrences before any live write; unsupported programs remain owed. */
+export function compileTemporalPhases({
+  args,
+  view,
+  route,
+  ops,
+}: {
+  args: BuildViewArgs;
+  view: OutcomeView;
+  route?: Route;
+  ops: OutcomeOp[];
+}): TemporalPhases | undefined {
+  const sourceStructureId = view.targets.source.structureId;
+  if (route !== 'winner' || !sourceStructureId || !args.drawDefinition || !args.request.matchUpId) return undefined;
+  if (view.isTeam || view.line || view.group || view.existing.winningSide || view.existing.hasSideExitProvenance)
+    return undefined;
+  if (view.existing.matchUpStatus !== TO_BE_PLAYED || args.request.carries?.schedule) return undefined;
+  const result = ops[0];
+  if (result?.op !== 'setMatchUpResult' || result.matchUpId !== args.request.matchUpId) return undefined;
+  if (result.matchUpStatus !== COMPLETED || result.score !== args.request.score) return undefined;
+  if (
+    Object.keys(result).some(
+      (key) =>
+        ![
+          'op',
+          'matchUpId',
+          'matchUpStatus',
+          'winningSide',
+          'score',
+          'matchUpFormat',
+          'matchUpStatusCodes',
+          'notes',
+        ].includes(key),
+    )
+  )
+    return undefined;
+  const writes = ops.filter((op) => op.op !== 'stampUpdatedAt');
+  const arrival = writes[1];
+  if (writes.length > 2 || (arrival && arrival.op !== 'setMatchUpDrawPositions')) return undefined;
+  if (arrival) {
+    const target = view.targets.winner;
+    if (!target || arrival.matchUpId !== view.targets.winnerMatchUpId || arrival.matchUpId === result.matchUpId)
+      return undefined;
+    if (target.matchUpStatus !== TO_BE_PLAYED || target.hasBye || target.holdsResult || target.carriesExit)
+      return undefined;
+    if (Object.keys(arrival).some((key) => !['op', 'matchUpId', 'drawPositions'].includes(key))) return undefined;
+  }
+  // The phase compiler replaces these exact stamp obligations; an extra or missing effect must not disappear.
+  const expected: OutcomeOp[] = [
+    result,
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: result.matchUpId },
+    ...(arrival ? [arrival, { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: arrival.matchUpId }] : []),
+    { op: 'stampUpdatedAt', entity: 'structure', id: sourceStructureId },
+    { op: 'stampUpdatedAt', entity: 'drawDefinition', id: args.drawDefinition.drawId },
+  ];
+  if (ops.length !== expected.length) return undefined;
+  if (
+    ops.some((op, index) => {
+      const wanted = expected[index];
+      return op.op === 'stampUpdatedAt'
+        ? wanted.op !== 'stampUpdatedAt' || op.entity !== wanted.entity || op.id !== wanted.id
+        : op !== wanted;
+    })
+  )
+    return undefined;
+  return { result, arrival: arrival as ArrivalOp | undefined, sourceStructureId, consumed: ops.length };
+}
+
+/** Execute only a previously certified complete program, preserving each writer's clock and notice boundary. */
+export function applyTemporalPhases(
+  args: BuildViewArgs,
+  phases: TemporalPhases,
+  shape: PlanShape,
+  effects: { notices: NoticeEffects; topics: string[] } = { notices: liveNoticeEffects, topics: getTopics().topics },
+): ResultType {
+  const { drawDefinition, tournamentRecord, event } = args;
+  if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
+  const stored = new Map(args.matchUpsMap?.drawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
+  const source = stored.get(phases.result.matchUpId);
+  const destination = phases.arrival && stored.get(phases.arrival.matchUpId);
+  if (!source || (phases.arrival && !destination)) return { error: INVALID_VALUES };
+  const tournamentId = tournamentRecord?.tournamentId;
+  const result = applyOutcomeOps(drawDefinition, [{ ...phases.result, stampsScoredTime: false }], undefined, {
+    phase: 'ordinary-result',
+  });
+  if (result.error) return { error: INVALID_VALUES, info: result.error };
+  if (effects.topics.includes(UPDATE_INCONTEXT_MATCHUP)) {
+    const matchUpId = source.matchUpId;
+    deferInContextMatchUp(
+      {
+        inContextMatchUp: deferredQuery(getInContextMatchUp, { tournamentRecord, drawDefinition, matchUpId }),
+        tournamentId,
+        matchUpId,
+      },
+      effects.notices,
+    );
+  }
+  const announce = (matchUp: MatchUp, context: string) =>
+    modifyMatchUpNotice(
+      { drawDefinition, tournamentId, eventId: event?.eventId, event, matchUp, context },
+      effects.notices,
+    );
+  announce(source, 'modifyMatchUpScore');
+  if (phases.arrival && destination) {
+    const placed = applyOutcomeOps(drawDefinition, [phases.arrival], undefined, { phase: 'ordinary-arrival' });
+    if (placed.error) return { error: INVALID_VALUES, info: placed.error };
+    announce(destination, 'assignMatchUpDrawPosition');
+  }
+  const action = scoredTimeAction(source);
+  if (action === 'initialize') {
+    source.schedule ??= {};
+    source.schedule.scoredTime = new Date(
+      effects.notices.readClock({ kind: 'scoredTime', target: source }),
+    ).toISOString();
+  } else if (action === 'clear' && source.schedule) delete source.schedule.scoredTime;
+  return planResult(shape, [phases.result]);
+}
 
 /**
  * The outcome pipeline, v2: APPLY (executor plan § 3.1 step 4, § 3.4; S2). A call v2 owns is written here and v1 is
@@ -127,7 +260,7 @@ export function applyOwnedPlan({
     const contextless = score?.announcesContext === false || score?.inContextBare;
     const record = contextless ? undefined : tournamentRecord;
     deferInContextMatchUp({
-      inContextMatchUp: () => getInContextMatchUp({ tournamentRecord: record, drawDefinition, matchUpId }),
+      inContextMatchUp: deferredQuery(getInContextMatchUp, { tournamentRecord: record, drawDefinition, matchUpId }),
       tournamentId: contextless ? undefined : tournamentId,
       matchUpId,
     });
@@ -174,6 +307,10 @@ export function applyOwnedPlan({
   }
   announceAssignments({ ops, drawDefinition, tournamentId, event });
   announceScoredTimeCleanup(cleanupTargets, args);
+  return planResult(shape, ops);
+}
+
+function planResult(shape: PlanShape, ops: OutcomeOp[]): ResultType {
   const tieMatchUpResult = dualTallyResult(ops);
   // a winner's route returns the context `directParticipants` builds, a final's included, which carries something only
   // for an exit (S5): empty

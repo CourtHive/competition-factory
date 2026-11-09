@@ -2,7 +2,7 @@ import type { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
 import type { ErrorType } from '@Constants/errorConditionConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { WorkingView } from './overlay';
-import type { OutcomeOp } from './ops';
+import type { OutcomeOp, TemporalProjection } from './ops';
 import type {
   DrawDefinition,
   Event,
@@ -431,6 +431,9 @@ export type MatchUpWrite = {
 };
 
 export type BuildViewArgs = {
+  /** Private planning mode; it grants no runtime ownership. */
+  clockFree?: boolean;
+  temporal?: TemporalProjection;
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
   policyDefinitions?: PolicyDefinitions;
@@ -646,6 +649,7 @@ export type SeatObligation = { kind: 'double-exit-seats'; targetMatchUpId?: stri
  * for it, and the composition points a plan folds one step on another with.
  */
 export type PlanArgs = {
+  clockFree?: boolean;
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
   direction?: DirectionPlan;

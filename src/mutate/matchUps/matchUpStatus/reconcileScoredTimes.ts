@@ -28,6 +28,13 @@ export function hasStaleScoredTime(matchUp?: MatchUp): boolean {
   return !!matchUp?.schedule?.scoredTime && !matchUpIsScored(matchUp);
 }
 
+/** Decide presence without reading time; pending initialization is a planning fact, never a stored timestamp. */
+export function scoredTimeAction(matchUp: MatchUp, pending = false): 'retain' | 'initialize' | 'clear' {
+  const present = pending || !!matchUp.schedule?.scoredTime;
+  if (matchUpIsScored(matchUp)) return present ? 'retain' : 'initialize';
+  return present ? 'clear' : 'retain';
+}
+
 /**
  * Remove `schedule.scoredTime` from every matchUp that no longer carries a result.
  *

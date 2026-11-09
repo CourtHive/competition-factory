@@ -39,7 +39,7 @@ export function cloneState<T>(source: T): StateClone<T> {
 
   const clone = (value: unknown): unknown => {
     if (value instanceof Date) {
-      const date = new Date(value.getTime());
+      const date = new Date(Date.prototype.getTime.call(value));
       originals.set(date, value);
       return date;
     }
@@ -72,7 +72,7 @@ export function restoreState<T>({ copy, originals }: StateClone<T>): T {
   const reinstate = (snapshotValue: unknown): unknown => {
     if (snapshotValue instanceof Date) {
       const originalDate = originals.get(snapshotValue) as Date | undefined;
-      originalDate?.setTime(snapshotValue.getTime());
+      if (originalDate) Date.prototype.setTime.call(originalDate, Date.prototype.getTime.call(snapshotValue));
       return originalDate ?? snapshotValue;
     }
     if (!isPlainContainer(snapshotValue)) return snapshotValue;

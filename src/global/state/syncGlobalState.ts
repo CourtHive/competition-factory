@@ -1,10 +1,4 @@
-import {
-  modifiedTournamentId,
-  noticeModifies,
-  preserveNoticeIdentity,
-  UNANNOUNCED_WRITE,
-  UNNAMED_TOURNAMENT,
-} from './noticeIdentity';
+import { appendNotice, UNANNOUNCED_WRITE, UNNAMED_TOURNAMENT } from './noticeIdentity';
 import {
   CallListenerArgs,
   DeleteNoticeArgs,
@@ -57,6 +51,7 @@ export default {
   enableNotifications,
   getMethods,
   getNoticeBuffer,
+  getNoticeState,
   getNotices,
   getPayloads: getNotices, // canonical alias for the deprecated `getNotices`
   getTopics,
@@ -236,32 +231,15 @@ export function setMutationStatus(status: boolean) {
   syncGlobalState.modified = status;
 }
 
-export function addNotice({ topic, payload, key }: Notice, isGlobalSubscription?: boolean) {
-  if (typeof topic !== 'string' || typeof payload !== 'object') return;
-  // if there is a notice then the state has been modified, regardless of whether there is a subscription: the
-  // tournament it names (every loaded record when it names none), unless it only reports
-  if (!syncGlobalState.disableNotifications && noticeModifies(topic))
-    markModified(modifiedTournamentId(payload), topic);
-  if (syncGlobalState.disableNotifications || (!syncGlobalState.subscriptions[topic] && !isGlobalSubscription)) return;
+export function addNotice(notice: Notice, isGlobalSubscription?: boolean) {
+  return appendNotice(syncGlobalState, notice, isGlobalSubscription);
+}
 
-  let outgoing = payload;
-
-  if (key) {
-    const retained: any[] = [];
-    for (const notice of syncGlobalState.notices) {
-      if (notice.topic === topic && notice.key === key) {
-        // superseded — but its identity is still true of this key, so do not discard it
-        outgoing = preserveNoticeIdentity(outgoing, notice.payload);
-      } else {
-        retained.push(notice);
-      }
-    }
-    syncGlobalState.notices = retained;
-  }
-
-  syncGlobalState.notices.push({ topic, payload: outgoing, key });
-
-  return { ...SUCCESS };
+/** A snapshot boundary; callers copy the roots and this state together to retain payload aliases. */
+export function getNoticeState() {
+  const { disableNotifications, subscriptions, notices, modified, modifiedTournamentIds, modifiedTopics } =
+    syncGlobalState;
+  return { disableNotifications, subscriptions, notices, modified, modifiedTournamentIds, modifiedTopics };
 }
 
 export function getMethods() {

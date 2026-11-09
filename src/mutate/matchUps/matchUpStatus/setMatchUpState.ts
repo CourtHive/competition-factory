@@ -13,7 +13,7 @@ import { relabelWithoutDirection } from '@Mutate/matchUps/drawPositions/relabelL
 import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinningSide';
 import { rewritesCarriedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
-import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
+import { scoredTimeAction } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { ensureGoesTo, holdGoesTo, type GoesToHold } from '@Query/matchUps/addGoesTo';
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
@@ -922,10 +922,11 @@ function resolveAndApplyOutcome({
 // for when the match actually finished (TD-behavior analytics) when no explicit
 // END_TIME timeItem is recorded; an actual endTime supersedes it at read time.
 function applyScoredTime({ matchUp }) {
-  if (matchUpIsScored(matchUp)) {
+  const action = scoredTimeAction(matchUp);
+  if (action === 'initialize') {
     if (!matchUp.schedule) matchUp.schedule = {};
-    if (!matchUp.schedule.scoredTime) matchUp.schedule.scoredTime = nowIso();
-  } else if (matchUp.schedule?.scoredTime) {
+    matchUp.schedule.scoredTime = nowIso({ kind: 'scoredTime', target: matchUp });
+  } else if (action === 'clear') {
     delete matchUp.schedule.scoredTime;
   }
 }
