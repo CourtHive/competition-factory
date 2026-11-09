@@ -39,6 +39,7 @@ on:
   pull_request:
   push:
     branches: [master]
+  # Manual runs exercise the checkpoint path on the selected ref: full matrices and differential coverage.
   workflow_dispatch:
 
 permissions:
@@ -311,7 +312,7 @@ jobs:
       - name: coverage shard ${{ matrix.shard }}/4
         run: pnpm exec vitest run --coverage --shard=${{ matrix.shard }}/4 --reporter=default --reporter=blob
         env:
-          OUTCOME_PIPELINE: ${{ (github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'differential' || '' }}
+          OUTCOME_PIPELINE: ${{ (github.event_name == 'workflow_dispatch' || github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'differential' || '' }}
 
       # `.vitest/blob/blob-<shard>-4.json` (vitest's default); a dot-directory, hence include-hidden-files
       - uses: actions/upload-artifact@v7
@@ -362,7 +363,7 @@ jobs:
           fi
           pnpm exec vitest run --merge-reports=.vitest/blob --coverage --reporter=default
         env:
-          OUTCOME_PIPELINE: ${{ (github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'differential' || '' }}
+          OUTCOME_PIPELINE: ${{ (github.event_name == 'workflow_dispatch' || github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'differential' || '' }}
 
       # How much margin the merged coverage has above the floors, in items (CA, 2026-10-05: report +
       # an absolute minimum). Written to the job summary on every run, and the run fails if any metric
