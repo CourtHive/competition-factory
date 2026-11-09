@@ -304,7 +304,7 @@ function noticeRules(ops: OutcomeOp[]) {
       (op.op === 'setMatchUpDrawPositions' &&
         (op.announcesContext === false || (op.advancesThroughBye && !op.announcesEvent))) ||
       (op.op === 'setMatchUpResult' && op.announcesContext === false) ||
-      (op.op === 'setMatchUpBye' && op.announcesEvent === false)
+      ((op.op === 'setMatchUpBye' || op.op === 'setSideExitProvenance') && op.announcesEvent === false)
         ? [op.matchUpId]
         : [],
     ),
@@ -382,8 +382,10 @@ const placement = (op: OutcomeOp): op is Extract<OutcomeOp, { op: 'assignPositio
  */
 export const announcesAssignments = (
   op: OutcomeOp,
-): op is Extract<OutcomeOp, { op: 'assignPosition' | 'assignBye' | 'withdrawBye' }> =>
-  placement(op) || (op.op === 'withdrawBye' && op.announcesAssignments !== false);
+): op is Extract<OutcomeOp, { op: 'assignPosition' | 'assignBye' | 'withdrawBye' | 'announcePositionAssignments' }> =>
+  op.op === 'announcePositionAssignments' ||
+  op.op === 'assignPosition' ||
+  ((op.op === 'assignBye' || op.op === 'withdrawBye') && op.announcesAssignments !== false);
 
 /** each structure a placement or an unwind's seat visit touches, in the order the call first touches it */
 const touchedStructures = (ops: OutcomeOp[]) => [
@@ -396,7 +398,10 @@ const touchedStructures = (ops: OutcomeOp[]) => [
  */
 const eventedPlacement = (ops: OutcomeOp[], structureId: string) =>
   ops.some(
-    (op) => placement(op) && op.structureId === structureId && !(op.op === 'assignBye' && op.announcesEvent === false),
+    (op) =>
+      (placement(op) || op.op === 'announcePositionAssignments') &&
+      op.structureId === structureId &&
+      !('announcesEvent' in op && op.announcesEvent === false),
   );
 
 /**
@@ -532,6 +537,12 @@ function namedWriters(ops: OutcomeOp[]) {
       settled.get(op.matchUpId) === 'withdrawProducedExits'
     ) {
       settled.delete(op.matchUpId);
+    } else if (
+      (op.op === 'setMatchUpBye' || op.op === 'setMatchUpDrawPositions') &&
+      ['withdrawDisplacedCarry', 'assignDrawPositionBye-TEAM'].includes(settled.get(op.matchUpId) ?? '')
+    ) {
+      settled.delete(op.matchUpId);
+      lineUpUnevented.delete(op.matchUpId);
     } else if (op.op === 'setMatchUpResult') {
       if (op.announcedAs) settled.set(op.matchUpId, op.announcedAs);
       else settled.delete(op.matchUpId);

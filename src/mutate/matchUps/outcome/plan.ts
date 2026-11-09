@@ -457,14 +457,11 @@ function carriedDirectionContext(args: PlanArgs, landing: OutcomeOp[]): boolean 
 }
 
 /** Every deferred seat obligation is discharged before an executable plan can leave the builder. */
-function certifiedSeatProgram(
-  args: PlanArgs,
-  drawDefinition: DrawDefinition,
-  prefix: OutcomeOp[],
-  obligation?: SeatObligation,
-) {
+function certifiedSeatProgram(args: PlanArgs, prefix: OutcomeOp[], obligation?: SeatObligation) {
   if (args.route !== DOUBLE_EXIT) return obligation ? undefined : { ops: [], after: [] };
-  const seats = doubleExitSeatOps(args.view, args.request, drawDefinition, args.direction, args.project, prefix);
+  const following =
+    args.route === DOUBLE_EXIT ? producedExitOps(args.view, args.request, args.write!, args.direction) : [];
+  const seats = doubleExitSeatOps(args.view, args.request, args.direction, args.project, prefix, following);
   if (!seats) return undefined;
   if (obligation && (seats.kind !== 'planned' || seats.targetMatchUpId !== obligation.targetMatchUpId))
     return undefined;
@@ -583,7 +580,6 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   // The linked seats read the state after the literal prefix emitted below, never positional guesses.
   const seatOps = certifiedSeatProgram(
     args,
-    drawDefinition,
     [...ops, ...seated, ...carried.relay, ...throughBye, ...lineUps, ...landing, ...converging],
     seatObligation,
   );
