@@ -183,7 +183,11 @@ test('CLI preserves the other tier and leaves weights untouched when evidence is
       return file;
     });
     const script = fileURLToPath(new URL('./shardTiming.mjs', import.meta.url));
-    execFileSync(process.execPath, [script, 'calibrate', 'full', output, ...inputs], { cwd: directory });
+    execFileSync(process.execPath, [script, 'calibrate', 'full', output, ...inputs], {
+      cwd: directory,
+      timeout: 30_000,
+      killSignal: 'SIGKILL',
+    });
     assert.deepEqual(JSON.parse(readFileSync(output)).pr, { untouched: 42 });
     assert.deepEqual(Object.values(JSON.parse(readFileSync(output)).full), [1.5, 1.5, 1.5, 1.5]);
     const before = readFileSync(output, 'utf8'),
@@ -191,7 +195,11 @@ test('CLI preserves the other tier and leaves weights untouched when evidence is
     bad.contexts.pop();
     writeFileSync(inputs[0], JSON.stringify(bad));
     assert.notEqual(
-      spawnSync(process.execPath, [script, 'calibrate', 'full', output, ...inputs], { cwd: directory }).status,
+      spawnSync(process.execPath, [script, 'calibrate', 'full', output, ...inputs], {
+        cwd: directory,
+        timeout: 30_000,
+        killSignal: 'SIGKILL',
+      }).status,
       0,
     );
     assert.equal(readFileSync(output, 'utf8'), before);
