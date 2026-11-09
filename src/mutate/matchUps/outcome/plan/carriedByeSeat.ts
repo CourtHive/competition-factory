@@ -1,8 +1,8 @@
-import { BLANK_SCORE, SINGLE_EXITS, indexed, onwardFrom, positionsOf, scoreless, sideOf } from './planShared';
-import { buildCarriedExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { SINGLE_EXITS, indexed, onwardFrom, positionsOf, scoreless, sideOf } from './planShared';
 import { getOrderedDrawPositions } from '@Query/matchUps/getOrderedDrawPositions';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { carriedContinuation } from './carriedContinuation';
 import { carriedByeDualSides } from './teamPlan';
 
 // constants and types
@@ -191,41 +191,24 @@ export function carriedByeSeatOps(
   ];
   const after: OutcomeOp[] = [];
   if (landing) {
-    const provenance = (exitingSideNumber: number | undefined) =>
-      buildCarriedExitProvenance({
-        matchUpStatus: origin.matchUpStatus,
-        previousMatchUpStatus: origin.matchUpStatus,
-        sourceMatchUpId: origin.sourceMatchUpId,
-        exitingSideNumber,
-      })!;
-    after.push(
-      ...replayedByes(seat, drawDefinition).flatMap(({ entry, side }): OutcomeOp[] => [
-        {
-          op: 'mergeSideExitProvenance',
-          matchUpId: entry.matchUpId,
-          provenance: provenance(side),
-          announcedAs: 'progressExitStatus',
-        },
-        { op: 'stampUpdatedAt', entity: 'matchUp', id: entry.matchUpId },
-      ]),
-      {
-        op: 'setMatchUpResult',
+    const continuation = carriedContinuation(origin.matchUpStatus, {
+      sourceMatchUpId: origin.sourceMatchUpId,
+      previousMatchUpStatus: origin.matchUpStatus,
+      landing: {
         matchUpId: landing.entry.matchUpId,
-        matchUpStatus: origin.matchUpStatus,
-        winningSide: (3 - landing.side) as 1 | 2,
-        matchUpStatusCodes: [],
-        ...(origin.matchUpStatus === WALKOVER ? { score: { ...BLANK_SCORE } } : {}),
+        sideNumber: landing.side,
+        carriesOn: false,
+        opponentHeld: false,
+        passes: 1,
+        onward: landing.onward,
+        relays: replayedByes(seat, drawDefinition).map(({ entry, side }) => ({
+          matchUpId: entry.matchUpId,
+          sideNumber: side,
+        })),
         ...(isTeam && drawDefinition ? { ensuredSides: carriedByeDualSides(drawDefinition, landing.entry) } : {}),
       },
-      { op: 'mergeSideExitProvenance', matchUpId: landing.entry.matchUpId, provenance: provenance(landing.side) },
-      { op: 'stampUpdatedAt', entity: 'matchUp', id: landing.entry.matchUpId },
-      ...(landing.onward
-        ? [
-            { op: 'setMatchUpDrawPositions' as const, ...landing.onward },
-            { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: landing.onward.matchUpId },
-          ]
-        : []),
-    );
+    })!;
+    after.push(...continuation.relay, ...continuation.landing);
   }
   if (home.schedule?.scoredTime)
     after.push(
