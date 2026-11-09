@@ -1,6 +1,6 @@
 {
   "name": "documentation",
-  "packageManager": "pnpm@12.16.1",
+  "packageManager": "pnpm@12.18.0",
   "version": "0.0.0",
   "private": true,
   "scripts": {
