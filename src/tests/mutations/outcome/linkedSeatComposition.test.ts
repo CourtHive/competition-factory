@@ -164,6 +164,18 @@ const holderRecipe: Recipe = {
 };
 const recipes: [string, Recipe][] = [
   [
+    'a lone advanced BYE passes its event to the child seat',
+    {
+      drawType: COMPASS,
+      size: 16,
+      count: 15,
+      seed: 21036395,
+      structureName: 'East',
+      target: 2,
+      correction: true,
+    },
+  ],
+  [
     'a carried home serves its occupied loser seat before replaying the carry',
     { drawType: OLYMPIC, size: 8, count: 8, setup: 1, target: 2, seed: 20053188, structureName: 'East', carried: true },
   ],

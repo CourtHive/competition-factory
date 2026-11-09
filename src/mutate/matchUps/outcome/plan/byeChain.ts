@@ -108,7 +108,7 @@ function byeService(
   if (!updated || opposite.length > 1) return undefined;
   const advance = byeServiceAdvance(currentView(), updated, seat, opposite);
   if (!advance || !emit(advance.ops)) return undefined;
-  const child = byeServiceChild(currentView(), working, updated, holders, opposite.length > 0, seen);
+  const child = byeServiceChild(currentView(), working, updated, holders, opposite.length > 0, named, seen);
   if (!child) return undefined;
   writes.push(...child.writes);
   if (!emit([{ op: 'announcePositionAssignments', structureId: seat.structureId, ...quiet }])) return undefined;
@@ -147,6 +147,7 @@ function byeServiceChild(
   entry: HydratedMatchUp,
   holders: MatchUp[],
   opposed: boolean,
+  named: boolean,
   seen: Set<string>,
 ): ByeChain | undefined {
   if (!entry.loserMatchUpId) return { assigns: [], writes: [], matchUpIds: [] };
@@ -173,7 +174,8 @@ function byeServiceChild(
     view,
     working,
     { structureId: child.structureId, matchUpId: child.matchUpId, drawPosition },
-    false,
+    // A lone advanced seat calls assignByeToLoserTarget with its event. The opposed advance drops that context.
+    named && !opposed,
     seen,
   );
 }
