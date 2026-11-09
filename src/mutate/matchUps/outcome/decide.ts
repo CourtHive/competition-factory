@@ -1,5 +1,12 @@
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
-import { addedNotices, captureShadow, compareNotices, compareShadow, plannedNotices } from './shadow';
+import {
+  addedNotices,
+  captureShadow,
+  compareNotices,
+  compareShadow,
+  plannedNotices,
+  prepareTemporalShadow,
+} from './shadow';
 import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
 import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
@@ -22,11 +29,12 @@ import { createWorkingView } from './overlay';
 import { refuseOutcome } from './refusals';
 import { stampedInThisCall } from './ops';
 import { buildOutcomeView } from './view';
-import { applyOwnedPlan } from './apply';
+import { applyOwnedPlan, applyTemporalPhases, compileTemporalPhases } from './apply';
 import { chooseRoute } from './route';
 import { planOutcome } from './plan';
 import {
   getCapturedStamps,
+  getCapturedClock,
   getNoticeBuffer,
   getOutcomePipeline,
   getTopics,
@@ -73,6 +81,7 @@ const OWNED_SHAPES = new Set<PlanShape>(['local', 'direction']);
  * the settle passes' has-work predicates. A plan that leaves a pass work abstains `settle`.
  */
 function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal) {
+  args = { ...args, clockFree: getCapturedClock() === undefined };
   // TEAM auto-calc: a dual whose result is computed from its lines takes the PROJECTED winner and score in
   // place of the call's before anything is routed, as `handleTeamAutoCalc` rewrites v1's parameters
   const planned = autoCalculated(args.request, view);
@@ -80,6 +89,7 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal) {
   const plan = route ? planWrite(planned, view, route) : undefined;
   const direction = route ? planDirection(planned, view, route) : undefined;
   const allowed = planOutcome({
+    clockFree: args.clockFree,
     tournamentRecord: args.tournamentRecord,
     drawDefinition: args.drawDefinition,
     rebuild: rebuildView(args, view, planned),
@@ -97,7 +107,12 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal) {
   if (allowed.ops)
     outcome =
       folded && 'ops' in folded && !folded.settle.length ? { ...allowed, ops: folded.ops } : { abstain: 'settle' };
-  return { planned, route, plan, direction, folded, outcome };
+  const phases =
+    args.clockFree && outcome.ops ? compileTemporalPhases({ args, view, route, ops: outcome.ops }) : undefined;
+  const observe = phases && outcome.ops ? prepareTemporalShadow(args, phases, outcome.shape) : undefined;
+  // An uncaptured call requires a complete phase program and a replayable effect scope, in either mode.
+  if (args.clockFree && !observe) outcome = { abstain: 'clock' };
+  return { planned, route, plan, direction, folded, outcome, phases, observe };
 }
 
 /**
@@ -115,6 +130,7 @@ function rebuildView(args: BuildViewArgs, view: OutcomeView, request: OutcomeReq
       drawDefinition: working.drawDefinition,
       matchUpsMap: working.matchUpsMap,
       structural: view.structural,
+      temporal: working.temporal,
     });
     return { view: rebuilt, direction: planDirection(request, rebuilt, route) };
   };
@@ -124,7 +140,11 @@ function rebuildView(args: BuildViewArgs, view: OutcomeView, request: OutcomeReq
 function projectOutcome(args: BuildViewArgs, view: OutcomeView): ProjectOutcome {
   return (prefix) => {
     if (!args.drawDefinition || !args.matchUpsMap || !view.inContextDrawMatchUps) return undefined;
+    // Until the continuation's clock phase is explicit, its timestamp cannot be treated as already written here.
+    if (args.clockFree && prefix.some((op) => op.op === 'setMatchUpResult' && op.stampsScoredTime !== false))
+      return undefined;
     const working = createWorkingView({
+      clockFree: args.clockFree,
       inContextDrawMatchUps: view.inContextDrawMatchUps,
       structural: view.structural,
       tournamentRecord: args.tournamentRecord,
@@ -146,6 +166,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   refused?: ResultType;
   owned?: ResultType;
   compare?: (v1Result: ResultType) => void;
+  runV1?: <T>(run: () => T) => T;
 } {
   const mode = getOutcomePipeline();
   if (mode === OUTCOME_PIPELINE_V1) return {};
@@ -158,16 +179,19 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   if (mode === OUTCOME_PIPELINE_V2) {
     if (refusal) return { refused: toResult(refusal, args) };
     // S2: a call whose complete plan is a shape v2 owns is written by v2, and v1 is not asked (F1 (a), fail-closed)
-    const { outcome } = planCall(args, view);
-    return outcome.ops && OWNED_SHAPES.has(outcome.shape)
-      ? { owned: applyOwnedPlan({ args, ops: outcome.ops, shape: outcome.shape }) }
-      : {};
+    const { outcome, phases } = planCall(args, view);
+    if (!outcome.ops || !OWNED_SHAPES.has(outcome.shape)) return {};
+    return {
+      owned: phases
+        ? applyTemporalPhases(args, phases, outcome.shape)
+        : applyOwnedPlan({ args, ops: outcome.ops, shape: outcome.shape }),
+    };
   }
   if (mode !== OUTCOME_PIPELINE_DIFFERENTIAL) return {};
   // § 3.1.1's index oracle, read before v1 writes: the index of the draw as the call found it against the view's hydration
   const indexed = indexOracle(args, view);
 
-  const { planned, route, plan, direction, folded, outcome } = planCall(args, view, refusal);
+  const { planned, route, plan, direction, folded, outcome, observe } = planCall(args, view, refusal);
   const dual = route ? planDual(args, view) : undefined;
   const shadowBefore =
     outcome.ops && args.drawDefinition ? captureShadow({ ...args, drawDefinition: args.drawDefinition }) : undefined;
@@ -188,6 +212,25 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   const modified = readMutationStatus();
 
   return {
+    runV1:
+      observe &&
+      (<T>(run: () => T): T => {
+        try {
+          const result = observe(run);
+          checkViewOracle(observe.shadow);
+          differentialTally('shadow:applied', 'compared');
+          differentialTally('shadow:notices', 'compared');
+          return result;
+        } catch (error) {
+          // A matching live clock throw retains its writes and exact error identity. Only a divergence is restored.
+          if (error instanceof OutcomePipelineDivergence) {
+            restoreState(before);
+            setNoticeBuffer(notices);
+            restoreMutationStatus(modified);
+          }
+          throw error;
+        }
+      }),
     compare: (v1Result) => {
       try {
         compareWithV1(v1Result);
@@ -259,6 +302,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
 
   /** S1: the complete plan, folded into the record as it stood before v1, against the record v1 wrote */
   function checkShadow() {
+    if (observe) return; // The enclosing continuation compares every clock prefix and its terminal state.
     if (outcome.abstain) return differentialTally(`shadow:abstain:${outcome.abstain}`, 'deferred');
     if (!shadowBefore || !args.drawDefinition) return differentialTally('shadow:abstain:no-record', 'deferred');
     const shadow = compareShadow({
@@ -874,6 +918,7 @@ function finalizePlan({
 }): { ops: OutcomeOp[]; matchUps: HydratedMatchUp[]; settle: SettleSite[] } | { error: string } | undefined {
   if (!ops || !args.drawDefinition || !args.matchUpsMap || !view.inContextDrawMatchUps) return undefined;
   const working = createWorkingView({
+    clockFree: args.clockFree,
     inContextDrawMatchUps: view.inContextDrawMatchUps,
     structural: view.structural,
     tournamentRecord: args.tournamentRecord,

@@ -1,5 +1,6 @@
 import { isFunction, isObject } from '@Tools/objects';
 import syncGlobalState from './syncGlobalState';
+import type { NoticeState } from './noticeIdentity';
 
 // constants and types
 import { OUTCOME_PIPELINE_V1, OutcomePipelineMode, outcomePipelineModes } from '@Constants/outcomePipelineConstants';
@@ -657,6 +658,19 @@ export function deleteNotices() {
  * The notice buffer as it stands, for an operation that may need to restore it (rollback, dryRun).
  * `undefined` when the provider cannot expose it; `setNoticeBuffer` then falls back to deleting.
  */
+/** Optional provider snapshot for isolated, effect-ordered differential replay. */
+export function getNoticeState(): (NoticeState & { globalSubscriptions: Record<string, boolean> }) | undefined {
+  const state = _globalStateProvider.getNoticeState?.();
+  return (
+    state && {
+      ...state,
+      globalSubscriptions: Object.fromEntries(
+        Object.entries(globalState.globalSubscriptions).map(([topic, subscription]) => [topic, !!subscription]),
+      ),
+    }
+  );
+}
+
 export function getNoticeBuffer(): Notice[] | undefined {
   return isFunction(_globalStateProvider.getNoticeBuffer) ? _globalStateProvider.getNoticeBuffer() : undefined;
 }

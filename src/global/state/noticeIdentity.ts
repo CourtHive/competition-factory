@@ -1,4 +1,40 @@
 import { NoticeIdentity } from '@Types/topicTypes';
+import type { Notice } from './globalState';
+import { SUCCESS } from '@Constants/resultConstants';
+
+/** Provider-owned notice state; also usable as an isolated differential snapshot. */
+export type NoticeState = {
+  disableNotifications: boolean;
+  subscriptions: Record<string, unknown>;
+  notices: Notice[];
+  modified: boolean;
+  modifiedTournamentIds?: Set<string>;
+  modifiedTopics?: Set<string>;
+};
+
+/** The buffer's insertion and identity rules, shared by the live provider and private replay. */
+export function appendNotice(state: NoticeState, { topic, payload, key }: Notice, isGlobalSubscription?: boolean) {
+  if (typeof topic !== 'string' || typeof payload !== 'object') return;
+  if (!state.disableNotifications && noticeModifies(topic)) {
+    state.modified = true;
+    state.modifiedTournamentIds ??= new Set();
+    state.modifiedTournamentIds.add(modifiedTournamentId(payload));
+    state.modifiedTopics ??= new Set();
+    state.modifiedTopics.add(topic || UNANNOUNCED_WRITE);
+  }
+  if (state.disableNotifications || (!state.subscriptions[topic] && !isGlobalSubscription)) return;
+  let outgoing = payload;
+  if (key) {
+    const retained: Notice[] = [];
+    for (const notice of state.notices) {
+      if (notice.topic === topic && notice.key === key) outgoing = preserveNoticeIdentity(outgoing, notice.payload);
+      else retained.push(notice);
+    }
+    state.notices = retained;
+  }
+  state.notices.push({ topic, payload: outgoing, key });
+  return { ...SUCCESS };
+}
 
 // constants
 import {

@@ -284,10 +284,13 @@ function resultRemovalReason(view: OutcomeView): AbstainReason | undefined {
 }
 
 /** A plan needs the draw and an existing captured instant; tournament containment is not a write prerequisite. */
-function recordReason({ drawDefinition }: { drawDefinition?: DrawDefinition }): AbstainReason | undefined {
+function recordReason({
+  drawDefinition,
+  clockFree,
+}: Pick<PlanArgs, 'drawDefinition' | 'clockFree'>): AbstainReason | undefined {
   if (!drawDefinition) return 'no-record';
   // Draw-scoped callers reuse their existing capture; direct uncaptured clocks still need ordered temporal effects.
-  if (getCapturedClock() === undefined) return 'clock';
+  if (getCapturedClock() === undefined && !clockFree) return 'clock';
   return undefined;
 }
 
@@ -334,6 +337,7 @@ function lineDualPlan(
     ),
   };
   const dualPlan = planOps({
+    clockFree: args.clockFree,
     tournamentRecord: args.tournamentRecord,
     direction: dual.direction,
     request: dual.request,
