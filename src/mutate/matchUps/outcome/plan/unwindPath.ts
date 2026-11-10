@@ -1005,7 +1005,11 @@ export function producedRelayAfterOps(
         ReturnType<typeof convergedRelayCopy>
       >;
       return [
-        ...unwound.filter((write) => write.op === 'setMatchUpResult' && write.retainedExitPlanned && !loser?.converged),
+        ...unwound.flatMap((write): OutcomeOp[] =>
+          write.op === 'setMatchUpResult' && write.retainedExitPlanned && !loser?.converged
+            ? [{ ...write, resetsScore: write.matchUpStatus === WALKOVER ? true : undefined, replaysCarriedExit: true }]
+            : [],
+        ),
         ...unwound.filter(
           (write) =>
             write.op === 'setMatchUpResult' &&

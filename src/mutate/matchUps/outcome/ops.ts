@@ -60,6 +60,8 @@ export type OutcomeOp =
       removesWinningSide?: true;
       /** The pending produced exit lost its winner key in the settle pass after a retained BYE relay. */
       deletesWinningSide?: true;
+      /** Settle restores the retained carrier origin and removes its old winner before replaying the result. */
+      replaysCarriedExit?: true;
       /** The unlinked qualifying-final removal returns an own undefined qualifierRemoved field. */
       returnsQualifierRemoved?: true;
       /** A relabel first withdraws the existing carry, clearing provenance, codes and winner before re-entry. */
@@ -497,6 +499,12 @@ export function stampedInThisCall(drawDefinition?: DrawDefinition): Set<string> 
 function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMatchUpResult' }>, context: FoldContext) {
   const { phase, bindResultInputs } = context;
   const ordinary = phase === 'ordinary-result';
+  if (op.replaysCarriedExit) {
+    const provenance = matchUp.sideExitProvenance;
+    clearSideExitProvenance(matchUp);
+    setSideExitProvenance({ matchUp, provenance });
+    delete matchUp.winningSide;
+  }
   if (op.withdrawsCarry) {
     clearSideExitProvenance(matchUp);
     matchUp.matchUpStatusCodes = [];

@@ -1220,3 +1220,24 @@ it.each(
   expect(at(round).matchUpStatus).toBe(round === 3 ? DEFAULTED : TO_BE_PLAYED);
   expect(Object.hasOwn(at(round), 'winningSide')).toBe(false);
 });
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s restores the retained carrier provenance before replaying its winner',
+  (mode) => {
+    const scenario = CONVERGED_PRODUCED_RELAYS.find(
+      ([label]) => label === 'produced relay convergence: DOUBLE_DEFAULT/DEFAULTED/DOUBLE_DEFAULT/cleared',
+    )![1];
+    prepareDirection(OUTCOME_PIPELINE_V1, { ...scenario, steps: [] });
+    const step = scenario.steps[0];
+    write(mode, 'd', findTarget(step.target), step.outcome, step.params);
+    const record = Object.values(getTournamentRecords())[0] as Tournament;
+    const target = record
+      .events![0].drawDefinitions![0].structures!.find((entry) => entry.structureName === 'Consolation')!
+      .matchUps!.find((entry) => entry.roundNumber === 1 && entry.roundPosition === 2)!;
+    expect(target.matchUpStatus).toBe(DEFAULTED);
+    expect(target.winningSide).toBe(1);
+    const keys = Object.keys(target);
+    expect(keys.indexOf('matchUpFormat')).toBeLessThan(keys.indexOf('sideExitProvenance'));
+    expect(keys.indexOf('winningSide')).toBeGreaterThan(keys.indexOf('sideExitProvenance'));
+  },
+);
