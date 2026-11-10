@@ -172,3 +172,19 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(target.matchUpStatusCodes).not.toBe(toBePlayed.matchUpStatusCodes);
   },
 );
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s clearing a double exit shares the reset score with its unwound product',
+  (mode) => {
+    const { drawId, matchUps } = fresh();
+    const source = matchUps.find((m) => m.roundNumber === 1 && m.roundPosition === 1)!;
+    const target = matchUps.find((m) => m.roundNumber === 2 && m.roundPosition === 1)!;
+    write(OUTCOME_PIPELINE_V1, drawId, source.matchUpId, { matchUpStatus: DOUBLE_WALKOVER });
+    expect(target.matchUpStatus).toBe('WALKOVER');
+    write(mode, drawId, source.matchUpId, { matchUpStatus: TO_BE_PLAYED });
+    expect(source.score).toBe(toBePlayed.score);
+    expect(target.matchUpStatus).toBe(TO_BE_PLAYED);
+    expect(target.score).toBe(toBePlayed.score);
+    expect(target.score).toBe(source.score);
+  },
+);
