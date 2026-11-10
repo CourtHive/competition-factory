@@ -19,6 +19,7 @@ import {
   STANDALONE_CARRIED_CONVERGENCES,
   TERMINAL_RELAY_CAPTURES,
   OCCUPIED_FINAL_RELAY_CAPTURES,
+  INDIRECT_COMPOUND_CLEARS,
   play as prepareDirection,
   findTarget,
 } from '@Tests/testHarness/outcome/directionFixtures';
@@ -1467,5 +1468,26 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     const keys = Object.keys(target);
     expect(keys.indexOf('matchUpFormat')).toBeLessThan(keys.indexOf('sideExitProvenance'));
     expect(keys.indexOf('winningSide')).toBeGreaterThan(keys.indexOf('sideExitProvenance'));
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s retains the pending award winner key position during removal',
+  (mode) => {
+    const scenario = INDIRECT_COMPOUND_CLEARS.find(
+      ([label]) => label === 'indirect compound clear: DOUBLE_DEFAULT/DOUBLE_DEFAULT/DOUBLE_DEFAULT',
+    )![1];
+    prepareDirection(OUTCOME_PIPELINE_V1, { ...scenario, steps: [] });
+    const step = scenario.steps[0];
+    write(mode, 'd', findTarget(step.target), step.outcome, step.params);
+    const record = Object.values(getTournamentRecords())[0] as Tournament;
+    const target = record
+      .events![0].drawDefinitions![0].structures!.find((entry) => entry.structureName === 'Main')!
+      .matchUps!.find((entry) => entry.roundNumber === 3 && entry.roundPosition === 1)!;
+    expect(target.matchUpStatus).toBe(DEFAULTED);
+    expect(Object.hasOwn(target, 'winningSide')).toBe(true);
+    expect(target.winningSide).toBeUndefined();
+    const keys = Object.keys(target);
+    expect(keys.indexOf('winningSide')).toBeLessThan(keys.indexOf('matchUpStatusCodes'));
   },
 );

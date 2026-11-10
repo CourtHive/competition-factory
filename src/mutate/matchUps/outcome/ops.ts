@@ -670,7 +670,7 @@ function foldMatchUpWrite(
       matchUp.matchUpStatus = TO_BE_PLAYED;
       setSideExitProvenance({ matchUp, provenance: undefined });
     }
-    if (op.withdrawsPendingAward) delete matchUp.winningSide;
+    if (op.withdrawsPendingAward) matchUp.winningSide = undefined;
     if (op.withdrawsProducedExit) {
       matchUp.matchUpStatus = TO_BE_PLAYED;
       matchUp.winningSide = undefined;
