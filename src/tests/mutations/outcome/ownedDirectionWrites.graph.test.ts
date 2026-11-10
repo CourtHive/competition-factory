@@ -15,6 +15,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import {
   assignmentViewFixture,
   STANDING_BYE_CAPTURES,
+  NOTICE_RELAY_CARRIES,
   STANDALONE_INDIRECT_CLEARS,
   CONVERGED_PRODUCED_RELAYS,
   STANDALONE_CARRIED_CONVERGENCES,
@@ -1633,5 +1634,38 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     const step = scenario.steps[0];
     write(mode, 'd', findTarget(step.target), step.outcome, step.params);
     expect(returns).toBe(1);
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s returns the carrier assignment before announcing its BYE provenance',
+  (mode) => {
+    const scenario = NOTICE_RELAY_CARRIES[0][1];
+    prepareDirection(OUTCOME_PIPELINE_V1, { ...scenario, steps: [] });
+    const record = Object.values(getTournamentRecords())[0] as Tournament;
+    const structure = record.events![0].drawDefinitions![0].structures!.find(
+      (entry) => entry.structureName === 'Consolation',
+    )!;
+    const relay = structure.matchUps!.find((entry) => entry.roundNumber === 2 && entry.roundPosition === 2)!;
+    const provider = getProvider();
+    const add = provider.addNotice;
+    const topics: string[] = [];
+    vi.spyOn(provider, 'addNotice').mockImplementation((notice, ...args) => {
+      const { topic, key } = notice as { topic: string; key?: string };
+      if (
+        counter.active &&
+        ((topic === MODIFY_POSITION_ASSIGNMENTS && key === structure.structureId) ||
+          (topic === MODIFY_MATCHUP && key === relay.matchUpId))
+      )
+        topics.push(topic);
+      return add(notice, ...args);
+    });
+    setSubscriptions({
+      subscriptions: { [MODIFY_POSITION_ASSIGNMENTS]: () => undefined, [MODIFY_MATCHUP]: () => undefined },
+    });
+    const step = scenario.steps[0];
+    write(mode, 'd', findTarget(step.target), step.outcome, step.params);
+    expect(topics.at(-2)).toBe(MODIFY_POSITION_ASSIGNMENTS);
+    expect(topics.at(-1)).toBe(MODIFY_MATCHUP);
   },
 );

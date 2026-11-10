@@ -556,7 +556,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   const lineUps = dualCall ? dualLineUpOps({ ...args, drawDefinition }, loser, loserThrough) : [];
   if (!lineUps) return { abstain: 'team' };
   // a carried exit's write on the matchUp the loser lands in (S5)
-  // (a carry past a BYE is recorded beside it before the carrier is placed on beyond, as v1 announces the two)
+  // The carrier's assignment returns before progressExitStatus announces its provenance beside the BYE.
   const carried = unwoundCarriedFor(view, args, loser);
   const landing = dualCall ? carriedDualLanding(view, drawDefinition, carried.landing, loser) : carried.landing;
   if (!landing) return { abstain: 'team' };
@@ -608,7 +608,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   // The linked seats read the state after the literal prefix emitted below, never positional guesses.
   const seatOps = certifiedSeatProgram(
     args,
-    [...ops, ...seated, ...initialLineUps, ...carried.relay, ...throughBye, ...lineUps, ...landing, ...converging],
+    [...ops, ...seated, ...initialLineUps, ...throughBye, ...lineUps, ...carried.relay, ...landing, ...converging],
     seatObligation,
   );
   if (!seatOps) return { abstain: 'exit' };
@@ -640,11 +640,11 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   ops.push(
     ...seated.filter((op) => op.op !== 'announcePositionAssignments'),
     ...initialLineUps,
-    ...carried.relay,
     ...throughBye,
     ...lineUps,
     ...seated.filter((op) => op.op === 'announcePositionAssignments'),
     ...arrivalReturns,
+    ...carried.relay,
     ...landing,
     ...converging,
     ...doubleExitSeated,
