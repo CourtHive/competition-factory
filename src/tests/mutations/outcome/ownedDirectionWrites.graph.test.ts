@@ -1,5 +1,6 @@
 import { getProvider, getTournamentRecords, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
+import { playForward as prepareForward } from '@Tests/testHarness/exitPropagation/driver';
 import { prepareHeldCarryCorrection } from '@Tests/testHarness/outcome/directionFixtures';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { HELD_BYE_REMOVALS } from '@Tests/testHarness/outcome/directionFixtures';
@@ -1264,5 +1265,28 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(target.sideExitProvenance).toBeDefined();
     const keys = Object.keys(target);
     expect(keys.indexOf('sides')).toBeLessThan(keys.indexOf('sideExitProvenance'));
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s announces the BYE removal before its assignment returns',
+  (mode) => {
+    const { drawId } = fresh({ drawType: FEED_IN_CHAMPIONSHIP, drawSize: 16, participantsCount: 15 }, {}, 59);
+    prepareForward({ drawId, propagateExitStatus: true, exitOutcome: { matchUpStatus: DOUBLE_WALKOVER }, maxSteps: 6 });
+    const record = Object.values(getTournamentRecords())[0] as Tournament;
+    const source = record
+      .events![0].drawDefinitions![0].structures!.find((entry) => entry.structureName === 'Main')!
+      .matchUps!.find((entry) => entry.roundNumber === 1 && entry.roundPosition === 4)!;
+    expect(source.matchUpStatus).toBe(DOUBLE_WALKOVER);
+    const topics: string[][] = [];
+    const provider = getProvider();
+    const cycle = provider.cycleModifiedTopics!;
+    vi.spyOn(provider, 'cycleModifiedTopics').mockImplementation(() => {
+      const written = cycle();
+      if (counter.active && written?.size) topics.push([...written]);
+      return written;
+    });
+    write(mode, drawId, source.matchUpId, { ...toBePlayed, winningSide: undefined });
+    expect(topics.at(-1)?.[0]).toBe(MODIFY_DRAW_DEFINITION);
   },
 );

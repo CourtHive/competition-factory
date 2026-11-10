@@ -384,7 +384,7 @@ function nativeNoticeSteps(
       steps.push({
         kind: 'position',
         matchUpId: op.matchUpId,
-        rank: positionNoticeRank(op, index, steps, stored),
+        rank: positionNoticeRank(op, index, ops, steps, stored),
         // removeDoubleExit's recursive withdrawal omits the tournament and event.
         position: index < sourceIndex && !sourceFirst ? { ...op, announcesContext: false } : op,
       });
@@ -410,6 +410,7 @@ function nativeNoticeSteps(
 function positionNoticeRank(
   op: ArrivalOp,
   index: number,
+  ops: OutcomeOp[],
   steps: NativeNoticeStep[],
   stored: Map<string, MatchUp>,
 ): number {
@@ -430,7 +431,12 @@ function positionNoticeRank(
         step.score.matchUpStatus === TO_BE_PLAYED &&
         downstream.has(step.matchUpId),
     );
-  return preceding ? preceding.rank - 0.5 : index * 3 + 2;
+  if (!preceding) return index * 3 + 2;
+  // The child's loser-seat withdrawal precedes its score in the fold, but is nested inside this removal.
+  const previousResult = ops
+    .slice(0, Math.floor(preceding.rank / 3))
+    .findLastIndex((write) => write.op === 'setMatchUpResult');
+  return (previousResult + 1) * 3 - 0.5;
 }
 
 /** Position writers announce their structure when they return, at the program's explicit boundary. */
