@@ -1800,3 +1800,30 @@ it.each(
   write(mode, 'd', findTarget(step.target), step.outcome, step.params);
   expect(topics.at(-1)).toBe(expected);
 });
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s withdraws the existing carried exit before relabeling its result and provenance',
+  (mode) => {
+    const { drawId, record } = fresh({ drawType: FEED_IN_CHAMPIONSHIP, drawSize: 16 }, {}, 4242);
+    const structures = record.events![0].drawDefinitions![0].structures!;
+    const source = structures
+      .find((entry) => entry.structureName === 'Main')!
+      .matchUps!.find((entry) => entry.roundNumber === 1 && entry.roundPosition === 1)!;
+    write(
+      OUTCOME_PIPELINE_V1,
+      drawId,
+      source.matchUpId,
+      { matchUpStatus: WALKOVER, winningSide: 1 },
+      { propagateExitStatus: true },
+    );
+    write(mode, drawId, source.matchUpId, { matchUpStatus: DEFAULTED, winningSide: 1 }, { propagateExitStatus: true });
+    const target = structures
+      .find((entry) => entry.structureName === 'Consolation')!
+      .matchUps!.find((entry) => entry.roundNumber === 1 && entry.roundPosition === 1)!;
+    expect(target.matchUpStatus).toBe(DEFAULTED);
+    expect(target.winningSide).toBe(2);
+    const keys = Object.keys(target);
+    expect(keys.indexOf('winningSide')).toBeGreaterThan(keys.indexOf('schedule'));
+    expect(keys.indexOf('sideExitProvenance')).toBeGreaterThan(keys.indexOf('winningSide'));
+  },
+);
