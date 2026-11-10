@@ -990,3 +990,23 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(target.winningSide).toBeUndefined();
   },
 );
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s places a carrier beyond a BYE before the exit writer inserts its winner key',
+  (mode) => {
+    const { drawId, record } = fresh({ drawType: COMPASS, drawSize: 32, participantsCount: 30 }, {}, 20715025);
+    const structures = record.events![0].drawDefinitions![0].structures!;
+    const source = structures
+      .find((structure) => structure.structureName === 'East')!
+      .matchUps!.find((matchUp) => matchUp.roundNumber === 1 && matchUp.roundPosition === 12)!;
+    write(mode, drawId, source.matchUpId, { matchUpStatus: DEFAULTED, winningSide: 1 }, { propagateExitStatus: true });
+    const target = structures
+      .find((structure) => structure.structureName === 'Southeast')!
+      .matchUps!.find((matchUp) => matchUp.roundNumber === 2 && matchUp.roundPosition === 1)!;
+    expect(target.matchUpStatus).toBe(DEFAULTED);
+    expect(target.winningSide).toBe(1);
+    expect(Object.keys(target).indexOf('winningSide')).toBeGreaterThan(
+      Object.keys(target).indexOf('matchUpStatusCodes'),
+    );
+  },
+);

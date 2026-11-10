@@ -56,7 +56,7 @@ export function carriedContinuation(
       { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
     ]);
     (frame === first ? relay : landing).push(...relays);
-    if (frame !== first && at.beyond) landing.push(...carryPlacement(at.beyond));
+    if (frame !== first && at.beyond) landing.push(...carryPlacement(at.beyond, true));
     landing.push(...carryLanding(status, frame));
     if (!at.carriesOn) return { relay, landing };
     frame = next?.(frame);
@@ -64,12 +64,13 @@ export function carriedContinuation(
   return undefined;
 }
 
-function carryPlacement(at: { matchUpId: string; drawPositions: number[] }): OutcomeOp[] {
+function carryPlacement(at: { matchUpId: string; drawPositions: number[] }, preservesWinningSide?: true): OutcomeOp[] {
   return [
     {
       op: 'setMatchUpDrawPositions',
       matchUpId: at.matchUpId,
       drawPositions: at.drawPositions,
+      ...(preservesWinningSide ? { preservesWinningSide } : {}),
     },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: at.matchUpId },
   ];
