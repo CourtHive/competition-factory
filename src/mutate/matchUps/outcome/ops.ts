@@ -514,8 +514,10 @@ function applyResultScoredTime(matchUp: MatchUp, { temporal, pendingScoredTimes 
   const pending = pendingScoredTimes?.has(matchUp);
   const action = scoredTimeAction(matchUp, pending || temporal?.scoredTimes.has(matchUp.matchUpId));
   if (action === 'initialize') {
-    if (temporal) temporal.scoredTimes.add(matchUp.matchUpId);
-    else if (pendingScoredTimes && (matchUp.collectionId || !Object.hasOwn(matchUp, 'updatedAt')))
+    if (temporal) {
+      matchUp.schedule ??= {};
+      temporal.scoredTimes.add(matchUp.matchUpId);
+    } else if (pendingScoredTimes && (matchUp.collectionId || !Object.hasOwn(matchUp, 'updatedAt')))
       pendingScoredTimes.set(matchUp, nowIso());
     else {
       matchUp.schedule ??= {};

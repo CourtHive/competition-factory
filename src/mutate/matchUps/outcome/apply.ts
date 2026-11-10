@@ -277,6 +277,11 @@ export function applyOwnedPlan({
     });
   };
   const tallyMatchUpId = tallyNoticeTarget(ops, args);
+  // A line's nested dual write and a group's tally occur inside their result writers. Other directed
+  // programs retain their last-score order even when a later position write re-announces the same matchUp.
+  const sourceId = args.request?.matchUpId;
+  const interleaved = !!(sourceId && stored.get(sourceId)?.collectionId) || tallyMatchUpId !== undefined;
+  if (!interleaved) for (const matchUpId of [...new Set(scored.toReversed())].reverse()) deferScore(matchUpId);
   announceInitialResult(ops, announced, stored, { drawDefinition, tournamentId, event }, deferScore);
   const { settled } = namedWriters(ops);
   for (const matchUpId of announced) {
