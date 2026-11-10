@@ -8,7 +8,7 @@
  *
  * Regenerate:   pnpm gen:enum-exports
  * Drift guard:  pnpm check:enum-exports
- * Covers 73 enums across 4 modules.
+ * Covers 74 enums across 4 modules.
  */
 
 export { SportEnum } from './competitionFormat';
@@ -76,6 +76,7 @@ export { ShotTypeEnum } from './tournamentTypes';
 export { StageTypeEnum } from './tournamentTypes';
 export { StructureTypeEnum } from './tournamentTypes';
 export { SurfaceCategoryEnum } from './tournamentTypes';
+export { TeamColorRoleEnum } from './tournamentTypes';
 export { TieScoreSourceEnum } from './tournamentTypes';
 export { TierMovementEnum } from './tournamentTypes';
 export { TournamentLevelEnum } from './tournamentTypes';

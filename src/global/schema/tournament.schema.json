@@ -3570,21 +3570,46 @@
     "TeamColors": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["palette", "display"],
+      "required": ["palette"],
       "properties": {
         "palette": {
           "type": "array",
           "minItems": 1,
-          "maxItems": 32,
-          "items": { "$ref": "#/definitions/TeamPaletteColor" }
+          "items": {
+            "$ref": "#/definitions/TeamPaletteColor"
+          }
         },
         "display": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["primary"],
+          "required": ["roles"],
           "properties": {
-            "primary": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}$" },
-            "secondary": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}$" }
+            "roles": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "team.surface": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}$"
+                },
+                "team.text": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}$"
+                },
+                "team.accent": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}$"
+                },
+                "score.surface": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}$"
+                },
+                "score.text": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}$"
+                }
+              }
+            }
           }
         }
       }

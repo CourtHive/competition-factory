@@ -8,40 +8,40 @@ import * as seedingConstants from '@Constants/seedingConstants';
 
 // The exported OBJECTS — what consumers reach via factoryConstants, maintained by
 // hand and therefore able to lag the enum even when the namespace cannot.
-import { matchUpStatusConstants as matchUpStatusObject } from '@Constants/matchUpStatusConstants';
-import { bookingTypeConstants as bookingTypeObject } from '@Constants/bookingTypeConstants';
-import { entryStatusConstants as entryStatusObject } from '@Constants/entryStatusConstants';
-import { weekdayConstants as weekdayObject } from '@Constants/weekdayConstants';
-import { surfaceConstants as surfaceObject } from '@Constants/surfaceConstants';
-import { participantConstants as participantObject } from '@Constants/participantConstants';
-import { participantRoles as participantRolesObject } from '@Constants/participantRoles';
-import { seedingBasisConstants as seedingBasisObject } from '@Constants/seedingConstants';
-import { genderConstants as genderObject } from '@Constants/genderConstants';
-import { eventConstants as eventObject } from '@Constants/eventConstants';
 import { tournamentConstants as tournamentObject, tournamentStatuses } from '@Constants/tournamentConstants';
-import { venueConstants as venueObject, indoorOutdoorTypes } from '@Constants/venueConstants';
 import { disciplineConstants as disciplineObject, disciplines } from '@Constants/disciplineConstants';
 import { drawDefinitionConstants as drawDefinitionObject } from '@Constants/drawDefinitionConstants';
+import { matchUpStatusConstants as matchUpStatusObject } from '@Constants/matchUpStatusConstants';
+import { venueConstants as venueObject, indoorOutdoorTypes } from '@Constants/venueConstants';
+import { bookingTypeConstants as bookingTypeObject } from '@Constants/bookingTypeConstants';
+import { entryStatusConstants as entryStatusObject } from '@Constants/entryStatusConstants';
+import { participantConstants as participantObject } from '@Constants/participantConstants';
+import { seedingBasisConstants as seedingBasisObject } from '@Constants/seedingConstants';
+import { participantRoles as participantRolesObject } from '@Constants/participantRoles';
+import { weekdayConstants as weekdayObject } from '@Constants/weekdayConstants';
+import { surfaceConstants as surfaceObject } from '@Constants/surfaceConstants';
+import { genderConstants as genderObject } from '@Constants/genderConstants';
+import { eventConstants as eventObject } from '@Constants/eventConstants';
+import * as tournamentConstants from '@Constants/tournamentConstants';
+import * as disciplineConstants from '@Constants/disciplineConstants';
 import * as weekdayConstants from '@Constants/weekdayConstants';
 import * as surfaceConstants from '@Constants/surfaceConstants';
 import * as genderConstants from '@Constants/genderConstants';
 import * as eventConstants from '@Constants/eventConstants';
-import * as tournamentConstants from '@Constants/tournamentConstants';
 import * as venueConstants from '@Constants/venueConstants';
-import * as disciplineConstants from '@Constants/disciplineConstants';
 import * as T from '@Types/tournamentTypes';
 
 // The generated, drift-guarded enumeration of EVERY enum under src/types — the
 // authoritative list. Reading it here means the registry and the value-export
 // generator cannot disagree, and a new enum in ANY types file is covered.
-import * as ALL_ENUMS from '@Types/enumExports';
-import * as E from '@Types/enumExports';
-import * as officiatingConstants from '@Constants/officiatingConstants';
-import * as sanctioningConstants from '@Constants/sanctioningConstants';
 import { officiatingConstants as officiatingObject } from '@Constants/officiatingConstants';
 import { sanctioningConstants as sanctioningObject } from '@Constants/sanctioningConstants';
+import * as officiatingConstants from '@Constants/officiatingConstants';
+import * as sanctioningConstants from '@Constants/sanctioningConstants';
 import { readdirSync, readFileSync } from 'node:fs';
+import * as ALL_ENUMS from '@Types/enumExports';
 import { describe, it, expect } from 'vitest';
+import * as E from '@Types/enumExports';
 import { join } from 'node:path';
 
 /**
@@ -148,6 +148,8 @@ const COVERAGE: {
 // Listed so a newly-added enum can't silently skip the mirror/bucket decision above.
 const ENUM_ONLY = [
   'AddressTypeEnum',
+  // CODES display-role vocabulary has no domain-constant twin.
+  'TeamColorRoleEnum',
   // getEventData's payload-detail selector. Enum-only by design: it is a REQUEST-shape vocabulary,
   // consumed as a typed param, and has no domain-constant twin for callers to destructure.
   'PayloadProfileEnum',

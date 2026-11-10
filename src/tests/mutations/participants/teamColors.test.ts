@@ -15,16 +15,19 @@ const colors = {
     { colorId: 'accent', value: '#aabbcc' },
     { colorId: 'trim', value: '#001122' },
   ],
-  display: { primary: 'accent', secondary: 'trim' },
+  display: { roles: { 'team.accent': 'accent', 'team.surface': 'trim' } },
 };
 const stored = {
   palette: [
     { colorId: 'accent', value: '#AABBCC' },
     { colorId: 'trim', value: '#001122' },
   ],
-  display: { primary: 'accent', secondary: 'trim' },
+  display: { roles: { 'team.accent': 'accent', 'team.surface': 'trim' } },
 };
-const replaced = { palette: [{ colorId: 'accent', value: '#FFEEDD' }], display: { primary: 'accent' } };
+const replaced = {
+  palette: [{ colorId: 'accent', value: '#FFEEDD' }],
+  display: { roles: { 'team.accent': 'accent' } },
+};
 
 function createTeam() {
   mocksEngine.generateTournamentRecord({ setState: true, nonRandom: 1 });
@@ -55,7 +58,10 @@ writeModeMatrix(() => {
     let result: any = tournamentEngine.modifyParticipant({
       participant: {
         participantId: team.participantId,
-        teamColors: { palette: [{ colorId: 'accent', value: '#ffeedd' }], display: { primary: 'accent' } },
+        teamColors: {
+          palette: [{ colorId: 'accent', value: '#ffeedd' }],
+          display: { roles: { 'team.accent': 'accent' } },
+        },
       },
     });
     expect(result.success).toBe(true);

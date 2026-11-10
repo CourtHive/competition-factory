@@ -13,6 +13,7 @@ export type HydratedVenue = {
 } & Venue;
 
 export interface HydratedMatchUp extends MatchUp {
+  teamPresentation?: import('./tournamentTypes').TeamPresentation;
   [key: string | number]: any;
   // Hydration adds parent-context pointers — strictly typed as `string`
   // (required) on hydrated matchUps so consumers don't have to thread

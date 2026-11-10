@@ -1950,7 +1950,6 @@ export type OnlineResourceTypeUnion = `${OnlineResourceTypeEnum}`;
 #### TeamPaletteColor
 
 ```ts
-/** A named color in a tournament-scoped CODES TEAM palette. */
 export interface TeamPaletteColor {
   colorId: string;
   value: string;
@@ -1959,13 +1958,29 @@ export interface TeamPaletteColor {
 }
 ```
 
+#### TeamColorRole
+
+```ts
+export type TeamColorRole = `${TeamColorRoleEnum}`;
+```
+
 #### TeamColors
 
 ```ts
-/** CODES TEAM palette; display references are palette IDs, never color tier rankings. */
+/** Portable CODES TEAM palette and provider-authored preferred color roles. */
 export interface TeamColors {
   palette: TeamPaletteColor[];
-  display: { primary: string; secondary?: string };
+  display?: { roles: Partial<Record<TeamColorRole, string>> };
+}
+```
+
+#### TeamPresentation
+
+```ts
+/** A theme marker explicitly uses the renderer/theme fallback; omission inherits. */
+export interface TeamPresentation {
+  roles?: Partial<Record<TeamColorRole, string | { theme: true }>>;
+  teams?: Record<string, { roles: Partial<Record<TeamColorRole, string | { theme: true }>> }>;
 }
 ```
 
