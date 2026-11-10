@@ -523,7 +523,7 @@ function noticeMatchUpId(op: OutcomeOp): string | undefined {
     op.op === 'mergeSideExitProvenance' ||
     op.op === 'setSideExitProvenance' ||
     op.op === 'clearMatchUpBye' ||
-    op.op === 'setSideLineUp' ||
+    (op.op === 'setSideLineUp' && !op.quiet) ||
     op.op === 'setOrderOfFinish' ||
     op.op === 'exchangeDrawPositions'
     ? op.matchUpId
@@ -908,7 +908,7 @@ function namedWriters(ops: OutcomeOp[]) {
       settled.set(op.matchUpId, op.announcedAs);
       lineUpUnevented.delete(op.matchUpId);
     } else if (op.op === 'setSideLineUp') {
-      if (relayed.has(op.matchUpId)) continue;
+      if (op.quiet || relayed.has(op.matchUpId)) continue;
       settled.set(op.matchUpId, op.announcedAs);
       if (op.announcesEvent === false) lineUpUnevented.add(op.matchUpId);
     } else if (

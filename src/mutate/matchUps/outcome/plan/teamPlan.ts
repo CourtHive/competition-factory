@@ -324,6 +324,16 @@ function assignedLineUpOps(
   return ops;
 }
 
+/** Assignment ensures relay side objects before the carry; the lineup's actual notice follows placement. */
+export function initialRelayLineUpOps(lineUps: OutcomeOp[], relay: OutcomeOp[]): OutcomeOp[] {
+  return lineUps.flatMap((op): OutcomeOp[] =>
+    op.op === 'setSideLineUp' &&
+    relay.some((write) => write.op === 'mergeSideExitProvenance' && write.matchUpId === op.matchUpId)
+      ? [{ ...op, quiet: true }]
+      : [],
+  );
+}
+
 /**
  * S7: the line-ups a dual's own call writes through its assignments: a re-entered winner's on the next dual
  * (`winnerLineUpOps`), then the loser's where it lands (`assignedLineUpOps`). False where a dual does not side the

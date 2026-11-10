@@ -359,6 +359,8 @@ export type OutcomeOp =
     }
   | {
       op: 'setSideLineUp';
+      /** The assignment ensures these sides before the carry; its actual notice follows the placement. */
+      quiet?: true;
       /**
        * a TEAM dual a team is directed into (S7): the team's line-up on its side, as v1 writes it, the winning team's
        * by `propagateLineUp` (`directWinner`), the losing team's by `propagateLoserLineUp` (`directLoser`) and, past a BYE,
