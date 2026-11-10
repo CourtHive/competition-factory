@@ -1392,3 +1392,33 @@ it.each(
   const actual = boundary === 'first' ? topics[0] : topics.filter((topic) => topic !== MODIFY_DRAW_DEFINITION).at(-1);
   expect(actual).toBe(boundary === 'first' ? MODIFY_DRAW_DEFINITION : MODIFY_POSITION_ASSIGNMENTS);
 });
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s creates the onward BYE score key before resetting the produced result',
+  (mode) => {
+    const { drawId, record } = fresh(
+      { drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 16, participantsCount: 13 },
+      {},
+      180,
+    );
+    const structures = record.events![0].drawDefinitions![0].structures!;
+    const main = structures.find((entry) => entry.structureName === 'Main')!;
+    for (const position of [2, 3, 4]) {
+      const source = main.matchUps!.find((entry) => entry.roundNumber === 1 && entry.roundPosition === position)!;
+      write(
+        OUTCOME_PIPELINE_V1,
+        drawId,
+        source.matchUpId,
+        position === 2 ? { matchUpStatus: DOUBLE_DEFAULT } : { winningSide: 1 },
+      );
+    }
+    const consolation = structures.find((entry) => entry.structureName === 'Consolation')!;
+    const source = consolation.matchUps!.find((entry) => entry.roundNumber === 1 && entry.roundPosition === 2)!;
+    write(mode, drawId, source.matchUpId, { matchUpStatus: DOUBLE_DEFAULT });
+    const target = consolation.matchUps!.find((entry) => entry.roundNumber === 4 && entry.roundPosition === 1)!;
+    expect(target.matchUpStatus).toBe(DEFAULTED);
+    const keys = Object.keys(target);
+    expect(keys).toContain('score');
+    expect(keys.indexOf('score')).toBeLessThan(keys.indexOf('matchUpStatusCodes'));
+  },
+);

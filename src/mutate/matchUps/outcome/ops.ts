@@ -56,6 +56,8 @@ export type OutcomeOp =
       op: 'setMatchUpResult';
       /** The source writer resets through toBePlayed, including own undefined keys. */
       resetsScore?: true;
+      /** An onward BYE placement creates the own score key before the subsequent result reset. */
+      initializesScore?: true;
       /** The source writer assigns an own undefined winner. */
       removesWinningSide?: true;
       /** The pending produced exit lost its winner key in the settle pass after a retained BYE relay. */
@@ -524,6 +526,7 @@ function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMat
   if (op.ensuredSides) matchUp.sides = structuredClone(op.ensuredSides) as MatchUp['sides'];
   if (op.dualTally?.tieFormat) matchUp.tieFormat = structuredClone(op.dualTally.tieFormat) as MatchUp['tieFormat'];
   if (op.dualTally?.clearsTieFormatId) matchUp.tieFormatId = undefined;
+  if (op.initializesScore) matchUp.score = undefined;
   if (op.resetsScore) resetResult(matchUp, op.matchUpStatus, bindResultInputs);
   if (op.score) matchUp.score = ordinary || bindResultInputs ? op.score : structuredClone(op.score);
   matchUp.matchUpStatus = op.matchUpStatus;

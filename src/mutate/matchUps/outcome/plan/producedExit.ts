@@ -298,6 +298,7 @@ function byeHeldProducedOps(
       matchUpStatusCodes: [],
       // v1's writer here removes the score whatever the exit (`removeScore`), leaving it blanked
       resetsScore: true,
+      ...(relays.length ? { initializesScore: true as const } : {}),
       score: toBePlayed.score,
       stampsScoredTime: false,
       ...(relays.length ? { inContextBare: true as const } : { announcesContext: false as const }),
