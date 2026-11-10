@@ -147,6 +147,14 @@ export function convergenceOps(
     sourceMatchUpId,
   });
   const score = convergence.score ?? (matchUpStatus === DOUBLE_WALKOVER ? blankScore() : undefined);
+  const previousLoser = indexed(view, matchUpId)?.sides?.find((side) => side.sideNumber !== sideNumber)?.participantId;
+  const seats = (convergence.seats ?? []).map((op): OutcomeOp => {
+    if (op.op !== 'assignBye' || !previousLoser) return op;
+    const participant = indexed(view, op.matchUpId)?.sides?.find(
+      (side) => side.drawPosition === op.drawPosition,
+    )?.participantId;
+    return participant === previousLoser ? { ...op, clearsDisplacedPosition: true } : op;
+  });
   return [
     {
       op: 'setMatchUpResult',
@@ -162,9 +170,9 @@ export function convergenceOps(
     { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
     // the BYEs before the exit produced onward, as v1's `doubleExitAdvancement` places them; a displaced carrier's landing
     // is announced last, by the `reconcileScoredTimes` pass that takes its `scoredTime`
-    ...unreconciled(convergence.seats ?? []),
+    ...unreconciled(seats),
     ...(target ? producedTargetOps(view, target, matchUpId, matchUpStatus) : []),
-    ...reconciled(convergence.seats ?? []),
+    ...reconciled(seats),
   ];
 }
 

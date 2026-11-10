@@ -66,14 +66,14 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-function fresh(drawProfile = {}, policyDefinitions = {}) {
+function fresh(drawProfile = {}, policyDefinitions = {}, nonRandom = 1) {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date('2026-11-08T12:00:00.000Z'));
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
   const generated = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 8, ...drawProfile }],
     policyDefinitions,
-    nonRandom: 1,
+    nonRandom,
     setState: true,
   });
   expect(generated.success).toBe(true);
@@ -611,6 +611,16 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     });
     write(mode, 'd', id, step.outcome, step.params);
     expect(observed.at(-1)?.slice(0, 3)).toEqual(['modifyDrawDefinition', MODIFY_MATCHUP, UPDATE_INCONTEXT_MATCHUP]);
+    const record = Object.values(getTournamentRecords())[0] as Tournament;
+    const consolation = record.events![0].drawDefinitions![0].structures!.find(
+      (structure) => structure.structureName === 'Consolation',
+    )!;
+    const retained = consolation.matchUps!.find((m) => m.roundNumber === 2 && m.roundPosition === 4)!;
+    const released = consolation.matchUps!.find((m) => m.roundNumber === 3 && m.roundPosition === 2)!;
+    expect(Object.keys(retained).indexOf('sideExitProvenance')).toBeGreaterThan(
+      Object.keys(retained).indexOf('winningSide'),
+    );
+    expect(Object.keys(released).indexOf('winningSide')).toBeLessThan(Object.keys(released).indexOf('score'));
   },
 );
 
@@ -686,15 +696,30 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     const line = dual.tieMatchUps!.find((m) => m.matchUpType === SINGLES)!;
     const observed: string[][] = [];
     const provider = getProvider();
+    const buffers: { topic: string; key?: string }[][] = [];
+    const clear = provider.deleteNotices;
+    vi.spyOn(provider, 'deleteNotices').mockImplementation(() => {
+      if (counter.active) buffers.push(provider.getNoticeBuffer!().map(({ topic, key }) => ({ topic, key })));
+      return clear();
+    });
     const cycle = provider.cycleModifiedTopics!;
     vi.spyOn(provider, 'cycleModifiedTopics').mockImplementation(() => {
       const topics = cycle();
       if (counter.active && topics?.size) observed.push([...topics]);
       return topics;
     });
-    setSubscriptions({ subscriptions: { [UPDATE_INCONTEXT_MATCHUP]: () => undefined } });
+    setSubscriptions({
+      subscriptions: { [UPDATE_INCONTEXT_MATCHUP]: () => undefined, [MODIFY_MATCHUP]: () => undefined },
+    });
     write(mode, drawId, line.matchUpId, won());
     expect(observed.at(-1)?.[0]).toBe(UPDATE_INCONTEXT_MATCHUP);
+    const buffer = buffers.at(-1)!;
+    const lineCallback = buffer.findIndex((n) => n.topic === UPDATE_INCONTEXT_MATCHUP && n.key === line.matchUpId);
+    const otherModifications = buffer.flatMap((n, index) =>
+      n.topic === MODIFY_MATCHUP && n.key !== line.matchUpId && n.key !== dual.matchUpId ? [index] : [],
+    );
+    expect(otherModifications.length).toBeGreaterThan(0);
+    expect(lineCallback).toBeGreaterThan(Math.max(...otherModifications));
   },
 );
 
@@ -745,3 +770,30 @@ it('a BYE placement preserves existing assignment and winner property positions'
   expect(Object.keys(matchUp).indexOf('winningSide')).toBeLessThan(Object.keys(matchUp).indexOf('schedule'));
   expect(matchUp.winningSide).toBeUndefined();
 });
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s clears the prior carrier before seating the BYEs a carried convergence produces',
+  (mode) => {
+    const { drawId, record } = fresh({ drawType: COMPASS, drawSize: 16 }, {}, 4242);
+    const structures = record.events![0].drawDefinitions![0].structures!;
+    const east = structures.find((s) => s.structureName === 'East')!;
+    const first = east.matchUps!.find((m) => m.roundNumber === 1 && m.roundPosition === 1)!;
+    const second = east.matchUps!.find((m) => m.roundNumber === 1 && m.roundPosition === 2)!;
+    write(
+      OUTCOME_PIPELINE_V1,
+      drawId,
+      first.matchUpId,
+      { matchUpStatus: DEFAULTED, winningSide: 1 },
+      { propagateExitStatus: true },
+    );
+    write(mode, drawId, second.matchUpId, { matchUpStatus: DEFAULTED, winningSide: 1 }, { propagateExitStatus: true });
+    for (const name of ['South', 'Southeast']) {
+      const structure = structures.find((s) => s.structureName === name)!;
+      const matchUp = structure.matchUps!.find((m) => m.roundNumber === 1 && m.roundPosition === 1)!;
+      const assignment = structure.positionAssignments!.find((a) => a.drawPosition === 1)!;
+      expect(Object.keys(assignment)).toEqual(['drawPosition', 'bye', 'participantId', 'byeFromPropagation']);
+      expect(Object.keys(matchUp).indexOf('winningSide')).toBeGreaterThan(Object.keys(matchUp).indexOf('schedule'));
+      expect(Object.keys(matchUp).indexOf('winningSide')).toBeGreaterThan(Object.keys(matchUp).indexOf('score'));
+    }
+  },
+);

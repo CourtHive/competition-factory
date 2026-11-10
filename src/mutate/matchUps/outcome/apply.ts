@@ -336,8 +336,9 @@ function nativeNoticeSteps(
   const steps: NativeNoticeStep[] = [];
   const last = new Map<string, NativeNoticeStep>();
   // removeDirectedParticipants scores the call's own matchUp before withdrawing its directed positions.
+  const lineSource = !!stored.get(sourceId ?? '')?.collectionId;
   const sourceFirst =
-    !!stored.get(sourceId ?? '')?.collectionId ||
+    !lineSource &&
     ops.some(
       (op) =>
         op.op === 'setMatchUpResult' &&
@@ -372,6 +373,11 @@ function nativeNoticeSteps(
         position: index < sourceIndex && !sourceFirst ? { ...op, announcesContext: false } : op,
       });
   });
+  if (lineSource && sourceIndex > 0) {
+    // scoreModification removes directed participants through an initial line write, then writes the line again.
+    const initialLine = steps.find((step) => step.kind === 'score' && step.matchUpId === sourceId);
+    if (initialLine) steps.push({ ...initialLine, rank: -2 });
+  }
   const ordered = [...steps, ...last.values(), ...assignmentNoticeSteps(ops)];
   if (sourceFirst)
     for (const step of ordered) {

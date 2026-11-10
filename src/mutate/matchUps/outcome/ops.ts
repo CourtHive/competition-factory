@@ -270,6 +270,8 @@ export type OutcomeOp =
     }
   | {
       op: 'assignBye';
+      /** A converging result withdrew the prior loser before the BYE service places this seat. */
+      clearsDisplacedPosition?: true;
       /** The matchUp whose assignment is cleared before the BYE is placed. */
       matchUpId?: string;
       /** False when a separate return-time op announces this placement. */
@@ -639,7 +641,7 @@ function foldMatchUpWrite(
     if (op.withdrawsPendingAward) delete matchUp.winningSide;
     if (op.withdrawsProducedExit) {
       matchUp.matchUpStatus = TO_BE_PLAYED;
-      delete matchUp.winningSide;
+      matchUp.winningSide = undefined;
       setSideExitProvenance({ matchUp, provenance: undefined });
       clearOrderOfFinishUnlessCompleted(matchUp);
     }
@@ -760,7 +762,7 @@ function foldSetProvenance(op: OpOf<'setSideExitProvenance'>, { matchUps }: Draw
   return {};
 }
 
-function foldAssignBye(op: OpOf<'assignBye'>, { structures, groups }: DrawIndex): Folded {
+function foldAssignBye(op: OpOf<'assignBye'>, { structures, groups, matchUps }: DrawIndex): Folded {
   const positionAssignments = positionAssignmentsOf(structures.get(op.structureId) ?? groups.get(op.structureId));
   if (!positionAssignments) return { error: `assignBye: no structure ${op.structureId}` };
   let assignment = positionAssignments.find((candidate) => candidate.drawPosition === op.drawPosition);
@@ -768,6 +770,11 @@ function foldAssignBye(op: OpOf<'assignBye'>, { structures, groups }: DrawIndex)
   if (!assignment) {
     assignment = { drawPosition: op.drawPosition };
     positionAssignments.push(assignment);
+  }
+  if (op.clearsDisplacedPosition && assignment.participantId) {
+    delete assignment.participantId;
+    const matchUp = op.matchUpId && matchUps.get(op.matchUpId);
+    if (matchUp) delete matchUp.winningSide;
   }
   assignment.bye = true;
   assignment.participantId = undefined;
@@ -803,6 +810,10 @@ function foldClearMatchUpBye(op: OpOf<'clearMatchUpBye'>, { matchUps }: DrawInde
   if (!matchUp) return { error: `clearMatchUpBye: no matchUp ${op.matchUpId}` };
   matchUp.matchUpStatus = op.rederived?.matchUpStatus ?? TO_BE_PLAYED;
   matchUp.winningSide = op.rederived?.winningSide;
+  // positionClear clears the side record before restoring the retained entry, so its own key moves last.
+  const retained = op.rederived && matchUp.sideExitProvenance ? { ...matchUp.sideExitProvenance } : undefined;
+  clearSideExitProvenance(matchUp);
+  if (retained) setSideExitProvenance({ matchUp, provenance: retained });
   clearResolvedSideExitProvenance(matchUp);
   clearOrderOfFinishUnlessCompleted(matchUp);
   return {};
