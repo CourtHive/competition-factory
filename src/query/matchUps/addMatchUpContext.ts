@@ -33,15 +33,6 @@ import { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/eventConstants';
 import { isMixed } from '@Validators/isMixed';
 import {
-  ContextContent,
-  ContextProfile,
-  ParticipantMap,
-  PolicyDefinitions,
-  RoundProfile,
-  ScheduleTiming,
-  ScheduleVisibilityFilters,
-} from '@Types/factoryTypes';
-import {
   Participant,
   Tournament,
   Event,
@@ -51,6 +42,15 @@ import {
   PositionAssignment,
   TieFormat,
 } from '@Types/tournamentTypes';
+import {
+  ContextContent,
+  ContextProfile,
+  ParticipantMap,
+  PolicyDefinitions,
+  RoundProfile,
+  ScheduleTiming,
+  ScheduleVisibilityFilters,
+} from '@Types/factoryTypes';
 
 type AddMatchUpContextArgs = {
   /** a line's dual's tieFormat, as the dual resolved it: what a line without its own resolves through */
@@ -737,6 +737,7 @@ function processTieMatchUps(params) {
         participantName: teamParticipant.participantName,
         participantId: teamParticipant.participantId,
         teamId: teamParticipant.teamId,
+        teamColors: teamParticipant.teamColors,
       });
 
     return {

@@ -599,3 +599,15 @@ const { participants } = tournamentEngine.getParticipants({
 - **[Participant Policy](/docs/policies/participantPolicy)** - Configuring privacy and data filters
 - **[Query Governor](/docs/governors/query-governor#getparticipants)** - Complete API reference
 - **[Participant Governor](/docs/governors/participant-governor)** - Participant management methods
+
+## TEAM branding
+
+A TEAM participant may carry `teamColors: { primary: '#AABBCC', secondary: '#112233' }`. These tournament-scoped colors are optional and do not affect scores, lineups or outcomes. They are distinct from an individual's `TeamAttribute`. Primary and secondary are opaque six-digit hex values, normalized to uppercase by `addParticipant` and `modifyParticipant`; secondary trims the same team, not its opponent.
+
+A nonempty object requires primary. Arrays, unknown keys, CSS tokens, named colors and alpha/short hex values are refused. New branding is TEAM-only. Validation runs before record writes or notifications. Unchanged legacy values on whole-participant edits follow `modifyParticipant`'s existing unchanged-value behavior.
+
+For updates, omission, `undefined` and `null` leave the field alone. An empty object `{}` explicitly clears it and is a command shape, never stored. A nonempty object replaces the entire value, so omitting secondary removes the previous secondary. Stored `Participant.teamColors` uses `TeamColors`, which always requires primary when present. Existing records need no migration.
+
+TEAM identity and allowed colors hydrate onto parent sides and `side.teamParticipant` on singles/doubles tie lines, including unassigned lines. Participant privacy templates still apply: a template that does not allow `teamColors` produces no branding. Default public privacy policy is unchanged. Consumers must not read raw participants to recover filtered branding.
+
+TMX's TEAM editor uses the normal `addParticipants` / `modifyParticipant` mutation path to create, replace and clear colors. GROUP editing exposes no branding fields. Shared scorecards opt into identity accents separately from explicit composition `sideColors`; Arena receives a narrow match-scoped metadata snapshot through the score relay.

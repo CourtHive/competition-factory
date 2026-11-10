@@ -1839,7 +1839,14 @@ export enum OnlineResourceTypeEnum {
 }
 export type OnlineResourceTypeUnion = `${OnlineResourceTypeEnum}`;
 
+/** Tournament-scoped TEAM branding. Opaque hex colors; primary is required when present. */
+export interface TeamColors {
+  primary: string;
+  secondary?: string;
+}
+
 export interface Participant {
+  teamColors?: TeamColors;
   contacts?: Contact[];
   /**
    * Members who hold contact information for this grouping — "who do I call about this group".
