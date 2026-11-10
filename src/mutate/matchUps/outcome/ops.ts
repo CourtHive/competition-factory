@@ -425,6 +425,8 @@ type FoldContext = {
   stampedBefore?: Set<string>;
   temporal?: TemporalProjection;
   phase?: 'ordinary-result' | 'ordinary-arrival';
+  /** Native execution retains v1's input aliases; standalone folds and planning overlays copy their plan inputs. */
+  bindResultInputs?: true;
 };
 
 /**
@@ -463,7 +465,7 @@ export function stampedInThisCall(drawDefinition?: DrawDefinition): Set<string> 
 function setMatchUpResult(
   matchUp: MatchUp,
   op: Extract<OutcomeOp, { op: 'setMatchUpResult' }>,
-  { temporal, phase }: FoldContext,
+  { temporal, phase, bindResultInputs }: FoldContext,
 ) {
   const ordinary = phase === 'ordinary-result';
   // a dual's sides and tieFormat as `updateTieMatchUpScore` rewrites them before its tally (S7)
@@ -480,12 +482,12 @@ function setMatchUpResult(
   if (ordinary && op.score) matchUp.score = op.score;
   matchUp.matchUpStatus = op.matchUpStatus;
   clearOrderOfFinishUnlessCompleted(matchUp);
-  if (op.score && !ordinary) matchUp.score = op.score;
+  if (op.score && !ordinary) matchUp.score = bindResultInputs ? op.score : structuredClone(op.score);
   // The ordinary writer installs format and codes before the winner and binds the caller's normalized codes.
   if (ordinary) setResultFormatAndCodes(matchUp, op, true);
   if (op.winningSide) matchUp.winningSide = op.winningSide;
   else delete matchUp.winningSide;
-  if (!ordinary) setResultFormatAndCodes(matchUp, op);
+  if (!ordinary) setResultFormatAndCodes(matchUp, op, false, bindResultInputs);
   if (op.notes) matchUp.notes = op.notes;
   if (op.stampsScoredTime === false) return;
   // v1's `applyScoredTime`: captured the first time the matchUp is scored, kept on later corrections, removed with
@@ -504,12 +506,14 @@ function setMatchUpResult(
 function setResultFormatAndCodes(
   matchUp: MatchUp,
   op: Extract<OutcomeOp, { op: 'setMatchUpResult' }>,
-  bindCodes = false,
+  ordinary = false,
+  bindResultInputs = false,
 ) {
   if (op.matchUpFormat) matchUp.matchUpFormat = op.matchUpFormat;
   if (op.matchUpStatusCodes) {
-    matchUp.matchUpStatusCodes = op.matchUpStatusCodes;
-    if (bindCodes && !op.matchUpStatusCodes.length) {
+    matchUp.matchUpStatusCodes =
+      ordinary || bindResultInputs ? op.matchUpStatusCodes : structuredClone(op.matchUpStatusCodes);
+    if (ordinary && !op.matchUpStatusCodes.length) {
       delete matchUp.matchUpStatusCode;
       delete matchUp.sideStatusCodes;
     }

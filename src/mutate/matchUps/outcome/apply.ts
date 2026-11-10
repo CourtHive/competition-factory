@@ -1,5 +1,5 @@
-import { getInContextMatchUp } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { scoredTimeAction } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
+import { getInContextMatchUp } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { applyOutcomeOps, splitScoredTimeCleanup } from './ops';
 import { findStructure } from '@Acquire/findStructure';
 import { getTopics } from '@Global/state/globalState';
@@ -14,9 +14,9 @@ import {
 
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+import type { BuildViewArgs, OutcomeView, PlanShape, Route } from './types';
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
-import type { BuildViewArgs, OutcomeView, PlanShape, Route } from './types';
 import type { MatchUp } from '@Types/tournamentTypes';
 import type { ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -184,7 +184,7 @@ export function applyOwnedPlan({
     return matchUp ? [matchUp] : [];
   });
   if (cleanupTargets.length !== cleanup.length) return { error: INVALID_VALUES };
-  const applied = applyOutcomeOps(drawDefinition, completedOps);
+  const applied = applyOutcomeOps(drawDefinition, completedOps, undefined, { bindResultInputs: true });
   if (applied.error) return { error: INVALID_VALUES, info: applied.error };
 
   const tournamentId = tournamentRecord?.tournamentId;
