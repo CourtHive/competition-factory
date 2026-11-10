@@ -599,7 +599,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   // The linked seats read the state after the literal prefix emitted below, never positional guesses.
   const seatOps = certifiedSeatProgram(
     args,
-    [...ops, ...seated, ...carried.relay, ...throughBye, ...lineUps, ...landing, ...converging],
+    [...ops, ...seated, ...lineUps, ...carried.relay, ...throughBye, ...landing, ...converging],
     seatObligation,
   );
   if (!seatOps) return { abstain: 'exit' };
@@ -629,9 +629,9 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
     : [];
   ops.push(
     ...seated,
+    ...lineUps,
     ...carried.relay,
     ...throughBye,
-    ...lineUps,
     ...landing,
     ...converging,
     ...arrivalReturnOps(arrival),

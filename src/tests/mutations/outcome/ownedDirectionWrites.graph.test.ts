@@ -92,7 +92,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-function fresh(drawProfile = {}, policyDefinitions = {}, nonRandom = 1) {
+function fresh(drawProfile = {}, policyDefinitions = {}, nonRandom = 1, hasLineUps = true) {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date('2026-11-08T12:00:00.000Z'));
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
@@ -103,7 +103,7 @@ function fresh(drawProfile = {}, policyDefinitions = {}, nonRandom = 1) {
     setState: true,
   });
   expect(generated.success).toBe(true);
-  if ('eventType' in drawProfile && drawProfile.eventType === TEAM)
+  if (hasLineUps && 'eventType' in drawProfile && drawProfile.eventType === TEAM)
     expect(
       tournamentEngine.generateLineUps({ drawId: generated.drawIds![0], useDefaultEventRanking: true, attach: true })
         .success,
@@ -1239,5 +1239,30 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     const keys = Object.keys(target);
     expect(keys.indexOf('matchUpFormat')).toBeLessThan(keys.indexOf('sideExitProvenance'));
     expect(keys.indexOf('winningSide')).toBeGreaterThan(keys.indexOf('sideExitProvenance'));
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s ensures the BYE relay team sides before recording the carried exit',
+  (mode) => {
+    const { drawId, record } = fresh(
+      { drawType: COMPASS, drawSize: 8, participantsCount: 5, eventType: TEAM, tieFormatName: DOMINANT_DUO },
+      {},
+      200203,
+      false,
+    );
+    const structures = record.events![0].drawDefinitions![0].structures!;
+    const source = structures
+      .find((entry) => entry.structureName === 'East')!
+      .matchUps!.find((entry) => entry.roundNumber === 1 && entry.roundPosition === 2)!;
+    write(mode, drawId, source.matchUpId, { matchUpStatus: DEFAULTED, winningSide: 1 }, { propagateExitStatus: true });
+    const target = structures
+      .find((entry) => entry.structureName === 'West')!
+      .matchUps!.find((entry) => entry.roundNumber === 1 && entry.roundPosition === 1)!;
+    expect(target.matchUpStatus).toBe(BYE);
+    expect(target.sides).toHaveLength(2);
+    expect(target.sideExitProvenance).toBeDefined();
+    const keys = Object.keys(target);
+    expect(keys.indexOf('sides')).toBeLessThan(keys.indexOf('sideExitProvenance'));
   },
 );
