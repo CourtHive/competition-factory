@@ -347,6 +347,7 @@ export interface RegistrationProfile {
 
 ```ts
 export interface Participant {
+  teamColors?: TeamColors;
   contacts?: Contact[];
   /**
    * Members who hold contact information for this grouping — "who do I call about this group".
@@ -1944,6 +1945,16 @@ export type CountryCodeUnion = `${CountryCodeEnum}`;
 
 ```ts
 export type OnlineResourceTypeUnion = `${OnlineResourceTypeEnum}`;
+```
+
+#### TeamColors
+
+```ts
+/** Tournament-scoped TEAM branding. Opaque hex colors; primary is required when present. */
+export interface TeamColors {
+  primary: string;
+  secondary?: string;
+}
 ```
 
 #### ContactRelationshipUnion

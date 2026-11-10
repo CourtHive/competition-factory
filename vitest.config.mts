@@ -42,6 +42,9 @@ const ISOLATED_FILES = [
   'src/tests/engines/workshop/enginesWarmup.test.ts',
   // asserts the async provider's process-wide count of implicit-context warnings ("1 so far")
   'src/tests/engines/asyncGlobalStateIsolation.test.ts',
+  // installs every GLOBAL notice subscription; those registrations survive the public per-file reset and
+  // otherwise divert later scheduling audits from timeItems into notices in a shared worker
+  'src/tests/global/noticeCoverageCollector.test.ts',
 ];
 const TEST_FILE = /\.test\.(js|mjs|cjs|ts|mts|cts|jsx|tsx)$/;
 const testFiles = (dir: string): string[] =>

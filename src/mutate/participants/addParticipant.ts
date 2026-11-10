@@ -1,5 +1,6 @@
 import { generatePairParticipantName } from '@Functions/participants/generatePairParticipantName';
 import { coercePersonSex, isUnrecognizedSex, UNRECOGNIZED_SEX_INFO } from '@Helpers/coercedSex';
+import { indexParticipant, pairKey, ParticipantsIndex } from './participantsIndex';
 import { normalizePersonNames } from '@Helpers/normalizedPersonName';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { definedAttributes } from '@Tools/definedAttributes';
@@ -7,16 +8,16 @@ import { normalizeGender } from '@Helpers/coercedGender';
 import { addNotice } from '@Global/state/globalState';
 import { collapseWhitespace } from '@Tools/strings';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
-import { indexParticipant, pairKey, ParticipantsIndex } from './participantsIndex';
+import { planTeamColors } from './teamColors';
 import { intersection } from '@Tools/arrays';
 import { UUID } from '@Tools/UUID';
 
 // constants and types
 import { GROUP, INDIVIDUAL, PAIR, participantTypes, TEAM } from '@Constants/participantConstants';
+import { Participant, Tournament } from '@Types/tournamentTypes';
 import { ADD_PARTICIPANTS } from '@Constants/topicConstants';
 import { TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Participant, Tournament } from '@Types/tournamentTypes';
 import {
   INVALID_PARTICIPANT_IDS,
   INVALID_PARTICIPANT_TYPE,
@@ -238,6 +239,9 @@ export function addParticipant(params: AddParticipantType) {
 
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
 
+  const colors = planTeamColors(participant?.teamColors, participant?.participantType);
+  if (colors.error) return colors;
+
   const baseError = validateBaseParticipant(participant, tournamentRecord, participantsIndex);
   if (baseError) return decorateResult({ result: baseError, stack });
 
@@ -295,6 +299,7 @@ export function addParticipant(params: AddParticipantType) {
     return { error: INVALID_PARTICIPANT_TYPE };
   }
 
+  applyNewTeamColors(participant, colors.teamColors);
   appendParticipant({ tournamentRecord, participant, participantsIndex });
 
   if (!disableNotice) {
@@ -312,4 +317,9 @@ export function addParticipant(params: AddParticipantType) {
     ...SUCCESS,
   };
   return definedAttributes(result);
+}
+
+function applyNewTeamColors(participant: Participant, colors: Participant['teamColors']) {
+  if (colors) participant.teamColors = colors;
+  else delete participant.teamColors;
 }

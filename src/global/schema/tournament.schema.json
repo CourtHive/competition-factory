@@ -2999,6 +2999,7 @@
     "Participant": {
       "type": "object",
       "properties": {
+        "teamColors": { "$ref": "#/definitions/TeamColors" },
         "createdAt": {
           "type": ["string", "object"],
           "format": "date-time"
@@ -3554,6 +3555,15 @@
         }
       },
       "additionalProperties": false
+    },
+    "TeamColors": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primary"],
+      "properties": {
+        "primary": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "secondary": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" }
+      }
     },
     "TeamAttribute": {
       "type": "object",
