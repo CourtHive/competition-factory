@@ -620,11 +620,11 @@ A TEAM participant may carry an optional CODES palette with stable IDs and expli
 
 Each entry requires a unique `colorId` and opaque six-digit hex `value`. IDs use 1–64 ASCII letters/digits, dots, colons, underscores or hyphens, starting with a letter/digit. Optional `name` and `group` are nonblank labels of at most 100 characters, trimmed on writes. Groups are descriptive source labels; multiple colors can share a group. They never select CSS behavior. Values normalize to uppercase. Duplicate color values and identical primary/secondary selections are valid.
 
+The palette stores the team's available colors. The display references choose colors for two current rendering roles: the scoreboard accent and optional trim. Other entries stay in the palette. These two roles describe the current renderer, not the team's brand hierarchy.
+
 The palette has 1–32 entries. The upper bound is a resource guard, not a claim that a team has only a fixed number of official colors. `display.primary` is required and references a palette ID; optional `display.secondary` references a trim color. Reordering preserves these references. Removing a selected entry requires updating its selection in the same mutation. The closed schema validates structure; write validation additionally enforces unique IDs and valid references.
 
 New branding is TEAM-only. Arrays, unknown keys, CSS tokens, named colors and alpha/short hex values are refused. Validation runs before record writes or notifications and never changes scores/outcomes. For updates, omission, `undefined` and `null` leave the field alone. `{}` explicitly clears it and is never stored. A nonempty object replaces the whole palette and selection; omitted entries or secondary references are removed.
-
-The earlier two-field proposal was never merged or populated. It is rejected rather than adapted: there is no record migration or compatibility write shape. Existing absent branding remains valid; omission does not add a palette.
 
 TEAM identity and allowed palette data hydrate onto parent sides and `side.teamParticipant` on singles/doubles tie lines, including unassigned lines. Participant privacy templates still apply: a template excluding `teamColors` produces no branding. Consumers must not read raw participants to recover filtered colors.
 
