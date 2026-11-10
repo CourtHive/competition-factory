@@ -1,6 +1,6 @@
-import { DOUBLES_EVENT, SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import type { AvoidancePolicy } from '@Mutate/drawDefinitions/positionGovernor/randomUnseededSeparation';
 import type { MatchUpActionsPolicy } from '@Query/drawDefinition/positionActions/actionPolicyUtils';
+import { DOUBLES_EVENT, SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import type { RotatingPartnerScoringPolicies } from './rotatingPartnerScoring';
 import type { RotatingPartnerTallyPolicy } from './rotatingPartnerTally';
 import { SignedInStatusUnion } from '@Constants/participantConstants';
@@ -978,6 +978,8 @@ export type PairingProfile = {
 };
 
 export type GenerateDrawDefinitionArgs = {
+  /** Requested limits, bounded by the sanction record overrideLimits. */
+  constraintOverrides?: { drawSize?: number; maxWildcards?: number; maxAlternates?: number; maxQualifiers?: number };
   /**
    * Passed through to the drawType's generator: `groupSize` for ROUND_ROBIN and ROUND_ROBIN_WITH_PLAYOFF,
    * `playoffGroups` for ROUND_ROBIN_WITH_PLAYOFF.

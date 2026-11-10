@@ -3205,6 +3205,13 @@ export interface SanctionConstraints {
 
 /** The limits for the events an entry matches: eventType always; eventName and categoryName when stated. */
 export interface SanctionEventConstraints {
+  /** Explicit per-limit override ceilings authorized by the sanctioning record; absent fields grant no permission. */
+  overrideLimits?: {
+    drawSize?: number;
+    maxWildcards?: number;
+    maxAlternates?: number;
+    maxQualifiers?: number;
+  };
   match: { eventType: EventTypeUnion; eventName?: string; categoryName?: string };
   drawSize?: number;
   maxWildcards?: number;

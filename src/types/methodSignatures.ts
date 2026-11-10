@@ -105,6 +105,7 @@ import type { anonymizeTournamentRecord } from '@Generators/tournamentRecords/an
 import type { removeDrawPositionAssignment } from '@Mutate/drawDefinitions/removeDrawPositionAssignment';
 import type { proAutoSchedule } from '@Mutate/matchUps/schedule/schedulers/proScheduler/proAutoSchedule';
 import type { getAvailableQualifyingTargets } from '@Query/drawDefinition/getAvailableQualifyingTargets';
+import type { getDrawCompositionConstraints } from '@Query/drawDefinition/getDrawCompositionConstraints';
 import type { getRotatingPartnerTallyPolicy } from '@Query/drawDefinition/getRotatingPartnerTallyPolicy';
 import type { addPlayoffStructures } from '@Generators/drawDefinitions/structures/addPlayoffStructures';
 import type { addElementExtension, removeElementExtension } from '@Mutate/extensions/elementExtensions';
@@ -993,6 +994,7 @@ export interface MethodSignatures {
   getCourts: EngineMethod<typeof getCourts>;
   getDraftState: EngineMethod<typeof getDraftState>;
   getDrawCompleteness: EngineMethod<typeof getDrawCompleteness>;
+  getDrawCompositionConstraints: EngineMethod<typeof getDrawCompositionConstraints>;
   getDrawData: EngineMethod<typeof getDrawData>;
   getDrawDefinitionTimeItem: EngineMethod<typeof getDrawDefinitionTimeItem>;
   getDrawFit: EngineMethod<typeof getDrawFit>;

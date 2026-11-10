@@ -1,5 +1,5 @@
+import { type DrawCompositionConstraints, getDrawCompositionConstraints } from './getDrawCompositionConstraints';
 import { getSanctionedEntryAllowance, getSanctionedEntryLimit } from './getStageSpace';
-import { getDrawCompositionConstraints } from './getDrawCompositionConstraints';
 import { decorateResult } from '@Functions/global/decorateResult';
 
 // constants and types
@@ -10,6 +10,7 @@ import { MAIN } from '@Constants/drawDefinitionConstants';
 import { ResultType } from '@Types/factoryTypes';
 
 type CheckSanctionedEntryLimitsArgs = {
+  constraintOverrides?: DrawCompositionConstraints;
   tournamentRecord?: Tournament;
   // the draw the entries are added to, when it already holds entries; its entries count against the limits
   drawDefinition?: DrawDefinition;
@@ -34,12 +35,14 @@ const LIMITED_ENTRY_STATUSES = [WILDCARD, ALTERNATE];
  */
 export function checkSanctionedEntryLimits({
   tournamentRecord,
+  constraintOverrides,
   drawDefinition,
   entries,
   event,
   stack = 'checkSanctionedEntryLimits',
 }: CheckSanctionedEntryLimitsArgs): ResultType {
-  const { constraints } = getDrawCompositionConstraints({ tournamentRecord, event });
+  const { constraints, error } = getDrawCompositionConstraints({ tournamentRecord, event, constraintOverrides });
+  if (error) return { error };
   if (!constraints || !entries?.length) return {};
 
   const existingEntries = drawDefinition?.entries ?? [];
