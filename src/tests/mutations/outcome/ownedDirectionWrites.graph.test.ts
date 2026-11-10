@@ -20,11 +20,13 @@ import {
 } from '@Tests/testHarness/outcome/directionFixtures';
 
 // constants and types
+import { replayFailure as prepareCensus } from '@Tests/testHarness/exitPropagation/sweep';
 import { USTA_COLLEGE, DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { TEAM, SINGLES } from '@Constants/eventConstants';
 import type { Tournament } from '@Types/tournamentTypes';
 import { setClock } from '@Tools/clock';
+import { readFileSync } from 'node:fs';
 import {
   COMPASS,
   CURTIS_CONSOLATION,
@@ -58,12 +60,17 @@ import {
   BYE,
 } from '@Constants/matchUpStatusConstants';
 
-const counter = vi.hoisted(() => ({ active: false, calls: 0 }));
+const counter = vi.hoisted(() => ({
+  active: false,
+  calls: 0,
+  prepare: undefined as ((params: any) => void) | undefined,
+}));
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (load) => {
   const actual: any = await load();
   return {
     ...actual,
     setMatchUpState: (...args: any[]) => {
+      counter.prepare?.(args[0]);
       if (counter.active) counter.calls++;
       return actual.setMatchUpState(...args);
     },
@@ -77,6 +84,7 @@ registerTestSeedIdentity('src/tests/mutations/outcome/ownedDirectionWrites.graph
 
 afterEach(() => {
   counter.active = false;
+  counter.prepare = undefined;
   setSubscriptions({ subscriptions: {} });
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
   setClock();
@@ -1100,5 +1108,56 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(target.matchUpStatus).toBe(BYE);
     expect(Object.hasOwn(target, 'winningSide')).toBe(true);
     expect(target.winningSide).toBeUndefined();
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s removes the winner key from a pending foreign product relayed through a BYE',
+  (mode) => {
+    const fixture = readFileSync(
+      new URL('../../fixtures/exitPropagation/censusF2RefusalSchedules20261011.jsonl', import.meta.url),
+      'utf8',
+    )
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => JSON.parse(line))
+      .find((entry) => entry.seed === 20523724)!;
+    let prepared: Tournament | undefined;
+    let sourceId: string | undefined;
+    setOutcomePipeline(OUTCOME_PIPELINE_V1);
+    counter.prepare = (params) => {
+      if (prepared || params.matchUpStatus !== TO_BE_PLAYED) return;
+      const record = params.tournamentRecord as Tournament | undefined;
+      const draw = record?.events
+        ?.flatMap((event) => event.drawDefinitions ?? [])
+        .find((entry) => entry.drawId === params.drawDefinition?.drawId);
+      const structure = draw?.structures?.find((entry) => entry.structureName === 'Consolation');
+      const at = (round: number, position: number) =>
+        structure?.matchUps?.find((entry) => entry.roundNumber === round && entry.roundPosition === position);
+      const source = at(2, 1);
+      if (
+        !source ||
+        source.matchUpId !== params.matchUpId ||
+        at(2, 2)?.matchUpStatus !== BYE ||
+        at(3, 1)?.matchUpStatus !== DOUBLE_WALKOVER
+      )
+        return;
+      prepared = structuredClone(record!);
+      sourceId = source.matchUpId;
+    };
+    try {
+      prepareCensus(fixture.config, fixture.steps, 'pending-native-witness');
+    } finally {
+      counter.prepare = undefined;
+    }
+    expect(prepared).toBeDefined();
+    tournamentEngine.setState(prepared!);
+    write(mode, 'pending-native-witness', sourceId!, { matchUpStatus: TO_BE_PLAYED }, { propagateExitStatus: true });
+    const draw = (Object.values(getTournamentRecords())[0] as Tournament).events![0].drawDefinitions![0];
+    const target = draw
+      .structures!.find((entry) => entry.structureName === 'Consolation')!
+      .matchUps!.find((entry) => entry.roundNumber === 3 && entry.roundPosition === 1)!;
+    expect(target.matchUpStatus).toBe(WALKOVER);
+    expect(Object.hasOwn(target, 'winningSide')).toBe(false);
   },
 );

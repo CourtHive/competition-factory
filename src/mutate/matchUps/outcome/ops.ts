@@ -58,6 +58,8 @@ export type OutcomeOp =
       resetsScore?: true;
       /** The source writer assigns an own undefined winner. */
       removesWinningSide?: true;
+      /** The pending produced exit lost its winner key in the settle pass after a retained BYE relay. */
+      deletesWinningSide?: true;
       /** The unlinked qualifying-final removal returns an own undefined qualifierRemoved field. */
       returnsQualifierRemoved?: true;
       /** A relabel first withdraws the existing carry, clearing provenance, codes and winner before re-entry. */
@@ -516,7 +518,8 @@ function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMat
   clearOrderOfFinishUnlessCompleted(matchUp);
   setResultFormatAndCodes(matchUp, op, ordinary, !!bindResultInputs);
   clearResolvedSideExitProvenance(matchUp);
-  if (op.winningSide) matchUp.winningSide = op.winningSide;
+  if (op.deletesWinningSide) delete matchUp.winningSide;
+  else if (op.winningSide) matchUp.winningSide = op.winningSide;
   else if (op.removesWinningSide) matchUp.winningSide = undefined;
   else if (op.announcedAs === 'reconcileScoredTimes' && op.matchUpStatus !== BYE) delete matchUp.winningSide;
   else if (bindResultInputs) {

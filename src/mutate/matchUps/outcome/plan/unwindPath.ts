@@ -853,6 +853,24 @@ function unwoundBranch(
   ];
 }
 
+/** The kept double exit reached this empty convergence through a standing BYE, so settle removes its winner key. */
+function pendingRelayedWinner(view: OutcomeView, matchUpId: string, rederived: Rederived): boolean {
+  const kept = Object.values(rederived.provenance)[0];
+  const origin = indexed(view, kept?.sourceMatchUpId);
+  return (
+    !!origin &&
+    isDoubleExit(origin.matchUpStatus) &&
+    !!view.inContextDrawMatchUps?.some(
+      (feeder) =>
+        feeder.winnerMatchUpId === matchUpId &&
+        feeder.matchUpStatus === BYE &&
+        Object.values(feeder.sideExitProvenance ?? {}).some(
+          (entry) => entry?.sourceMatchUpId === kept?.sourceMatchUpId,
+        ),
+    )
+  );
+}
+
 /**
  * The cleared double exit's unwind, as v1 writes it, deepest first: at each level the seat its loser link feeds, then
  * the matchUp written back to be played through `modifyMatchUpScore` (no `scoredTime` rule), its codes `[]` and its
@@ -965,6 +983,7 @@ export function unwoundOps(
             matchUpStatusCodes: [],
             stampsScoredTime: false,
             announcedAs: 'settleRederivedDoubleExit',
+            ...(pendingRelayedWinner(view, matchUpId, rederived) ? { deletesWinningSide: true as const } : {}),
           },
         ]
       : [],
