@@ -12,6 +12,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, expect, it, vi } from 'vitest';
 import {
+  assignmentViewFixture,
   STANDALONE_INDIRECT_CLEARS,
   play as prepareDirection,
   findTarget,
@@ -19,12 +20,16 @@ import {
 
 // constants and types
 import { ROUND_ROBIN, FIRST_MATCH_LOSER_CONSOLATION, MAIN, CONSOLATION } from '@Constants/drawDefinitionConstants';
-import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 import { COMPASS, CURTIS_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { USTA_COLLEGE, DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM, SINGLES } from '@Constants/eventConstants';
 import type { Tournament } from '@Types/tournamentTypes';
 import { setClock } from '@Tools/clock';
+import {
+  OUTCOME_PIPELINE_DIFFERENTIAL,
+  OUTCOME_PIPELINE_V1,
+  OUTCOME_PIPELINE_V2,
+} from '@Constants/outcomePipelineConstants';
 import {
   MODIFY_MATCHUP,
   UPDATE_INCONTEXT_MATCHUP,
@@ -795,5 +800,51 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
       expect(Object.keys(matchUp).indexOf('winningSide')).toBeGreaterThan(Object.keys(matchUp).indexOf('schedule'));
       expect(Object.keys(matchUp).indexOf('winningSide')).toBeGreaterThan(Object.keys(matchUp).indexOf('score'));
     }
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s announces a recursive BYE chain from the deepest child back to its parent',
+  (mode) => {
+    const { sources } = assignmentViewFixture(COMPASS, SINGLES, true);
+    setSubscriptions({ subscriptions: { [MODIFY_POSITION_ASSIGNMENTS]: () => undefined } });
+    const record = Object.values(getTournamentRecords())[0] as Tournament;
+    const structures = record.events![0].drawDefinitions![0].structures!;
+    const names = new Map(structures.map((structure) => [structure.structureId, structure.structureName]));
+    const buffers: string[][] = [];
+    const provider = getProvider();
+    const clear = provider.deleteNotices;
+    vi.spyOn(provider, 'deleteNotices').mockImplementation(() => {
+      if (counter.active)
+        buffers.push(
+          provider.getNoticeBuffer!().flatMap(({ topic, key }) =>
+            topic === MODIFY_POSITION_ASSIGNMENTS ? [names.get(key!)!] : [],
+          ),
+        );
+      return clear();
+    });
+    write(mode, 'd', sources[0].matchUpId, { matchUpStatus: DOUBLE_DEFAULT }, { allowChangePropagation: true });
+    expect(buffers.at(-1)).toEqual(['Northwest', 'North']);
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_DIFFERENTIAL] as const)(
+  '%s stamps a structure announced by a recursive withdrawal at the current call time',
+  (mode) => {
+    const { drawId, record } = fresh({ drawType: COMPASS, drawSize: 16, participantsCount: 15 }, {}, 9000230);
+    const structures = record.events![0].drawDefinitions![0].structures!;
+    const east = structures.find((structure) => structure.structureName === 'East')!;
+    const second = east.matchUps!.find((matchUp) => matchUp.roundNumber === 1 && matchUp.roundPosition === 2)!;
+    write(OUTCOME_PIPELINE_V1, drawId, second.matchUpId, { matchUpStatus: DOUBLE_WALKOVER });
+    const current = '2026-11-08T12:01:00.000Z';
+    setClock(current);
+    setOutcomePipeline(mode);
+    const result = tournamentEngine.setMatchUpStatus({
+      drawId,
+      matchUpId: second.matchUpId,
+      outcome: { matchUpStatus: WALKOVER, winningSide: 1 },
+    });
+    expect(result).toMatchObject({ success: true });
+    expect(structures.find((structure) => structure.structureName === 'Northwest')!.updatedAt).toBe(current);
   },
 );

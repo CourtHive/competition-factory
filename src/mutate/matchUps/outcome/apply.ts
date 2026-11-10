@@ -325,7 +325,14 @@ type NativeNoticeStep =
   | { kind: 'ensure' | 'score'; matchUpId: string; rank: number; score: ResultOp }
   | { kind: 'modify'; matchUpId: string; rank: number }
   | { kind: 'position'; matchUpId: string; rank: number; position: ArrivalOp }
-  | { kind: 'assignments'; matchUpId?: never; structureId: string; named: boolean; evented: boolean; rank: number };
+  | {
+      kind: 'assignments';
+      matchUpId?: never;
+      structureId: string;
+      named: boolean;
+      includesEvent: boolean;
+      rank: number;
+    };
 
 /** Preserve last-write order within each topic, while retaining genuine earlier score boundaries. */
 function nativeNoticeSteps(
@@ -410,7 +417,7 @@ function assignmentNoticeSteps(ops: OutcomeOp[]): NativeNoticeStep[] {
         kind: 'assignments',
         structureId: op.structureId,
         named,
-        evented: named && !('announcesEvent' in op && op.announcesEvent === false),
+        includesEvent: named && !('announcesEvent' in op && op.announcesEvent === false),
         rank: boundary * 3 + 2.5,
       },
     ];
@@ -744,7 +751,7 @@ function dualTallyResult(ops: OutcomeOp[]) {
  * (v1's `directLoser`, `assignDrawPositionBye`); and a seat an unwind visits (S6)
  */
 function announceAssignmentBoundary(
-  { structureId, named, evented }: Extract<NativeNoticeStep, { kind: 'assignments' }>,
+  { structureId, named, includesEvent }: Extract<NativeNoticeStep, { kind: 'assignments' }>,
   { drawDefinition, tournamentRecord, event }: BuildViewArgs,
 ): void {
   if (!drawDefinition) return;
@@ -754,7 +761,7 @@ function announceAssignmentBoundary(
     drawDefinition,
     structure,
     tournamentId: named ? tournamentRecord?.tournamentId : undefined,
-    event: evented ? event : undefined,
+    event: includesEvent ? event : undefined,
   });
 }
 

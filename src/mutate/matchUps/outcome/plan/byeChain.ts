@@ -253,7 +253,27 @@ function byeResultOps(entry: MatchUp, quiet: { announcesEvent?: false }): Outcom
  * that reached v1's bound (F9), are v1's. `announced`: whether v1 names the event for the first seat (deeper seats are
  * placed with none)
  */
-function byeChain(
+function byeChain(...args: Parameters<typeof byeChainProgram>): ReturnType<typeof byeChainProgram> {
+  const chain = byeChainProgram(...args);
+  if (!chain) return undefined;
+  // assignDrawPositionBye announces on return: deepest child first, after the chain's matchUp writes.
+  return {
+    ...chain,
+    assigns: chain.assigns.map((op): OutcomeOp =>
+      op.op === 'assignBye' ? { ...op, announcesAssignments: false } : op,
+    ),
+    writes: [
+      ...chain.writes,
+      ...chain.assigns.flatMap((op): OutcomeOp[] =>
+        op.op === 'assignBye'
+          ? [{ op: 'announcePositionAssignments', structureId: op.structureId, announcesEvent: op.announcesEvent }]
+          : [],
+      ),
+    ],
+  };
+}
+
+function byeChainProgram(
   view: OutcomeView,
   first: Seat,
   chain: { levels: CarryLevel[]; bounded: boolean } | undefined,

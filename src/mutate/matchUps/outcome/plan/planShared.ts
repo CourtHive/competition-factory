@@ -375,6 +375,7 @@ export function structureStamps(ops: OutcomeOp[], structureId: string): OutcomeO
   const seatedIn = ops.flatMap((op) =>
     (op.op === 'assignPosition' ||
       op.op === 'assignBye' ||
+      op.op === 'announcePositionAssignments' ||
       (op.op === 'withdrawBye' && op.announcesAssignments !== false)) &&
     op.structureId !== structureId
       ? [op.structureId]
