@@ -17,6 +17,7 @@ import {
   STANDING_BYE_CAPTURES,
   NOTICE_RELAY_CARRIES,
   AWARDED_PRODUCED_RELAY,
+  PRODUCED_RELAY,
   CARRIER_SENT_ON,
   STANDALONE_INDIRECT_CLEARS,
   CONVERGED_PRODUCED_RELAYS,
@@ -1825,5 +1826,19 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     const keys = Object.keys(target);
     expect(keys.indexOf('winningSide')).toBeGreaterThan(keys.indexOf('schedule'));
     expect(keys.indexOf('sideExitProvenance')).toBeGreaterThan(keys.indexOf('winningSide'));
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s returns the backdraw assignment before announcing the linked main-draw placement',
+  (mode) => {
+    const scenario = PRODUCED_RELAY.find(
+      ([label]) => label === 'DE 8 produced relay: DOUBLE_WALKOVER relayed beside the BYE of DOUBLE_DEFAULT, played',
+    )![1];
+    prepareDirection(OUTCOME_PIPELINE_V1, { ...scenario, steps: [] });
+    const topics = observeNoticeTopics();
+    const step = scenario.steps[0];
+    write(mode, 'd', findTarget(step.target), step.outcome, step.params);
+    expect(topics.at(-1)).toBe(MODIFY_MATCHUP);
   },
 );

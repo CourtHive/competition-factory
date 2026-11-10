@@ -678,9 +678,24 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   const delayedReturns = awardedAssignmentReturns(view, [...relayAfter, ...(seatOps?.after ?? [])], arrivalReturns);
   const writes = ops.filter((op) => !superseded.has(op) && !delayedReturns.has(op));
   return {
-    ops: [...writes, ...relayAfter, ...delayedReturns, ...retainedAward],
+    ops: [...writes, ...returnedRelayOps(view, relayAfter, delayedReturns), ...retainedAward],
     shape: args.route === 'winner' || carriedOn ? 'direction' : 'local',
   };
+}
+
+/** A linked winner's later cleanup follows the assignment return in the originating structure. */
+function returnedRelayOps(view: OutcomeView, ops: OutcomeOp[], returns: Set<OutcomeOp>): OutcomeOp[] {
+  const cleanup = ops.findIndex(
+    (op) => op.op === 'setMatchUpDrawPositions' && !!op.releasedDrawPosition && crossesWinnerLink(view, op.matchUpId),
+  );
+  const boundary = cleanup < 0 ? ops.length : cleanup;
+  return [...ops.slice(0, boundary), ...returns, ...ops.slice(boundary)];
+}
+
+function crossesWinnerLink(view: OutcomeView, matchUpId: string): boolean {
+  const source = indexed(view, matchUpId);
+  const target = indexed(view, source?.winnerMatchUpId);
+  return !!source && !!target && source.structureId !== target.structureId;
 }
 
 /** A produced exit is awarded inside assignDrawPosition, before that assignment returns. */
