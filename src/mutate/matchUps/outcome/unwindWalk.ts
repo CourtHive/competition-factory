@@ -49,6 +49,7 @@ type Sim = {
   winnerLinkRounds: Set<string>;
   propagatesBye: boolean;
   notices: Map<string, Notice>;
+  noticeWrites: { matchUpId: string; notice: Notice; positions: number[]; matchUpStatus?: MatchUpStatusUnion }[];
   clearedWinners: Map<string, number>;
   initial: Map<string, { positions: number[]; matchUpStatus?: MatchUpStatusUnion }>;
   withdrawn: { structureId: string; drawPosition: number; quiet: boolean; segment: number }[];
@@ -83,7 +84,15 @@ function fail(sim: Sim): false {
 function announce(sim: Sim, matchUpId: string, notice: Omit<Notice, 'segment'>) {
   // v1's notice buffer keeps a matchUp re-announced later in the call at that later place, with the later context
   sim.notices.delete(matchUpId);
-  sim.notices.set(matchUpId, { ...notice, segment: sim.segment });
+  const written = { ...notice, segment: sim.segment };
+  sim.notices.set(matchUpId, written);
+  const matchUp = sim.byId.get(matchUpId)!;
+  sim.noticeWrites.push({
+    matchUpId,
+    notice: written,
+    positions: [...matchUp.positions],
+    matchUpStatus: matchUp.matchUpStatus,
+  });
 }
 
 const initialRound = (matchUps: SimMatchUp[], drawPosition?: number) =>
@@ -411,6 +420,7 @@ export function unwindWalk({
     ),
     propagatesBye,
     notices: new Map(),
+    noticeWrites: [],
     clearedWinners: new Map(),
     initial: new Map(),
     withdrawn: [],
@@ -463,8 +473,8 @@ export function unwindWalk({
       announcesAssignments: false,
     });
   const stamped = new Set<string>();
-  for (const [matchUpId, notice] of sim.notices) {
-    const written = matchUpOps(sim, matchUpId, notice);
+  for (const { matchUpId, notice, positions, matchUpStatus } of sim.noticeWrites) {
+    const written = matchUpOps(sim, matchUpId, notice, { positions, matchUpStatus });
     if (!written) return undefined;
     segments[notice.segment].push(...written);
     // v1's notice stamps the matchUp's structure (`modifyMatchUpNotice`)
@@ -487,10 +497,16 @@ export function unwindWalk({
 }
 
 /** a matchUp the walk wrote, as it stands after the walk, announced with the context of its last notice */
-function matchUpOps(sim: Sim, matchUpId: string, notice: Notice): OutcomeOp[] | undefined {
-  const matchUp = sim.byId.get(matchUpId);
+function matchUpOps(
+  sim: Sim,
+  matchUpId: string,
+  notice: Notice,
+  snapshot: Pick<SimMatchUp, 'positions' | 'matchUpStatus'>,
+): OutcomeOp[] | undefined {
+  const current = sim.byId.get(matchUpId);
   const before = sim.initial.get(matchUpId);
-  if (!matchUp || !before) return undefined;
+  if (!current || !before) return undefined;
+  const matchUp = { ...current, ...snapshot };
   const ops: OutcomeOp[] = [];
   if (before.matchUpStatus === BYE && matchUp.matchUpStatus === TO_BE_PLAYED)
     ops.push({ op: 'clearMatchUpBye', matchUpId, drawPosition: notice.drawPosition });

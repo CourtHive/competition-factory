@@ -368,7 +368,10 @@ function nativeNoticeSteps(
       !ops
         .slice(index + 1)
         .some(
-          (next) => (next.op === 'setMatchUpResult' || next.op === 'setMatchUpBye') && next.matchUpId === op.matchUpId,
+          (next) =>
+            ['setMatchUpResult', 'setMatchUpBye', 'clearMatchUpBye', 'setMatchUpDrawPositions'].includes(next.op) &&
+            'matchUpId' in next &&
+            next.matchUpId === op.matchUpId,
         )
     )
       return;
@@ -392,7 +395,10 @@ function nativeNoticeSteps(
       !ops
         .slice(index + 1)
         .some(
-          (next) => (next.op === 'setMatchUpResult' || next.op === 'setMatchUpBye') && next.matchUpId === op.matchUpId,
+          (next) =>
+            ['setMatchUpResult', 'setMatchUpBye', 'clearMatchUpBye', 'setMatchUpDrawPositions'].includes(next.op) &&
+            'matchUpId' in next &&
+            next.matchUpId === op.matchUpId,
         )
     )
       return;

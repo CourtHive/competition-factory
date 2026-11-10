@@ -1702,3 +1702,34 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(keys.indexOf('winningSide')).toBeLessThan(keys.indexOf('matchUpStatusCodes'));
   },
 );
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s announces the earlier BYE withdrawal before a later segment supersedes its position notice',
+  (mode) => {
+    const { drawId, record } = fresh(
+      { drawType: FEED_IN_CHAMPIONSHIP, drawSize: 8, participantsCount: 6 },
+      {},
+      20576342,
+    );
+    const main = record.events![0].drawDefinitions![0].structures!.find((entry) => entry.structureName === 'Main')!;
+    const at = (round: number, position: number) =>
+      main.matchUps!.find((entry) => entry.roundNumber === round && entry.roundPosition === position)!.matchUpId;
+    for (const [id, outcome] of [
+      [at(1, 3), { matchUpStatus: WALKOVER, winningSide: 2 }],
+      [at(1, 2), { matchUpStatus: DOUBLE_DEFAULT }],
+      [at(2, 2), { matchUpStatus: DOUBLE_WALKOVER }],
+      [at(1, 3), { winningSide: 2 }],
+    ] as const)
+      write(OUTCOME_PIPELINE_V1, drawId, id, outcome, { propagateExitStatus: true });
+    const topics: string[][] = [];
+    const provider = getProvider();
+    const cycle = provider.cycleModifiedTopics!;
+    vi.spyOn(provider, 'cycleModifiedTopics').mockImplementation(() => {
+      const written = cycle();
+      if (counter.active && written?.size) topics.push([...written]);
+      return written;
+    });
+    write(mode, drawId, at(2, 2), { matchUpStatus: WALKOVER, winningSide: 1 }, { propagateExitStatus: true });
+    expect(topics.at(-1)?.[0]).toBe(MODIFY_DRAW_DEFINITION);
+  },
+);
