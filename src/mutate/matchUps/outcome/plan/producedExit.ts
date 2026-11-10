@@ -325,6 +325,7 @@ function byeHeldProducedOps(
       matchUpId: produced.matchUpId,
       matchUpStatus: BYE,
       matchUpStatusCodes: [],
+      removesWinningSide: true,
       stampsScoredTime: false,
     },
     ...recorded(produced.matchUpId, (3 - produced.winningSide) as 1 | 2, true),

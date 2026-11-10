@@ -1576,3 +1576,35 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(topics.at(-1)?.[0]).toBe(MODIFY_DRAW_DEFINITION);
   },
 );
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s retains the pending winner key on the BYE that receives a produced exit',
+  (mode) => {
+    const { drawId, record } = fresh({
+      drawType: FIRST_MATCH_LOSER_CONSOLATION,
+      drawSize: 16,
+      outcomes: [
+        ...[
+          [1, 2],
+          [3, 4],
+          [5, 6],
+          [7, 8],
+        ].map((drawPositions) => ({
+          drawPositions,
+          scoreString: '6-1 6-2',
+          winningSide: 1,
+        })),
+        { stage: CONSOLATION, scoreString: '6-1 6-2', winningSide: 1 },
+      ],
+    });
+    const consolation = record.events![0].drawDefinitions![0].structures!.find(
+      (entry) => entry.structureName === 'Consolation',
+    )!;
+    const source = consolation.matchUps!.find((entry) => entry.roundNumber === 1 && entry.roundPosition === 2)!;
+    const target = consolation.matchUps!.find((entry) => entry.roundNumber === 2 && entry.roundPosition === 2)!;
+    write(mode, drawId, source.matchUpId, { matchUpStatus: DOUBLE_WALKOVER });
+    expect(target.matchUpStatus).toBe(BYE);
+    expect(Object.hasOwn(target, 'winningSide')).toBe(true);
+    expect(target.winningSide).toBeUndefined();
+  },
+);
