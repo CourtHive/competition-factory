@@ -724,6 +724,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
       subscriptions: { [UPDATE_INCONTEXT_MATCHUP]: () => undefined, [MODIFY_MATCHUP]: () => undefined },
     });
     write(mode, drawId, line.matchUpId, won());
+    expect(Object.hasOwn(dual, 'tieFormatId')).toBe(false);
     expect(observed.at(-1)?.[0]).toBe(UPDATE_INCONTEXT_MATCHUP);
     const buffer = buffers.at(-1)!;
     const lineCallback = buffer.findIndex((n) => n.topic === UPDATE_INCONTEXT_MATCHUP && n.key === line.matchUpId);

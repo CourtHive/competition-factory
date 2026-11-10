@@ -2124,7 +2124,12 @@ function initialEmptyDualTally({
   structure?: Structure;
   event?: Event;
 }): boolean {
-  if (!dualMatchUp.winningSide || dualMatchUp.winningSide === projectedWinningSide) return false;
+  if (
+    !dualMatchUp.winningSide ||
+    dualMatchUp.winningSide === projectedWinningSide ||
+    checkScoreHasValue({ score: request.score })
+  )
+    return false;
   const otherResult = dualMatchUp.tieMatchUps?.some(
     (line) =>
       line.matchUpId !== request.matchUpId &&
