@@ -57,6 +57,7 @@ import {
 import {
   DOUBLE_WALKOVER,
   DOUBLE_DEFAULT,
+  RETIRED,
   DEFAULTED,
   WALKOVER,
   TO_BE_PLAYED,
@@ -1422,3 +1423,28 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(keys.indexOf('score')).toBeLessThan(keys.indexOf('matchUpStatusCodes'));
   },
 );
+
+it.each(
+  ([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const).flatMap((mode) =>
+    [false, true].map((custom) => [mode, custom] as const),
+  ),
+)('%s deletes the empty initial dual score before recreating the final tally, custom=%s', (mode, custom) => {
+  const { drawId, matchUps, record } = fresh({
+    drawType: ROUND_ROBIN,
+    eventType: TEAM,
+    drawSize: 8,
+    tieFormatName: DOMINANT_DUO,
+  });
+  const dual = matchUps.find((entry) => entry.tieMatchUps?.length && entry.matchUpStatus === TO_BE_PLAYED)!;
+  write(OUTCOME_PIPELINE_V1, drawId, dual.matchUpId, {
+    matchUpStatus: RETIRED,
+    winningSide: 1,
+    score: { sets: [{ side1Score: 6, side2Score: 3 }], scoreStringSide1: '6-3', scoreStringSide2: '3-6' },
+  });
+  if (custom) dual.tieFormat = { ...record.events![0].tieFormat!, tieFormatName: 'retained custom dual format' };
+  write(mode, drawId, dual.tieMatchUps![0].matchUpId, { winningSide: 1 });
+  expect(dual.score?.scoreStringSide1).toBe('1-0');
+  expect(Object.hasOwn(dual, 'tieFormatId')).toBe(!custom);
+  const keys = Object.keys(dual);
+  expect(keys.indexOf('score')).toBeGreaterThan(keys.indexOf(custom ? 'tieFormat' : 'tieFormatId'));
+});

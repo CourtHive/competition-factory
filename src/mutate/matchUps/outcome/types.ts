@@ -180,6 +180,8 @@ export type OutcomeView = {
       sides?: unknown[];
       tieFormat?: unknown;
       clearsTieFormatId?: true;
+      /** The initial tally with the line cleared removes its old aggregate score before the final tally. */
+      clearsInitialScore?: true;
       scoreReported: boolean;
       /** the sides once the line's write has ensured them (the winner's carry reads these) */
       sidesAsHeld?: unknown[];

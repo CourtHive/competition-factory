@@ -115,7 +115,13 @@ export type OutcomeOp =
        * call's `tieMatchUpResult`, but for a line's result removed or a line cleared (`unreturned`: v1's
        * `removeDirectedParticipants` returns none, nor its clear of a line still to be played)
        */
-      dualTally?: { sides?: unknown[]; tieFormat?: unknown; clearsTieFormatId?: true; unreturned?: true };
+      dualTally?: {
+        sides?: unknown[];
+        tieFormat?: unknown;
+        clearsTieFormatId?: true;
+        clearsInitialScore?: true;
+        unreturned?: true;
+      };
       /**
        * a TEAM dual's own call (S7): the sides `ensureSideLineUps` writes before the result (their line-ups from the
        * draw's), present only where they change the stored ones. Unlike a line's `dualTally`, the call returns no
@@ -526,6 +532,7 @@ function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMat
   if (op.ensuredSides) matchUp.sides = structuredClone(op.ensuredSides) as MatchUp['sides'];
   if (op.dualTally?.tieFormat) matchUp.tieFormat = structuredClone(op.dualTally.tieFormat) as MatchUp['tieFormat'];
   if (op.dualTally?.clearsTieFormatId) matchUp.tieFormatId = undefined;
+  if (op.dualTally?.clearsInitialScore) delete matchUp.score;
   if (op.initializesScore) matchUp.score = undefined;
   if (op.resetsScore) resetResult(matchUp, op.matchUpStatus, bindResultInputs);
   if (op.score) matchUp.score = ordinary || bindResultInputs ? op.score : structuredClone(op.score);

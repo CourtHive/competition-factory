@@ -2123,14 +2123,14 @@ function initialEmptyDualTally({
   drawDefinition: DrawDefinition;
   structure?: Structure;
   event?: Event;
-}): boolean {
+}): { clearsInitialScore: true; clearsTieFormatId?: true } | undefined {
   if (
     !dualMatchUp.winningSide ||
     dualMatchUp.winningSide === projectedWinningSide ||
     checkScoreHasValue({ score: request.score }) ||
     (!!request.matchUpStatus && completedMatchUpStatuses.includes(request.matchUpStatus))
   )
-    return false;
+    return undefined;
   const otherResult = dualMatchUp.tieMatchUps?.some(
     (line) =>
       line.matchUpId !== request.matchUpId &&
@@ -2138,10 +2138,15 @@ function initialEmptyDualTally({
         (line.matchUpStatus && completedMatchUpStatuses.includes(line.matchUpStatus)) ||
         (line.score?.sets?.length && (line.score.sets[0].side1Score || line.score.sets[0].side2Score))),
   );
-  if (otherResult) return false;
+  if (otherResult) return undefined;
   const resolved = resolveTieFormat({ matchUp: dualMatchUp, drawDefinition, structure, event })?.tieFormat;
   const inherited = resolveTieFormat({ drawDefinition, structure, event })?.tieFormat;
-  return !!resolved && !!inherited && JSON.stringify(resolved) === JSON.stringify(inherited);
+  return {
+    clearsInitialScore: true,
+    ...(resolved && inherited && JSON.stringify(resolved) === JSON.stringify(inherited)
+      ? { clearsTieFormatId: true as const }
+      : {}),
+  };
 }
 
 function lineDualRewrite(
@@ -2151,6 +2156,6 @@ function lineDualRewrite(
 ): NonNullable<OutcomeView['line']>['dualRewrite'] {
   return {
     ...dualRewrite(args),
-    ...(initialEmptyDualTally({ ...args, request, projectedWinningSide }) ? { clearsTieFormatId: true as const } : {}),
+    ...initialEmptyDualTally({ ...args, request, projectedWinningSide }),
   };
 }
