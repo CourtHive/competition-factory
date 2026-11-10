@@ -451,7 +451,7 @@ export function unwindWalk({
   }
   if (sim.failed || owesByeAdvance(sim)) return undefined;
   const segments: OutcomeOp[][] = seats.map(() => []);
-  for (const { structureId, drawPosition, quiet, segment } of sim.withdrawn)
+  for (const { structureId, drawPosition, segment } of sim.withdrawn)
     segments[segment].push({
       op: 'withdrawBye',
       structureId,
@@ -460,7 +460,7 @@ export function unwindWalk({
       clearedWinnerIds: [...sim.clearedWinners]
         .filter(([id, clearedIn]) => clearedIn === segment && !sim.notices.has(id))
         .map(([id]) => id),
-      ...(quiet ? { announcesAssignments: false as const } : {}),
+      announcesAssignments: false,
     });
   const stamped = new Set<string>();
   for (const [matchUpId, notice] of sim.notices) {
@@ -473,6 +473,15 @@ export function unwindWalk({
       stamped.add(structureId);
       segments[notice.segment].push({ op: 'stampUpdatedAt', entity: 'structure', id: structureId });
     }
+  }
+  for (const { structureId, quiet, segment } of sim.withdrawn) {
+    if (!quiet)
+      segments[segment].push({
+        op: 'announcePositionAssignments',
+        structureId,
+        announcesEvent: false,
+        announcesTournament: false,
+      });
   }
   return segments;
 }

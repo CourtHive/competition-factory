@@ -748,7 +748,26 @@ function standingByeRemainder(
   );
 }
 
-export function unwoundSeatOps(
+/** The assignment notice belongs to the clear's return, after its matchUp writes. */
+export function unwoundSeatOps(...args: Parameters<typeof unwoundSeatProgram>): ReturnType<typeof unwoundSeatProgram> {
+  const program = unwoundSeatProgram(...args);
+  const [, seat] = args;
+  const withdrawal = program?.find(
+    (op) => op.op === 'withdrawBye' && op.structureId === seat.structureId && op.drawPosition === seat.drawPosition,
+  );
+  if (!program || withdrawal?.op !== 'withdrawBye' || withdrawal.announcesAssignments === false) return program;
+  return [
+    ...program.map((op): OutcomeOp => (op === withdrawal ? { ...withdrawal, announcesAssignments: false } : op)),
+    {
+      op: 'announcePositionAssignments',
+      structureId: seat.structureId,
+      announcesEvent: false,
+      announcesTournament: false,
+    },
+  ];
+}
+
+function unwoundSeatProgram(
   view: OutcomeView,
   loserSeat: WinnerLoserSeat,
   placedBye: boolean,

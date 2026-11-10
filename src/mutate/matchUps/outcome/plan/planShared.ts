@@ -353,9 +353,16 @@ export function removesDirection(view: OutcomeView, route: Route | undefined, wr
 /** a seat filled with a propagated BYE and its matchUp a BYE (`assignDrawPositionBye`), the matchUp stamped */
 export function seatBye(seat: { structureId: string; drawPosition: number; matchUpId: string }): OutcomeOp[] {
   return [
-    { op: 'assignBye', structureId: seat.structureId, drawPosition: seat.drawPosition, byeFromPropagation: true },
+    {
+      op: 'assignBye',
+      structureId: seat.structureId,
+      drawPosition: seat.drawPosition,
+      byeFromPropagation: true,
+      announcesAssignments: false,
+    },
     { op: 'setMatchUpBye', matchUpId: seat.matchUpId },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: seat.matchUpId },
+    { op: 'announcePositionAssignments', structureId: seat.structureId },
   ];
 }
 

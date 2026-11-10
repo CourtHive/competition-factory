@@ -262,6 +262,8 @@ export type OutcomeOp =
     }
   | {
       op: 'announcePositionAssignments';
+      /** Recursive withdrawal returns without tournament context. */
+      announcesTournament?: false;
       /** Return-time notice: nested BYE assignments announce before their parent. No state write. */
       structureId: string;
       announcesEvent?: false;
@@ -758,7 +760,7 @@ function foldSetProvenance(op: OpOf<'setSideExitProvenance'>, { matchUps }: Draw
   return {};
 }
 
-function foldAssignBye(op: OpOf<'assignBye'>, { structures, groups, matchUps }: DrawIndex): Folded {
+function foldAssignBye(op: OpOf<'assignBye'>, { structures, groups }: DrawIndex): Folded {
   const positionAssignments = positionAssignmentsOf(structures.get(op.structureId) ?? groups.get(op.structureId));
   if (!positionAssignments) return { error: `assignBye: no structure ${op.structureId}` };
   let assignment = positionAssignments.find((candidate) => candidate.drawPosition === op.drawPosition);
@@ -766,11 +768,6 @@ function foldAssignBye(op: OpOf<'assignBye'>, { structures, groups, matchUps }: 
   if (!assignment) {
     assignment = { drawPosition: op.drawPosition };
     positionAssignments.push(assignment);
-  }
-  if (assignment.participantId) {
-    delete assignment.participantId;
-    const matchUp = op.matchUpId && matchUps.get(op.matchUpId);
-    if (matchUp) delete matchUp.winningSide;
   }
   assignment.bye = true;
   assignment.participantId = undefined;

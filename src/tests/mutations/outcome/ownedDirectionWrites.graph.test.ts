@@ -2,6 +2,7 @@ import { getProvider, getTournamentRecords, setOutcomePipeline, setSubscriptions
 import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { prepareHeldCarryCorrection } from '@Tests/testHarness/outcome/directionFixtures';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
+import { HELD_BYE_REMOVALS } from '@Tests/testHarness/outcome/directionFixtures';
 import { registerTestSeedIdentity } from '@Tests/testHarness/seedMathRandom';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { unwindWalk } from '@Mutate/matchUps/outcome/unwindWalk';
@@ -19,12 +20,17 @@ import {
 // constants and types
 import { ROUND_ROBIN, FIRST_MATCH_LOSER_CONSOLATION, MAIN, CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
-import { MODIFY_MATCHUP, UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
 import { COMPASS, CURTIS_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { USTA_COLLEGE, DOMINANT_DUO } from '@Constants/tieFormatConstants';
+import { TEAM, SINGLES } from '@Constants/eventConstants';
 import type { Tournament } from '@Types/tournamentTypes';
-import { TEAM } from '@Constants/eventConstants';
 import { setClock } from '@Tools/clock';
+import {
+  MODIFY_MATCHUP,
+  UPDATE_INCONTEXT_MATCHUP,
+  MODIFY_POSITION_ASSIGNMENTS,
+  MODIFY_DRAW_DEFINITION,
+} from '@Constants/topicConstants';
 import {
   DOUBLE_WALKOVER,
   DOUBLE_DEFAULT,
@@ -627,3 +633,115 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(line.winningSide).toBeUndefined();
   },
 );
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s announces a BYE assignment on return before the later carried score callbacks',
+  (mode) => {
+    const scenario = HELD_BYE_REMOVALS.find(
+      ([label]) => label === 'C21 FIRST_MATCH_LOSER_CONSOLATION 7/8 R1/2 side 1: DOUBLE_DEFAULT, policy off',
+    )![1];
+    prepareDirection(OUTCOME_PIPELINE_V1, { ...scenario, steps: [] });
+    const step = scenario.steps[0];
+    const id = findTarget(step.target);
+    const buffers: string[][] = [];
+    const provider = getProvider();
+    const clear = provider.deleteNotices;
+    vi.spyOn(provider, 'deleteNotices').mockImplementation(() => {
+      if (counter.active) buffers.push(provider.getNoticeBuffer!().map(({ topic }) => topic));
+      return clear();
+    });
+    write(mode, 'd', id, step.outcome, step.params);
+    expect(buffers.at(-1)).toEqual([
+      UPDATE_INCONTEXT_MATCHUP,
+      MODIFY_MATCHUP,
+      UPDATE_INCONTEXT_MATCHUP,
+      MODIFY_MATCHUP,
+      UPDATE_INCONTEXT_MATCHUP,
+      MODIFY_MATCHUP,
+      MODIFY_POSITION_ASSIGNMENTS,
+      UPDATE_INCONTEXT_MATCHUP,
+      MODIFY_MATCHUP,
+      MODIFY_MATCHUP,
+      UPDATE_INCONTEXT_MATCHUP,
+      MODIFY_DRAW_DEFINITION,
+      MODIFY_MATCHUP,
+    ]);
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s announces a fresh line before the dual withdrawal it causes',
+  (mode) => {
+    const { drawId, record } = fresh({
+      drawSize: 8,
+      participantsCount: 3,
+      drawType: COMPASS,
+      eventType: TEAM,
+      tieFormatName: USTA_COLLEGE,
+    });
+    const dual = record
+      .events![0].drawDefinitions![0].structures!.find((s) => s.structureName === 'East')!
+      .matchUps!.find((m) => m.roundNumber === 2 && m.roundPosition === 1)!;
+    write(OUTCOME_PIPELINE_V1, drawId, dual.matchUpId, { winningSide: 1 });
+    const line = dual.tieMatchUps!.find((m) => m.matchUpType === SINGLES)!;
+    const observed: string[][] = [];
+    const provider = getProvider();
+    const cycle = provider.cycleModifiedTopics!;
+    vi.spyOn(provider, 'cycleModifiedTopics').mockImplementation(() => {
+      const topics = cycle();
+      if (counter.active && topics?.size) observed.push([...topics]);
+      return topics;
+    });
+    setSubscriptions({ subscriptions: { [UPDATE_INCONTEXT_MATCHUP]: () => undefined } });
+    write(mode, drawId, line.matchUpId, won());
+    expect(observed.at(-1)?.[0]).toBe(UPDATE_INCONTEXT_MATCHUP);
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s clears the old loser assignment before placing the propagated BYE',
+  (mode) => {
+    const { drawId, record } = fresh({ drawType: FIRST_MATCH_LOSER_CONSOLATION });
+    const structures = record.events![0].drawDefinitions![0].structures!;
+    const source = structures
+      .find((s) => s.stage === MAIN)!
+      .matchUps!.find((m) => m.roundNumber === 1 && m.roundPosition === 1)!;
+    write(OUTCOME_PIPELINE_V1, drawId, source.matchUpId, { winningSide: 1 });
+    const assignment = structures
+      .find((s) => s.stage === CONSOLATION)!
+      .positionAssignments!.find((a) => a.participantId)!;
+    write(mode, drawId, source.matchUpId, { matchUpStatus: DOUBLE_DEFAULT });
+    expect(assignment.bye).toBe(true);
+    expect(assignment.participantId).toBeUndefined();
+    expect(Object.keys(assignment)).toEqual(['drawPosition', 'bye', 'participantId', 'byeFromPropagation']);
+  },
+);
+
+it('a BYE placement preserves existing assignment and winner property positions', () => {
+  const matchUp = {
+    matchUpId: 'placement',
+    matchUpStatus: DEFAULTED as typeof DEFAULTED,
+    winningSide: 1 as const,
+    schedule: {},
+    drawPositions: [1, 2],
+  };
+  const assignment = { drawPosition: 1, participantId: 'displaced' };
+  const draw: any = {
+    drawId: 'placement-draw',
+    structures: [{ structureId: 'placement-structure', matchUps: [matchUp], positionAssignments: [assignment] }],
+  };
+  const result = applyOutcomeOps(draw, [
+    {
+      op: 'assignBye',
+      structureId: 'placement-structure',
+      matchUpId: 'placement',
+      drawPosition: 1,
+      byeFromPropagation: true,
+    },
+    { op: 'setMatchUpBye', matchUpId: 'placement' },
+  ]);
+  expect(result).toEqual({});
+  expect(Object.keys(assignment)).toEqual(['drawPosition', 'participantId', 'bye', 'byeFromPropagation']);
+  expect(Object.keys(matchUp).indexOf('winningSide')).toBeLessThan(Object.keys(matchUp).indexOf('schedule'));
+  expect(matchUp.winningSide).toBeUndefined();
+});

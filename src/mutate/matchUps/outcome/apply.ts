@@ -245,16 +245,16 @@ export function applyOwnedPlan({
   const tallyMatchUpId = tallyNoticeTarget(ops, args);
   const { settled } = namedWriters(ops);
   const eventless = eventlessNotices(ops).matchUps;
-  for (const step of nativeNoticeSteps(ops, args.request?.matchUpId)) {
+  for (const step of nativeNoticeSteps(ops, args.request?.matchUpId, stored)) {
+    if (step.kind === 'assignments') {
+      announceAssignmentBoundary(step, args);
+      continue;
+    }
     const matchUpId = step.matchUpId;
     const matchUp = stored.get(matchUpId);
     if (!matchUp) continue;
-    if (step.kind === 'position') {
-      announcePositionBoundary(step.position, matchUp, args);
-      continue;
-    }
     if (step.kind !== 'modify') {
-      announceResultBoundary(
+      announceWriteBoundary(
         step,
         matchUp,
         { ...args, event: step.kind === 'score' && eventless.has(matchUpId) ? undefined : event },
@@ -299,7 +299,6 @@ export function applyOwnedPlan({
       event: noticeEvent,
     });
   }
-  announceAssignments({ ops, drawDefinition, tournamentId, event });
   announceScoredTimeCleanup(cleanupTargets, args);
   return planResult(shape, ops, route);
 }
@@ -325,20 +324,27 @@ function tallyNoticeTarget(ops: OutcomeOp[], args: BuildViewArgs): string | unde
 type NativeNoticeStep =
   | { kind: 'ensure' | 'score'; matchUpId: string; rank: number; score: ResultOp }
   | { kind: 'modify'; matchUpId: string; rank: number }
-  | { kind: 'position'; matchUpId: string; rank: number; position: ArrivalOp };
+  | { kind: 'position'; matchUpId: string; rank: number; position: ArrivalOp }
+  | { kind: 'assignments'; matchUpId?: never; structureId: string; named: boolean; evented: boolean; rank: number };
 
 /** Preserve last-write order within each topic, while retaining genuine earlier score boundaries. */
-function nativeNoticeSteps(ops: OutcomeOp[], sourceId?: string): NativeNoticeStep[] {
+function nativeNoticeSteps(
+  ops: OutcomeOp[],
+  sourceId: string | undefined,
+  stored: Map<string, MatchUp>,
+): NativeNoticeStep[] {
   const steps: NativeNoticeStep[] = [];
   const last = new Map<string, NativeNoticeStep>();
   // removeDirectedParticipants scores the call's own matchUp before withdrawing its directed positions.
-  const sourceFirst = ops.some(
-    (op) =>
-      op.op === 'setMatchUpResult' &&
-      op.matchUpId === sourceId &&
-      op.removesWinningSide &&
-      op.stampsScoredTime !== false,
-  );
+  const sourceFirst =
+    !!stored.get(sourceId ?? '')?.collectionId ||
+    ops.some(
+      (op) =>
+        op.op === 'setMatchUpResult' &&
+        op.matchUpId === sourceId &&
+        op.removesWinningSide &&
+        op.stampsScoredTime !== false,
+    );
   const sourceIndex = ops.findIndex((op) => op.op === 'setMatchUpResult' && op.matchUpId === sourceId);
   ops.forEach((op, index) => {
     const matchUpId = noticeMatchUpId(op);
@@ -366,7 +372,7 @@ function nativeNoticeSteps(ops: OutcomeOp[], sourceId?: string): NativeNoticeSte
         position: index < sourceIndex && !sourceFirst ? { ...op, announcesContext: false } : op,
       });
   });
-  const ordered = [...steps, ...last.values()];
+  const ordered = [...steps, ...last.values(), ...assignmentNoticeSteps(ops)];
   if (sourceFirst)
     for (const step of ordered) {
       if (step.matchUpId === sourceId) {
@@ -378,11 +384,38 @@ function nativeNoticeSteps(ops: OutcomeOp[], sourceId?: string): NativeNoticeSte
   return ordered.sort((a, b) => a.rank - b.rank);
 }
 
+/** Position writers announce their structure when they return, at the program's explicit boundary. */
+function assignmentNoticeSteps(ops: OutcomeOp[]): NativeNoticeStep[] {
+  return ops.flatMap((op, index): NativeNoticeStep[] => {
+    if (!announcesAssignments(op)) return [];
+    const named =
+      op.op !== 'withdrawBye' && !(op.op === 'announcePositionAssignments' && op.announcesTournament === false);
+    let boundary = index;
+    if (op.op === 'assignBye') {
+      const byeIndex = ops.findIndex(
+        (next, at) => at > index && next.op === 'setMatchUpBye' && next.matchUpId === op.matchUpId,
+      );
+      if (byeIndex >= 0) boundary = byeIndex;
+    }
+    // Legacy withdrawal programs without an explicit return marker retain their declared final boundary.
+    if (op.op === 'withdrawBye') boundary += ops.length;
+    return [
+      {
+        kind: 'assignments',
+        structureId: op.structureId,
+        named,
+        evented: named && !('announcesEvent' in op && op.announcesEvent === false),
+        rank: boundary * 3 + 2.5,
+      },
+    ];
+  });
+}
+
 /** A real placement/removal may announce before a later score supersedes its keyed notice. */
 function announcePositionBoundary(
   op: ArrivalOp,
   matchUp: MatchUp,
-  { drawDefinition, tournamentRecord, event }: BuildViewArgs,
+  { drawDefinition, tournamentRecord, event }: Pick<BuildViewArgs, 'drawDefinition' | 'tournamentRecord' | 'event'>,
 ): void {
   const bare = op.announcesContext === false || !!op.withdrawnByePosition || !!op.clearsScore;
   const noticeEvent =
@@ -420,14 +453,18 @@ function noticeMatchUpId(op: OutcomeOp): string | undefined {
 }
 
 /** A dual ensures its line-ups before tallying; every score writer then defers and announces its own result. */
-function announceResultBoundary(
-  step: Extract<NativeNoticeStep, { kind: 'ensure' | 'score' }>,
+function announceWriteBoundary(
+  step: Extract<NativeNoticeStep, { kind: 'ensure' | 'score' | 'position' }>,
   matchUp: MatchUp,
   { drawDefinition, tournamentRecord, event }: BuildViewArgs,
   tallyMatchUpId: string | undefined,
   deferScore: (score: ResultOp) => void,
 ): void {
   if (!drawDefinition) return;
+  if (step.kind === 'position') {
+    announcePositionBoundary(step.position, matchUp, { drawDefinition, tournamentRecord, event });
+    return;
+  }
   if (step.kind === 'score') {
     announceTally(step.matchUpId, tallyMatchUpId, drawDefinition);
     deferScore(step.score);
@@ -700,35 +737,19 @@ function dualTallyResult(ops: OutcomeOp[]) {
  * The structures whose assignments the ops change: a loser placed across a link, or a reserved seat, announced once
  * (v1's `directLoser`, `assignDrawPositionBye`); and a seat an unwind visits (S6)
  */
-function announceAssignments({
-  drawDefinition,
-  tournamentId,
-  event,
-  ops,
-}: {
-  drawDefinition: NonNullable<BuildViewArgs['drawDefinition']>;
-  event: BuildViewArgs['event'];
-  tournamentId?: string;
-  ops: OutcomeOp[];
-}) {
-  // each structure once, where the call first touches it: the notice buffer keeps a structure's first notice in place
-  // and takes a later one's payload over it (`preserveNoticeIdentity`), so an unwind's seat visit and the loser placed
-  // after it in the same structure are one notice, at the visit (S6)
-  for (const structureId of touchedStructures(ops)) {
-    const { structure } = findStructure({ drawDefinition, structureId });
-    if (!structure) continue;
-    const placedIn = ops.some((op) => placement(op) && op.structureId === structureId);
-    // a seat an unwind's `removeDirectedBye` visits, nothing placed in its structure: announced with neither event nor
-    // tournament, whether or not a BYE stood there (S6)
-    if (!placedIn) {
-      modifyPositionAssignmentsNotice({ drawDefinition, structure, tournamentId: undefined, event: undefined });
-      continue;
-    }
-    // a loser placed across a link, or a reserved seat (v1's `directLoser`, `assignDrawPositionBye`), with its event
-    // where any placement in it is announced with one (`eventedPlacement`)
-    const noticeEvent = eventedPlacement(ops, structureId) ? event : undefined;
-    modifyPositionAssignmentsNotice({ drawDefinition, tournamentId, structure, event: noticeEvent });
-  }
+function announceAssignmentBoundary(
+  { structureId, named, evented }: Extract<NativeNoticeStep, { kind: 'assignments' }>,
+  { drawDefinition, tournamentRecord, event }: BuildViewArgs,
+): void {
+  if (!drawDefinition) return;
+  const { structure } = findStructure({ drawDefinition, structureId });
+  if (!structure) return;
+  modifyPositionAssignmentsNotice({
+    drawDefinition,
+    structure,
+    tournamentId: named ? tournamentRecord?.tournamentId : undefined,
+    event: evented ? event : undefined,
+  });
 }
 
 /**
