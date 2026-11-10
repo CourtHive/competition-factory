@@ -18,6 +18,7 @@ import {
   CONVERGED_PRODUCED_RELAYS,
   STANDALONE_CARRIED_CONVERGENCES,
   TERMINAL_RELAY_CAPTURES,
+  OCCUPIED_FINAL_RELAY_CAPTURES,
   play as prepareDirection,
   findTarget,
 } from '@Tests/testHarness/outcome/directionFixtures';
@@ -1448,3 +1449,23 @@ it.each(
   const keys = Object.keys(dual);
   expect(keys.indexOf('score')).toBeGreaterThan(keys.indexOf(custom ? 'tieFormat' : 'tieFormatId'));
 });
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s restamps the occupied-final carrier before replaying its result',
+  (mode) => {
+    const scenario = OCCUPIED_FINAL_RELAY_CAPTURES.find(
+      ([label]) => label === 'occupied final relay: DEFAULTED/DOUBLE_DEFAULT/DOUBLE_DEFAULT/clear',
+    )![1];
+    prepareDirection(OUTCOME_PIPELINE_V1, { ...scenario, steps: [] });
+    const step = scenario.steps[0];
+    write(mode, 'd', findTarget(step.target), step.outcome, step.params);
+    const record = Object.values(getTournamentRecords())[0] as Tournament;
+    const target = record
+      .events![0].drawDefinitions![0].structures!.find((entry) => entry.structureName === 'Consolation')!
+      .matchUps!.find((entry) => entry.roundNumber === 3 && entry.roundPosition === 1)!;
+    expect(target.matchUpStatus).toBe(DEFAULTED);
+    const keys = Object.keys(target);
+    expect(keys.indexOf('matchUpFormat')).toBeLessThan(keys.indexOf('sideExitProvenance'));
+    expect(keys.indexOf('winningSide')).toBeGreaterThan(keys.indexOf('sideExitProvenance'));
+  },
+);
