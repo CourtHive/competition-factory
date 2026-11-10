@@ -1011,3 +1011,19 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     );
   },
 );
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s keeps the format identifier absent when the initial line tally already holds an exit status',
+  (mode) => {
+    const { drawId, matchUps } = fresh({
+      drawType: ROUND_ROBIN,
+      eventType: TEAM,
+      drawSize: 8,
+      tieFormatName: DOMINANT_DUO,
+    });
+    const dual = matchUps.find((matchUp) => matchUp.tieMatchUps?.length && matchUp.matchUpStatus === TO_BE_PLAYED)!;
+    write(OUTCOME_PIPELINE_V1, drawId, dual.matchUpId, { winningSide: 1 });
+    write(mode, drawId, dual.tieMatchUps![0].matchUpId, { winningSide: 1, matchUpStatus: DEFAULTED });
+    expect(Object.hasOwn(dual, 'tieFormatId')).toBe(false);
+  },
+);
