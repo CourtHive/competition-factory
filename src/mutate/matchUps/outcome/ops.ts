@@ -480,7 +480,7 @@ function setMatchUpResult(
   if (ordinary && op.score) matchUp.score = op.score;
   matchUp.matchUpStatus = op.matchUpStatus;
   clearOrderOfFinishUnlessCompleted(matchUp);
-  if (op.score && !ordinary) matchUp.score = structuredClone(op.score);
+  if (op.score && !ordinary) matchUp.score = op.score;
   // The ordinary writer installs format and codes before the winner and binds the caller's normalized codes.
   if (ordinary) setResultFormatAndCodes(matchUp, op, true);
   if (op.winningSide) matchUp.winningSide = op.winningSide;
@@ -508,7 +508,7 @@ function setResultFormatAndCodes(
 ) {
   if (op.matchUpFormat) matchUp.matchUpFormat = op.matchUpFormat;
   if (op.matchUpStatusCodes) {
-    matchUp.matchUpStatusCodes = bindCodes ? op.matchUpStatusCodes : structuredClone(op.matchUpStatusCodes);
+    matchUp.matchUpStatusCodes = op.matchUpStatusCodes;
     if (bindCodes && !op.matchUpStatusCodes.length) {
       delete matchUp.matchUpStatusCode;
       delete matchUp.sideStatusCodes;

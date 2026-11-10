@@ -1,3 +1,5 @@
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
+
 // constants and types
 import type { MatchUpWrite, OutcomeRequest, OutcomeView } from '../types';
 import type { MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
@@ -14,7 +16,7 @@ import type { OutcomeOp } from '../ops';
  */
 export function writtenScore(request: OutcomeRequest, write: MatchUpWrite): Score | undefined {
   const blanked = write.scoreStringSide1 === '' && write.scoreStringSide2 === '' && !write.sets;
-  return blanked ? { scoreStringSide1: '', scoreStringSide2: '' } : (request.score as Score | undefined);
+  return blanked ? toBePlayed.score : (request.score as Score | undefined);
 }
 
 /** the call's own result on its matchUp, and the matchUp's stamp */
