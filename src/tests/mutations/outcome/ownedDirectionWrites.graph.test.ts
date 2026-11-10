@@ -1161,3 +1161,41 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(Object.hasOwn(target, 'winningSide')).toBe(false);
   },
 );
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s announces the loser assignment after the arrival finishes advancing',
+  (mode) => {
+    const { drawId, record } = fresh({ drawType: MODIFIED_FEED_IN_CHAMPIONSHIP, drawSize: 16 });
+    const main = record.events![0].drawDefinitions![0].structures!.find((entry) => entry.structureName === 'Main')!;
+    const at = (position: number) =>
+      main.matchUps!.find((entry) => entry.roundNumber === 1 && entry.roundPosition === position)!;
+    write(
+      OUTCOME_PIPELINE_V1,
+      drawId,
+      at(1).matchUpId,
+      { matchUpStatus: DOUBLE_DEFAULT },
+      { propagateExitStatus: true },
+    );
+    const topics: string[] = [];
+    const provider = getProvider();
+    const add = provider.addNotice;
+    vi.spyOn(provider, 'addNotice').mockImplementation((notice, ...args) => {
+      const topic = (notice as { topic: string }).topic;
+      if (counter.active && [MODIFY_MATCHUP, MODIFY_POSITION_ASSIGNMENTS].includes(topic)) topics.push(topic);
+      return add(notice, ...args);
+    });
+    setSubscriptions({
+      subscriptions: {
+        [MODIFY_MATCHUP]: () => undefined,
+        [MODIFY_POSITION_ASSIGNMENTS]: () => undefined,
+      },
+    });
+    const outcome = generateOutcomeFromScoreString({
+      scoreString: '6-1 6-1',
+      winningSide: 1,
+      matchUpFormat: 'SET3-S:6/TB7',
+    }).outcome;
+    write(mode, drawId, at(2).matchUpId, outcome!, { propagateExitStatus: true });
+    expect(topics.at(-1)).toBe(MODIFY_POSITION_ASSIGNMENTS);
+  },
+);

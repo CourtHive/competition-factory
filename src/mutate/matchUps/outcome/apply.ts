@@ -750,8 +750,8 @@ export const announcesAssignments = (
   op: OutcomeOp,
 ): op is Extract<OutcomeOp, { op: 'assignPosition' | 'assignBye' | 'withdrawBye' | 'announcePositionAssignments' }> =>
   op.op === 'announcePositionAssignments' ||
-  op.op === 'assignPosition' ||
-  ((op.op === 'assignBye' || op.op === 'withdrawBye') && op.announcesAssignments !== false);
+  ((op.op === 'assignPosition' || op.op === 'assignBye' || op.op === 'withdrawBye') &&
+    op.announcesAssignments !== false);
 
 /** each structure a placement or an unwind's seat visit touches, in the order the call first touches it */
 const touchedStructures = (ops: OutcomeOp[]) => [

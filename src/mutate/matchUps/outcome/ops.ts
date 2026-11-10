@@ -194,6 +194,8 @@ export type OutcomeOp =
     }
   | {
       op: 'assignPosition';
+      /** The assignment announces at an explicit return boundary after its nested arrivals. */
+      announcesAssignments?: false;
       structureId: string;
       drawPosition: number;
       /** the participant placed at the drawPosition's stored assignment (a loser fed across a link) */

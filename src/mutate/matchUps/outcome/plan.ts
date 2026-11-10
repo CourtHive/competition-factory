@@ -62,6 +62,7 @@ import {
 import {
   arrivalOps,
   awardedArrivalOps,
+  arrivalReturnOps,
   placedDirection,
   removalOps,
   removedOps,
@@ -633,6 +634,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
     ...lineUps,
     ...landing,
     ...converging,
+    ...arrivalReturnOps(arrival),
     ...doubleExitSeated,
     ...producedExit,
     ...(seatOps?.after ?? []),

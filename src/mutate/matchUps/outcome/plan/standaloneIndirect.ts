@@ -1,7 +1,7 @@
 import { indirectRelayReset, producedRelayAfterOps, unwoundOps } from './unwindPath';
 import { getSideStatusCode } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
+import { arrivalOps, arrivalReturnOps, winnerPlacementOps } from './directionOps';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
-import { arrivalOps, winnerPlacementOps } from './directionOps';
 import { producedAwardWriteOps } from './producedExit';
 import { directionReason } from './directionReasons';
 import { isDoubleExit } from '@Validators/isExit';
@@ -101,6 +101,7 @@ function standaloneTail(
     ...resultOps(request, write, request.matchUpId as string),
     ...winnerPlacementOps(after.view, 'winner', write, direction.winner),
     ...arrival,
+    ...arrivalReturnOps(arrival),
     ...unwind.reannounced,
     ...producedRelayAfterOps(view, unwind.ops, undefined, unwind.seatPrograms),
     ...structureStamps([...unwind.ops, ...arrival], structureId),

@@ -1,5 +1,5 @@
 import { blankScore, CLEAR_SCORE, indexed, scoreless, sideOf, structureStamps, unplaced } from './planShared';
-import { arrivalOps, winnerPlacementOps } from './directionOps';
+import { arrivalOps, arrivalReturnOps, winnerPlacementOps } from './directionOps';
 import { unwoundOps, unwoundView } from './unwindPath';
 import { isDoubleExit } from '@Validators/isExit';
 import { scheduleOps } from './schedulePlan';
@@ -150,6 +150,7 @@ export function terminalOccupiedWinnerOps(args: PlanArgs): OutcomeOp[] | undefin
     ...winnerOps,
     ...arrival,
     relayAward,
+    ...arrivalReturnOps(arrival),
     ...unwind.reannounced.map(project),
     ...final,
     ...structureStamps([...unwound, ...arrival], source.structureId),

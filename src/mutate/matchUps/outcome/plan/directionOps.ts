@@ -174,6 +174,7 @@ export function arrivalOps(view: OutcomeView, loser?: DirectionPlan['loser']): O
     ? [
         {
           op: 'assignPosition',
+          announcesAssignments: false,
           structureId: loserStructureId,
           drawPosition: loserTargetDrawPosition,
           participantId: loser.participantId,
@@ -181,6 +182,12 @@ export function arrivalOps(view: OutcomeView, loser?: DirectionPlan['loser']): O
       ]
     : [];
 }
+
+/** The structure assignment is announced only after the participant's nested arrivals have returned. */
+export const arrivalReturnOps = (arrival: OutcomeOp[]): OutcomeOp[] =>
+  arrival.flatMap((op) =>
+    op.op === 'assignPosition' ? [{ op: 'announcePositionAssignments', structureId: op.structureId }] : [],
+  );
 
 /**
  * C18: the loser placed on a seat whose matchUp holds a carried exit awarded to it takes the award: v1's
