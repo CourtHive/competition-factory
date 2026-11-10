@@ -789,7 +789,7 @@ function unwoundSeatProgram(
         (matchUp) =>
           matchUp.structureId === structureId &&
           matchUp.drawPositions?.includes(drawPosition) &&
-          matchUp.matchUpStatus === TO_BE_PLAYED &&
+          (matchUp.matchUpStatus === TO_BE_PLAYED || matchUp.matchUpStatus === BYE) &&
           !matchUp.winningSide,
       )
       .map(({ matchUpId }) => matchUpId),

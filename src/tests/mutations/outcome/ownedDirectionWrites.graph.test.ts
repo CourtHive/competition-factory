@@ -20,12 +20,17 @@ import {
 } from '@Tests/testHarness/outcome/directionFixtures';
 
 // constants and types
-import { COMPASS, CURTIS_CONSOLATION, FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
 import { USTA_COLLEGE, DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { TEAM, SINGLES } from '@Constants/eventConstants';
 import type { Tournament } from '@Types/tournamentTypes';
 import { setClock } from '@Tools/clock';
+import {
+  COMPASS,
+  CURTIS_CONSOLATION,
+  FEED_IN_CHAMPIONSHIP,
+  MODIFIED_FEED_IN_CHAMPIONSHIP,
+} from '@Constants/drawDefinitionConstants';
 import {
   ROUND_ROBIN,
   FIRST_MATCH_LOSER_CONSOLATION,
@@ -1072,5 +1077,28 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     });
     write(mode, 'd', source, step.outcome, step.params);
     expect(observed.at(-1)?.[0]).toBe(MODIFY_DRAW_DEFINITION);
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s normalizes the earlier BYE winner key when withdrawing a later held seat',
+  (mode) => {
+    const { drawId, record } = fresh(
+      { drawId: 'd', drawType: MODIFIED_FEED_IN_CHAMPIONSHIP, drawSize: 32, participantsCount: 27 },
+      {},
+      20715466,
+    );
+    const structures = record.events![0].drawDefinitions![0].structures!;
+    const at = (name: string, round: number, position: number) =>
+      structures
+        .find((entry) => entry.structureName === name)!
+        .matchUps!.find((entry) => entry.roundNumber === round && entry.roundPosition === position)!;
+    const params = { propagateExitStatus: true, allowChangePropagation: true };
+    write(OUTCOME_PIPELINE_V1, drawId, at('Main', 1, 6).matchUpId, { matchUpStatus: DOUBLE_DEFAULT }, params);
+    write(mode, drawId, at('Main', 1, 6).matchUpId, { matchUpStatus: TO_BE_PLAYED }, params);
+    const target = at('Consolation', 1, 3);
+    expect(target.matchUpStatus).toBe(BYE);
+    expect(Object.hasOwn(target, 'winningSide')).toBe(true);
+    expect(target.winningSide).toBeUndefined();
   },
 );
