@@ -246,6 +246,7 @@ function chainOps({ levels, pending }: ConvergedChain): OutcomeOp[] {
       op: 'setMatchUpResult',
       matchUpId: level.matchUpId,
       matchUpStatus: level.matchUpStatus,
+      ...(isDoubleExit(level.matchUpStatus) ? { removesWinningSide: true as const } : {}),
       matchUpStatusCodes: [],
       ...(blanked ? { resetsScore: true, score: toBePlayed.score } : {}),
       stampsScoredTime: false,

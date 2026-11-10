@@ -916,8 +916,10 @@ export function unwoundOps(
               op: 'setMatchUpResult',
               matchUpId,
               matchUpStatus: rederived.matchUpStatus,
-              resetsScore: true,
-              score: blankScore(),
+              removesWinningSide: true,
+              ...(rederived.matchUpStatus === WALKOVER
+                ? { resetsScore: true as const, score: blankScore() }
+                : { score: { scoreStringSide1: '', scoreStringSide2: '', sets: undefined } }),
               matchUpStatusCodes: [],
               stampsScoredTime: false,
               ...(retainedAward && !stored?.winnerMatchUpId && !stored?.loserMatchUpId

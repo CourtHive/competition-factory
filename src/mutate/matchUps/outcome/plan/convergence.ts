@@ -152,6 +152,7 @@ export function convergenceOps(
       op: 'setMatchUpResult',
       matchUpId,
       matchUpStatus,
+      removesWinningSide: true,
       // a side whose standing exit a double exit delivered shows its outcome code (S6 tail)
       matchUpStatusCodes,
       // a DOUBLE_WALKOVER says nothing was played, so its score is blanked; a DOUBLE_DEFAULT keeps what stood
@@ -272,6 +273,7 @@ export function producedConvergedOps(
       op: 'setMatchUpResult',
       matchUpId: landing.matchUpId,
       matchUpStatus,
+      removesWinningSide: true,
       matchUpStatusCodes: [],
       stampsScoredTime: false,
       ...(matchUpStatus === DOUBLE_WALKOVER ? { resetsScore: true, score: toBePlayed.score } : {}),

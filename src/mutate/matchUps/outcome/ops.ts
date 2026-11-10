@@ -489,9 +489,6 @@ function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMat
     matchUp.matchUpStatusCodes = [];
     delete matchUp.winningSide;
   }
-  // a dual's sides and tieFormat as `updateTieMatchUpScore` rewrites them before its tally (S7)
-  if (op.dualTally?.sides) matchUp.sides = structuredClone(op.dualTally.sides) as MatchUp['sides'];
-  if (op.ensuredSides) matchUp.sides = structuredClone(op.ensuredSides) as MatchUp['sides'];
   if (op.disableAutoCalc !== undefined)
     setFirstClassOrExtension({
       element: matchUp,
@@ -499,6 +496,9 @@ function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMat
       name: DISABLE_AUTO_CALC,
       value: op.disableAutoCalc,
     });
+  // a dual's sides and tieFormat as `updateTieMatchUpScore` rewrites them before its tally (S7)
+  if (op.dualTally?.sides) matchUp.sides = structuredClone(op.dualTally.sides) as MatchUp['sides'];
+  if (op.ensuredSides) matchUp.sides = structuredClone(op.ensuredSides) as MatchUp['sides'];
   if (op.dualTally?.tieFormat) matchUp.tieFormat = structuredClone(op.dualTally.tieFormat) as MatchUp['tieFormat'];
   if (op.resetsScore) resetResult(matchUp, op.matchUpStatus, bindResultInputs);
   if (op.score) matchUp.score = ordinary || bindResultInputs ? op.score : structuredClone(op.score);

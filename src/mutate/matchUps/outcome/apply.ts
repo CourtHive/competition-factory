@@ -244,12 +244,19 @@ export function applyOwnedPlan({
   };
   const tallyMatchUpId = tallyNoticeTarget(ops, args);
   const { settled } = namedWriters(ops);
+  const eventless = eventlessNotices(ops).matchUps;
   for (const step of nativeNoticeSteps(ops)) {
     const matchUpId = step.matchUpId;
     const matchUp = stored.get(matchUpId);
     if (!matchUp) continue;
     if (step.kind !== 'modify') {
-      announceResultBoundary(step, matchUp, args, tallyMatchUpId, deferScore);
+      announceResultBoundary(
+        step,
+        matchUp,
+        { ...args, event: step.kind === 'score' && eventless.has(matchUpId) ? undefined : event },
+        tallyMatchUpId,
+        deferScore,
+      );
       continue;
     }
     // a removal's notice is built as v1's `removeSubsequentRoundsParticipant` builds it, whose caller passes no event;

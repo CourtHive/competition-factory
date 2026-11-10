@@ -357,3 +357,49 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(landing.score).toBe(toBePlayed.score);
   },
 );
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s writes a manual dual override before ensuring its sides',
+  (mode) => {
+    const { drawId, matchUps } = fresh({ eventType: TEAM, tieFormatName: USTA_COLLEGE });
+    const dual = matchUps.find((m) => m.tieMatchUps?.length && m.roundNumber === 1 && m.roundPosition === 1)!;
+    delete dual.sides;
+    write(mode, drawId, dual.matchUpId, { winningSide: 1 }, { disableAutoCalc: true });
+    const keys = Object.keys(dual);
+    expect(keys.indexOf('disableAutoCalc')).toBeGreaterThan(-1);
+    expect(keys.indexOf('sides')).toBeGreaterThan(keys.indexOf('disableAutoCalc'));
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s removes the winning side explicitly when two produced defaults converge',
+  (mode) => {
+    const { drawId, matchUps } = fresh({ drawSize: 16 });
+    const first = matchUps.find((m) => m.roundNumber === 1 && m.roundPosition === 1)!;
+    const second = matchUps.find((m) => m.roundNumber === 1 && m.roundPosition === 2)!;
+    const target = matchUps.find((m) => m.roundNumber === 2 && m.roundPosition === 1)!;
+    write(OUTCOME_PIPELINE_V1, drawId, first.matchUpId, { matchUpStatus: DOUBLE_DEFAULT });
+    write(mode, drawId, second.matchUpId, { matchUpStatus: DOUBLE_DEFAULT });
+    expect(target.matchUpStatus).toBe(DOUBLE_DEFAULT);
+    expect(Object.hasOwn(target, 'winningSide')).toBe(true);
+    expect(target.winningSide).toBeUndefined();
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s dissolves a default convergence with a separate unplayed score and retained format shape',
+  (mode) => {
+    const { drawId, matchUps } = fresh({ drawSize: 16 });
+    const first = matchUps.find((m) => m.roundNumber === 1 && m.roundPosition === 1)!;
+    const second = matchUps.find((m) => m.roundNumber === 1 && m.roundPosition === 2)!;
+    const target = matchUps.find((m) => m.roundNumber === 2 && m.roundPosition === 1)!;
+    write(OUTCOME_PIPELINE_V1, drawId, first.matchUpId, { matchUpStatus: DOUBLE_DEFAULT });
+    write(OUTCOME_PIPELINE_V1, drawId, second.matchUpId, { matchUpStatus: DOUBLE_DEFAULT });
+    expect(Object.hasOwn(target, 'matchUpFormat')).toBe(false);
+    write(mode, drawId, first.matchUpId, { matchUpStatus: TO_BE_PLAYED });
+    expect(target.matchUpStatus).toBe(DEFAULTED);
+    expect(target.score).not.toBe(toBePlayed.score);
+    expect(Object.keys(target.score!)).toEqual(['scoreStringSide1', 'scoreStringSide2', 'sets']);
+    expect(Object.hasOwn(target, 'matchUpFormat')).toBe(false);
+  },
+);
