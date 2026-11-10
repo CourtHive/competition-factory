@@ -56,7 +56,11 @@ function fresh(drawProfile = {}) {
     ).toBe(true);
   const record = Object.values(getTournamentRecords())[0] as Tournament;
   const draw = record.events![0].drawDefinitions![0];
-  return { drawId: generated.drawIds![0], record, matchUps: getMatchUpsMap({ drawDefinition: draw }).drawMatchUps };
+  return {
+    drawId: generated.drawIds![0],
+    record,
+    matchUps: getMatchUpsMap({ drawDefinition: draw }).drawMatchUps,
+  };
 }
 
 function write(
@@ -150,5 +154,21 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     ]);
     expect(result.tieMatchUpResult.tieFormatRemoved).toBeUndefined();
     expect(result.tieMatchUpResult.winningSide).toBeUndefined();
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s convergence shares the reset score while keeping its freshly derived codes distinct',
+  (mode) => {
+    const { drawId, matchUps } = fresh();
+    const first = matchUps.find((m) => m.roundNumber === 1 && m.roundPosition === 1)!;
+    const second = matchUps.find((m) => m.roundNumber === 1 && m.roundPosition === 2)!;
+    const target = matchUps.find((m) => m.roundNumber === 2 && m.roundPosition === 1)!;
+    write(OUTCOME_PIPELINE_V1, drawId, first.matchUpId, { matchUpStatus: DOUBLE_WALKOVER });
+    write(mode, drawId, second.matchUpId, { matchUpStatus: DOUBLE_WALKOVER });
+    expect(target.matchUpStatus).toBe(DOUBLE_WALKOVER);
+    expect(target.score).toBe(toBePlayed.score);
+    expect(target.matchUpStatusCodes).toEqual([]);
+    expect(target.matchUpStatusCodes).not.toBe(toBePlayed.matchUpStatusCodes);
   },
 );
