@@ -508,7 +508,7 @@ function setMatchUpResult(
   clearResolvedSideExitProvenance(matchUp);
   if (op.winningSide) matchUp.winningSide = op.winningSide;
   else if (op.removesWinningSide) matchUp.winningSide = undefined;
-  else if (op.announcedAs === 'reconcileScoredTimes') delete matchUp.winningSide;
+  else if (op.announcedAs === 'reconcileScoredTimes' && op.matchUpStatus !== BYE) delete matchUp.winningSide;
   else if (bindResultInputs) {
     if (matchUp.winningSide) matchUp.winningSide = undefined;
   } else if (!op.resetsScore) delete matchUp.winningSide;
