@@ -132,7 +132,7 @@ describe('stored TeamColors schema', () => {
     $ref: '#/definitions/TeamColors',
     definitions: schema.definitions,
   });
-  it('requires a primary color and rejects command/unknown fields', () => {
+  it('requires a nonempty palette and rejects command/unknown fields', () => {
     expect(validate(stored)).toBe(true);
     expect(
       validate({ ...stored, palette: stored.palette.map((entry) => ({ ...entry, name: 'Color', group: 'Primary' })) }),

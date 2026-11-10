@@ -1,10 +1,12 @@
 import { rootExtensionsFingerprint, rootExtensionsNotice } from '@Mutate/tournaments/tournamentDetailNotice';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { normalizeTeamPresentation } from '@Validators/teamColors';
 import { isValidExtension } from '@Validators/isValidExtension';
 import { nowIso } from '@Tools/clock';
 
 // constants
 import { ErrorType, INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import { DISPLAY } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // types
@@ -36,6 +38,14 @@ export function addExtension(params?: AddExtensionArgs): {
       result: { error: INVALID_VALUES, info: 'invalid extension' },
       stack,
     });
+
+  // Team presentation is read tolerantly (bad entries dropped) at hydration, so it is rejected whole here.
+  const presentation = params.extension.name === DISPLAY ? params.extension.value?.teamPresentation : undefined;
+  if (presentation !== undefined) {
+    const issues: string[] = [];
+    normalizeTeamPresentation(presentation, issues);
+    if (issues.length) return decorateResult({ result: { error: INVALID_VALUES, info: issues.join('; ') }, stack });
+  }
 
   if (!params.element) {
     if (params.discover && !params.tournamentId && params.tournamentRecords) {

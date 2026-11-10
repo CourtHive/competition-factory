@@ -49,43 +49,51 @@ export function normalizeTeamPalette(value: unknown): TeamColors | undefined {
   return { palette, display: { roles } };
 }
 
-/** Validate sparse tournament settings without coupling them to a particular TEAM palette. */
-export function normalizeTeamPresentation(value: unknown): TeamPresentation | undefined {
-  if (!object(value) || !only(value, ['roles', 'teams'])) return undefined;
-  const read = (input: unknown, references: boolean) => {
-    if (!object(input)) return undefined;
+/**
+ * Read sparse tournament settings without coupling them to a particular TEAM palette. Invalid entries are
+ * dropped individually (an empty team exception inherits) and described in `issues`; writers reject any issue.
+ */
+export function normalizeTeamPresentation(value: unknown, issues: string[] = []): TeamPresentation | undefined {
+  if (!object(value)) {
+    issues.push('teamPresentation must be an object');
+    return undefined;
+  }
+  for (const key of Object.keys(value)) if (key !== 'roles' && key !== 'teams') issues.push(`unknown field ${key}`);
+  const read = (input: unknown, references: boolean, path: string) => {
     const roles: Partial<Record<TeamColorRole, string | { theme: true }>> = {};
+    if (input === undefined) return roles;
+    if (!object(input)) {
+      issues.push(`${path} must be an object`);
+      return roles;
+    }
     for (const [role, color] of Object.entries(input)) {
-      if (!TEAM_COLOR_ROLES.has(role as TeamColorRole)) return undefined;
-      if (object(color)) {
-        if (!only(color, ['theme']) || color.theme !== true) return undefined;
+      if (!TEAM_COLOR_ROLES.has(role as TeamColorRole)) issues.push(`${path}: unknown role ${role}`);
+      else if (object(color) && only(color, ['theme']) && color.theme === true) {
         roles[role as TeamColorRole] = { theme: true };
       } else if (hex(color)) roles[role as TeamColorRole] = color.toUpperCase();
       else if (references && colorId(color)) roles[role as TeamColorRole] = color;
-      else return undefined;
+      else issues.push(`${path}: invalid ${role}`);
     }
     return roles;
   };
   const result: TeamPresentation = {};
-  if (value.roles !== undefined) {
-    const roles = read(value.roles, false);
-    if (!roles) return undefined;
-    result.roles = roles;
-  }
+  if (value.roles !== undefined) result.roles = read(value.roles, false, 'roles');
   if (value.teams !== undefined) {
-    if (!object(value.teams)) return undefined;
-    result.teams = {};
-    for (const [id, team] of Object.entries(value.teams)) {
-      if (!id || id.length > 200 || !object(team) || !only(team, ['roles'])) return undefined;
-      const roles = read(team.roles, true);
-      if (!roles) return undefined;
-      Object.defineProperty(result.teams, id, {
-        value: { roles },
-        enumerable: true,
-        configurable: true,
-        writable: true,
-      });
-    }
+    if (object(value.teams)) {
+      result.teams = {};
+      for (const [id, team] of Object.entries(value.teams)) {
+        if (!id || id.length > 200 || !object(team) || !only(team, ['roles'])) {
+          issues.push(`invalid team exception ${id.slice(0, 200)}`);
+          continue;
+        }
+        Object.defineProperty(result.teams, id, {
+          value: { roles: read(team.roles, true, `teams.${id}`) },
+          enumerable: true,
+          configurable: true,
+          writable: true,
+        });
+      }
+    } else issues.push('teams must be an object');
   }
   return result;
 }
