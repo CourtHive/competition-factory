@@ -3,6 +3,7 @@ import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotif
 import { modifyTournamentDetailNotice } from '@Mutate/tournaments/tournamentDetailNotice';
 import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
+import { refuseInvalidTeamPresentation } from './teamPresentationGuard';
 import { modifyVenueNotice } from '@Mutate/venues/venueNotices';
 import { removeExtension } from './removeExtension';
 import { addExtension } from './addExtension';
@@ -114,6 +115,8 @@ function withElementNotice<T extends { error?: unknown }>(params: ElementParams 
  * Any other element (a copy, an object in no loaded record) is written as before, with no notice.
  */
 export function addElementExtension(params?: Parameters<typeof addExtension>[0]): ReturnType<typeof addExtension> {
+  const refusal = refuseInvalidTeamPresentation(params?.extension);
+  if (refusal) return refusal;
   return withElementNotice(params, () => addExtension(params));
 }
 
