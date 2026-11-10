@@ -191,31 +191,6 @@ export function applyOwnedPlan({
   if (applied.error) return { error: INVALID_VALUES, info: applied.error };
 
   const tournamentId = tournamentRecord?.tournamentId;
-  const writes = ops.flatMap((op) =>
-    op.op === 'setMatchUpResult' ||
-    op.op === 'setMatchUpDrawPositions' ||
-    op.op === 'setMatchUpBye' ||
-    op.op === 'setMatchUpStatusCodes' ||
-    op.op === 'mergeSideExitProvenance' ||
-    op.op === 'setSideExitProvenance' ||
-    op.op === 'clearMatchUpBye' ||
-    op.op === 'setSideLineUp' ||
-    op.op === 'setOrderOfFinish' ||
-    op.op === 'exchangeDrawPositions'
-      ? [op.matchUpId]
-      : [],
-  );
-  // each matchUp at its LAST score write for the in-context notice that write defers, and at its LAST write of any kind
-  // for its `modifyMatchUp`: v1's notice buffer keeps a matchUp re-announced later in the call at that later place (a
-  // double exit given a winner: the next matchUp unwound first, then the winner's arrival after the result; an unwind
-  // under `doubleExitPropagateBye: false` writing a matchUp back twice, S6 tail), and only a score write defers an
-  // in-context notice (a settle pass's write defers none: v1's `reconcileScoredTimes` announces the matchUp, not its
-  // context)
-  const scores = scoreWrites(ops);
-  const scored = scores.map((op) => op.matchUpId);
-  const lastScores = new Map(scores.map((op) => [op.matchUpId, op] as const));
-  const deferred = new Set<string>();
-  const announced = [...new Set(writes.toReversed())].reverse();
   // a matchUp given its result and then a position (that next matchUp): its last notice is the placement's
   const lastWrites = new Map(ops.flatMap((op) => ('matchUpId' in op && op.matchUpId ? [[op.matchUpId, op]] : [])));
   const placedLast = new Set(
@@ -256,18 +231,9 @@ export function applyOwnedPlan({
   const subscribed = getTopics().topics.includes(UPDATE_INCONTEXT_MATCHUP);
   // every score write announces its matchUp in context to a subscriber, as v1's `modifyMatchUpScore` does: the call's
   // own, and a carried exit's on the matchUp it lands in (S5)
-  const deferScore = (matchUpId: string) => {
-    if (
-      !subscribed ||
-      !scored.includes(matchUpId) ||
-      !resulted.has(matchUpId) ||
-      !stored.has(matchUpId) ||
-      deferred.has(matchUpId)
-    )
-      return;
-    deferred.add(matchUpId);
-    // v1's deferred callback is replaced by the last score write, including the record it captures.
-    const score = lastScores.get(matchUpId);
+  const deferScore = (score: ResultOp) => {
+    const { matchUpId } = score;
+    if (!subscribed || !stored.has(matchUpId)) return;
     const contextless = score?.announcesContext === false || score?.inContextBare;
     const record = contextless ? undefined : tournamentRecord;
     deferInContextMatchUp({
@@ -277,18 +243,15 @@ export function applyOwnedPlan({
     });
   };
   const tallyMatchUpId = tallyNoticeTarget(ops, args);
-  // A line's nested dual write and a group's tally occur inside their result writers. Other directed
-  // programs retain their last-score order even when a later position write re-announces the same matchUp.
-  const sourceId = args.request?.matchUpId;
-  const interleaved = !!(sourceId && stored.get(sourceId)?.collectionId) || tallyMatchUpId !== undefined;
-  if (!interleaved) for (const matchUpId of [...new Set(scored.toReversed())].reverse()) deferScore(matchUpId);
-  announceInitialResult(ops, announced, stored, { drawDefinition, tournamentId, event }, deferScore);
   const { settled } = namedWriters(ops);
-  for (const matchUpId of announced) {
+  for (const step of nativeNoticeSteps(ops)) {
+    const matchUpId = step.matchUpId;
     const matchUp = stored.get(matchUpId);
     if (!matchUp) continue;
-    announceTally(matchUpId, tallyMatchUpId, drawDefinition);
-    deferScore(matchUpId);
+    if (step.kind !== 'modify') {
+      announceResultBoundary(step, matchUp, args, tallyMatchUpId, deferScore);
+      continue;
+    }
     // a removal's notice is built as v1's `removeSubsequentRoundsParticipant` builds it, whose caller passes no event;
     // unless a score write announces the matchUp after it (a result turned into a double exit: the exit it produces)
     const removedPosition = resulted.has(matchUpId) ? undefined : removed.get(matchUpId);
@@ -348,36 +311,62 @@ function tallyNoticeTarget(ops: OutcomeOp[], args: BuildViewArgs): string | unde
   );
 }
 
-/** A reset announced again on arrival marks its named tournament at the first score write. */
-function announceInitialResult(
-  ops: OutcomeOp[],
-  announced: string[],
-  stored: ReadonlyMap<string, MatchUp>,
-  {
-    drawDefinition,
-    tournamentId,
-    event,
-  }: {
-    drawDefinition: NonNullable<BuildViewArgs['drawDefinition']>;
-    tournamentId?: string;
-    event: BuildViewArgs['event'];
-  },
-  deferScore: (matchUpId: string) => void,
+type NativeNoticeStep =
+  | { kind: 'ensure' | 'score'; matchUpId: string; rank: number; score: ResultOp }
+  | { kind: 'modify'; matchUpId: string; rank: number };
+
+/** Preserve last-write order within each topic, while retaining genuine earlier score boundaries. */
+function nativeNoticeSteps(ops: OutcomeOp[]): NativeNoticeStep[] {
+  const steps: NativeNoticeStep[] = [];
+  const last = new Map<string, NativeNoticeStep>();
+  ops.forEach((op, index) => {
+    const matchUpId = noticeMatchUpId(op);
+    if (matchUpId) last.set(matchUpId, { kind: 'modify', matchUpId, rank: index * 3 + 2 });
+    if (op.op !== 'setMatchUpResult' || op.announcedAs) return;
+    if (op.ensuredSides || op.dualTally?.sides)
+      steps.push({ kind: 'ensure', matchUpId: op.matchUpId, rank: index * 3, score: op });
+    steps.push({ kind: 'score', matchUpId: op.matchUpId, rank: index * 3 + 1, score: op });
+  });
+  return [...steps, ...last.values()].sort((a, b) => a.rank - b.rank);
+}
+
+function noticeMatchUpId(op: OutcomeOp): string | undefined {
+  return op.op === 'setMatchUpResult' ||
+    op.op === 'setMatchUpDrawPositions' ||
+    op.op === 'setMatchUpBye' ||
+    op.op === 'setMatchUpStatusCodes' ||
+    op.op === 'mergeSideExitProvenance' ||
+    op.op === 'setSideExitProvenance' ||
+    op.op === 'clearMatchUpBye' ||
+    op.op === 'setSideLineUp' ||
+    op.op === 'setOrderOfFinish' ||
+    op.op === 'exchangeDrawPositions'
+    ? op.matchUpId
+    : undefined;
+}
+
+/** A dual ensures its line-ups before tallying; every score writer then defers and announces its own result. */
+function announceResultBoundary(
+  step: Extract<NativeNoticeStep, { kind: 'ensure' | 'score' }>,
+  matchUp: MatchUp,
+  { drawDefinition, tournamentRecord, event }: BuildViewArgs,
+  tallyMatchUpId: string | undefined,
+  deferScore: (score: ResultOp) => void,
 ): void {
-  const first = ops[0];
-  if (first?.op !== 'setMatchUpResult' || first.announcesContext === false || announced[0] === first.matchUpId) return;
-  const matchUp = stored.get(first.matchUpId);
-  if (matchUp) {
-    deferScore(first.matchUpId);
-    modifyMatchUpNotice({
-      drawDefinition,
-      tournamentId,
-      eventId: event?.eventId,
-      event,
-      matchUp,
-      context: 'modifyMatchUpScore',
-    });
+  if (!drawDefinition) return;
+  if (step.kind === 'score') {
+    announceTally(step.matchUpId, tallyMatchUpId, drawDefinition);
+    deferScore(step.score);
   }
+  const bare = step.kind === 'score' && step.score.announcesContext === false;
+  modifyMatchUpNotice({
+    drawDefinition,
+    tournamentId: bare ? undefined : tournamentRecord?.tournamentId,
+    eventId: bare ? undefined : event?.eventId,
+    event: bare ? undefined : event,
+    matchUp,
+    context: step.kind === 'ensure' ? 'ensureSidLineUps' : 'modifyMatchUpScore',
+  });
 }
 
 function planResult(shape: PlanShape, ops: OutcomeOp[], route?: Route): ResultType {

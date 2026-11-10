@@ -13,6 +13,7 @@ import {
   setSideExitProvenance,
   blankSideExitCode,
   clearResolvedSideExitProvenance,
+  clearSideExitProvenance,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
@@ -57,6 +58,8 @@ export type OutcomeOp =
       resetsScore?: true;
       /** The source writer assigns an own undefined winner. */
       removesWinningSide?: true;
+      /** A relabel first withdraws the existing carry, clearing provenance, codes and winner before re-entry. */
+      withdrawsCarry?: true;
       matchUpId: string;
       matchUpStatus: MatchUpStatusUnion;
       winningSide?: 1 | 2;
@@ -481,6 +484,11 @@ export function stampedInThisCall(drawDefinition?: DrawDefinition): Set<string> 
 function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMatchUpResult' }>, context: FoldContext) {
   const { phase, bindResultInputs } = context;
   const ordinary = phase === 'ordinary-result';
+  if (op.withdrawsCarry) {
+    clearSideExitProvenance(matchUp);
+    matchUp.matchUpStatusCodes = [];
+    delete matchUp.winningSide;
+  }
   // a dual's sides and tieFormat as `updateTieMatchUpScore` rewrites them before its tally (S7)
   if (op.dualTally?.sides) matchUp.sides = structuredClone(op.dualTally.sides) as MatchUp['sides'];
   if (op.ensuredSides) matchUp.sides = structuredClone(op.ensuredSides) as MatchUp['sides'];

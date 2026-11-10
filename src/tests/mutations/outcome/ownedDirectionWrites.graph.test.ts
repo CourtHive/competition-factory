@@ -1,5 +1,6 @@
 import { getProvider, getTournamentRecords, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
+import { prepareHeldCarryCorrection } from '@Tests/testHarness/outcome/directionFixtures';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { registerTestSeedIdentity } from '@Tests/testHarness/seedMathRandom';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
@@ -9,13 +10,15 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, expect, it, vi } from 'vitest';
 
 // constants and types
+import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, DEFAULTED, WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { ROUND_ROBIN, FIRST_MATCH_LOSER_CONSOLATION, MAIN, CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 import { MODIFY_MATCHUP, UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
-import { DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { USTA_COLLEGE } from '@Constants/tieFormatConstants';
+import { COMPASS, CURTIS_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { USTA_COLLEGE, DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import type { Tournament } from '@Types/tournamentTypes';
 import { TEAM } from '@Constants/eventConstants';
+import { setClock } from '@Tools/clock';
 
 const counter = vi.hoisted(() => ({ active: false, calls: 0 }));
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (load) => {
@@ -38,6 +41,7 @@ afterEach(() => {
   counter.active = false;
   setSubscriptions({ subscriptions: {} });
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
+  setClock();
   vi.restoreAllMocks();
   vi.useRealTimers();
 });
@@ -72,12 +76,13 @@ function write(
   drawId: string,
   matchUpId: string,
   outcome: object,
+  params = {},
 ) {
   setOutcomePipeline(mode);
   counter.calls = 0;
   counter.active = true;
   try {
-    const result = tournamentEngine.setMatchUpStatus({ drawId, matchUpId, outcome });
+    const result = tournamentEngine.setMatchUpStatus({ drawId, matchUpId, outcome, ...params });
     expect(result).toMatchObject({ success: true });
     if (mode === OUTCOME_PIPELINE_V2) expect(counter.calls).toBe(0);
     const { stack: _stack, ...returned } = result;
@@ -264,5 +269,91 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(Object.hasOwn(released, 'winningSide')).toBe(true);
     expect(released.winningSide).toBeUndefined();
     expect(released.score).toBe(toBePlayed.score);
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s a plain loser advanced through a BYE preserves an absent winner key',
+  (mode) => {
+    const { drawId, record } = fresh({ drawType: COMPASS, drawSize: 16, participantsCount: 13 });
+    const structures = record.events![0].drawDefinitions![0].structures!;
+    const source = structures
+      .find((s) => s.structureName === 'East')!
+      .matchUps!.find((m) => m.roundNumber === 1 && m.roundPosition === 2)!;
+    const landing = structures
+      .find((s) => s.structureName === 'West')!
+      .matchUps!.find((m) => m.roundNumber === 2 && m.roundPosition === 1)!;
+    expect(Object.hasOwn(landing, 'winningSide')).toBe(false);
+    write(mode, drawId, source.matchUpId, { winningSide: 1 });
+    expect(landing.drawPositions?.length).toBeGreaterThan(0);
+    expect(Object.hasOwn(landing, 'winningSide')).toBe(false);
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s a dual line-up notice marks its tournament before the unnamed group tally',
+  (mode) => {
+    const { drawId, matchUps, record } = fresh({
+      drawSize: 4,
+      drawType: ROUND_ROBIN,
+      eventType: TEAM,
+      tieFormatName: DOMINANT_DUO,
+    });
+    const dual = matchUps.find((m) => m.tieMatchUps?.length)!;
+    const observed: string[][] = [];
+    const provider = getProvider();
+    const cycle = provider.cycleModifiedTournamentIds!;
+    vi.spyOn(provider, 'cycleModifiedTournamentIds').mockImplementation(() => {
+      const ids = cycle();
+      if (counter.active && ids?.size) observed.push([...ids]);
+      return ids;
+    });
+    write(mode, drawId, dual.matchUpId, { matchUpStatus: DOUBLE_DEFAULT });
+    expect(observed.at(-1)).toEqual([record.tournamentId, '*']);
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s a carry correction preserves raw notice interleaving and the landing reset key order',
+  (mode) => {
+    const { scenario } = prepareHeldCarryCorrection(
+      { drawType: CURTIS_CONSOLATION, drawSize: 16, participantsCount: 11, eventType: 'SINGLES' },
+      { name: 'default becomes walkover', previous: DEFAULTED, entered: WALKOVER },
+      true,
+    );
+    const record = Object.values(getTournamentRecords())[0] as Tournament;
+    const draw = record.events![0].drawDefinitions![0];
+    const target = scenario.steps[0].target;
+    const source = draw
+      .structures!.find((s) => s.structureName === target.structureName)!
+      .matchUps!.find((m) => m.roundNumber === target.roundNumber && m.roundPosition === target.roundPosition)!;
+    const matches = getMatchUpsMap({ drawDefinition: draw }).drawMatchUps;
+    const carried = matches.filter((m) =>
+      Object.values(m.sideExitProvenance ?? {}).some((p) => p?.sourceMatchUpId === source.matchUpId),
+    );
+    const landing = carried.find((m) => m.matchUpStatus === DEFAULTED)!;
+    const relay = carried.find((m) => m.matchUpStatus === 'BYE')!;
+    expect(landing).toBeDefined();
+    expect(relay).toBeDefined();
+    const buffers: { topic: string; key?: string }[][] = [];
+    const provider = getProvider();
+    const clear = provider.deleteNotices;
+    vi.spyOn(provider, 'deleteNotices').mockImplementation(() => {
+      if (counter.active) buffers.push(provider.getNoticeBuffer!().map(({ topic, key }) => ({ topic, key })));
+      return clear();
+    });
+    setSubscriptions({
+      subscriptions: { [MODIFY_MATCHUP]: () => undefined, [UPDATE_INCONTEXT_MATCHUP]: () => undefined },
+    });
+    write(mode, 'd', source.matchUpId, scenario.steps[0].outcome as object, scenario.steps[0].params);
+    expect(buffers.at(-1)).toEqual([
+      { topic: UPDATE_INCONTEXT_MATCHUP, key: source.matchUpId },
+      { topic: MODIFY_MATCHUP, key: source.matchUpId },
+      { topic: MODIFY_MATCHUP, key: relay.matchUpId },
+      { topic: UPDATE_INCONTEXT_MATCHUP, key: landing.matchUpId },
+      { topic: MODIFY_MATCHUP, key: landing.matchUpId },
+    ]);
+    expect(Object.keys(landing).indexOf('winningSide')).toBeGreaterThan(Object.keys(landing).indexOf('matchUpFormat'));
+    expect(landing.score).toBe(toBePlayed.score);
   },
 );

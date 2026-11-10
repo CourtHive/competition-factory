@@ -553,10 +553,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
               op: 'setMatchUpDrawPositions',
               matchUpId: through.matchUpId,
               drawPositions: through.drawPositions,
-              ...(loser?.exit &&
-              landing.some((op) => op.op === 'setMatchUpResult' && op.matchUpId === through.matchUpId)
-                ? { preservesWinningSide: true as const }
-                : {}),
+              preservesWinningSide: true,
               ...(placedThrough && through === loserThrough
                 ? { placedDrawPosition: view.targets.loserTargetDrawPosition }
                 : {}),

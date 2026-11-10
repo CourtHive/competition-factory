@@ -352,11 +352,12 @@ export function heldByeCarryCorrectionOps(args: ExitReasonArgs): OutcomeOp[] | u
     {
       op: 'setMatchUpResult',
       matchUpId: landing.entry.matchUpId,
+      withdrawsCarry: true,
+      matchUpStatusCodes: [],
       matchUpStatus: relabel ? entered : TO_BE_PLAYED,
       ...(relabel
         ? {
             winningSide: (3 - landing.sideNumber) as 1 | 2,
-            matchUpStatusCodes: [],
             ...(entered === WALKOVER ? { resetsScore: true, score: toBePlayed.score } : {}),
           }
         : { announcedAs: 'reconcileScoredTimes' as const }),
