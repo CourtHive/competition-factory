@@ -1357,3 +1357,25 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(target.winningSide).toBeUndefined();
   },
 );
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s finishes the deciding line assignment before carrying the losing team lineup',
+  (mode) => {
+    fresh({
+      drawId: 'd',
+      drawType: COMPASS,
+      drawSize: 8,
+      participantsCount: 5,
+      eventType: TEAM,
+      tieFormatName: USTA_COLLEGE,
+    });
+    const target = { structureName: 'East', roundNumber: 1, roundPosition: 3 };
+    const outcome = generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 1 }).outcome!;
+    for (const singlesLine of [0, 1, 2])
+      write(OUTCOME_PIPELINE_V1, 'd', findTarget({ ...target, singlesLine }), outcome);
+    const topics = observeNoticeTopics();
+    write(mode, 'd', findTarget({ ...target, singlesLine: 3 }), outcome);
+    expect(topics.at(-2)).toBe(MODIFY_POSITION_ASSIGNMENTS);
+    expect(topics.at(-1)).toBe(MODIFY_MATCHUP);
+  },
+);

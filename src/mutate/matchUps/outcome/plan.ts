@@ -436,7 +436,12 @@ function decidingLineOps(args: PlanArgs & { dual: DualCall; drawDefinition: Draw
   // the dual the loser lands in, otherwise untouched (the arrival is written on its structure's assignments), is stamped
   // by the carry's notice
   // past a BYE, the dual beyond takes the losing team's line-up first (its assignment's), as v1 announces the two
-  if (beyond) ops.push(...beyond);
+  if (beyond) {
+    const assignmentReturn = ops.findLastIndex(
+      (op) => op.op === 'announcePositionAssignments' && op.structureId === dual.view.targets.loserStructureId,
+    );
+    ops.splice(assignmentReturn < 0 ? ops.length : assignmentReturn, 0, ...beyond);
+  }
   if (loserCarry) ops.push(loserCarry, { op: 'stampUpdatedAt', entity: 'matchUp', id: loserCarry.matchUpId });
   return { ops: [...resultOps(request, write, request.matchUpId as string), ...ops], shape: dualPlan.shape };
 }
