@@ -137,20 +137,29 @@ export function removalOps(view: OutcomeView, matchUpStatus?: MatchUpStatusUnion
 /**
  * the loser's seat across the link emptied, and their matchUp's codes re-derived (`[]`) where it stored none. v1's
  * `removeDirectedLoser` re-derives them only when the call names a status (its `sourceMatchUpStatus`): a clear that names
- * none leaves them as they are. Only that write announces the matchUp, and its notice stamps the matchUp's structure, so
- * the structure is stamped with it and not otherwise
+ * none leaves them as they are. An equal empty array is still reallocated, quietly; a changed side record announces
+ * the matchUp and stamps its structure.
  */
 export function removedLoserOps(view: OutcomeView, matchUpStatus?: MatchUpStatusUnion): OutcomeOp[] {
   const { loserMatchUpId, loserStructureId, loserTargetDrawPosition, loserMatchUpRecord } = view.targets;
   const participantId = storedLoserId(view);
   if (!loserMatchUpId || !loserStructureId || !loserTargetDrawPosition || !participantId) return [];
   const codes: OutcomeOp[] =
-    !matchUpStatus || loserMatchUpRecord?.matchUpStatusCodes
+    !matchUpStatus || loserMatchUpRecord?.matchUpStatusCodes?.length
       ? []
       : [
-          { op: 'setMatchUpStatusCodes', matchUpId: loserMatchUpId, matchUpStatusCodes: [] },
-          { op: 'stampUpdatedAt', entity: 'matchUp', id: loserMatchUpId },
-          { op: 'stampUpdatedAt', entity: 'structure', id: loserStructureId },
+          {
+            op: 'setMatchUpStatusCodes',
+            matchUpId: loserMatchUpId,
+            matchUpStatusCodes: [],
+            ...(loserMatchUpRecord?.matchUpStatusCodes ? { quiet: true as const } : {}),
+          },
+          ...(!loserMatchUpRecord?.matchUpStatusCodes
+            ? [
+                { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: loserMatchUpId },
+                { op: 'stampUpdatedAt' as const, entity: 'structure' as const, id: loserStructureId },
+              ]
+            : []),
         ];
   return [
     { op: 'clearPosition', structureId: loserStructureId, drawPosition: loserTargetDrawPosition, participantId },

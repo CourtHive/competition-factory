@@ -214,7 +214,7 @@ export function applyOwnedPlan({
   );
   const byes = new Set(ops.flatMap((op) => (op.op === 'setMatchUpBye' ? [op.matchUpId] : [])));
   // a loser taken back out: their matchUp's codes re-derived, announced as v1's `removeDirectedLoser` announces it
-  const recoded = new Set(ops.flatMap((op) => (op.op === 'setMatchUpStatusCodes' ? [op.matchUpId] : [])));
+  const recoded = new Set(ops.flatMap((op) => (op.op === 'setMatchUpStatusCodes' && !op.quiet ? [op.matchUpId] : [])));
   // a swap's relabel in a later round: v1's `exchangePathPositions` announces each matchUp as `swapWinnerLoser`
   const exchanged = new Set(ops.flatMap((op) => (op.op === 'exchangeDrawPositions' ? [op.matchUpId] : [])));
   // a carry recorded beside a BYE it passed: the BYE matchUp's state is not rewritten, so v1's `progressExitStatus`
@@ -341,7 +341,7 @@ function noticeMatchUpId(op: OutcomeOp): string | undefined {
   return op.op === 'setMatchUpResult' ||
     op.op === 'setMatchUpDrawPositions' ||
     op.op === 'setMatchUpBye' ||
-    op.op === 'setMatchUpStatusCodes' ||
+    (op.op === 'setMatchUpStatusCodes' && !op.quiet) ||
     op.op === 'mergeSideExitProvenance' ||
     op.op === 'setSideExitProvenance' ||
     op.op === 'clearMatchUpBye' ||

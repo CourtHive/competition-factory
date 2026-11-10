@@ -229,6 +229,8 @@ export type OutcomeOp =
     }
   | {
       op: 'setMatchUpStatusCodes';
+      /** An equal re-derivation allocates fresh codes but emits no notice. */
+      quiet?: true;
       /** a matchUp's status codes re-derived from its provenance (a loser taken back out of it, S4) */
       matchUpId: string;
       matchUpStatusCodes: MatchUpStatusCodeElement[];
@@ -446,6 +448,7 @@ type FoldContext = {
   /** Native execution retains v1's input aliases; standalone folds and planning overlays copy their plan inputs. */
   bindResultInputs?: true;
   pendingScoredTimes?: Map<MatchUp, string>;
+  pendingSchedules?: Map<MatchUp, MatchUpSchedule>;
 };
 
 /**
@@ -518,14 +521,20 @@ function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMat
 }
 
 /** A native result's schedule lands after finishing order and its result notice's stamp. */
-function applyResultScoredTime(matchUp: MatchUp, { temporal, pendingScoredTimes }: FoldContext): void {
+function applyResultScoredTime(
+  matchUp: MatchUp,
+  { temporal, pendingScoredTimes, pendingSchedules }: FoldContext,
+): void {
   const pending = pendingScoredTimes?.has(matchUp);
   const action = scoredTimeAction(matchUp, pending || temporal?.scoredTimes.has(matchUp.matchUpId));
   if (action === 'initialize') {
     if (temporal) {
       matchUp.schedule ??= {};
       temporal.scoredTimes.add(matchUp.matchUpId);
-    } else if (pendingScoredTimes && (matchUp.collectionId || !Object.hasOwn(matchUp, 'updatedAt')))
+    } else if (
+      pendingScoredTimes &&
+      (matchUp.collectionId || !Object.hasOwn(matchUp, 'updatedAt') || pendingSchedules?.has(matchUp))
+    )
       pendingScoredTimes.set(matchUp, nowIso());
     else {
       matchUp.schedule ??= {};
@@ -713,13 +722,17 @@ function foldOrderOfFinish(op: OpOf<'setOrderOfFinish'>, { matchUps }: DrawIndex
 function foldSchedule(
   op: OpOf<'setMatchUpSchedule'> | OpOf<'clearMatchUpScoredTime'>,
   { matchUps }: DrawIndex,
-  temporal?: TemporalProjection,
+  { temporal, pendingSchedules }: FoldContext,
 ): Folded {
   const matchUp = matchUps.get(op.matchUpId);
   if (!matchUp) return { error: `${op.op}: no matchUp ${op.matchUpId}` };
   temporal?.scoredTimes.delete(op.matchUpId);
-  if (op.op === 'setMatchUpSchedule') matchUp.schedule = structuredClone(op.schedule);
-  else if (matchUp.schedule) delete matchUp.schedule.scoredTime;
+  if (op.op === 'setMatchUpSchedule') {
+    const schedule = structuredClone(op.schedule);
+    // The public writer adds a new schedule after its outcome, before the scored-time write.
+    if (pendingSchedules && !Object.hasOwn(matchUp, 'schedule')) pendingSchedules.set(matchUp, schedule);
+    else matchUp.schedule = schedule;
+  } else if (matchUp.schedule) delete matchUp.schedule.scoredTime;
   return {};
 }
 
@@ -849,13 +862,17 @@ export function applyOutcomeOps(
   const context: FoldContext = {
     ...effects,
     stampedBefore,
-    ...(effects.bindResultInputs ? { pendingScoredTimes: new Map() } : {}),
+    ...(effects.bindResultInputs ? { pendingScoredTimes: new Map(), pendingSchedules: new Map() } : {}),
   };
   for (const op of ops) {
     const folded = foldOne(op, index, drawDefinition, context);
     if (folded.error) return folded;
   }
-  for (const matchUp of context.pendingScoredTimes?.keys() ?? []) flushScoredTime(matchUp, context);
+  for (const matchUp of new Set([
+    ...(context.pendingScoredTimes?.keys() ?? []),
+    ...(context.pendingSchedules?.keys() ?? []),
+  ]))
+    flushScoredTime(matchUp, context);
   return {};
 }
 
@@ -893,7 +910,7 @@ function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition
       return foldSideLineUp(op, index);
     case 'setMatchUpSchedule':
     case 'clearMatchUpScoredTime':
-      return foldSchedule(op, index, context.temporal);
+      return foldSchedule(op, index, context);
     case 'setOrderOfFinish':
       return foldOrderOfFinish(op, index);
     default:
@@ -902,7 +919,12 @@ function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition
 }
 
 /** Flush at the result writer's stamp; a remaining unstamped result flushes when its fold completes. */
-function flushScoredTime(matchUp: MatchUp, { pendingScoredTimes }: FoldContext): void {
+function flushScoredTime(matchUp: MatchUp, { pendingScoredTimes, pendingSchedules }: FoldContext): void {
+  const schedule = pendingSchedules?.get(matchUp);
+  if (schedule) {
+    matchUp.schedule = schedule;
+    pendingSchedules?.delete(matchUp);
+  }
   const scoredTime = pendingScoredTimes?.get(matchUp);
   if (scoredTime === undefined) return;
   matchUp.schedule ??= {};

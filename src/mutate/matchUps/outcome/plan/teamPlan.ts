@@ -406,7 +406,11 @@ export function carriedDualLanding(
     contextSides: reached?.sides?.map((side) =>
       side.drawPosition === loserTargetDrawPosition ? { ...side, participantId } : side,
     ),
-    rawSides: rawSides as Parameters<typeof ensuredDualSides>[0]['rawSides'],
+    // The loser's assignment has already called updateSideLineUp, numbering both stored sides.
+    rawSides: [1, 2].map((sideNumber) => ({
+      ...(rawSides?.find((side) => side.sideNumber === sideNumber) ?? {}),
+      sideNumber,
+    })),
     lineUps: firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }),
   });
   return landing.map((op) =>

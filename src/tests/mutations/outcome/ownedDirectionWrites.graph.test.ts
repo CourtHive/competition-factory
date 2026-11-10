@@ -4,13 +4,14 @@ import { prepareHeldCarryCorrection } from '@Tests/testHarness/outcome/direction
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { registerTestSeedIdentity } from '@Tests/testHarness/seedMathRandom';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
+import { unwindWalk } from '@Mutate/matchUps/outcome/unwindWalk';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { applyOutcomeOps } from '@Mutate/matchUps/outcome/ops';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, expect, it, vi } from 'vitest';
 
 // constants and types
-import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, DEFAULTED, WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { ROUND_ROBIN, FIRST_MATCH_LOSER_CONSOLATION, MAIN, CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 import { MODIFY_MATCHUP, UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
@@ -19,6 +20,14 @@ import { USTA_COLLEGE, DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import type { Tournament } from '@Types/tournamentTypes';
 import { TEAM } from '@Constants/eventConstants';
 import { setClock } from '@Tools/clock';
+import {
+  DOUBLE_WALKOVER,
+  DOUBLE_DEFAULT,
+  DEFAULTED,
+  WALKOVER,
+  TO_BE_PLAYED,
+  BYE,
+} from '@Constants/matchUpStatusConstants';
 
 const counter = vi.hoisted(() => ({ active: false, calls: 0 }));
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (load) => {
@@ -403,3 +412,123 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(Object.hasOwn(target, 'matchUpFormat')).toBe(false);
   },
 );
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s re-derives an unchanged empty loser code array without retaining the reset anchor',
+  (mode) => {
+    const { drawId, record } = fresh({ drawType: FIRST_MATCH_LOSER_CONSOLATION });
+    const structures = record.events![0].drawDefinitions![0].structures!;
+    const source = structures.find((s) => s.stage === MAIN)!.matchUps!.find((m) => m.roundNumber === 1)!;
+    const target = structures.find((s) => s.stage === CONSOLATION)!.matchUps!.find((m) => m.roundNumber === 1)!;
+    write(OUTCOME_PIPELINE_V1, drawId, source.matchUpId, { winningSide: 1 });
+    target.matchUpStatusCodes = toBePlayed.matchUpStatusCodes;
+    write(mode, drawId, source.matchUpId, { matchUpStatus: DOUBLE_WALKOVER });
+    expect(target.matchUpStatusCodes).toEqual([]);
+    expect(target.matchUpStatusCodes).not.toBe(toBePlayed.matchUpStatusCodes);
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s adds a carried schedule after its outcome keys and keeps its scored time',
+  (mode) => {
+    const { drawId, matchUps } = fresh();
+    const source = matchUps.find((m) => m.roundNumber === 1 && m.roundPosition === 1)!;
+    expect(Object.hasOwn(source, 'schedule')).toBe(false);
+    write(mode, drawId, source.matchUpId, won(), { schedule: { scheduledDate: '2026-11-08' } });
+    const keys = Object.keys(source);
+    expect(keys.indexOf('schedule')).toBeGreaterThan(keys.indexOf('winningSide'));
+    expect(source.schedule?.scheduledDate).toBe('2026-11-08');
+    expect(source.schedule?.scoredTime).toBe('2026-11-08T12:00:00.000Z');
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s clears quiet BYE recursion winner properties',
+  (mode) => {
+    const { drawId, record } = fresh({ drawType: COMPASS, drawSize: 16, participantsCount: 16 });
+    const structures = record.events![0].drawDefinitions![0].structures!;
+    const source = structures
+      .find((s) => s.structureName === 'East')!
+      .matchUps!.find((m) => m.roundNumber === 1 && m.roundPosition === 1)!;
+    write(OUTCOME_PIPELINE_V1, drawId, source.matchUpId, { matchUpStatus: DOUBLE_DEFAULT });
+    const absent = structures.flatMap((s) =>
+      (s.matchUps ?? [])
+        .filter((m) => !Object.hasOwn(m, 'winningSide'))
+        .map((m) => [m, `${s.structureName}|${m.roundNumber}|${m.roundPosition}`] as const),
+    );
+    write(mode, drawId, source.matchUpId, { matchUpStatus: TO_BE_PLAYED });
+    expect(absent.filter(([m]) => Object.hasOwn(m, 'winningSide')).map(([, key]) => key)).toEqual([
+      'East|2|1',
+      'East|3|1',
+      'East|4|1',
+      'Northeast|1|1',
+    ]);
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s retains the side-number keys created before a carried dual ensures its sides',
+  (mode) => {
+    const { drawId, record } = fresh({
+      drawType: FIRST_MATCH_LOSER_CONSOLATION,
+      eventType: TEAM,
+      tieFormatName: USTA_COLLEGE,
+    });
+    const structures = record.events![0].drawDefinitions![0].structures!;
+    const source = structures
+      .find((s) => s.stage === MAIN)!
+      .matchUps!.find((m) => m.roundNumber === 1 && m.roundPosition === 1)!;
+    const target = structures
+      .find((s) => s.stage === CONSOLATION)!
+      .matchUps!.find((m) => m.roundNumber === 1 && m.roundPosition === 1)!;
+    delete target.sides;
+    write(mode, drawId, source.matchUpId, { matchUpStatus: DEFAULTED, winningSide: 1 }, { propagateExitStatus: true });
+    expect(target.matchUpStatus).toBe(DEFAULTED);
+    expect(target.sides).toHaveLength(2);
+    for (const side of target.sides!) expect(Object.keys(side)[0]).toBe('sideNumber');
+  },
+);
+
+it('a quiet withdrawal writes its own undefined winning side without an announced matchUp', () => {
+  const matchUp = {
+    matchUpId: 'quiet',
+    matchUpStatus: BYE as typeof BYE,
+    drawPositions: [1, 2],
+    roundNumber: 1,
+    roundPosition: 1,
+  };
+  const draw: any = {
+    drawId: 'quiet-draw',
+    structures: [
+      {
+        structureId: 'quiet-structure',
+        structureType: 'ITEM',
+        stage: MAIN,
+        matchUps: [matchUp],
+        positionAssignments: [
+          { drawPosition: 1, bye: true },
+          { drawPosition: 2, bye: true },
+        ],
+      },
+    ],
+  };
+  const ops = unwindWalk({
+    drawDefinition: draw,
+    propagatesBye: true,
+    inContextDrawMatchUps: [
+      {
+        ...matchUp,
+        structureId: 'quiet-structure',
+        drawId: 'quiet-draw',
+        eventId: 'quiet-event',
+        tournamentId: 'quiet-tournament',
+      },
+    ],
+    seats: [{ structureId: 'quiet-structure', drawPosition: 1 }],
+  });
+  expect(ops).toBeDefined();
+  expect(ops!.flat().filter((op) => op.op === 'stampUpdatedAt')).toEqual([]);
+  expect(applyOutcomeOps(draw, ops!.flat())).toEqual({});
+  expect(Object.hasOwn(matchUp, 'winningSide')).toBe(true);
+  expect(Object.keys(matchUp).at(-1)).toBe('winningSide');
+});

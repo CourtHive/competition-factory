@@ -49,6 +49,7 @@ type Sim = {
   winnerLinkRounds: Set<string>;
   propagatesBye: boolean;
   notices: Map<string, Notice>;
+  clearedWinners: Map<string, number>;
   initial: Map<string, { positions: number[]; matchUpStatus?: MatchUpStatusUnion }>;
   withdrawn: { structureId: string; drawPosition: number; quiet: boolean; segment: number }[];
   segment: number;
@@ -259,6 +260,7 @@ function removeDrawPosition(sim: Sim, matchUps: SimMatchUp[], matchUp: SimMatchU
   }
   const containsBye = matchUp.positions.some((position) => sim.byes.has(seatKey(structureId, position)));
   matchUp.matchUpStatus = containsBye ? BYE : TO_BE_PLAYED;
+  sim.clearedWinners.set(matchUp.matchUpId, sim.segment);
   const noChange = initialPositions.includes(drawPosition) && initialStatus === matchUp.matchUpStatus;
   if (!noChange) announce(sim, matchUp.matchUpId, { context: 'remove', drawPosition });
   // a write v1 makes with no notice (the positions changed, nothing else): no op announces nothing
@@ -409,6 +411,7 @@ export function unwindWalk({
     ),
     propagatesBye,
     notices: new Map(),
+    clearedWinners: new Map(),
     initial: new Map(),
     withdrawn: [],
     segment: 0,
@@ -453,6 +456,10 @@ export function unwindWalk({
       op: 'withdrawBye',
       structureId,
       drawPosition,
+      // positionClear writes winningSide even when its value comparison suppresses the notice.
+      clearedWinnerIds: [...sim.clearedWinners]
+        .filter(([id, clearedIn]) => clearedIn === segment && !sim.notices.has(id))
+        .map(([id]) => id),
       ...(quiet ? { announcesAssignments: false as const } : {}),
     });
   const stamped = new Set<string>();
