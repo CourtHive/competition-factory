@@ -57,10 +57,10 @@ export function carriedContinuation(
       ...carryProvenance(status, frame!, matchUpId, sideNumber, 'progressExitStatus'),
       { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
     ]);
-    (frame === first ? relay : landing).push(...relays);
+    if (!frame.assignment) (frame === first ? relay : landing).push(...relays);
     if (frame !== first && at.beyond) landing.push(...carryPlacement(at.beyond, true));
     if (frame.assignment)
-      landing.push({ op: 'announcePositionAssignments', structureId: frame.assignment.structureId });
+      landing.push({ op: 'announcePositionAssignments', structureId: frame.assignment.structureId }, ...relays);
     landing.push(...carryLanding(status, frame));
     if (!at.carriesOn) return { relay, landing };
     frame = next?.(frame);

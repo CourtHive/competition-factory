@@ -28,7 +28,7 @@ import {
 import { replayFailure as prepareCensus } from '@Tests/testHarness/exitPropagation/sweep';
 import { USTA_COLLEGE, DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
-import { TEAM, SINGLES } from '@Constants/eventConstants';
+import { TEAM, SINGLES, DOUBLES } from '@Constants/eventConstants';
 import type { Tournament } from '@Types/tournamentTypes';
 import { setClock } from '@Tools/clock';
 import { readFileSync } from 'node:fs';
@@ -1489,5 +1489,35 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(target.winningSide).toBeUndefined();
     const keys = Object.keys(target);
     expect(keys.indexOf('winningSide')).toBeLessThan(keys.indexOf('matchUpStatusCodes'));
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s returns the nested carrier assignment before recording its BYE relay',
+  (mode) => {
+    const { drawId } = fresh({ drawType: COMPASS, drawSize: 16, participantsCount: 11, eventType: DOUBLES });
+    const matches = tournamentEngine.allDrawMatchUps({ drawId, inContext: true }).matchUps ?? [];
+    const source = matches.find(
+      (entry) => entry.roundNumber === 1 && entry.sides?.filter((side) => side.participantId).length === 2,
+    )!;
+    const played = generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 1 }).outcome!;
+    for (const matchUp of matches.filter(
+      (entry) =>
+        entry.structureId === source.structureId &&
+        entry.roundNumber === 1 &&
+        entry.sides?.filter((side) => side.participantId).length === 2,
+    )) {
+      write(OUTCOME_PIPELINE_V1, drawId, matchUp.matchUpId, played, { propagateExitStatus: false });
+    }
+    write(OUTCOME_PIPELINE_V1, drawId, source.winnerMatchUpId!, played, { propagateExitStatus: false });
+    const topics = observeNoticeTopics();
+    write(
+      mode,
+      drawId,
+      source.matchUpId,
+      { matchUpStatus: DEFAULTED, winningSide: 1 },
+      { propagateExitStatus: true, allowChangePropagation: true },
+    );
+    expect(topics.at(-1)).toBe(MODIFY_MATCHUP);
   },
 );
