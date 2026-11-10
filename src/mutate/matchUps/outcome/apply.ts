@@ -366,7 +366,11 @@ function nativeNoticeSteps(
     if (
       op.op !== 'setMatchUpDrawPositions' ||
       index * 3 + 2 === last.get(op.matchUpId)?.rank ||
-      !ops.slice(index + 1).some((next) => next.op === 'setMatchUpResult' && next.matchUpId === op.matchUpId)
+      !ops
+        .slice(index + 1)
+        .some(
+          (next) => (next.op === 'setMatchUpResult' || next.op === 'setMatchUpBye') && next.matchUpId === op.matchUpId,
+        )
     )
       return;
     if (
@@ -380,7 +384,7 @@ function nativeNoticeSteps(
       steps.push({
         kind: 'position',
         matchUpId: op.matchUpId,
-        rank: index * 3 + 2,
+        rank: positionNoticeRank(op, index, steps, stored),
         // removeDoubleExit's recursive withdrawal omits the tournament and event.
         position: index < sourceIndex && !sourceFirst ? { ...op, announcesContext: false } : op,
       });
@@ -400,6 +404,33 @@ function nativeNoticeSteps(
       }
     }
   return ordered.sort((a, b) => a.rank - b.rank);
+}
+
+/** A removal announces this round before resetting the later rounds that its position had reached. */
+function positionNoticeRank(
+  op: ArrivalOp,
+  index: number,
+  steps: NativeNoticeStep[],
+  stored: Map<string, MatchUp>,
+): number {
+  const downstream = new Set<string>();
+  for (
+    let id = stored.get(op.matchUpId)?.winnerMatchUpId;
+    id && !downstream.has(id);
+    id = stored.get(id)?.winnerMatchUpId
+  )
+    downstream.add(id);
+  const preceding =
+    op.clearsScore &&
+    steps.find(
+      (step) =>
+        step.kind === 'score' &&
+        step.rank < index * 3 &&
+        step.score.stampsScoredTime === false &&
+        step.score.matchUpStatus === TO_BE_PLAYED &&
+        downstream.has(step.matchUpId),
+    );
+  return preceding ? preceding.rank - 0.5 : index * 3 + 2;
 }
 
 /** Position writers announce their structure when they return, at the program's explicit boundary. */

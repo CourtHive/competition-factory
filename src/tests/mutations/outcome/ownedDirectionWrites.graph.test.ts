@@ -14,6 +14,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import {
   assignmentViewFixture,
   STANDALONE_INDIRECT_CLEARS,
+  CONVERGED_PRODUCED_RELAYS,
   play as prepareDirection,
   findTarget,
 } from '@Tests/testHarness/outcome/directionFixtures';
@@ -1025,5 +1026,51 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     write(OUTCOME_PIPELINE_V1, drawId, dual.matchUpId, { winningSide: 1 });
     write(mode, drawId, dual.tieMatchUps![0].matchUpId, { winningSide: 1, matchUpStatus: DEFAULTED });
     expect(Object.hasOwn(dual, 'tieFormatId')).toBe(false);
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s retains the unnamed placement before a later BYE supersedes its notice',
+  (mode) => {
+    const { drawId, record, matchUps } = fresh(
+      { drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 32 },
+      PRODUCED_EXIT_POLICY,
+    );
+    const source = matchUps.find((matchUp) => matchUp.roundNumber === 1 && matchUp.roundPosition === 1)!;
+    const observed: string[][] = [];
+    const provider = getProvider();
+    const cycle = provider.cycleModifiedTournamentIds!;
+    vi.spyOn(provider, 'cycleModifiedTournamentIds').mockImplementation(() => {
+      const ids = cycle();
+      if (counter.active && ids?.size) observed.push([...ids]);
+      return ids;
+    });
+    write(mode, drawId, source.matchUpId, { matchUpStatus: DOUBLE_DEFAULT });
+    expect(observed.at(-1)).toEqual([record.tournamentId, '*']);
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s announces the winner withdrawal before resetting the produced relay',
+  (mode) => {
+    const scenario = CONVERGED_PRODUCED_RELAYS.find(
+      ([label]) => label === 'produced relay convergence: DOUBLE_DEFAULT/DEFAULTED/DOUBLE_DEFAULT/cleared',
+    )![1];
+    prepareDirection(OUTCOME_PIPELINE_V1, { ...scenario, steps: [] });
+    const step = scenario.steps[0];
+    const source = findTarget(step.target);
+    const observed: string[][] = [];
+    const provider = getProvider();
+    const cycle = provider.cycleModifiedTopics!;
+    vi.spyOn(provider, 'cycleModifiedTopics').mockImplementation(() => {
+      const topics = cycle();
+      if (counter.active && topics?.size) observed.push([...topics]);
+      return topics;
+    });
+    setSubscriptions({
+      subscriptions: { [UPDATE_INCONTEXT_MATCHUP]: () => undefined, [MODIFY_MATCHUP]: () => undefined },
+    });
+    write(mode, 'd', source, step.outcome, step.params);
+    expect(observed.at(-1)?.[0]).toBe(MODIFY_DRAW_DEFINITION);
   },
 );
