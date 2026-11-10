@@ -4,12 +4,16 @@ import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatch
 import { exchangeMatchUpPositions } from '@Mutate/matchUps/drawPositions/swapWinnerLoser';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { scoredTimeAction } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { getCapturedStamps } from '@Global/state/globalState';
+import { isAnyExit } from '@Validators/isExit';
 import { nowIso } from '@Tools/clock';
 import {
   mergeSideExitProvenance,
   setSideExitProvenance,
   blankSideExitCode,
+  clearResolvedSideExitProvenance,
+  clearSideExitProvenance,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
@@ -50,6 +54,20 @@ import type {
 export type OutcomeOp =
   | {
       op: 'setMatchUpResult';
+      /** The source writer resets through toBePlayed, including own undefined keys. */
+      resetsScore?: true;
+      /** An onward BYE placement creates the own score key before the subsequent result reset. */
+      initializesScore?: true;
+      /** The source writer assigns an own undefined winner. */
+      removesWinningSide?: true;
+      /** The pending produced exit lost its winner key in the settle pass after a retained BYE relay. */
+      deletesWinningSide?: true;
+      /** Settle restores the retained carrier origin and removes its old winner before replaying the result. */
+      replaysCarriedExit?: true;
+      /** The unlinked qualifying-final removal returns an own undefined qualifierRemoved field. */
+      returnsQualifierRemoved?: true;
+      /** A relabel first withdraws the existing carry, clearing provenance, codes and winner before re-entry. */
+      withdrawsCarry?: true;
       matchUpId: string;
       matchUpStatus: MatchUpStatusUnion;
       winningSide?: 1 | 2;
@@ -97,7 +115,13 @@ export type OutcomeOp =
        * call's `tieMatchUpResult`, but for a line's result removed or a line cleared (`unreturned`: v1's
        * `removeDirectedParticipants` returns none, nor its clear of a line still to be played)
        */
-      dualTally?: { sides?: unknown[]; tieFormat?: unknown; unreturned?: true };
+      dualTally?: {
+        sides?: unknown[];
+        tieFormat?: unknown;
+        clearsTieFormatId?: true;
+        clearsInitialScore?: true;
+        unreturned?: true;
+      };
       /**
        * a TEAM dual's own call (S7): the sides `ensureSideLineUps` writes before the result (their line-ups from the
        * draw's), present only where they change the stored ones. Unlike a line's `dualTally`, the call returns no
@@ -114,6 +138,10 @@ export type OutcomeOp =
     }
   | {
       op: 'setMatchUpDrawPositions';
+      /** A re-key before the score write leaves the winner's own key alone. */
+      preservesWinningSide?: true;
+      /** A released result writes an own undefined score before its subsequent reset. */
+      clearsScore?: true;
       matchUpId: string;
       /** the positions placed in the matchUp, as v1 stores them: numbers, ascending */
       drawPositions: number[];
@@ -176,6 +204,8 @@ export type OutcomeOp =
     }
   | {
       op: 'assignPosition';
+      /** The assignment announces at an explicit return boundary after its nested arrivals. */
+      announcesAssignments?: false;
       structureId: string;
       drawPosition: number;
       /** the participant placed at the drawPosition's stored assignment (a loser fed across a link) */
@@ -215,6 +245,8 @@ export type OutcomeOp =
     }
   | {
       op: 'setMatchUpStatusCodes';
+      /** An equal re-derivation allocates fresh codes but emits no notice. */
+      quiet?: true;
       /** a matchUp's status codes re-derived from its provenance (a loser taken back out of it, S4) */
       matchUpId: string;
       matchUpStatusCodes: MatchUpStatusCodeElement[];
@@ -246,12 +278,18 @@ export type OutcomeOp =
     }
   | {
       op: 'announcePositionAssignments';
+      /** Recursive withdrawal returns without tournament context. */
+      announcesTournament?: false;
       /** Return-time notice: nested BYE assignments announce before their parent. No state write. */
       structureId: string;
       announcesEvent?: false;
     }
   | {
       op: 'assignBye';
+      /** A converging result withdrew the prior loser before the BYE service places this seat. */
+      clearsDisplacedPosition?: true;
+      /** The matchUp whose assignment is cleared before the BYE is placed. */
+      matchUpId?: string;
       /** False when a separate return-time op announces this placement. */
       announcesAssignments?: false;
       /** a FIRST_MATCHUP reservation (S3): the consolation seat a loser who has won can never fill */
@@ -276,6 +314,8 @@ export type OutcomeOp =
     }
   | {
       op: 'withdrawBye';
+      /** Quiet own-key writes made by positionClear even where status and seats do not change. */
+      clearedWinnerIds?: string[];
       /**
        * an unwind's `removeDirectedBye` on a seat (S6): the stored assignment's BYE and its propagation marker removed,
        * where one stands; the structure's assignments announced with neither event nor tournament either way
@@ -327,6 +367,8 @@ export type OutcomeOp =
     }
   | {
       op: 'setSideLineUp';
+      /** The assignment ensures these sides before the carry; its actual notice follows the placement. */
+      quiet?: true;
       /**
        * a TEAM dual a team is directed into (S7): the team's line-up on its side, as v1 writes it, the winning team's
        * by `propagateLineUp` (`directWinner`), the losing team's by `propagateLoserLineUp` (`directLoser`) and, past a BYE,
@@ -427,6 +469,8 @@ type FoldContext = {
   phase?: 'ordinary-result' | 'ordinary-arrival';
   /** Native execution retains v1's input aliases; standalone folds and planning overlays copy their plan inputs. */
   bindResultInputs?: true;
+  pendingScoredTimes?: Map<MatchUp, string>;
+  pendingSchedules?: Map<MatchUp, MatchUpSchedule>;
 };
 
 /**
@@ -462,15 +506,20 @@ export function stampedInThisCall(drawDefinition?: DrawDefinition): Set<string> 
   return keys;
 }
 
-function setMatchUpResult(
-  matchUp: MatchUp,
-  op: Extract<OutcomeOp, { op: 'setMatchUpResult' }>,
-  { temporal, phase, bindResultInputs }: FoldContext,
-) {
+function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMatchUpResult' }>, context: FoldContext) {
+  const { phase, bindResultInputs } = context;
   const ordinary = phase === 'ordinary-result';
-  // a dual's sides and tieFormat as `updateTieMatchUpScore` rewrites them before its tally (S7)
-  if (op.dualTally?.sides) matchUp.sides = structuredClone(op.dualTally.sides) as MatchUp['sides'];
-  if (op.ensuredSides) matchUp.sides = structuredClone(op.ensuredSides) as MatchUp['sides'];
+  if (op.replaysCarriedExit) {
+    const provenance = matchUp.sideExitProvenance;
+    clearSideExitProvenance(matchUp);
+    setSideExitProvenance({ matchUp, provenance });
+    delete matchUp.winningSide;
+  }
+  if (op.withdrawsCarry) {
+    clearSideExitProvenance(matchUp);
+    matchUp.matchUpStatusCodes = [];
+    delete matchUp.winningSide;
+  }
   if (op.disableAutoCalc !== undefined)
     setFirstClassOrExtension({
       element: matchUp,
@@ -478,29 +527,69 @@ function setMatchUpResult(
       name: DISABLE_AUTO_CALC,
       value: op.disableAutoCalc,
     });
+  // a dual's sides and tieFormat as `updateTieMatchUpScore` rewrites them before its tally (S7)
+  if (op.dualTally?.sides) matchUp.sides = structuredClone(op.dualTally.sides) as MatchUp['sides'];
+  if (op.ensuredSides) matchUp.sides = structuredClone(op.ensuredSides) as MatchUp['sides'];
   if (op.dualTally?.tieFormat) matchUp.tieFormat = structuredClone(op.dualTally.tieFormat) as MatchUp['tieFormat'];
-  if (ordinary && op.score) matchUp.score = op.score;
+  if (op.dualTally?.clearsTieFormatId) matchUp.tieFormatId = undefined;
+  if (op.dualTally?.clearsInitialScore) delete matchUp.score;
+  if (op.initializesScore) matchUp.score = undefined;
+  if (op.resetsScore) resetResult(matchUp, op.matchUpStatus, bindResultInputs);
+  if (op.score) matchUp.score = ordinary || bindResultInputs ? op.score : structuredClone(op.score);
   matchUp.matchUpStatus = op.matchUpStatus;
   clearOrderOfFinishUnlessCompleted(matchUp);
-  if (op.score && !ordinary) matchUp.score = bindResultInputs ? op.score : structuredClone(op.score);
-  // The ordinary writer installs format and codes before the winner and binds the caller's normalized codes.
-  if (ordinary) setResultFormatAndCodes(matchUp, op, true);
-  if (op.winningSide) matchUp.winningSide = op.winningSide;
-  else delete matchUp.winningSide;
-  if (!ordinary) setResultFormatAndCodes(matchUp, op, false, bindResultInputs);
+  setResultFormatAndCodes(matchUp, op, ordinary, !!bindResultInputs);
+  clearResolvedSideExitProvenance(matchUp);
+  if (op.deletesWinningSide) delete matchUp.winningSide;
+  else if (op.winningSide) matchUp.winningSide = op.winningSide;
+  else if (op.removesWinningSide) matchUp.winningSide = undefined;
+  else if (
+    (op.announcedAs === 'reconcileScoredTimes' && op.matchUpStatus !== BYE) ||
+    op.announcedAs === 'withdrawProducedExits'
+  )
+    delete matchUp.winningSide;
+  else if (bindResultInputs) {
+    if (matchUp.winningSide) matchUp.winningSide = undefined;
+  } else if (!op.resetsScore) delete matchUp.winningSide;
   if (op.notes) matchUp.notes = op.notes;
   if (op.stampsScoredTime === false) return;
-  // v1's `applyScoredTime`: captured the first time the matchUp is scored, kept on later corrections, removed with
-  // the score so a re-score gets a fresh stamp
-  const action = scoredTimeAction(matchUp, temporal?.scoredTimes.has(matchUp.matchUpId));
+  applyResultScoredTime(matchUp, context);
+}
+
+/** A native result's schedule lands after finishing order and its result notice's stamp. */
+function applyResultScoredTime(
+  matchUp: MatchUp,
+  { temporal, pendingScoredTimes, pendingSchedules }: FoldContext,
+): void {
+  const pending = pendingScoredTimes?.has(matchUp);
+  const action = scoredTimeAction(matchUp, pending || temporal?.scoredTimes.has(matchUp.matchUpId));
   if (action === 'initialize') {
-    matchUp.schedule ??= {};
-    if (temporal) temporal.scoredTimes.add(matchUp.matchUpId);
-    else matchUp.schedule.scoredTime = nowIso();
+    if (temporal) {
+      matchUp.schedule ??= {};
+      temporal.scoredTimes.add(matchUp.matchUpId);
+    } else if (
+      pendingScoredTimes &&
+      (matchUp.collectionId || !Object.hasOwn(matchUp, 'updatedAt') || pendingSchedules?.has(matchUp))
+    )
+      pendingScoredTimes.set(matchUp, nowIso());
+    else {
+      matchUp.schedule ??= {};
+      matchUp.schedule.scoredTime = nowIso();
+    }
   } else if (action === 'clear') {
+    pendingScoredTimes?.delete(matchUp);
     temporal?.scoredTimes.delete(matchUp.matchUpId);
     if (matchUp.schedule) delete matchUp.schedule.scoredTime;
   }
+}
+
+/** The score-reset writer retains the fixture's own keys and rescues the standing format/provenance. */
+function resetResult(matchUp: MatchUp, matchUpStatus: MatchUpStatusUnion, bindResultInputs?: true): void {
+  const provenance = isAnyExit(matchUpStatus) ? matchUp.sideExitProvenance : undefined;
+  const format = matchUp.matchUpFormat;
+  Object.assign(matchUp, bindResultInputs ? toBePlayed : structuredClone(toBePlayed));
+  if (provenance) matchUp.sideExitProvenance = provenance;
+  if (format) matchUp.matchUpFormat = format;
 }
 
 function setResultFormatAndCodes(
@@ -568,7 +657,7 @@ function foldMatchUpWrite(
   else {
     // v1's advance through a BYE (`assignDrawPositionBye`) writes the matchUp it advances into with no score, as a
     // removal does: a blank one a cleared result left there goes with it
-    if (op.removedDrawPosition || op.advancesThroughBye) delete matchUp.score;
+    // The position writer assigns score below, after its own winner write.
     setMatchUpDrawPositions({
       structureId: structureOf.get(op.matchUpId),
       drawPositions: op.drawPositions,
@@ -581,17 +670,20 @@ function foldMatchUpWrite(
       matchUp.matchUpStatus = TO_BE_PLAYED;
       setSideExitProvenance({ matchUp, provenance: undefined });
     }
-    if (op.withdrawsPendingAward) delete matchUp.winningSide;
+    if (op.withdrawsPendingAward) matchUp.winningSide = undefined;
     if (op.withdrawsProducedExit) {
       matchUp.matchUpStatus = TO_BE_PLAYED;
-      delete matchUp.winningSide;
+      matchUp.winningSide = undefined;
       setSideExitProvenance({ matchUp, provenance: undefined });
       clearOrderOfFinishUnlessCompleted(matchUp);
     }
     // the arrival that decides the matchUp by the carried exit beside it: its codes re-derived (`progressExitStatus`)
     if (op.rederivesCodes) matchUp.matchUpStatusCodes = [];
     // The ordinary arrival writes this own key, observable before its notice reads the caller's clock.
-    if (context.phase === 'ordinary-arrival') matchUp.winningSide = undefined;
+    if (op.advancesThroughBye) matchUp.score = undefined;
+    // A plain onward release leaves the result keys alone; its later reset inserts its own undefined winner.
+    if (!op.preservesWinningSide && !op.releasedDrawPosition && !matchUp.winningSide) matchUp.winningSide = undefined;
+    if (op.removedDrawPosition || op.clearsScore) matchUp.score = undefined;
   }
   return {};
 }
@@ -666,13 +758,17 @@ function foldOrderOfFinish(op: OpOf<'setOrderOfFinish'>, { matchUps }: DrawIndex
 function foldSchedule(
   op: OpOf<'setMatchUpSchedule'> | OpOf<'clearMatchUpScoredTime'>,
   { matchUps }: DrawIndex,
-  temporal?: TemporalProjection,
+  { temporal, pendingSchedules }: FoldContext,
 ): Folded {
   const matchUp = matchUps.get(op.matchUpId);
   if (!matchUp) return { error: `${op.op}: no matchUp ${op.matchUpId}` };
   temporal?.scoredTimes.delete(op.matchUpId);
-  if (op.op === 'setMatchUpSchedule') matchUp.schedule = structuredClone(op.schedule);
-  else if (matchUp.schedule) delete matchUp.schedule.scoredTime;
+  if (op.op === 'setMatchUpSchedule') {
+    const schedule = structuredClone(op.schedule);
+    // The public writer adds a new schedule after its outcome, before the scored-time write.
+    if (pendingSchedules && !Object.hasOwn(matchUp, 'schedule')) pendingSchedules.set(matchUp, schedule);
+    else matchUp.schedule = schedule;
+  } else if (matchUp.schedule) delete matchUp.schedule.scoredTime;
   return {};
 }
 
@@ -698,7 +794,7 @@ function foldSetProvenance(op: OpOf<'setSideExitProvenance'>, { matchUps }: Draw
   return {};
 }
 
-function foldAssignBye(op: OpOf<'assignBye'>, { structures, groups }: DrawIndex): Folded {
+function foldAssignBye(op: OpOf<'assignBye'>, { structures, groups, matchUps }: DrawIndex): Folded {
   const positionAssignments = positionAssignmentsOf(structures.get(op.structureId) ?? groups.get(op.structureId));
   if (!positionAssignments) return { error: `assignBye: no structure ${op.structureId}` };
   let assignment = positionAssignments.find((candidate) => candidate.drawPosition === op.drawPosition);
@@ -706,6 +802,11 @@ function foldAssignBye(op: OpOf<'assignBye'>, { structures, groups }: DrawIndex)
   if (!assignment) {
     assignment = { drawPosition: op.drawPosition };
     positionAssignments.push(assignment);
+  }
+  if (op.clearsDisplacedPosition && assignment.participantId) {
+    delete assignment.participantId;
+    const matchUp = op.matchUpId && matchUps.get(op.matchUpId);
+    if (matchUp) delete matchUp.winningSide;
   }
   assignment.bye = true;
   assignment.participantId = undefined;
@@ -721,12 +822,18 @@ function foldSetMatchUpBye(op: OpOf<'setMatchUpBye'>, { matchUps }: DrawIndex): 
   return {};
 }
 
-function foldWithdrawBye(op: OpOf<'withdrawBye'>, { structures, groups }: DrawIndex): Folded {
+function foldWithdrawBye(op: OpOf<'withdrawBye'>, { structures, groups, matchUps }: DrawIndex): Folded {
   const positionAssignments = positionAssignmentsOf(structures.get(op.structureId) ?? groups.get(op.structureId));
   const assignment = positionAssignments?.find((candidate) => candidate.drawPosition === op.drawPosition);
   if (!assignment) return { error: `withdrawBye: no drawPosition ${op.drawPosition} in ${op.structureId}` };
+  for (const id of op.clearedWinnerIds ?? []) {
+    const matchUp = matchUps.get(id);
+    if (!matchUp) return { error: `withdrawBye: no matchUp ${id}` };
+    matchUp.winningSide = undefined;
+  }
   delete assignment.bye;
   delete assignment.byeFromPropagation;
+  if (assignment.participantId === undefined) delete assignment.participantId;
   return {};
 }
 
@@ -734,7 +841,12 @@ function foldClearMatchUpBye(op: OpOf<'clearMatchUpBye'>, { matchUps }: DrawInde
   const matchUp = matchUps.get(op.matchUpId);
   if (!matchUp) return { error: `clearMatchUpBye: no matchUp ${op.matchUpId}` };
   matchUp.matchUpStatus = op.rederived?.matchUpStatus ?? TO_BE_PLAYED;
-  if (op.rederived) matchUp.winningSide = op.rederived.winningSide;
+  matchUp.winningSide = op.rederived?.winningSide;
+  // positionClear clears the side record before restoring the retained entry, so its own key moves last.
+  const retained = op.rederived && matchUp.sideExitProvenance ? { ...matchUp.sideExitProvenance } : undefined;
+  clearSideExitProvenance(matchUp);
+  if (retained) setSideExitProvenance({ matchUp, provenance: retained });
+  clearResolvedSideExitProvenance(matchUp);
   clearOrderOfFinishUnlessCompleted(matchUp);
   return {};
 }
@@ -771,6 +883,7 @@ function foldStamp(
   const target = op.entity === 'matchUp' ? matchUps.get(op.id) : structures.get(op.id);
   if (!target) return { error: `stampUpdatedAt: no ${op.entity} ${op.id}` };
   stamp(target as Stamped, `${op.entity}:${op.id}`, context);
+  if (op.entity === 'matchUp') flushScoredTime(target as MatchUp, context);
   return {};
 }
 
@@ -786,11 +899,20 @@ export function applyOutcomeOps(
   effects: Omit<FoldContext, 'stampedBefore'> = {},
 ): Folded {
   const index = indexDraw(drawDefinition);
-  const context = { ...effects, stampedBefore };
+  const context: FoldContext = {
+    ...effects,
+    stampedBefore,
+    ...(effects.bindResultInputs ? { pendingScoredTimes: new Map(), pendingSchedules: new Map() } : {}),
+  };
   for (const op of ops) {
     const folded = foldOne(op, index, drawDefinition, context);
     if (folded.error) return folded;
   }
+  for (const matchUp of new Set([
+    ...(context.pendingScoredTimes?.keys() ?? []),
+    ...(context.pendingSchedules?.keys() ?? []),
+  ]))
+    flushScoredTime(matchUp, context);
   return {};
 }
 
@@ -828,10 +950,24 @@ function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition
       return foldSideLineUp(op, index);
     case 'setMatchUpSchedule':
     case 'clearMatchUpScoredTime':
-      return foldSchedule(op, index, context.temporal);
+      return foldSchedule(op, index, context);
     case 'setOrderOfFinish':
       return foldOrderOfFinish(op, index);
     default:
       return foldStamp(op, index, drawDefinition, context);
   }
+}
+
+/** Flush at the result writer's stamp; a remaining unstamped result flushes when its fold completes. */
+function flushScoredTime(matchUp: MatchUp, { pendingScoredTimes, pendingSchedules }: FoldContext): void {
+  const schedule = pendingSchedules?.get(matchUp);
+  if (schedule) {
+    matchUp.schedule = schedule;
+    pendingSchedules?.delete(matchUp);
+  }
+  const scoredTime = pendingScoredTimes?.get(matchUp);
+  if (scoredTime === undefined) return;
+  matchUp.schedule ??= {};
+  matchUp.schedule.scoredTime = scoredTime;
+  pendingScoredTimes?.delete(matchUp);
 }

@@ -1,7 +1,7 @@
 import { indirectRelayReset, producedRelayAfterOps, unwoundOps } from './unwindPath';
 import { getSideStatusCode } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
+import { arrivalOps, arrivalReturnOps, winnerPlacementOps } from './directionOps';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
-import { arrivalOps, winnerPlacementOps } from './directionOps';
 import { producedAwardWriteOps } from './producedExit';
 import { directionReason } from './directionReasons';
 import { isDoubleExit } from '@Validators/isExit';
@@ -9,7 +9,7 @@ import { producedTarget } from './producedTarget';
 import { convergenceOps } from './convergence';
 import { resultOps } from './resultOps';
 import {
-  BLANK_SCORE,
+  blankScore,
   CLEAR_SCORE,
   indexed,
   onwardFrom,
@@ -192,9 +192,12 @@ export function standaloneCarriedWinnerOps(args: PlanArgs): OutcomeOp[] | undefi
     request.matchUpId,
     request.matchUpStatus,
   ).map((op): OutcomeOp =>
-    op.op === 'setMatchUpResult' && op.matchUpId === clear.matchUpId ? { ...op, score: BLANK_SCORE } : op,
+    op.op === 'setMatchUpResult' && op.matchUpId === clear.matchUpId
+      ? { ...op, resetsScore: true, score: blankScore() }
+      : op,
   );
-  const arrival = [...arrivalOps(after.view, loser), ...relayOps, ...produced];
+  const assignment = arrivalOps(after.view, loser);
+  const arrival = [...assignment, ...arrivalReturnOps(assignment), ...relayOps, ...produced];
   return standaloneTail(args, removal, direction, arrival);
 }
 
@@ -293,8 +296,9 @@ function standaloneBareArrival(
   if (next.matchUpStatus !== TO_BE_PLAYED || !unwoundClean(next, new Set())) return undefined;
   if (positionsOf(next).includes(position) || JSON.stringify(positionsOf(next)) !== JSON.stringify(reset.drawPositions))
     return undefined;
+  const assignment = arrivalOps(view, loser);
   return [
-    ...arrivalOps(view, loser),
+    ...assignment,
     {
       op: 'setMatchUpResult',
       matchUpId: relay.matchUpId,
@@ -312,5 +316,6 @@ function standaloneBareArrival(
       placedDrawPosition: position,
     },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId },
+    ...arrivalReturnOps(assignment),
   ];
 }

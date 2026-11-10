@@ -1,11 +1,11 @@
-import { convergedChain, convergedRelayCopy, unwoundSeatOps } from './unwindSeats';
+import { convergedChain, convergedRelayCopy, unwoundSeatOps, pendingRelayedWinner } from './unwindSeats';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { standingReservationPrograms } from './standingReservation';
 import { isDoubleExit } from '@Validators/isExit';
 import { producedTarget } from './producedTarget';
 import { unwindWalk } from '../unwindWalk';
 import {
-  BLANK_SCORE,
+  blankScore,
   CLEAR_SCORE,
   indexed,
   isSettleWrite,
@@ -451,7 +451,7 @@ function walkedSeatOps(
     drawDefinition,
   });
   // the walk writes nothing the unwind's own path writes (`unwoundOps` writes those back to be played)
-  const touched = segments?.flat().flatMap((op) => ('matchUpId' in op ? [op.matchUpId] : []));
+  const touched = segments?.flat().flatMap((op) => ('matchUpId' in op && op.matchUpId ? [op.matchUpId] : []));
   if (!segments || touched?.some((matchUpId) => path.includes(matchUpId))) return undefined;
   return new Map(walkedSeats.map(({ index }, i) => [index, segments[i]]));
 }
@@ -646,7 +646,8 @@ function unwoundPassage(view: OutcomeView, loserSeat: WinnerLoserSeat, relay?: U
           op: 'setMatchUpResult',
           matchUpId: landing.matchUpId,
           matchUpStatus: TO_BE_PLAYED,
-          score: BLANK_SCORE,
+          resetsScore: true,
+          score: blankScore(),
           matchUpStatusCodes: [],
           stampsScoredTime: false,
           announcesContext: false,
@@ -663,7 +664,8 @@ function unwoundPassage(view: OutcomeView, loserSeat: WinnerLoserSeat, relay?: U
       op: 'setMatchUpResult',
       matchUpId: matchUp.matchUpId,
       matchUpStatus: relay?.cleared.has(matchUp.matchUpId) ? TO_BE_PLAYED : BYE,
-      score: BLANK_SCORE,
+      resetsScore: true,
+      score: blankScore(),
       matchUpStatusCodes: [],
       stampsScoredTime: false,
       announcesContext: false,
@@ -720,7 +722,8 @@ function unwoundOwnConvergence(view: OutcomeView, seat: WinnerLoserSeat, relay?:
       op: 'setMatchUpResult',
       matchUpId: next.matchUpId,
       matchUpStatus: TO_BE_PLAYED,
-      score: BLANK_SCORE,
+      resetsScore: true,
+      score: blankScore(),
       matchUpStatusCodes: [],
       stampsScoredTime: false,
       announcesContext: false,
@@ -733,7 +736,8 @@ function unwoundOwnConvergence(view: OutcomeView, seat: WinnerLoserSeat, relay?:
       matchUpStatus: status,
       winningSide: fedSide,
       retainedExitPlanned: true,
-      score: BLANK_SCORE,
+      resetsScore: true,
+      score: blankScore(),
       matchUpStatusCodes: [],
       stampsScoredTime: false,
     },
@@ -776,7 +780,8 @@ function unwoundBranch(
         op: 'setMatchUpResult',
         matchUpId: matchUp.matchUpId,
         matchUpStatus: TO_BE_PLAYED,
-        score: BLANK_SCORE,
+        resetsScore: true,
+        score: blankScore(),
         matchUpStatusCodes: [],
         stampsScoredTime: false,
         ...(context ? {} : { announcesContext: false as const }),
@@ -911,7 +916,10 @@ export function unwoundOps(
               op: 'setMatchUpResult',
               matchUpId,
               matchUpStatus: rederived.matchUpStatus,
-              score: BLANK_SCORE,
+              removesWinningSide: true,
+              ...(rederived.matchUpStatus === WALKOVER
+                ? { resetsScore: true as const, score: blankScore() }
+                : { score: { scoreStringSide1: '', scoreStringSide2: '', sets: undefined } }),
               matchUpStatusCodes: [],
               stampsScoredTime: false,
               ...(retainedAward && !stored?.winnerMatchUpId && !stored?.loserMatchUpId
@@ -927,12 +935,15 @@ export function unwoundOps(
         const carried = Object.keys(stored?.sideExitProvenance ?? {}).length > 0;
         return [
           ...seatOps,
-          ...(released ? [{ op: 'setMatchUpDrawPositions' as const, matchUpId, drawPositions }] : []),
+          ...(released
+            ? [{ op: 'setMatchUpDrawPositions' as const, matchUpId, drawPositions, clearsScore: true as const }]
+            : []),
           {
             op: 'setMatchUpResult',
             matchUpId,
             matchUpStatus: TO_BE_PLAYED,
-            score: BLANK_SCORE,
+            resetsScore: true,
+            score: blankScore(),
             matchUpStatusCodes: [],
             stampsScoredTime: false,
             ...(produced ? {} : { announcesContext: false as const }),
@@ -954,6 +965,7 @@ export function unwoundOps(
             matchUpStatusCodes: [],
             stampsScoredTime: false,
             announcedAs: 'settleRederivedDoubleExit',
+            ...(pendingRelayedWinner(view, matchUpId, rederived) ? { deletesWinningSide: true as const } : {}),
           },
         ]
       : [],
@@ -993,7 +1005,11 @@ export function producedRelayAfterOps(
         ReturnType<typeof convergedRelayCopy>
       >;
       return [
-        ...unwound.filter((write) => write.op === 'setMatchUpResult' && write.retainedExitPlanned && !loser?.converged),
+        ...unwound.flatMap((write): OutcomeOp[] =>
+          write.op === 'setMatchUpResult' && write.retainedExitPlanned && !loser?.converged
+            ? [{ ...write, resetsScore: write.matchUpStatus === WALKOVER ? true : undefined, replaysCarriedExit: true }]
+            : [],
+        ),
         ...unwound.filter(
           (write) =>
             write.op === 'setMatchUpResult' &&

@@ -1,14 +1,7 @@
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
-import {
-  addedNotices,
-  captureShadow,
-  compareNotices,
-  compareShadow,
-  plannedNotices,
-  prepareTemporalShadow,
-} from './shadow';
 import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
+import { applyOwnedPlan, applyTemporalPhases, compileTemporalPhases } from './apply';
 import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { PREDICTED_CALL, predictSettleWork, type SettleSite } from './settleWork';
 import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
@@ -29,9 +22,16 @@ import { createWorkingView } from './overlay';
 import { refuseOutcome } from './refusals';
 import { stampedInThisCall } from './ops';
 import { buildOutcomeView } from './view';
-import { applyOwnedPlan, applyTemporalPhases, compileTemporalPhases } from './apply';
 import { chooseRoute } from './route';
 import { planOutcome } from './plan';
+import {
+  addedNotices,
+  captureShadow,
+  compareNotices,
+  compareShadow,
+  plannedNotices,
+  prepareTemporalShadow,
+} from './shadow';
 import {
   getCapturedStamps,
   getCapturedClock,
@@ -179,12 +179,12 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   if (mode === OUTCOME_PIPELINE_V2) {
     if (refusal) return { refused: toResult(refusal, args) };
     // S2: a call whose complete plan is a shape v2 owns is written by v2, and v1 is not asked (F1 (a), fail-closed)
-    const { outcome, phases } = planCall(args, view);
+    const { outcome, phases, route } = planCall(args, view);
     if (!outcome.ops || !OWNED_SHAPES.has(outcome.shape)) return {};
     return {
       owned: phases
         ? applyTemporalPhases(args, phases, outcome.shape)
-        : applyOwnedPlan({ args, ops: outcome.ops, shape: outcome.shape }),
+        : applyOwnedPlan({ args, ops: outcome.ops, shape: outcome.shape, route }),
     };
   }
   if (mode !== OUTCOME_PIPELINE_DIFFERENTIAL) return {};

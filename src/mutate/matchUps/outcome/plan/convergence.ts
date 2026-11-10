@@ -1,6 +1,7 @@
-import { BLANK_SCORE, SINGLE_EXITS, carriedStatus, indexed, isSettleWrite, sideOf } from './planShared';
+import { blankScore, SINGLE_EXITS, carriedStatus, indexed, isSettleWrite, sideOf } from './planShared';
 import { producedTarget, producedTargetOps, producedTargetReason } from './producedTarget';
 import { ownByeChain, unfillableByeChain, walkChain } from './byeChain';
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { isDoubleExit } from '@Validators/isExit';
 import {
   buildCarriedExitProvenance,
@@ -145,24 +146,33 @@ export function convergenceOps(
     previousMatchUpStatus,
     sourceMatchUpId,
   });
-  const score = convergence.score ?? (matchUpStatus === DOUBLE_WALKOVER ? BLANK_SCORE : undefined);
+  const score = convergence.score ?? (matchUpStatus === DOUBLE_WALKOVER ? blankScore() : undefined);
+  const previousLoser = indexed(view, matchUpId)?.sides?.find((side) => side.sideNumber !== sideNumber)?.participantId;
+  const seats = (convergence.seats ?? []).map((op): OutcomeOp => {
+    if (op.op !== 'assignBye' || !previousLoser) return op;
+    const participant = indexed(view, op.matchUpId)?.sides?.find(
+      (side) => side.drawPosition === op.drawPosition,
+    )?.participantId;
+    return participant === previousLoser ? { ...op, clearsDisplacedPosition: true } : op;
+  });
   return [
     {
       op: 'setMatchUpResult',
       matchUpId,
       matchUpStatus,
+      removesWinningSide: true,
       // a side whose standing exit a double exit delivered shows its outcome code (S6 tail)
-      ...(matchUpStatusCodes.length ? { matchUpStatusCodes } : {}),
+      matchUpStatusCodes,
       // a DOUBLE_WALKOVER says nothing was played, so its score is blanked; a DOUBLE_DEFAULT keeps what stood
-      ...(score ? { score } : {}),
+      ...(score ? { score, ...(score === blankScore() ? { resetsScore: true as const } : {}) } : {}),
     },
     ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId, provenance }] : []),
     { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
     // the BYEs before the exit produced onward, as v1's `doubleExitAdvancement` places them; a displaced carrier's landing
     // is announced last, by the `reconcileScoredTimes` pass that takes its `scoredTime`
-    ...unreconciled(convergence.seats ?? []),
+    ...unreconciled(seats),
     ...(target ? producedTargetOps(view, target, matchUpId, matchUpStatus) : []),
-    ...reconciled(convergence.seats ?? []),
+    ...reconciled(seats),
   ];
 }
 
@@ -271,9 +281,10 @@ export function producedConvergedOps(
       op: 'setMatchUpResult',
       matchUpId: landing.matchUpId,
       matchUpStatus,
+      removesWinningSide: true,
       matchUpStatusCodes: [],
       stampsScoredTime: false,
-      ...(matchUpStatus === DOUBLE_WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
+      ...(matchUpStatus === DOUBLE_WALKOVER ? { resetsScore: true, score: toBePlayed.score } : {}),
     },
     ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId: landing.matchUpId, provenance }] : []),
     { op: 'stampUpdatedAt', entity: 'matchUp', id: landing.matchUpId },

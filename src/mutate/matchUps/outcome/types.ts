@@ -1,8 +1,8 @@
 import type { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
 import type { ErrorType } from '@Constants/errorConditionConstants';
+import type { OutcomeOp, TemporalProjection } from './ops';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { WorkingView } from './overlay';
-import type { OutcomeOp, TemporalProjection } from './ops';
 import type {
   DrawDefinition,
   Event,
@@ -179,6 +179,9 @@ export type OutcomeView = {
     dualRewrite: {
       sides?: unknown[];
       tieFormat?: unknown;
+      clearsTieFormatId?: true;
+      /** The initial tally with the line cleared removes its old aggregate score before the final tally. */
+      clearsInitialScore?: true;
       scoreReported: boolean;
       /** the sides once the line's write has ensured them (the winner's carry reads these) */
       sidesAsHeld?: unknown[];
@@ -387,6 +390,8 @@ export type OutcomeView = {
      * exit's loser seat shows its produced exit instead of a BYE (CA ruling (A), 2026-10-21)
      */
     doubleExitPropagatesBye?: boolean;
+    /** Clearing a qualifying final whose winner link feeds no DRAW still returns qualifierRemoved. */
+    unlinkedQualifierRemoval?: boolean;
     /** v1's score write updates a tally here (`updateTallyIfNeeded`): a round-robin container, ad hoc, or lucky */
     tallied: boolean;
     /** the draw stores its winner and loser edges; v1 writes them first on one that does not (edge repair) */
@@ -420,6 +425,10 @@ export type Route =
 
 /** § 4: what the matchUp itself holds once the write has landed */
 export type MatchUpWrite = {
+  /** The v1 write resets the result through the shared fixture. */
+  resetsScore?: true;
+  /** The v1 write assigns an own undefined winner. */
+  removesWinningSide?: true;
   matchUpStatus?: MatchUpStatusUnion;
   winningSide?: number;
   scoreStringSide1?: string;

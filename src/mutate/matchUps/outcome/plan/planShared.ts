@@ -1,3 +1,4 @@
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { isDoubleExit } from '@Validators/isExit';
 
 // constants and types
@@ -260,7 +261,7 @@ export function pairedFeeder(
 export const carriedStatus = (status?: string): MatchUpStatusUnion => (status === DEFAULTED ? DEFAULTED : WALKOVER);
 
 /** the first reason this call is not S1's, or undefined when it is */
-export const BLANK_SCORE: Score = { scoreStringSide1: '', scoreStringSide2: '' };
+export const blankScore = (): Score => toBePlayed.score;
 export const scoreless = (matchUp: HydratedMatchUp) =>
   !matchUp.score?.scoreStringSide1 && !matchUp.score?.scoreStringSide2 && !matchUp.score?.sets?.length;
 export const unplaced = (matchUp: HydratedMatchUp) => !(matchUp.drawPositions ?? []).some(Boolean);
@@ -352,9 +353,16 @@ export function removesDirection(view: OutcomeView, route: Route | undefined, wr
 /** a seat filled with a propagated BYE and its matchUp a BYE (`assignDrawPositionBye`), the matchUp stamped */
 export function seatBye(seat: { structureId: string; drawPosition: number; matchUpId: string }): OutcomeOp[] {
   return [
-    { op: 'assignBye', structureId: seat.structureId, drawPosition: seat.drawPosition, byeFromPropagation: true },
+    {
+      op: 'assignBye',
+      structureId: seat.structureId,
+      drawPosition: seat.drawPosition,
+      byeFromPropagation: true,
+      announcesAssignments: false,
+    },
     { op: 'setMatchUpBye', matchUpId: seat.matchUpId },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: seat.matchUpId },
+    { op: 'announcePositionAssignments', structureId: seat.structureId },
   ];
 }
 
@@ -367,6 +375,7 @@ export function structureStamps(ops: OutcomeOp[], structureId: string): OutcomeO
   const seatedIn = ops.flatMap((op) =>
     (op.op === 'assignPosition' ||
       op.op === 'assignBye' ||
+      op.op === 'announcePositionAssignments' ||
       (op.op === 'withdrawBye' && op.announcesAssignments !== false)) &&
     op.structureId !== structureId
       ? [op.structureId]

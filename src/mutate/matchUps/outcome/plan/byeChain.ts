@@ -4,6 +4,7 @@ import { getDrawPositionSideNumber, getSideDrawPosition } from '@Query/matchUps/
 import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { indexed, lowerFirst, onwardFrom, sideOf } from './planShared';
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { findStructure } from '@Acquire/findStructure';
 import { carriedByeReplay } from './carriedByeSeat';
@@ -116,7 +117,7 @@ function byeService(
     assigns: [],
     writes,
     onward: advance.onward,
-    matchUpIds: [...new Set(writes.flatMap((op) => ('matchUpId' in op ? [op.matchUpId] : [])))],
+    matchUpIds: [...new Set(writes.flatMap((op) => ('matchUpId' in op && op.matchUpId ? [op.matchUpId] : [])))],
   };
 }
 
@@ -252,7 +253,31 @@ function byeResultOps(entry: MatchUp, quiet: { announcesEvent?: false }): Outcom
  * that reached v1's bound (F9), are v1's. `announced`: whether v1 names the event for the first seat (deeper seats are
  * placed with none)
  */
-function byeChain(
+function byeChain(...args: Parameters<typeof byeChainProgram>): ReturnType<typeof byeChainProgram> {
+  const chain = byeChainProgram(...args);
+  if (!chain) return undefined;
+  return assignmentReturns(chain);
+}
+
+/** assignDrawPositionBye announces on return: deepest child first, after the chain's matchUp writes. */
+function assignmentReturns(chain: ByeChain): ByeChain {
+  return {
+    ...chain,
+    assigns: chain.assigns.map((op): OutcomeOp =>
+      op.op === 'assignBye' ? { ...op, announcesAssignments: false } : op,
+    ),
+    writes: [
+      ...chain.writes,
+      ...chain.assigns.flatMap((op): OutcomeOp[] =>
+        op.op === 'assignBye'
+          ? [{ op: 'announcePositionAssignments', structureId: op.structureId, announcesEvent: op.announcesEvent }]
+          : [],
+      ),
+    ],
+  };
+}
+
+function byeChainProgram(
   view: OutcomeView,
   first: Seat,
   chain: { levels: CarryLevel[]; bounded: boolean } | undefined,
@@ -587,6 +612,10 @@ function walkedSeats(view: OutcomeView, entry?: HydratedMatchUp): DoubleExitSeat
 }
 
 export function walkChain(walk: ByeWalk): ByeChain {
+  return assignmentReturns(walkChainProgram(walk));
+}
+
+function walkChainProgram(walk: ByeWalk): ByeChain {
   const quiet = (named: boolean) => (named ? {} : { announcesEvent: false as const });
   return {
     assigns: walk.assigns.map(({ structureId, drawPosition, matchUpId, named }) => ({
@@ -905,7 +934,8 @@ function heldBeyondOps(request: OutcomeRequest, beyond: { matchUpId: string; arr
       matchUpStatusCodes: [],
       stampsScoredTime: false,
       inContextBare: true,
-      score: { scoreStringSide1: '', scoreStringSide2: '' },
+      resetsScore: true,
+      score: toBePlayed.score,
     },
     ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId, provenance }] : []),
     { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
@@ -922,7 +952,7 @@ function heldLoserOps(request: OutcomeRequest, held: HeldLoser): OutcomeOp[] {
       matchUpStatus: status,
       exitingSideNumber,
     });
-  const blank = { scoreStringSide1: '', scoreStringSide2: '' };
+  const blank = toBePlayed.score;
   const write = (
     matchUpId: string,
     matchUpStatus: MatchUpStatusUnion,
@@ -939,6 +969,7 @@ function heldLoserOps(request: OutcomeRequest, held: HeldLoser): OutcomeOp[] {
         matchUpStatusCodes: [],
         stampsScoredTime: false,
         announcesContext: false,
+        resetsScore: true,
         score: blank,
       },
       ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId, provenance }] : []),
@@ -1043,7 +1074,7 @@ function producedLoserOps(request: OutcomeRequest, produced: ProducedLoser): Out
       winningSide: (3 - produced.seatSide) as 1 | 2,
       matchUpStatusCodes: [],
       stampsScoredTime: false,
-      ...(matchUpStatus === WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
+      ...(matchUpStatus === WALKOVER ? { resetsScore: true, score: toBePlayed.score } : {}),
     },
     ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId: produced.matchUpId, provenance }] : []),
     { op: 'stampUpdatedAt', entity: 'matchUp', id: produced.matchUpId },

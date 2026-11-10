@@ -49,6 +49,8 @@ type Sim = {
   winnerLinkRounds: Set<string>;
   propagatesBye: boolean;
   notices: Map<string, Notice>;
+  noticeWrites: { matchUpId: string; write: Notice; positions: number[]; matchUpStatus?: MatchUpStatusUnion }[];
+  clearedWinners: Map<string, number>;
   initial: Map<string, { positions: number[]; matchUpStatus?: MatchUpStatusUnion }>;
   withdrawn: { structureId: string; drawPosition: number; quiet: boolean; segment: number }[];
   segment: number;
@@ -82,7 +84,15 @@ function fail(sim: Sim): false {
 function announce(sim: Sim, matchUpId: string, notice: Omit<Notice, 'segment'>) {
   // v1's notice buffer keeps a matchUp re-announced later in the call at that later place, with the later context
   sim.notices.delete(matchUpId);
-  sim.notices.set(matchUpId, { ...notice, segment: sim.segment });
+  const written = { ...notice, segment: sim.segment };
+  sim.notices.set(matchUpId, written);
+  const matchUp = sim.byId.get(matchUpId)!;
+  sim.noticeWrites.push({
+    matchUpId,
+    write: written,
+    positions: [...matchUp.positions],
+    matchUpStatus: matchUp.matchUpStatus,
+  });
 }
 
 const initialRound = (matchUps: SimMatchUp[], drawPosition?: number) =>
@@ -259,6 +269,7 @@ function removeDrawPosition(sim: Sim, matchUps: SimMatchUp[], matchUp: SimMatchU
   }
   const containsBye = matchUp.positions.some((position) => sim.byes.has(seatKey(structureId, position)));
   matchUp.matchUpStatus = containsBye ? BYE : TO_BE_PLAYED;
+  sim.clearedWinners.set(matchUp.matchUpId, sim.segment);
   const noChange = initialPositions.includes(drawPosition) && initialStatus === matchUp.matchUpStatus;
   if (!noChange) announce(sim, matchUp.matchUpId, { context: 'remove', drawPosition });
   // a write v1 makes with no notice (the positions changed, nothing else): no op announces nothing
@@ -360,7 +371,9 @@ function loserCascade(sim: Sim, matchUp: SimMatchUp): boolean {
   // loser arrives) has its removal tasks run too, which change nothing (the seat's position went on only through a BYE
   // opposite, which keeps it: `advancedByOpponentsBye`); a participant there is v1's
   if (sim.byes.has(seatKey(structureId, drawPosition))) return clearSeat(sim, structureId, drawPosition, false);
-  return !sim.participants.has(seatKey(structureId, drawPosition)) || fail(sim);
+  if (sim.participants.has(seatKey(structureId, drawPosition))) return fail(sim);
+  sim.withdrawn.push({ structureId, drawPosition, quiet: true, segment: sim.segment });
+  return removals(sim, structureId, drawPosition);
 }
 
 /** a BYE advance `reconcileByeAdvancements` owes after the call: a BYE matchUp whose other position has not gone on */
@@ -409,6 +422,8 @@ export function unwindWalk({
     ),
     propagatesBye,
     notices: new Map(),
+    noticeWrites: [],
+    clearedWinners: new Map(),
     initial: new Map(),
     withdrawn: [],
     segment: 0,
@@ -448,16 +463,20 @@ export function unwindWalk({
   }
   if (sim.failed || owesByeAdvance(sim)) return undefined;
   const segments: OutcomeOp[][] = seats.map(() => []);
-  for (const { structureId, drawPosition, quiet, segment } of sim.withdrawn)
+  for (const { structureId, drawPosition, segment } of sim.withdrawn)
     segments[segment].push({
       op: 'withdrawBye',
       structureId,
       drawPosition,
-      ...(quiet ? { announcesAssignments: false as const } : {}),
+      // positionClear writes winningSide even when its value comparison suppresses the notice.
+      clearedWinnerIds: [...sim.clearedWinners]
+        .filter(([id, clearedIn]) => clearedIn === segment && !sim.notices.has(id))
+        .map(([id]) => id),
+      announcesAssignments: false,
     });
   const stamped = new Set<string>();
-  for (const [matchUpId, notice] of sim.notices) {
-    const written = matchUpOps(sim, matchUpId, notice);
+  for (const { matchUpId, write: notice, positions, matchUpStatus } of sim.noticeWrites) {
+    const written = matchUpOps(sim, matchUpId, notice, { positions, matchUpStatus });
     if (!written) return undefined;
     segments[notice.segment].push(...written);
     // v1's notice stamps the matchUp's structure (`modifyMatchUpNotice`)
@@ -467,14 +486,29 @@ export function unwindWalk({
       segments[notice.segment].push({ op: 'stampUpdatedAt', entity: 'structure', id: structureId });
     }
   }
+  for (const { structureId, quiet, segment } of sim.withdrawn) {
+    if (!quiet)
+      segments[segment].push({
+        op: 'announcePositionAssignments',
+        structureId,
+        announcesEvent: false,
+        announcesTournament: false,
+      });
+  }
   return segments;
 }
 
 /** a matchUp the walk wrote, as it stands after the walk, announced with the context of its last notice */
-function matchUpOps(sim: Sim, matchUpId: string, notice: Notice): OutcomeOp[] | undefined {
-  const matchUp = sim.byId.get(matchUpId);
+function matchUpOps(
+  sim: Sim,
+  matchUpId: string,
+  notice: Notice,
+  snapshot: Pick<SimMatchUp, 'positions' | 'matchUpStatus'>,
+): OutcomeOp[] | undefined {
+  const current = sim.byId.get(matchUpId);
   const before = sim.initial.get(matchUpId);
-  if (!matchUp || !before) return undefined;
+  if (!current || !before) return undefined;
+  const matchUp = { ...current, ...snapshot };
   const ops: OutcomeOp[] = [];
   if (before.matchUpStatus === BYE && matchUp.matchUpStatus === TO_BE_PLAYED)
     ops.push({ op: 'clearMatchUpBye', matchUpId, drawPosition: notice.drawPosition });
