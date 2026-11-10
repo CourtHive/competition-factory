@@ -331,6 +331,15 @@ type NativeNoticeStep =
 function nativeNoticeSteps(ops: OutcomeOp[], sourceId?: string): NativeNoticeStep[] {
   const steps: NativeNoticeStep[] = [];
   const last = new Map<string, NativeNoticeStep>();
+  // removeDirectedParticipants scores the call's own matchUp before withdrawing its directed positions.
+  const sourceFirst = ops.some(
+    (op) =>
+      op.op === 'setMatchUpResult' &&
+      op.matchUpId === sourceId &&
+      op.removesWinningSide &&
+      op.stampsScoredTime !== false,
+  );
+  const sourceIndex = ops.findIndex((op) => op.op === 'setMatchUpResult' && op.matchUpId === sourceId);
   ops.forEach((op, index) => {
     const matchUpId = noticeMatchUpId(op);
     if (matchUpId) last.set(matchUpId, { kind: 'modify', matchUpId, rank: index * 3 + 2 });
@@ -349,16 +358,14 @@ function nativeNoticeSteps(ops: OutcomeOp[], sourceId?: string): NativeNoticeSte
       op.announcesContext === false ||
       op.advancesThroughBye
     )
-      steps.push({ kind: 'position', matchUpId: op.matchUpId, rank: index * 3 + 2, position: op });
+      steps.push({
+        kind: 'position',
+        matchUpId: op.matchUpId,
+        rank: index * 3 + 2,
+        // removeDoubleExit's recursive withdrawal omits the tournament and event.
+        position: index < sourceIndex && !sourceFirst ? { ...op, announcesContext: false } : op,
+      });
   });
-  // removeDirectedParticipants scores the call's own matchUp before withdrawing its directed positions.
-  const sourceFirst = ops.some(
-    (op) =>
-      op.op === 'setMatchUpResult' &&
-      op.matchUpId === sourceId &&
-      op.removesWinningSide &&
-      op.stampsScoredTime !== false,
-  );
   const ordered = [...steps, ...last.values()];
   if (sourceFirst)
     for (const step of ordered) {

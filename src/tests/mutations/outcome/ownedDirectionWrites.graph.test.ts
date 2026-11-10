@@ -607,3 +607,23 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(observed.at(-1)?.slice(0, 3)).toEqual(['modifyDrawDefinition', MODIFY_MATCHUP, UPDATE_INCONTEXT_MATCHUP]);
   },
 );
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s explicitly clears an untouched line winner when its double default undecides a dual',
+  (mode) => {
+    const { drawId, matchUps } = fresh({
+      drawSize: 4,
+      drawType: ROUND_ROBIN,
+      eventType: TEAM,
+      tieFormatName: DOMINANT_DUO,
+    });
+    const dual = matchUps.find((m) => m.tieMatchUps?.length)!;
+    write(OUTCOME_PIPELINE_V1, drawId, dual.matchUpId, { winningSide: 1 });
+    const line = dual.tieMatchUps![0];
+    expect(Object.hasOwn(line, 'winningSide')).toBe(false);
+    write(mode, drawId, line.matchUpId, { matchUpStatus: DOUBLE_DEFAULT });
+    expect(line.matchUpStatus).toBe(DOUBLE_DEFAULT);
+    expect(Object.hasOwn(line, 'winningSide')).toBe(true);
+    expect(line.winningSide).toBeUndefined();
+  },
+);

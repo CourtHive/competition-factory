@@ -135,6 +135,13 @@ export function planWrite(request: OutcomeRequest, view: OutcomeView, route: Rou
     // the call's result through the same write point as every other route
     case 'swap':
     case 'only-score':
+      // scoreModification first removes directed participants when this line un-decides its dual,
+      // even when the line itself has no winning-side key yet.
+      return applyScoreAndStatus(
+        { ...asIs, removeWinningSide: !!view.line?.dualWinningSide && !view.line.projectedWinningSide },
+        request,
+        view,
+      );
     case 'team-round-robin':
     case 'propagating':
       return applyScoreAndStatus(asIs, request, view);
