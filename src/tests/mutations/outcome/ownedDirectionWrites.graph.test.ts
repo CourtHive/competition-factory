@@ -1312,9 +1312,14 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
   },
 );
 
-it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
-  '%s retains the own undefined winner after releasing the carrier and its awardee',
-  (mode) => {
+it.each(
+  ([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const).flatMap((mode) => [
+    { mode, seed: 20490105, source: ['Main', 2, 3] as const, landing: ['Backdraw', 3, 2] as const },
+    { mode, seed: 20496362, source: ['East', 2, 4] as const, landing: ['North', 2, 1] as const },
+  ]),
+)(
+  '$mode retains the own undefined winner after releasing the carrier, seed $seed',
+  ({ mode, seed, source: origin, landing }) => {
     const fixture = readFileSync(
       new URL('../../fixtures/exitPropagation/censusF2RefusalSchedules20261011.jsonl', import.meta.url),
       'utf8',
@@ -1322,36 +1327,42 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
       .split('\n')
       .filter(Boolean)
       .map((line) => JSON.parse(line))
-      .find((entry) => entry.seed === 20490105)!;
+      .find((entry) => entry.seed === seed)!;
+    const drawId = `released-carrier-${seed}`;
     let prepared: Tournament | undefined;
     let sourceId: string | undefined;
     counter.prepare = (params) => {
-      if (prepared || params.matchUpStatus !== TO_BE_PLAYED) return;
+      if (prepared || params.matchUpStatus !== TO_BE_PLAYED || !params.tournamentRecord) return;
       const draw = params.drawDefinition;
       const source = draw?.structures
-        ?.find((entry: any) => entry.structureName === 'Main')
-        ?.matchUps?.find((entry: any) => entry.roundNumber === 2 && entry.roundPosition === 3);
+        ?.find((entry: any) => entry.structureName === origin[0])
+        ?.matchUps?.find((entry: any) => entry.roundNumber === origin[1] && entry.roundPosition === origin[2]);
       const target = draw?.structures
-        ?.find((entry: any) => entry.structureName === 'Backdraw')
-        ?.matchUps?.find((entry: any) => entry.roundNumber === 3 && entry.roundPosition === 2);
-      if (source?.matchUpId !== params.matchUpId || target?.matchUpStatus !== DEFAULTED || target.winningSide !== 1)
+        ?.find((entry: any) => entry.structureName === landing[0])
+        ?.matchUps?.find((entry: any) => entry.roundNumber === landing[1] && entry.roundPosition === landing[2]);
+      if (
+        !source ||
+        source.matchUpId !== params.matchUpId ||
+        target?.matchUpStatus !== DEFAULTED ||
+        target.winningSide !== 1
+      )
         return;
       prepared = structuredClone(params.tournamentRecord);
       sourceId = source.matchUpId;
     };
     setOutcomePipeline(OUTCOME_PIPELINE_V1);
     try {
-      prepareCensus(fixture.config, fixture.steps, 'released-carrier-witness');
+      prepareCensus(fixture.config, fixture.steps, drawId);
     } finally {
       counter.prepare = undefined;
     }
     expect(prepared).toBeDefined();
     tournamentEngine.setState(prepared!);
-    write(mode, 'released-carrier-witness', sourceId!, { ...toBePlayed, winningSide: undefined });
+    write(mode, drawId, sourceId!, { ...toBePlayed, winningSide: undefined });
     const record = Object.values(getTournamentRecords())[0] as Tournament;
     const target = record
-      .events![0].drawDefinitions![0].structures!.find((entry) => entry.structureName === 'Backdraw')!
-      .matchUps!.find((entry) => entry.roundNumber === 3 && entry.roundPosition === 2)!;
+      .events![0].drawDefinitions![0].structures!.find((entry) => entry.structureName === landing[0])!
+      .matchUps!.find((entry) => entry.roundNumber === landing[1] && entry.roundPosition === landing[2])!;
     expect(target.matchUpStatus).toBe(TO_BE_PLAYED);
     expect(Object.hasOwn(target, 'winningSide')).toBe(true);
     expect(target.winningSide).toBeUndefined();

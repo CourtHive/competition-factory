@@ -371,8 +371,8 @@ function carrierHomeOps({ carrier, relays, landing, released }: CarrierSentOn, d
       matchUpId: landing.matchUpId,
       matchUpStatus: TO_BE_PLAYED,
       announcedAs: 'reconcileScoredTimes',
-      // Taking the awardee back from the successor revisits this landing in positionClear.
-      ...(released ? { removesWinningSide: true as const } : {}),
+      // The last-round clear, or a released successor, revisits this landing in positionClear.
+      ...(released || !landing.winnerMatchUpId ? { removesWinningSide: true as const } : {}),
     },
     { op: 'setSideExitProvenance', matchUpId: landing.matchUpId },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: landing.matchUpId },
