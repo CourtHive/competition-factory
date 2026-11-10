@@ -765,6 +765,15 @@ export function unwoundSeatOps(
     op: 'withdrawBye',
     structureId,
     drawPosition,
+    clearedWinnerIds: (view.inContextDrawMatchUps ?? [])
+      .filter(
+        (matchUp) =>
+          matchUp.structureId === structureId &&
+          matchUp.drawPositions?.includes(drawPosition) &&
+          matchUp.matchUpStatus === TO_BE_PLAYED &&
+          !matchUp.winningSide,
+      )
+      .map(({ matchUpId }) => matchUpId),
     ...(cascaded ? { announcesAssignments: false as const } : {}),
   };
   // a BYE this double exit placed went in behind a FIRST_MATCHUP link too (`advanceByeToLoserMatchUp` asks no condition),

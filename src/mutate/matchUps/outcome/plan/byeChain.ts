@@ -117,7 +117,7 @@ function byeService(
     assigns: [],
     writes,
     onward: advance.onward,
-    matchUpIds: [...new Set(writes.flatMap((op) => ('matchUpId' in op ? [op.matchUpId] : [])))],
+    matchUpIds: [...new Set(writes.flatMap((op) => ('matchUpId' in op && op.matchUpId ? [op.matchUpId] : [])))],
   };
 }
 

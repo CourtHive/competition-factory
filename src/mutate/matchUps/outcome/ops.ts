@@ -121,6 +121,10 @@ export type OutcomeOp =
     }
   | {
       op: 'setMatchUpDrawPositions';
+      /** A re-key before the score write leaves the winner's own key alone. */
+      preservesWinningSide?: true;
+      /** A released result writes an own undefined score before its subsequent reset. */
+      clearsScore?: true;
       matchUpId: string;
       /** the positions placed in the matchUp, as v1 stores them: numbers, ascending */
       drawPositions: number[];
@@ -259,6 +263,8 @@ export type OutcomeOp =
     }
   | {
       op: 'assignBye';
+      /** The matchUp whose assignment is cleared before the BYE is placed. */
+      matchUpId?: string;
       /** False when a separate return-time op announces this placement. */
       announcesAssignments?: false;
       /** a FIRST_MATCHUP reservation (S3): the consolation seat a loser who has won can never fill */
@@ -283,6 +289,8 @@ export type OutcomeOp =
     }
   | {
       op: 'withdrawBye';
+      /** Quiet own-key writes made by positionClear even where status and seats do not change. */
+      clearedWinnerIds?: string[];
       /**
        * an unwind's `removeDirectedBye` on a seat (S6): the stored assignment's BYE and its propagation marker removed,
        * where one stands; the structure's assignments announced with neither event nor tournament either way
@@ -500,6 +508,7 @@ function setMatchUpResult(
   clearResolvedSideExitProvenance(matchUp);
   if (op.winningSide) matchUp.winningSide = op.winningSide;
   else if (op.removesWinningSide) matchUp.winningSide = undefined;
+  else if (op.announcedAs === 'reconcileScoredTimes') delete matchUp.winningSide;
   else if (bindResultInputs) {
     if (matchUp.winningSide) matchUp.winningSide = undefined;
   } else if (!op.resetsScore) delete matchUp.winningSide;
@@ -607,8 +616,8 @@ function foldMatchUpWrite(
     if (op.rederivesCodes) matchUp.matchUpStatusCodes = [];
     // The ordinary arrival writes this own key, observable before its notice reads the caller's clock.
     if (op.advancesThroughBye) matchUp.score = undefined;
-    if (!matchUp.winningSide) matchUp.winningSide = undefined;
-    if (op.removedDrawPosition) matchUp.score = undefined;
+    if (!op.preservesWinningSide && !matchUp.winningSide) matchUp.winningSide = undefined;
+    if (op.removedDrawPosition || op.clearsScore) matchUp.score = undefined;
   }
   return {};
 }
@@ -715,7 +724,7 @@ function foldSetProvenance(op: OpOf<'setSideExitProvenance'>, { matchUps }: Draw
   return {};
 }
 
-function foldAssignBye(op: OpOf<'assignBye'>, { structures, groups }: DrawIndex): Folded {
+function foldAssignBye(op: OpOf<'assignBye'>, { structures, groups, matchUps }: DrawIndex): Folded {
   const positionAssignments = positionAssignmentsOf(structures.get(op.structureId) ?? groups.get(op.structureId));
   if (!positionAssignments) return { error: `assignBye: no structure ${op.structureId}` };
   let assignment = positionAssignments.find((candidate) => candidate.drawPosition === op.drawPosition);
@@ -723,6 +732,11 @@ function foldAssignBye(op: OpOf<'assignBye'>, { structures, groups }: DrawIndex)
   if (!assignment) {
     assignment = { drawPosition: op.drawPosition };
     positionAssignments.push(assignment);
+  }
+  if (assignment.participantId) {
+    delete assignment.participantId;
+    const matchUp = op.matchUpId && matchUps.get(op.matchUpId);
+    if (matchUp) delete matchUp.winningSide;
   }
   assignment.bye = true;
   assignment.participantId = undefined;
@@ -738,10 +752,15 @@ function foldSetMatchUpBye(op: OpOf<'setMatchUpBye'>, { matchUps }: DrawIndex): 
   return {};
 }
 
-function foldWithdrawBye(op: OpOf<'withdrawBye'>, { structures, groups }: DrawIndex): Folded {
+function foldWithdrawBye(op: OpOf<'withdrawBye'>, { structures, groups, matchUps }: DrawIndex): Folded {
   const positionAssignments = positionAssignmentsOf(structures.get(op.structureId) ?? groups.get(op.structureId));
   const assignment = positionAssignments?.find((candidate) => candidate.drawPosition === op.drawPosition);
   if (!assignment) return { error: `withdrawBye: no drawPosition ${op.drawPosition} in ${op.structureId}` };
+  for (const id of op.clearedWinnerIds ?? []) {
+    const matchUp = matchUps.get(id);
+    if (!matchUp) return { error: `withdrawBye: no matchUp ${id}` };
+    matchUp.winningSide = undefined;
+  }
   delete assignment.bye;
   delete assignment.byeFromPropagation;
   if (assignment.participantId === undefined) delete assignment.participantId;
@@ -752,7 +771,8 @@ function foldClearMatchUpBye(op: OpOf<'clearMatchUpBye'>, { matchUps }: DrawInde
   const matchUp = matchUps.get(op.matchUpId);
   if (!matchUp) return { error: `clearMatchUpBye: no matchUp ${op.matchUpId}` };
   matchUp.matchUpStatus = op.rederived?.matchUpStatus ?? TO_BE_PLAYED;
-  if (op.rederived) matchUp.winningSide = op.rederived.winningSide;
+  matchUp.winningSide = op.rederived?.winningSide;
+  clearResolvedSideExitProvenance(matchUp);
   clearOrderOfFinishUnlessCompleted(matchUp);
   return {};
 }

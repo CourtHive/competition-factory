@@ -217,7 +217,7 @@ export function applyOwnedPlan({
   const written = [...new Set(scored.toReversed())].reverse();
   const announced = [...new Set(writes.toReversed())].reverse();
   // a matchUp given its result and then a position (that next matchUp): its last notice is the placement's
-  const lastWrites = new Map(ops.flatMap((op) => ('matchUpId' in op ? [[op.matchUpId, op]] : [])));
+  const lastWrites = new Map(ops.flatMap((op) => ('matchUpId' in op && op.matchUpId ? [[op.matchUpId, op]] : [])));
   const placedLast = new Set(
     [...lastWrites].flatMap(([matchUpId, op]) => (op.op === 'setMatchUpDrawPositions' ? [matchUpId] : [])),
   );
@@ -272,6 +272,20 @@ export function applyOwnedPlan({
   const tallyMatchUpId =
     ops.find((op): op is ResultOp => op.op === 'setMatchUpResult' && !!op.dualTally)?.matchUpId ??
     args.request.matchUpId;
+  // A reset announced again on arrival still marks its named tournament at the first score write.
+  const first = ops[0];
+  if (first?.op === 'setMatchUpResult' && first.announcesContext !== false && announced[0] !== first.matchUpId) {
+    const matchUp = stored.get(first.matchUpId);
+    if (matchUp)
+      modifyMatchUpNotice({
+        drawDefinition,
+        tournamentId,
+        eventId: event?.eventId,
+        event,
+        matchUp,
+        context: 'modifyMatchUpScore',
+      });
+  }
   const { settled } = namedWriters(ops);
   for (const matchUpId of announced) {
     const matchUp = stored.get(matchUpId);
@@ -509,7 +523,7 @@ export function eventlessNotices(ops: OutcomeOp[]): { matchUps: Set<string>; str
   const resulted = new Set(ops.flatMap((op) => (op.op === 'setMatchUpResult' ? [op.matchUpId] : [])));
   const matchUps = new Set(
     ops.flatMap((op) => {
-      if (!('matchUpId' in op)) return [];
+      if (!('matchUpId' in op) || !op.matchUpId) return [];
       const { matchUpId } = op;
       const unplaced = !resulted.has(matchUpId) && (removed.has(matchUpId) || unbyed.has(matchUpId));
       return !namedResults.has(matchUpId) && !carriedNotices.has(matchUpId) && (unplaced || unevented.has(matchUpId))

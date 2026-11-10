@@ -451,7 +451,7 @@ function walkedSeatOps(
     drawDefinition,
   });
   // the walk writes nothing the unwind's own path writes (`unwoundOps` writes those back to be played)
-  const touched = segments?.flat().flatMap((op) => ('matchUpId' in op ? [op.matchUpId] : []));
+  const touched = segments?.flat().flatMap((op) => ('matchUpId' in op && op.matchUpId ? [op.matchUpId] : []));
   if (!segments || touched?.some((matchUpId) => path.includes(matchUpId))) return undefined;
   return new Map(walkedSeats.map(({ index }, i) => [index, segments[i]]));
 }
@@ -933,7 +933,9 @@ export function unwoundOps(
         const carried = Object.keys(stored?.sideExitProvenance ?? {}).length > 0;
         return [
           ...seatOps,
-          ...(released ? [{ op: 'setMatchUpDrawPositions' as const, matchUpId, drawPositions }] : []),
+          ...(released
+            ? [{ op: 'setMatchUpDrawPositions' as const, matchUpId, drawPositions, clearsScore: true as const }]
+            : []),
           {
             op: 'setMatchUpResult',
             matchUpId,

@@ -66,7 +66,12 @@ export function carriedContinuation(
 
 function carryPlacement(at: { matchUpId: string; drawPositions: number[] }): OutcomeOp[] {
   return [
-    { op: 'setMatchUpDrawPositions', matchUpId: at.matchUpId, drawPositions: at.drawPositions },
+    {
+      op: 'setMatchUpDrawPositions',
+      matchUpId: at.matchUpId,
+      drawPositions: at.drawPositions,
+      preservesWinningSide: true,
+    },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: at.matchUpId },
   ];
 }
