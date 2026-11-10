@@ -1,5 +1,29 @@
 # Changelog
 
+## [7.35.0](https://github.com/CourtHive/competition-factory/compare/v7.34.0...v7.35.0) (2026-11-10)
+
+
+### Features
+
+* activate timed rotating-partner scoring and standings ([#6341](https://github.com/CourtHive/competition-factory/issues/6341)) ([9f46586](https://github.com/CourtHive/competition-factory/commit/9f46586f30e40a57ece2ee7983b0cf2847643ffa))
+* compose linked BYE seats in stored write order ([#6337](https://github.com/CourtHive/competition-factory/issues/6337)) ([8ef0636](https://github.com/CourtHive/competition-factory/commit/8ef0636b40913c7de4d50aff75ee1fe2ba7778a0))
+* execute ordinary outcomes with live clock phases ([68d93d3](https://github.com/CourtHive/competition-factory/commit/68d93d3694fb6a93d7c1ea86a40f3bd8ba4591e6))
+* execute uncaptured outcomes at observed clock phases ([60c5185](https://github.com/CourtHive/competition-factory/commit/60c518533e060ef305ac691b927449596d20b9f2))
+
+
+### Bug Fixes
+
+* anonymize team identities and affiliation labels ([be8c2a1](https://github.com/CourtHive/competition-factory/commit/be8c2a192c30f3a98a377aaff0a8ce7930c1d72f))
+* anonymize team identities and affiliation labels ([6560c8d](https://github.com/CourtHive/competition-factory/commit/6560c8d396035d98cbbdaacadf20b49047c9af0e))
+* keep clock observer bookkeeping within bundle budget ([79d498b](https://github.com/CourtHive/competition-factory/commit/79d498bcdeee5a2e58134174766d79fca9208e37))
+* keep temporal snapshots free of caller Date methods ([ee5fe51](https://github.com/CourtHive/competition-factory/commit/ee5fe515e8e2e86e94770d235efaa3b2c7e21027))
+* use canonical statuses in clock phase admission ([7a5d7f5](https://github.com/CourtHive/competition-factory/commit/7a5d7f5f5911b6d74236da0a134b9f62d770d15d))
+
+
+### Performance
+
+* **tests:** split outcome direction suites and calibrate checkpoint shards ([#6340](https://github.com/CourtHive/competition-factory/issues/6340)) ([4ecab4d](https://github.com/CourtHive/competition-factory/commit/4ecab4d32d116a329ea825d6a61f2c50a3dc7242))
+
 ## [7.34.0](https://github.com/CourtHive/competition-factory/compare/v7.33.0...v7.34.0) (2026-11-09)
 
 
