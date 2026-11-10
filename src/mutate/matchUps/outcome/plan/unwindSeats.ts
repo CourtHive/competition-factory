@@ -788,6 +788,19 @@ export function unwoundSeatOps(...args: Parameters<typeof unwoundSeatProgram>): 
   ];
 }
 
+/** A retained standing BYE has no assignment-clear return to announce. */
+function unplacedByeSeatOps(
+  view: OutcomeView,
+  seat: WinnerLoserSeat,
+  withdrawn: Set<string>,
+  withdraw: Extract<OutcomeOp, { op: 'withdrawBye' }>,
+): OutcomeOp[] | undefined {
+  if (!seat.seat?.free) return undefined;
+  if (seat.matchUpStatus !== BYE) return [withdraw];
+  if (!standingByeSeat(view, seat, withdrawn)) return undefined;
+  return [{ ...withdraw, announcesAssignments: false }];
+}
+
 function unwoundSeatProgram(
   view: OutcomeView,
   loserSeat: WinnerLoserSeat,
@@ -821,10 +834,7 @@ function unwoundSeatProgram(
   // exit's to take back: v1's
   const conditioned = loserSeat.linkCondition && !(placedBye && loserSeat.linkCondition === FIRST_MATCHUP);
   if (!seat || conditioned) return undefined;
-  if (!placedBye)
-    return seat.free && (loserSeat.matchUpStatus !== BYE || standingByeSeat(view, loserSeat, withdrawn))
-      ? [withdraw]
-      : undefined;
+  if (!placedBye) return unplacedByeSeatOps(view, loserSeat, withdrawn, withdraw);
   const byeMatchUp = indexed(view, matchUpId);
   if (!seat.bye || !seat.byeFromPropagation || !byeMatchUp) return undefined;
   const produced =
