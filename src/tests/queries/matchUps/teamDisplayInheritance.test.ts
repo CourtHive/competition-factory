@@ -67,6 +67,13 @@ it('rejects malformed presentation at the write boundary and leaves the stored v
     result = tournamentEngine.addTournamentExtension({ extension: { name: DISPLAY, value: { teamPresentation } } });
     expect(result.error).toBeDefined();
   }
+  // The element writer (engine `addExtension`) refuses the same way.
+  const { tournamentRecord } = tournamentEngine.getTournament();
+  result = tournamentEngine.addExtension({
+    extension: { name: DISPLAY, value: { teamPresentation: { roles: { nope: '#112233' } } } },
+    element: tournamentRecord,
+  });
+  expect(result.error).toBeDefined();
   expect(tournamentEngine.findExtension({ name: DISPLAY, discover: true }).extension.value.teamPresentation).toEqual(
     valid,
   );
