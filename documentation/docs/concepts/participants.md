@@ -602,30 +602,91 @@ const { participants } = tournamentEngine.getParticipants({
 
 ## TEAM branding
 
-A TEAM participant may carry an optional CODES palette with stable IDs and explicit display selections:
+A TEAM participant carries portable CODES identity colors and its administrator's preferred display.
+Team providers supply this data with team details; importing teams into a tournament does not require
+recreating their display configuration. The imported participant is a snapshot usable offline.
 
 ```json
 {
   "teamColors": {
     "palette": [
-      { "colorId": "red", "value": "#CE1126", "name": "Red", "group": "Primary" },
+      { "colorId": "navy", "value": "#13294B", "name": "Navy", "group": "Primary" },
       { "colorId": "white", "value": "#FFFFFF", "name": "White", "group": "Primary" },
-      { "colorId": "black", "value": "#000000", "name": "Black", "group": "Primary" },
-      { "colorId": "gold", "value": "#FCD116", "name": "Gold", "group": "Primary" }
+      { "colorId": "gold", "value": "#E8B923", "name": "Gold", "group": "Accent" }
     ],
-    "display": { "primary": "red", "secondary": "gold" }
+    "display": {
+      "roles": {
+        "team.surface": "navy",
+        "team.text": "white",
+        "team.accent": "gold",
+        "score.surface": "gold",
+        "score.text": "navy"
+      }
+    }
   }
 }
 ```
 
-Each entry requires a unique `colorId` and opaque six-digit hex `value`. IDs use 1–64 ASCII letters/digits, dots, colons, underscores or hyphens, starting with a letter/digit. Optional `name` and `group` are nonblank labels of at most 100 characters, trimmed on writes. Groups are descriptive source labels; multiple colors can share a group. They never select CSS behavior. Values normalize to uppercase. Duplicate color values and identical primary/secondary selections are valid.
+### Palette and default display contract
 
-The palette stores the team's available colors. The display references choose colors for two current rendering roles: the scoreboard accent and optional trim. Other entries stay in the palette. These two roles describe the current renderer, not the team's brand hierarchy.
+Each palette entry requires a unique stable `colorId` and opaque `#RRGGBB` value. IDs are 1–64 ASCII
+letters/digits, dots, colons, underscores or hyphens, starting with a letter/digit. Optional `name` and
+`group` labels are nonblank, at most 100 characters, and trimmed on write. Hex values normalize to
+uppercase. Duplicate hex values and descriptive groups are valid; group labels never select styling.
+The palette must be nonempty. CODES imposes no fixed color-count ceiling.
 
-The palette has 1–32 entries. The upper bound is a resource guard, not a claim that a team has only a fixed number of official colors. `display.primary` is required and references a palette ID; optional `display.secondary` references a trim color. Reordering preserves these references. Removing a selected entry requires updating its selection in the same mutation. The closed schema validates structure; write validation additionally enforces unique IDs and valid references.
+`display` is optional. Its `roles` may assign any subset of `team.surface`, `team.text`, `team.accent`,
+`score.surface` and `score.text`. Every assigned value references an existing palette `colorId`.
+Palette reordering preserves display identity. Removing a referenced entry requires removing or
+reassigning its roles in the same atomic write. Unassigned roles use renderer/theme defaults.
+A renderer declares the roles its layout supports; these roles are preferences, not arbitrary CSS.
 
-New branding is TEAM-only. Arrays, unknown keys, CSS tokens, named colors and alpha/short hex values are refused. Validation runs before record writes or notifications and never changes scores/outcomes. For updates, omission, `undefined` and `null` leave the field alone. `{}` explicitly clears it and is never stored. A nonempty object replaces the whole palette and selection; omitted entries or secondary references are removed.
+`teamColors` is TEAM-only. Closed objects reject unknown fields/roles, malformed hex values, duplicate
+IDs and dangling default references. Add/modify participant methods validate before writes or notices.
+For updates, omission, `undefined` and `null` leave the field alone; `{}` clears it; a nonempty object
+replaces the entire palette/default display. The command `{}` is never stored as branding.
+The structural schema and semantic write validator complement one another: unique IDs and palette
+reference membership are semantic constraints.
 
-TEAM identity and allowed palette data hydrate onto parent sides and `side.teamParticipant` on singles/doubles tie lines, including unassigned lines. Participant privacy templates still apply: a template excluding `teamColors` produces no branding. Consumers must not read raw participants to recover filtered colors.
+### Tournament presentation overrides
 
-TMX authors all palette entries and display selections through normal participant mutations. GROUP editing exposes no branding fields. Components and Epixodic resolve selected references to a narrow `{ primary: hex, secondary?: hex }` display pair. The relay transports that selected pair, not the full palette; Arena's wire contract remains unchanged.
+Tournament directors store optional `teamPresentation` in the tournament's DISPLAY extension, separately
+from imported TEAM defaults. All-team roles accept opaque hex values or `{ theme: true }`; TEAM-specific exceptions
+also accept that team's palette IDs. For example:
+
+```json
+{
+  "name": "display",
+  "value": {
+    "teamPresentation": {
+      "roles": { "score.surface": "#13294B", "score.text": "#FFFFFF" },
+      "teams": { "team-alpha": { "roles": { "team.accent": "gold", "team.surface": { "theme": true } } } }
+    }
+  }
+}
+```
+
+Resolve each role from renderer/theme fallback, then team default, then all-team override, then
+TEAM-specific exception. Omission inherits; `{ theme: true }` explicitly uses the renderer/theme fallback. Reset
+removes the override. Overrides are keyed by participantId and remain stable through side swaps.
+Refreshing provider details updates team defaults while preserving tournament presentation settings.
+No tournament mutation writes back to provider identity data. Use `addTournamentExtension` through
+the normal mutation path to persist presentation; the generic extension mechanism stores its value,
+and presentation consumers validate its supported role shape.
+
+### Hydration and rendering boundaries
+
+TEAM identities and permitted palettes hydrate onto parent sides and `side.teamParticipant` on
+singles/doubles tie lines, including unassigned lines. Participant privacy still applies; consumers
+must not recover withheld palette data from raw records. Hydrated matchUps expose `teamPresentation`
+with all-team roles and exceptions only for TEAM identities exposed on that matchUp's sides.
+
+Clean scorecards keep plain headers and theme-semantic state indicators. Branded scorecards may use
+team roles on match-line names; arena layouts may use independently colored team and score surfaces.
+Foreground contrast is resolved against the actual consumer's theme/surface without changing stored
+brand values. Names and visible outcome/serve cues remain meaningful without color. Existing explicit
+composition `sideColors` map/callback semantics remain available to callers.
+
+Relay branding transports named role values before consumer-local contrast resolution. Unselected
+palette metadata does not cross that wire. [CODES decisions](/docs/concepts/team-presentation) describe
+provider ownership, tournament inheritance and consumer responsibilities together.

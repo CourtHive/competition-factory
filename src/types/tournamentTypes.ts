@@ -1839,7 +1839,6 @@ export enum OnlineResourceTypeEnum {
 }
 export type OnlineResourceTypeUnion = `${OnlineResourceTypeEnum}`;
 
-/** A named color in a tournament-scoped CODES TEAM palette. */
 export interface TeamPaletteColor {
   colorId: string;
   value: string;
@@ -1847,10 +1846,25 @@ export interface TeamPaletteColor {
   group?: string;
 }
 
-/** CODES TEAM palette; display references are palette IDs, never color tier rankings. */
+export enum TeamColorRoleEnum {
+  TEAM_SURFACE = 'team.surface',
+  TEAM_TEXT = 'team.text',
+  TEAM_ACCENT = 'team.accent',
+  SCORE_SURFACE = 'score.surface',
+  SCORE_TEXT = 'score.text',
+}
+export type TeamColorRole = `${TeamColorRoleEnum}`;
+
+/** Portable CODES TEAM palette and provider-authored preferred color roles. */
 export interface TeamColors {
   palette: TeamPaletteColor[];
-  display: { primary: string; secondary?: string };
+  display?: { roles: Partial<Record<TeamColorRole, string>> };
+}
+
+/** A theme marker explicitly uses the renderer/theme fallback; omission inherits. */
+export interface TeamPresentation {
+  roles?: Partial<Record<TeamColorRole, string | { theme: true }>>;
+  teams?: Record<string, { roles: Partial<Record<TeamColorRole, string | { theme: true }>> }>;
 }
 
 export interface Participant {

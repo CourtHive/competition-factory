@@ -56,7 +56,12 @@ module.exports = {
         {
           type: 'category',
           label: 'Participants',
-          items: ['concepts/participants', 'concepts/participant-context', 'concepts/scaleItems'],
+          items: [
+            'concepts/participants',
+            'concepts/team-presentation',
+            'concepts/participant-context',
+            'concepts/scaleItems',
+          ],
         },
         {
           type: 'category',

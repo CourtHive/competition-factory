@@ -4,7 +4,7 @@ title: Data Standards
 
 ## The Importance of Standardization
 
-**Data standards** are critical for the long-term viability, interoperability, and accessibility of sports competition data. The **Competition Factory** is built on the **[Tennis Open Data Standards (TODS)](https://itftennis.atlassian.net/wiki/spaces/TODS/overview)**, which provide a comprehensive, document-based representation of all tournament elements.
+**Data standards** are critical for the long-term viability, interoperability, and accessibility of sports competition data. The **Competition Factory** uses **CODES — Competition Open Data Exchange Standards**, CourtHive's canonical competition data model. CODES provides a document-based representation of tournament elements across sports.
 
 ### Why Data Standards Matter
 
@@ -77,6 +77,12 @@ To reflect this cross-sport reality, the data model used by the Competition Fact
 - Sport-agnostic terminology and conventions
 - Broader applicability beyond racquet sports
 - A governance model open to multiple sports federations
+
+### Team identity and presentation decisions
+
+CODES defines portable TEAM palettes and provider-authored default display roles. Tournament theme overrides
+remain separate from team identity and inherit by role. See [Team Presentation in CODES](/docs/concepts/team-presentation)
+for ownership, storage and rendering responsibilities.
 
 ### What CODES Provides
 
