@@ -393,14 +393,7 @@ function nativeNoticeSteps(
     if (
       op.op !== 'setMatchUpDrawPositions' ||
       index * 3 + 2 === last.get(op.matchUpId)?.rank ||
-      !ops
-        .slice(index + 1)
-        .some(
-          (next) =>
-            ['setMatchUpResult', 'setMatchUpBye', 'clearMatchUpBye', 'setMatchUpDrawPositions'].includes(next.op) &&
-            'matchUpId' in next &&
-            next.matchUpId === op.matchUpId,
-        )
+      !ops.slice(index + 1).some((next) => laterPositionNotice(op, next))
     )
       return;
     if (
@@ -439,6 +432,14 @@ function nativeNoticeSteps(
     if (notice && settled.get(matchUpId) === 'reconcileScoredTimes') notice.rank = reconcileRank++;
   }
   return ordered.sort((a, b) => a.rank - b.rank);
+}
+
+/** Retain actual earlier withdrawals; a superseded plain advance keeps its final writer's identity. */
+function laterPositionNotice(op: ArrivalOp, next: OutcomeOp): boolean {
+  if (!('matchUpId' in next) || next.matchUpId !== op.matchUpId) return false;
+  if (next.op === 'setMatchUpResult' || next.op === 'setMatchUpBye') return true;
+  const withdrawal = !!(op.clearsScore || op.removedDrawPosition || op.withdrawnByePosition || op.releasedDrawPosition);
+  return withdrawal && (next.op === 'clearMatchUpBye' || next.op === 'setMatchUpDrawPositions');
 }
 
 /** A removal announces this round before resetting the later rounds that its position had reached. */
