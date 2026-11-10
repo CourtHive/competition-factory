@@ -269,9 +269,10 @@ export function applyOwnedPlan({
     });
   }
   const tallied = ops.some((op) => op.op === 'setParticipantResults');
-  const tallyMatchUpId =
-    ops.find((op): op is ResultOp => op.op === 'setMatchUpResult' && !!op.dualTally)?.matchUpId ??
-    args.request.matchUpId;
+  const tallyMatchUpId = tallied
+    ? (ops.find((op): op is ResultOp => op.op === 'setMatchUpResult' && !!op.dualTally)?.matchUpId ??
+      args.request.matchUpId)
+    : undefined;
   // A reset announced again on arrival still marks its named tournament at the first score write.
   const first = ops[0];
   if (first?.op === 'setMatchUpResult' && first.announcesContext !== false && announced[0] !== first.matchUpId) {
