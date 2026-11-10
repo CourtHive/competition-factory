@@ -20,6 +20,24 @@ import type { OutcomeOp } from '../ops';
 
 export type Rederived = { matchUpStatus: MatchUpStatusUnion; provenance: SideExitProvenance };
 
+/** The kept double exit reached this empty convergence through a standing BYE, so settle removes its winner key. */
+export function pendingRelayedWinner(view: OutcomeView, matchUpId: string, rederived: Rederived): boolean {
+  const kept = Object.values(rederived.provenance)[0];
+  const origin = indexed(view, kept?.sourceMatchUpId);
+  return (
+    !!origin &&
+    isDoubleExit(origin.matchUpStatus) &&
+    !!view.inContextDrawMatchUps?.some(
+      (feeder) =>
+        feeder.winnerMatchUpId === matchUpId &&
+        feeder.matchUpStatus === BYE &&
+        Object.values(feeder.sideExitProvenance ?? {}).some(
+          (entry) => entry?.sourceMatchUpId === kept?.sourceMatchUpId,
+        ),
+    )
+  );
+}
+
 /**
  * S6 tail: the double exit's produced exit met its paired matchUp's in the next matchUp, which stands a double exit by
  * convergence (two origins, this matchUp's among them) producing on in turn. v1's unwind re-derives that matchUp to the
@@ -581,6 +599,7 @@ function convergedProducedRelaySeatOps(
       matchUpStatusCodes: [],
       stampsScoredTime: false,
       announcedAs: 'settleRederivedDoubleExit',
+      ...(pendingRelayedWinner(view, next.matchUpId, kept) ? { deletesWinningSide: true as const } : {}),
     },
     { op: 'setSideExitProvenance', matchUpId: next.matchUpId, provenance: kept.provenance },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId },

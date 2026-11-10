@@ -523,7 +523,11 @@ function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMat
   if (op.deletesWinningSide) delete matchUp.winningSide;
   else if (op.winningSide) matchUp.winningSide = op.winningSide;
   else if (op.removesWinningSide) matchUp.winningSide = undefined;
-  else if (op.announcedAs === 'reconcileScoredTimes' && op.matchUpStatus !== BYE) delete matchUp.winningSide;
+  else if (
+    (op.announcedAs === 'reconcileScoredTimes' && op.matchUpStatus !== BYE) ||
+    op.announcedAs === 'withdrawProducedExits'
+  )
+    delete matchUp.winningSide;
   else if (bindResultInputs) {
     if (matchUp.winningSide) matchUp.winningSide = undefined;
   } else if (!op.resetsScore) delete matchUp.winningSide;

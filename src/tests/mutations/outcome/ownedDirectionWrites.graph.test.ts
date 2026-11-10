@@ -1199,3 +1199,24 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(topics.at(-1)).toBe(MODIFY_POSITION_ASSIGNMENTS);
   },
 );
+
+it.each(
+  ([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const).flatMap((mode) =>
+    [3, 4].map((round) => [mode, round] as const),
+  ),
+)('%s removes the round %s winner key when a foreign produced relay remains', (mode, round) => {
+  const scenario = CONVERGED_PRODUCED_RELAYS.find(
+    ([label]) => label === 'produced relay convergence: DOUBLE_DEFAULT/DEFAULTED/DOUBLE_DEFAULT/cleared',
+  )![1];
+  prepareDirection(OUTCOME_PIPELINE_V1, { ...scenario, steps: [] });
+  const step = scenario.steps[0];
+  write(mode, 'd', findTarget(step.target), step.outcome, step.params);
+  const record = Object.values(getTournamentRecords())[0] as Tournament;
+  const structure = record.events![0].drawDefinitions![0].structures!.find(
+    (entry) => entry.structureName === 'Consolation',
+  )!;
+  const at = (round: number) =>
+    structure.matchUps!.find((entry) => entry.roundNumber === round && entry.roundPosition === 1)!;
+  expect(at(round).matchUpStatus).toBe(round === 3 ? DEFAULTED : TO_BE_PLAYED);
+  expect(Object.hasOwn(at(round), 'winningSide')).toBe(false);
+});

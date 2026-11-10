@@ -1,4 +1,4 @@
-import { convergedChain, convergedRelayCopy, unwoundSeatOps } from './unwindSeats';
+import { convergedChain, convergedRelayCopy, unwoundSeatOps, pendingRelayedWinner } from './unwindSeats';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { standingReservationPrograms } from './standingReservation';
 import { isDoubleExit } from '@Validators/isExit';
@@ -851,24 +851,6 @@ function unwoundBranch(
     ...ops,
     ...[...structures].map((id) => ({ op: 'stampUpdatedAt' as const, entity: 'structure' as const, id })),
   ];
-}
-
-/** The kept double exit reached this empty convergence through a standing BYE, so settle removes its winner key. */
-function pendingRelayedWinner(view: OutcomeView, matchUpId: string, rederived: Rederived): boolean {
-  const kept = Object.values(rederived.provenance)[0];
-  const origin = indexed(view, kept?.sourceMatchUpId);
-  return (
-    !!origin &&
-    isDoubleExit(origin.matchUpStatus) &&
-    !!view.inContextDrawMatchUps?.some(
-      (feeder) =>
-        feeder.winnerMatchUpId === matchUpId &&
-        feeder.matchUpStatus === BYE &&
-        Object.values(feeder.sideExitProvenance ?? {}).some(
-          (entry) => entry?.sourceMatchUpId === kept?.sourceMatchUpId,
-        ),
-    )
-  );
 }
 
 /**
