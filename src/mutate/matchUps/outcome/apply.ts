@@ -274,7 +274,7 @@ export function applyOwnedPlan({
   for (const matchUpId of announced) {
     const matchUp = stored.get(matchUpId);
     if (!matchUp) continue;
-    if (matchUpId === tallyMatchUpId) modifyDrawNotice({ drawDefinition });
+    announceTally(matchUpId, tallyMatchUpId, drawDefinition);
     // a removal's notice is built as v1's `removeSubsequentRoundsParticipant` builds it, whose caller passes no event;
     // unless a score write announces the matchUp after it (a result turned into a double exit: the exit it produces)
     const removedPosition = resulted.has(matchUpId) ? undefined : removed.get(matchUpId);
@@ -314,6 +314,15 @@ export function applyOwnedPlan({
   announceAssignments({ ops, drawDefinition, tournamentId, event });
   announceScoredTimeCleanup(cleanupTargets, args);
   return planResult(shape, ops, route);
+}
+
+/** Announce a group's tally at the result writer that performed it. */
+function announceTally(
+  matchUpId: string,
+  tallyMatchUpId: string | undefined,
+  drawDefinition: NonNullable<BuildViewArgs['drawDefinition']>,
+): void {
+  if (matchUpId === tallyMatchUpId) modifyDrawNotice({ drawDefinition });
 }
 
 /** The tally precedes its own result notice; a TEAM line may have announced its result already. */
