@@ -105,12 +105,6 @@ const ALLOWED: Record<string, { count: number; why: string }> = {
       '`filteredDrawPositions[0]` reads a COMPACTED copy holding one position, placed on side 1 BECAUSE the round ' +
       'is a feed round (the structural test): a side resolver, not a side reader',
   },
-  'mutate/matchUps/outcome/plan/carriedByeSeat.ts': {
-    count: 1,
-    why:
-      '`orderedDrawPositions[0]` reads getOrderedDrawPositions output, whose index is the structurally resolved ' +
-      'side; it compares display order after the carrier arrives, never the compact stored array.',
-  },
   'query/matchUps/addMatchUpContext.ts': {
     count: 1,
     why:

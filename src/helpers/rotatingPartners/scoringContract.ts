@@ -1,5 +1,6 @@
 import { stringifyCombinedPointFormat } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { isRotatingPartnerTallyPolicy } from '@Validators/rotatingPartnerTallyPolicy';
+import { canonicalJson } from '@Tools/canonicalJson';
 import {
   isRotatingPartnerScoringPolicy,
   isRotatingPartnerScoringVariant,
@@ -10,6 +11,7 @@ import {
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import type { ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { Score } from '@Types/tournamentTypes';
 import type {
   RotatingPartnerScoringConfiguration,
   RotatingPartnerScoringPolicyWithTimed,
@@ -42,7 +44,7 @@ function isTimedVariant(value: unknown): value is TimedRotatingPartnerVariant {
   );
 }
 
-/** Scoring input only; accepting this shape does not admit a public competitionProfile. */
+/** Closed configuration shared by public profiles and policy resolution. */
 export function isRotatingPartnerScoringConfiguration(value: unknown): value is RotatingPartnerScoringConfiguration {
   if (!object(value)) return false;
   if (value.kind === 'TIMED') {
@@ -109,19 +111,33 @@ export function normalizeRotatingPartnerScoreContract(
   return { combinedPointTotal, ...selectedVariant };
 }
 
-/** One mapping from the selected duration to the authoritative format, for future generation and integrity readers. */
+/** Generation, historical integrity and outcome validation share the same authoritative format mapping. */
 export function rotatingPartnerContractFormat(value: unknown): string | undefined {
   const contract = normalizeRotatingPartnerScoreContract(value);
   if (!contract) return undefined;
-  return 'kind' in contract
+  return contract.kind === 'TIMED'
     ? `SET1-S:T${contract.minutes}P${contract.tieResolution === 'DECIDING_POINT' ? '/TB1' : ''}`
     : `SET1-S:${stringifyCombinedPointFormat(contract)}`;
 }
 
-/**
- * Internal, pure selection boundary. Callers must supply already inherited policies; this does not read a record
- * or enable timed tournament writes. The same refusal must guard selection and generation when those activate.
- */
+/** Omitted and explicit combined-point kinds compare equally without rewriting either saved input. */
+export function sameRotatingPartnerScoreContract(a: unknown, b: unknown): boolean {
+  const left = normalizeRotatingPartnerScoreContract(a);
+  const right = normalizeRotatingPartnerScoreContract(b);
+  return !!left && !!right && canonicalJson(left) === canonicalJson(right);
+}
+
+/** Timed standings count actual rally totals, including a deciding rally already present in those totals. */
+export function validTimedRotatingPartnerPoints(score: Score): boolean {
+  return (
+    score.sets?.length === 1 &&
+    [score.sets[0].side1Score, score.sets[0].side2Score].every(
+      (points) => typeof points === 'number' && Number.isSafeInteger(points) && points >= 0,
+    )
+  );
+}
+
+/** Pure selection boundary shared by organizer selection and new-round generation. Historical reads use saved rules. */
 export function resolveRotatingPartnerScoringConfiguration(params: {
   scoring: unknown;
   policy: unknown;

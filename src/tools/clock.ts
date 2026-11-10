@@ -42,6 +42,21 @@ import { SUCCESS } from '@Constants/resultConstants';
 type ClockSource = () => Date | string | number;
 
 type ClockError = { error: ErrorType; message: string };
+export type ClockEffect = { kind: 'updatedAt' | 'scoredTime'; target: object };
+type ClockValue = { ms: number } | ClockError;
+export type ClockReading = ClockValue | { thrown: unknown };
+type ClockObserver = (effect?: ClockEffect) => (reading: ClockReading) => void;
+const clockObservers: { observe: ClockObserver; errors: unknown[] }[] = [];
+
+/** Synchronous observation of actual reads, without capturing an instant or replacing the caller's source. */
+export function observeClockReads<T>(observer: ClockObserver, run: () => T, errors: unknown[]): T {
+  clockObservers.push({ observe: observer, errors });
+  try {
+    return run();
+  } finally {
+    clockObservers.pop();
+  }
+}
 
 let configuredClock: ClockSource | undefined;
 
@@ -71,7 +86,34 @@ export function setClock(clock?: ClockSource | Date | string | number): { succes
 }
 
 // One validated read of the source. Never throws: a throwing or invalid source becomes a ClockError.
-function readSource(): { ms: number } | ClockError {
+function readSource(effect?: ClockEffect): ClockValue {
+  if (!clockObservers.length) return readConfiguredSource();
+  const observers = clockObservers.flatMap(({ observe, errors }) => {
+    try {
+      return [{ notify: observe(effect), errors }];
+    } catch (error) {
+      errors.push(error);
+      return [];
+    }
+  });
+  let reading: ClockReading;
+  try {
+    reading = readConfiguredSource();
+  } catch (thrown) {
+    reading = { thrown };
+  }
+  for (const { notify, errors } of observers) {
+    try {
+      notify({ ...reading });
+    } catch (error) {
+      errors.push(error);
+    }
+  }
+  if ('thrown' in reading) throw reading.thrown;
+  return reading;
+}
+
+function readConfiguredSource(): ClockValue {
   if (!configuredClock) return { ms: Date.now() };
   let date: Date | undefined;
   try {
@@ -187,23 +229,23 @@ export async function withCapturedClockAsync<T>(fn: (timeStamp: number) => Promi
 }
 
 /** The current instant as a Date: the captured one inside an engine call, else read at the call. */
-export function now(): Date {
+export function now(effect?: ClockEffect): Date {
   const captured = getCapturedClock();
   if (captured !== undefined) return new Date(captured);
 
-  const read = readSource();
+  const read = readSource(effect);
   if ('error' in read) throw new Error(read.message);
   return new Date(read.ms);
 }
 
 /** The current instant as an ISO 8601 string, the form every record timestamp takes. */
-export function nowIso(): string {
-  return now().toISOString();
+export function nowIso(effect?: ClockEffect): string {
+  return now(effect).toISOString();
 }
 
 /** The current instant as epoch milliseconds, for sites that compare or bump timestamps. */
-export function nowMs(): number {
-  return now().getTime();
+export function nowMs(effect?: ClockEffect): number {
+  return now(effect).getTime();
 }
 
 /**

@@ -91,11 +91,13 @@ Credits require nonnegative safe integers and a winning side; they are distinct 
 and do not increment matches played when no played score exists. A retained partial score remains
 visible as played points even when the policy awards credits instead. Retirement scores must validate
 under the saved scoring contract.
-Excluding extra points preserves the sporting win while crediting tied base points. Separate deciding
-phases remain unsupported.
+For combined-point scoring, excluding extra points preserves the sporting win while crediting tied base points.
+Timed rounds count actual rally totals; they have no fixed midpoint or inferred extra points. Timed
+DECIDING_POINT refuses deciding-point EXCLUDE until its evidence contract is supported; overtimePoints
+has no effect under timed scoring. See the [timed configuration and completion rules](./competition-profile.md#timed-rounds).
 
 Each round saves its resolved `tallyContract`; policy changes affect new rounds only. Missing historical
-contracts are refused rather than reconstructed from today's policy. This pre-release shape has not shipped.
+contracts are refused rather than reconstructed from today's policy.
 
 Mexicano previews require every prior result to be settled. Application saves the exact source
 `standingsSnapshot` and `standingsThroughRoundNumber`. Changed scores invalidate approval when they

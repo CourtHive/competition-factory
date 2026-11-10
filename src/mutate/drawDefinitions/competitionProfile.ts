@@ -43,7 +43,7 @@ export function setCompetitionProfile(params: ProfileContext & { competitionProf
   }
   if (
     drawDefinition.competitionProfile &&
-    canonicalJson(drawDefinition.competitionProfile) === canonicalJson(competitionProfile)
+    canonicalProfile(drawDefinition.competitionProfile) === canonicalProfile(competitionProfile)
   )
     return { ...SUCCESS };
   if (competitionProfile.format !== 'LADDER' && drawDefinition.entries?.length) {
@@ -102,9 +102,30 @@ export function setRotatingPartnerScoring(
   if (resolved.error) return resolved;
   const profile = drawDefinition?.competitionProfile;
   if (!profile || profile.format === 'LADDER' || !resolved.contract) return { error: INVALID_VALUES };
-  const { combinedPointTotal, ...selectedVariant } = resolved.contract;
+  if (resolved.contract.kind === 'TIMED') {
+    const { kind, minutes, ...selectedVariant } = resolved.contract;
+    return setCompetitionProfile({
+      ...params,
+      competitionProfile: { ...profile, scoring: { kind, minutes, selectedVariant } },
+    });
+  }
+  const { combinedPointTotal, tieResolution, winningMargin } = resolved.contract;
+  const selectedVariant = winningMargin === undefined ? { tieResolution } : { tieResolution, winningMargin };
   return setCompetitionProfile({
     ...params,
-    competitionProfile: { ...profile, scoring: { combinedPointTotal, selectedVariant } },
+    competitionProfile: {
+      ...profile,
+      scoring: {
+        ...(profile.scoring.kind === 'COMBINED_POINTS' ? { kind: 'COMBINED_POINTS' as const } : {}),
+        combinedPointTotal,
+        selectedVariant,
+      },
+    },
   });
+}
+
+function canonicalProfile(profile: CompetitionProfile): string {
+  if (profile.format === 'LADDER') return canonicalJson(profile);
+  const { kind, ...scoring } = profile.scoring;
+  return canonicalJson(kind === 'COMBINED_POINTS' ? { ...profile, scoring } : profile);
 }

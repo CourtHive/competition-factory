@@ -1,9 +1,13 @@
 import { getRotatingPartnerScoringContract } from '@Query/drawDefinition/getRotatingPartnerScoringContract';
-import { stringifyCombinedPointFormat } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { validRotatingPartnerSettlementHistory } from '@Validators/rotatingPartnerSettlement';
 import { isRotatingPartnerTallyPolicy } from '@Validators/rotatingPartnerTallyPolicy';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { canonicalJson } from '@Tools/canonicalJson';
+import {
+  rotatingPartnerContractFormat,
+  sameRotatingPartnerScoreContract,
+  normalizeRotatingPartnerScoreContract,
+} from '@Helpers/rotatingPartners/scoringContract';
 
 // constants and types
 import type { DrawDefinition, Tournament, Participant } from '@Types/tournamentTypes';
@@ -35,12 +39,21 @@ export function appliedRotatingPartnerRoundsAreIntact({
     if (round.matchUpIds.some((id) => usedMatches.has(id))) return false;
     round.matchUpIds.forEach((id) => usedMatches.add(id));
     if (!isRotatingPartnerTallyPolicy(round.tallyContract)) return false;
+    const contract = normalizeRotatingPartnerScoreContract(round.scoringContract);
+    if (
+      !contract ||
+      (contract.kind === 'TIMED' &&
+        contract.tieResolution === 'DECIDING_POINT' &&
+        round.tallyContract.decidingPoints === 'EXCLUDE')
+    )
+      return false;
+
     if (
       !profile ||
       profile.format === 'LADDER' ||
       round.format !== profile.format ||
       round.baseSeed !== profile.pairing.seed ||
-      canonicalJson(round.scoringContract) !== canonicalJson(scoring.contract)
+      !sameRotatingPartnerScoreContract(round.scoringContract, scoring.contract)
     )
       return false;
     if (!membershipMatches(round, drawDefinition, participants)) return false;
@@ -60,7 +73,7 @@ function membershipMatches(
   for (const [index, id] of round.matchUpIds.entries()) {
     const matchUp = matches.get(id);
     if (matchUp?.roundNumber !== round.roundNumber || matchUp.sides?.length !== 2) return false;
-    if (matchUp.matchUpFormat !== `SET1-S:${stringifyCombinedPointFormat(round.scoringContract)}`) return false;
+    if (matchUp.matchUpFormat !== rotatingPartnerContractFormat(round.scoringContract)) return false;
     for (let sideNumber = 1; sideNumber <= 2; sideNumber++) {
       const side = matchUp.sides.find((candidate) => candidate.sideNumber === sideNumber);
       const pair = participants.get(side?.participantId ?? '');

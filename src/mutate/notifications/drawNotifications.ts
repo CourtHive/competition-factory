@@ -5,7 +5,7 @@ import { getDrawPositionSides } from '@Query/matchUps/getDrawPositionSides';
 import { drawOrigin, eventOrigin } from '@Query/readModel/readModelRows';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { pushGlobalLog } from '@Functions/global/globalLog';
-import { nowMs } from '@Tools/clock';
+import { nowMs, type ClockEffect } from '@Tools/clock';
 
 // constants and types
 import { ErrorType, MISSING_DRAW_DEFINITION, MISSING_MATCHUP } from '@Constants/errorConditionConstants';
@@ -25,6 +25,14 @@ import {
   UPDATE_INCONTEXT_MATCHUP,
 } from '@Constants/topicConstants';
 
+/** Explicit primitive effects keep a private replay off the live provider and clock. */
+export type NoticeEffects = {
+  readClock: (effect: ClockEffect) => number;
+  addNotice: typeof addNotice;
+  getCapturedStamps: typeof getCapturedStamps;
+};
+export const liveNoticeEffects: NoticeEffects = { readClock: nowMs, addNotice, getCapturedStamps };
+
 /**
  * The next `updatedAt` for an entity: now, or 1 ms past its previous stamp when that is already now or later, so a
  * stamp always moves on (an ordering value, not an event instant). Under a fixed or backward clock an equality-only
@@ -35,27 +43,27 @@ import {
  * (`outcome/ops.ts` `nextStamp`). Outside an engine call, or with a state provider that keeps no ledger, every
  * stamp moves on, as before.
  */
-function stampUpdatedAt(entity?: { updatedAt?: string | Date } | null) {
-  const stamped = getCapturedStamps();
+function stampUpdatedAt(entity?: { updatedAt?: string | Date } | null, effects = liveNoticeEffects) {
+  const stamped = effects.getCapturedStamps();
   if (!entity || stamped?.has(entity)) return undefined;
   const previous = entity.updatedAt;
   const prevMs = typeof previous === 'string' ? new Date(previous).getTime() : previous?.getTime();
-  const timeStamp = nowMs();
+  const timeStamp = effects.readClock({ kind: 'updatedAt', target: entity });
   const next = prevMs !== undefined && !Number.isNaN(prevMs) && timeStamp <= prevMs ? prevMs + 1 : timeStamp;
   entity.updatedAt = new Date(next).toISOString();
   stamped?.add(entity);
   return undefined;
 }
 
-function drawUpdatedAt(drawDefinition: DrawDefinition, structureIds?: string[]) {
+function drawUpdatedAt(drawDefinition: DrawDefinition, structureIds?: string[], effects = liveNoticeEffects) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
   const relevantStructureIds = structureIds?.filter(Boolean);
 
-  stampUpdatedAt(drawDefinition);
+  stampUpdatedAt(drawDefinition, effects);
   drawDefinition.structures?.filter(Boolean).forEach((structure) => {
     if (!relevantStructureIds?.length || relevantStructureIds?.includes(structure.structureId)) {
-      stampUpdatedAt(structure);
+      stampUpdatedAt(structure, effects);
     }
   });
 
@@ -63,8 +71,8 @@ function drawUpdatedAt(drawDefinition: DrawDefinition, structureIds?: string[]) 
 }
 
 /** Stamp a matchUp to mark that it has just been modified: `stampUpdatedAt`, so once per call. */
-function stampMatchUpUpdatedAt(matchUp?: MatchUp | null) {
-  stampUpdatedAt(matchUp);
+function stampMatchUpUpdatedAt(matchUp?: MatchUp | null, effects = liveNoticeEffects) {
+  stampUpdatedAt(matchUp, effects);
 }
 
 /**
@@ -216,15 +224,10 @@ export function topLevelStructureId(drawDefinition: DrawDefinition, matchUpId: s
   return drawDefinition.structures?.find(holds)?.structureId;
 }
 
-export function modifyMatchUpNotice({
-  drawDefinition,
-  tournamentId,
-  structureId,
-  context,
-  eventId,
-  matchUp,
-  event,
-}: ModifyMatchUpNoticeArgs) {
+export function modifyMatchUpNotice(
+  { drawDefinition, tournamentId, structureId, context, eventId, matchUp, event }: ModifyMatchUpNoticeArgs,
+  effects = liveNoticeEffects,
+) {
   if (!matchUp) {
     pushGlobalLog({ method: 'drawNotifications', error: MISSING_MATCHUP });
     return { error: MISSING_MATCHUP };
@@ -242,17 +245,20 @@ export function modifyMatchUpNotice({
     // stamp. A matchUp no top-level structure is found to hold still stamps every structure, as before.
     const stampedStructureId = topLevelStructureId(drawDefinition, matchUp.matchUpId) ?? structureId;
     const structureIds = stampedStructureId ? [stampedStructureId] : undefined;
-    modifyDrawNotice({
-      drawDefinition,
-      structureIds,
-      tournamentId,
-      eventId: resolvedEventId,
-    });
+    modifyDrawNotice(
+      {
+        drawDefinition,
+        structureIds,
+        tournamentId,
+        eventId: resolvedEventId,
+      },
+      effects,
+    );
   }
   // Stamp the matchUp itself so consumers can see at-a-glance that it
   // was just touched (complements the drawDefinition + structure
   // timestamps written above via `modifyDrawNotice`).
-  stampMatchUpUpdatedAt(matchUp);
+  stampMatchUpUpdatedAt(matchUp, effects);
   // Most-specific grain wins. A matchUp lives in a DRAW, and an origin system supplies only the grains
   // it actually models — a UTR flight carries tournament + draw ids with NO event grain at all
   // (see drawOrigin in readModelRows). Resolving only the event origin would leave those notices with
@@ -260,7 +266,7 @@ export function modifyMatchUpNotice({
   // rather than two organisationIds that could disagree.
   const origin = drawOrigin(drawDefinition) ?? eventOrigin(event);
   const resolvedStructureId = structureId ?? resolveStructureId(drawDefinition, matchUp?.matchUpId);
-  addNotice({
+  effects.addNotice({
     topic: MODIFY_MATCHUP,
     // eventId/drawId/structureId ride the ENVELOPE, not just the entity. A subscriber that only needs
     // to know WHICH event changed — cache eviction, fan-out routing — should not have to resolve the
@@ -295,26 +301,52 @@ export function modifyMatchUpNotice({
   return { ...SUCCESS };
 }
 
+type DeferredQuery = { query: (args: unknown) => unknown; args: unknown };
+const deferredQueries = new WeakMap<object, DeferredQuery>();
+
+/** A lazy read with an explicit binding, inspectable without invoking a subscriber's payload builder. */
+export function deferredQuery<A, T>(query: (args: A) => T, args: A): () => T {
+  const binding: DeferredQuery = { query: query as (args: unknown) => unknown, args };
+  const read = () => binding.query(binding.args) as T;
+  deferredQueries.set(read, binding);
+  return read;
+}
+
+export function deferredQueryBinding(read: object) {
+  return deferredQueries.get(read);
+}
+
+function inContextNoticePayload({
+  inContextMatchUp,
+  tournamentId,
+}: {
+  inContextMatchUp: () => HydratedMatchUp | undefined;
+  tournamentId?: string;
+}) {
+  const built = inContextMatchUp();
+  return built ? { inContextMatchUp: built, tournamentId } : undefined;
+}
+
 /**
  * `UPDATE_INCONTEXT_MATCHUP` with the in-context matchUp built only when the notices are read, after the call has
  * succeeded (`globalState.getPayloads`): a refused call, which deletes its notices, builds none. Keyed by the matchUp,
  * so a call that writes it more than once builds it once, as the call left it.
  */
-export function deferInContextMatchUp({
-  inContextMatchUp,
-  tournamentId,
-  matchUpId,
-}: {
-  inContextMatchUp: () => HydratedMatchUp | undefined;
-  tournamentId?: string;
-  matchUpId: string;
-}) {
-  addNotice({
+export function deferInContextMatchUp(
+  {
+    inContextMatchUp,
+    tournamentId,
+    matchUpId,
+  }: {
+    inContextMatchUp: () => HydratedMatchUp | undefined;
+    tournamentId?: string;
+    matchUpId: string;
+  },
+  effects = liveNoticeEffects,
+) {
+  effects.addNotice({
     payload: {
-      [DEFERRED_PAYLOAD]: () => {
-        const built = inContextMatchUp();
-        return built ? { inContextMatchUp: built, tournamentId } : undefined;
-      },
+      [DEFERRED_PAYLOAD]: deferredQuery(inContextNoticePayload, { inContextMatchUp, tournamentId }),
       tournamentId,
       matchUpId,
     },
@@ -386,12 +418,15 @@ type ModifyDrawNoticeArgs = {
   tournamentId?: string;
   eventId?: string;
 };
-export function modifyDrawNotice({ drawDefinition, tournamentId, structureIds, eventId }: ModifyDrawNoticeArgs) {
+export function modifyDrawNotice(
+  { drawDefinition, tournamentId, structureIds, eventId }: ModifyDrawNoticeArgs,
+  effects = liveNoticeEffects,
+) {
   if (!drawDefinition) {
     return { error: MISSING_DRAW_DEFINITION };
   }
-  drawUpdatedAt(drawDefinition, structureIds);
-  addNotice({
+  drawUpdatedAt(drawDefinition, structureIds, effects);
+  effects.addNotice({
     payload: { tournamentId, eventId, drawDefinition },
     topic: MODIFY_DRAW_DEFINITION,
     key: drawDefinition.drawId,

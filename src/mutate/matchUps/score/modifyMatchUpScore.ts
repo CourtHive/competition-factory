@@ -1,7 +1,7 @@
 import { updateAssignmentParticipantResults } from '@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults';
 import { attributeDerivedStatusCodes, splitStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { processCompetitionMatchUp } from '@Mutate/drawDefinitions/competition/processCompetitionMatchUp';
-import { modifyMatchUpNotice, deferInContextMatchUp } from '@Mutate/notifications/drawNotifications';
+import { modifyMatchUpNotice, deferInContextMatchUp, deferredQuery } from '@Mutate/notifications/drawNotifications';
 import { clearResolvedSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
 import type { DerivedStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
@@ -178,7 +178,7 @@ export function modifyMatchUpScore(params: ModifyMatchUpScoreArgs) {
 
   if (drawDefinition && getTopics().topics.includes(UPDATE_INCONTEXT_MATCHUP)) {
     deferInContextMatchUp({
-      inContextMatchUp: () => getInContextMatchUp({ tournamentRecord, drawDefinition, matchUpId }),
+      inContextMatchUp: deferredQuery(getInContextMatchUp, { tournamentRecord, drawDefinition, matchUpId }),
       tournamentId,
       matchUpId,
     });

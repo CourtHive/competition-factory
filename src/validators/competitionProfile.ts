@@ -1,4 +1,4 @@
-import { isRotatingPartnerScoringVariant } from './rotatingPartnerScoringPolicy';
+import { isRotatingPartnerScoringConfiguration } from '@Helpers/rotatingPartners/scoringContract';
 
 // constants and types
 import type { CompetitionProfile } from '@Types/competitionProfile';
@@ -33,18 +33,10 @@ export function isCompetitionProfile(value: unknown): value is CompetitionProfil
   return (
     value.entrantScope === 'INDIVIDUAL' &&
     value.matchUpType === 'DOUBLES' &&
-    validScoring(value.scoring) &&
+    isRotatingPartnerScoringConfiguration(value.scoring) &&
     validStandings(value.standings) &&
     validPairing(value.pairing, value.format) &&
     validCompletion(value.completion, value.format)
-  );
-}
-
-function validScoring(value: unknown): boolean {
-  return (
-    objectWithKeys(value, ['combinedPointTotal'], ['selectedVariant']) &&
-    positiveInteger(value.combinedPointTotal) &&
-    (value.selectedVariant === undefined || isRotatingPartnerScoringVariant(value.selectedVariant))
   );
 }
 

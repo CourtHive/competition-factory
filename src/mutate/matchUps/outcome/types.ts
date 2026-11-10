@@ -1,7 +1,8 @@
 import type { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
 import type { ErrorType } from '@Constants/errorConditionConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
-import type { OutcomeOp } from './ops';
+import type { WorkingView } from './overlay';
+import type { OutcomeOp, TemporalProjection } from './ops';
 import type {
   DrawDefinition,
   Event,
@@ -430,6 +431,9 @@ export type MatchUpWrite = {
 };
 
 export type BuildViewArgs = {
+  /** Private planning mode; it grants no runtime ownership. */
+  clockFree?: boolean;
+  temporal?: TemporalProjection;
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
   policyDefinitions?: PolicyDefinitions;
@@ -634,11 +638,18 @@ export type RebuildView = (
   route: Route,
 ) => { view: OutcomeView; direction?: DirectionPlan } | undefined;
 
+/** A fresh private cursor rooted at this planning call's entry; the supplied prefix is folded once. */
+export type ProjectOutcome = (prefix: OutcomeOp[]) => WorkingView | undefined;
+
+/** Admission is incomplete until the builder certifies these seats at their actual write phase. */
+export type SeatObligation = { kind: 'double-exit-seats'; targetMatchUpId?: string };
+
 /**
  * `planOutcome`'s arguments (plan.ts): the call planned against its view, what `planWrite` and `planDirection` decided
  * for it, and the composition points a plan folds one step on another with.
  */
 export type PlanArgs = {
+  clockFree?: boolean;
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
   direction?: DirectionPlan;
@@ -647,6 +658,8 @@ export type PlanArgs = {
   view: OutcomeView;
   route?: Route;
   rebuild?: RebuildView;
+  /** Current stored state for ordered subprograms; does not reroute or repeat admission. */
+  project?: ProjectOutcome;
   /** S7: the dual's call a deciding line makes */
   dual?: DualCall;
   /** S7: this call is a deciding line's dual, planned as part of the line's plan: its TEAM shape is the line's to vet */

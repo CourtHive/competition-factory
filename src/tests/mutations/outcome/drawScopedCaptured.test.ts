@@ -26,7 +26,11 @@ import {
   UPDATE_INCONTEXT_MATCHUP,
 } from '@Constants/topicConstants';
 
-const observed = vi.hoisted(() => ({ v1: 0, fault: false, plans: [] as any[] }));
+const observed = vi.hoisted(() => ({ v1: 0, fault: false, noNoticeSnapshot: false, plans: [] as any[] }));
+vi.mock('@Global/state/globalState', async (load) => {
+  const original = await load<typeof import('@Global/state/globalState')>();
+  return { ...original, getNoticeState: () => (observed.noNoticeSnapshot ? undefined : original.getNoticeState()) };
+});
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (load) => {
   const original: any = await load();
   return {
@@ -83,6 +87,7 @@ const outcome = (complete: boolean) => {
 
 afterEach(() => {
   observed.fault = false;
+  observed.noNoticeSnapshot = false;
   setOutcomePipeline('v1');
   setSubscriptions({ subscriptions: {} });
   deleteNotices();
@@ -193,17 +198,20 @@ it.each(SCOPES)('%s: differential compares the draw, view and subscribed notices
   }
 });
 
-it('an uncaptured draw keeps v1 clock reads, values and delivered notices', () => {
-  const v1 = play('v1', 'draw-only', true, false);
-  const v2 = play('v2', 'draw-only', true, false);
-  expect(v1.reads).toBeGreaterThan(1);
-  expect(v2.v1).toEqual(1);
-  expect(v2.plans).toEqual([{ abstain: 'clock' }]);
-  expect(v2.reads).toEqual(v1.reads);
-  expect(v2.roots).toEqual(v1.roots);
-  expect(v2.result).toEqual(v1.result);
-  expect(v2.notices).toEqual(v1.notices);
-});
+it.each(SCOPES)(
+  '%s: an uncaptured ordinary result is owned with the same clock reads and delivered notices',
+  (scope) => {
+    const v1 = play('v1', scope, true, false);
+    const v2 = play('v2', scope, true, false);
+    expect(v1.reads).toBeGreaterThan(1);
+    expect(v2.v1).toEqual(0);
+    expect(v2.plans[0]?.ops?.length).toBeGreaterThan(0);
+    expect(v2.reads).toEqual(v1.reads);
+    expect(v2.roots).toEqual(v1.roots);
+    expect(v2.result).toEqual(v1.result);
+    expect(v2.notices).toEqual(v1.notices);
+  },
+);
 
 it('a wrong detached shadow diverges and restores the original draw objects', () => {
   const { args, record } = fixture('detached-record');
@@ -284,7 +292,7 @@ function throwPrefix(mode: OutcomePipelineMode, throwAt: number) {
   return { roots, buffered, notices, reads, thrown, plans: observed.plans };
 }
 
-it('every direct clock throw prefix stays on v1 with identical writes and delivered notices', () => {
+it('every owned direct clock throw prefix preserves identical writes and delivered notices', () => {
   const successful = play('v1', 'draw-only', true, false);
   expect(successful.reads).toEqual(7);
   for (let read = 1; read <= successful.reads; read++) {
@@ -292,7 +300,7 @@ it('every direct clock throw prefix stays on v1 with identical writes and delive
     const v2 = throwPrefix('v2', read);
     expect(v1.thrown).toContain('direct clock failure');
     expect(v1.reads).toEqual(read);
-    expect(v2.plans).toEqual([{ abstain: 'clock' }]);
+    expect(v2.plans[0]?.ops?.length).toBeGreaterThan(0);
     expect({ ...v2, plans: [] }).toEqual(v1);
   }
 });
@@ -372,4 +380,36 @@ it('an eventless later call retains the earlier buffered event identity under di
   expect({ ...v2, v1: 2 }).toEqual(v1);
   const differential = nestedWrites('differential', true);
   expect(differential).toEqual(v1);
+});
+
+it.each(SCOPES)('%s: uncaptured differential replay adds no clock reads and checks the completed view', (scope) => {
+  const v1 = play('v1', scope, true, false);
+  const compared = play('differential', scope, true, false);
+  expect(compared.reads).toBe(v1.reads);
+  expect(compared.result).toEqual(v1.result);
+  expect(compared.roots).toEqual(v1.roots);
+  expect(compared.notices).toEqual(v1.notices);
+  for (const key of ['shadow:applied', 'shadow:notices', 'view'])
+    expect(compared.tally[key]).toEqual({ compared: 1, deferred: 0 });
+});
+
+it('an uncaptured partial score remains owed without a complete temporal program', () => {
+  const v1 = play('v1', 'draw-only', false, false);
+  const v2 = play('v2', 'draw-only', false, false);
+  expect(v2.v1).toBe(1);
+  expect(v2.reads).toBe(v1.reads);
+  expect(v2.result).toEqual(v1.result);
+  expect(v2.roots).toEqual(v1.roots);
+  expect(v2.notices).toEqual(v1.notices);
+});
+
+it('an uncaptured provider without notice snapshots remains owed with v1 parity', () => {
+  observed.noNoticeSnapshot = true;
+  const v1 = play('v1', 'draw-only', true, false);
+  const v2 = play('v2', 'draw-only', true, false);
+  expect(v2.v1).toBe(1);
+  expect(v2.reads).toBe(v1.reads);
+  expect(v2.result).toEqual(v1.result);
+  expect(v2.roots).toEqual(v1.roots);
+  expect(v2.notices).toEqual(v1.notices);
 });

@@ -3,10 +3,9 @@ import { SINGLE_EXITS, indexed, onwardFrom, pairedFeeder } from './planShared';
 import { producedConvergedOps, producedConvergedReason } from './convergence';
 import { isDoubleExit } from '@Validators/isExit';
 import { producedTarget } from './producedTarget';
-import { doubleExitSeats } from './byeChain';
 
 // constants and types
-import type { AbstainReason, DirectionPlan, MatchUpWrite, OutcomeRequest, OutcomeView } from '../types';
+import type { AbstainReason, DirectionPlan, MatchUpWrite, OutcomeRequest, OutcomeView, SeatObligation } from '../types';
 import type { MatchUpStatusUnion, SideExitProvenance } from '@Types/tournamentTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { OutcomeOp } from '../ops';
@@ -45,7 +44,7 @@ export function producedReason(
   request: OutcomeRequest,
   direction?: DirectionPlan,
   write?: MatchUpWrite,
-): AbstainReason | undefined {
+): AbstainReason | SeatObligation | undefined {
   const { existing, targets } = view;
   if (!write || !isDoubleExit(write.matchUpStatus) || request.matchUpStatus !== write.matchUpStatus) return 'exit';
   // a matchUp in progress takes the double exit as one to be played does: v1 writes over its score (a dual's tally),
@@ -62,7 +61,7 @@ export function producedReason(
   // a structure's final (or the one matchUp of a one-round structure) produces nothing (`doubleExitAdvancement` finds no
   // winner target): the own loser seat's BYE where a link feeds one, and the call's own write (S6 tail, family 8). A
   // final whose winner link leads on (DOUBLE_ELIMINATION's Decider) has a winner target across it: the decider's, v1's
-  if (!targets.winnerMatchUpId && !direction?.decider) return doubleExitSeats(view) ? undefined : 'exit';
+  if (!targets.winnerMatchUpId && !direction?.decider) return { kind: 'double-exit-seats' };
   const produced = direction?.produced;
   const target = targets.winner;
   if (!produced || direction?.decider || !target) return 'exit';
@@ -77,8 +76,13 @@ export function producedReason(
   if (awarded?.bye) return 'exit';
   // loser links, from this matchUp or from the next: the seats they feed take BYEs, planned outside a feed round
   if (targets.loserLink || targets.loserMatchUpId || entry.loserMatchUpId) {
-    if (entry.feedRound || !doubleExitSeats(view, entry)) return 'exit';
-    return pendingOrAwardedReason(view, entry, awarded);
+    if (entry.feedRound) return 'exit';
+    return (
+      pendingOrAwardedReason(view, entry, awarded) ?? {
+        kind: 'double-exit-seats',
+        targetMatchUpId: entry.matchUpId,
+      }
+    );
   }
   // a feed round: the awarded side is the fed seat, filled from another structure
   if (entry.feedRound) return fedSeatReason(view, entry, awarded);

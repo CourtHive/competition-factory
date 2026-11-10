@@ -1,12 +1,16 @@
 import { writeAssignmentResults } from '@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults';
-import { mergeSideExitProvenance, setSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { exchangeMatchUpPositions } from '@Mutate/matchUps/drawPositions/swapWinnerLoser';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
-import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
+import { scoredTimeAction } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { getCapturedStamps } from '@Global/state/globalState';
 import { nowIso } from '@Tools/clock';
+import {
+  mergeSideExitProvenance,
+  setSideExitProvenance,
+  blankSideExitCode,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
 import { completedMatchUpStatuses, BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
@@ -235,10 +239,21 @@ export type OutcomeOp =
       matchUpId: string;
       provenance?: SideExitProvenance;
       /** A carry removed beside a BYE announces that provenance write without rewriting the BYE's result. */
-      announcedAs?: 'relabelLoserExit';
+      announcedAs?: 'relabelLoserExit' | 'withdrawDisplacedCarry';
+      /** The displaced carrier takes the reason on this side with its provenance. */
+      blankExitSide?: 1 | 2;
+      announcesEvent?: false;
+    }
+  | {
+      op: 'announcePositionAssignments';
+      /** Return-time notice: nested BYE assignments announce before their parent. No state write. */
+      structureId: string;
+      announcesEvent?: false;
     }
   | {
       op: 'assignBye';
+      /** False when a separate return-time op announces this placement. */
+      announcesAssignments?: false;
       /** a FIRST_MATCHUP reservation (S3): the consolation seat a loser who has won can never fill */
       structureId: string;
       drawPosition: number;
@@ -252,6 +267,8 @@ export type OutcomeOp =
     }
   | {
       op: 'setMatchUpBye';
+      /** The direct BYE service preserves this field; result-writer paths clear it. */
+      preservesOrderOfFinish?: true;
       /** the matchUp the reserved seat is in: BYE, its score and winner removed (v1's `setMatchUpStatusBYE`) */
       matchUpId: string;
       /** false where v1 announces it with no event: a seat a produced exit leaves unfillable (S5) */
@@ -320,7 +337,8 @@ export type OutcomeOp =
       sideNumber: number;
       lineUp: unknown;
       /** the v1 writer that announces it (`updateSideLineUp`'s context is spelled so) */
-      announcedAs: 'directWinner' | 'directLoser' | 'updateSidLineUp' | 'removeDirectedLoser';
+      announcedAs:
+        'directWinner' | 'directLoser' | 'updateSidLineUp' | 'removeDirectedLoser' | 'assignDrawPositionBye-TEAM';
       /** C21: delete the line-up on an existing stored side, preserving the sides array. */
       clearsLineUp?: true;
       /** false when the coalesced notice has no event; a standing award retains its assignment's identity */
@@ -361,6 +379,7 @@ export type OutcomeOpName =
   | 'mergeSideExitProvenance'
   | 'setSideExitProvenance'
   | 'assignBye'
+  | 'announcePositionAssignments'
   | 'setMatchUpBye'
   | 'withdrawBye'
   | 'clearMatchUpBye'
@@ -400,14 +419,26 @@ export function nextStamp(previous: string | Date | undefined, now: string = now
 
 type Stamped = { updatedAt?: string | Date };
 
+/** Unknown temporal values belong to the projection cursor, never to stored or hydrated records. */
+export type TemporalProjection = { scoredTimes: Set<string>; updatedAt: Set<string> };
+type FoldContext = {
+  stampedBefore?: Set<string>;
+  temporal?: TemporalProjection;
+  phase?: 'ordinary-result' | 'ordinary-arrival';
+};
+
 /**
  * Once per call, as v1 (`drawNotifications.ts` `stampUpdatedAt`): an entity this engine call has already stamped keeps
  * its stamp. `stampedBefore` names those the live call stamped before the plan was folded, which a COPY of the draw
  * cannot tell from the call's ledger; the ledger itself covers the live draw.
  */
-function stamp(target: Stamped | undefined, key: string, stampedBefore?: Set<string>) {
+function stamp(target: Stamped | undefined, key: string, { stampedBefore, temporal }: FoldContext) {
   const stamped = getCapturedStamps();
   if (target && !stampedBefore?.has(key) && !stamped?.has(target)) {
+    if (temporal) {
+      temporal.updatedAt.add(key);
+      return;
+    }
     target.updatedAt = nextStamp(target.updatedAt);
     stamped?.add(target);
   }
@@ -429,7 +460,12 @@ export function stampedInThisCall(drawDefinition?: DrawDefinition): Set<string> 
   return keys;
 }
 
-function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMatchUpResult' }>) {
+function setMatchUpResult(
+  matchUp: MatchUp,
+  op: Extract<OutcomeOp, { op: 'setMatchUpResult' }>,
+  { temporal, phase }: FoldContext,
+) {
+  const ordinary = phase === 'ordinary-result';
   // a dual's sides and tieFormat as `updateTieMatchUpScore` rewrites them before its tally (S7)
   if (op.dualTally?.sides) matchUp.sides = structuredClone(op.dualTally.sides) as MatchUp['sides'];
   if (op.ensuredSides) matchUp.sides = structuredClone(op.ensuredSides) as MatchUp['sides'];
@@ -441,22 +477,42 @@ function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMat
       value: op.disableAutoCalc,
     });
   if (op.dualTally?.tieFormat) matchUp.tieFormat = structuredClone(op.dualTally.tieFormat) as MatchUp['tieFormat'];
+  if (ordinary && op.score) matchUp.score = op.score;
   matchUp.matchUpStatus = op.matchUpStatus;
   clearOrderOfFinishUnlessCompleted(matchUp);
-  if (op.score) matchUp.score = structuredClone(op.score);
+  if (op.score && !ordinary) matchUp.score = structuredClone(op.score);
+  // The ordinary writer installs format and codes before the winner and binds the caller's normalized codes.
+  if (ordinary) setResultFormatAndCodes(matchUp, op, true);
   if (op.winningSide) matchUp.winningSide = op.winningSide;
   else delete matchUp.winningSide;
-  if (op.matchUpFormat) matchUp.matchUpFormat = op.matchUpFormat;
-  if (op.matchUpStatusCodes) matchUp.matchUpStatusCodes = structuredClone(op.matchUpStatusCodes);
+  if (!ordinary) setResultFormatAndCodes(matchUp, op);
   if (op.notes) matchUp.notes = op.notes;
   if (op.stampsScoredTime === false) return;
   // v1's `applyScoredTime`: captured the first time the matchUp is scored, kept on later corrections, removed with
   // the score so a re-score gets a fresh stamp
-  if (matchUpIsScored(matchUp)) {
+  const action = scoredTimeAction(matchUp, temporal?.scoredTimes.has(matchUp.matchUpId));
+  if (action === 'initialize') {
     matchUp.schedule ??= {};
-    if (!matchUp.schedule.scoredTime) matchUp.schedule.scoredTime = nowIso();
-  } else if (matchUp.schedule?.scoredTime) {
-    delete matchUp.schedule.scoredTime;
+    if (temporal) temporal.scoredTimes.add(matchUp.matchUpId);
+    else matchUp.schedule.scoredTime = nowIso();
+  } else if (action === 'clear') {
+    temporal?.scoredTimes.delete(matchUp.matchUpId);
+    if (matchUp.schedule) delete matchUp.schedule.scoredTime;
+  }
+}
+
+function setResultFormatAndCodes(
+  matchUp: MatchUp,
+  op: Extract<OutcomeOp, { op: 'setMatchUpResult' }>,
+  bindCodes = false,
+) {
+  if (op.matchUpFormat) matchUp.matchUpFormat = op.matchUpFormat;
+  if (op.matchUpStatusCodes) {
+    matchUp.matchUpStatusCodes = bindCodes ? op.matchUpStatusCodes : structuredClone(op.matchUpStatusCodes);
+    if (bindCodes && !op.matchUpStatusCodes.length) {
+      delete matchUp.matchUpStatusCode;
+      delete matchUp.sideStatusCodes;
+    }
   }
 }
 
@@ -499,10 +555,11 @@ function foldMatchUpWrite(
   op: OpOf<'setMatchUpResult'> | OpOf<'setMatchUpDrawPositions'>,
   { matchUps, structureOf }: DrawIndex,
   drawDefinition: DrawDefinition,
+  context: FoldContext,
 ): Folded {
   const matchUp = matchUps.get(op.matchUpId);
   if (!matchUp) return { error: `${op.op}: no matchUp ${op.matchUpId}` };
-  if (op.op === 'setMatchUpResult') setMatchUpResult(matchUp, op);
+  if (op.op === 'setMatchUpResult') setMatchUpResult(matchUp, op, context);
   // through the one writer, which normalises the positions and re-keys a side's facts if an occupant changes side
   else {
     // v1's advance through a BYE (`assignDrawPositionBye`) writes the matchUp it advances into with no score, as a
@@ -529,6 +586,8 @@ function foldMatchUpWrite(
     }
     // the arrival that decides the matchUp by the carried exit beside it: its codes re-derived (`progressExitStatus`)
     if (op.rederivesCodes) matchUp.matchUpStatusCodes = [];
+    // The ordinary arrival writes this own key, observable before its notice reads the caller's clock.
+    if (context.phase === 'ordinary-arrival') matchUp.winningSide = undefined;
   }
   return {};
 }
@@ -603,9 +662,11 @@ function foldOrderOfFinish(op: OpOf<'setOrderOfFinish'>, { matchUps }: DrawIndex
 function foldSchedule(
   op: OpOf<'setMatchUpSchedule'> | OpOf<'clearMatchUpScoredTime'>,
   { matchUps }: DrawIndex,
+  temporal?: TemporalProjection,
 ): Folded {
   const matchUp = matchUps.get(op.matchUpId);
   if (!matchUp) return { error: `${op.op}: no matchUp ${op.matchUpId}` };
+  temporal?.scoredTimes.delete(op.matchUpId);
   if (op.op === 'setMatchUpSchedule') matchUp.schedule = structuredClone(op.schedule);
   else if (matchUp.schedule) delete matchUp.schedule.scoredTime;
   return {};
@@ -629,6 +690,7 @@ function foldSetProvenance(op: OpOf<'setSideExitProvenance'>, { matchUps }: Draw
   const matchUp = matchUps.get(op.matchUpId);
   if (!matchUp) return { error: `setSideExitProvenance: no matchUp ${op.matchUpId}` };
   setSideExitProvenance({ matchUp, provenance: op.provenance && structuredClone(op.provenance) });
+  if (op.blankExitSide) blankSideExitCode(matchUp, op.blankExitSide);
   return {};
 }
 
@@ -651,7 +713,7 @@ function foldSetMatchUpBye(op: OpOf<'setMatchUpBye'>, { matchUps }: DrawIndex): 
   const matchUp = matchUps.get(op.matchUpId);
   if (!matchUp) return { error: `setMatchUpBye: no matchUp ${op.matchUpId}` };
   Object.assign(matchUp, { matchUpStatus: BYE, score: undefined, winningSide: undefined });
-  clearOrderOfFinishUnlessCompleted(matchUp);
+  if (!op.preservesOrderOfFinish) clearOrderOfFinishUnlessCompleted(matchUp);
   return {};
 }
 
@@ -695,16 +757,16 @@ function foldStamp(
   op: OpOf<'stampUpdatedAt'>,
   { matchUps, structures }: DrawIndex,
   drawDefinition: DrawDefinition,
-  stampedBefore?: Set<string>,
+  context: FoldContext,
 ): Folded {
   if (op.entity === 'drawDefinition') {
     if (op.id !== drawDefinition.drawId) return { error: `stampUpdatedAt: not this draw ${op.id}` };
-    stamp(drawDefinition as Stamped, `drawDefinition:${op.id}`, stampedBefore);
+    stamp(drawDefinition as Stamped, `drawDefinition:${op.id}`, context);
     return {};
   }
   const target = op.entity === 'matchUp' ? matchUps.get(op.id) : structures.get(op.id);
   if (!target) return { error: `stampUpdatedAt: no ${op.entity} ${op.id}` };
-  stamp(target as Stamped, `${op.entity}:${op.id}`, stampedBefore);
+  stamp(target as Stamped, `${op.entity}:${op.id}`, context);
   return {};
 }
 
@@ -713,20 +775,26 @@ function foldStamp(
  * the draw given, never against a hydrated copy. An op naming something the draw does not hold is a planner defect,
  * returned rather than ignored, so a shadow apply cannot pass by writing nothing.
  */
-export function applyOutcomeOps(drawDefinition: DrawDefinition, ops: OutcomeOp[], stampedBefore?: Set<string>): Folded {
+export function applyOutcomeOps(
+  drawDefinition: DrawDefinition,
+  ops: OutcomeOp[],
+  stampedBefore?: Set<string>,
+  effects: Omit<FoldContext, 'stampedBefore'> = {},
+): Folded {
   const index = indexDraw(drawDefinition);
+  const context = { ...effects, stampedBefore };
   for (const op of ops) {
-    const folded = foldOne(op, index, drawDefinition, stampedBefore);
+    const folded = foldOne(op, index, drawDefinition, context);
     if (folded.error) return folded;
   }
   return {};
 }
 
-function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition, stampedBefore?: Set<string>): Folded {
+function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition, context: FoldContext): Folded {
   switch (op.op) {
     case 'setMatchUpResult':
     case 'setMatchUpDrawPositions':
-      return foldMatchUpWrite(op, index, drawDefinition);
+      return foldMatchUpWrite(op, index, drawDefinition, context);
     case 'assignPosition':
     case 'relabelPosition':
       return foldAssignPosition(op, index);
@@ -740,6 +808,8 @@ function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition
       return foldProvenance(op, index);
     case 'setSideExitProvenance':
       return foldSetProvenance(op, index);
+    case 'announcePositionAssignments':
+      return {};
     case 'assignBye':
       return foldAssignBye(op, index);
     case 'setMatchUpBye':
@@ -754,10 +824,10 @@ function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition
       return foldSideLineUp(op, index);
     case 'setMatchUpSchedule':
     case 'clearMatchUpScoredTime':
-      return foldSchedule(op, index);
+      return foldSchedule(op, index, context.temporal);
     case 'setOrderOfFinish':
       return foldOrderOfFinish(op, index);
     default:
-      return foldStamp(op, index, drawDefinition, stampedBefore);
+      return foldStamp(op, index, drawDefinition, context);
   }
 }

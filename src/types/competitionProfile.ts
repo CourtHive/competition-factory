@@ -1,14 +1,11 @@
-import type { RotatingPartnerScoringVariant } from './rotatingPartnerScoring';
+import type { RotatingPartnerScoringConfiguration } from './rotatingPartnerScoring';
 
 /** Versioned draw-level configuration. MatchUps, scores and standings state live separately. */
 type RotatingPartnerProfile = {
   version: 1;
   entrantScope: 'INDIVIDUAL';
   matchUpType: 'DOUBLES';
-  scoring: {
-    combinedPointTotal: number;
-    selectedVariant?: RotatingPartnerScoringVariant;
-  };
+  scoring: RotatingPartnerScoringConfiguration;
   standings: { metric: 'SIDE_POINTS'; attribution: 'EACH_INDIVIDUAL' };
 };
 

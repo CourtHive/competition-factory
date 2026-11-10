@@ -95,12 +95,31 @@ export function compareWrites(plan: MatchUpWrite, actual: MatchUpWrite): { agree
  */
 const tally: Record<string, { compared: number; deferred: number }> = {};
 
+type VerificationFailure = { matchUpId?: string; occurrence: number; detail: string };
+const verificationFailures: VerificationFailure[] = [];
+
+/** A caught live throw must not conceal an oracle failure or receive comparison credit. */
+export function recordVerificationFailure(failure: VerificationFailure): void {
+  verificationFailures.push(failure);
+}
+
+export function takeVerificationFailures(): VerificationFailure[] {
+  return verificationFailures.splice(0);
+}
+
 export function differentialTally(route: string, outcome: 'compared' | 'deferred'): void {
   tally[route] ??= { compared: 0, deferred: 0 };
   tally[route][outcome] += 1;
 }
 
 export function getDifferentialTally(): Record<string, { compared: number; deferred: number }> {
+  const failure = verificationFailures[0];
+  if (failure)
+    throw new OutcomePipelineDivergence({
+      matchUpId: failure.matchUpId,
+      v1: 'unverified continuation',
+      v2: failure.detail,
+    });
   return structuredClone(tally);
 }
 

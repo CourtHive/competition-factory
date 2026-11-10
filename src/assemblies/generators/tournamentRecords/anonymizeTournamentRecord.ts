@@ -118,6 +118,7 @@ export function anonymizeTournamentRecord(params?: AnonymizeTournamentRecordArgs
   forEachMatchUp(record, anonymizeMatchUp);
   anonymizeIndividualPersons({ record, context, anonymizeParticipantNames, newPersonIds });
   anonymizeGroupedParticipants({ record, random });
+  anonymizeTeamNames(record, anonymizeParticipantNames);
   remapReferences(record, context.idMap);
 
   return { ...SUCCESS, tournamentRecord: record as Tournament };
@@ -192,6 +193,9 @@ function mapAdditionalDefinedIds(node: unknown, add: (id: unknown) => unknown) {
   }
   if (!node || typeof node !== 'object') return undefined;
   for (const [key, value] of Object.entries(node)) {
+    // Team identities also occur as affiliations or legacy participant.team attributes, without
+    // a separate team definition. Map every occurrence before rewriting any reference.
+    if (key === 'teamId') add(value);
     const idKey = ADDITIONAL_ID_COLLECTIONS.get(key);
     if (idKey && Array.isArray(value)) {
       for (const entry of value) add(entry?.[idKey]);
@@ -200,6 +204,29 @@ function mapAdditionalDefinedIds(node: unknown, add: (id: unknown) => unknown) {
     mapAdditionalDefinedIds(value, add);
   }
   return undefined;
+}
+
+function anonymizeTeamNames(record: Loose, enabled: boolean) {
+  if (!enabled) return;
+  const labels = new Map<string, string>();
+  const visit = (node: unknown) => {
+    if (!node || typeof node !== 'object') return;
+    if (Array.isArray(node)) {
+      node.forEach(visit);
+      return;
+    }
+    const team = node as Loose;
+    for (const key of ['teamName', 'nativeTeamName', 'jerseyName']) {
+      if (typeof team[key] !== 'string') continue;
+      const identity = typeof team.teamId === 'string' ? team.teamId : team[key];
+      if (!labels.has(identity)) labels.set(identity, `Team ${labels.size + 1}`);
+      team[key] = labels.get(identity);
+    }
+    delete team.otherTeamNames;
+    delete team.previousTeamNames;
+    Object.values(team).forEach(visit);
+  };
+  visit(record);
 }
 
 /** Every stored matchUp: drawn (including nested structures and tieMatchUps), draw-level and tournament-level. */

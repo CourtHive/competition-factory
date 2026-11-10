@@ -1,5 +1,5 @@
+import type { RotatingPartnerScoreContractWithTimed } from './rotatingPartnerScoring';
 import type { RotatingPartnerTallyPolicy } from './rotatingPartnerTally';
-import type { RotatingPartnerScoreContract } from './rotatingPartnerScoring';
 
 /** Applied-round provenance, separate from competitionProfile configuration. */
 export type RotatingPartnerRoundRecord = {
@@ -15,6 +15,6 @@ export type RotatingPartnerRoundRecord = {
   pairings: [[string, string], [string, string]][];
   tallyContract: RotatingPartnerTallyPolicy;
   standingsThroughRoundNumber?: number;
-  scoringContract: RotatingPartnerScoreContract;
+  scoringContract: RotatingPartnerScoreContractWithTimed;
   standingsSnapshot?: { participantId: string; pointsScored: number }[];
 };

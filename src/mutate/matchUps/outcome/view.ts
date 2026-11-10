@@ -560,6 +560,24 @@ function loserSeatOf(draw: DrawContext, matchUpId: string, depth = 0): WinnerLos
   };
 }
 
+/** Keep the caller's selected link/seat; read its occupancy after preceding writes. */
+export function currentLinkedSeat(draw: DrawContext, matchUpsMap: MatchUpsMap, selected: WinnerLoserSeat) {
+  const matchUp = draw.inContextDrawMatchUps.find((entry) => entry.matchUpId === selected.matchUpId);
+  if (!matchUp || matchUp.structureId !== selected.structureId) return undefined;
+  const seat = loserTargetSeat(draw.drawDefinition, selected.structureId, selected.drawPosition, matchUp.drawPositions);
+  if (!seat) return undefined;
+  return {
+    seat: {
+      ...selected,
+      seat,
+      drawPositions: (matchUp.drawPositions ?? []).filter((position): position is number => !!position),
+      matchUpStatus: matchUp.matchUpStatus,
+      hasResult: hasResult(matchUp),
+    },
+    levels: matchUp.loserMatchUpId ? carryLevels(draw, matchUpsMap, matchUp.matchUpId) : undefined,
+  };
+}
+
 /**
  * A double exit's call (S5): the levels a BYE it places goes on to across loser links, from the loser matchUp (its own
  * seat's, or under `doubleExitPropagateBye: false` the produced exit's there) and from the matchUp holding the seat its
