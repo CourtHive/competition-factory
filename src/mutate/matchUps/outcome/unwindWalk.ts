@@ -371,7 +371,9 @@ function loserCascade(sim: Sim, matchUp: SimMatchUp): boolean {
   // loser arrives) has its removal tasks run too, which change nothing (the seat's position went on only through a BYE
   // opposite, which keeps it: `advancedByOpponentsBye`); a participant there is v1's
   if (sim.byes.has(seatKey(structureId, drawPosition))) return clearSeat(sim, structureId, drawPosition, false);
-  return !sim.participants.has(seatKey(structureId, drawPosition)) || fail(sim);
+  if (sim.participants.has(seatKey(structureId, drawPosition))) return fail(sim);
+  sim.withdrawn.push({ structureId, drawPosition, quiet: true, segment: sim.segment });
+  return removals(sim, structureId, drawPosition);
 }
 
 /** a BYE advance `reconcileByeAdvancements` owes after the call: a BYE matchUp whose other position has not gone on */

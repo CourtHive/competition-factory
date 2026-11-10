@@ -27,13 +27,18 @@ import {
 } from '@Tests/testHarness/outcome/directionFixtures';
 
 // constants and types
-import { replayFailure as prepareCensus } from '@Tests/testHarness/exitPropagation/sweep';
 import { USTA_COLLEGE, DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { TEAM, SINGLES, DOUBLES } from '@Constants/eventConstants';
 import type { Tournament } from '@Types/tournamentTypes';
 import { setClock } from '@Tools/clock';
 import { readFileSync } from 'node:fs';
+import {
+  replayFailure as prepareCensus,
+  prepareDraw,
+  randomConfig,
+  generateSchedule,
+} from '@Tests/testHarness/exitPropagation/sweep';
 import {
   COMPASS,
   CURTIS_CONSOLATION,
@@ -1731,5 +1736,42 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     });
     write(mode, drawId, at(2, 2), { matchUpStatus: WALKOVER, winningSide: 1 }, { propagateExitStatus: true });
     expect(topics.at(-1)?.[0]).toBe(MODIFY_DRAW_DEFINITION);
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s writes the quiet winner key when a BYE cascade visits an empty loser seat',
+  (mode) => {
+    const config = randomConfig(9000060);
+    const drawId = 'quiet-empty-loser';
+    setOutcomePipeline(OUTCOME_PIPELINE_V1);
+    prepareDraw(config, drawId);
+    const steps = generateSchedule(config, drawId, 30);
+    let prepared: Tournament | undefined;
+    let sourceId: string | undefined;
+    counter.prepare = (params) => {
+      if (prepared || params.winningSide !== 2 || !params.tournamentRecord) return;
+      const source = params.drawDefinition?.structures
+        ?.find((entry: any) => entry.structureName === 'East')
+        ?.matchUps?.find((entry: any) => entry.roundNumber === 1 && entry.roundPosition === 3);
+      if (source?.matchUpId !== params.matchUpId || source?.matchUpStatus !== DOUBLE_DEFAULT) return;
+      prepared = structuredClone(params.tournamentRecord);
+      sourceId = source.matchUpId;
+    };
+    try {
+      prepareCensus(config, steps, drawId);
+    } finally {
+      counter.prepare = undefined;
+    }
+    expect(prepared).toBeDefined();
+    tournamentEngine.setState(prepared!);
+    write(mode, drawId, sourceId!, { winningSide: 2 }, { propagateExitStatus: config.propagateExitStatus });
+    const record = Object.values(getTournamentRecords())[0] as Tournament;
+    const target = record.events![0].drawDefinitions![0].structures!.find(
+      (entry) => entry.structureName === 'Southwest',
+    )!.matchUps![0];
+    expect(target.matchUpStatus).toBe(TO_BE_PLAYED);
+    expect(Object.hasOwn(target, 'winningSide')).toBe(true);
+    expect(target.winningSide).toBeUndefined();
   },
 );
