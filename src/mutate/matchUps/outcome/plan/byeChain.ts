@@ -1,3 +1,4 @@
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { buildCarriedExitProvenance, buildSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { carriedExitStatus, arrivedByResult, getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
 import { getDrawPositionSideNumber, getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
@@ -905,7 +906,8 @@ function heldBeyondOps(request: OutcomeRequest, beyond: { matchUpId: string; arr
       matchUpStatusCodes: [],
       stampsScoredTime: false,
       inContextBare: true,
-      score: { scoreStringSide1: '', scoreStringSide2: '' },
+      resetsScore: true,
+      score: toBePlayed.score,
     },
     ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId, provenance }] : []),
     { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
@@ -922,7 +924,7 @@ function heldLoserOps(request: OutcomeRequest, held: HeldLoser): OutcomeOp[] {
       matchUpStatus: status,
       exitingSideNumber,
     });
-  const blank = { scoreStringSide1: '', scoreStringSide2: '' };
+  const blank = toBePlayed.score;
   const write = (
     matchUpId: string,
     matchUpStatus: MatchUpStatusUnion,
@@ -939,6 +941,7 @@ function heldLoserOps(request: OutcomeRequest, held: HeldLoser): OutcomeOp[] {
         matchUpStatusCodes: [],
         stampsScoredTime: false,
         announcesContext: false,
+        resetsScore: true,
         score: blank,
       },
       ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId, provenance }] : []),
@@ -1043,7 +1046,7 @@ function producedLoserOps(request: OutcomeRequest, produced: ProducedLoser): Out
       winningSide: (3 - produced.seatSide) as 1 | 2,
       matchUpStatusCodes: [],
       stampsScoredTime: false,
-      ...(matchUpStatus === WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
+      ...(matchUpStatus === WALKOVER ? { resetsScore: true, score: toBePlayed.score } : {}),
     },
     ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId: produced.matchUpId, provenance }] : []),
     { op: 'stampUpdatedAt', entity: 'matchUp', id: produced.matchUpId },

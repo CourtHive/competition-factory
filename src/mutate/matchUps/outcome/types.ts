@@ -420,6 +420,10 @@ export type Route =
 
 /** § 4: what the matchUp itself holds once the write has landed */
 export type MatchUpWrite = {
+  /** The v1 write resets the result through the shared fixture. */
+  resetsScore?: true;
+  /** The v1 write assigns an own undefined winner. */
+  removesWinningSide?: true;
   matchUpStatus?: MatchUpStatusUnion;
   winningSide?: number;
   scoreStringSide1?: string;

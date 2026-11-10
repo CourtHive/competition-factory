@@ -1,3 +1,5 @@
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
+import { isAnyExit } from '@Validators/isExit';
 import { writeAssignmentResults } from '@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
@@ -10,6 +12,7 @@ import {
   mergeSideExitProvenance,
   setSideExitProvenance,
   blankSideExitCode,
+  clearResolvedSideExitProvenance,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
@@ -50,6 +53,10 @@ import type {
 export type OutcomeOp =
   | {
       op: 'setMatchUpResult';
+      /** The source writer resets through toBePlayed, including own undefined keys. */
+      resetsScore?: true;
+      /** The source writer assigns an own undefined winner. */
+      removesWinningSide?: true;
       matchUpId: string;
       matchUpStatus: MatchUpStatusUnion;
       winningSide?: 1 | 2;
@@ -479,15 +486,21 @@ function setMatchUpResult(
       value: op.disableAutoCalc,
     });
   if (op.dualTally?.tieFormat) matchUp.tieFormat = structuredClone(op.dualTally.tieFormat) as MatchUp['tieFormat'];
-  if (ordinary && op.score) matchUp.score = op.score;
+  if (op.resetsScore) {
+    const provenance = isAnyExit(op.matchUpStatus) ? matchUp.sideExitProvenance : undefined;
+    const format = matchUp.matchUpFormat;
+    Object.assign(matchUp, bindResultInputs ? toBePlayed : structuredClone(toBePlayed));
+    if (provenance) matchUp.sideExitProvenance = provenance;
+    if (format) matchUp.matchUpFormat = format;
+  }
+  if (op.score) matchUp.score = ordinary || bindResultInputs ? op.score : structuredClone(op.score);
   matchUp.matchUpStatus = op.matchUpStatus;
   clearOrderOfFinishUnlessCompleted(matchUp);
-  if (op.score && !ordinary) matchUp.score = bindResultInputs ? op.score : structuredClone(op.score);
-  // The ordinary writer installs format and codes before the winner and binds the caller's normalized codes.
-  if (ordinary) setResultFormatAndCodes(matchUp, op, true);
+  setResultFormatAndCodes(matchUp, op, ordinary, !!bindResultInputs);
+  clearResolvedSideExitProvenance(matchUp);
   if (op.winningSide) matchUp.winningSide = op.winningSide;
-  else delete matchUp.winningSide;
-  if (!ordinary) setResultFormatAndCodes(matchUp, op, false, bindResultInputs);
+  else if (op.removesWinningSide) matchUp.winningSide = undefined;
+  else if (!op.resetsScore) delete matchUp.winningSide;
   if (op.notes) matchUp.notes = op.notes;
   if (op.stampsScoredTime === false) return;
   // v1's `applyScoredTime`: captured the first time the matchUp is scored, kept on later corrections, removed with
@@ -568,7 +581,7 @@ function foldMatchUpWrite(
   else {
     // v1's advance through a BYE (`assignDrawPositionBye`) writes the matchUp it advances into with no score, as a
     // removal does: a blank one a cleared result left there goes with it
-    if (op.removedDrawPosition || op.advancesThroughBye) delete matchUp.score;
+    // The position writer assigns score below, after its own winner write.
     setMatchUpDrawPositions({
       structureId: structureOf.get(op.matchUpId),
       drawPositions: op.drawPositions,
@@ -591,7 +604,8 @@ function foldMatchUpWrite(
     // the arrival that decides the matchUp by the carried exit beside it: its codes re-derived (`progressExitStatus`)
     if (op.rederivesCodes) matchUp.matchUpStatusCodes = [];
     // The ordinary arrival writes this own key, observable before its notice reads the caller's clock.
-    if (context.phase === 'ordinary-arrival') matchUp.winningSide = undefined;
+    if (!matchUp.winningSide) matchUp.winningSide = undefined;
+    if (op.removedDrawPosition || op.advancesThroughBye) matchUp.score = undefined;
   }
   return {};
 }
@@ -727,6 +741,7 @@ function foldWithdrawBye(op: OpOf<'withdrawBye'>, { structures, groups }: DrawIn
   if (!assignment) return { error: `withdrawBye: no drawPosition ${op.drawPosition} in ${op.structureId}` };
   delete assignment.bye;
   delete assignment.byeFromPropagation;
+  if (assignment.participantId === undefined) delete assignment.participantId;
   return {};
 }
 

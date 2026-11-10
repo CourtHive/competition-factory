@@ -15,8 +15,7 @@ import type { OutcomeOp } from '../ops';
  * scores and all); neither, the matchUp's own is left where it is
  */
 export function writtenScore(request: OutcomeRequest, write: MatchUpWrite): Score | undefined {
-  const blanked = write.scoreStringSide1 === '' && write.scoreStringSide2 === '' && !write.sets;
-  return blanked ? toBePlayed.score : (request.score as Score | undefined);
+  return write.resetsScore ? toBePlayed.score : (request.score as Score | undefined);
 }
 
 /** the call's own result on its matchUp, and the matchUp's stamp */
@@ -43,6 +42,8 @@ export function resultOps(
     {
       op: 'setMatchUpResult',
       matchUpId,
+      ...(write.resetsScore ? { resetsScore: true as const } : {}),
+      ...(write.removesWinningSide ? { removesWinningSide: true as const } : {}),
       ...(ensuredSides ? { ensuredSides } : {}),
       ...(disableAutoCalc === undefined ? {} : { disableAutoCalc }),
       matchUpStatus: write.matchUpStatus as MatchUpStatusUnion,

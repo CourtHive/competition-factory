@@ -1,3 +1,4 @@
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { isDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
@@ -56,7 +57,8 @@ function applyScoreAndStatus(args: WriteArgs, request: OutcomeRequest, view: Out
   let matchUpStatus = args.matchUpStatus ?? (blank ? TO_BE_PLAYED : existing.matchUpStatus);
   // a write keeps the format stored on the matchUp (a clear included) and writes a new one if given
   const matchUpFormat = request.matchUpFormat ?? existing.ownMatchUpFormat;
-  const matchUpStatusCodes = args.matchUpStatusCodes ?? (blank ? [] : existing.matchUpStatusCodes);
+  const matchUpStatusCodes =
+    args.matchUpStatusCodes ?? (blank ? toBePlayed.matchUpStatusCodes : existing.matchUpStatusCodes);
   // a call's `winningSide` is 1, 2 or absent by the time it is written (row 3 refuses anything else)
   const winningSide = args.removeWinningSide
     ? undefined
@@ -72,6 +74,8 @@ function applyScoreAndStatus(args: WriteArgs, request: OutcomeRequest, view: Out
     matchUpStatus = IN_PROGRESS;
   const scored = matchUpIsScored({ winningSide, score, matchUpStatus, collectionId: existing.collectionId } as MatchUp);
   return {
+    ...(blank ? { resetsScore: true as const } : {}),
+    ...(args.removeWinningSide ? { removesWinningSide: true as const } : {}),
     matchUpStatus,
     winningSide,
     scoreStringSide1: score?.scoreStringSide1,

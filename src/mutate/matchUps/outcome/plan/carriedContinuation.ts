@@ -1,3 +1,4 @@
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { buildCarriedExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
@@ -101,7 +102,7 @@ function carryLanding(status: MatchUpStatusUnion, frame: CarryFrame): OutcomeOp[
       matchUpStatus: status,
       winningSide: (3 - at.sideNumber) as 1 | 2,
       matchUpStatusCodes: [],
-      ...(status === WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
+      ...(status === WALKOVER ? { resetsScore: true, score: toBePlayed.score } : {}),
       ...('ensuredSides' in at ? { ensuredSides: at.ensuredSides } : {}),
     },
     ...carryProvenance(status, frame, at.matchUpId, at.sideNumber),

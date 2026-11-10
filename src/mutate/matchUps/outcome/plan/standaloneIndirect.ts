@@ -192,7 +192,9 @@ export function standaloneCarriedWinnerOps(args: PlanArgs): OutcomeOp[] | undefi
     request.matchUpId,
     request.matchUpStatus,
   ).map((op): OutcomeOp =>
-    op.op === 'setMatchUpResult' && op.matchUpId === clear.matchUpId ? { ...op, score: BLANK_SCORE } : op,
+    op.op === 'setMatchUpResult' && op.matchUpId === clear.matchUpId
+      ? { ...op, resetsScore: true, score: BLANK_SCORE }
+      : op,
   );
   const arrival = [...arrivalOps(after.view, loser), ...relayOps, ...produced];
   return standaloneTail(args, removal, direction, arrival);

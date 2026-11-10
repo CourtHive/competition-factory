@@ -1,3 +1,4 @@
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { isDoubleExit } from '@Validators/isExit';
 
 // constants and types
@@ -260,7 +261,7 @@ export function pairedFeeder(
 export const carriedStatus = (status?: string): MatchUpStatusUnion => (status === DEFAULTED ? DEFAULTED : WALKOVER);
 
 /** the first reason this call is not S1's, or undefined when it is */
-export const BLANK_SCORE: Score = { scoreStringSide1: '', scoreStringSide2: '' };
+export const BLANK_SCORE: Score = toBePlayed.score;
 export const scoreless = (matchUp: HydratedMatchUp) =>
   !matchUp.score?.scoreStringSide1 && !matchUp.score?.scoreStringSide2 && !matchUp.score?.sets?.length;
 export const unplaced = (matchUp: HydratedMatchUp) => !(matchUp.drawPositions ?? []).some(Boolean);

@@ -179,12 +179,12 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   if (mode === OUTCOME_PIPELINE_V2) {
     if (refusal) return { refused: toResult(refusal, args) };
     // S2: a call whose complete plan is a shape v2 owns is written by v2, and v1 is not asked (F1 (a), fail-closed)
-    const { outcome, phases } = planCall(args, view);
+    const { outcome, phases, route } = planCall(args, view);
     if (!outcome.ops || !OWNED_SHAPES.has(outcome.shape)) return {};
     return {
       owned: phases
         ? applyTemporalPhases(args, phases, outcome.shape)
-        : applyOwnedPlan({ args, ops: outcome.ops, shape: outcome.shape }),
+        : applyOwnedPlan({ args, ops: outcome.ops, shape: outcome.shape, route }),
     };
   }
   if (mode !== OUTCOME_PIPELINE_DIFFERENTIAL) return {};

@@ -1,3 +1,4 @@
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { buildCarriedExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
 import { convergenceAt, convergenceOps } from './convergence';
@@ -356,7 +357,7 @@ export function heldByeCarryCorrectionOps(args: ExitReasonArgs): OutcomeOp[] | u
         ? {
             winningSide: (3 - landing.sideNumber) as 1 | 2,
             matchUpStatusCodes: [],
-            ...(entered === WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
+            ...(entered === WALKOVER ? { resetsScore: true, score: toBePlayed.score } : {}),
           }
         : { announcedAs: 'reconcileScoredTimes' as const }),
     },

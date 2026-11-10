@@ -9,6 +9,7 @@ import {
   deferInContextMatchUp,
   deferredQuery,
   modifyMatchUpNotice,
+  modifyDrawNotice,
   modifyPositionAssignmentsNotice,
 } from '@Mutate/notifications/drawNotifications';
 
@@ -170,10 +171,12 @@ export function applyOwnedPlan({
   shape,
   args,
   ops: completedOps,
+  route,
 }: {
   args: BuildViewArgs;
   ops: OutcomeOp[];
   shape: PlanShape;
+  route?: Route;
 }): ResultType {
   const { drawDefinition, tournamentRecord, event } = args;
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
@@ -265,6 +268,7 @@ export function applyOwnedPlan({
       matchUpId,
     });
   }
+  if (ops.some((op) => op.op === 'setParticipantResults')) modifyDrawNotice({ drawDefinition });
   const { settled } = namedWriters(ops);
   for (const matchUpId of announced) {
     const matchUp = stored.get(matchUpId);
@@ -307,14 +311,18 @@ export function applyOwnedPlan({
   }
   announceAssignments({ ops, drawDefinition, tournamentId, event });
   announceScoredTimeCleanup(cleanupTargets, args);
-  return planResult(shape, ops);
+  return planResult(shape, ops, route);
 }
 
-function planResult(shape: PlanShape, ops: OutcomeOp[]): ResultType {
+function planResult(shape: PlanShape, ops: OutcomeOp[], route?: Route): ResultType {
   const tieMatchUpResult = dualTallyResult(ops);
   // a winner's route returns the context `directParticipants` builds, a final's included, which carries something only
   // for an exit (S5): empty
-  return shape === 'direction' ? { ...SUCCESS, context: {}, ...tieMatchUpResult } : { ...SUCCESS, ...tieMatchUpResult };
+  if (route === 'remove-directed') {
+    const result = { ...SUCCESS, connectedStructures: undefined };
+    return result;
+  }
+  return shape === 'direction' ? { ...SUCCESS, ...tieMatchUpResult, context: {} } : { ...SUCCESS, ...tieMatchUpResult };
 }
 
 /** Final stored-order cleanup announces real context after ordinary writers and assignments. */
@@ -553,7 +561,8 @@ function dualTallyResult(ops: OutcomeOp[]) {
       ...SUCCESS,
       score: tally.score,
       removeWinningSide: false,
-      ...(tally.winningSide ? { winningSide: tally.winningSide } : {}),
+      tieFormatRemoved: undefined,
+      winningSide: tally.winningSide,
     },
   };
 }
