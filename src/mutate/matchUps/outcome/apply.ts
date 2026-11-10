@@ -245,10 +245,14 @@ export function applyOwnedPlan({
   const tallyMatchUpId = tallyNoticeTarget(ops, args);
   const { settled } = namedWriters(ops);
   const eventless = eventlessNotices(ops).matchUps;
-  for (const step of nativeNoticeSteps(ops)) {
+  for (const step of nativeNoticeSteps(ops, args.request?.matchUpId)) {
     const matchUpId = step.matchUpId;
     const matchUp = stored.get(matchUpId);
     if (!matchUp) continue;
+    if (step.kind === 'position') {
+      announcePositionBoundary(step.position, matchUp, args);
+      continue;
+    }
     if (step.kind !== 'modify') {
       announceResultBoundary(
         step,
@@ -320,10 +324,11 @@ function tallyNoticeTarget(ops: OutcomeOp[], args: BuildViewArgs): string | unde
 
 type NativeNoticeStep =
   | { kind: 'ensure' | 'score'; matchUpId: string; rank: number; score: ResultOp }
-  | { kind: 'modify'; matchUpId: string; rank: number };
+  | { kind: 'modify'; matchUpId: string; rank: number }
+  | { kind: 'position'; matchUpId: string; rank: number; position: ArrivalOp };
 
 /** Preserve last-write order within each topic, while retaining genuine earlier score boundaries. */
-function nativeNoticeSteps(ops: OutcomeOp[]): NativeNoticeStep[] {
+function nativeNoticeSteps(ops: OutcomeOp[], sourceId?: string): NativeNoticeStep[] {
   const steps: NativeNoticeStep[] = [];
   const last = new Map<string, NativeNoticeStep>();
   ops.forEach((op, index) => {
@@ -334,7 +339,62 @@ function nativeNoticeSteps(ops: OutcomeOp[]): NativeNoticeStep[] {
       steps.push({ kind: 'ensure', matchUpId: op.matchUpId, rank: index * 3, score: op });
     steps.push({ kind: 'score', matchUpId: op.matchUpId, rank: index * 3 + 1, score: op });
   });
-  return [...steps, ...last.values()].sort((a, b) => a.rank - b.rank);
+  ops.forEach((op, index) => {
+    if (op.op !== 'setMatchUpDrawPositions' || index * 3 + 2 === last.get(op.matchUpId)?.rank) return;
+    if (
+      op.clearsScore ||
+      op.removedDrawPosition ||
+      op.withdrawnByePosition ||
+      op.releasedDrawPosition ||
+      op.announcesContext === false ||
+      op.advancesThroughBye
+    )
+      steps.push({ kind: 'position', matchUpId: op.matchUpId, rank: index * 3 + 2, position: op });
+  });
+  // removeDirectedParticipants scores the call's own matchUp before withdrawing its directed positions.
+  const sourceFirst = ops.some(
+    (op) =>
+      op.op === 'setMatchUpResult' &&
+      op.matchUpId === sourceId &&
+      op.removesWinningSide &&
+      op.stampsScoredTime !== false,
+  );
+  const ordered = [...steps, ...last.values()];
+  if (sourceFirst)
+    for (const step of ordered) {
+      if (step.matchUpId === sourceId) {
+        step.rank = -1;
+        if (step.kind === 'ensure') step.rank = -3;
+        else if (step.kind === 'score') step.rank = -2;
+      }
+    }
+  return ordered.sort((a, b) => a.rank - b.rank);
+}
+
+/** A real placement/removal may announce before a later score supersedes its keyed notice. */
+function announcePositionBoundary(
+  op: ArrivalOp,
+  matchUp: MatchUp,
+  { drawDefinition, tournamentRecord, event }: BuildViewArgs,
+): void {
+  const bare = op.announcesContext === false || !!op.withdrawnByePosition || !!op.clearsScore;
+  const noticeEvent =
+    bare || op.removedDrawPosition || (op.advancesThroughBye && !op.announcesEvent) ? undefined : event;
+  modifyMatchUpNotice({
+    drawDefinition,
+    matchUp,
+    tournamentId: bare ? undefined : tournamentRecord?.tournamentId,
+    eventId: noticeEvent?.eventId,
+    event: noticeEvent,
+    context: positionBoundaryContext(op),
+  });
+}
+
+function positionBoundaryContext(op: ArrivalOp): string {
+  if (op.removedDrawPosition) return `removeSubsequentDrawPosition-${op.removedDrawPosition}`;
+  if (op.withdrawnByePosition) return `removeDrawPosition-${op.withdrawnByePosition}`;
+  if (op.releasedDrawPosition) return 'releaseAdvancedDrawPosition';
+  return op.advancesThroughBye ? 'advanceWinner' : 'assignMatchUpDrawPosition';
 }
 
 function noticeMatchUpId(op: OutcomeOp): string | undefined {

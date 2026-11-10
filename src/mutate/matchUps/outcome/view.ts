@@ -2089,7 +2089,8 @@ function dualRewrite({
   const same = (a: unknown, b: unknown) =>
     a === undefined || b === undefined ? a === b : canonicalJson(a) === canonicalJson(b);
   return {
-    ...(same(sides, stored.sides) ? {} : { sides }),
+    // ensureSideLineUps writes even value-equal sides: own undefined keys and its notice remain observable.
+    ...(sides ? { sides } : {}),
     ...(same(tieFormat, stored.tieFormat) ? {} : { tieFormat }),
     sidesAsHeld: sides ?? stored.sides,
     sidesInContext: dualMatchUp.sides,

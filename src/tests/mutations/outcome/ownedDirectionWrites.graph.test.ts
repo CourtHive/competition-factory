@@ -10,6 +10,11 @@ import { applyOutcomeOps } from '@Mutate/matchUps/outcome/ops';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, expect, it, vi } from 'vitest';
+import {
+  STANDALONE_INDIRECT_CLEARS,
+  play as prepareDirection,
+  findTarget,
+} from '@Tests/testHarness/outcome/directionFixtures';
 
 // constants and types
 import { ROUND_ROBIN, FIRST_MATCH_LOSER_CONSOLATION, MAIN, CONSOLATION } from '@Constants/drawDefinitionConstants';
@@ -532,3 +537,73 @@ it('a quiet withdrawal writes its own undefined winning side without an announce
   expect(Object.hasOwn(matchUp, 'winningSide')).toBe(true);
   expect(Object.keys(matchUp).at(-1)).toBe('winningSide');
 });
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s repeats the named line-up notice when a manual dual keeps value-equal sides',
+  (mode) => {
+    const { drawId, matchUps, record } = fresh({
+      drawSize: 4,
+      drawType: ROUND_ROBIN,
+      eventType: TEAM,
+      tieFormatName: DOMINANT_DUO,
+    });
+    const dual = matchUps.find((m) => m.tieMatchUps?.length)!;
+    write(OUTCOME_PIPELINE_V1, drawId, dual.tieMatchUps![0].matchUpId, { winningSide: 1 });
+    const before = structuredClone(dual.sides);
+    const observed: string[][] = [];
+    const provider = getProvider();
+    const cycle = provider.cycleModifiedTournamentIds!;
+    vi.spyOn(provider, 'cycleModifiedTournamentIds').mockImplementation(() => {
+      const ids = cycle();
+      if (counter.active && ids?.size) observed.push([...ids]);
+      return ids;
+    });
+    write(mode, drawId, dual.matchUpId, { winningSide: 1 }, { disableAutoCalc: true });
+    expect(dual.sides).toEqual(before);
+    expect(observed.at(-1)).toEqual([record.tournamentId, '*']);
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s announces its result before withdrawing directed positions',
+  (mode) => {
+    const { drawId, record } = fresh({ drawType: FIRST_MATCH_LOSER_CONSOLATION });
+    const source = record
+      .events![0].drawDefinitions![0].structures!.find((s) => s.stage === MAIN)!
+      .matchUps!.find((m) => m.roundNumber === 1 && m.roundPosition === 1)!;
+    write(OUTCOME_PIPELINE_V1, drawId, source.matchUpId, { winningSide: 1 });
+    const observed: string[][] = [];
+    const provider = getProvider();
+    const cycle = provider.cycleModifiedTopics!;
+    vi.spyOn(provider, 'cycleModifiedTopics').mockImplementation(() => {
+      const topics = cycle();
+      if (counter.active && topics?.size) observed.push([...topics]);
+      return topics;
+    });
+    setSubscriptions({ subscriptions: { [UPDATE_INCONTEXT_MATCHUP]: () => undefined } });
+    write(mode, drawId, source.matchUpId, { matchUpStatus: DOUBLE_WALKOVER });
+    expect(observed.at(-1)?.slice(0, 3)).toEqual([UPDATE_INCONTEXT_MATCHUP, 'modifyDrawDefinition', MODIFY_MATCHUP]);
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s records an indirect winner withdrawal before the unwind score callback',
+  (mode) => {
+    const scenario = STANDALONE_INDIRECT_CLEARS.find(
+      ([label]) => label === 'C10 standalone indirect clear: DOUBLE_DEFAULT/DOUBLE_DEFAULT/DEFAULTED/DEFAULTED',
+    )![1];
+    prepareDirection(OUTCOME_PIPELINE_V1, { ...scenario, steps: [] });
+    const step = scenario.steps[0];
+    const id = findTarget(step.target);
+    const observed: string[][] = [];
+    const provider = getProvider();
+    const cycle = provider.cycleModifiedTopics!;
+    vi.spyOn(provider, 'cycleModifiedTopics').mockImplementation(() => {
+      const topics = cycle();
+      if (counter.active && topics?.size) observed.push([...topics]);
+      return topics;
+    });
+    write(mode, 'd', id, step.outcome, step.params);
+    expect(observed.at(-1)?.slice(0, 3)).toEqual(['modifyDrawDefinition', MODIFY_MATCHUP, UPDATE_INCONTEXT_MATCHUP]);
+  },
+);
