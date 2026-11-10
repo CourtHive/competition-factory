@@ -1,5 +1,5 @@
-import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { buildSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { indexed, onwardFrom } from './planShared';
 
 // constants and types

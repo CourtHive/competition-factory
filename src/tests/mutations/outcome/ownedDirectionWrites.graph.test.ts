@@ -1,5 +1,5 @@
-import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { getProvider, getTournamentRecords, setOutcomePipeline } from '@Global/state/globalState';
+import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { registerTestSeedIdentity } from '@Tests/testHarness/seedMathRandom';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';

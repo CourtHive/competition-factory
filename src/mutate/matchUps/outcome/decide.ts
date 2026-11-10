@@ -1,14 +1,7 @@
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
-import {
-  addedNotices,
-  captureShadow,
-  compareNotices,
-  compareShadow,
-  plannedNotices,
-  prepareTemporalShadow,
-} from './shadow';
 import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
+import { applyOwnedPlan, applyTemporalPhases, compileTemporalPhases } from './apply';
 import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { PREDICTED_CALL, predictSettleWork, type SettleSite } from './settleWork';
 import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
@@ -29,9 +22,16 @@ import { createWorkingView } from './overlay';
 import { refuseOutcome } from './refusals';
 import { stampedInThisCall } from './ops';
 import { buildOutcomeView } from './view';
-import { applyOwnedPlan, applyTemporalPhases, compileTemporalPhases } from './apply';
 import { chooseRoute } from './route';
 import { planOutcome } from './plan';
+import {
+  addedNotices,
+  captureShadow,
+  compareNotices,
+  compareShadow,
+  plannedNotices,
+  prepareTemporalShadow,
+} from './shadow';
 import {
   getCapturedStamps,
   getCapturedClock,

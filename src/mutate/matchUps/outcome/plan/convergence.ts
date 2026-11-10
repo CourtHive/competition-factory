@@ -1,7 +1,7 @@
-import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { blankScore, SINGLE_EXITS, carriedStatus, indexed, isSettleWrite, sideOf } from './planShared';
 import { producedTarget, producedTargetOps, producedTargetReason } from './producedTarget';
 import { ownByeChain, unfillableByeChain, walkChain } from './byeChain';
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { isDoubleExit } from '@Validators/isExit';
 import {
   buildCarriedExitProvenance,

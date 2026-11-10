@@ -1,12 +1,12 @@
-import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
-import { isAnyExit } from '@Validators/isExit';
 import { writeAssignmentResults } from '@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { exchangeMatchUpPositions } from '@Mutate/matchUps/drawPositions/swapWinnerLoser';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { scoredTimeAction } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { getCapturedStamps } from '@Global/state/globalState';
+import { isAnyExit } from '@Validators/isExit';
 import { nowIso } from '@Tools/clock';
 import {
   mergeSideExitProvenance,

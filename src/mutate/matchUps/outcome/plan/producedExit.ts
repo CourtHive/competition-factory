@@ -1,7 +1,7 @@
-import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { buildSideExitProvenance, collapseDoubleExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { SINGLE_EXITS, indexed, onwardFrom, pairedFeeder } from './planShared';
 import { producedConvergedOps, producedConvergedReason } from './convergence';
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { isDoubleExit } from '@Validators/isExit';
 import { producedTarget } from './producedTarget';
 

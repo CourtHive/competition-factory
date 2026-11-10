@@ -1,10 +1,10 @@
-import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { buildCarriedExitProvenance, buildSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { carriedExitStatus, arrivedByResult, getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
 import { getDrawPositionSideNumber, getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { indexed, lowerFirst, onwardFrom, sideOf } from './planShared';
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { findStructure } from '@Acquire/findStructure';
 import { carriedByeReplay } from './carriedByeSeat';

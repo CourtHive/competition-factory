@@ -1,5 +1,5 @@
-import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { buildCarriedExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 
 // constants and types
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';

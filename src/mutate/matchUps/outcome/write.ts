@@ -1,7 +1,7 @@
-import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { isDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { dualWinningSideChange, noWinnerNeeded } from './route';
 
 // constants and types

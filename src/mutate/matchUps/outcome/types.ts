@@ -1,8 +1,8 @@
 import type { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
 import type { ErrorType } from '@Constants/errorConditionConstants';
+import type { OutcomeOp, TemporalProjection } from './ops';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { WorkingView } from './overlay';
-import type { OutcomeOp, TemporalProjection } from './ops';
 import type {
   DrawDefinition,
   Event,
