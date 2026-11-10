@@ -363,7 +363,12 @@ function nativeNoticeSteps(
     steps.push({ kind: 'score', matchUpId: op.matchUpId, rank: index * 3 + 1, score: op });
   });
   ops.forEach((op, index) => {
-    if (op.op !== 'setMatchUpDrawPositions' || index * 3 + 2 === last.get(op.matchUpId)?.rank) return;
+    if (
+      op.op !== 'setMatchUpDrawPositions' ||
+      index * 3 + 2 === last.get(op.matchUpId)?.rank ||
+      !ops.slice(index + 1).some((next) => next.op === 'setMatchUpResult' && next.matchUpId === op.matchUpId)
+    )
+      return;
     if (
       op.clearsScore ||
       op.removedDrawPosition ||
@@ -498,7 +503,13 @@ function planResult(shape: PlanShape, ops: OutcomeOp[], route?: Route): ResultTy
   // a winner's route returns the context `directParticipants` builds, a final's included, which carries something only
   // for an exit (S5): empty
   if (route === 'remove-directed') {
-    const result = { ...SUCCESS, connectedStructures: undefined };
+    const result = {
+      ...SUCCESS,
+      connectedStructures: undefined,
+      ...(ops.some((op) => op.op === 'setMatchUpResult' && op.returnsQualifierRemoved)
+        ? { qualifierRemoved: undefined }
+        : {}),
+    };
     return result;
   }
   return shape === 'direction' ? { ...SUCCESS, ...tieMatchUpResult, context: {} } : { ...SUCCESS, ...tieMatchUpResult };

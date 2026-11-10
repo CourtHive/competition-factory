@@ -58,6 +58,8 @@ export type OutcomeOp =
       resetsScore?: true;
       /** The source writer assigns an own undefined winner. */
       removesWinningSide?: true;
+      /** The unlinked qualifying-final removal returns an own undefined qualifierRemoved field. */
+      returnsQualifierRemoved?: true;
       /** A relabel first withdraws the existing carry, clearing provenance, codes and winner before re-entry. */
       withdrawsCarry?: true;
       matchUpId: string;

@@ -497,7 +497,14 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
     // same rule (`ensuredDualSides`)
     // a schedule the call carries, written before the result as v1 writes it before `applyScoredTime` (S7)
     ...scheduleOps(args, matchUpId),
-    ...resultOps(request, write, matchUpId, view.dualSides, autoCalcWrite(request, view)),
+    ...resultOps(
+      request,
+      write,
+      matchUpId,
+      view.dualSides,
+      autoCalcWrite(request, view),
+      returnsQualifierRemoved(args),
+    ),
     ...(refreshedArrivalOps(args) ?? []),
     // a convergence the unwind dissolved, re-announced by v1's settle pass after the call's own write (S6 tail)
     ...reannounced,
@@ -658,4 +665,9 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
     ],
     shape: args.route === 'winner' || carriedOn ? 'direction' : 'local',
   };
+}
+
+/** The unlinked qualifying-final removal still contributes its own undefined return field. */
+function returnsQualifierRemoved({ route, view }: PlanArgs): true | undefined {
+  return route === 'remove-directed' && view.draw.unlinkedQualifierRemoval ? true : undefined;
 }

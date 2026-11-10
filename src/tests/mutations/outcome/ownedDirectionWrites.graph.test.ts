@@ -19,12 +19,19 @@ import {
 } from '@Tests/testHarness/outcome/directionFixtures';
 
 // constants and types
-import { ROUND_ROBIN, FIRST_MATCH_LOSER_CONSOLATION, MAIN, CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { COMPASS, CURTIS_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { USTA_COLLEGE, DOMINANT_DUO } from '@Constants/tieFormatConstants';
+import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { TEAM, SINGLES } from '@Constants/eventConstants';
 import type { Tournament } from '@Types/tournamentTypes';
 import { setClock } from '@Tools/clock';
+import {
+  ROUND_ROBIN,
+  FIRST_MATCH_LOSER_CONSOLATION,
+  MAIN,
+  CONSOLATION,
+  QUALIFYING,
+} from '@Constants/drawDefinitionConstants';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
@@ -846,5 +853,87 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_DIFFERENTIAL] as const)(
     });
     expect(result).toMatchObject({ success: true });
     expect(structures.find((structure) => structure.structureName === 'Northwest')!.updatedAt).toBe(current);
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s returns the own undefined qualifierRemoved field for an unlinked qualifying final',
+  (mode) => {
+    setOutcomePipeline(OUTCOME_PIPELINE_V1);
+    const generated = mocksEngine.generateTournamentRecord({
+      participantsProfile: { participantsCount: 40 },
+      drawProfiles: [{ drawSize: 32 }],
+      setState: true,
+      nonRandom: 42,
+    });
+    const drawId = generated.drawIds![0];
+    const { event, drawDefinition } = tournamentEngine.getEvent({ drawId });
+    const main = drawDefinition.structures.find((structure) => structure.stage === MAIN)!;
+    const entered = new Set(event.entries.map((entry) => entry.participantId));
+    const qualifyingIds = tournamentEngine
+      .getParticipants()
+      .participants.filter((participant) => !entered.has(participant.participantId))
+      .slice(0, 4)
+      .map((participant) => participant.participantId);
+    expect(
+      tournamentEngine.addEventEntries({
+        eventId: event.eventId,
+        drawId,
+        entryStage: QUALIFYING,
+        participantIds: qualifyingIds,
+      }).success,
+    ).toBe(true);
+    const { structure, link } = tournamentEngine.generateQualifyingStructure({
+      targetStructureId: main.structureId,
+      qualifyingPositions: 2,
+      drawSize: 4,
+      drawId,
+    });
+    expect(
+      tournamentEngine.attachQualifyingStructure({
+        link: { ...link, source: { ...link.source, roundNumber: 2 } },
+        structure,
+        drawId,
+      }).success,
+    ).toBe(true);
+    expect(tournamentEngine.automatedPositioning({ structureId: structure.structureId, drawId }).success).toBe(true);
+    const source = tournamentEngine
+      .allDrawMatchUps({ drawId, inContext: true })
+      .matchUps.find((matchUp) => matchUp.structureId === structure.structureId && matchUp.finishingRound === 1)!;
+    write(OUTCOME_PIPELINE_V1, drawId, source.matchUpId, won());
+    const result = write(mode, drawId, source.matchUpId, toBePlayed, {
+      policyDefinitions: { [POLICY_TYPE_PROGRESSION]: { autoRemoveQualifiers: true } },
+    });
+    expect(Object.keys(result)).toEqual(['success', 'connectedStructures', 'qualifierRemoved']);
+    expect(Object.hasOwn(result, 'qualifierRemoved')).toBe(true);
+    expect(result.qualifierRemoved).toBeUndefined();
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s announces an own BYE seat placed by the recursion after its deeper child',
+  (mode) => {
+    const { drawId, record } = fresh({ drawType: COMPASS, drawSize: 16 });
+    const structures = record.events![0].drawDefinitions![0].structures!;
+    const east = structures.find((structure) => structure.structureName === 'East')!;
+    const first = east.matchUps!.find((matchUp) => matchUp.roundNumber === 1 && matchUp.roundPosition === 1)!;
+    const second = east.matchUps!.find((matchUp) => matchUp.roundNumber === 1 && matchUp.roundPosition === 2)!;
+    write(OUTCOME_PIPELINE_V1, drawId, first.matchUpId, { matchUpStatus: DOUBLE_WALKOVER });
+    const names = new Map(structures.map((structure) => [structure.structureId, structure.structureName]));
+    const buffers: string[][] = [];
+    const provider = getProvider();
+    const clear = provider.deleteNotices;
+    setSubscriptions({ subscriptions: { [MODIFY_POSITION_ASSIGNMENTS]: () => undefined } });
+    vi.spyOn(provider, 'deleteNotices').mockImplementation(() => {
+      if (counter.active)
+        buffers.push(
+          provider.getNoticeBuffer!().flatMap(({ topic, key }) =>
+            topic === MODIFY_POSITION_ASSIGNMENTS ? [names.get(key!)!] : [],
+          ),
+        );
+      return clear();
+    });
+    write(mode, drawId, second.matchUpId, { matchUpStatus: DOUBLE_WALKOVER });
+    expect(buffers.at(-1)).toEqual(['Southwest', 'West', 'Northeast']);
   },
 );

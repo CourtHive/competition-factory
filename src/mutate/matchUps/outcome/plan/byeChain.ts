@@ -256,7 +256,11 @@ function byeResultOps(entry: MatchUp, quiet: { announcesEvent?: false }): Outcom
 function byeChain(...args: Parameters<typeof byeChainProgram>): ReturnType<typeof byeChainProgram> {
   const chain = byeChainProgram(...args);
   if (!chain) return undefined;
-  // assignDrawPositionBye announces on return: deepest child first, after the chain's matchUp writes.
+  return assignmentReturns(chain);
+}
+
+/** assignDrawPositionBye announces on return: deepest child first, after the chain's matchUp writes. */
+function assignmentReturns(chain: ByeChain): ByeChain {
   return {
     ...chain,
     assigns: chain.assigns.map((op): OutcomeOp =>
@@ -608,6 +612,10 @@ function walkedSeats(view: OutcomeView, entry?: HydratedMatchUp): DoubleExitSeat
 }
 
 export function walkChain(walk: ByeWalk): ByeChain {
+  return assignmentReturns(walkChainProgram(walk));
+}
+
+function walkChainProgram(walk: ByeWalk): ByeChain {
   const quiet = (named: boolean) => (named ? {} : { announcesEvent: false as const });
   return {
     assigns: walk.assigns.map(({ structureId, drawPosition, matchUpId, named }) => ({

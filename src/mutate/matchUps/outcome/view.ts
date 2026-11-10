@@ -58,8 +58,8 @@ import {
 } from '@Query/matchUp/missingDrawPositionsRefusal';
 
 // constants and types
+import { FIRST_MATCHUP, CONTAINER, LOSER, WIN_RATIO, QUALIFYING, DRAW } from '@Constants/drawDefinitionConstants';
 import type { BuildViewArgs, OutcomeRequest, OutcomeScore, OutcomeView, Reservation, ThroughBye } from './types';
-import { FIRST_MATCHUP, CONTAINER, LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { BYE, COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { ByePassage, ByeWalk, CarryLevel, WinnerLoserSeat } from './types';
 import type { PositionTargetsResult } from '@Query/matchUp/positionTargets';
@@ -2008,6 +2008,12 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         getCompetitionPolicy({ tournamentRecord, drawDefinition, event }).competitionPolicy?.processingGranularity ===
         'PER_MATCHUP',
       doubleExitPropagatesBye: propagatesByeOnDoubleExit(appliedPolicies),
+      unlinkedQualifierRemoval:
+        structure?.stage === QUALIFYING &&
+        inContextMatchUp?.finishingRound === 1 &&
+        !!matchUp.winningSide &&
+        !!appliedPolicies?.[POLICY_TYPE_PROGRESSION]?.autoRemoveQualifiers &&
+        targetData?.targetLinks?.winnerTargetLink?.target.feedProfile !== DRAW,
       defaultProcessCodes: Array.isArray(
         appliedPolicies?.[POLICY_TYPE_SCORING]?.processCodes?.incompleteAssignmentsOnDefault,
       ),

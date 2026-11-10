@@ -36,11 +36,13 @@ export function resultOps(
   matchUpId: string,
   ensuredSides?: unknown[],
   disableAutoCalc?: true | null,
+  returnsQualifierRemoved?: true,
 ): OutcomeOp[] {
   const score = writtenScore(request, write);
   return [
     {
       op: 'setMatchUpResult',
+      ...(returnsQualifierRemoved ? { returnsQualifierRemoved } : {}),
       matchUpId,
       ...(write.resetsScore ? { resetsScore: true as const } : {}),
       ...(write.removesWinningSide ? { removesWinningSide: true as const } : {}),
