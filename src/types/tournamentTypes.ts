@@ -1839,10 +1839,18 @@ export enum OnlineResourceTypeEnum {
 }
 export type OnlineResourceTypeUnion = `${OnlineResourceTypeEnum}`;
 
-/** Tournament-scoped TEAM branding. Opaque hex colors; primary is required when present. */
+/** A named color in a tournament-scoped CODES TEAM palette. */
+export interface TeamPaletteColor {
+  colorId: string;
+  value: string;
+  name?: string;
+  group?: string;
+}
+
+/** CODES TEAM palette; display references are palette IDs, never color tier rankings. */
 export interface TeamColors {
-  primary: string;
-  secondary?: string;
+  palette: TeamPaletteColor[];
+  display: { primary: string; secondary?: string };
 }
 
 export interface Participant {

@@ -5,7 +5,7 @@ const team: any = {
   participantId: 'team',
   participantType: 'TEAM',
   participantName: 'Team',
-  teamColors: { primary: '#AABBCC' },
+  teamColors: { palette: [{ colorId: 'blue', value: '#AABBCC' }], display: { primary: 'blue' } },
   notes: 'private',
 };
 

@@ -424,12 +424,6 @@ function getHomeVenueIds({
 
 function setTeamColors(args: FieldArgs) {
   const { existingParticipant, participantValues, participant, clearedKeys } = args;
-  const value = participant.teamColors;
-  const clearTeamColors =
-    existingParticipant.participantType === TEAM &&
-    Object.prototype.toString.call(value) === '[object Object]' &&
-    !Object.keys(value).length;
-  if (!clearTeamColors && sameValue(value, existingParticipant.teamColors)) return undefined;
   const plan = planTeamColors(participant.teamColors, existingParticipant.participantType);
   if (plan.error) return plan;
   if (plan.clear) clearedKeys.push('teamColors');

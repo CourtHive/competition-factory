@@ -1947,13 +1947,25 @@ export type CountryCodeUnion = `${CountryCodeEnum}`;
 export type OnlineResourceTypeUnion = `${OnlineResourceTypeEnum}`;
 ```
 
+#### TeamPaletteColor
+
+```ts
+/** A named color in a tournament-scoped CODES TEAM palette. */
+export interface TeamPaletteColor {
+  colorId: string;
+  value: string;
+  name?: string;
+  group?: string;
+}
+```
+
 #### TeamColors
 
 ```ts
-/** Tournament-scoped TEAM branding. Opaque hex colors; primary is required when present. */
+/** CODES TEAM palette; display references are palette IDs, never color tier rankings. */
 export interface TeamColors {
-  primary: string;
-  secondary?: string;
+  palette: TeamPaletteColor[];
+  display: { primary: string; secondary?: string };
 }
 ```
 
