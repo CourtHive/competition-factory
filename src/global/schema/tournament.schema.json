@@ -3556,13 +3556,37 @@
       },
       "additionalProperties": false
     },
+    "TeamPaletteColor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["colorId", "value"],
+      "properties": {
+        "colorId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}$" },
+        "value": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "\\S" },
+        "group": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "\\S" }
+      }
+    },
     "TeamColors": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["primary"],
+      "required": ["palette", "display"],
       "properties": {
-        "primary": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
-        "secondary": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" }
+        "palette": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": { "$ref": "#/definitions/TeamPaletteColor" }
+        },
+        "display": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["primary"],
+          "properties": {
+            "primary": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}$" },
+            "secondary": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}$" }
+          }
+        }
       }
     },
     "TeamAttribute": {

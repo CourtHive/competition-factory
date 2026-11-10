@@ -10,7 +10,21 @@ import Ajv from 'ajv';
 import schema from '../../../global/schema/tournament.schema.json';
 import { TEAM } from '@Constants/participantConstants';
 
-const colors = { primary: '#aabbcc', secondary: '#001122' };
+const colors = {
+  palette: [
+    { colorId: 'accent', value: '#aabbcc' },
+    { colorId: 'trim', value: '#001122' },
+  ],
+  display: { primary: 'accent', secondary: 'trim' },
+};
+const stored = {
+  palette: [
+    { colorId: 'accent', value: '#AABBCC' },
+    { colorId: 'trim', value: '#001122' },
+  ],
+  display: { primary: 'accent', secondary: 'trim' },
+};
+const replaced = { palette: [{ colorId: 'accent', value: '#FFEEDD' }], display: { primary: 'accent' } };
 
 function createTeam() {
   mocksEngine.generateTournamentRecord({ setState: true, nonRandom: 1 });
@@ -31,7 +45,7 @@ function createTeam() {
 writeModeMatrix(() => {
   it('creates, persists, replaces, preserves and clears TEAM branding', () => {
     const team = createTeam();
-    expect(team.teamColors).toEqual({ primary: '#AABBCC', secondary: '#001122' });
+    expect(team.teamColors).toEqual(stored);
     const reload = () => {
       const record = makeDeepCopy(tournamentEngine.getTournament().tournamentRecord);
       tournamentEngine.setState(record);
@@ -39,16 +53,19 @@ writeModeMatrix(() => {
     };
     expect(reload().teamColors).toEqual(team.teamColors);
     let result: any = tournamentEngine.modifyParticipant({
-      participant: { participantId: team.participantId, teamColors: { primary: '#ffeedd' } },
+      participant: {
+        participantId: team.participantId,
+        teamColors: { palette: [{ colorId: 'accent', value: '#ffeedd' }], display: { primary: 'accent' } },
+      },
     });
     expect(result.success).toBe(true);
-    expect(reload().teamColors).toEqual({ primary: '#FFEEDD' });
+    expect(reload().teamColors).toEqual(replaced);
     for (const value of [undefined, null]) {
       result = tournamentEngine.modifyParticipant({
         participant: { participantId: team.participantId, teamColors: value },
       });
       expect(result.success).toBe(true);
-      expect(reload().teamColors).toEqual({ primary: '#FFEEDD' });
+      expect(reload().teamColors).toEqual(replaced);
     }
     result = tournamentEngine.modifyParticipant({ participant: { participantId: team.participantId, teamColors: {} } });
     expect(result.success).toBe(true);
@@ -61,6 +78,7 @@ writeModeMatrix(() => {
     { value: '#ffffff' },
     ...[
       { secondary: '#ffffff' },
+      { primary: '#ffffff' },
       { primary: 'red' },
       { primary: '#fff' },
       { primary: '#11223344' },
@@ -82,7 +100,7 @@ writeModeMatrix(() => {
     expect(record).toEqual({ tournamentId: 'empty' });
   });
 
-  it('refuses non-TEAM creation and modification, while allowing unchanged legacy whole-participant saves', () => {
+  it('refuses non-TEAM creation and modification', () => {
     createTeam();
     const participant = tournamentEngine
       .getParticipants()
@@ -100,20 +118,21 @@ writeModeMatrix(() => {
       },
     });
     expect(result.error).toBeDefined();
-    const record = tournamentEngine.getTournament().tournamentRecord;
-    const team = record.participants.find((p: any) => p.participantId === 'branded-team');
-    team.teamColors = { primary: 'legacy-value' };
-    tournamentEngine.setState(record);
-    result = tournamentEngine.modifyParticipant({ participant: { ...team, participantName: 'Legacy renamed' } });
-    expect(result.success).toBe(true);
-    expect(result.participant.teamColors.primary).toBe('legacy-value');
   });
 });
 
 describe('stored TeamColors schema', () => {
-  const validate = new Ajv({ strict: false }).compile({ ...schema.definitions.TeamColors });
+  const validate = new Ajv({ strict: false }).compile({
+    $ref: '#/definitions/TeamColors',
+    definitions: schema.definitions,
+  });
   it('requires a primary color and rejects command/unknown fields', () => {
+    expect(validate(stored)).toBe(true);
+    expect(
+      validate({ ...stored, palette: stored.palette.map((entry) => ({ ...entry, name: 'Color', group: 'Primary' })) }),
+    ).toBe(true);
     expect(validate(colors)).toBe(true);
+    expect(validate({ primary: '#AABBCC' })).toBe(false);
     for (const value of [{}, [], { primary: '#ffffff', textColor: '#000000' }, { primary: '#fff' }]) {
       expect(validate(value)).toBe(false);
     }
@@ -144,7 +163,7 @@ it.each([false, true])(
     expect(new Set(lines.map((m: any) => m.matchUpType))).toEqual(new Set(['SINGLES', 'DOUBLES']));
     for (const line of lines)
       for (const side of line.sides) {
-        expect(side.teamParticipant.teamColors).toEqual({ primary: '#AABBCC', secondary: '#001122' });
+        expect(side.teamParticipant.teamColors).toEqual(stored);
         expect(teams.some((t: any) => t.participantId === side.teamParticipant.participantId)).toBe(true);
       }
     const filtered = query({
@@ -158,14 +177,13 @@ it.each([false, true])(
   },
 );
 
-it('clears an invalid legacy empty TEAM object using the reserved clear command', () => {
+it('clears canonical TEAM branding idempotently using the explicit clear command', () => {
   const team = createTeam();
-  const record = tournamentEngine.getTournament().tournamentRecord;
-  record.participants.find((p: any) => p.participantId === team.participantId).teamColors = {};
-  tournamentEngine.setState(record);
-  let result: any = tournamentEngine.modifyParticipant({
-    participant: { participantId: team.participantId, teamColors: {} },
-  });
-  expect(result.success).toBe(true);
-  expect(result.participant).not.toHaveProperty('teamColors');
+  for (let i = 0; i < 2; i++) {
+    let result: any = tournamentEngine.modifyParticipant({
+      participant: { participantId: team.participantId, teamColors: {} },
+    });
+    expect(result.success).toBe(true);
+    expect(result.participant).not.toHaveProperty('teamColors');
+  }
 });
