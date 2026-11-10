@@ -23,6 +23,7 @@ import {
   changesWinner,
   directsElsewhere,
   isSettleWrite,
+  indexed,
   loserByeArrival,
   heldByeLoser,
   reentersWinner,
@@ -632,13 +633,14 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
         .filter((id) => id !== (view.group?.containerStructureId ?? structureId))
         .map((id) => ({ op: 'stampUpdatedAt', entity: 'structure', id }))
     : [];
+  const arrivalReturns = arrivalReturnOps(arrival);
   ops.push(
     ...seated.filter((op) => op.op !== 'announcePositionAssignments'),
     ...lineUps,
     ...carried.relay,
     ...throughBye,
     ...seated.filter((op) => op.op === 'announcePositionAssignments'),
-    ...arrivalReturnOps(arrival),
+    ...arrivalReturns,
     ...landing,
     ...converging,
     ...doubleExitSeated,
@@ -668,13 +670,20 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   // and moved after it, and position alone cannot tell the two apart. Before widening this to one end-of-plan pass,
   // assert over the census that no candidate's matchUp takes a non-convergence result write later in the plan.
   const superseded = new Set(reannounced.filter((op) => isSettleWrite(op) && convergedWrites.has(op.matchUpId)));
-  const writes = ops.filter((op) => !superseded.has(op));
+  const relayAfter = producedRelayAfterOps(view, unwound, loser, seatPrograms, convergence.superseded);
+  // A terminal produced exit is awarded inside assignDrawPosition, before that assignment returns.
+  const terminalArrival =
+    !indexed(view, loserMatchUpId)?.winnerMatchUpId &&
+    relayAfter.some(
+      (op) =>
+        op.op === 'setMatchUpResult' &&
+        op.matchUpId === loserMatchUpId &&
+        op.announcedAs === 'assignMatchUpDrawPosition',
+    );
+  const delayedReturns = new Set(terminalArrival ? arrivalReturns : []);
+  const writes = ops.filter((op) => !superseded.has(op) && !delayedReturns.has(op));
   return {
-    ops: [
-      ...writes,
-      ...producedRelayAfterOps(view, unwound, loser, seatPrograms, convergence.superseded),
-      ...retainedAward,
-    ],
+    ops: [...writes, ...relayAfter, ...delayedReturns, ...retainedAward],
     shape: args.route === 'winner' || carriedOn ? 'direction' : 'local',
   };
 }

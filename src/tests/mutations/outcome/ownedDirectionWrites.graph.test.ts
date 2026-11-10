@@ -17,6 +17,7 @@ import {
   STANDALONE_INDIRECT_CLEARS,
   CONVERGED_PRODUCED_RELAYS,
   STANDALONE_CARRIED_CONVERGENCES,
+  TERMINAL_RELAY_CAPTURES,
   play as prepareDirection,
   findTarget,
 } from '@Tests/testHarness/outcome/directionFixtures';
@@ -142,21 +143,17 @@ function write(
 
 const won = () => generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 1 }).outcome;
 
-function observeNoticeTopics() {
+function observeNoticeTopics(includeDraw = false) {
+  const relevant = [MODIFY_MATCHUP, MODIFY_POSITION_ASSIGNMENTS, ...(includeDraw ? [MODIFY_DRAW_DEFINITION] : [])];
   const topics: string[] = [];
   const provider = getProvider();
   const add = provider.addNotice;
   vi.spyOn(provider, 'addNotice').mockImplementation((notice, ...args) => {
     const topic = (notice as { topic: string }).topic;
-    if (counter.active && [MODIFY_MATCHUP, MODIFY_POSITION_ASSIGNMENTS].includes(topic)) topics.push(topic);
+    if (counter.active && relevant.includes(topic)) topics.push(topic);
     return add(notice, ...args);
   });
-  setSubscriptions({
-    subscriptions: {
-      [MODIFY_MATCHUP]: () => undefined,
-      [MODIFY_POSITION_ASSIGNMENTS]: () => undefined,
-    },
-  });
+  setSubscriptions({ subscriptions: Object.fromEntries(relevant.map((topic) => [topic, () => undefined])) });
   return topics;
 }
 
@@ -1379,3 +1376,19 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(topics.at(-1)).toBe(MODIFY_MATCHUP);
   },
 );
+
+it.each(
+  ([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const).flatMap((mode) =>
+    ['first', 'last'].map((boundary) => [mode, boundary] as const),
+  ),
+)('%s keeps the %s terminal relay notice boundary', (mode, boundary) => {
+  const scenario = TERMINAL_RELAY_CAPTURES.find(
+    ([label]) => label === 'terminal direct relay: DEFAULTED/DOUBLE_DEFAULT/DOUBLE_DEFAULT/winner1',
+  )![1];
+  prepareDirection(OUTCOME_PIPELINE_V1, { ...scenario, steps: [] });
+  const step = scenario.steps[0];
+  const topics = observeNoticeTopics(true);
+  write(mode, 'd', findTarget(step.target), step.outcome, step.params);
+  const actual = boundary === 'first' ? topics[0] : topics.filter((topic) => topic !== MODIFY_DRAW_DEFINITION).at(-1);
+  expect(actual).toBe(boundary === 'first' ? MODIFY_DRAW_DEFINITION : MODIFY_POSITION_ASSIGNMENTS);
+});

@@ -364,6 +364,29 @@ function nativeNoticeSteps(
   });
   ops.forEach((op, index) => {
     if (
+      op.op !== 'clearMatchUpBye' ||
+      !ops
+        .slice(index + 1)
+        .some(
+          (next) => (next.op === 'setMatchUpResult' || next.op === 'setMatchUpBye') && next.matchUpId === op.matchUpId,
+        )
+    )
+      return;
+    steps.push({
+      kind: 'position',
+      matchUpId: op.matchUpId,
+      rank: index * 3 + 2,
+      position: {
+        op: 'setMatchUpDrawPositions',
+        matchUpId: op.matchUpId,
+        drawPositions: stored.get(op.matchUpId)?.drawPositions ?? [],
+        withdrawnByePosition: op.drawPosition,
+        announcesContext: false,
+      },
+    });
+  });
+  ops.forEach((op, index) => {
+    if (
       op.op !== 'setMatchUpDrawPositions' ||
       index * 3 + 2 === last.get(op.matchUpId)?.rank ||
       !ops
