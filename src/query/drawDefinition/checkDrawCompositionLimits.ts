@@ -12,6 +12,8 @@ import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import type { ResultType } from '@Types/factoryTypes';
 
+const SELECTED = new Set(STRUCTURE_SELECTED_STATUSES);
+
 /** Checks the actual generated geometry and entries before a draw is returned or attached. */
 export function checkDrawCompositionLimits({
   tournamentRecord,
@@ -44,10 +46,7 @@ export function checkDrawCompositionLimits({
     ? new Set(
         (drawDefinition.entries ?? [])
           .filter(
-            (entry) =>
-              (entry.entryStage ?? MAIN) === MAIN &&
-              !!entry.entryStatus &&
-              STRUCTURE_SELECTED_STATUSES.includes(entry.entryStatus),
+            (entry) => (entry.entryStage ?? MAIN) === MAIN && !!entry.entryStatus && SELECTED.has(entry.entryStatus),
           )
           .map((entry) => entry.participantId),
       ).size

@@ -8,7 +8,9 @@ import { MAIN, QUALIFYING, SINGLE_ELIMINATION } from '@Constants/drawDefinitionC
 import type { DrawFitProposal, GetDrawFitProposalsArgs } from './getDrawFitProposals';
 import type { Entry } from '@Types/tournamentTypes';
 
-const selected = (entry: Entry) => !!entry.entryStatus && STRUCTURE_SELECTED_STATUSES.includes(entry.entryStatus);
+const ENTRY_STAGES = new Set<string>([MAIN, QUALIFYING]);
+const SELECTED = new Set(STRUCTURE_SELECTED_STATUSES);
+const selected = (entry: Entry) => !!entry.entryStatus && SELECTED.has(entry.entryStatus);
 export const stageEntryKey = (entry: Entry) => `${entry.entryStage ?? MAIN}:${entry.participantId}`;
 
 /** The first real-generator solution, keeping the existing qualifying field in qualifying. */
@@ -73,7 +75,7 @@ function qualifyAtSlots(
   const occupied = new Set([...qualifying, ...moved].map((entry) => entry.participantId));
   const alternates = ranked.filter(
     (entry) =>
-      [MAIN, QUALIFYING].includes(entry.entryStage ?? MAIN) &&
+      ENTRY_STAGES.has(entry.entryStage ?? MAIN) &&
       entry.entryStatus === ALTERNATE &&
       !occupied.has(entry.participantId) &&
       ((entry.entryStage ?? MAIN) === QUALIFYING || !qualifyingIds.has(entry.participantId)),
@@ -158,7 +160,7 @@ function candidateFit(
     !fit.structures?.length ||
     fit.structures.some(
       (structure) =>
-        [MAIN, QUALIFYING].includes(structure.stage ?? MAIN) &&
+        ENTRY_STAGES.has(structure.stage ?? MAIN) &&
         (structure.stageSequence ?? 1) === 1 &&
         structure.status !== 'FITS',
     )

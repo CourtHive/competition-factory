@@ -22,6 +22,8 @@ export type LegacySanctionedEventConstraints = DrawCompositionConstraints & {
   eventType?: string;
 };
 
+const CONSTRAINT_KEYS = new Set(['drawSize', 'maxWildcards', 'maxAlternates', 'maxQualifiers']);
+
 type GetDrawCompositionConstraintsArgs = {
   tournamentRecord?: Tournament;
   event?: Event;
@@ -135,12 +137,7 @@ function applyRequestedLimits(
     if (!constraintOverrides || typeof constraintOverrides !== 'object' || Array.isArray(constraintOverrides))
       return INVALID_VALUES;
     for (const [key, value] of Object.entries(constraintOverrides)) {
-      if (
-        !['drawSize', 'maxWildcards', 'maxAlternates', 'maxQualifiers'].includes(key) ||
-        typeof value !== 'number' ||
-        !Number.isSafeInteger(value) ||
-        value < 0
-      )
+      if (!CONSTRAINT_KEYS.has(key) || typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0)
         return INVALID_VALUES;
       const limitKey = key as keyof DrawCompositionConstraints;
       const limit = constraints[limitKey];

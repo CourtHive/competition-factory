@@ -41,6 +41,7 @@ export type GetDrawFitProposalsArgs = Partial<GenerateDrawDefinitionArgs> & {
 };
 export type DrawFitProposalsResult = ResultType & { proposals?: DrawFitProposal[] };
 
+const ENTRY_STAGES = new Set<string>([MAIN, QUALIFYING]);
 const SELECTED = new Set(STRUCTURE_SELECTED_STATUSES);
 const primaryMain = (fit: DrawFitResult) =>
   fit.structures?.find((structure) => structure.stage === MAIN && (structure.stageSequence ?? 1) === 1);
@@ -48,7 +49,7 @@ const selected = (entry: Entry) => !!entry.entryStatus && SELECTED.has(entry.ent
 
 function entryStagesFit(fit: DrawFitResult): boolean {
   const fields = (fit.structures ?? []).filter(
-    (structure) => [MAIN, QUALIFYING].includes(structure.stage ?? MAIN) && (structure.stageSequence ?? 1) === 1,
+    (structure) => ENTRY_STAGES.has(structure.stage ?? MAIN) && (structure.stageSequence ?? 1) === 1,
   );
   return fields.length > 0 && fields.every((structure) => structure.status === 'FITS');
 }

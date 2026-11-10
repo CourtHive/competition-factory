@@ -177,12 +177,13 @@ export function modifyEntriesStatus({
     flight,
     event,
   });
+  const participantIdSet = new Set(participantIds);
   if (
     entryStage &&
     targetEntryLists.some((entries) =>
       entries?.some(
         (entry) =>
-          participantIds.includes(entry.participantId) &&
+          participantIdSet.has(entry.participantId) &&
           (!stage || (entry.entryStage ?? MAIN) === stage) &&
           (entry.entryStage ?? MAIN) !== entryStage &&
           entries.some(
