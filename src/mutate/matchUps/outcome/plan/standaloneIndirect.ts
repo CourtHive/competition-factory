@@ -101,7 +101,6 @@ function standaloneTail(
     ...resultOps(request, write, request.matchUpId as string),
     ...winnerPlacementOps(after.view, 'winner', write, direction.winner),
     ...arrival,
-    ...arrivalReturnOps(arrival),
     ...unwind.reannounced,
     ...producedRelayAfterOps(view, unwind.ops, undefined, unwind.seatPrograms),
     ...structureStamps([...unwind.ops, ...arrival], structureId),
@@ -197,7 +196,8 @@ export function standaloneCarriedWinnerOps(args: PlanArgs): OutcomeOp[] | undefi
       ? { ...op, resetsScore: true, score: blankScore() }
       : op,
   );
-  const arrival = [...arrivalOps(after.view, loser), ...relayOps, ...produced];
+  const assignment = arrivalOps(after.view, loser);
+  const arrival = [...assignment, ...arrivalReturnOps(assignment), ...relayOps, ...produced];
   return standaloneTail(args, removal, direction, arrival);
 }
 
@@ -296,8 +296,9 @@ function standaloneBareArrival(
   if (next.matchUpStatus !== TO_BE_PLAYED || !unwoundClean(next, new Set())) return undefined;
   if (positionsOf(next).includes(position) || JSON.stringify(positionsOf(next)) !== JSON.stringify(reset.drawPositions))
     return undefined;
+  const assignment = arrivalOps(view, loser);
   return [
-    ...arrivalOps(view, loser),
+    ...assignment,
     {
       op: 'setMatchUpResult',
       matchUpId: relay.matchUpId,
@@ -315,5 +316,6 @@ function standaloneBareArrival(
       placedDrawPosition: position,
     },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId },
+    ...arrivalReturnOps(assignment),
   ];
 }

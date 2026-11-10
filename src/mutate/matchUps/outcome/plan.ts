@@ -628,13 +628,14 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
         .map((id) => ({ op: 'stampUpdatedAt', entity: 'structure', id }))
     : [];
   ops.push(
-    ...seated,
+    ...seated.filter((op) => op.op !== 'announcePositionAssignments'),
     ...lineUps,
     ...carried.relay,
     ...throughBye,
+    ...seated.filter((op) => op.op === 'announcePositionAssignments'),
+    ...arrivalReturnOps(arrival),
     ...landing,
     ...converging,
-    ...arrivalReturnOps(arrival),
     ...doubleExitSeated,
     ...producedExit,
     ...(seatOps?.after ?? []),

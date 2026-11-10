@@ -16,6 +16,7 @@ import {
   assignmentViewFixture,
   STANDALONE_INDIRECT_CLEARS,
   CONVERGED_PRODUCED_RELAYS,
+  STANDALONE_CARRIED_CONVERGENCES,
   play as prepareDirection,
   findTarget,
 } from '@Tests/testHarness/outcome/directionFixtures';
@@ -140,6 +141,24 @@ function write(
 }
 
 const won = () => generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 1 }).outcome;
+
+function observeNoticeTopics() {
+  const topics: string[] = [];
+  const provider = getProvider();
+  const add = provider.addNotice;
+  vi.spyOn(provider, 'addNotice').mockImplementation((notice, ...args) => {
+    const topic = (notice as { topic: string }).topic;
+    if (counter.active && [MODIFY_MATCHUP, MODIFY_POSITION_ASSIGNMENTS].includes(topic)) topics.push(topic);
+    return add(notice, ...args);
+  });
+  setSubscriptions({
+    subscriptions: {
+      [MODIFY_MATCHUP]: () => undefined,
+      [MODIFY_POSITION_ASSIGNMENTS]: () => undefined,
+    },
+  });
+  return topics;
+}
 
 it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
   '%s clears result and direction with exact own properties and reset sharing',
@@ -1177,20 +1196,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
       { matchUpStatus: DOUBLE_DEFAULT },
       { propagateExitStatus: true },
     );
-    const topics: string[] = [];
-    const provider = getProvider();
-    const add = provider.addNotice;
-    vi.spyOn(provider, 'addNotice').mockImplementation((notice, ...args) => {
-      const topic = (notice as { topic: string }).topic;
-      if (counter.active && [MODIFY_MATCHUP, MODIFY_POSITION_ASSIGNMENTS].includes(topic)) topics.push(topic);
-      return add(notice, ...args);
-    });
-    setSubscriptions({
-      subscriptions: {
-        [MODIFY_MATCHUP]: () => undefined,
-        [MODIFY_POSITION_ASSIGNMENTS]: () => undefined,
-      },
-    });
+    const topics = observeNoticeTopics();
     const outcome = generateOutcomeFromScoreString({
       scoreString: '6-1 6-1',
       winningSide: 1,
@@ -1288,5 +1294,20 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     });
     write(mode, drawId, source.matchUpId, { ...toBePlayed, winningSide: undefined });
     expect(topics.at(-1)?.[0]).toBe(MODIFY_DRAW_DEFINITION);
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s returns the assignment before settling the carried convergence',
+  (mode) => {
+    const scenario = STANDALONE_CARRIED_CONVERGENCES.find(
+      ([label]) =>
+        label === 'C12 standalone carried convergence: DOUBLE_DEFAULT/DOUBLE_DEFAULT/DEFAULTED/DEFAULTED/1/DEFAULTED',
+    )![1];
+    prepareDirection(OUTCOME_PIPELINE_V1, { ...scenario, steps: [] });
+    const step = scenario.steps[0];
+    const topics = observeNoticeTopics();
+    write(mode, 'd', findTarget(step.target), step.outcome, step.params);
+    expect(topics.at(-1)).toBe(MODIFY_MATCHUP);
   },
 );

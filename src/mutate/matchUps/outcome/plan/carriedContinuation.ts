@@ -44,7 +44,6 @@ export function carriedContinuation(
 ): { relay: OutcomeOp[]; landing: OutcomeOp[] } | undefined {
   const relay: OutcomeOp[] = [];
   const landing: OutcomeOp[] = [];
-  const returns: OutcomeOp[] = [];
   let frame: CarryFrame | undefined = first;
   let passes = 0;
   while (frame) {
@@ -53,7 +52,6 @@ export function carriedContinuation(
     if (maxPasses !== undefined && passes > maxPasses) return undefined;
     if (frame.assignment) {
       landing.push({ op: 'assignPosition', ...frame.assignment, announcesAssignments: false });
-      returns.unshift({ op: 'announcePositionAssignments', structureId: frame.assignment.structureId });
     }
     const relays = (at.relays ?? []).flatMap(({ matchUpId, sideNumber }): OutcomeOp[] => [
       ...carryProvenance(status, frame!, matchUpId, sideNumber, 'progressExitStatus'),
@@ -61,8 +59,10 @@ export function carriedContinuation(
     ]);
     (frame === first ? relay : landing).push(...relays);
     if (frame !== first && at.beyond) landing.push(...carryPlacement(at.beyond, true));
+    if (frame.assignment)
+      landing.push({ op: 'announcePositionAssignments', structureId: frame.assignment.structureId });
     landing.push(...carryLanding(status, frame));
-    if (!at.carriesOn) return { relay, landing: [...landing, ...returns] };
+    if (!at.carriesOn) return { relay, landing };
     frame = next?.(frame);
   }
   return undefined;
