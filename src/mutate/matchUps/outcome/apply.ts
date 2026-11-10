@@ -454,10 +454,10 @@ function positionNoticeRank(
         step.score.matchUpStatus === TO_BE_PLAYED &&
         downstream.has(step.matchUpId),
     );
-  if (!preceding) return index * 3 + 2;
+  if (!op.clearsScore) return index * 3 + 2;
   // The child's loser-seat withdrawal precedes its score in the fold, but is nested inside this removal.
   const previousResult = ops
-    .slice(0, Math.floor(preceding.rank / 3))
+    .slice(0, preceding ? Math.floor(preceding.rank / 3) : index)
     .findLastIndex((write) => write.op === 'setMatchUpResult');
   return (previousResult + 1) * 3 - 0.5;
 }

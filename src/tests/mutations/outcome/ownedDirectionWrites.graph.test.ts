@@ -1532,3 +1532,47 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(topics.at(-1)).toBe(MODIFY_MATCHUP);
   },
 );
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s announces the deepest result removal before withdrawing its losing seat',
+  (mode) => {
+    const fixture = readFileSync(
+      new URL('../../fixtures/exitPropagation/censusF2RefusalSchedules20261011.jsonl', import.meta.url),
+      'utf8',
+    )
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => JSON.parse(line))
+      .find((entry) => entry.seed === 20482909)!;
+    const drawId = 'deepest-removal';
+    let prepared: Tournament | undefined;
+    let sourceId: string | undefined;
+    counter.prepare = (params) => {
+      if (prepared || params.matchUpStatus !== DEFAULTED || params.winningSide !== 1) return;
+      const source = params.drawDefinition?.structures
+        ?.find((entry: any) => entry.structureName === 'Main')
+        ?.matchUps?.find((entry: any) => entry.roundNumber === 1 && entry.roundPosition === 2);
+      if (source?.matchUpId !== params.matchUpId || source?.matchUpStatus !== DOUBLE_WALKOVER) return;
+      prepared = structuredClone(params.tournamentRecord);
+      sourceId = source.matchUpId;
+    };
+    setOutcomePipeline(OUTCOME_PIPELINE_V1);
+    try {
+      prepareCensus(fixture.config, fixture.steps, drawId);
+    } finally {
+      counter.prepare = undefined;
+    }
+    expect(prepared).toBeDefined();
+    tournamentEngine.setState(prepared!);
+    const topics: string[][] = [];
+    const provider = getProvider();
+    const cycle = provider.cycleModifiedTopics!;
+    vi.spyOn(provider, 'cycleModifiedTopics').mockImplementation(() => {
+      const written = cycle();
+      if (counter.active && written?.size) topics.push([...written]);
+      return written;
+    });
+    write(mode, drawId, sourceId!, { matchUpStatus: DEFAULTED, winningSide: 1 }, { propagateExitStatus: true });
+    expect(topics.at(-1)?.[0]).toBe(MODIFY_DRAW_DEFINITION);
+  },
+);
