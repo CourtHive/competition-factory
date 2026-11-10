@@ -1311,3 +1311,49 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(topics.at(-1)).toBe(MODIFY_MATCHUP);
   },
 );
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s retains the own undefined winner after releasing the carrier and its awardee',
+  (mode) => {
+    const fixture = readFileSync(
+      new URL('../../fixtures/exitPropagation/censusF2RefusalSchedules20261011.jsonl', import.meta.url),
+      'utf8',
+    )
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => JSON.parse(line))
+      .find((entry) => entry.seed === 20490105)!;
+    let prepared: Tournament | undefined;
+    let sourceId: string | undefined;
+    counter.prepare = (params) => {
+      if (prepared || params.matchUpStatus !== TO_BE_PLAYED) return;
+      const draw = params.drawDefinition;
+      const source = draw?.structures
+        ?.find((entry: any) => entry.structureName === 'Main')
+        ?.matchUps?.find((entry: any) => entry.roundNumber === 2 && entry.roundPosition === 3);
+      const target = draw?.structures
+        ?.find((entry: any) => entry.structureName === 'Backdraw')
+        ?.matchUps?.find((entry: any) => entry.roundNumber === 3 && entry.roundPosition === 2);
+      if (source?.matchUpId !== params.matchUpId || target?.matchUpStatus !== DEFAULTED || target.winningSide !== 1)
+        return;
+      prepared = structuredClone(params.tournamentRecord);
+      sourceId = source.matchUpId;
+    };
+    setOutcomePipeline(OUTCOME_PIPELINE_V1);
+    try {
+      prepareCensus(fixture.config, fixture.steps, 'released-carrier-witness');
+    } finally {
+      counter.prepare = undefined;
+    }
+    expect(prepared).toBeDefined();
+    tournamentEngine.setState(prepared!);
+    write(mode, 'released-carrier-witness', sourceId!, { ...toBePlayed, winningSide: undefined });
+    const record = Object.values(getTournamentRecords())[0] as Tournament;
+    const target = record
+      .events![0].drawDefinitions![0].structures!.find((entry) => entry.structureName === 'Backdraw')!
+      .matchUps!.find((entry) => entry.roundNumber === 3 && entry.roundPosition === 2)!;
+    expect(target.matchUpStatus).toBe(TO_BE_PLAYED);
+    expect(Object.hasOwn(target, 'winningSide')).toBe(true);
+    expect(target.winningSide).toBeUndefined();
+  },
+);
