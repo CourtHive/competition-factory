@@ -245,7 +245,7 @@ export function applyOwnedPlan({
   const tallyMatchUpId = tallyNoticeTarget(ops, args);
   const { settled } = namedWriters(ops);
   const eventless = eventlessNotices(ops).matchUps;
-  for (const step of nativeNoticeSteps(ops, args.request?.matchUpId, stored)) {
+  for (const step of nativeNoticeSteps(ops, args.request?.matchUpId, stored, settled)) {
     if (step.kind === 'assignments') {
       announceAssignmentBoundary(step, args);
       continue;
@@ -339,6 +339,7 @@ function nativeNoticeSteps(
   ops: OutcomeOp[],
   sourceId: string | undefined,
   stored: Map<string, MatchUp>,
+  settled: Map<string, string>,
 ): NativeNoticeStep[] {
   const steps: NativeNoticeStep[] = [];
   const last = new Map<string, NativeNoticeStep>();
@@ -432,6 +433,11 @@ function nativeNoticeSteps(
         else if (step.kind === 'score') step.rank = -2;
       }
     }
+  let reconcileRank = ops.length * 3;
+  for (const [matchUpId] of stored) {
+    const notice = last.get(matchUpId);
+    if (notice && settled.get(matchUpId) === 'reconcileScoredTimes') notice.rank = reconcileRank++;
+  }
   return ordered.sort((a, b) => a.rank - b.rank);
 }
 

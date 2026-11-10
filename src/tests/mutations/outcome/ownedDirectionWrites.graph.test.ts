@@ -16,6 +16,8 @@ import {
   assignmentViewFixture,
   STANDING_BYE_CAPTURES,
   NOTICE_RELAY_CARRIES,
+  AWARDED_PRODUCED_RELAY,
+  CARRIER_SENT_ON,
   STANDALONE_INDIRECT_CLEARS,
   CONVERGED_PRODUCED_RELAYS,
   STANDALONE_CARRIED_CONVERGENCES,
@@ -1775,3 +1777,26 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(target.winningSide).toBeUndefined();
   },
 );
+
+it.each(
+  ([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const).flatMap((mode) => [
+    { mode, kind: 'produced', expected: MODIFY_POSITION_ASSIGNMENTS },
+    { mode, kind: 'carried', expected: MODIFY_MATCHUP },
+  ]),
+)('$mode retains the final $kind assignment-return notice boundary', ({ mode, kind, expected }) => {
+  const scenario =
+    kind === 'produced'
+      ? AWARDED_PRODUCED_RELAY.find(
+          ([label]) =>
+            label ===
+            'FEED_IN_CHAMPIONSHIP 8 awarded produced relay: DOUBLE_DEFAULT beside the BYE of DOUBLE_DEFAULT, played',
+        )![1]
+      : CARRIER_SENT_ON.find(
+          ([label]) => label.startsWith('FIRST_ROUND_LOSER_CONSOLATION 8:') && label.endsWith('given a winner'),
+        )![1];
+  prepareDirection(OUTCOME_PIPELINE_V1, { ...scenario, steps: [] });
+  const topics = observeNoticeTopics();
+  const step = scenario.steps[0];
+  write(mode, 'd', findTarget(step.target), step.outcome, step.params);
+  expect(topics.at(-1)).toBe(expected);
+});

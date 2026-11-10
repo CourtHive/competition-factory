@@ -675,7 +675,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   // assert over the census that no candidate's matchUp takes a non-convergence result write later in the plan.
   const superseded = new Set(reannounced.filter((op) => isSettleWrite(op) && convergedWrites.has(op.matchUpId)));
   const relayAfter = producedRelayAfterOps(view, unwound, loser, seatPrograms, convergence.superseded);
-  const delayedReturns = terminalRelayReturns(view, loserMatchUpId, relayAfter, arrivalReturns);
+  const delayedReturns = awardedAssignmentReturns(view, [...relayAfter, ...(seatOps?.after ?? [])], arrivalReturns);
   const writes = ops.filter((op) => !superseded.has(op) && !delayedReturns.has(op));
   return {
     ops: [...writes, ...relayAfter, ...delayedReturns, ...retainedAward],
@@ -683,20 +683,16 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   };
 }
 
-/** A terminal produced exit is awarded inside assignDrawPosition, before that assignment returns. */
-function terminalRelayReturns(
-  view: OutcomeView,
-  matchUpId: string | undefined,
-  relayAfter: OutcomeOp[],
-  returns: OutcomeOp[],
-): Set<OutcomeOp> {
-  const awarded =
-    !indexed(view, matchUpId)?.winnerMatchUpId &&
-    relayAfter.some(
-      (op) =>
-        op.op === 'setMatchUpResult' && op.matchUpId === matchUpId && op.announcedAs === 'assignMatchUpDrawPosition',
-    );
-  return new Set(awarded ? returns : []);
+/** A produced exit is awarded inside assignDrawPosition, before that assignment returns. */
+function awardedAssignmentReturns(view: OutcomeView, awards: OutcomeOp[], returns: OutcomeOp[]): Set<OutcomeOp> {
+  const structures = new Set(
+    awards.flatMap((op) =>
+      op.op === 'setMatchUpResult' && op.announcedAs === 'assignMatchUpDrawPosition'
+        ? [indexed(view, op.matchUpId)?.structureId]
+        : [],
+    ),
+  );
+  return new Set(returns.filter((op) => op.op === 'announcePositionAssignments' && structures.has(op.structureId)));
 }
 
 /** The unlinked qualifying-final removal still contributes its own undefined return field. */
