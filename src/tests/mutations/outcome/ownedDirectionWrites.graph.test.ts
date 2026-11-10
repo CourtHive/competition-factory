@@ -1,4 +1,4 @@
-import { getProvider, getTournamentRecords, setOutcomePipeline } from '@Global/state/globalState';
+import { getProvider, getTournamentRecords, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { registerTestSeedIdentity } from '@Tests/testHarness/seedMathRandom';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
@@ -9,6 +9,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 
 // constants and types
 import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
+import { MODIFY_MATCHUP, UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
 import { DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { USTA_COLLEGE } from '@Constants/tieFormatConstants';
@@ -34,6 +35,7 @@ registerTestSeedIdentity('src/tests/mutations/outcome/ownedDirectionWrites.graph
 
 afterEach(() => {
   counter.active = false;
+  setSubscriptions({ subscriptions: {} });
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
   vi.restoreAllMocks();
   vi.useRealTimers();
@@ -186,5 +188,50 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(target.matchUpStatus).toBe(TO_BE_PLAYED);
     expect(target.score).toBe(toBePlayed.score);
     expect(target.score).toBe(source.score);
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s writes a TEAM line finishing order before its scored-time schedule and interleaves its notices',
+  (mode) => {
+    const { drawId, matchUps } = fresh({ drawSize: 4, eventType: TEAM, tieFormatName: USTA_COLLEGE });
+    const dual = matchUps.find((m) => m.tieMatchUps?.length && m.roundNumber === 1 && m.roundPosition === 1)!;
+    const line = dual.tieMatchUps![0];
+    const buffers: { topic: string; key?: string }[][] = [];
+    const provider = getProvider();
+    const clear = provider.deleteNotices;
+    vi.spyOn(provider, 'deleteNotices').mockImplementation(() => {
+      if (counter.active) buffers.push(provider.getNoticeBuffer!().map(({ topic, key }) => ({ topic, key })));
+      return clear();
+    });
+    setSubscriptions({
+      subscriptions: {
+        [MODIFY_MATCHUP]: () => undefined,
+        [UPDATE_INCONTEXT_MATCHUP]: () => undefined,
+      },
+    });
+    write(mode, drawId, line.matchUpId, { winningSide: 1 });
+    const keys = Object.keys(line);
+    expect(keys.indexOf('orderOfFinish')).toBeGreaterThan(-1);
+    expect(keys.indexOf('schedule')).toBeGreaterThan(keys.indexOf('orderOfFinish'));
+    expect(buffers.at(-1)).toEqual([
+      { topic: UPDATE_INCONTEXT_MATCHUP, key: line.matchUpId },
+      { topic: MODIFY_MATCHUP, key: line.matchUpId },
+      { topic: UPDATE_INCONTEXT_MATCHUP, key: dual.matchUpId },
+      { topic: MODIFY_MATCHUP, key: dual.matchUpId },
+    ]);
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s stores a new ad hoc matchUp stamp before its scored-time schedule',
+  (mode) => {
+    const { drawId, matchUps } = fresh({ drawSize: 4, drawType: 'AD_HOC', automated: true, roundsCount: 1 });
+    const source = matchUps[0];
+    delete source.updatedAt;
+    delete source.schedule;
+    write(mode, drawId, source.matchUpId, won());
+    expect(Object.keys(source).indexOf('schedule')).toBeGreaterThan(Object.keys(source).indexOf('updatedAt'));
+    expect(matchUps.find((matchUp) => matchUp === source)?.schedule?.scoredTime).toBe('2026-11-08T12:00:00.000Z');
   },
 );

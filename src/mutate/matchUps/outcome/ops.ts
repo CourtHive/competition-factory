@@ -442,6 +442,7 @@ type FoldContext = {
   phase?: 'ordinary-result' | 'ordinary-arrival';
   /** Native execution retains v1's input aliases; standalone folds and planning overlays copy their plan inputs. */
   bindResultInputs?: true;
+  pendingScoredTimes?: Map<MatchUp, string>;
 };
 
 /**
@@ -477,11 +478,8 @@ export function stampedInThisCall(drawDefinition?: DrawDefinition): Set<string> 
   return keys;
 }
 
-function setMatchUpResult(
-  matchUp: MatchUp,
-  op: Extract<OutcomeOp, { op: 'setMatchUpResult' }>,
-  { temporal, phase, bindResultInputs }: FoldContext,
-) {
+function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMatchUpResult' }>, context: FoldContext) {
+  const { phase, bindResultInputs } = context;
   const ordinary = phase === 'ordinary-result';
   // a dual's sides and tieFormat as `updateTieMatchUpScore` rewrites them before its tally (S7)
   if (op.dualTally?.sides) matchUp.sides = structuredClone(op.dualTally.sides) as MatchUp['sides'];
@@ -508,14 +506,22 @@ function setMatchUpResult(
   } else if (!op.resetsScore) delete matchUp.winningSide;
   if (op.notes) matchUp.notes = op.notes;
   if (op.stampsScoredTime === false) return;
-  // v1's `applyScoredTime`: captured the first time the matchUp is scored, kept on later corrections, removed with
-  // the score so a re-score gets a fresh stamp
-  const action = scoredTimeAction(matchUp, temporal?.scoredTimes.has(matchUp.matchUpId));
+  applyResultScoredTime(matchUp, context);
+}
+
+/** A native result's schedule lands after finishing order and its result notice's stamp. */
+function applyResultScoredTime(matchUp: MatchUp, { temporal, pendingScoredTimes }: FoldContext): void {
+  const pending = pendingScoredTimes?.has(matchUp);
+  const action = scoredTimeAction(matchUp, pending || temporal?.scoredTimes.has(matchUp.matchUpId));
   if (action === 'initialize') {
-    matchUp.schedule ??= {};
     if (temporal) temporal.scoredTimes.add(matchUp.matchUpId);
-    else matchUp.schedule.scoredTime = nowIso();
+    else if (pendingScoredTimes) pendingScoredTimes.set(matchUp, nowIso());
+    else {
+      matchUp.schedule ??= {};
+      matchUp.schedule.scoredTime = nowIso();
+    }
   } else if (action === 'clear') {
+    pendingScoredTimes?.delete(matchUp);
     temporal?.scoredTimes.delete(matchUp.matchUpId);
     if (matchUp.schedule) delete matchUp.schedule.scoredTime;
   }
@@ -812,6 +818,7 @@ function foldStamp(
   const target = op.entity === 'matchUp' ? matchUps.get(op.id) : structures.get(op.id);
   if (!target) return { error: `stampUpdatedAt: no ${op.entity} ${op.id}` };
   stamp(target as Stamped, `${op.entity}:${op.id}`, context);
+  if (op.entity === 'matchUp') flushScoredTime(target as MatchUp, context);
   return {};
 }
 
@@ -827,11 +834,16 @@ export function applyOutcomeOps(
   effects: Omit<FoldContext, 'stampedBefore'> = {},
 ): Folded {
   const index = indexDraw(drawDefinition);
-  const context = { ...effects, stampedBefore };
+  const context: FoldContext = {
+    ...effects,
+    stampedBefore,
+    ...(effects.bindResultInputs ? { pendingScoredTimes: new Map() } : {}),
+  };
   for (const op of ops) {
     const folded = foldOne(op, index, drawDefinition, context);
     if (folded.error) return folded;
   }
+  for (const matchUp of context.pendingScoredTimes?.keys() ?? []) flushScoredTime(matchUp, context);
   return {};
 }
 
@@ -875,4 +887,13 @@ function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition
     default:
       return foldStamp(op, index, drawDefinition, context);
   }
+}
+
+/** Flush at the result writer's stamp; a remaining unstamped result flushes when its fold completes. */
+function flushScoredTime(matchUp: MatchUp, { pendingScoredTimes }: FoldContext): void {
+  const scoredTime = pendingScoredTimes?.get(matchUp);
+  if (scoredTime === undefined) return;
+  matchUp.schedule ??= {};
+  matchUp.schedule.scoredTime = scoredTime;
+  pendingScoredTimes?.delete(matchUp);
 }
