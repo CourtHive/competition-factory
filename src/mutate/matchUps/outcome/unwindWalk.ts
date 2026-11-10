@@ -49,7 +49,7 @@ type Sim = {
   winnerLinkRounds: Set<string>;
   propagatesBye: boolean;
   notices: Map<string, Notice>;
-  noticeWrites: { matchUpId: string; notice: Notice; positions: number[]; matchUpStatus?: MatchUpStatusUnion }[];
+  noticeWrites: { matchUpId: string; write: Notice; positions: number[]; matchUpStatus?: MatchUpStatusUnion }[];
   clearedWinners: Map<string, number>;
   initial: Map<string, { positions: number[]; matchUpStatus?: MatchUpStatusUnion }>;
   withdrawn: { structureId: string; drawPosition: number; quiet: boolean; segment: number }[];
@@ -89,7 +89,7 @@ function announce(sim: Sim, matchUpId: string, notice: Omit<Notice, 'segment'>) 
   const matchUp = sim.byId.get(matchUpId)!;
   sim.noticeWrites.push({
     matchUpId,
-    notice: written,
+    write: written,
     positions: [...matchUp.positions],
     matchUpStatus: matchUp.matchUpStatus,
   });
@@ -475,7 +475,7 @@ export function unwindWalk({
       announcesAssignments: false,
     });
   const stamped = new Set<string>();
-  for (const { matchUpId, notice, positions, matchUpStatus } of sim.noticeWrites) {
+  for (const { matchUpId, write: notice, positions, matchUpStatus } of sim.noticeWrites) {
     const written = matchUpOps(sim, matchUpId, notice, { positions, matchUpStatus });
     if (!written) return undefined;
     segments[notice.segment].push(...written);
