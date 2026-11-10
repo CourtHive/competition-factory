@@ -494,13 +494,7 @@ function setMatchUpResult(
       value: op.disableAutoCalc,
     });
   if (op.dualTally?.tieFormat) matchUp.tieFormat = structuredClone(op.dualTally.tieFormat) as MatchUp['tieFormat'];
-  if (op.resetsScore) {
-    const provenance = isAnyExit(op.matchUpStatus) ? matchUp.sideExitProvenance : undefined;
-    const format = matchUp.matchUpFormat;
-    Object.assign(matchUp, bindResultInputs ? toBePlayed : structuredClone(toBePlayed));
-    if (provenance) matchUp.sideExitProvenance = provenance;
-    if (format) matchUp.matchUpFormat = format;
-  }
+  if (op.resetsScore) resetResult(matchUp, op.matchUpStatus, bindResultInputs);
   if (op.score) matchUp.score = ordinary || bindResultInputs ? op.score : structuredClone(op.score);
   matchUp.matchUpStatus = op.matchUpStatus;
   clearOrderOfFinishUnlessCompleted(matchUp);
@@ -525,6 +519,15 @@ function setMatchUpResult(
     temporal?.scoredTimes.delete(matchUp.matchUpId);
     if (matchUp.schedule) delete matchUp.schedule.scoredTime;
   }
+}
+
+/** The score-reset writer retains the fixture's own keys and rescues the standing format/provenance. */
+function resetResult(matchUp: MatchUp, matchUpStatus: MatchUpStatusUnion, bindResultInputs?: true): void {
+  const provenance = isAnyExit(matchUpStatus) ? matchUp.sideExitProvenance : undefined;
+  const format = matchUp.matchUpFormat;
+  Object.assign(matchUp, bindResultInputs ? toBePlayed : structuredClone(toBePlayed));
+  if (provenance) matchUp.sideExitProvenance = provenance;
+  if (format) matchUp.matchUpFormat = format;
 }
 
 function setResultFormatAndCodes(

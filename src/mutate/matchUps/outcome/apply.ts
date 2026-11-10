@@ -268,30 +268,13 @@ export function applyOwnedPlan({
       matchUpId,
     });
   }
-  const tallied = ops.some((op) => op.op === 'setParticipantResults');
-  const tallyMatchUpId = tallied
-    ? (ops.find((op): op is ResultOp => op.op === 'setMatchUpResult' && !!op.dualTally)?.matchUpId ??
-      args.request.matchUpId)
-    : undefined;
-  // A reset announced again on arrival still marks its named tournament at the first score write.
-  const first = ops[0];
-  if (first?.op === 'setMatchUpResult' && first.announcesContext !== false && announced[0] !== first.matchUpId) {
-    const matchUp = stored.get(first.matchUpId);
-    if (matchUp)
-      modifyMatchUpNotice({
-        drawDefinition,
-        tournamentId,
-        eventId: event?.eventId,
-        event,
-        matchUp,
-        context: 'modifyMatchUpScore',
-      });
-  }
+  const tallyMatchUpId = tallyNoticeTarget(ops, args);
+  announceInitialResult(ops, announced, stored, { drawDefinition, tournamentId, event });
   const { settled } = namedWriters(ops);
   for (const matchUpId of announced) {
     const matchUp = stored.get(matchUpId);
     if (!matchUp) continue;
-    if (tallied && matchUpId === tallyMatchUpId) modifyDrawNotice({ drawDefinition });
+    if (matchUpId === tallyMatchUpId) modifyDrawNotice({ drawDefinition });
     // a removal's notice is built as v1's `removeSubsequentRoundsParticipant` builds it, whose caller passes no event;
     // unless a score write announces the matchUp after it (a result turned into a double exit: the exit it produces)
     const removedPosition = resulted.has(matchUpId) ? undefined : removed.get(matchUpId);
@@ -331,6 +314,44 @@ export function applyOwnedPlan({
   announceAssignments({ ops, drawDefinition, tournamentId, event });
   announceScoredTimeCleanup(cleanupTargets, args);
   return planResult(shape, ops, route);
+}
+
+/** The tally precedes its own result notice; a TEAM line may have announced its result already. */
+function tallyNoticeTarget(ops: OutcomeOp[], args: BuildViewArgs): string | undefined {
+  if (!ops.some((op) => op.op === 'setParticipantResults')) return undefined;
+  return (
+    ops.find((op): op is ResultOp => op.op === 'setMatchUpResult' && !!op.dualTally)?.matchUpId ??
+    args.request.matchUpId
+  );
+}
+
+/** A reset announced again on arrival marks its named tournament at the first score write. */
+function announceInitialResult(
+  ops: OutcomeOp[],
+  announced: string[],
+  stored: ReadonlyMap<string, MatchUp>,
+  {
+    drawDefinition,
+    tournamentId,
+    event,
+  }: {
+    drawDefinition: NonNullable<BuildViewArgs['drawDefinition']>;
+    tournamentId?: string;
+    event: BuildViewArgs['event'];
+  },
+): void {
+  const first = ops[0];
+  if (first?.op !== 'setMatchUpResult' || first.announcesContext === false || announced[0] === first.matchUpId) return;
+  const matchUp = stored.get(first.matchUpId);
+  if (matchUp)
+    modifyMatchUpNotice({
+      drawDefinition,
+      tournamentId,
+      eventId: event?.eventId,
+      event,
+      matchUp,
+      context: 'modifyMatchUpScore',
+    });
 }
 
 function planResult(shape: PlanShape, ops: OutcomeOp[], route?: Route): ResultType {
