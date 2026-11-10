@@ -70,7 +70,6 @@ function carryPlacement(at: { matchUpId: string; drawPositions: number[] }): Out
       op: 'setMatchUpDrawPositions',
       matchUpId: at.matchUpId,
       drawPositions: at.drawPositions,
-      preservesWinningSide: true,
     },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: at.matchUpId },
   ];

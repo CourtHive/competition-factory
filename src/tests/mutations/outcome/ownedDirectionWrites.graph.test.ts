@@ -19,7 +19,7 @@ import {
 } from '@Tests/testHarness/outcome/directionFixtures';
 
 // constants and types
-import { COMPASS, CURTIS_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { COMPASS, CURTIS_CONSOLATION, FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
 import { USTA_COLLEGE, DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { TEAM, SINGLES } from '@Constants/eventConstants';
@@ -935,5 +935,58 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     });
     write(mode, drawId, second.matchUpId, { matchUpStatus: DOUBLE_WALKOVER });
     expect(buffers.at(-1)).toEqual(['Southwest', 'West', 'Northeast']);
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s retains the own undefined tieFormatId from the initial empty dual tally',
+  (mode) => {
+    const { drawId, matchUps } = fresh({
+      drawType: ROUND_ROBIN,
+      eventType: TEAM,
+      drawSize: 8,
+      tieFormatName: DOMINANT_DUO,
+    });
+    const dual = matchUps.find((matchUp) => matchUp.tieMatchUps?.length && matchUp.matchUpStatus === TO_BE_PLAYED)!;
+    write(OUTCOME_PIPELINE_V1, drawId, dual.matchUpId, { winningSide: 1 });
+    const line = dual.tieMatchUps![0];
+    write(mode, drawId, line.matchUpId, { winningSide: 1 });
+    expect(Object.hasOwn(dual, 'tieFormatId')).toBe(true);
+    expect(dual.tieFormatId).toBeUndefined();
+    expect(dual.tieFormat).toBeDefined();
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s gives a carried loser onward placement an own undefined winner',
+  (mode) => {
+    const { drawId, record } = fresh(
+      { drawType: FEED_IN_CHAMPIONSHIP, drawSize: 16, participantsCount: 14 },
+      {},
+      20833621,
+    );
+    const structures = record.events![0].drawDefinitions![0].structures!;
+    const main = structures.find((structure) => structure.structureName === 'Main')!;
+    const at = (roundNumber: number, roundPosition: number) =>
+      main.matchUps!.find((matchUp) => matchUp.roundNumber === roundNumber && matchUp.roundPosition === roundPosition)!;
+    const setup = [
+      [1, 7, { matchUpStatus: DOUBLE_DEFAULT }],
+      [1, 3, { winningSide: 1 }],
+      [1, 2, { matchUpStatus: WALKOVER, winningSide: 2 }],
+      [1, 6, { winningSide: 1 }],
+      [1, 5, { winningSide: 1 }],
+      [2, 3, { winningSide: 2 }],
+      [2, 1, { matchUpStatus: DEFAULTED, winningSide: 1 }],
+      [3, 2, { matchUpStatus: DEFAULTED, winningSide: 1 }],
+    ] as const;
+    for (const [round, position, outcome] of setup)
+      write(OUTCOME_PIPELINE_V1, drawId, at(round, position).matchUpId, outcome, { propagateExitStatus: true });
+    write(mode, drawId, at(1, 4).matchUpId, { matchUpStatus: WALKOVER, winningSide: 1 }, { propagateExitStatus: true });
+    const target = structures
+      .find((structure) => structure.structureName === 'Consolation')!
+      .matchUps!.find((matchUp) => matchUp.roundNumber === 2 && matchUp.roundPosition === 2)!;
+    expect(target.matchUpStatus).toBe(TO_BE_PLAYED);
+    expect(Object.hasOwn(target, 'winningSide')).toBe(true);
+    expect(target.winningSide).toBeUndefined();
   },
 );

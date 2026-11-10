@@ -58,9 +58,9 @@ import {
 } from '@Query/matchUp/missingDrawPositionsRefusal';
 
 // constants and types
+import { BYE, COMPLETED, IN_PROGRESS, TO_BE_PLAYED, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCHUP, CONTAINER, LOSER, WIN_RATIO, QUALIFYING, DRAW } from '@Constants/drawDefinitionConstants';
 import type { BuildViewArgs, OutcomeRequest, OutcomeScore, OutcomeView, Reservation, ThroughBye } from './types';
-import { BYE, COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { ByePassage, ByeWalk, CarryLevel, WinnerLoserSeat } from './types';
 import type { PositionTargetsResult } from '@Query/matchUp/positionTargets';
 import type { ErrorType } from '@Constants/errorConditionConstants';
@@ -1793,7 +1793,11 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
           projectedTieMatchUps,
         }),
         autoCalcDisabled: !!(dualMatchUp.disableAutoCalc ?? dualMatchUp._disableAutoCalc),
-        dualRewrite: dualRewrite({ dualMatchUp, matchUpsMap, drawDefinition, structure, event }),
+        dualRewrite: lineDualRewrite(
+          { dualMatchUp, matchUpsMap, drawDefinition, structure, event },
+          request,
+          projectedWinningSide,
+        ),
       };
     }
   }
@@ -2101,5 +2105,46 @@ function dualRewrite({
     sidesAsHeld: sides ?? stored.sides,
     sidesInContext: dualMatchUp.sides,
     scoreReported,
+  };
+}
+
+/** Undoing a decided dual first tallies with the line cleared, before entering its new result. */
+function initialEmptyDualTally({
+  dualMatchUp,
+  request,
+  projectedWinningSide,
+  drawDefinition,
+  structure,
+  event,
+}: {
+  dualMatchUp: HydratedMatchUp;
+  request: OutcomeRequest;
+  projectedWinningSide?: number;
+  drawDefinition: DrawDefinition;
+  structure?: Structure;
+  event?: Event;
+}): boolean {
+  if (!dualMatchUp.winningSide || dualMatchUp.winningSide === projectedWinningSide) return false;
+  const otherResult = dualMatchUp.tieMatchUps?.some(
+    (line) =>
+      line.matchUpId !== request.matchUpId &&
+      (line.winningSide ||
+        (line.matchUpStatus && completedMatchUpStatuses.includes(line.matchUpStatus)) ||
+        (line.score?.sets?.length && (line.score.sets[0].side1Score || line.score.sets[0].side2Score))),
+  );
+  if (otherResult) return false;
+  const resolved = resolveTieFormat({ matchUp: dualMatchUp, drawDefinition, structure, event })?.tieFormat;
+  const inherited = resolveTieFormat({ drawDefinition, structure, event })?.tieFormat;
+  return !!resolved && !!inherited && JSON.stringify(resolved) === JSON.stringify(inherited);
+}
+
+function lineDualRewrite(
+  args: Parameters<typeof dualRewrite>[0],
+  request: OutcomeRequest,
+  projectedWinningSide?: number,
+): NonNullable<OutcomeView['line']>['dualRewrite'] {
+  return {
+    ...dualRewrite(args),
+    ...(initialEmptyDualTally({ ...args, request, projectedWinningSide }) ? { clearsTieFormatId: true as const } : {}),
   };
 }

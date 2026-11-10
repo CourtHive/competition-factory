@@ -179,6 +179,7 @@ export type OutcomeView = {
     dualRewrite: {
       sides?: unknown[];
       tieFormat?: unknown;
+      clearsTieFormatId?: true;
       scoreReported: boolean;
       /** the sides once the line's write has ensured them (the winner's carry reads these) */
       sidesAsHeld?: unknown[];

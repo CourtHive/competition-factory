@@ -355,7 +355,11 @@ function lineDualPlan(
     return {
       ...result,
       stampsScoredTime: false,
-      dualTally: { sides: line.dualRewrite.sides, tieFormat: line.dualRewrite.tieFormat },
+      dualTally: {
+        sides: line.dualRewrite.sides,
+        tieFormat: line.dualRewrite.tieFormat,
+        ...(line.dualRewrite.clearsTieFormatId ? { clearsTieFormatId: true as const } : {}),
+      },
     };
   });
   return { ...dualPlan, ops };

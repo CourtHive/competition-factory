@@ -168,6 +168,7 @@ export const dualTallyOps = (line?: OutcomeView['line'], route?: Route): Outcome
           dualTally: {
             sides: line.dualRewrite.sides,
             tieFormat: line.dualRewrite.tieFormat,
+            ...(line.dualRewrite.clearsTieFormatId ? { clearsTieFormatId: true as const } : {}),
             ...(route === REMOVE_DIRECTED || route === CLEAR_SCORE ? { unreturned: true as const } : {}),
           },
         },
