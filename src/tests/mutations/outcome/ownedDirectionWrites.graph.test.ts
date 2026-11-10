@@ -1,4 +1,5 @@
 import { getProvider, getTournamentRecords, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { registerTestSeedIdentity } from '@Tests/testHarness/seedMathRandom';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
@@ -8,10 +9,10 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, expect, it, vi } from 'vitest';
 
 // constants and types
+import { ROUND_ROBIN, FIRST_MATCH_LOSER_CONSOLATION, MAIN, CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 import { MODIFY_MATCHUP, UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
 import { DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { USTA_COLLEGE } from '@Constants/tieFormatConstants';
 import type { Tournament } from '@Types/tournamentTypes';
 import { TEAM } from '@Constants/eventConstants';
@@ -41,12 +42,13 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-function fresh(drawProfile = {}) {
+function fresh(drawProfile = {}, policyDefinitions = {}) {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date('2026-11-08T12:00:00.000Z'));
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
   const generated = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 8, ...drawProfile }],
+    policyDefinitions,
     nonRandom: 1,
     setState: true,
   });
@@ -233,5 +235,34 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     write(mode, drawId, source.matchUpId, won());
     expect(Object.keys(source).indexOf('schedule')).toBeGreaterThan(Object.keys(source).indexOf('updatedAt'));
     expect(matchUps.find((matchUp) => matchUp === source)?.schedule?.scoredTime).toBe('2026-11-08T12:00:00.000Z');
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s releasing an onward seat leaves winner-key insertion to the later reset writer',
+  (mode) => {
+    const { drawId, record } = fresh(
+      {
+        drawType: FIRST_MATCH_LOSER_CONSOLATION,
+        outcomes: [
+          { roundNumber: 1, roundPosition: 1, winningSide: 1 },
+          { roundNumber: 1, roundPosition: 2, matchUpStatus: DOUBLE_WALKOVER },
+        ],
+      },
+      PRODUCED_EXIT_POLICY,
+    );
+    const structures = record.events![0].drawDefinitions![0].structures!;
+    const source = structures
+      .find((structure) => structure.stage === MAIN)!
+      .matchUps!.find((matchUp) => matchUp.roundNumber === 1 && matchUp.roundPosition === 2)!;
+    const released = structures
+      .find((structure) => structure.stage === CONSOLATION)!
+      .matchUps!.find((matchUp) => matchUp.roundNumber === 3 && matchUp.roundPosition === 1)!;
+    write(mode, drawId, source.matchUpId, toBePlayed);
+    expect(released.matchUpStatus).toBe(TO_BE_PLAYED);
+    expect(Object.keys(released).slice(-4)).toEqual(['matchUpStatusCodes', 'score', 'matchUpFormat', 'winningSide']);
+    expect(Object.hasOwn(released, 'winningSide')).toBe(true);
+    expect(released.winningSide).toBeUndefined();
+    expect(released.score).toBe(toBePlayed.score);
   },
 );

@@ -626,7 +626,8 @@ function foldMatchUpWrite(
     if (op.rederivesCodes) matchUp.matchUpStatusCodes = [];
     // The ordinary arrival writes this own key, observable before its notice reads the caller's clock.
     if (op.advancesThroughBye) matchUp.score = undefined;
-    if (!op.preservesWinningSide && !matchUp.winningSide) matchUp.winningSide = undefined;
+    // A plain onward release leaves the result keys alone; its later reset inserts its own undefined winner.
+    if (!op.preservesWinningSide && !op.releasedDrawPosition && !matchUp.winningSide) matchUp.winningSide = undefined;
     if (op.removedDrawPosition || op.clearsScore) matchUp.score = undefined;
   }
   return {};
