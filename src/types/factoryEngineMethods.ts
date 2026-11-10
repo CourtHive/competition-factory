@@ -295,6 +295,7 @@ export type FactoryEngineMethod =
   | 'getDevContext'
   | 'getDraftState'
   | 'getDrawCompleteness'
+  | 'getDrawCompositionConstraints'
   | 'getDrawData'
   | 'getDrawDefinitionTimeItem'
   | 'getDrawFit'
@@ -1103,6 +1104,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getDevContext',
   'getDraftState',
   'getDrawCompleteness',
+  'getDrawCompositionConstraints',
   'getDrawData',
   'getDrawDefinitionTimeItem',
   'getDrawFit',

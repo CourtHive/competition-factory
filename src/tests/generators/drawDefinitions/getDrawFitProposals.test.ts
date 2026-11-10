@@ -93,6 +93,7 @@ it('steps round robin candidates by the actual configured group size and does no
   expect(offered.map((proposal) => [proposal.kind, proposal.drawSize])).toEqual([
     ['Cut', 8],
     ['Grow', 12],
+    ['Qualify', 8],
   ]);
   expect(offered[0].fit.structures[0]).toMatchObject({ placed: 8, positions: 8 });
   expect(offered[1].fit.structures[0]).toMatchObject({ placed: 10, positions: 12, byes: 2 });
@@ -115,7 +116,7 @@ describe('sanction limits', () => {
     const args = fixture(40);
     limit(args, { drawSize: 32 });
     let result: any = getDrawFitProposals({ ...args, drawSize: 32, sanctioned: false } as GetDrawFitProposalsArgs);
-    expect(proposals(result).map((proposal) => proposal.kind)).toEqual(['Cut']);
+    expect(proposals(result).map((proposal) => proposal.kind)).toEqual(['Cut', 'Qualify']);
   });
   it('does not offer a Cut that would exceed the alternate cap', () => {
     const args = fixture(40);
@@ -149,7 +150,8 @@ describe('sanction limits', () => {
       drawSize: 32,
       qualifyingProfiles: [{ structureProfiles: [{ drawSize: 8, qualifyingPositions: 4 }] }],
     });
-    expect(proposals(result)).toEqual([]);
+    expect(result.error).toBeDefined();
+    expect(result.proposals).toBeUndefined();
     expect(JSON.stringify(args.event)).toBe(before);
     limit(args, { maxQualifiers: 4 });
     result = getDrawFitProposals({
@@ -183,15 +185,33 @@ it('leaves engine state, caller arrays and the record unchanged; each fit can be
   const ranked = JSON.stringify(args.rankedEntries);
   let result: any = getDrawFitProposals({ ...args, drawSize: 32 });
   for (const proposal of proposals(result)) {
-    const removed = new Set(proposal.entryChanges.map((change: any) => change.participantId));
+    const changes = new Map(
+      proposal.entryChanges.map((change: any) => [`${change.entryStage}:${change.participantId}`, change]),
+    );
     const drawEntries = args.event.entries!.map((entry) =>
-      removed.has(entry.participantId) ? { ...entry, entryStatus: ALTERNATE } : entry,
+      changes.has(`${entry.entryStage ?? MAIN}:${entry.participantId}`)
+        ? {
+            ...entry,
+            entryStatus: (changes.get(`${entry.entryStage ?? MAIN}:${entry.participantId}`) as any).entryStatus,
+            entryStage:
+              (changes.get(`${entry.entryStage ?? MAIN}:${entry.participantId}`) as any).toStage ?? entry.entryStage,
+          }
+        : entry,
     );
     const fit: any = tournamentEngine.getDrawFit({
       eventId: args.eventId,
       drawSize: proposal.drawSize,
       drawType: proposal.drawType,
       drawEntries,
+      ...(proposal.qualifyingDrawSize && {
+        qualifyingProfiles: [
+          {
+            structureProfiles: [
+              { drawSize: proposal.qualifyingDrawSize, qualifyingPositions: proposal.qualifyingPositions },
+            ],
+          },
+        ],
+      }),
     });
     expect(fit.structures.map(({ structureId: _id, ...value }: any) => value)).toEqual(
       proposal.fit.structures.map(({ structureId: _id, ...value }: any) => value),

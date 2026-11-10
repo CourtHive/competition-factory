@@ -4066,6 +4066,29 @@
       "description": "The limits for the events an entry matches: eventType always; eventName and categoryName when stated.",
       "type": "object",
       "properties": {
+        "overrideLimits": {
+          "description": "Explicit sanction-record permission ceilings. A director request above a base limit must not exceed this value; absent permission denies the override.",
+          "type": "object",
+          "properties": {
+            "drawSize": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "maxWildcards": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "maxAlternates": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "maxQualifiers": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
         "match": {
           "type": "object",
           "properties": {

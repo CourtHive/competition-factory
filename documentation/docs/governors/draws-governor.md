@@ -594,7 +594,7 @@ further tolerance belongs in a provider's policy.
 
 ## getDrawFitProposals
 
-Offers a bounded set of **Cut**, **Grow** and **Feed-in** configurations without changing entries or attaching a draw.
+Offers a bounded set of **Cut**, **Grow**, **Feed-in** and **Qualify** configurations without changing entries or attaching a draw.
 Every returned `fit` is a real [getDrawFit](#getdrawfit) result; no placement or BYE formula is duplicated.
 
 ```js
@@ -613,7 +613,7 @@ const { proposals, error } = tournamentEngine.getDrawFitProposals({
 `rankedEntries` supplies order only: the query does not change stages/statuses based on that array, and it never
 calculates a ranking itself. A supplied ranking must contain each selected MAIN entry exactly once. The host should
 pass its active ranking when a Cut should remove the lowest-ranked entrants. Existing QUALIFYING entries stay in
-their stage, unchanged.
+their stage. Supply both stages and alternates to rank qualifying promotions too; participant-and-stage pairs must be unique.
 
 Each proposal has `kind`, `label`, `drawSize`, `drawType`, `entryChanges`, `fit`, and `consequence`:
 
@@ -624,7 +624,18 @@ Each proposal has `kind`, `label`, `drawSize`, `drawType`, `entryChanges`, `fit`
 - **Feed-in**: the exact entrant count (including reserved qualifier positions), for elimination draws only. The
   generator's feed-in geometry supplies `consequence.fedIn`; a feed-free or non-fitting candidate is not offered.
 
-`consequence.cutToAlternate` counts the changed entries. No entries or an already fitting main draw returns an empty
+- **Qualify**: retains the main format and uses at most one qualifying structure, the lowest-ranked selected MAIN
+  entries move to QUALIFYING. The standard qualifying size includes existing qualifying entrants. Existing qualifying seeds and scoring settings are retained; profiles entering a later MAIN round or using another qualifying format are left to the director. Ranked MAIN or
+  QUALIFYING alternates may be promoted to fill places; remaining qualifying alternates stay below their line.
+  The proposal carries `qualifyingPositions` and `qualifyingDrawSize`, with `consequence.movedToQualifying` and
+  `consequence.promotedAlternates`. Every entry-taking stage must fit without extra BYEs. Existing qualifying entrants
+  never move to MAIN. Multiple qualifying profiles are preserved by leaving their topology to the director rather
+  than offering a proposal that would replace them.
+
+`entryChanges` identifies the source as `entryStage` (default MAIN); `toStage` is the destination when moving stages.
+Apply them with `modifyEntriesStatus({ stage: change.entryStage, entryStage: change.toStage ?? change.entryStage,
+entryStatus: change.entryStatus, ... })` before attaching the generated draw, in one rollback-enabled execution queue.
+`consequence.cutToAlternate` counts Cut demotions. No entries or a draw whose stages already fit returns an empty
 proposal list. Invalid current-generation parameters return the generator's error; invalid or incomplete rankings
 return `INVALID_VALUES`. Returned snapshots can be displayed as previews; applying `entryChanges` and generating the
 draw remain separate host actions.
@@ -632,12 +643,37 @@ draw remain separate host actions.
 The applicable sanctioning record (or legacy sanctioning extension) bounds every candidate: `drawSize`, per-stage
 `maxWildcards`/`maxAlternates`, and MAIN `maxQualifiers`. The existing sanctioned-entry validator is reused even when
 the caller supplies a generator escape flag. A caller cannot disable these limits with `sanctioned: false` or a
-director role. This first version has no sanctioned-override API; any future override must be explicitly permitted
-by the sanctioning record. Without applicable constraints the search is free.
+director role. Explicit `constraintOverrides` are accepted only under the sanction-record contract below. Without
+applicable constraints the search is free (and an override request is invalid).
 
 The implementation is beside `getDrawFit` in the generator layer: importing that generator-backed operation from the
 query layer would violate the dependency layering rule. It remains a read, registered and checked by the query-purity
-sweep. At most the current draw and three candidate fits are generated, plus one feed-in geometry template.
+sweep. The original three candidates remain bounded. Qualify tries power-of-two qualifier counts up to the main size,
+with at most two actual fits per count (the given pool, then ranked-alternate promotions), and returns the first fitting
+Qualify option. It never estimates placement or invents seeds to hide BYEs.
+
+---
+
+## getDrawCompositionConstraints
+
+Reads the matching event's sanction limits and explicit permission ceilings without changing the record:
+
+```js
+const { constraints, overrideLimits, error } = tournamentEngine.getDrawCompositionConstraints({ eventId });
+```
+
+The sanction authority records permissions on `sanction.constraints.events[].overrideLimits`, with any of
+`drawSize`, `maxWildcards`, `maxAlternates`, and `maxQualifiers` as nonnegative integer ceilings. For example,
+`drawSize: 32, overrideLimits: { drawSize: 64 }` keeps the normal maximum at 32, while permitting an explicit request
+up to 64. `sanction.constraints.definedBy.providerId` must identify the authority. Legacy extensions cannot grant
+permission. Missing permission leaves each limit binding.
+
+`getDrawFit`, `getDrawFitProposals`, `generateDrawDefinition`, and `addDrawDefinition` accept
+`constraintOverrides: { drawSize: 64 }`. A request cannot invent a limit, exceed its recorded ceiling, or use a role,
+`ignoreStageSpace`, `force`, or an AD_HOC draw as permission. Invalid requests return `INVALID_VALUES`. The effective
+limits apply to draft generation and are checked again against the actual geometry and entries before attachment.
+Pass the same request to `addDrawDefinition` in the atomic Generate queue: permission on a client preview does not
+carry authority to the server. Base limits and override ceilings remain unchanged in the tournament record.
 
 ---
 

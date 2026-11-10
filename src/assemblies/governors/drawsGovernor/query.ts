@@ -1,3 +1,4 @@
+export { getDrawCompositionConstraints } from '@Query/drawDefinition/getDrawCompositionConstraints';
 export { getRotatingPartnerTallyPolicy } from '@Query/drawDefinition/getRotatingPartnerTallyPolicy';
 export { getRotatingPartnerStandings } from '@Query/drawDefinition/getRotatingPartnerStandings';
 export { getRotatingPartnerRoundPreview } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/getRotatingPartnerRoundPreview';

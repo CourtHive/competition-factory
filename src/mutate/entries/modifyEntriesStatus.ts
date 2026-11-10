@@ -15,17 +15,10 @@ import { moveEntryToGroup } from './moveEntryToGroup';
 
 // constants
 import { INDIVIDUAL, PAIR, TEAM_PARTICIPANT } from '@Constants/participantConstants';
-import { validStages } from '@Constants/drawDefinitionConstants';
+import { MAIN, validStages } from '@Constants/drawDefinitionConstants';
 import { DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Flight } from '@Types/factoryTypes';
-import {
-  ALTERNATE,
-  DRAW_SPECIFIC_STATUSES,
-  EQUIVALENT_ACCEPTANCE_STATUSES,
-  VALID_ENTRY_STATUSES,
-  WITHDRAWN,
-} from '@Constants/entryStatusConstants';
 import {
   ENTRY_STATUS_NOT_ALLOWED_FOR_EVENT,
   INVALID_ENTRY_STATUS,
@@ -37,6 +30,13 @@ import {
   INVALID_VALUES,
   INVALID_STAGE,
 } from '@Constants/errorConditionConstants';
+import {
+  ALTERNATE,
+  DRAW_SPECIFIC_STATUSES,
+  EQUIVALENT_ACCEPTANCE_STATUSES,
+  VALID_ENTRY_STATUSES,
+  WITHDRAWN,
+} from '@Constants/entryStatusConstants';
 
 // types
 import {
@@ -177,6 +177,22 @@ export function modifyEntriesStatus({
     flight,
     event,
   });
+  if (
+    entryStage &&
+    targetEntryLists.some((entries) =>
+      entries?.some(
+        (entry) =>
+          participantIds.includes(entry.participantId) &&
+          (!stage || (entry.entryStage ?? MAIN) === stage) &&
+          (entry.entryStage ?? MAIN) !== entryStage &&
+          entries.some(
+            (other) => other.participantId === entry.participantId && (other.entryStage ?? MAIN) === entryStage,
+          ),
+      ),
+    )
+  )
+    return { error: INVALID_VALUES, info: 'participant already entered in destination stage' };
+
   if (targetEntryLists.some(entryStatusBlocked))
     return decorateResult({ result: { error: EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT }, stack });
 
@@ -359,7 +375,7 @@ function buildUpdateEntryStatus({
 }) {
   const filterEntries = (entries?: Entry[]) =>
     (entries ?? [])
-      .filter((entry: Entry) => !stage || !entry.entryStage || stage === entry.entryStage)
+      .filter((entry: Entry) => !stage || stage === (entry.entryStage ?? MAIN))
       .filter(({ participantId }) => participantIds.includes(participantId));
 
   const isAssigned = (entry) =>
