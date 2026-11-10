@@ -38,6 +38,7 @@ import {
   COMPASS,
   CURTIS_CONSOLATION,
   FEED_IN_CHAMPIONSHIP,
+  FEED_IN_CHAMPIONSHIP_TO_SF,
   MODIFIED_FEED_IN_CHAMPIONSHIP,
 } from '@Constants/drawDefinitionConstants';
 import {
@@ -1667,5 +1668,37 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     write(mode, 'd', findTarget(step.target), step.outcome, step.params);
     expect(topics.at(-2)).toBe(MODIFY_POSITION_ASSIGNMENTS);
     expect(topics.at(-1)).toBe(MODIFY_MATCHUP);
+  },
+);
+
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
+  '%s retains the released carrier winner key before its existing codes',
+  (mode) => {
+    const { drawId, record } = fresh(
+      { drawType: FEED_IN_CHAMPIONSHIP_TO_SF, drawSize: 16, participantsCount: 14 },
+      {},
+      20660398,
+    );
+    const structures = record.events![0].drawDefinitions![0].structures!;
+    const main = structures.find((entry) => entry.structureName === 'Main')!;
+    const at = (position: number) =>
+      main.matchUps!.find((entry) => entry.roundNumber === 1 && entry.roundPosition === position)!;
+    for (const position of [5, 4, 6, 7])
+      write(
+        OUTCOME_PIPELINE_V1,
+        drawId,
+        at(position).matchUpId,
+        position === 6 ? { matchUpStatus: DEFAULTED, winningSide: 1 } : { matchUpStatus: DOUBLE_WALKOVER },
+        { propagateExitStatus: true },
+      );
+    write(mode, drawId, at(5).matchUpId, { winningSide: 2 }, { propagateExitStatus: true });
+    const target = structures
+      .find((entry) => entry.structureName === 'Consolation')!
+      .matchUps!.find((entry) => entry.roundNumber === 3 && entry.roundPosition === 2)!;
+    expect(target.matchUpStatus).toBe(TO_BE_PLAYED);
+    expect(Object.hasOwn(target, 'winningSide')).toBe(true);
+    expect(target.winningSide).toBeUndefined();
+    const keys = Object.keys(target);
+    expect(keys.indexOf('winningSide')).toBeLessThan(keys.indexOf('matchUpStatusCodes'));
   },
 );
