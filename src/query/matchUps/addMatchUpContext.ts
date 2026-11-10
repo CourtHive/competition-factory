@@ -487,8 +487,11 @@ export function addMatchUpContext({
         return team?.participantId ? [team.participantId] : [];
       }),
     );
-    const teams = Object.fromEntries(Object.entries(presentation.teams ?? {}).filter(([id]) => ids.has(id)));
-    matchUpWithContext.teamPresentation = { ...presentation, ...(presentation.teams && { teams }) };
+    // Presentation styles TEAM identities only: a matchUp exposing none carries none.
+    if (ids.size) {
+      const teams = Object.fromEntries(Object.entries(presentation.teams ?? {}).filter(([id]) => ids.has(id)));
+      matchUpWithContext.teamPresentation = { ...presentation, ...(presentation.teams && { teams }) };
+    }
   }
   return matchUpWithContext;
 }
