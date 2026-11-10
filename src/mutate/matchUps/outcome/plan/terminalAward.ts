@@ -1,4 +1,4 @@
-import { BLANK_SCORE, CLEAR_SCORE, indexed, scoreless, sideOf, structureStamps, unplaced } from './planShared';
+import { blankScore, CLEAR_SCORE, indexed, scoreless, sideOf, structureStamps, unplaced } from './planShared';
 import { arrivalOps, winnerPlacementOps } from './directionOps';
 import { unwoundOps, unwoundView } from './unwindPath';
 import { isDoubleExit } from '@Validators/isExit';
@@ -47,7 +47,7 @@ function terminalMainAward(
     matchUpStatus: WALKOVER,
     winningSide: side,
     resetsScore: true,
-    score: BLANK_SCORE,
+    score: blankScore(),
     matchUpStatusCodes: [],
     stampsScoredTime: false,
     retainedExitPlanned: true,
@@ -192,7 +192,7 @@ export function retainedCarriedAwardOps(
     matchUpStatus: award.matchUpStatus,
     winningSide: (3 - side) as 1 | 2,
     resetsScore: true,
-    score: BLANK_SCORE,
+    score: blankScore(),
     matchUpStatusCodes: [],
     stampsScoredTime: false,
     retainedExitPlanned: true,

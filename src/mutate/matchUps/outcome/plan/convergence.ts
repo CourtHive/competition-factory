@@ -1,5 +1,5 @@
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
-import { BLANK_SCORE, SINGLE_EXITS, carriedStatus, indexed, isSettleWrite, sideOf } from './planShared';
+import { blankScore, SINGLE_EXITS, carriedStatus, indexed, isSettleWrite, sideOf } from './planShared';
 import { producedTarget, producedTargetOps, producedTargetReason } from './producedTarget';
 import { ownByeChain, unfillableByeChain, walkChain } from './byeChain';
 import { isDoubleExit } from '@Validators/isExit';
@@ -146,16 +146,16 @@ export function convergenceOps(
     previousMatchUpStatus,
     sourceMatchUpId,
   });
-  const score = convergence.score ?? (matchUpStatus === DOUBLE_WALKOVER ? BLANK_SCORE : undefined);
+  const score = convergence.score ?? (matchUpStatus === DOUBLE_WALKOVER ? blankScore() : undefined);
   return [
     {
       op: 'setMatchUpResult',
       matchUpId,
       matchUpStatus,
       // a side whose standing exit a double exit delivered shows its outcome code (S6 tail)
-      ...(matchUpStatusCodes.length ? { matchUpStatusCodes } : {}),
+      matchUpStatusCodes,
       // a DOUBLE_WALKOVER says nothing was played, so its score is blanked; a DOUBLE_DEFAULT keeps what stood
-      ...(score ? { score, ...(score === BLANK_SCORE ? { resetsScore: true as const } : {}) } : {}),
+      ...(score ? { score, ...(score === blankScore() ? { resetsScore: true as const } : {}) } : {}),
     },
     ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId, provenance }] : []),
     { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },

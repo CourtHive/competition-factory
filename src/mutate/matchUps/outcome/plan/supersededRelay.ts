@@ -3,7 +3,7 @@ import { isDoubleExit } from '@Validators/isExit';
 import { producedTarget } from './producedTarget';
 import { unwoundOps } from './unwindPath';
 import {
-  BLANK_SCORE,
+  blankScore,
   SINGLE_EXITS,
   carriedStatus,
   indexed,
@@ -140,7 +140,7 @@ export function supersededOwnRelayConvergence(
     sideNumber,
     matchUpStatus,
     matchUpStatusCodes: deriveStatusCodes(landing),
-    score: BLANK_SCORE,
+    score: blankScore(),
     target,
   };
 }

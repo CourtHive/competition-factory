@@ -9,7 +9,7 @@ import { producedTarget } from './producedTarget';
 import { convergenceOps } from './convergence';
 import { resultOps } from './resultOps';
 import {
-  BLANK_SCORE,
+  blankScore,
   CLEAR_SCORE,
   indexed,
   onwardFrom,
@@ -193,7 +193,7 @@ export function standaloneCarriedWinnerOps(args: PlanArgs): OutcomeOp[] | undefi
     request.matchUpStatus,
   ).map((op): OutcomeOp =>
     op.op === 'setMatchUpResult' && op.matchUpId === clear.matchUpId
-      ? { ...op, resetsScore: true, score: BLANK_SCORE }
+      ? { ...op, resetsScore: true, score: blankScore() }
       : op,
   );
   const arrival = [...arrivalOps(after.view, loser), ...relayOps, ...produced];

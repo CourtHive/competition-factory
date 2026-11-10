@@ -500,7 +500,9 @@ function setMatchUpResult(
   clearResolvedSideExitProvenance(matchUp);
   if (op.winningSide) matchUp.winningSide = op.winningSide;
   else if (op.removesWinningSide) matchUp.winningSide = undefined;
-  else if (!op.resetsScore) delete matchUp.winningSide;
+  else if (bindResultInputs) {
+    if (matchUp.winningSide) matchUp.winningSide = undefined;
+  } else if (!op.resetsScore) delete matchUp.winningSide;
   if (op.notes) matchUp.notes = op.notes;
   if (op.stampsScoredTime === false) return;
   // v1's `applyScoredTime`: captured the first time the matchUp is scored, kept on later corrections, removed with
@@ -604,8 +606,9 @@ function foldMatchUpWrite(
     // the arrival that decides the matchUp by the carried exit beside it: its codes re-derived (`progressExitStatus`)
     if (op.rederivesCodes) matchUp.matchUpStatusCodes = [];
     // The ordinary arrival writes this own key, observable before its notice reads the caller's clock.
+    if (op.advancesThroughBye) matchUp.score = undefined;
     if (!matchUp.winningSide) matchUp.winningSide = undefined;
-    if (op.removedDrawPosition || op.advancesThroughBye) matchUp.score = undefined;
+    if (op.removedDrawPosition) matchUp.score = undefined;
   }
   return {};
 }

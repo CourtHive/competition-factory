@@ -268,11 +268,15 @@ export function applyOwnedPlan({
       matchUpId,
     });
   }
-  if (ops.some((op) => op.op === 'setParticipantResults')) modifyDrawNotice({ drawDefinition });
+  const tallied = ops.some((op) => op.op === 'setParticipantResults');
+  const tallyMatchUpId =
+    ops.find((op): op is ResultOp => op.op === 'setMatchUpResult' && !!op.dualTally)?.matchUpId ??
+    args.request.matchUpId;
   const { settled } = namedWriters(ops);
   for (const matchUpId of announced) {
     const matchUp = stored.get(matchUpId);
     if (!matchUp) continue;
+    if (tallied && matchUpId === tallyMatchUpId) modifyDrawNotice({ drawDefinition });
     // a removal's notice is built as v1's `removeSubsequentRoundsParticipant` builds it, whose caller passes no event;
     // unless a score write announces the matchUp after it (a result turned into a double exit: the exit it produces)
     const removedPosition = resulted.has(matchUpId) ? undefined : removed.get(matchUpId);
@@ -554,7 +558,7 @@ const eventedPlacement = (ops: OutcomeOp[], structureId: string) =>
  * dual's score and the winner it decides, if it decides one; no winner removed, no tieFormat removed
  */
 function dualTallyResult(ops: OutcomeOp[]) {
-  const tally = ops.find((op) => op.op === 'setMatchUpResult' && op.dualTally);
+  const tally = ops.find((op): op is ResultOp => op.op === 'setMatchUpResult' && !!op.dualTally);
   if (tally?.op !== 'setMatchUpResult' || tally.dualTally?.unreturned) return {};
   return {
     tieMatchUpResult: {

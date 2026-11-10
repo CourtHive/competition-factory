@@ -1,4 +1,4 @@
-import { BLANK_SCORE, indexed, positionsOf, scoreless, seatKey, sideOf, undecided, unwoundClean } from './planShared';
+import { blankScore, indexed, positionsOf, scoreless, seatKey, sideOf, undecided, unwoundClean } from './planShared';
 import { collapseDoubleExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { isDoubleExit } from '@Validators/isExit';
@@ -577,7 +577,7 @@ function convergedProducedRelaySeatOps(
       matchUpId: next.matchUpId,
       matchUpStatus: kept.matchUpStatus,
       resetsScore: true,
-      score: BLANK_SCORE,
+      score: blankScore(),
       matchUpStatusCodes: [],
       stampsScoredTime: false,
       announcedAs: 'settleRederivedDoubleExit',
@@ -588,7 +588,7 @@ function convergedProducedRelaySeatOps(
       op: 'setMatchUpResult',
       matchUpId: successor.matchUpId,
       matchUpStatus: TO_BE_PLAYED,
-      ...(successor.score ? { resetsScore: true, score: BLANK_SCORE } : {}),
+      ...(successor.score ? { resetsScore: true, score: blankScore() } : {}),
       matchUpStatusCodes: [],
       stampsScoredTime: false,
       announcedAs: 'withdrawProducedExits',
@@ -692,7 +692,7 @@ function occupiedFinalRelaySeatOps(
       matchUpStatus: carried,
       winningSide: (3 - side) as 1 | 2,
       resetsScore: true,
-      score: BLANK_SCORE,
+      score: blankScore(),
       matchUpStatusCodes: [],
       stampsScoredTime: false,
       retainedExitPlanned: true,
