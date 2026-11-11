@@ -408,6 +408,76 @@ export function unwindWalk({
   propagatesBye: boolean;
   seats: UnwindSeat[];
 }): OutcomeOp[][] | undefined {
+  const sim = simulation(drawDefinition, inContextDrawMatchUps, propagatesBye);
+  for (const [segment, { structureId, drawPosition }] of seats.entries()) {
+    sim.segment = segment;
+    if (!clearSeat(sim, structureId, drawPosition, true)) return undefined;
+  }
+  if (sim.failed || owesByeAdvance(sim)) return undefined;
+  const segments: OutcomeOp[][] = seats.map(() => []);
+  for (const { structureId, drawPosition, segment } of sim.withdrawn)
+    segments[segment].push({
+      op: 'withdrawBye',
+      structureId,
+      drawPosition,
+      // positionClear writes winningSide even when its value comparison suppresses the notice.
+      clearedWinnerIds: [...sim.clearedWinners]
+        .filter(([id, clearedIn]) => clearedIn === segment && !sim.notices.has(id))
+        .map(([id]) => id),
+      announcesAssignments: false,
+    });
+  if (!noticeOps(sim, segments)) return undefined;
+  for (const { structureId, quiet, segment } of sim.withdrawn) {
+    if (!quiet)
+      segments[segment].push({
+        op: 'announcePositionAssignments',
+        structureId,
+        announcesEvent: false,
+        announcesTournament: false,
+      });
+  }
+  return segments;
+}
+
+/**
+ * v1's `withdrawOwnAdvancement` (`doubleExitAdvancement`): a converged double exit's own positions, found in the matchUp
+ * it produces into, released across the links they went over (`releaseAdvancedDrawPositionAcrossLinks`, `withdrawingExit`)
+ * from that matchUp's round on, as the release walk runs it. Undefined where the walk abstains.
+ */
+export function releaseWalk({
+  inContextDrawMatchUps,
+  fromRoundNumber,
+  drawDefinition,
+  drawPositions,
+  propagatesBye,
+  structureId,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  fromRoundNumber: number;
+  drawPositions: number[];
+  propagatesBye: boolean;
+  structureId: string;
+}): OutcomeOp[] | undefined {
+  const sim = simulation(drawDefinition, inContextDrawMatchUps, propagatesBye);
+  for (const drawPosition of drawPositions)
+    if (!release(sim, structureId, fromRoundNumber, drawPosition)) return undefined;
+  const segments: OutcomeOp[][] = [[]];
+  if (sim.failed || !noticeOps(sim, segments)) return undefined;
+  // the cascade hands the release its event and tournament (`withdrawOwnAdvancement`), so each release names them
+  return segments[0].map((op) => {
+    if (op.op !== 'setMatchUpDrawPositions' || !op.releasedDrawPosition) return op;
+    const { announcesContext: _bare, ...named } = op;
+    return named;
+  });
+}
+
+/** the draw as the walk reads it: its matchUps' stored positions and statuses, its BYEs and its participants */
+function simulation(
+  drawDefinition: DrawDefinition,
+  inContextDrawMatchUps: HydratedMatchUp[],
+  propagatesBye: boolean,
+): Sim {
   const sim: Sim = {
     drawDefinition,
     inContextDrawMatchUps,
@@ -457,27 +527,15 @@ export function unwindWalk({
       if (assignment.participantId) sim.participants.add(key);
     }
   }
-  for (const [segment, { structureId, drawPosition }] of seats.entries()) {
-    sim.segment = segment;
-    if (!clearSeat(sim, structureId, drawPosition, true)) return undefined;
-  }
-  if (sim.failed || owesByeAdvance(sim)) return undefined;
-  const segments: OutcomeOp[][] = seats.map(() => []);
-  for (const { structureId, drawPosition, segment } of sim.withdrawn)
-    segments[segment].push({
-      op: 'withdrawBye',
-      structureId,
-      drawPosition,
-      // positionClear writes winningSide even when its value comparison suppresses the notice.
-      clearedWinnerIds: [...sim.clearedWinners]
-        .filter(([id, clearedIn]) => clearedIn === segment && !sim.notices.has(id))
-        .map(([id]) => id),
-      announcesAssignments: false,
-    });
+  return sim;
+}
+
+/** each matchUp the walk announced, in its segment, as its last notice leaves it; its structure stamped once */
+function noticeOps(sim: Sim, segments: OutcomeOp[][]): boolean {
   const stamped = new Set<string>();
   for (const { matchUpId, write: notice, positions, matchUpStatus } of sim.noticeWrites) {
     const written = matchUpOps(sim, matchUpId, notice, { positions, matchUpStatus });
-    if (!written) return undefined;
+    if (!written) return false;
     segments[notice.segment].push(...written);
     // v1's notice stamps the matchUp's structure (`modifyMatchUpNotice`)
     const structureId = sim.byId.get(matchUpId)?.structureId;
@@ -486,16 +544,7 @@ export function unwindWalk({
       segments[notice.segment].push({ op: 'stampUpdatedAt', entity: 'structure', id: structureId });
     }
   }
-  for (const { structureId, quiet, segment } of sim.withdrawn) {
-    if (!quiet)
-      segments[segment].push({
-        op: 'announcePositionAssignments',
-        structureId,
-        announcesEvent: false,
-        announcesTournament: false,
-      });
-  }
-  return segments;
+  return true;
 }
 
 /** a matchUp the walk wrote, as it stands after the walk, announced with the context of its last notice */

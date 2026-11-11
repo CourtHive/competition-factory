@@ -532,11 +532,11 @@ function doubleExitSeats(
 }
 
 /** The source adapter: the frame the double exit's own call serves, its seat read once from the entry view. */
-function sourceSeatFrame(
+export function sourceSeatFrame(
   view: OutcomeView,
   request: OutcomeRequest,
-  prefix: OutcomeOp[],
-  following: OutcomeOp[],
+  prefix: OutcomeOp[] = [],
+  following: OutcomeOp[] = [],
 ): SeatFrame {
   const { targets } = view;
   const { loserStructureId: structureId, loserTargetDrawPosition: drawPosition, loserMatchUpId: matchUpId } = targets;
@@ -1045,7 +1045,7 @@ function heldLoserOps(frame: SeatFrame, held: HeldLoser): OutcomeOp[] {
   ];
 }
 
-const producedLoserMatchUpIds = (produced?: ProducedLoser) =>
+export const producedLoserMatchUpIds = (produced?: ProducedLoser) =>
   produced
     ? [
         produced.matchUpId,
@@ -1064,7 +1064,7 @@ const producedLoserMatchUpIds = (produced?: ProducedLoser) =>
  * matchUp with room. A loser matchUp that links its own loser on (COMPASS, OLYMPIC) leaves that seat to nobody: a BYE,
  * with all it sends on (`byeChain`).
  */
-function producedLoser(view: OutcomeView): ProducedLoser | undefined {
+export function producedLoser(view: OutcomeView): ProducedLoser | undefined {
   const { targets } = view;
   const seat = targets.loserTargetSeat;
   const loserMatchUp = indexed(view, targets.loserMatchUpId);
@@ -1105,7 +1105,10 @@ function producedLoser(view: OutcomeView): ProducedLoser | undefined {
  * the exit produced on the loser matchUp, as v1 writes it there: the BYE beyond it first (`conditionallyAdvanceDrawPosition`
  * serves the loser seat before the score), then the exit, its origin, and the advance
  */
-function producedLoserOps(frame: SeatFrame, produced: ProducedLoser): OutcomeOp[] {
+export function producedLoserOps(
+  frame: Pick<SeatFrame, 'cascadeStatus' | 'lineage'>,
+  produced: ProducedLoser,
+): OutcomeOp[] {
   const matchUpStatus = frame.cascadeStatus === DOUBLE_DEFAULT ? DEFAULTED : WALKOVER;
   const provenance = buildSideExitProvenance({
     sourceMatchUpStatus: frame.lineage.previousMatchUpStatus,

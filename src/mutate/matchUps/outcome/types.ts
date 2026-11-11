@@ -650,6 +650,16 @@ export type RebuildView = (
 /** A fresh private cursor rooted at this planning call's entry; the supplied prefix is folded once. */
 export type ProjectOutcome = (prefix: OutcomeOp[]) => WorkingView | undefined;
 
+/**
+ * Another matchUp of the draw read as a double exit's call at `matchUpStatus`, once `prefix` is folded: a converged
+ * landing's own targets as v1 reads them after its writes (`serveConvergedLoserLink`'s refresh), and that cursor.
+ */
+export type LandingView = (
+  prefix: OutcomeOp[],
+  matchUpId: string,
+  matchUpStatus: MatchUpStatusUnion,
+) => { view: OutcomeView; working: WorkingView } | undefined;
+
 /** Admission is incomplete until the builder certifies these seats at their actual write phase. */
 export type SeatObligation = { kind: 'double-exit-seats'; targetMatchUpId?: string };
 
@@ -669,6 +679,8 @@ export type PlanArgs = {
   rebuild?: RebuildView;
   /** Current stored state for ordered subprograms; does not reroute or repeat admission. */
   project?: ProjectOutcome;
+  /** A converged landing's view on the cursor (1b, L2). */
+  landing?: LandingView;
   /** S7: the dual's call a deciding line makes */
   dual?: DualCall;
   /** S7: this call is a deciding line's dual, planned as part of the line's plan: its TEAM shape is the line's to vet */
@@ -678,5 +690,5 @@ export type PlanArgs = {
 /** the arguments the exit shapes read (plan.ts `exitReason`): a plan's, without the record and the dual */
 export type ExitReasonArgs = Pick<
   PlanArgs,
-  'drawDefinition' | 'request' | 'view' | 'route' | 'write' | 'direction' | 'rebuild' | 'asDual'
+  'drawDefinition' | 'request' | 'view' | 'route' | 'write' | 'direction' | 'rebuild' | 'asDual' | 'landing'
 >;
