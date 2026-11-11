@@ -1,5 +1,18 @@
 # Changelog
 
+## [7.36.1](https://github.com/CourtHive/competition-factory/compare/v7.36.0...v7.36.1) (2026-11-11)
+
+
+### Bug Fixes
+
+* **deps:** update tods-competition-factory to 7.36.0 ([#6352](https://github.com/CourtHive/competition-factory/issues/6352)) ([c112fd3](https://github.com/CourtHive/competition-factory/commit/c112fd3f8c07efe48f23cedc042cfa91cf60aadf))
+* **sanctioning:** an activated tournament's parentOrganisation is its governing body ([#6356](https://github.com/CourtHive/competition-factory/issues/6356)) ([e4d784d](https://github.com/CourtHive/competition-factory/commit/e4d784d225efe9031fd36292d278610840e2381c))
+
+
+### Performance
+
+* **outcome:** cut the work v2 repeats before it delegates a call ([#6354](https://github.com/CourtHive/competition-factory/issues/6354)) ([8de84e6](https://github.com/CourtHive/competition-factory/commit/8de84e66b9536bd875d6662582c4e1c050529459))
+
 ## [7.36.0](https://github.com/CourtHive/competition-factory/compare/v7.35.0...v7.36.0) (2026-11-11)
 
 
