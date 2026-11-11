@@ -46,8 +46,8 @@ export function carriedByeReplay(view: OutcomeView, working: WorkingView): Outco
       landing.ensuredSides = carriedByeDualSides(working.drawDefinition, entry);
     }
     const replay = carriedContinuation(carry.matchUpStatus, {
-      sourceMatchUpId: carry.sourceMatchUpId,
-      previousMatchUpStatus: carry.matchUpStatus,
+      kind: 'carry',
+      lineage: { sourceMatchUpId: carry.sourceMatchUpId, previousMatchUpStatus: carry.matchUpStatus },
       landing,
     });
     if (!replay) return undefined;
