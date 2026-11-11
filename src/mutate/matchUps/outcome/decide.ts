@@ -80,7 +80,7 @@ const OWNED_SHAPES = new Set<PlanShape>(['local', 'direction']);
  * matchUp and the direction, then the plan as ops behind the fail-closed allowlist, then the working view after them and
  * the settle passes' has-work predicates. A plan that leaves a pass work abstains `settle`.
  */
-function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal) {
+function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, keepFoldedView = false) {
   args = { ...args, clockFree: getCapturedClock() === undefined };
   // TEAM auto-calc: a dual whose result is computed from its lines takes the PROJECTED winner and score in
   // place of the call's before anything is routed, as `handleTeamAutoCalc` rewrites v1's parameters
@@ -102,7 +102,7 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal) {
     view,
   });
   // the working view after the plan (§ 3.2), folded before anything is written to the stored objects it reads
-  const folded = allowed.ops ? finalizePlan({ args, view, ops: allowed.ops }) : undefined;
+  const folded = allowed.ops ? finalizePlan({ args, view, ops: allowed.ops, keepFoldedView }) : undefined;
   let outcome: OutcomePlan = allowed;
   if (allowed.ops)
     outcome =
@@ -191,7 +191,8 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   // § 3.1.1's index oracle, read before v1 writes: the index of the draw as the call found it against the view's hydration
   const indexed = indexOracle(args, view);
 
-  const { planned, route, plan, direction, folded, outcome, observe } = planCall(args, view, refusal);
+  // the folded view is kept for the view oracle only, which reads it after v1 has written
+  const { planned, route, plan, direction, folded, outcome, observe } = planCall(args, view, refusal, true);
   const dual = route ? planDual(args, view) : undefined;
   const shadowBefore =
     outcome.ops && args.drawDefinition ? captureShadow({ ...args, drawDefinition: args.drawDefinition }) : undefined;
@@ -335,7 +336,8 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   }
   /** § 3.2's view oracle: the working view after the plan against a hydration of the shadow-applied record */
   function checkViewOracle(shadow: NonNullable<typeof shadowBefore>) {
-    if (!viewAfter || 'error' in viewAfter || !args.drawDefinition) return differentialTally('view', 'deferred');
+    if (!viewAfter || 'error' in viewAfter || !viewAfter.matchUps || !args.drawDefinition)
+      return differentialTally('view', 'deferred');
     const record = hydrateShadow(shadow);
     if (!record) return differentialTally('view', 'deferred');
     const compared = compareViews({ record, view: viewAfter.matchUps });
@@ -908,14 +910,17 @@ function toResult(refusal: Refusal, args: BuildViewArgs): ResultType {
 
 /** Fold the complete program, append final cleanup, and return the authoritative executable plan and view. */
 function finalizePlan({
+  keepFoldedView,
   args,
   view,
   ops,
 }: {
+  /** copy the folded matchUps out (`differential`'s view oracle); a v2 decision reads only the ops and settle sites */
+  keepFoldedView?: boolean;
   args: BuildViewArgs;
   view: OutcomeView;
   ops?: OutcomeOp[];
-}): { ops: OutcomeOp[]; matchUps: HydratedMatchUp[]; settle: SettleSite[] } | { error: string } | undefined {
+}): { ops: OutcomeOp[]; matchUps?: HydratedMatchUp[]; settle: SettleSite[] } | { error: string } | undefined {
   if (!ops || !args.drawDefinition || !args.matchUpsMap || !view.inContextDrawMatchUps) return undefined;
   const working = createWorkingView({
     clockFree: args.clockFree,
@@ -968,7 +973,11 @@ function finalizePlan({
   const predicted = new Set<SettleSite>(settle);
   if (cleanup.length) predicted.add('reconcileScoredTimes');
   for (const site of predicted) recordSettleEvent({ kind: 'predicted', site });
-  return { ops: completedOps, matchUps: structuredClone(working.inContextDrawMatchUps), settle };
+  return {
+    ops: completedOps,
+    matchUps: keepFoldedView ? structuredClone(working.inContextDrawMatchUps) : undefined,
+    settle,
+  };
 }
 
 /**
