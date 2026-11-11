@@ -1,5 +1,28 @@
 # Changelog
 
+## [7.36.0](https://github.com/CourtHive/competition-factory/compare/v7.35.0...v7.36.0) (2026-11-11)
+
+
+### Features
+
+* add qualifying fit proposals and sanction-bound overrides ([#6345](https://github.com/CourtHive/competition-factory/issues/6345)) ([b85708f](https://github.com/CourtHive/competition-factory/commit/b85708ff1770ec1054ac87d04fe3fa78e243a860))
+* define CODES team display defaults and presentation inheritance ([6114060](https://github.com/CourtHive/competition-factory/commit/6114060afa7093c064e480a783e026cc7d51ab9a))
+* **participants:** persist and hydrate team branding colors ([f56916b](https://github.com/CourtHive/competition-factory/commit/f56916b538f27a9dce40aa0fb53eddeedafe05f5))
+* **participants:** store CODES team palettes with stable selections ([d4d3921](https://github.com/CourtHive/competition-factory/commit/d4d3921974adef549a2e8f4650182614ceefd580))
+
+
+### Bug Fixes
+
+* **extensions:** guard team presentation in the public writers ([bebf126](https://github.com/CourtHive/competition-factory/commit/bebf126ef7ef125b1284ee555e4fb46e896c510e))
+* **outcome:** preserve caller result identities on non-ordinary writes ([#6346](https://github.com/CourtHive/competition-factory/issues/6346)) ([ccf1de3](https://github.com/CourtHive/competition-factory/commit/ccf1de3914acbfc5588bc686304b5733f14e1237))
+* **outcome:** preserve graph contracts across owned writes ([#6347](https://github.com/CourtHive/competition-factory/issues/6347)) ([1e73695](https://github.com/CourtHive/competition-factory/commit/1e736958cb09bfcbc8096364369eca929ebd14ef))
+* **participants:** validate team presentation at its write boundary ([6185392](https://github.com/CourtHive/competition-factory/commit/6185392605785224669682e823411f470c201c83))
+
+
+### Documentation
+
+* **participants:** explain palette and display roles ([1160a1c](https://github.com/CourtHive/competition-factory/commit/1160a1cdf1f579dbc3be99759e7acc91b64ebca2))
+
 ## [7.35.0](https://github.com/CourtHive/competition-factory/compare/v7.34.0...v7.35.0) (2026-11-10)
 
 
