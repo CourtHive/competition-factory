@@ -101,6 +101,28 @@ describe('Activation — Tournament Generation', () => {
     expect(tr.tournamentStatus).toEqual('ACTIVE');
     expect(tr.processCodes).toContain('SANCTIONED');
     expect(tr.parentOrganisationId).toEqual('gov-001');
+    // The governing body is the provider that owns the tournament: a server keys the record by this field.
+    expect(tr.parentOrganisation).toEqual({ organisationId: 'gov-001' });
+  });
+
+  it('keeps what a supplied governingBody says about the owner, but never its identity', () => {
+    createApprovedRecord();
+    let result: any = sanctioningEngine.getSanctioningRecord();
+    sanctioningEngine.setSanctioningRecord({
+      ...result.sanctioningRecord,
+      governingBody: {
+        organisationId: 'stale-id',
+        organisationName: 'Test Federation',
+        organisationAbbreviation: 'TF',
+      },
+    });
+
+    result = sanctioningEngine.activateFromSanctioning({ sanctioningPolicy: testPolicy });
+    expect(result.tournamentRecord.parentOrganisation).toEqual({
+      organisationId: 'gov-001',
+      organisationName: 'Test Federation',
+      organisationAbbreviation: 'TF',
+    });
   });
 
   it('generates events with correct properties', () => {

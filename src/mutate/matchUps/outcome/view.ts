@@ -21,6 +21,7 @@ import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount'
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
 import { resolveScoringFormat } from '@Query/hierarchical/resolveScoringFormat';
 import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
+import { buildTargetIndex, type TargetIndex } from '@Query/matchUp/targetIndex';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { ensuredDualSides } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
 import { DUAL_TALLY_FORMAT } from '@Mutate/matchUps/score/modifyMatchUpScore';
@@ -136,7 +137,11 @@ function carriedStatuses(
     .filter((status): status is MatchUpStatusUnion => !!status);
 }
 
-type DrawContext = { inContextDrawMatchUps: HydratedMatchUp[]; drawDefinition: DrawDefinition };
+type DrawContext = {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  targetIndex?: TargetIndex;
+};
 
 /**
  * An entry that records how a side ARRIVED, not an exit standing on it.
@@ -157,7 +162,7 @@ function arrivedByWinning(
 ): boolean {
   if (!draw || !matchUp || !entry?.sourceMatchUpId || isDoubleExit(entry.previousMatchUpStatus)) return false;
   if (!matchUp.sides?.some((side) => side?.sideNumber === sideNumber && side.participantId)) return false;
-  const { targetMatchUps } = positionTargets({ ...draw, matchUpId: entry.sourceMatchUpId });
+  const { targetMatchUps } = positionTargets({ ...draw, matchUpId: entry.sourceMatchUpId, asReferences: true });
   return targetMatchUps?.winnerMatchUp?.matchUpId === matchUp.matchUpId;
 }
 
@@ -169,7 +174,7 @@ function placedTheHoldersBye(matchUp: HydratedMatchUp, sourceMatchUpId: string, 
   const byeSeats = (matchUp.sides ?? []).filter((side) => side?.bye).map((side) => side?.drawPosition);
   if (!byeSeats.length) return false;
   const { loserMatchUp, loserTargetDrawPosition } =
-    positionTargets({ ...draw, matchUpId: sourceMatchUpId })?.targetMatchUps ?? {};
+    positionTargets({ ...draw, matchUpId: sourceMatchUpId, asReferences: true })?.targetMatchUps ?? {};
   return loserMatchUp?.structureId === matchUp.structureId && byeSeats.includes(loserTargetDrawPosition);
 }
 
@@ -257,7 +262,7 @@ function heldBesideFeederBye(
 }
 
 const winnerTargetOf = (matchUpId: string, draw: DrawContext): string | undefined =>
-  positionTargets({ ...draw, matchUpId })?.targetMatchUps?.winnerMatchUp?.matchUpId;
+  positionTargets({ ...draw, matchUpId, asReferences: true })?.targetMatchUps?.winnerMatchUp?.matchUpId;
 
 function standingExits(matchUp?: HydratedMatchUp, sourceMatchUpId?: string, draw?: DrawContext): MatchUpStatusUnion[] {
   const carried = [
@@ -396,7 +401,8 @@ function throughBye(
   const drawPositions = [...new Set([...target.drawPositions, drawPosition])].sort((a, b) => a - b);
   if (drawPositions.length > 2) return undefined;
   if (drawPositions.length === 2) {
-    const onward = positionTargets({ ...draw, matchUpId: next.matchUpId })?.targetLinks?.loserTargetLink;
+    const onward = positionTargets({ ...draw, matchUpId: next.matchUpId, asReferences: true })?.targetLinks
+      ?.loserTargetLink;
     if (onward?.linkCondition === FIRST_MATCHUP) return undefined;
   }
   return { matchUpId: next.matchUpId, drawPositions };
@@ -420,7 +426,8 @@ function byePassage(
   const byes: string[] = [];
   let current = byeMatchUp;
   while (byes.length < SETTLE_PASS_LIMITS.exitLevels) {
-    const nextId = positionTargets({ ...draw, matchUpId: current.matchUpId })?.targetMatchUps?.winnerMatchUp?.matchUpId;
+    const nextId = positionTargets({ ...draw, matchUpId: current.matchUpId, asReferences: true })?.targetMatchUps
+      ?.winnerMatchUp?.matchUpId;
     if (!nextId) return { byes };
     const next = draw.inContextDrawMatchUps.find((matchUp) => matchUp.matchUpId === nextId);
     // the carrier's seat is free, so their position holds nobody wherever it stands: a BYE beside it there makes that
@@ -1403,11 +1410,16 @@ function firstMatchReservations({
   matchUpsMap: MatchUpsMap;
   draw: DrawContext;
 }): OutcomeView['targets']['reservations'] {
-  const { drawDefinition, inContextDrawMatchUps } = draw;
+  const { drawDefinition, inContextDrawMatchUps, targetIndex } = draw;
   if (!(drawDefinition.links ?? []).some((link) => link.linkCondition === FIRST_MATCHUP)) return undefined;
   const none: Reservation = { kind: 'none' };
   if (!winnerMatchUp || winnerMatchUp.winningSide) return { 1: none, 2: none };
-  const targetData = positionTargets({ matchUpId: winnerMatchUp.matchUpId, inContextDrawMatchUps, drawDefinition });
+  const targetData = positionTargets({
+    matchUpId: winnerMatchUp.matchUpId,
+    inContextDrawMatchUps,
+    drawDefinition,
+    targetIndex,
+  });
   const { loserMatchUp, loserTargetDrawPosition } = targetData?.targetMatchUps ?? {};
   const loserLink = targetData?.targetLinks?.loserTargetLink;
   if (loserLink?.linkCondition !== FIRST_MATCHUP || !loserMatchUp || loserTargetDrawPosition === undefined)
@@ -1659,7 +1671,11 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         })),
       }
     : matchUpsMap;
-  const draw: DrawContext = { inContextDrawMatchUps, drawDefinition };
+  const draw: DrawContext = {
+    inContextDrawMatchUps,
+    drawDefinition,
+    targetIndex: buildTargetIndex(inContextDrawMatchUps),
+  };
 
   const { structure } = findStructure({ drawDefinition, structureId: inContextMatchUp?.structureId });
   const isTeam = isMatchUpEventType(TEAM)(matchUp.matchUpType);
