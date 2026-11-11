@@ -162,6 +162,8 @@ export function createWorkingView({
   const reindex = (affected: Set<string>) =>
     buildStructuralIndex({
       structureIds: new Set([...affected].map((matchUpId) => topLevelOf.get(structureIdOf.get(matchUpId) ?? '') ?? '')),
+      // only what is read back below: an affected line's dual is affected too, and brings its lines
+      matchUpIds: affected,
       drawDefinition: workingDraw,
       tournamentRecord,
       team: true,

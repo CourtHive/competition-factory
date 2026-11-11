@@ -60,6 +60,11 @@ export type StructuralIndex = {
 type BuildStructuralIndexArgs = {
   /** the top-level structures to index, the rest left out: what a working view indexes again after a write (§ 3.2) */
   structureIds?: Set<string>;
+  /**
+   * the matchUps to emit, a dual's lines with it: every entry is built from its structure's whole round profile and
+   * assignments as before, so an emitted entry is the one the full build makes; the rest are not built
+   */
+  matchUpIds?: Set<string>;
   /** index TEAM duals and their lines; without it a draw holding one answers `unsupported` */
   team?: boolean;
   tournamentRecord?: Tournament;
@@ -74,6 +79,7 @@ export function buildStructuralIndex({
   tournamentRecord,
   drawDefinition,
   structureIds,
+  matchUpIds,
   event,
   team,
 }: BuildStructuralIndexArgs): StructuralIndex {
@@ -82,7 +88,15 @@ export function buildStructuralIndex({
   const participantIds = new Set((participants ?? []).map(({ participantId }) => participantId));
   for (const structure of drawDefinition.structures ?? []) {
     if (structureIds && !structureIds.has(structure.structureId)) continue;
-    const indexed = indexStructure({ drawDefinition, participantIds, participants, structure, event, team });
+    const indexed = indexStructure({
+      drawDefinition,
+      participantIds,
+      participants,
+      structure,
+      matchUpIds,
+      event,
+      team,
+    });
     if (indexed.unsupported) return { matchUps: [], unsupported: indexed.unsupported };
     matchUps.push(...indexed.matchUps);
   }
@@ -105,6 +119,7 @@ function indexStructure({
   drawDefinition,
   participantIds,
   participants,
+  matchUpIds,
   structure,
   event,
   team,
@@ -112,6 +127,7 @@ function indexStructure({
   drawDefinition: DrawDefinition;
   participantIds: Set<string>;
   participants?: Participant[];
+  matchUpIds?: Set<string>;
   structure: Structure;
   event?: Event;
   team?: boolean;
@@ -151,6 +167,7 @@ function indexStructure({
   };
   return {
     matchUps: members.flatMap((member) => {
+      if (matchUpIds && !matchUpIds.has(member.matchUp.matchUpId)) return [];
       const entry = indexMatchUp({ ...member, ...shared, event });
       if (!member.matchUp.tieMatchUps) return [entry];
       const lines = indexLines({ dual: member, dualEntry: entry, participants, shared, event });
