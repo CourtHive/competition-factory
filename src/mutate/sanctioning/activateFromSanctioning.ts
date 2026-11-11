@@ -24,6 +24,7 @@ import type {
   EventEntryProfile,
   UnifiedEventID,
   VenueTransitEntry,
+  Organisation,
   Tournament,
   Venue,
   Event,
@@ -218,6 +219,15 @@ function resolveEventOtherIds(
   ];
 }
 
+/** The owning organisation: `governingBodyId` names it; `governingBody` may describe it, never re-identify it. */
+function parentOrganisationOf(sanctioningRecord: SanctioningRecord): Organisation | undefined {
+  const { governingBodyId, governingBody } = sanctioningRecord;
+  if (!governingBodyId) return governingBody;
+  // Without a `governingBody` this is the bare `{ organisationId }` a provider-owned record carries everywhere else:
+  // the provider registry holds the name and abbreviation, which the factory does not have and must not invent.
+  return { ...governingBody, organisationId: governingBodyId } as Organisation;
+}
+
 export function activateFromSanctioning({
   sanctioningRecord,
   sanctioningPolicy,
@@ -264,9 +274,12 @@ export function activateFromSanctioning({
     processCodes: ['SANCTIONED'],
     sanction: buildSanction(sanctioningRecord),
 
-    // Governance
+    // Governance. The governing body is the provider that owns the sanctioned tournament, so it is the parent
+    // organisation, identified by `governingBodyId`. `governingBody` only adds descriptive fields when a caller supplied
+    // it; `createSanctioningRecord` never sets it, so copying it alone left `parentOrganisation` undefined, and a server
+    // that keys tournaments by `parentOrganisation.organisationId` could not persist the activated record.
     parentOrganisationId: sanctioningRecord.governingBodyId,
-    parentOrganisation: sanctioningRecord.governingBody,
+    parentOrganisation: parentOrganisationOf(sanctioningRecord),
 
     // Categories from events
     tournamentCategories: proposal.events
