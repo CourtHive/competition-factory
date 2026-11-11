@@ -117,19 +117,36 @@ function reclaimThenServe(
   { matchUpId, ...seat }: { structureId: string; matchUpId: string; drawPosition: number },
   landingView?: LandingView,
 ): LandingService | undefined {
-  const reclaim = unwindWalk({
+  const walked = unwindWalk({
     inContextDrawMatchUps: working.inContextDrawMatchUps,
     propagatesBye: !!view.draw.doubleExitPropagatesBye,
     drawDefinition: working.drawDefinition,
     seats: [seat],
   })?.[0];
-  if (!reclaim) return undefined;
+  if (!walked) return undefined;
+  const reclaim = walked.map(namedWithdrawal);
   const after = landingLoserLink({ ...frame, paramsChannel, prefix: [...frame.prefix, ...reclaim] }, landingView, true);
-  // v1's removal is handed the event and tournament; the walk's notices name neither. Certified only where the removal
-  // writes the seat's own matchUp alone and the produced exit's result write announces it after (the notice v1 keeps)
+  // Certified only where the removal writes the seat's own matchUp alone and the produced exit's result write announces
+  // it after (the notice v1 keeps)
   const announced = after?.ops.some((op) => op.op === 'setMatchUpResult' && op.matchUpId === matchUpId);
   if (!announced || touchedBy(reclaim).some((id) => id !== matchUpId)) return undefined;
   return after && { ops: [...reclaim, ...after.ops], touched: [...new Set([...touchedBy(reclaim), ...after.touched])] };
+}
+
+/**
+ * v1's removal is handed the event and the tournament (`removeDirectedBye` at DEA:3076 and :111), so each notice the walk
+ * makes names them: the matchUp's, its structure's assignments', and so the tournament the call marks modified
+ */
+function namedWithdrawal(op: OutcomeOp): OutcomeOp {
+  if (op.op === 'setMatchUpDrawPositions') {
+    const { announcesContext: _bare, ...named } = op;
+    return { ...named, namesContext: true };
+  }
+  if (op.op === 'announcePositionAssignments') {
+    const { announcesEvent: _event, announcesTournament: _tournament, ...named } = op;
+    return named;
+  }
+  return op.op === 'clearMatchUpBye' ? { ...op, namesContext: true } : op;
 }
 
 /** L2's `alreadyServed`: the loser matchUp's stored provenance names this convergence */

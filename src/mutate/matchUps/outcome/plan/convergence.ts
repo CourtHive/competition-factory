@@ -349,13 +349,13 @@ type ConvergedWrite = Pick<ProducedConvergence, 'landing' | 'matchUpStatus' | 'o
   /** v1's `retainPolicyCodes`; none by default */
   matchUpStatusCodes?: string[];
   /** `removeScore`: the score reset whatever the double exit; by default a DOUBLE_WALKOVER's alone */
-  removesScore?: boolean;
+  resetsScore?: boolean;
   /** the converged matchUp's own advancement taken back before it produces on (`withdrawOwnAdvancement`) */
   withdrawn?: OutcomeOp[];
   /** a re-entered landing's loser link, served before it produces on (DEA:316 before :417) */
   reentered?: OutcomeOp[];
   /** the converged matchUp's loser link, served after its produced exit (`serveConvergedLoserLink`, DEA:767–775) */
-  served?: OutcomeOp[];
+  loserLinkOps?: OutcomeOp[];
 };
 
 function convergedWrite(view: OutcomeView, planned: ConvergedWrite): OutcomeOp[] {
@@ -368,7 +368,7 @@ function convergedWrite(view: OutcomeView, planned: ConvergedWrite): OutcomeOp[]
       removesWinningSide: true,
       matchUpStatusCodes: planned.matchUpStatusCodes ?? [],
       stampsScoredTime: false,
-      ...(planned.removesScore || matchUpStatus === DOUBLE_WALKOVER
+      ...(planned.resetsScore || matchUpStatus === DOUBLE_WALKOVER
         ? { resetsScore: true, score: toBePlayed.score }
         : {}),
     },
@@ -379,7 +379,7 @@ function convergedWrite(view: OutcomeView, planned: ConvergedWrite): OutcomeOp[]
     // the onward matchUp's unfillable seat is served before its produced exit is written (`conditionallyAdvanceDrawPosition`)
     ...(onwardBye ? [...onwardBye.assigns, ...onwardBye.writes] : []),
     ...(onward ? producedTargetOps(view, onward, landing.matchUpId, matchUpStatus) : []),
-    ...(planned.served ?? []),
+    ...(planned.loserLinkOps ?? []),
   ];
 }
 
@@ -437,7 +437,7 @@ function pendingConvergence(
       ...buildCarriedExitProvenance({ ...lineage, matchUpStatus: cascadeStatus, exitingSideNumber }),
     },
     matchUpStatusCodes: [],
-    removesScore: true,
+    resetsScore: true,
     touched: [pending.matchUpId],
   };
   // a final produces nothing (`advanceConvergedWinner` finds no winner target)
@@ -461,7 +461,7 @@ function pendingConvergence(
       )
     : undefined;
   if (!served) return undefined;
-  return { ...advanced, served: served.ops, touched: [...advanced.touched, ...served.touched] };
+  return { ...advanced, loserLinkOps: served.ops, touched: [...advanced.touched, ...served.touched] };
 }
 
 /**

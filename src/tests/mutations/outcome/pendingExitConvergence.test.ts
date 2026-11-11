@@ -43,8 +43,12 @@ function scoreTwo(
     policyDefinitions: { [POLICY_TYPE_PROGRESSION]: { doubleExitPropagateBye: false } },
     nonRandom: 9000230,
   });
-  tournamentEngine.setState(tournamentRecord);
+  // a tournament loaded beside the draw, held live: a call stamps it only where a notice names no tournament
+  const { tournamentRecord: bystander } = mocksEngine.generateTournamentRecord({ nonRandom: 9000231 });
+  tournamentEngine.setState([tournamentRecord, bystander], false);
+  tournamentEngine.setTournamentId(tournamentRecord.tournamentId);
   setOutcomePipeline(mode);
+  const stamped: boolean[] = [];
   const all = () => tournamentEngine.allTournamentMatchUps({ inContext: false }).matchUps ?? [];
   const find = ([roundPosition]: string[]) =>
     tournamentEngine
@@ -54,11 +58,13 @@ function scoreTwo(
       )?.matchUpId;
   const results = [first, second].map((step) => {
     entries.sources = [];
+    delete bystander.factory;
     const result = tournamentEngine.setMatchUpStatus({
       outcome: { matchUpStatus: step[1] },
       matchUpId: find(step),
       drawId,
     });
+    stamped.push(!!bystander.factory);
     return { success: !!result.success, cascaded: entries.sources.length };
   });
   const draw = all()
@@ -74,7 +80,7 @@ function scoreTwo(
       }),
     )
     .sort();
-  return { results, draw };
+  return { results, draw, stamped };
 }
 
 const flavours = [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((a) => [DOUBLE_WALKOVER, DOUBLE_DEFAULT].map((b) => [a, b]));
@@ -94,6 +100,7 @@ it.each(cases)('v2 converges the pending exit and produces on from it: $first th
   expect(v1.results[1].cascaded).toBeGreaterThan(0);
   expect(v2.draw).toEqual(v1.draw);
   expect(differential.draw).toEqual(v1.draw);
+  expect(v2.stamped).toEqual(v1.stamped);
 });
 
 // L2: the converged loser matchUp's own loser link (`serveConvergedLoserLink`: the propagated BYE reclaimed, the exit
@@ -107,4 +114,7 @@ it.each(cases)("v2 serves the converged landings' loser links: COMPASS $first th
   expect(v1.results[1].cascaded).toBeGreaterThan(0);
   expect(v2.draw).toEqual(v1.draw);
   expect(differential.draw).toEqual(v1.draw);
+  // the reclaim names the tournament as v1's removal does, so the record beside it is left unstamped
+  expect(v1.stamped[1]).toBe(false);
+  expect(v2.stamped).toEqual(v1.stamped);
 });
