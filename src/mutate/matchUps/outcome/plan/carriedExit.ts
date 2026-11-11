@@ -1,5 +1,6 @@
 import { buildCarriedExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { convergenceAt, convergenceOps } from './convergence';
 import { carriedContinuation } from './carriedContinuation';
 import { freshByeCarry } from '../direction';
@@ -351,12 +352,13 @@ export function heldByeCarryCorrectionOps(args: ExitReasonArgs): OutcomeOp[] | u
     {
       op: 'setMatchUpResult',
       matchUpId: landing.entry.matchUpId,
+      withdrawsCarry: true,
+      matchUpStatusCodes: [],
       matchUpStatus: relabel ? entered : TO_BE_PLAYED,
       ...(relabel
         ? {
             winningSide: (3 - landing.sideNumber) as 1 | 2,
-            matchUpStatusCodes: [],
-            ...(entered === WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
+            ...(entered === WALKOVER ? { resetsScore: true, score: toBePlayed.score } : {}),
           }
         : { announcedAs: 'reconcileScoredTimes' as const }),
     },
@@ -573,6 +575,13 @@ export function carriedFor(
   if (view.targets.loserMatchUpCarryHeld && view.targets.loserMatchUpStatus === relabelled.exit)
     return { relay: [], landing: [] };
   const carried = carriedOps(view, args.request, write, relabelled);
+  // relabelLoserExit withdraws the existing carry before carrying the replacement label again.
+  const firstResult = carried.landing.find((op) => op.op === 'setMatchUpResult');
+  const landing = carried.landing.map((op): OutcomeOp =>
+    op === firstResult && op.op === 'setMatchUpResult' && view.targets.loserMatchUpCarryHeld
+      ? { ...op, withdrawsCarry: true }
+      : op,
+  );
   // nobody is placed, so no op names the loser's structure (`structureStamps`): v1's notice for the matchUp the carry
   // writes stamps it (`modifyMatchUpNotice`)
   const structureId = view.targets.loserStructureId;
@@ -580,5 +589,5 @@ export function carriedFor(
     structureId && structureId !== view.targets.source.structureId
       ? [{ op: 'stampUpdatedAt', entity: 'structure', id: structureId }]
       : [];
-  return { relay: carried.relay, landing: [...carried.landing, ...stamp] };
+  return { relay: carried.relay, landing: [...landing, ...stamp] };
 }

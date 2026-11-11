@@ -180,3 +180,5 @@ export type {
 } from './query/matchUps/scheduling/getParticipantRest';
 export { toStatObjects } from './query/scoring/statistics/toStatObjects';
 export { calculateMatchStatistics } from './query/scoring/statistics/standalone';
+
+export { normalizeTeamPresentation, normalizeTeamPalette } from './validators/teamColors';

@@ -23,6 +23,7 @@ import {
   changesWinner,
   directsElsewhere,
   isSettleWrite,
+  indexed,
   loserByeArrival,
   heldByeLoser,
   reentersWinner,
@@ -42,6 +43,7 @@ import {
 import {
   carriedDualLanding,
   dualLineUpOps,
+  initialRelayLineUpOps,
   dualTallyOps,
   lineExitReason,
   lineUpCarry,
@@ -62,6 +64,7 @@ import {
 import {
   arrivalOps,
   awardedArrivalOps,
+  arrivalReturnOps,
   placedDirection,
   removalOps,
   removedOps,
@@ -355,7 +358,12 @@ function lineDualPlan(
     return {
       ...result,
       stampsScoredTime: false,
-      dualTally: { sides: line.dualRewrite.sides, tieFormat: line.dualRewrite.tieFormat },
+      dualTally: {
+        sides: line.dualRewrite.sides,
+        tieFormat: line.dualRewrite.tieFormat,
+        ...(line.dualRewrite.clearsTieFormatId ? { clearsTieFormatId: true as const } : {}),
+        ...(line.dualRewrite.clearsInitialScore ? { clearsInitialScore: true as const } : {}),
+      },
     };
   });
   return { ...dualPlan, ops };
@@ -431,7 +439,12 @@ function decidingLineOps(args: PlanArgs & { dual: DualCall; drawDefinition: Draw
   // the dual the loser lands in, otherwise untouched (the arrival is written on its structure's assignments), is stamped
   // by the carry's notice
   // past a BYE, the dual beyond takes the losing team's line-up first (its assignment's), as v1 announces the two
-  if (beyond) ops.push(...beyond);
+  if (beyond) {
+    const assignmentReturn = ops.findLastIndex(
+      (op) => op.op === 'announcePositionAssignments' && op.structureId === dual.view.targets.loserStructureId,
+    );
+    ops.splice(assignmentReturn < 0 ? ops.length : assignmentReturn, 0, ...beyond);
+  }
   if (loserCarry) ops.push(loserCarry, { op: 'stampUpdatedAt', entity: 'matchUp', id: loserCarry.matchUpId });
   return { ops: [...resultOps(request, write, request.matchUpId as string), ...ops], shape: dualPlan.shape };
 }
@@ -497,7 +510,14 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
     // same rule (`ensuredDualSides`)
     // a schedule the call carries, written before the result as v1 writes it before `applyScoredTime` (S7)
     ...scheduleOps(args, matchUpId),
-    ...resultOps(request, write, matchUpId, view.dualSides, autoCalcWrite(request, view)),
+    ...resultOps(
+      request,
+      write,
+      matchUpId,
+      view.dualSides,
+      autoCalcWrite(request, view),
+      returnsQualifierRemoved(args),
+    ),
     ...(refreshedArrivalOps(args) ?? []),
     // a convergence the unwind dissolved, re-announced by v1's settle pass after the call's own write (S6 tail)
     ...reannounced,
@@ -536,10 +556,11 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   const lineUps = dualCall ? dualLineUpOps({ ...args, drawDefinition }, loser, loserThrough) : [];
   if (!lineUps) return { abstain: 'team' };
   // a carried exit's write on the matchUp the loser lands in (S5)
-  // (a carry past a BYE is recorded beside it before the carrier is placed on beyond, as v1 announces the two)
+  // The carrier's assignment returns before progressExitStatus announces its provenance beside the BYE.
   const carried = unwoundCarriedFor(view, args, loser);
   const landing = dualCall ? carriedDualLanding(view, drawDefinition, carried.landing, loser) : carried.landing;
   if (!landing) return { abstain: 'team' };
+  const initialLineUps = initialRelayLineUpOps(lineUps, carried.relay);
   const plainRelays =
     plainPassage?.byes.map((matchUpId) => ({
       matchUpId,
@@ -553,6 +574,9 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
               op: 'setMatchUpDrawPositions',
               matchUpId: through.matchUpId,
               drawPositions: through.drawPositions,
+              ...(through !== winnerThrough && !(placedThrough && through === loserThrough)
+                ? { preservesWinningSide: true as const }
+                : {}),
               ...(placedThrough && through === loserThrough
                 ? { placedDrawPosition: view.targets.loserTargetDrawPosition }
                 : {}),
@@ -584,7 +608,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   // The linked seats read the state after the literal prefix emitted below, never positional guesses.
   const seatOps = certifiedSeatProgram(
     args,
-    [...ops, ...seated, ...carried.relay, ...throughBye, ...lineUps, ...landing, ...converging],
+    [...ops, ...seated, ...initialLineUps, ...throughBye, ...lineUps, ...carried.relay, ...landing, ...converging],
     seatObligation,
   );
   if (!seatOps) return { abstain: 'exit' };
@@ -612,11 +636,15 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
         .filter((id) => id !== (view.group?.containerStructureId ?? structureId))
         .map((id) => ({ op: 'stampUpdatedAt', entity: 'structure', id }))
     : [];
+  const arrivalReturns = arrivalReturnOps(arrival);
   ops.push(
-    ...seated,
-    ...carried.relay,
+    ...seated.filter((op) => op.op !== 'announcePositionAssignments'),
+    ...initialLineUps,
     ...throughBye,
     ...lineUps,
+    ...seated.filter((op) => op.op === 'announcePositionAssignments'),
+    ...arrivalReturns,
+    ...carried.relay,
     ...landing,
     ...converging,
     ...doubleExitSeated,
@@ -646,13 +674,43 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   // and moved after it, and position alone cannot tell the two apart. Before widening this to one end-of-plan pass,
   // assert over the census that no candidate's matchUp takes a non-convergence result write later in the plan.
   const superseded = new Set(reannounced.filter((op) => isSettleWrite(op) && convergedWrites.has(op.matchUpId)));
-  const writes = ops.filter((op) => !superseded.has(op));
+  const relayAfter = producedRelayAfterOps(view, unwound, loser, seatPrograms, convergence.superseded);
+  const delayedReturns = awardedAssignmentReturns(view, [...relayAfter, ...(seatOps?.after ?? [])], arrivalReturns);
+  const writes = ops.filter((op) => !superseded.has(op) && !delayedReturns.has(op));
   return {
-    ops: [
-      ...writes,
-      ...producedRelayAfterOps(view, unwound, loser, seatPrograms, convergence.superseded),
-      ...retainedAward,
-    ],
+    ops: [...writes, ...returnedRelayOps(view, relayAfter, delayedReturns), ...retainedAward],
     shape: args.route === 'winner' || carriedOn ? 'direction' : 'local',
   };
+}
+
+/** A linked winner's later cleanup follows the assignment return in the originating structure. */
+function returnedRelayOps(view: OutcomeView, ops: OutcomeOp[], returns: Set<OutcomeOp>): OutcomeOp[] {
+  const cleanup = ops.findIndex(
+    (op) => op.op === 'setMatchUpDrawPositions' && !!op.releasedDrawPosition && crossesWinnerLink(view, op.matchUpId),
+  );
+  const boundary = cleanup < 0 ? ops.length : cleanup;
+  return [...ops.slice(0, boundary), ...returns, ...ops.slice(boundary)];
+}
+
+function crossesWinnerLink(view: OutcomeView, matchUpId: string): boolean {
+  const source = indexed(view, matchUpId);
+  const target = indexed(view, source?.winnerMatchUpId);
+  return !!source && !!target && source.structureId !== target.structureId;
+}
+
+/** A produced exit is awarded inside assignDrawPosition, before that assignment returns. */
+function awardedAssignmentReturns(view: OutcomeView, awards: OutcomeOp[], returns: OutcomeOp[]): Set<OutcomeOp> {
+  const structures = new Set(
+    awards.flatMap((op) =>
+      op.op === 'setMatchUpResult' && op.announcedAs === 'assignMatchUpDrawPosition'
+        ? [indexed(view, op.matchUpId)?.structureId]
+        : [],
+    ),
+  );
+  return new Set(returns.filter((op) => op.op === 'announcePositionAssignments' && structures.has(op.structureId)));
+}
+
+/** The unlinked qualifying-final removal still contributes its own undefined return field. */
+function returnsQualifierRemoved({ route, view }: PlanArgs): true | undefined {
+  return route === 'remove-directed' && view.draw.unlinkedQualifierRemoval ? true : undefined;
 }

@@ -2,6 +2,7 @@ import { rootExtensionsFingerprint, rootExtensionsNotice } from '@Mutate/tournam
 import { announceDrawChange, attributesSnapshot } from '@Mutate/drawDefinitions/announceDrawChange';
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { withEventChangeNotice } from '@Mutate/events/eventChangeNotice';
+import { refuseInvalidTeamPresentation } from './teamPresentationGuard';
 import { removeExtension } from './removeExtension';
 import { addExtension } from './addExtension';
 
@@ -34,6 +35,8 @@ export function addTournamentExtension(params: AddExtensionArgs): {
 } {
   if (!params || typeof params !== 'object') return { error: MISSING_VALUE };
   if (!params.tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+  const refusal = refuseInvalidTeamPresentation(params.extension);
+  if (refusal) return refusal;
   const before = rootExtensionsFingerprint(params.tournamentRecord);
   const result = addExtension({
     creationTime: params.creationTime,

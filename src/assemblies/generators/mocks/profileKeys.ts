@@ -87,6 +87,7 @@ export const DRAW_PROFILE_KEYS = [
   'completionGoal',
   'considerEventEntries',
   'consolationStructureName',
+  'constraintOverrides',
   'drawEntries',
   'drawExtensions',
   'drawId',

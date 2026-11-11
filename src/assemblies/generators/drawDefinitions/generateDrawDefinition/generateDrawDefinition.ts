@@ -1,7 +1,9 @@
 import { buildIndividualIdsMap, getSharedIndividualConflicts } from '@Query/participants/individualParticipantIds';
 import { addVoluntaryConsolationStructure } from '@Mutate/drawDefinitions/addVoluntaryConsolationStructure';
+import { resolveDrawCompositionOverrides } from '@Query/drawDefinition/getDrawCompositionConstraints';
 import { remapDrawDefinitionMatchUpIds } from '@Mutate/drawDefinitions/remapDrawDefinitionMatchUpIds';
 import { addPlayoffStructures } from '@Generators/drawDefinitions/structures/addPlayoffStructures';
+import { checkDrawCompositionLimits } from '@Query/drawDefinition/checkDrawCompositionLimits';
 import { hydrateRoundNames } from '@Mutate/drawDefinitions/hydrateRoundNames';
 import { getDrawFormat } from '@Generators/drawDefinitions/getDrawFormat';
 import { getParticipants } from '@Query/participants/getParticipants';
@@ -39,7 +41,11 @@ import {
 export function generateDrawDefinition(
   params: GenerateDrawDefinitionArgs,
 ): ReturnType<typeof generateDrawDefinitionDraft> {
-  return withDraftWrites(() => generateDrawDefinitionDraft(params));
+  const resolution = resolveDrawCompositionOverrides(params);
+  if (resolution.error) return { error: resolution.error };
+  return withDraftWrites(() =>
+    generateDrawDefinitionDraft({ ...params, tournamentRecord: resolution.tournamentRecord! }),
+  );
 }
 
 function generateDrawDefinitionDraft(params: GenerateDrawDefinitionArgs): ResultType & {
@@ -200,6 +206,14 @@ function generateDrawDefinitionDraft(params: GenerateDrawDefinitionArgs): Result
   if (targetMatchUpIds?.length) {
     remapDrawDefinitionMatchUpIds({ targetMatchUpIds, drawDefinition });
   }
+
+  const limitsResult = checkDrawCompositionLimits({
+    tournamentRecord,
+    event,
+    drawDefinition,
+    constraintOverrides: params.constraintOverrides,
+  });
+  if (limitsResult.error) return limitsResult;
 
   // the entries generation left out because their stage was full: generation goes on, and says so (CA 2026-11-01)
   const warnings = entriesNotPlacedWarnings({ entriesNotPlaced, drawDefinition });

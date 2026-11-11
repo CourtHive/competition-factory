@@ -1,6 +1,7 @@
 import { buildSideExitProvenance, collapseDoubleExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { SINGLE_EXITS, indexed, onwardFrom, pairedFeeder } from './planShared';
 import { producedConvergedOps, producedConvergedReason } from './convergence';
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { isDoubleExit } from '@Validators/isExit';
 import { producedTarget } from './producedTarget';
 
@@ -245,8 +246,9 @@ function chainOps({ levels, pending }: ConvergedChain): OutcomeOp[] {
       op: 'setMatchUpResult',
       matchUpId: level.matchUpId,
       matchUpStatus: level.matchUpStatus,
+      ...(isDoubleExit(level.matchUpStatus) ? { removesWinningSide: true as const } : {}),
       matchUpStatusCodes: [],
-      ...(blanked ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
+      ...(blanked ? { resetsScore: true, score: toBePlayed.score } : {}),
       stampsScoredTime: false,
       ...(quiet ? { announcesContext: false as const } : {}),
     },
@@ -295,7 +297,9 @@ function byeHeldProducedOps(
       ...(onward ? { winningSide: (3 - sideNumber) as 1 | 2 } : {}),
       matchUpStatusCodes: [],
       // v1's writer here removes the score whatever the exit (`removeScore`), leaving it blanked
-      score: { scoreStringSide1: '', scoreStringSide2: '' },
+      resetsScore: true,
+      ...(relays.length ? { initializesScore: true as const } : {}),
+      score: toBePlayed.score,
       stampsScoredTime: false,
       ...(relays.length ? { inContextBare: true as const } : { announcesContext: false as const }),
     },
@@ -321,6 +325,7 @@ function byeHeldProducedOps(
       matchUpId: produced.matchUpId,
       matchUpStatus: BYE,
       matchUpStatusCodes: [],
+      removesWinningSide: true,
       stampsScoredTime: false,
     },
     ...recorded(produced.matchUpId, (3 - produced.winningSide) as 1 | 2, true),
@@ -332,7 +337,8 @@ function byeHeldProducedOps(
         matchUpId,
         matchUpStatus: BYE,
         matchUpStatusCodes: [],
-        score: { scoreStringSide1: '', scoreStringSide2: '' },
+        resetsScore: true,
+        score: toBePlayed.score,
         stampsScoredTime: false,
         announcesContext: false,
       },
@@ -437,7 +443,7 @@ export function producedAwardWriteOps(
       ...(winningSide ? { winningSide } : {}),
       matchUpStatusCodes: [],
       stampsScoredTime: false,
-      ...(matchUpStatus === WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
+      ...(matchUpStatus === WALKOVER ? { resetsScore: true, score: toBePlayed.score } : {}),
     },
     ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId, provenance }] : []),
     { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },

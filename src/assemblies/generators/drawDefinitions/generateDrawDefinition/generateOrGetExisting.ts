@@ -2,7 +2,6 @@ import { checkSanctionedEntryLimits } from '@Query/drawDefinition/checkSanctione
 import { processExistingDrawDefinition } from './processExistingDrawDefinition';
 import { generateNewDrawDefinition } from './generateNewDrawDefinition';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { setUpDrawGeneration } from './setUpDrawGeneration';
 
 // constants
@@ -106,9 +105,8 @@ export function generateOrGetExisting(params: GenerateOrGetExisting): ResultType
 
   // Refuse before anything is generated: the entries this generation adds must fit the sanctioning constraints
   // (maxWildcards, maxAlternates). processExistingDrawDefinition adds only the QUALIFYING drawEntries (or the event's);
-  // generateNewDrawDefinition adds every entry that is not WITHDRAWN. An explicit ignoreStageSpace and AD_HOC draws
-  // are exempt, as addDrawEntry exempts them.
-  if (!params.ignoreStageSpace && !isAdHocType(params.drawType)) {
+  // generateNewDrawDefinition adds every entry that is not WITHDRAWN. Caller escape flags do not grant sanction permission.
+  {
     const entriesToAdd = processExisting
       ? (params.drawEntries ?? eventQualifyingEntries ?? []).filter(({ entryStage }) => entryStage === QUALIFYING)
       : entries.filter(({ entryStatus }) => entryStatus !== WITHDRAWN);

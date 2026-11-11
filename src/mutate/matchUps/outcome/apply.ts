@@ -1,5 +1,5 @@
-import { getInContextMatchUp } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { scoredTimeAction } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
+import { getInContextMatchUp } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { applyOutcomeOps, splitScoredTimeCleanup } from './ops';
 import { findStructure } from '@Acquire/findStructure';
 import { getTopics } from '@Global/state/globalState';
@@ -9,14 +9,15 @@ import {
   deferInContextMatchUp,
   deferredQuery,
   modifyMatchUpNotice,
+  modifyDrawNotice,
   modifyPositionAssignmentsNotice,
 } from '@Mutate/notifications/drawNotifications';
 
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+import type { BuildViewArgs, OutcomeView, PlanShape, Route } from './types';
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
-import type { BuildViewArgs, OutcomeView, PlanShape, Route } from './types';
 import type { MatchUp } from '@Types/tournamentTypes';
 import type { ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -170,10 +171,12 @@ export function applyOwnedPlan({
   shape,
   args,
   ops: completedOps,
+  route,
 }: {
   args: BuildViewArgs;
   ops: OutcomeOp[];
   shape: PlanShape;
+  route?: Route;
 }): ResultType {
   const { drawDefinition, tournamentRecord, event } = args;
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
@@ -184,37 +187,12 @@ export function applyOwnedPlan({
     return matchUp ? [matchUp] : [];
   });
   if (cleanupTargets.length !== cleanup.length) return { error: INVALID_VALUES };
-  const applied = applyOutcomeOps(drawDefinition, completedOps);
+  const applied = applyOutcomeOps(drawDefinition, completedOps, undefined, { bindResultInputs: true });
   if (applied.error) return { error: INVALID_VALUES, info: applied.error };
 
   const tournamentId = tournamentRecord?.tournamentId;
-  const writes = ops.flatMap((op) =>
-    op.op === 'setMatchUpResult' ||
-    op.op === 'setMatchUpDrawPositions' ||
-    op.op === 'setMatchUpBye' ||
-    op.op === 'setMatchUpStatusCodes' ||
-    op.op === 'mergeSideExitProvenance' ||
-    op.op === 'setSideExitProvenance' ||
-    op.op === 'clearMatchUpBye' ||
-    op.op === 'setSideLineUp' ||
-    op.op === 'setOrderOfFinish' ||
-    op.op === 'exchangeDrawPositions'
-      ? [op.matchUpId]
-      : [],
-  );
-  // each matchUp at its LAST score write for the in-context notice that write defers, and at its LAST write of any kind
-  // for its `modifyMatchUp`: v1's notice buffer keeps a matchUp re-announced later in the call at that later place (a
-  // double exit given a winner: the next matchUp unwound first, then the winner's arrival after the result; an unwind
-  // under `doubleExitPropagateBye: false` writing a matchUp back twice, S6 tail), and only a score write defers an
-  // in-context notice (a settle pass's write defers none: v1's `reconcileScoredTimes` announces the matchUp, not its
-  // context)
-  const scores = scoreWrites(ops);
-  const scored = scores.map((op) => op.matchUpId);
-  const lastScores = new Map(scores.map((op) => [op.matchUpId, op] as const));
-  const written = [...new Set(scored.toReversed())].reverse();
-  const announced = [...new Set(writes.toReversed())].reverse();
   // a matchUp given its result and then a position (that next matchUp): its last notice is the placement's
-  const lastWrites = new Map(ops.flatMap((op) => ('matchUpId' in op ? [[op.matchUpId, op]] : [])));
+  const lastWrites = new Map(ops.flatMap((op) => ('matchUpId' in op && op.matchUpId ? [[op.matchUpId, op]] : [])));
   const placedLast = new Set(
     [...lastWrites].flatMap(([matchUpId, op]) => (op.op === 'setMatchUpDrawPositions' ? [matchUpId] : [])),
   );
@@ -236,7 +214,7 @@ export function applyOwnedPlan({
   );
   const byes = new Set(ops.flatMap((op) => (op.op === 'setMatchUpBye' ? [op.matchUpId] : [])));
   // a loser taken back out: their matchUp's codes re-derived, announced as v1's `removeDirectedLoser` announces it
-  const recoded = new Set(ops.flatMap((op) => (op.op === 'setMatchUpStatusCodes' ? [op.matchUpId] : [])));
+  const recoded = new Set(ops.flatMap((op) => (op.op === 'setMatchUpStatusCodes' && !op.quiet ? [op.matchUpId] : [])));
   // a swap's relabel in a later round: v1's `exchangePathPositions` announces each matchUp as `swapWinnerLoser`
   const exchanged = new Set(ops.flatMap((op) => (op.op === 'exchangeDrawPositions' ? [op.matchUpId] : [])));
   // a carry recorded beside a BYE it passed: the BYE matchUp's state is not rewritten, so v1's `progressExitStatus`
@@ -253,10 +231,9 @@ export function applyOwnedPlan({
   const subscribed = getTopics().topics.includes(UPDATE_INCONTEXT_MATCHUP);
   // every score write announces its matchUp in context to a subscriber, as v1's `modifyMatchUpScore` does: the call's
   // own, and a carried exit's on the matchUp it lands in (S5)
-  for (const matchUpId of written) {
-    if (!subscribed || !resulted.has(matchUpId) || !stored.has(matchUpId)) continue;
-    // v1's deferred callback is replaced by the last score write, including the record it captures.
-    const score = lastScores.get(matchUpId);
+  const deferScore = (score: ResultOp) => {
+    const { matchUpId } = score;
+    if (!subscribed || !stored.has(matchUpId)) return;
     const contextless = score?.announcesContext === false || score?.inContextBare;
     const record = contextless ? undefined : tournamentRecord;
     deferInContextMatchUp({
@@ -264,11 +241,28 @@ export function applyOwnedPlan({
       tournamentId: contextless ? undefined : tournamentId,
       matchUpId,
     });
-  }
+  };
+  const tallyMatchUpId = tallyNoticeTarget(ops, args);
   const { settled } = namedWriters(ops);
-  for (const matchUpId of announced) {
+  const eventless = eventlessNotices(ops).matchUps;
+  for (const step of nativeNoticeSteps(ops, args.request?.matchUpId, stored, settled)) {
+    if (step.kind === 'assignments') {
+      announceAssignmentBoundary(step, args);
+      continue;
+    }
+    const matchUpId = step.matchUpId;
     const matchUp = stored.get(matchUpId);
     if (!matchUp) continue;
+    if (step.kind !== 'modify') {
+      announceWriteBoundary(
+        step,
+        matchUp,
+        { ...args, event: step.kind === 'score' && eventless.has(matchUpId) ? undefined : event },
+        tallyMatchUpId,
+        deferScore,
+      );
+      continue;
+    }
     // a removal's notice is built as v1's `removeSubsequentRoundsParticipant` builds it, whose caller passes no event;
     // unless a score write announces the matchUp after it (a result turned into a double exit: the exit it produces)
     const removedPosition = resulted.has(matchUpId) ? undefined : removed.get(matchUpId);
@@ -305,16 +299,293 @@ export function applyOwnedPlan({
       event: noticeEvent,
     });
   }
-  announceAssignments({ ops, drawDefinition, tournamentId, event });
   announceScoredTimeCleanup(cleanupTargets, args);
-  return planResult(shape, ops);
+  return planResult(shape, ops, route);
 }
 
-function planResult(shape: PlanShape, ops: OutcomeOp[]): ResultType {
+/** Announce a group's tally at the result writer that performed it. */
+function announceTally(
+  matchUpId: string,
+  tallyMatchUpId: string | undefined,
+  drawDefinition: NonNullable<BuildViewArgs['drawDefinition']>,
+): void {
+  if (matchUpId === tallyMatchUpId) modifyDrawNotice({ drawDefinition });
+}
+
+/** The tally precedes its own result notice; a TEAM line may have announced its result already. */
+function tallyNoticeTarget(ops: OutcomeOp[], args: BuildViewArgs): string | undefined {
+  if (!ops.some((op) => op.op === 'setParticipantResults')) return undefined;
+  return (
+    ops.find((op): op is ResultOp => op.op === 'setMatchUpResult' && !!op.dualTally)?.matchUpId ??
+    args.request.matchUpId
+  );
+}
+
+type NativeNoticeStep =
+  | { kind: 'ensure' | 'score'; matchUpId: string; rank: number; score: ResultOp }
+  | { kind: 'modify'; matchUpId: string; rank: number }
+  | { kind: 'position'; matchUpId: string; rank: number; position: ArrivalOp }
+  | {
+      kind: 'assignments';
+      matchUpId?: never;
+      structureId: string;
+      named: boolean;
+      includesEvent: boolean;
+      rank: number;
+    };
+
+/** Preserve last-write order within each topic, while retaining genuine earlier score boundaries. */
+function nativeNoticeSteps(
+  ops: OutcomeOp[],
+  sourceId: string | undefined,
+  stored: Map<string, MatchUp>,
+  settled: Map<string, string>,
+): NativeNoticeStep[] {
+  const steps: NativeNoticeStep[] = [];
+  const last = new Map<string, NativeNoticeStep>();
+  // removeDirectedParticipants scores the call's own matchUp before withdrawing its directed positions.
+  const lineSource = !!stored.get(sourceId ?? '')?.collectionId;
+  const sourceFirst =
+    !lineSource &&
+    ops.some(
+      (op) =>
+        op.op === 'setMatchUpResult' &&
+        op.matchUpId === sourceId &&
+        op.removesWinningSide &&
+        op.stampsScoredTime !== false,
+    );
+  const sourceIndex = ops.findIndex((op) => op.op === 'setMatchUpResult' && op.matchUpId === sourceId);
+  ops.forEach((op, index) => {
+    const matchUpId = noticeMatchUpId(op);
+    if (matchUpId) last.set(matchUpId, { kind: 'modify', matchUpId, rank: index * 3 + 2 });
+    if (op.op !== 'setMatchUpResult' || op.announcedAs) return;
+    if (op.ensuredSides || op.dualTally?.sides)
+      steps.push({ kind: 'ensure', matchUpId: op.matchUpId, rank: index * 3, score: op });
+    steps.push({ kind: 'score', matchUpId: op.matchUpId, rank: index * 3 + 1, score: op });
+  });
+  ops.forEach((op, index) => {
+    if (
+      op.op !== 'clearMatchUpBye' ||
+      !ops
+        .slice(index + 1)
+        .some(
+          (next) =>
+            ['setMatchUpResult', 'setMatchUpBye', 'clearMatchUpBye', 'setMatchUpDrawPositions'].includes(next.op) &&
+            'matchUpId' in next &&
+            next.matchUpId === op.matchUpId,
+        )
+    )
+      return;
+    steps.push({
+      kind: 'position',
+      matchUpId: op.matchUpId,
+      rank: index * 3 + 2,
+      position: {
+        op: 'setMatchUpDrawPositions',
+        matchUpId: op.matchUpId,
+        drawPositions: stored.get(op.matchUpId)?.drawPositions ?? [],
+        withdrawnByePosition: op.drawPosition,
+        announcesContext: false,
+      },
+    });
+  });
+  ops.forEach((op, index) => {
+    if (
+      op.op !== 'setMatchUpDrawPositions' ||
+      index * 3 + 2 === last.get(op.matchUpId)?.rank ||
+      !ops.slice(index + 1).some((next) => laterPositionNotice(op, next))
+    )
+      return;
+    if (
+      op.clearsScore ||
+      op.removedDrawPosition ||
+      op.withdrawnByePosition ||
+      op.releasedDrawPosition ||
+      op.announcesContext === false ||
+      op.advancesThroughBye
+    )
+      steps.push({
+        kind: 'position',
+        matchUpId: op.matchUpId,
+        rank: positionNoticeRank(op, index, ops, steps, stored),
+        // removeDoubleExit's recursive withdrawal omits the tournament and event.
+        position: index < sourceIndex && !sourceFirst ? { ...op, announcesContext: false } : op,
+      });
+  });
+  if (lineSource && sourceIndex > 0) {
+    // scoreModification removes directed participants through an initial line write, then writes the line again.
+    const initialLine = steps.find((step) => step.kind === 'score' && step.matchUpId === sourceId);
+    if (initialLine) steps.push({ ...initialLine, rank: -2 });
+  }
+  const ordered = [...steps, ...last.values(), ...assignmentNoticeSteps(ops)];
+  if (sourceFirst)
+    for (const step of ordered) {
+      if (step.matchUpId === sourceId) {
+        step.rank = -1;
+        if (step.kind === 'ensure') step.rank = -3;
+        else if (step.kind === 'score') step.rank = -2;
+      }
+    }
+  let reconcileRank = ops.length * 3;
+  for (const [matchUpId] of stored) {
+    const notice = last.get(matchUpId);
+    if (notice && settled.get(matchUpId) === 'reconcileScoredTimes') notice.rank = reconcileRank++;
+  }
+  return ordered.sort((a, b) => a.rank - b.rank);
+}
+
+/** Retain actual earlier withdrawals; a superseded plain advance keeps its final writer's identity. */
+function laterPositionNotice(op: ArrivalOp, next: OutcomeOp): boolean {
+  if (!('matchUpId' in next) || next.matchUpId !== op.matchUpId) return false;
+  if (next.op === 'setMatchUpResult' || next.op === 'setMatchUpBye') return true;
+  const withdrawal = !!(op.clearsScore || op.removedDrawPosition || op.withdrawnByePosition || op.releasedDrawPosition);
+  return withdrawal && (next.op === 'clearMatchUpBye' || next.op === 'setMatchUpDrawPositions');
+}
+
+/** A removal announces this round before resetting the later rounds that its position had reached. */
+function positionNoticeRank(
+  op: ArrivalOp,
+  index: number,
+  ops: OutcomeOp[],
+  steps: NativeNoticeStep[],
+  stored: Map<string, MatchUp>,
+): number {
+  const downstream = new Set<string>();
+  for (
+    let id = stored.get(op.matchUpId)?.winnerMatchUpId;
+    id && !downstream.has(id);
+    id = stored.get(id)?.winnerMatchUpId
+  )
+    downstream.add(id);
+  const preceding =
+    op.clearsScore &&
+    steps.find(
+      (step) =>
+        step.kind === 'score' &&
+        step.rank < index * 3 &&
+        step.score.stampsScoredTime === false &&
+        step.score.matchUpStatus === TO_BE_PLAYED &&
+        downstream.has(step.matchUpId),
+    );
+  if (!op.clearsScore) return index * 3 + 2;
+  // The child's loser-seat withdrawal precedes its score in the fold, but is nested inside this removal.
+  const previousResult = ops
+    .slice(0, preceding ? Math.floor(preceding.rank / 3) : index)
+    .findLastIndex((write) => write.op === 'setMatchUpResult');
+  return (previousResult + 1) * 3 - 0.5;
+}
+
+/** Position writers announce their structure when they return, at the program's explicit boundary. */
+function assignmentNoticeSteps(ops: OutcomeOp[]): NativeNoticeStep[] {
+  return ops.flatMap((op, index): NativeNoticeStep[] => {
+    if (!announcesAssignments(op)) return [];
+    const named =
+      op.op !== 'withdrawBye' && !(op.op === 'announcePositionAssignments' && op.announcesTournament === false);
+    let boundary = index;
+    if (op.op === 'assignBye') {
+      const byeIndex = ops.findIndex(
+        (next, at) => at > index && next.op === 'setMatchUpBye' && next.matchUpId === op.matchUpId,
+      );
+      if (byeIndex >= 0) boundary = byeIndex;
+    }
+    // Legacy withdrawal programs without an explicit return marker retain their declared final boundary.
+    if (op.op === 'withdrawBye') boundary += ops.length;
+    return [
+      {
+        kind: 'assignments',
+        structureId: op.structureId,
+        named,
+        includesEvent: named && !('announcesEvent' in op && op.announcesEvent === false),
+        rank: boundary * 3 + 2.5,
+      },
+    ];
+  });
+}
+
+/** A real placement/removal may announce before a later score supersedes its keyed notice. */
+function announcePositionBoundary(
+  op: ArrivalOp,
+  matchUp: MatchUp,
+  { drawDefinition, tournamentRecord, event }: Pick<BuildViewArgs, 'drawDefinition' | 'tournamentRecord' | 'event'>,
+): void {
+  const bare = op.announcesContext === false || !!op.withdrawnByePosition || !!op.clearsScore;
+  const noticeEvent =
+    bare || op.removedDrawPosition || (op.advancesThroughBye && !op.announcesEvent) ? undefined : event;
+  modifyMatchUpNotice({
+    drawDefinition,
+    matchUp,
+    tournamentId: bare ? undefined : tournamentRecord?.tournamentId,
+    eventId: noticeEvent?.eventId,
+    event: noticeEvent,
+    context: positionBoundaryContext(op),
+  });
+}
+
+function positionBoundaryContext(op: ArrivalOp): string {
+  if (op.removedDrawPosition) return `removeSubsequentDrawPosition-${op.removedDrawPosition}`;
+  if (op.withdrawnByePosition) return `removeDrawPosition-${op.withdrawnByePosition}`;
+  if (op.releasedDrawPosition) return 'releaseAdvancedDrawPosition';
+  return op.advancesThroughBye ? 'advanceWinner' : 'assignMatchUpDrawPosition';
+}
+
+function noticeMatchUpId(op: OutcomeOp): string | undefined {
+  return op.op === 'setMatchUpResult' ||
+    op.op === 'setMatchUpDrawPositions' ||
+    op.op === 'setMatchUpBye' ||
+    (op.op === 'setMatchUpStatusCodes' && !op.quiet) ||
+    op.op === 'mergeSideExitProvenance' ||
+    op.op === 'setSideExitProvenance' ||
+    op.op === 'clearMatchUpBye' ||
+    (op.op === 'setSideLineUp' && !op.quiet) ||
+    op.op === 'setOrderOfFinish' ||
+    op.op === 'exchangeDrawPositions'
+    ? op.matchUpId
+    : undefined;
+}
+
+/** A dual ensures its line-ups before tallying; every score writer then defers and announces its own result. */
+function announceWriteBoundary(
+  step: Extract<NativeNoticeStep, { kind: 'ensure' | 'score' | 'position' }>,
+  matchUp: MatchUp,
+  { drawDefinition, tournamentRecord, event }: BuildViewArgs,
+  tallyMatchUpId: string | undefined,
+  deferScore: (score: ResultOp) => void,
+): void {
+  if (!drawDefinition) return;
+  if (step.kind === 'position') {
+    announcePositionBoundary(step.position, matchUp, { drawDefinition, tournamentRecord, event });
+    return;
+  }
+  if (step.kind === 'score') {
+    announceTally(step.matchUpId, tallyMatchUpId, drawDefinition);
+    deferScore(step.score);
+  }
+  const bare = step.kind === 'score' && step.score.announcesContext === false;
+  modifyMatchUpNotice({
+    drawDefinition,
+    tournamentId: bare ? undefined : tournamentRecord?.tournamentId,
+    eventId: bare ? undefined : event?.eventId,
+    event: bare ? undefined : event,
+    matchUp,
+    context: step.kind === 'ensure' ? 'ensureSidLineUps' : 'modifyMatchUpScore',
+  });
+}
+
+function planResult(shape: PlanShape, ops: OutcomeOp[], route?: Route): ResultType {
   const tieMatchUpResult = dualTallyResult(ops);
   // a winner's route returns the context `directParticipants` builds, a final's included, which carries something only
   // for an exit (S5): empty
-  return shape === 'direction' ? { ...SUCCESS, context: {}, ...tieMatchUpResult } : { ...SUCCESS, ...tieMatchUpResult };
+  if (route === 'remove-directed') {
+    const result = {
+      ...SUCCESS,
+      connectedStructures: undefined,
+      ...(ops.some((op) => op.op === 'setMatchUpResult' && op.returnsQualifierRemoved)
+        ? { qualifierRemoved: undefined }
+        : {}),
+    };
+    return result;
+  }
+  return shape === 'direction' ? { ...SUCCESS, ...tieMatchUpResult, context: {} } : { ...SUCCESS, ...tieMatchUpResult };
 }
 
 /** Final stored-order cleanup announces real context after ordinary writers and assignments. */
@@ -497,7 +768,7 @@ export function eventlessNotices(ops: OutcomeOp[]): { matchUps: Set<string>; str
   const resulted = new Set(ops.flatMap((op) => (op.op === 'setMatchUpResult' ? [op.matchUpId] : [])));
   const matchUps = new Set(
     ops.flatMap((op) => {
-      if (!('matchUpId' in op)) return [];
+      if (!('matchUpId' in op) || !op.matchUpId) return [];
       const { matchUpId } = op;
       const unplaced = !resulted.has(matchUpId) && (removed.has(matchUpId) || unbyed.has(matchUpId));
       return !namedResults.has(matchUpId) && !carriedNotices.has(matchUpId) && (unplaced || unevented.has(matchUpId))
@@ -521,8 +792,8 @@ export const announcesAssignments = (
   op: OutcomeOp,
 ): op is Extract<OutcomeOp, { op: 'assignPosition' | 'assignBye' | 'withdrawBye' | 'announcePositionAssignments' }> =>
   op.op === 'announcePositionAssignments' ||
-  op.op === 'assignPosition' ||
-  ((op.op === 'assignBye' || op.op === 'withdrawBye') && op.announcesAssignments !== false);
+  ((op.op === 'assignPosition' || op.op === 'assignBye' || op.op === 'withdrawBye') &&
+    op.announcesAssignments !== false);
 
 /** each structure a placement or an unwind's seat visit touches, in the order the call first touches it */
 const touchedStructures = (ops: OutcomeOp[]) => [
@@ -546,14 +817,15 @@ const eventedPlacement = (ops: OutcomeOp[], structureId: string) =>
  * dual's score and the winner it decides, if it decides one; no winner removed, no tieFormat removed
  */
 function dualTallyResult(ops: OutcomeOp[]) {
-  const tally = ops.find((op) => op.op === 'setMatchUpResult' && op.dualTally);
+  const tally = ops.find((op): op is ResultOp => op.op === 'setMatchUpResult' && !!op.dualTally);
   if (tally?.op !== 'setMatchUpResult' || tally.dualTally?.unreturned) return {};
   return {
     tieMatchUpResult: {
       ...SUCCESS,
       score: tally.score,
       removeWinningSide: false,
-      ...(tally.winningSide ? { winningSide: tally.winningSide } : {}),
+      tieFormatRemoved: undefined,
+      winningSide: tally.winningSide,
     },
   };
 }
@@ -562,35 +834,19 @@ function dualTallyResult(ops: OutcomeOp[]) {
  * The structures whose assignments the ops change: a loser placed across a link, or a reserved seat, announced once
  * (v1's `directLoser`, `assignDrawPositionBye`); and a seat an unwind visits (S6)
  */
-function announceAssignments({
-  drawDefinition,
-  tournamentId,
-  event,
-  ops,
-}: {
-  drawDefinition: NonNullable<BuildViewArgs['drawDefinition']>;
-  event: BuildViewArgs['event'];
-  tournamentId?: string;
-  ops: OutcomeOp[];
-}) {
-  // each structure once, where the call first touches it: the notice buffer keeps a structure's first notice in place
-  // and takes a later one's payload over it (`preserveNoticeIdentity`), so an unwind's seat visit and the loser placed
-  // after it in the same structure are one notice, at the visit (S6)
-  for (const structureId of touchedStructures(ops)) {
-    const { structure } = findStructure({ drawDefinition, structureId });
-    if (!structure) continue;
-    const placedIn = ops.some((op) => placement(op) && op.structureId === structureId);
-    // a seat an unwind's `removeDirectedBye` visits, nothing placed in its structure: announced with neither event nor
-    // tournament, whether or not a BYE stood there (S6)
-    if (!placedIn) {
-      modifyPositionAssignmentsNotice({ drawDefinition, structure, tournamentId: undefined, event: undefined });
-      continue;
-    }
-    // a loser placed across a link, or a reserved seat (v1's `directLoser`, `assignDrawPositionBye`), with its event
-    // where any placement in it is announced with one (`eventedPlacement`)
-    const noticeEvent = eventedPlacement(ops, structureId) ? event : undefined;
-    modifyPositionAssignmentsNotice({ drawDefinition, tournamentId, structure, event: noticeEvent });
-  }
+function announceAssignmentBoundary(
+  { structureId, named, includesEvent }: Extract<NativeNoticeStep, { kind: 'assignments' }>,
+  { drawDefinition, tournamentRecord, event }: BuildViewArgs,
+): void {
+  if (!drawDefinition) return;
+  const { structure } = findStructure({ drawDefinition, structureId });
+  if (!structure) return;
+  modifyPositionAssignmentsNotice({
+    drawDefinition,
+    structure,
+    tournamentId: named ? tournamentRecord?.tournamentId : undefined,
+    event: includesEvent ? event : undefined,
+  });
 }
 
 /**
@@ -665,7 +921,7 @@ function namedWriters(ops: OutcomeOp[]) {
       settled.set(op.matchUpId, op.announcedAs);
       lineUpUnevented.delete(op.matchUpId);
     } else if (op.op === 'setSideLineUp') {
-      if (relayed.has(op.matchUpId)) continue;
+      if (op.quiet || relayed.has(op.matchUpId)) continue;
       settled.set(op.matchUpId, op.announcedAs);
       if (op.announcesEvent === false) lineUpUnevented.add(op.matchUpId);
     } else if (

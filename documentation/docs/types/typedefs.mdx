@@ -347,6 +347,7 @@ export interface RegistrationProfile {
 
 ```ts
 export interface Participant {
+  teamColors?: TeamColors;
   contacts?: Contact[];
   /**
    * Members who hold contact information for this grouping — "who do I call about this group".
@@ -1946,6 +1947,43 @@ export type CountryCodeUnion = `${CountryCodeEnum}`;
 export type OnlineResourceTypeUnion = `${OnlineResourceTypeEnum}`;
 ```
 
+#### TeamPaletteColor
+
+```ts
+export interface TeamPaletteColor {
+  colorId: string;
+  value: string;
+  name?: string;
+  group?: string;
+}
+```
+
+#### TeamColorRole
+
+```ts
+export type TeamColorRole = `${TeamColorRoleEnum}`;
+```
+
+#### TeamColors
+
+```ts
+/** Portable CODES TEAM palette and provider-authored preferred color roles. */
+export interface TeamColors {
+  palette: TeamPaletteColor[];
+  display?: { roles: Partial<Record<TeamColorRole, string>> };
+}
+```
+
+#### TeamPresentation
+
+```ts
+/** A theme marker explicitly uses the renderer/theme fallback; omission inherits. */
+export interface TeamPresentation {
+  roles?: Partial<Record<TeamColorRole, string | { theme: true }>>;
+  teams?: Record<string, { roles: Partial<Record<TeamColorRole, string | { theme: true }>> }>;
+}
+```
+
 #### ContactRelationshipUnion
 
 ```ts
@@ -2849,6 +2887,13 @@ export interface SanctionConstraints {
 ```ts
 /** The limits for the events an entry matches: eventType always; eventName and categoryName when stated. */
 export interface SanctionEventConstraints {
+  /** Explicit per-limit override ceilings authorized by the sanctioning record; absent fields grant no permission. */
+  overrideLimits?: {
+    drawSize?: number;
+    maxWildcards?: number;
+    maxAlternates?: number;
+    maxQualifiers?: number;
+  };
   match: { eventType: EventTypeUnion; eventName?: string; categoryName?: string };
   drawSize?: number;
   maxWildcards?: number;

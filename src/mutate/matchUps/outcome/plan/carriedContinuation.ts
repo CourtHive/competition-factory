@@ -1,4 +1,5 @@
 import { buildCarriedExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 
 // constants and types
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
@@ -49,13 +50,17 @@ export function carriedContinuation(
     const at = frame.landing;
     passes += at.passes;
     if (maxPasses !== undefined && passes > maxPasses) return undefined;
-    if (frame.assignment) landing.push({ op: 'assignPosition', ...frame.assignment });
+    if (frame.assignment) {
+      landing.push({ op: 'assignPosition', ...frame.assignment, announcesAssignments: false });
+    }
     const relays = (at.relays ?? []).flatMap(({ matchUpId, sideNumber }): OutcomeOp[] => [
       ...carryProvenance(status, frame!, matchUpId, sideNumber, 'progressExitStatus'),
       { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
     ]);
-    (frame === first ? relay : landing).push(...relays);
-    if (frame !== first && at.beyond) landing.push(...carryPlacement(at.beyond));
+    if (!frame.assignment) (frame === first ? relay : landing).push(...relays);
+    if (frame !== first && at.beyond) landing.push(...carryPlacement(at.beyond, true));
+    if (frame.assignment)
+      landing.push({ op: 'announcePositionAssignments', structureId: frame.assignment.structureId }, ...relays);
     landing.push(...carryLanding(status, frame));
     if (!at.carriesOn) return { relay, landing };
     frame = next?.(frame);
@@ -63,9 +68,14 @@ export function carriedContinuation(
   return undefined;
 }
 
-function carryPlacement(at: { matchUpId: string; drawPositions: number[] }): OutcomeOp[] {
+function carryPlacement(at: { matchUpId: string; drawPositions: number[] }, preservesWinningSide?: true): OutcomeOp[] {
   return [
-    { op: 'setMatchUpDrawPositions', matchUpId: at.matchUpId, drawPositions: at.drawPositions },
+    {
+      op: 'setMatchUpDrawPositions',
+      matchUpId: at.matchUpId,
+      drawPositions: at.drawPositions,
+      ...(preservesWinningSide ? { preservesWinningSide } : {}),
+    },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: at.matchUpId },
   ];
 }
@@ -101,7 +111,7 @@ function carryLanding(status: MatchUpStatusUnion, frame: CarryFrame): OutcomeOp[
       matchUpStatus: status,
       winningSide: (3 - at.sideNumber) as 1 | 2,
       matchUpStatusCodes: [],
-      ...(status === WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
+      ...(status === WALKOVER ? { resetsScore: true, score: toBePlayed.score } : {}),
       ...('ensuredSides' in at ? { ensuredSides: at.ensuredSides } : {}),
     },
     ...carryProvenance(status, frame, at.matchUpId, at.sideNumber),

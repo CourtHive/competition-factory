@@ -1,5 +1,5 @@
-import { BLANK_SCORE, CLEAR_SCORE, indexed, scoreless, sideOf, structureStamps, unplaced } from './planShared';
-import { arrivalOps, winnerPlacementOps } from './directionOps';
+import { blankScore, CLEAR_SCORE, indexed, scoreless, sideOf, structureStamps, unplaced } from './planShared';
+import { arrivalOps, arrivalReturnOps, winnerPlacementOps } from './directionOps';
 import { unwoundOps, unwoundView } from './unwindPath';
 import { isDoubleExit } from '@Validators/isExit';
 import { scheduleOps } from './schedulePlan';
@@ -46,7 +46,8 @@ function terminalMainAward(
     matchUpId: main.matchUpId,
     matchUpStatus: WALKOVER,
     winningSide: side,
-    score: BLANK_SCORE,
+    resetsScore: true,
+    score: blankScore(),
     matchUpStatusCodes: [],
     stampsScoredTime: false,
     retainedExitPlanned: true,
@@ -149,6 +150,7 @@ export function terminalOccupiedWinnerOps(args: PlanArgs): OutcomeOp[] | undefin
     ...winnerOps,
     ...arrival,
     relayAward,
+    ...arrivalReturnOps(arrival),
     ...unwind.reannounced.map(project),
     ...final,
     ...structureStamps([...unwound, ...arrival], source.structureId),
@@ -190,7 +192,9 @@ export function retainedCarriedAwardOps(
     matchUpId: award.matchUpId,
     matchUpStatus: award.matchUpStatus,
     winningSide: (3 - side) as 1 | 2,
-    score: BLANK_SCORE,
+    resetsScore: award.matchUpStatus === WALKOVER ? true : undefined,
+    replaysCarriedExit: true,
+    score: blankScore(),
     matchUpStatusCodes: [],
     stampsScoredTime: false,
     retainedExitPlanned: true,

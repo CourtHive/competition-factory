@@ -13,6 +13,7 @@ import { isObject, isString } from '@Tools/objects';
 import { collapseWhitespace } from '@Tools/strings';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { addParticipant } from './addParticipant';
+import { planTeamColors } from './teamColors';
 
 // constants
 import { PARTICIPANT_NAME_DERIVED_FROM_PERSON } from '@Constants/infoConstants';
@@ -163,6 +164,7 @@ function planModification(args: PlanArgs): ModificationPlan | ResultType {
   if (name.participantName) participantValues.participantName = name.participantName;
 
   const checks: (() => ResultType | undefined)[] = [
+    () => setTeamColors(fieldArgs),
     () => checkGrouping(args),
     () => checkSetterOwnedAttributes({ existingParticipant, participant }),
     () => setParticipantAttributes({ tournamentRecord, ...fieldArgs }),
@@ -418,4 +420,13 @@ function getHomeVenueIds({
   if (unknownVenueIds.length) return { error: VENUE_NOT_FOUND, venueIds: unknownVenueIds };
 
   return { homeVenueIds: uniqueVenueIds };
+}
+
+function setTeamColors(args: FieldArgs) {
+  const { existingParticipant, participantValues, participant, clearedKeys } = args;
+  const plan = planTeamColors(participant.teamColors, existingParticipant.participantType);
+  if (plan.error) return plan;
+  if (plan.clear) clearedKeys.push('teamColors');
+  if (plan.teamColors) participantValues.teamColors = plan.teamColors;
+  return undefined;
 }

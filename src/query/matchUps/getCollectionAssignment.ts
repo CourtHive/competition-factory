@@ -87,12 +87,9 @@ export function getCollectionAssignment({
       }
     } else {
       const participantId = assignedParticipantIds?.[0];
+      if (!participantId && !teamParticipant) return undefined;
 
-      return (
-        participantId && {
-          [attribute]: { participantId, teamParticipant, substitutions },
-        }
-      );
+      return { [attribute]: { participantId, teamParticipant, substitutions } };
     }
     return undefined;
   };

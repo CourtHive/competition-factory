@@ -1,4 +1,4 @@
-import { BLANK_SCORE, indexed, positionsOf, scoreless, seatKey, sideOf, undecided, unwoundClean } from './planShared';
+import { blankScore, indexed, positionsOf, scoreless, seatKey, sideOf, undecided, unwoundClean } from './planShared';
 import { collapseDoubleExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { isDoubleExit } from '@Validators/isExit';
@@ -19,6 +19,24 @@ import type { OutcomeOp } from '../ops';
  */
 
 export type Rederived = { matchUpStatus: MatchUpStatusUnion; provenance: SideExitProvenance };
+
+/** The kept double exit reached this empty convergence through a standing BYE, so settle removes its winner key. */
+export function pendingRelayedWinner(view: OutcomeView, matchUpId: string, rederived: Rederived): boolean {
+  const kept = Object.values(rederived.provenance)[0];
+  const origin = indexed(view, kept?.sourceMatchUpId);
+  return (
+    !!origin &&
+    isDoubleExit(origin.matchUpStatus) &&
+    !!view.inContextDrawMatchUps?.some(
+      (feeder) =>
+        feeder.winnerMatchUpId === matchUpId &&
+        feeder.matchUpStatus === BYE &&
+        Object.values(feeder.sideExitProvenance ?? {}).some(
+          (entry) => entry?.sourceMatchUpId === kept?.sourceMatchUpId,
+        ),
+    )
+  );
+}
 
 /**
  * S6 tail: the double exit's produced exit met its paired matchUp's in the next matchUp, which stands a double exit by
@@ -353,6 +371,8 @@ function carrierHomeOps({ carrier, relays, landing, released }: CarrierSentOn, d
       matchUpId: landing.matchUpId,
       matchUpStatus: TO_BE_PLAYED,
       announcedAs: 'reconcileScoredTimes',
+      // positionClear assigns undefined in place when the carrier returns home.
+      removesWinningSide: true,
     },
     { op: 'setSideExitProvenance', matchUpId: landing.matchUpId },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: landing.matchUpId },
@@ -576,10 +596,12 @@ function convergedProducedRelaySeatOps(
       op: 'setMatchUpResult',
       matchUpId: next.matchUpId,
       matchUpStatus: kept.matchUpStatus,
-      score: BLANK_SCORE,
+      resetsScore: true,
+      score: blankScore(),
       matchUpStatusCodes: [],
       stampsScoredTime: false,
       announcedAs: 'settleRederivedDoubleExit',
+      ...(pendingRelayedWinner(view, next.matchUpId, kept) ? { deletesWinningSide: true as const } : {}),
     },
     { op: 'setSideExitProvenance', matchUpId: next.matchUpId, provenance: kept.provenance },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId },
@@ -587,7 +609,7 @@ function convergedProducedRelaySeatOps(
       op: 'setMatchUpResult',
       matchUpId: successor.matchUpId,
       matchUpStatus: TO_BE_PLAYED,
-      ...(successor.score ? { score: BLANK_SCORE } : {}),
+      ...(successor.score ? { resetsScore: true, score: blankScore() } : {}),
       matchUpStatusCodes: [],
       stampsScoredTime: false,
       announcedAs: 'withdrawProducedExits',
@@ -690,7 +712,8 @@ function occupiedFinalRelaySeatOps(
       matchUpId: next.matchUpId,
       matchUpStatus: carried,
       winningSide: (3 - side) as 1 | 2,
-      score: BLANK_SCORE,
+      resetsScore: true,
+      score: blankScore(),
       matchUpStatusCodes: [],
       stampsScoredTime: false,
       retainedExitPlanned: true,
@@ -746,7 +769,39 @@ function standingByeRemainder(
   );
 }
 
-export function unwoundSeatOps(
+/** The assignment notice belongs to the clear's return, after its matchUp writes. */
+export function unwoundSeatOps(...args: Parameters<typeof unwoundSeatProgram>): ReturnType<typeof unwoundSeatProgram> {
+  const program = unwoundSeatProgram(...args);
+  const [, seat] = args;
+  const withdrawal = program?.find(
+    (op) => op.op === 'withdrawBye' && op.structureId === seat.structureId && op.drawPosition === seat.drawPosition,
+  );
+  if (!program || withdrawal?.op !== 'withdrawBye' || withdrawal.announcesAssignments === false) return program;
+  return [
+    ...program.map((op): OutcomeOp => (op === withdrawal ? { ...withdrawal, announcesAssignments: false } : op)),
+    {
+      op: 'announcePositionAssignments',
+      structureId: seat.structureId,
+      announcesEvent: false,
+      announcesTournament: false,
+    },
+  ];
+}
+
+/** A retained standing BYE has no assignment-clear return to announce. */
+function unplacedByeSeatOps(
+  view: OutcomeView,
+  seat: WinnerLoserSeat,
+  withdrawn: Set<string>,
+  withdraw: Extract<OutcomeOp, { op: 'withdrawBye' }>,
+): OutcomeOp[] | undefined {
+  if (!seat.seat?.free) return undefined;
+  if (seat.matchUpStatus !== BYE) return [withdraw];
+  if (!standingByeSeat(view, seat, withdrawn)) return undefined;
+  return [{ ...withdraw, announcesAssignments: false }];
+}
+
+function unwoundSeatProgram(
   view: OutcomeView,
   loserSeat: WinnerLoserSeat,
   placedBye: boolean,
@@ -763,6 +818,15 @@ export function unwoundSeatOps(
     op: 'withdrawBye',
     structureId,
     drawPosition,
+    clearedWinnerIds: (view.inContextDrawMatchUps ?? [])
+      .filter(
+        (matchUp) =>
+          matchUp.structureId === structureId &&
+          matchUp.drawPositions?.includes(drawPosition) &&
+          (matchUp.matchUpStatus === TO_BE_PLAYED || matchUp.matchUpStatus === BYE) &&
+          !matchUp.winningSide,
+      )
+      .map(({ matchUpId }) => matchUpId),
     ...(cascaded ? { announcesAssignments: false as const } : {}),
   };
   // a BYE this double exit placed went in behind a FIRST_MATCHUP link too (`advanceByeToLoserMatchUp` asks no condition),
@@ -770,10 +834,7 @@ export function unwoundSeatOps(
   // exit's to take back: v1's
   const conditioned = loserSeat.linkCondition && !(placedBye && loserSeat.linkCondition === FIRST_MATCHUP);
   if (!seat || conditioned) return undefined;
-  if (!placedBye)
-    return seat.free && (loserSeat.matchUpStatus !== BYE || standingByeSeat(view, loserSeat, withdrawn))
-      ? [withdraw]
-      : undefined;
+  if (!placedBye) return unplacedByeSeatOps(view, loserSeat, withdrawn, withdraw);
   const byeMatchUp = indexed(view, matchUpId);
   if (!seat.bye || !seat.byeFromPropagation || !byeMatchUp) return undefined;
   const produced =

@@ -1839,7 +1839,36 @@ export enum OnlineResourceTypeEnum {
 }
 export type OnlineResourceTypeUnion = `${OnlineResourceTypeEnum}`;
 
+export interface TeamPaletteColor {
+  colorId: string;
+  value: string;
+  name?: string;
+  group?: string;
+}
+
+export enum TeamColorRoleEnum {
+  TEAM_SURFACE = 'team.surface',
+  TEAM_TEXT = 'team.text',
+  TEAM_ACCENT = 'team.accent',
+  SCORE_SURFACE = 'score.surface',
+  SCORE_TEXT = 'score.text',
+}
+export type TeamColorRole = `${TeamColorRoleEnum}`;
+
+/** Portable CODES TEAM palette and provider-authored preferred color roles. */
+export interface TeamColors {
+  palette: TeamPaletteColor[];
+  display?: { roles: Partial<Record<TeamColorRole, string>> };
+}
+
+/** A theme marker explicitly uses the renderer/theme fallback; omission inherits. */
+export interface TeamPresentation {
+  roles?: Partial<Record<TeamColorRole, string | { theme: true }>>;
+  teams?: Record<string, { roles: Partial<Record<TeamColorRole, string | { theme: true }>> }>;
+}
+
 export interface Participant {
+  teamColors?: TeamColors;
   contacts?: Contact[];
   /**
    * Members who hold contact information for this grouping — "who do I call about this group".
@@ -3205,6 +3234,13 @@ export interface SanctionConstraints {
 
 /** The limits for the events an entry matches: eventType always; eventName and categoryName when stated. */
 export interface SanctionEventConstraints {
+  /** Explicit per-limit override ceilings authorized by the sanctioning record; absent fields grant no permission. */
+  overrideLimits?: {
+    drawSize?: number;
+    maxWildcards?: number;
+    maxAlternates?: number;
+    maxQualifiers?: number;
+  };
   match: { eventType: EventTypeUnion; eventName?: string; categoryName?: string };
   drawSize?: number;
   maxWildcards?: number;

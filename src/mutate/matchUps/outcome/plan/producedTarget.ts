@@ -1,4 +1,5 @@
 import { buildSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { indexed, onwardFrom } from './planShared';
 
 // constants and types
@@ -115,7 +116,7 @@ export function producedTargetOps(
       matchUpStatusCodes: [],
       stampsScoredTime: false,
       ...(target.reservation ? { restoresNoticeIdentity: true as const } : {}),
-      ...(target.matchUpStatus === WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
+      ...(target.matchUpStatus === WALKOVER ? { resetsScore: true, score: toBePlayed.score } : {}),
     },
     ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId: entry.matchUpId, provenance }] : []),
     { op: 'stampUpdatedAt', entity: 'matchUp', id: entry.matchUpId },

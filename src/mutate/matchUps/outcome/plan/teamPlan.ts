@@ -168,6 +168,8 @@ export const dualTallyOps = (line?: OutcomeView['line'], route?: Route): Outcome
           dualTally: {
             sides: line.dualRewrite.sides,
             tieFormat: line.dualRewrite.tieFormat,
+            ...(line.dualRewrite.clearsTieFormatId ? { clearsTieFormatId: true as const } : {}),
+            ...(line.dualRewrite.clearsInitialScore ? { clearsInitialScore: true as const } : {}),
             ...(route === REMOVE_DIRECTED || route === CLEAR_SCORE ? { unreturned: true as const } : {}),
           },
         },
@@ -323,6 +325,16 @@ function assignedLineUpOps(
   return ops;
 }
 
+/** Assignment ensures relay side objects before the carry; the lineup's actual notice follows placement. */
+export function initialRelayLineUpOps(lineUps: OutcomeOp[], relay: OutcomeOp[]): OutcomeOp[] {
+  return lineUps.flatMap((op): OutcomeOp[] =>
+    op.op === 'setSideLineUp' &&
+    relay.some((write) => write.op === 'mergeSideExitProvenance' && write.matchUpId === op.matchUpId)
+      ? [{ ...op, quiet: true }]
+      : [],
+  );
+}
+
 /**
  * S7: the line-ups a dual's own call writes through its assignments: a re-entered winner's on the next dual
  * (`winnerLineUpOps`), then the loser's where it lands (`assignedLineUpOps`). False where a dual does not side the
@@ -406,7 +418,11 @@ export function carriedDualLanding(
     contextSides: reached?.sides?.map((side) =>
       side.drawPosition === loserTargetDrawPosition ? { ...side, participantId } : side,
     ),
-    rawSides: rawSides as Parameters<typeof ensuredDualSides>[0]['rawSides'],
+    // The loser's assignment has already called updateSideLineUp, numbering both stored sides.
+    rawSides: [1, 2].map((sideNumber) => ({
+      ...(rawSides?.find((side) => side.sideNumber === sideNumber) ?? {}),
+      sideNumber,
+    })),
     lineUps: firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }),
   });
   return landing.map((op) =>

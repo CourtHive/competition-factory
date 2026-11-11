@@ -1,4 +1,5 @@
-import { checkSanctionedEntryLimits } from '@Query/drawDefinition/checkSanctionedEntryLimits';
+import type { DrawCompositionConstraints } from '@Query/drawDefinition/getDrawCompositionConstraints';
+import { checkDrawCompositionLimits } from '@Query/drawDefinition/checkDrawCompositionLimits';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -6,7 +7,6 @@ import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
-import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { addNotice, hasTopic } from '@Global/state/globalState';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { storeGoesTo } from '@Query/matchUps/addGoesTo';
@@ -39,6 +39,7 @@ import {
 } from '@Constants/errorConditionConstants';
 
 type AddDrawDefinitionArgs = {
+  constraintOverrides?: DrawCompositionConstraints;
   flight?: { flightNumber: number };
   suppressNotifications?: boolean;
   tournamentRecord?: Tournament;
@@ -120,17 +121,13 @@ export function addDrawDefinition(
       },
     });
 
-  // Refuse before writing: a draw whose entries exceed the sanctioning constraints (maxWildcards, maxAlternates) is not
-  // stored. AD_HOC draws are exempt, as addDrawEntry exempts them.
-  if (!isAdHocType(drawDefinition.drawType)) {
-    const limitsResult = checkSanctionedEntryLimits({
-      stack: 'addDrawDefinition',
-      entries: drawEntries,
-      tournamentRecord,
-      event,
-    });
-    if (limitsResult.error) return limitsResult;
-  }
+  const limitsResult = checkDrawCompositionLimits({
+    constraintOverrides: params.constraintOverrides,
+    tournamentRecord,
+    drawDefinition,
+    event,
+  });
+  if (limitsResult.error) return limitsResult;
 
   // Refuse before writing: an existing drawId is only replaced when permitted and unscored.
   const existingDrawDefinition = eventDrawDefinitions.find((dd) => dd.drawId === drawId);

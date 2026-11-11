@@ -1,3 +1,5 @@
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
+
 // constants and types
 import type { MatchUpWrite, OutcomeRequest, OutcomeView } from '../types';
 import type { MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
@@ -13,8 +15,7 @@ import type { OutcomeOp } from '../ops';
  * scores and all); neither, the matchUp's own is left where it is
  */
 export function writtenScore(request: OutcomeRequest, write: MatchUpWrite): Score | undefined {
-  const blanked = write.scoreStringSide1 === '' && write.scoreStringSide2 === '' && !write.sets;
-  return blanked ? { scoreStringSide1: '', scoreStringSide2: '' } : (request.score as Score | undefined);
+  return write.resetsScore ? toBePlayed.score : (request.score as Score | undefined);
 }
 
 /** the call's own result on its matchUp, and the matchUp's stamp */
@@ -35,12 +36,16 @@ export function resultOps(
   matchUpId: string,
   ensuredSides?: unknown[],
   disableAutoCalc?: true | null,
+  returnsQualifierRemoved?: true,
 ): OutcomeOp[] {
   const score = writtenScore(request, write);
   return [
     {
       op: 'setMatchUpResult',
+      ...(returnsQualifierRemoved ? { returnsQualifierRemoved } : {}),
       matchUpId,
+      ...(write.resetsScore ? { resetsScore: true as const } : {}),
+      ...(write.removesWinningSide ? { removesWinningSide: true as const } : {}),
       ...(ensuredSides ? { ensuredSides } : {}),
       ...(disableAutoCalc === undefined ? {} : { disableAutoCalc }),
       matchUpStatus: write.matchUpStatus as MatchUpStatusUnion,

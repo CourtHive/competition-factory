@@ -10,6 +10,7 @@ import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieForma
 import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { getCollectionAssignment } from './getCollectionAssignment';
 import { getOrderedDrawPositions } from './getOrderedDrawPositions';
+import { normalizeTeamPresentation } from '@Validators/teamColors';
 import { getMatchUpType } from '@Query/matchUp/getMatchUpType';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { findParticipant } from '@Acquire/findParticipant';
@@ -27,20 +28,12 @@ import type { HydrationCache } from '@Query/matchUps/hydrationCache';
 import { POLICY_TYPE_PARTICIPANT } from '@Constants/policyConstants';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { isEmbargoed } from '@Query/publishing/isEmbargoed';
+import { DISPLAY } from '@Constants/extensionConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { SINGLES } from '@Constants/matchUpTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/eventConstants';
 import { isMixed } from '@Validators/isMixed';
-import {
-  ContextContent,
-  ContextProfile,
-  ParticipantMap,
-  PolicyDefinitions,
-  RoundProfile,
-  ScheduleTiming,
-  ScheduleVisibilityFilters,
-} from '@Types/factoryTypes';
 import {
   Participant,
   Tournament,
@@ -51,6 +44,15 @@ import {
   PositionAssignment,
   TieFormat,
 } from '@Types/tournamentTypes';
+import {
+  ContextContent,
+  ContextProfile,
+  ParticipantMap,
+  PolicyDefinitions,
+  RoundProfile,
+  ScheduleTiming,
+  ScheduleVisibilityFilters,
+} from '@Types/factoryTypes';
 
 type AddMatchUpContextArgs = {
   /** a line's dual's tieFormat, as the dual resolved it: what a line without its own resolves through */
@@ -474,6 +476,23 @@ export function addMatchUpContext({
   // `contextProfile.exclude` is not applied here: what this returns is still read (completion, filters, schedule
   // order), so the exclusion is a redaction of the final result. See contextExclusion.ts.
 
+  const presentation = normalizeTeamPresentation(
+    tournamentRecord?.extensions?.find((entry) => entry.name === DISPLAY)?.value?.teamPresentation,
+  );
+  if (presentation) {
+    const ids = new Set<string>(
+      (matchUpWithContext.sides ?? []).flatMap((side) => {
+        const team =
+          side.teamParticipant ?? (side.participant?.participantType === TEAM ? side.participant : undefined);
+        return team?.participantId ? [team.participantId] : [];
+      }),
+    );
+    // Presentation styles TEAM identities only: a matchUp exposing none carries none.
+    if (ids.size) {
+      const teams = Object.fromEntries(Object.entries(presentation.teams ?? {}).filter(([id]) => ids.has(id)));
+      matchUpWithContext.teamPresentation = { ...presentation, ...(presentation.teams && { teams }) };
+    }
+  }
   return matchUpWithContext;
 }
 
@@ -737,6 +756,7 @@ function processTieMatchUps(params) {
         participantName: teamParticipant.participantName,
         participantId: teamParticipant.participantId,
         teamId: teamParticipant.teamId,
+        teamColors: teamParticipant.teamColors,
       });
 
     return {
