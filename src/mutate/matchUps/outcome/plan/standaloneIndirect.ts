@@ -3,10 +3,10 @@ import { getSideStatusCode } from '@Mutate/matchUps/matchUpStatus/sideStatusCode
 import { arrivalOps, arrivalReturnOps, winnerPlacementOps } from './directionOps';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { producedAwardWriteOps } from './producedExit';
+import { convergenceOps } from './carriedConvergence';
 import { directionReason } from './directionReasons';
 import { isDoubleExit } from '@Validators/isExit';
 import { producedTarget } from './producedTarget';
-import { convergenceOps } from './convergence';
 import { resultOps } from './resultOps';
 import {
   blankScore,
@@ -30,8 +30,8 @@ import {
 import { COMPLETED, DEFAULTED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { DirectionPlan, OutcomeView, PlanArgs } from '../types';
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
+import type { Convergence } from './carriedConvergence';
 import type { HydratedMatchUp } from '@Types/hydrated';
-import type { Convergence } from './convergence';
 import type { OutcomeOp } from '../ops';
 
 /**

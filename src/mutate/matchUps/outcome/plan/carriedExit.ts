@@ -1,7 +1,7 @@
 import { buildCarriedExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
+import { convergenceAt, convergenceOps } from './carriedConvergence';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
-import { convergenceAt, convergenceOps } from './convergence';
 import { carriedContinuation } from './carriedContinuation';
 import { freshByeCarry } from '../direction';
 import {

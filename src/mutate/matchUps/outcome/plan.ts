@@ -8,9 +8,9 @@ import { autoCalcWrite, resultOps, writtenScore } from './plan/resultOps';
 import { producedExitOps, producedReason } from './plan/producedExit';
 import { carriedReason, retainedByeCarry } from './plan/carriedExit';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
+import { convergedReason } from './plan/carriedConvergence';
 import { groupTally, writtenLine } from './plan/tallyOps';
 import { withFinishingOrder } from './finishingOrderOps';
-import { convergedReason } from './plan/convergence';
 import { doubleExitSeatOps } from './plan/byeChain';
 import {
   APPLY_VALUES,

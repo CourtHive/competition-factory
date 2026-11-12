@@ -1,6 +1,6 @@
 import { buildSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { producedConvergedOps, producedConvergedReason } from './producedConvergence';
 import { SINGLE_EXITS, indexed, onwardFrom, pairedFeeder } from './planShared';
-import { producedConvergedOps, producedConvergedReason } from './convergence';
 import { byeHeldProduced, byeHeldProducedOps } from './byeHeldPassage';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { isDoubleExit } from '@Validators/isExit';
@@ -9,9 +9,9 @@ import { isDoubleExit } from '@Validators/isExit';
 import type { AbstainReason, DirectionPlan, MatchUpWrite, OutcomeRequest, OutcomeView, SeatObligation } from '../types';
 import { BYE, COMPLETED, IN_PROGRESS, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { MatchUpStatusUnion, SideExitProvenance } from '@Types/tournamentTypes';
-import type { ConvergedContext } from './convergence';
-import type { PassageOrigin } from './byeHeldPassage';
+import type { ConvergedContext } from './convergedWrite';
 import type { HydratedMatchUp } from '@Types/hydrated';
+import type { PassageOrigin } from './byeHeldPassage';
 import type { OutcomeOp } from '../ops';
 
 /**

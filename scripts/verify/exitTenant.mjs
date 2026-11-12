@@ -110,8 +110,14 @@ const ALLOWED = {
     "PLUMBING — the produced target's write carries [] and its reader abstains where the target holds codes; decides nothing on them",
   'mutate/matchUps/outcome/plan/byeChain.ts':
     'PLUMBING — the BYE chain abstains where a matchUp it would write holds codes, and writes [] where v1 writes it; decides nothing on them',
-  'mutate/matchUps/outcome/plan/convergence.ts':
-    'PLUMBING — a convergence keeps the codes as they stood and writes [] into what it produces, as v1 does; decides nothing on them',
+  'mutate/matchUps/outcome/plan/carriedConvergence.ts':
+    "PLUMBING — RULE 4's convergence (split from convergence.ts) keeps the codes as they stood (deriveStatusCodes) and abstains where the client sent the array; decides nothing on them",
+  'mutate/matchUps/outcome/plan/convergedWrite.ts':
+    "PLUMBING — the converged write (split from convergence.ts) carries the codes its caller plans ([] or v1's retainPolicyCodes) into the op; decides nothing on them",
+  'mutate/matchUps/outcome/plan/pendingConvergence.ts':
+    'PLUMBING — the pending convergence (split from convergence.ts) writes [] into what it produces, as v1 does; decides nothing on them',
+  'mutate/matchUps/outcome/plan/producedConvergence.ts':
+    'PLUMBING — the produced convergence (split from convergence.ts) abstains where the landing holds codes; decides nothing on them',
   'mutate/matchUps/outcome/plan/directionReasons.ts':
     "PLUMBING — abstains where a loser's seat holds codes v1 would re-derive (removedLoserReason); decides nothing on them",
   'mutate/matchUps/outcome/plan/directionOps.ts':

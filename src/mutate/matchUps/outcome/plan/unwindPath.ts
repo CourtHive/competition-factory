@@ -24,9 +24,9 @@ import type { DrawDefinition, MatchUpStatusUnion, SideExitProvenance } from '@Ty
 import { BYE, DEFAULTED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCHUP, LOSER, WINNER } from '@Constants/drawDefinitionConstants';
 import type { Rederived, UnwindRelay } from './unwindSeats';
+import type { Convergence } from './carriedConvergence';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { ProducedTarget } from './producedTarget';
-import type { Convergence } from './convergence';
 import type { OutcomeOp } from '../ops';
 
 /**

@@ -4,7 +4,7 @@ import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 // constants and types
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import { WALKOVER } from '@Constants/matchUpStatusConstants';
-import type { Convergence } from './convergence';
+import type { Convergence } from './carriedConvergence';
 import type { ThroughBye } from '../types';
 import type { OutcomeOp } from '../ops';
 
