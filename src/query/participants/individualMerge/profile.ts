@@ -29,10 +29,8 @@ export function mergeIndividualProfile(
     usedResolutions,
   }) as Participant;
   participant.participantId = target.participantId;
-  for (const path of Object.keys(resolutions)) {
-    if (!usedResolutions.has(path)) blockers.push({ code: 'INVALID_RESOLUTION', path });
-  }
-  return { participant, conflicts, blockers };
+  // Entry choices are consumed while references are rewritten; the planner reports unused choices afterwards.
+  return { participant, conflicts, blockers, usedResolutions };
 }
 
 type MergeContext = {

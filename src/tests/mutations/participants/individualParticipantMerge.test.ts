@@ -326,11 +326,46 @@ test('recognizes trusted identities across mirrored fields and preserves disjoin
   expect(ratings.participants![0].timeItems).toHaveLength(2);
 });
 
-test('refuses a ledger pointing at a removed survivor without resurrecting either identity', () => {
+test('a retired ID stays retired after its survivor is deleted; unrelated adds and merges proceed', () => {
+  const record = fixture([individual('third'), individual('fourth')]);
+  expect(commit(record).success).toBe(true);
+  tournamentEngine.setState(record);
+  let result: any = tournamentEngine.deleteParticipants({ participantIds: ['target'] });
+  expect(result.success).toBe(true);
+  result = tournamentEngine.addParticipants({ participants: [individual('fresh')] });
+  expect(result.success).toBe(true);
+  result = tournamentEngine.addParticipant({ participant: individual('source') });
+  expect(result.error?.code).toBe('PARTICIPANT_ID_RETIRED');
+  expect(result.context.canonicalParticipantId).toBe('target');
+  // Re-importing the person re-creates the survivor, never the duplicate.
+  expect(tournamentEngine.resolveMergedParticipantId({ participantId: 'source' })).toBe('target');
+  result = tournamentEngine.addParticipant({ participant: individual('target') });
+  expect(result.success).toBe(true);
+  const preview = tournamentEngine.getIndividualParticipantMergePreview({
+    sourceParticipantId: 'third',
+    targetParticipantId: 'fourth',
+  });
+  expect(preview.canMerge).toBe(true);
+  result = tournamentEngine.mergeIndividualParticipants({
+    sourceParticipantId: 'third',
+    targetParticipantId: 'fourth',
+    expectedFingerprint: preview.fingerprint,
+  });
+  expect(result.success).toBe(true);
+});
+
+test('a corrupt alias chain refuses only the IDs that traverse it, and any merge that rewrites the ledger', () => {
   const record = fixture();
-  record.extensions = [{ name: 'individualParticipantMerges', value: { version: 1, aliases: { retired: 'missing' } } }];
+  record.extensions = [
+    { name: 'individualParticipantMerges', value: { version: 1, aliases: { one: 'two', two: 'one' } } },
+  ];
+  tournamentEngine.setState(record);
+  let result: any = tournamentEngine.addParticipants({ participants: [individual('fresh')] });
+  expect(result.success).toBe(true);
+  result = tournamentEngine.addParticipants({ participants: [individual('one')] });
+  expect(result.error?.code).toBe('ERR_INVALID_VALUES');
   const before = JSON.stringify(record);
-  let result: any = commit(record);
+  result = commit(record);
   expect(result.error?.code).toBe('ERR_INVALID_VALUES');
   expect(JSON.stringify(record)).toBe(before);
 });
@@ -450,3 +485,131 @@ test('transfers direct draw and tournament matchUps, retains public contacts and
   expect(record.participants[0].person.contacts.every((c) => c.isPublic)).toBe(true);
   expect(result.mergeReceipt.before.other.matchUps[0].sides[0].participantId).toBe('source');
 });
+
+function engineEvent(participantIds: string[]) {
+  fixture([individual('other'), individual('fourth')]);
+  tournamentEngine.addEvent({ event: { eventId: 'e1', eventName: 'Open', eventType: 'SINGLES' } });
+  let result: any = tournamentEngine.addEventEntries({ eventId: 'e1', participantIds });
+  expect(result.success).toBe(true);
+  return tournamentEngine.getTournament().tournamentRecord as any;
+}
+function engineMerge(resolutions = {}) {
+  const args = { sourceParticipantId: 'source', targetParticipantId: 'target', resolutions };
+  const preview = tournamentEngine.getIndividualParticipantMergePreview(args);
+  return {
+    preview,
+    result: tournamentEngine.mergeIndividualParticipants({
+      ...args,
+      ...(preview && { expectedFingerprint: preview.fingerprint }),
+    }),
+  };
+}
+
+test('duplicates entered in the same event merge: positions are incidental, the survivor keeps its own', () => {
+  engineEvent(['source', 'target', 'other']);
+  const { preview, result } = engineMerge();
+  expect(preview.canMerge).toBe(true);
+  expect(result.success).toBe(true);
+  const entries = tournamentEngine.getEvent({ eventId: 'e1' }).event.entries;
+  expect(entries.map((e) => e.participantId)).toEqual(['target', 'other']);
+  expect(entries[0].entryPosition).toBe(2);
+});
+
+test('differing registration fields become explicit choices on the survivor entry', () => {
+  const record = engineEvent(['source', 'target']);
+  record.events[0].entries[0].entryStatus = 'ALTERNATE';
+  tournamentEngine.setState(record);
+  let { preview, result }: any = engineMerge();
+  expect(preview.canMerge).toBe(false);
+  expect(preview.conflicts).toContainEqual({
+    path: '/events/0/entries/1/entryStatus',
+    source: 'ALTERNATE',
+    target: 'DIRECT_ACCEPTANCE',
+  });
+  expect(result.error?.code).toBe('INDIVIDUAL_MERGE_BLOCKED');
+  ({ result } = engineMerge({ '/events/0/entries/1/entryStatus': 'source' }));
+  expect(result.success).toBe(true);
+  const entries = tournamentEngine.getEvent({ eventId: 'e1' }).event.entries;
+  expect(entries).toEqual([expect.objectContaining({ participantId: 'target', entryStatus: 'ALTERNATE' })]);
+});
+
+test('a source-only registration field transfers; an existing survivor duplicate that differs still refuses', () => {
+  const record = engineEvent(['source', 'target']);
+  record.events[0].entries[0].entryStageSequence = 2;
+  tournamentEngine.setState(record);
+  let { result }: any = engineMerge();
+  expect(result.success).toBe(true);
+  expect(tournamentEngine.getEvent({ eventId: 'e1' }).event.entries).toEqual([
+    expect.objectContaining({ participantId: 'target', entryStageSequence: 2 }),
+  ]);
+  const duplicated = engineEvent(['target']);
+  duplicated.events[0].entries.push({ ...duplicated.events[0].entries[0], entryStatus: 'ALTERNATE' });
+  tournamentEngine.setState(duplicated);
+  ({ result } = engineMerge());
+  expect(result.context.blockers).toContainEqual({ code: 'ENTRY_CONFLICT', path: '/events/0/entries/1' });
+});
+
+test('the review fingerprint ignores unrelated activity but not the merge inputs or choices', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8 }],
+    setState: true,
+  });
+  tournamentRecord.participants!.push(individual('source'), individual('target'));
+  tournamentRecord.participants![tournamentRecord.participants!.length - 2].person!.birthDate = '1990-01-01';
+  tournamentEngine.setState(tournamentRecord);
+  const resolutions = { '/person/birthDate': 'source' as const };
+  const args = { sourceParticipantId: 'source', targetParticipantId: 'target', resolutions };
+  const reviewed = tournamentEngine.getIndividualParticipantMergePreview(args);
+  const { matchUps } = tournamentEngine.allTournamentMatchUps({ matchUpFilters: { roundNumbers: [1] } });
+  const { matchUpId, drawId } = matchUps[0];
+  expect(tournamentEngine.addMatchUpScheduledTime({ matchUpId, drawId, scheduledTime: '10:00' }).success).toBe(true);
+  expect(tournamentEngine.getIndividualParticipantMergePreview(args).fingerprint).toBe(reviewed.fingerprint);
+  let result: any = tournamentEngine.mergeIndividualParticipants({
+    ...args,
+    resolutions: {},
+    expectedFingerprint: reviewed.fingerprint,
+  });
+  expect(result.error?.code).toBe('INDIVIDUAL_MERGE_STALE');
+  tournamentEngine.modifyParticipant({ participant: { participantId: 'source', participantName: 'Ana R.' } });
+  result = tournamentEngine.mergeIndividualParticipants({ ...args, expectedFingerprint: reviewed.fingerprint });
+  expect(result.error?.code).toBe('INDIVIDUAL_MERGE_STALE');
+});
+
+test.each(['same', 'different', 'source-only', 'legacy-extension'])(
+  'rewrites flight profile entries before draws exist: %s flight',
+  (kind) => {
+    const both = ['source', 'target', 'other'];
+    const entered = { same: both, 'legacy-extension': both, different: ['source', 'other', 'target', 'fourth'] };
+    engineEvent(entered[kind] ?? ['source', 'other']);
+    let result: any = tournamentEngine.generateFlightProfile({
+      attachFlightProfile: true,
+      flightsCount: kind === 'different' ? 2 : 1,
+      eventId: 'e1',
+    });
+    expect(result.success).toBe(true);
+    if (kind === 'legacy-extension') {
+      // Un-migrated records still carry the profile as an event extension, which getFlightProfile reads.
+      const record: any = tournamentEngine.getTournament().tournamentRecord;
+      const { flightProfile, ...event } = record.events[0];
+      record.events[0] = { ...event, extensions: [{ name: 'flightProfile', value: flightProfile }] };
+      tournamentEngine.setState(record);
+    }
+    const flights = () => tournamentEngine.getFlightProfile({ eventId: 'e1' }).flightProfile.flights;
+    if (kind === 'different') {
+      const sides = flights().map((f) => f.drawEntries.map((e) => e.participantId));
+      // Source and target must land in different flights for this case to mean anything.
+      expect(sides.findIndex((ids) => ids.includes('source'))).not.toBe(
+        sides.findIndex((ids) => ids.includes('target')),
+      );
+    }
+    const { preview, result: merged }: any = engineMerge();
+    if (kind === 'different') {
+      expect(preview.blockers).toContainEqual(expect.objectContaining({ code: 'FLIGHT_CONFLICT' }));
+      return;
+    }
+    expect(preview.blockers).toEqual([]);
+    expect(merged.success).toBe(true);
+    const ids = flights().flatMap((f) => f.drawEntries.map((e) => e.participantId));
+    expect(ids.toSorted()).toEqual(['other', 'target']);
+  },
+);

@@ -1082,6 +1082,15 @@ Preview consolidation of two existing INDIVIDUAL participants in one tournament.
 A conflict path uses JSON Pointer notation (for example `/person/birthDate`); `resolutions` maps each conflicting
 path to `source` or `target`. A preview can be successful while `canMerge` is false.
 
+When both individuals are entered in the same event stage (or the same flight), the two entries collapse into the
+survivor's entry, keeping its `entryPosition`. Any other registration field on which they differ (for example
+`entryStatus`) is a conflict at the survivor entry's path, such as `/events/0/entries/1/entryStatus`, resolved like a
+profile field.
+
+The `fingerprint` covers what the operator reviews: both profiles, the proposed participant, choices, conflicts,
+blockers, affected draws and every reference to be rewritten. Activity elsewhere in the tournament, such as scoring
+on another court, does not invalidate a review.
+
 The source is the duplicate to retire; the target is the participant ID to keep. Both individuals occurring in the
 same drawDefinition always blocks consolidation, including entries, nested structures, pairs, team rosters and
 lineups. Pair collapse, duplicate pairs, opposing-side overlap, duplicate lineups, conflicting entries/flights,
@@ -1104,7 +1113,9 @@ not a public notice or a global Persons merge. Consumers must keep receipts priv
 ## resolveMergedParticipantId
 
 Resolve a tournament-local retired participant ID to its retained ID. IDs without a mapping resolve to themselves.
-Successive merges flatten the alias chain. The `individualParticipantMerges` tournament extension survives record
+Successive merges flatten the alias chain. A retired ID stays retired if
+the retained participant is later deleted: it still resolves to the retained ID, so re-importing the person
+re-creates the survivor rather than the duplicate. The `individualParticipantMerges` tournament extension survives record
 export/import. Importers must resolve these IDs before deciding add/update/skip and before assigning event entries.
 `addParticipant`, `addParticipants` and the existing `mergeParticipants` upsert refuse a retired ID with
 `PARTICIPANT_ID_RETIRED` and `context.canonicalParticipantId`, so another importer cannot recreate the duplicate.
