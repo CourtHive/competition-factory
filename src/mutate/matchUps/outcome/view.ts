@@ -865,6 +865,28 @@ function onwardLoserSeat(
   return { ...seat, levels: linked ? carryLevels(draw, matchUpsMap, seat.matchUpId) : undefined };
 }
 
+/**
+ * A double exit's call whose loser seat lands on a pending exit (1b): where they converge, the double exit there produces
+ * on into the matchUp after it, whose own loser seat takes a BYE (F3, DEA:1050–1063). That seat (as `winnerLoserSeat`
+ * reads one) and the levels a BYE placed there goes on to
+ */
+function convergedLoserSeat(
+  draw: DrawContext,
+  matchUpsMap: MatchUpsMap,
+  request: OutcomeRequest,
+  targetData?: PositionTargetsResult,
+): OutcomeView['targets']['convergedLoserSeat'] {
+  const loserMatchUp = targetData?.targetMatchUps?.loserMatchUp;
+  if (!isDoubleExit(request.matchUpStatus) || !isExit(loserMatchUp?.matchUpStatus)) return undefined;
+  const onwardId = loserMatchUp?.winnerMatchUpId;
+  const onward = onwardId ? draw.inContextDrawMatchUps.find((matchUp) => matchUp.matchUpId === onwardId) : undefined;
+  if (!onward?.loserMatchUpId) return undefined;
+  const seat = winnerLoserSeat(draw, request, onward.matchUpId);
+  if (!seat) return undefined;
+  const linked = draw.inContextDrawMatchUps.find((matchUp) => matchUp.matchUpId === seat.matchUpId)?.loserMatchUpId;
+  return { ...seat, levels: linked ? carryLevels(draw, matchUpsMap, seat.matchUpId) : undefined };
+}
+
 /** a call that may carry an exit across a loser link (`propagateExitStatus`, an exit status, a loser matchUp) */
 function carriesOn(request: OutcomeRequest, targetData?: PositionTargetsResult): boolean {
   return (
@@ -1949,6 +1971,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       byeWalk: byeWalk(draw, request, targetData),
       landingWalk: landingWalk(draw, request, targetData),
       onwardLoserSeat: onwardLoserSeat(draw, matchUpsMap, request, targetData),
+      convergedLoserSeat: convergedLoserSeat(draw, matchUpsMap, request, targetData),
       carryLevels: carriesOn(request, targetData)
         ? carryLevels(draw, matchUpsMap, carryLanding(drawDefinition, targetData, draw))
         : undefined,
