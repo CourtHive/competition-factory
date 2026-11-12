@@ -61,8 +61,10 @@ export function planIndividualMerge(args: IndividualMergeArgs): { preview: Indiv
     target: targetId,
     blockers,
     changedPaths: [] as string[],
-    retiredPersonIds: [source.personId, source.person?.personId].filter(
-      (id): id is string => !!id && id !== profile.participant.person?.personId,
+    retiredPersonIds: new Set(
+      [source.personId, source.person?.personId].filter(
+        (id): id is string => !!id && id !== profile.participant.person?.personId,
+      ),
     ),
   };
   const copy = makeDeepCopy(tournamentRecord);
@@ -109,7 +111,7 @@ function validResolutions(value: unknown): value is IndividualMergeArgs['resolut
 }
 function alignPersonId(participant: Participant, trustedId?: string) {
   const personId = trustedId ?? participant.person?.personId ?? participant.personId;
-  if (!personId) return;
+  if (!personId) return undefined;
   if (participant.person) participant.person.personId = personId;
   if (participant.personId !== undefined) participant.personId = personId;
 }
@@ -142,22 +144,22 @@ function checkPairs(
   before: Participant[],
   blockers: IndividualMergeBlocker[],
 ) {
-  const original = new Map(before.map((p) => [p.participantId, p]));
+  const originalMembers = new Map(before.map((p) => [p.participantId, new Set(p.individualParticipantIds)]));
   const pairs = new Map<string, string>();
   for (const participant of next) {
     if (participant.participantType !== PAIR) continue;
     const members = participant.individualParticipantIds ?? [];
-    const changed = original.get(participant.participantId)?.individualParticipantIds?.includes(source);
+    const changed = originalMembers.get(participant.participantId)?.has(source);
     if (changed && (members.length !== 2 || new Set(members).size !== 2)) {
       blockers.push({ code: 'PAIR_COLLAPSE', path: `/participants/${participant.participantId}` });
     }
     const key = canonicalJson(members.toSorted((a, b) => a.localeCompare(b, 'en')));
     const prior = pairs.get(key);
-    if (prior && (changed || original.get(prior)?.individualParticipantIds?.includes(source))) {
+    if (prior && (changed || originalMembers.get(prior)?.has(source))) {
       blockers.push({ code: 'DUPLICATE_PAIR', path: `/participants/${participant.participantId}` });
     }
     pairs.set(key, participant.participantId);
-    if (changed && members.includes(target))
+    if (changed && new Set(members).has(target))
       participant.participantName = generatePairParticipantName({
         individualParticipants: members
           .map((id) => next.find((p) => p.participantId === id))

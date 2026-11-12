@@ -19,7 +19,7 @@ export type ReferenceContext = {
   target: string;
   blockers: IndividualMergeBlocker[];
   changedPaths: string[];
-  retiredPersonIds?: string[];
+  retiredPersonIds?: Set<string>;
 };
 
 /** Only registered reference fields are rewritten; unknown ID-bearing payloads refuse the plan. */
@@ -27,14 +27,14 @@ export function rewriteIndividualReferences(value: unknown, path: string, contex
   if (Array.isArray(value))
     return value.map((item, index) => rewriteIndividualReferences(item, `${path}/${index}`, context));
   if (!isRecord(value)) {
-    if (value === context.source || (typeof value === 'string' && context.retiredPersonIds?.includes(value)))
+    if (value === context.source || (typeof value === 'string' && context.retiredPersonIds?.has(value)))
       context.blockers.push({ code: 'UNSUPPORTED_REFERENCE', path });
     return value;
   }
   const result: Record<string, unknown> = {};
   for (const [key, item] of Object.entries(value)) {
     const childPath = `${path}/${key}`;
-    if (key === context.source || context.retiredPersonIds?.includes(key))
+    if (key === context.source || context.retiredPersonIds?.has(key))
       context.blockers.push({ code: 'UNSUPPORTED_REFERENCE', path: childPath });
     if (key === 'person') {
       checkPersonExtensions(item, childPath, context);
@@ -44,7 +44,7 @@ export function rewriteIndividualReferences(value: unknown, path: string, contex
     if (
       key === 'personId' &&
       typeof item === 'string' &&
-      context.retiredPersonIds?.includes(item) &&
+      context.retiredPersonIds?.has(item) &&
       !/^\/participants\/\d+$/.test(path)
     )
       context.blockers.push({ code: 'UNSUPPORTED_REFERENCE', path: childPath });
@@ -68,7 +68,7 @@ export function rewriteIndividualReferences(value: unknown, path: string, contex
           }),
         ),
       ];
-    } else if (item === context.source || (typeof item === 'string' && context.retiredPersonIds?.includes(item))) {
+    } else if (item === context.source || (typeof item === 'string' && context.retiredPersonIds?.has(item))) {
       context.blockers.push({ code: 'UNSUPPORTED_REFERENCE', path: childPath });
       result[key] = item;
     } else {
@@ -87,11 +87,11 @@ function checkOpaque(value: unknown, path: string, context: ReferenceContext) {
     }
   } else if (isRecord(value)) {
     for (const [key, item] of Object.entries(value)) {
-      if (key === context.source || context.retiredPersonIds?.includes(key))
+      if (key === context.source || context.retiredPersonIds?.has(key))
         context.blockers.push({ code: 'UNSUPPORTED_REFERENCE', path: `${path}/${key}` });
       checkOpaque(item, `${path}/${key}`, context);
     }
-  } else if (value === context.source || (typeof value === 'string' && context.retiredPersonIds?.includes(value)))
+  } else if (value === context.source || (typeof value === 'string' && context.retiredPersonIds?.has(value)))
     context.blockers.push({ code: 'UNSUPPORTED_REFERENCE', path });
 }
 
@@ -137,9 +137,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function checkPersonExtensions(value: unknown, path: string, context: ReferenceContext) {
   if (Array.isArray(value)) {
     value.forEach((item, index) => checkPersonExtensions(item, `${path}/${index}`, context));
-    return;
+    return undefined;
   }
-  if (!isRecord(value)) return;
+  if (!isRecord(value)) return undefined;
   for (const [key, item] of Object.entries(value)) {
     if (key === 'personId' || key === 'personOtherIds') continue;
     if (OPAQUE_FIELDS.has(key) || key.endsWith('ParticipantId') || key.endsWith('ParticipantIds'))

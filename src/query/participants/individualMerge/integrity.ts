@@ -22,9 +22,9 @@ export function checkIndividualMergeIntegrity(
   const visit = (value: unknown, path: string) => {
     if (Array.isArray(value)) {
       value.forEach((item, index) => visit(item, `${path}/${index}`));
-      return;
+      return undefined;
     }
-    if (!value || typeof value !== 'object') return;
+    if (!value || typeof value !== 'object') return undefined;
     const object = value as Record<string, unknown>;
     if (Array.isArray(object.sides)) {
       const count = object.sides.filter((side) => individuals(side).has(targetId)).length;
