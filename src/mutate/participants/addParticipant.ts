@@ -1,5 +1,6 @@
 import { generatePairParticipantName } from '@Functions/participants/generatePairParticipantName';
 import { coercePersonSex, isUnrecognizedSex, UNRECOGNIZED_SEX_INFO } from '@Helpers/coercedSex';
+import { retiredParticipantCheck } from '@Query/participants/individualMerge/aliases';
 import { indexParticipant, pairKey, ParticipantsIndex } from './participantsIndex';
 import { normalizePersonNames } from '@Helpers/normalizedPersonName';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -47,6 +48,11 @@ type AddParticipantType = {
 
 function validateBaseParticipant(participant, tournamentRecord, participantsIndex?: ParticipantsIndex) {
   if (!participant) return { error: MISSING_PARTICIPANT };
+  const retired = retiredParticipantCheck(
+    tournamentRecord,
+    participant.participantId ? [participant.participantId] : [],
+  );
+  if (retired) return retired;
   participant.participantId ??= UUID();
   tournamentRecord.participants ??= [];
 

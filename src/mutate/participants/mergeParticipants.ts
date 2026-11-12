@@ -1,13 +1,14 @@
 import { coercePersonSex, isUnrecognizedSex, UNRECOGNIZED_SEX_INFO } from '@Helpers/coercedSex';
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
+import { retiredParticipantCheck } from '@Query/participants/individualMerge/aliases';
 import { addNotice } from '@Global/state/globalState';
 import { xa } from '@Tools/extractAttributes';
 import { deepMerge } from '@Tools/deepMerge';
 
 // constants and types
 import { INVALID_VALUES, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
-import { ADD_PARTICIPANTS } from '@Constants/topicConstants';
 import { PARTICIPANT_ID } from '@Constants/attributeConstants';
+import { ADD_PARTICIPANTS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Participant } from '@Types/tournamentTypes';
 
@@ -17,6 +18,11 @@ export function mergeParticipants({
   arraysToMerge,
 }) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+  const retired = retiredParticipantCheck(
+    tournamentRecord,
+    incomingParticipants.map((p) => p.participantId).filter(Boolean),
+  );
+  if (retired) return retired;
   tournamentRecord.participants ??= [];
 
   // Checked before anything is merged, so one bad person refuses the whole merge

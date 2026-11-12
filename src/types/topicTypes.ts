@@ -18,6 +18,7 @@
  * optional (e.g. `tournamentId` for participant topics).
  */
 
+// constants and types
 import type { MatchUp, Event, DrawDefinition } from '@Types/tournamentTypes';
 
 // ============================================================================
@@ -205,6 +206,12 @@ export interface ModifyEventPayload {
  *   });
  */
 export interface TopicPayloadMap {
+  mergeIndividualParticipants: {
+    tournamentId: string;
+    sourceParticipantId: string;
+    targetParticipantId: string;
+    drawIds: string[];
+  };
   addEvent: AddEventPayload;
   addDrawDefinition: AddDrawDefinitionPayload;
   modifyDrawDefinition: ModifyDrawDefinitionPayload;

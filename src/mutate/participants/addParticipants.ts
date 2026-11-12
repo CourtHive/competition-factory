@@ -1,7 +1,8 @@
+import { retiredParticipantCheck } from '@Query/participants/individualMerge/aliases';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { indexParticipants } from './participantsIndex';
 import { addNotice } from '@Global/state/globalState';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
-import { indexParticipants } from './participantsIndex';
 import { addParticipant } from './addParticipant';
 import { UUID } from '@Tools/UUID';
 
@@ -27,6 +28,8 @@ export function addParticipants({
 }: AddParticipantsType) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   const tournamentParticipants = tournamentRecord.participants ?? [];
+  const retired = retiredParticipantCheck(tournamentRecord, participants.map((p) => p.participantId).filter(Boolean));
+  if (retired) return retired;
 
   const existingParticipantIds = new Set(tournamentParticipants.map((p) => p.participantId));
 
