@@ -104,6 +104,8 @@ const ALLOWED = {
     'PLUMBING — carries the planned array into the result op, as plan.ts did before the split; decides nothing on it',
   'mutate/matchUps/outcome/plan/producedExit.ts':
     "PLUMBING — the produced exit's writes carry the codes doubleExitAdvancement stores ([]); abstain where a target holds codes; decide nothing on them",
+  'mutate/matchUps/outcome/plan/byeHeldPassage.ts':
+    'PLUMBING — the passage past a BYE-held matchUp (moved from producedExit.ts) abstains where a matchUp beyond holds codes and writes [] where v1 writes it; decides nothing on them',
   'mutate/matchUps/outcome/plan/producedTarget.ts':
     "PLUMBING — the produced target's write carries [] and its reader abstains where the target holds codes; decides nothing on them",
   'mutate/matchUps/outcome/plan/byeChain.ts':
