@@ -551,7 +551,7 @@ export function sourceSeatFrame(
     snapshotAt: 0,
     prefix,
     following,
-    propagatesBye: !!view.draw.doubleExitPropagatesBye,
+    propagatesBye: !!view.draw.propagatesByeOnDoubleExit,
     seat: {
       linked: !!targets.loserLink || !!targets.loserMatchUpId,
       ...(structureId && drawPosition && matchUpId ? { at: { structureId, drawPosition, matchUpId } } : {}),

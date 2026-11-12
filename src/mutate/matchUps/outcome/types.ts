@@ -389,7 +389,7 @@ export type OutcomeView = {
      * the progression policy's `doubleExitPropagateBye` as v1 reads it (`propagatesByeOnDoubleExit`): off, a double
      * exit's loser seat shows its produced exit instead of a BYE (CA ruling (A), 2026-10-21)
      */
-    doubleExitPropagatesBye?: boolean;
+    propagatesByeOnDoubleExit?: boolean;
     /** Clearing a qualifying final whose winner link feeds no DRAW still returns qualifierRemoved. */
     unlinkedQualifierRemoval?: boolean;
     /** v1's score write updates a tally here (`updateTallyIfNeeded`): a round-robin container, ad hoc, or lucky */

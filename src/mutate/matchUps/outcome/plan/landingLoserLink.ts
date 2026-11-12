@@ -126,7 +126,7 @@ function reclaimThenServe(
 ): LandingService | undefined {
   const walked = unwindWalk({
     inContextDrawMatchUps: working.inContextDrawMatchUps,
-    propagatesBye: !!view.draw.doubleExitPropagatesBye,
+    propagatesBye: !!view.draw.propagatesByeOnDoubleExit,
     drawDefinition: working.drawDefinition,
     seats: [seat],
   })?.[0];

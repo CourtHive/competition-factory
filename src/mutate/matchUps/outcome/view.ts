@@ -2027,7 +2027,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       perMatchUpCompetition:
         getCompetitionPolicy({ tournamentRecord, drawDefinition, event }).competitionPolicy?.processingGranularity ===
         'PER_MATCHUP',
-      doubleExitPropagatesBye: propagatesByeOnDoubleExit(appliedPolicies),
+      propagatesByeOnDoubleExit: propagatesByeOnDoubleExit(appliedPolicies),
       unlinkedQualifierRemoval:
         structure?.stage === QUALIFYING &&
         inContextMatchUp?.finishingRound === 1 &&
