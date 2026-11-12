@@ -706,6 +706,7 @@
   "setMatchUpState": "mutation",
   "setMatchUpStatus": "mutation",
   "setOrderOfFinish": "mutation",
+  "setParticipantCheckInState": "mutation",
   "setParticipantScaleItem": "mutation",
   "setParticipantScaleItems": "mutation",
   "setPositionAssignments": "mutation",

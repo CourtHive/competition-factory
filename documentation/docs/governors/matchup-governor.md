@@ -1340,6 +1340,31 @@ engine.setOrderOfFinish({
 
 ---
 
+## setParticipantCheckInState
+
+Brings an individual participant's presence for one matchUp to an explicit state. Where `toggleParticipantCheckInState` flips whatever the record holds, this records an intention: two desks that both press "check in" leave one attestation, by the first attester.
+
+```js
+const { changed } = engine.setParticipantCheckInState({
+  checkedIn, // required boolean: the state the operator asked for
+  participantId, // an INDIVIDUAL on one of the matchUp's sides
+  matchUpId,
+  drawId,
+  attributedTo, // optional: who attested the arrival or departure
+  occurredAt, // optional ISO timestamp; defaults to now
+  attestationId, // optional; supplied by a server so every copy holds the same attestation
+});
+```
+
+- A request for the state already held returns `{ success: true, changed: false }` and writes nothing.
+- An actual transition returns `{ success: true, changed: true }` and appends one attestation, applying the same rules as `checkInParticipant` / `checkOutParticipant`.
+- A check-out is refused with `INVALID_ACTION` once the matchUp is in play, completed or scored, whether or not the participant is already out.
+- Attribution policy is checked only on an actual arrival, as with `checkInParticipant`.
+
+`changed: false` holds no fact for another copy of the record to replay. The legacy `toggleParticipantCheckInState` and the strict `checkOutParticipant` (which refuses a redundant check-out) are unchanged.
+
+---
+
 ## substituteParticipant
 
 Substitutes one participant for another in a matchUp.

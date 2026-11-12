@@ -142,6 +142,7 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   substituteParticipant: 'MATCHUPS',
   checkOutParticipant: 'MATCHUPS',
   checkInParticipant: 'MATCHUPS',
+  setParticipantCheckInState: 'MATCHUPS',
   setMatchUpFormat: 'MATCHUPS',
 
   // SCORING — scoreGovernor/mutate
