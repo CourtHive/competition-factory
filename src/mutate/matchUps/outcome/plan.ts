@@ -145,7 +145,7 @@ function exitReason(args: ExitReasonArgs): AbstainReason | SeatObligation | unde
   const loser = direction?.loser;
   if (directsElsewhere(direction)) return 'exit';
   if (loser?.carriedPast || loser?.withdrawn) return 'exit';
-  if (loser?.converged) return convergedReason(view, request, write, loser);
+  if (loser?.converged) return convergedReason(view, request, write, loser, undefined, args.drawDefinition);
   if (loser?.exit) return carriedReason(view, write);
   return undefined;
 }

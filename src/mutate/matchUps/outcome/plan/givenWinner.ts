@@ -386,6 +386,8 @@ export function unwoundConvergedFor(
       args.write as MatchUpWrite,
       after?.direction?.loser ?? loser,
       after ? retainedRelayReservation(args, after) : undefined,
+      // the withdrawal simulates over the draw as it stands, which an unwind has not yet changed
+      after ? undefined : args.drawDefinition,
     ),
   };
 }
