@@ -65,10 +65,10 @@ export function producedConvergedReason(
   if (!converged || !source) return undefined;
   // with loser links, the BYEs they take (`doubleExitPropagateBye`); off, a pending exit there converges (1b)
   const pending =
-    linked && !view.draw.doubleExitPropagatesBye
+    linked && !view.draw.propagatesByeOnDoubleExit
       ? pendingConvergence(view, sourceSeatFrame(view, request), request, source, context)
       : undefined;
-  if (linked && !view.draw.doubleExitPropagatesBye && !pending) return undefined;
+  if (linked && !view.draw.propagatesByeOnDoubleExit && !pending) return undefined;
   // the own seat as the chain's shapes plan it, or as the view's walk of v1's recursion places it (S6 tail)
   const walkedOwn = view.targets.byeWalk?.own;
   const own = linked && !pending ? (ownByeChain(view) ?? (walkedOwn ? walkChain(walkedOwn) : undefined)) : undefined;
@@ -104,7 +104,7 @@ export function producedConvergedReason(
   if (!landing.winnerMatchUpId) return apart(planned);
   const onward = producedTarget(view, landing, matchUpStatus);
   const onwardLinked = !!onward?.entry.loserMatchUpId;
-  if (!onward || !producedTargetReason(view, landing, onward, onwardLinked && view.draw.doubleExitPropagatesBye))
+  if (!onward || !producedTargetReason(view, landing, onward, onwardLinked && view.draw.propagatesByeOnDoubleExit))
     return undefined;
   const seat = targets.onwardLoserSeat;
   const onwardBye = onwardLinked ? unfillableByeChain(view, onward.entry, { seat, levels: seat?.levels }) : undefined;
@@ -123,7 +123,7 @@ function landingReentry(
   written: ConvergedWrite & { pending?: PendingConvergence },
 ): LandingService | undefined {
   const { landing, matchUpStatus, provenance, pending } = written;
-  if (!landing.loserMatchUpId || view.draw.doubleExitPropagatesBye) return { ops: [], touched: [] };
+  if (!landing.loserMatchUpId || view.draw.propagatesByeOnDoubleExit) return { ops: [], touched: [] };
   const prefix = [
     ...(context.prefix ?? []),
     ...(pending ? convergedWrite(view, pending) : []),

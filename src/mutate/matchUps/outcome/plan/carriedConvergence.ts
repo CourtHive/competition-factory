@@ -112,7 +112,7 @@ export function convergenceAt(
   if (landing.winningSide !== sideNumber && !pending) return undefined;
   // a landing that links its loser on: its own seat takes the double exit's BYE (the first carrier displaced), planned
   // where the walk of v1's recursion plans it, under `doubleExitPropagateBye` (S6 tail)
-  if (landing.loserMatchUpId && (!walk?.own || !view.draw.doubleExitPropagatesBye)) return undefined;
+  if (landing.loserMatchUpId && (!walk?.own || !view.draw.propagatesByeOnDoubleExit)) return undefined;
   if (!SINGLE_EXITS.has(landing.matchUpStatus) || landing.matchUpStatus === RETIRED) return undefined;
   if (landing.score?.scoreStringSide1 || landing.score?.scoreStringSide2 || landing.score?.sets?.length)
     return undefined;
@@ -194,7 +194,7 @@ function withdrawReservation(
   if (!fits(releasedTarget)) return undefined;
   const ops = releaseWalk({
     inContextDrawMatchUps: view.inContextDrawMatchUps ?? [],
-    propagatesBye: !!view.draw.doubleExitPropagatesBye,
+    propagatesBye: !!view.draw.propagatesByeOnDoubleExit,
     fromRoundNumber: entry.roundNumber as number,
     structureId: entry.structureId,
     drawPositions: own,

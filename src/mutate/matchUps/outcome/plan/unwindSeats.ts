@@ -115,7 +115,7 @@ function indirectProducedRelaySeatOps(
   withdraw: OutcomeOp,
   withdrawn: Set<string>,
 ): OutcomeOp[] | undefined {
-  if (view.draw.doubleExitPropagatesBye || bye.matchUpStatus !== BYE || bye.winningSide || !bye.feedRound)
+  if (view.draw.propagatesByeOnDoubleExit || bye.matchUpStatus !== BYE || bye.winningSide || !bye.feedRound)
     return undefined;
   if (bye.loserMatchUpId || !scoreless(bye) || bye.matchUpStatusCodes?.length || positionsOf(bye).length !== 2)
     return undefined;

@@ -105,7 +105,8 @@ function pendingAwardRemoval(
   previous: HydratedMatchUp,
   at: HydratedMatchUp,
 ): PendingRemoval | undefined {
-  if (view.draw.doubleExitPropagatesBye || previous.structureId !== at.structureId || !at.winningSide) return undefined;
+  if (view.draw.propagatesByeOnDoubleExit || previous.structureId !== at.structureId || !at.winningSide)
+    return undefined;
   if (!scoreless(previous) || !scoreless(at) || previous.matchUpStatusCodes?.length || at.matchUpStatusCodes?.length)
     return undefined;
   const held = positionsOf(at);
@@ -181,7 +182,7 @@ export function unwoundPath(
   if (linksOut.some(unread)) return undefined;
   // under `doubleExitPropagateBye: false` the seats the loser links feed show no BYE: v1 visits them as matchUps and
   // walks on from them (`unwoundBranch`, S6 tail)
-  const branched = linksOut.some((link) => link.linkType === LOSER) && !view.draw.doubleExitPropagatesBye;
+  const branched = linksOut.some((link) => link.linkType === LOSER) && !view.draw.propagatesByeOnDoubleExit;
   const seats = view.targets.unwindLoserSeats ?? [];
   // a structure's final (or the one matchUp of a one-round structure) produced nothing: the path is the call's matchUp
   // alone, its own seat visited as any first level's (S6 tail, family 6). A final whose winner link leads on
@@ -446,7 +447,7 @@ function walkedSeatOps(
   if (!walkedSeats.length) return undefined;
   const segments = unwindWalk({
     inContextDrawMatchUps: view.inContextDrawMatchUps,
-    propagatesBye: !!view.draw.doubleExitPropagatesBye,
+    propagatesBye: !!view.draw.propagatesByeOnDoubleExit,
     seats: walkedSeats,
     drawDefinition,
   });

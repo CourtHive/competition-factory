@@ -142,7 +142,7 @@ function convergedWinner(
     own.length
       ? releaseWalk({
           inContextDrawMatchUps: view.inContextDrawMatchUps ?? [],
-          propagatesBye: !!view.draw.doubleExitPropagatesBye,
+          propagatesBye: !!view.draw.propagatesByeOnDoubleExit,
           fromRoundNumber: entry.roundNumber as number,
           structureId: entry.structureId,
           drawPositions: own,
