@@ -1,6 +1,6 @@
 import { earlyReleasedLandings, unwoundOps, unwoundPath, unwoundView } from './unwindPath';
 import { standaloneBareWinnerOps, standaloneCarriedWinnerOps } from './standaloneIndirect';
-import { convergedOps, convergedReason, convergenceOps } from './convergence';
+import { convergedOps, convergedReason, convergenceOps } from './carriedConvergence';
 import { standingReservationPrograms } from './standingReservation';
 import { supersededOwnRelayConvergence } from './supersededRelay';
 import { terminalOccupiedWinnerOps } from './terminalAward';
@@ -29,8 +29,8 @@ import {
 import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import type { RetainedRelayReservation } from './producedTarget';
+import type { Convergence } from './carriedConvergence';
 import type { HydratedMatchUp } from '@Types/hydrated';
-import type { Convergence } from './convergence';
 import type { UnwoundLevel } from './unwindPath';
 import type { OutcomeOp } from '../ops';
 import type {
