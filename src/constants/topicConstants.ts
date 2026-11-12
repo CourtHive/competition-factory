@@ -1,3 +1,4 @@
+export const MERGE_INDIVIDUAL_PARTICIPANTS = 'mergeIndividualParticipants';
 export const ADD_DRAW_DEFINITION = 'addDrawDefinition';
 export const ADD_MATCHUPS = 'addMatchUps';
 export const ADD_PARTICIPANTS = 'addParticipants';
@@ -37,6 +38,7 @@ export const UNPUBLISH_TOURNAMENT = 'unPublishTournament';
 export const UPDATE_INCONTEXT_MATCHUP = 'updateInContextMatchUp';
 
 export const topicConstants = {
+  MERGE_INDIVIDUAL_PARTICIPANTS,
   ADD_DRAW_DEFINITION,
   ADD_MATCHUPS,
   ADD_PARTICIPANTS,

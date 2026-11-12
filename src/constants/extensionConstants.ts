@@ -1,3 +1,4 @@
+export const INDIVIDUAL_PARTICIPANT_MERGES = 'individualParticipantMerges';
 export const ACTIVE_SUSPENSION = 'activeSuspension';
 export const APPLIED_POLICIES = 'appliedPolicies';
 export const COMPETITION_STATE = 'competitionState';
@@ -34,6 +35,7 @@ export const TALLY = 'tally';
 export const TIE_FORMAT_MODIFICATIONS = 'tieFormatModification';
 
 export const extensionConstants = {
+  INDIVIDUAL_PARTICIPANT_MERGES,
   ACTIVE_SUSPENSION,
   APPLIED_POLICIES,
   COMPETITION_STATE,

@@ -1,3 +1,15 @@
+export const INDIVIDUAL_MERGE_BLOCKED = {
+  message: 'Individual participant merge requires conflict resolution',
+  code: 'INDIVIDUAL_MERGE_BLOCKED' as const,
+} satisfies ErrorType;
+export const INDIVIDUAL_MERGE_STALE = {
+  message: 'Individual participant merge preview is stale',
+  code: 'INDIVIDUAL_MERGE_STALE' as const,
+} satisfies ErrorType;
+export const PARTICIPANT_ID_RETIRED = {
+  message: 'Participant ID was merged into another participant',
+  code: 'PARTICIPANT_ID_RETIRED' as const,
+} satisfies ErrorType;
 export type ErrorType = {
   message: string;
   info?: string;
@@ -1065,6 +1077,9 @@ export const QUALIFYING_CAPACITY_EXCEEDED = {
 } satisfies ErrorType;
 
 export const errorConditionConstants = {
+  INDIVIDUAL_MERGE_BLOCKED,
+  INDIVIDUAL_MERGE_STALE,
+  PARTICIPANT_ID_RETIRED,
   ANACHRONISM,
   SCHEDULING_PROFILE_DATES_OUT_OF_RANGE,
   EVENT_DATE_INACTIVE,
