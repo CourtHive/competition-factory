@@ -198,8 +198,8 @@ importers:
         specifier: 2.1.1
         version: 2.1.1
       courthive-components:
-        specifier: 7.13.0
-        version: 7.13.0(@tiptap/pm@3.33.0)(leaflet@1.9.4)(tods-competition-factory@7.36.1)
+        specifier: 7.14.0
+        version: 7.14.0(@tiptap/pm@3.33.0)(leaflet@1.9.4)(tods-competition-factory@7.36.1)
       leaflet:
         specifier: ^1.9.4
         version: 1.9.4
@@ -2627,8 +2627,8 @@ packages:
       typescript:
         optional: true
 
-  courthive-components@7.13.0:
-    resolution: {integrity: sha512-j0aP+ULwo6sL5BSqLYeDQYH5KyoUdCfRZSlBdTwm11X82OoWRJQ/gcn9jzYGjrrgUkolduW9ubQs3g2MIQe9gA==}
+  courthive-components@7.14.0:
+    resolution: {integrity: sha512-pb1KMZ+mI+G7Wj07PcbaeovI1OglHuCLADB9zyUov60ABymhyReUlmTjb8bz3fGmaeHuAnq36OBzgMje9UOjdg==}
     engines: {node: '>=24'}
     peerDependencies:
       leaflet: ^1.9.4
@@ -4754,6 +4754,7 @@ packages:
   postcss-selector-parser@7.2.0:
     resolution: {integrity: sha512-Khh/tERVBn0I1499dvBSHY0pWJloMJWUxDsOBM0CCDPAcVZ10Jl2L1qy1f19uEX22spa8Mv7DCdEQJc0cGwBhQ==}
     engines: {node: '>=4'}
+    deprecated: Double-escapes CSS Modules class names (#362). Use 7.2.1.
 
   postcss-sort-media-queries@5.2.0:
     resolution: {integrity: sha512-AZ5fDMLD8SldlAYlvi8NIqo0+Z8xnXU2ia0jxmuhxAU+Lqt9K+AlmLNJ/zWEnE9x+Zx3qL3+1K20ATgNOr3fAA==}
@@ -9543,7 +9544,7 @@ snapshots:
       parse-json: 5.2.0
       path-type: 4.0.0
 
-  courthive-components@7.13.0(@tiptap/pm@3.33.0)(leaflet@1.9.4)(tods-competition-factory@7.36.1):
+  courthive-components@7.14.0(@tiptap/pm@3.33.0)(leaflet@1.9.4)(tods-competition-factory@7.36.1):
     dependencies:
       '@tiptap/core': 3.33.0(@tiptap/pm@3.33.0)
       '@tiptap/extension-color': 3.33.0(@tiptap/extension-text-style@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0)))
