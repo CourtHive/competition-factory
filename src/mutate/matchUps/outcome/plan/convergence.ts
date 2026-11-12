@@ -1,5 +1,5 @@
 import { blankScore, SINGLE_EXITS, carriedStatus, indexed, isSettleWrite, pairedFeeder, sideOf } from './planShared';
-import { byeHeldProducedOps } from './producedExit';
+import { byeHeldProducedOps } from './byeHeldPassage';
 import { producedTarget, producedTargetOps, producedTargetReason } from './producedTarget';
 import { ownByeChain, sourceSeatFrame, unfillableByeChain, walkChain } from './byeChain';
 import { getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
