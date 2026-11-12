@@ -5,6 +5,7 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
 import type { IndividualMergeBlocker } from '@Types/individualParticipantMerge';
+import { FLIGHT_PROFILE } from '@Constants/extensionConstants';
 import type { Tournament } from '@Types/tournamentTypes';
 
 /** Additional collisions outside draw entry lists, including standalone matchUps and ungenerated flights. */
@@ -39,7 +40,12 @@ export function checkIndividualMergeIntegrity(
       if (count > 1) blockers.push({ code: 'FLIGHT_CONFLICT', path });
     }
     for (const [key, item] of Object.entries(object)) {
-      if (key !== 'extensions' && key !== 'person') visit(item, `${path}/${key}`);
+      if (key === 'extensions' && Array.isArray(item)) {
+        // Flight profiles are the one extension holding entries; the rest are checked as opaque references.
+        item.forEach((extension, index) => {
+          if (extension?.name === FLIGHT_PROFILE) visit(extension.value, `${path}/extensions/${index}/value`);
+        });
+      } else if (key !== 'person') visit(item, `${path}/${key}`);
     }
   };
   visit(record, '');

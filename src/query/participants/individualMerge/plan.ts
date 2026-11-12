@@ -1,4 +1,9 @@
-import { readIndividualMergeLedger, retiredParticipantCheck, resolveMergedParticipantId } from './aliases';
+import {
+  invalidLedgerCheck,
+  readIndividualMergeLedger,
+  retiredParticipantCheck,
+  resolveMergedParticipantId,
+} from './aliases';
 import { generatePairParticipantName } from '@Functions/participants/generatePairParticipantName';
 import { collectParticipantReferences, rewriteIndividualReferences } from './references';
 import { checkMergeConsistency, checkIndividualMergeIntegrity } from './integrity';
@@ -29,7 +34,9 @@ export function planIndividualMerge(args: IndividualMergeArgs): { preview: Indiv
   if (!sourceId || !targetId || sourceId === targetId || !validResolutions(resolutions)) {
     return { preview: { error: INVALID_VALUES } };
   }
-  const retired = retiredParticipantCheck(tournamentRecord, [sourceId, targetId]);
+  // This plan rewrites the ledger, so it must be wholly valid; adders check only the IDs they add.
+  const retired =
+    invalidLedgerCheck(tournamentRecord) ?? retiredParticipantCheck(tournamentRecord, [sourceId, targetId]);
   if (retired) return { preview: retired };
   const participants = tournamentRecord.participants ?? [];
   const source = participants.find((p) => p.participantId === sourceId);
@@ -60,6 +67,9 @@ export function planIndividualMerge(args: IndividualMergeArgs): { preview: Indiv
     source: sourceId,
     target: targetId,
     blockers,
+    resolutions,
+    conflicts: profile.conflicts,
+    usedResolutions: profile.usedResolutions,
     changedPaths: [] as string[],
     retiredPersonIds: new Set(
       [source.personId, source.person?.personId].filter(
@@ -83,22 +93,21 @@ export function planIndividualMerge(args: IndividualMergeArgs): { preview: Indiv
   ledger.aliases = { ...ledger.aliases, [sourceId]: targetId };
   next.extensions = (next.extensions ?? []).filter(({ name }) => name !== INDIVIDUAL_PARTICIPANT_MERGES);
   next.extensions.push({ name: INDIVIDUAL_PARTICIPANT_MERGES, value: ledger });
+  for (const path of Object.keys(resolutions)) {
+    if (!profile.usedResolutions.has(path)) blockers.push({ code: 'INVALID_RESOLUTION', path });
+  }
   const unresolved = profile.conflicts.filter(({ path }) => !Object.hasOwn(resolutions, path));
   if (!blockers.length && !unresolved.length)
     checkMergeConsistency(tournamentRecord, next, sourceId, targetId, blockers);
-  return {
-    next,
-    preview: {
-      success: true,
-      canMerge: !blockers.length && !unresolved.length,
-      fingerprint: mergeFingerprint(tournamentRecord),
-      participant: next.participants?.find((p) => p.participantId === targetId),
-      blockers,
-      conflicts: profile.conflicts,
-      changedPaths: context.changedPaths,
-      affectedDrawIds,
-    },
+  const review = {
+    participant: next.participants?.find((p) => p.participantId === targetId),
+    blockers,
+    conflicts: profile.conflicts,
+    changedPaths: context.changedPaths,
+    affectedDrawIds,
   };
+  const fingerprint = mergeFingerprint({ ...review, source, target, resolutions, aliases: ledger.aliases });
+  return { next, preview: { success: true, canMerge: !blockers.length && !unresolved.length, fingerprint, ...review } };
 }
 
 function validResolutions(value: unknown): value is IndividualMergeArgs['resolutions'] {
@@ -168,9 +177,14 @@ function checkPairs(
   }
 }
 
-/** Staleness detector, never an authorization token. Ignore volatile entity stamps shared clients may apply at different times. */
-export function mergeFingerprint(record: Tournament): string {
-  const json = canonicalJson(withoutStamps(record));
+/**
+ * Staleness detector, never an authorization token. It covers what the operator reviewed (both profiles, the outcome,
+ * choices, blockers and every reference to be rewritten), not the whole record: a score on another court must not
+ * invalidate the review, and client and server copies need only agree on the merge's own inputs. Entity stamps are
+ * ignored because clients apply them at different times.
+ */
+export function mergeFingerprint(review: Record<string, unknown>): string {
+  const json = canonicalJson(withoutStamps(review));
   let hash = 0xcbf29ce484222325n;
   for (let index = 0; index < json.length; index++)
     hash = BigInt.asUintN(64, (hash ^ BigInt(json.charCodeAt(index))) * 0x100000001b3n);
@@ -182,7 +196,7 @@ function withoutStamps(value: unknown): unknown {
   if (value && typeof value === 'object')
     return Object.fromEntries(
       Object.entries(value)
-        .filter(([key]) => key !== 'updatedAt')
+        .filter(([key]) => key !== 'updatedAt' && key !== 'createdAt')
         .map(([key, item]) => [key, withoutStamps(item)]),
     );
   return value;

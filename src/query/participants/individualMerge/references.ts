@@ -1,8 +1,12 @@
 import { canonicalJson } from '@Tools/canonicalJson';
 
 // constants and types
-import type { IndividualMergeBlocker } from '@Types/individualParticipantMerge';
-import { INDIVIDUAL_PARTICIPANT_MERGES } from '@Constants/extensionConstants';
+import { FLIGHT_PROFILE, INDIVIDUAL_PARTICIPANT_MERGES } from '@Constants/extensionConstants';
+import type {
+  IndividualMergeBlocker,
+  IndividualMergeConflict,
+  IndividualMergeResolutions,
+} from '@Types/individualParticipantMerge';
 
 const REFERENCE_FIELDS = new Set([
   'participantId',
@@ -13,6 +17,9 @@ const REFERENCE_FIELDS = new Set([
 const REFERENCE_ARRAYS = new Set(['participantIds', 'individualParticipantIds', 'contactParticipantIds']);
 const IDENTITY_FIELDS = new Set(['person', 'participantOtherIds', 'personId']);
 const OPAQUE_FIELDS = new Set(['extensions', 'timeItems']);
+const ENTRY_LISTS = new Set(['entries', 'drawEntries']);
+// Ordering and stamps differ between any two entries of one event; they never express a registration choice.
+const ENTRY_INCIDENTAL = new Set(['participantId', 'entryPosition', 'createdAt', 'updatedAt']);
 
 export type ReferenceContext = {
   source: string;
@@ -20,6 +27,9 @@ export type ReferenceContext = {
   blockers: IndividualMergeBlocker[];
   changedPaths: string[];
   retiredPersonIds?: Set<string>;
+  resolutions: IndividualMergeResolutions;
+  conflicts: IndividualMergeConflict[];
+  usedResolutions: Set<string>;
 };
 
 /** Only registered reference fields are rewritten; unknown ID-bearing payloads refuse the plan. */
@@ -52,7 +62,18 @@ export function rewriteIndividualReferences(value: unknown, path: string, contex
       result[key] = item;
       continue;
     }
-    if (OPAQUE_FIELDS.has(key)) {
+    if (key === 'extensions' && Array.isArray(item)) {
+      result[key] = item.map((extension, index) => {
+        const extensionPath = `${childPath}/${index}`;
+        // A flight profile lists draw entries before any draw exists: references, not opaque data.
+        if (!isRecord(extension) || extension.name !== FLIGHT_PROFILE) {
+          if (!(isRecord(extension) && extension.name === INDIVIDUAL_PARTICIPANT_MERGES && path === ''))
+            checkOpaque(extension, extensionPath, context);
+          return extension;
+        }
+        return { ...extension, value: rewriteIndividualReferences(extension.value, `${extensionPath}/value`, context) };
+      });
+    } else if (OPAQUE_FIELDS.has(key)) {
       checkOpaque(item, childPath, context);
       result[key] = item;
     } else if (REFERENCE_FIELDS.has(key) && item === context.source) {
@@ -75,16 +96,17 @@ export function rewriteIndividualReferences(value: unknown, path: string, contex
       result[key] = rewriteIndividualReferences(item, childPath, context);
     }
   }
-  if (Array.isArray(result.entries)) result.entries = reconcileEntries(result.entries, `${path}/entries`, context);
+  for (const key of ENTRY_LISTS) {
+    const original = value[key];
+    if (Array.isArray(result[key]) && Array.isArray(original))
+      result[key] = reconcileEntries(original, result[key] as unknown[], `${path}/${key}`, context);
+  }
   return result;
 }
 
 function checkOpaque(value: unknown, path: string, context: ReferenceContext) {
   if (Array.isArray(value)) {
-    for (const [index, item] of value.entries()) {
-      if (path === '/extensions' && isRecord(item) && item.name === INDIVIDUAL_PARTICIPANT_MERGES) continue;
-      checkOpaque(item, `${path}/${index}`, context);
-    }
+    for (const [index, item] of value.entries()) checkOpaque(item, `${path}/${index}`, context);
   } else if (isRecord(value)) {
     for (const [key, item] of Object.entries(value)) {
       if (key === context.source || context.retiredPersonIds?.has(key))
@@ -95,25 +117,65 @@ function checkOpaque(value: unknown, path: string, context: ReferenceContext) {
     context.blockers.push({ code: 'UNSUPPORTED_REFERENCE', path });
 }
 
-function reconcileEntries(entries: unknown[], path: string, context: ReferenceContext) {
-  const scoped = new Map<string, unknown>();
+/**
+ * Two entries for one stage now name the survivor. Keep one: the survivor's own ordering, and an explicit choice for
+ * every registration field on which the two entries disagree (path: the survivor's entry index plus the field).
+ */
+function reconcileEntries(originals: unknown[], entries: unknown[], path: string, context: ReferenceContext) {
+  const kept = new Map<string, number>();
   const result: unknown[] = [];
   for (const [index, entry] of entries.entries()) {
     if (!isRecord(entry) || entry.participantId !== context.target) {
       result.push(entry);
       continue;
     }
-    const scope = canonicalJson([entry.participantId, entry.entryStage ?? null]);
-    if (scoped.has(scope)) {
-      if (canonicalJson(scoped.get(scope)) !== canonicalJson(entry)) {
-        context.blockers.push({ code: 'ENTRY_CONFLICT', path: `${path}/${index}` });
-      }
-    } else {
-      scoped.set(scope, entry);
+    const scope = canonicalJson(entry.entryStage ?? null);
+    const prior = kept.get(scope);
+    if (prior === undefined) {
+      kept.set(scope, index);
       result.push(entry);
+      continue;
     }
+    const fromSource = (at: number) => isRecord(originals[at]) && originals[at].participantId === context.source;
+    if (fromSource(prior) === fromSource(index)) {
+      // Neither entry belonged to the retired participant: an existing duplicate this merge did not create.
+      if (canonicalJson(entries[prior]) !== canonicalJson(entry))
+        context.blockers.push({ code: 'ENTRY_CONFLICT', path: `${path}/${index}` });
+      continue;
+    }
+    const [targetAt, sourceAt] = fromSource(prior) ? [index, prior] : [prior, index];
+    const merged = mergeEntry(
+      entries[targetAt] as Record<string, unknown>,
+      entries[sourceAt] as Record<string, unknown>,
+      `${path}/${targetAt}`,
+      context,
+    );
+    result[result.indexOf(entries[prior])] = merged;
   }
   return result;
+}
+
+function mergeEntry(
+  target: Record<string, unknown>,
+  source: Record<string, unknown>,
+  path: string,
+  context: ReferenceContext,
+) {
+  const merged: Record<string, unknown> = { ...target };
+  for (const key of new Set([...Object.keys(target), ...Object.keys(source)])) {
+    if (ENTRY_INCIDENTAL.has(key) || source[key] === undefined) continue;
+    if (target[key] === undefined) {
+      merged[key] = source[key];
+      continue;
+    }
+    if (canonicalJson(source[key]) === canonicalJson(target[key])) continue;
+    const fieldPath = `${path}/${key}`;
+    const choice = context.resolutions[fieldPath];
+    context.conflicts.push({ path: fieldPath, source: source[key], target: target[key] });
+    if (choice) context.usedResolutions.add(fieldPath);
+    if (choice === 'source') merged[key] = source[key];
+  }
+  return merged;
 }
 
 /** Direct references only: do not expand unrelated groups as query hydration does. */
