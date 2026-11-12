@@ -5,6 +5,7 @@ import { byeHeldProducedOps } from './byeHeldPassage';
 import { landingLoserLink } from './landingLoserLink';
 import { indexed, pairedFeeder } from './planShared';
 import { convergedWrite } from './convergedWrite';
+import { unfillableByeChain } from './byeChain';
 import { releaseWalk } from '../unwindWalk';
 import {
   buildCarriedExitProvenance,
@@ -123,8 +124,6 @@ function convergedWinner(
   const target = producedTarget(view, landing, matchUpStatus);
   if (!target) return undefined;
   const { entry } = target;
-  // F3: the BYE on that matchUp's own loser seat, placed whatever the policy (DEA:1050–1063)
-  if (entry.loserMatchUpId) return undefined;
   // in a feed round the awarded side is the fed seat, whose position stands for the participant fed from another
   // structure: it is not the converged matchUp's own advancement, so DEA:976 leaves it (the reservation is certified below)
   const fedSeat = target.feed
@@ -133,6 +132,12 @@ function convergedWinner(
   // 1c: a BYE on the awarded side keeps its position there (the matchUp stays a BYE, DEA:1185); not this one's own
   const bye = entry.sides?.find((side) => side.bye);
   if (bye && bye.sideNumber !== target.awardedSide) return undefined;
+  // F3: the BYE on that matchUp's own loser seat, placed whatever the policy after the withdrawals and before the produced
+  // exit is written (`advanceByeToLoserMatchUp`, DEA:1050–1063); not certified beside the BYE-held passage
+  if (entry.loserMatchUpId && bye) return undefined;
+  const seat = view.targets.convergedLoserSeat;
+  const onwardBye = entry.loserMatchUpId ? unfillableByeChain(view, entry, { seat, levels: seat?.levels }) : undefined;
+  if (entry.loserMatchUpId && !onwardBye) return undefined;
   const held = (entry.drawPositions ?? []).filter(
     (position): position is number => !!position && position !== fedSeat && position !== bye?.drawPosition,
   );
@@ -169,7 +174,7 @@ function convergedWinner(
       }
     : entry;
   const onward = { ...target, entry: released as HydratedMatchUp };
-  if (!producedTargetReason(view, landing, onward)) return undefined;
+  if (!producedTargetReason(view, landing, onward, !!onwardBye)) return undefined;
   const withdrawn = release();
   if (!withdrawn) return undefined;
   const touched = [
@@ -179,7 +184,9 @@ function convergedWinner(
       op.op === 'setMatchUpDrawPositions' && op.matchUpId !== entry.matchUpId ? [op.matchUpId] : [],
     ),
   ];
-  return { ...converged, withdrawn, onward, touched };
+  // the BYE's chain read on the draw before the convergence writes: certified only apart from every matchUp it touches
+  if (onwardBye?.matchUpIds.some((matchUpId) => touched.includes(matchUpId))) return undefined;
+  return { ...converged, withdrawn, onward, onwardBye, touched: [...touched, ...(onwardBye?.matchUpIds ?? [])] };
 }
 
 /**

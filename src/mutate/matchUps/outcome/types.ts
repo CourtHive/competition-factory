@@ -260,6 +260,11 @@ export type OutcomeView = {
      */
     onwardLoserSeat?: WinnerLoserSeat & { levels?: { levels: CarryLevel[]; bounded: boolean } };
     /**
+     * a double exit's call whose loser seat lands on a pending exit (1b): the loser seat of the matchUp the convergence
+     * there produces into, which takes a BYE (F3), and the levels a BYE there goes on to
+     */
+    convergedLoserSeat?: WinnerLoserSeat & { levels?: { levels: CarryLevel[]; bounded: boolean } };
+    /**
      * a double exit's call (S5): the loser-link levels beyond the loser matchUp (`own`) and beyond the matchUp holding the
      * seat its produced exit leaves unfillable (`unfillable`), which a BYE placed there goes on to (`byeLevels`)
      */
