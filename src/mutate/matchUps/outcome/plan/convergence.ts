@@ -489,18 +489,8 @@ function convergedWinner(
   const held = (entry.drawPositions ?? []).filter((position): position is number => !!position && position !== fedSeat);
   const own = held.filter((position) => landing.drawPositions?.includes(position));
   if (own.length !== held.length) return undefined;
-  const withdrawn = own.length
-    ? releaseWalk({
-        inContextDrawMatchUps: view.inContextDrawMatchUps ?? [],
-        propagatesBye: !!view.draw.doubleExitPropagatesBye,
-        fromRoundNumber: entry.roundNumber as number,
-        structureId: entry.structureId,
-        drawPositions: own,
-        drawDefinition,
-      })
-    : [];
-  if (!withdrawn) return undefined;
-  // the next matchUp as the produced exit finds it, its positions taken back
+  // the next matchUp as the produced exit finds it, its positions taken back: read before the walk, which a refusal
+  // here would spend for nothing (G4, FIRST_MATCH_LOSER_CONSOLATION)
   const released = own.length
     ? {
         ...entry,
@@ -512,6 +502,17 @@ function convergedWinner(
     : entry;
   const onward = { ...target, entry: released as HydratedMatchUp };
   if (!producedTargetReason(view, landing, onward)) return undefined;
+  const withdrawn = own.length
+    ? releaseWalk({
+        inContextDrawMatchUps: view.inContextDrawMatchUps ?? [],
+        propagatesBye: !!view.draw.doubleExitPropagatesBye,
+        fromRoundNumber: entry.roundNumber as number,
+        structureId: entry.structureId,
+        drawPositions: own,
+        drawDefinition,
+      })
+    : [];
+  if (!withdrawn) return undefined;
   const touched = [
     ...converged.touched,
     entry.matchUpId,
