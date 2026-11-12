@@ -70,8 +70,7 @@ export function producedReason(
   const target = targets.winner;
   if (!produced || direction?.decider || !target) return 'exit';
   // the next matchUp holds a BYE on the side the exit is awarded to: the exit passes it (`byeHeldProduced`)
-  const source = { matchUpId: request.matchUpId as string, matchUpStatus: write.matchUpStatus as MatchUpStatusUnion };
-  if (target.hasBye) return byeHeldProduced(view, produced, source) ? undefined : 'exit';
+  if (target.hasBye) return byeHeldProduced(view, produced, callOrigin(view, request, write)) ? undefined : 'exit';
   if (target.matchUpStatus !== TO_BE_PLAYED || target.holdsResult || target.hasBye || target.carriesExit) return 'exit';
   if (target.carriedStatuses.length) return 'exit';
   const entry = indexed(view, produced.matchUpId);
@@ -92,6 +91,25 @@ export function producedReason(
   if (entry.feedRound) return fedSeatReason(view, entry, awarded);
   return pendingOrAwardedReason(view, entry, awarded);
 }
+
+/**
+ * The double exit whose produced exit passes a BYE-held matchUp: the call's own, or a converged matchUp producing on
+ * (1c: `advanceConvergedWinner` onto a BYE-held target, DEA:801-830 then :1185). Its paired feeder is the matchUp beside
+ * it, whose origin a plain round records beside the BYE's; a loser link from it is not planned.
+ */
+export type PassageOrigin = {
+  matchUpId: string;
+  matchUpStatus: MatchUpStatusUnion;
+  paired?: HydratedMatchUp;
+  loserLinked: boolean;
+};
+
+const callOrigin = (view: OutcomeView, request: OutcomeRequest, write: MatchUpWrite): PassageOrigin => ({
+  matchUpId: request.matchUpId as string,
+  matchUpStatus: write.matchUpStatus as MatchUpStatusUnion,
+  paired: pairedFeeder(view),
+  loserLinked: !!view.targets.loserLink || !!view.targets.loserMatchUpId,
+});
 
 type ByeHeldPassage = {
   beyond?: HydratedMatchUp;
@@ -182,10 +200,9 @@ function firstPendingExit(matchUp: HydratedMatchUp, relays: ByeHeldPassage['rela
 function byeHeldProduced(
   view: OutcomeView,
   produced: NonNullable<DirectionPlan['produced']>,
-  source: { matchUpId: string; matchUpStatus: MatchUpStatusUnion },
+  source: PassageOrigin,
 ): ByeHeldPassage | undefined {
-  const { targets } = view;
-  if (targets.loserLink || targets.loserMatchUpId) return undefined;
+  if (source.loserLinked) return undefined;
   // the BYE matchUp's own loser link takes a BYE in v1 (`advanceByeToLoserMatchUp`), which is not planned
   const held = indexed(view, produced.matchUpId);
   if (!held || held.loserMatchUpId) return undefined;
@@ -267,23 +284,24 @@ function chainOps({ levels, pending }: ConvergedChain): OutcomeOp[] {
   ];
 }
 
-/** the produced exit past a BYE-held next matchUp, as v1 writes it (`byeHeldProduced`) */
-function byeHeldProducedOps(
+/**
+ * the produced exit past a BYE-held next matchUp, as v1 writes it (`byeHeldProduced`), from either origin; undefined where
+ * the passage is not planned
+ */
+export function byeHeldProducedOps(
   view: OutcomeView,
-  request: OutcomeRequest,
-  write: MatchUpWrite,
   produced: NonNullable<DirectionPlan['produced']>,
-): OutcomeOp[] {
-  const source = { matchUpId: request.matchUpId as string, matchUpStatus: write.matchUpStatus as MatchUpStatusUnion };
+  source: PassageOrigin,
+): OutcomeOp[] | undefined {
   const passage = byeHeldProduced(view, produced, source);
-  if (!passage) return [];
+  if (!passage) return undefined;
   const { beyond, arrivalSide, relays, onward, converged } = passage;
   // in a plain round the BYE came from the matchUp beside this one (a double BYE): its origin is recorded too
-  const paired = indexed(view, produced.matchUpId)?.feedRound ? undefined : pairedFeeder(view);
+  const paired = indexed(view, produced.matchUpId)?.feedRound ? undefined : source.paired;
   const recorded = (matchUpId: string, sourceSideNumber: 1 | 2, withPaired?: boolean): OutcomeOp[] => {
     const provenance = buildSideExitProvenance({
-      sourceMatchUpStatus: write.matchUpStatus as MatchUpStatusUnion,
-      sourceMatchUpId: request.matchUpId,
+      sourceMatchUpStatus: source.matchUpStatus,
+      sourceMatchUpId: source.matchUpId,
       sourceSideNumber,
       ...(withPaired && paired ? { pairedMatchUpStatus: paired.matchUpStatus, pairedMatchUpId: paired.matchUpId } : {}),
     });
@@ -405,7 +423,7 @@ function fedSeatReason(
 function producedOps(view: OutcomeView, request: OutcomeRequest, write: MatchUpWrite, direction?: DirectionPlan) {
   const produced = direction?.produced;
   if (!produced) return [];
-  if (view.targets.winner?.hasBye) return byeHeldProducedOps(view, request, write, produced);
+  if (view.targets.winner?.hasBye) return byeHeldProducedOps(view, produced, callOrigin(view, request, write)) ?? [];
   const entry = indexed(view, produced.matchUpId);
   const awarded = entry?.sides?.find((side) => side.sideNumber === produced.winningSide);
   const paired = awarded?.participantId && !entry?.feedRound ? pairedFeeder(view) : undefined;

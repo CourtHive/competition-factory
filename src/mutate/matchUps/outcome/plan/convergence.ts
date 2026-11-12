@@ -1,4 +1,5 @@
-import { blankScore, SINGLE_EXITS, carriedStatus, indexed, isSettleWrite, sideOf } from './planShared';
+import { blankScore, SINGLE_EXITS, carriedStatus, indexed, isSettleWrite, pairedFeeder, sideOf } from './planShared';
+import { byeHeldProducedOps } from './producedExit';
 import { producedTarget, producedTargetOps, producedTargetReason } from './producedTarget';
 import { ownByeChain, sourceSeatFrame, unfillableByeChain, walkChain } from './byeChain';
 import { getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
@@ -356,6 +357,8 @@ type ConvergedWrite = Pick<ProducedConvergence, 'landing' | 'matchUpStatus' | 'o
   reentered?: OutcomeOp[];
   /** the converged matchUp's loser link, served after its produced exit (`serveConvergedLoserLink`, DEA:767–775) */
   loserLinkOps?: OutcomeOp[];
+  /** 1c: its produced exit passing a BYE-held target instead (`byeHeldProduced`, from the converged origin) */
+  heldPassage?: OutcomeOp[];
 };
 
 function convergedWrite(view: OutcomeView, planned: ConvergedWrite): OutcomeOp[] {
@@ -379,6 +382,7 @@ function convergedWrite(view: OutcomeView, planned: ConvergedWrite): OutcomeOp[]
     // the onward matchUp's unfillable seat is served before its produced exit is written (`conditionallyAdvanceDrawPosition`)
     ...(onwardBye ? [...onwardBye.assigns, ...onwardBye.writes] : []),
     ...(onward ? producedTargetOps(view, onward, landing.matchUpId, matchUpStatus) : []),
+    ...(planned.heldPassage ?? []),
     ...(planned.loserLinkOps ?? []),
   ];
 }
@@ -441,7 +445,7 @@ function pendingConvergence(
     touched: [pending.matchUpId],
   };
   // a final produces nothing (`advanceConvergedWinner` finds no winner target)
-  const advanced = pending.winnerMatchUpId ? convergedWinner(view, converged, drawDefinition) : converged;
+  const advanced = pending.winnerMatchUpId ? convergedWinner(view, converged, drawDefinition, context) : converged;
   if (!advanced || !pending.loserMatchUpId) return advanced;
   // then its loser link (`serveConvergedLoserLink`, DEA:767–775), on the status this frame was handed (DEA:773), its
   // dispatch reading the frame's params channel: the call's entry, or after a decided result's removal its re-read
@@ -474,6 +478,7 @@ function convergedWinner(
   view: OutcomeView,
   converged: PendingConvergence,
   drawDefinition: DrawDefinition,
+  context?: ConvergedContext,
 ): PendingConvergence | undefined {
   const { landing, matchUpStatus } = converged;
   const target = producedTarget(view, landing, matchUpStatus);
@@ -486,9 +491,33 @@ function convergedWinner(
   const fedSeat = target.feed
     ? entry.sides?.find((side) => side.sideNumber === target.awardedSide)?.drawPosition
     : undefined;
-  const held = (entry.drawPositions ?? []).filter((position): position is number => !!position && position !== fedSeat);
+  // 1c: a BYE on the awarded side keeps its position there (the matchUp stays a BYE, DEA:1185); not this one's own
+  const bye = entry.sides?.find((side) => side.bye);
+  if (bye && bye.sideNumber !== target.awardedSide) return undefined;
+  const held = (entry.drawPositions ?? []).filter(
+    (position): position is number => !!position && position !== fedSeat && position !== bye?.drawPosition,
+  );
   const own = held.filter((position) => landing.drawPositions?.includes(position));
   if (own.length !== held.length) return undefined;
+  const release = () =>
+    own.length
+      ? releaseWalk({
+          inContextDrawMatchUps: view.inContextDrawMatchUps ?? [],
+          propagatesBye: !!view.draw.doubleExitPropagatesBye,
+          fromRoundNumber: entry.roundNumber as number,
+          structureId: entry.structureId,
+          drawPositions: own,
+          drawDefinition,
+        })
+      : [];
+  if (bye) {
+    const withdrawn = release();
+    if (!withdrawn) return undefined;
+    // its own positions taken back first (DEA:976): the passage reads the draw as the convergence and that release leave it
+    const prefix = [...(context?.prefix ?? []), ...convergedWrite(view, { ...converged, withdrawn })];
+    const projected = context?.landing?.(prefix, landing.matchUpId, matchUpStatus);
+    return projected ? heldCarry(projected.view, { ...converged, withdrawn }, target) : undefined;
+  }
   // the next matchUp as the produced exit finds it, its positions taken back: read before the walk, which a refusal
   // here would spend for nothing (G4, FIRST_MATCH_LOSER_CONSOLATION)
   const released = own.length
@@ -502,16 +531,7 @@ function convergedWinner(
     : entry;
   const onward = { ...target, entry: released as HydratedMatchUp };
   if (!producedTargetReason(view, landing, onward)) return undefined;
-  const withdrawn = own.length
-    ? releaseWalk({
-        inContextDrawMatchUps: view.inContextDrawMatchUps ?? [],
-        propagatesBye: !!view.draw.doubleExitPropagatesBye,
-        fromRoundNumber: entry.roundNumber as number,
-        structureId: entry.structureId,
-        drawPositions: own,
-        drawDefinition,
-      })
-    : [];
+  const withdrawn = release();
   if (!withdrawn) return undefined;
   const touched = [
     ...converged.touched,
@@ -521,6 +541,29 @@ function convergedWinner(
     ),
   ];
   return { ...converged, withdrawn, onward, touched };
+}
+
+/**
+ * 1c: the converged winner's held carry. Its target holds a BYE on the side the produced exit is awarded to, so v1 leaves
+ * it a BYE and carries the exit on (`conditionallyAdvanceDrawPosition` → `advanceByeAdvancedDrawPosition`, DEA:1185,
+ * :1945), the passage `byeHeldProduced` plans for a call's own double exit, here from the converged matchUp at its
+ * collapsed status. Planned where none of its own advancement stands to be taken back first; a convergence beyond with a
+ * carried exit (`convergeCarriedExit`, DEA:2914) is refused inside the passage.
+ */
+function heldCarry(
+  view: OutcomeView,
+  converged: PendingConvergence,
+  target: ProducedTarget,
+): PendingConvergence | undefined {
+  const { landing, matchUpStatus } = converged;
+  const heldPassage = byeHeldProducedOps(
+    view,
+    { matchUpId: target.entry.matchUpId, matchUpStatus: target.matchUpStatus, winningSide: target.awardedSide },
+    { matchUpId: landing.matchUpId, matchUpStatus, paired: pairedFeeder(view, landing), loserLinked: false },
+  );
+  if (!heldPassage?.length) return undefined;
+  const touched = heldPassage.flatMap((op) => ('matchUpId' in op && op.matchUpId ? [op.matchUpId] : []));
+  return { ...converged, heldPassage, touched: [...new Set([...converged.touched, ...touched])] };
 }
 
 /** a convergence's writes: the landing as the double exit, the arriving side's entry, and the exit it produces */
