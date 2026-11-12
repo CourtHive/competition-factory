@@ -113,6 +113,7 @@ import type { addElementExtension, removeElementExtension } from '@Mutate/extens
 import type { alternateDrawPositionAssignment } from '@Mutate/matchUps/drawPositions/positionAlternate';
 import type { qualifierDrawPositionAssignment } from '@Mutate/matchUps/drawPositions/positionQualifier';
 import type { removeMatchUpSideParticipant } from '@Mutate/matchUps/sides/removeMatchUpSideParticipant';
+import type { setParticipantCheckInState } from '@Mutate/timeItems/matchUps/setParticipantCheckInState';
 import type { getSchedulingProfileIssues } from '@Query/matchUps/scheduling/getSchedulingProfileIssues';
 import type { generateSeedingScaleItems } from '@Generators/drawDefinitions/generateSeedingScaleItems';
 import type { automatedPlayoffPositioning } from '@Mutate/drawDefinitions/automatedPlayoffPositioning';
@@ -1375,6 +1376,7 @@ export interface MethodSignatures {
   setMatchUpState: EngineMethod<typeof setMatchUpState>;
   setMatchUpStatus: EngineMethod<typeof setMatchUpStatus>;
   setOrderOfFinish: EngineMethod<typeof setOrderOfFinish>;
+  setParticipantCheckInState: EngineMethod<typeof setParticipantCheckInState>;
   setParticipantScaleItem: EngineMethod<typeof setParticipantScaleItem>;
   setParticipantScaleItems: EngineMethod<typeof setParticipantScaleItems>;
   setPositionAssignments: EngineMethod<typeof setPositionAssignments>;

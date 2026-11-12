@@ -712,6 +712,7 @@ export type FactoryEngineMethod =
   | 'setMatchUpState'
   | 'setMatchUpStatus'
   | 'setOrderOfFinish'
+  | 'setParticipantCheckInState'
   | 'setParticipantScaleItem'
   | 'setParticipantScaleItems'
   | 'setPositionAssignments'
@@ -1524,6 +1525,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'setMatchUpState',
   'setMatchUpStatus',
   'setOrderOfFinish',
+  'setParticipantCheckInState',
   'setParticipantScaleItem',
   'setParticipantScaleItems',
   'setPositionAssignments',
