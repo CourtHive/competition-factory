@@ -1,11 +1,16 @@
-import { setOutcomePipeline } from '@Global/state/globalState';
+import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, vi } from 'vitest';
 
 // constants and types
-import { COMPASS, FIRST_ROUND_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import {
+  COMPASS,
+  FIRST_MATCH_LOSER_CONSOLATION,
+  FIRST_ROUND_LOSER_CONSOLATION,
+} from '@Constants/drawDefinitionConstants';
 import { DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
+import { MODIFY_MATCHUP } from '@Constants/topicConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 
@@ -37,9 +42,10 @@ function scoreTwo(
   structureName: string,
   first: string[],
   second: string[],
+  participantsCount = 8,
 ) {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawType, drawSize: 8, drawId }],
+    drawProfiles: [{ drawType, drawSize: 8, participantsCount, drawId }],
     policyDefinitions: { [POLICY_TYPE_PROGRESSION]: { doubleExitPropagateBye: false } },
     nonRandom: 9000230,
   });
@@ -116,5 +122,28 @@ it.each(cases)("v2 serves the converged landings' loser links: COMPASS $first th
   expect(differential.draw).toEqual(v1.draw);
   // the reclaim names the tournament as v1's removal does, so the record beside it is left unstamped
   expect(v1.stamped[1]).toBe(false);
+  expect(v2.stamped).toEqual(v1.stamped);
+});
+
+// 1c: the converged winner's held carry. Under FIRST_MATCH_LOSER_CONSOLATION 8/7 the consolation's feed round holds a BYE
+// on its fed seat, so the converged matchUp's produced exit passes it (`advanceConvergedWinner` onto a BYE-held target,
+// then `advanceByeAdvancedDrawPosition`), as a call's own double exit passes a BYE-held matchUp (`byeHeldProduced`)
+const heldCases = flavours.flatMap(([a, b]) =>
+  [
+    ['3', '4'],
+    ['4', '3'],
+  ].map(([p, q]) => ({ first: [p, a], second: [q, b] })),
+);
+it.each(heldCases)('v2 carries the converged exit past the held BYE: $first then $second', ({ first, second }) => {
+  // subscribed, so the differential compares the notices too (a notice's event and tournament)
+  setSubscriptions({ subscriptions: { [MODIFY_MATCHUP]: () => undefined } });
+  const v1 = scoreTwo('v1', FIRST_MATCH_LOSER_CONSOLATION, 'Main', first, second, 7);
+  const v2 = scoreTwo('v2', FIRST_MATCH_LOSER_CONSOLATION, 'Main', first, second, 7);
+  const differential = scoreTwo('differential', FIRST_MATCH_LOSER_CONSOLATION, 'Main', first, second, 7);
+  expect(v1.results.every((result) => result.success)).toBe(true);
+  expect(v2.results[1]).toEqual({ success: true, cascaded: 0 });
+  expect(v1.results[1].cascaded).toBeGreaterThan(0);
+  expect(v2.draw).toEqual(v1.draw);
+  expect(differential.draw).toEqual(v1.draw);
   expect(v2.stamped).toEqual(v1.stamped);
 });

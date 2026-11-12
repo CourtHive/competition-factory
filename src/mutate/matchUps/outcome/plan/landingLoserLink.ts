@@ -7,6 +7,7 @@ import { indexed } from './planShared';
 
 // constants and types
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
+import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { WorkingView } from '../overlay';
@@ -42,9 +43,10 @@ type LandingRead = NonNullable<ReturnType<LandingView>>;
  * The landing's loser link, step by step as v1 takes it: no link (DEA:3055) or the same decider (:3057) serve nothing; a
  * propagated BYE on the seat gives way (`removeDirectedBye`) and the link is served again on a fresh read (:3070–3086,
  * :158); an occupant, BYE or qualifier there (:3099), or an exit this convergence already sent (:3101–3105), serve
- * nothing; otherwise `handleLoserMatchUp` (:3110) produces the exit on the loser matchUp (`producedLoser`). Undefined,
- * the call v1's, wherever v1 takes another branch (a carrier released, a fed seat, another empty exit, a FIRST_MATCHUP
- * gate at a re-entry, a BYE-held loser matchUp at a re-entry) or where the two hydration channels read apart.
+ * nothing; otherwise `handleLoserMatchUp` (:3110) produces the exit on the loser matchUp (`producedLoser`). A re-entry's
+ * FIRST_MATCHUP gate serves nothing where the landing holds no position. Undefined, the call v1's, wherever v1 takes
+ * another branch (a carrier released, a fed seat, another empty exit, a reclaim before that gate, a BYE-held loser matchUp
+ * at a re-entry) or where the two hydration channels read apart.
  */
 export function landingLoserLink(
   frame: LandingFrame,
@@ -64,8 +66,13 @@ export function landingLoserLink(
   if (!loserMatchUp) return NONE;
   if (!drawPosition || !targets.loserLink) return l2 ? NONE : undefined;
   if (l2 && targets.winnerMatchUpId === loserMatchUp.matchUpId) return NONE;
-  // the FIRST_MATCHUP gate a re-entry asks (DEA:290–313) is not certified here
-  if (!l2 && targets.loserLink.linkCondition) return undefined;
+  // the FIRST_MATCHUP gate a re-entry asks (DEA:282–313), after its reclaim (:146): a converged landing holding no
+  // position names no first-match loser, so its loser side is not served. A reclaim before the gate is v1's
+  if (!l2 && targets.loserLink.linkCondition) {
+    if (targets.loserLink.linkCondition !== FIRST_MATCHUP) return undefined;
+    if (seat?.bye && seat.byeFromPropagation && !loserMatchUp.hasFedDrawPosition) return undefined;
+    return (converged?.drawPositions ?? []).some(Boolean) ? undefined : NONE;
+  }
   if (!seat || !converged || loserMatchUp.structureId === converged.structureId) return undefined;
   if (seat.bye && seat.byeFromPropagation && !loserMatchUp.hasFedDrawPosition) {
     const seatAt = { structureId: loserMatchUp.structureId, matchUpId: loserMatchUp.matchUpId, drawPosition };
