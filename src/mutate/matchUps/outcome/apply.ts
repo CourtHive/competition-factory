@@ -385,7 +385,7 @@ function nativeNoticeSteps(
         matchUpId: op.matchUpId,
         drawPositions: stored.get(op.matchUpId)?.drawPositions ?? [],
         withdrawnByePosition: op.drawPosition,
-        announcesContext: false,
+        ...(op.namesContext ? { namesContext: true } : { announcesContext: false }),
       },
     });
   });
@@ -508,7 +508,7 @@ function announcePositionBoundary(
   matchUp: MatchUp,
   { drawDefinition, tournamentRecord, event }: Pick<BuildViewArgs, 'drawDefinition' | 'tournamentRecord' | 'event'>,
 ): void {
-  const bare = op.announcesContext === false || !!op.withdrawnByePosition || !!op.clearsScore;
+  const bare = op.announcesContext === false || (!op.namesContext && (!!op.withdrawnByePosition || !!op.clearsScore));
   const noticeEvent =
     bare || op.removedDrawPosition || (op.advancesThroughBye && !op.announcesEvent) ? undefined : event;
   modifyMatchUpNotice({
@@ -749,6 +749,10 @@ function noticeRules(ops: OutcomeOp[]) {
   const namedResults = new Set([
     ...ops.flatMap((op) => (op.op === 'setMatchUpResult' && op.announcedAs ? [op.matchUpId] : [])),
     ...[...lastScores.values()].flatMap((op) => (op.restoresNoticeIdentity ? [op.matchUpId] : [])),
+    // ...as does a withdrawal v1 makes with the event and the tournament (a converged landing's reclaim)
+    ...ops.flatMap((op) =>
+      (op.op === 'setMatchUpDrawPositions' || op.op === 'clearMatchUpBye') && op.namesContext ? [op.matchUpId] : [],
+    ),
   ]);
   const carriedNotices = new Set(
     [...namedWriters(ops).settled].flatMap(([matchUpId, writer]) =>

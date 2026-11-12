@@ -8,6 +8,7 @@ import { producedTarget } from './producedTarget';
 // constants and types
 import type { AbstainReason, DirectionPlan, MatchUpWrite, OutcomeRequest, OutcomeView, SeatObligation } from '../types';
 import type { MatchUpStatusUnion, SideExitProvenance } from '@Types/tournamentTypes';
+import type { ConvergedContext } from './convergence';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { OutcomeOp } from '../ops';
 import {
@@ -45,6 +46,7 @@ export function producedReason(
   request: OutcomeRequest,
   direction?: DirectionPlan,
   write?: MatchUpWrite,
+  context?: ConvergedContext,
 ): AbstainReason | SeatObligation | undefined {
   const { existing, targets } = view;
   if (!write || !isDoubleExit(write.matchUpStatus) || request.matchUpStatus !== write.matchUpStatus) return 'exit';
@@ -58,7 +60,8 @@ export function producedReason(
   if (view.group && !view.group.adHoc && !direction && !targets.winnerMatchUpId && !targets.loserMatchUpId)
     return undefined;
   // the exit it produces meets one standing there: the two converge, and that double exit produces on
-  if (direction?.converged) return producedConvergedReason(view, request, write, direction) ? undefined : 'exit';
+  if (direction?.converged)
+    return producedConvergedReason(view, request, write, direction, context) ? undefined : 'exit';
   // a structure's final (or the one matchUp of a one-round structure) produces nothing (`doubleExitAdvancement` finds no
   // winner target): the own loser seat's BYE where a link feeds one, and the call's own write (S6 tail, family 8). A
   // final whose winner link leads on (DOUBLE_ELIMINATION's Decider) has a winner target across it: the decider's, v1's
@@ -467,8 +470,9 @@ export function producedExitOps(
   request: OutcomeRequest,
   write: MatchUpWrite,
   direction?: DirectionPlan,
-) {
+  context?: ConvergedContext,
+): OutcomeOp[] | undefined {
   return direction?.converged
-    ? producedConvergedOps(view, request, write, direction)
+    ? producedConvergedOps(view, request, write, direction, context)
     : producedOps(view, request, write, direction);
 }

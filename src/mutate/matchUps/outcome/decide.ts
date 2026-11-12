@@ -53,6 +53,7 @@ import type {
   BuildViewArgs,
   DirectionPlan,
   DualCall,
+  LandingView,
   OutcomePlan,
   OutcomeRequest,
   OutcomeView,
@@ -94,6 +95,7 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
     drawDefinition: args.drawDefinition,
     rebuild: rebuildView(args, view, planned),
     project: projectOutcome(args, view),
+    landing: landingView(args, view),
     dual: dualCallFor(route, args, view),
     request: planned,
     write: plan,
@@ -153,6 +155,24 @@ function projectOutcome(args: BuildViewArgs, view: OutcomeView): ProjectOutcome 
       event: args.event,
     });
     return working.apply(prefix).error ? undefined : working;
+  };
+}
+
+/** A converged landing read as its own double exit's call on the cursor the prefix leaves (1b, L2). */
+function landingView(args: BuildViewArgs, view: OutcomeView): LandingView {
+  return (prefix, matchUpId, matchUpStatus) => {
+    const working = projectOutcome(args, view)(prefix);
+    if (!working) return undefined;
+    const landing = buildOutcomeView({
+      ...args,
+      request: { flags: args.request.flags, matchUpId, matchUpStatus },
+      inContextDrawMatchUps: working.inContextDrawMatchUps,
+      drawDefinition: working.drawDefinition,
+      matchUpsMap: working.matchUpsMap,
+      structural: view.structural,
+      temporal: working.temporal,
+    });
+    return landing.found ? { view: landing, working } : undefined;
   };
 }
 
