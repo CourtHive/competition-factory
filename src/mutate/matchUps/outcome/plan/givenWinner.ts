@@ -37,6 +37,7 @@ import type {
   AbstainReason,
   DirectionPlan,
   ExitReasonArgs,
+  LandingView,
   MatchUpWrite,
   OutcomeView,
   PlanArgs,
@@ -364,7 +365,8 @@ export function unwoundConvergedFor(
   view: OutcomeView,
   args: PlanArgs,
   loser?: DirectionPlan['loser'],
-): { ops: OutcomeOp[]; superseded?: Convergence } {
+  serving?: { landing?: LandingView; prefix: OutcomeOp[] },
+): { ops: OutcomeOp[]; superseded?: Convergence } | undefined {
   if (!loser?.converged) return { ops: [] };
   const after = isDoubleExit(view.existing.matchUpStatus) ? unwoundView(args, { releasedLandings: true }) : undefined;
   const superseded = after && supersededOwnRelayConvergence(args, after);
@@ -379,17 +381,18 @@ export function unwoundConvergedFor(
         args.write?.matchUpStatus as MatchUpStatusUnion,
       ),
     };
-  return {
-    ops: convergedOps(
-      after?.view ?? view,
-      args.request,
-      args.write as MatchUpWrite,
-      after?.direction?.loser ?? loser,
-      after ? retainedRelayReservation(args, after) : undefined,
-      // the withdrawal simulates over the draw as it stands, which an unwind has not yet changed
-      after ? undefined : args.drawDefinition,
-    ),
-  };
+  const ops = convergedOps(
+    after?.view ?? view,
+    args.request,
+    args.write as MatchUpWrite,
+    after?.direction?.loser ?? loser,
+    after ? retainedRelayReservation(args, after) : undefined,
+    // the withdrawal simulates over the draw as it stands, which an unwind has not yet changed
+    after ? undefined : args.drawDefinition,
+    // 2c-1: served only on the program's own cursor; an unwound view's landing is v1's
+    after ? undefined : serving,
+  );
+  return ops && { ops };
 }
 
 /**
