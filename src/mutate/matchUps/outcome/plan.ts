@@ -79,6 +79,7 @@ import type { DrawDefinition, Score } from '@Types/tournamentTypes';
 import type { OutcomeOp } from './ops';
 import type {
   AbstainReason,
+  DirectionPlan,
   DualCall,
   ExitReasonArgs,
   MatchUpWrite,
@@ -145,7 +146,7 @@ function exitReason(args: ExitReasonArgs): AbstainReason | SeatObligation | unde
   const loser = direction?.loser;
   if (directsElsewhere(direction)) return 'exit';
   if (loser?.carriedPast || loser?.withdrawn) return 'exit';
-  if (loser?.converged) return convergedReason(view, request, write, loser, undefined, args.drawDefinition);
+  if (loser?.converged) return convergedReason(view, request, write, loser, undefined, args.drawDefinition, true);
   if (loser?.exit) return carriedReason(view, write);
   return undefined;
 }
@@ -499,6 +500,17 @@ function routedProducedOps(args: PlanArgs, drawDefinition: DrawDefinition, prefi
   return producedExitOps(args.view, args.request, args.write!, args.direction, context);
 }
 
+/** a kept-out loser's BYE on the seat the link feeds (v1's `directLoser`), unless a reservation placed it already */
+function keptOutByeOps(args: PlanArgs, seatProgram: OutcomeOp[], loser?: DirectionPlan['loser']): OutcomeOp[] {
+  const { view } = args;
+  const { loserMatchUpId } = view.targets;
+  const keptOut = loser?.bye && !loser.arrives && !view.targets.loserTargetSeat?.bye ? loser.bye : undefined;
+  return (
+    unwoundKeptOutOps(view, seatProgram, loser, loser?.bye ? unwoundView(args)?.view : undefined) ??
+    (keptOut && loserMatchUpId ? seatBye({ ...keptOut, matchUpId: loserMatchUpId }) : [])
+  );
+}
+
 /** A recorded single-call plan after the shared refusal, dual and no-op gates. */
 function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObligation?: SeatObligation): OutcomePlan {
   const { request, view } = args;
@@ -548,7 +560,6 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   // object does not change (the write is on the structure's assignments), so it is not a touched entity (F2 (i), and v1).
   // The structure whose assignments change is stamped below (v1's `modifyPositionAssignmentsNotice`).
   const loser = placing?.loser;
-  const { loserMatchUpId } = view.targets;
   const arrival = arrivalOps(view, loser);
   const plainPassage = loserByeArrival(view, loser, args.route, write);
   // a participant placed opposite a BYE goes on through it, a loser fed onto the seat or a winner into a BYE-held
@@ -599,19 +610,12 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
           ]
         : [],
   );
-  // a kept-out loser's BYE on the seat the link feeds (v1's `directLoser`), unless a reservation placed it already
-  const keptOut = loser?.bye && !loser.arrives && !view.targets.loserTargetSeat?.bye ? loser.bye : undefined;
-  const keptOutBye =
-    unwoundKeptOutOps(view, seatPrograms[0] ?? [], loser, loser?.bye ? unwoundView(args)?.view : undefined) ??
-    (keptOut && loserMatchUpId ? seatBye({ ...keptOut, matchUpId: loserMatchUpId }) : []);
+  const keptOutBye = keptOutByeOps(args, seatPrograms[0] ?? [], loser);
   // the FIRST_MATCHUP reservation the winner's arrival makes (v1's `propagateConsolationBye`)
   const reservation = write.winningSide ? view.targets.reservations?.[write.winningSide as 1 | 2] : undefined;
   const reserved = reservation?.kind === 'reserve' ? seatBye(reservation) : [];
-  // two exits meeting where the loser lands (RULE 4), and what the double exit they make produces (S5)
-  const convergence = unwoundConvergedFor(view, args, loser);
-  const converging = convergence.ops;
-  // ...and, seated beside a carried exit whose carrier the unwind released back, awarded it and sent on (S7)
-  // ...or seated where a carried exit stands awarded to them, taken and sent on (C18)
+  // seated beside a carried exit whose carrier the unwind released back, awarded it and sent on (S7), or seated where a
+  // carried exit stands awarded to them, taken and sent on (C18)
   const seated = [
     ...arrival,
     ...awardedArrivalOps(view, loser),
@@ -619,6 +623,14 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
     ...keptOutBye,
     ...reserved,
   ];
+  // two exits meeting where the loser lands (RULE 4), and what the double exit they make produces (S5); under the policy
+  // off, a landing linking its loser on is removed and served on the cursor this program leaves (2c-1)
+  const convergence = unwoundConvergedFor(view, args, loser, {
+    prefix: [...ops, ...seated, ...initialLineUps, ...throughBye, ...lineUps, ...carried.relay, ...landing],
+    landing: args.landing,
+  });
+  if (!convergence) return { abstain: 'exit' };
+  const converging = convergence.ops;
   // The linked seats read the state after the literal prefix emitted below, never positional guesses.
   const seatOps = certifiedSeatProgram(
     args,

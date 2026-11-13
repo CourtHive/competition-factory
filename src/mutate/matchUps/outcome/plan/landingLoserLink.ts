@@ -1,15 +1,17 @@
 import { producedLoser, producedLoserMatchUpIds, producedLoserOps } from './byeChain';
 import { getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
+import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { unwindWalk } from '../unwindWalk';
 import { indexed } from './planShared';
 
 // constants and types
-import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
+import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
+import { TEAM } from '@Constants/matchUpTypes';
 import type { WorkingView } from '../overlay';
 import type { LandingView } from '../types';
 import type { OutcomeOp } from '../ops';
@@ -51,7 +53,7 @@ type LandingRead = NonNullable<ReturnType<LandingView>>;
 export function landingLoserLink(
   frame: LandingFrame,
   landingView?: LandingView,
-  reclaimed = false,
+  reclaim?: Reclaim,
 ): LandingService | undefined {
   const read = landingView?.(frame.prefix, frame.matchUpId, frame.cascadeStatus);
   if (!read) return undefined;
@@ -76,14 +78,14 @@ export function landingLoserLink(
   if (!seat || !converged || loserMatchUp.structureId === converged.structureId) return undefined;
   if (seat.bye && seat.byeFromPropagation && !loserMatchUp.hasFedDrawPosition) {
     const seatAt = { structureId: loserMatchUp.structureId, matchUpId: loserMatchUp.matchUpId, drawPosition };
-    return reclaimed ? undefined : reclaimThenServe(frame, read, paramsChannel, seatAt, landingView);
+    return reclaim ? undefined : reclaimThenServe(frame, read, paramsChannel, seatAt, landingView);
   }
   // the convergence's first carrier, sent on as its loser, released (`releaseCarrier`): measured on no call, v1's
   if (seat.participantId && converged.sides?.some((side) => side.participantId === seat.participantId))
     return undefined;
   if (!seat.free) return l2 || (seat.bye && loserMatchUp.matchUpStatus === BYE) ? NONE : undefined;
   if (l2 && servedFrom(working, loserMatchUp.matchUpId, frame.matchUpId)) return NONE;
-  return dispatch(frame, read, paramsChannel, loserMatchUp);
+  return dispatch(frame, read, paramsChannel, loserMatchUp, reclaim);
 }
 
 /** `handleLoserMatchUp` (DEA:430–546) on a free seat, the produced exit read on the cursor */
@@ -92,6 +94,7 @@ function dispatch(
   { view, working }: LandingRead,
   paramsChannel: HydratedMatchUp[],
   loserMatchUp: HydratedMatchUp,
+  reclaim?: Reclaim,
 ): LandingService | undefined {
   const l2 = frame.phase === 'landing-converged';
   // a re-entry dispatches a loser matchUp that is not a BYE (DEA:316); a BYE-held one records the exit, v1's
@@ -102,7 +105,11 @@ function dispatch(
   const occupied = loserMatchUp.sides?.some((side) => side.participantId || (!l2 && side.participant));
   if (isExit(loserMatchUp.matchUpStatus) && !occupied) return undefined;
   if (isDoubleExit(loserMatchUp.matchUpStatus)) return NONE;
-  if (!sameChannel(working, paramsChannel, loserMatchUp.matchUpId)) return undefined;
+  // the channel reading as the cursor does (dev's certificate) stands after a reclaim too
+  const channel =
+    sameChannel(working, paramsChannel, loserMatchUp.matchUpId) ||
+    (!!reclaim && reclaimedChannel(working, paramsChannel, loserMatchUp, reclaim));
+  if (!channel) return undefined;
   const produced = producedLoser(view);
   if (!produced) return undefined;
   const lineage = { sourceMatchUpId: frame.matchUpId, previousMatchUpStatus: frame.cascadeStatus };
@@ -124,27 +131,40 @@ function reclaimThenServe(
   { matchUpId, ...seat }: { structureId: string; matchUpId: string; drawPosition: number },
   landingView?: LandingView,
 ): LandingService | undefined {
+  const visits = { unnamed: new Set<string>() };
   const walked = unwindWalk({
     inContextDrawMatchUps: working.inContextDrawMatchUps,
     propagatesBye: !!view.draw.propagatesByeOnDoubleExit,
     drawDefinition: working.drawDefinition,
     seats: [seat],
+    visits,
   })?.[0];
   if (!walked) return undefined;
-  const reclaim = walked.map(namedWithdrawal);
-  const after = landingLoserLink({ ...frame, paramsChannel, prefix: [...frame.prefix, ...reclaim] }, landingView, true);
-  // Certified only where the removal writes the seat's own matchUp alone and the produced exit's result write announces
-  // it after (the notice v1 keeps)
+  const reclaim = walked.map((op) => namedWithdrawal(op, visits.unnamed));
+  const undone = { ids: new Set(touchedBy(reclaim)), before: working.inContextDrawMatchUps };
+  const after = landingLoserLink(
+    { ...frame, paramsChannel, prefix: [...frame.prefix, ...reclaim] },
+    landingView,
+    undone,
+  );
+  // Certified where the produced exit's result write announces the seat's matchUp after (the notice v1 keeps), and every
+  // matchUp the removal reached only with no event in hand (`removeSubsequentRoundsParticipant`, the round-1 loser
+  // cascade: the tournament, no event, which no op here writes) is announced again after it, so v1's later notice is the
+  // one kept (2026-11-13 L2 ruling §3)
   const announced = after?.ops.some((op) => op.op === 'setMatchUpResult' && op.matchUpId === matchUpId);
-  if (!announced || touchedBy(reclaim).some((id) => id !== matchUpId)) return undefined;
+  const reannounced = [...visits.unnamed].every((id) => after?.ops.some((op) => announces(op, id)));
+  if (!announced || !reannounced) return undefined;
   return after && { ops: [...reclaim, ...after.ops], touched: [...new Set([...touchedBy(reclaim), ...after.touched])] };
 }
 
 /**
- * v1's removal is handed the event and the tournament (`removeDirectedBye` at DEA:3076 and :111), so each notice the walk
- * makes names them: the matchUp's, its structure's assignments', and so the tournament the call marks modified
+ * v1's removal is handed the event and the tournament (`removeDirectedBye` at DEA:3076 and :111), so each notice its
+ * removal tasks make names them: the matchUp's, its structure's assignments', and so the tournament the call marks
+ * modified. A matchUp the walk reached only with no event in hand (`Sim.named`) is left as the walk writes it, for a
+ * later write to announce
  */
-function namedWithdrawal(op: OutcomeOp): OutcomeOp {
+function namedWithdrawal(op: OutcomeOp, unnamed: Set<string>): OutcomeOp {
+  if ('matchUpId' in op && op.matchUpId && unnamed.has(op.matchUpId)) return op;
   if (op.op === 'setMatchUpDrawPositions') {
     const { announcesContext: _bare, ...named } = op;
     return { ...named, namesContext: true };
@@ -179,6 +199,69 @@ function sameChannel(working: WorkingView, paramsChannel: HydratedMatchUp[], mat
   return named(fresh).every((matchUp, index) => facts(matchUp) === facts(staleNamed[index]));
 }
 
+/** what the reclaim undid: the matchUps it wrote, and the cursor before it */
+type Reclaim = { ids: Set<string>; before: HydratedMatchUp[] };
+
+/**
+ * F2 after a reclaim (2026-11-13 L2 ruling §2): v1 re-serves on a fresh read, but the dispatched exit still reads the
+ * caller's params channel, which predates the reclaim (DEA:3076–3085, :3110 → :902). Certified where that channel names
+ * the same matchUps the cursor does, at every level the dispatch reads them (the loser matchUp's targets, and its winner
+ * target's onward target, DEA:1036–1047, drawPositionPlacement.ts:363–372), and reads each as the cursor does, or, where
+ * the reclaim wrote it, as it stood before the reclaim. v1's other channel reads are kept out: the side a walkover is
+ * awarded to resolves structurally (DEA:522–530), a loser matchUp holding a decided exit would read its winner on the
+ * channel (DEA:1121), and a TEAM line-up reads the channel's sides (drawPositionPlacement.ts:413, :915–935)
+ */
+function reclaimedChannel(
+  working: WorkingView,
+  paramsChannel: HydratedMatchUp[],
+  loserMatchUp: HydratedMatchUp,
+  { ids, before }: Reclaim,
+): boolean {
+  const { drawDefinition } = working;
+  const { matchUpId, structureId } = loserMatchUp;
+  if (isExit(loserMatchUp.matchUpStatus) && loserMatchUp.winningSide) return false;
+  const read = (inContextDrawMatchUps: HydratedMatchUp[], id: string) =>
+    positionTargets({ drawDefinition, inContextDrawMatchUps, matchUpId: id });
+  const fresh = read(working.inContextDrawMatchUps, matchUpId);
+  const stale = read(paramsChannel, matchUpId);
+  if (fresh.error || stale.error) return false;
+  const loserTargetDrawPosition = fresh.targetMatchUps?.loserTargetDrawPosition;
+  if (loserTargetDrawPosition !== stale.targetMatchUps?.loserTargetDrawPosition) return false;
+  const structural =
+    !!loserMatchUp.feedRound ||
+    !!getDrawPositionSideNumber({
+      matchUp: { ...loserMatchUp, sides: undefined },
+      drawPosition: loserTargetDrawPosition,
+      drawDefinition,
+      structureId,
+    });
+  if (!structural) return false;
+  const winner = fresh.targetMatchUps?.winnerMatchUp;
+  const onward = winner
+    ? [read(working.inContextDrawMatchUps, winner.matchUpId), read(paramsChannel, winner.matchUpId)]
+    : [];
+  if (onward.some((targets) => targets.error)) return false;
+  const pairs: [HydratedMatchUp | undefined, HydratedMatchUp | undefined][] = [
+    [winner, stale.targetMatchUps?.winnerMatchUp],
+    [fresh.targetMatchUps?.loserMatchUp, stale.targetMatchUps?.loserMatchUp],
+    ...(onward.length
+      ? [
+          [onward[0].targetMatchUps?.winnerMatchUp, onward[1].targetMatchUps?.winnerMatchUp] as [
+            HydratedMatchUp | undefined,
+            HydratedMatchUp | undefined,
+          ],
+        ]
+      : []),
+  ];
+  if ([loserMatchUp, ...pairs.flat()].some((matchUp) => matchUp?.matchUpType === TEAM)) return false;
+  return pairs.every(([cursor, channel]) => {
+    if (cursor?.matchUpId !== channel?.matchUpId) return false;
+    if (facts(cursor) === facts(channel)) return true;
+    const undone = channel && ids.has(channel.matchUpId) && before.find((m) => m.matchUpId === channel.matchUpId);
+    return !!undone && facts(undone) === facts(channel);
+  });
+}
+
 const facts = (matchUp?: HydratedMatchUp) =>
   matchUp &&
   JSON.stringify([
@@ -189,6 +272,11 @@ const facts = (matchUp?: HydratedMatchUp) =>
     matchUp.sideExitProvenance,
     matchUp.sides?.map((side) => [side.sideNumber, side.participantId, side.drawPosition, side.bye]),
   ]);
+
+/** a write announcing the matchUp, whose notice supersedes an earlier one in the call */
+const announces = (op: OutcomeOp, matchUpId: string) =>
+  (op.op === 'setMatchUpResult' || op.op === 'setMatchUpDrawPositions' || op.op === 'setMatchUpBye') &&
+  op.matchUpId === matchUpId;
 
 const touchedBy = (ops: OutcomeOp[]) =>
   ops.flatMap((op) => {

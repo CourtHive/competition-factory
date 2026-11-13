@@ -3,7 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { MISSING_VALUE, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { MISSING_VALUE, PARTICIPANT_NOT_FOUND, EXISTING_PERSON_OTHER_ID } from '@Constants/errorConditionConstants';
 
 function setup() {
   let result: any = mocksEngine.generateTournamentRecord({
@@ -52,7 +52,7 @@ describe('addPersonOtherId — append', () => {
 });
 
 describe('addPersonOtherId — upsert by organisationId', () => {
-  it('replaces personId when organisationId already exists', () => {
+  it('refuses to re-point an existing id unless replaceExisting is set', () => {
     const { participantId } = setup();
     tournamentEngine.addPersonOtherId({
       participantId,
@@ -64,6 +64,25 @@ describe('addPersonOtherId — upsert by organisationId', () => {
       organisationId: 'FED_X',
       personId: 'X-NEW',
     });
+    expect(result.error).toEqual(EXISTING_PERSON_OTHER_ID);
+    expect(result.context).toEqual({ organisationId: 'FED_X', existingPersonIds: ['X-OLD'] });
+    result = tournamentEngine.findParticipant({ participantId });
+    expect(result.participant.person.personOtherIds.map((o: any) => o.personId)).toEqual(['X-OLD']);
+  });
+
+  it('replaces personId when replaceExisting is set', () => {
+    const { participantId } = setup();
+    tournamentEngine.addPersonOtherId({
+      participantId,
+      organisationId: 'FED_X',
+      personId: 'X-OLD',
+    });
+    let result: any = tournamentEngine.addPersonOtherId({
+      participantId,
+      organisationId: 'FED_X',
+      personId: 'X-NEW',
+      replaceExisting: true,
+    });
     expect(result.success).toEqual(true);
 
     result = tournamentEngine.findParticipant({ participantId });
@@ -72,6 +91,31 @@ describe('addPersonOtherId — upsert by organisationId', () => {
     expect(otherIds[0].organisationId).toEqual('FED_X');
     expect(otherIds[0].personId).toEqual('X-NEW');
     expect(otherIds[0].updatedAt).toBeDefined();
+  });
+
+  it('collapses duplicate entries for the organisation when replacing', () => {
+    const { participantId } = setup();
+    let result: any = tournamentEngine.findParticipant({ participantId });
+    const participant = result.participant;
+    participant.person.personOtherIds = [
+      { organisationId: 'FED_D', personId: 'D-1', createdAt: '2026-01-01T00:00:00Z' },
+      { organisationId: 'OTHER', personId: 'O-1' },
+      { organisationId: 'FED_D', personId: 'D-1', createdAt: '2026-02-01T00:00:00Z' },
+    ];
+    result = tournamentEngine.modifyParticipant({ participant });
+    expect(result.success).toEqual(true);
+    result = tournamentEngine.addPersonOtherId({
+      participantId,
+      organisationId: 'FED_D',
+      personId: 'D-2',
+      replaceExisting: true,
+    });
+    expect(result.success).toEqual(true);
+    result = tournamentEngine.findParticipant({ participantId });
+    expect(result.participant.person.personOtherIds.map((o: any) => [o.organisationId, o.personId])).toEqual([
+      ['FED_D', 'D-2'],
+      ['OTHER', 'O-1'],
+    ]);
   });
 
   it('does not duplicate when same (organisationId, personId) is re-applied', () => {

@@ -613,3 +613,89 @@ test.each(['same', 'different', 'source-only', 'legacy-extension'])(
     expect(ids.toSorted()).toEqual(['other', 'target']);
   },
 );
+
+const CANONICAL = 'CANONICAL_REGISTRY';
+function stamp(participant: Participant, personId: string, createdAt?: string) {
+  participant.person!.personOtherIds = [{ organisationId: CANONICAL, personId, ...(createdAt && { createdAt }) }];
+}
+function preview(record: Tournament, extra = {}) {
+  return getIndividualParticipantMergePreview({
+    tournamentRecord: record,
+    sourceParticipantId: 'source',
+    targetParticipantId: 'target',
+    ...extra,
+  });
+}
+
+test('one entry survives per issuer and value, keeping the earliest stamp', () => {
+  const record = fixture();
+  stamp(record.participants![0], 'P1', '2026-02-01T00:00:00Z');
+  stamp(record.participants![1], 'P1', '2026-01-01T00:00:00Z');
+  const result: any = commit(record);
+  expect(result.success).toBe(true);
+  expect(record.participants![0].person!.personOtherIds).toEqual([
+    { organisationId: CANONICAL, personId: 'P1', createdAt: '2026-01-01T00:00:00Z' },
+  ]);
+});
+
+test('a protected id that would move to the survivor is a warning by default and a blocker under refuse', () => {
+  const record = fixture();
+  stamp(record.participants![0], 'P1');
+  const protectedIssuers = [CANONICAL];
+  const warning = {
+    code: 'PROTECTED_ID_WOULD_MOVE',
+    path: '/person/personOtherIds',
+    organisationId: CANONICAL,
+    personId: 'P1',
+  };
+  let result: any = preview(record, { protectedIssuers });
+  expect(result.canMerge).toBe(true);
+  expect(result.warnings).toEqual([warning]);
+  result = preview(record, { protectedIssuers, protectedIdPolicy: 'refuse' });
+  expect(result.canMerge).toBe(false);
+  expect(result.blockers).toEqual([{ code: 'PROTECTED_ID_WOULD_MOVE', path: '/person/personOtherIds' }]);
+  expect(result.warnings).toEqual([warning]);
+  // Swapping survivor and duplicate keeps the protected id where it is: no warning, nothing to refuse.
+  result = getIndividualParticipantMergePreview({
+    tournamentRecord: record,
+    sourceParticipantId: 'target',
+    targetParticipantId: 'source',
+    protectedIssuers,
+    protectedIdPolicy: 'refuse',
+  });
+  expect(result.canMerge).toBe(true);
+  expect(result.warnings).toEqual([{ ...warning, code: 'PROTECTED_ID_ABSORBS_SOURCE' }]);
+});
+
+test('a survivor with a protected id reports that it absorbs the duplicate, and never refuses', () => {
+  const record = fixture();
+  stamp(record.participants![1], 'P2');
+  const result: any = preview(record, { protectedIssuers: [CANONICAL], protectedIdPolicy: 'refuse' });
+  expect(result.canMerge).toBe(true);
+  expect(result.warnings).toEqual([
+    { code: 'PROTECTED_ID_ABSORBS_SOURCE', path: '/person/personOtherIds', organisationId: CANONICAL, personId: 'P2' },
+  ]);
+});
+
+test('protected ids on both sides raise no warning: equal values merge, different values still conflict', () => {
+  const record = fixture();
+  stamp(record.participants![0], 'P1');
+  stamp(record.participants![1], 'P1');
+  let result: any = preview(record, { protectedIssuers: [CANONICAL] });
+  expect(result.canMerge).toBe(true);
+  expect(result.warnings).toBeUndefined();
+  stamp(record.participants![1], 'P2');
+  result = preview(record, { protectedIssuers: [CANONICAL] });
+  expect(result.canMerge).toBe(false);
+  expect(result.blockers.map(({ code }: any) => code)).toEqual(['ISSUED_ID_CONFLICT']);
+  expect(result.warnings).toBeUndefined();
+});
+
+test('without protected issuers the review and its fingerprint are unchanged', () => {
+  const record = fixture();
+  stamp(record.participants![0], 'P1');
+  const plain: any = preview(record);
+  expect(Object.hasOwn(plain, 'warnings')).toBe(false);
+  expect(preview(record, { protectedIssuers: ['UNUSED_ISSUER'] }).fingerprint).toBe(plain.fingerprint);
+  expect(preview(record, { protectedIssuers: [CANONICAL] }).fingerprint).not.toBe(plain.fingerprint);
+});
