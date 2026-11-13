@@ -1080,12 +1080,13 @@ export function producedRelayAfterOps(
 
 /**
  * A produced exit withdrawn (`withdrawProducedExits` → `applyWithdrawnExits`): the matchUp to be played, its codes `[]`
- * (v1 re-derives them from the provenance it clears), its provenance cleared, announced as the withdrawal. 2c-1's
- * removal also takes the award (`removesWinningSide`) and leaves the schedule as v1 does (`keepsScoredTime`)
+ * (v1 re-derives them from the provenance it clears), its provenance cleared, announced as the withdrawal, which
+ * deletes any winner key (written again last by whatever re-awards it). 2c-1's removal leaves the schedule as v1 does
+ * (`keepsScoredTime`)
  */
 export function withdrawnExitReset(
   matchUpId: string,
-  { removesWinningSide, keepsScoredTime }: { removesWinningSide?: boolean; keepsScoredTime?: boolean } = {},
+  { keepsScoredTime }: { keepsScoredTime?: boolean } = {},
 ): OutcomeOp[] {
   return [
     {
@@ -1093,7 +1094,6 @@ export function withdrawnExitReset(
       matchUpId,
       matchUpStatus: TO_BE_PLAYED,
       matchUpStatusCodes: [],
-      ...(removesWinningSide ? { removesWinningSide: true as const } : {}),
       ...(keepsScoredTime ? { stampsScoredTime: false as const } : {}),
       announcedAs: 'withdrawProducedExits',
     },
