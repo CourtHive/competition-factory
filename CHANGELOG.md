@@ -1,5 +1,22 @@
 # Changelog
 
+## [7.37.0](https://github.com/CourtHive/competition-factory/compare/v7.36.1...v7.37.0) (2026-11-13)
+
+
+### Features
+
+* consolidate individual participants with reviewed atomic merges ([#6364](https://github.com/CourtHive/competition-factory/issues/6364)) ([881b3e2](https://github.com/CourtHive/competition-factory/commit/881b3e2f1ffcd761389e2efebc28f580d5769c31))
+* **outcome:** own a carried exit converging with a pending produced exit ([7108397](https://github.com/CourtHive/competition-factory/commit/710839730bf403d9633fa5da1b85aeaa74f4782f))
+* **outcome:** own a converged winner's held carry past a BYE-held target ([b6074b3](https://github.com/CourtHive/competition-factory/commit/b6074b3ee7f5a5876d5ccb10440c207a530fdd32))
+* **outcome:** own a produced exit converging on a pending exit, with its landing's loser link ([#6362](https://github.com/CourtHive/competition-factory/issues/6362)) ([f5fe375](https://github.com/CourtHive/competition-factory/commit/f5fe37586863d0c4c9c42a9cfc5b2094affef8aa))
+* **presence:** add setParticipantCheckInState for explicit check-in intentions ([#6365](https://github.com/CourtHive/competition-factory/issues/6365)) ([a48d919](https://github.com/CourtHive/competition-factory/commit/a48d91930e80ac7475acfe566d84b57369527356))
+
+
+### Bug Fixes
+
+* **deps:** update tods-competition-factory to 7.36.1 ([#6360](https://github.com/CourtHive/competition-factory/issues/6360)) ([1b68ef0](https://github.com/CourtHive/competition-factory/commit/1b68ef01cd0560bbb4329b6026b48a613a31ee49))
+* **participants:** keep individual merges usable after deletes, same-event entries and live play ([#6367](https://github.com/CourtHive/competition-factory/issues/6367)) ([ff7e6d7](https://github.com/CourtHive/competition-factory/commit/ff7e6d7d598b4c2a32bd7d8553c49a52fe2c47cd))
+
 ## [7.36.1](https://github.com/CourtHive/competition-factory/compare/v7.36.0...v7.36.1) (2026-11-11)
 
 
