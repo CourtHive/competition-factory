@@ -1,4 +1,3 @@
-import { completeDrawMatchUps } from '@Generators/simulation/completeDrawMatchUps';
 import { tournamentEngine } from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { defined } from '@Tests/helpers/defined';
@@ -42,7 +41,7 @@ it('can aggregate team scores across SINGLES/DOUBLES events', () => {
       });
       expect(result.success).toBe(true);
       const { drawDefinition } = result;
-      const completionResult = completeDrawMatchUps({ drawDefinition });
+      const completionResult = mocksEngine.completeDrawMatchUps({ drawDefinition: drawDefinition as any });
       expect(completionResult.success).toEqual(true);
       const addResult = tournamentEngine.addDrawDefinition({
         drawDefinition,

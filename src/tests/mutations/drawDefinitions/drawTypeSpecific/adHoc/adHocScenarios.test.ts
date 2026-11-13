@@ -1,4 +1,3 @@
-import { completeDrawMatchUps } from '@Generators/simulation/completeDrawMatchUps';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { validMatchUp, validMatchUps } from '@Validators/validMatchUp';
 import { intersection, unique } from '@Tools/arrays';
@@ -277,7 +276,7 @@ it('can remove adHoc rounds', () => {
     eventId,
   }).drawDefinition;
   expect(completedDrawDefinition.entries.length).toEqual(participantsCount);
-  const completionResult = completeDrawMatchUps({
+  const completionResult = mocksEngine.completeDrawMatchUps({
     drawDefinition: completedDrawDefinition,
   });
   expect(completionResult.success).toEqual(true);
