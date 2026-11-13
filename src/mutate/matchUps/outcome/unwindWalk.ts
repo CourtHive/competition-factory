@@ -37,7 +37,12 @@ type SimMatchUp = {
   stored: HydratedMatchUp;
 };
 
-type Notice = { context: 'remove' | 'release'; drawPosition: number; segment: number };
+/**
+ * `named`: whether v1 writes some visit of the call to this matchUp with the event its removal was handed (`sim.named`
+ * when the visit is made). v1's keyed notice keeps an earlier visit's ids when a later one omits them
+ * (`preserveNoticeIdentity`), so one named visit names the matchUp's notice
+ */
+type Notice = { context: 'remove' | 'release'; drawPosition: number; segment: number; named: boolean };
 
 type Sim = {
   drawDefinition: DrawDefinition;
@@ -56,7 +61,22 @@ type Sim = {
   segment: number;
   steps: number;
   failed: boolean;
+  /**
+   * whether the removal being walked holds the event: every positionClear task passes on the event it is handed, and
+   * `removeDirectedBye` (DEA:3076) hands it one; `removeSubsequentRoundsParticipant` (positionClear.ts:250) and the
+   * round-1 loser cascade's `drawPositionRemovals` (positionClear.ts:1239, :1284) are handed none, nor so anything under them
+   */
+  named: boolean;
 };
+
+/** v1's removal entered with no event: every notice made under it, however deep, names none */
+function eventless(sim: Sim, walk: () => boolean): boolean {
+  const named = sim.named;
+  sim.named = false;
+  const walked = walk();
+  sim.named = named;
+  return walked;
+}
 
 const seatKey = (structureId: string, drawPosition: number) => `${structureId}|${drawPosition}`;
 const roundKey = (structureId: string, roundNumber?: number) => `${structureId}|${roundNumber}`;
@@ -83,8 +103,9 @@ function fail(sim: Sim): false {
 
 function announce(sim: Sim, matchUpId: string, notice: Omit<Notice, 'segment'>) {
   // v1's notice buffer keeps a matchUp re-announced later in the call at that later place, with the later context
+  const named = notice.named || !!sim.notices.get(matchUpId)?.named;
   sim.notices.delete(matchUpId);
-  const written = { ...notice, segment: sim.segment };
+  const written = { ...notice, named, segment: sim.segment };
   sim.notices.set(matchUpId, written);
   const matchUp = sim.byId.get(matchUpId)!;
   sim.noticeWrites.push({
@@ -238,7 +259,7 @@ function subsequentRounds(sim: Sim, matchUps: SimMatchUp[], target: number, roun
     (matchUp) =>
       (matchUp.roundNumber ?? 0) >= roundNumber && matchUp.roundNumber !== first && matchUp.positions.includes(target),
   );
-  return relevant.every((matchUp) => removeDrawPosition(sim, matchUps, matchUp, target));
+  return eventless(sim, () => relevant.every((matchUp) => removeDrawPosition(sim, matchUps, matchUp, target)));
 }
 
 /** the position reached this matchUp because its opponent in the feeding matchUp is a BYE (`advancedByOpponentsBye`) */
@@ -271,7 +292,7 @@ function removeDrawPosition(sim: Sim, matchUps: SimMatchUp[], matchUp: SimMatchU
   matchUp.matchUpStatus = containsBye ? BYE : TO_BE_PLAYED;
   sim.clearedWinners.set(matchUp.matchUpId, sim.segment);
   const noChange = initialPositions.includes(drawPosition) && initialStatus === matchUp.matchUpStatus;
-  if (!noChange) announce(sim, matchUp.matchUpId, { context: 'remove', drawPosition });
+  if (!noChange) announce(sim, matchUp.matchUpId, { context: 'remove', drawPosition, named: sim.named });
   // a write v1 makes with no notice (the positions changed, nothing else): no op announces nothing
   else if (initialPositions.length !== matchUp.positions.length) return fail(sim);
   if (!releaseUndecided(sim, matchUp, drawPosition, initialPositions, initialStatus)) return false;
@@ -317,7 +338,7 @@ function release(sim: Sim, structureId: string, fromRoundNumber: number, drawPos
     if (isBye || feeder?.positions.some((position) => sim.byes.has(seatKey(structureId, position)))) return fail(sim);
     matchUp.positions = matchUp.positions.filter((position) => position !== drawPosition);
     releasedRounds.push(matchUp.roundNumber ?? 0);
-    announce(sim, matchUp.matchUpId, { context: 'release', drawPosition });
+    announce(sim, matchUp.matchUpId, { context: 'release', drawPosition, named: sim.named });
   }
   // released rounds release across WINNER links (`releaseLinkedWinnerAdvancement`): v1's
   if (releasedRounds.some((roundNumber) => sim.winnerLinkRounds.has(roundKey(structureId, roundNumber))))
@@ -370,10 +391,11 @@ function loserCascade(sim: Sim, matchUp: SimMatchUp): boolean {
   // the round-1 cascade clears the seat whatever it holds: a BYE is withdrawn; an empty seat (a consolation's, before any
   // loser arrives) has its removal tasks run too, which change nothing (the seat's position went on only through a BYE
   // opposite, which keeps it: `advancedByOpponentsBye`); a participant there is v1's
-  if (sim.byes.has(seatKey(structureId, drawPosition))) return clearSeat(sim, structureId, drawPosition, false);
+  if (sim.byes.has(seatKey(structureId, drawPosition)))
+    return eventless(sim, () => clearSeat(sim, structureId, drawPosition, false));
   if (sim.participants.has(seatKey(structureId, drawPosition))) return fail(sim);
   sim.withdrawn.push({ structureId, drawPosition, quiet: true, segment: sim.segment });
-  return removals(sim, structureId, drawPosition);
+  return eventless(sim, () => removals(sim, structureId, drawPosition));
 }
 
 /** a BYE advance `reconcileByeAdvancements` owes after the call: a BYE matchUp whose other position has not gone on */
@@ -402,11 +424,14 @@ export function unwindWalk({
   drawDefinition,
   propagatesBye,
   seats,
+  visits,
 }: {
   inContextDrawMatchUps: HydratedMatchUp[];
   drawDefinition: DrawDefinition;
   propagatesBye: boolean;
   seats: UnwindSeat[];
+  /** filled with the matchUps whose every visit v1 makes with no event (`Sim.named`) */
+  visits?: { unnamed: Set<string> };
 }): OutcomeOp[][] | undefined {
   const sim = simulation(drawDefinition, inContextDrawMatchUps, propagatesBye);
   for (const [segment, { structureId, drawPosition }] of seats.entries()) {
@@ -427,6 +452,7 @@ export function unwindWalk({
       announcesAssignments: false,
     });
   if (!noticeOps(sim, segments)) return undefined;
+  for (const [matchUpId, notice] of sim.notices) if (!notice.named) visits?.unnamed.add(matchUpId);
   for (const { structureId, quiet, segment } of sim.withdrawn) {
     if (!quiet)
       segments[segment].push({
@@ -499,6 +525,7 @@ function simulation(
     segment: 0,
     steps: 0,
     failed: false,
+    named: true,
   };
   const inContext = new Map(inContextDrawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
   for (const structure of drawDefinition.structures ?? []) {
