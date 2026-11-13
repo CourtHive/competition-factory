@@ -1,5 +1,22 @@
 # Changelog
 
+## [7.38.0](https://github.com/CourtHive/competition-factory/compare/v7.37.0...v7.38.0) (2026-11-13)
+
+
+### Features
+
+* **outcome:** plan a converged winner's onward loser-seat bye (F3) ([8142c2d](https://github.com/CourtHive/competition-factory/commit/8142c2df4240afa89ee3536071f5f3acf969620b))
+* **outcome:** plan a policy-off produced convergence's onward loser-seat bye ([9eb134e](https://github.com/CourtHive/competition-factory/commit/9eb134e50c70112d9df36468b88fcf28ce2adbc6))
+* **outcome:** remove and serve a policy-off carried landing that links its loser on ([6eb9ae9](https://github.com/CourtHive/competition-factory/commit/6eb9ae960aa154918916b8cd8000331fda35e57b))
+* **outcome:** serve a reclaimed loser link on the caller's stale channel ([7b45fee](https://github.com/CourtHive/competition-factory/commit/7b45feeff61d446abe54e93dd77291ce746261aa))
+* **participants:** protect issued identities in merges and re-points ([#6377](https://github.com/CourtHive/competition-factory/issues/6377)) ([d1aa518](https://github.com/CourtHive/competition-factory/commit/d1aa518b651669271075fb37d1c7675f5defd7f9))
+
+
+### Bug Fixes
+
+* **deps:** update tods-competition-factory to 7.37.0 ([d3b1e5e](https://github.com/CourtHive/competition-factory/commit/d3b1e5eda9dacf12624a4e94031ebcbd996bbd0f))
+* **outcome:** delete the withdrawn exit's winner as applyWithdrawnExits does ([773a8d2](https://github.com/CourtHive/competition-factory/commit/773a8d21794a0f434239b4122b570f285bc706ef))
+
 ## [7.37.0](https://github.com/CourtHive/competition-factory/compare/v7.36.1...v7.37.0) (2026-11-13)
 
 
