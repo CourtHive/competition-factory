@@ -5,7 +5,6 @@
  *   3. Complete qualifying matchUps
  *   4. Generate Swiss round in main — should include MAIN entries + qualifying winners
  */
-import { completeDrawMatchUps } from '@Generators/simulation/completeDrawMatchUps';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
@@ -116,7 +115,7 @@ describe('Swiss draw with qualifying structure', () => {
 
     // Step 3: Complete all qualifying matchUps
     const { drawDefinition } = tournamentEngine.getEvent({ drawId });
-    const compResult = completeDrawMatchUps({ drawDefinition });
+    const compResult = mocksEngine.completeDrawMatchUps({ drawDefinition });
     expect(compResult.success).toEqual(true);
     tournamentEngine.addDrawDefinition({ eventId, drawDefinition, allowReplacement: true });
 

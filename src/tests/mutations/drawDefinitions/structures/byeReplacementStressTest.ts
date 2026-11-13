@@ -1,4 +1,3 @@
-import { completeDrawMatchUps } from '@Generators/simulation/completeDrawMatchUps';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getDrawPosition } from '@Functions/global/extractors';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -97,7 +96,7 @@ export function replacementTest(params) {
     tournamentRecord: updatedTournamentRecord,
     drawId,
   });
-  completeDrawMatchUps({ drawDefinition });
+  mocksEngine.completeDrawMatchUps({ drawDefinition: drawDefinition as any });
   tournamentEngine.setState(updatedTournamentRecord);
 
   const result = tournamentEngine.tournamentMatchUps();
