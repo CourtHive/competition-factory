@@ -21,13 +21,24 @@ export type IndividualMergeBlockerCode =
   | 'HISTORY_CONFLICT'
   | 'UNSUPPORTED_REFERENCE'
   | 'INVALID_RESOLUTION'
-  | 'INTEGRITY_CONFLICT';
+  | 'INTEGRITY_CONFLICT'
+  | 'PROTECTED_ID_WOULD_MOVE';
 export type IndividualMergeBlocker = {
   code: IndividualMergeBlockerCode;
   path: string;
   eventId?: string;
   drawId?: string;
 };
+/** A merge that is allowed but changes which participant carries an identity issued by a protected organisation. */
+export type IndividualMergeWarningCode = 'PROTECTED_ID_WOULD_MOVE' | 'PROTECTED_ID_ABSORBS_SOURCE';
+export type IndividualMergeWarning = {
+  code: IndividualMergeWarningCode;
+  path: string;
+  organisationId: string;
+  personId: string;
+};
+/** `warn` reports a protected id that would move to the survivor; `refuse` also blocks the merge. */
+export type IndividualMergeProtectedIdPolicy = 'warn' | 'refuse';
 export type IndividualMergeConflict = {
   path: string;
   source: unknown;
@@ -38,6 +49,9 @@ export type IndividualMergeArgs = {
   sourceParticipantId: string;
   targetParticipantId: string;
   resolutions?: IndividualMergeResolutions;
+  /** `personOtherIds` organisations whose ids identify a person beyond this tournament; the caller names them. */
+  protectedIssuers?: string[];
+  protectedIdPolicy?: IndividualMergeProtectedIdPolicy;
 };
 export type IndividualMergePreview = {
   success?: boolean;
@@ -46,6 +60,7 @@ export type IndividualMergePreview = {
   fingerprint?: string;
   participant?: Participant;
   blockers?: IndividualMergeBlocker[];
+  warnings?: IndividualMergeWarning[];
   conflicts?: IndividualMergeConflict[];
   changedPaths?: string[];
   affectedDrawIds?: string[];

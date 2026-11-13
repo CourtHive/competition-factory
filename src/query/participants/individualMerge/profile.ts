@@ -81,7 +81,7 @@ function mergeIssuedIds(source: unknown[], target: unknown[], path: string, cont
     context.blockers.push({ code: 'INVALID_ISSUED_ID', path });
     return target;
   }
-  const ids = union(source, target) as Record<string, unknown>[];
+  const ids = dedupeIssuedIds([...target, ...source] as Record<string, unknown>[]);
   const authorities = new Map<string, string>();
   for (const id of ids) {
     const authority = String(id.organisationId ?? id.uniqueOrganisationName ?? '');
@@ -92,6 +92,16 @@ function mergeIssuedIds(source: unknown[], target: unknown[], path: string, cont
     authorities.set(authority, value);
   }
   return ids;
+}
+/** One entry per (issuer, value): copies differing only in stamps would leave a stale id behind a later re-issue. */
+function dedupeIssuedIds(ids: Record<string, unknown>[]) {
+  const kept = new Map<string, Record<string, unknown>>();
+  for (const id of ids) {
+    const key = canonicalJson([id.organisationId ?? id.uniqueOrganisationName, id.personId ?? id.participantId]);
+    const prior = kept.get(key);
+    if (!prior || String(id.createdAt ?? '￿') < String(prior.createdAt ?? '￿')) kept.set(key, id);
+  }
+  return [...kept.values()];
 }
 function union(source: unknown[], target: unknown[]) {
   const values = new Map([...target, ...source].map((value) => [canonicalJson(value), value]));

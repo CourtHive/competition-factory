@@ -230,12 +230,13 @@ describe('otherIds and court-grid bookings — occurredAt', () => {
       .participants.find((p: any) => p.participantId === participantId).person;
     expect(person.personOtherIds.at(-1).createdAt).toEqual(OCCURRED);
 
-    // Upsert path: same organisationId, different personId → updatedAt.
+    // Upsert path: same organisationId, different personId (an explicit re-point) → updatedAt.
     tournamentEngine.addPersonOtherId({
       participantId,
       organisationId: 'ORG',
       personId: 'p-2',
       occurredAt: OCCURRED,
+      replaceExisting: true,
     });
     person = tournamentEngine.getParticipants().participants.find((p: any) => p.participantId === participantId).person;
     expect(person.personOtherIds.at(-1).updatedAt).toEqual(OCCURRED);
