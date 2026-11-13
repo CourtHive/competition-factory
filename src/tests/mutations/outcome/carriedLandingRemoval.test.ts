@@ -1,4 +1,4 @@
-import { getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
+import { getDrawDefinition, getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
 import tournamentEngine from '@Engines/syncEngine';
@@ -120,7 +120,12 @@ function play(mode: OutcomePipelineMode, { config, setup, measured }: Scenario) 
       }),
     )
     .sort((a, b) => a.localeCompare(b));
-  return { draw, notices: notices.toSorted((a, b) => a.localeCompare(b)), cascades: entries.cascades };
+  // the stored matchUps' own keys, in order: v1 deletes a withdrawn exit's winner and writes it again last
+  const keys = getDrawDefinition(drawId)
+    .structures.flatMap((structure: any) => structure.matchUps ?? [])
+    .map((m: any) => `${m.matchUpId}:${Object.keys(m).join(',')}`)
+    .sort((a: string, b: string) => a.localeCompare(b));
+  return { draw, keys, notices: notices.toSorted((a, b) => a.localeCompare(b)), cascades: entries.cascades };
 }
 
 it('a carried exit converging at a landing that links its loser on is planned by v2 as v1 removes and serves it', () => {
@@ -128,6 +133,7 @@ it('a carried exit converging at a landing that links its loser on is planned by
   const v2 = play('v2', SERVED);
 
   expect(v2.draw).toEqual(v1.draw);
+  expect(v2.keys).toEqual(v1.keys);
   expect(v1.notices.length).toBeGreaterThan(0);
   // every notice v1 makes, with the event and the tournament each names; the carrier's cleared seat announces nothing
   expect(v2.notices).toEqual(v1.notices);
@@ -141,6 +147,7 @@ it('a landing whose first carrier went on past its loser matchUp is not removed 
   const v2 = play('v2', ONWARD);
 
   expect(v2.draw).toEqual(v1.draw);
+  expect(v2.keys).toEqual(v1.keys);
   expect(v2.notices).toEqual(v1.notices);
   // refused (the removal's certificate: the carrier placed past the loser matchUp), so v1's cascade runs under v2 too
   expect(v1.cascades).toBeGreaterThan(0);

@@ -53,7 +53,7 @@ export function servedLandingOps({
 
   // row 2: the exit the landing produced on its loser matchUp withdrawn (`applyWithdrawnExits`, announced with the event)
   // `applyWithdrawnExits` resets the status and leaves the schedule: the produced exit's `scoredTime` stands
-  const withdrawn = withdrawnExitReset(loserMatchUp.matchUpId, { removesWinningSide: true, keepsScoredTime: true });
+  const withdrawn = withdrawnExitReset(loserMatchUp.matchUpId, { keepsScoredTime: true });
   // row 5: the first carrier's seat cleared; `removeDirectedLoser` announces no assignments
   const cleared: OutcomeOp[] = [
     {
