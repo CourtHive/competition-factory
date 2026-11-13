@@ -6,6 +6,7 @@ import { pendingConvergence } from './pendingConvergence';
 import { SINGLE_EXITS, indexed } from './planShared';
 import { isDoubleExit } from '@Validators/isExit';
 import { convergedWrite } from './convergedWrite';
+import { currentLinkedSeat } from '../view';
 
 // constants and types
 import type { DirectionPlan, MatchUpWrite, OutcomeRequest, OutcomeView } from '../types';
@@ -104,12 +105,43 @@ export function producedConvergedReason(
   if (!landing.winnerMatchUpId) return apart(planned);
   const onward = producedTarget(view, landing, matchUpStatus);
   const onwardLinked = !!onward?.entry.loserMatchUpId;
-  if (!onward || !producedTargetReason(view, landing, onward, onwardLinked && view.draw.propagatesByeOnDoubleExit))
-    return undefined;
+  // the onward matchUp's loser seat takes its BYE whatever the policy (`advanceByeToLoserMatchUp`, DEA:1050–1063)
+  if (!onward || !producedTargetReason(view, landing, onward, onwardLinked)) return undefined;
   const seat = targets.onwardLoserSeat;
   const onwardBye = onwardLinked ? unfillableByeChain(view, onward.entry, { seat, levels: seat?.levels }) : undefined;
   if (onwardLinked && !onwardBye) return undefined;
+  if (onwardBye && !reenteredBye(view, context, planned, onward.entry, onwardBye)) return undefined;
   return apart({ ...planned, onward, onwardBye });
+}
+
+/**
+ * Under the policy off the landing's re-entry (L2) writes between the entry view this chain is planned on and v1's
+ * placement (DEA:1052), which reads the live record: its reclaim can clear a BYE the chain reads and does not write
+ * (`byeChainProgram`'s terminal level). Certified where the chain planned on the cursor after the re-entry emits the same
+ * ops; a re-entry that writes nothing leaves the entry plan as it is
+ */
+function reenteredBye(
+  view: OutcomeView,
+  context: ConvergedContext,
+  planned: ConvergedWrite & { pending?: PendingConvergence; reentry: LandingService },
+  onward: HydratedMatchUp,
+  onwardBye: ByeChain,
+): boolean {
+  const { reentry, landing, matchUpStatus } = planned;
+  if (!reentry.ops.length) return true;
+  const seat = view.targets.onwardLoserSeat;
+  const working = context.landing?.(
+    [...reentryPrefix(view, context, planned), ...reentry.ops],
+    landing.matchUpId,
+    matchUpStatus,
+  )?.working;
+  const current = working && seat && currentLinkedSeat(working, working.matchUpsMap, seat);
+  const entry = working?.inContextDrawMatchUps.find((matchUp) => matchUp.matchUpId === onward.matchUpId);
+  if (!working || !current || !entry) return false;
+  const cursor = { ...view, inContextDrawMatchUps: working.inContextDrawMatchUps };
+  const replanned = unfillableByeChain(cursor, entry, current);
+  const ops = (chain?: ByeChain) => chain && JSON.stringify([chain.assigns, chain.writes, chain.matchUpIds]);
+  return ops(replanned) === ops(onwardBye);
 }
 
 /**
@@ -124,13 +156,22 @@ function landingReentry(
 ): LandingService | undefined {
   const { landing, matchUpStatus, provenance, pending } = written;
   if (!landing.loserMatchUpId || view.draw.propagatesByeOnDoubleExit) return { ops: [], touched: [] };
-  const prefix = [
+  const prefix = reentryPrefix(view, context, { landing, matchUpStatus, provenance, pending });
+  const frame = { phase: 'reentry' as const, matchUpId: landing.matchUpId, cascadeStatus: matchUpStatus, prefix };
+  return landingLoserLink(frame, context.landing);
+}
+
+/** what v1 has written when the landing re-enters: the caller's prefix, the pending convergence, the landing's own */
+function reentryPrefix(
+  view: OutcomeView,
+  context: ConvergedContext,
+  { landing, matchUpStatus, provenance, pending }: ConvergedWrite & { pending?: PendingConvergence },
+): OutcomeOp[] {
+  return [
     ...(context.prefix ?? []),
     ...(pending ? convergedWrite(view, pending) : []),
     ...convergedWrite(view, { landing, matchUpStatus, provenance }),
   ];
-  const frame = { phase: 'reentry' as const, matchUpId: landing.matchUpId, cascadeStatus: matchUpStatus, prefix };
-  return landingLoserLink(frame, context.landing);
 }
 
 /** a convergence touching any matchUp twice is v1's */
