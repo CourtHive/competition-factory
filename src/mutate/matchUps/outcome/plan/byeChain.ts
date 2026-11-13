@@ -15,6 +15,7 @@ import { BYE, DEFAULTED, DOUBLE_DEFAULT, TO_BE_PLAYED, WALKOVER } from '@Constan
 import { CONTAINER, FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import type { MatchUp, MatchUpStatusUnion } from '@Types/tournamentTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
+import type { SeatFrame } from './carriedContinuation';
 import { TEAM } from '@Constants/matchUpTypes';
 import type { WorkingView } from '../overlay';
 import type { OutcomeOp } from '../ops';
@@ -517,86 +518,174 @@ type ProducedLoser = {
  * with no BYE beside it, the matchUp to be played holding no result, exit, codes or provenance; a participant opposite
  * this matchUp's seat goes on through its BYE as an empty position does), each chain plans, and no matchUp is in two.
  */
-type SeatComposition = {
-  project?: ProjectOutcome;
-  prefix: OutcomeOp[];
-  request: OutcomeRequest;
-  following: OutcomeOp[];
-};
-
 function doubleExitSeats(
   view: OutcomeView,
   entry: HydratedMatchUp | undefined,
-  composition: SeatComposition,
+  frame: SeatFrame,
+  project?: ProjectOutcome,
 ): DoubleExitSeats | undefined {
-  const sharedService =
-    view.draw.doubleExitPropagatesBye || (fedSeat(view) && !view.targets.loserTargetSeat?.opponentBye);
-  const seats = sharedService ? servicedSeats(view, entry, composition) : chainedSeats(view, entry, composition);
+  const seats = serveSeats(view, entry, frame, project);
   if (seats === false) return undefined;
-  if (seats || !view.draw.doubleExitPropagatesBye) return seats;
+  if (seats || !frame.propagatesBye) return seats;
   // the chain's shapes refused: the seats as v1's `assignDrawPositionBye` recursion walks them (S6 tail, the BYE chain)
   return walkedSeats(view, entry);
+}
+
+/** The source adapter: the frame the double exit's own call serves, its seat read once from the entry view. */
+export function sourceSeatFrame(
+  view: OutcomeView,
+  request: OutcomeRequest,
+  prefix: OutcomeOp[] = [],
+  following: OutcomeOp[] = [],
+): SeatFrame {
+  const { targets } = view;
+  const { loserStructureId: structureId, loserTargetDrawPosition: drawPosition, loserMatchUpId: matchUpId } = targets;
+  const originMatchUpId = request.matchUpId as string;
+  const status = request.matchUpStatus as MatchUpStatusUnion;
+  return {
+    kind: 'seat',
+    phase: 'source',
+    originMatchUpId,
+    cascadeStatus: status,
+    lineage: { sourceMatchUpId: originMatchUpId, previousMatchUpStatus: status },
+    snapshotAt: 0,
+    prefix,
+    following,
+    propagatesBye: !!view.draw.propagatesByeOnDoubleExit,
+    seat: {
+      linked: !!targets.loserLink || !!targets.loserMatchUpId,
+      ...(structureId && drawPosition && matchUpId ? { at: { structureId, drawPosition, matchUpId } } : {}),
+      linkCondition: targets.loserLink?.linkCondition,
+      // a fed seat (a feed round's) takes a BYE whatever `doubleExitPropagateBye` says (S7)
+      fed: !!indexed(view, matchUpId)?.feedRound,
+      opponentBye: !!targets.loserTargetSeat?.opponentBye,
+    },
+  };
+}
+
+/** The frame's case (§2.1): the BYE service, or under `doubleExitPropagateBye: false` the exit held beside a BYE, the
+ * exit produced on the loser matchUp, or no seat of its own. */
+type SeatCase = 'bye' | 'held' | 'produced' | 'unlinked';
+
+function seatCase({ propagatesBye, seat }: SeatFrame): SeatCase {
+  if (propagatesBye || (seat.fed && !seat.opponentBye)) return 'bye';
+  if (seat.opponentBye) return 'held';
+  return seat.linked ? 'produced' : 'unlinked';
+}
+
+type SeatCursor = { working: WorkingView; failed: boolean };
+
+/** The stored state a frame reads: its prefix projected, a failed fold remembered (a refusal no walk replaces). */
+function frameCursor(frame: SeatFrame, project?: ProjectOutcome): SeatCursor | undefined {
+  const working = project?.(frame.prefix);
+  if (!working) return undefined;
+  const cursor = { working, failed: false };
+  const apply = working.apply;
+  working.apply = (ops) => {
+    const result = apply(ops);
+    cursor.failed ||= !!result.error;
+    return result;
+  };
+  return cursor;
+}
+
+const atCursor = (view: OutcomeView, working: WorkingView) => ({
+  ...view,
+  inContextDrawMatchUps: working.inContextDrawMatchUps,
+});
+
+/** One service for a frame's seats: its own seat by its case's builder, then the seat the produced exit's link feeds,
+ * then the case's certificate. The BYE service reads the cursor; held and produced exits read the entry view. */
+function serveSeats(
+  view: OutcomeView,
+  entry: HydratedMatchUp | undefined,
+  frame: SeatFrame,
+  project?: ProjectOutcome,
+): DoubleExitSeats | false | undefined {
+  const service = seatCase(frame);
+  const cursor = service === 'bye' ? frameCursor(frame, project) : undefined;
+  if (service === 'bye' && !cursor) return false;
+  const seats = ownSeat(view, frame, service, cursor);
+  if (!seats) return seats;
+  if (entry?.loserMatchUpId) {
+    const unfillable = unfillableSeat(view, entry, frame, service, seats, cursor, project);
+    if (!unfillable) return unfillable;
+    seats.unfillable = unfillable;
+    if (!joinHeldLanding(view, seats)) return undefined;
+  }
+  if (cursor) return servicedSeats(view, entry, frame, seats, cursor);
+  if (service === 'held') return completeDeferredSeats(seats, entry);
+  // Cross-phase overlap is read from the cursor. Internal repeated writes and changes to the produced target
+  // still need their own dependency proof; an ordinary seat program does not certify either.
+  return producedSeatsComplete(seats, entry) ? seats : undefined;
+}
+
+/** this matchUp's loser seat: a BYE and its chain on the cursor, or the exit held or produced in place of the BYE */
+function ownSeat(
+  view: OutcomeView,
+  frame: SeatFrame,
+  service: SeatCase,
+  cursor?: SeatCursor,
+): DoubleExitSeats | false | undefined {
+  if (service === 'held') {
+    const held = heldLoser(view);
+    return held && { heldLoser: held };
+  }
+  if (service === 'produced') {
+    const produced = producedLoser(view);
+    return produced && { producedLoser: produced };
+  }
+  const { seat } = frame;
+  if (!cursor || !seat.linked) return {};
+  if (seat.linkCondition || !seat.at) return undefined;
+  const own = byeService(atCursor(view, cursor.working), cursor.working, seat.at, true);
+  if (own) return { own };
+  return cursor.failed ? false : undefined;
+}
+
+/** the seat the produced exit's link feeds, which nobody will lose into: a BYE and its chain, as the case reads it */
+function unfillableSeat(
+  view: OutcomeView,
+  entry: HydratedMatchUp,
+  frame: SeatFrame,
+  service: SeatCase,
+  seats: DoubleExitSeats,
+  cursor: SeatCursor | undefined,
+  project?: ProjectOutcome,
+): ByeChain | false | undefined {
+  if (service === 'held') return unfillableByeChain(view, entry);
+  if (!cursor) return projectedUnfillable(view, entry, seats, frame, project);
+  const selected = view.targets.winnerLoserSeat;
+  if (
+    !selected ||
+    selected.matchUpId !== entry.loserMatchUpId ||
+    (selected.linkCondition && selected.linkCondition !== FIRST_MATCHUP)
+  )
+    return undefined;
+  const unfillable = byeService(atCursor(view, cursor.working), cursor.working, selected, false);
+  if (unfillable) return unfillable;
+  return cursor.failed ? false : undefined;
 }
 
 /** Both immediate seats share one cursor. Deferred carry selection follows the produced write too. */
 function servicedSeats(
   view: OutcomeView,
   entry: HydratedMatchUp | undefined,
-  composition: SeatComposition,
+  frame: SeatFrame,
+  seats: DoubleExitSeats,
+  cursor: SeatCursor,
 ): DoubleExitSeats | false | undefined {
-  const working = composition.project?.(composition.prefix);
-  if (!working) return false;
-  const apply = working.apply;
-  let foldFailed = false;
-  working.apply = (ops) => {
-    const result = apply(ops);
-    foldFailed ||= !!result.error;
-    return result;
-  };
-  const currentView = () => ({ ...view, inContextDrawMatchUps: working.inContextDrawMatchUps });
-  const seats: DoubleExitSeats = {};
-  const { targets } = view;
-  if (targets.loserLink || targets.loserMatchUpId) {
-    if (
-      targets.loserLink?.linkCondition ||
-      !targets.loserStructureId ||
-      !targets.loserTargetDrawPosition ||
-      !targets.loserMatchUpId
-    )
-      return undefined;
-    seats.own = byeService(
-      currentView(),
-      working,
-      {
-        structureId: targets.loserStructureId,
-        drawPosition: targets.loserTargetDrawPosition,
-        matchUpId: targets.loserMatchUpId,
-      },
-      true,
-    );
-    if (!seats.own) return foldFailed ? false : undefined;
-  }
-  if (entry?.loserMatchUpId) {
-    const selected = targets.winnerLoserSeat;
-    if (
-      !selected ||
-      selected.matchUpId !== entry.loserMatchUpId ||
-      (selected.linkCondition && selected.linkCondition !== FIRST_MATCHUP)
-    )
-      return undefined;
-    seats.unfillable = byeService(currentView(), working, selected, false);
-    if (!seats.unfillable) return foldFailed ? false : undefined;
-  }
+  const { working } = cursor;
   if (
     [...(seats.own?.matchUpIds ?? []), ...(seats.unfillable?.matchUpIds ?? [])].some(
-      (id) => id === composition.request.matchUpId || id === entry?.matchUpId,
+      (id) => id === frame.originMatchUpId || id === entry?.matchUpId,
     )
   )
     return undefined;
-  if (working.apply(composition.following).error) return false;
+  if (working.apply(frame.following).error) return false;
   seats.after = carriedByeReplay(view, working);
   if (seats.after) return seats;
-  return foldFailed ? false : undefined;
+  return cursor.failed ? false : undefined;
 }
 
 /** the seats' BYEs as the view's walk of v1's recursion places them, each written as the chain's own ops are */
@@ -654,46 +743,6 @@ function walkChainProgram(walk: ByeWalk): ByeChain {
   };
 }
 
-/** the loser seat is a fed one (a feed round's): it takes a BYE whatever `doubleExitPropagateBye` says (S7) */
-const fedSeat = (view: OutcomeView) => !!indexed(view, view.targets.loserMatchUpId)?.feedRound;
-
-/** the seats as the chain's shapes plan them (S5, S6) */
-function chainedSeats(
-  view: OutcomeView,
-  entry: HydratedMatchUp | undefined,
-  composition: SeatComposition,
-): DoubleExitSeats | false | undefined {
-  const { targets } = view;
-  const seats: DoubleExitSeats = {};
-  // under `doubleExitPropagateBye: false` the loser matchUp takes a produced exit in place of the BYE
-  if (!view.draw.doubleExitPropagatesBye && targets.loserTargetSeat?.opponentBye) {
-    seats.heldLoser = heldLoser(view);
-    if (!seats.heldLoser) return undefined;
-  } else if (!view.draw.doubleExitPropagatesBye && (targets.loserLink || targets.loserMatchUpId) && !fedSeat(view)) {
-    seats.producedLoser = producedLoser(view);
-    if (!seats.producedLoser) return undefined;
-  } else if (targets.loserLink || targets.loserMatchUpId) {
-    // Ordinary BYE service, including a policy-off fed seat, is composed by servicedSeats.
-    return undefined;
-  }
-  const ordinary = !seats.heldLoser;
-  if (entry?.loserMatchUpId) {
-    const unfillable = ordinary
-      ? projectedUnfillable(view, entry, seats, composition)
-      : unfillableByeChain(view, entry);
-    if (unfillable === false) return false;
-    if (!unfillable) return undefined;
-    seats.unfillable = unfillable;
-    if (!joinHeldLanding(view, seats)) return undefined;
-  }
-  if (ordinary) {
-    // Cross-phase overlap is read from the cursor. Internal repeated writes and changes to the produced target
-    // still need their own dependency proof; an ordinary seat program does not certify either.
-    return producedSeatsComplete(seats, entry) ? seats : undefined;
-  }
-  return completeDeferredSeats(seats, entry);
-}
-
 /** Held origins retain their existing deferred-phase certificate. */
 function completeDeferredSeats(seats: DoubleExitSeats, entry?: HydratedMatchUp): DoubleExitSeats | undefined {
   const touched = [
@@ -730,17 +779,17 @@ function projectedUnfillable(
   view: OutcomeView,
   entry: HydratedMatchUp,
   seats: DoubleExitSeats,
-  { project, prefix, request }: SeatComposition,
+  frame: SeatFrame,
+  project?: ProjectOutcome,
 ): ByeChain | false | undefined {
   const selected = view.targets.winnerLoserSeat;
   if (!selected) return undefined;
-  const working = project?.(prefix);
-  const produced = seats.producedLoser ? producedLoserOps(request, seats.producedLoser) : [];
+  const working = frameCursor(frame, project)?.working;
+  const produced = seats.producedLoser ? producedLoserOps(frame, seats.producedLoser) : [];
   if (!working || working.apply(produced).error) return false;
   const current = currentLinkedSeat(working, working.matchUpsMap, selected);
   if (!current) return undefined;
-  const projected = { ...view, inContextDrawMatchUps: working.inContextDrawMatchUps };
-  const planned = unfillableByeChain(projected, entry, current);
+  const planned = unfillableByeChain(atCursor(view, working), entry, current);
   if (!planned) return undefined;
   if (working.apply([...planned.assigns, ...planned.writes]).error) return false;
   return planned;
@@ -917,11 +966,10 @@ function heldBeyond(
 }
 
 /** the held exit written where it lands past the unfillable seat's BYE: pending, its origin on the arrival side */
-function heldBeyondOps(request: OutcomeRequest, beyond: { matchUpId: string; arrivalSide: 1 | 2 }): OutcomeOp[] {
-  const status = request.matchUpStatus as MatchUpStatusUnion;
+function heldBeyondOps(frame: SeatFrame, beyond: { matchUpId: string; arrivalSide: 1 | 2 }): OutcomeOp[] {
+  const status = frame.cascadeStatus;
   const provenance = buildCarriedExitProvenance({
-    sourceMatchUpId: request.matchUpId,
-    previousMatchUpStatus: status,
+    ...frame.lineage,
     matchUpStatus: status,
     exitingSideNumber: beyond.arrivalSide,
   });
@@ -943,12 +991,11 @@ function heldBeyondOps(request: OutcomeRequest, beyond: { matchUpId: string; arr
 }
 
 /** the exit recorded on the BYE matchUps and carried on, as v1 writes them, the loser matchUp first */
-function heldLoserOps(request: OutcomeRequest, held: HeldLoser): OutcomeOp[] {
-  const status = request.matchUpStatus as MatchUpStatusUnion;
+function heldLoserOps(frame: SeatFrame, held: HeldLoser): OutcomeOp[] {
+  const status = frame.cascadeStatus;
   const entry = (exitingSideNumber: 1 | 2) =>
     buildCarriedExitProvenance({
-      sourceMatchUpId: request.matchUpId,
-      previousMatchUpStatus: status,
+      ...frame.lineage,
       matchUpStatus: status,
       exitingSideNumber,
     });
@@ -998,7 +1045,7 @@ function heldLoserOps(request: OutcomeRequest, held: HeldLoser): OutcomeOp[] {
   ];
 }
 
-const producedLoserMatchUpIds = (produced?: ProducedLoser) =>
+export const producedLoserMatchUpIds = (produced?: ProducedLoser) =>
   produced
     ? [
         produced.matchUpId,
@@ -1017,7 +1064,7 @@ const producedLoserMatchUpIds = (produced?: ProducedLoser) =>
  * matchUp with room. A loser matchUp that links its own loser on (COMPASS, OLYMPIC) leaves that seat to nobody: a BYE,
  * with all it sends on (`byeChain`).
  */
-function producedLoser(view: OutcomeView): ProducedLoser | undefined {
+export function producedLoser(view: OutcomeView): ProducedLoser | undefined {
   const { targets } = view;
   const seat = targets.loserTargetSeat;
   const loserMatchUp = indexed(view, targets.loserMatchUpId);
@@ -1058,11 +1105,14 @@ function producedLoser(view: OutcomeView): ProducedLoser | undefined {
  * the exit produced on the loser matchUp, as v1 writes it there: the BYE beyond it first (`conditionallyAdvanceDrawPosition`
  * serves the loser seat before the score), then the exit, its origin, and the advance
  */
-function producedLoserOps(request: OutcomeRequest, produced: ProducedLoser): OutcomeOp[] {
-  const matchUpStatus = request.matchUpStatus === DOUBLE_DEFAULT ? DEFAULTED : WALKOVER;
+export function producedLoserOps(
+  frame: Pick<SeatFrame, 'cascadeStatus' | 'lineage'>,
+  produced: ProducedLoser,
+): OutcomeOp[] {
+  const matchUpStatus = frame.cascadeStatus === DOUBLE_DEFAULT ? DEFAULTED : WALKOVER;
   const provenance = buildSideExitProvenance({
-    sourceMatchUpStatus: request.matchUpStatus as MatchUpStatusUnion,
-    sourceMatchUpId: request.matchUpId,
+    sourceMatchUpStatus: frame.lineage.previousMatchUpStatus,
+    sourceMatchUpId: frame.lineage.sourceMatchUpId,
     sourceSideNumber: produced.seatSide,
   });
   return [
@@ -1107,7 +1157,8 @@ export function doubleExitSeatOps(
   const final = !view.targets.winnerMatchUpId && !direction?.decider;
   // Convergence and other produced writers certify their own seats. This is distinct from failed planning.
   if (!entry && !final) return { kind: 'not-required', ops: [], after: [] };
-  const seats = doubleExitSeats(view, entry, { project, prefix, request, following });
+  const frame = sourceSeatFrame(view, request, prefix, following);
+  const seats = doubleExitSeats(view, entry, frame, project);
   if (!seats) return undefined;
   // On this route the pre-seat prefix changes only the source. The first ordinary reader keeps its entry
   // facts only when its successful footprint cannot read that changed source through a backward edge.
@@ -1117,13 +1168,13 @@ export function doubleExitSeatOps(
     kind: 'planned',
     targetMatchUpId: entry?.matchUpId,
     ops: [
-      ...(produced ? producedLoserOps(request, produced) : []),
-      ...(held ? heldLoserOps(request, held) : []),
+      ...(produced ? producedLoserOps(frame, produced) : []),
+      ...(held ? heldLoserOps(frame, held) : []),
       ...(own ? [...own.assigns, ...own.writes] : []),
       ...(unfillable ? [...unfillable.assigns, ...unfillable.writes] : []),
     ],
     after: [
-      ...(seats.heldBeyond ? [...seats.heldBeyond.advanceOps, ...heldBeyondOps(request, seats.heldBeyond)] : []),
+      ...(seats.heldBeyond ? [...seats.heldBeyond.advanceOps, ...heldBeyondOps(frame, seats.heldBeyond)] : []),
       ...(seats.after ?? []),
     ],
   };

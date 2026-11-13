@@ -16,9 +16,9 @@ import {
 // constants and types
 import { BYE, RETIRED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { ExitReasonArgs, OutcomeView, RebuildView } from '../types';
+import type { Convergence } from './carriedConvergence';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { ProducedTarget } from './producedTarget';
-import type { Convergence } from './convergence';
 
 /**
  * A produced exit superseding a stale relay on its own side (C15): the original propagated BYE withdrawn, then a

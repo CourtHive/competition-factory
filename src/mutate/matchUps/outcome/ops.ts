@@ -185,6 +185,11 @@ export type OutcomeOp =
        */
       clearsPendingExit?: true;
       /**
+       * true where v1's removal is handed the event and the tournament (a converged landing's reclaim,
+       * `serveConvergedLoserLink`, `reclaimSingleExitBye`): the withdrawal's notices name both
+       */
+      namesContext?: true;
+      /**
        * an awarded produced copy withdrawn as its relay's BYE goes (S7): keep the legitimate occupant and blank score,
        * reset the result and remove its provenance before the arriving loser is planned
        */
@@ -344,6 +349,11 @@ export type OutcomeOp =
       rederived?: { matchUpStatus: MatchUpStatusUnion; winningSide?: 1 | 2 };
       /** the relayed copy converged onward: its surviving origin is retained by the unwind's separate ops */
       retainedOnwardMatchUpId?: string;
+      /**
+       * true where v1's removal is handed the event and the tournament (a converged landing's reclaim,
+       * `serveConvergedLoserLink`, `reclaimSingleExitBye`): the withdrawal's notices name both
+       */
+      namesContext?: true;
       /** A final retains the actual carrier's award while this relay's produced copy is withdrawn (S7 clear or certified plain winner). */
       retainedCarriedAward?: {
         matchUpId: string;

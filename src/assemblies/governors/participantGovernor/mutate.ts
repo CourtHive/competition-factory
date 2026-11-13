@@ -1,3 +1,4 @@
+export { mergeIndividualParticipants } from '@Mutate/participants/mergeIndividualParticipants';
 export { modifyPersonRequests } from '@Mutate/matchUps/schedule/scheduleMatchUps/personRequests/modifyPersonRequests';
 export { removePersonRequests } from '@Mutate/matchUps/schedule/scheduleMatchUps/personRequests/removePersonRequests';
 export { addPersonRequests } from '@Mutate/matchUps/schedule/scheduleMatchUps/personRequests/addPersonRequests';

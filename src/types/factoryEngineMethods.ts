@@ -336,6 +336,7 @@ export type FactoryEngineMethod =
   | 'getFlightProfile'
   | 'getHighestSeverity'
   | 'getHomeParticipantId'
+  | 'getIndividualParticipantMergePreview'
   | 'getLadderMovement'
   | 'getLadderOrdering'
   | 'getLadderPolicy'
@@ -522,6 +523,7 @@ export type FactoryEngineMethod =
   | 'meetCondition'
   | 'mergeAdjacentSegments'
   | 'mergeFacilitySchedule'
+  | 'mergeIndividualParticipants'
   | 'mergeOverlappingAvailability'
   | 'mergeParticipants'
   | 'migrateTournamentRecord'
@@ -671,6 +673,7 @@ export type FactoryEngineMethod =
   | 'resolveDraftPositions'
   | 'resolveEntryFee'
   | 'resolveHomeParticipantId'
+  | 'resolveMergedParticipantId'
   | 'resolvePointValue'
   | 'resolveStatus'
   | 'resolveVenueId'
@@ -709,6 +712,7 @@ export type FactoryEngineMethod =
   | 'setMatchUpState'
   | 'setMatchUpStatus'
   | 'setOrderOfFinish'
+  | 'setParticipantCheckInState'
   | 'setParticipantScaleItem'
   | 'setParticipantScaleItems'
   | 'setPositionAssignments'
@@ -1145,6 +1149,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getFlightProfile',
   'getHighestSeverity',
   'getHomeParticipantId',
+  'getIndividualParticipantMergePreview',
   'getLadderMovement',
   'getLadderOrdering',
   'getLadderPolicy',
@@ -1331,6 +1336,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'meetCondition',
   'mergeAdjacentSegments',
   'mergeFacilitySchedule',
+  'mergeIndividualParticipants',
   'mergeOverlappingAvailability',
   'mergeParticipants',
   'migrateTournamentRecord',
@@ -1480,6 +1486,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'resolveDraftPositions',
   'resolveEntryFee',
   'resolveHomeParticipantId',
+  'resolveMergedParticipantId',
   'resolvePointValue',
   'resolveStatus',
   'resolveVenueId',
@@ -1518,6 +1525,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'setMatchUpState',
   'setMatchUpStatus',
   'setOrderOfFinish',
+  'setParticipantCheckInState',
   'setParticipantScaleItem',
   'setParticipantScaleItems',
   'setPositionAssignments',

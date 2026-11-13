@@ -1,3 +1,5 @@
+export { getIndividualParticipantMergePreview } from '@Query/participants/getIndividualParticipantMergePreview';
+export { resolveMergedParticipantId } from '@Query/participants/individualMerge/aliases';
 export { getMatchUpCheckInHistory } from '@Query/matchUp/getMatchUpCheckInHistory';
 export { validatePresenceAttribution } from '@Query/participant/presencePolicy';
 export { getPresenceExpectation } from '@Query/participant/presencePolicy';

@@ -116,6 +116,11 @@ export function plannedNotices({
   const retainedEvents = new Set(
     prior?.filter((notice) => notice.payload?.eventId).map((notice) => `${notice.topic}|${notice.key}`),
   );
+  // ...and within the call: a matchUp a named release announced (`releaseAdvancedDrawPosition`, with the event) keeps that
+  // event when a later quiet write announces it again (1c: a held carry's landing the converged matchUp was released from)
+  for (const op of ops)
+    if (op.op === 'setMatchUpDrawPositions' && op.releasedDrawPosition && op.announcesContext !== false)
+      retainedEvents.add(`${MODIFY_MATCHUP}|${op.matchUpId}`);
   const marked = (topic: string, key: string, unevented: boolean) => {
     const identity = `${topic}|${key}`;
     return `${identity}${(!hasEvent || unevented) && !retainedEvents.has(identity) ? NO_EVENT : ''}`;

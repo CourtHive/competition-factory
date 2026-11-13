@@ -4,7 +4,7 @@ import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 // constants and types
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import { WALKOVER } from '@Constants/matchUpStatusConstants';
-import type { Convergence } from './convergence';
+import type { Convergence } from './carriedConvergence';
 import type { ThroughBye } from '../types';
 import type { OutcomeOp } from '../ops';
 
@@ -23,14 +23,47 @@ export type CarriedLanding = {
   ensuredSides?: unknown[];
 };
 
+/** The origin a continuation's provenance names (ruling 11). */
+export type FrameLineage = { sourceMatchUpId: string; previousMatchUpStatus: MatchUpStatusUnion };
+
+/** The loser target a seat frame serves, read once by its adapter. `at` only where the link names a whole seat. */
+export type SeatTarget = {
+  linked: boolean;
+  at?: { structureId: string; drawPosition: number; matchUpId: string };
+  linkCondition?: string;
+  fed: boolean;
+  opponentBye: boolean;
+};
+
+/** A double exit's loser seats, served by one dispatch over the existing builders. Stored reads come from the
+ * cursor (`prefix` projected); hydrated reads come from the entry view (`snapshotAt` 0). `cascadeStatus` is the
+ * status the caller passes; derived statuses read it, never the request. */
+export type SeatFrame = {
+  kind: 'seat';
+  phase: 'source';
+  originMatchUpId: string;
+  cascadeStatus: MatchUpStatusUnion;
+  lineage: FrameLineage;
+  snapshotAt: 0;
+  prefix: OutcomeOp[];
+  /** the produced write the seats precede, folded before deferred replay */
+  following: OutcomeOp[];
+  propagatesBye: boolean;
+  seat: SeatTarget;
+};
+
 export type CarryFrame = {
+  kind: 'carry';
   landing: CarriedLanding;
-  sourceMatchUpId?: string;
-  previousMatchUpStatus?: MatchUpStatusUnion;
+  /** Optional: a frame with no origin builds provenance with none. */
+  lineage?: Partial<FrameLineage>;
   assignment?: Omit<Extract<OutcomeOp, { op: 'assignPosition' }>, 'op'>;
   /** Existing convergence writer's terminal program, resolved with this frame's lineage. */
   convergence?: OutcomeOp[];
 };
+
+/** One frame type for every continuation; not an executor, never persisted, never a deduplication key. */
+export type ContinuationFrame = SeatFrame | CarryFrame;
 
 /** One carried origin, through BYE relays, an award or convergence, and onward loser links.
  * The first relay remains separate: immediate callers place the carrier beyond its BYEs before
@@ -88,8 +121,8 @@ function carryProvenance(
   announcedAs?: 'progressExitStatus',
 ): OutcomeOp[] {
   const provenance = buildCarriedExitProvenance({
-    previousMatchUpStatus: frame.previousMatchUpStatus,
-    sourceMatchUpId: frame.sourceMatchUpId,
+    previousMatchUpStatus: frame.lineage?.previousMatchUpStatus,
+    sourceMatchUpId: frame.lineage?.sourceMatchUpId,
     matchUpStatus: status,
     exitingSideNumber,
   });

@@ -1,3 +1,4 @@
+export * from './individualParticipantMerge';
 export * from './roundRobinTallyPolicy';
 export * from './rotatingPartnerSettlement';
 export * from './rotatingPartnerTally';

@@ -1,7 +1,7 @@
 import { buildCarriedExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
+import { convergenceAt, convergenceOps } from './carriedConvergence';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
-import { convergenceAt, convergenceOps } from './convergence';
 import { carriedContinuation } from './carriedContinuation';
 import { freshByeCarry } from '../direction';
 import {
@@ -18,7 +18,7 @@ import {
 
 // constants and types
 import { BYE, DEFAULTED, RETIRED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import type { CarriedLanding, CarryFrame } from './carriedContinuation';
+import type { CarriedLanding, FrameLineage } from './carriedContinuation';
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { OutcomeOp } from '../ops';
@@ -464,13 +464,13 @@ function continuationFor(
   view: OutcomeView,
   first: CarriedLanding,
   status: MatchUpStatusUnion,
-  origin: Pick<CarryFrame, 'sourceMatchUpId' | 'previousMatchUpStatus'> = {},
+  origin: Partial<FrameLineage> = {},
   participantId?: string,
 ) {
   const chain = view.targets.carryLevels;
   if (first.carriesOn && (!chain || chain.bounded || chain.levels[0]?.fromMatchUpId !== first.matchUpId))
     return undefined;
-  const terminal = (landing: CarriedLanding, source: Pick<CarryFrame, 'sourceMatchUpId' | 'previousMatchUpStatus'>) =>
+  const terminal = (landing: CarriedLanding, source: Partial<FrameLineage>) =>
     landing.converged
       ? {
           convergence: convergenceOps(
@@ -485,16 +485,17 @@ function continuationFor(
   let index = 0;
   return carriedContinuation(
     status,
-    { landing: first, ...origin, ...terminal(first, origin) },
+    { kind: 'carry', landing: first, lineage: origin, ...terminal(first, origin) },
     () => {
       const level = chain?.levels[index++];
       const landing = level && levelLanding(view, level, status);
       if (!level || !landing || (landing.opponentHeld && !landing.onward)) return undefined;
+      const lineage = { sourceMatchUpId: level.fromMatchUpId, previousMatchUpStatus: status };
       return {
+        kind: 'carry',
         landing,
-        sourceMatchUpId: level.fromMatchUpId,
-        previousMatchUpStatus: status,
-        ...terminal(landing, { sourceMatchUpId: level.fromMatchUpId, previousMatchUpStatus: status }),
+        lineage,
+        ...terminal(landing, lineage),
         ...(participantId
           ? { assignment: { structureId: level.structureId, drawPosition: level.drawPosition, participantId } }
           : {}),

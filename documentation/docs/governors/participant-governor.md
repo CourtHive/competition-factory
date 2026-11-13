@@ -1074,3 +1074,48 @@ engine.addParticipantTimeItem({
 ```
 
 ---
+
+## getIndividualParticipantMergePreview
+
+Preview consolidation of two existing INDIVIDUAL participants in one tournament. This query is read-only and returns
+`canMerge`, `fingerprint`, the proposed `participant`, `conflicts`, `blockers`, `changedPaths` and `affectedDrawIds`.
+A conflict path uses JSON Pointer notation (for example `/person/birthDate`); `resolutions` maps each conflicting
+path to `source` or `target`. A preview can be successful while `canMerge` is false.
+
+When both individuals are entered in the same event stage (or the same flight), the two entries collapse into the
+survivor's entry, keeping its `entryPosition`. Any other registration field on which they differ (for example
+`entryStatus`) is a conflict at the survivor entry's path, such as `/events/0/entries/1/entryStatus`, resolved like a
+profile field.
+
+The `fingerprint` covers what the operator reviews: both profiles, the proposed participant, choices, conflicts,
+blockers, affected draws and every reference to be rewritten. Activity elsewhere in the tournament, such as scoring
+on another court, does not invalidate a review.
+
+The source is the duplicate to retire; the target is the participant ID to keep. Both individuals occurring in the
+same drawDefinition always blocks consolidation, including entries, nested structures, pairs, team rosters and
+lineups. Pair collapse, duplicate pairs, opposing-side overlap, duplicate lineups, conflicting entries/flights,
+trusted identity conflicts and unsupported ID-bearing extensions also block it. Different roles cannot be merged.
+Non-conflicting rating histories are retained. Divergent current ratings, presence or penalty histories require
+separate reconciliation in this version; they are never silently overwritten.
+
+## mergeIndividualParticipants
+
+Consolidate the two existing identities after preview. Unlike `mergeParticipants`, this removes one participant,
+transfers supported references, retains the target ID and records the retired-ID mapping. Supply the reviewed
+`expectedFingerprint`; missing/stale fingerprints return `INDIVIDUAL_MERGE_STALE`. Structural blockers and unresolved
+field conflicts return `INDIVIDUAL_MERGE_BLOCKED` with the latest preview in `context`. Every refusal is atomic even
+outside an execution queue. There is no force flag.
+
+The result includes `sourceParticipantId`, `targetParticipantId`, `changedPaths` and a `mergeReceipt` holding the
+reviewed choices and affected before-state. The server's durable command receipt stores this recovery data; it is
+not a public notice or a global Persons merge. Consumers must keep receipts private. General unmerge is not provided.
+
+## resolveMergedParticipantId
+
+Resolve a tournament-local retired participant ID to its retained ID. IDs without a mapping resolve to themselves.
+Successive merges flatten the alias chain. A retired ID stays retired if
+the retained participant is later deleted: it still resolves to the retained ID, so re-importing the person
+re-creates the survivor rather than the duplicate. The `individualParticipantMerges` tournament extension survives record
+export/import. Importers must resolve these IDs before deciding add/update/skip and before assigning event entries.
+`addParticipant`, `addParticipants` and the existing `mergeParticipants` upsert refuse a retired ID with
+`PARTICIPANT_ID_RETIRED` and `context.canonicalParticipantId`, so another importer cannot recreate the duplicate.

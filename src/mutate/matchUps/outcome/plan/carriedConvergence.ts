@@ -1,27 +1,25 @@
 import { blankScore, SINGLE_EXITS, carriedStatus, indexed, isSettleWrite, sideOf } from './planShared';
 import { producedTarget, producedTargetOps, producedTargetReason } from './producedTarget';
-import { ownByeChain, unfillableByeChain, walkChain } from './byeChain';
-import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
-import { isDoubleExit } from '@Validators/isExit';
+import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
+import { releaseWalk } from '../unwindWalk';
+import { walkChain } from './byeChain';
 import {
   buildCarriedExitProvenance,
-  buildSideExitProvenance,
   collapseDoubleExitStatus,
   deriveStatusCodes,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
 import type { AbstainReason, ByeWalk, DirectionPlan, MatchUpWrite, OutcomeRequest, OutcomeView } from '../types';
+import type { DrawDefinition, MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
 import type { ProducedTarget, RetainedRelayReservation } from './producedTarget';
 import { DOUBLE_WALKOVER, RETIRED } from '@Constants/matchUpStatusConstants';
-import type { MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
-import type { ByeChain } from './byeChain';
 import type { OutcomeOp } from '../ops';
 
 /**
- * RULE 4 of v1's `progressExitStatus` (S5, S6 tail): two exits meeting where a carrier lands, or a produced exit
- * meeting the one standing in the next matchUp, the double exit they make and what it produces on.
+ * RULE 4 of v1's `progressExitStatus` (S5, S6 tail): a CARRIED exit meeting the exit standing where a carrier
+ * lands, written as `setMatchUpState` writes it, the double exit they make and what it produces on.
  */
 
 /**
@@ -38,6 +36,7 @@ export function convergedReason(
   write: MatchUpWrite,
   loser: NonNullable<DirectionPlan['loser']>,
   reservation?: RetainedRelayReservation,
+  drawDefinition?: DrawDefinition,
 ): AbstainReason | undefined {
   const { targets } = view;
   const seat = targets.loserTargetSeat;
@@ -51,6 +50,7 @@ export function convergedReason(
     carriedStatus(request.matchUpStatus),
     targets.landingWalk,
     reservation,
+    drawDefinition,
   );
   return convergence && loser.converged === convergence.matchUpStatus ? undefined : 'exit';
 }
@@ -67,6 +67,8 @@ export type Convergence = {
   target?: ProducedTarget;
   /** a landing that links its loser on: the BYEs the double exit places, walked as v1's recursion places them (S6 tail) */
   seats?: OutcomeOp[];
+  /** 2a: a pending landing's reservation in the produced target, taken back before it produces there (DEA:976) */
+  withdrawn?: OutcomeOp[];
 };
 
 // Two RULE 4 rules, kept apart on purpose (Mentat assessment/2026-11-07-outcome-refactor-debates.md, ruling 3).
@@ -74,12 +76,15 @@ export type Convergence = {
 // carrier's seat, any carried origin standing opposite, written as `setMatchUpState` writes it (`deriveStatusCodes`,
 // `scoredTime` stamped). `producedConvergedReason` mirrors `conditionallyAdvanceDrawPosition`'s `existingExit`: a
 // PRODUCED exit arriving where a PENDING exit a double exit produced stands with no winner and no positions, written
-// as `modifyMatchUpScore` writes it (codes `[]`, no `scoredTime`). The off-diagonal cells are refused by both and are
-// v1's: a produced exit onto a carried award (`recordedExitAwaitingThisSeat`; FEED_IN_CHAMPIONSHIP 8, Main 2/1
-// WALKOVER carried onto Consolation 2/2, then Consolation 1/2 a DOUBLE_WALKOVER: both abstain `exit`, differential
-// clean) and a carried exit onto a pending produced exit (`convergeCarriedExit`). A merge parameterised by the
-// arrival would branch at the award, the standing origin, the positions, the seats, the codes, the stamp and the
-// score guard.
+// as `modifyMatchUpScore` writes it (codes `[]`, no `scoredTime`). A merge parameterised by the arrival would branch at
+// the award, the standing origin, the positions, the seats, the codes, the stamp and the score guard.
+// THE WRITER FOLLOWS THE CALLER, NOT THE CELL (Mentat assessment/2026-11-12-outcome-v2-after-1c-ruling.md): a carried
+// exit onto a pending produced exit is written by `progressExitStatus` RULE 4 through `setMatchUpState` when the
+// loser's direction reaches it (no winner there, so nothing directed is taken back), and by `convergeCarriedExit`
+// through `modifyMatchUpScore` only on DEA's own carry (`carryExitOnward`). The off-diagonal cells refused by both
+// (a produced exit onto a carried award, `recordedExitAwaitingThisSeat`: FEED_IN_CHAMPIONSHIP 8, Main 2/1 WALKOVER
+// carried onto Consolation 2/2, then Consolation 1/2 a DOUBLE_WALKOVER, both abstain `exit`, differential clean; the
+// DEA carry onto a pending produced exit) are deferred v2 work, each owned by the slice the ruling names.
 /**
  * RULE 4 at the matchUp a carrier lands in (`progressExitStatus`), at the first level (S5) or a deeper one (S6 tail): the
  * matchUp holds a single exit (not a retirement) awarded to the carrier's seat, carried in on the other side and on that
@@ -94,13 +99,20 @@ export function convergenceAt(
   carried: MatchUpStatusUnion,
   walk?: { own?: ByeWalk; unfillable?: ByeWalk },
   reservation?: RetainedRelayReservation,
+  drawDefinition?: DrawDefinition,
 ): Convergence | undefined {
   const landing = indexed(view, matchUpId);
   const sideNumber = sideOf(landing, drawPosition);
-  if (!landing || !sideNumber || landing.winningSide !== sideNumber) return undefined;
+  if (!landing || !sideNumber) return undefined;
+  // 2a: a PENDING exit standing there (no winner) meets the carrier as an awarded one does. `progressExitStatus` asks
+  // whether the opponent has itself exited (`carriedExitStatus`, its RULE 4 gate), not who won: the same pending RULE 4
+  // `standalonePendingConvergence` plans, written by the same `setMatchUpState` (after-1c ruling, M1: v1 takes nothing
+  // directed back there)
+  const pending = !landing.winningSide && pendingExitOpposite(landing, sideNumber);
+  if (landing.winningSide !== sideNumber && !pending) return undefined;
   // a landing that links its loser on: its own seat takes the double exit's BYE (the first carrier displaced), planned
   // where the walk of v1's recursion plans it, under `doubleExitPropagateBye` (S6 tail)
-  if (landing.loserMatchUpId && (!walk?.own || !view.draw.doubleExitPropagatesBye)) return undefined;
+  if (landing.loserMatchUpId && (!walk?.own || !view.draw.propagatesByeOnDoubleExit)) return undefined;
   if (!SINGLE_EXITS.has(landing.matchUpStatus) || landing.matchUpStatus === RETIRED) return undefined;
   if (landing.score?.scoreStringSide1 || landing.score?.scoreStringSide2 || landing.score?.sets?.length)
     return undefined;
@@ -113,6 +125,9 @@ export function convergenceAt(
     matchUpId: landing.matchUpId,
     matchUpStatus,
     sideNumber,
+    // a pending landing's convergence is `setMatchUpState`'s nested score write, blank whatever the flavour (as the
+    // standalone pending RULE 4 writes it)
+    ...(pending ? { score: blankScore() } : {}),
     ...(ownSeat ? { seats: [...ownSeat.assigns, ...ownSeat.writes] } : {}),
   };
   if (!landing.winnerMatchUpId) return convergence;
@@ -126,9 +141,73 @@ export function convergenceAt(
   const targetLinked = !!target?.entry.loserMatchUpId;
   if (targetLinked && (!ownSeat || !walk?.unfillable)) return undefined;
   const unfillable = targetLinked && walk?.unfillable ? walkChain(walk.unfillable) : undefined;
-  if (!target || advanced || !producedTargetReason(view, landing, target, targetLinked)) return undefined;
+  // 2a: a pending landing's own position stands there as the reservation its produced exit made: v1 takes it back before
+  // the double exit produces there (`withdrawOwnAdvancement`, DEA:976, P44), as 1b's `convergedWinner` plans it
+  const released =
+    advanced && pending && target
+      ? withdrawReservation(
+          view,
+          landing,
+          target,
+          (found) => producedTargetReason(view, landing, found, targetLinked),
+          drawDefinition,
+        )
+      : undefined;
+  const onward = released?.target ?? target;
+  if (!onward || (advanced && !released) || !producedTargetReason(view, landing, onward, targetLinked))
+    return undefined;
   const seats = [...(convergence.seats ?? []), ...(unfillable ? [...unfillable.assigns, ...unfillable.writes] : [])];
-  return { ...convergence, target, ...(seats.length ? { seats } : {}) };
+  return {
+    ...convergence,
+    target: onward,
+    ...(released ? { withdrawn: released.ops } : {}),
+    ...(seats.length ? { seats } : {}),
+  };
+}
+
+/**
+ * The reservation a pending landing's produced exit left in its target, taken back (`releaseWalk`, DEA:976's writer), and
+ * the target as the convergence's produced exit then finds it. Undefined where the target holds anyone else's position:
+ * a fed seat's, a BYE's, or one the landing does not hold, or where the released target does not `fit`: read before the
+ * walk, which a refusal there would spend for nothing.
+ */
+function withdrawReservation(
+  view: OutcomeView,
+  landing: HydratedMatchUp,
+  target: ProducedTarget,
+  fits: (released: ProducedTarget) => unknown,
+  drawDefinition?: DrawDefinition,
+): { ops: OutcomeOp[]; target: ProducedTarget } | undefined {
+  const { entry } = target;
+  if (!drawDefinition || target.feed || entry.sides?.some((side) => side.bye)) return undefined;
+  const held = (entry.drawPositions ?? []).filter((position): position is number => !!position);
+  const own = held.filter((position) => landing.drawPositions?.includes(position));
+  if (!own.length || own.length !== held.length) return undefined;
+  const released = {
+    ...entry,
+    drawPositions: [],
+    sides: entry.sides?.map((side) =>
+      own.includes(side.drawPosition as number) ? { ...side, drawPosition: undefined } : side,
+    ),
+  };
+  const releasedTarget = { ...target, entry: released as HydratedMatchUp };
+  if (!fits(releasedTarget)) return undefined;
+  const ops = releaseWalk({
+    inContextDrawMatchUps: view.inContextDrawMatchUps ?? [],
+    propagatesBye: !!view.draw.propagatesByeOnDoubleExit,
+    fromRoundNumber: entry.roundNumber as number,
+    structureId: entry.structureId,
+    drawPositions: own,
+    drawDefinition,
+  });
+  if (!ops) return undefined;
+  return { ops, target: releasedTarget };
+}
+
+/** a pending exit carried in on the other side and recorded there alone: the opponent has itself exited (RULE 4) */
+function pendingExitOpposite(landing: HydratedMatchUp, sideNumber: 1 | 2): boolean {
+  const provenance = landing.sideExitProvenance ?? {};
+  return Object.keys(provenance).length === 1 && !!carriedExitStatus(provenance[3 - sideNumber]);
 }
 
 /** the double exit RULE 4 writes, the arriving side's entry merged beside the standing one, and what it produces on */
@@ -171,6 +250,7 @@ export function convergenceOps(
     // the BYEs before the exit produced onward, as v1's `doubleExitAdvancement` places them; a displaced carrier's landing
     // is announced last, by the `reconcileScoredTimes` pass that takes its `scoredTime`
     ...unreconciled(seats),
+    ...(convergence.withdrawn ?? []),
     ...(target ? producedTargetOps(view, target, matchUpId, matchUpStatus) : []),
     ...reconciled(seats),
   ];
@@ -178,122 +258,8 @@ export function convergenceOps(
 
 /** a walk's ops but the writes v1's `reconcileScoredTimes` pass makes, which it announces after everything else */
 const unreconciled = (ops: OutcomeOp[]) => ops.filter((op) => !isSettleWrite(op));
+
 const reconciled = (ops: OutcomeOp[]) => ops.filter((op) => isSettleWrite(op));
-
-type ProducedConvergence = {
-  /** this matchUp's own loser seat: a BYE and its chain, placed first (`handleLoserMatchUp`) */
-  own?: ByeChain;
-  /** the onward matchUp's loser seat, which its produced exit leaves unfillable: a BYE and its chain */
-  onwardBye?: ByeChain;
-  landing: HydratedMatchUp;
-  /** the side the double exit feeds, which takes its origin beside the one standing there */
-  fedSide: 1 | 2;
-  matchUpStatus: MatchUpStatusUnion;
-  /** where the converged double exit produces in turn: none from a final */
-  onward?: ProducedTarget;
-};
-
-// The produced twin of `convergenceAt`: a separate RULE 4 by the same ruling (see the comment there).
-/**
- * S5: a double exit whose produced exit meets an exit standing in the next matchUp (`conditionallyAdvanceDrawPosition`'s
- * `existingExit`): the two converge there (`collapseDoubleExitStatus`: two defaults a `DOUBLE_DEFAULT`, anything else a
- * `DOUBLE_WALKOVER`), with no winner, the arriving side's origin merged beside the standing one, and that double exit
- * produces on as one entered there would (`advanceConvergedWinner`). Planned where the standing exit is a pending one a
- * double exit beside this one produced (its origin alone, on the other side; nobody there; no score, codes or loser link),
- * nothing links a loser on from this matchUp, and the exit produced onward lands clean (or the landing is a final).
- */
-export function producedConvergedReason(
-  view: OutcomeView,
-  request: OutcomeRequest,
-  write: MatchUpWrite,
-  direction?: DirectionPlan,
-): ProducedConvergence | undefined {
-  const { targets } = view;
-  const converged = direction?.converged;
-  const source = indexed(view, request.matchUpId);
-  const linked = !!targets.loserLink || !!targets.loserMatchUpId;
-  // with loser links, the BYEs they take (`doubleExitPropagateBye`; off, the seats show exits: v1's)
-  if (!converged || !source || (linked && !view.draw.doubleExitPropagatesBye)) return undefined;
-  // the own seat as the chain's shapes plan it, or as the view's walk of v1's recursion places it (S6 tail)
-  const walkedOwn = view.targets.byeWalk?.own;
-  const own = linked ? (ownByeChain(view) ?? (walkedOwn ? walkChain(walkedOwn) : undefined)) : undefined;
-  if (linked && !own) return undefined;
-  const target = producedTarget(view, source, write.matchUpStatus as MatchUpStatusUnion);
-  const landing = target?.entry;
-  if (!target || !landing || target.feed || landing.matchUpId !== converged.matchUpId) return undefined;
-  if (!SINGLE_EXITS.has(landing.matchUpStatus) || landing.matchUpStatus === RETIRED || landing.winningSide)
-    return undefined;
-  if (landing.matchUpStatusCodes?.length || landing.score?.scoreStringSide1) return undefined;
-  // the landing's own loser seat took its BYE when the first exit was produced there: nothing more is written to it.
-  // Under `doubleExitPropagateBye: false` that BYE gives way to the convergence's produced exit (`serveConvergedLoserLink`)
-  const landingSeat = targets.winnerLoserSeat;
-  const landingLinked = !!landing.loserMatchUpId;
-  if (landingLinked && (!view.draw.doubleExitPropagatesBye || landingSeat?.matchUpId !== landing.loserMatchUpId))
-    return undefined;
-  if (landingLinked && !landingSeat?.seat?.bye) return undefined;
-  if ((landing.drawPositions ?? []).some(Boolean)) return undefined;
-  const provenance = landing.sideExitProvenance ?? {};
-  const standing = provenance[target.awardedSide];
-  if (provenance[target.fedSide] || !standing || !isDoubleExit(standing.previousMatchUpStatus)) return undefined;
-  const matchUpStatus = collapseDoubleExitStatus([write.matchUpStatus, landing.matchUpStatus]);
-  if (matchUpStatus !== converged.matchUpStatus) return undefined;
-  const planned = { own, landing, fedSide: target.fedSide, matchUpStatus };
-  if (!landing.winnerMatchUpId) return apart(planned);
-  const onward = producedTarget(view, landing, matchUpStatus);
-  const onwardLinked = !!onward?.entry.loserMatchUpId;
-  if (!onward || !producedTargetReason(view, landing, onward, onwardLinked && view.draw.doubleExitPropagatesBye))
-    return undefined;
-  const seat = targets.onwardLoserSeat;
-  const onwardBye = onwardLinked ? unfillableByeChain(view, onward.entry, { seat, levels: seat?.levels }) : undefined;
-  if (onwardLinked && !onwardBye) return undefined;
-  return apart({ ...planned, onward, onwardBye });
-}
-
-/** a convergence touching any matchUp twice is v1's */
-function apart(planned: ProducedConvergence): ProducedConvergence | undefined {
-  const touched = [
-    ...(planned.own?.matchUpIds ?? []),
-    ...(planned.onwardBye?.matchUpIds ?? []),
-    planned.landing.matchUpId,
-    ...(planned.onward ? [planned.onward.entry.matchUpId] : []),
-  ];
-  return new Set(touched).size === touched.length ? planned : undefined;
-}
-
-/** the convergence written on the next matchUp, as v1 writes it there, and the exit it produces on */
-export function producedConvergedOps(
-  view: OutcomeView,
-  request: OutcomeRequest,
-  write: MatchUpWrite,
-  direction?: DirectionPlan,
-) {
-  const planned = producedConvergedReason(view, request, write, direction);
-  if (!planned) return [];
-  const { own, landing, fedSide, matchUpStatus, onward, onwardBye } = planned;
-  const provenance = buildSideExitProvenance({
-    sourceMatchUpStatus: write.matchUpStatus as MatchUpStatusUnion,
-    sourceMatchUpId: request.matchUpId,
-    sourceSideNumber: fedSide,
-  });
-  const ops: OutcomeOp[] = [
-    ...(own ? [...own.assigns, ...own.writes] : []),
-    {
-      op: 'setMatchUpResult',
-      matchUpId: landing.matchUpId,
-      matchUpStatus,
-      removesWinningSide: true,
-      matchUpStatusCodes: [],
-      stampsScoredTime: false,
-      ...(matchUpStatus === DOUBLE_WALKOVER ? { resetsScore: true, score: toBePlayed.score } : {}),
-    },
-    ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId: landing.matchUpId, provenance }] : []),
-    { op: 'stampUpdatedAt', entity: 'matchUp', id: landing.matchUpId },
-    // the onward matchUp's unfillable seat is served before its produced exit is written (`conditionallyAdvanceDrawPosition`)
-    ...(onwardBye ? [...onwardBye.assigns, ...onwardBye.writes] : []),
-    ...(onward ? producedTargetOps(view, onward, landing.matchUpId, matchUpStatus) : []),
-  ];
-  return ops;
-}
 
 /** a convergence's writes: the landing as the double exit, the arriving side's entry, and the exit it produces */
 export function convergedOps(
@@ -302,12 +268,21 @@ export function convergedOps(
   write: MatchUpWrite,
   loser?: DirectionPlan['loser'],
   reservation?: RetainedRelayReservation,
+  drawDefinition?: DrawDefinition,
 ) {
   const { loserMatchUpId, loserTargetDrawPosition } = view.targets;
   const carried = carriedStatus(request.matchUpStatus);
   const convergence =
     loser?.arrives && loser.converged
-      ? convergenceAt(view, loserMatchUpId, loserTargetDrawPosition, carried, view.targets.landingWalk, reservation)
+      ? convergenceAt(
+          view,
+          loserMatchUpId,
+          loserTargetDrawPosition,
+          carried,
+          view.targets.landingWalk,
+          reservation,
+          drawDefinition,
+        )
       : undefined;
   if (!convergence) return [];
   return convergenceOps(view, convergence, carried, request.matchUpId, write.matchUpStatus as MatchUpStatusUnion);

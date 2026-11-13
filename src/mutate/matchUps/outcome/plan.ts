@@ -8,9 +8,9 @@ import { autoCalcWrite, resultOps, writtenScore } from './plan/resultOps';
 import { producedExitOps, producedReason } from './plan/producedExit';
 import { carriedReason, retainedByeCarry } from './plan/carriedExit';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
+import { convergedReason } from './plan/carriedConvergence';
 import { groupTally, writtenLine } from './plan/tallyOps';
 import { withFinishingOrder } from './finishingOrderOps';
-import { convergedReason } from './plan/convergence';
 import { doubleExitSeatOps } from './plan/byeChain';
 import {
   APPLY_VALUES,
@@ -119,7 +119,11 @@ function exitReason(args: ExitReasonArgs): AbstainReason | SeatObligation | unde
   if (retainedByeCarry(args)) return relabelledExit(args) ? undefined : 'exit';
   if (!isAnyExit(request.matchUpStatus) && !isAnyExit(existing.matchUpStatus) && !isAnyExit(write?.matchUpStatus))
     return undefined;
-  if (route === DOUBLE_EXIT) return producedReason(view, request, direction, write);
+  if (route === DOUBLE_EXIT)
+    return producedReason(view, request, direction, write, {
+      drawDefinition: args.drawDefinition,
+      landing: args.landing,
+    });
   if (satisfiedDoubleExit(view, request, route)) return undefined;
   if (route === 'winner' && isDoubleExit(existing.matchUpStatus)) return givenWinnerReason(args);
   if (route === CLEAR_SCORE && isDoubleExit(existing.matchUpStatus))
@@ -141,7 +145,7 @@ function exitReason(args: ExitReasonArgs): AbstainReason | SeatObligation | unde
   const loser = direction?.loser;
   if (directsElsewhere(direction)) return 'exit';
   if (loser?.carriedPast || loser?.withdrawn) return 'exit';
-  if (loser?.converged) return convergedReason(view, request, write, loser);
+  if (loser?.converged) return convergedReason(view, request, write, loser, undefined, args.drawDefinition);
   if (loser?.exit) return carriedReason(view, write);
   return undefined;
 }
@@ -476,13 +480,23 @@ function carriedDirectionContext(args: PlanArgs, landing: OutcomeOp[]): boolean 
 /** Every deferred seat obligation is discharged before an executable plan can leave the builder. */
 function certifiedSeatProgram(args: PlanArgs, prefix: OutcomeOp[], obligation?: SeatObligation) {
   if (args.route !== DOUBLE_EXIT) return obligation ? undefined : { ops: [], after: [] };
-  const following =
-    args.route === DOUBLE_EXIT ? producedExitOps(args.view, args.request, args.write!, args.direction) : [];
+  // a convergence certifies its own seats (`doubleExitSeatOps` asks no seat of it): nothing follows them
+  const following = args.direction?.converged
+    ? []
+    : producedExitOps(args.view, args.request, args.write!, args.direction);
+  if (!following) return undefined;
   const seats = doubleExitSeatOps(args.view, args.request, args.direction, args.project, prefix, following);
   if (!seats) return undefined;
   if (obligation && (seats.kind !== 'planned' || seats.targetMatchUpId !== obligation.targetMatchUpId))
     return undefined;
   return seats;
+}
+
+/** a double exit's produced exit, read on the cursor the program before it leaves */
+function routedProducedOps(args: PlanArgs, drawDefinition: DrawDefinition, prefix: OutcomeOp[]) {
+  if (args.route !== DOUBLE_EXIT) return [];
+  const context = { prefix, landing: args.landing, drawDefinition };
+  return producedExitOps(args.view, args.request, args.write!, args.direction, context);
 }
 
 /** A recorded single-call plan after the shared refusal, dual and no-op gates. */
@@ -613,7 +627,18 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   );
   if (!seatOps) return { abstain: 'exit' };
   const doubleExitSeated = seatOps?.ops ?? [];
-  const producedExit = args.route === DOUBLE_EXIT ? producedExitOps(view, request, write, args.direction) : [];
+  const producedExit = routedProducedOps(args, drawDefinition, [
+    ...ops,
+    ...seated,
+    ...initialLineUps,
+    ...throughBye,
+    ...lineUps,
+    ...carried.relay,
+    ...landing,
+    ...converging,
+    ...doubleExitSeated,
+  ]);
+  if (!producedExit) return { abstain: 'exit' };
   const line = view.line;
   // a TEAM line's group is its dual's: the dual is tallied with the line's result in place, its lines and its tally (S7)
   const tallied = line
