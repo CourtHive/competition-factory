@@ -731,6 +731,10 @@ export const EXISTING_PARTICIPANT = {
   message: 'Existing participant',
   code: 'ERR_EXISTING_PARTICIPANT' as const,
 } satisfies ErrorType;
+export const EXISTING_PERSON_OTHER_ID = {
+  message: 'Person already carries a different id from this organisation',
+  code: 'ERR_EXISTING_PERSON_OTHER_ID' as const,
+} satisfies ErrorType;
 export const PARTICIPANT_COUNT_EXCEEDS_DRAW_SIZE = {
   message: 'participantsCount exceeds drawSize',
   code: 'ERR_INVALID_PARTICIPANT_COUNT' as const,
@@ -1077,6 +1081,7 @@ export const QUALIFYING_CAPACITY_EXCEEDED = {
 } satisfies ErrorType;
 
 export const errorConditionConstants = {
+  EXISTING_PERSON_OTHER_ID,
   INDIVIDUAL_MERGE_BLOCKED,
   INDIVIDUAL_MERGE_STALE,
   PARTICIPANT_ID_RETIRED,

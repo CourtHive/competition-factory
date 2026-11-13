@@ -26,6 +26,7 @@ import type {
   IndividualMergeArgs,
   IndividualMergePreview,
   IndividualMergeBlocker,
+  IndividualMergeWarning,
 } from '@Types/individualParticipantMerge';
 
 export function planIndividualMerge(args: IndividualMergeArgs): { preview: IndividualMergePreview; next?: Tournament } {
@@ -62,6 +63,10 @@ export function planIndividualMerge(args: IndividualMergeArgs): { preview: Indiv
   }
   if (source.participantRole !== target.participantRole)
     blockers.push({ code: 'ROLE_CONFLICT', path: '/participantRole' });
+  const warnings = protectedIdWarnings(source, target, args.protectedIssuers);
+  if (args.protectedIdPolicy === 'refuse') {
+    for (const { code, path } of warnings) if (code === 'PROTECTED_ID_WOULD_MOVE') blockers.push({ code, path });
+  }
   const affectedDrawIds = checkDraws(tournamentRecord, sourceId, targetId, blockers);
   const context = {
     source: sourceId,
@@ -102,6 +107,8 @@ export function planIndividualMerge(args: IndividualMergeArgs): { preview: Indiv
   const review = {
     participant: next.participants?.find((p) => p.participantId === targetId),
     blockers,
+    // Present only when non-empty, so a fingerprint from a build without warnings still matches.
+    ...(warnings.length ? { warnings } : {}),
     conflicts: profile.conflicts,
     changedPaths: context.changedPaths,
     affectedDrawIds,
@@ -117,6 +124,30 @@ function validResolutions(value: unknown): value is IndividualMergeArgs['resolut
     !Array.isArray(value) &&
     Object.values(value).every((choice) => choice === 'source' || choice === 'target')
   );
+}
+/**
+ * Ids from a protected issuer identify a person beyond this tournament. Different values already block as
+ * ISSUED_ID_CONFLICT; a one-sided id either moves onto the survivor or adopts the duplicate's participation.
+ */
+function protectedIdWarnings(source: Participant, target: Participant, issuers: string[] = []) {
+  const warnings: IndividualMergeWarning[] = [];
+  const path = '/person/personOtherIds';
+  const idsOf = (participant: Participant, organisationId: string) =>
+    (participant.person?.personOtherIds ?? [])
+      .filter((id) => id?.organisationId === organisationId && id.personId)
+      .map((id) => id.personId as string);
+  for (const organisationId of new Set(issuers)) {
+    const sourceIds = idsOf(source, organisationId);
+    const targetIds = idsOf(target, organisationId);
+    if (sourceIds.length && !targetIds.length) {
+      for (const personId of new Set(sourceIds))
+        warnings.push({ code: 'PROTECTED_ID_WOULD_MOVE', path, organisationId, personId });
+    } else if (targetIds.length && !sourceIds.length) {
+      for (const personId of new Set(targetIds))
+        warnings.push({ code: 'PROTECTED_ID_ABSORBS_SOURCE', path, organisationId, personId });
+    }
+  }
+  return warnings;
 }
 function alignPersonId(participant: Participant, trustedId?: string) {
   const personId = trustedId ?? participant.person?.personId ?? participant.personId;

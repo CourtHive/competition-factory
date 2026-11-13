@@ -133,19 +133,21 @@ engine.addPersons({
 
 ## addPersonOtherId
 
-Upserts a `UnifiedPersonID` entry into the participant's `person.personOtherIds[]` array. Only valid on INDIVIDUAL participants (the ones that have a `person` object).
+Adds a `UnifiedPersonID` entry to the participant's `person.personOtherIds[]` array, or re-points an existing one when asked to. Only valid on INDIVIDUAL participants (the ones that have a `person` object).
 
 ```js
 engine.addPersonOtherId({
   participantId, // required
   organisationId, // required — the federation / registry identifier (string)
   personId, // required — the externalId issued by that organisation
+  replaceExisting, // optional — required to re-point an existing, different id
 });
 ```
 
 **Semantics:**
 
-- **Upsert by `organisationId`**: if the participant already has an entry under the given `organisationId`, that entry's `personId` is replaced (and `updatedAt` is stamped). Otherwise a new entry is appended with `createdAt`.
+- **Keyed by `organisationId`**: with no entry for the organisation, a new entry is appended with `createdAt`.
+- **Re-pointing is explicit**: if the participant already carries a different `personId` from that organisation, the call refuses with `EXISTING_PERSON_OTHER_ID` (its `context` names the existing ids) unless `replaceExisting: true` is passed. With the flag, the kept entry's `personId` is replaced and `updatedAt` is stamped, and any duplicate entries for that organisation are collapsed into it. An identity link is never re-pointed by accident; an application can route the refusal to a review step and re-apply with the flag once approved.
 - **Idempotent**: re-applying the same `(organisationId, personId)` is a no-op. The array does not grow.
 - **Federation-agnostic**: the factory does not validate or interpret `organisationId`. Callers choose what to use — a federation abbreviation (`'USTA'`, `'ITA'`, `'HTS'`, `'CTS'`), a canonical-registry name, anything stable and meaningful within the consuming application.
 
@@ -155,6 +157,7 @@ engine.addPersonOtherId({
 - `MISSING_VALUE` — when `organisationId` or `personId` is empty.
 - `PARTICIPANT_NOT_FOUND` — when no participant matches.
 - `INVALID_VALUES` — when the participant is not INDIVIDUAL (has no `person` object). Only INDIVIDUAL participants accept `personOtherIds`.
+- `EXISTING_PERSON_OTHER_ID` — when the organisation already has a different id on this person and `replaceExisting` is not set.
 
 **Purpose:** Establish a stable, queryable link between a TODS participant and an external identity — a federation member roster, a canonical person registry, or any other identifier-issuing system. The mutation is the write-half of the TODS `personOtherIds` shape; reads use that array directly.
 
@@ -1097,6 +1100,23 @@ lineups. Pair collapse, duplicate pairs, opposing-side overlap, duplicate lineup
 trusted identity conflicts and unsupported ID-bearing extensions also block it. Different roles cannot be merged.
 Non-conflicting rating histories are retained. Divergent current ratings, presence or penalty histories require
 separate reconciliation in this version; they are never silently overwritten.
+
+Issued ids (`personOtherIds`, `participantOtherIds`) are combined per issuing organisation. Copies of the same id that
+differ only in their stamps collapse into one entry, keeping the earliest `createdAt`; two different ids from the same
+organisation block as `ISSUED_ID_CONFLICT`.
+
+Some organisations issue ids that identify a person beyond this tournament, such as a canonical person registry. The
+caller names them in `protectedIssuers` (the factory does not decide which organisations matter). When exactly one
+side carries a protected id, the preview adds `warnings`:
+
+- `PROTECTED_ID_WOULD_MOVE` — only the source carries it, so the id would move onto the survivor. Swapping source and
+  target keeps it where it is. With `protectedIdPolicy: 'refuse'` this also becomes a blocker; the default, `'warn'`,
+  only reports it.
+- `PROTECTED_ID_ABSORBS_SOURCE` — only the target carries it, so the person it identifies gains the duplicate's
+  entries and results. This is reported, never refused.
+
+Each warning names the `organisationId` and `personId`. `warnings` is present only when non-empty, so the
+`fingerprint` of a review without warnings is unchanged.
 
 ## mergeIndividualParticipants
 
