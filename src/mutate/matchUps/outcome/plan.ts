@@ -1,4 +1,4 @@
-import { pendingCarryOps, type CarrySource } from './plan/pendingCarry';
+import { pendingCarryOps, takeAdmittedCarry, type CarrySource } from './plan/pendingCarry';
 import { clearedSingleExit, correctedSingleExit, refreshedArrivalOps, relabelledExit } from './plan/exitCorrections';
 import { getCapturedClock, getCapturedStamps, writeLegacyEnabled } from '@Global/state/globalState';
 import { producedRelayAfterOps, unwoundOps, unwoundPath, unwoundView } from './plan/unwindPath';
@@ -312,10 +312,21 @@ const carryOf = (args: PlanArgs): CarrySource => ({
 });
 
 export function planOutcome(args: PlanArgs): OutcomePlan {
+  takeAdmittedCarry(); // nothing an earlier call's plan left is this call's
   const plan = args.route === RESULT_TO_DOUBLE_EXIT ? resultToDoubleExit(args) : planOps(args);
   // a TEAM line's result numbers it in its collection's finishing order (a deciding line's dual is planned in its plan)
-  if (!plan.ops || args.asDual) return plan;
-  return { ...plan, ops: withFinishingOrder(plan.ops, args.drawDefinition) };
+  const ordered = !plan.ops || args.asDual ? plan : { ...plan, ops: withFinishingOrder(plan.ops, args.drawDefinition) };
+  return wholeCarry(args, ordered);
+}
+
+/**
+ * C27 owns a call whole or not at all. Its pending carry admitted where the removal refuses (`admitPendingCarry`), a call
+ * the plan does not own, or whose ops leave a settle pass work, is given back that refusal: the reason it has without
+ * C27, at the same point of the plan
+ */
+function wholeCarry(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
+  if (takeAdmittedCarry() !== args.request.matchUpId) return plan;
+  return plan.ops && !args.settles?.(plan.ops) ? plan : { abstain: 'cascade' };
 }
 
 /**
