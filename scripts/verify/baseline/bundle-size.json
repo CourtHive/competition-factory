@@ -4,28 +4,28 @@
     "gzip": 155
   },
   "tods-competition-factory.d.ts": {
-    "raw": 1179179,
-    "gzip": 178562
+    "raw": 1238974,
+    "gzip": 188717
   },
   "tods-competition-factory.d.mts": {
-    "raw": 1179179,
-    "gzip": 178562
+    "raw": 1238974,
+    "gzip": 188717
   },
   "tods-competition-factory.d.cts": {
-    "raw": 1179179,
-    "gzip": 178562
+    "raw": 1238974,
+    "gzip": 188717
   },
   "tods-competition-factory.development.cjs.js": {
-    "raw": 5398135,
-    "gzip": 966134
+    "raw": 5887069,
+    "gzip": 1062659
   },
   "tods-competition-factory.production.cjs.min.js": {
-    "raw": 2488061,
-    "gzip": 665921
+    "raw": 2727566,
+    "gzip": 731592
   },
   "esm/** (aggregate)": {
-    "raw": 6250776,
-    "gzip": 1561503,
-    "files": 1594
+    "raw": 6802760,
+    "gzip": 1709070,
+    "files": 1703
   }
 }
