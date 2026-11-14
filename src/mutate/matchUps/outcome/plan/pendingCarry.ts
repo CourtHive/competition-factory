@@ -52,6 +52,24 @@ export function pendingCarryWithdrawal(view: OutcomeView, carry?: CarrySource): 
   return certified ? loserMatchUpId : undefined;
 }
 
+/**
+ * C27 owns a call whole or not at all. The removal's refusal (`removedLoserReason`) records the matchUp whose carry it
+ * admitted; a call planned past it but not owned is given back that refusal (`planCall`), so it keeps the reason it has
+ * without C27. One plan per call, so the record is the call's own: taken (and cleared) as the call's plan is decided.
+ */
+let admittedCarry: string | undefined;
+
+export function admitPendingCarry(loserMatchUpId: string | undefined, carry?: CarrySource): string | undefined {
+  if (loserMatchUpId) admittedCarry = carry?.matchUpId;
+  return loserMatchUpId;
+}
+
+export function takeAdmittedCarry(): string | undefined {
+  const matchUpId = admittedCarry;
+  admittedCarry = undefined;
+  return matchUpId;
+}
+
 /** the pending carry withdrawn, ahead of the winner's and the carrier's removal (v1's order) */
 export function pendingCarryOps(view: OutcomeView, carry?: CarrySource): OutcomeOp[] {
   const loserMatchUpId = pendingCarryWithdrawal(view, carry);

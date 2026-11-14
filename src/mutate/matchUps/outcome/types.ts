@@ -690,11 +690,6 @@ export type PlanArgs = {
   dual?: DualCall;
   /** S7: this call is a deciding line's dual, planned as part of the line's plan: its TEAM shape is the line's to vet */
   asDual?: true;
-  /**
-   * C27 off: planned without the pending carry's withdrawal. A call C27 admits but does not own is decided as it is
-   * without C27 (`planCall`), so it keeps the refusal the carry check gives it
-   */
-  pendingCarry?: false;
 };
 
 /** the arguments the exit shapes read (plan.ts `exitReason`): a plan's, without the record and the dual */

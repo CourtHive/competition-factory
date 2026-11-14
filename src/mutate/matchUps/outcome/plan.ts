@@ -305,9 +305,11 @@ function recordReason({
   return undefined;
 }
 
-/** C27's carry source: the call's draw and matchUp, unless the call is planned without C27 (`pendingCarry: false`) */
-const carryOf = (args: PlanArgs): CarrySource | undefined =>
-  args.pendingCarry === false ? undefined : { drawDefinition: args.drawDefinition, matchUpId: args.request.matchUpId };
+/** C27's carry source: the call's draw and matchUp */
+const carryOf = (args: PlanArgs): CarrySource => ({
+  drawDefinition: args.drawDefinition,
+  matchUpId: args.request.matchUpId,
+});
 
 export function planOutcome(args: PlanArgs): OutcomePlan {
   const plan = args.route === RESULT_TO_DOUBLE_EXIT ? resultToDoubleExit(args) : planOps(args);
@@ -362,7 +364,6 @@ function lineDualPlan(
     view: group ? { ...dual.view, group } : dual.view,
     drawDefinition,
     asDual: true,
-    pendingCarry: args.pendingCarry,
   });
   if (!dualPlan.ops) return dualPlan;
   const ops = dualPlan.ops.map((op): OutcomeOp => {

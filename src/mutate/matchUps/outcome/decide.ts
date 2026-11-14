@@ -24,7 +24,7 @@ import { stampedInThisCall } from './ops';
 import { buildOutcomeView } from './view';
 import { chooseRoute } from './route';
 import { planOutcome } from './plan';
-import { pendingCarryWithdrawal } from './plan/pendingCarry';
+import { takeAdmittedCarry } from './plan/pendingCarry';
 import {
   addedNotices,
   captureShadow,
@@ -83,21 +83,8 @@ const OWNED_SHAPES = new Set<PlanShape>(['local', 'direction']);
  * the settle passes' has-work predicates. A plan that leaves a pass work abstains `settle`.
  */
 function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, keepFoldedView = false) {
-  const call = planCallWith(args, view, refusal, keepFoldedView);
-  // C27 owns a call whole or not at all: a pending carry admitted but the call not owned, it is decided without C27
-  if (call.outcome.ops || refusal) return call;
-  const carry = { drawDefinition: args.drawDefinition, matchUpId: call.planned.matchUpId };
-  return pendingCarryWithdrawal(view, carry) ? planCallWith(args, view, refusal, keepFoldedView, false) : call;
-}
-
-function planCallWith(
-  args: BuildViewArgs,
-  view: OutcomeView,
-  refusal?: Refusal,
-  keepFoldedView = false,
-  pendingCarry?: false,
-) {
   args = { ...args, clockFree: getCapturedClock() === undefined };
+  takeAdmittedCarry(); // nothing an earlier call's plan left is this call's
   // TEAM auto-calc: a dual whose result is computed from its lines takes the PROJECTED winner and score in
   // place of the call's before anything is routed, as `handleTeamAutoCalc` rewrites v1's parameters
   const planned = autoCalculated(args.request, view);
@@ -105,7 +92,6 @@ function planCallWith(
   const plan = route ? planWrite(planned, view, route) : undefined;
   const direction = route ? planDirection(planned, view, route) : undefined;
   const allowed = planOutcome({
-    pendingCarry,
     clockFree: args.clockFree,
     tournamentRecord: args.tournamentRecord,
     drawDefinition: args.drawDefinition,
@@ -125,6 +111,9 @@ function planCallWith(
   if (allowed.ops)
     outcome =
       folded && 'ops' in folded && !folded.settle.length ? { ...allowed, ops: folded.ops } : { abstain: 'settle' };
+  // C27 owns a call whole or not at all: its pending carry admitted where the removal refuses, the call not owned, it
+  // keeps that refusal, the reason it has without C27 (`admitPendingCarry`)
+  if (!outcome.ops && takeAdmittedCarry() === planned.matchUpId) outcome = { abstain: 'cascade' };
   const phases =
     args.clockFree && outcome.ops ? compileTemporalPhases({ args, view, route, ops: outcome.ops }) : undefined;
   const observe = phases && outcome.ops ? prepareTemporalShadow(args, phases, outcome.shape) : undefined;
