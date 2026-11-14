@@ -209,7 +209,11 @@ function shapeReason(
   const { request, view, write, direction } = args;
   if (shape.sameWinner) return applyValuesReason(args);
   if (shape.reentered) return reenteredReason(view, write, direction);
-  if (shape.changing) return changedWinnerReason(view, write, direction);
+  if (shape.changing)
+    return changedWinnerReason(view, write, direction, {
+      drawDefinition: args.drawDefinition,
+      matchUpId: request.matchUpId,
+    });
   if (shape.swapping) return swapReason(view, write);
   // S5: a double exit's produced exit, vetted by `producedReason`
   if (args.route === DOUBLE_EXIT) return undefined;
@@ -534,7 +538,10 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   if (!retainedAward) return { abstain: 'exit' };
   const ops: OutcomeOp[] = [
     ...swapOps(view, args.route),
-    ...replacedLoserOps(view, args.route, write, request.matchUpStatus),
+    ...replacedLoserOps(view, args.route, write, request.matchUpStatus, {
+      drawDefinition: args.drawDefinition,
+      matchUpId: request.matchUpId,
+    }),
     ...unwound,
     // a dual's own call writes its sides first (S7); for the dual a line decides they are its line's (`dualTally`), by the
     // same rule (`ensuredDualSides`)

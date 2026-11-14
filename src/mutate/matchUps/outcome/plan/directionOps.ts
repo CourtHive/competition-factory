@@ -97,8 +97,11 @@ export function replacedLoserOps(
   route: Route | undefined,
   write: MatchUpWrite,
   matchUpStatus?: MatchUpStatusUnion,
+  carry?: CarrySource,
 ): OutcomeOp[] {
-  return changesWinner(view, route, write) ? removedLoserOps(view, matchUpStatus) : [];
+  return changesWinner(view, route, write)
+    ? [...pendingCarryOps(view, carry), ...removedLoserOps(view, matchUpStatus)]
+    : [];
 }
 
 export function removedOps(

@@ -207,11 +207,12 @@ export function changedWinnerReason(
   view: OutcomeView,
   write?: MatchUpWrite,
   direction?: DirectionPlan,
+  carry?: CarrySource,
 ): AbstainReason | undefined {
   const { targets } = view;
   if (!directedBothSides(view, write)) return 'route';
   if (directsElsewhere(direction)) return 'route';
-  const removal = removalReason(view);
+  const removal = removalReason(view, undefined, carry);
   if (removal) return removal;
   if (targets.winner ? !direction?.winner : direction?.winner) return 'route';
   if (!targets.loserMatchUpId) return undefined;

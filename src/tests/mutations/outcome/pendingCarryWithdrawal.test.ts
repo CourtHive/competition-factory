@@ -1,6 +1,6 @@
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
-import { CARRIED, cleared, exited, play, R1 } from '@Tests/testHarness/outcome/directionFixtures';
+import { CARRIED, cleared, exited, play, R1, won } from '@Tests/testHarness/outcome/directionFixtures';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { setClock } from '@Tools/clock';
 
@@ -91,6 +91,35 @@ const OWNED: [string, Scenario][] = [
  */
 const REFUSED: [string, Scenario][] = [withdrawal(COMPASS, 16, WALKOVER, 1), withdrawal(OLYMPIC, 16, DEFAULTED, 2)];
 
+/** the winner changed (`winner` route): the old carry withdrawn, the new loser placed plainly, or carrying the new exit */
+const changed = (drawType: string, drawSize: number, exit: string, next?: string): [string, Scenario] => {
+  const target = R1(1, 'Main');
+  return [
+    `${drawType} ${drawSize}: Main|1|1 a carried ${exit} won by side 1, then ${next ?? 'played'} won by side 2`,
+    {
+      drawProfile: { drawSize, drawType },
+      setup: [{ target, outcome: exited(exit, 1), params: CARRIED }],
+      steps: [{ target, outcome: next ? exited(next, 2) : won(2), params: CARRIED }],
+    },
+  ];
+};
+
+const CHANGED: [string, Scenario][] = [
+  changed(FIRST_ROUND_LOSER_CONSOLATION, 8, WALKOVER),
+  changed(FEED_IN_CHAMPIONSHIP, 16, DEFAULTED),
+  changed(DOUBLE_ELIMINATION, 8, WALKOVER),
+];
+
+/**
+ * Not this slice, refused before the carry is read: a FIRST_MATCHUP link (FMLC, whose removal may take a BYE back), and
+ * a new exit, whose loser carries it on (`changedWinnerReason`'s `loser.exit`)
+ */
+const CHANGED_OUTSIDE: [string, Scenario][] = [
+  changed(FIRST_MATCH_LOSER_CONSOLATION, 8, WALKOVER),
+  changed(FIRST_ROUND_LOSER_CONSOLATION, 8, WALKOVER, WALKOVER),
+  changed(FEED_IN_CHAMPIONSHIP, 16, WALKOVER, DEFAULTED),
+];
+
 const tally = () => ({
   applied: getDifferentialTally()['shadow:applied']?.compared ?? 0,
   cascade: getDifferentialTally()['shadow:abstain:cascade']?.deferred ?? 0,
@@ -111,6 +140,29 @@ describe('C27 a cleared single exit withdraws the carry it left pending on its l
     expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
     expect(v2.notices).toEqual(v1.notices);
+  });
+
+  it.each(CHANGED)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    const before = tally();
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+    expect(tally()).toEqual({ applied: before.applied + 1, cascade: before.cascade });
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v2.v1Writes).toEqual(0);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+  });
+
+  it.each(CHANGED_OUTSIDE)('%s: outside, v1 writes it', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const before = tally();
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+    expect(tally().applied).toEqual(before.applied);
   });
 
   it.each(REFUSED)('%s: refused, v1 writes it', (_label, scenario) => {
