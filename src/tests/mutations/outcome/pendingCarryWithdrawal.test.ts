@@ -6,7 +6,7 @@ import { setClock } from '@Tools/clock';
 
 // constants and types
 import type { Scenario } from '@Tests/testHarness/outcome/directionFixtures';
-import { DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 import {
   COMPASS,
   DOUBLE_ELIMINATION,
@@ -50,15 +50,24 @@ afterEach(() => {
 
 const EAST = new Set([COMPASS, OLYMPIC]);
 
-const withdrawal = (drawType: string, drawSize: number, exit: string, winningSide: 1 | 2): [string, Scenario] => {
+/** `then`: the step after the carry, the exit cleared or (S6, `completed-to-double-exit`) turned into a double exit */
+const withdrawal = (
+  drawType: string,
+  drawSize: number,
+  exit: string,
+  winningSide: 1 | 2,
+  then?: string,
+): [string, Scenario] => {
   const structureName = EAST.has(drawType) ? 'East' : 'Main';
   const target = R1(1, structureName);
+  const outcome = then ? { matchUpStatus: then } : cleared;
+  const step = then ? 'made a ' + then : 'cleared';
   return [
-    `${drawType} ${drawSize}: ${structureName}|1|1 a carried ${exit} won by side ${winningSide}, cleared before the opponent arrives`,
+    `${drawType} ${drawSize}: ${structureName}|1|1 a carried ${exit} won by side ${winningSide}, ${step} before the opponent arrives`,
     {
       drawProfile: { drawSize, drawType },
       setup: [{ target, outcome: exited(exit, winningSide), params: CARRIED }],
-      steps: [{ target, outcome: cleared, params: CARRIED }],
+      steps: [{ target, outcome, params: CARRIED }],
     },
   ];
 };
@@ -70,6 +79,10 @@ const OWNED: [string, Scenario][] = [
   withdrawal(FEED_IN_CHAMPIONSHIP, 16, WALKOVER, 1),
   withdrawal(FEED_IN_CHAMPIONSHIP, 16, DEFAULTED, 1),
   withdrawal(DOUBLE_ELIMINATION, 8, WALKOVER, 1),
+  withdrawal(FIRST_ROUND_LOSER_CONSOLATION, 8, WALKOVER, 1, DOUBLE_WALKOVER),
+  withdrawal(FIRST_MATCH_LOSER_CONSOLATION, 8, DEFAULTED, 2, DOUBLE_DEFAULT),
+  withdrawal(FEED_IN_CHAMPIONSHIP, 16, WALKOVER, 1, DOUBLE_DEFAULT),
+  withdrawal(DOUBLE_ELIMINATION, 8, DEFAULTED, 1, DOUBLE_WALKOVER),
 ];
 
 /**

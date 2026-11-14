@@ -18,7 +18,8 @@ export type CarrySource = { drawDefinition?: DrawDefinition; matchUpId?: string 
  * `applyWithdrawnExits`: the loser matchUp back to be played, its provenance gone, its `scoredTime` standing), then the
  * winner's position (`removeDirectedWinner`), then the carrier's seat (`removeDirectedLoser`). Certified as 2c-1's
  * landing removal is (`removalCertified`): the loser matchUp the only one this matchUp's provenance reaches, the carrier
- * gone nowhere past it. Undefined, the call v1's, otherwise.
+ * gone nowhere past it. Undefined, the call v1's, otherwise. Planned on the cleared route (`removedOps`) and on a result
+ * turned double exit (`resultToDoubleExit`), whose removal is the same `removeDirectedParticipants`.
  */
 export function pendingCarryWithdrawal(view: OutcomeView, carry?: CarrySource): string | undefined {
   const { targets } = view;

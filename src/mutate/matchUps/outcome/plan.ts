@@ -1,3 +1,4 @@
+import { pendingCarryOps, type CarrySource } from './plan/pendingCarry';
 import { clearedSingleExit, correctedSingleExit, refreshedArrivalOps, relabelledExit } from './plan/exitCorrections';
 import { getCapturedClock, getCapturedStamps, writeLegacyEnabled } from '@Global/state/globalState';
 import { producedRelayAfterOps, unwoundOps, unwoundPath, unwoundView } from './plan/unwindPath';
@@ -232,9 +233,11 @@ function shapeReason(
  */
 function resultToDoubleExit(args: PlanArgs): OutcomePlan {
   const { view, request, rebuild } = args;
-  const removing = resultRemovalReason(view);
+  const carry = { drawDefinition: args.drawDefinition, matchUpId: request.matchUpId };
+  const removing = resultRemovalReason(view, carry);
   if (removing) return { abstain: removing };
-  const removal = removalOps(view, request.matchUpStatus);
+  // C27: a carry the result left pending is withdrawn first, as v1's removal withdraws it
+  const removal = [...pendingCarryOps(view, carry), ...removalOps(view, request.matchUpStatus)];
   const undecided: OutcomeOp = {
     op: 'setMatchUpResult',
     matchUpId: request.matchUpId as string,
@@ -284,12 +287,12 @@ function resultToDoubleExit(args: PlanArgs): OutcomePlan {
  * next matchUp of the same structure, the loser, if a link took them, on the seat it fed in a matchUp they have not
  * played. Not a result in a group (its tally), a WIN_RATIO structure, nor one with side provenance or a carried exit.
  */
-function resultRemovalReason(view: OutcomeView): AbstainReason | undefined {
+function resultRemovalReason(view: OutcomeView, carry?: CarrySource): AbstainReason | undefined {
   if (!view.existing.winningSide) return 'exit';
   if (view.group || view.draw.tallied) return 'tallied';
   if (view.draw.winRatio) return 'link';
   if (view.existing.hasSideExitProvenance || view.existing.carriedExit) return 'provenance';
-  return removalReason(view);
+  return removalReason(view, undefined, carry);
 }
 
 /** A plan needs the draw and an existing captured instant; tournament containment is not a write prerequisite. */
