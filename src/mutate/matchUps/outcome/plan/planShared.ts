@@ -1,5 +1,7 @@
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { isDoubleExit } from '@Validators/isExit';
+import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
+import { TEAM } from '@Constants/matchUpTypes';
 
 // constants and types
 import type { AbstainReason, DirectionPlan, MatchUpWrite, OutcomeRequest, OutcomeView, Route } from '../types';
@@ -65,9 +67,13 @@ export function storedLoserId(view: OutcomeView): string | undefined {
   return winningSide ? view.targets.sideParticipantIds[(3 - winningSide) as 1 | 2] : undefined;
 }
 
+/** the drawPosition the call's matchUp holds on a side (`sideDrawPositions`, keyed by side, not an array) */
+export const sideDrawPosition = (view: OutcomeView, side: 1 | 2): number | undefined =>
+  view.targets.sideDrawPositions[side];
+
 /** the winning side's drawPosition already stands in the winner's target: what a stored winner directed */
 export function heldInTarget(view: OutcomeView, winningSide: 1 | 2): boolean {
-  const position = view.targets.sideDrawPositions[winningSide];
+  const position = sideDrawPosition(view, winningSide);
   return !!position && !!view.targets.winner?.drawPositions.includes(position);
 }
 
@@ -195,6 +201,63 @@ export function standingAwardArrival(
   if (!next || positionsOf(next).some((position) => positionsOf(entry).includes(position))) return undefined;
   const onward = onwardFrom(view, entry, drawPosition);
   return onward ? { entry, drawPosition, onward } : undefined;
+}
+
+/**
+ * C20: A STANDING AWARD THE ARRIVING WINNER TAKES, the winner's twin of C18. The winner's next matchUp already holds a
+ * carried single exit awarded to the seat their position takes: the carrier's WALKOVER or DEFAULTED came down from the
+ * paired feeder first (`progressExitStatus`), stands as the matchUp's status with `winningSide` naming the empty seat,
+ * and its provenance sits on the carrier's side. v1's `assignMatchUpDrawPosition` adds the position
+ * (`applyPositionToMatchUp`, `participantArrivesAtExit`): the award stands, its codes re-derived (`[]`, none stored), the
+ * matchUp announced as the assignment, and the position goes on into the next matchUp (`advanceIntoWinnerMatchUp`), a
+ * clean arrival there (`onwardFrom`), or nowhere from the structure's last round. Certified only for that exact shape: a
+ * plain winner's call (no result standing, no double exit), the next matchUp in the structure holding the carrier's
+ * position alone, the award on the side the winner's position takes and the carrier keeping theirs (no side facts
+ * re-keyed), no provenance or exactly the carrier's, not a double exit's produced one, scoreless, no codes, no BYE, no TEAM, and
+ * a carried award linking no loser on (`propagateUnfillableLoserBye` places a BYE there). Anything else stays v1's
+ * (`cascade`).
+ */
+export function standingWinnerAward(
+  view: OutcomeView,
+  write: MatchUpWrite,
+):
+  | {
+      entry: HydratedMatchUp;
+      drawPosition: number;
+      drawPositions: number[];
+      onward?: { matchUpId: string; drawPositions: number[] };
+    }
+  | undefined {
+  const { targets, existing } = view;
+  if (existing.winningSide || isDoubleExit(existing.matchUpStatus) || !write.winningSide) return undefined;
+  const drawPosition = sideDrawPosition(view, write.winningSide as 1 | 2);
+  const entry = indexed(view, targets.winnerMatchUpId);
+  if (!entry || !drawPosition || entry.structureId !== targets.source.structureId) return undefined;
+  if (entry.collectionId || entry.matchUpType === TEAM) return undefined;
+  if (entry.matchUpStatus !== WALKOVER && entry.matchUpStatus !== DEFAULTED) return undefined;
+  if (!entry.winningSide || entry.score?.scoreStringSide1 || entry.matchUpStatusCodes?.length) return undefined;
+  if (entry.sides?.some((side) => side.bye)) return undefined;
+  const held = positionsOf(entry);
+  if (held.length !== 1 || held.includes(drawPosition)) return undefined;
+  const drawPositions = [...held, drawPosition].sort((a, b) => a - b);
+  // two positions are sided by their order: the award's side is the winner's, and the carrier's side does not move
+  const winnerSide = getDrawPositionSideNumber({ matchUp: { drawPositions }, drawPosition }) ?? 0;
+  const carrierSide = 3 - winnerSide;
+  if (entry.winningSide !== winnerSide || sideOf(entry, held[0]) !== carrierSide) return undefined;
+  const provenance = entry.sideExitProvenance ?? {};
+  const carrier = provenance[carrierSide as 1 | 2];
+  // the exit entered there directly records none; carried in, exactly the carrier's (`holdsStandingExit` reads the award)
+  const recorded = Object.keys(provenance).length;
+  if (recorded > 1 || (recorded && carrier?.matchUpStatus !== entry.matchUpStatus)) return undefined;
+  if (isDoubleExit(carrier?.previousMatchUpStatus)) return undefined;
+  // a carried award's loser is nobody: v1 gives a loser seat the award links on a BYE (`propagateUnfillableLoserBye`),
+  // not planned here. An award entered directly has a real loser, and v1 writes nothing over the link
+  if (recorded && entry.loserMatchUpId) return undefined;
+  if (!entry.winnerMatchUpId) return { entry, drawPosition, drawPositions };
+  const next = indexed(view, entry.winnerMatchUpId);
+  if (!next || positionsOf(next).some((position) => drawPositions.includes(position))) return undefined;
+  const onward = onwardFrom(view, entry, drawPosition);
+  return onward ? { entry, drawPosition, drawPositions, onward } : undefined;
 }
 
 /**

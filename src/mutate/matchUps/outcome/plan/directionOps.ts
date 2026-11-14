@@ -7,6 +7,7 @@ import {
   reentersWinner,
   removesDirection,
   standingAwardArrival,
+  standingWinnerAward,
   storedLoserId,
 } from './planShared';
 
@@ -35,6 +36,8 @@ export function winnerPlacementOps(
   if (!winner || !position || !target) return [];
   const award = route === 'winner' ? pendingProducedArrival(view, write) : undefined;
   if (award) return pendingProducedArrivalOps(write, award);
+  const standing = route === 'winner' ? standingWinnerAward(view, write) : undefined;
+  if (standing) return standingWinnerAwardOps(standing);
   const replaced = changesWinner(view, route, write)
     ? view.targets.sideDrawPositions[view.existing.winningSide as 1 | 2]
     : undefined;
@@ -205,6 +208,40 @@ export function awardedArrivalOps(view: OutcomeView, loser?: DirectionPlan['lose
       op: 'setMatchUpDrawPositions',
       matchUpId: entry.matchUpId,
       drawPositions: positionsOf(entry),
+      placedDrawPosition: drawPosition,
+      rederivesCodes: true,
+    },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: entry.matchUpId },
+    ...(onward
+      ? ([
+          {
+            op: 'setMatchUpDrawPositions',
+            matchUpId: onward.matchUpId,
+            drawPositions: onward.drawPositions,
+            placedDrawPosition: drawPosition,
+          },
+          { op: 'stampUpdatedAt', entity: 'matchUp', id: onward.matchUpId },
+        ] as OutcomeOp[])
+      : []),
+  ];
+}
+
+/**
+ * C20: the winner's position added to the next matchUp, whose standing award is theirs: written back as it stands with
+ * its codes re-derived and announced as the assignment (`applyPositionToMatchUp`), then the position sent on
+ * (`advanceIntoWinnerMatchUp`), announced and stamped as any placement; from the structure's last round nobody goes on
+ */
+function standingWinnerAwardOps({
+  entry,
+  drawPosition,
+  drawPositions,
+  onward,
+}: NonNullable<ReturnType<typeof standingWinnerAward>>): OutcomeOp[] {
+  return [
+    {
+      op: 'setMatchUpDrawPositions',
+      matchUpId: entry.matchUpId,
+      drawPositions,
       placedDrawPosition: drawPosition,
       rederivesCodes: true,
     },
