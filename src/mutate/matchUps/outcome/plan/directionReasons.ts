@@ -1,3 +1,4 @@
+import { pendingCarryWithdrawal, type CarrySource } from './pendingCarry';
 import { relabelCarryReason, withdrawnReason } from './carriedExit';
 import { isDoubleExit } from '@Validators/isExit';
 import {
@@ -120,10 +121,14 @@ function reservationReason(view: OutcomeView, winningSide: 1 | 2): boolean {
  * played (`removedLoserReason`): nothing across a winner link, no FIRST_MATCHUP reservation the draw may hold, and the
  * next matchUp `TO_BE_PLAYED` with no BYE, exit, carry or result. Anything else is v1's (S4).
  */
-export function removalReason(view: OutcomeView, direction?: DirectionPlan): AbstainReason | undefined {
+export function removalReason(
+  view: OutcomeView,
+  direction?: DirectionPlan,
+  carry?: CarrySource,
+): AbstainReason | undefined {
   const { targets, existing } = view;
   if (direction) return 'loser';
-  const loserReason = removedLoserReason(view);
+  const loserReason = removedLoserReason(view, carry);
   if (loserReason) return loserReason;
   // a BYE-only target beside a playoff link (FMLC with a playoff): v1 takes back the BYE it placed there (`removeDirectedBye`)
   if (targets.byeTarget) return 'loser';
@@ -138,7 +143,7 @@ export function removalReason(view: OutcomeView, direction?: DirectionPlan): Abs
  * exit or provenance there, and no codes but none or an empty list (which v1 re-derives as `[]`). Not a FIRST_MATCHUP
  * link, whose removal may take a BYE back too.
  */
-function removedLoserReason(view: OutcomeView): AbstainReason | undefined {
+function removedLoserReason(view: OutcomeView, carry?: CarrySource): AbstainReason | undefined {
   const { targets } = view;
   if (!targets.loserMatchUpId && !targets.loserLink) return undefined;
   if (!targets.loserMatchUpId || targets.loserLink?.linkCondition) return 'loser';
@@ -147,7 +152,8 @@ function removedLoserReason(view: OutcomeView): AbstainReason | undefined {
   if (!loserId || !targets.loserStructureId || !targets.loserTargetDrawPosition || seat?.participantId !== loserId)
     return 'loser';
   if (seat.opponentBye || targets.loserMatchUpStatus !== TO_BE_PLAYED)
-    return heldByeLoser(view) ? undefined : 'cascade';
+    // C27: a cleared exit's carry still pending on the loser matchUp is withdrawn with it (`pendingCarryWithdrawal`)
+    return heldByeLoser(view) || pendingCarryWithdrawal(view, carry) ? undefined : 'cascade';
   if (targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit) return 'cascade';
   const record = targets.loserMatchUpRecord;
   if (!record || record.provenance || record.matchUpStatusCodes?.length) return 'provenance';

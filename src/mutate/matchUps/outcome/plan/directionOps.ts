@@ -1,3 +1,4 @@
+import { pendingCarryOps, type CarrySource } from './pendingCarry';
 import { buildSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import {
   APPLY_VALUES,
@@ -105,12 +106,13 @@ export function removedOps(
   route: Route | undefined,
   write: MatchUpWrite,
   matchUpStatus?: MatchUpStatusUnion,
+  carry?: CarrySource,
 ): OutcomeOp[] {
   if (changesWinner(view, route, write) || !removesDirection(view, route, write)) return [];
   // A cleared final (no winner matchUp) takes back its loser's fed seat alone (C17, decision 5 of the refactor status):
   // `removalOps` emits no winner leg for it. The guard that returned nothing here until then left the fed seat
   // occupied, which is what the settle check abstained on (ruling 10's amendment).
-  return removalOps(view, matchUpStatus);
+  return [...pendingCarryOps(view, carry), ...removalOps(view, matchUpStatus)];
 }
 
 /**

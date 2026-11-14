@@ -186,7 +186,8 @@ function abstainReason(args: PlanArgs): AbstainReason | SeatObligation | undefin
   // a TEAM line directs nothing, its targets being its dual's: its result removed or corrected takes back and re-enters
   // nothing (no re-entered or changed winner), its dual's tally re-read (`teamReason`, S7)
   if (removing) {
-    const removal = view.line ? undefined : removalReason(view, direction);
+    const carry = { drawDefinition: args.drawDefinition, matchUpId: request.matchUpId };
+    const removal = view.line ? undefined : removalReason(view, direction, carry);
     if (removal) return removal;
   } else if (view.existing.winningSide && !view.line && !sameWinner && !reentered && !changing && !swapping)
     return 'winner';
@@ -554,7 +555,10 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   const winner = placing?.winner;
   ops.push(
     ...winnerPlacementOps(view, args.route, write, winner),
-    ...removedOps(view, args.route, write, request.matchUpStatus),
+    ...removedOps(view, args.route, write, request.matchUpStatus, {
+      drawDefinition: args.drawDefinition,
+      matchUpId: request.matchUpId,
+    }),
   );
   // a plain loser arrival: the loser on the seat the link feeds. The matchUp they land in is not stamped: its stored
   // object does not change (the write is on the structure's assignments), so it is not a touched entity (F2 (i), and v1).
