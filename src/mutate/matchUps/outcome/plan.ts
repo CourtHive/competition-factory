@@ -187,8 +187,7 @@ function abstainReason(args: PlanArgs): AbstainReason | SeatObligation | undefin
   // a TEAM line directs nothing, its targets being its dual's: its result removed or corrected takes back and re-enters
   // nothing (no re-entered or changed winner), its dual's tally re-read (`teamReason`, S7)
   if (removing) {
-    const carry = { drawDefinition: args.drawDefinition, matchUpId: request.matchUpId };
-    const removal = view.line ? undefined : removalReason(view, direction, carry);
+    const removal = view.line ? undefined : removalReason(view, direction, carryOf(args));
     if (removal) return removal;
   } else if (view.existing.winningSide && !view.line && !sameWinner && !reentered && !changing && !swapping)
     return 'winner';
@@ -209,11 +208,7 @@ function shapeReason(
   const { request, view, write, direction } = args;
   if (shape.sameWinner) return applyValuesReason(args);
   if (shape.reentered) return reenteredReason(view, write, direction);
-  if (shape.changing)
-    return changedWinnerReason(view, write, direction, {
-      drawDefinition: args.drawDefinition,
-      matchUpId: request.matchUpId,
-    });
+  if (shape.changing) return changedWinnerReason(view, write, direction, carryOf(args));
   if (shape.swapping) return swapReason(view, write);
   // S5: a double exit's produced exit, vetted by `producedReason`
   if (args.route === DOUBLE_EXIT) return undefined;
@@ -237,7 +232,7 @@ function shapeReason(
  */
 function resultToDoubleExit(args: PlanArgs): OutcomePlan {
   const { view, request, rebuild } = args;
-  const carry = { drawDefinition: args.drawDefinition, matchUpId: request.matchUpId };
+  const carry = carryOf(args);
   const removing = resultRemovalReason(view, carry);
   if (removing) return { abstain: removing };
   // C27: a carry the result left pending is withdrawn first, as v1's removal withdraws it
@@ -310,6 +305,10 @@ function recordReason({
   return undefined;
 }
 
+/** C27's carry source: the call's draw and matchUp, unless the call is planned without C27 (`pendingCarry: false`) */
+const carryOf = (args: PlanArgs): CarrySource | undefined =>
+  args.pendingCarry === false ? undefined : { drawDefinition: args.drawDefinition, matchUpId: args.request.matchUpId };
+
 export function planOutcome(args: PlanArgs): OutcomePlan {
   const plan = args.route === RESULT_TO_DOUBLE_EXIT ? resultToDoubleExit(args) : planOps(args);
   // a TEAM line's result numbers it in its collection's finishing order (a deciding line's dual is planned in its plan)
@@ -363,6 +362,7 @@ function lineDualPlan(
     view: group ? { ...dual.view, group } : dual.view,
     drawDefinition,
     asDual: true,
+    pendingCarry: args.pendingCarry,
   });
   if (!dualPlan.ops) return dualPlan;
   const ops = dualPlan.ops.map((op): OutcomeOp => {
@@ -538,10 +538,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   if (!retainedAward) return { abstain: 'exit' };
   const ops: OutcomeOp[] = [
     ...swapOps(view, args.route),
-    ...replacedLoserOps(view, args.route, write, request.matchUpStatus, {
-      drawDefinition: args.drawDefinition,
-      matchUpId: request.matchUpId,
-    }),
+    ...replacedLoserOps(view, args.route, write, request.matchUpStatus, carryOf(args)),
     ...unwound,
     // a dual's own call writes its sides first (S7); for the dual a line decides they are its line's (`dualTally`), by the
     // same rule (`ensuredDualSides`)
@@ -565,10 +562,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   const winner = placing?.winner;
   ops.push(
     ...winnerPlacementOps(view, args.route, write, winner),
-    ...removedOps(view, args.route, write, request.matchUpStatus, {
-      drawDefinition: args.drawDefinition,
-      matchUpId: request.matchUpId,
-    }),
+    ...removedOps(view, args.route, write, request.matchUpStatus, carryOf(args)),
   );
   // a plain loser arrival: the loser on the seat the link feeds. The matchUp they land in is not stamped: its stored
   // object does not change (the write is on the structure's assignments), so it is not a touched entity (F2 (i), and v1).

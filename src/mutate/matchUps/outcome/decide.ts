@@ -24,6 +24,7 @@ import { stampedInThisCall } from './ops';
 import { buildOutcomeView } from './view';
 import { chooseRoute } from './route';
 import { planOutcome } from './plan';
+import { pendingCarryWithdrawal } from './plan/pendingCarry';
 import {
   addedNotices,
   captureShadow,
@@ -82,6 +83,20 @@ const OWNED_SHAPES = new Set<PlanShape>(['local', 'direction']);
  * the settle passes' has-work predicates. A plan that leaves a pass work abstains `settle`.
  */
 function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, keepFoldedView = false) {
+  const call = planCallWith(args, view, refusal, keepFoldedView);
+  // C27 owns a call whole or not at all: a pending carry admitted but the call not owned, it is decided without C27
+  if (call.outcome.ops || refusal) return call;
+  const carry = { drawDefinition: args.drawDefinition, matchUpId: call.planned.matchUpId };
+  return pendingCarryWithdrawal(view, carry) ? planCallWith(args, view, refusal, keepFoldedView, false) : call;
+}
+
+function planCallWith(
+  args: BuildViewArgs,
+  view: OutcomeView,
+  refusal?: Refusal,
+  keepFoldedView = false,
+  pendingCarry?: false,
+) {
   args = { ...args, clockFree: getCapturedClock() === undefined };
   // TEAM auto-calc: a dual whose result is computed from its lines takes the PROJECTED winner and score in
   // place of the call's before anything is routed, as `handleTeamAutoCalc` rewrites v1's parameters
@@ -90,6 +105,7 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
   const plan = route ? planWrite(planned, view, route) : undefined;
   const direction = route ? planDirection(planned, view, route) : undefined;
   const allowed = planOutcome({
+    pendingCarry,
     clockFree: args.clockFree,
     tournamentRecord: args.tournamentRecord,
     drawDefinition: args.drawDefinition,

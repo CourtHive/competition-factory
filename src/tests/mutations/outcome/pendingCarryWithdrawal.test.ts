@@ -120,6 +120,22 @@ const CHANGED_OUTSIDE: [string, Scenario][] = [
   changed(FEED_IN_CHAMPIONSHIP, 16, WALKOVER, DEFAULTED),
 ];
 
+/**
+ * Owned whole or not at all (`planCall`): the carry admitted, but the plan after it not owned, the call is decided as it
+ * is without C27 and keeps the refusal the carry check gives it. FMLC's re-score: the new loser's first-match
+ * reservation in the consolation is settle work (`reconcileConsolationReservations`) the plan leaves.
+ */
+const ADMITTED_NOT_OWNED: [string, Scenario][] = [
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION 8: Main|1|3 a carried WALKOVER won by side 2, then played won by side 1',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [{ target: R1(3, 'Main'), outcome: exited(WALKOVER, 2), params: CARRIED }],
+      steps: [{ target: R1(3, 'Main'), outcome: won(1), params: CARRIED }],
+    },
+  ],
+];
+
 const tally = () => ({
   applied: getDifferentialTally()['shadow:applied']?.compared ?? 0,
   cascade: getDifferentialTally()['shadow:abstain:cascade']?.deferred ?? 0,
@@ -163,6 +179,16 @@ describe('C27 a cleared single exit withdraws the carry it left pending on its l
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
     expect(tally().applied).toEqual(before.applied);
+  });
+
+  it.each(ADMITTED_NOT_OWNED)('%s: admitted, not owned, the refusal kept', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    const before = tally();
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+    expect(tally()).toEqual({ applied: before.applied, cascade: before.cascade + 1 });
   });
 
   it.each(REFUSED)('%s: refused, v1 writes it', (_label, scenario) => {
