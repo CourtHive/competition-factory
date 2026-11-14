@@ -18,7 +18,7 @@ import { compareViews, hydrateShadow } from './viewOracle';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
 import { observeWrite, planWrite } from './write';
-import { createWorkingView } from './overlay';
+import { createWorkingView, type WorkingView } from './overlay';
 import { refuseOutcome } from './refusals';
 import { stampedInThisCall } from './ops';
 import { buildOutcomeView } from './view';
@@ -90,6 +90,7 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
   const plan = route ? planWrite(planned, view, route) : undefined;
   const direction = route ? planDirection(planned, view, route) : undefined;
   const allowed = planOutcome({
+    settles: carrySettles(args, view),
     clockFree: args.clockFree,
     tournamentRecord: args.tournamentRecord,
     drawDefinition: args.drawDefinition,
@@ -929,6 +930,41 @@ function toResult(refusal: Refusal, args: BuildViewArgs): ResultType {
 }
 
 /** Fold the complete program, append final cleanup, and return the authoritative executable plan and view. */
+/** S2's has-work predicates on a working view the call's ops leave, as `finalizePlan` reads them */
+function settleSites(args: BuildViewArgs, view: OutcomeView, working: WorkingView, ops: OutcomeOp[]): SettleSite[] {
+  if (!args.drawDefinition || !view.inContextDrawMatchUps) return [];
+  return predictSettleWork({
+    propagateRetirementAsExit: args.request.flags.propagateRetirementAsExit,
+    propagateExitStatus: args.request.flags.propagateExitStatus,
+    loserLinked: !!view.targets.loserLink,
+    // a round robin group's double exit produces nothing, nor does a TEAM line's (its targets are its dual's), nor a
+    // final's (no winner target, a winner link out included: S6 tail, family 8)
+    contained: (!!view.group && !view.group.adHoc) || !!view.line || !view.targets.winnerMatchUpId,
+    inContextDrawMatchUps: view.inContextDrawMatchUps,
+    matchUpId: args.request.matchUpId,
+    tournamentRecord: args.tournamentRecord,
+    drawDefinition: args.drawDefinition,
+    event: args.event,
+    working,
+    ops,
+  });
+}
+
+/**
+ * C27 owns a call whole or not at all (`planOutcome`): whether a plan's ops leave a settle pass work, read before the
+ * plan is returned, on the working view they leave. Stale scored times are `finalizePlan`'s cleanup, work only where
+ * there is no stamp ledger to order it; a program that cannot be folded here is not known to settle clean.
+ */
+function carrySettles(args: BuildViewArgs, view: OutcomeView) {
+  return (ops: OutcomeOp[]) => {
+    const working = projectOutcome(args, view)(ops);
+    if (!working) return true;
+    const sites = settleSites(args, view, working, ops);
+    const stale = sites.includes('reconcileScoredTimes');
+    return sites.some((site) => site !== 'reconcileScoredTimes') || (stale && !getCapturedStamps());
+  };
+}
+
 function finalizePlan({
   keepFoldedView,
   args,
@@ -974,21 +1010,7 @@ function finalizePlan({
   }
   const completedOps = cleanup.length ? [...ops, ...cleanup] : ops;
   // S2's has-work predicates, recorded for the census to set against v1's per-pass writes (nothing outside telemetry)
-  const settle = predictSettleWork({
-    propagateRetirementAsExit: args.request.flags.propagateRetirementAsExit,
-    propagateExitStatus: args.request.flags.propagateExitStatus,
-    loserLinked: !!view.targets.loserLink,
-    // a round robin group's double exit produces nothing, nor does a TEAM line's (its targets are its dual's), nor a
-    // final's (no winner target, a winner link out included: S6 tail, family 8)
-    contained: (!!view.group && !view.group.adHoc) || !!view.line || !view.targets.winnerMatchUpId,
-    inContextDrawMatchUps: view.inContextDrawMatchUps,
-    matchUpId: args.request.matchUpId,
-    tournamentRecord: args.tournamentRecord,
-    drawDefinition: args.drawDefinition,
-    event: args.event,
-    working,
-    ops: completedOps,
-  });
+  const settle = settleSites(args, view, working, completedOps);
   recordSettleEvent({ kind: 'predicted', site: PREDICTED_CALL });
   const predicted = new Set<SettleSite>(settle);
   if (cleanup.length) predicted.add('reconcileScoredTimes');

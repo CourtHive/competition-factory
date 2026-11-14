@@ -73,8 +73,11 @@ export function servedLandingOps({
   return served && [...withdrawn, ...cleared, ...served.ops];
 }
 
-/** every RDP row the prefix does not model writes nothing */
-function removalCertified(
+/**
+ * every RDP row the prefix does not model writes nothing: the landing's only produced exit the one on its loser
+ * matchUp, which sent nobody on, and the carrier gone nowhere past it (also C27's, `pendingCarry.ts`)
+ */
+export function removalCertified(
   view: OutcomeView,
   drawDefinition: DrawDefinition,
   landing: HydratedMatchUp,
