@@ -677,3 +677,40 @@ export function unreachedWinner(view: OutcomeView, write: MatchUpWrite, directio
     !!targets.sideParticipantIds[side === 1 ? 2 : 1]
   );
 }
+
+/**
+ * BATCH 1 (A1): a winner crossing a winner link (DOUBLE_ELIMINATION's backdraw into the Main final) joins the matchUp
+ * across it on the position they already hold in that structure (`winnerLinkPosition`). Owned where the matchUp is to
+ * be played with no BYE, result or carried exit: v1's placement then writes its drawPositions and nothing more.
+ */
+export function linkedWinnerPosition(view: OutcomeView, write: MatchUpWrite): number | undefined {
+  const target = view.targets.winner;
+  const position = view.targets.winnerLinkPositions?.[write.winningSide as 1 | 2];
+  if (!target || !position) return undefined;
+  if (target.matchUpStatus !== TO_BE_PLAYED || target.hasBye || target.holdsResult) return undefined;
+  if (target.carriesExit || target.carriedStatuses.length) return undefined;
+  return position;
+}
+
+/**
+ * BATCH 1 (A2): a final sending its winner and its loser to one Decider across its links (DOUBLE_ELIMINATION's Main
+ * final). Owned on a first entry where the Decider is to be played and empty: the winner is assigned the seat v1 picks
+ * (`winnerLinkSeat`), the loser the other, and the Decider is settled as the plan says (`planDecider`).
+ */
+export function deciderSeats(view: OutcomeView, write: MatchUpWrite, direction?: DirectionPlan) {
+  const { targets, existing } = view;
+  const target = targets.winner;
+  const seat = targets.winnerLinkSeats?.[write.winningSide as 1 | 2];
+  const loser = direction?.loser;
+  if (!direction?.decider || direction.produced || direction.converged) return undefined;
+  if (!direction.winner || !loser?.arrives || !target || !seat) return undefined;
+  if (existing.winningSide || isDoubleExit(existing.matchUpStatus)) return undefined;
+  if (target.matchUpStatus !== TO_BE_PLAYED || target.hasBye || target.holdsResult) return undefined;
+  if (target.carriesExit || target.carriedStatuses.length) return undefined;
+  if (loser.exit || loser.converged || loser.carriedPast || loser.withdrawn) return undefined;
+  // both seats free: the winner is placed first, and the loser, their linked seat taken, takes the other (`placeLoser`)
+  const [other, ...rest] = target.drawPositions.filter((position) => position !== seat.drawPosition);
+  if (!other || rest.length || seat.unfilled !== 2) return undefined;
+  if (targets.loserStructureId !== seat.structureId) return undefined;
+  return { winner: seat, loserDrawPosition: other, decider: direction.decider };
+}

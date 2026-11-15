@@ -232,6 +232,10 @@ export type OutcomeView = {
       /** the participant the seat holds: a re-entered result finds its loser already there (S4) */
       participantId?: string;
     };
+    /** the position each side's winner holds in the structure across a winner link (`winnerLinkPosition`) */
+    winnerLinkPositions?: { 1?: number; 2?: number };
+    /** the free seat each side's winner is assigned across a winner link (`winnerLinkSeat`) */
+    winnerLinkSeats?: { 1?: WinnerLinkSeat; 2?: WinnerLinkSeat };
     /** a loser placed opposite a BYE goes on into this matchUp, holding these drawPositions after (planned, S3) */
     loserThroughBye?: ThroughBye;
     /** a carried exit's loser placed opposite a BYE with no clean matchUp beyond it: the BYEs it passes after (S6 tail) */
@@ -699,3 +703,6 @@ export type ExitReasonArgs = Pick<
   PlanArgs,
   'drawDefinition' | 'request' | 'view' | 'route' | 'write' | 'direction' | 'rebuild' | 'asDual' | 'landing'
 >;
+
+/** a seat across a winner link; `unfilled` counts the target matchUp's unfilled seats, this one among them */
+export type WinnerLinkSeat = { structureId: string; drawPosition: number; participantId: string; unfilled: number };

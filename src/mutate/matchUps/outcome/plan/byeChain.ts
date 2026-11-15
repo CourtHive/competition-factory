@@ -833,6 +833,27 @@ export function ownByeChain(view: OutcomeView): ByeChain | undefined {
   return byeChain(view, first, targets.byeLevels?.own, true, doubled);
 }
 
+/**
+ * BATCH 1 (B): the BYE a loser kept out of a FIRST_MATCHUP feed leaves on the seat the link feeds (`directLoser`,
+ * `assignDrawPositionBye` with the event named), where somebody already stands opposite: the matchUp becomes a BYE and
+ * they go on through it, as a chain's first step sends them (`byeStep`). The seat is free with no BYE opposite, its
+ * matchUp to be played holding no result, exit, codes or provenance, and links no loser on (a chain of one).
+ */
+export function keptOutByeChain(
+  view: OutcomeView,
+  bye: { structureId: string; drawPosition: number },
+): ByeChain | undefined {
+  const { targets } = view;
+  const seat = targets.loserTargetSeat;
+  const { loserMatchUpRecord, loserMatchUpId } = targets;
+  if (!loserMatchUpId || !seat?.free || seat.opponentBye) return undefined;
+  if (targets.loserMatchUpStatus !== TO_BE_PLAYED) return undefined;
+  if (targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit) return undefined;
+  if (!loserMatchUpRecord || loserMatchUpRecord.provenance || loserMatchUpRecord.matchUpStatusCodes?.length)
+    return undefined;
+  return byeChain(view, { ...bye, matchUpId: loserMatchUpId }, undefined, true, false);
+}
+
 /** the produced exit's matchUp's loser seat, a BYE placed with no event (`conditionallyAdvanceDrawPosition`), and its chain */
 export function unfillableByeChain(
   view: OutcomeView,

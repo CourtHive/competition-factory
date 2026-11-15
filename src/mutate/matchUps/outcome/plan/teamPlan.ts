@@ -9,6 +9,7 @@ import {
   DOUBLE_EXIT,
   LINE_SCORE,
   REMOVE_DIRECTED,
+  deciderSeats,
   indexed,
   heldByeLoser,
   loserByeArrival,
@@ -346,6 +347,8 @@ export function dualLineUpOps(
   loserThrough?: { matchUpId: string },
 ): OutcomeOp[] | false {
   const { view, drawDefinition } = args;
+  const decider = args.write && args.route === 'winner' && deciderSeats(view, args.write, args.direction);
+  if (decider && loser) return deciderAssignedLineUpOps(view, drawDefinition, decider, loser);
   const arrived = loser?.arrives
     ? assignedLineUpOps(view, drawDefinition, loser, loserThrough, loserByeArrival(view, loser, args.route, args.write))
     : [];
@@ -367,6 +370,8 @@ function winnerLineUpOps(args: PlanArgs & { drawDefinition: DrawDefinition }): O
   const dual = inContext?.find((matchUp) => matchUp.matchUpId === request.matchUpId);
   const drawPosition = dual?.sides?.find((side) => side.sideNumber === write?.winningSide)?.drawPosition;
   const target = inContext?.find((matchUp) => matchUp.matchUpId === next.matchUpId);
+  // across a winner link the drawPosition is the source structure's: it sides nothing in the next dual (BATCH 1, A1)
+  if (target?.structureId !== dual?.structureId) return [];
   const sideNumber = drawPosition && target?.sides?.find((side) => side.drawPosition === drawPosition)?.sideNumber;
   if (!sideNumber) return [];
   const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }) ?? {};
@@ -472,4 +477,59 @@ export function carriedByeDualSides(drawDefinition: DrawDefinition, entry: Hydra
     rawSides: storedSides(drawDefinition, entry.matchUpId),
     lineUps: firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }),
   });
+}
+
+/**
+ * BATCH 1 (A2, TEAM): a final's losing team is seated in the Decider on the seat the winner left (`deciderSeats`), and
+ * its assignment writes the team's line-up, as the draw holds it, on that side (`assignTeamLineUp`). The carries then
+ * write side 1 as v1 reckons it (`lineUpCarry`, `loserLineUpCarry`): both land there, the loser's last.
+ */
+export function deciderLineUpOps({ dual, drawDefinition }: { dual: DualCall; drawDefinition: DrawDefinition }) {
+  const seats = dual.write && deciderSeats(dual.view, dual.write, dual.direction);
+  const loser = dual.direction?.loser;
+  if (!seats || !loser) return [];
+  const target = indexed(dual.view, loser.matchUpId);
+  const sideNumber = target?.sides?.find((side) => side.drawPosition === seats.loserDrawPosition)?.sideNumber;
+  if (!sideNumber) return false;
+  const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }) ?? {};
+  const op: OutcomeOp = {
+    op: 'setSideLineUp',
+    matchUpId: loser.matchUpId,
+    sideNumber,
+    lineUp: lineUps[loser.participantId],
+    announcedAs: 'updateSidLineUp',
+  };
+  return [op];
+}
+
+/**
+ * BATCH 1 (A2, TEAM): a final decided by its own call seats both teams in the Decider, and each assignment writes its
+ * team's line-up, as the draw holds it, on its side (`assignTeamLineUp`): the winner's first, then the loser's.
+ */
+function deciderAssignedLineUpOps(
+  view: OutcomeView,
+  drawDefinition: DrawDefinition,
+  seats: NonNullable<ReturnType<typeof deciderSeats>>,
+  loser: NonNullable<DirectionPlan['loser']>,
+): OutcomeOp[] | false {
+  const target = indexed(view, loser.matchUpId);
+  const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }) ?? {};
+  const ops: OutcomeOp[] = [];
+  for (const [drawPosition, participantId] of [
+    [seats.winner.drawPosition, seats.winner.participantId],
+    [seats.loserDrawPosition, loser.participantId],
+  ] as const) {
+    const sideNumber = target?.sides?.find((side) => side.drawPosition === drawPosition)?.sideNumber;
+    if (!sideNumber) return false;
+    ops.push({
+      op: 'setSideLineUp',
+      matchUpId: loser.matchUpId,
+      sideNumber,
+      lineUp: lineUps[participantId],
+      announcedAs: 'updateSidLineUp',
+      // the own dual's line-up writer names no event (`assignedLineUpOps`)
+      announcesEvent: false,
+    });
+  }
+  return [...ops, { op: 'stampUpdatedAt', entity: 'matchUp', id: loser.matchUpId }];
 }

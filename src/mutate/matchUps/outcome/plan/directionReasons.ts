@@ -18,10 +18,13 @@ import {
   standingWinnerAward,
   storedLoserId,
   unreachedWinner,
+  linkedWinnerPosition,
+  deciderSeats,
 } from './planShared';
 
 // constants and types
 import type { AbstainReason, DirectionPlan, MatchUpWrite, OutcomeRequest, OutcomeView, Route } from '../types';
+import { keptOutByeChain } from './byeChain';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 /**
@@ -89,8 +92,9 @@ function keptOutReason(
   if (targets.loserStructureId !== bye.structureId || targets.loserTargetDrawPosition !== bye.drawPosition || !seat)
     return 'loser';
   if (seat.bye) return undefined;
-  if (!seat.free || seat.opponentHeld || targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit)
-    return 'cascade';
+  if (!seat.free || targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit) return 'cascade';
+  // somebody opposite goes on through the BYE (BATCH 1, B)
+  if (seat.opponentHeld && !keptOutByeChain(view, bye)) return 'cascade';
   return undefined;
 }
 
@@ -304,10 +308,11 @@ export function directionReason(args: {
   const unwound = isDoubleExit(view.existing.matchUpStatus);
   const loserReason = unwound ? undefined : plainLoserReason(view, direction);
   if (loserReason) return loserReason;
-  if (direction.decider || direction.produced || direction.converged) return 'route';
+  // a Decider seated plainly is planned with its settlement (BATCH 1, A2); a produced exit or convergence is not
+  if (directsElsewhere(direction)) return deciderReason(view, write, direction);
   if (final || unreached) return undefined;
   const target = targets.winner;
-  if (!target || target.structureId !== targets.source.structureId) return 'link';
+  if (!target || target.structureId !== targets.source.structureId) return linkedWinnerReason(view, write);
   if (reservationReason(view, write.winningSide as 1 | 2)) return 'cascade';
   // C19: the produced exit pending in this winner's target is awarded as the winner arrives; C20: the carried exit
   // standing there, awarded to their seat, is theirs as they arrive
@@ -322,4 +327,13 @@ export function directionReason(args: {
   if (target.matchUpStatus !== TO_BE_PLAYED && !through && !unwound) return 'route';
   if (!targets.sideDrawPositions[write.winningSide as 1 | 2]) return 'route';
   return undefined;
+}
+
+function linkedWinnerReason(view: OutcomeView, write: MatchUpWrite): AbstainReason | undefined {
+  if (isDoubleExit(view.existing.matchUpStatus) || view.existing.winningSide) return 'link';
+  return linkedWinnerPosition(view, write) ? undefined : 'link';
+}
+
+function deciderReason(view: OutcomeView, write: MatchUpWrite, direction: DirectionPlan): AbstainReason | undefined {
+  return deciderSeats(view, write, direction) ? undefined : 'route';
 }

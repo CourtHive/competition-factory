@@ -1,10 +1,12 @@
+import { getOutcomePipeline, setOutcomePipeline } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 // constants
 import { DEAD_RUBBER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
 
 /**
  * `reconcileDecider` RETURNS THE ERROR OF THE WRITE IT MAKES.
@@ -51,7 +53,19 @@ vi.mock('@Mutate/matchUps/score/modifyMatchUpScore', async (importOriginal) => {
   };
 });
 
+/**
+ * THE SITE IS v1's WRITER, so the play runs under `v1` whatever the suite's mode (as `cascadeWriteErrorsReachTheCaller`
+ * does). Since BATCH 1 the outcome pipeline v2 owns the Main final's first entry: it seats the Decider and settles it by
+ * ops, plans its refusals before its first op, and never reaches the writer this file makes fail.
+ */
+let pipeline: ReturnType<typeof getOutcomePipeline>;
+beforeEach(() => {
+  pipeline = getOutcomePipeline();
+  setOutcomePipeline(OUTCOME_PIPELINE_V1);
+});
+
 afterEach(() => {
+  setOutcomePipeline(pipeline);
   forced.context = undefined;
   forced.hits = 0;
 });
