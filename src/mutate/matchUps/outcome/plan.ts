@@ -1,4 +1,4 @@
-import { pendingCarryOps, takeAdmittedCarry, type CarrySource } from './plan/pendingCarry';
+import { takeAdmittedCarry, withPendingCarry, type CarrySource } from './plan/pendingCarry';
 import { clearedSingleExit, correctedSingleExit, refreshedArrivalOps, relabelledExit } from './plan/exitCorrections';
 import { getCapturedClock, getCapturedStamps, writeLegacyEnabled } from '@Global/state/globalState';
 import { producedRelayAfterOps, unwoundOps, unwoundPath, unwoundView } from './plan/unwindPath';
@@ -7,7 +7,7 @@ import { retainedCarriedAwardOps, terminalOccupiedWinnerOps } from './plan/termi
 import { notesReason, scheduleOps, scheduleReason } from './plan/schedulePlan';
 import { autoCalcWrite, resultOps, writtenScore } from './plan/resultOps';
 import { producedExitOps, producedReason } from './plan/producedExit';
-import { carriedReason, retainedByeCarry } from './plan/carriedExit';
+import { carriedReason, heldByeCarryWithdrawal, retainedByeCarry } from './plan/carriedExit';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { convergedReason } from './plan/carriedConvergence';
 import { groupTally, writtenLine } from './plan/tallyOps';
@@ -237,7 +237,9 @@ function resultToDoubleExit(args: PlanArgs): OutcomePlan {
   const removing = resultRemovalReason(view, carry);
   if (removing) return { abstain: removing };
   // C27: a carry the result left pending is withdrawn first, as v1's removal withdraws it
-  const removal = [...pendingCarryOps(view, carry), ...removalOps(view, request.matchUpStatus)];
+  const removal = withPendingCarry(view, carry, (rederived) => removalOps(view, request.matchUpStatus, rederived), {
+    reproduced: true,
+  });
   const undecided: OutcomeOp = {
     op: 'setMatchUpResult',
     matchUpId: request.matchUpId as string,
@@ -256,8 +258,14 @@ function resultToDoubleExit(args: PlanArgs): OutcomePlan {
   if (!produced.ops) return produced;
   // C21: the BYE entry's code-removal notice survives the double-exit placement further on. v1 announces
   // the source result before that notice; the source prefix and the other matchUps' removal writes commute.
-  const held = heldByeLoser(view);
-  if (held) {
+  // C28: so does the entry a carry was withdrawn from as it passed the BYE (`heldByeCarryWithdrawal`)
+  const held =
+    heldByeLoser(view) ??
+    (heldByeCarryWithdrawal(view, request.matchUpId)
+      ? { entry: indexed(view, view.targets.loserMatchUpId) }
+      : undefined);
+  const entryId = held?.entry?.matchUpId;
+  if (entryId) {
     const ownResult = produced.ops.findIndex(
       (op) => op.op === 'setMatchUpResult' && op.matchUpId === request.matchUpId,
     );
@@ -270,7 +278,7 @@ function resultToDoubleExit(args: PlanArgs): OutcomePlan {
     const tail = produced.ops
       .slice(ownStamp + 1)
       .map((op): OutcomeOp =>
-        op.op === 'setMatchUpResult' && op.matchUpId === held.entry.matchUpId && op.announcesContext === false
+        op.op === 'setMatchUpResult' && op.matchUpId === entryId && op.announcesContext === false
           ? { ...op, restoresNoticeIdentity: true }
           : op,
       );
