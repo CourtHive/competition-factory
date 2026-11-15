@@ -1,5 +1,5 @@
 import { CARRIED, compareUndirectedWinner, won } from '@Tests/testHarness/outcome/directionFixtures';
-import { describe, it } from 'vitest';
+import { describe, it, vi } from 'vitest';
 
 // constants and types
 import type { Scenario, Target } from '@Tests/testHarness/outcome/directionFixtures';
@@ -10,6 +10,19 @@ import {
   FEED_IN_CHAMPIONSHIP_TO_SF,
   MODIFIED_FEED_IN_CHAMPIONSHIP,
 } from '@Constants/drawDefinitionConstants';
+
+// counts v1's matchUp writes, so `compareUndirectedWinner` can assert v2 left none (`v2.v1Writes === 0`)
+vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
+  const actual: any = await importOriginal();
+  const { v1Writes } = await import('@Tests/testHarness/outcome/directionCounter');
+  return {
+    ...actual,
+    setMatchUpState: (...args: any[]) => {
+      v1Writes.count += 1;
+      return actual.setMatchUpState(...args);
+    },
+  };
+});
 
 /**
  * C29: A LOSER ARRIVING WHERE A DOUBLE EXIT'S PRODUCED EXIT STANDS PENDING. Every first-round matchUp of the main
