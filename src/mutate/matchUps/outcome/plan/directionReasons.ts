@@ -19,6 +19,7 @@ import {
   storedLoserId,
   unreachedWinner,
   linkedWinnerPosition,
+  propagatesSingleExit,
   deciderSeats,
 } from './planShared';
 
@@ -44,11 +45,15 @@ export function localReason({ route, write }: { route?: Route; write?: MatchUpWr
  * nothing, into a matchUp holding no result, exit or BYE beside it. The FMLC feed into round 2 is included: the seat
  * `positionTargets` reports is the one `directLoser` takes (no FIRST_MATCHUP test file in the suite differs, 2026-10-26).
  */
-export function plainLoserReason(view: OutcomeView, direction: DirectionPlan): AbstainReason | undefined {
+export function plainLoserReason(
+  view: OutcomeView,
+  direction: DirectionPlan,
+  propagating = false,
+): AbstainReason | undefined {
   const { targets } = view;
   const loser = direction.loser;
   if (!loser && !targets.loserMatchUpId) return undefined;
-  if (loser?.bye && !loser.arrives) return keptOutReason(view, loser.bye);
+  if (loser?.bye && !loser.arrives) return keptOutReason(view, loser.bye, propagating);
   // a carried exit reaches here only as `exitReason` admits it (`carriedReason`), a convergence (`convergedReason`)
   if (loser?.arrives && loser.converged) return undefined;
   if (!loser?.arrives || loser.converged || loser.carriedPast || loser.bye || loser.withdrawn) return 'loser';
@@ -86,6 +91,7 @@ export function plainLoserReason(view: OutcomeView, direction: DirectionPlan): A
 function keptOutReason(
   view: OutcomeView,
   bye: { structureId: string; drawPosition: number },
+  propagating: boolean,
 ): AbstainReason | undefined {
   const { targets } = view;
   const seat = targets.loserTargetSeat;
@@ -93,8 +99,9 @@ function keptOutReason(
     return 'loser';
   if (seat.bye) return undefined;
   if (!seat.free || targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit) return 'cascade';
-  // somebody opposite goes on through the BYE (BATCH 1, B)
-  if (seat.opponentHeld && !keptOutByeChain(view, bye)) return 'cascade';
+  // somebody opposite goes on through the BYE (BATCH 1, B); under an exit that would propagate, every settle pass is in
+  // reach (`predictSettleWork`), and the call stays v1's
+  if (seat.opponentHeld && (propagating || !keptOutByeChain(view, bye))) return 'cascade';
   return undefined;
 }
 
@@ -306,7 +313,7 @@ export function directionReason(args: {
   // S6: a double exit given a winner unwinds first (`givenWinnerReason`): the next matchUp held only its produced exit,
   // and is to be played again when the winner arrives; the loser's seat, freed of the double exit's BYE, was vetted there
   const unwound = isDoubleExit(view.existing.matchUpStatus);
-  const loserReason = unwound ? undefined : plainLoserReason(view, direction);
+  const loserReason = unwound ? undefined : plainLoserReason(view, direction, propagatesSingleExit(args.request));
   if (loserReason) return loserReason;
   // a Decider seated plainly is planned with its settlement (BATCH 1, A2); a produced exit or convergence is not
   if (directsElsewhere(direction)) return deciderReason(view, write, direction);

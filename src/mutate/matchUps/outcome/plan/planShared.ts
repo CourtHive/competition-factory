@@ -714,3 +714,13 @@ export function deciderSeats(view: OutcomeView, write: MatchUpWrite, direction?:
   if (targets.loserStructureId !== seat.structureId) return undefined;
   return { winner: seat, loserDrawPosition: other, decider: direction.decider };
 }
+
+/** the call writes a single exit that v1 would carry across a loser link (`directLoser`'s `validExitToPropagate`) */
+export function propagatesSingleExit({ matchUpStatus, flags }: OutcomeRequest): boolean {
+  if (!flags.propagateExitStatus) return false;
+  return (
+    matchUpStatus === WALKOVER ||
+    matchUpStatus === DEFAULTED ||
+    (matchUpStatus === RETIRED && flags.propagateRetirementAsExit)
+  );
+}

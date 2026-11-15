@@ -24,6 +24,7 @@ import {
   changesWinner,
   deciderSeats,
   directsElsewhere,
+  propagatesSingleExit,
   isSettleWrite,
   indexed,
   loserByeArrival,
@@ -151,8 +152,10 @@ function exitReason(args: ExitReasonArgs): AbstainReason | SeatObligation | unde
   if (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide) return 'exit';
   if (write.matchUpStatus === DEFAULTED && view.draw.defaultProcessCodes) return 'exit';
   const loser = direction?.loser;
-  // a final's exit is directed into its Decider as a played result is: no carry goes there (`carriedExit`; BATCH 1, A2)
-  if (directsElsewhere(direction) && !deciderSeats(view, write, direction)) return 'exit';
+  // a final's exit that does not propagate is directed into its Decider as a played result is (BATCH 1, A2); one that
+  // would propagate puts every settle pass in reach (`predictSettleWork`), and stays v1's
+  if (directsElsewhere(direction) && (propagatesSingleExit(request) || !deciderSeats(view, write, direction)))
+    return 'exit';
   if (loser?.carriedPast || loser?.withdrawn) return 'exit';
   if (loser?.converged) return convergedReason(view, request, write, loser, undefined, args.drawDefinition, true);
   if (loser?.exit) return carriedReason(view, write);

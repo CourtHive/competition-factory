@@ -1,4 +1,4 @@
-import { compareUndirectedWinner, exited, retired, won } from '@Tests/testHarness/outcome/directionFixtures';
+import { CARRIED, compareUndirectedWinner, exited, retired, won } from '@Tests/testHarness/outcome/directionFixtures';
 import { describe, it, vi } from 'vitest';
 
 // constants and types
@@ -172,5 +172,20 @@ describe('BATCH 1 (B) a kept-out loser whose BYE meets somebody', () => {
   });
   it.each(keptOut(false))('%s: owned, the BYE alone in its matchUp', (_, scenario) => {
     compareUndirectedWinner(scenario, true);
+  });
+});
+
+// an exit that propagates puts every settle pass in reach (`predictSettleWork`): these stay v1's
+const carried = (scenarios: [string, Scenario][]) =>
+  scenarios
+    .filter(([label]) => label.includes(WALKOVER) || label.includes(DEFAULTED))
+    .map(([label, scenario]): [string, Scenario] => [
+      `${label}, propagateExitStatus`,
+      { ...scenario, steps: scenario.steps.map((step) => ({ ...step, params: CARRIED })) },
+    ]);
+
+describe('BATCH 1 controls: a propagating exit on a final or beside a kept-out BYE', () => {
+  it.each([...carried(mainFinals()), ...carried(keptOut(true))])('%s: v1s', (_, scenario) => {
+    compareUndirectedWinner(scenario, false);
   });
 });
