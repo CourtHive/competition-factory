@@ -1,4 +1,4 @@
-import { pendingCarryOps, type CarrySource } from './pendingCarry';
+import { withPendingCarry, type CarrySource } from './pendingCarry';
 import { buildSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import {
   APPLY_VALUES,
@@ -102,7 +102,7 @@ export function replacedLoserOps(
   carry?: CarrySource,
 ): OutcomeOp[] {
   return changesWinner(view, route, write)
-    ? [...pendingCarryOps(view, carry), ...removedLoserOps(view, matchUpStatus)]
+    ? withPendingCarry(view, carry, (rederived) => removedLoserOps(view, matchUpStatus, rederived))
     : [];
 }
 
@@ -117,7 +117,7 @@ export function removedOps(
   // A cleared final (no winner matchUp) takes back its loser's fed seat alone (C17, decision 5 of the refactor status):
   // `removalOps` emits no winner leg for it. The guard that returned nothing here until then left the fed seat
   // occupied, which is what the settle check abstained on (ruling 10's amendment).
-  return [...pendingCarryOps(view, carry), ...removalOps(view, matchUpStatus)];
+  return withPendingCarry(view, carry, (rederived) => removalOps(view, matchUpStatus, rederived));
 }
 
 /**
@@ -126,7 +126,7 @@ export function removedOps(
  * `resultRemovalReason` on a result turned double exit) stay apart; this is only what they both take back. A final's
  * loser leg alone is emitted on both routes (the cleared route since C17).
  */
-export function removalOps(view: OutcomeView, matchUpStatus?: MatchUpStatusUnion): OutcomeOp[] {
+export function removalOps(view: OutcomeView, matchUpStatus?: MatchUpStatusUnion, rederived?: boolean): OutcomeOp[] {
   const { targets, existing } = view;
   const position = targets.sideDrawPositions[existing.winningSide as 1 | 2];
   const winner: OutcomeOp[] =
@@ -141,30 +141,36 @@ export function removalOps(view: OutcomeView, matchUpStatus?: MatchUpStatusUnion
           { op: 'stampUpdatedAt', entity: 'matchUp', id: targets.winnerMatchUpId },
         ]
       : [];
-  return [...winner, ...removedLoserOps(view, matchUpStatus)];
+  return [...winner, ...removedLoserOps(view, matchUpStatus, rederived)];
 }
 
 /**
  * the loser's seat across the link emptied, and their matchUp's codes re-derived (`[]`) where it stored none. v1's
  * `removeDirectedLoser` re-derives them only when the call names a status (its `sourceMatchUpStatus`): a clear that names
  * none leaves them as they are. An equal empty array is still reallocated, quietly; a changed side record announces
- * the matchUp and stamps its structure.
+ * the matchUp and stamps its structure. `rederived`: a withdrawal ahead of it already wrote the codes `[]` (C28), so the
+ * rewrite is the quiet one.
  */
-export function removedLoserOps(view: OutcomeView, matchUpStatus?: MatchUpStatusUnion): OutcomeOp[] {
+export function removedLoserOps(
+  view: OutcomeView,
+  matchUpStatus?: MatchUpStatusUnion,
+  rederived?: boolean,
+): OutcomeOp[] {
   const { loserMatchUpId, loserStructureId, loserTargetDrawPosition, loserMatchUpRecord } = view.targets;
   const participantId = storedLoserId(view);
   if (!loserMatchUpId || !loserStructureId || !loserTargetDrawPosition || !participantId) return [];
+  const storedCodes = rederived ? [] : loserMatchUpRecord?.matchUpStatusCodes;
   const codes: OutcomeOp[] =
-    !matchUpStatus || loserMatchUpRecord?.matchUpStatusCodes?.length
+    !matchUpStatus || storedCodes?.length
       ? []
       : [
           {
             op: 'setMatchUpStatusCodes',
             matchUpId: loserMatchUpId,
             matchUpStatusCodes: [],
-            ...(loserMatchUpRecord?.matchUpStatusCodes ? { quiet: true as const } : {}),
+            ...(storedCodes ? { quiet: true as const } : {}),
           },
-          ...(!loserMatchUpRecord?.matchUpStatusCodes
+          ...(!storedCodes
             ? [
                 { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: loserMatchUpId },
                 { op: 'stampUpdatedAt' as const, entity: 'structure' as const, id: loserStructureId },

@@ -2,6 +2,7 @@ import { getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance'
 import { indexed, storedLoserId } from './planShared';
 import { withdrawnExitReset } from './unwindPath';
 import { removalCertified } from './landingRemoval';
+import { heldByeCarryWithdrawal } from './carriedExit';
 
 // constants and types
 import { DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
@@ -54,7 +55,7 @@ export function pendingCarryWithdrawal(view: OutcomeView, carry?: CarrySource): 
 
 /**
  * C27 owns a call whole or not at all. The removal's refusal (`removedLoserReason`) records the matchUp whose carry it
- * admitted; a call planned past it but not owned is given back that refusal (`planCall`), so it keeps the reason it has
+ * admitted; a call planned past it but not owned is given back that refusal (`wholeCarry`), so it keeps the reason it has
  * without C27. One plan per call, so the record is the call's own: taken (and cleared) as the call's plan is decided.
  */
 let admittedCarry: string | undefined;
@@ -70,8 +71,18 @@ export function takeAdmittedCarry(): string | undefined {
   return matchUpId;
 }
 
-/** the pending carry withdrawn, ahead of the winner's and the carrier's removal (v1's order) */
-export function pendingCarryOps(view: OutcomeView, carry?: CarrySource): OutcomeOp[] {
+/**
+ * the pending carry withdrawn, ahead of the winner's and the carrier's removal (v1's order). A carry withdrawn through a
+ * held BYE (C28) has already re-derived the BYE's codes, so the removal's rewrite of them is the quiet one (`rederived`).
+ */
+export function withPendingCarry(
+  view: OutcomeView,
+  carry: CarrySource | undefined,
+  removal: (rederived?: boolean) => OutcomeOp[],
+  { reproduced }: { reproduced?: boolean } = {},
+): OutcomeOp[] {
   const loserMatchUpId = pendingCarryWithdrawal(view, carry);
-  return loserMatchUpId ? withdrawnExitReset(loserMatchUpId, { keepsScoredTime: true }) : [];
+  if (loserMatchUpId) return [...withdrawnExitReset(loserMatchUpId, { keepsScoredTime: true }), ...removal()];
+  const held = heldByeCarryWithdrawal(view, carry?.matchUpId, { reproduced });
+  return held ? [...held, ...removal(true)] : removal();
 }

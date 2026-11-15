@@ -281,7 +281,7 @@ export type OutcomeOp =
       matchUpId: string;
       provenance?: SideExitProvenance;
       /** A carry removed beside a BYE announces that provenance write without rewriting the BYE's result. */
-      announcedAs?: 'relabelLoserExit' | 'withdrawDisplacedCarry';
+      announcedAs?: 'relabelLoserExit' | 'withdrawDisplacedCarry' | 'withdrawProducedExits';
       /** The displaced carrier takes the reason on this side with its provenance. */
       blankExitSide?: 1 | 2;
       announcesEvent?: false;
