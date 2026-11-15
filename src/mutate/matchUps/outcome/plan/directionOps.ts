@@ -9,6 +9,7 @@ import {
   removesDirection,
   standingAwardArrival,
   producedLoserArrival,
+  awardedProducedArrival,
   standingWinnerAward,
   storedLoserId,
 } from './planShared';
@@ -326,6 +327,37 @@ export function producedLoserArrivalOps(view: OutcomeView, loser?: DirectionPlan
     ...(onward
       ? ([
           { op: 'setMatchUpDrawPositions', matchUpId: onward.matchUpId, drawPositions: onward.drawPositions },
+          { op: 'stampUpdatedAt', entity: 'matchUp', id: onward.matchUpId },
+        ] as OutcomeOp[])
+      : []),
+  ];
+}
+
+/**
+ * C30: `awardedProducedArrival`'s placement: both matchUps written back as they stand, announced as the assignment
+ * (C18's ops), the award's codes re-derived
+ */
+export function awardedProducedArrivalOps(view: OutcomeView, loser?: DirectionPlan['loser']): OutcomeOp[] {
+  const award = awardedProducedArrival(view, loser);
+  if (!award) return [];
+  const { entry, drawPosition, onward } = award;
+  return [
+    {
+      op: 'setMatchUpDrawPositions',
+      matchUpId: entry.matchUpId,
+      drawPositions: positionsOf(entry),
+      placedDrawPosition: drawPosition,
+      rederivesCodes: true,
+    },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: entry.matchUpId },
+    ...(onward
+      ? ([
+          {
+            op: 'setMatchUpDrawPositions',
+            matchUpId: onward.matchUpId,
+            drawPositions: onward.drawPositions,
+            placedDrawPosition: drawPosition,
+          },
           { op: 'stampUpdatedAt', entity: 'matchUp', id: onward.matchUpId },
         ] as OutcomeOp[])
       : []),
