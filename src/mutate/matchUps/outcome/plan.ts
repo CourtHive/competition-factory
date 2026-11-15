@@ -65,6 +65,7 @@ import {
 import {
   arrivalOps,
   awardedArrivalOps,
+  producedLoserArrivalOps,
   arrivalReturnOps,
   placedDirection,
   removalOps,
@@ -639,6 +640,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   const seated = [
     ...arrival,
     ...awardedArrivalOps(view, loser),
+    ...producedLoserArrivalOps(view, loser),
     ...unwoundArrivalOps(view, unwound, loser),
     ...keptOutBye,
     ...reserved,

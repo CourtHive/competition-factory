@@ -83,6 +83,11 @@ export type OutcomeOp =
       /** the retained origin and all its onward consequences are explicitly planned (S7) */
       retainedExitPlanned?: true;
       /**
+       * the exit standing in the matchUp awarded to an arriving loser inside v1's `assignDrawPosition` (C29): written with no
+       * direction, so nothing propagates from it
+       */
+      awardsStandingExit?: true;
+      /**
        * false where v1 writes the result with neither the tournament nor the event (a produced exit recorded beside a BYE
        * and carried on, `stampExitOnByeHeldLoserTarget`, `carryExitOnward`): the notice names neither, and the matchUp in
        * context is read without the tournament
