@@ -153,6 +153,7 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
         // Only that line's result is exempt: a separate dual/downstream exit still puts every pass in reach.
         !(ownLine && op.matchUpId === args.matchUpId) &&
         !op.retainedExitPlanned &&
+        !op.awardsStandingExit &&
         op.announcedAs !== 'settleRederivedDoubleExit' &&
         propagatesExit(op.matchUpStatus, args),
     )

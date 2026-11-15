@@ -8,6 +8,7 @@ import {
   reentersWinner,
   removesDirection,
   standingAwardArrival,
+  producedLoserArrival,
   standingWinnerAward,
   storedLoserId,
 } from './planShared';
@@ -299,6 +300,33 @@ function pendingProducedArrivalOps(
       announcedAs: 'assignMatchUpDrawPosition',
     },
     ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId: entry.matchUpId, provenance }] : []),
+    { op: 'setMatchUpDrawPositions', matchUpId: entry.matchUpId, drawPositions: [drawPosition] },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: entry.matchUpId },
+    ...(onward
+      ? ([
+          { op: 'setMatchUpDrawPositions', matchUpId: onward.matchUpId, drawPositions: onward.drawPositions },
+          { op: 'stampUpdatedAt', entity: 'matchUp', id: onward.matchUpId },
+        ] as OutcomeOp[])
+      : []),
+  ];
+}
+
+/** C29: `producedLoserArrival`'s award, announced as the assignment, and the position sent on (C19's ops, the loser's) */
+export function producedLoserArrivalOps(view: OutcomeView, loser?: DirectionPlan['loser']): OutcomeOp[] {
+  const award = producedLoserArrival(view, loser);
+  if (!award) return [];
+  const { entry, matchUpStatus, side, drawPosition, onward } = award;
+  return [
+    {
+      op: 'setMatchUpResult',
+      matchUpId: entry.matchUpId,
+      matchUpStatus,
+      winningSide: side,
+      matchUpStatusCodes: [],
+      stampsScoredTime: false,
+      announcedAs: 'assignMatchUpDrawPosition',
+      awardsStandingExit: true,
+    },
     { op: 'setMatchUpDrawPositions', matchUpId: entry.matchUpId, drawPositions: [drawPosition] },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: entry.matchUpId },
     ...(onward
