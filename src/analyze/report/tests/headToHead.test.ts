@@ -1,4 +1,3 @@
-import { completeDrawMatchUps } from '@Generators/simulation/completeDrawMatchUps';
 import { chunkArray, generateRange } from '@Tools/arrays';
 import { timeKeeper } from '@Global/state/globalState';
 import { participantHeadToHead } from '../headToHead';
@@ -33,7 +32,7 @@ it('can generate H2H reports with Competitors In Common', () => {
       eventId,
     }).drawDefinition;
 
-    const completionResult = completeDrawMatchUps({ drawDefinition });
+    const completionResult = mocksEngine.completeDrawMatchUps({ drawDefinition: drawDefinition as any });
     expect(completionResult.success).toEqual(true);
 
     const addDrawResult = tournamentEngine.addDrawDefinition({
