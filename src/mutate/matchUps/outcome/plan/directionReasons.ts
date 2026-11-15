@@ -1,5 +1,5 @@
 import { admitPendingCarry, pendingCarryWithdrawal, type CarrySource } from './pendingCarry';
-import { relabelCarryReason, withdrawnReason } from './carriedExit';
+import { heldByeCarryWithdrawal, relabelCarryReason, withdrawnReason } from './carriedExit';
 import { isDoubleExit } from '@Validators/isExit';
 import {
   DIRECTED_STATUSES,
@@ -153,8 +153,13 @@ function removedLoserReason(view: OutcomeView, carry?: CarrySource): AbstainReas
     return 'loser';
   if (seat.opponentBye || targets.loserMatchUpStatus !== TO_BE_PLAYED) {
     if (heldByeLoser(view)) return undefined;
+    // C28: the carry the loser took through the held BYE, pending where it landed, withdrawn with it (`withPendingCarry`)
+    if (heldByeCarryWithdrawal(view, carry?.matchUpId)) {
+      admitPendingCarry(carry?.matchUpId, carry);
+      return undefined;
+    }
     // C27: a cleared exit's carry still pending on the loser matchUp is withdrawn with it (`pendingCarryWithdrawal`);
-    // admitted, it is recorded, so a call planned past it but not owned keeps this refusal (`planCall`)
+    // admitted, it is recorded, so a call planned past it but not owned keeps this refusal (`wholeCarry`)
     return admitPendingCarry(pendingCarryWithdrawal(view, carry), carry) ? undefined : 'cascade';
   }
   if (targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit) return 'cascade';
