@@ -19,7 +19,7 @@ import {
 
 // constants and types
 import type { Scenario } from '@Tests/testHarness/outcome/directionFixtures';
-import { FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
+import { FEED_IN_CHAMPIONSHIP, FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
@@ -112,6 +112,27 @@ describe('C16 the loser beside an opponent BYE goes on through the chain to the 
   });
 });
 
+/** owned with v1's results, record and notices, and v1 left nothing to write (C30) */
+function expectOwnedArrival(scenario: Scenario) {
+  const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+  expect(v1.results.every((result: any) => result.success)).toEqual(true);
+  const tally = () => ({
+    applied: getDifferentialTally()['shadow:applied']?.compared ?? 0,
+    cascade: getDifferentialTally()['shadow:abstain:cascade']?.deferred ?? 0,
+  });
+  const before = tally();
+  const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+  expect(compared.results).toEqual(v1.results);
+  expect(compared.record).toEqual(v1.record);
+  expect(compared.notices).toEqual(v1.notices);
+  expect(tally()).toEqual({ applied: before.applied + 1, cascade: before.cascade });
+  const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+  expect(v2.v1Writes).toEqual(0);
+  expect(v2.results).toEqual(v1.results);
+  expect(v2.record).toEqual(v1.record);
+  expect(v2.notices).toEqual(v1.notices);
+}
+
 describe('C18 the loser arriving where a carried exit stands awarded to their seat takes it and goes on', () => {
   it.each(STANDING_AWARDS)('%s', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
@@ -132,19 +153,10 @@ describe('C18 the loser arriving where a carried exit stands awarded to their se
     expect(v2.record).toEqual(v1.record);
     expect(v2.notices).toEqual(v1.notices);
   });
+  // the title is historical (the ledger keys calls by it): under the policy off the produced exit already stands
+  // awarded to the loser's seat, and C30 owns the arrival (`awardedProducedArrival`)
   it.each(PRODUCED_PENDING)('%s: a produced exit pending is not a standing award, v1s', (_label, scenario) => {
-    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
-    expect(v1.results.every((result: any) => result.success)).toEqual(true);
-    const deferred = () => getDifferentialTally()['shadow:abstain:cascade']?.deferred ?? 0;
-    const before = deferred();
-    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
-    expect(compared.results).toEqual(v1.results);
-    expect(compared.record).toEqual(v1.record);
-    expect(compared.notices).toEqual(v1.notices);
-    expect(deferred()).toEqual(before + 1);
-    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
-    expect(v2.v1Writes).toBeGreaterThan(0);
-    expect(v2.record).toEqual(v1.record);
+    expectOwnedArrival(scenario);
   });
 });
 
@@ -177,6 +189,9 @@ describe('C19 controls: the loser also meets a pending produced exit', () => {
   it.each(PENDING_WINNERS.filter(([, scenario]) => !pendingWinnerIsOwned(scenario) && !!scenario.policyDefinitions))(
     '%s stays v1s',
     (_label, scenario) => {
+      // the title is historical (the ledger keys calls by it): the loser's arrival at the produced exit awarded to
+      // their seat is C30's (`awardedProducedArrival`), except where the onward matchUp is a BYE v1 relays through
+      if (scenario.drawProfile.drawType !== FIRST_MATCH_LOSER_CONSOLATION) return expectOwnedArrival(scenario);
       const v1 = play(OUTCOME_PIPELINE_V1, scenario);
       expect(v1.results.every((result: any) => result.success)).toEqual(true);
       const deferred = () => getDifferentialTally()['shadow:abstain:cascade']?.deferred ?? 0;

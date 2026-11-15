@@ -310,6 +310,58 @@ export function producedLoserArrival(
 }
 
 /**
+ * C30: a loser fed across a link onto the free seat a double exit's produced exit already stands awarded to, nobody
+ * opposite (`doubleExitPropagateBye` off). The award has already sent the seat's position on, so v1's
+ * `assignDrawPosition` only places the arrival: the matchUp's positions written back as they stand, its codes re-derived
+ * and announced as the assignment (`applyPositionToMatchUp`), and the next matchUp, which already holds the position,
+ * announced the same way (`advanceIntoWinnerMatchUp`). C18's award, with the produced exit as its carrier. Only that
+ * exact shape: a plain loser's call (no exit carried, no double exit, no link condition, no TEAM), the free seat with
+ * nobody opposite and no BYE, both positions present, the award on the arrival's side, exactly one double-exit
+ * provenance on the other side, scoreless, no codes, and the next matchUp still to be played, holding the position, with
+ * no winner, BYE or exit provenance (or the last round). An onward BYE (v1 relays the position through it), or an onward
+ * exit (v1 awards it to the arrival), stays v1's (`cascade`).
+ */
+export function awardedProducedArrival(
+  view: OutcomeView,
+  loser?: DirectionPlan['loser'],
+):
+  | { entry: HydratedMatchUp; drawPosition: number; onward?: { matchUpId: string; drawPositions: number[] } }
+  | undefined {
+  const { targets, existing } = view;
+  const { loserMatchUpId, loserTargetDrawPosition: drawPosition, loserTargetSeat: seat } = targets;
+  if (
+    view.isTeam ||
+    !loser?.arrives ||
+    loser.exit ||
+    loser.converged ||
+    loser.carriedPast ||
+    loser.bye ||
+    loser.withdrawn
+  )
+    return undefined;
+  if (isDoubleExit(existing.matchUpStatus) || targets.loserLink?.linkCondition) return undefined;
+  const entry = indexed(view, loserMatchUpId);
+  if (!entry || !drawPosition || !seat?.free || seat.opponentBye || seat.opponentHeld) return undefined;
+  if (entry.matchUpStatus !== WALKOVER && entry.matchUpStatus !== DEFAULTED) return undefined;
+  const side = sideOf(entry, drawPosition);
+  if (!side || entry.winningSide !== side) return undefined;
+  if (!scoreless(entry) || entry.matchUpStatusCodes?.length) return undefined;
+  if (entry.sides?.some((entrySide) => entrySide.bye)) return undefined;
+  const provenance = entry.sideExitProvenance ?? {};
+  const origin = provenance[(3 - side) as 1 | 2];
+  if (Object.keys(provenance).length !== 1 || origin?.matchUpStatus !== entry.matchUpStatus) return undefined;
+  if (!isDoubleExit(origin.previousMatchUpStatus)) return undefined;
+  if (positionsOf(entry).length !== 2 || !positionsOf(entry).includes(drawPosition)) return undefined;
+  if (!entry.winnerMatchUpId) return { entry, drawPosition };
+  const next = indexed(view, entry.winnerMatchUpId);
+  if (!next || next.matchUpStatus !== TO_BE_PLAYED || next.winningSide || !positionsOf(next).includes(drawPosition))
+    return undefined;
+  if (next.sides?.some((nextSide) => nextSide.bye) || Object.keys(next.sideExitProvenance ?? {}).length)
+    return undefined;
+  return { entry, drawPosition, onward: { matchUpId: next.matchUpId, drawPositions: positionsOf(next) } };
+}
+
+/**
  * C19: a winner arriving opposite a double exit's single produced exit, still pending. v1 awards the held exit to
  * the arrival, records their origin and sends them on. Only the empty arrival seat, exactly the paired feeder's
  * double-exit provenance, no result, score, codes or BYE, and a clean onward arrival (or the last round).

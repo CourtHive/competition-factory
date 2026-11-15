@@ -14,6 +14,7 @@ import {
   directsElsewhere,
   standingAwardArrival,
   producedLoserArrival,
+  awardedProducedArrival,
   standingWinnerAward,
   storedLoserId,
   unreachedWinner,
@@ -54,8 +55,11 @@ export function plainLoserReason(view: OutcomeView, direction: DirectionPlan): A
   if (loser.participantId && targets.seededParticipantIds?.includes(loser.participantId)) return 'loser';
   // a carried exit standing there, awarded to the seat the loser takes: they take it and go on (C18)
   if (targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit)
-    // C29: a double exit's produced exit pending beside the free seat is awarded to the arrival (`producedLoserArrival`)
-    return standingAwardArrival(view, loser) || producedLoserArrival(view, loser) ? undefined : 'cascade';
+    // C29: a double exit's produced exit pending beside the free seat is awarded to the arrival (`producedLoserArrival`);
+    // C30: one already awarded to the free seat, its position already sent on, takes the arrival (`awardedProducedArrival`)
+    return standingAwardArrival(view, loser) || producedLoserArrival(view, loser) || awardedProducedArrival(view, loser)
+      ? undefined
+      : 'cascade';
   // opposite a BYE the loser goes on at once: planned when the matchUp they go on into is clean (`loserThroughBye`), or a
   // carried exit's loser goes on through the BYE-held matchUps past it (`loserByePassage`, S6 tail)
   if (
