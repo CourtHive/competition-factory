@@ -261,6 +261,55 @@ export function standingWinnerAward(
 }
 
 /**
+ * C29: a loser fed across a link onto the seat a double exit's produced exit stands pending beside (C19's award, on the
+ * loser's link). v1's `assignDrawPosition` awards the held exit to the arrival (`applyPositionToMatchUp`) and the
+ * position goes on (`advanceIntoWinnerMatchUp`). Only the free seat with nobody opposite, exactly one double-exit
+ * provenance on the other side, no result, score, codes or BYE, and a clean onward matchUp (or the last round).
+ */
+export function producedLoserArrival(
+  view: OutcomeView,
+  loser?: DirectionPlan['loser'],
+):
+  | {
+      entry: HydratedMatchUp;
+      matchUpStatus: typeof WALKOVER;
+      side: 1 | 2;
+      drawPosition: number;
+      onward?: { matchUpId: string; drawPositions: number[] };
+    }
+  | undefined {
+  const { targets, existing } = view;
+  const { loserMatchUpId, loserTargetDrawPosition: drawPosition, loserTargetSeat: seat } = targets;
+  if (
+    view.isTeam ||
+    !loser?.arrives ||
+    loser.exit ||
+    loser.converged ||
+    loser.carriedPast ||
+    loser.bye ||
+    loser.withdrawn
+  )
+    return undefined;
+  if (isDoubleExit(existing.matchUpStatus) || targets.loserLink?.linkCondition) return undefined;
+  const entry = indexed(view, loserMatchUpId);
+  if (!entry || !drawPosition || !seat?.free || seat.opponentBye || seat.opponentHeld) return undefined;
+  if (entry.matchUpStatus !== WALKOVER && entry.matchUpStatus !== DEFAULTED) return undefined;
+  if (entry.winningSide || !scoreless(entry) || entry.matchUpStatusCodes?.length) return undefined;
+  if (entry.sides?.some((side) => side.bye)) return undefined;
+  const positions = positionsOf(entry);
+  if (positions.some((position) => position !== drawPosition)) return undefined;
+  const side = sideOf(entry, drawPosition);
+  const provenance = entry.sideExitProvenance ?? {};
+  const origin = side ? provenance[(3 - side) as 1 | 2] : undefined;
+  if (!side || Object.keys(provenance).length !== 1 || origin?.matchUpStatus !== entry.matchUpStatus) return undefined;
+  if (!isDoubleExit(origin.previousMatchUpStatus)) return undefined;
+  const award = { entry, matchUpStatus: entry.matchUpStatus as typeof WALKOVER, side: side as 1 | 2, drawPosition };
+  if (!entry.winnerMatchUpId) return award;
+  const onward = onwardFrom(view, entry, drawPosition, { standing: true });
+  return onward ? { ...award, onward } : undefined;
+}
+
+/**
  * C19: a winner arriving opposite a double exit's single produced exit, still pending. v1 awards the held exit to
  * the arrival, records their origin and sends them on. Only the empty arrival seat, exactly the paired feeder's
  * double-exit provenance, no result, score, codes or BYE, and a clean onward arrival (or the last round).
