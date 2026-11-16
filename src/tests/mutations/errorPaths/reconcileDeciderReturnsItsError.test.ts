@@ -153,9 +153,7 @@ it('returns the error when the write to the decider fails (v1 residual: the fina
   expect(fold.stored).toEqual(0);
 });
 
-it('v2: a settle op that cannot be folded is met on the working copy, and the stored draw is written whole', (context) => {
-  // read when the test runs: the suite's mode is set after the file is collected
-  if (getOutcomePipeline() === OUTCOME_PIPELINE_V1) context.skip();
+it('v2: a settle op that cannot be folded is met on the working copy, and the stored draw is written whole', () => {
   playToTheFinal();
   const score = () =>
     tournamentEngine.setMatchUpStatus({ matchUpId: final().matchUpId, outcome: { winningSide: 1 }, drawId: DRAW_ID });
@@ -175,7 +173,8 @@ it('v2: a settle op that cannot be folded is met on the working copy, and the st
   fold.on = true;
   result = score();
   // CONTROL: the fold was attempted and failed, once, on a copy; the stored draw never took the plan in part
-  expect(fold.working).toEqual(1);
+  // (under v1 nothing is planned, so nothing is folded: the call is v1's, whole either way)
+  expect(fold.working).toEqual(getOutcomePipeline() === OUTCOME_PIPELINE_V1 ? 0 : 1);
   expect(fold.stored).toEqual(0);
   // never a success over a draw half written: the call is whole, as the unforced one leaves it
   expect(result.success).toEqual(true);

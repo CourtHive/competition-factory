@@ -238,9 +238,7 @@ it('a placement across the link that fails is not returned as a refusal over the
   expect(names(find(drawId, 'Decider|1|1'))).toEqual(['Marie Ogden', 'Joe Jovovich']);
 });
 
-it('v2: an assignment across the link that cannot be folded is met on the working copy, and the draw is written whole', (context) => {
-  // read when the test runs: the suite's mode is set after the file is collected
-  if (getOutcomePipeline() === OUTCOME_PIPELINE_V1) context.skip();
+it('v2: an assignment across the link that cannot be folded is met on the working copy, and the draw is written whole', () => {
   const { drawId, record } = mainFinalToPlay();
   const drawNow = () => {
     const draw = tournamentEngine.getEvent({ drawId }).drawDefinition;
@@ -257,7 +255,8 @@ it('v2: an assignment across the link that cannot be folded is met on the workin
   fold.structureId = find(drawId, 'Decider|1|1').structureId;
   result = apply(drawId, 'Main|4|1', { winningSide: 2 });
   // CONTROL: the fold was attempted and failed, once, on a copy; the stored draw never took the plan in part
-  expect(fold.working).toEqual(1);
+  // (under v1 nothing is planned, so nothing is folded: the call is v1's, whole either way)
+  expect(fold.working).toEqual(getOutcomePipeline() === OUTCOME_PIPELINE_V1 ? 0 : 1);
   expect(fold.stored).toEqual(0);
   expect(result.success).toEqual(true);
   expect(names(find(drawId, 'Decider|1|1'))).toEqual(['Marie Ogden', 'Joe Jovovich']);
