@@ -111,7 +111,7 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
   let outcome: OutcomePlan = allowed;
   if (allowed.ops)
     outcome =
-      folded && 'ops' in folded && (allowed.settled || !folded.settle.length)
+      folded && 'ops' in folded && (allowed.settleRecorded || !folded.settle.length)
         ? { ...allowed, ops: folded.ops }
         : { abstain: 'settle' };
   const phases =

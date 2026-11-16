@@ -638,7 +638,7 @@ export type OutcomePlan =
       shape: PlanShape;
       abstain?: undefined;
       /** RECORDED: v1's settle passes ran on the working copy and their writes are among the ops */
-      settled?: boolean;
+      settleRecorded?: boolean;
     }
   | { abstain: AbstainReason; ops?: undefined; shape?: undefined };
 
