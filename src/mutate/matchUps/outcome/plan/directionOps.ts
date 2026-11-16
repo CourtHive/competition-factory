@@ -422,8 +422,8 @@ export function deciderSettleOps(
       op: 'setMatchUpResult',
       matchUpId,
       matchUpStatus,
-      matchUpStatusCodes: [],
-      score: { scoreStringSide1: '', scoreStringSide2: '' },
+      // v1 clears through the `toBePlayed` fixture (`removeScore`): its own keys, in its order, and its objects
+      resetsScore: true,
       removesWinningSide: true,
       stampsScoredTime: false,
     },
