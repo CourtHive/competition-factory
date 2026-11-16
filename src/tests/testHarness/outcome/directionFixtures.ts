@@ -6074,6 +6074,27 @@ export const HELD_BYE_RECIPES: [string, number, number, number, number][] = [
   [FIRST_ROUND_LOSER_CONSOLATION, 32, 17, 1, 8],
 ];
 
+/**
+ * C28: the carried WALKOVER cleared is v2's where the carrier's BYE passage reaches a landing in the loser structure,
+ * the award there pending (`heldByeCarryWithdrawal`). The rest stay v1's: the passage runs out at the structure's end,
+ * the carry standing on the BYE itself (the 4-draws, FIC 2/8 R3/1, FRLC 5/8, 9/16 and 17/32, COMPASS and OLYMPIC past
+ * R1/2, the R3/1 feeds), or it leaves the structure (DOUBLE_ELIMINATION 2/8 R3/1).
+ */
+const C28_LANDINGS = new Set([
+  'FEED_IN_CHAMPIONSHIP 7/8 R1/2',
+  'FEED_IN_CHAMPIONSHIP 3/8 R2/1',
+  'FIRST_ROUND_LOSER_CONSOLATION 7/8 R1/2',
+  'FIRST_ROUND_LOSER_CONSOLATION 10/16 R1/2',
+  'COMPASS 7/8 R1/2',
+  'OLYMPIC 7/8 R1/2',
+  'DOUBLE_ELIMINATION 7/8 R1/2',
+  'DOUBLE_ELIMINATION 3/8 R2/1',
+  'CURTIS_CONSOLATION 15/16 R1/2',
+  'MODIFIED_FEED_IN_CHAMPIONSHIP 15/16 R1/2',
+  'FEED_IN_CHAMPIONSHIP_TO_SF 15/16 R1/2',
+  'FIRST_MATCH_LOSER_CONSOLATION 7/8 R1/2',
+]);
+
 export const HELD_BYE_REMOVALS: [string, Scenario, boolean][] = HELD_BYE_RECIPES.flatMap(
   ([drawType, drawSize, participantsCount, roundNumber, roundPosition]) => {
     const target = {
@@ -6082,6 +6103,7 @@ export const HELD_BYE_REMOVALS: [string, Scenario, boolean][] = HELD_BYE_RECIPES
       roundPosition,
     };
     const drawProfile = { drawType, drawSize, participantsCount };
+    const recipeKey = `${drawType} ${participantsCount}/${drawSize} R${roundNumber}/${roundPosition}`;
     const linkedWinner = drawType === DOUBLE_ELIMINATION && participantsCount === 2;
     return ([1, 2] as const).flatMap((side) => {
       const actions: [string, Record<string, unknown>, Record<string, unknown>, boolean][] = [
@@ -6089,7 +6111,7 @@ export const HELD_BYE_REMOVALS: [string, Scenario, boolean][] = HELD_BYE_RECIPES
         ['correct', won(side), won(side === 1 ? 2 : 1), !linkedWinner],
         [DOUBLE_WALKOVER, won(side), { matchUpStatus: DOUBLE_WALKOVER }, !linkedWinner],
         [DOUBLE_DEFAULT, won(side), { matchUpStatus: DOUBLE_DEFAULT }, !linkedWinner],
-        ['carried WALKOVER clear control', walkover(side), cleared, false],
+        ['carried WALKOVER clear control', walkover(side), cleared, C28_LANDINGS.has(recipeKey)],
         ['retired correct', retired(side), won(side === 1 ? 2 : 1), !linkedWinner],
       ];
       return actions.flatMap(([action, initial, outcome, owned]): [string, Scenario, boolean][] => {

@@ -14,6 +14,7 @@ import {
   relabelsWhereWinnerStands,
   scoreless,
   sideOf,
+  storedLoserId,
 } from './planShared';
 
 // constants and types
@@ -263,6 +264,64 @@ function heldByeCarry(view: OutcomeView, sourceMatchUpId: string, participantId:
     entry = indexed(view, entry.winnerMatchUpId);
   }
   return undefined;
+}
+
+/**
+ * C28: a removed result whose loser carried its exit through the BYE held opposite them, the carry still pending where
+ * it landed. v1's `removeDirectedParticipants` withdraws the exit the matchUp produced first (`withdrawProducedExits`):
+ * each BYE the carrier passed loses its provenance, and the landing goes back to be played, its codes and scored time
+ * re-derived. The winner's and the carrier's removal follow (`removeDirectedWinner`, `removeDirectedLoser`, which takes
+ * the carrier back out of the held BYE passage as it does with no carry: `heldByeLoser`). The passage certified as C25
+ * certifies it (`heldByeCarry`); not a landing linking its loser on, nor one whose award somebody has arrived to take.
+ */
+export function heldByeCarryWithdrawal(
+  view: OutcomeView,
+  sourceMatchUpId?: string,
+  { reproduced }: { reproduced?: boolean } = {},
+): OutcomeOp[] | undefined {
+  const { targets } = view;
+  const participantId = storedLoserId(view);
+  const drawPosition = targets.loserTargetDrawPosition;
+  if (!sourceMatchUpId || !participantId || !drawPosition || targets.loserLink?.linkCondition) return undefined;
+  if (targets.loserTargetSeat?.participantId !== participantId || !targets.loserTargetSeat.opponentBye)
+    return undefined;
+  if (!targets.loserMatchUpId || targets.loserMatchUpId === targets.winnerMatchUpId) return undefined;
+  const held = heldByeCarry(view, sourceMatchUpId, participantId, drawPosition);
+  if (!held || held.landing.entry.loserMatchUpId) return undefined;
+  const { relays, landing } = held;
+  // the award to the side opposite the carrier (`heldCarryAt`), nobody there yet: an unfed final side has no number
+  const awarded = landing.entry.sides?.find((side) => side.sideNumber !== landing.sideNumber);
+  if (awarded?.participantId || awarded?.bye) return undefined;
+  return [
+    // v1 re-derives each relay's codes from the provenance it clears (`applyWithdrawnExits`): an equal `[]` quietly
+    ...relays.flatMap(({ entry }): OutcomeOp[] => [
+      {
+        op: 'setMatchUpStatusCodes',
+        matchUpId: entry.matchUpId,
+        matchUpStatusCodes: [],
+        ...(entry.matchUpStatusCodes ? { quiet: true as const } : {}),
+      },
+      { op: 'setSideExitProvenance', matchUpId: entry.matchUpId, announcedAs: 'withdrawProducedExits' },
+      { op: 'stampUpdatedAt', entity: 'matchUp', id: entry.matchUpId },
+    ]),
+    // undecided at the call's end (a clear), its `scoredTime` goes (`reconcileScoredTimes`); a result turned double exit
+    // produces the exit there again, so the landing is decided at the end and keeps the stamp it had (`reproduced`)
+    {
+      op: 'setMatchUpResult',
+      matchUpId: landing.entry.matchUpId,
+      withdrawsCarry: true,
+      matchUpStatusCodes: [],
+      matchUpStatus: TO_BE_PLAYED,
+      ...(reproduced
+        ? { stampsScoredTime: false as const, announcedAs: 'withdrawProducedExits' as const }
+        : { announcedAs: 'reconcileScoredTimes' as const }),
+    },
+    { op: 'setSideExitProvenance', matchUpId: landing.entry.matchUpId },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: landing.entry.matchUpId },
+    ...(targets.loserStructureId && targets.loserStructureId !== targets.source.structureId
+      ? [{ op: 'stampUpdatedAt' as const, entity: 'structure' as const, id: targets.loserStructureId }]
+      : []),
+  ];
 }
 
 /** C25: relabel or withdraw the existing carry, keeping each BYE and its positions intact. */

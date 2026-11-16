@@ -1,3 +1,4 @@
+import { takeAdmittedCarry, withPendingCarry, type CarrySource } from './plan/pendingCarry';
 import { clearedSingleExit, correctedSingleExit, refreshedArrivalOps, relabelledExit } from './plan/exitCorrections';
 import { getCapturedClock, getCapturedStamps, writeLegacyEnabled } from '@Global/state/globalState';
 import { producedRelayAfterOps, unwoundOps, unwoundPath, unwoundView } from './plan/unwindPath';
@@ -6,7 +7,7 @@ import { retainedCarriedAwardOps, terminalOccupiedWinnerOps } from './plan/termi
 import { notesReason, scheduleOps, scheduleReason } from './plan/schedulePlan';
 import { autoCalcWrite, resultOps, writtenScore } from './plan/resultOps';
 import { producedExitOps, producedReason } from './plan/producedExit';
-import { carriedReason, retainedByeCarry } from './plan/carriedExit';
+import { carriedReason, heldByeCarryWithdrawal, retainedByeCarry } from './plan/carriedExit';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { convergedReason } from './plan/carriedConvergence';
 import { groupTally, writtenLine } from './plan/tallyOps';
@@ -64,6 +65,8 @@ import {
 import {
   arrivalOps,
   awardedArrivalOps,
+  producedLoserArrivalOps,
+  awardedProducedArrivalOps,
   arrivalReturnOps,
   placedDirection,
   removalOps,
@@ -186,7 +189,7 @@ function abstainReason(args: PlanArgs): AbstainReason | SeatObligation | undefin
   // a TEAM line directs nothing, its targets being its dual's: its result removed or corrected takes back and re-enters
   // nothing (no re-entered or changed winner), its dual's tally re-read (`teamReason`, S7)
   if (removing) {
-    const removal = view.line ? undefined : removalReason(view, direction);
+    const removal = view.line ? undefined : removalReason(view, direction, carryOf(args));
     if (removal) return removal;
   } else if (view.existing.winningSide && !view.line && !sameWinner && !reentered && !changing && !swapping)
     return 'winner';
@@ -207,7 +210,7 @@ function shapeReason(
   const { request, view, write, direction } = args;
   if (shape.sameWinner) return applyValuesReason(args);
   if (shape.reentered) return reenteredReason(view, write, direction);
-  if (shape.changing) return changedWinnerReason(view, write, direction);
+  if (shape.changing) return changedWinnerReason(view, write, direction, carryOf(args));
   if (shape.swapping) return swapReason(view, write);
   // S5: a double exit's produced exit, vetted by `producedReason`
   if (args.route === DOUBLE_EXIT) return undefined;
@@ -231,9 +234,13 @@ function shapeReason(
  */
 function resultToDoubleExit(args: PlanArgs): OutcomePlan {
   const { view, request, rebuild } = args;
-  const removing = resultRemovalReason(view);
+  const carry = carryOf(args);
+  const removing = resultRemovalReason(view, carry);
   if (removing) return { abstain: removing };
-  const removal = removalOps(view, request.matchUpStatus);
+  // C27: a carry the result left pending is withdrawn first, as v1's removal withdraws it
+  const removal = withPendingCarry(view, carry, (rederived) => removalOps(view, request.matchUpStatus, rederived), {
+    reproduced: true,
+  });
   const undecided: OutcomeOp = {
     op: 'setMatchUpResult',
     matchUpId: request.matchUpId as string,
@@ -252,8 +259,14 @@ function resultToDoubleExit(args: PlanArgs): OutcomePlan {
   if (!produced.ops) return produced;
   // C21: the BYE entry's code-removal notice survives the double-exit placement further on. v1 announces
   // the source result before that notice; the source prefix and the other matchUps' removal writes commute.
-  const held = heldByeLoser(view);
-  if (held) {
+  // C28: so does the entry a carry was withdrawn from as it passed the BYE (`heldByeCarryWithdrawal`)
+  const held =
+    heldByeLoser(view) ??
+    (heldByeCarryWithdrawal(view, request.matchUpId)
+      ? { entry: indexed(view, view.targets.loserMatchUpId) }
+      : undefined);
+  const entryId = held?.entry?.matchUpId;
+  if (entryId) {
     const ownResult = produced.ops.findIndex(
       (op) => op.op === 'setMatchUpResult' && op.matchUpId === request.matchUpId,
     );
@@ -266,7 +279,7 @@ function resultToDoubleExit(args: PlanArgs): OutcomePlan {
     const tail = produced.ops
       .slice(ownStamp + 1)
       .map((op): OutcomeOp =>
-        op.op === 'setMatchUpResult' && op.matchUpId === held.entry.matchUpId && op.announcesContext === false
+        op.op === 'setMatchUpResult' && op.matchUpId === entryId && op.announcesContext === false
           ? { ...op, restoresNoticeIdentity: true }
           : op,
       );
@@ -283,12 +296,12 @@ function resultToDoubleExit(args: PlanArgs): OutcomePlan {
  * next matchUp of the same structure, the loser, if a link took them, on the seat it fed in a matchUp they have not
  * played. Not a result in a group (its tally), a WIN_RATIO structure, nor one with side provenance or a carried exit.
  */
-function resultRemovalReason(view: OutcomeView): AbstainReason | undefined {
+function resultRemovalReason(view: OutcomeView, carry?: CarrySource): AbstainReason | undefined {
   if (!view.existing.winningSide) return 'exit';
   if (view.group || view.draw.tallied) return 'tallied';
   if (view.draw.winRatio) return 'link';
   if (view.existing.hasSideExitProvenance || view.existing.carriedExit) return 'provenance';
-  return removalReason(view);
+  return removalReason(view, undefined, carry);
 }
 
 /** A plan needs the draw and an existing captured instant; tournament containment is not a write prerequisite. */
@@ -302,11 +315,28 @@ function recordReason({
   return undefined;
 }
 
+/** C27's carry source: the call's draw and matchUp */
+const carryOf = (args: PlanArgs): CarrySource => ({
+  drawDefinition: args.drawDefinition,
+  matchUpId: args.request.matchUpId,
+});
+
 export function planOutcome(args: PlanArgs): OutcomePlan {
+  takeAdmittedCarry(); // nothing an earlier call's plan left is this call's
   const plan = args.route === RESULT_TO_DOUBLE_EXIT ? resultToDoubleExit(args) : planOps(args);
   // a TEAM line's result numbers it in its collection's finishing order (a deciding line's dual is planned in its plan)
-  if (!plan.ops || args.asDual) return plan;
-  return { ...plan, ops: withFinishingOrder(plan.ops, args.drawDefinition) };
+  const ordered = !plan.ops || args.asDual ? plan : { ...plan, ops: withFinishingOrder(plan.ops, args.drawDefinition) };
+  return wholeCarry(args, ordered);
+}
+
+/**
+ * C27 owns a call whole or not at all. Its pending carry admitted where the removal refuses (`admitPendingCarry`), a call
+ * the plan does not own, or whose ops leave a settle pass work, is given back that refusal: the reason it has without
+ * C27, at the same point of the plan
+ */
+function wholeCarry(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
+  if (takeAdmittedCarry() !== args.request.matchUpId) return plan;
+  return plan.ops && !args.settles?.(plan.ops) ? plan : { abstain: 'cascade' };
 }
 
 /**
@@ -530,7 +560,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   if (!retainedAward) return { abstain: 'exit' };
   const ops: OutcomeOp[] = [
     ...swapOps(view, args.route),
-    ...replacedLoserOps(view, args.route, write, request.matchUpStatus),
+    ...replacedLoserOps(view, args.route, write, request.matchUpStatus, carryOf(args)),
     ...unwound,
     // a dual's own call writes its sides first (S7); for the dual a line decides they are its line's (`dualTally`), by the
     // same rule (`ensuredDualSides`)
@@ -554,7 +584,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   const winner = placing?.winner;
   ops.push(
     ...winnerPlacementOps(view, args.route, write, winner),
-    ...removedOps(view, args.route, write, request.matchUpStatus),
+    ...removedOps(view, args.route, write, request.matchUpStatus, carryOf(args)),
   );
   // a plain loser arrival: the loser on the seat the link feeds. The matchUp they land in is not stamped: its stored
   // object does not change (the write is on the structure's assignments), so it is not a touched entity (F2 (i), and v1).
@@ -619,6 +649,8 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   const seated = [
     ...arrival,
     ...awardedArrivalOps(view, loser),
+    ...producedLoserArrivalOps(view, loser),
+    ...awardedProducedArrivalOps(view, loser),
     ...unwoundArrivalOps(view, unwound, loser),
     ...keptOutBye,
     ...reserved,

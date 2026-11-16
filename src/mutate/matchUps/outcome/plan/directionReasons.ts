@@ -1,4 +1,5 @@
-import { relabelCarryReason, withdrawnReason } from './carriedExit';
+import { admitPendingCarry, pendingCarryWithdrawal, type CarrySource } from './pendingCarry';
+import { heldByeCarryWithdrawal, relabelCarryReason, withdrawnReason } from './carriedExit';
 import { isDoubleExit } from '@Validators/isExit';
 import {
   DIRECTED_STATUSES,
@@ -12,6 +13,9 @@ import {
   directedBothSides,
   directsElsewhere,
   standingAwardArrival,
+  producedLoserArrival,
+  awardedProducedArrival,
+  standingWinnerAward,
   storedLoserId,
   unreachedWinner,
 } from './planShared';
@@ -51,7 +55,11 @@ export function plainLoserReason(view: OutcomeView, direction: DirectionPlan): A
   if (loser.participantId && targets.seededParticipantIds?.includes(loser.participantId)) return 'loser';
   // a carried exit standing there, awarded to the seat the loser takes: they take it and go on (C18)
   if (targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit)
-    return standingAwardArrival(view, loser) ? undefined : 'cascade';
+    // C29: a double exit's produced exit pending beside the free seat is awarded to the arrival (`producedLoserArrival`);
+    // C30: one already awarded to the free seat, its position already sent on, takes the arrival (`awardedProducedArrival`)
+    return standingAwardArrival(view, loser) || producedLoserArrival(view, loser) || awardedProducedArrival(view, loser)
+      ? undefined
+      : 'cascade';
   // opposite a BYE the loser goes on at once: planned when the matchUp they go on into is clean (`loserThroughBye`), or a
   // carried exit's loser goes on through the BYE-held matchUps past it (`loserByePassage`, S6 tail)
   if (
@@ -119,10 +127,14 @@ function reservationReason(view: OutcomeView, winningSide: 1 | 2): boolean {
  * played (`removedLoserReason`): nothing across a winner link, no FIRST_MATCHUP reservation the draw may hold, and the
  * next matchUp `TO_BE_PLAYED` with no BYE, exit, carry or result. Anything else is v1's (S4).
  */
-export function removalReason(view: OutcomeView, direction?: DirectionPlan): AbstainReason | undefined {
+export function removalReason(
+  view: OutcomeView,
+  direction?: DirectionPlan,
+  carry?: CarrySource,
+): AbstainReason | undefined {
   const { targets, existing } = view;
   if (direction) return 'loser';
-  const loserReason = removedLoserReason(view);
+  const loserReason = removedLoserReason(view, carry);
   if (loserReason) return loserReason;
   // a BYE-only target beside a playoff link (FMLC with a playoff): v1 takes back the BYE it placed there (`removeDirectedBye`)
   if (targets.byeTarget) return 'loser';
@@ -137,7 +149,7 @@ export function removalReason(view: OutcomeView, direction?: DirectionPlan): Abs
  * exit or provenance there, and no codes but none or an empty list (which v1 re-derives as `[]`). Not a FIRST_MATCHUP
  * link, whose removal may take a BYE back too.
  */
-function removedLoserReason(view: OutcomeView): AbstainReason | undefined {
+function removedLoserReason(view: OutcomeView, carry?: CarrySource): AbstainReason | undefined {
   const { targets } = view;
   if (!targets.loserMatchUpId && !targets.loserLink) return undefined;
   if (!targets.loserMatchUpId || targets.loserLink?.linkCondition) return 'loser';
@@ -145,8 +157,17 @@ function removedLoserReason(view: OutcomeView): AbstainReason | undefined {
   const seat = targets.loserTargetSeat;
   if (!loserId || !targets.loserStructureId || !targets.loserTargetDrawPosition || seat?.participantId !== loserId)
     return 'loser';
-  if (seat.opponentBye || targets.loserMatchUpStatus !== TO_BE_PLAYED)
-    return heldByeLoser(view) ? undefined : 'cascade';
+  if (seat.opponentBye || targets.loserMatchUpStatus !== TO_BE_PLAYED) {
+    if (heldByeLoser(view)) return undefined;
+    // C28: the carry the loser took through the held BYE, pending where it landed, withdrawn with it (`withPendingCarry`)
+    if (heldByeCarryWithdrawal(view, carry?.matchUpId)) {
+      admitPendingCarry(carry?.matchUpId, carry);
+      return undefined;
+    }
+    // C27: a cleared exit's carry still pending on the loser matchUp is withdrawn with it (`pendingCarryWithdrawal`);
+    // admitted, it is recorded, so a call planned past it but not owned keeps this refusal (`wholeCarry`)
+    return admitPendingCarry(pendingCarryWithdrawal(view, carry), carry) ? undefined : 'cascade';
+  }
   if (targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit) return 'cascade';
   const record = targets.loserMatchUpRecord;
   if (!record || record.provenance || record.matchUpStatusCodes?.length) return 'provenance';
@@ -200,11 +221,12 @@ export function changedWinnerReason(
   view: OutcomeView,
   write?: MatchUpWrite,
   direction?: DirectionPlan,
+  carry?: CarrySource,
 ): AbstainReason | undefined {
   const { targets } = view;
   if (!directedBothSides(view, write)) return 'route';
   if (directsElsewhere(direction)) return 'route';
-  const removal = removalReason(view);
+  const removal = removalReason(view, undefined, carry);
   if (removal) return removal;
   if (targets.winner ? !direction?.winner : direction?.winner) return 'route';
   if (!targets.loserMatchUpId) return undefined;
@@ -287,8 +309,9 @@ export function directionReason(args: {
   const target = targets.winner;
   if (!target || target.structureId !== targets.source.structureId) return 'link';
   if (reservationReason(view, write.winningSide as 1 | 2)) return 'cascade';
-  // C19: the produced exit pending in this winner's target is awarded as the winner arrives.
-  if (!unwound && pendingProducedArrival(view, write)) return undefined;
+  // C19: the produced exit pending in this winner's target is awarded as the winner arrives; C20: the carried exit
+  // standing there, awarded to their seat, is theirs as they arrive
+  if (!unwound && (pendingProducedArrival(view, write) || standingWinnerAward(view, write))) return undefined;
   // a target holding a BYE sends the winner on past it: planned when where they go is clean (`winnerThroughBye`)
   const through = target.hasBye ? targets.winnerThroughBye?.[write.winningSide as 1 | 2] : undefined;
   // an unwound call's next matchUp is on the unwind's path, written back to be played before the winner arrives: a

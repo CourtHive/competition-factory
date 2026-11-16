@@ -228,7 +228,8 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     expect(v2.notices).toEqual(v1.notices);
   });
 
-  it('S6: a cleared walkover that carried its exit across the loser link is v1s (its provenance there)', () => {
+  // C27: the carry still pending on the loser matchUp is withdrawn with the exit (pendingCarryWithdrawal.test.ts)
+  it('S6: a cleared walkover that carried its exit across the loser link, the carry pending, is v2s (C27)', () => {
     const scenario: Scenario = {
       drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
       setup: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
@@ -237,7 +238,7 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
     expect(v1.results[0].success).toEqual(true);
-    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.v1Writes).toEqual(0);
     expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
     expect(v2.notices).toEqual(v1.notices);
@@ -392,19 +393,27 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
         steps: [{ target: { roundNumber: 1, nth: 0 }, outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
       },
     ],
-    [
-      'S6: a walkover its loser carried across their link, turned into a double walkover, is v1s (FEED_IN_CHAMPIONSHIP)',
-      {
-        drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
-        setup: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
-        steps: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
-      },
-    ],
   ])('%s', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
     expect(v1.results[0].success).toEqual(true);
     expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+  });
+
+  // C27: the double exit's removal withdraws the carry still pending on the loser matchUp (pendingCarryWithdrawal.test.ts)
+  it('S6: a walkover its loser carried across their link, the carry pending, turned into a double walkover, is v2s (C27)', () => {
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+      steps: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v1.results[0].success).toEqual(true);
+    expect(v2.v1Writes).toEqual(0);
     expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
     expect(v2.notices).toEqual(v1.notices);

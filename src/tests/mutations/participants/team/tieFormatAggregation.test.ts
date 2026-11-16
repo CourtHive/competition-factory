@@ -1,4 +1,3 @@
-import { completeDrawMatchUps } from '@Generators/simulation/completeDrawMatchUps';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -38,7 +37,7 @@ it('can aggregate tieFormats found in drawDefinitions to event.tieFormats', () =
   });
 
   let event = tournamentEngine.getEvent({ eventId: eventIds[0] }).event;
-  let completionResult = completeDrawMatchUps({
+  let completionResult = mocksEngine.completeDrawMatchUps({
     drawDefinition: d1.drawDefinition,
     completeAllMatchUps: true,
     tournamentRecord,
@@ -58,7 +57,7 @@ it('can aggregate tieFormats found in drawDefinitions to event.tieFormats', () =
   });
 
   event = tournamentEngine.getEvent({ eventId: eventIds[0] }).event;
-  completionResult = completeDrawMatchUps({
+  completionResult = mocksEngine.completeDrawMatchUps({
     drawDefinition: d2.drawDefinition,
     completeAllMatchUps: true,
     tournamentRecord,
