@@ -460,6 +460,18 @@ function lineDualOps(args: PlanArgs & { dual: DualCall; drawDefinition: DrawDefi
   return args.route === LINE_SCORE ? undecidingLineOps(args) : decidingLineOps(args);
 }
 
+/** takes the dual plan's Decider settle (`deciderSettleOps`, its last ops) out of `ops`, to be written after the line-ups */
+function settledDeciderOps(ops: OutcomeOp[], dual: DualCall): OutcomeOp[] {
+  const settle = deciderSettleOps(dual.view, dual.route, dual.write as MatchUpWrite, dual.direction);
+  const [result] = settle;
+  if (result?.op !== 'setMatchUpResult') return [];
+  const at = ops.findLastIndex(
+    (op) =>
+      op.op === 'setMatchUpResult' && op.matchUpId === result.matchUpId && op.resetsScore && op.removesWinningSide,
+  );
+  return at < 0 ? [] : ops.splice(at, settle.length);
+}
+
 function decidingLineOps(args: PlanArgs & { dual: DualCall; drawDefinition: DrawDefinition }): OutcomePlan {
   const { dual, view, request, drawDefinition } = args;
   const line = view.line;
@@ -490,8 +502,11 @@ function decidingLineOps(args: PlanArgs & { dual: DualCall; drawDefinition: Draw
   }
   const seated = deciderLineUpOps({ dual, drawDefinition });
   if (!seated) return { abstain: 'team' };
+  // v1 settles the Decider last (`reconcileDeciders`), after both line-ups are on it
+  const settled = settledDeciderOps(ops, dual);
   ops.push(...seated);
   if (loserCarry) ops.push(loserCarry, { op: 'stampUpdatedAt', entity: 'matchUp', id: loserCarry.matchUpId });
+  ops.push(...settled);
   return { ops: [...resultOps(request, write, request.matchUpId as string), ...ops], shape: dualPlan.shape };
 }
 
