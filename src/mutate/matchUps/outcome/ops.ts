@@ -453,6 +453,11 @@ export type OutcomeOp =
       op: 'announceRecorded';
       /** RECORDED: the notices the module and the settle passes buffered, in their order */
       notices: RecordedNotice[];
+      /**
+       * the tournaments and topics the copy's writes marked modified, each in its order: a notice marks them whether or
+       * not anyone subscribes, so the buffer alone does not say. Absent where the provider cannot expose its marks
+       */
+      marks?: { tournamentIds: string[]; topics: string[] };
     }
   | { op: 'stampUpdatedAt'; entity: 'matchUp' | 'structure' | 'drawDefinition'; id: string };
 

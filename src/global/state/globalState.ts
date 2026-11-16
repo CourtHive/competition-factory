@@ -548,8 +548,8 @@ export function cycleModifiedTopics(): Set<string> | undefined {
  * Marks a write modified without announcing it: a write made with `suppressNotifications` is still stamped. A provider
  * without the optional hook marks nothing (the write is then unstamped, as before).
  */
-export function markModified(tournamentId?: string) {
-  _globalStateProvider.markModified?.(tournamentId);
+export function markModified(tournamentId?: string, topic?: string) {
+  _globalStateProvider.markModified?.(tournamentId, topic);
 }
 
 /** Clears the mutation flag and the tournaments it names: a refused write is not a modification. */

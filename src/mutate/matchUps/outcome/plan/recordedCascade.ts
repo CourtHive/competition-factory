@@ -60,20 +60,28 @@ function drawMatchUps(drawDefinition: DrawDefinition): MatchUp[] {
   return found;
 }
 
+type NoticeMarks = { tournamentIds: string[]; topics: string[] };
+
 /**
  * `withDraftWrites` puts back the notice buffer and the modified flag; the provider's marks of WHICH tournaments and
  * topics the call modified are put back here, in their order. A copy's notices marked them before the call's own did.
+ * They are emptied for the run, so `fn` can read what the copy's writes marked (`read`), which apply marks again.
  */
-function withNoticeMarks<T>(fn: () => T): T {
-  const marks = () => {
+function withNoticeMarks<T>(fn: (read: () => NoticeMarks | undefined) => T): T {
+  const sets = () => {
     const state = getNoticeState();
     return [state?.modifiedTournamentIds, state?.modifiedTopics];
   };
-  const before = marks().map((set) => set && [...set]);
+  const before = sets().map((set) => set && [...set]);
+  sets().forEach((set) => set?.clear());
+  const read = () => {
+    const [tournamentIds, topics] = sets();
+    return tournamentIds && topics ? { tournamentIds: [...tournamentIds], topics: [...topics] } : undefined;
+  };
   try {
-    return fn();
+    return fn(read);
   } finally {
-    marks().forEach((set, at) => {
+    sets().forEach((set, at) => {
       set?.clear();
       for (const value of before[at] ?? []) set?.add(value);
     });
@@ -128,7 +136,7 @@ export function recordDoubleExitCascade(args: BuildViewArgs, prefix: OutcomeOp[]
     for (const matchUp of drawMatchUps(drawDefinition))
       if (stampedBefore.has(`matchUp:${matchUp.matchUpId}`)) ledger.add(matchUp);
   }
-  return withNoticeMarks(() =>
+  return withNoticeMarks((readMarks) =>
     withDraftWrites(() =>
       withoutSettleTelemetry(() => {
         // v1 reads the draw before the call's own write (`setMatchUpState`), and the module is handed that reading
@@ -230,7 +238,7 @@ export function recordDoubleExitCascade(args: BuildViewArgs, prefix: OutcomeOp[]
           if (!recorded) return undefined;
           notices.push(recorded);
         }
-        ops.push({ op: 'announceRecorded', notices });
+        ops.push({ op: 'announceRecorded', notices, marks: readMarks() });
         return ops;
       }),
     ),

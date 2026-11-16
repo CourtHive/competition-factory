@@ -3,7 +3,8 @@ import { getInContextMatchUp } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { applyOutcomeOps, RECORDED_ENTITY, splitScoredTimeCleanup } from './ops';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { findStructure } from '@Acquire/findStructure';
-import { addNotice, DEFERRED_PAYLOAD, getTopics } from '@Global/state/globalState';
+import { addNotice, DEFERRED_PAYLOAD, getTopics, markModified } from '@Global/state/globalState';
+import { UNANNOUNCED_WRITE, UNNAMED_TOURNAMENT } from '@Global/state/noticeIdentity';
 import {
   liveNoticeEffects,
   type NoticeEffects,
@@ -306,6 +307,21 @@ export function applyOwnedPlan({
   return planResult(shape, ops, route);
 }
 
+/**
+ * the tournaments and topics the copy's writes marked modified, marked again in their order, before the notices: one
+ * raised again marks only what its payload now names
+ */
+function markRecorded(marks?: { tournamentIds: string[]; topics: string[] }) {
+  if (!marks?.tournamentIds.length || !marks.topics.length) return;
+  const named = (value: string | undefined, unnamed: string) => (value === unnamed ? undefined : value);
+  const { tournamentIds, topics } = marks;
+  for (let at = 0; at < Math.max(tournamentIds.length, topics.length); at++)
+    markModified(
+      named(tournamentIds[Math.min(at, tournamentIds.length - 1)], UNNAMED_TOURNAMENT),
+      named(topics[Math.min(at, topics.length - 1)], UNANNOUNCED_WRITE),
+    );
+}
+
 /** the stored entity a recorded notice carries: the matchUp, the draw, or a structure's assignments */
 function recordedEntity(topic: string, key: string, drawDefinition: DrawDefinition, stored: Map<string, MatchUp>) {
   if (topic === MODIFY_MATCHUP) return stored.get(key);
@@ -324,6 +340,7 @@ function announceRecorded(ops: OutcomeOp[], args: BuildViewArgs, stored: Map<str
   if (!drawDefinition) return;
   for (const op of ops) {
     if (op.op !== 'announceRecorded') continue;
+    markRecorded(op.marks);
     for (const { topic, key, fields, deferred } of op.notices) {
       if (deferred) {
         const inContextMatchUp = deferredQuery(getInContextMatchUp, {
