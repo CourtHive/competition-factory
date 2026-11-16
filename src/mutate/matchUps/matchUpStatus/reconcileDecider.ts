@@ -12,8 +12,9 @@ import { isAnyExit } from '@Validators/isExit';
 // constants and types
 import { BYE, DEAD_RUBBER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DrawDefinition, Event, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
+import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { ResultType } from '@Types/factoryTypes';
+import type { HydratedMatchUp } from '@Types/hydrated';
 
 /**
  * A DECIDER IS PLAYED ONLY IF IT IS NEEDED, and says so when it is not.
@@ -81,6 +82,9 @@ type DeciderArgs = {
   event?: Event;
 };
 
+/** a reading of the draw its caller already holds, so asking whether there is work costs no hydration of its own */
+type DeciderReading = { inContextDrawMatchUps?: HydratedMatchUp[]; matchUpsMap?: MatchUpsMap };
+
 /**
  * What the rule asks of one triggered final, read and not yet done: the seats its finalists take (`seats`, absent
  * where they already stand as the rule puts them or the decider is not two plain seats) and the status its decider
@@ -88,11 +92,17 @@ type DeciderArgs = {
  * Undefined where the final has no decider to settle. Shared by the pass and by its has-work predicate, so the two
  * cannot drift.
  */
-function resolveDecider({ winningSideBefore, deciderChanged, drawDefinition, matchUpId }: DeciderArgs) {
+function resolveDecider(
+  { winningSideBefore, deciderChanged, drawDefinition, matchUpId }: DeciderArgs,
+  reading?: DeciderReading,
+) {
   if (!drawDefinition || !matchUpId) return undefined;
 
-  const matchUpsMap = getMatchUpsMap({ drawDefinition });
-  const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
+  const matchUpsMap = reading?.matchUpsMap ?? getMatchUpsMap({ drawDefinition });
+  const inContextDrawMatchUps =
+    reading?.inContextDrawMatchUps ??
+    getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ??
+    [];
   const final = inContextDrawMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
   if (!final || final.collectionId || (final.winningSide === winningSideBefore && !deciderChanged)) return undefined;
 
@@ -141,9 +151,12 @@ function resolveDecider({ winningSideBefore, deciderChanged, drawDefinition, mat
   return { decider, seats, matchUpStatus: stands ? undefined : matchUpStatus };
 }
 
-/** the pass would seat or write for this trigger: its has-work predicate, exact (`resolveDecider`) */
-export function deciderHasWork(args: DeciderArgs): boolean {
-  const resolved = resolveDecider(args);
+/**
+ * The pass would seat or write for this trigger: its has-work predicate, exact (`resolveDecider`). Given the caller's
+ * own reading of the draw it asks nothing more of it (`verify:hydrations`).
+ */
+export function deciderHasWork(args: DeciderArgs, reading?: DeciderReading): boolean {
+  const resolved = resolveDecider(args, reading);
   return !!resolved && (!!resolved.error || !!resolved.seats || !!resolved.matchUpStatus);
 }
 

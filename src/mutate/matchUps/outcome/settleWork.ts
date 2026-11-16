@@ -131,7 +131,9 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
         deciderSnapshotBefore: getDeciderSnapshot(args.drawDefinition),
         mutatedMatchUpId: args.matchUpId,
         drawDefinition: draw,
-      }).some((trigger) => deciderHasWork({ ...trigger, drawDefinition: draw })),
+      }).some((trigger) =>
+        deciderHasWork({ ...trigger, drawDefinition: draw }, { inContextDrawMatchUps: view, matchUpsMap: map }),
+      ),
     settleForwardConsequences: () =>
       hasForwardWork({
         inContextDrawMatchUps: view,
