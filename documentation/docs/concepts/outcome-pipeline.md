@@ -1626,7 +1626,7 @@ write shape by shape is not handed to v1. v2 folds the call's own write into a c
 double-exit module (`doubleExitAdvancement`) on that copy as `attemptToSetMatchUpStatus` runs it after
 `scoreModification`, then v1's settle passes (`settleAfterWrite`, the one sequence `setMatchUpStatus` runs on the stored
 draw), and returns what changed as the four ops above (`outcome/plan/recordedCascade.ts`). The copy's writes announce
-nothing and stamp nothing outside it (`withDraftWrites`). The plan is then held to the check every plan is: no settle pass has work left on the working view. It is refused, and the call stays v1's, where the module or a pass returns an error, the forward
+nothing and stamp nothing outside it (`withDraftWrites`). The plan is then held to the check every plan is: no settle pass has work left on the working view. A recording a predicate still finds work on is dropped whole, and the call is refused where it was before. It is refused, and the call stays v1's, where the module or a pass returns an error, the forward
 settle is exhausted, anything outside the draw changes, or a notice is buffered that apply could not raise again. Not
 recorded: a matchUp that already holds a result or an exit (v1 removes it first), a round robin group, a TEAM dual or
 line, and a call with no captured clock. The module and the passes stay v1's code, used as a library until v3.

@@ -813,7 +813,10 @@ function recordedCascade(
     { op: 'stampUpdatedAt', entity: 'drawDefinition', id: drawDefinition.drawId },
   ];
   const recorded = record(prefix);
-  return recorded && { ops: [...prefix, ...recorded], shape: 'local' };
+  if (!recorded) return undefined;
+  const recordedOps = [...prefix, ...recorded];
+  // whole or not at all (C27): a recording a settle predicate still finds work on stays where it was refused
+  return args.settles?.(recordedOps) ? undefined : { ops: recordedOps, shape: 'local' };
 }
 
 /** A linked winner's later cleanup follows the assignment return in the originating structure. */
