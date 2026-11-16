@@ -1,5 +1,9 @@
 import { findMissedLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileMissedLinkAdvancements';
-import { getDeciderTriggers, getDeciderSnapshot } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
+import {
+  deciderHasWork,
+  getDeciderTriggers,
+  getDeciderSnapshot,
+} from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { findReservationWork } from '@Mutate/matchUps/matchUpStatus/reconcileConsolationReservations';
 import { findMisplacedProvenance } from '@Mutate/matchUps/matchUpStatus/reconcileProvenanceSides';
 import { hasHeldExitWork } from '@Mutate/drawDefinitions/positionGovernor/doubleExitAdvancement';
@@ -120,13 +124,16 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
       !!findMissedLinkAdvancements({ inContextDrawMatchUps: view, drawDefinition: draw }).length,
     reconcileProvenanceSides: () => !!findMisplacedProvenance({ inContextDrawMatchUps: view, matchUpsMap: map }).length,
     // EXACT for the trigger: a changed final winner, or a decider moved by a foreign cascade.
+    // and for the work: each trigger asked what the pass would seat or write (`deciderHasWork`); most need nothing
     reconcileDeciders: () =>
-      !!getDeciderTriggers({
+      getDeciderTriggers({
         finalsBefore: getDeciderFinals(args.drawDefinition),
         deciderSnapshotBefore: getDeciderSnapshot(args.drawDefinition),
         mutatedMatchUpId: args.matchUpId,
         drawDefinition: draw,
-      }).length,
+      }).some((trigger) =>
+        deciderHasWork({ ...trigger, drawDefinition: draw }, { inContextDrawMatchUps: view, matchUpsMap: map }),
+      ),
     settleForwardConsequences: () =>
       hasForwardWork({
         inContextDrawMatchUps: view,

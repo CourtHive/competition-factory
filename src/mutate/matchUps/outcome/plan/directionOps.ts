@@ -3,6 +3,8 @@ import { buildSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExit
 import {
   APPLY_VALUES,
   changesWinner,
+  linkedWinnerPosition,
+  deciderSeats,
   positionsOf,
   pendingProducedArrival,
   reentersWinner,
@@ -37,6 +39,7 @@ export function winnerPlacementOps(
   const target = view.targets.winner;
   const position = write.winningSide ? view.targets.sideDrawPositions[write.winningSide as 1 | 2] : undefined;
   if (!winner || !position || !target) return [];
+  if (target.structureId !== view.targets.source.structureId) return linkedWinnerOps(view, route, write, winner);
   const award = route === 'winner' ? pendingProducedArrival(view, write) : undefined;
   if (award) return pendingProducedArrivalOps(write, award);
   const standing = route === 'winner' ? standingWinnerAward(view, write) : undefined;
@@ -53,6 +56,22 @@ export function winnerPlacementOps(
       drawPositions,
       ...(replaced ? { removedDrawPosition: replaced, placedDrawPosition: position } : {}),
     },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: winner.matchUpId },
+  ];
+}
+
+/** BATCH 1 (A1): the winner's own position in the structure across the link joins the matchUp there */
+function linkedWinnerOps(
+  view: OutcomeView,
+  route: Route | undefined,
+  write: MatchUpWrite,
+  winner: NonNullable<DirectionPlan['winner']>,
+): OutcomeOp[] {
+  const position = route === 'winner' ? linkedWinnerPosition(view, write) : undefined;
+  if (!position || !view.targets.winner) return [];
+  const drawPositions = [...new Set([...view.targets.winner.drawPositions, position])].sort((a, b) => a - b);
+  return [
+    { op: 'setMatchUpDrawPositions', matchUpId: winner.matchUpId, drawPositions },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: winner.matchUpId },
   ];
 }
@@ -368,4 +387,66 @@ export function awardedProducedArrivalOps(view: OutcomeView, loser?: DirectionPl
         ] as OutcomeOp[])
       : []),
   ];
+}
+
+/** BATCH 1 (A2): the final's winner and loser assigned their Decider seats (`deciderSeats`) */
+function deciderArrivalOps(view: OutcomeView, write: MatchUpWrite, direction?: DirectionPlan): OutcomeOp[] {
+  const seats = deciderSeats(view, write, direction);
+  if (!seats || !direction?.loser) return [];
+  const { structureId, drawPosition, participantId } = seats.winner;
+  const assign = (position: number, id: string): OutcomeOp => ({
+    op: 'assignPosition',
+    announcesAssignments: false,
+    structureId,
+    drawPosition: position,
+    participantId: id,
+  });
+  return [assign(drawPosition, participantId), assign(seats.loserDrawPosition, direction.loser.participantId)];
+}
+
+/**
+ * BATCH 1 (A2): a Decider that is not needed is written a DEAD_RUBBER by v1's settle pass (`reconcileDecider`), after
+ * everything the call directs. One that is needed stands to be played, as the arrivals found it.
+ */
+export function deciderSettleOps(
+  view: OutcomeView,
+  route: Route | undefined,
+  write: MatchUpWrite,
+  direction?: DirectionPlan,
+): OutcomeOp[] {
+  const seats = route === 'winner' ? deciderSeats(view, write, direction) : undefined;
+  if (!seats || seats.decider.matchUpStatus === view.targets.winner?.matchUpStatus) return [];
+  const { matchUpId, matchUpStatus } = seats.decider;
+  return [
+    {
+      op: 'setMatchUpResult',
+      matchUpId,
+      matchUpStatus,
+      // v1 clears through the `toBePlayed` fixture (`removeScore`): its own keys, in its order, and its objects
+      resetsScore: true,
+      removesWinningSide: true,
+      stampsScoredTime: false,
+    },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
+  ];
+}
+
+/** the loser's plain arrival (`arrivalOps`), or a final's two arrivals in its Decider (`deciderArrivalOps`) */
+export function linkedArrivalOps(
+  view: OutcomeView,
+  route: Route | undefined,
+  write: MatchUpWrite,
+  direction: DirectionPlan | undefined,
+  loser: DirectionPlan['loser'],
+): OutcomeOp[] {
+  const decider = route === 'winner' ? deciderArrivalOps(view, write, direction) : [];
+  return decider.length ? decider : arrivalOps(view, loser);
+}
+
+/** BATCH 1 (A1): a winner placed across a winner link stamps the structure they land in, as v1 announces it */
+export function linkedWinnerStamp(view: OutcomeView, placed: OutcomeOp[]): OutcomeOp[] {
+  const id = view.targets.winner?.structureId;
+  return placed.length && id && id !== view.targets.source.structureId
+    ? [{ op: 'stampUpdatedAt', entity: 'structure', id }]
+    : [];
 }

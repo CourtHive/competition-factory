@@ -12,7 +12,7 @@ import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { convergedReason } from './plan/carriedConvergence';
 import { groupTally, writtenLine } from './plan/tallyOps';
 import { withFinishingOrder } from './finishingOrderOps';
-import { doubleExitSeatOps } from './plan/byeChain';
+import { doubleExitSeatOps, keptOutByeChain } from './plan/byeChain';
 import {
   APPLY_VALUES,
   CLEAR_SCORE,
@@ -22,7 +22,9 @@ import {
   RESULT_TO_DOUBLE_EXIT,
   SINGLE_EXITS,
   changesWinner,
+  deciderSeats,
   directsElsewhere,
+  propagatesSingleExit,
   isSettleWrite,
   indexed,
   loserByeArrival,
@@ -48,6 +50,7 @@ import {
   dualTallyOps,
   lineExitReason,
   lineUpCarry,
+  deciderLineUpOps,
   loserLineUpBeyond,
   removedByeLineUpOps,
   loserLineUpCarry,
@@ -63,7 +66,9 @@ import {
   swapReason,
 } from './plan/directionReasons';
 import {
-  arrivalOps,
+  deciderSettleOps,
+  linkedArrivalOps,
+  linkedWinnerStamp,
   awardedArrivalOps,
   producedLoserArrivalOps,
   awardedProducedArrivalOps,
@@ -147,7 +152,10 @@ function exitReason(args: ExitReasonArgs): AbstainReason | SeatObligation | unde
   if (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide) return 'exit';
   if (write.matchUpStatus === DEFAULTED && view.draw.defaultProcessCodes) return 'exit';
   const loser = direction?.loser;
-  if (directsElsewhere(direction)) return 'exit';
+  // a final's exit that does not propagate is directed into its Decider as a played result is (BATCH 1, A2); one that
+  // would propagate puts every settle pass in reach (`predictSettleWork`), and stays v1's
+  if (directsElsewhere(direction) && (propagatesSingleExit(request) || !deciderSeats(view, write, direction)))
+    return 'exit';
   if (loser?.carriedPast || loser?.withdrawn) return 'exit';
   if (loser?.converged) return convergedReason(view, request, write, loser, undefined, args.drawDefinition, true);
   if (loser?.exit) return carriedReason(view, write);
@@ -452,6 +460,18 @@ function lineDualOps(args: PlanArgs & { dual: DualCall; drawDefinition: DrawDefi
   return args.route === LINE_SCORE ? undecidingLineOps(args) : decidingLineOps(args);
 }
 
+/** takes the dual plan's Decider settle (`deciderSettleOps`, its last ops) out of `ops`, to be written after the line-ups */
+function settledDeciderOps(ops: OutcomeOp[], dual: DualCall): OutcomeOp[] {
+  const settle = deciderSettleOps(dual.view, dual.route, dual.write as MatchUpWrite, dual.direction);
+  const [result] = settle;
+  if (result?.op !== 'setMatchUpResult') return [];
+  const at = ops.findLastIndex(
+    (op) =>
+      op.op === 'setMatchUpResult' && op.matchUpId === result.matchUpId && op.resetsScore && op.removesWinningSide,
+  );
+  return at < 0 ? [] : ops.splice(at, settle.length);
+}
+
 function decidingLineOps(args: PlanArgs & { dual: DualCall; drawDefinition: DrawDefinition }): OutcomePlan {
   const { dual, view, request, drawDefinition } = args;
   const line = view.line;
@@ -480,7 +500,13 @@ function decidingLineOps(args: PlanArgs & { dual: DualCall; drawDefinition: Draw
     );
     ops.splice(assignmentReturn < 0 ? ops.length : assignmentReturn, 0, ...beyond);
   }
+  const seated = deciderLineUpOps({ dual, drawDefinition });
+  if (!seated) return { abstain: 'team' };
+  // v1 settles the Decider last (`reconcileDeciders`), after both line-ups are on it
+  const settled = settledDeciderOps(ops, dual);
+  ops.push(...seated);
   if (loserCarry) ops.push(loserCarry, { op: 'stampUpdatedAt', entity: 'matchUp', id: loserCarry.matchUpId });
+  ops.push(...settled);
   return { ops: [...resultOps(request, write, request.matchUpId as string), ...ops], shape: dualPlan.shape };
 }
 
@@ -537,8 +563,15 @@ function keptOutByeOps(args: PlanArgs, seatProgram: OutcomeOp[], loser?: Directi
   const keptOut = loser?.bye && !loser.arrives && !view.targets.loserTargetSeat?.bye ? loser.bye : undefined;
   return (
     unwoundKeptOutOps(view, seatProgram, loser, loser?.bye ? unwoundView(args)?.view : undefined) ??
-    (keptOut && loserMatchUpId ? seatBye({ ...keptOut, matchUpId: loserMatchUpId }) : [])
+    (keptOut && loserMatchUpId ? keptOutSeatOps(view, { ...keptOut, matchUpId: loserMatchUpId }) : [])
   );
+}
+
+/** the kept-out BYE alone in its matchUp (`seatBye`), or sending on whoever stands opposite (`keptOutByeChain`) */
+function keptOutSeatOps(view: OutcomeView, seat: { structureId: string; drawPosition: number; matchUpId: string }) {
+  if (!view.targets.loserTargetSeat?.opponentHeld) return seatBye(seat);
+  const chain = keptOutByeChain(view, seat);
+  return chain ? [...chain.assigns, ...chain.writes] : [];
 }
 
 /** A recorded single-call plan after the shared refusal, dual and no-op gates. */
@@ -582,15 +615,14 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   // the first direction: the winner's position joins the next matchUp's, which v1 stores ascending
   const placing = placedDirection(view, args.route, write, retainedRelayDirection(args, unwound));
   const winner = placing?.winner;
-  ops.push(
-    ...winnerPlacementOps(view, args.route, write, winner),
-    ...removedOps(view, args.route, write, request.matchUpStatus, carryOf(args)),
-  );
+  const placed = winnerPlacementOps(view, args.route, write, winner);
+  const linkedStamp = linkedWinnerStamp(view, placed);
+  ops.push(...placed, ...removedOps(view, args.route, write, request.matchUpStatus, carryOf(args)));
   // a plain loser arrival: the loser on the seat the link feeds. The matchUp they land in is not stamped: its stored
   // object does not change (the write is on the structure's assignments), so it is not a touched entity (F2 (i), and v1).
   // The structure whose assignments change is stamped below (v1's `modifyPositionAssignmentsNotice`).
   const loser = placing?.loser;
-  const arrival = arrivalOps(view, loser);
+  const arrival = linkedArrivalOps(view, args.route, write, args.direction, loser);
   const plainPassage = loserByeArrival(view, loser, args.route, write);
   // a participant placed opposite a BYE goes on through it, a loser fed onto the seat or a winner into a BYE-held
   // target: their position joins the next matchUp, which is stamped
@@ -719,6 +751,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
     ...doubleExitSeated,
     ...producedExit,
     ...(seatOps?.after ?? []),
+    ...linkedStamp,
     ...structureStamps(
       [...unwound, ...seated, ...carried.landing, ...converging, ...doubleExitSeated, ...producedExit],
       structureId,
@@ -747,7 +780,12 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   const delayedReturns = awardedAssignmentReturns(view, [...relayAfter, ...(seatOps?.after ?? [])], arrivalReturns);
   const writes = ops.filter((op) => !superseded.has(op) && !delayedReturns.has(op));
   return {
-    ops: [...writes, ...returnedRelayOps(view, relayAfter, delayedReturns), ...retainedAward],
+    ops: [
+      ...writes,
+      ...returnedRelayOps(view, relayAfter, delayedReturns),
+      ...retainedAward,
+      ...deciderSettleOps(view, args.route, write, args.direction),
+    ],
     shape: args.route === 'winner' || carriedOn ? 'direction' : 'local',
   };
 }

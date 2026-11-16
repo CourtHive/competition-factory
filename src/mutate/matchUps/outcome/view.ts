@@ -62,7 +62,8 @@ import {
 import { BYE, COMPLETED, IN_PROGRESS, TO_BE_PLAYED, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCHUP, CONTAINER, LOSER, WIN_RATIO, QUALIFYING, DRAW } from '@Constants/drawDefinitionConstants';
 import type { BuildViewArgs, OutcomeRequest, OutcomeScore, OutcomeView, Reservation, ThroughBye } from './types';
-import type { ByePassage, ByeWalk, CarryLevel, WinnerLoserSeat } from './types';
+import type { ByePassage, ByeWalk, CarryLevel, WinnerLinkSeat, WinnerLoserSeat } from './types';
+import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import type { PositionTargetsResult } from '@Query/matchUp/positionTargets';
 import type { ErrorType } from '@Constants/errorConditionConstants';
 import { TieScoreSourceEnum } from '@Types/tournamentTypes';
@@ -1280,6 +1281,80 @@ function loserTargetSeat(
   };
 }
 
+/**
+ * BATCH 1 (A1): the position a winner takes into the matchUp across a winner link (DOUBLE_ELIMINATION's backdraw into
+ * the Main final), read as v1 picks it (`directWinnerViaLink`). Read only where the winner already holds a position in
+ * the target structure, outside the target matchUp, and no seat of that matchUp is unfilled: v1 then joins that
+ * position to the matchUp (`assignMatchUpDrawPosition`). An unfilled seat is assigned instead, and a winner seeded in
+ * the source structure is seeded again in the target: neither is read.
+ */
+function winnerLinkPosition(
+  drawDefinition: DrawDefinition,
+  targetData: PositionTargetsResult | undefined,
+  winningDrawPosition?: number,
+): number | undefined {
+  const link = targetData?.targetLinks?.winnerTargetLink;
+  const winnerMatchUp = targetData?.targetMatchUps?.winnerMatchUp;
+  const sourceStructureId = link?.source?.structureId;
+  const structureId = link?.target?.structureId;
+  if (!link || !winnerMatchUp || !winningDrawPosition || !sourceStructureId || !structureId) return undefined;
+  if (structureId === sourceStructureId || winnerMatchUp.structureId !== structureId) return undefined;
+  const { structure: source } = findStructure({ drawDefinition, structureId: sourceStructureId });
+  const { structure: target } = findStructure({ drawDefinition, structureId });
+  const participantId = (positionAssignmentsOf(source) ?? []).find(
+    (assignment) => assignment.drawPosition === winningDrawPosition,
+  )?.participantId;
+  if (!participantId) return undefined;
+  if (source?.seedAssignments?.some((assignment) => assignment.participantId === participantId)) return undefined;
+  const assignments = positionAssignmentsOf(target) ?? [];
+  const positions = winnerMatchUp.drawPositions ?? [];
+  const unfilled = assignments.some(
+    (a) => positions.includes(a.drawPosition) && !a.participantId && !a.bye && !a.qualifier,
+  );
+  const held = assignments.find((assignment) => assignment.participantId === participantId)?.drawPosition;
+  return held && !unfilled && !positions.includes(held) ? held : undefined;
+}
+
+/**
+ * BATCH 1 (A2): the seat a winner is assigned across a winner link (DOUBLE_ELIMINATION's Main final into its Decider),
+ * read as v1 picks it (`directWinnerViaLink`): the linked side's own position when the link feeds round 1 and it is
+ * unfilled, otherwise the last unfilled position of the target matchUp. Read only where the winner holds no position
+ * in the target structure and carries no seeding from the source structure.
+ */
+function winnerLinkSeat(
+  drawDefinition: DrawDefinition,
+  targetData: PositionTargetsResult | undefined,
+  winningDrawPosition?: number,
+): WinnerLinkSeat | undefined {
+  const link = targetData?.targetLinks?.winnerTargetLink;
+  const winnerMatchUp = targetData?.targetMatchUps?.winnerMatchUp;
+  const sourceStructureId = link?.source?.structureId;
+  const structureId = link?.target?.structureId;
+  if (!link || !winnerMatchUp || !winningDrawPosition || !sourceStructureId || !structureId) return undefined;
+  if (structureId === sourceStructureId || winnerMatchUp.structureId !== structureId) return undefined;
+  const { structure: source } = findStructure({ drawDefinition, structureId: sourceStructureId });
+  const { structure: target } = findStructure({ drawDefinition, structureId });
+  const participantId = (positionAssignmentsOf(source) ?? []).find(
+    (assignment) => assignment.drawPosition === winningDrawPosition,
+  )?.participantId;
+  if (!participantId) return undefined;
+  if (source?.seedAssignments?.some((assignment) => assignment.participantId === participantId)) return undefined;
+  const assignments = positionAssignmentsOf(target) ?? [];
+  if (assignments.some((assignment) => assignment.participantId === participantId)) return undefined;
+  const positions = winnerMatchUp.drawPositions ?? [];
+  const unfilled = assignments
+    .filter((a) => positions.includes(a.drawPosition) && !a.participantId && !a.bye && !a.qualifier)
+    .map((a) => a.drawPosition);
+  const index = targetData?.targetMatchUps?.winnerMatchUpDrawPositionIndex;
+  const sidePosition =
+    typeof index === 'number'
+      ? getSideDrawPosition({ sideNumber: index + 1, structureId, matchUp: winnerMatchUp, drawDefinition })
+      : undefined;
+  const drawPosition =
+    link.target.roundNumber === 1 && sidePosition && unfilled.includes(sidePosition) ? sidePosition : unfilled.at(-1);
+  return drawPosition ? { structureId, drawPosition, participantId, unfilled: unfilled.length } : undefined;
+}
+
 /** this matchUp's round and position, and how many matchUps its round and the next hold in its structure */
 function sourcePlace(inContextDrawMatchUps: HydratedMatchUp[], inContextMatchUp?: HydratedMatchUp) {
   const inStructure = inContextDrawMatchUps.filter(
@@ -1993,6 +2068,14 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         event,
       }),
       winner: winnerTarget(targetData?.targetMatchUps?.winnerMatchUp, request.matchUpId, draw),
+      winnerLinkPositions: {
+        1: winnerLinkPosition(drawDefinition, targetData, sideDrawPosition(inContextMatchUp, 1)),
+        2: winnerLinkPosition(drawDefinition, targetData, sideDrawPosition(inContextMatchUp, 2)),
+      },
+      winnerLinkSeats: {
+        1: winnerLinkSeat(drawDefinition, targetData, sideDrawPosition(inContextMatchUp, 1)),
+        2: winnerLinkSeat(drawDefinition, targetData, sideDrawPosition(inContextMatchUp, 2)),
+      },
       winnerThroughBye: {
         1: throughBye(targetData?.targetMatchUps?.winnerMatchUp, sideDrawPosition(inContextMatchUp, 1), draw),
         2: throughBye(targetData?.targetMatchUps?.winnerMatchUp, sideDrawPosition(inContextMatchUp, 2), draw),
