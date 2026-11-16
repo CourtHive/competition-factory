@@ -22,7 +22,7 @@ const isNode = (value: unknown): value is Node =>
 export class Recording {
   private readonly origins = new Map<object, Origin>();
   private readonly sources = new Map<string, object>();
-  private readonly bound = new Map<object, { counterpart: Map<object, object>; done: Map<object, object> }>();
+  private readonly bindings = new Map<object, { counterpart: Map<object, object>; done: Map<object, object> }>();
 
   /** `root`: the working copy's draw as the module is about to find it */
   constructor(private readonly root: object) {
@@ -45,7 +45,7 @@ export class Recording {
   }
 
   private bind(targetRoot: object) {
-    const existing = this.bound.get(targetRoot);
+    const existing = this.bindings.get(targetRoot);
     if (existing) return existing;
     const counterpart = new Map<object, object>();
     const resolve = (value: object): object | undefined => {
@@ -60,7 +60,7 @@ export class Recording {
     counterpart.set(this.root, targetRoot);
     for (const value of this.origins.keys()) resolve(value);
     const binding = { counterpart, done: new Map<object, object>() };
-    this.bound.set(targetRoot, binding);
+    this.bindings.set(targetRoot, binding);
     return binding;
   }
 
