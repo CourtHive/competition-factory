@@ -239,7 +239,10 @@ export function loserLineUpCarry({
   const source = inContext?.find((matchUp) => matchUp.matchUpId === line.dualMatchUpId)?.roundPosition;
   const roundNumber = inContext?.find((matchUp) => matchUp.matchUpId === loser.matchUpId)?.roundNumber;
   if (!source || !roundNumber) return false;
-  const sideNumber = roundNumber === 1 ? 2 - (source % 2) : 1;
+  // in a Decider (the winner's target too) the loser sits second: v1's `propagateLoserLineUp`
+  const decider = dual.direction?.winner?.matchUpId === loser.matchUpId;
+  const consolationSide = roundNumber === 1 ? 2 - (source % 2) : 1;
+  const sideNumber = decider ? 2 : consolationSide;
   const lineUp = removeLineUpSubstitutions({ lineUp: held });
   return {
     op: 'setSideLineUp' as const,
@@ -482,7 +485,7 @@ export function carriedByeDualSides(drawDefinition: DrawDefinition, entry: Hydra
 /**
  * BATCH 1 (A2, TEAM): a final's losing team is seated in the Decider on the seat the winner left (`deciderSeats`), and
  * its assignment writes the team's line-up, as the draw holds it, on that side (`assignTeamLineUp`). The carries then
- * write side 1 as v1 reckons it (`lineUpCarry`, `loserLineUpCarry`): both land there, the loser's last.
+ * write each team's line-up, as its final held it, on its own side (`lineUpCarry` side 1, `loserLineUpCarry` side 2).
  */
 export function deciderLineUpOps({ dual, drawDefinition }: { dual: DualCall; drawDefinition: DrawDefinition }) {
   const seats = dual.write && deciderSeats(dual.view, dual.write, dual.direction);
