@@ -702,7 +702,10 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
     [...ops, ...seated, ...initialLineUps, ...throughBye, ...lineUps, ...carried.relay, ...landing, ...converging],
     seatObligation,
   );
-  if (!seatOps) return recordedCascade(args, drawDefinition, structureId, ops, cascadeParts()) ?? { abstain: 'exit' };
+  // RECORDED: seats the planners do not write are read off the double-exit module, where it can be recorded
+  const recordedSeats = seatOps ? undefined : recordedCascade(args, drawDefinition, structureId, ops, cascadeParts());
+  if (recordedSeats) return recordedSeats;
+  if (!seatOps) return { abstain: 'exit' };
   const doubleExitSeated = seatOps?.ops ?? [];
   const producedExit = routedProducedOps(args, drawDefinition, [
     ...ops,
@@ -715,8 +718,11 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
     ...converging,
     ...doubleExitSeated,
   ]);
-  if (!producedExit)
-    return recordedCascade(args, drawDefinition, structureId, ops, cascadeParts()) ?? { abstain: 'exit' };
+  const recordedExit = producedExit
+    ? undefined
+    : recordedCascade(args, drawDefinition, structureId, ops, cascadeParts());
+  if (recordedExit) return recordedExit;
+  if (!producedExit) return { abstain: 'exit' };
   const line = view.line;
   // a TEAM line's group is its dual's: the dual is tallied with the line's result in place, its lines and its tally (S7)
   const tallied = line
