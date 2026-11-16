@@ -1,12 +1,13 @@
-import { getOutcomePipeline, setOutcomePipeline } from '@Global/state/globalState';
+import { getOutcomePipeline } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 
 // constants
 import { DEAD_RUBBER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
+import type { OutcomeOp } from '@Mutate/matchUps/outcome/ops';
 
 /**
  * `reconcileDecider` RETURNS THE ERROR OF THE WRITE IT MAKES.
@@ -54,20 +55,35 @@ vi.mock('@Mutate/matchUps/score/modifyMatchUpScore', async (importOriginal) => {
 });
 
 /**
- * THE SITE IS v1's WRITER, so the play runs under `v1` whatever the suite's mode (as `cascadeWriteErrorsReachTheCaller`
- * does). Since BATCH 1 the outcome pipeline v2 owns the Main final's first entry: it seats the Decider and settles it by
- * ops, plans its refusals before its first op, and never reaches the writer this file makes fail.
+ * THE SAME FAULT, IN THE OUTCOME PIPELINE v2. Since BATCH 1 v2 owns the Main final's first entry: it seats the Decider and
+ * settles it by ops, and never reaches the writer above. Its own write of the Decider is the settle op, and what can
+ * fail there is the FOLD of that op. `forced.fold` makes it fail, after the ops before it have been folded.
+ *
+ * v2 folds a plan into the working view's COPIES before it writes the stored draw (`overlay.ts`, copy before write), so
+ * the failure is met there: v2 gives the call up with the stored draw untouched, and it is written whole by whoever
+ * takes it (v1, until v1 is retired; a refusal after). That is the rule this file's v1 case cannot provide.
  */
-let pipeline: ReturnType<typeof getOutcomePipeline>;
-beforeEach(() => {
-  pipeline = getOutcomePipeline();
-  setOutcomePipeline(OUTCOME_PIPELINE_V1);
+const fold = vi.hoisted(() => ({ on: false, working: 0, stored: 0 }));
+vi.mock('@Mutate/matchUps/outcome/ops', async (importOriginal) => {
+  const actual: any = await importOriginal();
+  return {
+    ...actual,
+    applyOutcomeOps: (drawDefinition: any, ops: OutcomeOp[], stampedBefore: any, effects: any) => {
+      const at = ops.findIndex((op) => op.op === 'setMatchUpResult' && op.matchUpStatus === 'DEAD_RUBBER');
+      if (!fold.on || at < 0) return actual.applyOutcomeOps(drawDefinition, ops, stampedBefore, effects);
+      // the stored apply binds the result's inputs (`applyOwnedPlan`); every other fold is of a copy
+      if (effects?.bindResultInputs) fold.stored += 1;
+      else fold.working += 1;
+      const before = actual.applyOutcomeOps(drawDefinition, ops.slice(0, at), stampedBefore, effects);
+      return before.error ? before : { error: 'forced by the test' };
+    },
+  };
 });
 
 afterEach(() => {
-  setOutcomePipeline(pipeline);
   forced.context = undefined;
   forced.hits = 0;
+  Object.assign(fold, { on: false, working: 0, stored: 0 });
 });
 
 const DRAW_ID = 'decider-error';
@@ -118,7 +134,9 @@ it('settles the decider and reports success when the write succeeds', () => {
 
 it('returns the error when the write to the decider fails (v1 residual: the final stays scored)', () => {
   playToTheFinal();
+  // every writer of the Decider is made to fail: v1's, and v2's fold of its settle op
   forced.context = 'reconcileDecider';
+  fold.on = true;
 
   const result: any = tournamentEngine.setMatchUpStatus({
     matchUpId: final().matchUpId,
@@ -130,4 +148,37 @@ it('returns the error when the write to the decider fails (v1 residual: the fina
   expect(forced.hits).toEqual(1);
   expect(result.success).toBeUndefined();
   expect(result.error).toEqual(FORCED_ERROR);
+  // v2 met its own failure first, on the copy, and never wrote the stored draw
+  expect(fold.working).toEqual(getOutcomePipeline() === OUTCOME_PIPELINE_V1 ? 0 : 1);
+  expect(fold.stored).toEqual(0);
+});
+
+it('v2: a settle op that cannot be folded is met on the working copy, and the stored draw is written whole', (context) => {
+  // read when the test runs: the suite's mode is set after the file is collected
+  if (getOutcomePipeline() === OUTCOME_PIPELINE_V1) context.skip();
+  playToTheFinal();
+  const score = () =>
+    tournamentEngine.setMatchUpStatus({ matchUpId: final().matchUpId, outcome: { winningSide: 1 }, drawId: DRAW_ID });
+  const drawNow = () => {
+    const draw = tournamentEngine.getEvent({ drawId: DRAW_ID }).drawDefinition;
+    const timeless = (key: string, value: unknown) => (key === 'updatedAt' || key === 'scoredTime' ? undefined : value);
+    return JSON.stringify(draw, timeless);
+  };
+
+  // the twin: the same record, the same call, nothing forced
+  const before = tournamentEngine.getTournament().tournamentRecord;
+  let result: any = score();
+  expect(result.success).toEqual(true);
+  const unforced = drawNow();
+  tournamentEngine.setState(before);
+
+  fold.on = true;
+  result = score();
+  // CONTROL: the fold was attempted and failed, once, on a copy; the stored draw never took the plan in part
+  expect(fold.working).toEqual(1);
+  expect(fold.stored).toEqual(0);
+  // never a success over a draw half written: the call is whole, as the unforced one leaves it
+  expect(result.success).toEqual(true);
+  expect(decider().matchUpStatus).toEqual(DEAD_RUBBER);
+  expect(drawNow()).toEqual(unforced);
 });
