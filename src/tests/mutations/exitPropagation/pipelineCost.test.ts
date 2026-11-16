@@ -26,7 +26,11 @@ import {
 
 // constants
 import { COMPLETED, DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
+import {
+  OUTCOME_PIPELINE_DIFFERENTIAL,
+  OUTCOME_PIPELINE_V1,
+  OUTCOME_PIPELINE_V2,
+} from '@Constants/outcomePipelineConstants';
 import { LUCKY_DRAW, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -462,7 +466,8 @@ it.skipIf(!enabled)(
  *   v1 ran, shared by every check; the oracles' own hydrations are reported apart. A dual's view
  *   reuses its line's, so no arm needs a further exception. Each allowance is the measured cost, so
  *   one more hydration per call fails on every arm (falsified 2026-10-24: a view that hydrates again
- *   fails every matrix arm under `v2`). A recorded cascade's reads on v2's working copy are outside the
+ *   fails every matrix arm under `v2`). Under `v2` a recorded cascade's worst call may build one more
+ *   `getMatchUpsMap`, its working copy's (`worstAllowance`); the total ceiling is v1's. A recorded cascade's reads on v2's working copy are outside the
  *   ceiling under `differential` only (`recordedRead`), where v1 repeats them on the stored draw.
  * - The baseline is written under `v1` only, and a census whose arms or call counts differ from it
  *   fails: those are a different census, not a cheaper one.
@@ -482,6 +487,8 @@ const GATED: {
   name: keyof Omit<ArmCeilings, 'calls'>;
   selector: Selector;
   allowance: (mode: string) => number;
+  /** what the worst call alone may add on top of `allowance`; the arm's total ceiling does not move */
+  worstAllowance?: (mode: string) => number;
 }[] = [
   {
     allowance: (mode) => (mode === OUTCOME_PIPELINE_DIFFERENTIAL ? 1 : 0),
@@ -490,6 +497,9 @@ const GATED: {
   },
   {
     allowance: () => 0,
+    // A RECORDED CASCADE'S OWN MAP (CA, 2026-11-16: declared): under `v2` a recorded call builds the map of its working
+    // copy besides the call's own, so its worst call may cost one more build than v1's. The total stays v1's.
+    worstAllowance: (mode) => (mode === OUTCOME_PIPELINE_V2 ? 1 : 0),
     selector: pipelineMap,
     name: 'getMatchUpsMap',
   },
@@ -525,11 +535,11 @@ it.skipIf(!gated)(
       for (const [arm, ceilings] of Object.entries(baseline)) {
         const now = measured[arm];
         expect(now.calls, `${arm}: setMatchUpStatus calls`).toEqual(ceilings.calls);
-        for (const { name, allowance: allowed } of GATED) {
+        for (const { name, allowance: allowed, worstAllowance } of GATED) {
           const allowance = allowed(mode);
           const limit = {
             total: ceilings[name].total + allowance * ceilings.calls,
-            worst: ceilings[name].worst + allowance,
+            worst: ceilings[name].worst + allowance + (worstAllowance?.(mode) ?? 0),
           };
           for (const measure of ['total', 'worst'] as const) {
             const line = `${arm} ${name} ${measure}: ${now[name][measure]} against ${limit[measure]}`;

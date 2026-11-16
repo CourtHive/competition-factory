@@ -1631,7 +1631,7 @@ settle is exhausted, anything outside the draw changes, or a notice is buffered 
 recorded: a matchUp that already holds a result or an exit (v1 removes it first), a round robin group, a TEAM dual or
 line, and a call with no captured clock. The module and the passes stay v1's code, used as a library until v3.
 Under `differential` the same reads are therefore made twice, on the copy and by v1 on the stored draw;
-`verify:hydrations` keeps the copy's out of its ceiling there and reports them apart.
+`verify:hydrations` keeps the copy's out of its ceiling there and reports them apart. Under `v2` a recorded call builds the map of its working copy besides the call's own, and the gate allows its worst call that one build more than v1's; the arm's total is held to v1's.
 
 `planOutcome` returns a complete plan only when every write the call makes is an op; otherwise it **abstains**, naming
 the first reason, and the call is v1's whole (fail-closed). S1 holds two shapes: the **local** write (the matchUp's own
