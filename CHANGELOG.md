@@ -1,5 +1,22 @@
 # Changelog
 
+## [7.39.0](https://github.com/CourtHive/competition-factory/compare/v7.38.0...v7.39.0) (2026-11-16)
+
+
+### Features
+
+* **outcome:** award a pending produced exit to the loser arriving beside it (C29) ([#6388](https://github.com/CourtHive/competition-factory/issues/6388)) ([a8c4f1d](https://github.com/CourtHive/competition-factory/commit/a8c4f1dcf919e8dc5bec38ef260b9161ce204c40))
+* **outcome:** place a loser on the produced exit already awarded to their seat (C30) ([#6391](https://github.com/CourtHive/competition-factory/issues/6391)) ([a5176e6](https://github.com/CourtHive/competition-factory/commit/a5176e67185fd9a53e66b699b7036db44ef173e4))
+* **outcome:** plan the winner taking a standing award in their next matchUp (C20) ([#6384](https://github.com/CourtHive/competition-factory/issues/6384)) ([1d9d11f](https://github.com/CourtHive/competition-factory/commit/1d9d11fa250b02a2b3bd256047f90243580522e4))
+* **outcome:** withdraw a carry the loser took through a held BYE (C28) ([402f57a](https://github.com/CourtHive/competition-factory/commit/402f57a9e8aacb72a1b7ca9e58d1d0044ee62d23))
+* **outcome:** withdraw a carry the loser took through a held BYE (C28) ([#6390](https://github.com/CourtHive/competition-factory/issues/6390)) ([402f57a](https://github.com/CourtHive/competition-factory/commit/402f57a9e8aacb72a1b7ca9e58d1d0044ee62d23))
+* **outcome:** withdraw a pending carry with the exit that made it (C27) ([#6387](https://github.com/CourtHive/competition-factory/issues/6387)) ([97df0de](https://github.com/CourtHive/competition-factory/commit/97df0de1aec23093513c2e1aac56f1ad82401dd0))
+
+
+### Bug Fixes
+
+* **deps:** update tods-competition-factory to 7.38.0 ([#6382](https://github.com/CourtHive/competition-factory/issues/6382)) ([5d57932](https://github.com/CourtHive/competition-factory/commit/5d57932823e3c0176fe56d592b167f3cf15c9a77))
+
 ## [7.38.0](https://github.com/CourtHive/competition-factory/compare/v7.37.0...v7.38.0) (2026-11-13)
 
 
