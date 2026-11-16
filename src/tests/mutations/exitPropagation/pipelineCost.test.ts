@@ -1,4 +1,11 @@
-import { distribution, takeRecords, beginRun, siteRows, median } from '@Tests/testHarness/exitPropagation/pipelineCost';
+import {
+  RECORDED_CASCADE_SITE,
+  distribution,
+  takeRecords,
+  beginRun,
+  siteRows,
+  median,
+} from '@Tests/testHarness/exitPropagation/pipelineCost';
 import { deepCorrectionScenario, runPath } from '@Tests/testHarness/exitPropagation/correctionDivergence';
 import { getOutcomePipeline, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import type { CallRecord, Selector, Site } from '@Tests/testHarness/exitPropagation/pipelineCost';
@@ -153,13 +160,21 @@ const anyHydration: Selector = (site) =>
 const viewOracleRead: Selector = (site) =>
   getOutcomePipeline() === OUTCOME_PIPELINE_DIFFERENTIAL &&
   /^(hydrateShadow@viewOracle|apply@overlay|indexOracle@decide|precheckOracle@indexPrecheck)/.test(site.caller);
-const hydration: Selector = (site) => anyHydration(site) && !viewOracleRead(site);
+/**
+ * A RECORDED CASCADE'S READS UNDER `differential` (CA, 2026-11-16: a declared allowance): v2 runs v1's double-exit module
+ * and settle passes on its working copy, and `differential` then runs v1 on the stored draw as well, so the same reads
+ * are made twice. The copy's are kept out of the ceiling there and reported apart. Under `v2` they are the call's own
+ * cost and count: v1 is not asked.
+ */
+const recordedRead: Selector = (site) =>
+  getOutcomePipeline() === OUTCOME_PIPELINE_DIFFERENTIAL && site.caller === RECORDED_CASCADE_SITE;
+const hydration: Selector = (site) => anyHydration(site) && !viewOracleRead(site) && !recordedRead(site);
 const top =
   (fn: string): Selector =>
   (site) =>
     !site.nested && site.fn === fn;
 // the `getMatchUpsMap` builds the pipeline asks for itself; the settle precheck's completeness run builds its own
-const pipelineMap: Selector = (site) => top('getMatchUpsMap')(site) && !viewOracleRead(site);
+const pipelineMap: Selector = (site) => top('getMatchUpsMap')(site) && !viewOracleRead(site) && !recordedRead(site);
 
 function playCell(arm: string, cell: (typeof ALL_CELLS)[number], policy?: any): CallRecord[] {
   setSubscriptions({});
@@ -447,7 +462,8 @@ it.skipIf(!enabled)(
  *   v1 ran, shared by every check; the oracles' own hydrations are reported apart. A dual's view
  *   reuses its line's, so no arm needs a further exception. Each allowance is the measured cost, so
  *   one more hydration per call fails on every arm (falsified 2026-10-24: a view that hydrates again
- *   fails every matrix arm under `v2`).
+ *   fails every matrix arm under `v2`). A recorded cascade's reads on v2's working copy are outside the
+ *   ceiling under `differential` only (`recordedRead`), where v1 repeats them on the stored draw.
  * - The baseline is written under `v1` only, and a census whose arms or call counts differ from it
  *   fails: those are a different census, not a cheaper one.
  */
@@ -542,6 +558,8 @@ it.skipIf(!gated)(
       process.stdout.write(
         `[verify:hydrations] the oracles' own hydrations (view, index, settle precheck), outside the ceiling: ${
           distribution(records, (site) => anyHydration(site) && viewOracleRead(site)).total
+        }; a recorded cascade's on the working copy, which v1 then repeats on the stored draw: ${
+          distribution(records, (site) => anyHydration(site) && recordedRead(site)).total
         }\n`,
       );
     expect(rises, `asked the draw for more than the ceiling allows under ${mode}`).toEqual([]);

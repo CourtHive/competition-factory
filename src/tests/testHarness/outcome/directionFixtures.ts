@@ -7020,7 +7020,8 @@ export function c26SeatRecipes([drawType, size, direct]: (typeof C26_SEAT_PROFIL
         status,
         policyOff: false,
         carry: !!entered,
-        owned: direct,
+        // a seat the planners do not serve is recorded off the double-exit module (CA, 2026-11-16); TEAM stays owed
+        owned: direct || (eventType !== 'TEAM' && drawType !== DOUBLE_ELIMINATION),
       })),
     ),
   );
@@ -7031,7 +7032,12 @@ export const C26_SEAT_CASES = C26_SEAT_PROFILES.flatMap(c26SeatRecipes).flatMap(
   return [
     [`C26 BYE beside carried award ${label}`, recipe] as const,
     ...(recipe.size === 16 && recipe.carrierStatus === WALKOVER
-      ? [[`C26 produced convergence control ${label}`, { ...recipe, policyOff: true, owned: false }] as const]
+      ? [
+          [
+            `C26 produced convergence control ${label}`,
+            { ...recipe, policyOff: true, owned: recipe.eventType !== 'TEAM' },
+          ] as const,
+        ]
       : []),
   ];
 });

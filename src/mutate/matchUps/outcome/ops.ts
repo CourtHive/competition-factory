@@ -17,6 +17,7 @@ import {
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
+import { MODIFY_DRAW_DEFINITION, MODIFY_MATCHUP, MODIFY_POSITION_ASSIGNMENTS } from '@Constants/topicConstants';
 import { completedMatchUpStatuses, BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
 import type {
@@ -422,7 +423,55 @@ export type OutcomeOp =
       orderOfFinish?: number;
     }
   | { op: 'clearMatchUpScoredTime'; matchUpId: string }
+  | {
+      op: 'replaceMatchUp';
+      /**
+       * RECORDED (CA, 2026-11-16): the stored matchUp as the double-exit module left it on a copy of the draw
+       * (`plan/recordedCascade.ts`), written whole
+       */
+      matchUpId: string;
+      matchUp: MatchUp;
+    }
+  | {
+      op: 'replaceStructureState';
+      /** RECORDED: a top-level structure's own fields (its matchUps and child structures apart) as the module left them */
+      structureId: string;
+      state: Record<string, unknown>;
+    }
+  | {
+      op: 'replaceDrawState';
+      /** RECORDED: the draw's own fields (its structures apart) as the module left them */
+      drawId: string;
+      state: Record<string, unknown>;
+    }
+  | {
+      op: 'announceRecorded';
+      /** RECORDED: the notices the module and the settle passes buffered, in their order */
+      notices: RecordedNotice[];
+    }
   | { op: 'stampUpdatedAt'; entity: 'matchUp' | 'structure' | 'drawDefinition'; id: string };
+
+/**
+ * RECORDED: one buffered notice as data. `fields` is its payload in v1's key order with the entity it carried (the
+ * matchUp, the draw, a structure's assignments) left null: apply puts the stored one there. An in-context notice is
+ * `deferred`: its builder's own tournament id (the payload's can be one an earlier notice of the call left it,
+ * `preserveNoticeIdentity`), and whether the builder was bound without the tournament record.
+ */
+export type RecordedNotice = {
+  topic: string;
+  key: string;
+  eventId?: string;
+  context?: string;
+  fields: Record<string, unknown>;
+  deferred?: { tournamentId?: string; contextless: boolean };
+};
+
+/** the entity each topic's payload carries, which apply replaces with the stored one */
+export const RECORDED_ENTITY: Record<string, string> = {
+  [MODIFY_POSITION_ASSIGNMENTS]: 'positionAssignments',
+  [MODIFY_DRAW_DEFINITION]: 'drawDefinition',
+  [MODIFY_MATCHUP]: 'matchUp',
+};
 
 /** the op vocabulary as a literal union, which `verify:outcome-spec` holds to the spec; checked against `OutcomeOp` */
 export type OutcomeOpName =
@@ -445,6 +494,10 @@ export type OutcomeOpName =
   | 'setMatchUpSchedule'
   | 'clearMatchUpScoredTime'
   | 'setOrderOfFinish'
+  | 'replaceMatchUp'
+  | 'replaceStructureState'
+  | 'replaceDrawState'
+  | 'announceRecorded'
   | 'stampUpdatedAt';
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 const opNamesMatch: Same<OutcomeOpName, OutcomeOp['op']> = true;
@@ -968,9 +1021,41 @@ function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition
       return foldSchedule(op, index, context);
     case 'setOrderOfFinish':
       return foldOrderOfFinish(op, index);
+    case 'replaceMatchUp':
+      return replaceOwn(
+        index.matchUps.get(op.matchUpId),
+        op.matchUp as unknown as Record<string, unknown>,
+        [],
+        `matchUp ${op.matchUpId}`,
+      );
+    case 'replaceStructureState':
+      return replaceOwn(
+        index.structures.get(op.structureId),
+        op.state,
+        STRUCTURE_CHILDREN,
+        `structure ${op.structureId}`,
+      );
+    case 'replaceDrawState':
+      return replaceOwn(drawDefinition, op.state, DRAW_CHILDREN, `draw ${op.drawId}`);
+    case 'announceRecorded':
+      return {};
     default:
       return foldStamp(op, index, drawDefinition, context);
   }
+}
+
+export const STRUCTURE_CHILDREN = ['matchUps', 'structures'];
+export const DRAW_CHILDREN = ['structures'];
+
+/** RECORDED: an entity's own fields replaced by the recorded ones, its children kept; the call's ledger told of its stamp */
+function replaceOwn(target: object | undefined, state: Record<string, unknown>, kept: string[], name: string): Folded {
+  if (!target) return { error: `recorded: no ${name}` };
+  const own = target as Record<string, unknown>;
+  const stampedBefore = own.updatedAt;
+  for (const key of Object.keys(own)) if (!kept.includes(key) && !(key in state)) delete own[key];
+  for (const [key, value] of Object.entries(structuredClone(state))) if (!kept.includes(key)) own[key] = value;
+  if (own.updatedAt !== stampedBefore) getCapturedStamps()?.add(target);
+  return {};
 }
 
 /** Flush at the result writer's stamp; a remaining unstamped result flushes when its fold completes. */

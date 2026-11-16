@@ -1,3 +1,4 @@
+import { recordDoubleExitCascade } from './plan/recordedCascade';
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
 import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
@@ -97,6 +98,7 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
     rebuild: rebuildView(args, view, planned),
     project: projectOutcome(args, view),
     landing: landingView(args, view),
+    record: (prefix) => recordDoubleExitCascade({ ...args, request: planned }, prefix),
     dual: dualCallFor(route, args, view),
     request: planned,
     write: plan,
@@ -109,7 +111,9 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
   let outcome: OutcomePlan = allowed;
   if (allowed.ops)
     outcome =
-      folded && 'ops' in folded && !folded.settle.length ? { ...allowed, ops: folded.ops } : { abstain: 'settle' };
+      folded && 'ops' in folded && (allowed.settled || !folded.settle.length)
+        ? { ...allowed, ops: folded.ops }
+        : { abstain: 'settle' };
   const phases =
     args.clockFree && outcome.ops ? compileTemporalPhases({ args, view, route, ops: outcome.ops }) : undefined;
   const observe = phases && outcome.ops ? prepareTemporalShadow(args, phases, outcome.shape) : undefined;

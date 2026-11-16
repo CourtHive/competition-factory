@@ -1,12 +1,14 @@
 import { scoredTimeAction } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { getInContextMatchUp } from '@Mutate/matchUps/score/modifyMatchUpScore';
-import { applyOutcomeOps, splitScoredTimeCleanup } from './ops';
+import { applyOutcomeOps, RECORDED_ENTITY, splitScoredTimeCleanup } from './ops';
+import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { findStructure } from '@Acquire/findStructure';
-import { getTopics } from '@Global/state/globalState';
+import { addNotice, DEFERRED_PAYLOAD, getTopics } from '@Global/state/globalState';
 import {
   liveNoticeEffects,
   type NoticeEffects,
   deferInContextMatchUp,
+  inContextNoticePayload,
   deferredQuery,
   modifyMatchUpNotice,
   modifyDrawNotice,
@@ -17,8 +19,8 @@ import {
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import type { BuildViewArgs, OutcomeView, PlanShape, Route } from './types';
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
-import type { MatchUp } from '@Types/tournamentTypes';
+import { MODIFY_DRAW_DEFINITION, MODIFY_MATCHUP, UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
+import type { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
 import type { ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import type { OutcomeOp } from './ops';
@@ -299,8 +301,44 @@ export function applyOwnedPlan({
       event: noticeEvent,
     });
   }
+  announceRecorded(ops, args, stored);
   announceScoredTimeCleanup(cleanupTargets, args);
   return planResult(shape, ops, route);
+}
+
+/** the stored entity a recorded notice carries: the matchUp, the draw, or a structure's assignments */
+function recordedEntity(topic: string, key: string, drawDefinition: DrawDefinition, stored: Map<string, MatchUp>) {
+  if (topic === MODIFY_MATCHUP) return stored.get(key);
+  if (topic === MODIFY_DRAW_DEFINITION) return drawDefinition;
+  const { structure } = findStructure({ drawDefinition, structureId: key });
+  return getPositionAssignments({ structure }).positionAssignments;
+}
+
+/**
+ * RECORDED (CA, 2026-11-16): the notices the double-exit module and the settle passes buffered on the working copy,
+ * raised again in their order on the stored record: each payload as recorded, carrying the stored entity. The stamps
+ * are among the ops, so nothing is stamped here.
+ */
+function announceRecorded(ops: OutcomeOp[], args: BuildViewArgs, stored: Map<string, MatchUp>) {
+  const { drawDefinition, tournamentRecord } = args;
+  if (!drawDefinition) return;
+  for (const op of ops) {
+    if (op.op !== 'announceRecorded') continue;
+    for (const { topic, key, fields, deferred } of op.notices) {
+      if (deferred) {
+        const inContextMatchUp = deferredQuery(getInContextMatchUp, {
+          tournamentRecord: deferred.contextless ? undefined : tournamentRecord,
+          matchUpId: key,
+          drawDefinition,
+        });
+        const build = deferredQuery(inContextNoticePayload, { inContextMatchUp, tournamentId: deferred.tournamentId });
+        addNotice({ topic, key, payload: { [DEFERRED_PAYLOAD]: build, ...fields, matchUpId: key } });
+        continue;
+      }
+      const entity = recordedEntity(topic, key, drawDefinition, stored);
+      addNotice({ topic, key, payload: { ...fields, [RECORDED_ENTITY[topic]]: entity } });
+    }
+  }
 }
 
 /** Announce a group's tally at the result writer that performed it. */

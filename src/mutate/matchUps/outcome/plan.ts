@@ -695,13 +695,14 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   });
   if (!convergence) return { abstain: 'exit' };
   const converging = convergence.ops;
+  const cascadeParts = () => [seated, initialLineUps, throughBye, lineUps, carried.relay, landing, converging];
   // The linked seats read the state after the literal prefix emitted below, never positional guesses.
   const seatOps = certifiedSeatProgram(
     args,
     [...ops, ...seated, ...initialLineUps, ...throughBye, ...lineUps, ...carried.relay, ...landing, ...converging],
     seatObligation,
   );
-  if (!seatOps) return { abstain: 'exit' };
+  if (!seatOps) return recordedCascade(args, drawDefinition, structureId, ops, cascadeParts()) ?? { abstain: 'exit' };
   const doubleExitSeated = seatOps?.ops ?? [];
   const producedExit = routedProducedOps(args, drawDefinition, [
     ...ops,
@@ -714,7 +715,8 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
     ...converging,
     ...doubleExitSeated,
   ]);
-  if (!producedExit) return { abstain: 'exit' };
+  if (!producedExit)
+    return recordedCascade(args, drawDefinition, structureId, ops, cascadeParts()) ?? { abstain: 'exit' };
   const line = view.line;
   // a TEAM line's group is its dual's: the dual is tallied with the line's result in place, its lines and its tally (S7)
   const tallied = line
@@ -788,6 +790,30 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
     ],
     shape: args.route === 'winner' || carriedOn ? 'direction' : 'local',
   };
+}
+
+/**
+ * RECORDED (CA, 2026-11-16): a first double exit whose seats or produced exit the planners do not write is read off the
+ * double-exit module on a copy of the record (`plan/recordedCascade.ts`), after the call's own write and nothing else
+ */
+function recordedCascade(
+  args: PlanArgs,
+  drawDefinition: DrawDefinition,
+  structureId: string,
+  ops: OutcomeOp[],
+  parts: OutcomeOp[][],
+): OutcomePlan | undefined {
+  const { view, record } = args;
+  if (!record || args.route !== DOUBLE_EXIT || args.clockFree) return undefined;
+  if (view.group || view.line || view.isTeam || view.existing.winningSide) return undefined;
+  if (view.existing.matchUpStatus !== TO_BE_PLAYED || parts.some((part) => part.length)) return undefined;
+  const prefix: OutcomeOp[] = [
+    ...ops,
+    { op: 'stampUpdatedAt', entity: 'structure', id: structureId },
+    { op: 'stampUpdatedAt', entity: 'drawDefinition', id: drawDefinition.drawId },
+  ];
+  const recorded = record(prefix);
+  return recorded && { ops: [...prefix, ...recorded], shape: 'local', settled: true };
 }
 
 /** A linked winner's later cleanup follows the assignment return in the originating structure. */

@@ -633,7 +633,13 @@ export type AbstainReason =
 /** which of the allowlist's shapes a complete plan is: `local` (the matchUp's own result) or the first `direction` */
 export type PlanShape = 'local' | 'direction';
 export type OutcomePlan =
-  | { ops: OutcomeOp[]; shape: PlanShape; abstain?: undefined }
+  | {
+      ops: OutcomeOp[];
+      shape: PlanShape;
+      abstain?: undefined;
+      /** RECORDED: v1's settle passes ran on the working copy and their writes are among the ops */
+      settled?: boolean;
+    }
   | { abstain: AbstainReason; ops?: undefined; shape?: undefined };
 
 /**
@@ -690,6 +696,8 @@ export type PlanArgs = {
   project?: ProjectOutcome;
   /** A converged landing's view on the cursor (1b, L2). */
   landing?: LandingView;
+  /** RECORDED: the double-exit module's cascade after `prefix`, read on a copy of the record. */
+  record?: (prefix: OutcomeOp[]) => OutcomeOp[] | undefined;
   /** S7: the dual's call a deciding line makes */
   dual?: DualCall;
   /** S7: this call is a deciding line's dual, planned as part of the line's plan: its TEAM shape is the line's to vet */
