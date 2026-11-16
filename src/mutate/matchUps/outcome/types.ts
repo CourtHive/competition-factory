@@ -633,13 +633,7 @@ export type AbstainReason =
 /** which of the allowlist's shapes a complete plan is: `local` (the matchUp's own result) or the first `direction` */
 export type PlanShape = 'local' | 'direction';
 export type OutcomePlan =
-  | {
-      ops: OutcomeOp[];
-      shape: PlanShape;
-      abstain?: undefined;
-      /** RECORDED: v1's settle passes ran on the working copy and their writes are among the ops */
-      settleRecorded?: boolean;
-    }
+  | { ops: OutcomeOp[]; shape: PlanShape; abstain?: undefined }
   | { abstain: AbstainReason; ops?: undefined; shape?: undefined };
 
 /**

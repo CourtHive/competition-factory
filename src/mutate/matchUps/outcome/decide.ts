@@ -111,9 +111,7 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
   let outcome: OutcomePlan = allowed;
   if (allowed.ops)
     outcome =
-      folded && 'ops' in folded && (allowed.settleRecorded || !folded.settle.length)
-        ? { ...allowed, ops: folded.ops }
-        : { abstain: 'settle' };
+      folded && 'ops' in folded && !folded.settle.length ? { ...allowed, ops: folded.ops } : { abstain: 'settle' };
   const phases =
     args.clockFree && outcome.ops ? compileTemporalPhases({ args, view, route, ops: outcome.ops }) : undefined;
   const observe = phases && outcome.ops ? prepareTemporalShadow(args, phases, outcome.shape) : undefined;

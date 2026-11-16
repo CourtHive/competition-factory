@@ -813,7 +813,7 @@ function recordedCascade(
     { op: 'stampUpdatedAt', entity: 'drawDefinition', id: drawDefinition.drawId },
   ];
   const recorded = record(prefix);
-  return recorded && { ops: [...prefix, ...recorded], shape: 'local', settleRecorded: true };
+  return recorded && { ops: [...prefix, ...recorded], shape: 'local' };
 }
 
 /** A linked winner's later cleanup follows the assignment return in the originating structure. */

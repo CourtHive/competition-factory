@@ -89,10 +89,8 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
     !!own?.collectionId &&
     before.get(own.matchUpTieId ?? '')?.tieMatchUps?.some((line) => line.matchUpId === own.matchUpId);
   const results = ops.filter((op) => op.op === 'setMatchUpResult');
-  // RECORDED: a matchUp the double-exit module wrote is a result written there, whatever the write was
-  const recorded = ops.filter((op) => op.op === 'replaceMatchUp');
   const resultOn = (predicate: (matchUp?: HydratedMatchUp) => boolean) =>
-    [...results, ...recorded].some((op) => predicate(before.get(op.matchUpId)));
+    results.some((op) => predicate(before.get(op.matchUpId)));
   let stale: boolean | undefined;
   const staleOrigins = () =>
     (stale ??= hasStaleExitOrigins({ inContextDrawMatchUps: view, drawDefinition: draw, matchUpsMap: map }));
