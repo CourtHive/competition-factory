@@ -5,7 +5,7 @@ import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
 import { isDoubleExit } from '@Validators/isExit';
 import { doubleExitAdvancement } from '@Mutate/drawDefinitions/positionGovernor/doubleExitAdvancement';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import { DEFERRED_PAYLOAD, getCapturedStamps, type Notice } from '@Global/state/globalState';
+import { DEFERRED_PAYLOAD, getCapturedStamps, getNoticeState, type Notice } from '@Global/state/globalState';
 import { deferredQueryBinding } from '@Mutate/notifications/drawNotifications';
 import { getNoticeBuffer } from '@Global/state/globalState';
 import { withDraftWrites } from '@Global/state/withDraftWrites';
@@ -16,7 +16,15 @@ import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers
 import { findStructure } from '@Acquire/findStructure';
 import { cloneState } from '@Tools/cloneState';
 import { isObject } from '@Tools/objects';
-import { applyOutcomeOps, DRAW_CHILDREN, RECORDED_ENTITY, STRUCTURE_CHILDREN, stampedInThisCall } from '../ops';
+import {
+  applyOutcomeOps,
+  DRAW_CHILDREN,
+  RECORDED_ENTITY,
+  recordedName,
+  STRUCTURE_CHILDREN,
+  stampedInThisCall,
+} from '../ops';
+import { Recording } from '../recording';
 
 // constants and types
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
@@ -50,6 +58,26 @@ function drawMatchUps(drawDefinition: DrawDefinition): MatchUp[] {
   };
   for (const structure of drawDefinition.structures ?? []) visit(structure);
   return found;
+}
+
+/**
+ * `withDraftWrites` puts back the notice buffer and the modified flag; the provider's marks of WHICH tournaments and
+ * topics the call modified are put back here, in their order. A copy's notices marked them before the call's own did.
+ */
+function withNoticeMarks<T>(fn: () => T): T {
+  const marks = () => {
+    const state = getNoticeState();
+    return [state?.modifiedTournamentIds, state?.modifiedTopics];
+  };
+  const before = marks().map((set) => set && [...set]);
+  try {
+    return fn();
+  } finally {
+    marks().forEach((set, at) => {
+      set?.clear();
+      for (const value of before[at] ?? []) set?.add(value);
+    });
+  }
 }
 
 function recordedNotice({ topic, key, payload }: Notice): RecordedNotice | undefined {
@@ -100,94 +128,111 @@ export function recordDoubleExitCascade(args: BuildViewArgs, prefix: OutcomeOp[]
     for (const matchUp of drawMatchUps(drawDefinition))
       if (stampedBefore.has(`matchUp:${matchUp.matchUpId}`)) ledger.add(matchUp);
   }
-  return withDraftWrites(() =>
-    withoutSettleTelemetry(() => {
-      // v1 reads the draw before the call's own write (`setMatchUpState`), and the module is handed that reading
-      const matchUpsMap = getMatchUpsMap({ drawDefinition });
-      const inContextDrawMatchUps =
-        getAllDrawMatchUps({ tournamentRecord, inContext: true, drawDefinition, matchUpsMap, event }).matchUps ?? [];
-      const inContextMatchUp = inContextDrawMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
-      const matchUp = matchUpsMap.drawMatchUps.find((stored) => stored.matchUpId === matchUpId);
-      const { structure } = findStructure({ drawDefinition, structureId: inContextMatchUp?.structureId });
-      const targetData = positionTargets({ matchUpId, inContextDrawMatchUps, drawDefinition });
-      if (!inContextMatchUp || !matchUp || !structure || targetData.error) return undefined;
-      const { appliedPolicies = {} } = getAppliedPolicies({
-        policyTypes: [POLICY_TYPE_PROGRESSION, POLICY_TYPE_SCORING, POLICY_TYPE_ROUND_ROBIN_TALLY],
-        tournamentRecord,
-        drawDefinition,
-        event,
-      });
-      if (isObject(args.policyDefinitions)) Object.assign(appliedPolicies, args.policyDefinitions);
-      // read before the call's write, as `setMatchUpStatus` reads them for its settle passes
-      const settleBefore = {
-        doubleExitsBefore: new Set(
-          matchUpsMap.drawMatchUps
-            .filter((stored) => isDoubleExit(stored.matchUpStatus))
-            .map((stored) => stored.matchUpId),
-        ),
-        deciderSnapshotBefore: getDeciderSnapshot(drawDefinition),
-        finalsBefore: getDeciderFinals(drawDefinition),
-      };
-      if (applyOutcomeOps(drawDefinition, prefix, stampedBefore).error) return undefined;
-      const before = {
-        matchUps: new Map(drawMatchUps(drawDefinition).map((stored) => [stored.matchUpId, JSON.stringify(stored)])),
-        structures: new Map(
-          (drawDefinition.structures ?? []).map((s) => [s.structureId, JSON.stringify(own(s, STRUCTURE_CHILDREN))]),
-        ),
-        draw: JSON.stringify(own(drawDefinition, DRAW_CHILDREN)),
-        outside: outside(),
-        notices: new Set(getNoticeBuffer() ?? []),
-      };
-      const result = doubleExitAdvancement({
-        // the outcome as the call entered it, then its flags, as `attemptToSetMatchUpStatus` hands v1's parameters on
-        ...request,
-        flags: undefined,
-        carries: undefined,
-        ...request.flags,
-        policyDefinitions: args.policyDefinitions,
-        inContextDrawMatchUps,
-        inContextMatchUp,
-        appliedPolicies,
-        tournamentRecord,
-        drawDefinition,
-        matchUpsMap,
-        targetData,
-        structure,
-        matchUpId,
-        matchUp,
-        event,
-      });
-      if (result?.error) return undefined;
-      // then everything v1 settles after the write, on the copy (`settleAfterWrite`: the one sequence both run)
-      const settled = settleAfterWrite({
-        params: { tournamentRecord, drawDefinition, matchUpId, event },
-        propagateExitStatus: request.flags.propagateExitStatus,
-        ...settleBefore,
-        matchUpsMap,
-      });
-      if (settled.error || settled.exhausted || outside() !== before.outside) return undefined;
-      const ops: OutcomeOp[] = [];
-      for (const stored of drawMatchUps(drawDefinition))
-        if (JSON.stringify(stored) !== before.matchUps.get(stored.matchUpId))
-          ops.push({ op: 'replaceMatchUp', matchUpId: stored.matchUpId, matchUp: structuredClone(stored) });
-      for (const s of drawDefinition.structures ?? []) {
-        const state = own(s, STRUCTURE_CHILDREN);
-        if (JSON.stringify(state) !== before.structures.get(s.structureId))
-          ops.push({ op: 'replaceStructureState', structureId: s.structureId, state: structuredClone(state) });
-      }
-      const state = own(drawDefinition, DRAW_CHILDREN);
-      if (JSON.stringify(state) !== before.draw)
-        ops.push({ op: 'replaceDrawState', drawId: drawDefinition.drawId, state: structuredClone(state) });
-      const notices: RecordedNotice[] = [];
-      for (const notice of getNoticeBuffer() ?? []) {
-        if (before.notices.has(notice)) continue;
-        const recorded = recordedNotice(notice);
-        // a notice apply could not raise again on the stored record: the call stays v1's
-        if (!recorded) return undefined;
-        notices.push(recorded);
-      }
-      ops.push({ op: 'announceRecorded', notices });
-      return ops;
-    }),
+  return withNoticeMarks(() =>
+    withDraftWrites(() =>
+      withoutSettleTelemetry(() => {
+        // v1 reads the draw before the call's own write (`setMatchUpState`), and the module is handed that reading
+        const matchUpsMap = getMatchUpsMap({ drawDefinition });
+        const inContextDrawMatchUps =
+          getAllDrawMatchUps({ tournamentRecord, inContext: true, drawDefinition, matchUpsMap, event }).matchUps ?? [];
+        const inContextMatchUp = inContextDrawMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
+        const matchUp = matchUpsMap.drawMatchUps.find((stored) => stored.matchUpId === matchUpId);
+        const { structure } = findStructure({ drawDefinition, structureId: inContextMatchUp?.structureId });
+        const targetData = positionTargets({ matchUpId, inContextDrawMatchUps, drawDefinition });
+        if (!inContextMatchUp || !matchUp || !structure || targetData.error) return undefined;
+        const { appliedPolicies = {} } = getAppliedPolicies({
+          policyTypes: [POLICY_TYPE_PROGRESSION, POLICY_TYPE_SCORING, POLICY_TYPE_ROUND_ROBIN_TALLY],
+          tournamentRecord,
+          drawDefinition,
+          event,
+        });
+        if (isObject(args.policyDefinitions)) Object.assign(appliedPolicies, args.policyDefinitions);
+        // read before the call's write, as `setMatchUpStatus` reads them for its settle passes
+        const settleBefore = {
+          doubleExitsBefore: new Set(
+            matchUpsMap.drawMatchUps
+              .filter((stored) => isDoubleExit(stored.matchUpStatus))
+              .map((stored) => stored.matchUpId),
+          ),
+          deciderSnapshotBefore: getDeciderSnapshot(drawDefinition),
+          finalsBefore: getDeciderFinals(drawDefinition),
+        };
+        if (applyOutcomeOps(drawDefinition, prefix, stampedBefore).error) return undefined;
+        // where every object of the copy stands as the module is about to find it (`recording.ts`)
+        const recording = new Recording(drawDefinition);
+        const before = {
+          matchUps: new Map(drawMatchUps(drawDefinition).map((stored) => [stored.matchUpId, JSON.stringify(stored)])),
+          structures: new Map(
+            (drawDefinition.structures ?? []).map((s) => [s.structureId, JSON.stringify(own(s, STRUCTURE_CHILDREN))]),
+          ),
+          draw: JSON.stringify(own(drawDefinition, DRAW_CHILDREN)),
+          outside: outside(),
+          notices: new Set(getNoticeBuffer() ?? []),
+        };
+        const result = doubleExitAdvancement({
+          // the outcome as the call entered it, then its flags, as `attemptToSetMatchUpStatus` hands v1's parameters on
+          ...request,
+          flags: undefined,
+          carries: undefined,
+          ...request.flags,
+          policyDefinitions: args.policyDefinitions,
+          inContextDrawMatchUps,
+          inContextMatchUp,
+          appliedPolicies,
+          tournamentRecord,
+          drawDefinition,
+          matchUpsMap,
+          targetData,
+          structure,
+          matchUpId,
+          matchUp,
+          event,
+        });
+        if (result?.error) return undefined;
+        // then everything v1 settles after the write, on the copy (`settleAfterWrite`: the one sequence both run)
+        const settled = settleAfterWrite({
+          params: { tournamentRecord, drawDefinition, matchUpId, event },
+          propagateExitStatus: request.flags.propagateExitStatus,
+          ...settleBefore,
+          matchUpsMap,
+        });
+        if (settled.error || settled.exhausted || outside() !== before.outside) return undefined;
+        const ops: OutcomeOp[] = [];
+        const replace = (op: Extract<OutcomeOp, { recording?: Recording }>, entity: object) => {
+          recording.source(recordedName(op), entity);
+          ops.push(op);
+        };
+        for (const stored of drawMatchUps(drawDefinition))
+          if (JSON.stringify(stored) !== before.matchUps.get(stored.matchUpId))
+            replace(
+              { op: 'replaceMatchUp', matchUpId: stored.matchUpId, matchUp: structuredClone(stored), recording },
+              stored,
+            );
+        for (const s of drawDefinition.structures ?? []) {
+          const state = own(s, STRUCTURE_CHILDREN);
+          if (JSON.stringify(state) !== before.structures.get(s.structureId))
+            replace(
+              { op: 'replaceStructureState', structureId: s.structureId, state: structuredClone(state), recording },
+              s,
+            );
+        }
+        const state = own(drawDefinition, DRAW_CHILDREN);
+        if (JSON.stringify(state) !== before.draw)
+          replace(
+            { op: 'replaceDrawState', drawId: drawDefinition.drawId, state: structuredClone(state), recording },
+            drawDefinition,
+          );
+        const notices: RecordedNotice[] = [];
+        for (const notice of getNoticeBuffer() ?? []) {
+          if (before.notices.has(notice)) continue;
+          const recorded = recordedNotice(notice);
+          // a notice apply could not raise again on the stored record: the call stays v1's
+          if (!recorded) return undefined;
+          notices.push(recorded);
+        }
+        ops.push({ op: 'announceRecorded', notices });
+        return ops;
+      }),
+    ),
   );
 }

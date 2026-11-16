@@ -16,6 +16,7 @@ import {
   clearSideExitProvenance,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
+import type { Recording } from './recording';
 // constants and types
 import { MODIFY_DRAW_DEFINITION, MODIFY_MATCHUP, MODIFY_POSITION_ASSIGNMENTS } from '@Constants/topicConstants';
 import { completedMatchUpStatuses, BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
@@ -431,18 +432,22 @@ export type OutcomeOp =
        */
       matchUpId: string;
       matchUp: MatchUp;
+      /** the copy's object graph, which apply leaves on the stored draw (`recording.ts`) */
+      recording?: Recording;
     }
   | {
       op: 'replaceStructureState';
       /** RECORDED: a top-level structure's own fields (its matchUps and child structures apart) as the module left them */
       structureId: string;
       state: Record<string, unknown>;
+      recording?: Recording;
     }
   | {
       op: 'replaceDrawState';
       /** RECORDED: the draw's own fields (its structures apart) as the module left them */
       drawId: string;
       state: Record<string, unknown>;
+      recording?: Recording;
     }
   | {
       op: 'announceRecorded';
@@ -1022,26 +1027,42 @@ function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition
     case 'setOrderOfFinish':
       return foldOrderOfFinish(op, index);
     case 'replaceMatchUp':
-      return replaceOwn(
-        index.matchUps.get(op.matchUpId),
-        op.matchUp as unknown as Record<string, unknown>,
-        [],
-        `matchUp ${op.matchUpId}`,
-      );
     case 'replaceStructureState':
-      return replaceOwn(
-        index.structures.get(op.structureId),
-        op.state,
-        STRUCTURE_CHILDREN,
-        `structure ${op.structureId}`,
-      );
     case 'replaceDrawState':
-      return replaceOwn(drawDefinition, op.state, DRAW_CHILDREN, `draw ${op.drawId}`);
+      return foldRecorded(op, index, drawDefinition, context);
     case 'announceRecorded':
       return {};
     default:
       return foldStamp(op, index, drawDefinition, context);
   }
+}
+
+type RecordedOp = Extract<OutcomeOp, { op: 'replaceMatchUp' | 'replaceStructureState' | 'replaceDrawState' }>;
+
+/** the name a recorded op and its recording share for the entity it replaces */
+export function recordedName(op: RecordedOp): string {
+  if (op.op === 'replaceMatchUp') return `matchUp ${op.matchUpId}`;
+  return op.op === 'replaceStructureState' ? `structure ${op.structureId}` : `draw ${op.drawId}`;
+}
+
+/**
+ * RECORDED: apply (`bindResultInputs`) leaves the copy's object graph on the stored entity (`Recording.mirror`); the
+ * working view and the shadow take the recorded values as fresh clones.
+ */
+function foldRecorded(op: RecordedOp, index: DrawIndex, drawDefinition: DrawDefinition, context: FoldContext): Folded {
+  const name = recordedName(op);
+  let target: object | undefined = drawDefinition;
+  let state = op.op === 'replaceMatchUp' ? (op.matchUp as unknown as Record<string, unknown>) : op.state;
+  let kept = DRAW_CHILDREN;
+  if (op.op === 'replaceMatchUp') {
+    target = index.matchUps.get(op.matchUpId);
+    kept = [];
+  } else if (op.op === 'replaceStructureState') {
+    target = index.structures.get(op.structureId);
+    kept = STRUCTURE_CHILDREN;
+  }
+  if (context.bindResultInputs && op.recording) return op.recording.mirror(drawDefinition, name, target, kept);
+  return replaceOwn(target, state, kept, name);
 }
 
 export const STRUCTURE_CHILDREN = ['matchUps', 'structures'];
