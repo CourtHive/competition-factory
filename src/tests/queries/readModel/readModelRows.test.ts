@@ -349,13 +349,14 @@ describe('courtRow', () => {
 });
 
 describe('orderOfPlayRow', () => {
-  it('maps a scoped publish (dates + events + embargo)', () => {
+  it('maps a scoped publish (dates + events + embargo + per-date embargoes)', () => {
     expect(
       orderOfPlayRow('t1', {
         published: true,
         scheduledDates: ['2025-01-05'],
         eventIds: ['e1'],
         embargo: '2025-01-04T00:00',
+        dateEmbargoes: { '2025-01-05': '2025-01-04T18:00:00Z' },
       }),
     ).toEqual({
       tournament_id: 't1',
@@ -363,6 +364,7 @@ describe('orderOfPlayRow', () => {
       scheduled_dates: ['2025-01-05'],
       event_ids: ['e1'],
       embargo: '2025-01-04T00:00',
+      date_embargoes: { '2025-01-05': '2025-01-04T18:00:00Z' },
     });
   });
 
@@ -373,6 +375,7 @@ describe('orderOfPlayRow', () => {
       scheduled_dates: null,
       event_ids: null,
       embargo: null,
+      date_embargoes: null,
     });
   });
 });

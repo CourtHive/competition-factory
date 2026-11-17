@@ -190,6 +190,15 @@ function buildTournamentPublishState({
       embargoActive: isEmbargoed(pubStatus.orderOfPlay),
     });
   }
+  // one entry per date released on its own clock; `id` is the date
+  for (const [date, embargo] of Object.entries(pubStatus?.orderOfPlay?.dateEmbargoes ?? {})) {
+    embargoes.push({
+      type: 'orderOfPlayDate',
+      id: date,
+      embargo: embargo as string,
+      embargoActive: isEmbargoed({ embargo: embargo as string }),
+    });
+  }
   if (pubStatus?.participants?.embargo) {
     embargoes.push({
       type: 'participants',

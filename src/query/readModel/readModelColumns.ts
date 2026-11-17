@@ -110,7 +110,7 @@ export const READ_MODEL_COLUMNS = {
     'latitude',
     'longitude',
   ],
-  order_of_play: ['tournament_id', 'published', 'scheduled_dates', 'event_ids', 'embargo'],
+  order_of_play: ['tournament_id', 'published', 'scheduled_dates', 'event_ids', 'embargo', 'date_embargoes'],
   scheduling_profile: [
     'tournament_id',
     'schedule_date',

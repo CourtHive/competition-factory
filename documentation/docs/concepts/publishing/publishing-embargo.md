@@ -120,6 +120,18 @@ engine.publishOrderOfPlay({
 
 When embargoed, `competitionScheduleMatchUps({ usePublishState: true })` returns empty `dateMatchUps`.
 
+#### Order of Play Date Embargo
+
+Releases each scheduled date on its own clock, while the dates already released stay visible.
+
+```js
+engine.publishOrderOfPlay({
+  dateEmbargoes: { '2024-06-16': '2024-06-15T18:00:00Z' }, // day 2 visible after 6pm on day 1
+});
+```
+
+Until a date's embargo passes, `competitionScheduleMatchUps({ usePublishState: true })` omits that date's matchUps. The whole-schedule `embargo` above still withholds every date. An omitted `dateEmbargoes` keeps the prior map (a republish that only changes `scheduledDates` cannot release a date early); `null` or `{}` clears it.
+
 **API Reference:** [publishOrderOfPlay](/docs/governors/publishing-governor#publishorderofplay), [competitionScheduleMatchUps](/docs/governors/query-governor#competitionschedulematchups)
 
 #### Participants Embargo
@@ -172,6 +184,7 @@ publishState.embargoes?.forEach(({ type, id, embargo, embargoActive }) => {
 //   { type: 'structure', id: 'structureId1', embargo: '2024-06-15T14:00:00Z', embargoActive: true },
 //   { type: 'scheduledRound', id: 'structureId1:round2', embargo: '2024-06-16T08:00:00Z', embargoActive: true },
 //   { type: 'orderOfPlay', embargo: '2024-06-14T18:00:00Z', embargoActive: true },
+//   { type: 'orderOfPlayDate', id: '2024-06-16', embargo: '2024-06-15T18:00:00Z', embargoActive: true },
 //   { type: 'participants', embargo: '2024-06-10T09:00:00Z', embargoActive: false },
 // ]
 ```
@@ -180,12 +193,12 @@ publishState.embargoes?.forEach(({ type, id, embargo, embargoActive }) => {
 
 Each entry contains:
 
-| Field           | Type    | Description                                                                                                |
-| --------------- | ------- | ---------------------------------------------------------------------------------------------------------- |
-| `type`          | string  | `'draw'`, `'stage'`, `'structure'`, `'scheduledRound'`, `'orderOfPlay'`, or `'participants'`               |
-| `id`            | string? | Identifier (drawId, `drawId:stage`, structureId, `structureId:roundN`). Absent for tournament-level types. |
-| `embargo`       | string  | ISO 8601 timestamp                                                                                         |
-| `embargoActive` | boolean | `true` if the embargo is still in the future                                                               |
+| Field           | Type    | Description                                                                                                                                   |
+| --------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `type`          | string  | `'draw'`, `'stage'`, `'structure'`, `'scheduledRound'`, `'orderOfPlay'`, `'orderOfPlayDate'`, or `'participants'`                             |
+| `id`            | string? | Identifier (drawId, `drawId:stage`, structureId, `structureId:roundN`, or the date for `orderOfPlayDate`). Absent for tournament-level types. |
+| `embargo`       | string  | ISO 8601 timestamp                                                                                                                            |
+| `embargoActive` | boolean | `true` if the embargo is still in the future                                                                                                  |
 
 ### Embargo Validation
 

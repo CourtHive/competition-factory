@@ -78,7 +78,11 @@ export type TournamentEventInfo = Pick<
 /** The tournament-level publish state (`getPublishState(...).publishState.tournament`). */
 export type TournamentPublishState = {
   status?: { published?: boolean; publishedEventIds?: string[] };
-  orderOfPlay?: PublishingDetail & { scheduledDates?: string[]; eventIds?: string[] };
+  orderOfPlay?: PublishingDetail & {
+    dateEmbargoes?: Record<string, string>; // per-date release: { 'YYYY-MM-DD': ISO instant }
+    scheduledDates?: string[];
+    eventIds?: string[];
+  };
   info?: PublishingDetail & { eventIds?: string[] };
   participants?: PublishingDetail;
   [key: string]: unknown;
