@@ -99,7 +99,8 @@ describe('C30 a loser arriving where a double exit produced its exit, awarded to
   it.each(casesOf(RELAYED))(
     '%s: the onward BYE relays the position, v1s',
     (_, drawType, drawSize, doubleExit, side, carried) => {
-      compareUndirectedWinner(arrival(drawType, drawSize, doubleExit, side, carried), false);
+      // recorded whole (batch 3): the title is historical
+      compareUndirectedWinner(arrival(drawType, drawSize, doubleExit, side, carried), true);
     },
   );
 });

@@ -34,6 +34,7 @@ import { isString } from '@Tools/objects';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Set as SetType, Tournament } from '@Types/tournamentTypes';
+import type { RecordCopy } from '@Mutate/matchUps/outcome/types';
 import { MatchUpsMap, PolicyDefinitions, ResultType, ResultWarning, TournamentRecords } from '@Types/factoryTypes';
 import { INVALID_VALUES, INVALID_WINNING_SIDE, SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING, POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
@@ -263,6 +264,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
         enableAutoCalc,
       },
     },
+    writeOnCopy: (copy) => writeOnCopy(copy),
     policyDefinitions,
     tournamentRecord,
     drawDefinition,
@@ -271,11 +273,49 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   });
   if (v2.refused) return decorateResult({ result: v2.refused, stack });
   // S2: a call v2 owns has been written by it (`outcome/apply.ts`); v1 is not asked, and the warnings are v1's own
-  if (v2.owned) return ownedResult({ owned: v2.owned, params, matchUpsMap, neverPlayedBefore, stack });
+  // a call recorded whole returns what v1 returned for it on the copy, its warnings among them
+  if (v2.owned)
+    return v2.recorded ? v2.owned : ownedResult({ owned: v2.owned, params, matchUpsMap, neverPlayedBefore, stack });
 
-  return v2.runV1 ? v2.runV1(runV1) : runV1();
+  const stored: V1Target = {
+    deciderSnapshotBefore,
+    doubleExitsBefore,
+    tournamentRecords,
+    finalsBefore,
+    matchUpsMap,
+    params,
+  };
+  return v2.runV1 ? v2.runV1(() => runV1(stored)) : runV1(stored);
 
-  function runV1() {
+  /**
+   * RECORDED (`outcome/plan/recordedCall.ts`): this call's v1 write on a copy of the record, with the copy's own map
+   * and the readings the settle passes are handed, taken as they are taken above. Not for a call that names more than
+   * one tournament record: only the one it is made in is copied.
+   */
+  function writeOnCopy(copy: RecordCopy) {
+    const copied = copy.tournamentRecord;
+    const named = Object.keys(tournamentRecords);
+    if (named.length > 1 || (named.length && named[0] !== copied?.tournamentId)) return undefined;
+    const records = copied ? { [copied.tournamentId]: copied } : tournamentRecords;
+    const map = getMatchUpsMap({ drawDefinition: copy.drawDefinition });
+    return runV1({
+      params: { ...params, ...copy, tournamentRecord: copied as Tournament, tournamentRecords: records },
+      doubleExitsBefore: new Set(
+        map.drawMatchUps.filter((matchUp) => isDoubleExit(matchUp.matchUpStatus)).map((m) => m.matchUpId),
+      ),
+      deciderSnapshotBefore: getDeciderSnapshot(copy.drawDefinition),
+      finalsBefore: getDeciderFinals(copy.drawDefinition),
+      tournamentRecords: records,
+      matchUpsMap: map,
+      onCopy: true,
+    });
+  }
+
+  function runV1(target: V1Target): ResultType {
+    const { params, tournamentRecords, matchUpsMap, finalsBefore, deciderSnapshotBefore, doubleExitsBefore } = target;
+    const { tournamentRecord, drawDefinition, event } = params;
+    // a copy's write is compared with nothing: it is what v2 plans from
+    const compare = target.onCopy ? undefined : v2.compare;
     // A REFUSED CALL STORES NONE OF THE MISSING EDGES (CA, 2026-10-18: "no, a refused call does not store a draw's
     // missing edges. v1 should no longer do so."). `setMatchUpState` writes them before deciding anything, and takes
     // them back on its own refusal; what it held is held here too, for a refusal met after it returned.
@@ -316,7 +356,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
       if (!context?.progressExitStatus) continue;
       const propagated = propagateExitFrom({ context, params, propagateExitStatus });
       if (propagated?.error) {
-        v2.compare?.(propagated);
+        compare?.(propagated);
         return refuse(propagated);
       }
     }
@@ -324,7 +364,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     // call left (census F2, 2026-10-11: the settle step ran after `setMatchUpState` refused, and its reconciliation
     // was the refused call's only write in 55 of 92 refusals after a write).
     if (result.error) {
-      v2.compare?.(result);
+      compare?.(result);
       return refuse(result);
     }
     const settled = settleAfterWrite({
@@ -336,7 +376,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
       matchUpsMap,
     });
     if (settled.error) {
-      v2.compare?.(settled);
+      compare?.(settled);
       return refuse(settled);
     }
     const warnings = [
@@ -348,7 +388,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     // nothing is refused past here: a call that wrote the draw's missing edges announces the draw, once
     announceGoesTo({ hold: heldEdges, tournamentRecord, drawDefinition, event });
 
-    v2.compare?.(result);
+    compare?.(result);
 
     return decorateResult({ result: withoutPropagationContext(result), stack });
   }
@@ -370,6 +410,17 @@ const PROPAGATION_CONTEXT_KEYS = [
   'loserMatchUp',
   'matchUpsMap',
 ];
+
+/** what one run of v1's write is made on: the stored record, or a recorder's copy of it (`onCopy`) */
+type V1Target = {
+  deciderSnapshotBefore: ReturnType<typeof getDeciderSnapshot>;
+  finalsBefore: ReturnType<typeof getDeciderFinals>;
+  tournamentRecords: TournamentRecords;
+  doubleExitsBefore: Set<string>;
+  params: SetMatchUpStatusArgs;
+  matchUpsMap: MatchUpsMap;
+  onCopy?: boolean;
+};
 
 type KeepDualAggregateArgs = Pick<SetMatchUpStatusArgs, 'enableAutoCalc' | 'outcome'> & {
   matchUpsMap: MatchUpsMap;

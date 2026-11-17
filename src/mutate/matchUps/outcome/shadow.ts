@@ -125,7 +125,9 @@ export function plannedNotices({
     const identity = `${topic}|${key}`;
     return `${identity}${(!hasEvent || unevented) && !retainedEvents.has(identity) ? NO_EVENT : ''}`;
   };
-  const notices = new Set<string>(prefix.length ? [`${UPDATE_INCONTEXT_MATCHUP}|${matchUpId}`] : []);
+  // a call recorded whole announces what it recorded, and nothing besides (`plan/recordedCall.ts`)
+  const recordedWhole = prefix.every((op) => RECORDED_OPS.has(op.op));
+  const notices = new Set<string>(prefix.length && !recordedWhole ? [`${UPDATE_INCONTEXT_MATCHUP}|${matchUpId}`] : []);
   for (const op of ops) {
     // every score write announces its matchUp in context, as `apply.ts` defers it: a TEAM line's dual too (S7)
     if (op.op === 'setMatchUpResult' && !op.announcedAs) notices.add(`${UPDATE_INCONTEXT_MATCHUP}|${op.matchUpId}`);
@@ -158,6 +160,8 @@ export function addedNotices<T>(before: T[] | undefined, after: T[] | undefined)
   const kept = new Set(before ?? []);
   return (after ?? []).filter((notice) => !kept.has(notice));
 }
+
+const RECORDED_OPS = new Set(['replaceMatchUp', 'replaceStructureState', 'replaceDrawState', 'announceRecorded']);
 
 /** a notice whose payload names no event, marked on its key where the event is compared (`plannedNotices`) */
 const NO_EVENT = '|no-event';

@@ -5,25 +5,15 @@ import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
 import { isDoubleExit } from '@Validators/isExit';
 import { doubleExitAdvancement } from '@Mutate/drawDefinitions/positionGovernor/doubleExitAdvancement';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import { DEFERRED_PAYLOAD, getCapturedStamps, getNoticeState, type Notice } from '@Global/state/globalState';
-import { deferredQueryBinding } from '@Mutate/notifications/drawNotifications';
-import { getNoticeBuffer } from '@Global/state/globalState';
 import { withDraftWrites } from '@Global/state/withDraftWrites';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
 import { cloneState } from '@Tools/cloneState';
+import { readBefore, recordedOps, stampCopies, withNoticeMarks } from './recordedDiff';
+import { applyOutcomeOps, stampedInThisCall } from '../ops';
 import { isObject } from '@Tools/objects';
-import {
-  applyOutcomeOps,
-  DRAW_CHILDREN,
-  RECORDED_ENTITY,
-  recordedName,
-  STRUCTURE_CHILDREN,
-  stampedInThisCall,
-} from '../ops';
 import { Recording } from '../recording';
 
 // constants and types
@@ -33,10 +23,9 @@ import {
   POLICY_TYPE_ROUND_ROBIN_TALLY,
   POLICY_TYPE_SCORING,
 } from '@Constants/policyConstants';
-import type { DrawDefinition, MatchUp, Structure } from '@Types/tournamentTypes';
+import type { DrawDefinition } from '@Types/tournamentTypes';
 import type { BuildViewArgs } from '../types';
-import type { OutcomeOp, RecordedNotice } from '../ops';
-import { UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
+import type { OutcomeOp } from '../ops';
 
 /**
  * RECORDED (CA, 2026-11-16, option 2): a double exit's cascade the planners do not write shape by shape is read off the
@@ -46,68 +35,6 @@ import { UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
  * stored record or the engine's notice state. Undefined where the module refuses, or writes outside the draw.
  */
 export type RecordCascade = (prefix: OutcomeOp[]) => OutcomeOp[] | undefined;
-
-const own = (entity: object, children: string[]) =>
-  Object.fromEntries(Object.entries(entity).filter(([key]) => !children.includes(key)));
-
-function drawMatchUps(drawDefinition: DrawDefinition): MatchUp[] {
-  const found: MatchUp[] = [];
-  const visit = (structure: Structure) => {
-    for (const matchUp of matchUpsOf(structure) ?? []) found.push(matchUp, ...(matchUp.tieMatchUps ?? []));
-    for (const child of structuresOf(structure) ?? []) visit(child);
-  };
-  for (const structure of drawDefinition.structures ?? []) visit(structure);
-  return found;
-}
-
-type NoticeMarks = { tournamentIds: string[]; topics: string[] };
-
-/**
- * `withDraftWrites` puts back the notice buffer and the modified flag; the provider's marks of WHICH tournaments and
- * topics the call modified are put back here, in their order. A copy's notices marked them before the call's own did.
- * They are emptied for the run, so `fn` can read what the copy's writes marked (`read`), which apply marks again.
- */
-function withNoticeMarks<T>(fn: (read: () => NoticeMarks | undefined) => T): T {
-  const sets = () => {
-    const state = getNoticeState();
-    return [state?.modifiedTournamentIds, state?.modifiedTopics];
-  };
-  const before = sets().map((set) => set && [...set]);
-  sets().forEach((set) => set?.clear());
-  const read = () => {
-    const [tournamentIds, topics] = sets();
-    return tournamentIds && topics ? { tournamentIds: [...tournamentIds], topics: [...topics] } : undefined;
-  };
-  try {
-    return fn(read);
-  } finally {
-    sets().forEach((set, at) => {
-      set?.clear();
-      for (const value of before[at] ?? []) set?.add(value);
-    });
-  }
-}
-
-function recordedNotice({ topic, key, payload }: Notice): RecordedNotice | undefined {
-  if (!key || !isObject(payload)) return undefined;
-  const base = { topic, key, eventId: payload.eventId, context: payload.context };
-  if (topic === UPDATE_INCONTEXT_MATCHUP) {
-    const built = payload[DEFERRED_PAYLOAD];
-    const outer = typeof built === 'function' ? deferredQueryBinding(built) : undefined;
-    const bound = outer?.args as { inContextMatchUp?: object; tournamentId?: string } | undefined;
-    const inner = bound?.inContextMatchUp && deferredQueryBinding(bound.inContextMatchUp);
-    if (!bound || !inner) return undefined;
-    const contextless = !(inner.args as { tournamentRecord?: unknown }).tournamentRecord;
-    return {
-      ...base,
-      fields: { tournamentId: payload.tournamentId },
-      deferred: { tournamentId: bound.tournamentId, contextless },
-    };
-  }
-  const entity = RECORDED_ENTITY[topic];
-  if (!entity) return undefined;
-  return { ...base, fields: structuredClone({ ...payload, [entity]: null }) };
-}
 
 export function recordDoubleExitCascade(args: BuildViewArgs, prefix: OutcomeOp[]): OutcomeOp[] | undefined {
   const { request } = args;
@@ -127,15 +54,7 @@ export function recordDoubleExitCascade(args: BuildViewArgs, prefix: OutcomeOp[]
   const drawDefinition = copy.drawDefinition as DrawDefinition;
   const outside = () =>
     JSON.stringify({ tournamentRecord, event }, (_key, value) => (value === drawDefinition ? 0 : value));
-  // the copies of what this engine call already stamped are stamped: the module's own notices stamp once per call
-  const ledger = getCapturedStamps();
-  if (ledger) {
-    if (stampedBefore.has(`drawDefinition:${drawDefinition.drawId}`)) ledger.add(drawDefinition);
-    for (const structure of drawDefinition.structures ?? [])
-      if (stampedBefore.has(`structure:${structure.structureId}`)) ledger.add(structure);
-    for (const matchUp of drawMatchUps(drawDefinition))
-      if (stampedBefore.has(`matchUp:${matchUp.matchUpId}`)) ledger.add(matchUp);
-  }
+  stampCopies(drawDefinition, stampedBefore);
   return withNoticeMarks((readMarks) =>
     withDraftWrites(() =>
       withoutSettleTelemetry(() => {
@@ -168,15 +87,7 @@ export function recordDoubleExitCascade(args: BuildViewArgs, prefix: OutcomeOp[]
         if (applyOutcomeOps(drawDefinition, prefix, stampedBefore).error) return undefined;
         // where every object of the copy stands as the module is about to find it (`recording.ts`)
         const recording = new Recording(drawDefinition);
-        const before = {
-          matchUps: new Map(drawMatchUps(drawDefinition).map((stored) => [stored.matchUpId, JSON.stringify(stored)])),
-          structures: new Map(
-            (drawDefinition.structures ?? []).map((s) => [s.structureId, JSON.stringify(own(s, STRUCTURE_CHILDREN))]),
-          ),
-          draw: JSON.stringify(own(drawDefinition, DRAW_CHILDREN)),
-          outside: outside(),
-          notices: new Set(getNoticeBuffer() ?? []),
-        };
+        const before = { ...readBefore(drawDefinition), outside: outside() };
         const result = doubleExitAdvancement({
           // the outcome as the call entered it, then its flags, as `attemptToSetMatchUpStatus` hands v1's parameters on
           ...request,
@@ -205,41 +116,7 @@ export function recordDoubleExitCascade(args: BuildViewArgs, prefix: OutcomeOp[]
           matchUpsMap,
         });
         if (settled.error || settled.exhausted || outside() !== before.outside) return undefined;
-        const ops: OutcomeOp[] = [];
-        const replace = (op: Extract<OutcomeOp, { recording?: Recording }>, entity: object) => {
-          recording.source(recordedName(op), entity);
-          ops.push(op);
-        };
-        for (const stored of drawMatchUps(drawDefinition))
-          if (JSON.stringify(stored) !== before.matchUps.get(stored.matchUpId))
-            replace(
-              { op: 'replaceMatchUp', matchUpId: stored.matchUpId, matchUp: structuredClone(stored), recording },
-              stored,
-            );
-        for (const s of drawDefinition.structures ?? []) {
-          const state = own(s, STRUCTURE_CHILDREN);
-          if (JSON.stringify(state) !== before.structures.get(s.structureId))
-            replace(
-              { op: 'replaceStructureState', structureId: s.structureId, state: structuredClone(state), recording },
-              s,
-            );
-        }
-        const state = own(drawDefinition, DRAW_CHILDREN);
-        if (JSON.stringify(state) !== before.draw)
-          replace(
-            { op: 'replaceDrawState', drawId: drawDefinition.drawId, state: structuredClone(state), recording },
-            drawDefinition,
-          );
-        const notices: RecordedNotice[] = [];
-        for (const notice of getNoticeBuffer() ?? []) {
-          if (before.notices.has(notice)) continue;
-          const recorded = recordedNotice(notice);
-          // a notice apply could not raise again on the stored record: the call stays v1's
-          if (!recorded) return undefined;
-          notices.push(recorded);
-        }
-        ops.push({ op: 'announceRecorded', notices, marks: readMarks() });
-        return ops;
+        return recordedOps({ drawDefinition, recording, before, marks: readMarks() });
       }),
     ),
   );

@@ -343,6 +343,28 @@ export function planOutcome(args: PlanArgs): OutcomePlan {
  * C27, at the same point of the plan
  */
 function wholeCarry(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
+  return recordedWhole(args, carriedWhole(args, plan));
+}
+
+/** the abstentions a whole-call recording answers: an exit, a cascade or a loser seat the planners do not write */
+const RECORDED_WHOLE = new Set<AbstainReason>(['exit', 'cascade', 'loser']);
+
+/**
+ * RECORDED, THE WHOLE CALL (batch 3, `plan/recordedCall.ts`): the call's own plan, where the planners abstain for one of
+ * those reasons, is read off v1's whole write on a copy of the record: the recorded ops, and nothing before them. Whole
+ * or not at all, as a recorded cascade is: a recording a settle predicate still finds work on is dropped, and the plan
+ * is the abstention the planners returned. Not for a real-clock call (`clock`), nor a dual planned in its line's plan.
+ */
+function recordedWhole(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
+  if (!plan.abstain || !RECORDED_WHOLE.has(plan.abstain) || args.asDual || args.clockFree) return plan;
+  // a refused call has no route: the refusal is its answer, and v1 on a copy would only return the same error
+  if (!args.route) return plan;
+  const recorded = args.recordWhole?.();
+  if (!recorded || args.settles?.(recorded.ops)) return plan;
+  return { ops: recorded.ops, shape: 'local', recordedResult: recorded.written };
+}
+
+function carriedWhole(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
   if (takeAdmittedCarry() !== args.request.matchUpId) return plan;
   return plan.ops && !args.settles?.(plan.ops) ? plan : { abstain: 'cascade' };
 }

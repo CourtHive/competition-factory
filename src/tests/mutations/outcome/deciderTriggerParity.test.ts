@@ -28,10 +28,12 @@ import {
 const writes = vi.hoisted(() => ({ count: 0 }));
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
   const actual: any = await importOriginal();
+  const { inDraftWrites } = await import('@Global/state/withDraftWrites');
   return {
     ...actual,
     setMatchUpState: (...args: any[]) => {
-      writes.count++;
+      // a recorder's run on its working copy is not a write of the stored record
+      if (!inDraftWrites()) writes.count++;
       return actual.setMatchUpState(...args);
     },
   };
@@ -252,7 +254,7 @@ for (const allowChangePropagation of [false, true]) {
     );
     expect(stored.find((m: any) => m.matchUpId === final.matchUpId).winningSide).toBe(2);
     expect(stored.find((m: any) => m.matchUpId === decider.matchUpId).matchUpStatus).toBe(DEAD_RUBBER);
-    expect(replay('v2', record, matchUpId, outcome, options)).toEqual(reference);
+    expect(replay('v2', record, matchUpId, outcome, options)).toEqual({ ...reference, writes: 0 });
     expect(replay('differential', record, matchUpId, outcome, options)).toEqual(reference);
   });
 }

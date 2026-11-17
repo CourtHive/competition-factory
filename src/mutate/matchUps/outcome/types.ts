@@ -1,4 +1,4 @@
-import type { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
+import type { MatchUpsMap, PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import type { ErrorType } from '@Constants/errorConditionConstants';
 import type { OutcomeOp, TemporalProjection } from './ops';
 import type { HydratedMatchUp } from '@Types/hydrated';
@@ -463,7 +463,19 @@ export type BuildViewArgs = {
   structural?: boolean;
   event?: Event;
   request: OutcomeRequest;
+  /** RECORDED: v1's whole write for this call, run on a copy of the record (`plan/recordedCall.ts`) */
+  writeOnCopy?: WriteOnCopy;
 };
+
+/** the record a recorder copies: what a call is handed */
+export type RecordCopy = { tournamentRecord?: Tournament; drawDefinition: DrawDefinition; event?: Event };
+
+/**
+ * RECORDED: `setMatchUpStatus`'s own v1 write (`runV1`) on `copy`, with the call's parameters, and what it returned:
+ * the call's whole answer, warnings included. Undefined where the call cannot be run on a copy (it names more than one
+ * tournament record).
+ */
+export type WriteOnCopy = (copy: RecordCopy) => ResultType | undefined;
 
 /** § 5 rule 1: what direction must have done once the route has written */
 /** F2: what the loser's matchUp holds once a relabel withdraws the exit carried there */
@@ -633,7 +645,13 @@ export type AbstainReason =
 /** which of the allowlist's shapes a complete plan is: `local` (the matchUp's own result) or the first `direction` */
 export type PlanShape = 'local' | 'direction';
 export type OutcomePlan =
-  | { ops: OutcomeOp[]; shape: PlanShape; abstain?: undefined }
+  | {
+      ops: OutcomeOp[];
+      shape: PlanShape;
+      abstain?: undefined;
+      /** RECORDED: what v1 returned for the whole call it wrote on a copy, which the owned call returns */
+      recordedResult?: ResultType;
+    }
   | { abstain: AbstainReason; ops?: undefined; shape?: undefined };
 
 /**
@@ -692,6 +710,8 @@ export type PlanArgs = {
   landing?: LandingView;
   /** RECORDED: the double-exit module's cascade after `prefix`, read on a copy of the record. */
   record?: (prefix: OutcomeOp[]) => OutcomeOp[] | undefined;
+  /** RECORDED: v1's whole write for the call, read on a copy of the record (`plan/recordedCall.ts`). */
+  recordWhole?: () => { ops: OutcomeOp[]; written: ResultType } | undefined;
   /** S7: the dual's call a deciding line makes */
   dual?: DualCall;
   /** S7: this call is a deciding line's dual, planned as part of the line's plan: its TEAM shape is the line's to vet */

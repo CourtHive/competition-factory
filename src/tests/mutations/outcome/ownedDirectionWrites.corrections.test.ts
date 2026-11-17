@@ -10,7 +10,7 @@ import {
 } from '@Tests/testHarness/outcome/directionFixtures';
 
 // constants and types
-import { COMPASS, FEED_IN_CHAMPIONSHIP, FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { FEED_IN_CHAMPIONSHIP, FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import type { HeldCarryCorrection } from '@Tests/testHarness/outcome/directionFixtures';
 import { COMPLETED, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import {
@@ -55,12 +55,8 @@ describe('C25 existing carries corrected past held BYEs preserve records, return
         expect(actual.notices).toEqual(v1.notices);
       }
     } else {
-      // Captured controls: COMPASS 16/15 carries across another loser link; DOUBLES 16/11 also withdraws a downstream BYE.
-      const deeper =
-        profile.drawType === COMPASS &&
-        profile.drawSize === 16 &&
-        (profile.participantsCount === 15 || profile.eventType === 'DOUBLES');
-      const owned = profile.eventType !== 'TEAM' && (!deeper || !!correction.sourceOnly);
+      // the deeper controls are recorded whole (batch 3); TEAM stays v1's
+      const owned = profile.eventType !== 'TEAM';
       expect(compareUndirectedWinner(scenario, owned, prepared).v1.results[0].success).toEqual(true);
     }
   });
@@ -74,7 +70,8 @@ describe('C25 existing carries corrected past held BYEs preserve records, return
       initialCarry: false,
     };
     const { prepared, scenario } = prepareHeldCarryCorrection(profile, correction, false);
-    expect(compareUndirectedWinner(scenario, false, prepared).v1.results[0].success).toEqual(true);
+    // recorded whole (batch 3): the title is historical
+    expect(compareUndirectedWinner(scenario, true, prepared).v1.results[0].success).toEqual(true);
   });
 
   it.each(['SINGLES', 'DOUBLES'])('C25 %s: disabling propagation keeps the carried record', (eventType) => {
