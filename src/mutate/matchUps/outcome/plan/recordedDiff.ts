@@ -94,15 +94,22 @@ export function stampCopies(drawDefinition: DrawDefinition, stampedBefore: Set<s
     if (stampedBefore.has(`matchUp:${matchUp.matchUpId}`)) ledger.add(matchUp);
 }
 
+/**
+ * An entity as text for comparison, a key holding undefined included: v1 writes `winningSide: undefined` onto a matchUp
+ * it resets, plain JSON drops the key, and the exact graph v1 leaves has it.
+ */
+const UNDEFINED = '\u0000undefined';
+const shapeOf = (value: unknown) => JSON.stringify(value, (_key, held) => (held === undefined ? UNDEFINED : held));
+
 /** the copy as the writers are about to find it: each entity's own fields, and the notices already buffered */
 export type RecordedBefore = ReturnType<typeof readBefore>;
 export function readBefore(drawDefinition: DrawDefinition) {
   return {
-    matchUps: new Map(drawMatchUps(drawDefinition).map((stored) => [stored.matchUpId, JSON.stringify(stored)])),
+    matchUps: new Map(drawMatchUps(drawDefinition).map((stored) => [stored.matchUpId, shapeOf(stored)])),
     structures: new Map(
-      (drawDefinition.structures ?? []).map((s) => [s.structureId, JSON.stringify(ownState(s, STRUCTURE_CHILDREN))]),
+      (drawDefinition.structures ?? []).map((s) => [s.structureId, shapeOf(ownState(s, STRUCTURE_CHILDREN))]),
     ),
-    draw: JSON.stringify(ownState(drawDefinition, DRAW_CHILDREN)),
+    draw: shapeOf(ownState(drawDefinition, DRAW_CHILDREN)),
     notices: new Set(getNoticeBuffer() ?? []),
   };
 }
@@ -128,18 +135,18 @@ export function recordedOps({
     ops.push(op);
   };
   for (const stored of drawMatchUps(drawDefinition))
-    if (JSON.stringify(stored) !== before.matchUps.get(stored.matchUpId))
+    if (shapeOf(stored) !== before.matchUps.get(stored.matchUpId))
       replace(
         { op: 'replaceMatchUp', matchUpId: stored.matchUpId, matchUp: structuredClone(stored), recording },
         stored,
       );
   for (const s of drawDefinition.structures ?? []) {
     const state = ownState(s, STRUCTURE_CHILDREN);
-    if (JSON.stringify(state) !== before.structures.get(s.structureId))
+    if (shapeOf(state) !== before.structures.get(s.structureId))
       replace({ op: 'replaceStructureState', structureId: s.structureId, state: structuredClone(state), recording }, s);
   }
   const state = ownState(drawDefinition, DRAW_CHILDREN);
-  if (JSON.stringify(state) !== before.draw)
+  if (shapeOf(state) !== before.draw)
     replace(
       { op: 'replaceDrawState', drawId: drawDefinition.drawId, state: structuredClone(state), recording },
       drawDefinition,
