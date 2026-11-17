@@ -268,7 +268,11 @@ function applyScheduleAssignments({
   });
   if (conflictResult) return conflictResult;
 
-  if (courtId !== undefined && scheduledDate !== undefined) {
+  // A court is ASSIGNED for a day, so an assignment needs the date. A CLEAR needs no day: without this it was silently
+  // skipped while the venue and court order (applied unconditionally below) were cleared, leaving a matchUp with a court
+  // and no place on the grid (TMX "take it off the court, keep its time", 2026-11-17).
+  const clearsCourt = courtId !== undefined && !courtId;
+  if (courtId !== undefined && (scheduledDate !== undefined || clearsCourt)) {
     const result = assignMatchUpCourt({
       courtDayDate: scheduledDate,
       disableNotice: true,
