@@ -1,10 +1,13 @@
-import { CARRIED, MAIN, R1, play, walkover, won } from '@Tests/testHarness/outcome/directionFixtures';
+import { CARRIED, MAIN, R1, cleared, play, walkover, won } from '@Tests/testHarness/outcome/directionFixtures';
 import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
+import { getTournamentRecords } from '@Global/state/globalState';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 // constants and types
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import type { Scenario } from '@Tests/testHarness/outcome/directionFixtures';
+import type { MatchUp, Tournament } from '@Types/tournamentTypes';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
@@ -120,6 +123,84 @@ describe('a call whose planned ops leave settle work', () => {
     expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
     expect(v2.notices).toEqual(v1.notices);
+  });
+});
+
+/**
+ * the stored record and the cleared fixture as an object graph: every value, a key holding undefined, the keys in their
+ * order, and WHICH objects are one object (an object met again is named by where it was first met)
+ */
+function objectGraph(root: unknown) {
+  const met = new Map<object, number>();
+  const visit = (value: unknown): unknown => {
+    if (value === undefined) return { undefined: true };
+    if (value === null || typeof value !== 'object') return value;
+    if (met.has(value)) return { met: met.get(value) };
+    met.set(value, met.size);
+    return Object.entries(value).map(([key, held]) => [key, visit(held)]);
+  };
+  return visit(root);
+}
+
+const storedRecord = () => Object.values(getTournamentRecords())[0] as Tournament;
+
+const storedGraph = () => objectGraph([toBePlayed.matchUpStatusCodes, toBePlayed.score, storedRecord()]);
+
+const consolation = (roundPosition: number) =>
+  storedRecord()
+    .events![0].drawDefinitions![0].structures!.find((structure) => structure.structureName === 'Consolation')!
+    .matchUps!.find((matchUp) => matchUp.roundNumber === 1 && matchUp.roundPosition === roundPosition) as MatchUp;
+
+describe("a call recorded whole leaves the objects v1's write leaves", () => {
+  // Consolation 1/2 is played and cleared, and the clear leaves it the cleared fixture's status codes: one empty
+  // array, shared by every matchUp so cleared (`modifyMatchUpScore`). Main 1/4 is then cleared: its loser leaves
+  // Consolation 1/2, whose codes `removeDirectedLoser` derives afresh, a NEW empty array for the shared empty one.
+  // Nothing Consolation 1/2 says is changed; the array that says it is another
+  const SHARED_CODES: Scenario = {
+    drawProfile: { drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 8 },
+    nonRandom: 7001,
+    setup: [
+      { target: R1(3, 'Main'), outcome: { winningSide: 1 } },
+      { target: R1(4, 'Main'), outcome: { winningSide: 1 } },
+      { target: R1(2, 'Consolation'), outcome: { winningSide: 1 } },
+      { target: R1(2, 'Consolation'), outcome: cleared },
+    ],
+    steps: [{ target: R1(4, 'Main'), outcome: cleared }],
+  };
+
+  it('a new object that says what the old one said is the one stored', () => {
+    play(OUTCOME_PIPELINE_V1, { ...SHARED_CODES, steps: [] });
+    const before = JSON.stringify(consolation(2));
+    expect(consolation(2).matchUpStatusCodes).toBe(toBePlayed.matchUpStatusCodes);
+
+    const v1 = play(OUTCOME_PIPELINE_V1, SHARED_CODES);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    expect(v1.v1Writes).toBeGreaterThan(0);
+    const graph = storedGraph();
+    expect(JSON.stringify(consolation(2))).toEqual(before);
+    expect(consolation(2).matchUpStatusCodes).toEqual([]);
+    expect(consolation(2).matchUpStatusCodes).not.toBe(toBePlayed.matchUpStatusCodes);
+
+    // CONTROL: the call is one the planners plan and a settle pass has work on, so it is recorded
+    const settle = tally('shadow:abstain:settle');
+    recorder.refuse = true;
+    recorder.asked = 0;
+    play(OUTCOME_PIPELINE_DIFFERENTIAL, SHARED_CODES);
+    recorder.refuse = false;
+    expect(recorder.asked).toEqual(1);
+    expect(tally('shadow:abstain:settle')).toEqual(settle + 1);
+
+    for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+      recorder.asked = 0;
+      const actual = play(mode, SHARED_CODES);
+      expect(recorder.asked).toEqual(1);
+      if (mode === OUTCOME_PIPELINE_V2) expect(actual.v1Writes).toEqual(0);
+      expect(actual.results).toEqual(v1.results);
+      expect(actual.record).toEqual(v1.record);
+      expect(actual.notices).toEqual(v1.notices);
+      expect(consolation(2).matchUpStatusCodes).not.toBe(toBePlayed.matchUpStatusCodes);
+      expect(storedGraph()).toEqual(graph);
+    }
   });
 });
 
