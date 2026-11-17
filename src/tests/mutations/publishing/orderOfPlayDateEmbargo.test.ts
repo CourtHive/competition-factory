@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getMatchUpIds } from '@Functions/global/extractors';
-import { cast } from '@Query/readModel/cast';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { cast } from '@Query/readModel/cast';
 
 // constants
 import { INVALID_EMBARGO, INVALID_VALUES } from '@Constants/errorConditionConstants';
