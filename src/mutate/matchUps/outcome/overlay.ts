@@ -170,6 +170,16 @@ export function createWorkingView({
       event,
     }).matchUps;
 
+  /** RECORDED: a structure's assignments replaced whole change the sides of any of its matchUps */
+  const replacedStructureMatchUps = (ops: OutcomeOp[]) =>
+    ops.flatMap((op) => {
+      if (op.op !== 'replaceStructureState') return [];
+      const top = structureHolding(op.structureId);
+      return [top, ...(structuresOf(top) ?? [])].flatMap((structure) =>
+        (matchUpsOf(structure) ?? []).map((matchUp) => matchUp.matchUpId),
+      );
+    });
+
   const view: WorkingView = {
     inContextDrawMatchUps,
     drawDefinition: workingDraw,
@@ -203,6 +213,8 @@ export function createWorkingView({
         for (const matchUp of matchUpsOf(structureHolding(op.structureId)) ?? [])
           if (matchUp.drawPositions?.includes(op.drawPosition)) affected.add(matchUp.matchUpId);
       }
+
+      replacedStructureMatchUps(ops).forEach((matchUpId) => affected.add(matchUpId));
 
       // a dual's lines are built through it (its drawPositions, its sides' line-ups): what changes the dual, changes them
       for (const matchUpId of [...affected]) {

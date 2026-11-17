@@ -53,3 +53,18 @@ export function observePass<T>(site: string, drawDefinition: unknown, pass: () =
   }
   return result;
 }
+
+/**
+ * Run `fn` with telemetry off and put it back: a pass run on a working copy (outcome v2's recorded cascade) is not one of
+ * the call's passes, and `differential` runs both.
+ */
+export function withoutSettleTelemetry<T>(fn: () => T): T {
+  const { enabled, passes } = telemetry;
+  telemetry.enabled = telemetry.passes = false;
+  try {
+    return fn();
+  } finally {
+    telemetry.enabled = enabled;
+    telemetry.passes = passes;
+  }
+}

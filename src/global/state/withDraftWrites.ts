@@ -14,10 +14,19 @@ import { restoreMutationStatus, readMutationStatus, getNoticeBuffer, setNoticeBu
 export function withDraftWrites<T>(fn: () => T): T {
   const notices = getNoticeBuffer();
   const modified = readMutationStatus();
+  drafts += 1;
   try {
     return fn();
   } finally {
+    drafts -= 1;
     setNoticeBuffer(notices);
     restoreMutationStatus(modified);
   }
+}
+
+let drafts = 0;
+
+/** True while `withDraftWrites` runs: a writer called now writes a draft, not the record (a test's write counter asks). */
+export function inDraftWrites() {
+  return drafts > 0;
 }

@@ -316,7 +316,8 @@ export function deferredQueryBinding(read: object) {
   return deferredQueries.get(read);
 }
 
-function inContextNoticePayload({
+/** the payload a deferred in-context notice builds when it is read; exported for a notice raised again as recorded */
+export function inContextNoticePayload({
   inContextMatchUp,
   tournamentId,
 }: {

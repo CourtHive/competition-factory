@@ -132,6 +132,15 @@ export function plannedNotices({
     // a placement, and a seat an unwind visits (`withdrawBye`): `apply.ts` announces each structure's assignments
     if (announcesAssignments(op))
       notices.add(marked(MODIFY_POSITION_ASSIGNMENTS, op.structureId, eventless.structures.has(op.structureId)));
+    if (op.op === 'announceRecorded')
+      for (const { topic, key, eventId } of op.notices) {
+        const identity = `${topic}|${key}`;
+        const compared = EVENT_COMPARED.has(topic);
+        if (!compared || eventId || retainedEvents.has(identity)) {
+          notices.delete(`${identity}${NO_EVENT}`);
+          notices.add(identity);
+        } else if (!notices.has(identity)) notices.add(`${identity}${NO_EVENT}`);
+      }
     if (op.op !== 'stampUpdatedAt') continue;
     if (op.entity === 'matchUp') notices.add(marked(MODIFY_MATCHUP, op.id, eventless.matchUps.has(op.id)));
     if (op.entity === 'drawDefinition') notices.add(`${MODIFY_DRAW_DEFINITION}|${op.id}`);

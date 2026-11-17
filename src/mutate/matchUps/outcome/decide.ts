@@ -1,3 +1,4 @@
+import { recordDoubleExitCascade } from './plan/recordedCascade';
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
 import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
@@ -97,6 +98,7 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
     rebuild: rebuildView(args, view, planned),
     project: projectOutcome(args, view),
     landing: landingView(args, view),
+    record: (prefix) => recordDoubleExitCascade({ ...args, request: planned }, prefix),
     dual: dualCallFor(route, args, view),
     request: planned,
     write: plan,
