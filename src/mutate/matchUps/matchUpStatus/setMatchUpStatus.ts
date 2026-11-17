@@ -21,6 +21,7 @@ import { isPartialDualScore } from '@Scoring/analysis/isPartialDualScore';
 import { tiebreakPointsWarnings } from '@Scoring/analysis/validateScore';
 import { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
 import { decideOutcomeV2 } from '@Mutate/matchUps/outcome/decide';
+import { replayedDraws } from '@Tools/replayedDraws';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { matchUpScore } from '@Scoring/views/matchUpScore';
@@ -246,6 +247,10 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // The v2 pipeline decides the refusals (§ 2) before v1 runs. Under `v2` its refusal is the answer
   // and v1 is not asked; under `differential` v1 runs as well and the two must agree. Under `v1`,
   // the default, this is a no-op. See `src/mutate/matchUps/outcome/`.
+  // A RECORDED CALL DRAWS ONCE. v1 run on a copy (`writeOnCopy`, the recorded cascade) takes its random draws from the
+  // source, and they are kept; v1 run on the stored record after it (`differential`, or a recording refused or
+  // dropped) is handed those draws first, in order. Every stream is read as v1 alone reads it, in every mode.
+  const draws = replayedDraws();
   const v2 = decideOutcomeV2({
     request: {
       matchUpStatusCodes: outcome?.matchUpStatusCodes,
@@ -264,7 +269,8 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
         enableAutoCalc,
       },
     },
-    writeOnCopy: (copy) => writeOnCopy(copy),
+    writeOnCopy: (copy) => draws.record(() => writeOnCopy(copy)),
+    recordDraws: draws.record,
     policyDefinitions,
     tournamentRecord,
     drawDefinition,
@@ -285,7 +291,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     matchUpsMap,
     params,
   };
-  return v2.runV1 ? v2.runV1(() => runV1(stored)) : runV1(stored);
+  return draws.replay(() => (v2.runV1 ? v2.runV1(() => runV1(stored)) : runV1(stored)));
 
   /**
    * RECORDED (`outcome/plan/recordedCall.ts`): this call's v1 write on a copy of the record, with the copy's own map

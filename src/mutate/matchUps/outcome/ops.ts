@@ -62,6 +62,8 @@ export type OutcomeOp =
       initializesScore?: true;
       /** The source writer assigns an own undefined winner. */
       removesWinningSide?: true;
+      /** The source writer was handed status codes naming no reason: the reasons the matchUp kept are deleted. */
+      clearsStatusReasons?: true;
       /** The pending produced exit lost its winner key in the settle pass after a retained BYE relay. */
       deletesWinningSide?: true;
       /** Settle restores the retained carrier origin and removes its old winner before replaying the result. */
@@ -684,6 +686,10 @@ function setResultFormatAndCodes(
       delete matchUp.matchUpStatusCode;
       delete matchUp.sideStatusCodes;
     }
+  }
+  if (op.clearsStatusReasons) {
+    delete matchUp.matchUpStatusCode;
+    delete matchUp.sideStatusCodes;
   }
 }
 

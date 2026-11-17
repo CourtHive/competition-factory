@@ -129,7 +129,7 @@ describe('C13 no-arrival public writers and subscribed differential notices', ()
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
       const compared = play(mode, scenario);
-      expect(compared.v1Writes).toEqual(1);
+      expect(compared.v1Writes).toEqual(mode === OUTCOME_PIPELINE_V2 ? 0 : 1);
       expect(compared.results).toEqual(v1.results);
       expect(compared.record).toEqual(v1.record);
       expect(compared.notices).toEqual(v1.notices);
@@ -156,8 +156,7 @@ describe('C14 standing reservations preserve their original stored records', () 
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
     for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
       const compared = play(mode, scenario);
-      // the double correction is recorded whole (batch 3); the rest plan ops that leave settle work, v1's
-      expect(compared.v1Writes).toEqual(mode === OUTCOME_PIPELINE_V2 && _label.endsWith('/double correction') ? 0 : 1);
+      expect(compared.v1Writes).toEqual(mode === OUTCOME_PIPELINE_V2 ? 0 : 1);
       expect(compared.results).toEqual(v1.results);
       expect(compared.record).toEqual(v1.record);
       expect(compared.notices).toEqual(v1.notices);
@@ -265,7 +264,7 @@ describe('C15 superseded own relay material and notice contracts', () => {
       expect(compared.record).toEqual(v1.record);
       expect(compared.notices).toEqual(v1.notices);
       // A locally owned clear still runs v1 in differential's comparison shadow.
-      expect(compared.v1Writes).toEqual(_label.includes('/clear/') && mode === OUTCOME_PIPELINE_V2 ? 0 : 1);
+      expect(compared.v1Writes).toEqual(mode === OUTCOME_PIPELINE_V2 ? 0 : 1);
     }
   });
 });

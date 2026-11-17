@@ -220,9 +220,14 @@ TO_BE_PLAYED`, `score` with empty `scoreStringSide1` / `scoreStringSide2` and `s
    the real reason it carries for the arriving side, on the sides that exited: both sides of a double
    exit, the losing side of a single exit. A bare `WO` or `DEF` that the projection wrote is never a
    reason. The choice is made by origin, not by value: a client's `['WO']` is still split as its
-   reason. v2 plans only the requested matchUp's own write, from client input, and compares
-   `matchUpStatusCodes` as display; it plans no `sideStatusCodes` and no propagation write, so there
-   is nothing to mirror there.
+   reason. **An array naming no reason deletes the reasons the matchUp kept**: a write handed `[]`
+   (the call's own, or the one the winner route always passes) splits to nothing, so
+   `sideStatusCodes` and `matchUpStatusCode` both go; a write handed no array (a clear, a live score
+   or a double exit entered with no codes) leaves them standing, beside whatever the display array
+   becomes. v2 plans only the requested matchUp's own write, from client input, and compares
+   `matchUpStatusCodes` as display; a call carrying codes is v1's (`status-codes`), so the one
+   `sideStatusCodes` write it plans is that deletion (`clearsStatusReasons`,
+   `clearedStatusReasons.test.ts`), and it plans no propagation write.
 4. **`scoredTime`** is stamped on `schedule` the first time the matchUp becomes scored (a score with
    value, a winner, or a completed status), kept through corrections, and deleted when the result is
    removed. One exception: a DOUBLE_ELIMINATION decider made a DEAD_RUBBER was not played, so it is
@@ -1626,7 +1631,7 @@ write shape by shape is not handed to v1. v2 folds the call's own write into a c
 double-exit module (`doubleExitAdvancement`) on that copy as `attemptToSetMatchUpStatus` runs it after
 `scoreModification`, then v1's settle passes (`settleAfterWrite`, the one sequence `setMatchUpStatus` runs on the stored
 draw), and returns what changed as the four ops above (`outcome/plan/recordedCascade.ts`). The copy's writes announce
-nothing and stamp nothing outside it (`withDraftWrites`). Apply leaves the copy's object graph on the stored draw, not only its values (`outcome/recording.ts`): an object v1 keeps is kept, one object written in two places stays one object, and keys keep v1's order; the working view and the shadow take the values as clones. The tournaments and topics the copy's writes marked modified are put back as they were found and marked again by apply, before the recorded notices. The plan is then held to the check every plan is: no settle pass has work left on the working view. A recording a predicate still finds work on is dropped whole, and the call is refused where it was before. It is refused, and the call stays v1's, where the module or a pass returns an error, the forward
+nothing and stamp nothing outside it (`withDraftWrites`). Apply leaves the copy's object graph on the stored draw, not only its values (`outcome/recording.ts`): an object v1 keeps is kept, one object written in two places stays one object, and keys keep v1's order; the working view and the shadow take the values as clones. An entity is recorded where its own fields read differently, a key holding `undefined` included, or where an object holding them is another (`outcome/plan/recordedDiff.ts` `unchanged`): v1 writes a new object where the old one says the same (`removeDirectedLoser` derives a loser target's status codes afresh, an empty array for the cleared fixture's shared empty one), and the new object is the one stored. The tournaments and topics the copy's writes marked modified are put back as they were found and marked again by apply, before the recorded notices. The plan is then held to the check every plan is: no settle pass has work left on the working view. A recording a predicate still finds work on is dropped whole, and the call is refused where it was before. It is refused, and the call stays v1's, where the module or a pass returns an error, the forward
 settle is exhausted, anything outside the draw changes, or a notice is buffered that apply could not raise again. Not
 recorded: a matchUp that already holds a result or an exit (v1 removes it first), a round robin group, a TEAM dual or
 line, and a call with no captured clock. The module and the passes stay v1's code, used as a library until v3.
@@ -1649,8 +1654,8 @@ per call, and a dual planned inside its line's plan (`asDual`) is never recorded
 
 The recording is held to the rule a recorded cascade is, whole or not at all: where a settle predicate still finds
 work on what it leaves (`predictSettleWork`), it is dropped and the plan is the very abstention the planners returned.
-A call whose PLANNED ops leave settle work (`settle`) is not recorded: it stays v1's. The recording is not made, and
-the call stays v1's, for: a TEAM dual or line; a call with no captured clock; a call that names more than one
+A call whose PLANNED ops leave settle work (`settle`) was not recorded in batch 3 (batch 4a, below, records it). The
+recording is not made, and the call stays v1's, for: a TEAM dual or line; a call with no captured clock; a call that names more than one
 tournament record. Nor is it asked for where the call is refused: a refused call has no route, its refusal is its
 answer, and `differential` plans it only to set v1's refusal against v2's. It is discarded where v1's run on the copy returns an error, throws, or stops its forward settle
 at the bound; writes anything outside the draw; adds or moves a matchUp or a structure; writes a round robin group's
@@ -1663,6 +1668,48 @@ v1's writers stay library code until v3: a recorded call is v2's because v2 deci
 and v1 is not asked to write the stored record, but the write it applies is the one v1's code computed. Under
 `differential` v1 therefore runs twice for a recorded call, on the copy and on the stored record; under `v2` it runs
 once, on the copy, and the call pays for the copy and the diff besides.
+
+**A recorded call draws once.** v1 draws at random inside some calls: a qualifying final given a winner seats its
+qualifier in a main draw qualifier seat picked at random (`placeQualifier`), and an id v1 mints is drawn too (`UUID`).
+Every such draw is ambient (`randomSource()`: a seeded call's stream, the configured source or `Math.random`);
+`setMatchUpStatus` hands v1 no `random` of the call's own, so there is no other stream to keep. One reader per call
+(`tools/replayedDraws.ts`, made in `setMatchUpStatus`) stands between v1 and that source for every run v1 makes for the
+call: the whole call on a copy (`writeOnCopy`), the recorded cascade's module and settle on a copy (`recordDraws`), and
+v1 on the stored record where one follows (`differential`, or a recording refused, dropped or discarded). Each run reads
+the call's draws from the first: those an earlier run took are handed back in order, a source that threw throws the
+same error again, and the source itself is read only past their end. So v1 on the stored record makes the choices v1
+made on the copy, the source is read exactly as often as v1 alone reads it, and what is drawn after the call is what
+v1 alone leaves to be drawn, in `v1`, `v2` and `differential` alike. Under `v2` with the recording applied nothing more
+is read. Under `v1` no copy is made, nothing is kept, and v1 reads the source itself.
+
+The reader is scoped as the call's stream and as the configured source both (`withAmbientRandomSource`), so it stands
+whatever the state provider: one without the call-stream hooks reads the configured source, which is process-wide and
+safe to replace here because every run is synchronous (the async engine awaits around `setMatchUpStatus`, never inside
+it). Where a provider hands out a call stream it will not let be replaced, the reader cannot stand: the recorder
+refuses before v1 runs on the copy, no recording is made, and the call is v1's, reading the provider's stream itself.
+Each run reads through a function of its own, since `UUID` refuses an id one function mints twice; the ids a recorded
+call mints are therefore not entered in the source's own repeat window (`refuseRepeatedId`), as a composed write's are
+not (`tools/composeThenWrite.ts`).
+
+**Recorded calls (batch 4a).** The whole-call recording answers five more of the planners' abstentions: a route or a
+link they do not plan (`route`, `link`), the client's positional codes (`status-codes`), provenance on the call's
+matchUp (`provenance`), and LEGACY or BRIDGE write mode (`write-mode`). It is asked for and made as above, under the
+same refusals. `team`, `edges`, `clock`, `competition`, `no-record`, `notes`, `schedule` and `tallied` are not
+answered: a call the planners abstain from for one of them stays v1's. The planners name the first reason that holds,
+so a call recorded for one of the five may be one a later reason would have held too: LEGACY or BRIDGE is asked ahead of
+a draw stored without its edges, a schedule, notes and a competition policy, and what v1 does for those on the copy is
+recorded with the rest of its write, or the recording is discarded by the recorder's own rules. The scored time those
+rules read (a matchUp with no result left holding one) is `schedule.scoredTime`, where v1 stamps it in every write
+mode (measured 2026-11-17: LEGACY and BRIDGE write no timeItem for it, whatever the `write-mode` row below says).
+
+A call whose PLANNED ops leave settle work is recorded too. `recordedWhole` asks `settles` of the ops the planners
+return: where a settle predicate finds work on the working view they leave (or they cannot be folded, or they leave a
+stale scored time with no stamp ledger to order its cleanup), the call would abstain `settle`, and its whole write is
+asked for instead, under every refusal above. Where the recording is not made, or is dropped, the planners' ops stand
+and the call abstains `settle` as it did. The question costs a planned call no fold: the working view `settles` folds
+the ops into, the settle sites it reads there, or the error the fold meets, are kept by the ops array itself
+(`outcome/decide.ts` `settleFolds`) and taken by the call's one `finalizePlan`, which asks the predicates again only
+where it appended its scored-time cleanup.
 
 `planOutcome` returns a complete plan only when every write the call makes is an op; otherwise it **abstains**, naming
 the first reason, and the call is v1's whole (fail-closed). S1 holds two shapes: the **local** write (the matchUp's own
@@ -1687,7 +1734,7 @@ the slices that follow:
 | `no-record`    | has no supplied draw definition to apply the plan to                                                                                                                     | requires a draw; tournament containment is not required                                                                                                                                                                                                                  |
 | `edges`        | is on a draw that stores no winner and loser edges, which v1 writes first (`ensureGoesTo`)                                                                               | S2 (`setEdges`)                                                                                                                                                                                                                                                          |
 | `clock`        | has no existing captured instant; direct source reads, advancing values and throwing-write prefixes must remain ordered as in v1                                         | owed by v2: clock-free planning and ordered lazy temporal effects before uncaptured admission                                                                                                                                                                            |
-| `settle`       | leaves a settle pass work on the working view (S2's has-work predicates, `settleWork.ts`), leftover state included                                                       | none: S2 owns only a call no pass has work for                                                                                                                                                                                                                           |
+| `settle`       | leaves a settle pass work on the working view (S2's has-work predicates, `settleWork.ts`), leftover state included                                                       | batch 4a: read off v1's whole write where it can be (`recordedWhole`); otherwise none: S2 owns only a call no pass has work for                                                                                                                                          |
 | `write-mode`   | is made in LEGACY or BRIDGE write mode, where v1 writes `scoredTime` as a timeItem, which the reducer does not                                                           | a later slice (F6: BRIDGE in with its evidence)                                                                                                                                                                                                                          |
 | `competition`  | names a winner where a per-matchUp competition policy applies: v1 updates ratings on the result (`processCompetitionMatchUp`)                                            | a later slice                                                                                                                                                                                                                                                            |
 

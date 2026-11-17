@@ -175,7 +175,7 @@ describe('BATCH 1 (B) a kept-out loser whose BYE meets somebody', () => {
   });
 });
 
-// an exit that propagates puts every settle pass in reach (`predictSettleWork`): these reach past the planners
+// an exit that propagates puts every settle pass in reach (`predictSettleWork`): these are read off v1's whole write
 const carried = (scenarios: [string, Scenario][]) =>
   scenarios
     .filter(([label]) => label.includes(WALKOVER) || label.includes(DEFAULTED))
@@ -185,13 +185,9 @@ const carried = (scenarios: [string, Scenario][]) =>
     ]);
 
 describe('BATCH 1 controls: a propagating exit on a final or beside a kept-out BYE', () => {
-  // The final's is recorded whole (batch 3: the planners abstain `exit`; the title is historical). Beside the kept-out BYE
-  // the planners plan ops that leave settle work (`settle`), which no recording answers: v1's.
-  const controls: [string, Scenario, boolean][] = [
-    ...carried(mainFinals()).map(([label, scenario]): [string, Scenario, boolean] => [label, scenario, true]),
-    ...carried(keptOut(true)).map(([label, scenario]): [string, Scenario, boolean] => [label, scenario, false]),
-  ];
-  it.each(controls)('%s: v1s', (_, scenario, owned) => {
-    compareUndirectedWinner(scenario, owned);
+  it.each([...carried(mainFinals()), ...carried(keptOut(true))])('%s: v1s', (_, scenario) => {
+    // recorded whole, the title is historical: the planners abstain `exit` on the final, and beside the kept-out BYE
+    // plan ops that leave settle work
+    compareUndirectedWinner(scenario, true);
   });
 });
