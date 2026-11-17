@@ -9,7 +9,7 @@ import { setClock } from '@Tools/clock';
 // constants
 import { DOUBLE_WALKOVER, IN_PROGRESS, SUSPENDED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
-import { BRIDGE, NATIVE, type SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
+import { BRIDGE, LEGACY, NATIVE, type SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import {
   MODIFY_DRAW_DEFINITION,
@@ -30,10 +30,12 @@ import {
 const v1Writes = vi.hoisted(() => ({ count: 0 }));
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
   const actual: any = await importOriginal();
+  const { inDraftWrites } = await import('@Global/state/withDraftWrites');
   return {
     ...actual,
     setMatchUpState: (...args: any[]) => {
-      v1Writes.count += 1;
+      // a write to a copy of the record is a recorded call's reading of v1 (`plan/recordedCall.ts`): v1 was not asked
+      if (!inDraftWrites()) v1Writes.count += 1;
       return actual.setMatchUpState(...args);
     },
   };
@@ -209,12 +211,18 @@ describe('what v2 does not own goes to v1, whole', () => {
     expect(v2.record).toEqual(v1.record);
   });
 
-  it('BRIDGE: v1 writes `scoredTime` as a timeItem too, which the reducer does not, so v2 abstains', () => {
-    const v1 = play(OUTCOME_PIPELINE_V1, SHAPES[0][1], BRIDGE);
-    const v2 = play(OUTCOME_PIPELINE_V2, SHAPES[0][1], BRIDGE);
-    expect(v2.v1Writes).toEqual(1);
-    expect(v2.record).toEqual(v1.record);
-  });
+  it.each([BRIDGE, LEGACY] as const)(
+    "%s: the planners abstain `write-mode`, and the call is read off v1's whole write and is v2s",
+    (writeMode) => {
+      const v1 = play(OUTCOME_PIPELINE_V1, SHAPES[0][1], writeMode);
+      const v2 = play(OUTCOME_PIPELINE_V2, SHAPES[0][1], writeMode);
+      expect(v1.v1Writes).toEqual(1);
+      expect(v2.v1Writes).toEqual(0);
+      expect(v2.results).toEqual(v1.results);
+      expect(v2.record).toEqual(v1.record);
+      expect(v2.notices).toEqual(v1.notices);
+    },
+  );
 });
 
 it('a schedule out of played order with the next matchUp: v2 refuses it as v1 does, against the stored draw (S7)', () => {

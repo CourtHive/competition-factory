@@ -1664,6 +1664,17 @@ and v1 is not asked to write the stored record, but the write it applies is the 
 `differential` v1 therefore runs twice for a recorded call, on the copy and on the stored record; under `v2` it runs
 once, on the copy, and the call pays for the copy and the diff besides.
 
+**Recorded calls (batch 4a).** The whole-call recording answers five more of the planners' abstentions: a route or a
+link they do not plan (`route`, `link`), the client's positional codes (`status-codes`), provenance on the call's
+matchUp (`provenance`), and LEGACY or BRIDGE write mode (`write-mode`). It is asked for and made as above, under the
+same refusals. `team`, `edges`, `clock`, `competition`, `no-record`, `notes`, `schedule` and `tallied` are not
+answered: a call the planners abstain from for one of them stays v1's. The planners name the first reason that holds,
+so a call recorded for one of the five may be one a later reason would have held too: LEGACY or BRIDGE is asked ahead of
+a draw stored without its edges, a schedule, notes and a competition policy, and what v1 does for those on the copy is
+recorded with the rest of its write, or the recording is discarded by the recorder's own rules. The scored time those
+rules read (a matchUp with no result left holding one) is `schedule.scoredTime`, where v1 stamps it in every write
+mode (measured 2026-11-17: LEGACY and BRIDGE write no timeItem for it, whatever the `write-mode` row below says).
+
 `planOutcome` returns a complete plan only when every write the call makes is an op; otherwise it **abstains**, naming
 the first reason, and the call is v1's whole (fail-closed). S1 holds two shapes: the **local** write (the matchUp's own
 result, no winner before or after) and the **first direction** (a played result naming a winner where none stood, whose

@@ -17,8 +17,8 @@ import { SUCCESS } from '@Constants/resultConstants';
  * A whole-call recording (`outcome/plan/recordedCall.ts`) is made only where v1's run on the copy is carried whole by
  * the recorded ops. Each refusal here is one the recorder makes itself, asked of it directly with a writer in v1's
  * place; whatever the writer did, the stored record is as it was. `planOutcome` asks for one where its planners abstain
- * `exit`, `cascade` or `loser`, and drops one a settle predicate still finds work on: the fixtures' ownership flags
- * hold those (`directionFixtures.ts`).
+ * for a reason a recording answers (`RECORDED_WHOLE`: `recordedCallReasons.test.ts`), and drops one a settle predicate
+ * still finds work on: the fixtures' ownership flags hold those (`directionFixtures.ts`).
  */
 
 afterEach(() => {

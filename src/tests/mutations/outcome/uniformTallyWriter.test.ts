@@ -47,10 +47,12 @@ vi.mock('@Mutate/matchUps/outcome/plan/tallyOps', async (importOriginal) => {
 });
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
   const actual: any = await importOriginal();
+  const { inDraftWrites } = await import('@Global/state/withDraftWrites');
   return {
     ...actual,
     setMatchUpState(...args: any[]) {
-      writes.count++;
+      // a write to a copy of the record is a recorded call's reading of v1 (`plan/recordedCall.ts`): v1 was not asked
+      if (!inDraftWrites()) writes.count++;
       return actual.setMatchUpState(...args);
     },
   };
@@ -453,7 +455,9 @@ describe.each([NATIVE, BRIDGE] as const)('uniform tally writer %s', (schema) => 
     expect(v2.result).toEqual(v1.result);
     expect(JSON.parse(v2.record)).toEqual(JSON.parse(v1.record));
     expect(v2.notices).toEqual(v1.notices);
-    const owned = schema === NATIVE && !['correct', 'clear'].includes(recipe.action);
+    // BRIDGE abstains `write-mode`, and a winner corrected or cleared in a WIN_RATIO structure `link`: both are read
+    // off v1's whole write, which is not made for a TEAM dual or line
+    const owned = schema === NATIVE || recipe.eventType !== 'TEAM';
     expect(v2.writes).toEqual(owned ? 0 : v1.writes);
   });
 });

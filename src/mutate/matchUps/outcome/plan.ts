@@ -346,8 +346,20 @@ function wholeCarry(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
   return recordedWhole(args, carriedWhole(args, plan));
 }
 
-/** the abstentions a whole-call recording answers: an exit, a cascade or a loser seat the planners do not write */
-const RECORDED_WHOLE = new Set<AbstainReason>(['exit', 'cascade', 'loser']);
+/**
+ * the abstentions a whole-call recording answers: an exit, a cascade or a loser seat the planners do not write; a route
+ * or a link they do not plan; the client's positional codes; provenance on the matchUp; LEGACY or BRIDGE write mode
+ */
+const RECORDED_WHOLE = new Set<AbstainReason>([
+  'exit',
+  'cascade',
+  'loser',
+  'route',
+  'link',
+  'status-codes',
+  'write-mode',
+  'provenance',
+]);
 
 /**
  * RECORDED, THE WHOLE CALL (batch 3, `plan/recordedCall.ts`): the call's own plan, where the planners abstain for one of
