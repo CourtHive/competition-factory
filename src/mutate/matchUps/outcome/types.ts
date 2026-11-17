@@ -716,7 +716,10 @@ export type PlanArgs = {
   dual?: DualCall;
   /** S7: this call is a deciding line's dual, planned as part of the line's plan: its TEAM shape is the line's to vet */
   asDual?: true;
-  /** whether ops leave a settle pass work on the view they leave (`decide.ts` `carrySettles`; C27's whole-or-nothing) */
+  /**
+   * whether ops leave a settle pass work on the view they leave (`decide.ts` `carrySettles`): C27's whole-or-nothing, and
+   * what a whole-call recording is asked for and held to
+   */
   settles?: (ops: OutcomeOp[]) => boolean;
 };
 

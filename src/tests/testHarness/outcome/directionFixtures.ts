@@ -6174,7 +6174,7 @@ export const UNREACHED_WINNER_RECIPES: [
   [false, CURTIS_CONSOLATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
   [false, MODIFIED_FEED_IN_CHAMPIONSHIP, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
   [false, FEED_IN_CHAMPIONSHIP_TO_SF, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
-  [false, FIRST_MATCH_LOSER_CONSOLATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, false],
+  [false, FIRST_MATCH_LOSER_CONSOLATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
   [true, SINGLE_ELIMINATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
   [true, FEED_IN_CHAMPIONSHIP, 8, 8, 'Main', 1, 1, 'Consolation', 1, 2, true, true],
   [true, FEED_IN_CHAMPIONSHIP, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, false],
@@ -7005,8 +7005,9 @@ export function c26SeatRecipes([drawType, size, direct]: (typeof C26_SEAT_PROFIL
         status,
         policyOff: false,
         carry: !!entered,
-        // a seat the planners do not serve is recorded off the double-exit module (CA, 2026-11-16); TEAM stays owed
-        owned: direct || (eventType !== 'TEAM' && drawType !== DOUBLE_ELIMINATION),
+        // a seat the planners do not serve is recorded off the double-exit module (CA, 2026-11-16), and DOUBLE_ELIMINATION
+        // 4's planned ops, which leave settle work, off v1's whole write (`plan/recordedCall.ts`); TEAM stays owed
+        owned: direct || eventType !== 'TEAM',
       })),
     ),
   );

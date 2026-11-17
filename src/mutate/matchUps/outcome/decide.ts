@@ -958,18 +958,47 @@ function settleSites(args: BuildViewArgs, view: OutcomeView, working: WorkingVie
 }
 
 /**
- * C27 owns a call whole or not at all (`planOutcome`): whether a plan's ops leave a settle pass work, read before the
- * plan is returned, on the working view they leave. Stale scored times are `finalizePlan`'s cleanup, work only where
- * there is no stamp ledger to order it; a program that cannot be folded here is not known to settle clean.
+ * C27 owns a call whole or not at all (`planOutcome`), and a call whose planned ops leave settle work is asked for whole
+ * (`recordedWhole`): whether a plan's ops leave a settle pass work, read before the plan is returned, on the working view
+ * they leave. Stale scored times are `finalizePlan`'s cleanup, work only where there is no stamp ledger to order it; a
+ * program that cannot be folded here is not known to settle clean.
  */
 function carrySettles(args: BuildViewArgs, view: OutcomeView) {
   return (ops: OutcomeOp[]) => {
-    const working = projectOutcome(args, view)(ops);
-    if (!working) return true;
-    const sites = settleSites(args, view, working, ops);
-    const stale = sites.includes('reconcileScoredTimes');
-    return sites.some((site) => site !== 'reconcileScoredTimes') || (stale && !getCapturedStamps());
+    const fold = settleFolds.get(ops) ?? settleFold(args, view, ops);
+    if (!fold || fold.error !== undefined) return true;
+    const stale = fold.sites.includes('reconcileScoredTimes');
+    return fold.sites.some((site) => site !== 'reconcileScoredTimes') || (stale && !getCapturedStamps());
   };
+}
+
+/**
+ * ONE FOLD PER PLAN: the working view `carrySettles` folded a plan's ops into and the settle sites it read there, or the
+ * error the fold met, kept by the ops array itself until the call's `finalizePlan` takes them. `planOutcome` asks
+ * `settles` of every plan it returns ops for, and the plan it returns is that same array, so asking costs a planned
+ * call no second fold.
+ */
+type SettleFold = { working: WorkingView; sites: SettleSite[]; error?: undefined } | { error: string };
+const settleFolds = new WeakMap<OutcomeOp[], SettleFold>();
+
+/** `finalizePlan`'s fold of a program, made where `projectOutcome` would make one: undefined where it would not */
+function settleFold(args: BuildViewArgs, view: OutcomeView, ops: OutcomeOp[]): SettleFold | undefined {
+  if (!args.drawDefinition || !args.matchUpsMap || !view.inContextDrawMatchUps) return undefined;
+  if (args.clockFree && ops.some((op) => op.op === 'setMatchUpResult' && op.stampsScoredTime !== false))
+    return undefined;
+  const working = createWorkingView({
+    clockFree: args.clockFree,
+    inContextDrawMatchUps: view.inContextDrawMatchUps,
+    structural: view.structural,
+    tournamentRecord: args.tournamentRecord,
+    drawDefinition: args.drawDefinition,
+    matchUpsMap: args.matchUpsMap,
+    event: args.event,
+  });
+  const { error } = working.apply(ops);
+  const fold: SettleFold = error ? { error } : { working, sites: settleSites(args, view, working, ops) };
+  settleFolds.set(ops, fold);
+  return fold;
 }
 
 function finalizePlan({
@@ -985,16 +1014,22 @@ function finalizePlan({
   ops?: OutcomeOp[];
 }): { ops: OutcomeOp[]; matchUps?: HydratedMatchUp[]; settle: SettleSite[] } | { error: string } | undefined {
   if (!ops || !args.drawDefinition || !args.matchUpsMap || !view.inContextDrawMatchUps) return undefined;
-  const working = createWorkingView({
-    clockFree: args.clockFree,
-    inContextDrawMatchUps: view.inContextDrawMatchUps,
-    structural: view.structural,
-    tournamentRecord: args.tournamentRecord,
-    drawDefinition: args.drawDefinition,
-    matchUpsMap: args.matchUpsMap,
-    event: args.event,
-  });
-  const applied = working.apply(ops);
+  // the fold `settles` made of these very ops, if it asked: taken once, the cleanup below is folded into it
+  const shared = settleFolds.get(ops);
+  settleFolds.delete(ops);
+  if (shared?.error !== undefined) return { error: shared.error };
+  const working =
+    shared?.working ??
+    createWorkingView({
+      clockFree: args.clockFree,
+      inContextDrawMatchUps: view.inContextDrawMatchUps,
+      structural: view.structural,
+      tournamentRecord: args.tournamentRecord,
+      drawDefinition: args.drawDefinition,
+      matchUpsMap: args.matchUpsMap,
+      event: args.event,
+    });
+  const applied: { error?: string } = shared ? {} : working.apply(ops);
   if (applied.error) return { error: applied.error };
   const cleanup: OutcomeOp[] = [];
   const staleTimes = working.matchUpsMap.drawMatchUps.filter(hasStaleScoredTime);
@@ -1017,7 +1052,8 @@ function finalizePlan({
   }
   const completedOps = cleanup.length ? [...ops, ...cleanup] : ops;
   // S2's has-work predicates, recorded for the census to set against v1's per-pass writes (nothing outside telemetry)
-  const settle = settleSites(args, view, working, completedOps);
+  // the sites `settles` read stand unless cleanup was appended, which the predicates are asked again after
+  const settle = shared && !cleanup.length ? shared.sites : settleSites(args, view, working, completedOps);
   recordSettleEvent({ kind: 'predicted', site: PREDICTED_CALL });
   const predicted = new Set<SettleSite>(settle);
   if (cleanup.length) predicted.add('reconcileScoredTimes');

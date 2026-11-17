@@ -1649,8 +1649,8 @@ per call, and a dual planned inside its line's plan (`asDual`) is never recorded
 
 The recording is held to the rule a recorded cascade is, whole or not at all: where a settle predicate still finds
 work on what it leaves (`predictSettleWork`), it is dropped and the plan is the very abstention the planners returned.
-A call whose PLANNED ops leave settle work (`settle`) is not recorded: it stays v1's. The recording is not made, and
-the call stays v1's, for: a TEAM dual or line; a call with no captured clock; a call that names more than one
+A call whose PLANNED ops leave settle work (`settle`) was not recorded in batch 3 (batch 4a, below, records it). The
+recording is not made, and the call stays v1's, for: a TEAM dual or line; a call with no captured clock; a call that names more than one
 tournament record. Nor is it asked for where the call is refused: a refused call has no route, its refusal is its
 answer, and `differential` plans it only to set v1's refusal against v2's. It is discarded where v1's run on the copy returns an error, throws, or stops its forward settle
 at the bound; writes anything outside the draw; adds or moves a matchUp or a structure; writes a round robin group's
@@ -1675,6 +1675,15 @@ recorded with the rest of its write, or the recording is discarded by the record
 rules read (a matchUp with no result left holding one) is `schedule.scoredTime`, where v1 stamps it in every write
 mode (measured 2026-11-17: LEGACY and BRIDGE write no timeItem for it, whatever the `write-mode` row below says).
 
+A call whose PLANNED ops leave settle work is recorded too. `recordedWhole` asks `settles` of the ops the planners
+return: where a settle predicate finds work on the working view they leave (or they cannot be folded, or they leave a
+stale scored time with no stamp ledger to order its cleanup), the call would abstain `settle`, and its whole write is
+asked for instead, under every refusal above. Where the recording is not made, or is dropped, the planners' ops stand
+and the call abstains `settle` as it did. The question costs a planned call no fold: the working view `settles` folds
+the ops into, the settle sites it reads there, or the error the fold meets, are kept by the ops array itself
+(`outcome/decide.ts` `settleFolds`) and taken by the call's one `finalizePlan`, which asks the predicates again only
+where it appended its scored-time cleanup.
+
 `planOutcome` returns a complete plan only when every write the call makes is an op; otherwise it **abstains**, naming
 the first reason, and the call is v1's whole (fail-closed). S1 holds two shapes: the **local** write (the matchUp's own
 result, no winner before or after) and the **first direction** (a played result naming a winner where none stood, whose
@@ -1698,7 +1707,7 @@ the slices that follow:
 | `no-record`    | has no supplied draw definition to apply the plan to                                                                                                                     | requires a draw; tournament containment is not required                                                                                                                                                                                                                  |
 | `edges`        | is on a draw that stores no winner and loser edges, which v1 writes first (`ensureGoesTo`)                                                                               | S2 (`setEdges`)                                                                                                                                                                                                                                                          |
 | `clock`        | has no existing captured instant; direct source reads, advancing values and throwing-write prefixes must remain ordered as in v1                                         | owed by v2: clock-free planning and ordered lazy temporal effects before uncaptured admission                                                                                                                                                                            |
-| `settle`       | leaves a settle pass work on the working view (S2's has-work predicates, `settleWork.ts`), leftover state included                                                       | none: S2 owns only a call no pass has work for                                                                                                                                                                                                                           |
+| `settle`       | leaves a settle pass work on the working view (S2's has-work predicates, `settleWork.ts`), leftover state included                                                       | batch 4a: read off v1's whole write where it can be (`recordedWhole`); otherwise none: S2 owns only a call no pass has work for                                                                                                                                          |
 | `write-mode`   | is made in LEGACY or BRIDGE write mode, where v1 writes `scoredTime` as a timeItem, which the reducer does not                                                           | a later slice (F6: BRIDGE in with its evidence)                                                                                                                                                                                                                          |
 | `competition`  | names a winner where a per-matchUp competition policy applies: v1 updates ratings on the result (`processCompetitionMatchUp`)                                            | a later slice                                                                                                                                                                                                                                                            |
 
