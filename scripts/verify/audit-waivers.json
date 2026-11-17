@@ -2,12 +2,25 @@
   "$comment": [
     "Advisories verify:audit will not fail on. Every waiver is printed on every run,",
     "so a waived advisory stays visible rather than becoming a silent exception.",
-    "A waiver that no longer matches an open advisory is a FAILURE, not a no-op \u2014",
+    "A waiver that no longer matches an open advisory is a FAILURE, not a no-op —",
     "stale waivers must be deleted, otherwise the list only ever grows and quietly",
     "widens what the gate ignores.",
     "",
     "Waive only when there is no action available. 'We will get to it' is not a",
     "waiver; a version bump is."
   ],
-  "waivers": []
+  "waivers": [
+    {
+      "ghsa": "GHSA-fc5q-39xc-vjpf",
+      "module": "picomatch",
+      "tree": "package",
+      "reason": "No patched release exists (advisory range <= 4.0.7, first_patched_version null; 4.0.7 is picomatch's latest; range widened 2026-11-17T15:56Z, checked 2026-11-17). Dev tooling only: picomatch 4.0.7 via the rollup plugins (@rollup/pluginutils, plugin-commonjs), unplugin-swc and @nestjs/schematics, and 2.3.2 via micromatch <- fast-glob/globby <- markdownlint-cli2; never in the published package (files: dist, no runtime dependencies). Delete when a patched picomatch ships, and override to it."
+    },
+    {
+      "ghsa": "GHSA-fc5q-39xc-vjpf",
+      "module": "picomatch",
+      "tree": "documentation",
+      "reason": "No patched release exists (<= 4.0.7, first_patched_version null, checked 2026-11-17). Docs site build and dev-server tooling only: picomatch 2.3.2 via micromatch (@docusaurus/utils, fast-glob, http-proxy-middleware), chokidar's anymatch/readdirp and jest-worker; the published site is static and never runs it at request time. Delete when a patched picomatch ships."
+    }
+  ]
 }
