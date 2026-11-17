@@ -1633,6 +1633,33 @@ line, and a call with no captured clock. The module and the passes stay v1's cod
 Under `differential` the same reads are therefore made twice, on the copy and by v1 on the stored draw;
 `verify:hydrations` keeps the copy's out of its ceiling there and reports them apart. Under `v2` a recorded call builds the map of its working copy besides the call's own, and the gate allows its worst call that one build more than v1's; the arm's total is held to v1's.
 
+**Recorded calls (batch 3).** A call the planners abstain from for an exit, a cascade, a loser seat or settle work
+(`exit`, `cascade`, `loser`, `settle`) is not handed to v1 either, where it can be read whole. v2 copies the record and
+runs on the copy everything `setMatchUpStatus` does once a call is accepted (`runV1`, with the call's own parameters):
+the draw's missing edges, `setMatchUpState` and all under it, exit propagation, the settle passes and the edges'
+announcement. What that changed in the draw is the whole plan, as the four recorded ops (`outcome/plan/recordedCall.ts`;
+the reading and the diff are the recorded cascade's, `outcome/plan/recordedDiff.ts`), with no op before them; the
+call returns what v1 returned on the copy, its warnings among them. The copy's writes announce nothing and stamp
+nothing outside it, apply leaves the copy's object graph on the stored draw, and the marks are put back and marked
+again, as for a recorded cascade. The planners' refusing lines stand as they were: the recording is made after
+`planOutcome` and `finalizePlan` have answered (`decide.ts` `recordedWhole`), and the abstention tally counts only what
+is still v1's.
+
+The recording is then held to the check every plan is, whole or not at all: its ops fold into the working view, need
+no scored-time cleanup beside them, and leave no settle pass work (`predictSettleWork`). One that fails is dropped,
+and the call is refused where it was before. It is not made, and the call stays v1's, for: a TEAM dual or line; a
+call with no captured clock; a call that names more than one tournament record. It is discarded where v1's run on the
+copy returns an error, throws, or stops its forward settle at the bound; writes anything outside the draw; adds or
+moves a matchUp or a structure; writes a round robin group's own fields; changes the call's own parameters (which are
+put back); buffers a notice apply could not raise again; or returns a result that holds an object of the copy. A call
+whose recording v1 refused is then run by v1 on the stored record, so v1 runs twice for it: what a v1 error leaves
+written on the stored record today is observable, and only v1's own run leaves it.
+
+v1's writers stay library code until v3: a recorded call is v2's because v2 decides it, applies it and announces it,
+and v1 is not asked to write the stored record, but the write it applies is the one v1's code computed. Under
+`differential` v1 therefore runs twice for a recorded call, on the copy and on the stored record; under `v2` it runs
+once, on the copy, and the call pays for the copy and the diff besides.
+
 `planOutcome` returns a complete plan only when every write the call makes is an op; otherwise it **abstains**, naming
 the first reason, and the call is v1's whole (fail-closed). S1 holds two shapes: the **local** write (the matchUp's own
 result, no winner before or after) and the **first direction** (a played result naming a winner where none stood, whose
