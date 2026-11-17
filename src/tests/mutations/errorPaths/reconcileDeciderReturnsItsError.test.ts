@@ -42,11 +42,14 @@ const FORCED_ERROR = { code: 'ERR_FORCED', message: 'forced by the test' };
 
 vi.mock('@Mutate/matchUps/score/modifyMatchUpScore', async (importOriginal) => {
   const actual: any = await importOriginal();
+  const { inDraftWrites } = await import('@Global/state/withDraftWrites');
   return {
     ...actual,
     modifyMatchUpScore: (params: any) => {
       if (forced.context && params?.context === forced.context) {
-        forced.hits += 1;
+        // v2 reads v1's write on a copy first, where the same write fails and the recording is refused: the call
+        // stays v1's, and the hit counted is the one on the stored record
+        if (!inDraftWrites()) forced.hits += 1;
         return { error: FORCED_ERROR };
       }
       return actual.modifyMatchUpScore(params);

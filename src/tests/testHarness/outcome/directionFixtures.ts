@@ -6075,26 +6075,10 @@ export const HELD_BYE_RECIPES: [string, number, number, number, number][] = [
 ];
 
 /**
- * C28: the carried WALKOVER cleared is v2's where the carrier's BYE passage reaches a landing in the loser structure,
- * the award there pending (`heldByeCarryWithdrawal`). The rest stay v1's: the passage runs out at the structure's end,
- * the carry standing on the BYE itself (the 4-draws, FIC 2/8 R3/1, FRLC 5/8, 9/16 and 17/32, COMPASS and OLYMPIC past
- * R1/2, the R3/1 feeds), or it leaves the structure (DOUBLE_ELIMINATION 2/8 R3/1).
+ * C28: the carried WALKOVER cleared is planned where the carrier's BYE passage reaches a landing in the loser structure,
+ * the award there pending (`heldByeCarryWithdrawal`). The rest, and the linked-winner controls (DOUBLE_ELIMINATION 2/8
+ * R3/1), are recorded whole (batch 3, `outcome/plan/recordedCall.ts`), so every case is v2's but the one below.
  */
-const C28_LANDINGS = new Set([
-  'FEED_IN_CHAMPIONSHIP 7/8 R1/2',
-  'FEED_IN_CHAMPIONSHIP 3/8 R2/1',
-  'FIRST_ROUND_LOSER_CONSOLATION 7/8 R1/2',
-  'FIRST_ROUND_LOSER_CONSOLATION 10/16 R1/2',
-  'COMPASS 7/8 R1/2',
-  'OLYMPIC 7/8 R1/2',
-  'DOUBLE_ELIMINATION 7/8 R1/2',
-  'DOUBLE_ELIMINATION 3/8 R2/1',
-  'CURTIS_CONSOLATION 15/16 R1/2',
-  'MODIFIED_FEED_IN_CHAMPIONSHIP 15/16 R1/2',
-  'FEED_IN_CHAMPIONSHIP_TO_SF 15/16 R1/2',
-  'FIRST_MATCH_LOSER_CONSOLATION 7/8 R1/2',
-]);
-
 export const HELD_BYE_REMOVALS: [string, Scenario, boolean][] = HELD_BYE_RECIPES.flatMap(
   ([drawType, drawSize, participantsCount, roundNumber, roundPosition]) => {
     const target = {
@@ -6103,16 +6087,15 @@ export const HELD_BYE_REMOVALS: [string, Scenario, boolean][] = HELD_BYE_RECIPES
       roundPosition,
     };
     const drawProfile = { drawType, drawSize, participantsCount };
-    const recipeKey = `${drawType} ${participantsCount}/${drawSize} R${roundNumber}/${roundPosition}`;
     const linkedWinner = drawType === DOUBLE_ELIMINATION && participantsCount === 2;
     return ([1, 2] as const).flatMap((side) => {
       const actions: [string, Record<string, unknown>, Record<string, unknown>, boolean][] = [
-        ['clear', won(side), cleared, !linkedWinner],
-        ['correct', won(side), won(side === 1 ? 2 : 1), !linkedWinner],
-        [DOUBLE_WALKOVER, won(side), { matchUpStatus: DOUBLE_WALKOVER }, !linkedWinner],
-        [DOUBLE_DEFAULT, won(side), { matchUpStatus: DOUBLE_DEFAULT }, !linkedWinner],
-        ['carried WALKOVER clear control', walkover(side), cleared, C28_LANDINGS.has(recipeKey)],
-        ['retired correct', retired(side), won(side === 1 ? 2 : 1), !linkedWinner],
+        ['clear', won(side), cleared, true],
+        ['correct', won(side), won(side === 1 ? 2 : 1), true],
+        [DOUBLE_WALKOVER, won(side), { matchUpStatus: DOUBLE_WALKOVER }, true],
+        [DOUBLE_DEFAULT, won(side), { matchUpStatus: DOUBLE_DEFAULT }, true],
+        ['carried WALKOVER clear control', walkover(side), cleared, true],
+        ['retired correct', retired(side), won(side === 1 ? 2 : 1), true],
       ];
       return actions.flatMap(([action, initial, outcome, owned]): [string, Scenario, boolean][] => {
         const label = `C21 ${drawType} ${participantsCount}/${drawSize} R${roundNumber}/${roundPosition} side ${side}: ${action}`;
@@ -6123,11 +6106,9 @@ export const HELD_BYE_REMOVALS: [string, Scenario, boolean][] = HELD_BYE_RECIPES
         };
         const cases: [string, Scenario, boolean][] = [[label, scenario, owned]];
         if ([DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(action)) {
-          // Policy-off propagation at this later FIC source reaches an existing exit refusal.
-          const exitControl =
-            (drawType === FEED_IN_CHAMPIONSHIP && participantsCount === 3 && drawSize === 8) ||
-            (drawType === DOUBLE_ELIMINATION && participantsCount === 3);
-          cases.push([`${label}, policy off`, { ...scenario, policyDefinitions: POLICY_OFF }, owned && !exitControl]);
+          // The linked winner's double exit under policy off: `predictSettleWork` still finds `settleHeldExits` work on
+          // what the recording leaves, so it is dropped whole and the call stays v1's (owed a ruling).
+          cases.push([`${label}, policy off`, { ...scenario, policyDefinitions: POLICY_OFF }, owned && !linkedWinner]);
         }
         return cases;
       });
@@ -6193,7 +6174,7 @@ export const UNREACHED_WINNER_RECIPES: [
   [false, CURTIS_CONSOLATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
   [false, MODIFIED_FEED_IN_CHAMPIONSHIP, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
   [false, FEED_IN_CHAMPIONSHIP_TO_SF, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
-  [false, FIRST_MATCH_LOSER_CONSOLATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, false],
+  [false, FIRST_MATCH_LOSER_CONSOLATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
   [true, SINGLE_ELIMINATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
   [true, FEED_IN_CHAMPIONSHIP, 8, 8, 'Main', 1, 1, 'Consolation', 1, 2, true, true],
   [true, FEED_IN_CHAMPIONSHIP, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, false],
@@ -6261,9 +6242,9 @@ export function compareUndirectedWinner(scenario: Scenario, owned: boolean, prep
   const v1 = play(OUTCOME_PIPELINE_V1, scenario, { prepared });
   const before = getDifferentialTally()['shadow:applied']?.compared ?? 0;
   const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario, { prepared });
-  if (!process.env.B3_SOFT) expect((getDifferentialTally()['shadow:applied']?.compared ?? 0) - before).toEqual(Number(owned));
+  expect((getDifferentialTally()['shadow:applied']?.compared ?? 0) - before).toEqual(Number(owned));
   const v2 = play(OUTCOME_PIPELINE_V2, scenario, { prepared });
-  if (!process.env.B3_SOFT) expect(v2.v1Writes === 0).toEqual(owned);
+  expect(v2.v1Writes === 0).toEqual(owned);
   for (const actual of [compared, v2]) {
     expect(actual.results).toEqual(v1.results);
     expect(actual.record).toEqual(v1.record);
@@ -6577,13 +6558,17 @@ export const REFRESHED_ARRIVAL_CASES = PENDING_WINNER_DRAWS.filter(([, size]) =>
                 ],
               };
               // C24 also owns the played source whose policy-on loser already passed a BYE.
-              const owned =
+              // C24 also plans the played source whose policy-on loser already passed a BYE.
+              const planned =
                 side === 1 && (!carry || status === COMPLETED || drawType === SINGLE_ELIMINATION || !policyOff);
+              // the rest are recorded whole (batch 3, `outcome/plan/recordedCall.ts`): owned all the same
+              const owned = true;
               return [
                 `C23 ${drawType} ${drawSize} origin ${arrival}: ${doubleExit}, policy off ${policyOff}, ${status} side ${side}, carry ${carry}`,
                 scenario,
                 owned,
                 status,
+                planned,
               ] as const;
             }),
           ),
@@ -7021,7 +7006,7 @@ export function c26SeatRecipes([drawType, size, direct]: (typeof C26_SEAT_PROFIL
         policyOff: false,
         carry: !!entered,
         // a seat the planners do not serve is recorded off the double-exit module (CA, 2026-11-16); TEAM stays owed
-        owned: direct || (eventType !== 'TEAM' && drawType !== DOUBLE_ELIMINATION),
+        owned: direct || eventType !== 'TEAM',
       })),
     ),
   );

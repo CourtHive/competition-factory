@@ -175,7 +175,7 @@ describe('BATCH 1 (B) a kept-out loser whose BYE meets somebody', () => {
   });
 });
 
-// an exit that propagates puts every settle pass in reach (`predictSettleWork`): these stay v1's
+// an exit that propagates puts every settle pass in reach (`predictSettleWork`): these are read off v1's whole write
 const carried = (scenarios: [string, Scenario][]) =>
   scenarios
     .filter(([label]) => label.includes(WALKOVER) || label.includes(DEFAULTED))
@@ -186,6 +186,7 @@ const carried = (scenarios: [string, Scenario][]) =>
 
 describe('BATCH 1 controls: a propagating exit on a final or beside a kept-out BYE', () => {
   it.each([...carried(mainFinals()), ...carried(keptOut(true))])('%s: v1s', (_, scenario) => {
-    compareUndirectedWinner(scenario, false);
+    // recorded whole (batch 3): the title is historical
+    compareUndirectedWinner(scenario, true);
   });
 });

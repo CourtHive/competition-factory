@@ -178,7 +178,11 @@ describe('C27 a cleared single exit withdraws the carry it left pending on its l
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
-    if (!process.env.B3_SOFT) expect(tally().applied).toEqual(before.applied);
+    expect(tally().applied).toEqual(before.applied + 1);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v2.v1Writes).toEqual(0);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
   });
 
   it.each(ADMITTED_NOT_OWNED)('%s: admitted, not owned, the refusal kept', (_label, scenario) => {
@@ -188,7 +192,11 @@ describe('C27 a cleared single exit withdraws the carry it left pending on its l
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
-    if (!process.env.B3_SOFT) expect(tally()).toEqual({ applied: before.applied, cascade: before.cascade + 1 });
+    expect(tally()).toEqual({ applied: before.applied + 1, cascade: before.cascade });
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v2.v1Writes).toEqual(0);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
   });
 
   it.each(REFUSED)('%s: refused, v1 writes it', (_label, scenario) => {
@@ -197,6 +205,10 @@ describe('C27 a cleared single exit withdraws the carry it left pending on its l
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
-    if (!process.env.B3_SOFT) expect(tally()).toEqual({ applied: before.applied, cascade: before.cascade + 1 });
+    expect(tally()).toEqual({ applied: before.applied + 1, cascade: before.cascade });
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v2.v1Writes).toEqual(0);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
   });
 });

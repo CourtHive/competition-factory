@@ -18,7 +18,7 @@ import {
 } from '@Tests/testHarness/outcome/directionFixtures';
 
 // constants and types
-import { COMPLETED, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { Scenario } from '@Tests/testHarness/outcome/directionFixtures';
 import { OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
 import { MISSING_ASSIGNMENTS } from '@Constants/errorConditionConstants';
@@ -81,8 +81,8 @@ describe('C22 lucky pre-feed defers its loser link with its winner', () => {
       drawProfile: { drawType: ADAPTIVE, drawSize, participantsCount: drawSize },
       steps: [{ target: R1(position, 'East'), outcome, params: { propagateExitStatus: carry } }],
     };
-    const owned = !carry || status === COMPLETED || status === 'bare';
-    expect(compareUndirectedWinner(scenario, owned).v1.results[0].success).toEqual(true);
+    // a carried exit's deferred loser link is recorded whole (batch 3)
+    expect(compareUndirectedWinner(scenario, true).v1.results[0].success).toEqual(true);
   });
   it.each(
     [6, 10].flatMap((size) =>
