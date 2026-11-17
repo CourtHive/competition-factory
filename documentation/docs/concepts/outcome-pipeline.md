@@ -1651,7 +1651,8 @@ The recording is held to the rule a recorded cascade is, whole or not at all: wh
 work on what it leaves (`predictSettleWork`), it is dropped and the plan is the very abstention the planners returned.
 A call whose PLANNED ops leave settle work (`settle`) is not recorded: it stays v1's. The recording is not made, and
 the call stays v1's, for: a TEAM dual or line; a call with no captured clock; a call that names more than one
-tournament record. It is discarded where v1's run on the copy returns an error, throws, or stops its forward settle
+tournament record. Nor is it asked for where the call is refused: a refused call has no route, its refusal is its
+answer, and `differential` plans it only to set v1's refusal against v2's. It is discarded where v1's run on the copy returns an error, throws, or stops its forward settle
 at the bound; writes anything outside the draw; adds or moves a matchUp or a structure; writes a round robin group's
 own fields; leaves a scored time on a matchUp with no score (the plan's own cleanup would clear it); changes the
 call's own parameters (which are put back); buffers a notice apply could not raise again; or returns a result that

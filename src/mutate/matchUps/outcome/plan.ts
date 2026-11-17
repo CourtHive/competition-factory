@@ -357,6 +357,8 @@ const RECORDED_WHOLE = new Set<AbstainReason>(['exit', 'cascade', 'loser']);
  */
 function recordedWhole(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
   if (!plan.abstain || !RECORDED_WHOLE.has(plan.abstain) || args.asDual || args.clockFree) return plan;
+  // a refused call has no route: the refusal is its answer, and v1 on a copy would only return the same error
+  if (!args.route) return plan;
   const recorded = args.recordWhole?.();
   if (!recorded || args.settles?.(recorded.ops)) return plan;
   return { ops: recorded.ops, shape: 'local', recordedResult: recorded.written };
