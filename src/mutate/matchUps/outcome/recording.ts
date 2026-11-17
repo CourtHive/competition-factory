@@ -34,7 +34,7 @@ export class Recording {
     visit(root, {});
   }
 
-  /** SPIKE: whether `value` is an object of the copy as it stood before the run */
+  /** whether `value` is an object of the copy as the writers found it */
   holds(value: object) {
     return this.origins.has(value);
   }

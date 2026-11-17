@@ -1063,7 +1063,7 @@ function foldRecorded(op: RecordedOp, index: DrawIndex, drawDefinition: DrawDefi
     target = index.matchUps.get(op.matchUpId);
     kept = [];
   } else if (op.op === 'replaceStructureState') {
-    target = index.structures.get(op.structureId) ?? index.groups.get(op.structureId);
+    target = index.structures.get(op.structureId);
     kept = STRUCTURE_CHILDREN;
   }
   if (context.bindResultInputs && op.recording) return op.recording.mirror(drawDefinition, name, target, kept);

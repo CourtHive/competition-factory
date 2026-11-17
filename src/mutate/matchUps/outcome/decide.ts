@@ -1,10 +1,10 @@
 import { recordDoubleExitCascade } from './plan/recordedCascade';
-import { b3Tally, recordWholeCall } from './plan/recordedCall';
+import { recordWholeCall } from './plan/recordedCall';
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
 import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
 import { applyOwnedPlan, applyTemporalPhases, compileTemporalPhases } from './apply';
-import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
+import { recordSettleEvent, withoutSettleTelemetry } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { PREDICTED_CALL, predictSettleWork, type SettleSite } from './settleWork';
 import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { topLevelStructureId } from '@Mutate/notifications/drawNotifications';
@@ -52,6 +52,7 @@ import type { HydratedMatchUp } from '@Types/hydrated';
 import type { ResultType } from '@Types/factoryTypes';
 import type { OutcomeOp } from './ops';
 import type {
+  AbstainReason,
   BuildViewArgs,
   DirectionPlan,
   DualCall,
@@ -91,7 +92,7 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
   const route = refusal ? undefined : chooseRoute(planned, view);
   const plan = route ? planWrite(planned, view, route) : undefined;
   const direction = route ? planDirection(planned, view, route) : undefined;
-  let allowed: OutcomePlan = planOutcome({
+  const allowed = planOutcome({
     settles: carrySettles(args, view),
     clockFree: args.clockFree,
     tournamentRecord: args.tournamentRecord,
@@ -107,46 +108,53 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
     route,
     view,
   });
-  // SPIKE (batch 3): an abstention of these reasons is read off v1's whole write on a copy (`plan/recordedCall.ts`)
-  let wholeCall = false;
-  const tryWholeCall = (reason: string) => {
-    if (!route || refusal || process.env.B3_WHOLE_CALL === '0') return false;
-    if (!(process.env.B3_REASONS ?? 'exit,cascade,loser,settle').split(',').includes(reason)) return false;
-    const recorded = recordWholeCall(args, view, route, reason);
-    if (!recorded) return false;
-    allowed = { ops: recorded.ops, shape: 'local', recordedResult: recorded.result, recordedDraw: recorded.drawJson };
-    wholeCall = true;
-    return true;
-  };
-  if (allowed.abstain) tryWholeCall(allowed.abstain);
   // the working view after the plan (§ 3.2), folded before anything is written to the stored objects it reads
-  let folded = allowed.ops ? finalizePlan({ args, view, ops: allowed.ops, keepFoldedView }) : undefined;
-  if (allowed.ops && !wholeCall && !(folded && 'ops' in folded && !folded.settle.length) && tryWholeCall('settle'))
-    folded = allowed.ops ? finalizePlan({ args, view, ops: allowed.ops, keepFoldedView }) : undefined;
+  const folded = allowed.ops ? finalizePlan({ args, view, ops: allowed.ops, keepFoldedView }) : undefined;
   let outcome: OutcomePlan = allowed;
-  if (allowed.ops && wholeCall) {
-    const tag = `${route ?? 'none'}`;
-    if (!folded || !('ops' in folded)) {
-      b3Tally('dropped', tag, 'working-view-fold', folded && 'error' in folded ? folded.error.slice(0, 60) : 'none');
-      outcome = { abstain: 'settle' };
-    } else if (folded.ops !== allowed.ops) {
-      b3Tally('dropped', tag, 'stale-scored-time-cleanup');
-      outcome = { abstain: 'settle' };
-    } else {
-      // v1's own settle sequence ran on the copy: a predicate that still finds work is counted, not obeyed
-      if (folded.settle.length) b3Tally('note', tag, 'settle-predicted-after-recording', folded.settle.join('+'));
-      if (folded.settle.length && process.env.B3_OBEY_SETTLE === '1') outcome = { abstain: 'settle' };
-    }
-  } else if (allowed.ops)
+  if (allowed.ops)
     outcome =
       folded && 'ops' in folded && !folded.settle.length ? { ...allowed, ops: folded.ops } : { abstain: 'settle' };
+  // RECORDED: an abstention of these reasons is read off v1's whole write on a copy, where it can be
+  const whole = route && !refusal ? recordedWhole({ args, view, abstain: outcome.abstain, keepFoldedView }) : undefined;
+  if (whole) outcome = whole.outcome;
   const phases =
     args.clockFree && outcome.ops ? compileTemporalPhases({ args, view, route, ops: outcome.ops }) : undefined;
   const observe = phases && outcome.ops ? prepareTemporalShadow(args, phases, outcome.shape) : undefined;
   // An uncaptured call requires a complete phase program and a replayable effect scope, in either mode.
   if (args.clockFree && !observe) outcome = { abstain: 'clock' };
-  if (wholeCall) b3Tally(outcome.ops ? 'planned' : 'lost', `${route ?? 'none'}`, outcome.abstain);
-  return { planned, route, plan, direction, folded, outcome, phases, observe };
+  return { planned, route, plan, direction, folded: whole?.folded ?? folded, outcome, phases, observe };
+}
+
+/** the abstentions a whole-call recording answers: the shapes of exit, cascade, loser seat and settle work not planned */
+const RECORDED_WHOLE = new Set<AbstainReason>(['exit', 'cascade', 'loser', 'settle']);
+
+/**
+ * RECORDED, THE WHOLE CALL (batch 3, `plan/recordedCall.ts`): a call the planners abstained from, as the ops v1's own
+ * write left on a copy of the record, held to the check every plan is (`finalizePlan`): the ops fold into the working
+ * view, need no cleanup beside them, and leave no settle pass work. Whole or not at all: otherwise undefined, and the
+ * call is refused where it was before.
+ */
+function recordedWhole({
+  keepFoldedView,
+  abstain,
+  args,
+  view,
+}: {
+  keepFoldedView: boolean;
+  abstain?: AbstainReason;
+  args: BuildViewArgs;
+  view: OutcomeView;
+}) {
+  // a real-clock call is not planned from a recording (`clock`), so none is made
+  if (!abstain || !RECORDED_WHOLE.has(abstain) || args.clockFree) return undefined;
+  const recorded = recordWholeCall(args, view);
+  if (!recorded) return undefined;
+  // the call's predictions were recorded with the plan that abstained, where there was one
+  const finalize = () => finalizePlan({ args, view, ops: recorded.ops, keepFoldedView });
+  const folded = abstain === 'settle' ? withoutSettleTelemetry(finalize) : finalize();
+  if (!folded || !('ops' in folded) || folded.ops !== recorded.ops || folded.settle.length) return undefined;
+  const outcome: OutcomePlan = { ops: recorded.ops, shape: 'local', recordedResult: recorded.written };
+  return { outcome, folded };
 }
 
 /**
@@ -217,6 +225,8 @@ function landingView(args: BuildViewArgs, view: OutcomeView): LandingView {
 export function decideOutcomeV2(args: BuildViewArgs): {
   refused?: ResultType;
   owned?: ResultType;
+  /** `owned` is v1's whole answer for a call recorded on a copy (`plan/recordedCall.ts`) */
+  recorded?: boolean;
   compare?: (v1Result: ResultType) => void;
   runV1?: <T>(run: () => T) => T;
 } {
@@ -233,18 +243,12 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     // S2: a call whose complete plan is a shape v2 owns is written by v2, and v1 is not asked (F1 (a), fail-closed)
     const { outcome, phases, route } = planCall(args, view);
     if (!outcome.ops || !OWNED_SHAPES.has(outcome.shape)) return {};
-    if (outcome.recordedResult && !phases) {
-      const applied = applyOwnedPlan({ args, ops: outcome.ops, shape: outcome.shape, route });
-      b3Tally('owned', `${route ?? 'none'}`, applied.error ? 'apply-error' : 'ok');
-      if (!applied.error)
-        b3Tally('graph', `${route ?? 'none'}`, JSON.stringify(args.drawDefinition) === outcome.recordedDraw ? 'json-identical' : 'JSON-DIFFERS');
-      return { owned: applied.error ? applied : outcome.recordedResult };
-    }
-    return {
-      owned: phases
-        ? applyTemporalPhases(args, phases, outcome.shape)
-        : applyOwnedPlan({ args, ops: outcome.ops, shape: outcome.shape, route }),
-    };
+    const applied = phases
+      ? applyTemporalPhases(args, phases, outcome.shape)
+      : applyOwnedPlan({ args, ops: outcome.ops, shape: outcome.shape, route });
+    // a call recorded whole returns what v1 returned for it
+    if (applied.error || !outcome.recordedResult) return { owned: applied };
+    return { owned: outcome.recordedResult, recorded: true };
   }
   if (mode !== OUTCOME_PIPELINE_DIFFERENTIAL) return {};
   // § 3.1.1's index oracle, read before v1 writes: the index of the draw as the call found it against the view's hydration
