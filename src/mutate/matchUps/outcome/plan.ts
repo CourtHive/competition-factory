@@ -574,6 +574,9 @@ function planOps(args: PlanArgs): OutcomePlan {
   if (args.dual) return lineDualOps({ ...args, dual: args.dual, drawDefinition });
   // a double exit asked for again: v1 writes nothing (`satisfiedDoubleExit`)
   if (satisfiedDoubleExit(view, request, args.route)) return { ops: [], shape: 'local' };
+  // a refused call has no route and no write (the differential plans it beside its refusal): nothing to state as ops,
+  // as `recordedWhole` records nothing for it. A line's double exit is the one shape no reason above stops without one
+  if (!args.route || !args.write) return { abstain: 'route' };
   return recordedPlanOps(args, drawDefinition, reason);
 }
 
