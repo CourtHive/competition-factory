@@ -16,7 +16,9 @@ import { SUCCESS } from '@Constants/resultConstants';
 /**
  * A whole-call recording (`outcome/plan/recordedCall.ts`) is made only where v1's run on the copy is carried whole by
  * the recorded ops. Each refusal here is one the recorder makes itself, asked of it directly with a writer in v1's
- * place; whatever the writer did, the stored record is as it was.
+ * place; whatever the writer did, the stored record is as it was. `planOutcome` asks for one where its planners abstain
+ * `exit`, `cascade` or `loser`, and drops one a settle predicate still finds work on: the fixtures' ownership flags
+ * hold those (`directionFixtures.ts`).
  */
 
 afterEach(() => {
@@ -72,6 +74,13 @@ const refused: [string, Writer][] = [
       first(copy).notes = 'written';
       setSubscriptions({ subscriptions: { unrecordedTopic: () => undefined } });
       addNotice({ topic: 'unrecordedTopic', key: 'k', payload: { tournamentId: 't' } });
+      return { ...SUCCESS };
+    },
+  ],
+  [
+    "v1 leaves a scored time on a matchUp with no score, which the plan's own cleanup would clear",
+    (copy) => {
+      first(copy).schedule = { scoredTime: '2026-11-16T10:00:00.000Z' };
       return { ...SUCCESS };
     },
   ],

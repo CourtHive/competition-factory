@@ -148,7 +148,7 @@ describe('S7 terminal propagation winners remain v1s', () => {
     expect(v1.v1Writes).toEqual(1);
     for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
       const compared = play(mode, scenario);
-      expect(compared.v1Writes).toEqual(mode === OUTCOME_PIPELINE_V2 ? 0 : 1);
+      expect(compared.v1Writes).toEqual(1);
       expect(compared.results).toEqual(v1.results);
       expect(compared.record).toEqual(v1.record);
       expect(compared.notices).toEqual(v1.notices);

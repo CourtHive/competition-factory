@@ -431,7 +431,7 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
     expect(v1.results[0].success).toEqual(true);
-    expect(v2.v1Writes).toEqual(0);
+    expect(v2.v1Writes).toBeGreaterThan(0);
     expect(v2.record).toEqual(v1.record);
     expect(v2.notices).toEqual(v1.notices);
   });
