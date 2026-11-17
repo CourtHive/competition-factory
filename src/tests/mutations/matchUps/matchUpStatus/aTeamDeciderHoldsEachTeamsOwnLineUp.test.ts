@@ -47,10 +47,7 @@ function decideByLines(matchUpId: string, winningSide: number) {
   expect(dual().winningSide).toEqual(winningSide);
 }
 
-it.each([
-  [1, DEAD_RUBBER],
-  [2, TO_BE_PLAYED],
-])('the final won by side %s: each side of the Decider holds its own team (%s)', (finalWinningSide, deciderStatus) => {
+function deciderHoldsEachTeamsOwnLineUp(finalWinningSide: number, deciderStatus: string) {
   mocksEngine.generateTournamentRecord({
     drawProfiles: [
       { drawId: DRAW_ID, drawType: DOUBLE_ELIMINATION, drawSize: 8, eventType: TEAM, tieFormatName: 'USTA_COLLEGE' },
@@ -89,4 +86,14 @@ it.each([
     const [first, second] = line.sides.map((side: any) => side.participantId);
     if (first || second) expect(first).not.toEqual(second);
   }
-});
+}
+
+// 13 s each under OUTCOME_PIPELINE=differential with coverage; a checkpoint's shard crossed 30 s (#6405)
+it.each([
+  [1, DEAD_RUBBER],
+  [2, TO_BE_PLAYED],
+])(
+  'the final won by side %s: each side of the Decider holds its own team (%s)',
+  { timeout: 180_000 },
+  deciderHoldsEachTeamsOwnLineUp,
+);
