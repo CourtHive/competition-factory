@@ -24,7 +24,14 @@ const isShard = process.argv.some((arg) => arg.startsWith('--shard'));
 // grows with the square of its points: a volleyball deciding set took 34.5 s, and its file 115-297 s, under load. Those
 // runs get 180 s per test, over five times the slowest test measured, and still finite so a hang fails; the default
 // suite keeps 30 s.
-const testTimeout = process.env.FACTORY_BACKEND ? 180_000 : 30_000;
+//
+// OUTCOME_PIPELINE=differential (every PR into master, and the differential arm on dev) runs every outcome through v1
+// AND the v2 pipeline and compares them, so the 30 s set for one pipeline no longer fits: on the 7.40.0 checkpoint
+// (#6405) one test on the default took 40 s and another 34 s, about twenty more used over half of it, and the same
+// shard ran 1.5x slower on its second run. A test fixed one at a time leaves the next one to fail a checkpoint, so
+// the differential gets the second implementation's 180 s: over five times the slowest test measured (34 s).
+const slowSuite = process.env.FACTORY_BACKEND || process.env.OUTCOME_PIPELINE === 'differential';
+const testTimeout = slowSuite ? 180_000 : 30_000;
 
 // TEST ISOLATION (CA, 2026-11-05). By default vitest gives every test file a fresh module graph, so each of ~2,100 files
 // re-imports and re-instruments the engine: import was a third of a CI coverage shard. On PRs into dev
@@ -62,7 +69,7 @@ const testExclude = [...configDefaults.exclude, '**/scratch/**'];
 
 export default defineConfig({
   test: {
-    testTimeout, // 30 seconds for slow tests; 180 under a second implementation (above)
+    testTimeout, // 30 seconds for slow tests; 180 under a second implementation or the differential (above)
     environment: 'node',
     // `--shard` splits by recorded duration, not file count (vitest.sequencer.mts); unsharded runs are unaffected
     sequence: { sequencer: DurationSequencer },
