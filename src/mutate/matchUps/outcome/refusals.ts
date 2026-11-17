@@ -3,6 +3,7 @@ import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatus
 import { rewritesCarriedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { validateScore } from '@Scoring/analysis/validateScore';
+import { definedAttributes } from '@Tools/definedAttributes';
 import { isDoubleExit } from '@Validators/isExit';
 import { chooseRoute } from './route';
 
@@ -62,11 +63,16 @@ const LIVE = new Set<string>([IN_PROGRESS, SUSPENDED]);
 const NON_RESULT = new Set<string>([CANCELLED, INCOMPLETE, ABANDONED, TO_BE_PLAYED]);
 const EXITS = new Set<string>([WALKOVER, DEFAULTED, DOUBLE_WALKOVER, DOUBLE_DEFAULT]);
 
+/**
+ * A refusal's context holds the attributes that are defined, as v1's `decorateResult` leaves it (shallow: a context
+ * carries references): a call naming no status is refused with no `matchUpStatus` key, not an undefined one
+ */
 const refuse = (row: number, error: ErrorType, extra: Omit<Refusal, 'code' | 'error' | 'row'> = {}): Refusal => ({
   code: error.code,
   error,
   row,
   ...extra,
+  ...(extra.context ? { context: definedAttributes(extra.context, false, false, true) } : {}),
 });
 
 const isClear = (request: OutcomeRequest): boolean =>
@@ -166,7 +172,8 @@ function refuseScore(request: OutcomeRequest, view: OutcomeView): Refusal | unde
   if (view.isTeam && flags.enableAutoCalc && view.activeDownstream) {
     const projected = view.dualProjection?.projectedWinningSide;
     if (projected !== view.existing.winningSide)
-      return refuse(14, CANNOT_CHANGE_WINNING_SIDE, { context: { winningSide, projectedWinningSide: projected } });
+      // v1 (`handleTeamAutoCalc`) names the stored dual beside the call's winningSide (`namesMatchUp`)
+      return refuse(14, CANNOT_CHANGE_WINNING_SIDE, { context: { winningSide }, namesMatchUp: true });
   }
 
   if (view.isTeam && matchUpStatus === AWAITING_RESULT)

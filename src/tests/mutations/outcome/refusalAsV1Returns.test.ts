@@ -1,3 +1,4 @@
+import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { objectGraph } from '@Tests/testHarness/outcome/objectGraph';
 import { setOutcomePipeline } from '@Global/state/globalState';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -6,8 +7,15 @@ import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 
 // constants and types
-import { DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
-import { INVALID_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
+import {
+  DEFAULTED,
+  DOUBLE_DEFAULT,
+  DOUBLE_WALKOVER,
+  RETIRED,
+  TO_BE_PLAYED,
+  WALKOVER,
+} from '@Constants/matchUpStatusConstants';
+import { CANNOT_CHANGE_WINNING_SIDE, INVALID_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
@@ -78,6 +86,51 @@ function refusedAlike(prepared: any, call: Call, code: string) {
   }
   return v1;
 }
+
+describe("a refusal's context holds the keys v1's holds", () => {
+  it.each([
+    ['a singles matchUp', { drawSize: 4 }],
+    ['a TEAM dual', TEAM_DRAW],
+  ])('row 6, nobody assigned: a winner alone on %s names no matchUpStatus', (_label, drawProfile) => {
+    generate(drawProfile);
+    const prepared = stored();
+    const { matchUpId } = inRound(2);
+    const bare = refusedAlike(prepared, { matchUpId, outcome: { winningSide: 1 } }, INVALID_MATCHUP_STATUS.code);
+    expect(bare.keys).toEqual(['requiredParticipants']);
+    const named = { matchUpId, outcome: { matchUpStatus: WALKOVER, winningSide: 1 } };
+    expect(refusedAlike(prepared, named, INVALID_MATCHUP_STATUS.code).keys).toEqual([
+      'matchUpStatus',
+      'requiredParticipants',
+    ]);
+  });
+
+  // row 14's TEAM clause: a dual whose downstream is active, its auto-calc turned on by a call whose lines project
+  // another winner (none). v1 (`handleTeamAutoCalc`) names the stored dual beside the call's winningSide
+  it.each([
+    ['naming no winner', { matchUpStatus: TO_BE_PLAYED }, ['matchUp']],
+    ['naming a winner', { winningSide: 2 }, ['winningSide', 'matchUp']],
+    ['an exit naming a winner', { matchUpStatus: WALKOVER, winningSide: 2 }, ['winningSide', 'matchUp']],
+  ])('row 14, a decided dual with an active downstream, auto-calc enabled by a call %s', (_label, outcome, keys) => {
+    generate(TEAM_DRAW);
+    const dual = inRound(1);
+    const retired = {
+      ...generateOutcomeFromScoreString({ scoreString: '6-1 2-1', winningSide: 1 }).outcome,
+      matchUpStatus: RETIRED,
+    };
+    for (const [matchUpId, given, params] of [
+      [dual.matchUpId, retired, { disableAutoCalc: true }],
+      // the next dual, one team arrived: an exit awarded there makes the first dual's downstream active
+      [dual.winnerMatchUpId, { matchUpStatus: DEFAULTED, winningSide: 2 }, {}],
+    ] as const)
+      expect(tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId, outcome: given, ...params }).success).toEqual(
+        true,
+      );
+    const call = { matchUpId: dual.matchUpId, outcome, params: { enableAutoCalc: true } };
+    const v1 = refusedAlike(stored(), call, CANNOT_CHANGE_WINNING_SIDE.code);
+    expect(v1.keys).toEqual(keys);
+    expect(v1.result.context.matchUp.matchUpId).toEqual(dual.matchUpId);
+  });
+});
 
 describe('a refused call is compared under the differential without a plan', () => {
   // row 6: the dual's seats hold nobody. A line's double exit is the one shape the planners let through with no route
