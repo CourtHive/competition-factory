@@ -47,10 +47,10 @@ import { UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
  */
 export type RecordCascade = (prefix: OutcomeOp[]) => OutcomeOp[] | undefined;
 
-const own = (entity: object, children: string[]) =>
+export const own = (entity: object, children: string[]) =>
   Object.fromEntries(Object.entries(entity).filter(([key]) => !children.includes(key)));
 
-function drawMatchUps(drawDefinition: DrawDefinition): MatchUp[] {
+export function drawMatchUps(drawDefinition: DrawDefinition): MatchUp[] {
   const found: MatchUp[] = [];
   const visit = (structure: Structure) => {
     for (const matchUp of matchUpsOf(structure) ?? []) found.push(matchUp, ...(matchUp.tieMatchUps ?? []));
@@ -67,7 +67,7 @@ type NoticeMarks = { tournamentIds: string[]; topics: string[] };
  * topics the call modified are put back here, in their order. A copy's notices marked them before the call's own did.
  * They are emptied for the run, so `fn` can read what the copy's writes marked (`read`), which apply marks again.
  */
-function withNoticeMarks<T>(fn: (read: () => NoticeMarks | undefined) => T): T {
+export function withNoticeMarks<T>(fn: (read: () => NoticeMarks | undefined) => T): T {
   const sets = () => {
     const state = getNoticeState();
     return [state?.modifiedTournamentIds, state?.modifiedTopics];
@@ -88,7 +88,7 @@ function withNoticeMarks<T>(fn: (read: () => NoticeMarks | undefined) => T): T {
   }
 }
 
-function recordedNotice({ topic, key, payload }: Notice): RecordedNotice | undefined {
+export function recordedNotice({ topic, key, payload }: Notice): RecordedNotice | undefined {
   if (!key || !isObject(payload)) return undefined;
   const base = { topic, key, eventId: payload.eventId, context: payload.context };
   if (topic === UPDATE_INCONTEXT_MATCHUP) {

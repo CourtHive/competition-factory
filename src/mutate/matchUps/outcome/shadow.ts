@@ -125,7 +125,9 @@ export function plannedNotices({
     const identity = `${topic}|${key}`;
     return `${identity}${(!hasEvent || unevented) && !retainedEvents.has(identity) ? NO_EVENT : ''}`;
   };
-  const notices = new Set<string>(prefix.length ? [`${UPDATE_INCONTEXT_MATCHUP}|${matchUpId}`] : []);
+  // SPIKE (batch 3): a whole-call recording announces exactly what it recorded
+  const wholeCall = prefix.every((op) => op.op.startsWith('replace') || op.op === 'announceRecorded');
+  const notices = new Set<string>(prefix.length && !wholeCall ? [`${UPDATE_INCONTEXT_MATCHUP}|${matchUpId}`] : []);
   for (const op of ops) {
     // every score write announces its matchUp in context, as `apply.ts` defers it: a TEAM line's dual too (S7)
     if (op.op === 'setMatchUpResult' && !op.announcedAs) notices.add(`${UPDATE_INCONTEXT_MATCHUP}|${op.matchUpId}`);

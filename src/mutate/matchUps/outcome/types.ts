@@ -1,4 +1,4 @@
-import type { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
+import type { MatchUpsMap, PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import type { ErrorType } from '@Constants/errorConditionConstants';
 import type { OutcomeOp, TemporalProjection } from './ops';
 import type { HydratedMatchUp } from '@Types/hydrated';
@@ -463,6 +463,11 @@ export type BuildViewArgs = {
   structural?: boolean;
   event?: Event;
   request: OutcomeRequest;
+  /** SPIKE (batch 3): v1's whole write for the call, run on a copy of the record (`setMatchUpStatus` `runV1`) */
+  recordCall?: (copy: { tournamentRecord?: Tournament; drawDefinition?: DrawDefinition; event?: Event }) => {
+    result: ResultType & { exhausted?: string };
+    refused?: string;
+  };
 };
 
 /** § 5 rule 1: what direction must have done once the route has written */
@@ -633,7 +638,7 @@ export type AbstainReason =
 /** which of the allowlist's shapes a complete plan is: `local` (the matchUp's own result) or the first `direction` */
 export type PlanShape = 'local' | 'direction';
 export type OutcomePlan =
-  | { ops: OutcomeOp[]; shape: PlanShape; abstain?: undefined }
+  | { ops: OutcomeOp[]; shape: PlanShape; abstain?: undefined; recordedResult?: ResultType; recordedDraw?: string }
   | { abstain: AbstainReason; ops?: undefined; shape?: undefined };
 
 /**

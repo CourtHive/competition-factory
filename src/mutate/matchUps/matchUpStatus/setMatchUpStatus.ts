@@ -268,14 +268,56 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     drawDefinition,
     matchUpsMap,
     event,
+    // SPIKE (batch 3): v1's whole write for this call, run on a copy of the record
+    recordCall: (copy) => {
+      if (Object.keys(tournamentRecords ?? {}).length > 1) return { result: {}, refused: 'multi-tournament' };
+      const copyDraw = copy.drawDefinition as DrawDefinition;
+      const copyMap = getMatchUpsMap({ drawDefinition: copyDraw });
+      const copyRecords =
+        copy.tournamentRecord?.tournamentId && tournamentRecords?.[copy.tournamentRecord.tournamentId]
+          ? { ...tournamentRecords, [copy.tournamentRecord.tournamentId]: copy.tournamentRecord }
+          : tournamentRecords;
+      const result = runV1({
+        params: {
+          ...params,
+          tournamentRecord: copy.tournamentRecord as Tournament,
+          tournamentRecords: copyRecords,
+          drawDefinition: copyDraw,
+          event: copy.event,
+        },
+        tournamentRecords: copyRecords,
+        matchUpsMap: copyMap,
+        finalsBefore: getDeciderFinals(copyDraw),
+        deciderSnapshotBefore: getDeciderSnapshot(copyDraw),
+        doubleExitsBefore: new Set(
+          copyMap.drawMatchUps.filter((matchUp) => isDoubleExit(matchUp.matchUpStatus)).map((m) => m.matchUpId),
+        ),
+        recording: {},
+      });
+      return { result };
+    },
   });
   if (v2.refused) return decorateResult({ result: v2.refused, stack });
   // S2: a call v2 owns has been written by it (`outcome/apply.ts`); v1 is not asked, and the warnings are v1's own
   if (v2.owned) return ownedResult({ owned: v2.owned, params, matchUpsMap, neverPlayedBefore, stack });
 
-  return v2.runV1 ? v2.runV1(runV1) : runV1();
+  return v2.runV1 ? v2.runV1(() => runV1()) : runV1();
 
-  function runV1() {
+  function runV1(
+    target: {
+      params: SetMatchUpStatusArgs;
+      tournamentRecords: TournamentRecords;
+      matchUpsMap: MatchUpsMap;
+      finalsBefore: ReturnType<typeof getDeciderFinals>;
+      deciderSnapshotBefore: ReturnType<typeof getDeciderSnapshot>;
+      doubleExitsBefore: Set<string>;
+      recording?: { exhausted?: string };
+    } = { params, tournamentRecords, matchUpsMap, finalsBefore, deciderSnapshotBefore, doubleExitsBefore },
+  ): ResultType & { exhausted?: string } {
+    const { tournamentRecord, drawDefinition, event } = target.params;
+    const { tournamentRecords, matchUpsMap, finalsBefore, deciderSnapshotBefore, doubleExitsBefore } = target;
+    const params = target.params;
+    const compare = target.recording ? undefined : v2.compare;
     // A REFUSED CALL STORES NONE OF THE MISSING EDGES (CA, 2026-10-18: "no, a refused call does not store a draw's
     // missing edges. v1 should no longer do so."). `setMatchUpState` writes them before deciding anything, and takes
     // them back on its own refusal; what it held is held here too, for a refusal met after it returned.
@@ -316,7 +358,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
       if (!context?.progressExitStatus) continue;
       const propagated = propagateExitFrom({ context, params, propagateExitStatus });
       if (propagated?.error) {
-        v2.compare?.(propagated);
+        compare?.(propagated);
         return refuse(propagated);
       }
     }
@@ -324,7 +366,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     // call left (census F2, 2026-10-11: the settle step ran after `setMatchUpState` refused, and its reconciliation
     // was the refused call's only write in 55 of 92 refusals after a write).
     if (result.error) {
-      v2.compare?.(result);
+      compare?.(result);
       return refuse(result);
     }
     const settled = settleAfterWrite({
@@ -336,8 +378,13 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
       matchUpsMap,
     });
     if (settled.error) {
-      v2.compare?.(settled);
+      compare?.(settled);
       return refuse(settled);
+    }
+    if (target.recording) {
+      if (settled.exhausted) return { ...withoutPropagationContext(result), exhausted: settled.exhausted };
+      announceGoesTo({ hold: heldEdges, tournamentRecord, drawDefinition, event });
+      return withoutPropagationContext(result);
     }
     const warnings = [
       ...(settled.exhausted ? [{ code: FORWARD_SETTLE_EXHAUSTED, matchUpIds: [settled.exhausted] }] : []),
@@ -348,7 +395,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     // nothing is refused past here: a call that wrote the draw's missing edges announces the draw, once
     announceGoesTo({ hold: heldEdges, tournamentRecord, drawDefinition, event });
 
-    v2.compare?.(result);
+    compare?.(result);
 
     return decorateResult({ result: withoutPropagationContext(result), stack });
   }
@@ -606,5 +653,6 @@ function ownedResult({ owned, params, matchUpsMap, neverPlayedBefore, stack }: O
   if (owned.error) return decorateResult({ result: owned, stack });
   const { disableScoreValidation, outcome } = params;
   const warnings = callWarnings({ params, matchUpsMap, neverPlayedBefore, disableScoreValidation, outcome });
-  return decorateResult({ result: warnings.length ? { ...owned, warnings } : owned, stack });
+  const all = [...((owned as { warnings?: ResultWarning[] }).warnings ?? []), ...warnings];
+  return decorateResult({ result: all.length ? { ...owned, warnings: all } : owned, stack });
 }

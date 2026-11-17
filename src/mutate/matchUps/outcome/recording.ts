@@ -34,6 +34,11 @@ export class Recording {
     visit(root, {});
   }
 
+  /** SPIKE: whether `value` is an object of the copy as it stood before the run */
+  holds(value: object) {
+    return this.origins.has(value);
+  }
+
   /** ops are data: a recording says nothing when they are serialized */
   toJSON() {
     return undefined;
