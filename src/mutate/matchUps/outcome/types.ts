@@ -439,6 +439,12 @@ export type MatchUpWrite = {
   resetsScore?: true;
   /** The v1 write assigns an own undefined winner. */
   removesWinningSide?: true;
+  /**
+   * The v1 write is handed a status-codes array holding no reason (`[]`, the call's own or the winner route's), so its
+   * split finds nobody to attribute and deletes the reasons the matchUp kept: `sideStatusCodes`, `matchUpStatusCode`.
+   * A write handed no array leaves them standing.
+   */
+  clearsStatusReasons?: true;
   matchUpStatus?: MatchUpStatusUnion;
   winningSide?: number;
   scoreStringSide1?: string;

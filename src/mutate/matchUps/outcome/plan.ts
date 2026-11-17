@@ -435,7 +435,8 @@ function lineDualPlan(
   if (!dualPlan.ops) return dualPlan;
   const ops = dualPlan.ops.map((op): OutcomeOp => {
     if (op.op !== 'setMatchUpResult' || op.matchUpId !== line.dualMatchUpId) return op;
-    const { matchUpStatusCodes: _codes, ...result } = op;
+    // the tally write is handed no status codes (`updateTieMatchUpScore`): none written, no kept reason deleted
+    const { matchUpStatusCodes: _codes, clearsStatusReasons: _clears, ...result } = op;
     return {
       ...result,
       stampsScoredTime: false,

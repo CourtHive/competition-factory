@@ -220,9 +220,14 @@ TO_BE_PLAYED`, `score` with empty `scoreStringSide1` / `scoreStringSide2` and `s
    the real reason it carries for the arriving side, on the sides that exited: both sides of a double
    exit, the losing side of a single exit. A bare `WO` or `DEF` that the projection wrote is never a
    reason. The choice is made by origin, not by value: a client's `['WO']` is still split as its
-   reason. v2 plans only the requested matchUp's own write, from client input, and compares
-   `matchUpStatusCodes` as display; it plans no `sideStatusCodes` and no propagation write, so there
-   is nothing to mirror there.
+   reason. **An array naming no reason deletes the reasons the matchUp kept**: a write handed `[]`
+   (the call's own, or the one the winner route always passes) splits to nothing, so
+   `sideStatusCodes` and `matchUpStatusCode` both go; a write handed no array (a clear, a live score
+   or a double exit entered with no codes) leaves them standing, beside whatever the display array
+   becomes. v2 plans only the requested matchUp's own write, from client input, and compares
+   `matchUpStatusCodes` as display; a call carrying codes is v1's (`status-codes`), so the one
+   `sideStatusCodes` write it plans is that deletion (`clearsStatusReasons`,
+   `clearedStatusReasons.test.ts`), and it plans no propagation write.
 4. **`scoredTime`** is stamped on `schedule` the first time the matchUp becomes scored (a score with
    value, a winner, or a completed status), kept through corrections, and deleted when the result is
    removed. One exception: a DOUBLE_ELIMINATION decider made a DEAD_RUBBER was not played, so it is
