@@ -14,11 +14,23 @@ import type { Recording } from '../recording';
 /**
  * RECORDED (CA, 2026-11-16): what the two recorders share (`recordedCascade.ts`, `recordedCall.ts`). v1's writers run on
  * a COPY of the record; what the copy held before is read here, and what the run changed is returned as the recorded
- * ops: each matchUp it wrote, each top-level structure's and the draw's own fields, and the notices it buffered.
+ * ops: each matchUp it wrote, each structure's own fields (a round robin's groups are structures of their own, and a
+ * group's tally is among its fields), the draw's own fields, and the notices it buffered.
  */
 
 const ownState = (entity: object, children: string[]) =>
   Object.fromEntries(Object.entries(entity).filter(([key]) => !children.includes(key)));
+
+/** every structure of the draw, a round robin's groups after it, in the draw's order */
+export function drawStructures(drawDefinition: DrawDefinition): Structure[] {
+  const found: Structure[] = [];
+  const visit = (structure: Structure) => {
+    found.push(structure);
+    for (const child of structuresOf(structure) ?? []) visit(child);
+  };
+  for (const structure of drawDefinition.structures ?? []) visit(structure);
+  return found;
+}
 
 /** every stored matchUp of the draw, a dual's lines after it, in the draw's order */
 export function drawMatchUps(drawDefinition: DrawDefinition): MatchUp[] {
@@ -135,7 +147,7 @@ export function readBefore(drawDefinition: DrawDefinition) {
   return {
     matchUps: new Map(drawMatchUps(drawDefinition).map((stored) => [stored.matchUpId, read(stored)])),
     structures: new Map(
-      (drawDefinition.structures ?? []).map((s) => [s.structureId, read(ownState(s, STRUCTURE_CHILDREN))]),
+      drawStructures(drawDefinition).map((s) => [s.structureId, read(ownState(s, STRUCTURE_CHILDREN))]),
     ),
     draw: read(ownState(drawDefinition, DRAW_CHILDREN)),
     notices: new Set(getNoticeBuffer() ?? []),
@@ -169,7 +181,7 @@ export function recordedOps({
         { op: 'replaceMatchUp', matchUpId: stored.matchUpId, matchUp: structuredClone(stored), recording },
         stored,
       );
-  for (const s of drawDefinition.structures ?? []) {
+  for (const s of drawStructures(drawDefinition)) {
     const state = ownState(s, STRUCTURE_CHILDREN);
     if (!unchanged(state, before.structures.get(s.structureId)))
       replace({ op: 'replaceStructureState', structureId: s.structureId, state: structuredClone(state), recording }, s);

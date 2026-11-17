@@ -1,6 +1,5 @@
 import { withoutSettleTelemetry } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
-import { drawMatchUps, readBefore, recordedOps, stampCopies, withNoticeMarks } from './recordedDiff';
-import { structuresOf } from '@Helpers/drawTopology/structureMembers';
+import { drawMatchUps, drawStructures, readBefore, recordedOps, stampCopies, withNoticeMarks } from './recordedDiff';
 import { FORWARD_SETTLE_EXHAUSTED } from '@Mutate/matchUps/matchUpStatus/settleForwardConsequences';
 import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { withDraftWrites } from '@Global/state/withDraftWrites';
@@ -23,22 +22,14 @@ import type { OutcomeOp } from '../ops';
  *
  * Undefined, and the call stays v1's, wherever the copy's run is not known to be carried whole by those ops: a TEAM
  * dual or line; more than one tournament record; v1 returned an error, threw, or stopped its forward settle at the
- * bound; it wrote outside the draw, changed the call's own parameters, added or moved a matchUp or a structure, or
- * wrote a round robin group's own fields; it buffered a notice apply could not raise again; or its result holds an
- * object of the copy.
+ * bound; it wrote outside the draw, changed the call's own parameters, or added or moved a matchUp or a structure, a
+ * round robin's group among them; it buffered a notice apply could not raise again; or its result holds an object of
+ * the copy.
  */
 export type RecordedCall = { ops: OutcomeOp[]; written: ResultType };
 
-/** a draw's nested structures (a round robin's groups), whose own fields no recorded op carries */
-function nestedState(drawDefinition: DrawDefinition): string {
-  const nested = (drawDefinition.structures ?? []).flatMap((structure) => structuresOf(structure) ?? []);
-  return JSON.stringify(nested, (key, value) => (key === 'matchUps' ? 0 : value));
-}
-
-const placed = (drawDefinition: DrawDefinition) => [
-  ...(drawDefinition.structures ?? []),
-  ...drawMatchUps(drawDefinition),
-];
+/** every structure and matchUp of the draw, where it stands */
+const placed = (drawDefinition: DrawDefinition) => [...drawStructures(drawDefinition), ...drawMatchUps(drawDefinition)];
 
 /** v1's forward settle stopped at its bound: it warns, and leaves work this plan would not show */
 const unsettled = (written: ResultType) =>
@@ -76,7 +67,6 @@ export function recordWholeCall(args: BuildViewArgs, view: OutcomeView): Recorde
         const recording = new Recording(drawDefinition);
         const before = {
           ...readBefore(drawDefinition),
-          nested: nestedState(drawDefinition),
           placed: placed(drawDefinition),
           outside: outside(),
         };
@@ -84,7 +74,7 @@ export function recordWholeCall(args: BuildViewArgs, view: OutcomeView): Recorde
         if (!ran || ran.error || unsettled(ran)) return undefined;
         const after = placed(drawDefinition);
         const moved = after.length !== before.placed.length || after.some((entity, at) => entity !== before.placed[at]);
-        if (moved || outside() !== before.outside || nestedState(drawDefinition) !== before.nested) return undefined;
+        if (moved || outside() !== before.outside) return undefined;
         if (holdsCopy(recording, ran)) return undefined;
         // a scored time v1 left stale is one the plan's own cleanup would clear (`finalizePlan`)
         if (after.some((entity) => hasStaleScoredTime(entity as MatchUp))) return undefined;

@@ -348,7 +348,8 @@ function wholeCarry(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
 
 /**
  * the abstentions a whole-call recording answers: an exit, a cascade or a loser seat the planners do not write; a route
- * or a link they do not plan; the client's positional codes; provenance on the matchUp; LEGACY or BRIDGE write mode
+ * or a link they do not plan; the client's positional codes; provenance on the matchUp; LEGACY or BRIDGE write mode; a
+ * tally the planners do not write (a group's is among the group's own fields, which a recording carries)
  */
 const RECORDED_WHOLE = new Set<AbstainReason>([
   'exit',
@@ -359,6 +360,7 @@ const RECORDED_WHOLE = new Set<AbstainReason>([
   'status-codes',
   'write-mode',
   'provenance',
+  'tallied',
 ]);
 
 /**

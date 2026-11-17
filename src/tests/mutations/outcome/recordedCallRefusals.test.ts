@@ -1,5 +1,6 @@
 import { FORWARD_SETTLE_EXHAUSTED } from '@Mutate/matchUps/matchUpStatus/settleForwardConsequences';
 import { recordWholeCall } from '@Mutate/matchUps/outcome/plan/recordedCall';
+import { applyOutcomeOps } from '@Mutate/matchUps/outcome/ops';
 import { addNotice, deleteNotices, setSubscriptions } from '@Global/state/globalState';
 import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { canonicalJson } from '@Tools/canonicalJson';
@@ -10,7 +11,7 @@ import { afterEach, expect, it } from 'vitest';
 // constants and types
 import type { BuildViewArgs, OutcomeView, RecordCopy } from '@Mutate/matchUps/outcome/types';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
-import type { MatchUp } from '@Types/tournamentTypes';
+import type { MatchUp, Structure } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
 /**
@@ -108,11 +109,30 @@ it('is not made for a TEAM dual or line, or with no writer', () => {
   expect(recordWholeCall(args, plain)).toBeUndefined();
 });
 
-it("is not made where v1 writes a round robin group's own fields", () => {
+it("carries a round robin group's own fields, the group named as any structure is", () => {
+  const { args, before } = prepare(ROUND_ROBIN);
+  const groupOf = (draw: RecordCopy['drawDefinition']) => structuresOf(draw.structures?.[0])?.[1] as Structure;
+  const writeOnCopy = (copy: RecordCopy) => {
+    groupOf(copy.drawDefinition).structureName = 'renamed';
+    return { ...SUCCESS };
+  };
+  const recorded = recordWholeCall({ ...args, writeOnCopy }, plain);
+  const { structureId } = groupOf(args.drawDefinition as RecordCopy['drawDefinition']);
+  expect(recorded?.ops).toMatchObject([{ op: 'replaceStructureState', structureId }, { op: 'announceRecorded' }]);
+  expect(canonicalJson(args.tournamentRecord)).toEqual(before);
+
+  // folded, the group is found inside its container and takes the recorded fields; nothing else changes
+  const folded = structuredClone(args.drawDefinition) as RecordCopy['drawDefinition'];
+  const expected = structuredClone(folded);
+  groupOf(expected).structureName = 'renamed';
+  expect(applyOutcomeOps(folded, recorded?.ops ?? []).error).toBeUndefined();
+  expect(folded).toEqual(expected);
+});
+
+it('is not made where v1 adds a round robin group', () => {
   const { args, before } = prepare(ROUND_ROBIN);
   const writeOnCopy = (copy: RecordCopy) => {
-    const group = structuresOf(copy.drawDefinition.structures?.[0])?.[0];
-    if (group) group.structureName = 'renamed';
+    structuresOf(copy.drawDefinition.structures?.[0])?.push({ structureId: 'added' } as Structure);
     return { ...SUCCESS };
   };
   expect(recordWholeCall({ ...args, writeOnCopy }, plain)).toBeUndefined();

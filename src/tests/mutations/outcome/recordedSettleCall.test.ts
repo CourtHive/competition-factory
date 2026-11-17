@@ -1,13 +1,13 @@
 import { CARRIED, MAIN, R1, cleared, play, walkover, won } from '@Tests/testHarness/outcome/directionFixtures';
 import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
+import { storedGraph, storedRecord } from '@Tests/testHarness/outcome/objectGraph';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
-import { getTournamentRecords } from '@Global/state/globalState';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 // constants and types
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import type { Scenario } from '@Tests/testHarness/outcome/directionFixtures';
-import type { MatchUp, Tournament } from '@Types/tournamentTypes';
+import type { MatchUp } from '@Types/tournamentTypes';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
@@ -125,26 +125,6 @@ describe('a call whose planned ops leave settle work', () => {
     expect(v2.notices).toEqual(v1.notices);
   });
 });
-
-/**
- * the stored record and the cleared fixture as an object graph: every value, a key holding undefined, the keys in their
- * order, and WHICH objects are one object (an object met again is named by where it was first met)
- */
-function objectGraph(root: unknown) {
-  const met = new Map<object, number>();
-  const visit = (value: unknown): unknown => {
-    if (value === undefined) return { undefined: true };
-    if (value === null || typeof value !== 'object') return value;
-    if (met.has(value)) return { met: met.get(value) };
-    met.set(value, met.size);
-    return Object.entries(value).map(([key, held]) => [key, visit(held)]);
-  };
-  return visit(root);
-}
-
-const storedRecord = () => Object.values(getTournamentRecords())[0] as Tournament;
-
-const storedGraph = () => objectGraph([toBePlayed.matchUpStatusCodes, toBePlayed.score, storedRecord()]);
 
 const consolation = (roundPosition: number) =>
   storedRecord()
