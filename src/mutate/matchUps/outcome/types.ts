@@ -710,6 +710,8 @@ export type PlanArgs = {
   landing?: LandingView;
   /** RECORDED: the double-exit module's cascade after `prefix`, read on a copy of the record. */
   record?: (prefix: OutcomeOp[]) => OutcomeOp[] | undefined;
+  /** RECORDED: v1's whole write for the call, read on a copy of the record (`plan/recordedCall.ts`). */
+  recordWhole?: () => { ops: OutcomeOp[]; written: ResultType } | undefined;
   /** S7: the dual's call a deciding line makes */
   dual?: DualCall;
   /** S7: this call is a deciding line's dual, planned as part of the line's plan: its TEAM shape is the line's to vet */

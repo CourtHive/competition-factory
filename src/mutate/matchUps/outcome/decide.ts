@@ -4,7 +4,7 @@ import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDive
 import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
 import { applyOwnedPlan, applyTemporalPhases, compileTemporalPhases } from './apply';
-import { recordSettleEvent, withoutSettleTelemetry } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
+import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { PREDICTED_CALL, predictSettleWork, type SettleSite } from './settleWork';
 import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { topLevelStructureId } from '@Mutate/notifications/drawNotifications';
@@ -52,7 +52,6 @@ import type { HydratedMatchUp } from '@Types/hydrated';
 import type { ResultType } from '@Types/factoryTypes';
 import type { OutcomeOp } from './ops';
 import type {
-  AbstainReason,
   BuildViewArgs,
   DirectionPlan,
   DualCall,
@@ -101,6 +100,7 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
     project: projectOutcome(args, view),
     landing: landingView(args, view),
     record: (prefix) => recordDoubleExitCascade({ ...args, request: planned }, prefix),
+    recordWhole: () => recordWholeCall(args, view),
     dual: dualCallFor(route, args, view),
     request: planned,
     write: plan,
@@ -109,55 +109,17 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
     view,
   });
   // the working view after the plan (§ 3.2), folded before anything is written to the stored objects it reads
-  let folded = allowed.ops ? finalizePlan({ args, view, ops: allowed.ops, keepFoldedView }) : undefined;
+  const folded = allowed.ops ? finalizePlan({ args, view, ops: allowed.ops, keepFoldedView }) : undefined;
   let outcome: OutcomePlan = allowed;
   if (allowed.ops)
     outcome =
       folded && 'ops' in folded && !folded.settle.length ? { ...allowed, ops: folded.ops } : { abstain: 'settle' };
-  // RECORDED: an abstention of these reasons is read off v1's whole write on a copy, where it can be
-  const whole = route && !refusal ? recordedWhole({ args, view, abstain: outcome.abstain, keepFoldedView }) : undefined;
-  if (whole) {
-    outcome = whole.outcome;
-    folded = whole.folded;
-  }
   const phases =
     args.clockFree && outcome.ops ? compileTemporalPhases({ args, view, route, ops: outcome.ops }) : undefined;
   const observe = phases && outcome.ops ? prepareTemporalShadow(args, phases, outcome.shape) : undefined;
   // An uncaptured call requires a complete phase program and a replayable effect scope, in either mode.
   if (args.clockFree && !observe) outcome = { abstain: 'clock' };
   return { planned, route, plan, direction, folded, outcome, phases, observe };
-}
-
-/** the abstentions a whole-call recording answers: the shapes of exit, cascade, loser seat and settle work not planned */
-const RECORDED_WHOLE = new Set<AbstainReason>(['exit', 'cascade', 'loser', 'settle']);
-
-/**
- * RECORDED, THE WHOLE CALL (batch 3, `plan/recordedCall.ts`): a call the planners abstained from, as the ops v1's own
- * write left on a copy of the record, held to the check every plan is (`finalizePlan`): the ops fold into the working
- * view, need no cleanup beside them, and leave no settle pass work. Whole or not at all: otherwise undefined, and the
- * call is refused where it was before.
- */
-function recordedWhole({
-  keepFoldedView,
-  abstain,
-  args,
-  view,
-}: {
-  keepFoldedView: boolean;
-  abstain?: AbstainReason;
-  args: BuildViewArgs;
-  view: OutcomeView;
-}) {
-  // a real-clock call is not planned from a recording (`clock`), so none is made
-  if (!abstain || !RECORDED_WHOLE.has(abstain) || args.clockFree) return undefined;
-  const recorded = recordWholeCall(args, view);
-  if (!recorded) return undefined;
-  // the call's predictions were recorded with the plan that abstained, where there was one
-  const finalize = () => finalizePlan({ args, view, ops: recorded.ops, keepFoldedView });
-  const folded = abstain === 'settle' ? withoutSettleTelemetry(finalize) : finalize();
-  if (!folded || !('ops' in folded) || folded.ops !== recorded.ops || folded.settle.length) return undefined;
-  const outcome: OutcomePlan = { ops: recorded.ops, shape: 'local', recordedResult: recorded.written };
-  return { outcome, folded };
 }
 
 /**

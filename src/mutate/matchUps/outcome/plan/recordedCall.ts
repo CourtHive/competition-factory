@@ -2,6 +2,7 @@ import { withoutSettleTelemetry } from '@Mutate/matchUps/matchUpStatus/settleTel
 import { drawMatchUps, readBefore, recordedOps, stampCopies, withNoticeMarks } from './recordedDiff';
 import { structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { FORWARD_SETTLE_EXHAUSTED } from '@Mutate/matchUps/matchUpStatus/settleForwardConsequences';
+import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { withDraftWrites } from '@Global/state/withDraftWrites';
 import { cloneState, restoreState } from '@Tools/cloneState';
 import { stampedInThisCall } from '../ops';
@@ -9,7 +10,7 @@ import { Recording } from '../recording';
 
 // constants and types
 import type { BuildViewArgs, OutcomeView, RecordCopy } from '../types';
-import type { DrawDefinition } from '@Types/tournamentTypes';
+import type { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
 import type { ResultType } from '@Types/factoryTypes';
 import type { OutcomeOp } from '../ops';
 
@@ -85,6 +86,8 @@ export function recordWholeCall(args: BuildViewArgs, view: OutcomeView): Recorde
         const moved = after.length !== before.placed.length || after.some((entity, at) => entity !== before.placed[at]);
         if (moved || outside() !== before.outside || nestedState(drawDefinition) !== before.nested) return undefined;
         if (holdsCopy(recording, ran)) return undefined;
+        // a scored time v1 left stale is one the plan's own cleanup would clear (`finalizePlan`)
+        if (after.some((entity) => hasStaleScoredTime(entity as MatchUp))) return undefined;
         const ops = recordedOps({ drawDefinition, recording, before, marks: readMarks() });
         return ops && { ops, written: ran };
       }),
