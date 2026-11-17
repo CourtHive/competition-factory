@@ -11,6 +11,7 @@ import { getCompetitionMatchUps } from './getCompetitionMatchUps';
 import { getTournamentId } from '@Global/state/globalState';
 import { withContextExclusion } from './contextExclusion';
 import { isConvertableInteger } from '@Tools/math';
+import { extractDate } from '@Tools/dateTime';
 
 // constants and types
 import { ContextProfile, MatchUpFilters, PolicyDefinitions, TournamentRecords } from '@Types/factoryTypes';
@@ -177,6 +178,16 @@ function competitionScheduleMatchUpsUnredacted(
     relevantMatchUps = relevantMatchUps.filter((matchUp) => filterByRoundVisibility(matchUp, detailsMap));
   }
 
+  // a date released on its own clock (`publishOrderOfPlay({ dateEmbargoes })`) is withheld until its embargo lifts.
+  // Applied to the matchUps rather than folded into `scheduledDates`, because an empty `scheduledDates` means EVERY
+  // date, and "every date except the embargoed ones" is a set the date filter cannot express.
+  const embargoedDates = usePublishState ? getEmbargoedDates(publishedOrderOfPlay) : undefined;
+  if (embargoedDates?.size) {
+    relevantMatchUps = relevantMatchUps.filter(
+      (matchUp) => !embargoedDates.has(extractDate(matchUp.schedule?.scheduledDate)),
+    );
+  }
+
   const dateMatchUps = sortDateMatchUps
     ? scheduledSortedMatchUps({ matchUps: relevantMatchUps, schedulingProfile })
     : relevantMatchUps;
@@ -237,6 +248,16 @@ function competitionScheduleMatchUpsUnredacted(
         })
       : courtMatchUps;
   }
+}
+
+/** the scheduled dates whose own embargo has not lifted yet */
+function getEmbargoedDates(publishedOrderOfPlay): Set<string> | undefined {
+  const dateEmbargoes = publishedOrderOfPlay?.dateEmbargoes;
+  if (!dateEmbargoes) return undefined;
+  const dates = Object.entries(dateEmbargoes)
+    .filter(([, embargo]) => isEmbargoed({ embargo: embargo as string }))
+    .map(([date]) => date);
+  return new Set(dates);
 }
 
 function applyPublishedEventIdFilter(params, publishedOrderOfPlay) {

@@ -265,7 +265,14 @@ describe('cast — order of play + scheduling profile', () => {
   it('projects the published order-of-play state and the flattened scheduling plan', () => {
     const { rows } = cast({ tournamentRecord });
     expect(rows!.order_of_play).toEqual([
-      { tournament_id: 'tOoP', published: true, scheduled_dates: ['2025-01-05'], event_ids: null, embargo: null },
+      {
+        tournament_id: 'tOoP',
+        published: true,
+        scheduled_dates: ['2025-01-05'],
+        event_ids: null,
+        embargo: null,
+        date_embargoes: null,
+      },
     ]);
     expect(rows!.scheduling_profile).toHaveLength(1);
     expect(rows!.scheduling_profile[0]).toMatchObject({

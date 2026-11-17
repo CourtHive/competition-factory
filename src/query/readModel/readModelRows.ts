@@ -317,6 +317,7 @@ export function orderOfPlayRow(tournamentId: string, orderOfPlay: any): ReadMode
     scheduled_dates: orderOfPlay?.scheduledDates ?? null,
     event_ids: orderOfPlay?.eventIds ?? null,
     embargo: orderOfPlay?.embargo ?? null,
+    date_embargoes: orderOfPlay?.dateEmbargoes ?? null,
   };
 }
 

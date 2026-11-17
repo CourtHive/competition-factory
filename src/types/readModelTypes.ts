@@ -314,6 +314,7 @@ export interface ReadModelOrderOfPlayRow {
   scheduled_dates: string[] | null; // published dates; null = all
   event_ids: string[] | null; // published events; null = all
   embargo: string | null;
+  date_embargoes: Record<string, string> | null; // per-date release { 'YYYY-MM-DD': ISO instant }; null = none
 }
 
 export interface ReadModelSchedulingProfileRow {
