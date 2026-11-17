@@ -109,20 +109,23 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
     view,
   });
   // the working view after the plan (§ 3.2), folded before anything is written to the stored objects it reads
-  const folded = allowed.ops ? finalizePlan({ args, view, ops: allowed.ops, keepFoldedView }) : undefined;
+  let folded = allowed.ops ? finalizePlan({ args, view, ops: allowed.ops, keepFoldedView }) : undefined;
   let outcome: OutcomePlan = allowed;
   if (allowed.ops)
     outcome =
       folded && 'ops' in folded && !folded.settle.length ? { ...allowed, ops: folded.ops } : { abstain: 'settle' };
   // RECORDED: an abstention of these reasons is read off v1's whole write on a copy, where it can be
   const whole = route && !refusal ? recordedWhole({ args, view, abstain: outcome.abstain, keepFoldedView }) : undefined;
-  if (whole) outcome = whole.outcome;
+  if (whole) {
+    outcome = whole.outcome;
+    folded = whole.folded;
+  }
   const phases =
     args.clockFree && outcome.ops ? compileTemporalPhases({ args, view, route, ops: outcome.ops }) : undefined;
   const observe = phases && outcome.ops ? prepareTemporalShadow(args, phases, outcome.shape) : undefined;
   // An uncaptured call requires a complete phase program and a replayable effect scope, in either mode.
   if (args.clockFree && !observe) outcome = { abstain: 'clock' };
-  return { planned, route, plan, direction, folded: whole?.folded ?? folded, outcome, phases, observe };
+  return { planned, route, plan, direction, folded, outcome, phases, observe };
 }
 
 /** the abstentions a whole-call recording answers: the shapes of exit, cascade, loser seat and settle work not planned */
