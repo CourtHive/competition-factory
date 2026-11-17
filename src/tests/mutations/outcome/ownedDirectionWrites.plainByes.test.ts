@@ -11,7 +11,6 @@ import {
   PENDING_WINNERS,
   pendingWinnerIsOwned,
   PLAIN_BYE_ARRIVALS,
-  plainByeIsOwned,
 } from '@Tests/testHarness/outcome/directionFixtures';
 
 // constants and types
@@ -59,11 +58,10 @@ describe('C20 a plain loser goes on through a BYE chain or a last-round BYE', ()
     expect(compared.results).toEqual(v1.results);
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
-    // the linked-winner control is recorded whole (batch 3); a TEAM one stays v1's
-    const owned = plainByeIsOwned(scenario) || scenario.drawProfile.eventType !== 'TEAM';
-    expect(tally()).toEqual({ applied: before.applied + Number(owned), cascade: before.cascade + Number(!owned) });
+    // the linked-winner control is recorded whole (batch 3), a TEAM one too (batch 4b)
+    expect(tally()).toEqual({ applied: before.applied + 1, cascade: before.cascade });
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
-    expect(v2.v1Writes === 0).toEqual(owned);
+    expect(v2.v1Writes).toEqual(0);
     expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
     expect(v2.notices).toEqual(v1.notices);

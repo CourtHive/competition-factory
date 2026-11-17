@@ -3,6 +3,8 @@ import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreS
 import POLICY_SCORING_DEFAULT from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
 import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { v1Writes } from '@Tests/testHarness/outcome/directionCounter';
+import { storedGraph } from '@Tests/testHarness/outcome/objectGraph';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -49,13 +51,16 @@ import {
  * by v2 and v1's writer is not asked; the record, the notices (payloads, in order) and the results equal v1's, under the
  * fixed and the real clock.
  *
- * Still v1's, pinned below: a decided dual whose losing side holds no line-up; a removal or correction that
- * un-decides its dual, a removal leaving it holding no line's result; a line in a round robin (its group's tally); a REPORTED score source; and
- * auto-calc off.
+ * What the planners do not write (batch 4b, below) is read off v1's whole write on a copy of the record, and is v2's
+ * all the same: a decided dual whose losing side holds no line-up; a removal or correction that un-decides its dual, a
+ * removal leaving it holding no line's result; a dual's exit carried on past the dual it reaches; a double exit given a
+ * winner; auto-calc off. Still v1's: a line of a dual whose tieFormat declares its score REPORTED, whose result holds
+ * the dual's stored score.
  */
-const v1Writes = vi.hoisted(() => ({ count: 0 }));
+// counts v1's matchUp writes on the stored record (`directionCounter.ts`: a write to a recorded call's copy is not one)
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
   const actual: any = await importOriginal();
+  const { v1Writes } = await import('@Tests/testHarness/outcome/directionCounter');
   return {
     ...actual,
     setMatchUpState: (...args: any[]) => {
@@ -65,7 +70,17 @@ vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal)
   };
 });
 
+// CONTROL: with `refuse` set no recording is made, and the call's answer is the abstention its planners returned
+const recorder = vi.hoisted(() => ({ refuse: false }));
+vi.mock('@Mutate/matchUps/outcome/plan/recordedCall', async (original) => {
+  const actual = await original<typeof import('@Mutate/matchUps/outcome/plan/recordedCall')>();
+  const recordWholeCall: typeof actual.recordWholeCall = (args) =>
+    recorder.refuse ? undefined : actual.recordWholeCall(args);
+  return { ...actual, recordWholeCall };
+});
+
 afterEach(() => {
+  recorder.refuse = false;
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
   setSubscriptions({ subscriptions: {} });
   setClock();
@@ -146,7 +161,7 @@ type Scenario = {
   decided?: 1 | 2;
   /** the tournament's policies (a scoring policy's `processCodes`) */
   policyDefinitions?: Record<string, unknown>;
-  /** KEPT: the reason v2 leaves the step to v1 (`team` unless named) */
+  /** RECORDED: the reason the planners abstain from the step (`team` unless named) */
   abstains?: string;
   /** after the setup, the step's dual is given this exit (for side 1, a single one), or side 1 as winner, by its own call */
   dualExit?: 'WALKOVER' | 'DEFAULTED' | 'DOUBLE_WALKOVER' | 'winner';
@@ -357,6 +372,8 @@ function play(mode: OutcomePipelineMode, { step }: Scenario, prepared: any, real
   }) as any;
   return {
     record: canonicalJson(tournamentEngine.getTournament().tournamentRecord),
+    // the stored record and the result object for object: a result can hold objects of the record
+    graph: storedGraph(result),
     v1Writes: v1Writes.count,
     notices,
     result,
@@ -1808,7 +1825,7 @@ describe('under v2, a TEAM line is v2s, deciding its dual or not, and leaves exa
   });
 });
 
-const KEPT: [string, Scenario][] = [
+const RECORDED: [string, Scenario][] = [
   [
     "COMPASS 8/7: a dual's carry landing in West and going on to South past a BYE: v1's (the carrier placed again)",
     {
@@ -1936,15 +1953,6 @@ const KEPT: [string, Scenario][] = [
     },
   ],
   [
-    'a line of a dual whose tieFormat declares its score REPORTED: v1 returns before any tally',
-    {
-      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
-      setup: [{ target: R1(1, 0), winningSide: 1 }],
-      step: { target: R1(1, 1), winningSide: 2 },
-      reported: true,
-    },
-  ],
-  [
     "a line of a dual whose auto-calc is off: v1 leaves the dual's score to be entered",
     {
       drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
@@ -1975,15 +1983,76 @@ const KEPT: [string, Scenario][] = [
   ],
 ];
 
-describe('still v1s', () => {
-  it.each(KEPT)('%s', (_label, scenario) => {
-    const deferred = () => getDifferentialTally()[`shadow:abstain:${scenario.abstains ?? 'team'}`]?.deferred ?? 0;
+const tally = (key: string) => {
+  const entry = getDifferentialTally()[key];
+  return (entry?.compared ?? 0) + (entry?.deferred ?? 0);
+};
+
+/**
+ * RECORDED, THE WHOLE CALL, FOR A TEAM DUAL OR LINE (batch 4b, `outcome/plan/recordedCall.ts`). Each scenario is first
+ * played with no recording, to show the planners abstain from it (`team` unless named); then recorded: the shadow is
+ * applied and compared under `differential`, and under `v2` v1 is not asked to write the stored record, which is left
+ * as v1 leaves it object for object (`storedGraph`: the dual, its lines, the sides' line-ups and the draw's), with v1's
+ * notices and v1's result.
+ */
+describe("a TEAM dual or line the planners abstain from is read off v1's whole write, and is v2s", () => {
+  it.each(RECORDED)('%s', (_label, scenario) => {
+    const reason = scenario.abstains ?? 'team';
     const prepared = prepare(scenario, false);
-    const before = deferred();
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario, prepared);
+    expect(v1.result.success).toEqual(true);
+    expect(v1.v1Writes).toBeGreaterThanOrEqual(1);
+
+    // CONTROL: the planners' own answer for the call
+    const read = () => ({ abstained: tally(`shadow:abstain:${reason}`), applied: tally('shadow:applied') });
+    const before = read();
+    recorder.refuse = true;
+    expect(play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario, prepared).result.success).toEqual(true);
+    recorder.refuse = false;
+    expect(read()).toEqual({ abstained: before.abstained + 1, applied: before.applied });
+
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario, prepared);
-    expect(compared.result.success).toEqual(true);
-    expect(deferred() - before).toEqual(1);
+    expect(read()).toEqual({ abstained: before.abstained + 1, applied: before.applied + 1 });
     const v2 = play(OUTCOME_PIPELINE_V2, scenario, prepared);
-    expect(v2.v1Writes).toBeGreaterThanOrEqual(1);
+    expect(v2.v1Writes).toEqual(0);
+    for (const actual of [compared, v2]) {
+      expect(actual.result).toEqual(v1.result);
+      expect(actual.record).toEqual(v1.record);
+      expect(actual.notices).toEqual(v1.notices);
+      expect(actual.graph).toEqual(v1.graph);
+    }
+  });
+});
+
+// v1 returns the dual's own stored score in the line's result (`updateTieMatchUpScore`): on the copy, the copy's
+const RESULT_HOLDS_THE_RECORD: [string, Scenario][] = [
+  [
+    'a line of a dual whose tieFormat declares its score REPORTED: v1 returns before any tally',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1, 0), winningSide: 1 }],
+      step: { target: R1(1, 1), winningSide: 2 },
+      reported: true,
+    },
+  ],
+];
+
+describe("a TEAM line whose result holds an object of the record is not recorded, and is v1's", () => {
+  it.each(RESULT_HOLDS_THE_RECORD)('%s', (_label, scenario) => {
+    const prepared = prepare(scenario, false);
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario, prepared);
+    expect(v1.result.tieMatchUpResult.score).toBeDefined();
+    const read = () => ({ abstained: tally('shadow:abstain:team'), applied: tally('shadow:applied') });
+    const before = read();
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario, prepared);
+    expect(read()).toEqual({ abstained: before.abstained + 1, applied: before.applied });
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario, prepared);
+    expect(v2.v1Writes).toEqual(v1.v1Writes);
+    for (const actual of [compared, v2]) {
+      expect(actual.result).toEqual(v1.result);
+      expect(actual.record).toEqual(v1.record);
+      expect(actual.notices).toEqual(v1.notices);
+      expect(actual.graph).toEqual(v1.graph);
+    }
   });
 });

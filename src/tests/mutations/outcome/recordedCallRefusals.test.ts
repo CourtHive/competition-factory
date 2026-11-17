@@ -9,10 +9,11 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, expect, it } from 'vitest';
 
 // constants and types
-import type { BuildViewArgs, OutcomeView, RecordCopy } from '@Mutate/matchUps/outcome/types';
+import type { BuildViewArgs, RecordCopy } from '@Mutate/matchUps/outcome/types';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import type { MatchUp, Structure } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { TEAM } from '@Constants/eventConstants';
 
 /**
  * A whole-call recording (`outcome/plan/recordedCall.ts`) is made only where v1's run on the copy is carried whole by
@@ -27,11 +28,11 @@ afterEach(() => {
   deleteNotices();
 });
 
-const plain = { isTeam: false } as OutcomeView;
-
-function prepare(drawType?: string) {
+function prepare(drawType?: string, eventType?: string) {
   mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawId: 'd', drawSize: 8, ...(drawType ? { drawType } : {}) }],
+    drawProfiles: [
+      { drawId: 'd', drawSize: 8, ...(drawType ? { drawType } : {}), ...(eventType ? { eventType } : {}) },
+    ],
     setState: true,
   });
   const tournamentRecord = tournamentEngine.getTournament().tournamentRecord;
@@ -97,16 +98,13 @@ const refused: [string, Writer][] = [
 it.each(refused)('is not made where %s', (_label, writer) => {
   const { args, before } = prepare();
   const writeOnCopy = (copy: RecordCopy) => writer(copy, args) as ReturnType<NonNullable<BuildViewArgs['writeOnCopy']>>;
-  expect(recordWholeCall({ ...args, writeOnCopy }, plain)).toBeUndefined();
+  expect(recordWholeCall({ ...args, writeOnCopy })).toBeUndefined();
   expect(canonicalJson(args.tournamentRecord)).toEqual(before);
 });
 
-it('is not made for a TEAM dual or line, or with no writer', () => {
+it('is not made with no writer', () => {
   const { args } = prepare();
-  const writeOnCopy = () => ({ ...SUCCESS });
-  expect(recordWholeCall({ ...args, writeOnCopy }, { isTeam: true } as OutcomeView)).toBeUndefined();
-  expect(recordWholeCall({ ...args, writeOnCopy }, { line: {} } as OutcomeView)).toBeUndefined();
-  expect(recordWholeCall(args, plain)).toBeUndefined();
+  expect(recordWholeCall(args)).toBeUndefined();
 });
 
 it("carries a round robin group's own fields, the group named as any structure is", () => {
@@ -116,7 +114,7 @@ it("carries a round robin group's own fields, the group named as any structure i
     groupOf(copy.drawDefinition).structureName = 'renamed';
     return { ...SUCCESS };
   };
-  const recorded = recordWholeCall({ ...args, writeOnCopy }, plain);
+  const recorded = recordWholeCall({ ...args, writeOnCopy });
   const { structureId } = groupOf(args.drawDefinition as RecordCopy['drawDefinition']);
   expect(recorded?.ops).toMatchObject([{ op: 'replaceStructureState', structureId }, { op: 'announceRecorded' }]);
   expect(canonicalJson(args.tournamentRecord)).toEqual(before);
@@ -135,7 +133,52 @@ it('is not made where v1 adds a round robin group', () => {
     structuresOf(copy.drawDefinition.structures?.[0])?.push({ structureId: 'added' } as Structure);
     return { ...SUCCESS };
   };
-  expect(recordWholeCall({ ...args, writeOnCopy }, plain)).toBeUndefined();
+  expect(recordWholeCall({ ...args, writeOnCopy })).toBeUndefined();
+  expect(canonicalJson(args.tournamentRecord)).toEqual(before);
+});
+
+it("carries a TEAM dual's own fields and each line's by an op of its own, the dual keeping its lines", () => {
+  const { args, before } = prepare(undefined, TEAM);
+  const writeOnCopy = (copy: RecordCopy) => {
+    const dual = first(copy);
+    dual.notes = 'the dual';
+    (dual.tieMatchUps?.[1] as MatchUp).notes = 'its second line';
+    return { ...SUCCESS };
+  };
+  const recorded = recordWholeCall({ ...args, writeOnCopy });
+  const dual = first(args as unknown as RecordCopy);
+  const line = dual.tieMatchUps?.[1] as MatchUp;
+  expect(recorded?.ops).toMatchObject([
+    { op: 'replaceMatchUp', matchUpId: dual.matchUpId, matchUp: { notes: 'the dual' } },
+    { op: 'replaceMatchUp', matchUpId: line.matchUpId, matchUp: { notes: 'its second line' } },
+    { op: 'announceRecorded' },
+  ]);
+  // a dual's op says nothing of its lines: a line is written, and stamps, by its own
+  const [ofDual] = recorded?.ops ?? [];
+  expect(ofDual.op === 'replaceMatchUp' && 'tieMatchUps' in ofDual.matchUp).toEqual(false);
+  expect(canonicalJson(args.tournamentRecord)).toEqual(before);
+
+  // folded, the dual keeps the lines it holds, the very objects, and each takes what its op carries
+  const folded = structuredClone(args.drawDefinition) as RecordCopy['drawDefinition'];
+  const lines = [...(first({ drawDefinition: folded } as RecordCopy).tieMatchUps ?? [])];
+  expect(applyOutcomeOps(folded, recorded?.ops ?? []).error).toBeUndefined();
+  const written = first({ drawDefinition: folded } as RecordCopy);
+  expect(written.notes).toEqual('the dual');
+  expect(written.tieMatchUps?.length).toEqual(lines.length);
+  expect(written.tieMatchUps?.every((held, at) => held === lines[at])).toEqual(true);
+  expect(written.tieMatchUps?.map((held) => held.notes)).toEqual(
+    lines.map((_line, at) => (at === 1 ? 'its second line' : undefined)),
+  );
+});
+
+it('is not made where v1 replaces the list a dual holds its lines in', () => {
+  const { args, before } = prepare(undefined, TEAM);
+  const writeOnCopy = (copy: RecordCopy) => {
+    const dual = first(copy);
+    dual.tieMatchUps = [...(dual.tieMatchUps ?? [])];
+    return { ...SUCCESS };
+  };
+  expect(recordWholeCall({ ...args, writeOnCopy })).toBeUndefined();
   expect(canonicalJson(args.tournamentRecord)).toEqual(before);
 });
 
@@ -147,7 +190,7 @@ it("puts the call's own parameters back where v1 wrote into them, and is not mad
     (args.request.score as { sets?: unknown[] }).sets?.push({ setNumber: 2 });
     return { ...SUCCESS };
   };
-  expect(recordWholeCall({ ...args, writeOnCopy }, plain)).toBeUndefined();
+  expect(recordWholeCall({ ...args, writeOnCopy })).toBeUndefined();
   expect(args.request.score).toBe(score);
   expect(args.request.score?.sets).toBe(sets);
   expect(args.request.score?.sets).toEqual([{ setNumber: 1 }]);
@@ -160,7 +203,7 @@ it('returns what v1 changed in the draw as recorded ops, with what it returned, 
     first(copy).notes = 'written';
     return written;
   };
-  const recorded = recordWholeCall({ ...args, writeOnCopy }, plain);
+  const recorded = recordWholeCall({ ...args, writeOnCopy });
   expect(recorded?.written).toBe(written);
   expect(recorded?.ops.map((op) => op.op)).toEqual(['replaceMatchUp', 'announceRecorded']);
   expect(canonicalJson(args.tournamentRecord)).toEqual(before);

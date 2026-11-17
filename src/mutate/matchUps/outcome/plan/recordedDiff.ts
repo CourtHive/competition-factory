@@ -1,7 +1,7 @@
 import { DEFERRED_PAYLOAD, getCapturedStamps, getNoticeBuffer, getNoticeState } from '@Global/state/globalState';
 import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { deferredQueryBinding } from '@Mutate/notifications/drawNotifications';
-import { DRAW_CHILDREN, RECORDED_ENTITY, recordedName, STRUCTURE_CHILDREN } from '../ops';
+import { DRAW_CHILDREN, MATCHUP_CHILDREN, RECORDED_ENTITY, recordedName, STRUCTURE_CHILDREN } from '../ops';
 import { isObject } from '@Tools/objects';
 
 // constants and types
@@ -14,7 +14,7 @@ import type { Recording } from '../recording';
 /**
  * RECORDED (CA, 2026-11-16): what the two recorders share (`recordedCascade.ts`, `recordedCall.ts`). v1's writers run on
  * a COPY of the record; what the copy held before is read here, and what the run changed is returned as the recorded
- * ops: each matchUp it wrote, each structure's own fields (a round robin's groups are structures of their own, and a
+ * ops: each matchUp it wrote (a dual's own fields, and each line's), each structure's own fields (a round robin's groups are structures of their own, and a
  * group's tally is among its fields), the draw's own fields, and the notices it buffered.
  */
 
@@ -145,7 +145,9 @@ function unchanged(state: object, before?: Read): boolean {
 export type RecordedBefore = ReturnType<typeof readBefore>;
 export function readBefore(drawDefinition: DrawDefinition) {
   return {
-    matchUps: new Map(drawMatchUps(drawDefinition).map((stored) => [stored.matchUpId, read(stored)])),
+    matchUps: new Map(
+      drawMatchUps(drawDefinition).map((stored) => [stored.matchUpId, read(ownState(stored, MATCHUP_CHILDREN))]),
+    ),
     structures: new Map(
       drawStructures(drawDefinition).map((s) => [s.structureId, read(ownState(s, STRUCTURE_CHILDREN))]),
     ),
@@ -175,12 +177,15 @@ export function recordedOps({
     recording.source(recordedName(op), entity);
     ops.push(op);
   };
-  for (const stored of drawMatchUps(drawDefinition))
-    if (!unchanged(stored, before.matchUps.get(stored.matchUpId)))
+  // a dual's own fields, then each of its lines': a line is a matchUp of its own, and stamps as one
+  for (const stored of drawMatchUps(drawDefinition)) {
+    const state = ownState(stored, MATCHUP_CHILDREN);
+    if (!unchanged(state, before.matchUps.get(stored.matchUpId)))
       replace(
-        { op: 'replaceMatchUp', matchUpId: stored.matchUpId, matchUp: structuredClone(stored), recording },
+        { op: 'replaceMatchUp', matchUpId: stored.matchUpId, matchUp: structuredClone(state) as MatchUp, recording },
         stored,
       );
+  }
   for (const s of drawStructures(drawDefinition)) {
     const state = ownState(s, STRUCTURE_CHILDREN);
     if (!unchanged(state, before.structures.get(s.structureId)))

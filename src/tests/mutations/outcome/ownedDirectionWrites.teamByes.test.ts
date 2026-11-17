@@ -1,4 +1,4 @@
-import { findTarget, play, PLAIN_BYE_ARRIVALS, plainByeIsOwned } from '@Tests/testHarness/outcome/directionFixtures';
+import { findTarget, play, PLAIN_BYE_ARRIVALS } from '@Tests/testHarness/outcome/directionFixtures';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { registerTestSeedIdentity } from '@Tests/testHarness/seedMathRandom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -67,7 +67,7 @@ describe('C20 deciding TEAM lines send their loser through BYEs', () => {
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, lineScenario, { prepared });
     const v2 = play(OUTCOME_PIPELINE_V2, lineScenario, { prepared });
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
-    expect(v2.v1Writes === 0).toEqual(plainByeIsOwned(scenario));
+    expect(v2.v1Writes).toEqual(0);
     for (const actual of [compared, v2]) {
       expect(actual.results).toEqual(v1.results);
       expect(actual.record).toEqual(v1.record);

@@ -8,7 +8,7 @@ import { stampedInThisCall } from '../ops';
 import { Recording } from '../recording';
 
 // constants and types
-import type { BuildViewArgs, OutcomeView, RecordCopy } from '../types';
+import type { BuildViewArgs, RecordCopy } from '../types';
 import type { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
 import type { ResultType } from '@Types/factoryTypes';
 import type { OutcomeOp } from '../ops';
@@ -20,16 +20,27 @@ import type { OutcomeOp } from '../ops';
  * changed in the draw is returned as the recorded ops (`recordedDiff.ts`), with what it returned. The plan has no other
  * ops. Nothing here touches the stored record or the engine's notice state.
  *
- * Undefined, and the call stays v1's, wherever the copy's run is not known to be carried whole by those ops: a TEAM
- * dual or line; more than one tournament record; v1 returned an error, threw, or stopped its forward settle at the
- * bound; it wrote outside the draw, changed the call's own parameters, or added or moved a matchUp or a structure, a
- * round robin's group among them; it buffered a notice apply could not raise again; or its result holds an object of
- * the copy.
+ * Undefined, and the call stays v1's, wherever the copy's run is not known to be carried whole by those ops: more than
+ * one tournament record; v1 returned an error, threw, or stopped its forward settle at the bound; it wrote outside the
+ * draw, changed the call's own parameters, or added or moved a matchUp or a structure, a round robin's group or a
+ * dual's line among them; it buffered a notice apply could not raise again; or its result holds an object of the copy.
+ *
+ * A TEAM dual's call and a line's are recorded as any (batch 4b). v1 writes the line, its dual's tally
+ * (`updateTieMatchUpScore`), the dual's own direction where the line decides or un-decides it, and the line-ups it
+ * carries onto the next duals' sides and the draw's `lineUps` extension: all of it in the draw, so all of it ops.
  */
 export type RecordedCall = { ops: OutcomeOp[]; written: ResultType };
 
-/** every structure and matchUp of the draw, where it stands */
-const placed = (drawDefinition: DrawDefinition) => [...drawStructures(drawDefinition), ...drawMatchUps(drawDefinition)];
+/**
+ * every structure and matchUp of the draw, where it stands; and the list each dual holds its lines in, which a recorded
+ * dual keeps (`MATCHUP_CHILDREN`): a run that replaces it is not carried
+ */
+const placed = (drawDefinition: DrawDefinition): object[] => [
+  ...drawStructures(drawDefinition),
+  ...drawMatchUps(drawDefinition).flatMap((matchUp) =>
+    matchUp.tieMatchUps ? [matchUp, matchUp.tieMatchUps] : [matchUp],
+  ),
+];
 
 /** v1's forward settle stopped at its bound: it warns, and leaves work this plan would not show */
 const unsettled = (written: ResultType) =>
@@ -45,9 +56,9 @@ function holdsCopy(recording: Recording, written: unknown): boolean {
   return visit(written);
 }
 
-export function recordWholeCall(args: BuildViewArgs, view: OutcomeView): RecordedCall | undefined {
+export function recordWholeCall(args: BuildViewArgs): RecordedCall | undefined {
   const { writeOnCopy, request } = args;
-  if (!args.drawDefinition || !writeOnCopy || view.isTeam || view.line) return undefined;
+  if (!args.drawDefinition || !writeOnCopy) return undefined;
   const stampedBefore = stampedInThisCall(args.drawDefinition);
   const requested = JSON.stringify(request);
   const kept = cloneState(request);

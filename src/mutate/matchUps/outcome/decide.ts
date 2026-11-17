@@ -100,7 +100,7 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
     project: projectOutcome(args, view),
     landing: landingView(args, view),
     record: (prefix) => recordDoubleExitCascade({ ...args, request: planned }, prefix),
-    recordWhole: () => recordWholeCall(args, view),
+    recordWhole: () => recordWholeCall(args),
     dual: dualCallFor(route, args, view),
     request: planned,
     write: plan,
