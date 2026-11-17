@@ -403,7 +403,7 @@ if (roundVisibility) {
 **Returns:**
 
 ```ts
-Record<number, RoundVisibility> | undefined;
+type Returns = Record<number, RoundVisibility> | undefined;
 
 interface RoundVisibility {
   hidden?: boolean; // true when roundNumber > roundLimit
