@@ -1,5 +1,6 @@
 import type { MatchUpsMap, PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import type { ErrorType } from '@Constants/errorConditionConstants';
+import type { RecordDraws } from '@Tools/replayedDraws';
 import type { OutcomeOp, TemporalProjection } from './ops';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { WorkingView } from './overlay';
@@ -465,6 +466,12 @@ export type BuildViewArgs = {
   request: OutcomeRequest;
   /** RECORDED: v1's whole write for this call, run on a copy of the record (`plan/recordedCall.ts`) */
   writeOnCopy?: WriteOnCopy;
+  /**
+   * RECORDED: runs the cascade recorder's write on a copy with its random draws kept, so that v1's run on the stored
+   * record, where it follows, is handed the same draws (`tools/replayedDraws.ts`); not given it, it records nothing.
+   * `writeOnCopy` keeps its own.
+   */
+  recordDraws?: RecordDraws;
 };
 
 /** the record a recorder copies: what a call is handed */

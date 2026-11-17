@@ -33,10 +33,19 @@ import type { OutcomeOp } from '../ops';
  * copy as `attemptToSetMatchUpStatus` runs it after `scoreModification`, and what it changed is returned as ops: each
  * matchUp it wrote, each structure's and the draw's own fields, and the notices it buffered. Nothing here touches the
  * stored record or the engine's notice state. Undefined where the module refuses, or writes outside the draw.
+ *
+ * The settle that follows the module can direct a winner as any call does (`settleRederivedDoubleExits` ->
+ * `progressExitStatus` -> `setMatchUpState`), a qualifier's random seat among it, so the copy's random draws are kept
+ * (`args.recordDraws`) for v1's run on the stored record, where one follows. Undefined, before anything runs, where
+ * they cannot be kept.
  */
 export type RecordCascade = (prefix: OutcomeOp[]) => OutcomeOp[] | undefined;
 
 export function recordDoubleExitCascade(args: BuildViewArgs, prefix: OutcomeOp[]): OutcomeOp[] | undefined {
+  return args.recordDraws?.(() => recordOnCopy(args, prefix));
+}
+
+function recordOnCopy(args: BuildViewArgs, prefix: OutcomeOp[]): OutcomeOp[] | undefined {
   const { request } = args;
   const matchUpId = request.matchUpId as string;
   if (!args.drawDefinition) return undefined;

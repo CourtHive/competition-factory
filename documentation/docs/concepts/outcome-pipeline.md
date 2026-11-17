@@ -1664,6 +1664,28 @@ and v1 is not asked to write the stored record, but the write it applies is the 
 `differential` v1 therefore runs twice for a recorded call, on the copy and on the stored record; under `v2` it runs
 once, on the copy, and the call pays for the copy and the diff besides.
 
+**A recorded call draws once.** v1 draws at random inside some calls: a qualifying final given a winner seats its
+qualifier in a main draw qualifier seat picked at random (`placeQualifier`), and an id v1 mints is drawn too (`UUID`).
+Every such draw is ambient (`randomSource()`: a seeded call's stream, the configured source or `Math.random`);
+`setMatchUpStatus` hands v1 no `random` of the call's own, so there is no other stream to keep. One reader per call
+(`tools/replayedDraws.ts`, made in `setMatchUpStatus`) stands between v1 and that source for every run v1 makes for the
+call: the whole call on a copy (`writeOnCopy`), the recorded cascade's module and settle on a copy (`recordDraws`), and
+v1 on the stored record where one follows (`differential`, or a recording refused, dropped or discarded). Each run reads
+the call's draws from the first: those an earlier run took are handed back in order, a source that threw throws the
+same error again, and the source itself is read only past their end. So v1 on the stored record makes the choices v1
+made on the copy, the source is read exactly as often as v1 alone reads it, and what is drawn after the call is what
+v1 alone leaves to be drawn, in `v1`, `v2` and `differential` alike. Under `v2` with the recording applied nothing more
+is read. Under `v1` no copy is made, nothing is kept, and v1 reads the source itself.
+
+The reader is scoped as the call's stream and as the configured source both (`withAmbientRandomSource`), so it stands
+whatever the state provider: one without the call-stream hooks reads the configured source, which is process-wide and
+safe to replace here because every run is synchronous (the async engine awaits around `setMatchUpStatus`, never inside
+it). Where a provider hands out a call stream it will not let be replaced, the reader cannot stand: the recorder
+refuses before v1 runs on the copy, no recording is made, and the call is v1's, reading the provider's stream itself.
+Each run reads through a function of its own, since `UUID` refuses an id one function mints twice; the ids a recorded
+call mints are therefore not entered in the source's own repeat window (`refuseRepeatedId`), as a composed write's are
+not (`tools/composeThenWrite.ts`).
+
 **Recorded calls (batch 4a).** The whole-call recording answers five more of the planners' abstentions: a route or a
 link they do not plan (`route`, `link`), the client's positional codes (`status-codes`), provenance on the call's
 matchUp (`provenance`), and LEGACY or BRIDGE write mode (`write-mode`). It is asked for and made as above, under the

@@ -181,6 +181,15 @@ export async function withCallRandomSourceAsync<T>(
 }
 
 /**
+ * Runs `fn` with `source` as the AMBIENT source: the call's stream and the configured source both, so that
+ * `randomSource()` returns it whatever the provider. A provider without the call-stream hooks reads the configured
+ * source instead. For a synchronous `fn` only: the configured source is process-wide.
+ */
+export function withAmbientRandomSource<T>(source: RandomFunction, fn: () => T): T {
+  return withCallRandomSource(source, () => withRandomSource(source, fn));
+}
+
+/**
  * The function to draw randomness from right now: a seeded call's stream, then the configured source, then
  * `Math.random`. Read at the call, never captured at import.
  */
