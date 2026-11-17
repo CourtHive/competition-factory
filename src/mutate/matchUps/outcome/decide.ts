@@ -1,3 +1,5 @@
+import { recordDoubleExitCascade } from './plan/recordedCascade';
+import { recordWholeCall } from './plan/recordedCall';
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
 import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
@@ -97,6 +99,8 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
     rebuild: rebuildView(args, view, planned),
     project: projectOutcome(args, view),
     landing: landingView(args, view),
+    record: (prefix) => recordDoubleExitCascade({ ...args, request: planned }, prefix),
+    recordWhole: () => recordWholeCall(args, view),
     dual: dualCallFor(route, args, view),
     request: planned,
     write: plan,
@@ -186,6 +190,8 @@ function landingView(args: BuildViewArgs, view: OutcomeView): LandingView {
 export function decideOutcomeV2(args: BuildViewArgs): {
   refused?: ResultType;
   owned?: ResultType;
+  /** `owned` is v1's whole answer for a call recorded on a copy (`plan/recordedCall.ts`) */
+  recorded?: boolean;
   compare?: (v1Result: ResultType) => void;
   runV1?: <T>(run: () => T) => T;
 } {
@@ -202,11 +208,12 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     // S2: a call whose complete plan is a shape v2 owns is written by v2, and v1 is not asked (F1 (a), fail-closed)
     const { outcome, phases, route } = planCall(args, view);
     if (!outcome.ops || !OWNED_SHAPES.has(outcome.shape)) return {};
-    return {
-      owned: phases
-        ? applyTemporalPhases(args, phases, outcome.shape)
-        : applyOwnedPlan({ args, ops: outcome.ops, shape: outcome.shape, route }),
-    };
+    const applied = phases
+      ? applyTemporalPhases(args, phases, outcome.shape)
+      : applyOwnedPlan({ args, ops: outcome.ops, shape: outcome.shape, route });
+    // a call recorded whole returns what v1 returned for it
+    if (applied.error || !outcome.recordedResult) return { owned: applied };
+    return { owned: outcome.recordedResult, recorded: true };
   }
   if (mode !== OUTCOME_PIPELINE_DIFFERENTIAL) return {};
   // § 3.1.1's index oracle, read before v1 writes: the index of the draw as the call found it against the view's hydration

@@ -33,6 +33,7 @@ export function directLoser(params): ResultType {
     sourceMatchUpStatus,
     loserDrawPosition,
     tournamentRecord,
+    sharesWinnerTarget,
     loserTargetLink,
     drawDefinition,
     loserMatchUp,
@@ -216,6 +217,7 @@ export function directLoser(params): ResultType {
   });
 
   propagateLoserLineUp({
+    sharesWinnerTarget,
     projectedWinningSide,
     tournamentRecord,
     drawDefinition,
@@ -386,6 +388,7 @@ function propagateLoserSeed({
 }
 
 function propagateLoserLineUp({
+  sharesWinnerTarget,
   projectedWinningSide,
   tournamentRecord,
   drawDefinition,
@@ -402,7 +405,11 @@ function propagateLoserLineUp({
 
   const { roundNumber, eventId } = loserMatchUp;
   const { roundPosition } = dualMatchUp;
-  const targetSideNumber = roundNumber === 1 ? 2 - (roundPosition % 2) : 1;
+  // IN A DECIDER THE LOSER SITS SECOND. The first-round reckoning below is a consolation feed's, where each source
+  // matchUp owns one side; a final sends BOTH its sides to its Decider, and reckoned so its loser's line-up landed on
+  // side 1, over the winner's (CA, 2026-11-15: rendered, Team 3 stood on side 1 holding Team 8's line-up).
+  const consolationSide = roundNumber === 1 ? 2 - (roundPosition % 2) : 1;
+  const targetSideNumber = sharesWinnerTarget ? 2 : consolationSide;
 
   const targetMatchUp = matchUpsMap?.drawMatchUps?.find(({ matchUpId }) => matchUpId === loserMatchUp.matchUpId);
 

@@ -39,6 +39,14 @@ engine.publishOrderOfPlay({
   scheduledDates: ['2024-06-15'],
   embargo: '2024-06-14T18:00:00Z', // Visible after 6pm the day before
 });
+
+// A release time per date — each day appears on its own clock
+engine.publishOrderOfPlay({
+  dateEmbargoes: {
+    '2024-06-15': '2024-06-14T18:00:00Z',
+    '2024-06-16': '2024-06-15T18:00:00Z',
+  },
+});
 ```
 
 See [Embargo and Scheduled Rounds](./publishing-embargo.md) for details on how embargo enforcement works across all publishing levels.

@@ -156,7 +156,8 @@ describe('C14 standing reservations preserve their original stored records', () 
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
     for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
       const compared = play(mode, scenario);
-      expect(compared.v1Writes).toEqual(1);
+      // the double correction is recorded whole (batch 3); the rest plan ops that leave settle work, v1's
+      expect(compared.v1Writes).toEqual(mode === OUTCOME_PIPELINE_V2 && _label.endsWith('/double correction') ? 0 : 1);
       expect(compared.results).toEqual(v1.results);
       expect(compared.record).toEqual(v1.record);
       expect(compared.notices).toEqual(v1.notices);

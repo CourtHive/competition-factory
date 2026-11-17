@@ -36,9 +36,12 @@ const writes = vi.hoisted(() => ({
 }));
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
   const actual: any = await importOriginal();
+  const { inDraftWrites } = await import('@Global/state/withDraftWrites');
   return {
     ...actual,
     setMatchUpState: (...args: any[]) => {
+      // a recorder's run on its working copy is not a write of the stored record
+      if (inDraftWrites()) return actual.setMatchUpState(...args);
       if (!writes.count) {
         writes.firstDraw = canonicalJson(args[0].drawDefinition);
         writes.stampKinds = getMatchUpsMap({ drawDefinition: args[0].drawDefinition }).drawMatchUps.map((m) => ({

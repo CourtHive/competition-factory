@@ -11,9 +11,10 @@ import { isAnyExit } from '@Validators/isExit';
 
 // constants and types
 import { BYE, DEAD_RUBBER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
+import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { ResultType } from '@Types/factoryTypes';
+import type { HydratedMatchUp } from '@Types/hydrated';
 
 /**
  * A DECIDER IS PLAYED ONLY IF IT IS NEEDED, and says so when it is not.
@@ -72,46 +73,57 @@ import { ResultType } from '@Types/factoryTypes';
  * flips of the route differential (punch-list P18). With the seats settled here, by the rule rather
  * than by relabelling, both routes leave the same decider and the allowance for them is gone.
  */
-export function reconcileDecider({
-  winningSideBefore,
-  tournamentRecord,
-  deciderChanged,
-  drawDefinition,
-  matchUpId,
-  event,
-}: {
+type DeciderArgs = {
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
   winningSideBefore?: number;
   deciderChanged?: boolean;
   matchUpId?: string;
   event?: Event;
-}): ResultType {
-  if (!drawDefinition || !matchUpId) return { ...SUCCESS };
+};
 
-  const matchUpsMap = getMatchUpsMap({ drawDefinition });
-  const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
+/** a reading of the draw its caller already holds, so asking whether there is work costs no hydration of its own */
+type DeciderReading = { inContextDrawMatchUps?: HydratedMatchUp[]; matchUpsMap?: MatchUpsMap };
+
+/**
+ * What the rule asks of one triggered final, read and not yet done: the seats its finalists take (`seats`, absent
+ * where they already stand as the rule puts them or the decider is not two plain seats) and the status its decider
+ * is written to (`matchUpStatus`, absent where it stands so with no result, or holds what the cascade placed).
+ * Undefined where the final has no decider to settle. Shared by the pass and by its has-work predicate, so the two
+ * cannot drift.
+ */
+function resolveDecider(
+  { winningSideBefore, deciderChanged, drawDefinition, matchUpId }: DeciderArgs,
+  reading?: DeciderReading,
+) {
+  if (!drawDefinition || !matchUpId) return undefined;
+
+  const matchUpsMap = reading?.matchUpsMap ?? getMatchUpsMap({ drawDefinition });
+  const inContextDrawMatchUps =
+    reading?.inContextDrawMatchUps ??
+    getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ??
+    [];
   const final = inContextDrawMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
-  if (!final || final.collectionId || (final.winningSide === winningSideBefore && !deciderChanged))
-    return { ...SUCCESS };
+  if (!final || final.collectionId || (final.winningSide === winningSideBefore && !deciderChanged)) return undefined;
 
   const targetData = positionTargets({ inContextDrawMatchUps, drawDefinition, matchUpId });
-  if (targetData.error) return decorateResult({ result: targetData, stack: 'reconcileDecider' });
+  if (targetData.error) return { error: decorateResult({ result: targetData, stack: 'reconcileDecider' }) };
   const { winnerMatchUp, loserMatchUp } = targetData.targetMatchUps ?? {};
   const feedsOneMatchUp = winnerMatchUp?.matchUpId && winnerMatchUp.matchUpId === loserMatchUp?.matchUpId;
-  if (!feedsOneMatchUp || winnerMatchUp.structureId === final.structureId) return { ...SUCCESS };
+  if (!feedsOneMatchUp || winnerMatchUp.structureId === final.structureId) return undefined;
 
   const decider = matchUpsMap.drawMatchUps.find((matchUp) => matchUp.matchUpId === winnerMatchUp.matchUpId);
-  if (!decider) return { ...SUCCESS };
+  if (!decider) return undefined;
 
   const participantOn = (sideNumber?: number) =>
     (final.sides ?? []).find((side) => side.sideNumber === sideNumber)?.participantId;
   const winnerId = participantOn(final.winningSide);
   const loserId = final.winningSide ? participantOn(3 - final.winningSide) : undefined;
 
-  if (winnerId || !final.winningSide) {
-    seatFinalists({ structureId: winnerMatchUp.structureId, drawDefinition, winnerId, loserId });
-  }
+  const seats =
+    winnerId || !final.winningSide
+      ? unseatedFinalists({ structureId: winnerMatchUp.structureId, drawDefinition, winnerId, loserId })
+      : undefined;
 
   const lossesOutsideTheDecider = (participantId?: string) =>
     inContextDrawMatchUps.filter(
@@ -124,30 +136,49 @@ export function reconcileDecider({
         ),
     ).length;
   const needed = !!loserId && lossesOutsideTheDecider(loserId) < 2;
-  const matchUpStatus = winnerId && !needed ? DEAD_RUBBER : TO_BE_PLAYED;
+  const matchUpStatus: MatchUpStatusUnion = winnerId && !needed ? DEAD_RUBBER : TO_BE_PLAYED;
 
   const holdsAResult = !!decider.winningSide || !!decider.score?.sets?.length;
-  if (!holdsAResult && decider.matchUpStatus === matchUpStatus) return { ...SUCCESS };
-
   // WHAT THE CASCADE PLACED IS NOT OVERWRITTEN. A final that becomes a double exit sends the decider
   // a BYE (the default policy) or a produced exit (the policy off), and that is the decider's whole
   // record: nobody is coming from that final. Writing `TO_BE_PLAYED` over it said the opposite.
   // Measured 2026-09-30 by `correctionDivergenceDeep`: a DOUBLE_ELIMINATION final corrected from a
   // WALKOVER to a DOUBLE_WALKOVER left the decider `TO_BE_PLAYED` where the direct entry left it
   // `BYE`, in four cells. A result is still destroyed, as the rule says; a placement stays.
-  if (!holdsAResult && (decider.matchUpStatus === BYE || isAnyExit(decider.matchUpStatus))) return { ...SUCCESS };
+  const stands =
+    !holdsAResult &&
+    (decider.matchUpStatus === matchUpStatus || decider.matchUpStatus === BYE || isAnyExit(decider.matchUpStatus));
+  return { decider, seats, matchUpStatus: stands ? undefined : matchUpStatus };
+}
+
+/**
+ * The pass would seat or write for this trigger: its has-work predicate, exact (`resolveDecider`). Given the caller's
+ * own reading of the draw it asks nothing more of it (`verify:hydrations`).
+ */
+export function deciderHasWork(args: DeciderArgs, reading?: DeciderReading): boolean {
+  const resolved = resolveDecider(args, reading);
+  return !!resolved && (!!resolved.error || !!resolved.seats || !!resolved.matchUpStatus);
+}
+
+export function reconcileDecider(args: DeciderArgs): ResultType {
+  const { tournamentRecord, drawDefinition, event } = args;
+  const resolved = resolveDecider(args);
+  if (!resolved || !drawDefinition) return { ...SUCCESS };
+  if (resolved.error) return resolved.error;
+  resolved.seats?.();
+  if (!resolved.matchUpStatus || !resolved.decider) return { ...SUCCESS };
 
   // RETURNED, not dropped. This was a bare call and the function returned nothing, so a write that
   // failed left the decider as it was and `setMatchUpStatus` reported success.
   return modifyMatchUpScore({
-    matchUpId: decider.matchUpId,
+    matchUpId: resolved.decider.matchUpId,
     removeWinningSide: true,
     context: 'reconcileDecider',
     removeScore: true,
-    matchUp: decider,
+    matchUp: resolved.decider,
     tournamentRecord,
     drawDefinition,
-    matchUpStatus,
+    matchUpStatus: resolved.matchUpStatus,
     event,
   });
 }
@@ -276,7 +307,7 @@ function deciderChangedByCascade({
  * written. Entered directly, the decider is empty until its final is decided. A final decided for a seat its winner
  * has not reached yet (a pending exit) is decided: the links seat its loser, and that is left as it stands.
  */
-function seatFinalists({
+function unseatedFinalists({
   drawDefinition,
   structureId,
   winnerId,
@@ -286,17 +317,19 @@ function seatFinalists({
   structureId: string;
   winnerId?: string;
   loserId?: string;
-}) {
+}): (() => void) | undefined {
   const { structure } = findStructure({ drawDefinition, structureId });
   const assignments = [...(getPositionAssignments({ structure }).positionAssignments ?? [])].sort(
     (a, b) => a.drawPosition - b.drawPosition,
   );
   // a decider is one matchUp between two seats; any other shape is left as the links made it
-  if (assignments.length !== 2 || assignments.some((assignment) => assignment.bye)) return;
-  if (assignments[0].participantId === winnerId && assignments[1].participantId === loserId) return;
+  if (assignments.length !== 2 || assignments.some((assignment) => assignment.bye)) return undefined;
+  if (assignments[0].participantId === winnerId && assignments[1].participantId === loserId) return undefined;
 
-  if (winnerId) assignments[0].participantId = winnerId;
-  else delete assignments[0].participantId;
-  if (winnerId && loserId) assignments[1].participantId = loserId;
-  else delete assignments[1].participantId;
+  return () => {
+    if (winnerId) assignments[0].participantId = winnerId;
+    else delete assignments[0].participantId;
+    if (winnerId && loserId) assignments[1].participantId = loserId;
+    else delete assignments[1].participantId;
+  };
 }

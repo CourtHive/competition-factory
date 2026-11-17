@@ -68,10 +68,12 @@ vi.mock('@Mutate/drawDefinitions/positionGovernor/doubleExitAdvancement', async 
 
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
   const actual: any = await importOriginal();
+  const { inDraftWrites } = await import('@Global/state/withDraftWrites');
   return {
     ...actual,
     setMatchUpState: (...args: any[]) => {
-      observed.writes++;
+      // a write to v2's working copy (a recorded cascade) is not v1 being asked
+      if (!inDraftWrites()) observed.writes++;
       return actual.setMatchUpState(...args);
     },
   };
@@ -462,7 +464,7 @@ it.each(['missing', 'own-fold', 'second-fold'] as const)(
   (failure) => {
     const prepared = prepare(recipes.find(([label]) => label === 'two BYE chains join')![1]);
     const reference = replay('v1', prepared);
-    expect(replay('v2', prepared, failure)).toEqual(reference);
+    expect(replay('v2', prepared, failure)).toEqual({ ...reference, writes: 0 });
     expect(observed.projections).toBe(1);
     expect(observed.pure).toEqual([true]);
   },
@@ -471,7 +473,7 @@ it.each(['missing', 'own-fold', 'second-fold'] as const)(
 it('a nested child fold failure leaves the live draw unchanged and falls back as one call', () => {
   const prepared = prepare(recipes.find(([label]) => label.startsWith('a carried home serves'))![1]);
   const reference = replay('v1', prepared);
-  expect(replay('v2', prepared, 'child-fold')).toEqual(reference);
+  expect(replay('v2', prepared, 'child-fold')).toEqual({ ...reference, writes: 0 });
   expect(observed.pure).toEqual([true]);
   expect(observed.batches.some((batch) => batch.some((op) => op.op === 'setMatchUpBye'))).toBe(true);
 });
@@ -494,7 +496,7 @@ it('a foreign stale origin is settled before the local carry can replay', () => 
     .events[0].drawDefinitions[0].structures.flatMap((structure: any) => structure.matchUps)
     .find((entry: any) => entry.matchUpId === foreign.matchUpId);
   expect(settled.sideExitProvenance).toBeUndefined();
-  expect(replay('v2', prepared)).toEqual(reference);
+  expect(replay('v2', prepared)).toEqual({ ...reference, writes: 0 });
   expect(observed.pure).toEqual([true]);
 });
 
@@ -508,7 +510,7 @@ it.each([false, true])(
     expect(matchUpsOf(south)!.filter((entry) => entry.drawPositions?.includes(5))).toHaveLength(3);
     const reference = replay('v1', prepared);
     expect(reference.result.success).toBe(true);
-    expect(replay('v2', prepared)).toEqual(reference);
+    expect(replay('v2', prepared)).toEqual({ ...reference, writes: 0 });
     expect(observed.pure).toEqual([true]);
   },
 );

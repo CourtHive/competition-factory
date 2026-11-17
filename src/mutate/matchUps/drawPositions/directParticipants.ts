@@ -204,6 +204,8 @@ function processDrawPositionDirecting({
       tournamentRecord,
       loserTargetLink,
       drawDefinition,
+      // a Decider: the matchUp the winner is sent to as well, where the loser takes the second seat
+      sharesWinnerTarget: !!winnerMatchUp?.matchUpId && winnerMatchUp.matchUpId === loserMatchUp.matchUpId,
       loserMatchUp,
       winningSide,
       matchUpsMap,

@@ -194,7 +194,7 @@ describe('C19 controls: the loser also meets a pending produced exit', () => {
       if (scenario.drawProfile.drawType !== FIRST_MATCH_LOSER_CONSOLATION) return expectOwnedArrival(scenario);
       const v1 = play(OUTCOME_PIPELINE_V1, scenario);
       expect(v1.results.every((result: any) => result.success)).toEqual(true);
-      const deferred = () => getDifferentialTally()['shadow:abstain:cascade']?.deferred ?? 0;
+      const deferred = () => getDifferentialTally()['shadow:applied']?.compared ?? 0;
       const before = deferred();
       const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
       expect(compared.results).toEqual(v1.results);
@@ -202,7 +202,7 @@ describe('C19 controls: the loser also meets a pending produced exit', () => {
       expect(compared.notices).toEqual(v1.notices);
       expect(deferred()).toEqual(before + 1);
       const v2 = play(OUTCOME_PIPELINE_V2, scenario);
-      expect(v2.v1Writes).toBeGreaterThan(0);
+      expect(v2.v1Writes).toEqual(0);
       expect(v2.results).toEqual(v1.results);
       expect(v2.record).toEqual(v1.record);
       expect(v2.notices).toEqual(v1.notices);

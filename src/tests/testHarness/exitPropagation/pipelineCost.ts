@@ -1,3 +1,4 @@
+import { inDraftWrites } from '@Global/state/withDraftWrites';
 import { inPrecheckOracle } from '@Mutate/matchUps/matchUpStatus/precheckOracleMark';
 import { performance } from 'node:perf_hooks';
 
@@ -127,6 +128,15 @@ const FRAME = /^\s*at (?:async )?(?:(.+?) \()?(?:file:\/\/)?([^()]+?):\d+:\d+\)?
  * greps for. Frames with no source file (`Array.forEach`, `new Promise`) and the recorder's own are
  * skipped, so an arrow passed to `forEach` reads as the function that called `forEach`.
  */
+/** the one site a recorded cascade's reads are filed under: v1's module and settle passes run on v2's working copy */
+export const RECORDED_CASCADE_SITE = 'recorded@recordedCascade';
+
+function siteCaller(): string {
+  if (inPrecheckOracle()) return 'precheckOracle@indexPrecheck';
+  if (inDraftWrites()) return RECORDED_CASCADE_SITE;
+  return callerOf(new Error('site').stack);
+}
+
 export function callerOf(stack: string | undefined): string {
   const frames: string[] = [];
   for (const line of (stack ?? '').split('\n').slice(1)) {
@@ -162,7 +172,8 @@ export function counted<T extends (...args: any[]) => any>(
     const captureStarted = performance.now();
     const key = siteKey({
       // the settle precheck's oracle (agreement read, completeness run) is filed as one site, whatever the stack
-      caller: inPrecheckOracle() ? 'precheckOracle@indexPrecheck' : callerOf(new Error('site').stack),
+      // and so is everything a recorded cascade reads on v2's working copy (`outcome/plan/recordedCascade.ts`)
+      caller: siteCaller(),
       nested: state.countedDepth > 0,
       inContext: inContextOf(...args),
       fn,

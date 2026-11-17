@@ -126,11 +126,10 @@ describe('C26N a named BYE advance retains event identity through a later quiet 
           },
         ],
       };
-      // DOUBLES 8/5 has a different occupied loser seat; its carried program is still owed.
-      const owned = eventType !== 'DOUBLES';
+      // DOUBLES 8/5 has a different occupied loser seat: its carried program is recorded off the double-exit module
       const before = getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0;
-      expect(compareUndirectedWinner(scenario, owned, prepared).v1.results[0].success).toEqual(true);
-      expect((getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0) - before).toEqual(Number(!owned));
+      expect(compareUndirectedWinner(scenario, true, prepared).v1.results[0].success).toEqual(true);
+      expect((getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0) - before).toEqual(0);
     },
   );
 
@@ -161,7 +160,9 @@ describe('C26N a named BYE advance retains event identity through a later quiet 
       ],
     };
     const before = getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0;
-    expect(compareUndirectedWinner(scenario, !policyOff, prepared).v1.results[0].success).toEqual(true);
-    expect((getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0) - before).toEqual(Number(policyOff));
+    // policy off, the seat's cascade is recorded off the double-exit module; a TEAM draw's stays owed
+    const owned = !policyOff || eventType !== 'TEAM';
+    expect(compareUndirectedWinner(scenario, owned, prepared).v1.results[0].success).toEqual(true);
+    expect((getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0) - before).toEqual(Number(!owned));
   });
 });

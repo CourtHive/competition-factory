@@ -403,7 +403,7 @@ if (roundVisibility) {
 **Returns:**
 
 ```ts
-Record<number, RoundVisibility> | undefined;
+type Returns = Record<number, RoundVisibility> | undefined;
 
 interface RoundVisibility {
   hidden?: boolean; // true when roundNumber > roundLimit
@@ -877,6 +877,7 @@ engine.publishOrderOfPlay({
   scheduledDates, // optional - array of dates to publish
   eventIds, // optional - array of events to publish
   embargo, // optional - ISO 8601 timestamp; schedule hidden until this time
+  dateEmbargoes, // optional - { 'YYYY-MM-DD': ISO 8601 timestamp }; each date hidden until its own time
   removePriorValues, // optional boolean - clear previous timeItems
 });
 ```
@@ -928,6 +929,20 @@ engine.publishOrderOfPlay({
 ```
 
 When embargoed, [`competitionScheduleMatchUps`](/docs/governors/query-governor#competitionschedulematchups) with `usePublishState: true` returns empty `dateMatchUps` until the embargo passes.
+
+#### publishOrderOfPlay with a Release Time per Date
+
+```js
+// Every date is published; each one appears at 6pm the evening before it
+engine.publishOrderOfPlay({
+  dateEmbargoes: {
+    '2024-06-15': '2024-06-14T18:00:00Z',
+    '2024-06-16': '2024-06-15T18:00:00Z',
+  },
+});
+```
+
+A date whose embargo has not passed is withheld from `dateMatchUps`; the other dates stay visible. This works with or without `scheduledDates`. Unlike `scheduledDates` and `embargo`, an omitted `dateEmbargoes` **keeps the prior map**, so adding or removing a date cannot release another date early; pass `null` or `{}` to clear it. Keys must be `YYYY-MM-DD`; values follow the same rule as `embargo` (`INVALID_EMBARGO` without a timezone).
 
 **See**: [Embargo](../concepts/publishing/publishing-embargo.md) for comprehensive embargo documentation.
 

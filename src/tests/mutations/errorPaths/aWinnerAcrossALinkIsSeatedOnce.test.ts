@@ -1,6 +1,6 @@
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
-import { setSubscriptions } from '@Global/state/globalState';
+import { getOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, expect, it, vi } from 'vitest';
@@ -8,6 +8,8 @@ import { afterEach, expect, it, vi } from 'vitest';
 // constants
 import { DOUBLE_WALKOVER, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
+import type { OutcomeOp } from '@Mutate/matchUps/outcome/ops';
 import { EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT } from '@Constants/errorConditionConstants';
 
 /**
@@ -79,10 +81,35 @@ vi.mock('@Functions/global/decorateResult', async (importOriginal) => {
   };
 });
 
+/**
+ * THE SAME FAULT, IN THE OUTCOME PIPELINE v2. Since BATCH 1 v2 owns the Main final's first entry and seats its Decider
+ * by ops, never reaching `directWinnerViaLink`. Its placement across the link is an `assignPosition` in the Decider's
+ * structure, and what can fail there is the FOLD of that op: `fold.structureId` names the structure and makes it fail,
+ * after the ops before it have been folded. v2 folds a plan into the working view's copies before it writes the stored
+ * draw, so the failure is met there, with the stored draw untouched, and the call is written whole by whoever takes it.
+ */
+const fold = vi.hoisted(() => ({ structureId: undefined as string | undefined, working: 0, stored: 0 }));
+vi.mock('@Mutate/matchUps/outcome/ops', async (importOriginal) => {
+  const actual: any = await importOriginal();
+  return {
+    ...actual,
+    applyOutcomeOps: (drawDefinition: any, ops: OutcomeOp[], stampedBefore: any, effects: any) => {
+      const at = ops.findIndex((op) => op.op === 'assignPosition' && op.structureId === fold.structureId);
+      if (!fold.structureId || at < 0) return actual.applyOutcomeOps(drawDefinition, ops, stampedBefore, effects);
+      // the stored apply binds the result's inputs (`applyOwnedPlan`); every other fold is of a copy
+      if (effects?.bindResultInputs) fold.stored += 1;
+      else fold.working += 1;
+      const before = actual.applyOutcomeOps(drawDefinition, ops.slice(0, at), stampedBefore, effects);
+      return before.error ? before : { error: 'forced by the test' };
+    },
+  };
+});
+
 afterEach(() => {
   watch.force = false;
   watch.forced = 0;
   watch.duplicateRefusals = 0;
+  Object.assign(fold, { structureId: undefined, working: 0, stored: 0 });
 });
 
 const POLICY_OFF = { [POLICY_TYPE_PROGRESSION]: { doubleExitPropagateBye: false } };
@@ -198,10 +225,40 @@ it('a Decider whose seats are held by others is re-seated from the final, and th
 
 it('a placement across the link that fails is not returned as a refusal over the written result', () => {
   const { drawId } = mainFinalToPlay();
+  // every placement of the winner across the link is made to fail: v1's, and v2's fold of its assignment
   watch.force = true;
+  fold.structureId = find(drawId, 'Decider|1|1').structureId;
   let result: any = apply(drawId, 'Main|4|1', { winningSide: 2 });
   // CONTROL: the winner's placement across the link was made, and failed
   expect(watch.forced).toBeGreaterThan(0);
+  // v2 met its own failure first, on the copy, and never wrote the stored draw
+  expect(fold.working).toEqual(getOutcomePipeline() === OUTCOME_PIPELINE_V1 ? 0 : 1);
+  expect(fold.stored).toEqual(0);
   expect(result.success).toEqual(true);
   expect(names(find(drawId, 'Decider|1|1'))).toEqual(['Marie Ogden', 'Joe Jovovich']);
+});
+
+it('v2: an assignment across the link that cannot be folded is met on the working copy, and the draw is written whole', () => {
+  const { drawId, record } = mainFinalToPlay();
+  const drawNow = () => {
+    const draw = tournamentEngine.getEvent({ drawId }).drawDefinition;
+    const timeless = (key: string, value: unknown) => (key === 'updatedAt' || key === 'scoredTime' ? undefined : value);
+    return JSON.stringify(draw, timeless);
+  };
+
+  // the twin: the same record, the same call, nothing forced
+  let result: any = apply(drawId, 'Main|4|1', { winningSide: 2 });
+  expect(result.success).toEqual(true);
+  const unforced = drawNow();
+  tournamentEngine.setState(record);
+
+  fold.structureId = find(drawId, 'Decider|1|1').structureId;
+  result = apply(drawId, 'Main|4|1', { winningSide: 2 });
+  // CONTROL: the fold was attempted and failed, once, on a copy; the stored draw never took the plan in part
+  // (under v1 nothing is planned, so nothing is folded: the call is v1's, whole either way)
+  expect(fold.working).toEqual(getOutcomePipeline() === OUTCOME_PIPELINE_V1 ? 0 : 1);
+  expect(fold.stored).toEqual(0);
+  expect(result.success).toEqual(true);
+  expect(names(find(drawId, 'Decider|1|1'))).toEqual(['Marie Ogden', 'Joe Jovovich']);
+  expect(drawNow()).toEqual(unforced);
 });
