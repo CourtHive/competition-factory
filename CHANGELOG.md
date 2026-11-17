@@ -1,5 +1,26 @@
 # Changelog
 
+## [7.40.0](https://github.com/CourtHive/competition-factory/compare/v7.39.0...v7.40.0) (2026-11-17)
+
+
+### Features
+
+* **outcome:** own linked winners, deciders and kept-out byes (batch 1) ([#6398](https://github.com/CourtHive/competition-factory/issues/6398)) ([ab28983](https://github.com/CourtHive/competition-factory/commit/ab2898313140d874c3c616e628c12f6eef03d94c))
+* **outcome:** record a first double exit's cascade off v1's module and settle passes (batch 2) ([#6400](https://github.com/CourtHive/competition-factory/issues/6400)) ([eaae1df](https://github.com/CourtHive/competition-factory/commit/eaae1dffb781eec84adc20eefc044a2403b9ec54))
+* **outcome:** record v1's whole call on a copy where the planners abstain exit, cascade or loser (batch 3) ([#6403](https://github.com/CourtHive/competition-factory/issues/6403)) ([912941b](https://github.com/CourtHive/competition-factory/commit/912941b942791620f13e92e065a9799ed04b10bf))
+* **publishing:** an embargo per scheduled date of the order of play ([#6401](https://github.com/CourtHive/competition-factory/issues/6401)) ([6c1ec70](https://github.com/CourtHive/competition-factory/commit/6c1ec7047781817a7858d6e6c8eedfe93b11a663))
+
+
+### Bug Fixes
+
+* **deps:** update tods-competition-factory to 7.39.0 ([#6397](https://github.com/CourtHive/competition-factory/issues/6397)) ([b4189af](https://github.com/CourtHive/competition-factory/commit/b4189af8e0d567122f5e07b54cae10da2151d711))
+* **schedule:** apply a court clear without a scheduledDate ([#6402](https://github.com/CourtHive/competition-factory/issues/6402)) ([c479c64](https://github.com/CourtHive/competition-factory/commit/c479c645452f624550acfeea9a06535fdaaac8b4))
+
+
+### Documentation
+
+* **publishing:** write the round-visibility return type as a declaration ([#6404](https://github.com/CourtHive/competition-factory/issues/6404)) ([195b889](https://github.com/CourtHive/competition-factory/commit/195b889445067abc41e323a825e8c8f1600a6ed9))
+
 ## [7.39.0](https://github.com/CourtHive/competition-factory/compare/v7.38.0...v7.39.0) (2026-11-16)
 
 
