@@ -54,8 +54,7 @@ import {
  * What the planners do not write (batch 4b, below) is read off v1's whole write on a copy of the record, and is v2's
  * all the same: a decided dual whose losing side holds no line-up; a removal or correction that un-decides its dual, a
  * removal leaving it holding no line's result; a dual's exit carried on past the dual it reaches; a double exit given a
- * winner; auto-calc off. Still v1's: a line of a dual whose tieFormat declares its score REPORTED, whose result holds
- * the dual's stored score.
+ * winner; auto-calc off; a REPORTED score source, whose line's result holds the dual's stored score, the very object.
  */
 // counts v1's matchUp writes on the stored record (`directionCounter.ts`: a write to a recorded call's copy is not one)
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
@@ -1953,6 +1952,15 @@ const RECORDED: [string, Scenario][] = [
     },
   ],
   [
+    'a line of a dual whose tieFormat declares its score REPORTED: v1 returns before any tally',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1, 0), winningSide: 1 }],
+      step: { target: R1(1, 1), winningSide: 2 },
+      reported: true,
+    },
+  ],
+  [
     "a line of a dual whose auto-calc is off: v1 leaves the dual's score to be entered",
     {
       drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
@@ -2015,39 +2023,6 @@ describe("a TEAM dual or line the planners abstain from is read off v1's whole w
     expect(read()).toEqual({ abstained: before.abstained + 1, applied: before.applied + 1 });
     const v2 = play(OUTCOME_PIPELINE_V2, scenario, prepared);
     expect(v2.v1Writes).toEqual(0);
-    for (const actual of [compared, v2]) {
-      expect(actual.result).toEqual(v1.result);
-      expect(actual.record).toEqual(v1.record);
-      expect(actual.notices).toEqual(v1.notices);
-      expect(actual.graph).toEqual(v1.graph);
-    }
-  });
-});
-
-// v1 returns the dual's own stored score in the line's result (`updateTieMatchUpScore`): on the copy, the copy's
-const RESULT_HOLDS_THE_RECORD: [string, Scenario][] = [
-  [
-    'a line of a dual whose tieFormat declares its score REPORTED: v1 returns before any tally',
-    {
-      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
-      setup: [{ target: R1(1, 0), winningSide: 1 }],
-      step: { target: R1(1, 1), winningSide: 2 },
-      reported: true,
-    },
-  ],
-];
-
-describe("a TEAM line whose result holds an object of the record is not recorded, and is v1's", () => {
-  it.each(RESULT_HOLDS_THE_RECORD)('%s', (_label, scenario) => {
-    const prepared = prepare(scenario, false);
-    const v1 = play(OUTCOME_PIPELINE_V1, scenario, prepared);
-    expect(v1.result.tieMatchUpResult.score).toBeDefined();
-    const read = () => ({ abstained: tally('shadow:abstain:team'), applied: tally('shadow:applied') });
-    const before = read();
-    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario, prepared);
-    expect(read()).toEqual({ abstained: before.abstained + 1, applied: before.applied });
-    const v2 = play(OUTCOME_PIPELINE_V2, scenario, prepared);
-    expect(v2.v1Writes).toEqual(v1.v1Writes);
     for (const actual of [compared, v2]) {
       expect(actual.result).toEqual(v1.result);
       expect(actual.record).toEqual(v1.record);

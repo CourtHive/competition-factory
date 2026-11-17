@@ -1,7 +1,7 @@
 import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { v1Writes } from '@Tests/testHarness/outcome/directionCounter';
-import { storedGraph } from '@Tests/testHarness/outcome/objectGraph';
+import { storedGraph, storedRecord } from '@Tests/testHarness/outcome/objectGraph';
 import { TOPICS } from '@Tests/testHarness/outcome/directionFixtures';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
@@ -14,7 +14,7 @@ import { setClock } from '@Tools/clock';
 import { DOMINANT_DUO, LAVER_CUP, USTA_COLLEGE } from '@Constants/tieFormatConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { MISSING_ASSIGNMENTS } from '@Constants/errorConditionConstants';
-import type { Tournament } from '@Types/tournamentTypes';
+import type { MatchUp, Tournament } from '@Types/tournamentTypes';
 import { TEAM } from '@Constants/eventConstants';
 import {
   COMPASS,
@@ -176,6 +176,63 @@ describe('a recorded line tells the ledger of its own stamp', () => {
       // the clear is recorded; the line's first result is one the planners write
       expect([actual.asked, actual.made]).toEqual([1, 1]);
       if (mode === OUTCOME_PIPELINE_V2) expect(actual.v1Writes).toEqual(0);
+      expect(actual.results).toEqual(v1.results);
+      expect(actual.record).toEqual(v1.record);
+      expect(actual.notices).toEqual(v1.notices);
+      expect(actual.graph).toEqual(v1.graph);
+    }
+  });
+});
+
+/**
+ * v1 returns a line's call its dual's tally (`tieMatchUpResult`). Where the dual's tieFormat declares its score
+ * REPORTED, nothing is derived from the lines and the tally is the dual's own stored score: the very object. On the
+ * copy that is the copy's object, and the recorded call returns the stored one (`returnedOnStored`).
+ */
+describe("a recorded line's result holds its dual's stored score, the very object", () => {
+  // the stored dual itself, not the copy a query returns
+  const storedDual = (matchUpId: string) =>
+    storedRecord().events?.[0].drawDefinitions?.[0].structures?.[0].matchUps?.find(
+      (matchUp) => matchUp.matchUpId === matchUpId,
+    ) as MatchUp;
+
+  it('a line of a dual whose tieFormat declares its score REPORTED', () => {
+    generate({ drawSize: 4, drawType: SINGLE_ELIMINATION, tieFormatName: USTA_COLLEGE });
+    const dual = duals()[0];
+    const [first, second] = singles(dual);
+    const { matchUpId } = dual;
+    expect(
+      tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId: first.matchUpId, outcome: won(1) }).success,
+    ).toEqual(true);
+    const prepared = stored();
+    const reported = prepared.events?.[0].drawDefinitions?.[0].structures?.[0].matchUps?.find(
+      (matchUp) => matchUp.matchUpId === matchUpId,
+    );
+    // CONTROL: the dual stores its own tieFormat (copied on at its first line), which now declares a reported score
+    expect(!!reported?.tieFormat).toEqual(true);
+    Object.assign(reported?.tieFormat ?? {}, { scoreSource: 'REPORTED' });
+
+    const calls: Call[] = [{ matchUpId: second.matchUpId, outcome: won(2) }];
+    for (const mode of [OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const) {
+      setOutcomePipeline(OUTCOME_PIPELINE_V1);
+      tournamentEngine.setState(structuredClone(prepared), false);
+      const held = storedDual(matchUpId).score;
+      expect(held).toBeDefined();
+      setOutcomePipeline(mode);
+      setClock('2026-10-25T00:01:00.000Z');
+      recorder.made = 0;
+      v1Writes.count = 0;
+      const result: any = tournamentEngine.setMatchUpStatus({ drawId: 'd', ...calls[0] });
+      expect(result.success).toEqual(true);
+      // the dual's score is the object it was, and the result holds it
+      expect(storedDual(matchUpId).score).toBe(held);
+      expect(result.tieMatchUpResult.score).toBe(held);
+      if (mode === OUTCOME_PIPELINE_V2) expect([recorder.made, v1Writes.count]).toEqual([1, 0]);
+    }
+    const v1 = play(OUTCOME_PIPELINE_V1, prepared, calls);
+    for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+      const actual = play(mode, prepared, calls);
+      expect([actual.asked, actual.made]).toEqual([1, 1]);
       expect(actual.results).toEqual(v1.results);
       expect(actual.record).toEqual(v1.record);
       expect(actual.notices).toEqual(v1.notices);

@@ -87,10 +87,20 @@ const refused: [string, Writer][] = [
     },
   ],
   [
-    'the result holds an object of the copy',
+    'the result holds an object the run changed and took out of the draw',
+    (copy) => {
+      const range = first(copy).finishingPositionRange as { loser: number[] };
+      range.loser = [9, 9];
+      delete first(copy).finishingPositionRange;
+      return { ...SUCCESS, context: { range } };
+    },
+  ],
+  [
+    // the event holds the draw, so it reads as changed wherever the draw is
+    'the result holds an object outside the draw that does not read as its stored counterpart',
     (copy) => {
       first(copy).notes = 'written';
-      return { ...SUCCESS, context: { matchUp: first(copy) } };
+      return { ...SUCCESS, context: { event: copy.event } };
     },
   ],
 ];
@@ -180,6 +190,55 @@ it('is not made where v1 replaces the list a dual holds its lines in', () => {
   };
   expect(recordWholeCall({ ...args, writeOnCopy })).toBeUndefined();
   expect(canonicalJson(args.tournamentRecord)).toEqual(before);
+});
+
+/**
+ * v1 on the copy returns objects of the copy where on the stored record it returns the stored ones. The recorded call
+ * returns what v1 returns on the stored record: each object of the copy the result holds is the stored object it was
+ * copied from, in the objects the run itself made.
+ */
+it("returns the stored objects where v1's result holds objects of the copy", () => {
+  const { args, before } = prepare();
+  const made = { sets: [] as unknown[] };
+  const context: Record<string, unknown> = {};
+  const writeOnCopy = (copy: RecordCopy) => {
+    const matchUp = first(copy);
+    // written by the run, and still in the draw
+    matchUp.notes = 'written';
+    // made by the run, stored and returned: one object in the record and in the result
+    matchUp.score = made as MatchUp['score'];
+    Object.assign(context, {
+      matchUp,
+      // not written by the run
+      range: matchUp.finishingPositionRange,
+      // outside the draw
+      participant: copy.tournamentRecord?.participants?.[0],
+      // an object the run made, holding one of the copy
+      about: { structure: copy.drawDefinition.structures?.[0] },
+      score: matchUp.score,
+    });
+    return { ...SUCCESS, context };
+  };
+  const recorded = recordWholeCall({ ...args, writeOnCopy });
+  const storedDraw = args.drawDefinition as RecordCopy['drawDefinition'];
+  const storedMatchUp = first({ drawDefinition: storedDraw } as RecordCopy);
+  const about = context.about;
+  // the result is the object v1 returned, and the objects the run made are themselves
+  expect(recorded?.written.context).toBe(context);
+  expect(context.about).toBe(about);
+  expect(context.score).toBe(made);
+  // the objects of the copy are the stored ones
+  expect(context.matchUp).toBe(storedMatchUp);
+  expect(context.range).toBe(storedMatchUp.finishingPositionRange);
+  expect(context.participant).toBe(args.tournamentRecord?.participants?.[0]);
+  expect(context.participant).toBeDefined();
+  expect((context.about as { structure: unknown }).structure).toBe(storedDraw.structures?.[0]);
+  // nothing is written until the ops are applied: then the stored matchUp is what the result holds, written
+  expect(canonicalJson(args.tournamentRecord)).toEqual(before);
+  expect(applyOutcomeOps(storedDraw, recorded?.ops ?? [], undefined, { bindResultInputs: true }).error).toBeUndefined();
+  expect(context.matchUp).toBe(first({ drawDefinition: storedDraw } as RecordCopy));
+  expect(storedMatchUp.notes).toEqual('written');
+  expect(storedMatchUp.score).toBe(made);
 });
 
 it("puts the call's own parameters back where v1 wrote into them, and is not made", () => {

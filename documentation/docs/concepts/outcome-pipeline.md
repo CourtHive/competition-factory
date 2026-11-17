@@ -1424,7 +1424,8 @@ nothing is taken back from the next dual, and a correction is neither a re-enter
 `handleTeamAutoCalc` does (through `setFirstClassOrExtension`, a field of the dual's `setMatchUpResult`). Enabling also
 takes the winner and score the dual's lines project (`generateTieMatchUpScore`), whatever winner the call names.
 
-Stay v1's:
+Not planned (they stayed v1's until batch 4b, which reads each off v1's whole write: "Recorded calls (batch 4b)",
+§ 7.2):
 
 - a dual's own call that enables auto-calc whose lines project no winner, a dual's exit carried on past the dual it
   reaches, through a BYE or onto a losers' dual half placed, a call on a dual holding no winner that is neither to be
@@ -1652,18 +1653,19 @@ back and marked again, as for a recorded cascade. The planners' refusing lines s
 tally counts only what is still v1's. It is asked once per call, of the call's own plan: `planOutcome` is entered once
 per call, and a dual planned inside its line's plan (`asDual`) is never recorded.
 
-The recording is held to the rule a recorded cascade is, whole or not at all: where a settle predicate still finds
-work on what it leaves (`predictSettleWork`), it is dropped and the plan is the very abstention the planners returned.
-A call whose PLANNED ops leave settle work (`settle`) was not recorded in batch 3 (batch 4a, below, records it). The
-recording is not made, and the call stays v1's, for: a TEAM dual or line (batch 3 and 4a; batch 4b, below, records
-them); a call with no captured clock; a call that names more than one
-tournament record. Nor is it asked for where the call is refused: a refused call has no route, its refusal is its
-answer, and `differential` plans it only to set v1's refusal against v2's. It is discarded where v1's run on the copy returns an error, throws, or stops its forward settle
-at the bound; writes anything outside the draw; adds or moves a matchUp or a structure; writes a round robin group's
-own fields (batch 3 and 4a; batch 4b, below, carries them); leaves a scored time on a matchUp with no score (the plan's own cleanup would clear it); changes the
-call's own parameters (which are put back); buffers a notice apply could not raise again; or returns a result that
-holds an object of the copy. A call whose recording v1 refused is then run by v1 on the stored record, so v1 runs
-twice for it: what a v1 error leaves written on the stored record today is observable, and only v1's own run leaves it.
+The recording is held to the rule a recorded cascade is, whole or not at all: where a settle predicate still finds work
+on what it leaves (`predictSettleWork`), it is dropped and the plan is the very abstention the planners returned. A call
+whose PLANNED ops leave settle work (`settle`) was not recorded in batch 3 (batch 4a, below, records it). The recording
+is not made, and the call stays v1's, for: a TEAM dual or line (batch 3 and 4a; batch 4b, below, records them); a call
+with no captured clock; a call that names more than one tournament record. Nor is it asked for where the call is
+refused: a refused call has no route, its refusal is its answer, and `differential` plans it only to set v1's refusal
+against v2's. It is discarded where v1's run on the copy returns an error, throws, or stops its forward settle at the
+bound; writes anything outside the draw; adds or moves a matchUp or a structure; writes a round robin group's own fields
+(batch 3 and 4a; batch 4b, below, carries them); leaves a scored time on a matchUp with no score (the plan's own cleanup
+would clear it); changes the call's own parameters (which are put back); buffers a notice apply could not raise again;
+or returns a result that holds an object of the copy (batch 4b, below, returns the stored one where that is exact). A
+call whose recording v1 refused is then run by v1 on the stored record, so v1 runs twice for it: what a v1 error leaves
+written on the stored record today is observable, and only v1's own run leaves it.
 
 v1's writers stay library code until v3: a recorded call is v2's because v2 decides it, applies it and announces it,
 and v1 is not asked to write the stored record, but the write it applies is the one v1's code computed. Under
@@ -1695,13 +1697,14 @@ not (`tools/composeThenWrite.ts`).
 **Recorded calls (batch 4a).** The whole-call recording answers five more of the planners' abstentions: a route or a
 link they do not plan (`route`, `link`), the client's positional codes (`status-codes`), provenance on the call's
 matchUp (`provenance`), and LEGACY or BRIDGE write mode (`write-mode`). It is asked for and made as above, under the
-same refusals. `team`, `edges`, `clock`, `competition`, `no-record`, `notes`, `schedule` and `tallied` are not
-answered: a call the planners abstain from for one of them stays v1's (batch 4b, below, answers `tallied` and `team`). The planners name the first reason that holds,
-so a call recorded for one of the five may be one a later reason would have held too: LEGACY or BRIDGE is asked ahead of
-a draw stored without its edges, a schedule, notes and a competition policy, and what v1 does for those on the copy is
-recorded with the rest of its write, or the recording is discarded by the recorder's own rules. The scored time those
-rules read (a matchUp with no result left holding one) is `schedule.scoredTime`, where v1 stamps it in every write
-mode (measured 2026-11-17: LEGACY and BRIDGE write no timeItem for it, whatever the `write-mode` row below says).
+same refusals. `team`, `edges`, `clock`, `competition`, `no-record`, `notes`, `schedule` and `tallied` are not answered:
+a call the planners abstain from for one of them stays v1's (batch 4b, below, answers `tallied` and `team`). The
+planners name the first reason that holds, so a call recorded for one of the five may be one a later reason would have
+held too: LEGACY or BRIDGE is asked ahead of a draw stored without its edges, a schedule, notes and a competition
+policy, and what v1 does for those on the copy is recorded with the rest of its write, or the recording is discarded by
+the recorder's own rules. The scored time those rules read (a matchUp with no result left holding one) is
+`schedule.scoredTime`, where v1 stamps it in every write mode (measured 2026-11-17: LEGACY and BRIDGE write no timeItem
+for it, whatever the `write-mode` row below says).
 
 A call whose PLANNED ops leave settle work is recorded too. `recordedWhole` asks `settles` of the ops the planners
 return: where a settle predicate finds work on the working view they leave (or they cannot be folded, or they leave a
@@ -1738,10 +1741,25 @@ and its lines as across any entities: a line-up object v1 writes onto a side and
 in both. A dual planned inside its line's plan (`asDual`) is still never recorded: the line's call is the one asked, and
 is recorded whole where its dual's part is not planned.
 
+**What a recorded call returns.** v1 on the copy returns objects of the copy where on the stored record it returns the
+stored ones. A line's call returns its dual's tally (`tieMatchUpResult`), and where the dual's tieFormat declares its
+score REPORTED nothing is derived from its lines and the tally is the dual's own stored score, the very object
+(`updateTieMatchUpScore`). A recording whose result held an object of the copy was not made (batches 3 and 4a). Now the
+result is given the stored objects (`recordedCall.ts` `returnedOnStored`): each object of the copy it holds is replaced,
+in the objects the run itself made (the result, and what it built for it), by the stored object it was copied from
+(`cloneState` keeps, for every copy, the object it copies). That is the object v1 holds there on the stored record,
+since v1 does to the stored record what it did to the copy. An object the run made is left as it is: where v1 stores it
+too (a derived tally's score), apply stores that very object, so the result and the record hold one object, as v1's do.
+A stored object is returned only where it will read as the copy's does: it does already, and holds the stored
+counterparts of what the copy's holds (the run wrote nothing in it); or the copy's is still in the draw, which the
+recorded ops replace, so apply makes the stored object what the copy's is. Where neither holds the recording is not
+made, as before: an object the run changed and took out of the draw, or one outside the draw that does not read as its
+stored counterpart (the event and the tournament record hold the draw, so they read as changed wherever the draw is).
+The call's own parameters are not copied, and are returned as v1 returns them.
+
 Still v1's among TEAM calls, as among any: a call v1 refuses on the copy (`ERR_MISSING_ASSIGNMENTS` for a result entered
 on a line with no line-up assigned, `ERR_INVALID_MATCHUP_STATUS` for an exit entered on a dual whose auto-calc the call
-turns on), a recording a settle predicate still finds work on, and a call whose result holds an object of the copy (a
-line of a dual whose tieFormat declares its score REPORTED returns the dual's own stored score).
+turns on), and a recording a settle predicate still finds work on.
 
 `planOutcome` returns a complete plan only when every write the call makes is an op; otherwise it **abstains**, naming
 the first reason, and the call is v1's whole (fail-closed). S1 holds two shapes: the **local** write (the matchUp's own

@@ -14,8 +14,9 @@ import type { Recording } from '../recording';
 /**
  * RECORDED (CA, 2026-11-16): what the two recorders share (`recordedCascade.ts`, `recordedCall.ts`). v1's writers run on
  * a COPY of the record; what the copy held before is read here, and what the run changed is returned as the recorded
- * ops: each matchUp it wrote (a dual's own fields, and each line's), each structure's own fields (a round robin's groups are structures of their own, and a
- * group's tally is among its fields), the draw's own fields, and the notices it buffered.
+ * ops: each matchUp it wrote (a dual's own fields, and each line's), each structure's own fields (a round robin's groups
+ * are structures of their own, and a group's tally is among its fields), the draw's own fields, and the notices it
+ * buffered.
  */
 
 const ownState = (entity: object, children: string[]) =>
@@ -111,10 +112,11 @@ export function stampCopies(drawDefinition: DrawDefinition, stampedBefore: Set<s
  * it resets, plain JSON drops the key, and the exact graph v1 leaves has it.
  */
 const UNDEFINED = '\u0000undefined';
-const shapeOf = (value: unknown) => JSON.stringify(value, (_key, held) => (held === undefined ? UNDEFINED : held));
+export const shapeOf = (value: unknown) =>
+  JSON.stringify(value, (_key, held) => (held === undefined ? UNDEFINED : held));
 
 /** every object under `value`, in the order its text reads them: one reached twice is listed twice */
-function objectsOf(value: unknown): object[] {
+export function objectsOf(value: unknown): object[] {
   const found: object[] = [];
   const visit = (held: unknown) => {
     if (!held || typeof held !== 'object') return;
