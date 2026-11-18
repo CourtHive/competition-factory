@@ -700,6 +700,7 @@ export type FactoryEngineMethod =
   | 'setDrawPositionPreferences'
   | 'setEntryPosition'
   | 'setEntryPositions'
+  | 'setEntryQualifyingPath'
   | 'setEventDates'
   | 'setEventDisplay'
   | 'setEventEndDate'
@@ -1513,6 +1514,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'setDrawPositionPreferences',
   'setEntryPosition',
   'setEntryPositions',
+  'setEntryQualifyingPath',
   'setEventDates',
   'setEventDisplay',
   'setEventEndDate',

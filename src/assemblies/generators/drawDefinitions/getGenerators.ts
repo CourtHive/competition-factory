@@ -12,12 +12,12 @@ import { generatePagePlayoff } from './drawTypes/pagePlayoff';
 import { feedInChampionship } from './drawTypes/feedInChamp';
 import { treeMatchUps } from './drawTypes/eliminationTree';
 import { luckyDraw } from './drawTypes/luckyDraw';
-import { feedInMatchUps } from './feedInMatchUps';
+import { feedInMatchUps, isValidFeedRoundsProfile } from './feedInMatchUps';
 import { constantToString } from '@Tools/strings';
 
 // constants
 import { POLICY_TYPE_FEED_IN } from '@Constants/policyConstants';
-import { ErrorType } from '@Constants/errorConditionConstants';
+import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // prettier-ignore
@@ -190,7 +190,12 @@ export function getGenerators(params): { generators?: any; error?: ErrorType } {
     },
 
     [FEED_IN]: () => {
-      const { matchUps } = feedInMatchUps({ drawSize, uuids, matchUpType });
+      // the rounds its fed positions enter, when not the default: a 48 as [8, 8] enters 8 at R3 and 8 at R4, so seeds
+      // take the latest round and qualifiers routed to R3 the one before (CA, 2026-11-18)
+      const feedRoundsProfile = params.structureOptions?.feedRoundsProfile;
+      if (feedRoundsProfile && !isValidFeedRoundsProfile({ drawSize, feedRoundsProfile }))
+        return { error: INVALID_VALUES, info: 'feedRoundsProfile does not describe a FEED_IN draw of drawSize' };
+      const { matchUps } = feedInMatchUps({ drawSize, feedRoundsProfile, uuids, matchUpType });
 
       const structure = structureTemplate({
         stageSequence,

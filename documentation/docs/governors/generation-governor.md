@@ -218,6 +218,13 @@ const drawDefinitionValues = {
     // a playoff group's drawType must be one the factory can build as a playoff; any other value refuses the whole
     // draw with UNRECOGNIZED_DRAW_TYPE, naming the group in context.playoffGroupIndex. The accepted drawTypes are listed
     // in /docs/concepts/draw-types/round-robin-with-playoff#playoff-group-draw-types
+
+    // optional - for FEED_IN - the size of each fed round, when not the default. A FEED_IN draw is a base draw (the
+    // largest power of 2 within drawSize) plus fed positions; by default they enter as early as their count allows
+    // (a 48 enters 16 at R2). [8, 8] enters 8 at R3 and 8 at R4: seeds take the latest round, so qualifiers routed to
+    // R3 (roundTarget: 3) keep the round before it. Each size must be one of the base draw's round sizes and they must
+    // add up to drawSize minus the base, or the draw is refused with INVALID_VALUES.
+    feedRoundsProfile: [8, 8],
   },
 
   withPlayoffs, // optional - add playoff structures from the MAIN structure; supports recursive nesting (see below)
@@ -483,7 +490,7 @@ const { drawDefinition, matchUpsMap } = engine.generateDrawTypeAndModifyDrawDefi
   matchUpType, // optional - SINGLES, DOUBLES, TEAM
   matchUpFormat, // optional - default matchUpFormat
   tieFormat, // optional - for TEAM matchUps
-  structureOptions, // optional - { groupSize, playoffGroups } for ROUND_ROBIN
+  structureOptions, // optional - { groupSize, playoffGroups } for ROUND_ROBIN; { feedRoundsProfile } for FEED_IN
   qualifiersCount, // optional - number of qualifier positions
   qualifyingOnly, // optional boolean - generate only qualifying structures with MAIN placeholder
   stageSequence, // optional - target specific stage (1=QUALIFYING, 2=MAIN)
