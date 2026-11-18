@@ -78,6 +78,9 @@ it('a disagreement is a thrown divergence naming the matchUp and both answers; a
     agree: true,
     deferred: 'ERR_MISSING_ASSIGNMENTS',
   });
+  // a missing assignment is deferred only for a call v2 abstains from: one it has a complete plan for, it would write
+  expect(compareDecisions(undefined, 'ERR_MISSING_ASSIGNMENTS', true)).toMatchObject({ agree: false, v2: 'ok' });
+  expect(compareDecisions(undefined, 'ERR_FORCED', true)).toMatchObject({ agree: true, deferred: 'ERR_FORCED' });
   // the status codes are v2's own rows since S7 (rows 6 and 28): no longer deferred
   for (const code of [
     'ERR_UNRECOGNIZED_MATCHUP_STATUS',

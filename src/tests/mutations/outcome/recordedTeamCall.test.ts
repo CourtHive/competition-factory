@@ -15,6 +15,7 @@ import { DOMINANT_DUO, LAVER_CUP, USTA_COLLEGE } from '@Constants/tieFormatConst
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { MISSING_ASSIGNMENTS } from '@Constants/errorConditionConstants';
 import type { MatchUp, Tournament } from '@Types/tournamentTypes';
+import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { TEAM } from '@Constants/eventConstants';
 import {
   COMPASS,
@@ -259,6 +260,62 @@ describe("a TEAM call v1 refuses on the copy is not recorded, and is v1's", () =
       // asked for (the planners abstain), and not made: v1's error on the copy is v1's answer, made on the stored record
       expect([actual.asked, actual.made]).toEqual([1, 0]);
       expect(actual.v1Writes).toEqual(v1.v1Writes);
+      expect(actual.results).toEqual(v1.results);
+      expect(actual.record).toEqual(v1.record);
+      expect(actual.notices).toEqual(v1.notices);
+      expect(actual.graph).toEqual(v1.graph);
+    }
+  });
+
+  // the same line never touched: the planners would plan its first result, and v1 refuses it before any write
+  it.each([
+    ['a winner alone', { winningSide: 1 }],
+    ['a WALKOVER', { matchUpStatus: WALKOVER, winningSide: 1 }],
+  ])('%s on a line to be played with no line-up assigned (ERR_MISSING_ASSIGNMENTS)', (_label, outcome) => {
+    generate({ drawSize: 4, drawType: SINGLE_ELIMINATION, tieFormatName: DOMINANT_DUO }, { bare: true });
+    const line = singles(duals()[0])[0];
+    const prepared = stored();
+    const calls: Call[] = [{ matchUpId: line.matchUpId, outcome }];
+    const v1 = play(OUTCOME_PIPELINE_V1, prepared, calls);
+    for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+      const actual = play(mode, prepared, calls);
+      expect([actual.asked, actual.made]).toEqual([1, 0]);
+      expect(JSON.parse(actual.results)[0].error.code).toEqual(MISSING_ASSIGNMENTS.code);
+      expect(actual.results).toEqual(v1.results);
+      expect(actual.record).toEqual(v1.record);
+      expect(actual.notices).toEqual(v1.notices);
+      expect(actual.graph).toEqual(v1.graph);
+    }
+  });
+
+  // v1's `validToScore` lets these through: v2 answers as v1 does
+  it.each([
+    ['one side assigned, a single exit', { matchUpStatus: DEFAULTED, winningSide: 1 }, undefined, true],
+    ['no side assigned, the scoring policy not requiring participants', { winningSide: 1 }, false, false],
+  ])('%s is accepted', (_label, outcome, requireParticipantsForScoring, oneSide) => {
+    generate({ drawSize: 4, drawType: SINGLE_ELIMINATION, tieFormatName: DOMINANT_DUO }, { bare: true });
+    if (requireParticipantsForScoring === false)
+      tournamentEngine.attachPolicies({
+        policyDefinitions: { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } },
+      });
+    const dual = duals()[0];
+    const line = singles(dual)[0];
+    if (oneSide) {
+      const [individualParticipantId] = dual.sides[0].participant.individualParticipantIds;
+      expect(
+        tournamentEngine.assignTieMatchUpParticipantId({
+          participantId: individualParticipantId,
+          tieMatchUpId: line.matchUpId,
+          drawId: 'd',
+        }).success,
+      ).toEqual(true);
+    }
+    const prepared = stored();
+    const calls: Call[] = [{ matchUpId: line.matchUpId, outcome }];
+    const v1 = play(OUTCOME_PIPELINE_V1, prepared, calls);
+    expect(JSON.parse(v1.results)[0].success).toEqual(true);
+    for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+      const actual = play(mode, prepared, calls);
       expect(actual.results).toEqual(v1.results);
       expect(actual.record).toEqual(v1.record);
       expect(actual.notices).toEqual(v1.notices);

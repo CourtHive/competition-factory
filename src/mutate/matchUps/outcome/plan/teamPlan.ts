@@ -2,7 +2,7 @@ import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpS
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { ensuredDualSides } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
-import { isDoubleExit } from '@Validators/isExit';
+import { isDoubleExit, isExit } from '@Validators/isExit';
 
 import {
   CLEAR_SCORE,
@@ -94,6 +94,9 @@ export function teamReason({
   if (!removing && !correcting && !undeciding && (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide))
     return 'team';
   if (line.autoCalcDisabled || line.dualRewrite.scoreReported || !line.projectedScore) return 'team';
+  // a line given a winner whose own sides do not both hold a participant (no line-up assigned): v1 refuses it before
+  // its first write (`directParticipants` → `attemptToModifyScore`'s `validToScore`, MISSING_ASSIGNMENTS)
+  if (route === 'winner' && !lineValidToScore(view, request)) return 'team';
   // a round robin's group tally is re-read from the dual the line writes (S7: `groupTally`, the group read off the dual)
   if (view.draw.tallied && !view.group) return 'team';
   // a line played on a dual already decided keeps its winner: only the dual's tally changes. A fresh line cannot hand it
@@ -108,6 +111,18 @@ export function teamReason({
   // a line that decides its dual: the dual's own call is planned with it (`decidingLineOps`, S7)
   if (line.projectedWinningSide) return dual && line.projectedStatus === COMPLETED ? undefined : 'team';
   return line.projectedStatus === IN_PROGRESS ? undefined : 'team';
+}
+
+/**
+ * v1's `validToScore` (`attemptToModifyScore`) as it reads a line, which stores no drawPositions of its own: both of
+ * its sides hold a participant; or the scoring policy does not require participants; or one side does and the line is
+ * ad hoc, DEFAULTED, or a single exit.
+ */
+function lineValidToScore(view: OutcomeView, request: OutcomeRequest): boolean {
+  const { count, requireForScoring } = view.participants;
+  if (count === 2 || !requireForScoring) return true;
+  if (count !== 1) return false;
+  return !!view.draw.isAdHoc || isExit(request.matchUpStatus);
 }
 
 /**

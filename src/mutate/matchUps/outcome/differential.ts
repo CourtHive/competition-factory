@@ -7,7 +7,9 @@ import type { MatchUpWrite, Refusal } from './types';
  * S2a re-implements the REFUSALS (§ 2). A refusal v1 raises from a write v2 does not plan (the exit cascade's) is an
  * apply-stage code: v2 accepting while v1 refuses with one of these is not a divergence. Every other disagreement
  * throws, with both answers and the matchUp named. Since S7 the § 3 `refused` routes are v2's own refusals
- * (`refuseRoute`: rows 28 and 6), so no status code is deferred; `MISSING_ASSIGNMENTS` stays, a manual-scoring line's.
+ * (`refuseRoute`: rows 28 and 6), so no status code is deferred; `MISSING_ASSIGNMENTS` stays, for the calls v2
+ * abstains from (a line under manual scoring, a line given a winner with no line-up assigned): where v2 has a complete
+ * plan for the call it is a divergence (`compareDecisions`, `planned`).
  */
 export const APPLY_STAGE_CODES: ReadonlySet<string> = new Set([
   // INVALID_TIME, INVALID_DATE and ANACHRONISM are not: v2 refuses a schedule as v1's writer refuses it, rows 16, 25
@@ -26,7 +28,10 @@ export const APPLY_STAGE_CODES: ReadonlySet<string> = new Set([
   // `attemptToModifyScore`'s `validToScore`: row 6's participants clause asked again after the dispatch, which only a
   // score with no winner skips. On a singles matchUp such a score is `removeDirectedParticipants`' (row 24's removal
   // clause); on a line of a dual under manual scoring (auto-calc disabled) it is `attemptToModifyScore`'s, and a seat
-  // of the dual unassigned is refused here (`applyStageCodesRuled.test.ts`). v2 leaves manual scoring to v1 (item 3)
+  // of the dual unassigned is refused here (`applyStageCodesRuled.test.ts`). v2 leaves manual scoring to v1 (item 3).
+  // Its second reach is a line given a winner (`directParticipants`), auto-calc on: a line stores no drawPositions, so
+  // `validToScore` reads its own sides, and one with no line-up assigned is refused, before any write. v2 leaves that
+  // line to v1 too (`teamReason`, `lineValidToScore`). Deferred only where v2 abstains (`compareDecisions`)
   MISSING_ASSIGNMENTS.code,
   // MISSING_DRAW_POSITIONS is not: v2 refuses it as v1 does, row 24, both clauses (v1's `missingDrawPositionsRefusal`
   // before the dispatch; `removeDirectedParticipants`' check after it, S7)
@@ -54,11 +59,13 @@ export class OutcomePipelineDivergence extends Error {
 export type Comparison = { agree: boolean; deferred?: string; v1: string; v2: string };
 
 /** compares what v2 decided with what v1 returned; `deferred` names an apply-stage code v2 did not reach */
-export function compareDecisions(v2: Refusal | undefined, v1Code: string | undefined): Comparison {
+export function compareDecisions(v2: Refusal | undefined, v1Code: string | undefined, planned = false): Comparison {
   const v2Code = v2?.code;
   if (v2Code === v1Code) return { agree: true, v1: v1Code ?? 'ok', v2: v2Code ?? 'ok' };
-  if (!v2Code && v1Code && APPLY_STAGE_CODES.has(v1Code))
-    return { agree: true, deferred: v1Code, v1: v1Code, v2: 'ok' };
+  // `planned`: v2 has a complete plan for the call, so under `v2` it writes where v1 refuses. That is not a refusal
+  // v2 leaves to v1's apply stage: a missing assignment is deferred only for a call v2 abstains from
+  const deferrable = !!v1Code && APPLY_STAGE_CODES.has(v1Code) && !(planned && v1Code === MISSING_ASSIGNMENTS.code);
+  if (!v2Code && deferrable) return { agree: true, deferred: v1Code, v1: v1Code, v2: 'ok' };
   return { agree: false, v1: v1Code ?? 'ok', v2: v2Code ?? 'ok' };
 }
 

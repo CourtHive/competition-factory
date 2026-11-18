@@ -453,7 +453,8 @@ A double exit or an exit carried across a loser link that the plan does not hold
   2026-10-22): `propagateExitFrom` (`progressExitStatus`'s placements); the apply-stage refusals inside
   `setMatchUpState` after its first write (`noDownstreamDependencies`, `removeDoubleExit`,
   `attemptToSetWinningSide`'s `removeDirectedParticipants` and `directParticipants`, `attemptToModifyScore`'s
-  `MISSING_ASSIGNMENTS` on a line of a dual under manual scoring, `updateTieMatchUpScore`,
+  `MISSING_ASSIGNMENTS` on a line of a dual under manual scoring (its other reach, a line given a winner with no
+  line-up assigned, is refused before any write), `updateTieMatchUpScore`,
   `relabelWithoutDirection`, `swapWinnerLoser`'s writes after its relabel); and in the settle steps,
   `settleRederivedDoubleExits` (its `propagateUnfillableLoserBye`, `directWinner` and carry),
   `oweDissolvedConvergencesTheirByes`, `reconcileConsolationReservations`, `reconcileCarriesPastByes`
@@ -1277,7 +1278,7 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   a loser carries, the exit a double exit produces, two exits converging, the swap, a decider's
   settlement, TEAM auto-calc and the direction of a dual its lines decide, and an exit that meets a
   BYE (none may be left labelled an exit beside it). A refusal v1 raises at the apply stage, where
-  v2 does not reach (`APPLY_STAGE_CODES`: `ERR_FORCED`, and `ERR_MISSING_ASSIGNMENTS`, a manual-scoring line's; the status checks a write makes are v2's own rows since S7, rows 6, 24 and 28; an assigned or occupied drawPosition inside the exit cascade is not one since S7: v1 no longer raises either after its first write, so one raised there is a divergence), is recorded as
+  v2 does not reach (`APPLY_STAGE_CODES`: `ERR_FORCED`, and `ERR_MISSING_ASSIGNMENTS`, a manual-scoring line's or a line's given a winner with no line-up assigned, deferred only where v2 abstains from the call: v1 raising it for a call v2 has a complete plan for is a divergence; the status checks a write makes are v2's own rows since S7, rows 6, 24 and 28; an assigned or occupied drawPosition inside the exit cascade is not one since S7: v1 no longer raises either after its first write, so one raised there is a divergence), is recorded as
   deferred rather than a divergence; so is a step v2 does not yet plan, such as a relabel whose
   loser stands past a BYE, or an exit carried into a swap. `getDifferentialTally()` counts compared
   and deferred decisions by route.
@@ -1441,6 +1442,10 @@ Not planned (they stayed v1's until batch 4b, which reads each off v1's whole wr
 - a removal that leaves the dual holding no line's result: `updateTieMatchUpScore` removes the dual's score, and its
   tieFormat where it equals the inherited one;
 - auto-calc off;
+- a line given a winner whose own sides do not both hold a participant (no line-up assigned): v1 refuses it
+  `ERR_MISSING_ASSIGNMENTS` before any write (`directParticipants`, `attemptToModifyScore`'s `validToScore`, which lets
+  through a scoring policy that does not require participants, and one side assigned where the line is ad hoc or a
+  single exit), and v2 leaves the call, and the refusal, to v1;
 - a REPORTED score source (v1 returns before any tally).
 
 **A line that un-decides its dual** (S7, the `line-score` route: a decided dual whose lines, with this one in place,
