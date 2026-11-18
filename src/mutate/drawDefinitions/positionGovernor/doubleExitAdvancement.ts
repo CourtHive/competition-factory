@@ -922,7 +922,8 @@ function conditionallyAdvanceDrawPosition(params) {
   if (!noContextTargetMatchUp) return { error: MISSING_MATCHUP };
 
   const sourceDrawPositions = sourceMatchUp?.drawPositions ?? [];
-  let targetMatchUpDrawPositions = noContextTargetMatchUp.drawPositions?.filter(Boolean);
+  // a matchUp nobody has reached may store no drawPositions at all (a lucky draw's later rounds)
+  let targetMatchUpDrawPositions = noContextTargetMatchUp.drawPositions?.filter(Boolean) ?? [];
 
   const sameStructure = sourceMatchUp?.structureId === targetMatchUp.structureId;
 
@@ -1618,7 +1619,7 @@ function advanceFromTarget({
   const noContextNextWinnerMatchUp = matchUpsMap.drawMatchUps.find(
     (matchUp) => matchUp.matchUpId === nextWinnerMatchUp.matchUpId,
   );
-  const nextWinnerMatchUpDrawPositions = noContextNextWinnerMatchUp?.drawPositions?.filter(Boolean);
+  const nextWinnerMatchUpDrawPositions = noContextNextWinnerMatchUp?.drawPositions?.filter(Boolean) ?? [];
   const nextWinnerMatchUpHasDrawPosition = nextWinnerMatchUpDrawPositions.length === 1;
 
   if (drawPositionToAdvance) {
