@@ -825,6 +825,16 @@ function resolveAndApplyOutcome({
       stack,
     });
 
+  // § 2 rows 13, 14 and 15 on a TEAM dual: a result its played-on downstream does not allow (another winner, or no
+  // action the dispatch accepts). They were refused by the dispatch below, after the dual's writes, which left the dual
+  // stamped and announced under the error (measured 2026-11-18, TEAM SINGLE_ELIMINATION 4: a dual decided by its own
+  // call, its winner played on, given the other winner). Asked here, as the dispatch asks, so the error leaves the
+  // record unchanged.
+  if (applyTeamWrites) {
+    const refusal = downstreamRefusal(params, !!activeDownstream);
+    if (refusal) return decorateResult({ result: refusal, stack });
+  }
+
   // the TEAM dual's auto-calc and lineUps, now that nothing before the outcome's own writes can refuse
   applyTeamWrites?.();
 
@@ -942,6 +952,23 @@ function refusedAtTheStatusRoute(params: Parameters<typeof swapWinnerLoser>[0], 
   // a double exit asked to become a single one is unwound first (`removeDoubleExit`): not asked here
   if ((activeDownstream && hasPropagated) || isDoubleExit(matchUp.matchUpStatus)) return false;
   return refusesStatusRoute(params);
+}
+
+/**
+ * What the dispatch in `resolveAndApplyOutcome` refuses for the matchUp's played-on downstream, read as it reads it and
+ * writing nothing: a winner other than the one that stands (`winningSideWithDownstreamDependencies`: § 2 rows 13 and
+ * 14), or neither a winner nor a directing status (row 15). Undefined where the dispatch writes.
+ */
+function downstreamRefusal(params: Parameters<typeof swapWinnerLoser>[0], activeDownstream: boolean) {
+  const { matchUp, matchUpStatus, winningSide, score } = params;
+  if (clearsABye({ storedMatchUpStatus: matchUp?.matchUpStatus, matchUpStatus, score, winningSide })) return undefined;
+  if (isUndirectedDrawnOutcome(params, activeDownstream)) return undefined;
+  const hasPropagated = !!matchUp.winningSide || isDoubleExit(matchUp.matchUpStatus);
+  if (!activeDownstream || !hasPropagated) return undefined;
+  const matchUpWinner = (winningSide && !params.matchUpTieId) || params.projectedWinningSide;
+  if (matchUpWinner) return changedWinnerRefusal(params);
+  if (isDirectingMatchUpStatus({ matchUpStatus }) || params.autoCalcDisabled) return undefined;
+  return { error: NO_VALID_ACTIONS };
 }
 
 function applyScoredTime({ matchUp }) {
@@ -1128,9 +1155,24 @@ function resolveTieMatchUpContext({
   };
 }
 
-function winningSideWithDownstreamDependencies(params) {
+/** rows 13 and 14: a winner named beneath a played-on downstream that is not the winner standing there */
+function changedWinnerRefusal(params) {
   const { matchUp, winningSide, matchUpTieId, dualWinningSideChange } = params;
-  if (winningSide === matchUp.winningSide || (matchUpTieId && !dualWinningSideChange)) {
+  if (winningSide === matchUp.winningSide || (matchUpTieId && !dualWinningSideChange)) return undefined;
+  // A double exit has no `winningSide` to change — it is the OUTCOME being changed, and naming
+  // the missing field would contradict what the TD is looking at.
+  const error = matchUp.winningSide ? CANNOT_CHANGE_WINNING_SIDE : CANNOT_CHANGE_OUTCOME;
+  return decorateResult({
+    stack: 'winningSideWithDownstreamDependencies',
+    result: { error },
+    context: { winningSide, matchUp },
+  });
+}
+
+function winningSideWithDownstreamDependencies(params) {
+  const { matchUp, winningSide } = params;
+  const refusal = changedWinnerRefusal(params);
+  if (!refusal) {
     const relabel = !!winningSide && winningSide === matchUp.winningSide && !params.isCollectionMatchUp;
     const result = applyMatchUpValues(params);
     if (result.error || !relabel) return result;
@@ -1144,16 +1186,8 @@ function winningSideWithDownstreamDependencies(params) {
     if (relabelled.error) return relabelled;
     const { context } = relabelled;
     return context ? { ...result, context: { ...((result as any).context ?? {}), ...context } } : result;
-  } else {
-    // A double exit has no `winningSide` to change — it is the OUTCOME being changed, and naming
-    // the missing field would contradict what the TD is looking at.
-    const error = matchUp.winningSide ? CANNOT_CHANGE_WINNING_SIDE : CANNOT_CHANGE_OUTCOME;
-    return decorateResult({
-      stack: 'winningSideWithDownstreamDependencies',
-      result: { error },
-      context: { winningSide, matchUp },
-    });
   }
+  return refusal;
 }
 
 function applyMatchUpValues(params) {
