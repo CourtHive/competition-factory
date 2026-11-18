@@ -30,8 +30,10 @@ import {
  * Each shape below is refused with the same code under v1, v2 and the differential, which compares the two (no
  * deferral); and the record is unchanged. `UNRECOGNIZED_MATCHUP_STATUS` has no shape: § 3's `unrecognized` and `not
  * directing` rows are not reached past row 6, which the first test asserts of the status lists themselves.
- * `MISSING_ASSIGNMENTS` stays an apply-stage code: its one reach from `setMatchUpStatus` is a line under manual
- * scoring (item 3, v1's), pinned last as the deferral it is.
+ * `MISSING_ASSIGNMENTS` stays an apply-stage code for the calls v2 abstains from. It has two reaches from
+ * `setMatchUpStatus`: a line under manual scoring (item 3, v1's), shown last as the deferral it is; and a line given a
+ * winner with no line-up assigned, auto-calc on (`directParticipants`), which v2 also leaves to v1
+ * (`recordedTeamCall.test.ts`). Where v2 has a complete plan for the call, the code is a divergence, not a deferral.
  */
 afterEach(() => setOutcomePipeline(OUTCOME_PIPELINE_V1));
 

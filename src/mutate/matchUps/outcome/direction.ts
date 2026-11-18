@@ -26,7 +26,9 @@ import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
  * send). The loser's half is entangled with exit propagation and is planned with it (S2c).
  */
 export function planDirection(request: OutcomeRequest, view: OutcomeView, route: Route): DirectionPlan | undefined {
-  if (route === 'double-exit' || route === 'completed-to-double-exit') return planProducedExit(request, view);
+  // a lucky draw's double exit produces nothing (v1's `doubleExitAdvancement` returns at once there)
+  if (route === 'double-exit' || route === 'completed-to-double-exit')
+    return view.draw.luckyBased ? undefined : planProducedExit(request, view);
   if (route === 'swap') return planSwap(request, view);
   if (route === 'apply-values') return planRelabelled(request, view);
   if (route !== 'winner') return undefined;

@@ -1,6 +1,7 @@
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { getUnearnedLinkAdvancements } from '@Query/drawDefinition/getUnearnedLinkAdvancements';
 import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
+import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getByeCrossings } from '@Query/drawDefinition/getByeCrossings';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -657,6 +658,45 @@ function getNeverToBePlayed(drawMatchUps: any[]): Set<string> {
 }
 
 /**
+ * BEHIND A LUCKY DRAW'S DOUBLE EXIT — CA, 2026-11-17 and 2026-11-18.
+ *
+ * In a lucky-based draw (`isLuckyBasedDraw`: LUCKY_DRAW and ADAPTIVE) a double exit advances nobody: it is written on
+ * its own matchUp and produces nothing downstream (`doubleExitAdvancement`). So the seat it would have filled stays
+ * open, whoever arrives beside that seat waits there, and that is the intended state, not a stall ("yes to lucky
+ * exempt"; "adaptive same").
+ *
+ * The matchUps a double exit leaves a seat open in: the ones it feeds (`winnerMatchUpId`, and `loserMatchUpId` into an
+ * ADAPTIVE draw's other structures), and what those feed in turn for as long as they hold no winner. A matchUp with an
+ * open seat sends nobody on either, so the seat it owes is open for the same reason. A matchUp that HAS a winner ends
+ * the walk: it sent somebody on, and a seat left open past it was left open by something else.
+ *
+ * Returned empty for every other draw type: there a double exit produces onward, and a seat left open behind one is
+ * the defect this rule exists to name.
+ */
+function getBehindLuckyDoubleExit(drawMatchUps: any[], drawType?: string): Set<string> {
+  const behind = new Set<string>();
+  if (!isLuckyBasedDraw(drawType)) return behind;
+
+  const matchUpById = new Map(drawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
+  const pending = drawMatchUps.filter((matchUp) => isDoubleExit(matchUp.matchUpStatus) && !matchUp.winningSide);
+  const visited = new Set<string>();
+
+  while (pending.length) {
+    const matchUp = pending.pop();
+    if (!matchUp || visited.has(matchUp.matchUpId)) continue;
+    visited.add(matchUp.matchUpId);
+    for (const targetId of [matchUp.winnerMatchUpId, matchUp.loserMatchUpId]) {
+      const target = targetId && matchUpById.get(targetId);
+      if (!target || target.winningSide) continue;
+      behind.add(target.matchUpId);
+      pending.push(target);
+    }
+  }
+
+  return behind;
+}
+
+/**
  * STALLED_POSITION — a participant in a match that can never be played, in a draw that has stopped.
  *
  * ## Why every other rule here is blind to it
@@ -730,6 +770,7 @@ function getStalledPositionInconsistencies(
    */
   allDrawMatchUps: MatchUp[],
   roundRobinGroupStructureIds: Set<string>,
+  drawType?: string,
 ): StructureInconsistency[] {
   /**
    * PLAYABILITY, which is a different question from being stalled and must stay narrow. A
@@ -748,6 +789,7 @@ function getStalledPositionInconsistencies(
   if (!hasStarted) return [];
 
   const neverToBePlayed = getNeverToBePlayed(drawMatchUps);
+  const behindLuckyDoubleExit = getBehindLuckyDoubleExit(drawMatchUps, drawType);
 
   const inconsistencies: StructureInconsistency[] = [];
   for (const matchUp of scoped as any[]) {
@@ -758,6 +800,8 @@ function getStalledPositionInconsistencies(
     if ((matchUp.sides ?? []).some((side: any) => side?.bye)) continue;
     // nobody is waiting in a matchUp that will never be played, or in one such a matchUp feeds
     if (neverToBePlayed.has(matchUp.matchUpId)) continue;
+    // a lucky draw's double exit advances nobody: the seat left open behind it is the intended state
+    if (behindLuckyDoubleExit.has(matchUp.matchUpId)) continue;
 
     const present = occupants(matchUp);
     if (present.length !== 1) continue;
@@ -854,7 +898,12 @@ export function getStructureInconsistencies(
   collectRoundRobinGroupStructureIds(drawDefinition.structures, roundRobinGroupStructureIds);
 
   inconsistencies.push(
-    ...getStalledPositionInconsistencies(scoped, inContextDrawMatchUps, roundRobinGroupStructureIds),
+    ...getStalledPositionInconsistencies(
+      scoped,
+      inContextDrawMatchUps,
+      roundRobinGroupStructureIds,
+      drawDefinition.drawType,
+    ),
   );
 
   const linkTargetRounds = new Set(

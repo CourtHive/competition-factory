@@ -113,6 +113,13 @@ import type {
  */
 
 /**
+ * A lucky draw's double exit produces nothing (`doubleExitAdvancement`, CA 2026-11-17): entered, cleared or replaced, it
+ * is read off v1's whole write, the planners' produced exit and its unwind having nothing to state there.
+ */
+const luckyDoubleExit = ({ view, request }: Pick<PlanArgs, 'view' | 'request'>): boolean =>
+  !!view.draw.luckyBased && (isDoubleExit(request.matchUpStatus) || isDoubleExit(view.existing.matchUpStatus));
+
+/**
  * S5: an exit is planned only as a single WALKOVER, DEFAULTED or RETIRED entered with a winner on a matchUp that holds
  * no result, whose loser carries nothing on: `propagateExitStatus` off, or on with nothing to carry (no loser link, or a
  * retirement the policy does not propagate). v1 then directs it as a played result (`directParticipants`): the winner
@@ -176,7 +183,7 @@ function abstainReason(args: PlanArgs): AbstainReason | SeatObligation | undefin
   // its dual's, and its dual is tallied without it. A line's single exit still meets `exitReason` (a DEFAULTED under a
   // scoring policy's `incompleteAssignmentsOnDefault` writes `processCodes`, v1's)
   if (view.line && isDoubleExit(request.matchUpStatus)) return undefined;
-  const exit = exitReason(args);
+  const exit = luckyDoubleExit(args) ? 'exit' : exitReason(args);
   if (typeof exit === 'string') return exit;
   if (satisfiedDoubleExit(view, request, args.route)) return undefined;
   // S4: a score changed beneath an active downstream keeps its winner and re-directs nothing (`apply-values`)
@@ -574,6 +581,9 @@ function planOps(args: PlanArgs): OutcomePlan {
   if (args.dual) return lineDualOps({ ...args, dual: args.dual, drawDefinition });
   // a double exit asked for again: v1 writes nothing (`satisfiedDoubleExit`)
   if (satisfiedDoubleExit(view, request, args.route)) return { ops: [], shape: 'local' };
+  // a refused call has no route and no write (the differential plans it beside its refusal): nothing to state as ops,
+  // as `recordedWhole` records nothing for it. A line's double exit is the one shape no reason above stops without one
+  if (!args.route || !args.write) return { abstain: 'route' };
   return recordedPlanOps(args, drawDefinition, reason);
 }
 

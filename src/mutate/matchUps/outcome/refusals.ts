@@ -3,6 +3,7 @@ import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatus
 import { rewritesCarriedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { validateScore } from '@Scoring/analysis/validateScore';
+import { definedAttributes } from '@Tools/definedAttributes';
 import { isDoubleExit } from '@Validators/isExit';
 import { chooseRoute } from './route';
 
@@ -62,11 +63,16 @@ const LIVE = new Set<string>([IN_PROGRESS, SUSPENDED]);
 const NON_RESULT = new Set<string>([CANCELLED, INCOMPLETE, ABANDONED, TO_BE_PLAYED]);
 const EXITS = new Set<string>([WALKOVER, DEFAULTED, DOUBLE_WALKOVER, DOUBLE_DEFAULT]);
 
+/**
+ * A refusal's context holds the attributes that are defined, as v1's `decorateResult` leaves it (shallow: a context
+ * carries references): a call naming no status is refused with no `matchUpStatus` key, not an undefined one
+ */
 const refuse = (row: number, error: ErrorType, extra: Omit<Refusal, 'code' | 'error' | 'row'> = {}): Refusal => ({
   code: error.code,
   error,
   row,
   ...extra,
+  ...(extra.context ? { context: definedAttributes(extra.context, false, false, true) } : {}),
 });
 
 const isClear = (request: OutcomeRequest): boolean =>
@@ -166,7 +172,8 @@ function refuseScore(request: OutcomeRequest, view: OutcomeView): Refusal | unde
   if (view.isTeam && flags.enableAutoCalc && view.activeDownstream) {
     const projected = view.dualProjection?.projectedWinningSide;
     if (projected !== view.existing.winningSide)
-      return refuse(14, CANNOT_CHANGE_WINNING_SIDE, { context: { winningSide, projectedWinningSide: projected } });
+      // v1 (`handleTeamAutoCalc`) names the stored dual beside the call's winningSide (`namesMatchUp`)
+      return refuse(14, CANNOT_CHANGE_WINNING_SIDE, { context: { winningSide }, namesMatchUp: true });
   }
 
   if (view.isTeam && matchUpStatus === AWAITING_RESULT)
@@ -315,7 +322,13 @@ function refuseDispatch(request: OutcomeRequest, view: OutcomeView): Refusal | u
  * § 3's `unrecognized` and `not directing` rows are not reached: every status row 6 lets through is directing or
  * non-directing (`applyStageCodesRuled.test.ts`), so a `refused` route here that is not the BYE's is the fallthrough.
  */
-function refuseRoute(request: OutcomeRequest, view: OutcomeView): Refusal | undefined {
+function refuseRoute(given: OutcomeRequest, view: OutcomeView): Refusal | undefined {
+  // a TEAM dual's call that turns auto-calc on is dispatched with the winner and score its lines project, whatever
+  // the call names (v1's `handleTeamAutoCalc`): an exit entered with a winner the lines do not project has none
+  const projection = view.isTeam && given.flags.enableAutoCalc ? view.dualProjection : undefined;
+  const request = projection
+    ? { ...given, winningSide: projection.projectedWinningSide, score: projection.score }
+    : given;
   const route = chooseRoute(request, view);
   // a line under manual scoring (the dual's auto-calc disabled) goes to `attemptToModifyScore`, not the removal
   if (route === 'remove-directed')

@@ -5,12 +5,15 @@ import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/ma
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { isDoubleExit as isDoubleExitStatus } from '@Validators/isExit';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { rereadTargets } from './rereadTargets';
 
 // constants
 import { INVALID_MATCHUP_STATUS, UNRECOGNIZED_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
+import type { MatchUp, MatchUpStatusUnion } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { HydratedMatchUp } from '@Types/hydrated';
 import {
   BYE,
   CANCELLED,
@@ -20,14 +23,41 @@ import {
   WALKOVER,
 } from '@Constants/matchUpStatusConstants';
 
+/** what the status dispatch reads to choose its route */
+export type StatusRouteParams = {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  propagateExitStatus?: boolean;
+  matchUpStatus?: MatchUpStatusUnion;
+  matchUpTieId?: string;
+  matchUp: MatchUp;
+};
+
+/** a dual in a round robin: its status is written as it stands (`scoreModification`) */
+const isTeamRoundRobinContext = ({ matchUp, inContextDrawMatchUps }: StatusRouteParams): boolean =>
+  !!(
+    matchUp.tieMatchUps &&
+    !matchUp.roundPosition &&
+    inContextDrawMatchUps.find((icdm) => icdm.matchUpId === matchUp.matchUpId)?.containerStructureId
+  );
+
+/**
+ * Whether the dispatch below ends at its fallthrough (§ 3's `refused`, § 2 row 6): a directing status no route accepts
+ * as it is named, an exit with no winner that is not carried. Nothing is written on the way there, so a caller with
+ * writes of its own to make first (`setMatchUpState`'s TEAM sides) asks this before it makes them.
+ */
+export function statusFallsThrough(params: StatusRouteParams): boolean {
+  const { matchUpStatus, matchUp } = params;
+  if (!matchUpStatus) return false;
+  if (!isDirectingMatchUpStatus({ matchUpStatus }) || isNonDirectingMatchUpStatus({ matchUpStatus })) return false;
+  if (params.matchUpTieId || matchUp.winningSide || matchUpStatus === BYE) return false;
+  if (isDoubleExitStatus(matchUpStatus)) return false;
+  return !isTeamRoundRobinContext(params) && !params.propagateExitStatus;
+}
+
 export function attemptToSetMatchUpStatus(params) {
   const { tournamentRecord, drawDefinition, matchUpStatus, structure, matchUp, event } = params;
 
-  const teamRoundRobinContext = !!(
-    matchUp.tieMatchUps &&
-    !matchUp.roundPosition &&
-    params.inContextDrawMatchUps.find((icdm) => icdm.matchUpId === matchUp.matchUpId).containerStructureId
-  );
+  const teamRoundRobinContext = isTeamRoundRobinContext(params);
 
   const stack = 'attemptToSetMatchUpStatus';
 

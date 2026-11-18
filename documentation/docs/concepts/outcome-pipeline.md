@@ -68,6 +68,14 @@ judges the stored score under the **stored** format while its third judges the i
 the format the call would apply, so a call that carries a new `matchUpFormat` can be refused under
 the old one. The checks v1's writers make before their first write, after the dispatch (rows 13 to 15),
 are asked there (S7, `refuseRoute`): row 24's removal clause, row 28 and row 6's fallthrough clause.
+A `context` holds the attributes that are defined, as v1's `decorateResult` leaves it: a call that names no
+`matchUpStatus` is refused by row 6's participants clause with `requiredParticipants` alone. Row 14's TEAM clause (a
+decided dual with an active downstream whose auto-calc the call turns on, its lines projecting another winner) names
+the stored dual beside the call's `winningSide`, as v1's `handleTeamAutoCalc` does.
+Row 6's fallthrough clause is asked of the call as it is dispatched: a TEAM dual's call that turns auto-calc on takes
+the winner and score its lines project, whatever it names, so an exit entered with a winner the lines do not project is
+an exit with no winner, refused. v1 asks it before the dual's own writes (its sides and line-ups, `setMatchUpState`'s
+`refusedAtTheStatusRoute`), so the refusal leaves the record as it was.
 
 | #   | code                                       | condition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | where                                                                                                                                                                                                                                                              |
 | --- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -449,7 +457,8 @@ A double exit or an exit carried across a loser link that the plan does not hold
   2026-10-22): `propagateExitFrom` (`progressExitStatus`'s placements); the apply-stage refusals inside
   `setMatchUpState` after its first write (`noDownstreamDependencies`, `removeDoubleExit`,
   `attemptToSetWinningSide`'s `removeDirectedParticipants` and `directParticipants`, `attemptToModifyScore`'s
-  `MISSING_ASSIGNMENTS` on a line of a dual under manual scoring, `updateTieMatchUpScore`,
+  `MISSING_ASSIGNMENTS` on a line of a dual under manual scoring (its other reach, a line given a winner with no
+  line-up assigned, is refused before any write), `updateTieMatchUpScore`,
   `relabelWithoutDirection`, `swapWinnerLoser`'s writes after its relabel); and in the settle steps,
   `settleRederivedDoubleExits` (its `propagateUnfillableLoserBye`, `directWinner` and carry),
   `oweDissolvedConvergencesTheirByes`, `reconcileConsolationReservations`, `reconcileCarriesPastByes`
@@ -563,7 +572,11 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   under the same conditions. An ad hoc matchUp's winner directs nothing, and its structure's tally is
   planned when it holds one round (a Swiss's later rounds stay v1's). A result in a lucky draw's
   pre-feed round (a round of odd size) directs nothing either: v1 advances no one from it, the
-  advancement being chosen afterwards (`luckyDrawAdvancement`). An FMLC loser fed into the
+  advancement being chosen afterwards (`luckyDrawAdvancement`). A double exit in a lucky draw (LUCKY_DRAW, ADAPTIVE)
+  advances nobody, in a round of any size (CA, 2026-11-17): it is written on its own matchUp, produces no exit in the
+  next round, and whoever arrives beside the seat it leaves empty waits there (`doubleExitAdvancement` returns at
+  once; cleared, nothing is taken back). The planners plan no produced exit for it and abstain (`exit`), entered,
+  cleared or replaced: the call is read off v1's whole write. An FMLC loser fed into the
   consolation's round 2 is included (the seat `positionTargets` reports is the one `directLoser`
   takes). A loser that feed keeps out (they have won before) is
   owned too: their seat takes a propagated BYE and its matchUp becomes a BYE, as `directLoser` places
@@ -1273,7 +1286,7 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   a loser carries, the exit a double exit produces, two exits converging, the swap, a decider's
   settlement, TEAM auto-calc and the direction of a dual its lines decide, and an exit that meets a
   BYE (none may be left labelled an exit beside it). A refusal v1 raises at the apply stage, where
-  v2 does not reach (`APPLY_STAGE_CODES`: `ERR_FORCED`, and `ERR_MISSING_ASSIGNMENTS`, a manual-scoring line's; the status checks a write makes are v2's own rows since S7, rows 6, 24 and 28; an assigned or occupied drawPosition inside the exit cascade is not one since S7: v1 no longer raises either after its first write, so one raised there is a divergence), is recorded as
+  v2 does not reach (`APPLY_STAGE_CODES`: `ERR_FORCED`, and `ERR_MISSING_ASSIGNMENTS`, a manual-scoring line's or a line's given a winner with no line-up assigned, deferred only where v2 abstains from the call: v1 raising it for a call v2 has a complete plan for is a divergence; the status checks a write makes are v2's own rows since S7, rows 6, 24 and 28; an assigned or occupied drawPosition inside the exit cascade is not one since S7: v1 no longer raises either after its first write, so one raised there is a divergence), is recorded as
   deferred rather than a divergence; so is a step v2 does not yet plan, such as a relabel whose
   loser stands past a BYE, or an exit carried into a swap. `getDifferentialTally()` counts compared
   and deferred decisions by route.
@@ -1351,6 +1364,10 @@ own: its targets are its dual's.
 then the dual's tally, the dual staying COMPLETED and keeping its winner. Nothing is directed or carried again, since
 the dual's winner does not change; the next dual is left as it is, played or not. A dual walked over with its lines
 already at the value goal's edge is written the same way when a line takes it there (COMPLETED, its winner kept).
+A line's double exit on a dual decided by its own call (an exit, or a winner alone) that directed its winner or its
+loser (a next dual, a loser link), whose lines then project no winner, is not this shape: it names no winner, so it is not routed `line-score`, and v1 takes the dual's winner back out
+of the next dual before it writes the line (`attemptToSetMatchUpStatus`'s `scoreModification`). The planners abstain
+(`team`). Where the dual directed nobody (a round robin's, a final's) the line and the tally are all, and are planned.
 
 **A line that decides its dual** makes the dual's own call: v1's `directParticipants` writes the projected winner and
 score onto the dual (COMPLETED) and directs the dual as any winner is directed. v2 plans that call as it plans any call,
@@ -1437,6 +1454,11 @@ Not planned (they stayed v1's until batch 4b, which reads each off v1's whole wr
 - a removal that leaves the dual holding no line's result: `updateTieMatchUpScore` removes the dual's score, and its
   tieFormat where it equals the inherited one;
 - auto-calc off;
+- a line's double exit that un-decides a dual decided by its own call (above);
+- a line given a winner whose own sides do not both hold a participant (no line-up assigned): v1 refuses it
+  `ERR_MISSING_ASSIGNMENTS` before any write (`directParticipants`, `attemptToModifyScore`'s `validToScore`, which lets
+  through a scoring policy that does not require participants, and one side assigned where the line is ad hoc or a
+  single exit), and v2 leaves the call, and the refusal, to v1;
 - a REPORTED score source (v1 returns before any tally).
 
 **A line that un-decides its dual** (S7, the `line-score` route: a decided dual whose lines, with this one in place,
@@ -1772,8 +1794,9 @@ stored counterpart (the event and the tournament record hold the draw, so they r
 The call's own parameters are not copied, and are returned as v1 returns them.
 
 Still v1's among TEAM calls, as among any: a call v1 refuses on the copy (`ERR_MISSING_ASSIGNMENTS` for a result entered
-on a line with no line-up assigned, `ERR_INVALID_MATCHUP_STATUS` for an exit entered on a dual whose auto-calc the call
-turns on), and a recording a settle predicate still finds work on.
+on a line with no line-up assigned), and a recording a settle predicate still finds work on. An exit entered on a dual
+whose auto-calc the call turns on, its lines projecting no winner, is no longer one: it is row 6's fallthrough, refused
+by both pipelines before anything is written (§ 2).
 
 `planOutcome` returns a complete plan only when every write the call makes is an op; otherwise it **abstains**, naming
 the first reason, and the call is v1's whole (fail-closed). S1 holds two shapes: the **local** write (the matchUp's own

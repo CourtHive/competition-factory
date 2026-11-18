@@ -26,6 +26,8 @@ import { MISSING_ASSIGNMENTS } from '@Constants/errorConditionConstants';
  * (outcome-pipeline.md § 6, "A settle step has no failure to report"), and a divergence here is a finding against it.
  */
 type Site = 'settleDraw' | 'forward' | 'carryAfterForward';
+// § 2 row 19: the code the error-path tests force on a cascade write, an apply-stage code
+const FORCED = 'ERR_FORCED';
 const planted = vi.hoisted(() => ({ site: undefined as string | undefined, code: 'ERR_PLANTED', forwardRan: false }));
 const plantedError = () => ({ error: { code: planted.code, message: 'planted' } });
 
@@ -105,8 +107,17 @@ describe.each<Site>(['settleDraw', 'forward', 'carryAfterForward'])('a refusal p
 
   it('is a deferred refusal under differential when its code is an apply-stage code', () => {
     const { enter } = scoreFirstRound(OUTCOME_PIPELINE_DIFFERENTIAL);
-    Object.assign(planted, { site, code: MISSING_ASSIGNMENTS.code });
-    expect((enter() as any).error?.code).toEqual(MISSING_ASSIGNMENTS.code);
+    Object.assign(planted, { site, code: FORCED });
+    expect((enter() as any).error?.code).toEqual(FORCED);
     expect(getDifferentialTally().refusal).toEqual({ compared: 0, deferred: 1 });
+  });
+
+  // a missing assignment is deferred only for a call v2 abstains from: this one v2 has a complete plan for, and
+  // would write under `v2` where v1 refuses
+  it('is a divergence under differential when its code is a missing assignment, the call being one v2 plans', () => {
+    const { matchUpId, enter } = scoreFirstRound(OUTCOME_PIPELINE_DIFFERENTIAL);
+    Object.assign(planted, { site, code: MISSING_ASSIGNMENTS.code });
+    expect(enter).toThrow(/v1 ERR_MISSING_ASSIGNMENTS, v2 ok/);
+    expect(winningSideOf(matchUpId)).toBeUndefined();
   });
 });

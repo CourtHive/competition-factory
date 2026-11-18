@@ -292,7 +292,9 @@ export function decideOutcomeV2(args: BuildViewArgs): {
         v2: `index:${indexed.field} ${indexed.matchUpId} = ${indexed.index}`,
       });
     differentialTally('index', indexed ? 'compared' : 'deferred');
-    const comparison = compareDecisions(refusal, v1Result?.error?.code);
+    // a call v2 has a complete owned plan for is one it writes under `v2`: no missing assignment is deferred for it
+    const owned = !!outcome.ops && OWNED_SHAPES.has(outcome.shape);
+    const comparison = compareDecisions(refusal, v1Result?.error?.code, owned);
     if (!comparison.agree)
       throw new OutcomePipelineDivergence({
         matchUpId: args.request.matchUpId,

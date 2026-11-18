@@ -15,6 +15,7 @@ import { DOMINANT_DUO, LAVER_CUP, USTA_COLLEGE } from '@Constants/tieFormatConst
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { MISSING_ASSIGNMENTS } from '@Constants/errorConditionConstants';
 import type { MatchUp, Tournament } from '@Types/tournamentTypes';
+import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { TEAM } from '@Constants/eventConstants';
 import {
   COMPASS,
@@ -259,6 +260,128 @@ describe("a TEAM call v1 refuses on the copy is not recorded, and is v1's", () =
       // asked for (the planners abstain), and not made: v1's error on the copy is v1's answer, made on the stored record
       expect([actual.asked, actual.made]).toEqual([1, 0]);
       expect(actual.v1Writes).toEqual(v1.v1Writes);
+      expect(actual.results).toEqual(v1.results);
+      expect(actual.record).toEqual(v1.record);
+      expect(actual.notices).toEqual(v1.notices);
+      expect(actual.graph).toEqual(v1.graph);
+    }
+  });
+
+  // the same line never touched: the planners would plan its first result, and v1 refuses it before any write
+  it.each([
+    ['a winner alone', { winningSide: 1 }],
+    ['a WALKOVER', { matchUpStatus: WALKOVER, winningSide: 1 }],
+  ])('%s on a line to be played with no line-up assigned (ERR_MISSING_ASSIGNMENTS)', (_label, outcome) => {
+    generate({ drawSize: 4, drawType: SINGLE_ELIMINATION, tieFormatName: DOMINANT_DUO }, { bare: true });
+    const line = singles(duals()[0])[0];
+    const prepared = stored();
+    const calls: Call[] = [{ matchUpId: line.matchUpId, outcome }];
+    const v1 = play(OUTCOME_PIPELINE_V1, prepared, calls);
+    for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+      const actual = play(mode, prepared, calls);
+      expect([actual.asked, actual.made]).toEqual([1, 0]);
+      expect(JSON.parse(actual.results)[0].error.code).toEqual(MISSING_ASSIGNMENTS.code);
+      expect(actual.results).toEqual(v1.results);
+      expect(actual.record).toEqual(v1.record);
+      expect(actual.notices).toEqual(v1.notices);
+      expect(actual.graph).toEqual(v1.graph);
+    }
+  });
+
+  // v1's `validToScore` lets these through: v2 answers as v1 does
+  it.each([
+    ['one side assigned, a single exit', { matchUpStatus: DEFAULTED, winningSide: 1 }, undefined, true],
+    ['no side assigned, the scoring policy not requiring participants', { winningSide: 1 }, false, false],
+  ])('%s is accepted', (_label, outcome, requireParticipantsForScoring, oneSide) => {
+    generate({ drawSize: 4, drawType: SINGLE_ELIMINATION, tieFormatName: DOMINANT_DUO }, { bare: true });
+    if (requireParticipantsForScoring === false)
+      tournamentEngine.attachPolicies({
+        policyDefinitions: { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } },
+      });
+    const dual = duals()[0];
+    const line = singles(dual)[0];
+    if (oneSide) {
+      const [individualParticipantId] = dual.sides[0].participant.individualParticipantIds;
+      expect(
+        tournamentEngine.assignTieMatchUpParticipantId({
+          participantId: individualParticipantId,
+          tieMatchUpId: line.matchUpId,
+          drawId: 'd',
+        }).success,
+      ).toEqual(true);
+    }
+    const prepared = stored();
+    const calls: Call[] = [{ matchUpId: line.matchUpId, outcome }];
+    const v1 = play(OUTCOME_PIPELINE_V1, prepared, calls);
+    expect(JSON.parse(v1.results)[0].success).toEqual(true);
+    for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+      const actual = play(mode, prepared, calls);
+      expect(actual.results).toEqual(v1.results);
+      expect(actual.record).toEqual(v1.record);
+      expect(actual.notices).toEqual(v1.notices);
+      expect(actual.graph).toEqual(v1.graph);
+    }
+  });
+});
+
+/**
+ * A line's double exit names no winner, so it is never routed `line-score`. On a dual decided by its own call (an exit,
+ * or a winner alone) the lines then project no winner: v1 takes the dual's winner back out of the next dual, writes the
+ * line, and tallies the dual in progress. The planners do not plan that removal and abstain (`team`); the call is
+ * recorded whole.
+ */
+describe("a line's double exit that un-decides a dual decided by its own call is recorded", () => {
+  const nextDual = (record: string, matchUpId: string) =>
+    JSON.parse(record).events[0].drawDefinitions[0].structures[0].matchUps.find(
+      (matchUp: MatchUp) => matchUp.matchUpId === matchUpId,
+    );
+
+  it.each([
+    [DOUBLE_DEFAULT, { matchUpStatus: DEFAULTED, winningSide: 2 }],
+    [DOUBLE_WALKOVER, { matchUpStatus: DEFAULTED, winningSide: 2 }],
+    [DOUBLE_WALKOVER, { matchUpStatus: WALKOVER, winningSide: 1 }],
+    [DOUBLE_DEFAULT, { winningSide: 2 }],
+  ])('a line %s on a dual decided by %j', (matchUpStatus, decided) => {
+    generate({ drawSize: 4, drawType: SINGLE_ELIMINATION, tieFormatName: DOMINANT_DUO });
+    const dual = duals().find((each: any) => each.roundNumber === 1);
+    expect(
+      tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId: dual.matchUpId, outcome: decided }).success,
+    ).toEqual(true);
+    const prepared = stored();
+    const calls: Call[] = [{ matchUpId: dual.tieMatchUps[0].matchUpId, outcome: { matchUpStatus } }];
+    const v1 = play(OUTCOME_PIPELINE_V1, prepared, calls);
+    expect(JSON.parse(v1.results)[0].success).toEqual(true);
+    for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+      const actual = play(mode, prepared, calls);
+      expect([actual.asked, actual.made]).toEqual([1, 1]);
+      if (mode === OUTCOME_PIPELINE_V2) expect(actual.v1Writes).toEqual(0);
+      expect(actual.results).toEqual(v1.results);
+      expect(actual.record).toEqual(v1.record);
+      expect(actual.notices).toEqual(v1.notices);
+      expect(actual.graph).toEqual(v1.graph);
+      // the dual holds no winner, and nobody stands in the next dual for it
+      expect(nextDual(actual.record, dual.matchUpId).winningSide).toBeUndefined();
+      expect((nextDual(actual.record, dual.winnerMatchUpId).drawPositions ?? []).filter(Boolean)).toEqual([]);
+    }
+  });
+
+  // the next dual holds the exit a neighbouring dual's own double exit produced there, awarded to this dual's winner:
+  // v1 takes the winner back out of it, and the produced exit stands with nobody to be awarded it
+  it("a line's double exit on a dual decided by its own call, its winner awarded a produced exit in the next dual", () => {
+    generate({ drawSize: 8, drawType: SINGLE_ELIMINATION, tieFormatName: USTA_COLLEGE });
+    const [, , third, fourth] = duals().filter((each: any) => each.roundNumber === 1);
+    for (const [matchUpId, outcome] of [
+      [third.matchUpId, { matchUpStatus: DOUBLE_DEFAULT }],
+      [fourth.matchUpId, { winningSide: 2 }],
+    ] as const)
+      expect(tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId, outcome }).success).toEqual(true);
+    const prepared = stored();
+    const calls: Call[] = [{ matchUpId: fourth.tieMatchUps[5].matchUpId, outcome: { matchUpStatus: DOUBLE_WALKOVER } }];
+    const v1 = play(OUTCOME_PIPELINE_V1, prepared, calls);
+    expect(JSON.parse(v1.results)[0].success).toEqual(true);
+    for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+      const actual = play(mode, prepared, calls);
+      expect([actual.asked, actual.made]).toEqual([1, 1]);
       expect(actual.results).toEqual(v1.results);
       expect(actual.record).toEqual(v1.record);
       expect(actual.notices).toEqual(v1.notices);

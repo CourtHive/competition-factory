@@ -20,6 +20,7 @@ import { settleUnlessIdle } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
+import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
@@ -124,6 +125,15 @@ function logAdvancement(method, details) {
   pushGlobalLog({ method, ...details });
 }
 
+/**
+ * Where a double exit sends nobody on. A round robin group's matchUp (a container's) has no next matchUp. And A LUCKY
+ * DRAW'S DOUBLE EXIT ADVANCES NOBODY (CA, 2026-11-17): it is written on its own matchUp and produces nothing in the next
+ * round, no exit awarded to whoever stands or arrives there, no position sent on, no advance withdrawn. Who goes on
+ * from a lucky draw's round is chosen (`luckyDrawAdvancement`), and a double exit chooses nobody.
+ */
+const producesNothing = (structure: Structure, drawDefinition?: DrawDefinition): boolean =>
+  structure.structureType === CONTAINER || isLuckyBasedDraw(drawDefinition?.drawType);
+
 export function doubleExitAdvancement(args) {
   // THE CALL'S SCORE STAYS ON THE MATCHUP IT WAS ENTERED ON. Every write below spreads these params into
   // `modifyMatchUpScore` for ANOTHER matchUp (the produced exit, a convergence, a carry), so a score the double exit's
@@ -133,7 +143,7 @@ export function doubleExitAdvancement(args) {
   const { tournamentRecord, appliedPolicies, drawDefinition, matchUpsMap, targetData, structure, event } = params;
   const stack = 'doubleExitAdvancement';
 
-  if (structure.structureType === CONTAINER) return decorateResult({ result: { ...SUCCESS }, stack });
+  if (producesNothing(structure, drawDefinition)) return decorateResult({ result: { ...SUCCESS }, stack });
 
   const { matchUp: sourceMatchUp, targetMatchUps, targetLinks } = targetData;
   const { loserMatchUp, winnerMatchUp, loserTargetDrawPosition } = targetMatchUps;
@@ -922,7 +932,8 @@ function conditionallyAdvanceDrawPosition(params) {
   if (!noContextTargetMatchUp) return { error: MISSING_MATCHUP };
 
   const sourceDrawPositions = sourceMatchUp?.drawPositions ?? [];
-  let targetMatchUpDrawPositions = noContextTargetMatchUp.drawPositions?.filter(Boolean);
+  // a matchUp nobody has reached may store no drawPositions at all (a lucky draw's later rounds)
+  let targetMatchUpDrawPositions = noContextTargetMatchUp.drawPositions?.filter(Boolean) ?? [];
 
   const sameStructure = sourceMatchUp?.structureId === targetMatchUp.structureId;
 
@@ -1618,7 +1629,7 @@ function advanceFromTarget({
   const noContextNextWinnerMatchUp = matchUpsMap.drawMatchUps.find(
     (matchUp) => matchUp.matchUpId === nextWinnerMatchUp.matchUpId,
   );
-  const nextWinnerMatchUpDrawPositions = noContextNextWinnerMatchUp?.drawPositions?.filter(Boolean);
+  const nextWinnerMatchUpDrawPositions = noContextNextWinnerMatchUp?.drawPositions?.filter(Boolean) ?? [];
   const nextWinnerMatchUpHasDrawPosition = nextWinnerMatchUpDrawPositions.length === 1;
 
   if (drawPositionToAdvance) {
