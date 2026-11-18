@@ -1,4 +1,5 @@
 import { expectRecordedWhole, playCall, prepareCall } from '@Tests/testHarness/outcome/recordedCallHarness';
+import { objectGraph, storedGraph, storedRecord } from '@Tests/testHarness/outcome/objectGraph';
 import { findTarget, R1, won } from '@Tests/testHarness/outcome/directionFixtures';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -52,8 +53,8 @@ afterEach(() => {
  * routes and abstain `notes` from the rest. The notes are a matchUp's own field wherever v1 writes them, so they are
  * in the recording.
  *
- * NOT RECORDED: notes that are not data. `addNotes` also stores the `{ testing: true }` object a test hands it, as it
- * is; one that holds a function cannot be held by an op, the recording is not made, and the call stays v1's.
+ * Notes that are not data are recorded too (below): `addNotes` also stores the `{ testing: true }` object a test hands
+ * it, as it is, a function among its fields included.
  */
 
 const draw = () =>
@@ -91,23 +92,79 @@ describe('a call that carries notes the planners do not write is recorded whole'
   });
 });
 
+/**
+ * NOTES THAT ARE NOT DATA (CA, 2026-11-18: recorded). `addNotes` stores the object a test hands it (`testing: true`) as
+ * it is: the stored matchUp holds the caller's very object, a function among its fields included. A function cannot be
+ * copied, so the recorded op's own copy of the matchUp holds the notes copied as far as they can be and the function
+ * by reference (`cloneData`), and apply leaves on the stored matchUp what the copy's run left on the copy: the caller's
+ * object itself, as v1 does.
+ */
 describe('notes that are not data', () => {
-  it('a notes object holding a function is not recorded: the call stays v1s, and leaves what v1 leaves', () => {
-    const notes = { fx: { square: (x: number) => x * x }, keep: { num: 1 }, testing: true };
-    const prepared = prepareCall(call(undefined, undefined));
-    // the notes are handed over as they are: a function cannot be copied
-    const play = (mode: OutcomePipelineMode) =>
-      playCall(mode, { prepared: prepared.prepared, params: { ...prepared.params, notes } }, true);
-    const v1 = play(OUTCOME_PIPELINE_V1);
-    expect(v1.result.success).toEqual(true);
-    expect(v1.v1Writes).toBeGreaterThan(0);
-    const v2 = play(OUTCOME_PIPELINE_V2);
-    expect(v2.v1Writes).toEqual(v1.v1Writes);
-    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL);
-    for (const actual of [v2, compared]) {
-      expect(actual.result).toEqual(v1.result);
-      expect(actual.record).toEqual(v1.record);
-      expect(actual.notices).toEqual(v1.notices);
+  // `makeDeepCopy.test.ts`'s notes: a function, an object with its own `toString`, another with its own `toJSON`
+  const handed = () => ({
+    _id: { fx: (x: number) => x * x },
+    foo: { toString: () => '######' },
+    bar: { toJSON: () => '{ "some": "json" }' },
+    keep: { num: 1, str: 'string', obj: { a: 1, b: 2 } },
+    testing: true,
+  });
+  const noted = (record = storedRecord()) =>
+    (record.events?.[0].drawDefinitions?.[0].structures?.[0].matchUps ?? []).find((matchUp) => matchUp.notes);
+
+  it('a notes object holding functions is recorded whole, and the stored matchUp holds the very object v1 stores', () => {
+    const notes = handed();
+    const bare = prepareCall(call(undefined, undefined));
+    // the notes are handed over as they are, the same object in every play: a function cannot be copied
+    const prepared = { prepared: bare.prepared, params: { ...bare.params, notes } };
+    const before = objectGraph(notes);
+    // the record and the result object for object (`storedGraph`: a function is compared by identity), the notices
+    // and the record as text
+    expectRecordedWhole(prepared, 'notes', recorder, true);
+
+    for (const mode of [OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+      const played = playCall(mode, prepared, true);
+      expect(played.result.success).toEqual(true);
+      expect(played.v1Writes > 0).toEqual(mode !== OUTCOME_PIPELINE_V2);
+      // CONTROL (v1) and the claim (v2, differential): the caller's object itself, every object under it and each
+      // function the very one handed over
+      const stored = noted()?.notes as unknown as ReturnType<typeof handed>;
+      expect(stored).toBe(notes);
+      expect(stored._id).toBe(notes._id);
+      expect(stored._id.fx).toBe(notes._id.fx);
+      expect(stored._id.fx(3)).toEqual(9);
+      expect(stored.foo.toString).toBe(notes.foo.toString);
+      expect(stored.bar.toJSON).toBe(notes.bar.toJSON);
+      expect(stored.keep).toBe(notes.keep);
+      expect(stored.keep.obj).toBe(notes.keep.obj);
+      // and nothing wrote into what the caller handed over
+      expect(objectGraph(notes)).toEqual(before);
     }
+  });
+
+  it('a record that holds such notes takes later calls in every mode, as v1 does', () => {
+    const notes = handed();
+    const bare = prepareCall(call(undefined, undefined));
+    const noting: Record<string, unknown> = { ...bare.params, notes };
+    const later = (matchUpId: string) => [
+      // a result on the matchUp that holds the notes, then a double exit beside it
+      { drawId: 'd', matchUpId, outcome: won(1) },
+      { drawId: 'd', matchUpId: findTarget(R1(2)), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+    ];
+    const play = (mode: OutcomePipelineMode) => {
+      const first = playCall(mode, { prepared: bare.prepared, params: noting }, true);
+      setOutcomePipeline(mode);
+      const results = later(noting.matchUpId as string).map((params) => {
+        const { stack: _stack, ...result }: any = tournamentEngine.setMatchUpStatus(params);
+        return result;
+      });
+      setOutcomePipeline(OUTCOME_PIPELINE_V1);
+      expect(noted()?.notes).toBe(notes);
+      return { first: first.result, results, graph: storedGraph(results) };
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1);
+    // CONTROL: v1 accepts each
+    expect(v1.results.map((result) => result.success)).toEqual([true, true]);
+    expect(play(OUTCOME_PIPELINE_V2)).toEqual(v1);
+    expect(play(OUTCOME_PIPELINE_DIFFERENTIAL)).toEqual(v1);
   });
 });

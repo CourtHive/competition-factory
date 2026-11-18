@@ -6,6 +6,7 @@ import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExte
 import { scoredTimeAction } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { getCapturedStamps } from '@Global/state/globalState';
+import { cloneData } from '@Tools/cloneState';
 import { isAnyExit } from '@Validators/isExit';
 import { nowIso } from '@Tools/clock';
 import {
@@ -1104,7 +1105,8 @@ function replaceOwn(target: object | undefined, state: Record<string, unknown>, 
   const own = target as Record<string, unknown>;
   const stampedBefore = own.updatedAt;
   for (const key of Object.keys(own)) if (!kept.includes(key) && !(key in state)) delete own[key];
-  for (const [key, value] of Object.entries(structuredClone(state))) if (!kept.includes(key)) own[key] = value;
+  // a fresh copy for each fold; what is not data among the fields is held by reference (`cloneData`)
+  for (const [key, value] of Object.entries(cloneData(state))) if (!kept.includes(key)) own[key] = value;
   if (own.updatedAt !== stampedBefore) getCapturedStamps()?.add(target);
   return {};
 }

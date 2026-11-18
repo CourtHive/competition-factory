@@ -1807,9 +1807,22 @@ the matchUp's own field, so the recording carries them. A schedule v1 refuses is
 **Recorded calls: notes the planners do not write.** `notes` is answered. v1 writes a call's notes onto its matchUp
 inside the score write (`addNotes`) and forwards the call's parameters, notes among them, to the exits a double exit
 writes; the planners write notes on the call's own matchUp on the clean routes and abstained from the rest. Wherever v1
-writes them the notes are a matchUp's own field, so the recording carries them. Not recorded: notes that are not data.
-`addNotes` also stores the `{ testing: true }` object a test hands it, as it is; an entity whose fields hold a
-function cannot be held by an op (`recordedDiff.ts` `asData`), the recording is not made, and the call stays v1's.
+writes them the notes are a matchUp's own field, so the recording carries them.
+
+**Recorded calls: notes that are not data (CA, 2026-11-18).** `addNotes` also stores the `{ testing: true }` object a
+test hands it, as it is: the stored matchUp holds the caller's very object, whatever its fields hold, a function among
+them. Such a call was not recorded (a function cannot be copied, so no op could hold the matchUp), and stayed v1's. It
+is recorded: v1's run on the copy is handed the call's own parameters, so the copy's matchUp holds the caller's object,
+and apply leaves the copy's object graph on the stored matchUp (`Recording.mirror`: an object taken from the call is
+taken as it is). The stored matchUp therefore holds the very object v1 stores, each function in it the one handed over.
+The op's own copy of the matchUp, which the working view and the shadow fold, is a copy as far as one can be made
+(`tools/cloneState.ts` `cloneData`: `structuredClone`, and only where that throws, every plain object and array copied
+and whatever else is held kept by reference). The same copy is taken at three more places where v2 copies a stored
+matchUp or a folded view that may hold such a field (the working view's copy on write, the recorded fold,
+`differential`'s kept view): before, a later call on a record holding such notes threw there under `v2` and
+`differential` (`DataCloneError`), and the two measured (a result on the matchUp that holds them, a double exit beside
+it) now leave what v1 leaves. Other routes over such a record are not measured. `differential` compares the shadow with v1's record as text, which does not show a function; that
+the stored object is v1's, object for object and function for function, is held by `recordedNotesCall.test.ts`.
 
 **Recorded calls: a forward settle stopped at its bound (CA, 2026-11-18).** v1's forward settle acts on one owed
 answer per pass and stops after its pass limit (§ 6: `settleForwardConsequences`, 64 passes). A call that stops there

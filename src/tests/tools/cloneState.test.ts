@@ -1,4 +1,4 @@
-import { cloneState, isPlainContainer, restoreState } from '@Tools/cloneState';
+import { cloneData, cloneState, isPlainContainer, restoreState } from '@Tools/cloneState';
 import { describe, expect, it } from 'vitest';
 
 describe('cloneState', () => {
@@ -61,5 +61,41 @@ describe('cloneState', () => {
     expect(isPlainContainer(new (class Document {})())).toEqual(false);
     expect(isPlainContainer(new Date())).toEqual(false);
     expect(isPlainContainer(null)).toEqual(false);
+  });
+});
+
+describe('cloneData', () => {
+  it('copies data as structuredClone does: nothing shared, shared references kept shared, undefined kept', () => {
+    const shared = { n: 1 };
+    const source = { a: shared, b: shared, list: [shared], when: new Date(5), none: undefined };
+    const copy = cloneData(source);
+    expect(copy).toEqual(source);
+    expect(copy).not.toBe(source);
+    expect(copy.a).not.toBe(shared);
+    expect(copy.b).toBe(copy.a);
+    expect(copy.list[0]).toBe(copy.a);
+    expect(copy.when).not.toBe(source.when);
+    expect('none' in copy).toEqual(true);
+  });
+
+  it('copies what holds a function as far as it can be copied, and holds the function by reference', () => {
+    const square = (x: number) => x * x;
+    const keep = { num: 1 };
+    const source = { notes: { fx: { square }, keep, again: keep }, plain: [1, 2] };
+    // CONTROL: this is a value structuredClone refuses
+    expect(() => structuredClone(source)).toThrow();
+    const copy = cloneData(source);
+    expect(copy).not.toBe(source);
+    expect(copy.notes).not.toBe(source.notes);
+    expect(copy.notes.fx).not.toBe(source.notes.fx);
+    expect(copy.notes.fx.square).toBe(square);
+    expect(copy.notes.keep).toEqual(keep);
+    expect(copy.notes.keep).not.toBe(keep);
+    expect(copy.notes.again).toBe(copy.notes.keep);
+    expect(copy.plain).toEqual([1, 2]);
+    expect(copy.plain).not.toBe(source.plain);
+    // writing the copy leaves the source
+    copy.notes.keep.num = 2;
+    expect(keep.num).toEqual(1);
   });
 });

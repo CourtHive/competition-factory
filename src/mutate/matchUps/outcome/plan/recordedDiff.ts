@@ -2,6 +2,7 @@ import { DEFERRED_PAYLOAD, getCapturedStamps, getNoticeBuffer, getNoticeState } 
 import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { deferredQueryBinding } from '@Mutate/notifications/drawNotifications';
 import { DRAW_CHILDREN, MATCHUP_CHILDREN, RECORDED_ENTITY, recordedName, STRUCTURE_CHILDREN } from '../ops';
+import { cloneData } from '@Tools/cloneState';
 import { isObject } from '@Tools/objects';
 
 // constants and types
@@ -90,8 +91,7 @@ function recordedNotice({ topic, key, payload }: Notice): RecordedNotice | undef
   }
   const entity = RECORDED_ENTITY[topic];
   if (!entity) return undefined;
-  const fields = asData({ ...payload, [entity]: null });
-  return fields && { ...base, fields };
+  return { ...base, fields: asData({ ...payload, [entity]: null }) };
 }
 
 /**
@@ -177,20 +177,18 @@ export function nothingChanged(drawDefinition: DrawDefinition, before: RecordedB
   );
 }
 
-/** an op's own copy of an entity's fields; undefined where they are not data (a function among them: no op can hold it) */
-function asData<T>(state: T): T | undefined {
-  try {
-    return structuredClone(state);
-  } catch {
-    return undefined;
-  }
-}
+/**
+ * An op's own copy of an entity's fields, for the working view and the shadow to fold (apply leaves the copy's own
+ * graph: `Recording.mirror`). Fields that are not data (a function among the notes a caller handed `addNotes`, which
+ * v1 stores as they are) are copied as far as they can be, and what cannot be copied is held by reference
+ * (`cloneData`): the very function the call handed over, which is what v1 stores.
+ */
+const asData = cloneData;
 
 /**
  * What the writers changed on the copy since `before`, as ops, and the notices they buffered: an entity is changed
  * where its fields read differently or an object holding them is another (`unchanged`). Undefined where one of those
- * notices is one apply could not raise again on the stored record, or where a changed entity holds what is not data (a
- * function among the notes a test fixture carries): the call stays v1's.
+ * notices is one apply could not raise again on the stored record: the call stays v1's.
  */
 export function recordedOps({
   drawDefinition,
@@ -212,22 +210,17 @@ export function recordedOps({
   for (const stored of drawMatchUps(drawDefinition)) {
     const state = ownState(stored, MATCHUP_CHILDREN);
     if (unchanged(state, before.matchUps.get(stored.matchUpId))) continue;
-    const matchUp = asData(state) as MatchUp | undefined;
-    if (!matchUp) return undefined;
+    const matchUp = asData(state) as MatchUp;
     replace({ op: 'replaceMatchUp', matchUpId: stored.matchUpId, matchUp, recording }, stored);
   }
   for (const s of drawStructures(drawDefinition)) {
     const state = ownState(s, STRUCTURE_CHILDREN);
     if (unchanged(state, before.structures.get(s.structureId))) continue;
-    const data = asData(state);
-    if (!data) return undefined;
-    replace({ op: 'replaceStructureState', structureId: s.structureId, state: data, recording }, s);
+    replace({ op: 'replaceStructureState', structureId: s.structureId, state: asData(state), recording }, s);
   }
   const state = ownState(drawDefinition, DRAW_CHILDREN);
   if (!unchanged(state, before.draw)) {
-    const data = asData(state);
-    if (!data) return undefined;
-    replace({ op: 'replaceDrawState', drawId: drawDefinition.drawId, state: data, recording }, drawDefinition);
+    replace({ op: 'replaceDrawState', drawId: drawDefinition.drawId, state: asData(state), recording }, drawDefinition);
   }
   const notices: RecordedNotice[] = [];
   for (const notice of getNoticeBuffer() ?? []) {

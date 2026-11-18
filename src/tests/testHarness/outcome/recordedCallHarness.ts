@@ -70,6 +70,8 @@ export function playCall(
   };
 }
 
+const playAsGivenOrCopied = playCall;
+
 const tally = (key: string) => {
   const entry = getDifferentialTally()[key];
   return (entry?.compared ?? 0) + (entry?.deferred ?? 0);
@@ -81,7 +83,14 @@ const tally = (key: string) => {
  * compares the shadow, and under `v2` v1 is not asked to write the stored record, which is left as v1 leaves it object
  * for object, with v1's notices and v1's result.
  */
-export function expectRecordedWhole(call: RecordedCall, reason: AbstainReason, recorder: { refuse: boolean }) {
+export function expectRecordedWhole(
+  call: RecordedCall,
+  reason: AbstainReason,
+  recorder: { refuse: boolean },
+  /** hand the parameters over as they are, in every play (`playCall`) */
+  asGiven = false,
+) {
+  const playCall = (mode: OutcomePipelineMode, played: RecordedCall) => playAsGivenOrCopied(mode, played, asGiven);
   const v1 = playCall(OUTCOME_PIPELINE_V1, call);
   expect(v1.result.success, JSON.stringify(v1.result)).toEqual(true);
   expect(v1.v1Writes).toBeGreaterThan(0);

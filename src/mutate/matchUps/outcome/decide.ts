@@ -14,7 +14,7 @@ import { convergence, isRelabel, planDirection } from './direction';
 import { compareIndex, type IndexComparison } from './indexOracle';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
-import { cloneState, restoreState } from '@Tools/cloneState';
+import { cloneData, cloneState, restoreState } from '@Tools/cloneState';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { compareViews, hydrateShadow } from './viewOracle';
 import { isDoubleExit, isExit } from '@Validators/isExit';
@@ -1078,7 +1078,7 @@ function finalizePlan({
   for (const site of predicted) recordSettleEvent({ kind: 'predicted', site });
   return {
     ops: completedOps,
-    matchUps: keepFoldedView ? structuredClone(working.inContextDrawMatchUps) : undefined,
+    matchUps: keepFoldedView ? cloneData(working.inContextDrawMatchUps) : undefined,
     settle,
   };
 }
