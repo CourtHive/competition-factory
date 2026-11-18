@@ -120,6 +120,15 @@ const luckyDoubleExit = ({ view, request }: Pick<PlanArgs, 'view' | 'request'>):
   !!view.draw.luckyBased && (isDoubleExit(request.matchUpStatus) || isDoubleExit(view.existing.matchUpStatus));
 
 /**
+ * A double exit asked for again is satisfied, and v1 writes nothing of it (`satisfiedDoubleExit`). One stored with no
+ * `scoredTime` (a record older than the stamp, or one a failed write left) is still stamped by v1 where the call ends
+ * (`applyScoredTime`: a scored matchUp holding none is given one, with no notice and no `updatedAt`). That one write is
+ * read off v1's whole write.
+ */
+const unstampedDoubleExit = ({ view, request, route }: Pick<PlanArgs, 'view' | 'request' | 'route'>): boolean =>
+  satisfiedDoubleExit(view, request, route) && !view.existing.scoredTime;
+
+/**
  * S5: an exit is planned only as a single WALKOVER, DEFAULTED or RETIRED entered with a winner on a matchUp that holds
  * no result, whose loser carries nothing on: `propagateExitStatus` off, or on with nothing to carry (no loser link, or a
  * retirement the policy does not propagate). v1 then directs it as a played result (`directParticipants`): the winner
@@ -183,6 +192,7 @@ function abstainReason(args: PlanArgs): AbstainReason | SeatObligation | undefin
   // its dual's, and its dual is tallied without it. A line's single exit still meets `exitReason` (a DEFAULTED under a
   // scoring policy's `incompleteAssignmentsOnDefault` writes `processCodes`, v1's)
   if (view.line && isDoubleExit(request.matchUpStatus)) return undefined;
+  if (unstampedDoubleExit(args)) return 'exit';
   const exit = luckyDoubleExit(args) ? 'exit' : exitReason(args);
   if (typeof exit === 'string') return exit;
   if (satisfiedDoubleExit(view, request, args.route)) return undefined;
