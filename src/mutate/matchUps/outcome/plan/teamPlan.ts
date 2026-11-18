@@ -105,6 +105,13 @@ export function teamReason({
   // that is itself a single exit passes `lineExitReason` first (S7)
   // a removal or correction that changes the dual's winner: v1 takes the dual's winner back out of the next dual
   if ((removing || correcting) && line.projectedWinningSide !== line.dualWinningSide) return 'team';
+  // a line's double exit names no winner, so it is never routed `line-score` (`only-score`): on a dual decided by its
+  // own call, whose lines project no winner, v1 takes the dual's winner back out of the next dual before it writes the
+  // line (`attemptToSetMatchUpStatus`'s `scoreModification`, `removeDirectedParticipants`). Where the dual directed
+  // nobody (a round robin's, a final's: no next dual, no loser link) nothing is taken back, and the tally is all
+  const directed = !!(view.targets.winnerMatchUpId || view.targets.loserMatchUpId);
+  if (directed && isDoubleExit(request.matchUpStatus) && line.dualWinningSide && !line.projectedWinningSide)
+    return 'team';
   if (line.dualWinningSide) return undefined;
   const dualStatuses = new Set<string | undefined>([TO_BE_PLAYED, IN_PROGRESS, DEAD_RUBBER]);
   if (!dualStatuses.has(line.dualMatchUpStatus)) return 'team';

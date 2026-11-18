@@ -1356,6 +1356,10 @@ own: its targets are its dual's.
 then the dual's tally, the dual staying COMPLETED and keeping its winner. Nothing is directed or carried again, since
 the dual's winner does not change; the next dual is left as it is, played or not. A dual walked over with its lines
 already at the value goal's edge is written the same way when a line takes it there (COMPLETED, its winner kept).
+A line's double exit on a dual decided by its own call (an exit, or a winner alone) that directed its winner or its
+loser (a next dual, a loser link), whose lines then project no winner, is not this shape: it names no winner, so it is not routed `line-score`, and v1 takes the dual's winner back out
+of the next dual before it writes the line (`attemptToSetMatchUpStatus`'s `scoreModification`). The planners abstain
+(`team`). Where the dual directed nobody (a round robin's, a final's) the line and the tally are all, and are planned.
 
 **A line that decides its dual** makes the dual's own call: v1's `directParticipants` writes the projected winner and
 score onto the dual (COMPLETED) and directs the dual as any winner is directed. v2 plans that call as it plans any call,
@@ -1442,6 +1446,7 @@ Not planned (they stayed v1's until batch 4b, which reads each off v1's whole wr
 - a removal that leaves the dual holding no line's result: `updateTieMatchUpScore` removes the dual's score, and its
   tieFormat where it equals the inherited one;
 - auto-calc off;
+- a line's double exit that un-decides a dual decided by its own call (above);
 - a line given a winner whose own sides do not both hold a participant (no line-up assigned): v1 refuses it
   `ERR_MISSING_ASSIGNMENTS` before any write (`directParticipants`, `attemptToModifyScore`'s `validToScore`, which lets
   through a scoring policy that does not require participants, and one side assigned where the line is ad hoc or a
