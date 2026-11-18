@@ -774,7 +774,7 @@ nothing in the draw is playable — is an `error` **since 7.10.0**, so a stalled
 `valid`. It shipped as a `warning` and was promoted once randomised play at scale (40,000
 scenarios per arm, three arms) and the early-exit census both read zero.
 
-Four states are not reported, because nobody in them is waiting:
+Five states are not reported, because nobody in them is waiting:
 
 - a matchUp that is `DEAD_RUBBER`, `CANCELLED` or `ABANDONED` — it will never be played;
 - any matchUp one of those feeds, all the way downstream;
@@ -782,7 +782,12 @@ Four states are not reported, because nobody in them is waiting:
 - a `DOUBLE_WALKOVER` or `DOUBLE_DEFAULT` holding one participant (since 7.10.0) — a double
   exit produces onward, so the seat it leaves is a produced exit, not a wait. This is the
   shape left when an exit is recorded against a lone occupant and the other side later
-  carries in an exit of its own.
+  carries in an exit of its own;
+- in a lucky draw (`LUCKY_DRAW`, `ADAPTIVE`), a lone occupant behind a double exit. A lucky
+  draw's double exit advances nobody and produces nothing downstream, so the seat it leaves
+  open is the intended state: the matchUps the double exit feeds (winner and loser side), and
+  what those feed in turn while they hold no winner, are not reported. Any other open seat
+  in a lucky draw is still reported, and so is the same shape in every other draw type.
 
 :::
 
