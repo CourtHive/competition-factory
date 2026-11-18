@@ -47,10 +47,12 @@ vi.mock('@Mutate/matchUps/outcome/plan/tallyOps', async (importOriginal) => {
 });
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
   const actual: any = await importOriginal();
+  const { inDraftWrites } = await import('@Global/state/withDraftWrites');
   return {
     ...actual,
     setMatchUpState(...args: any[]) {
-      writes.count++;
+      // a write to a copy of the record is a recorded call's reading of v1 (`plan/recordedCall.ts`): v1 was not asked
+      if (!inDraftWrites()) writes.count++;
       return actual.setMatchUpState(...args);
     },
   };
@@ -229,7 +231,9 @@ it.each(['buffered', 'draw-only', 'no-ledger', 'uncaptured'] as const)(
     expect(v2.result).toEqual(v1.result);
     expect(JSON.parse(v2.record)).toEqual(JSON.parse(v1.record));
     expect(v2.notices).toEqual(v1.notices);
-    expect(v2.writes).toEqual(['no-ledger', 'uncaptured'].includes(context) ? v1.writes : 0);
+    // with no stamp ledger (no captured instant, or one captured without it) the call is recorded off v1's whole
+    // write on a copy, at the instants v1 read (`recordedClockCall.test.ts`): v1 is not asked to write the record
+    expect(v2.writes).toEqual(0);
   },
 );
 
@@ -453,7 +457,8 @@ describe.each([NATIVE, BRIDGE] as const)('uniform tally writer %s', (schema) => 
     expect(v2.result).toEqual(v1.result);
     expect(JSON.parse(v2.record)).toEqual(JSON.parse(v1.record));
     expect(v2.notices).toEqual(v1.notices);
-    const owned = schema === NATIVE && !['correct', 'clear'].includes(recipe.action);
-    expect(v2.writes).toEqual(owned ? 0 : v1.writes);
+    // BRIDGE abstains `write-mode`, and a winner corrected or cleared in a WIN_RATIO structure `link`: both are read
+    // off v1's whole write, a TEAM dual's or line's too (batch 4b)
+    expect(v2.writes).toEqual(0);
   });
 });

@@ -2,7 +2,7 @@ import { deferredQuery, deferredQueryBinding } from '@Mutate/notifications/drawN
 import { announcesAssignments, eventlessNotices, applyTemporalPhases, type TemporalPhases } from './apply';
 import { getNoticeState, getTopics, getCapturedStamps } from '@Global/state/globalState';
 import { appendNotice, type NoticeState } from '@Global/state/noticeIdentity';
-import { observeClockReads, type ClockEffect, type ClockReading } from '@Tools/clock';
+import { observeClockReadings, type ClockEffect, type ClockReading } from '@Tools/clock';
 import { OutcomePipelineDivergence, recordVerificationFailure } from './differential';
 import type { ResultType } from '@Types/factoryTypes';
 import type { BuildViewArgs, PlanShape } from './types';
@@ -299,7 +299,7 @@ export function prepareTemporalShadow(args: BuildViewArgs, phases: TemporalPhase
     let liveError: unknown;
     let liveThrew = false;
     try {
-      live = observeClockReads(
+      live = observeClockReadings(
         (effect) => {
           const before = current();
           return (reading) => observations.push({ effect, reading, before });

@@ -332,6 +332,7 @@ import type { calculateWinCriteria } from '@Helpers/tieFormats/calculateWinCrite
 import type { assignDrawPosition } from '@Mutate/drawDefinitions/assignDrawPosition';
 import type { initializeDraft } from '@Mutate/drawDefinitions/draft/initializeDraft';
 import type { removeStageEntries } from '@Mutate/drawDefinitions/removeStageEntries';
+import type { setEntryQualifyingPath } from '@Mutate/entries/setEntryQualifyingPath';
 import type { createOfficialRecord } from '@Mutate/officiating/createOfficialRecord';
 import type { conditionallyApprove } from '@Mutate/sanctioning/conditionallyApprove';
 import type { removeCollectionGroup } from '@Mutate/tieFormat/removeCollectionGroup';
@@ -1364,6 +1365,7 @@ export interface MethodSignatures {
   setDrawPositionPreferences: EngineMethod<typeof setDrawPositionPreferences>;
   setEntryPosition: EngineMethod<typeof setEntryPosition>;
   setEntryPositions: EngineMethod<typeof setEntryPositions>;
+  setEntryQualifyingPath: EngineMethod<typeof setEntryQualifyingPath>;
   setEventDates: EngineMethod<typeof setEventDates>;
   setEventDisplay: EngineMethod<typeof setEventDisplay>;
   setEventEndDate: EngineMethod<typeof setEventEndDate>;

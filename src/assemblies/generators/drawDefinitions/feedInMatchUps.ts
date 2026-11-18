@@ -194,6 +194,26 @@ export function feedInMatchUps(params: FeedInMatchUpsArgs) {
   }
 }
 
+/**
+ * Whether `feedRoundsProfile` describes a FEED_IN draw of `drawSize`: each fed round is the size of one of the base
+ * draw's rounds, and the fed positions are exactly what `drawSize` adds to its base. A 48 is a base 32 with 16 fed:
+ * `[16]` (16 enter at R2, the default) or `[8, 8]` (8 at R3, 8 at R4).
+ */
+export function isValidFeedRoundsProfile({
+  drawSize,
+  feedRoundsProfile,
+}: {
+  drawSize: number;
+  feedRoundsProfile: unknown;
+}) {
+  if (!Array.isArray(feedRoundsProfile) || !feedRoundsProfile.length) return false;
+  const nearestP2 = nearestPowerOf2(drawSize);
+  const baseDrawSize = nearestP2 > drawSize ? nearestP2 / 2 : nearestP2;
+  const baseRounds = roundMatchCounts({ drawSize: baseDrawSize });
+  const fed = feedRoundsProfile.reduce((sum, size) => sum + (Number.isInteger(size) ? size : NaN), 0);
+  return feedRoundsProfile.every((size) => baseRounds.includes(size)) && fed === drawSize - baseDrawSize;
+}
+
 // returns an array of the number of matchUps in each round of an elimination draw;
 // a qualifying elimination stops at the round which has `qualifyingPositions` matchUps
 function roundMatchCounts({ drawSize, qualifyingPositions }: { drawSize: number; qualifyingPositions?: number }) {

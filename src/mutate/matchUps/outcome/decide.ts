@@ -100,7 +100,8 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
     project: projectOutcome(args, view),
     landing: landingView(args, view),
     record: (prefix) => recordDoubleExitCascade({ ...args, request: planned }, prefix),
-    recordWhole: () => recordWholeCall(args, view),
+    recordWhole: () => recordWholeCall(args),
+    certifiesPhases: (ops) => !!compileTemporalPhases({ args, view, route, ops }),
     dual: dualCallFor(route, args, view),
     request: planned,
     write: plan,
@@ -117,8 +118,11 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
   const phases =
     args.clockFree && outcome.ops ? compileTemporalPhases({ args, view, route, ops: outcome.ops }) : undefined;
   const observe = phases && outcome.ops ? prepareTemporalShadow(args, phases, outcome.shape) : undefined;
+  // v1's whole write, recorded with the instants it read (`recordedWhole`): apply writes them as data, and reads no clock
+  const recorded = outcome.ops && outcome.recordedResult ? outcome : undefined;
   // An uncaptured call requires a complete phase program and a replayable effect scope, in either mode.
   if (args.clockFree && !observe) outcome = { abstain: 'clock' };
+  if (recorded) outcome = recorded;
   return { planned, route, plan, direction, folded, outcome, phases, observe };
 }
 
@@ -334,6 +338,14 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     if (observe) return; // The enclosing continuation compares every clock prefix and its terminal state.
     if (outcome.abstain) return differentialTally(`shadow:abstain:${outcome.abstain}`, 'deferred');
     if (!shadowBefore || !args.drawDefinition) return differentialTally('shadow:abstain:no-record', 'deferred');
+    // RECORDED with no captured instant: v1 here read the clock as often as it did on the copy, or the recorded
+    // instants are not the ones this run stamped (`tools/replayedInstants.ts`)
+    if (outcome.recordedResult && getCapturedClock() === undefined && args.instantsExact?.() === false)
+      throw new OutcomePipelineDivergence({
+        matchUpId: args.request.matchUpId,
+        v1: 'read the clock on the stored record',
+        v2: 'recorded: the copy read it another number of times',
+      });
     const shadow = compareShadow({
       current: { ...args, drawDefinition: args.drawDefinition },
       before: shadowBefore,
@@ -958,18 +970,47 @@ function settleSites(args: BuildViewArgs, view: OutcomeView, working: WorkingVie
 }
 
 /**
- * C27 owns a call whole or not at all (`planOutcome`): whether a plan's ops leave a settle pass work, read before the
- * plan is returned, on the working view they leave. Stale scored times are `finalizePlan`'s cleanup, work only where
- * there is no stamp ledger to order it; a program that cannot be folded here is not known to settle clean.
+ * C27 owns a call whole or not at all (`planOutcome`), and a call whose planned ops leave settle work is asked for whole
+ * (`recordedWhole`): whether a plan's ops leave a settle pass work, read before the plan is returned, on the working view
+ * they leave. Stale scored times are `finalizePlan`'s cleanup, work only where there is no stamp ledger to order it; a
+ * program that cannot be folded here is not known to settle clean.
  */
 function carrySettles(args: BuildViewArgs, view: OutcomeView) {
   return (ops: OutcomeOp[]) => {
-    const working = projectOutcome(args, view)(ops);
-    if (!working) return true;
-    const sites = settleSites(args, view, working, ops);
-    const stale = sites.includes('reconcileScoredTimes');
-    return sites.some((site) => site !== 'reconcileScoredTimes') || (stale && !getCapturedStamps());
+    const fold = settleFolds.get(ops) ?? settleFold(args, view, ops);
+    if (!fold || fold.error !== undefined) return true;
+    const stale = fold.sites.includes('reconcileScoredTimes');
+    return fold.sites.some((site) => site !== 'reconcileScoredTimes') || (stale && !getCapturedStamps());
   };
+}
+
+/**
+ * ONE FOLD PER PLAN: the working view `carrySettles` folded a plan's ops into and the settle sites it read there, or the
+ * error the fold met, kept by the ops array itself until the call's `finalizePlan` takes them. `planOutcome` asks
+ * `settles` of every plan it returns ops for, and the plan it returns is that same array, so asking costs a planned
+ * call no second fold.
+ */
+type SettleFold = { working: WorkingView; sites: SettleSite[]; error?: undefined } | { error: string };
+const settleFolds = new WeakMap<OutcomeOp[], SettleFold>();
+
+/** `finalizePlan`'s fold of a program, made where `projectOutcome` would make one: undefined where it would not */
+function settleFold(args: BuildViewArgs, view: OutcomeView, ops: OutcomeOp[]): SettleFold | undefined {
+  if (!args.drawDefinition || !args.matchUpsMap || !view.inContextDrawMatchUps) return undefined;
+  if (args.clockFree && ops.some((op) => op.op === 'setMatchUpResult' && op.stampsScoredTime !== false))
+    return undefined;
+  const working = createWorkingView({
+    clockFree: args.clockFree,
+    inContextDrawMatchUps: view.inContextDrawMatchUps,
+    structural: view.structural,
+    tournamentRecord: args.tournamentRecord,
+    drawDefinition: args.drawDefinition,
+    matchUpsMap: args.matchUpsMap,
+    event: args.event,
+  });
+  const { error } = working.apply(ops);
+  const fold: SettleFold = error ? { error } : { working, sites: settleSites(args, view, working, ops) };
+  settleFolds.set(ops, fold);
+  return fold;
 }
 
 function finalizePlan({
@@ -985,16 +1026,22 @@ function finalizePlan({
   ops?: OutcomeOp[];
 }): { ops: OutcomeOp[]; matchUps?: HydratedMatchUp[]; settle: SettleSite[] } | { error: string } | undefined {
   if (!ops || !args.drawDefinition || !args.matchUpsMap || !view.inContextDrawMatchUps) return undefined;
-  const working = createWorkingView({
-    clockFree: args.clockFree,
-    inContextDrawMatchUps: view.inContextDrawMatchUps,
-    structural: view.structural,
-    tournamentRecord: args.tournamentRecord,
-    drawDefinition: args.drawDefinition,
-    matchUpsMap: args.matchUpsMap,
-    event: args.event,
-  });
-  const applied = working.apply(ops);
+  // the fold `settles` made of these very ops, if it asked: taken once, the cleanup below is folded into it
+  const shared = settleFolds.get(ops);
+  settleFolds.delete(ops);
+  if (shared?.error !== undefined) return { error: shared.error };
+  const working =
+    shared?.working ??
+    createWorkingView({
+      clockFree: args.clockFree,
+      inContextDrawMatchUps: view.inContextDrawMatchUps,
+      structural: view.structural,
+      tournamentRecord: args.tournamentRecord,
+      drawDefinition: args.drawDefinition,
+      matchUpsMap: args.matchUpsMap,
+      event: args.event,
+    });
+  const applied: { error?: string } = shared ? {} : working.apply(ops);
   if (applied.error) return { error: applied.error };
   const cleanup: OutcomeOp[] = [];
   const staleTimes = working.matchUpsMap.drawMatchUps.filter(hasStaleScoredTime);
@@ -1017,7 +1064,8 @@ function finalizePlan({
   }
   const completedOps = cleanup.length ? [...ops, ...cleanup] : ops;
   // S2's has-work predicates, recorded for the census to set against v1's per-pass writes (nothing outside telemetry)
-  const settle = settleSites(args, view, working, completedOps);
+  // the sites `settles` read stand unless cleanup was appended, which the predicates are asked again after
+  const settle = shared && !cleanup.length ? shared.sites : settleSites(args, view, working, completedOps);
   recordSettleEvent({ kind: 'predicted', site: PREDICTED_CALL });
   const predicted = new Set<SettleSite>(settle);
   if (cleanup.length) predicted.add('reconcileScoredTimes');

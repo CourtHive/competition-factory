@@ -694,6 +694,7 @@
   "setDrawPositionPreferences": "mutation",
   "setEntryPosition": "mutation",
   "setEntryPositions": "mutation",
+  "setEntryQualifyingPath": "mutation",
   "setEventDates": "mutation",
   "setEventDisplay": "mutation",
   "setEventEndDate": "mutation",

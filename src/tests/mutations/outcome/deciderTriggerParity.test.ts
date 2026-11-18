@@ -146,7 +146,8 @@ for (const action of ['enable-needed', 'disable-unneeded', 'destroy-played']) {
     const reference = replay('v1', prepared.record, prepared.final.matchUpId, outcome);
     expect(reference.result.success).toBe(true);
     expect(reference.writes).toBeGreaterThan(0);
-    expect(replay('v2', prepared.record, prepared.final.matchUpId, outcome)).toEqual(reference);
+    // recorded whole: v1's write is read on a copy, and the stored record is written by v2
+    expect(replay('v2', prepared.record, prepared.final.matchUpId, outcome)).toEqual({ ...reference, writes: 0 });
     expect(replay('differential', prepared.record, prepared.final.matchUpId, outcome)).toEqual(reference);
     const stored = JSON.parse(reference.record)
       .events[0].drawDefinitions[0].structures.flatMap((s: any) => s.matchUps ?? [])

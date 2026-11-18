@@ -76,6 +76,10 @@ function applyScoreAndStatus(args: WriteArgs, request: OutcomeRequest, view: Out
   return {
     ...(blank ? { resetsScore: true as const } : {}),
     ...(args.removeWinningSide ? { removesWinningSide: true as const } : {}),
+    // § 4 rule 3: an array given with no reason in it splits to nothing, and what the matchUp kept goes
+    ...(args.matchUpStatusCodes && !args.matchUpStatusCodes.some((code) => code && typeof code === 'string')
+      ? { clearsStatusReasons: true as const }
+      : {}),
     matchUpStatus,
     winningSide,
     scoreStringSide1: score?.scoreStringSide1,

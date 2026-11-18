@@ -1,4 +1,5 @@
-import { nowIso, nowMs, observeClockReads, setClock } from '@Tools/clock';
+import { nowIso, nowMs, observeClockReadings, observeClockReads, setClock } from '@Tools/clock';
+import { replayedInstants } from '@Tools/replayedInstants';
 import { afterEach, expect, it, vi } from 'vitest';
 
 afterEach(() => {
@@ -85,4 +86,30 @@ it('observer failures neither suppress source reads nor replace their result', (
   ).toBe(2000);
   expect(reads).toBe(2);
   expect(errors).toHaveLength(2);
+});
+
+it('observes a replayed reading where it is given, and the read of the source only once', () => {
+  let tick = 1000;
+  setClock(() => tick++);
+  const instants = replayedInstants();
+  const reads: unknown[] = [],
+    readings: unknown[] = [],
+    errors: unknown[] = [];
+  const run = () => [nowMs(), nowMs()];
+  const observed = (wrapped: () => number[]) =>
+    observeClockReads(
+      () => (reading) => reads.push(reading),
+      () => observeClockReadings(() => (reading) => readings.push(reading), wrapped, errors),
+      errors,
+    );
+  expect(observed(() => instants.record(run))).toEqual([1000, 1001]);
+  expect(reads).toEqual([{ ms: 1000 }, { ms: 1001 }]);
+  expect(readings).toEqual(reads);
+  // the replay is given the same readings: each is observed as given, and the source is not read again
+  expect(observed(() => instants.replay(run))).toEqual([1000, 1001]);
+  expect(reads).toHaveLength(2);
+  expect(readings).toEqual([...reads, ...reads]);
+  expect(instants.exact()).toBe(true);
+  expect(errors).toEqual([]);
+  expect(tick).toBe(1002);
 });

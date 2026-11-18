@@ -1,5 +1,6 @@
 import type { MatchUpsMap, PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import type { ErrorType } from '@Constants/errorConditionConstants';
+import type { RecordDraws } from '@Tools/replayedDraws';
 import type { OutcomeOp, TemporalProjection } from './ops';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { WorkingView } from './overlay';
@@ -438,6 +439,12 @@ export type MatchUpWrite = {
   resetsScore?: true;
   /** The v1 write assigns an own undefined winner. */
   removesWinningSide?: true;
+  /**
+   * The v1 write is handed a status-codes array holding no reason (`[]`, the call's own or the winner route's), so its
+   * split finds nobody to attribute and deletes the reasons the matchUp kept: `sideStatusCodes`, `matchUpStatusCode`.
+   * A write handed no array leaves them standing.
+   */
+  clearsStatusReasons?: true;
   matchUpStatus?: MatchUpStatusUnion;
   winningSide?: number;
   scoreStringSide1?: string;
@@ -465,6 +472,17 @@ export type BuildViewArgs = {
   request: OutcomeRequest;
   /** RECORDED: v1's whole write for this call, run on a copy of the record (`plan/recordedCall.ts`) */
   writeOnCopy?: WriteOnCopy;
+  /**
+   * RECORDED: runs the cascade recorder's write on a copy with its random draws kept, so that v1's run on the stored
+   * record, where it follows, is handed the same draws (`tools/replayedDraws.ts`); not given it, it records nothing.
+   * `writeOnCopy` keeps its own.
+   */
+  recordDraws?: RecordDraws;
+  /**
+   * RECORDED, with no captured instant: whether v1's run on the stored record read the clock exactly as its run on
+   * the copy did (`tools/replayedInstants.ts`); `differential` asks it of a call recorded whole.
+   */
+  instantsExact?: () => boolean;
 };
 
 /** the record a recorder copies: what a call is handed */
@@ -712,11 +730,16 @@ export type PlanArgs = {
   record?: (prefix: OutcomeOp[]) => OutcomeOp[] | undefined;
   /** RECORDED: v1's whole write for the call, read on a copy of the record (`plan/recordedCall.ts`). */
   recordWhole?: () => { ops: OutcomeOp[]; written: ResultType } | undefined;
+  /** with no captured instant: whether `ops` is a program the ordered temporal executor certifies (`compileTemporalPhases`) */
+  certifiesPhases?: (ops: OutcomeOp[]) => boolean;
   /** S7: the dual's call a deciding line makes */
   dual?: DualCall;
   /** S7: this call is a deciding line's dual, planned as part of the line's plan: its TEAM shape is the line's to vet */
   asDual?: true;
-  /** whether ops leave a settle pass work on the view they leave (`decide.ts` `carrySettles`; C27's whole-or-nothing) */
+  /**
+   * whether ops leave a settle pass work on the view they leave (`decide.ts` `carrySettles`): C27's whole-or-nothing, and
+   * what a whole-call recording is asked for and held to
+   */
   settles?: (ops: OutcomeOp[]) => boolean;
 };
 

@@ -46,6 +46,7 @@ export function resultOps(
       matchUpId,
       ...(write.resetsScore ? { resetsScore: true as const } : {}),
       ...(write.removesWinningSide ? { removesWinningSide: true as const } : {}),
+      ...(write.clearsStatusReasons ? { clearsStatusReasons: true as const } : {}),
       ...(ensuredSides ? { ensuredSides } : {}),
       ...(disableAutoCalc === undefined ? {} : { disableAutoCalc }),
       matchUpStatus: write.matchUpStatus as MatchUpStatusUnion,

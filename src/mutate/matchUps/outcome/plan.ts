@@ -346,19 +346,50 @@ function wholeCarry(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
   return recordedWhole(args, carriedWhole(args, plan));
 }
 
-/** the abstentions a whole-call recording answers: an exit, a cascade or a loser seat the planners do not write */
-const RECORDED_WHOLE = new Set<AbstainReason>(['exit', 'cascade', 'loser']);
+/**
+ * the abstentions a whole-call recording answers: an exit, a cascade or a loser seat the planners do not write; a route
+ * or a link they do not plan; the client's positional codes; provenance on the matchUp; LEGACY or BRIDGE write mode; a
+ * tally the planners do not write (a group's is among the group's own fields, which a recording carries); a TEAM dual
+ * or line the planners do not write (S7 plans a line's result, and the dual it decides); a call with no stamp ledger
+ * (`clock`: no captured instant, or one captured without it); a draw stored without its edges, which v1 writes first
+ * (`edges`: they are among the matchUps the copy's run changed)
+ */
+const RECORDED_WHOLE = new Set<AbstainReason>([
+  'exit',
+  'cascade',
+  'loser',
+  'route',
+  'link',
+  'status-codes',
+  'write-mode',
+  'provenance',
+  'tallied',
+  'team',
+  'clock',
+  'edges',
+]);
 
 /**
  * RECORDED, THE WHOLE CALL (batch 3, `plan/recordedCall.ts`): the call's own plan, where the planners abstain for one of
- * those reasons, is read off v1's whole write on a copy of the record: the recorded ops, and nothing before them. Whole
- * or not at all, as a recorded cascade is: a recording a settle predicate still finds work on is dropped, and the plan
- * is the abstention the planners returned. Not for a real-clock call (`clock`), nor a dual planned in its line's plan.
+ * those reasons, or plan ops that leave a settle pass work (`settles`: the call would abstain `settle`), is read off
+ * v1's whole write on a copy of the record: the recorded ops, and nothing before them. Whole or not at all, as a
+ * recorded cascade is: a recording a settle predicate still finds work on is dropped, and the plan is the one the
+ * planners returned. Not for a dual planned in its line's plan.
+ *
+ * WITH NO CAPTURED INSTANT (a call outside the engine, `clockFree`) each stamp v1 writes reads the clock where it is
+ * written. The copy's run reads it there, and the recorded ops hold the instants it was given, as data: apply reads no
+ * clock. Planned ops are left to the ordered temporal executor where it certifies them (`certifiesPhases`); every other
+ * program, and each of those abstentions, is asked for whole, since a plan it does not certify is not owned
+ * (`clock`). v1's run on the stored record, where one follows, is handed the copy's readings (`replayedInstants.ts`).
  */
 function recordedWhole(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
-  if (!plan.abstain || !RECORDED_WHOLE.has(plan.abstain) || args.asDual || args.clockFree) return plan;
+  if (args.asDual) return plan;
   // a refused call has no route: the refusal is its answer, and v1 on a copy would only return the same error
   if (!args.route) return plan;
+  // planned ops that settle clean are the call's plan; the fold that asks is the one `finalizePlan` then takes
+  const unanswered = (ops: OutcomeOp[]) => (args.clockFree ? !args.certifiesPhases?.(ops) : !!args.settles?.(ops));
+  const answered = plan.ops ? unanswered(plan.ops) : RECORDED_WHOLE.has(plan.abstain);
+  if (!answered) return plan;
   const recorded = args.recordWhole?.();
   if (!recorded || args.settles?.(recorded.ops)) return plan;
   return { ops: recorded.ops, shape: 'local', recordedResult: recorded.written };
@@ -419,7 +450,8 @@ function lineDualPlan(
   if (!dualPlan.ops) return dualPlan;
   const ops = dualPlan.ops.map((op): OutcomeOp => {
     if (op.op !== 'setMatchUpResult' || op.matchUpId !== line.dualMatchUpId) return op;
-    const { matchUpStatusCodes: _codes, ...result } = op;
+    // the tally write is handed no status codes (`updateTieMatchUpScore`): none written, no kept reason deleted
+    const { matchUpStatusCodes: _codes, clearsStatusReasons: _clears, ...result } = op;
     return {
       ...result,
       stampsScoredTime: false,

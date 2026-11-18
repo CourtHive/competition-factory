@@ -270,7 +270,7 @@ it.each([true, false])('preserves cleanup-only effects and callbacks with stamp 
       .filter((n) => n.topic === MODIFY_MATCHUP)
       .map((n) => [n.payload.matchUp.matchUpId, n.payload.context]),
   ).toEqual([[target.matchUpId, 'reconcileScoredTimes']]);
-  expect(replay('v2', prepared, params, ledger)).toEqual({ ...reference, writes: ledger ? 0 : reference.writes });
+  expect(replay('v2', prepared, params, ledger)).toEqual({ ...reference, writes: 0 });
   expect(replay('differential', prepared, params, ledger)).toEqual(reference);
 });
 

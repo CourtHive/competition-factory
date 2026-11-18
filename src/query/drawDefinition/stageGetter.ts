@@ -56,10 +56,26 @@ type StageEntryCountArgs = {
   drawDefinition?: DrawDefinition;
   entryStatus?: string;
   stage?: string;
+  /**
+   * One sequence of the stage (pre-qualifying is QUALIFYING sequence 1 when it feeds sequence 2): its entries, and
+   * entries naming no sequence, as `getStageEntries` selects them. Without it, every sequence's entries count.
+   */
+  stageSequence?: number;
 };
-export function getStageEntryTypeCount({ stage, drawDefinition, entryStatus, entries }: StageEntryCountArgs) {
+export function getStageEntryTypeCount({
+  stage,
+  drawDefinition,
+  entryStatus,
+  entries,
+  stageSequence,
+}: StageEntryCountArgs) {
   return (entries ?? drawDefinition?.entries ?? []).reduce(
-    (p, c) => (c.entryStage === stage && c.entryStatus === entryStatus ? p + 1 : p),
+    (p, c) =>
+      c.entryStage === stage &&
+      c.entryStatus === entryStatus &&
+      (!stageSequence || !c.entryStageSequence || c.entryStageSequence === stageSequence)
+        ? p + 1
+        : p,
     0,
   );
 }
@@ -330,12 +346,14 @@ function collectStandardEntries({ provisionalPositioning, finishingPositions, al
 export const PLACE_TAKING_ENTRY_STATUSES: EntryStatusUnion[] = [...DIRECT_ENTRY_STATUSES, LUCKY_LOSER];
 
 export function getStagePlaceTakingEntriesCount({
-  stage,
+  stageSequence,
   drawDefinition,
   entries,
+  stage,
 }: Omit<StageEntryCountArgs, 'entryStatus'>) {
   return PLACE_TAKING_ENTRY_STATUSES.reduce(
-    (count, entryStatus) => count + getStageEntryTypeCount({ drawDefinition, entries, entryStatus, stage }),
+    (count, entryStatus) =>
+      count + getStageEntryTypeCount({ drawDefinition, entries, entryStatus, stage, stageSequence }),
     0,
   );
 }

@@ -1,7 +1,7 @@
 import { DEFERRED_PAYLOAD, getCapturedStamps, getNoticeBuffer, getNoticeState } from '@Global/state/globalState';
 import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { deferredQueryBinding } from '@Mutate/notifications/drawNotifications';
-import { DRAW_CHILDREN, RECORDED_ENTITY, recordedName, STRUCTURE_CHILDREN } from '../ops';
+import { DRAW_CHILDREN, MATCHUP_CHILDREN, RECORDED_ENTITY, recordedName, STRUCTURE_CHILDREN } from '../ops';
 import { isObject } from '@Tools/objects';
 
 // constants and types
@@ -14,11 +14,24 @@ import type { Recording } from '../recording';
 /**
  * RECORDED (CA, 2026-11-16): what the two recorders share (`recordedCascade.ts`, `recordedCall.ts`). v1's writers run on
  * a COPY of the record; what the copy held before is read here, and what the run changed is returned as the recorded
- * ops: each matchUp it wrote, each top-level structure's and the draw's own fields, and the notices it buffered.
+ * ops: each matchUp it wrote (a dual's own fields, and each line's), each structure's own fields (a round robin's groups
+ * are structures of their own, and a group's tally is among its fields), the draw's own fields, and the notices it
+ * buffered.
  */
 
 const ownState = (entity: object, children: string[]) =>
   Object.fromEntries(Object.entries(entity).filter(([key]) => !children.includes(key)));
+
+/** every structure of the draw, a round robin's groups after it, in the draw's order */
+export function drawStructures(drawDefinition: DrawDefinition): Structure[] {
+  const found: Structure[] = [];
+  const visit = (structure: Structure) => {
+    found.push(structure);
+    for (const child of structuresOf(structure) ?? []) visit(child);
+  };
+  for (const structure of drawDefinition.structures ?? []) visit(structure);
+  return found;
+}
 
 /** every stored matchUp of the draw, a dual's lines after it, in the draw's order */
 export function drawMatchUps(drawDefinition: DrawDefinition): MatchUp[] {
@@ -99,24 +112,56 @@ export function stampCopies(drawDefinition: DrawDefinition, stampedBefore: Set<s
  * it resets, plain JSON drops the key, and the exact graph v1 leaves has it.
  */
 const UNDEFINED = '\u0000undefined';
-const shapeOf = (value: unknown) => JSON.stringify(value, (_key, held) => (held === undefined ? UNDEFINED : held));
+export const shapeOf = (value: unknown) =>
+  JSON.stringify(value, (_key, held) => (held === undefined ? UNDEFINED : held));
+
+/** every object under `value`, in the order its text reads them: one reached twice is listed twice */
+export function objectsOf(value: unknown): object[] {
+  const found: object[] = [];
+  const visit = (held: unknown) => {
+    if (!held || typeof held !== 'object') return;
+    found.push(held);
+    for (const child of Object.values(held)) visit(child);
+  };
+  for (const child of Object.values(value as object)) visit(child);
+  return found;
+}
+
+/**
+ * An entity's own fields as the writers find them: their text, and the objects that hold them. v1 writes a NEW object
+ * where the old one says the same (`removeDirectedLoser` derives a loser target's status codes afresh, an empty array
+ * for an empty array): the text is the same, and the stored matchUp no longer shares the array it shared (the cleared
+ * fixture's, held by every matchUp cleared with it). The exact graph v1 leaves has the new object.
+ */
+type Read = { shape: string; objects: object[] };
+const read = (state: object): Read => ({ shape: shapeOf(state), objects: objectsOf(state) });
+
+/** whether `state` reads as it did and is held by the objects that held it */
+function unchanged(state: object, before?: Read): boolean {
+  if (shapeOf(state) !== before?.shape) return false;
+  const objects = objectsOf(state);
+  return objects.length === before.objects.length && objects.every((held, at) => held === before.objects[at]);
+}
 
 /** the copy as the writers are about to find it: each entity's own fields, and the notices already buffered */
 export type RecordedBefore = ReturnType<typeof readBefore>;
 export function readBefore(drawDefinition: DrawDefinition) {
   return {
-    matchUps: new Map(drawMatchUps(drawDefinition).map((stored) => [stored.matchUpId, shapeOf(stored)])),
-    structures: new Map(
-      (drawDefinition.structures ?? []).map((s) => [s.structureId, shapeOf(ownState(s, STRUCTURE_CHILDREN))]),
+    matchUps: new Map(
+      drawMatchUps(drawDefinition).map((stored) => [stored.matchUpId, read(ownState(stored, MATCHUP_CHILDREN))]),
     ),
-    draw: shapeOf(ownState(drawDefinition, DRAW_CHILDREN)),
+    structures: new Map(
+      drawStructures(drawDefinition).map((s) => [s.structureId, read(ownState(s, STRUCTURE_CHILDREN))]),
+    ),
+    draw: read(ownState(drawDefinition, DRAW_CHILDREN)),
     notices: new Set(getNoticeBuffer() ?? []),
   };
 }
 
 /**
- * What the writers changed on the copy since `before`, as ops, and the notices they buffered. Undefined where one of
- * those notices is one apply could not raise again on the stored record: the call stays v1's.
+ * What the writers changed on the copy since `before`, as ops, and the notices they buffered: an entity is changed
+ * where its fields read differently or an object holding them is another (`unchanged`). Undefined where one of those
+ * notices is one apply could not raise again on the stored record: the call stays v1's.
  */
 export function recordedOps({
   drawDefinition,
@@ -134,19 +179,22 @@ export function recordedOps({
     recording.source(recordedName(op), entity);
     ops.push(op);
   };
-  for (const stored of drawMatchUps(drawDefinition))
-    if (shapeOf(stored) !== before.matchUps.get(stored.matchUpId))
+  // a dual's own fields, then each of its lines': a line is a matchUp of its own, and stamps as one
+  for (const stored of drawMatchUps(drawDefinition)) {
+    const state = ownState(stored, MATCHUP_CHILDREN);
+    if (!unchanged(state, before.matchUps.get(stored.matchUpId)))
       replace(
-        { op: 'replaceMatchUp', matchUpId: stored.matchUpId, matchUp: structuredClone(stored), recording },
+        { op: 'replaceMatchUp', matchUpId: stored.matchUpId, matchUp: structuredClone(state) as MatchUp, recording },
         stored,
       );
-  for (const s of drawDefinition.structures ?? []) {
+  }
+  for (const s of drawStructures(drawDefinition)) {
     const state = ownState(s, STRUCTURE_CHILDREN);
-    if (shapeOf(state) !== before.structures.get(s.structureId))
+    if (!unchanged(state, before.structures.get(s.structureId)))
       replace({ op: 'replaceStructureState', structureId: s.structureId, state: structuredClone(state), recording }, s);
   }
   const state = ownState(drawDefinition, DRAW_CHILDREN);
-  if (shapeOf(state) !== before.draw)
+  if (!unchanged(state, before.draw))
     replace(
       { op: 'replaceDrawState', drawId: drawDefinition.drawId, state: structuredClone(state), recording },
       drawDefinition,

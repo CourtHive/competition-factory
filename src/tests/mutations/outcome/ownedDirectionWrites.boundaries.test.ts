@@ -386,7 +386,8 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
 
   it.each<[string, Scenario]>([
     [
-      'S6: a round robin result turned into a double walkover is v1s (the group is tallied)',
+      // batch 4b: the planners abstain `tallied`, and the call is read off v1's whole write, its group's tally with it
+      'S6: a round robin result turned into a double walkover is v2s (the group is tallied)',
       {
         drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },
         setup: [{ target: { roundNumber: 1, nth: 0 }, outcome: won(1) }],
@@ -397,7 +398,7 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
     expect(v1.results[0].success).toEqual(true);
-    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.v1Writes).toEqual(0);
     expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
     expect(v2.notices).toEqual(v1.notices);
@@ -431,7 +432,7 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
     expect(v1.results[0].success).toEqual(true);
-    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.v1Writes).toEqual(0);
     expect(v2.record).toEqual(v1.record);
     expect(v2.notices).toEqual(v1.notices);
   });

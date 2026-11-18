@@ -1,4 +1,4 @@
-import { randomSource, RandomFunction, withCallRandomSource, withRandomSource } from '@Tools/prng';
+import { randomSource, RandomFunction, withAmbientRandomSource as withAmbient } from '@Tools/prng';
 import { disableNotifications, enableNotifications } from '@Global/state/globalState';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
@@ -111,11 +111,6 @@ export function isStoredDraw({
 }): boolean {
   if (!tournamentRecord) return true;
   return !!tournamentRecord.events?.some((event) => event.drawDefinitions?.includes(drawDefinition));
-}
-
-function withAmbient<T>(source: RandomFunction, fn: () => T): T {
-  // both scopes: a provider without the call-stream hooks reads the configured source instead
-  return withCallRandomSource(source, () => withRandomSource(source, fn));
 }
 
 function recording(source: RandomFunction) {

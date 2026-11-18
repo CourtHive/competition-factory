@@ -48,17 +48,92 @@ export type ClockReading = ClockValue | { thrown: unknown };
 type ClockObserver = (effect?: ClockEffect) => (reading: ClockReading) => void;
 const clockObservers: { observe: ClockObserver; errors: unknown[] }[] = [];
 
-/** Synchronous observation of actual reads, without capturing an instant or replacing the caller's source. */
+const readingObservers: typeof clockObservers = [];
+
+/**
+ * Synchronous observation of actual reads, without capturing an instant or replacing the caller's source. The reads
+ * observed are those that REACH the source: a reading a source reader hands back from one it kept
+ * (`replayedInstants.ts`) was observed when it was taken, and is not observed again.
+ */
 export function observeClockReads<T>(observer: ClockObserver, run: () => T, errors: unknown[]): T {
-  clockObservers.push({ observe: observer, errors });
+  return observedBy(clockObservers, observer, run, errors);
+}
+
+/**
+ * As `observeClockReads`, of every reading a read site is GIVEN, whether the source was read for it or a source reader
+ * handed it back: what one run of a call stamps with, read by read, where the run is a replay of another's readings.
+ */
+export function observeClockReadings<T>(observer: ClockObserver, run: () => T, errors: unknown[]): T {
+  return observedBy(readingObservers, observer, run, errors);
+}
+
+function observedBy<T>(list: typeof clockObservers, observer: ClockObserver, run: () => T, errors: unknown[]): T {
+  list.push({ observe: observer, errors });
   try {
     return run();
   } finally {
-    clockObservers.pop();
+    list.pop();
   }
 }
 
+// one read made under the observers of `list`, each told what it stamps before it is made and its reading after
+function observedRead(
+  list: typeof clockObservers,
+  effect: ClockEffect | undefined,
+  read: () => ClockValue,
+): ClockValue {
+  if (!list.length) return read();
+  const observers = list.flatMap(({ observe, errors }) => {
+    try {
+      return [{ notify: observe(effect), errors }];
+    } catch (error) {
+      errors.push(error);
+      return [];
+    }
+  });
+  let reading: ClockReading;
+  try {
+    reading = read();
+  } catch (thrown) {
+    reading = { thrown };
+  }
+  for (const { notify, errors } of observers) {
+    try {
+      notify({ ...reading });
+    } catch (error) {
+      errors.push(error);
+    }
+  }
+  if ('thrown' in reading) throw reading.thrown;
+  return reading;
+}
+
 let configuredClock: ClockSource | undefined;
+
+/** one validated read of the source, as a value: an instant, or the refusal a throwing or invalid source becomes */
+export type ClockSourceReading = ClockValue;
+let sourceReader: (() => ClockValue) | undefined;
+
+/**
+ * Runs `run` with every read of the SOURCE made through `reader`, which is handed the source as it stood (the
+ * configured clock or the wall clock, or an enclosing reader), then reinstates it. Only reads that reach the source
+ * pass through: inside a captured instant there are none. Nothing is captured and the source is not replaced; what
+ * `reader` returns is what the read site is given, as the source's own reading would be (an invalid one throws at
+ * `now()`, and is refused at a capture). Synchronous runs only. See `replayedInstants.ts`.
+ */
+export function withClockSourceReader<T>(
+  reader: (source: () => ClockSourceReading) => ClockSourceReading,
+  run: () => T,
+): T {
+  const previous = sourceReader;
+  const source = previous ?? readObservedSource;
+  sourceReader = () => reader(source);
+  try {
+    return run();
+  } finally {
+    sourceReader = previous;
+  }
+}
 
 // always a NEW Date: neither a caller's Date nor one handed out by `now()` is ever shared with the clock
 function toDate(value: Date | string | number): Date | undefined {
@@ -87,33 +162,23 @@ export function setClock(clock?: ClockSource | Date | string | number): { succes
 
 // One validated read of the source. Never throws: a throwing or invalid source becomes a ClockError.
 function readSource(effect?: ClockEffect): ClockValue {
-  if (!clockObservers.length) return readConfiguredSource();
-  const observers = clockObservers.flatMap(({ observe, errors }) => {
-    try {
-      return [{ notify: observe(effect), errors }];
-    } catch (error) {
-      errors.push(error);
-      return [];
-    }
-  });
-  let reading: ClockReading;
+  const enclosing = readEffect;
+  readEffect = effect;
   try {
-    reading = readConfiguredSource();
-  } catch (thrown) {
-    reading = { thrown };
+    return observedRead(readingObservers, effect, () => (sourceReader ? sourceReader() : readObservedSource()));
+  } finally {
+    readEffect = enclosing;
   }
-  for (const { notify, errors } of observers) {
-    try {
-      notify({ ...reading });
-    } catch (error) {
-      errors.push(error);
-    }
-  }
-  if ('thrown' in reading) throw reading.thrown;
-  return reading;
 }
 
-function readConfiguredSource(): ClockValue {
+// what the read now being made stamps, for the observers of the read that reaches the source
+let readEffect: ClockEffect | undefined;
+
+function readObservedSource(): ClockValue {
+  return observedRead(clockObservers, readEffect, readOwnSource);
+}
+
+function readOwnSource(): ClockValue {
   if (!configuredClock) return { ms: Date.now() };
   let date: Date | undefined;
   try {

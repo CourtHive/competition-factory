@@ -1,4 +1,5 @@
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
+import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { setOutcomePipeline } from '@Global/state/globalState';
 import { canonicalJson } from '@Tools/canonicalJson';
 import { afterEach, expect, it, vi } from 'vitest';
@@ -16,10 +17,11 @@ import {
 } from '@Constants/outcomePipelineConstants';
 
 /**
- * A SWAP THAT CHANGES WHO MAY ENTER A FIRST_MATCHUP-FED SEAT IS v1's (S4). v2 owns a swap over a FIRST_MATCHUP link only
- * where the flip leaves every feed's eligibility as it was, so the relabel is v1's whole write; where it does not, v1's
- * `reconcileFedLoserEligibility` places the newly eligible loser or reverts the seat to a BYE after the flip, which v2
- * does not plan (`swapFeedsSettled`).
+ * A SWAP THAT CHANGES WHO MAY ENTER A FIRST_MATCHUP-FED SEAT IS NOT PLANNED (S4). The planners write a swap over a
+ * FIRST_MATCHUP link only where the flip leaves every feed's eligibility as it was, so the relabel is v1's whole write;
+ * where it does not, v1's `reconcileFedLoserEligibility` places the newly eligible loser or reverts the seat to a BYE
+ * after the flip, which they do not plan (`swapFeedsSettled`): they abstain `link`, and the call is read off v1's whole
+ * write on a copy of the record (`plan/recordedCall.ts`).
  *
  * FIRST_MATCH_LOSER_CONSOLATION 8 with 7 participants: drawPosition 2 is the BYE, so the round 2 winner from that half
  * reached it without a scored win. Their opponent won round 1 and, losing round 2, was kept out. The flip makes the BYE's
@@ -28,10 +30,12 @@ import {
 const v1Writes = vi.hoisted(() => ({ count: 0 }));
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
   const actual: any = await importOriginal();
+  const { inDraftWrites } = await import('@Global/state/withDraftWrites');
   return {
     ...actual,
     setMatchUpState: (...args: any[]) => {
-      v1Writes.count += 1;
+      // a write to a copy of the record is the recorded call's reading of v1: v1 was not asked
+      if (!inDraftWrites()) v1Writes.count += 1;
       return actual.setMatchUpState(...args);
     },
   };
@@ -76,16 +80,21 @@ function flipped(mode: OutcomePipelineMode) {
   return { result, v1Writes: v1Writes.count, record: canonicalJson(tournamentEngine.getTournament().tournamentRecord) };
 }
 
-it('is compared under differential with no divergence, and written by v1 under v2', () => {
+it('is compared under differential with no divergence, and recorded whole under v2', () => {
   const v1 = flipped(OUTCOME_PIPELINE_V1);
   expect(v1.result.success).toEqual(true);
+  expect(v1.v1Writes).toEqual(1);
 
+  const applied = () => getDifferentialTally()['shadow:applied']?.compared ?? 0;
+  const before = applied();
   const differential = flipped(OUTCOME_PIPELINE_DIFFERENTIAL);
   expect(differential.result).toEqual(v1.result);
+  expect(differential.record).toEqual(v1.record);
+  expect(applied()).toEqual(before + 1);
 
   const v2 = flipped(OUTCOME_PIPELINE_V2);
-  // v2 abstains: the reconciliation is v1's
-  expect(v2.v1Writes).toEqual(1);
+  // the reconciliation is read off v1's write on the copy: v1 is not asked to write the stored record
+  expect(v2.v1Writes).toEqual(0);
   expect(v2.result).toEqual(v1.result);
   expect(v2.record).toEqual(v1.record);
 });

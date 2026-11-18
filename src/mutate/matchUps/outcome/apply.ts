@@ -67,6 +67,8 @@ export function compileTemporalPhases({
           'score',
           'matchUpFormat',
           'matchUpStatusCodes',
+          // the ordinary fold deletes the kept reasons on an empty array already (`setResultFormatAndCodes`)
+          'clearsStatusReasons',
           'notes',
         ].includes(key),
     )

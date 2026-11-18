@@ -16,7 +16,6 @@ import {
 
 // constants and types
 import type { Scenario } from '@Tests/testHarness/outcome/directionFixtures';
-import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
@@ -102,10 +101,8 @@ describe('C21 TEAM correction and a fresh line undoing a decided dual', () => {
       const v2 = play(OUTCOME_PIPELINE_V2, scenario, { prepared });
       expect(storedLineUpFields()).toEqual(v1LineUpFields);
       expect(v1.results.every((result: any) => result.success)).toEqual(true);
-      expect(v2.v1Writes === 0).toEqual(
-        action !== 'clear control' &&
-          !(drawProfile.drawType === DOUBLE_ELIMINATION && drawProfile.participantsCount === 2),
-      );
+      // what the planners do not write (the clear control, DOUBLE_ELIMINATION 2) is read off v1's whole write (batch 4b)
+      expect(v2.v1Writes).toEqual(0);
       for (const actual of [compared, v2]) {
         expect(actual.results).toEqual(v1.results);
         expect(actual.record).toEqual(v1.record);

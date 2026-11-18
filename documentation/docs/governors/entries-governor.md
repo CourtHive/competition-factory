@@ -625,3 +625,28 @@ engine.setEntryPositions({
 ```
 
 ---
+
+## setEntryQualifyingPath
+
+Sets the path QUALIFYING entries take to MAIN, on entries that already exist (`addEventEntries` sets the same two
+attributes only as entries are added). The topology builder decides both from the structures the director draws.
+
+- `entryStageSequence` — how deep in the qualifying chain the entry starts; `1` is the deepest (pre-qualifying, then
+  qualifying).
+- `roundTarget` — the MAIN round its qualifying chain leads to; a stronger field can earn a later entry point.
+
+Without a `drawId` the event's entries change, with every flight's and draw's copy of them; with a `drawId` only that
+draw's and its flight's. Every participant must have a QUALIFYING entry in scope, or nothing changes:
+`PARTICIPANT_ENTRY_NOT_FOUND`, or `INVALID_STAGE` for an entry in another stage.
+
+```js
+engine.setEntryQualifyingPath({
+  participantIds, // required - QUALIFYING entries
+  eventId, // required
+  drawId, // optional - only this draw's (and its flight's) entries
+  entryStageSequence, // optional integer >= 1
+  roundTarget, // optional integer >= 1; at least one of the two
+});
+```
+
+---

@@ -73,7 +73,7 @@ describe('C26V assignment changes refresh unchanged duals and every tie line', (
         ),
       ),
     ),
-  )('%s remains an explicit TEAM withdrawal obligation', (_label, drawType, policyOff, status) => {
+  )("%s is read off v1's whole write", (_label, drawType, policyOff, status) => {
     const { drawProfile, sources } = assignmentViewFixture(drawType, 'TEAM', policyOff);
     const source = sources[0];
     expect(
@@ -99,9 +99,11 @@ describe('C26V assignment changes refresh unchanged duals and every tie line', (
         },
       ],
     };
+    // the planners abstain `team` (the withdrawal is not planned for a dual); the recording answers it (batch 4b), and
+    // the abstention tally counts only what is still v1's
     const before = getDifferentialTally()['shadow:abstain:team']?.deferred ?? 0;
-    expect(compareUndirectedWinner(scenario, false, prepared).v1.results[0].success).toEqual(true);
-    expect((getDifferentialTally()['shadow:abstain:team']?.deferred ?? 0) - before).toEqual(1);
+    expect(compareUndirectedWinner(scenario, true, prepared).v1.results[0].success).toEqual(true);
+    expect((getDifferentialTally()['shadow:abstain:team']?.deferred ?? 0) - before).toEqual(0);
   });
 });
 
@@ -160,9 +162,8 @@ describe('C26N a named BYE advance retains event identity through a later quiet 
       ],
     };
     const before = getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0;
-    // policy off, the seat's cascade is recorded off the double-exit module; a TEAM draw's stays owed
-    const owned = !policyOff || eventType !== 'TEAM';
-    expect(compareUndirectedWinner(scenario, owned, prepared).v1.results[0].success).toEqual(true);
-    expect((getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0) - before).toEqual(Number(!owned));
+    // policy off, the seat's cascade is recorded off the double-exit module; a TEAM draw's off v1's whole write
+    expect(compareUndirectedWinner(scenario, true, prepared).v1.results[0].success).toEqual(true);
+    expect((getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0) - before).toEqual(0);
   });
 });
