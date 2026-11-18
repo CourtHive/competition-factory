@@ -33,10 +33,12 @@ vi.mock('@Global/state/globalState', async (load) => {
 });
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (load) => {
   const original: any = await load();
+  const { inDraftWrites } = await import('@Global/state/withDraftWrites');
   return {
     ...original,
     setMatchUpState: (...args: any[]) => {
-      observed.v1++;
+      // a write to a copy of the record is a recorded call's reading of v1 (`plan/recordedCall.ts`): v1 was not asked
+      if (!inDraftWrites()) observed.v1++;
       return original.setMatchUpState(...args);
     },
   };
@@ -393,10 +395,12 @@ it.each(SCOPES)('%s: uncaptured differential replay adds no clock reads and chec
     expect(compared.tally[key]).toEqual({ compared: 1, deferred: 0 });
 });
 
-it('an uncaptured partial score remains owed without a complete temporal program', () => {
+it('an uncaptured partial score, with no complete temporal program, is recorded at the instants v1 read', () => {
   const v1 = play('v1', 'draw-only', false, false);
   const v2 = play('v2', 'draw-only', false, false);
-  expect(v2.v1).toBe(1);
+  expect(v1.v1).toBe(1);
+  expect(v2.v1).toBe(0);
+  expect(v1.reads).toBeGreaterThan(1);
   expect(v2.reads).toBe(v1.reads);
   expect(v2.result).toEqual(v1.result);
   expect(v2.roots).toEqual(v1.roots);

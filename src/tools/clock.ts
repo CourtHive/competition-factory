@@ -60,6 +60,31 @@ export function observeClockReads<T>(observer: ClockObserver, run: () => T, erro
 
 let configuredClock: ClockSource | undefined;
 
+/** one validated read of the source, as a value: an instant, or the refusal a throwing or invalid source becomes */
+export type ClockSourceReading = ClockValue;
+let sourceReader: (() => ClockValue) | undefined;
+
+/**
+ * Runs `run` with every read of the SOURCE made through `reader`, which is handed the source as it stood (the
+ * configured clock or the wall clock, or an enclosing reader), then reinstates it. Only reads that reach the source
+ * pass through: inside a captured instant there are none. Nothing is captured and the source is not replaced; what
+ * `reader` returns is what the read site is given, as the source's own reading would be (an invalid one throws at
+ * `now()`, and is refused at a capture). Synchronous runs only. See `replayedInstants.ts`.
+ */
+export function withClockSourceReader<T>(
+  reader: (source: () => ClockSourceReading) => ClockSourceReading,
+  run: () => T,
+): T {
+  const previous = sourceReader;
+  const source = previous ?? readOwnSource;
+  sourceReader = () => reader(source);
+  try {
+    return run();
+  } finally {
+    sourceReader = previous;
+  }
+}
+
 // always a NEW Date: neither a caller's Date nor one handed out by `now()` is ever shared with the clock
 function toDate(value: Date | string | number): Date | undefined {
   const date = new Date(value instanceof Date ? value.getTime() : value);
@@ -114,6 +139,10 @@ function readSource(effect?: ClockEffect): ClockValue {
 }
 
 function readConfiguredSource(): ClockValue {
+  return sourceReader ? sourceReader() : readOwnSource();
+}
+
+function readOwnSource(): ClockValue {
   if (!configuredClock) return { ms: Date.now() };
   let date: Date | undefined;
   try {

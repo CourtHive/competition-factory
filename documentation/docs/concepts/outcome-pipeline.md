@@ -1635,7 +1635,7 @@ draw), and returns what changed as the four ops above (`outcome/plan/recordedCas
 nothing and stamp nothing outside it (`withDraftWrites`). Apply leaves the copy's object graph on the stored draw, not only its values (`outcome/recording.ts`): an object v1 keeps is kept, one object written in two places stays one object, and keys keep v1's order; the working view and the shadow take the values as clones. An entity is recorded where its own fields read differently, a key holding `undefined` included, or where an object holding them is another (`outcome/plan/recordedDiff.ts` `unchanged`): v1 writes a new object where the old one says the same (`removeDirectedLoser` derives a loser target's status codes afresh, an empty array for the cleared fixture's shared empty one), and the new object is the one stored. The tournaments and topics the copy's writes marked modified are put back as they were found and marked again by apply, before the recorded notices. The plan is then held to the check every plan is: no settle pass has work left on the working view. A recording a predicate still finds work on is dropped whole, and the call is refused where it was before. It is refused, and the call stays v1's, where the module or a pass returns an error, the forward
 settle is exhausted, anything outside the draw changes, or a notice is buffered that apply could not raise again. Not
 recorded: a matchUp that already holds a result or an exit (v1 removes it first), a round robin group, a TEAM dual or
-line, and a call with no captured clock. The module and the passes stay v1's code, used as a library until v3.
+line, and a call with no captured clock (the cascade recorder; the whole-call recorder takes one, below). The module and the passes stay v1's code, used as a library until v3.
 Under `differential` the same reads are therefore made twice, on the copy and by v1 on the stored draw;
 `verify:hydrations` keeps the copy's out of its ceiling there and reports them apart. Under `v2` a recorded call builds the map of its working copy besides the call's own, and the gate allows its worst call that one build more than v1's; the arm's total is held to v1's.
 
@@ -1783,7 +1783,7 @@ the slices that follow:
 | `tallied`      | is in a round-robin, ad hoc or lucky structure, whose tally the write updates                                                                                            | S3; batch 4b: read off v1's whole write where the planners do not write the tally (`recordedWhole`)                                                                                                                                                                      |
 | `no-record`    | has no supplied draw definition to apply the plan to                                                                                                                     | requires a draw; tournament containment is not required                                                                                                                                                                                                                  |
 | `edges`        | is on a draw that stores no winner and loser edges, which v1 writes first (`ensureGoesTo`)                                                                               | S2 (`setEdges`)                                                                                                                                                                                                                                                          |
-| `clock`        | has no existing captured instant; direct source reads, advancing values and throwing-write prefixes must remain ordered as in v1                                         | owed by v2: clock-free planning and ordered lazy temporal effects before uncaptured admission                                                                                                                                                                            |
+| `clock`        | has no existing captured instant; direct source reads, advancing values and throwing-write prefixes must remain ordered as in v1                                         | the ordered temporal executor, for the programs it certifies; every other is read off v1's whole write, with the instants it read (`recordedWhole`, below; CA, 2026-11-18)                                                                                               |
 | `settle`       | leaves a settle pass work on the working view (S2's has-work predicates, `settleWork.ts`), leftover state included                                                       | batch 4a: read off v1's whole write where it can be (`recordedWhole`); otherwise none: S2 owns only a call no pass has work for                                                                                                                                          |
 | `write-mode`   | is made in LEGACY or BRIDGE write mode, where v1 writes `scoredTime` as a timeItem, which the reducer does not                                                           | a later slice (F6: BRIDGE in with its evidence)                                                                                                                                                                                                                          |
 | `competition`  | names a winner where a per-matchUp competition policy applies: v1 updates ratings on the result (`processCompetitionMatchUp`)                                            | a later slice                                                                                                                                                                                                                                                            |
@@ -1799,6 +1799,32 @@ v1's writes across the draw and every supplied context root, every `updatedAt` b
 v1 stamps each touched entity once per call, as v2 does (F2 (i), § 5 step 6). Uncaptured callers still abstain on
 `clock`; wrapping them in a new capture would change their direct-read and throw-prefix contract. Their ordered
 temporal path remains v2 work before v1 can be retired.
+
+**Recorded with no captured instant (CA, 2026-11-18: adopt the replay).** A call made
+outside an engine has no captured instant and no stamp ledger: each stamp v1 writes reads the source where it is
+written, a source that advances gives each entity its own instant, and a source that fails leaves the writes made
+before the read. Where the ordered temporal executor certifies the planned program it runs as above. Every other
+program, and each abstention a recording answers (`clock` among them: a group's tally with no ledger), is asked for
+whole (`recordedWhole`): v1 runs on a copy of the record and reads the source as it does on the stored record, the
+recorded ops hold the instants it was given as data, and apply reads no clock. A reader (`tools/replayedInstants.ts`,
+made in `setMatchUpStatus` beside `replayedDraws`) stands between v1 and the source for every run v1 makes for the
+call: the copy's readings are kept and handed, in order, to v1's run on the stored record (`differential`, or a
+recording refused, dropped or thrown out of), a reading the source refused is refused again at the same read, and only
+past their end is the source read. So in every mode the source is read exactly as often, and in the same order, as v1
+alone reads it; a failing source leaves v1's own partial write and v1's error, since the copy's run fails first, no
+recording is made, and v1 replays the same readings on the stored record. Nothing is captured: no instant is fixed for
+the call, no ledger is opened, and the caller's clock is not replaced. `differential` compares the shadow as for any
+recorded call, every `updatedAt` by value, and diverges where v1's run on the stored record read the clock another
+number of times than its run on the copy.
+
+ONE DEPARTURE from the clock-phases standard (zero planning reads; each read made at the live writer's own phase),
+ruled with it: a recorded uncaptured call takes its readings DURING PLANNING, while the copy is written and before the
+first write to the stored record, not between the stored record's own writes. Their count, their order and their values
+are v1's. Only a source that observes the stored record as it is read, or wall-clock time set against the record's own
+state, could tell the two apart. A competition provider (`setCompetitionClock`), which nothing on this path reads, is
+not replayed. Still `clock`: a draw stored
+without its edges (`edges` is not answered), a certified program whose provider gives no notice snapshot, and whatever
+a recording is refused for.
 Until 2026-10-24 stamps were normalised there (structures left out, the draw and matchUps by presence), because v1
 stamped at each notice and every top-level structure on each.
 

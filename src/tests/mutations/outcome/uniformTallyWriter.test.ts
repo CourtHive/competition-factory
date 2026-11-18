@@ -231,7 +231,9 @@ it.each(['buffered', 'draw-only', 'no-ledger', 'uncaptured'] as const)(
     expect(v2.result).toEqual(v1.result);
     expect(JSON.parse(v2.record)).toEqual(JSON.parse(v1.record));
     expect(v2.notices).toEqual(v1.notices);
-    expect(v2.writes).toEqual(['no-ledger', 'uncaptured'].includes(context) ? v1.writes : 0);
+    // with no stamp ledger (no captured instant, or one captured without it) the call is recorded off v1's whole
+    // write on a copy, at the instants v1 read (`recordedClockCall.test.ts`): v1 is not asked to write the record
+    expect(v2.writes).toEqual(0);
   },
 );
 

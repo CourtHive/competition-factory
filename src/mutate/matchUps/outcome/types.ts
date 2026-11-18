@@ -478,6 +478,11 @@ export type BuildViewArgs = {
    * `writeOnCopy` keeps its own.
    */
   recordDraws?: RecordDraws;
+  /**
+   * RECORDED, with no captured instant: whether v1's run on the stored record read the clock exactly as its run on
+   * the copy did (`tools/replayedInstants.ts`); `differential` asks it of a call recorded whole.
+   */
+  instantsExact?: () => boolean;
 };
 
 /** the record a recorder copies: what a call is handed */
@@ -725,6 +730,8 @@ export type PlanArgs = {
   record?: (prefix: OutcomeOp[]) => OutcomeOp[] | undefined;
   /** RECORDED: v1's whole write for the call, read on a copy of the record (`plan/recordedCall.ts`). */
   recordWhole?: () => { ops: OutcomeOp[]; written: ResultType } | undefined;
+  /** with no captured instant: whether `ops` is a program the ordered temporal executor certifies (`compileTemporalPhases`) */
+  certifiesPhases?: (ops: OutcomeOp[]) => boolean;
   /** S7: the dual's call a deciding line makes */
   dual?: DualCall;
   /** S7: this call is a deciding line's dual, planned as part of the line's plan: its TEAM shape is the line's to vet */
