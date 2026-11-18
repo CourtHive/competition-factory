@@ -207,8 +207,8 @@ importers:
         specifier: 2.1.1
         version: 2.1.1
       courthive-components:
-        specifier: 7.16.1
-        version: 7.16.1(@tiptap/pm@3.34.0)(leaflet@1.9.4)(tods-competition-factory@7.40.0)
+        specifier: 7.17.0
+        version: 7.17.0(@tiptap/pm@3.34.0)(leaflet@1.9.4)(tods-competition-factory@7.40.0)
       leaflet:
         specifier: ^1.9.4
         version: 1.9.4
@@ -2636,8 +2636,8 @@ packages:
       typescript:
         optional: true
 
-  courthive-components@7.16.1:
-    resolution: {integrity: sha512-2krNE7euWozbrwyIqhby0G0NqmXaxiJa8lZx9QiX0NHIDu61F6lyBwVlRvLyTW/WLjwXiwD0yn1SnpGGrbrMHA==}
+  courthive-components@7.17.0:
+    resolution: {integrity: sha512-ZGxb8PSDITeDyZRxULe4+UZFRT/Ptl+pzuXytkxm+Q9Cd0cQqbTrqjJRmsYtAxSTLpSO5UKcuhCu7OI0h+nkow==}
     engines: {node: '>=24'}
     peerDependencies:
       leaflet: ^1.9.4
@@ -4145,7 +4145,7 @@ packages:
       lightningcss: '*'
       postcss: '*'
       sharp: '*'
-      svgo: '>=3.3.5'
+      svgo: '*'
       uglify-js: '*'
       webpack: ^5.1.0
     peerDependenciesMeta:
@@ -9553,7 +9553,7 @@ snapshots:
       parse-json: 5.2.0
       path-type: 4.0.0
 
-  courthive-components@7.16.1(@tiptap/pm@3.34.0)(leaflet@1.9.4)(tods-competition-factory@7.40.0):
+  courthive-components@7.17.0(@tiptap/pm@3.34.0)(leaflet@1.9.4)(tods-competition-factory@7.40.0):
     dependencies:
       '@tiptap/core': 3.34.0(@tiptap/pm@3.34.0)
       '@tiptap/extension-color': 3.34.0(@tiptap/extension-text-style@3.34.0(@tiptap/core@3.34.0(@tiptap/pm@3.34.0)))
