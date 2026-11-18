@@ -334,7 +334,12 @@ After the write, and only on success:
    refused call included (census family F2).
 5. **The draw is settled**: held exits are released (`settleHeldExits`), including to a participant
    who already passed the BYE holding them and carries no exit of their own (only an exit whose
-   origin is still a double exit travels this way); the drawPosition opposite a lone BYE, a
+   origin is still a double exit travels this way), and a convergence that has not produced its exit
+   produces it. Into a winner target that is the BYE it holds, with nobody in it and no matchUp beyond,
+   it produces only where that moves something, asked on a copy of the draw: a BYE does not always
+   record the exit produced into it, so such a convergence read as owed on every later call, and the
+   BYE was written over itself, announced and stamped each time
+   (`aSettledByeTargetIsNotProducedAgain`); the drawPosition opposite a lone BYE, a
    participant or an empty seat the structure placed there, goes on where its next matchUp has room
    (`reconcileByeAdvancements`; census A1, `theSeatLeftOppositeAByeGoesOn`); and a final that feeds a
    decider settles whether the decider is needed (`reconcileDeciders`) when a final's winner changed,

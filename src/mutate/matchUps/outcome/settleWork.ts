@@ -15,6 +15,7 @@ import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScor
 import { findOwedCarry } from '@Mutate/matchUps/matchUpStatus/reconcileCarriesPastByes';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
+import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 
 // constants and types
@@ -118,7 +119,22 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
     reconcileStaleExitOrigins: staleOrigins,
     reconcileCarriesPastByes: () =>
       !!findOwedCarry({ inContextDrawMatchUps: view, drawDefinition: draw, matchUpsMap: map }),
-    settleHeldExits: () => hasHeldExitWork({ inContextDrawMatchUps: view, drawDefinition: draw, matchUpsMap: map }),
+    settleHeldExits: () =>
+      hasHeldExitWork({
+        // what the pass's own detector is handed (`settleAfterWrite`): a production it asks about is made with these
+        context: {
+          appliedPolicies: getAppliedPolicies({
+            tournamentRecord: args.tournamentRecord,
+            drawDefinition: draw,
+            event: args.event,
+          }).appliedPolicies,
+          tournamentRecord: args.tournamentRecord,
+          event: args.event,
+        },
+        inContextDrawMatchUps: view,
+        drawDefinition: draw,
+        matchUpsMap: map,
+      }),
     reconcileByeAdvancements: () => !!findOwedByeAdvance(view),
     reconcileMissedLinkAdvancements: () =>
       !!findMissedLinkAdvancements({ inContextDrawMatchUps: view, drawDefinition: draw }).length,
