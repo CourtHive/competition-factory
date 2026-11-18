@@ -1,5 +1,27 @@
 # Changelog
 
+## [7.41.0](https://github.com/CourtHive/competition-factory/compare/v7.40.0...v7.41.0) (2026-11-18)
+
+
+### Features
+
+* **entries:** setEntryQualifyingPath; a FEED_IN draw's feed rounds by profile ([#6422](https://github.com/CourtHive/competition-factory/issues/6422)) ([3005014](https://github.com/CourtHive/competition-factory/commit/30050140105abe3f5a5cf173a2b515b0041b32b6))
+* **outcome:** record more calls whole, settle among them, and read a recorded call's draws once (batch 4) ([#6411](https://github.com/CourtHive/competition-factory/issues/6411)) ([d866f6a](https://github.com/CourtHive/competition-factory/commit/d866f6a7fb6643ee21375c1cf991db96686f61be))
+* **outcome:** record TEAM duals and lines, round robin group fields and tallied calls whole (batch 4b) ([#6414](https://github.com/CourtHive/competition-factory/issues/6414)) ([baa84cc](https://github.com/CourtHive/competition-factory/commit/baa84cc3ba226ddb81f47c11062457e28edec50b))
+* **outcome:** record uncaptured clock calls and draws without whole edges (batch 5) ([#6417](https://github.com/CourtHive/competition-factory/issues/6417)) ([4abcb2d](https://github.com/CourtHive/competition-factory/commit/4abcb2d1ce69ee069eacc0464c04be4e652ca0de))
+
+
+### Bug Fixes
+
+* **deps:** update tods-competition-factory to 7.40.0 ([#6413](https://github.com/CourtHive/competition-factory/issues/6413)) ([9e63027](https://github.com/CourtHive/competition-factory/commit/9e6302755412e132b03184dcddba8cb1c24a8da7))
+* **qualifying:** a stage sequence's space counts its own entries ([#6416](https://github.com/CourtHive/competition-factory/issues/6416)) ([b7c758c](https://github.com/CourtHive/competition-factory/commit/b7c758c4bb2da3cd48a38330ef7e564c922b8f78))
+
+
+### Documentation
+
+* 40,000+ tests exercise the factory across the ecosystem ([#6420](https://github.com/CourtHive/competition-factory/issues/6420)) ([79365a3](https://github.com/CourtHive/competition-factory/commit/79365a3c7daca8feeae313d5958e2917fe3dc619))
+* **tmx:** embed screenshots and a live score entry demo in the tmx example pages ([#6419](https://github.com/CourtHive/competition-factory/issues/6419)) ([52f04a0](https://github.com/CourtHive/competition-factory/commit/52f04a008f72ae7ff6034eb03b1727103b12d554))
+
 ## [7.40.0](https://github.com/CourtHive/competition-factory/compare/v7.39.0...v7.40.0) (2026-11-17)
 
 
