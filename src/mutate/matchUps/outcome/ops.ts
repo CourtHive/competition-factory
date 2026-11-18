@@ -470,6 +470,13 @@ export type OutcomeOp =
        * passes themselves were then asked: no predicate is asked of it again (`decide.ts` `settleSites`)
        */
       settledByProof?: true;
+      /**
+       * STOPPED AT THE FORWARD BOUND (`plan/recordedCall.ts`): v1's forward settle stopped at its pass limit on the run
+       * this program was read off, and the call returns its `FORWARD_SETTLE_EXHAUSTED` warning. What that pass still
+       * owes on what the program leaves is what v1 leaves owed: `settleForwardConsequences` is not asked of it
+       * (`settleWork.ts` `predictSettleWork`); every other predicate is
+       */
+      forwardExhausted?: true;
     }
   | { op: 'stampUpdatedAt'; entity: 'matchUp' | 'structure' | 'drawDefinition'; id: string };
 

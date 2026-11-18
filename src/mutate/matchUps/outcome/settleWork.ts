@@ -182,7 +182,13 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
     )
   )
     return Object.keys(work) as SettleSite[];
-  return (Object.keys(work) as SettleSite[]).filter((site) => work[site]());
+  // RECORDED AT THE FORWARD BOUND (`ops.ts` `announceRecorded.forwardExhausted`): v1's forward settle stopped at its
+  // pass limit, succeeded, and warned of what it left. That remainder is what v1 leaves on the stored record, so it
+  // is not work the program misses: the pass's predicate is not asked, and every other pass's is
+  const exhausted = ops.some((op) => op.op === 'announceRecorded' && op.forwardExhausted);
+  return (Object.keys(work) as SettleSite[]).filter(
+    (site) => !(exhausted && site === 'settleForwardConsequences') && work[site](),
+  );
 }
 
 /** a matchUp of the working view carries the exit the call's matchUp sent across its loser link already */

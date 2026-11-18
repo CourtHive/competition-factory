@@ -33,10 +33,14 @@ import type { OutcomeOp } from '../ops';
  * ops. Nothing here touches the stored record or the engine's notice state.
  *
  * Undefined, and the call stays v1's, wherever the copy's run is not known to be carried whole by those ops: more than
- * one tournament record; v1 returned an error, threw, or stopped its forward settle at the bound; it wrote outside the
- * draw, changed the call's own parameters, or added or moved a matchUp or a structure, a round robin's group or a
- * dual's line among them; it buffered a notice apply could not raise again; or its result holds an object of the copy
- * whose stored counterpart is not known to read as it does (`returnedOnStored`).
+ * one tournament record; v1 returned an error or threw; it wrote outside the draw, changed the call's own parameters,
+ * or added or moved a matchUp or a structure, a round robin's group or a dual's line among them; it buffered a notice
+ * apply could not raise again; or its result holds an object of the copy whose stored counterpart is not known to
+ * read as it does (`returnedOnStored`).
+ *
+ * A run whose forward settle STOPPED AT ITS BOUND is recorded as it stopped (CA, 2026-11-18): v1 succeeds there,
+ * leaves what the pass did not reach for the next call, and says so in its `FORWARD_SETTLE_EXHAUSTED` warning, which
+ * is in what the call returns. The program says so too (`forwardExhausted`), and is asked for no proof.
  *
  * A TEAM dual's call and a line's are recorded as any (batch 4b). v1 writes the line, its dual's tally
  * (`updateTieMatchUpScore`), the dual's own direction where the line decides or un-decides it, and the line-ups it
@@ -60,9 +64,16 @@ const placed = (drawDefinition: DrawDefinition): object[] => [
   ),
 ];
 
-/** v1's forward settle stopped at its bound: it warns, and leaves work this plan would not show */
-const unsettled = (written: ResultType) =>
+/**
+ * v1's forward settle stopped at its bound (`settleForwardConsequences`, `PASS_LIMIT`): it warns, naming a matchUp it
+ * did not reach, and leaves the rest of what the pass owes to the next call's settle
+ */
+const stoppedForward = (written: ResultType) =>
   !!written.warnings?.some((warning) => warning.code === FORWARD_SETTLE_EXHAUSTED);
+
+/** the recorded program of a run that stopped there, saying so (`ops.ts` `announceRecorded.forwardExhausted`) */
+const exhaustedProgram = (ops: OutcomeOp[]): OutcomeOp[] =>
+  ops.map((op) => (op.op === 'announceRecorded' ? { ...op, forwardExhausted: true } : op));
 
 /** every object under `root`, itself among them */
 function objectsUnder(root: object): Set<object> {
@@ -151,7 +162,7 @@ export function recordWholeCall(args: BuildViewArgs): RecordedCall | undefined {
           outside: outside(),
         };
         const ran = runOnCopy(args, { tournamentRecord, drawDefinition, event });
-        if (!ran || ran.error || unsettled(ran)) return undefined;
+        if (!ran || ran.error) return undefined;
         const after = placed(drawDefinition);
         const moved = after.length !== before.placed.length || after.some((entity, at) => entity !== before.placed[at]);
         if (moved || outside() !== before.outside) return undefined;
@@ -160,6 +171,8 @@ export function recordWholeCall(args: BuildViewArgs): RecordedCall | undefined {
         const ops = recordedOps({ drawDefinition, recording, before, marks: readMarks() });
         // last: the ops are read off the copy as the run left it, before the result is given the stored objects
         if (!ops || !returnedOnStored(ran, originals, drawDefinition)) return undefined;
+        // stopped at the forward bound: what the pass left is v1's to leave, and running it again would do the rest
+        if (stoppedForward(ran)) return { ops: exhaustedProgram(ops), written: ran };
         const provesSettled = () => settledOnCopy(args, { tournamentRecord, drawDefinition, event }, outside);
         return { ops, written: ran, provesSettled };
       }),

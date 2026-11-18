@@ -1687,7 +1687,7 @@ is not made, and the call stays v1's, for: a TEAM dual or line (batch 3 and 4a; 
 with no captured clock; a call that names more than one tournament record. Nor is it asked for where the call is
 refused: a refused call has no route, its refusal is its answer, and `differential` plans it only to set v1's refusal
 against v2's. It is discarded where v1's run on the copy returns an error, throws, or stops its forward settle at the
-bound; writes anything outside the draw; adds or moves a matchUp or a structure; writes a round robin group's own fields
+bound (recorded since: batch 5, below); writes anything outside the draw; adds or moves a matchUp or a structure; writes a round robin group's own fields
 (batch 3 and 4a; batch 4b, below, carries them); leaves a scored time on a matchUp with no score (the plan's own cleanup
 would clear it); changes the call's own parameters (which are put back); buffers a notice apply could not raise again;
 or returns a result that holds an object of the copy (batch 4b, below, returns the stored one where that is exact). A
@@ -1810,6 +1810,19 @@ writes; the planners write notes on the call's own matchUp on the clean routes a
 writes them the notes are a matchUp's own field, so the recording carries them. Not recorded: notes that are not data.
 `addNotes` also stores the `{ testing: true }` object a test hands it, as it is; an entity whose fields hold a
 function cannot be held by an op (`recordedDiff.ts` `asData`), the recording is not made, and the call stays v1's.
+
+**Recorded calls: a forward settle stopped at its bound (CA, 2026-11-18).** v1's forward settle acts on one owed
+answer per pass and stops after its pass limit (§ 6: `settleForwardConsequences`, 64 passes). A call that stops there
+succeeds: what the pass did not reach is left for the next call's settle, and the call returns a
+`FORWARD_SETTLE_EXHAUSTED` warning naming a matchUp it did not reach. Such a run was discarded, and the call stayed
+v1's. It is recorded as it stopped: the recorded ops are v1's write up to the bound and the passes that follow it, and
+the call returns what v1 returned on the copy, the warning in it. The program's `announceRecorded` op says so
+(`forwardExhausted: true`, `plan/recordedCall.ts`), and of such a program the forward pass's predicate is not asked
+(`settleWork.ts` `predictSettleWork`): the work it would find is the work v1 leaves, stated in the warning, not work the
+program misses. Every other predicate is asked, and where one finds work the recording is dropped: no proof is offered
+for it (`settledOnCopy` would run the forward pass again and do the rest). The next call, v1's or v2's, finds the
+remainder as v1 alone leaves it. Not this: a bounded loop that REFUSES at its bound (`SETTLE_BOUND_REACHED`, § 6) is
+an error, and a call v1 refuses on the copy is still v1's.
 
 **Recorded calls: settled by proof (EXPLORATORY, not ruled; its own commit).** A whole-call recording is v1's write
 as its own settle passes left it, and a recording a has-work predicate still found work on was dropped. The predicates
