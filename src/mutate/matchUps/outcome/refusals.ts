@@ -322,7 +322,13 @@ function refuseDispatch(request: OutcomeRequest, view: OutcomeView): Refusal | u
  * § 3's `unrecognized` and `not directing` rows are not reached: every status row 6 lets through is directing or
  * non-directing (`applyStageCodesRuled.test.ts`), so a `refused` route here that is not the BYE's is the fallthrough.
  */
-function refuseRoute(request: OutcomeRequest, view: OutcomeView): Refusal | undefined {
+function refuseRoute(given: OutcomeRequest, view: OutcomeView): Refusal | undefined {
+  // a TEAM dual's call that turns auto-calc on is dispatched with the winner and score its lines project, whatever
+  // the call names (v1's `handleTeamAutoCalc`): an exit entered with a winner the lines do not project has none
+  const projection = view.isTeam && given.flags.enableAutoCalc ? view.dualProjection : undefined;
+  const request = projection
+    ? { ...given, winningSide: projection.projectedWinningSide, score: projection.score }
+    : given;
   const route = chooseRoute(request, view);
   // a line under manual scoring (the dual's auto-calc disabled) goes to `attemptToModifyScore`, not the removal
   if (route === 'remove-directed')

@@ -72,6 +72,10 @@ A `context` holds the attributes that are defined, as v1's `decorateResult` leav
 `matchUpStatus` is refused by row 6's participants clause with `requiredParticipants` alone. Row 14's TEAM clause (a
 decided dual with an active downstream whose auto-calc the call turns on, its lines projecting another winner) names
 the stored dual beside the call's `winningSide`, as v1's `handleTeamAutoCalc` does.
+Row 6's fallthrough clause is asked of the call as it is dispatched: a TEAM dual's call that turns auto-calc on takes
+the winner and score its lines project, whatever it names, so an exit entered with a winner the lines do not project is
+an exit with no winner, refused. v1 asks it before the dual's own writes (its sides and line-ups, `setMatchUpState`'s
+`refusedAtTheStatusRoute`), so the refusal leaves the record as it was.
 
 | #   | code                                       | condition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | where                                                                                                                                                                                                                                                              |
 | --- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -1786,8 +1790,9 @@ stored counterpart (the event and the tournament record hold the draw, so they r
 The call's own parameters are not copied, and are returned as v1 returns them.
 
 Still v1's among TEAM calls, as among any: a call v1 refuses on the copy (`ERR_MISSING_ASSIGNMENTS` for a result entered
-on a line with no line-up assigned, `ERR_INVALID_MATCHUP_STATUS` for an exit entered on a dual whose auto-calc the call
-turns on), and a recording a settle predicate still finds work on.
+on a line with no line-up assigned), and a recording a settle predicate still finds work on. An exit entered on a dual
+whose auto-calc the call turns on, its lines projecting no winner, is no longer one: it is row 6's fallthrough, refused
+by both pipelines before anything is written (§ 2).
 
 `planOutcome` returns a complete plan only when every write the call makes is an op; otherwise it **abstains**, naming
 the first reason, and the call is v1's whole (fail-closed). S1 holds two shapes: the **local** write (the matchUp's own

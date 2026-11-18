@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import { setClock } from '@Tools/clock';
 
 // constants and types
 import {
@@ -31,7 +32,10 @@ import {
  * both pipelines refuse is compared under `differential`, which plans it beside its refusal, without a plan being
  * stated for a call that has no route.
  */
-afterEach(() => setOutcomePipeline(OUTCOME_PIPELINE_V1));
+afterEach(() => {
+  setOutcomePipeline(OUTCOME_PIPELINE_V1);
+  setClock();
+});
 
 const MODES: OutcomePipelineMode[] = [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL];
 const TEAM_DRAW = { drawSize: 4, eventType: TEAM, tieFormatName: DOMINANT_DUO };
@@ -61,6 +65,7 @@ function play(mode: OutcomePipelineMode, prepared: any, { matchUpId, outcome, pa
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
   tournamentEngine.setState(structuredClone(prepared));
   setOutcomePipeline(mode);
+  setClock('2026-10-25T00:01:00.000Z');
   const { stack: _stack, ...result }: any = tournamentEngine.setMatchUpStatus({
     outcome: structuredClone(outcome),
     drawId: 'd',
@@ -139,5 +144,48 @@ describe('a refused call is compared under the differential without a plan', () 
     const prepared = stored();
     const line = inRound(2).tieMatchUps[0];
     refusedAlike(prepared, { matchUpId: line.matchUpId, outcome: { matchUpStatus } }, INVALID_MATCHUP_STATUS.code);
+  });
+});
+
+/**
+ * Row 6's fallthrough clause on a TEAM dual: a status no route accepts as named. A call that turns auto-calc on is
+ * dispatched with the winner its lines project, whatever it names, so an exit entered with a winner on a dual whose
+ * lines project none is an exit with no winner. v1 refuses it before the dual's own writes (its sides and line-ups),
+ * and v2 refuses it by the same request.
+ */
+describe('an exit no route accepts on a TEAM dual is refused before the dual is written', () => {
+  const retired = {
+    ...generateOutcomeFromScoreString({ scoreString: '6-1 2-1', winningSide: 2 }).outcome,
+    matchUpStatus: RETIRED,
+  };
+
+  it.each([
+    ['a WALKOVER naming a winner, auto-calc enabled', { matchUpStatus: WALKOVER, winningSide: 2 }, true],
+    ['a DEFAULTED naming a winner, auto-calc enabled', { matchUpStatus: DEFAULTED, winningSide: 1 }, true],
+    ['a RETIRED with its score and winner, auto-calc enabled', retired, true],
+    ['a WALKOVER naming no winner', { matchUpStatus: WALKOVER }, false],
+  ])('%s', (_label, outcome, enableAutoCalc) => {
+    generate(TEAM_DRAW);
+    const prepared = stored();
+    const call = { matchUpId: inRound(1).matchUpId, outcome, params: enableAutoCalc ? { enableAutoCalc } : {} };
+    const v1 = refusedAlike(prepared, call, INVALID_MATCHUP_STATUS.code);
+    expect(v1.result.info).toEqual(`matchUpStatus: ${outcome.matchUpStatus}`);
+  });
+
+  // the same exits a route accepts: without the flag the winner named stands, and a carried exit needs none
+  it.each([
+    ['without the flag', {}],
+    ['carried', { enableAutoCalc: true, propagateExitStatus: true }],
+  ])('a WALKOVER naming a winner is accepted %s, alike', (_label, params) => {
+    generate(TEAM_DRAW);
+    const prepared = stored();
+    const call = { matchUpId: inRound(1).matchUpId, outcome: { matchUpStatus: WALKOVER, winningSide: 2 }, params };
+    const v1 = play(OUTCOME_PIPELINE_V1, prepared, call);
+    expect(v1.result.success).toEqual(true);
+    for (const mode of MODES) {
+      const actual = play(mode, prepared, call);
+      expect(actual.result).toStrictEqual(v1.result);
+      expect(actual.record).toEqual(v1.record);
+    }
   });
 });

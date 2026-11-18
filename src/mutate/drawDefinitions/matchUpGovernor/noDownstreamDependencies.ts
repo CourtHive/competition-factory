@@ -3,7 +3,7 @@ import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpSc
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { lastSetFormatIsTimed } from '@Query/matchUp/lastSetFormatisTimed';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
-import { attemptToSetMatchUpStatus } from './attemptToSetMatchUpStatus';
+import { attemptToSetMatchUpStatus, statusFallsThrough, type StatusRouteParams } from './attemptToSetMatchUpStatus';
 import { checkConnectedStructures } from './checkConnectedStructures';
 import { attemptToSetWinningSide } from './attemptToSetWinningSide';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -175,6 +175,22 @@ export function removesDirected(params): boolean {
   const triggerDualWinningSide = [CANCELLED, ABANDONED].includes(matchUpStatus) && params.dualWinningSideChange;
   const propagateExitStatus = params.propagateExitStatus && isExit(matchUpStatus);
   return !manual && !winningSide && !triggerDualWinningSide && !propagateExitStatus && scoresWithNoWinningSide(params);
+}
+
+/**
+ * Whether the dispatch above sends the call to `attemptToSetMatchUpStatus` and that function refuses it at its
+ * fallthrough (`statusFallsThrough`): no winner, no dual trigger, no exit to carry, no score that is a removal's, and a
+ * status named that no route accepts. `setMatchUpState` asks this before a TEAM dual's own writes (S7, item 3).
+ */
+export function refusesStatusRoute(
+  params: StatusRouteParams & { winningSide?: number; dualWinningSideChange?: boolean },
+): boolean {
+  const { matchUpStatus, winningSide } = params;
+  const triggerDualWinningSide =
+    (matchUpStatus === CANCELLED || matchUpStatus === ABANDONED) && params.dualWinningSideChange;
+  const propagateExitStatus = params.propagateExitStatus && isExit(matchUpStatus);
+  if (winningSide || triggerDualWinningSide || propagateExitStatus || scoresWithNoWinningSide(params)) return false;
+  return !!matchUpStatus && matchUpStatus !== TO_BE_PLAYED && statusFallsThrough(params);
 }
 
 function scoreModification(params) {
