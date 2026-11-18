@@ -361,7 +361,8 @@ function wholeCarry(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
  * (`clock`: no captured instant, or one captured without it); a draw stored without its edges, which v1 writes first
  * (`edges`: they are among the matchUps the copy's run changed);
  * a stored winner taken away by a call that names none (`winner`: what S4 does not plan);
- * a result under a per-matchUp competition policy (`competition`: the state v1 re-derives is the draw's own field)
+ * a result under a per-matchUp competition policy (`competition`: the state v1 re-derives is the draw's own field);
+ * a schedule `scheduleOps` does not plan (`schedule`: timeItems, the matchUp's own field)
  */
 const RECORDED_WHOLE = new Set<AbstainReason>([
   'exit',
@@ -378,6 +379,7 @@ const RECORDED_WHOLE = new Set<AbstainReason>([
   'edges',
   'winner',
   'competition',
+  'schedule',
 ]);
 
 /**
