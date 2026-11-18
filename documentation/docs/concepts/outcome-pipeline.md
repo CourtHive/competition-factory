@@ -1769,6 +1769,12 @@ result corrected to a tie its format permits (COMPLETED with no winner). All of 
 matchUp's own fields, the next matchUp's position, a group's tally), so the recording carries it under every refusal
 above.
 
+**Recorded calls: a per-matchUp competition policy.** `competition` is answered. v1's score write brings the draw's
+stored competition state up to date (`processCompetitionMatchUp`: re-derived from every result of the draw) and
+announces the draw for it (`announceDrawChange`). The state is the draw's own field (`competitionState`, or its
+extension), so the recording carries it in `replaceDrawState`, with the draw notice among the recorded notices. Nothing
+is written outside the draw; a run that did would be discarded by the recorder's own rule.
+
 A TEAM dual's call and a line's are recorded as any call is, and `team` is answered with every other reason a TEAM call
 abstains for (`exit`, `cascade`, `route`, a plan that leaves settle work, and the rest). v1 writes the line, its dual's
 tally (`updateTieMatchUpScore`: the sides and tieFormat it ensures, the score, the status), the dual's own direction
@@ -1830,7 +1836,7 @@ the slices that follow:
 | `clock`        | has no existing captured instant; direct source reads, advancing values and throwing-write prefixes must remain ordered as in v1                                         | the ordered temporal executor, for the programs it certifies; every other is read off v1's whole write, with the instants it read (`recordedWhole`, below; CA, 2026-11-18)                                                                                               |
 | `settle`       | leaves a settle pass work on the working view (S2's has-work predicates, `settleWork.ts`), leftover state included                                                       | batch 4a: read off v1's whole write where it can be (`recordedWhole`); otherwise none: S2 owns only a call no pass has work for                                                                                                                                          |
 | `write-mode`   | is made in LEGACY or BRIDGE write mode, where v1 writes `scoredTime` as a timeItem, which the reducer does not                                                           | a later slice (F6: BRIDGE in with its evidence)                                                                                                                                                                                                                          |
-| `competition`  | names a winner where a per-matchUp competition policy applies: v1 updates ratings on the result (`processCompetitionMatchUp`)                                            | a later slice                                                                                                                                                                                                                                                            |
+| `competition`  | names a winner where a per-matchUp competition policy applies: v1 updates ratings on the result (`processCompetitionMatchUp`)                                            | a later slice; read off v1's whole write (`recordedWhole`): the competition state is the draw's own field                                                                                                                                                                |
 
 **Draw scope** (D): a supplied draw can be owned with an existing captured instant even when no tournament record
 holds it. The shadow copies the exact supplied draw and its real optional event/tournament roots together, preserving

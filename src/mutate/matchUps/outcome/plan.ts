@@ -360,7 +360,8 @@ function wholeCarry(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
  * or line the planners do not write (S7 plans a line's result, and the dual it decides); a call with no stamp ledger
  * (`clock`: no captured instant, or one captured without it); a draw stored without its edges, which v1 writes first
  * (`edges`: they are among the matchUps the copy's run changed);
- * a stored winner taken away by a call that names none (`winner`: what S4 does not plan)
+ * a stored winner taken away by a call that names none (`winner`: what S4 does not plan);
+ * a result under a per-matchUp competition policy (`competition`: the state v1 re-derives is the draw's own field)
  */
 const RECORDED_WHOLE = new Set<AbstainReason>([
   'exit',
@@ -376,6 +377,7 @@ const RECORDED_WHOLE = new Set<AbstainReason>([
   'clock',
   'edges',
   'winner',
+  'competition',
 ]);
 
 /**
