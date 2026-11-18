@@ -53,6 +53,7 @@ import {
   deciderLineUpOps,
   loserLineUpBeyond,
   removedByeLineUpOps,
+  undecidingLeavesLineUp,
   loserLineUpCarry,
   teamReason,
 } from './plan/teamPlan';
@@ -465,6 +466,7 @@ function lineDualPlan(
               line.projectedTieMatchUps,
               request.matchUpId as string,
               writtenScore(request, write),
+              args.view.existing.score as Score | undefined,
             ),
           }
         : matchUp,
@@ -512,6 +514,8 @@ function undecidingLineOps(args: PlanArgs & { dual: DualCall; drawDefinition: Dr
   const line = view.line;
   const write = args.write;
   if (!line || !write || dual.route !== REMOVE_DIRECTED) return { abstain: 'team' };
+  // a line-up the dual stores for the team taken back, in the next dual or the loser's: v1 takes it too
+  if (undecidingLeavesLineUp(dual.view, args.drawDefinition)) return { abstain: 'team' };
   const dualPlan = lineDualPlan(args, line, write);
   if (!dualPlan.ops) return dualPlan;
   // the dual's removal writes it as its tally leaves it (the projected score, no winner); `scoreModification` returns
@@ -822,7 +826,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
         matchUpId: line.dualMatchUpId,
         matchUpWrite: { matchUpStatus: line.projectedStatus, winningSide: line.projectedWinningSide } as MatchUpWrite,
         score: line.projectedScore as Score | undefined,
-        tieMatchUps: writtenLine(line.projectedTieMatchUps, matchUpId, score),
+        tieMatchUps: writtenLine(line.projectedTieMatchUps, matchUpId, score, view.existing.score as Score | undefined),
       }
     : { matchUpId, matchUpWrite: write, score, matchUpFormat: request.matchUpFormat };
   // Tally and result notices can stamp the same entity. Without the call's ledger, ordered stamp effects remain owed.
