@@ -34,7 +34,12 @@ export function prepareCall(build: () => Record<string, unknown>): RecordedCall 
 }
 
 /** the call on a fresh copy of the prepared record, every topic subscribed and the clock fixed */
-export function playCall(mode: OutcomePipelineMode, { prepared, params }: RecordedCall) {
+export function playCall(
+  mode: OutcomePipelineMode,
+  { prepared, params }: RecordedCall,
+  /** hand the parameters over as they are: for those that cannot be copied (a function among them) */
+  asGiven = false,
+) {
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
   setSubscriptions({ subscriptions: {} });
   expect(tournamentEngine.setState(structuredClone(prepared)).success).toEqual(true);
@@ -51,7 +56,9 @@ export function playCall(mode: OutcomePipelineMode, { prepared, params }: Record
   setClock('2026-10-25T00:01:00.000Z');
   setOutcomePipeline(mode);
   v1Writes.count = 0;
-  const { stack: _stack, ...result }: any = tournamentEngine.setMatchUpStatus(structuredClone(params));
+  const { stack: _stack, ...result }: any = tournamentEngine.setMatchUpStatus(
+    asGiven ? params : structuredClone(params),
+  );
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
   return {
     result,

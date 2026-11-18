@@ -90,7 +90,8 @@ function recordedNotice({ topic, key, payload }: Notice): RecordedNotice | undef
   }
   const entity = RECORDED_ENTITY[topic];
   if (!entity) return undefined;
-  return { ...base, fields: structuredClone({ ...payload, [entity]: null }) };
+  const fields = asData({ ...payload, [entity]: null });
+  return fields && { ...base, fields };
 }
 
 /**
@@ -158,10 +159,20 @@ export function readBefore(drawDefinition: DrawDefinition) {
   };
 }
 
+/** an op's own copy of an entity's fields; undefined where they are not data (a function among them: no op can hold it) */
+function asData<T>(state: T): T | undefined {
+  try {
+    return structuredClone(state);
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * What the writers changed on the copy since `before`, as ops, and the notices they buffered: an entity is changed
  * where its fields read differently or an object holding them is another (`unchanged`). Undefined where one of those
- * notices is one apply could not raise again on the stored record: the call stays v1's.
+ * notices is one apply could not raise again on the stored record, or where a changed entity holds what is not data (a
+ * function among the notes a test fixture carries): the call stays v1's.
  */
 export function recordedOps({
   drawDefinition,
@@ -182,23 +193,24 @@ export function recordedOps({
   // a dual's own fields, then each of its lines': a line is a matchUp of its own, and stamps as one
   for (const stored of drawMatchUps(drawDefinition)) {
     const state = ownState(stored, MATCHUP_CHILDREN);
-    if (!unchanged(state, before.matchUps.get(stored.matchUpId)))
-      replace(
-        { op: 'replaceMatchUp', matchUpId: stored.matchUpId, matchUp: structuredClone(state) as MatchUp, recording },
-        stored,
-      );
+    if (unchanged(state, before.matchUps.get(stored.matchUpId))) continue;
+    const matchUp = asData(state) as MatchUp | undefined;
+    if (!matchUp) return undefined;
+    replace({ op: 'replaceMatchUp', matchUpId: stored.matchUpId, matchUp, recording }, stored);
   }
   for (const s of drawStructures(drawDefinition)) {
     const state = ownState(s, STRUCTURE_CHILDREN);
-    if (!unchanged(state, before.structures.get(s.structureId)))
-      replace({ op: 'replaceStructureState', structureId: s.structureId, state: structuredClone(state), recording }, s);
+    if (unchanged(state, before.structures.get(s.structureId))) continue;
+    const data = asData(state);
+    if (!data) return undefined;
+    replace({ op: 'replaceStructureState', structureId: s.structureId, state: data, recording }, s);
   }
   const state = ownState(drawDefinition, DRAW_CHILDREN);
-  if (!unchanged(state, before.draw))
-    replace(
-      { op: 'replaceDrawState', drawId: drawDefinition.drawId, state: structuredClone(state), recording },
-      drawDefinition,
-    );
+  if (!unchanged(state, before.draw)) {
+    const data = asData(state);
+    if (!data) return undefined;
+    replace({ op: 'replaceDrawState', drawId: drawDefinition.drawId, state: data, recording }, drawDefinition);
+  }
   const notices: RecordedNotice[] = [];
   for (const notice of getNoticeBuffer() ?? []) {
     if (before.notices.has(notice)) continue;
