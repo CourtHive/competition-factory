@@ -350,7 +350,9 @@ function wholeCarry(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
  * the abstentions a whole-call recording answers: an exit, a cascade or a loser seat the planners do not write; a route
  * or a link they do not plan; the client's positional codes; provenance on the matchUp; LEGACY or BRIDGE write mode; a
  * tally the planners do not write (a group's is among the group's own fields, which a recording carries); a TEAM dual
- * or line the planners do not write (S7 plans a line's result, and the dual it decides)
+ * or line the planners do not write (S7 plans a line's result, and the dual it decides); a call with no stamp ledger
+ * (`clock`: no captured instant, or one captured without it); a draw stored without its edges, which v1 writes first
+ * (`edges`: they are among the matchUps the copy's run changed)
  */
 const RECORDED_WHOLE = new Set<AbstainReason>([
   'exit',
@@ -364,6 +366,7 @@ const RECORDED_WHOLE = new Set<AbstainReason>([
   'tallied',
   'team',
   'clock',
+  'edges',
 ]);
 
 /**

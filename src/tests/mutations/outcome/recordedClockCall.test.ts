@@ -92,6 +92,8 @@ type Row = {
   scope?: Scope;
   /** a TEAM draw's line-ups are generated, so its lines can be scored */
   lineUps?: boolean;
+  /** the draw is stored without its edges, which v1 writes first (`recordedEdgesCall.test.ts`) */
+  edgeless?: boolean;
 };
 
 const RR = (nth: number): Target => ({ roundNumber: 1, nth });
@@ -136,6 +138,10 @@ const ROWS: [string, Row][] = [
     'a winner changed',
     { drawProfile: SE_8, setup: [{ target: R1(1), outcome: won(1) }], step: { target: R1(1), outcome: won(2) } },
   ],
+  [
+    'a result on a draw stored without its edges',
+    { drawProfile: SE_8, step: { target: R1(1), outcome: won(1) }, edgeless: true },
+  ],
   ['a walkover', { drawProfile: SE_8, step: { target: R1(1), outcome: walkover(1) } }],
   ['a double walkover', { drawProfile: SE_8, step: { target: R1(1), outcome: { matchUpStatus: DOUBLE_WALKOVER } } }],
   [
@@ -155,7 +161,7 @@ const ROWS: [string, Row][] = [
   ],
 ];
 
-function prepare({ drawProfile, setup = [], step, lineUps }: Row) {
+function prepare({ drawProfile, setup = [], step, lineUps, edgeless }: Row) {
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
   setClock(FIXED);
   setSubscriptions({ subscriptions: {} });
@@ -180,6 +186,12 @@ function prepare({ drawProfile, setup = [], step, lineUps }: Row) {
   }
   const matchUpId = findTarget(step.target);
   const prepared: Tournament = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+  if (edgeless)
+    for (const structure of prepared.events?.[0].drawDefinitions?.[0].structures ?? [])
+      for (const matchUp of structure.matchUps ?? []) {
+        delete matchUp.winnerMatchUpId;
+        delete matchUp.loserMatchUpId;
+      }
   return { prepared, matchUpId, step };
 }
 
