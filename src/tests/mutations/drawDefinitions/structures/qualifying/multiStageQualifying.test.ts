@@ -101,10 +101,9 @@ it('supports multi-sequence qualifying structures', () => {
   });
   expect(q2pa?.length).toEqual(16);
   const q2positioned = q2pa?.filter((q) => q.participantId);
-  // NOTE: Known issue — getStageEntryTypeCount doesn't filter by stageSequence,
-  // so after q1 entries are added, the space check for q2 sees the stage as full.
-  // q2 entries are silently dropped, resulting in 0 positioned participants.
-  expect(q2positioned?.length).toEqual(0);
+  // its own 12 entries in its 16, with 4 positions held for q1's qualifiers. A sequence's space counted every sequence's
+  // entries, so q1's 32 filled the stage and q2's entries were dropped: 0 (fixed 2026-11-17)
+  expect(q2positioned?.length).toEqual(12);
 
   ({ roundMatchUps } = getRoundMatchUps({ matchUps: q2.matchUps ?? [] }));
   roundNumbers = roundMatchUps ? Object.keys(roundMatchUps).map((r) => Number.parseInt(r)) : [];
@@ -247,6 +246,13 @@ it('can advance participants through multi-stage qualifying structures', () => {
   const readyToScore = matchUps.filter((matchUp) => matchUp.readyToScore);
   expect(readyToScore.length).toEqual(matchUps.length);
 
+  // q2 has its own direct entries (it had none while a sequence's space counted every sequence's entries): a match
+  // between two of them was completed with the draw, so count what was completed before scoring the rest
+  const completedBefore = tournamentEngine.allTournamentMatchUps({
+    contextFilters: { stages: [QUALIFYING], stageSequences: [2] },
+    matchUpFilters: { matchUpStatuses: [COMPLETED] },
+  }).matchUps.length;
+
   // attempt to complete all matchUps in QUALIFYING stageSequence: 2
   // must use scoreString because test will not pass in the rare instance outcome id DEFAULT
   const { outcome } = mocksEngine.generateOutcomeFromScoreString({
@@ -267,10 +273,8 @@ it('can advance participants through multi-stage qualifying structures', () => {
     matchUpFilters: { matchUpStatuses: [COMPLETED] },
   }).matchUps;
 
-  // With the stageSequence space-check bug, q2 has no direct entries (only byes).
-  // q1 winners are placed as qualifiers and may face byes, producing fewer completed matchUps.
-  // readyToScore matchUps that were scored should be completed
-  expect(matchUps.length).toEqual(readyToScore.length);
+  // every matchUp scored is completed, beside those completed with the draw
+  expect(matchUps.length).toEqual(completedBefore + readyToScore.length);
 });
 
 import tournamentRecord from './multiStageQualifying.codes.json';

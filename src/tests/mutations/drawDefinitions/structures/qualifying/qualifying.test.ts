@@ -234,9 +234,9 @@ it('supports ROUND_ROBIN in multi-sequence qualifying structures', () => {
   });
   expect(q2pa?.length).toEqual(16);
   const q2positioned = q2pa?.filter((q) => q.participantId);
-  // NOTE: Known issue — getStageEntryTypeCount doesn't filter by stageSequence,
-  // so q2 entries are silently dropped when q1 entries fill the stage space check.
-  expect(q2positioned?.length).toEqual(0);
+  // its own 12 entries in its 16, with 4 positions held for q1's qualifiers. A sequence's space counted every sequence's
+  // entries, so q2's entries were dropped: 0 (fixed 2026-11-17)
+  expect(q2positioned?.length).toEqual(12);
 
   ({ roundMatchUps } = getRoundMatchUps({ matchUps: q2.matchUps }));
   roundNumbers = roundMatchUps ? Object.keys(roundMatchUps).map((r) => parseInt(r)) : [];
@@ -260,8 +260,7 @@ it('supports ROUND_ROBIN in multi-sequence qualifying structures', () => {
   expect(firstLink.target.feedProfile).toEqual(DRAW);
   expect(secondLink.target.feedProfile).toEqual(DRAW);
 
-  // NOTE: q2 has no positioned participants due to stageSequence space-check issue.
-  // Verify position actions on main structure which has participants.
+  // position actions on the main structure, which has participants
   const mainParticipantAssignment = mainStructure.positionAssignments?.find(({ participantId }) => participantId);
   const mainDrawPosition = mainParticipantAssignment?.drawPosition;
 
