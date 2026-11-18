@@ -572,7 +572,11 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   under the same conditions. An ad hoc matchUp's winner directs nothing, and its structure's tally is
   planned when it holds one round (a Swiss's later rounds stay v1's). A result in a lucky draw's
   pre-feed round (a round of odd size) directs nothing either: v1 advances no one from it, the
-  advancement being chosen afterwards (`luckyDrawAdvancement`). An FMLC loser fed into the
+  advancement being chosen afterwards (`luckyDrawAdvancement`). A double exit in a lucky draw (LUCKY_DRAW, ADAPTIVE)
+  advances nobody, in a round of any size (CA, 2026-11-17): it is written on its own matchUp, produces no exit in the
+  next round, and whoever arrives beside the seat it leaves empty waits there (`doubleExitAdvancement` returns at
+  once; cleared, nothing is taken back). The planners plan no produced exit for it and abstain (`exit`), entered,
+  cleared or replaced: the call is read off v1's whole write. An FMLC loser fed into the
   consolation's round 2 is included (the seat `positionTargets` reports is the one `directLoser`
   takes). A loser that feed keeps out (they have won before) is
   owned too: their seat takes a propagated BYE and its matchUp becomes a BYE, as `directLoser` places
