@@ -406,9 +406,19 @@ function recordedWhole(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
   const answered = plan.ops ? unanswered(plan.ops) : RECORDED_WHOLE.has(plan.abstain);
   if (!answered) return plan;
   const recorded = args.recordWhole?.();
-  if (!recorded || args.settles?.(recorded.ops)) return plan;
-  return { ops: recorded.ops, shape: 'local', recordedResult: recorded.written };
+  if (!recorded) return plan;
+  // a predicate that finds work on v1's own write is answered by the passes themselves (`settledOnCopy`): only where
+  // they change nothing at all is the program marked settled, and no predicate is asked of it again
+  const settled = args.settles?.(recorded.ops)
+    ? recorded.provesSettled?.() && settledProgram(recorded.ops)
+    : recorded.ops;
+  if (!settled) return plan;
+  return { ops: settled, shape: 'local', recordedResult: recorded.written };
 }
+
+/** the recorded program, its notices marked settled by proof (`ops.ts` `announceRecorded.settledByProof`) */
+const settledProgram = (ops: OutcomeOp[]): OutcomeOp[] =>
+  ops.map((op) => (op.op === 'announceRecorded' ? { ...op, settledByProof: true } : op));
 
 function carriedWhole(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
   if (takeAdmittedCarry() !== args.request.matchUpId) return plan;

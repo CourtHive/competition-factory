@@ -2,6 +2,7 @@ import { withoutSettleTelemetry } from '@Mutate/matchUps/matchUpStatus/settleTel
 import {
   drawMatchUps,
   drawStructures,
+  nothingChanged,
   objectsOf,
   readBefore,
   recordedOps,
@@ -11,7 +12,9 @@ import {
 } from './recordedDiff';
 import { FORWARD_SETTLE_EXHAUSTED } from '@Mutate/matchUps/matchUpStatus/settleForwardConsequences';
 import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
+import { withClockSourceReader, type ClockSourceReading } from '@Tools/clock';
 import { withDraftWrites } from '@Global/state/withDraftWrites';
+import { withAmbientRandomSource } from '@Tools/prng';
 import { cloneState, restoreState } from '@Tools/cloneState';
 import { stampedInThisCall } from '../ops';
 import { Recording } from '../recording';
@@ -39,7 +42,12 @@ import type { OutcomeOp } from '../ops';
  * (`updateTieMatchUpScore`), the dual's own direction where the line decides or un-decides it, and the line-ups it
  * carries onto the next duals' sides and the draw's `lineUps` extension: all of it in the draw, so all of it ops.
  */
-export type RecordedCall = { ops: OutcomeOp[]; written: ResultType };
+export type RecordedCall = {
+  ops: OutcomeOp[];
+  written: ResultType;
+  /** asked only where a settle predicate finds work on `ops`: whether the passes themselves do (`settledOnCopy`) */
+  provesSettled?: () => boolean;
+};
 
 /**
  * every structure and matchUp of the draw, where it stands; and the list each dual holds its lines in, which a recorded
@@ -151,7 +159,9 @@ export function recordWholeCall(args: BuildViewArgs): RecordedCall | undefined {
         if (after.some((entity) => hasStaleScoredTime(entity as MatchUp))) return undefined;
         const ops = recordedOps({ drawDefinition, recording, before, marks: readMarks() });
         // last: the ops are read off the copy as the run left it, before the result is given the stored objects
-        return ops && returnedOnStored(ran, originals, drawDefinition) ? { ops, written: ran } : undefined;
+        if (!ops || !returnedOnStored(ran, originals, drawDefinition)) return undefined;
+        const provesSettled = () => settledOnCopy(args, { tournamentRecord, drawDefinition, event }, outside);
+        return { ops, written: ran, provesSettled };
       }),
     ),
   );
@@ -159,6 +169,58 @@ export function recordWholeCall(args: BuildViewArgs): RecordedCall | undefined {
   // v1 wrote into the call's own parameters, which the stored record's write is handed next: they are put back
   restoreState(kept);
   return undefined;
+}
+
+/**
+ * THE FIXPOINT, PROVED ON THE COPY. A has-work predicate (`settleWork.ts`) reads the working view a program leaves and
+ * may find work where the pass it stands for has none: it is an approximation, kept on the safe side. Where one finds
+ * work on a recording, the passes themselves are asked: the settle passes (`settleAfterWrite`) run once more on the
+ * copy as v1's run left it, with the readings taken of it as it then stands, as the next call's settle would take them
+ * (the same answer was measured with the readings v1's own run was handed). True only if that run changes NOTHING
+ * AT ALL, by the measure the recorder takes of a change (`nothingChanged`: every entity's own fields and the objects
+ * that hold them, so no field and no stamp; no notice buffered), and returns no error and no warning, stops at no
+ * bound, adds or moves no entity, writes nothing outside the draw or into the call's parameters, marks no tournament
+ * or topic modified, and reads neither the clock nor the random source. Then v1's write is settled: the passes have
+ * no work on it, whatever a predicate says.
+ *
+ * The run is handed neither source: a read is answered with a placeholder and counted, and the proof fails. So the
+ * instants and the draws the copy's first run kept are the call's, and v1 on the stored record is handed exactly
+ * those (`replayedInstants.ts`, `replayedDraws.ts`). False changes nothing either: the recording is dropped, as it was.
+ */
+function settledOnCopy(args: BuildViewArgs, copy: RecordCopy, outside: () => string): boolean {
+  const settle = args.settleOnCopy;
+  if (!settle) return false;
+  const requested = JSON.stringify(args.request);
+  return withNoticeMarks((readMarks) =>
+    withDraftWrites(() =>
+      withoutSettleTelemetry(() => {
+        const before = { ...readBefore(copy.drawDefinition), placed: placed(copy.drawDefinition), outside: outside() };
+        let reads = 0;
+        const unread: ClockSourceReading = { ms: 0 };
+        let again: ReturnType<typeof settle>;
+        try {
+          again = withClockSourceReader(
+            () => ((reads += 1), unread),
+            () =>
+              withAmbientRandomSource(
+                () => ((reads += 1), 0),
+                () => settle(copy),
+              ),
+          );
+        } catch {
+          return false;
+        }
+        if (!again || again.error || again.exhausted || again.warnings?.length || reads) return false;
+        const after = placed(copy.drawDefinition);
+        if (after.length !== before.placed.length || after.some((entity, at) => entity !== before.placed[at]))
+          return false;
+        if (outside() !== before.outside || JSON.stringify(args.request) !== requested) return false;
+        const marks = readMarks();
+        if (marks?.tournamentIds.length || marks?.topics.length) return false;
+        return nothingChanged(copy.drawDefinition, before);
+      }),
+    ),
+  );
 }
 
 /** a throw is v1's to make on the stored record, as it makes it today */

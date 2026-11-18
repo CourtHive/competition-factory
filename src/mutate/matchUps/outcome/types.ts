@@ -474,6 +474,8 @@ export type BuildViewArgs = {
   request: OutcomeRequest;
   /** RECORDED: v1's whole write for this call, run on a copy of the record (`plan/recordedCall.ts`) */
   writeOnCopy?: WriteOnCopy;
+  /** RECORDED: this call's settle passes run once more on a copy `writeOnCopy` wrote (`plan/recordedCall.ts`) */
+  settleOnCopy?: (copy: RecordCopy) => (ResultType & { exhausted?: string }) | undefined;
   /**
    * RECORDED: runs the cascade recorder's write on a copy with its random draws kept, so that v1's run on the stored
    * record, where it follows, is handed the same draws (`tools/replayedDraws.ts`); not given it, it records nothing.
@@ -731,7 +733,7 @@ export type PlanArgs = {
   /** RECORDED: the double-exit module's cascade after `prefix`, read on a copy of the record. */
   record?: (prefix: OutcomeOp[]) => OutcomeOp[] | undefined;
   /** RECORDED: v1's whole write for the call, read on a copy of the record (`plan/recordedCall.ts`). */
-  recordWhole?: () => { ops: OutcomeOp[]; written: ResultType } | undefined;
+  recordWhole?: () => { ops: OutcomeOp[]; written: ResultType; provesSettled?: () => boolean } | undefined;
   /** with no captured instant: whether `ops` is a program the ordered temporal executor certifies (`compileTemporalPhases`) */
   certifiesPhases?: (ops: OutcomeOp[]) => boolean;
   /** S7: the dual's call a deciding line makes */

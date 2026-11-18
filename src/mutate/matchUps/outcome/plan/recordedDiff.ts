@@ -159,6 +159,24 @@ export function readBefore(drawDefinition: DrawDefinition) {
   };
 }
 
+/**
+ * Whether the copy is, object for object, as `before` read it: every matchUp's, structure's and the draw's own fields
+ * read the same and are held by the same objects (`unchanged`, the measure `recordedOps` takes of a change), and no
+ * notice has been buffered since.
+ */
+export function nothingChanged(drawDefinition: DrawDefinition, before: RecordedBefore): boolean {
+  return (
+    drawMatchUps(drawDefinition).every((stored) =>
+      unchanged(ownState(stored, MATCHUP_CHILDREN), before.matchUps.get(stored.matchUpId)),
+    ) &&
+    drawStructures(drawDefinition).every((s) =>
+      unchanged(ownState(s, STRUCTURE_CHILDREN), before.structures.get(s.structureId)),
+    ) &&
+    unchanged(ownState(drawDefinition, DRAW_CHILDREN), before.draw) &&
+    (getNoticeBuffer() ?? []).every((notice) => before.notices.has(notice))
+  );
+}
+
 /** an op's own copy of an entity's fields; undefined where they are not data (a function among them: no op can hold it) */
 function asData<T>(state: T): T | undefined {
   try {

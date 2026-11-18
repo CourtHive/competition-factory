@@ -464,6 +464,12 @@ export type OutcomeOp =
        * not anyone subscribes, so the buffer alone does not say. Absent where the provider cannot expose its marks
        */
       marks?: { tournamentIds: string[]; topics: string[] };
+      /**
+       * SETTLED BY PROOF (`plan/recordedCall.ts` `settledOnCopy`): the call's settle passes, run once more on what this
+       * program leaves, changed nothing at all. Set only where a has-work predicate found work on the program, and the
+       * passes themselves were then asked: no predicate is asked of it again (`decide.ts` `settleSites`)
+       */
+      settledByProof?: true;
     }
   | { op: 'stampUpdatedAt'; entity: 'matchUp' | 'structure' | 'drawDefinition'; id: string };
 

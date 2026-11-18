@@ -1806,6 +1806,28 @@ writes them the notes are a matchUp's own field, so the recording carries them. 
 `addNotes` also stores the `{ testing: true }` object a test hands it, as it is; an entity whose fields hold a
 function cannot be held by an op (`recordedDiff.ts` `asData`), the recording is not made, and the call stays v1's.
 
+**Recorded calls: settled by proof (EXPLORATORY, not ruled; its own commit).** A whole-call recording is v1's write
+as its own settle passes left it, and a recording a has-work predicate still found work on was dropped. The predicates
+approximate the passes, so where one finds work on a recording the passes themselves are asked
+(`plan/recordedCall.ts` `settledOnCopy`): `settleAfterWrite` runs once more on the copy as v1's run left it, with the
+readings taken of the copy as it then stands, as the next call's settle would take them. The recording is kept only if
+that run changes nothing at all by the measure the recorder takes of a change (every entity's own fields and the
+objects that hold them, so no field and no stamp; no notice buffered), returns no error and no warning, stops at no
+bound, adds or moves no entity, writes nothing outside the draw or into the call's parameters, marks no tournament or
+topic modified, and reads neither the clock nor the random source (it is handed neither: a read is answered with a
+placeholder, counted, and fails the proof, so the instants and draws the copy's first run kept stay the call's). The
+kept program's `announceRecorded` op says so (`settledByProof: true`), and `settleSites` asks no predicate of a program that
+carries it: the passes' answer stands in the predicates' place, and the plan reports no settle work because the passes
+have none. Anything else, and the recording is dropped as before.
+
+Measured on the batch 5 ledger's settle family (22 calls): `reconcileLinkAdvancements` found work the pass does not
+have (2 calls: a qualifier's removal held back by play downstream; a TEAM line in a dual won by WALKOVER whose winner
+was fed on), and those are proved and owned. `settleHeldExits` found work the pass DOES have (20 calls: a double exit
+beside a held exit, entered, asked for again, or made of a result): asked again, the pass leaves every value as it is
+and announces the matchUps it visits, which a later call's settle does too, with their stamps. That is a change, so
+those recordings are dropped and the calls stay v1's. With the readings v1's own run was handed, in place of fresh
+ones, every one of the 22 answers the same.
+
 **What a recorded call returns.** v1 on the copy returns objects of the copy where on the stored record it returns the
 stored ones. A line's call returns its dual's tally (`tieMatchUpResult`), and where the dual's tieFormat declares its
 score REPORTED nothing is derived from its lines and the tally is the dual's own stored score, the very object
