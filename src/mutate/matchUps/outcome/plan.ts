@@ -359,7 +359,8 @@ function wholeCarry(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
  * tally the planners do not write (a group's is among the group's own fields, which a recording carries); a TEAM dual
  * or line the planners do not write (S7 plans a line's result, and the dual it decides); a call with no stamp ledger
  * (`clock`: no captured instant, or one captured without it); a draw stored without its edges, which v1 writes first
- * (`edges`: they are among the matchUps the copy's run changed)
+ * (`edges`: they are among the matchUps the copy's run changed);
+ * a stored winner taken away by a call that names none (`winner`: what S4 does not plan)
  */
 const RECORDED_WHOLE = new Set<AbstainReason>([
   'exit',
@@ -374,6 +375,7 @@ const RECORDED_WHOLE = new Set<AbstainReason>([
   'team',
   'clock',
   'edges',
+  'winner',
 ]);
 
 /**
