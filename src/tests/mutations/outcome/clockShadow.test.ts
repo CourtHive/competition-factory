@@ -72,8 +72,8 @@ vi.mock('@Tools/clock', async (load) => {
   const original = await load<typeof import('@Tools/clock')>();
   return {
     ...original,
-    observeClockReads: (...[observe, run, errors]: Parameters<typeof original.observeClockReads>) =>
-      original.observeClockReads(
+    observeClockReadings: (...[observe, run, errors]: Parameters<typeof original.observeClockReadings>) =>
+      original.observeClockReadings(
         (effect) => {
           if (control.fault === 'observer-before') throw new Error('collector before');
           const complete = observe(effect);

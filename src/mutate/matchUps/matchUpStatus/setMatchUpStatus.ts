@@ -21,6 +21,7 @@ import { isPartialDualScore } from '@Scoring/analysis/isPartialDualScore';
 import { tiebreakPointsWarnings } from '@Scoring/analysis/validateScore';
 import { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
 import { decideOutcomeV2 } from '@Mutate/matchUps/outcome/decide';
+import { replayedInstants } from '@Tools/replayedInstants';
 import { replayedDraws } from '@Tools/replayedDraws';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -250,7 +251,11 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // A RECORDED CALL DRAWS ONCE. v1 run on a copy (`writeOnCopy`, the recorded cascade) takes its random draws from the
   // source, and they are kept; v1 run on the stored record after it (`differential`, or a recording refused or
   // dropped) is handed those draws first, in order. Every stream is read as v1 alone reads it, in every mode.
+  // AND READS THE CLOCK ONCE. Outside an engine call there is no captured instant, and each stamp reads the source
+  // where it is written: the copy's readings are kept and handed, in order, to v1's run on the stored record, so the
+  // source is read as v1 alone reads it and both runs stamp the same instants (`replayedInstants.ts`).
   const draws = replayedDraws();
+  const instants = replayedInstants();
   const v2 = decideOutcomeV2({
     request: {
       matchUpStatusCodes: outcome?.matchUpStatusCodes,
@@ -269,7 +274,8 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
         enableAutoCalc,
       },
     },
-    writeOnCopy: (copy) => draws.record(() => writeOnCopy(copy)),
+    writeOnCopy: (copy) => draws.record(() => instants.record(() => writeOnCopy(copy))),
+    instantsExact: instants.exact,
     recordDraws: draws.record,
     policyDefinitions,
     tournamentRecord,
@@ -291,7 +297,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     matchUpsMap,
     params,
   };
-  return draws.replay(() => (v2.runV1 ? v2.runV1(() => runV1(stored)) : runV1(stored)));
+  return draws.replay(() => instants.replay(() => (v2.runV1 ? v2.runV1(() => runV1(stored)) : runV1(stored))));
 
   /**
    * RECORDED (`outcome/plan/recordedCall.ts`): this call's v1 write on a copy of the record, with the copy's own map

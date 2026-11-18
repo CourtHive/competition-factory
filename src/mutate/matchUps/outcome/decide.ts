@@ -101,6 +101,7 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
     landing: landingView(args, view),
     record: (prefix) => recordDoubleExitCascade({ ...args, request: planned }, prefix),
     recordWhole: () => recordWholeCall(args),
+    certifiesPhases: (ops) => !!compileTemporalPhases({ args, view, route, ops }),
     dual: dualCallFor(route, args, view),
     request: planned,
     write: plan,
@@ -117,8 +118,11 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
   const phases =
     args.clockFree && outcome.ops ? compileTemporalPhases({ args, view, route, ops: outcome.ops }) : undefined;
   const observe = phases && outcome.ops ? prepareTemporalShadow(args, phases, outcome.shape) : undefined;
+  // v1's whole write, recorded with the instants it read (`recordedWhole`): apply writes them as data, and reads no clock
+  const recorded = outcome.ops && outcome.recordedResult ? outcome : undefined;
   // An uncaptured call requires a complete phase program and a replayable effect scope, in either mode.
   if (args.clockFree && !observe) outcome = { abstain: 'clock' };
+  if (recorded) outcome = recorded;
   return { planned, route, plan, direction, folded, outcome, phases, observe };
 }
 
@@ -334,6 +338,14 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     if (observe) return; // The enclosing continuation compares every clock prefix and its terminal state.
     if (outcome.abstain) return differentialTally(`shadow:abstain:${outcome.abstain}`, 'deferred');
     if (!shadowBefore || !args.drawDefinition) return differentialTally('shadow:abstain:no-record', 'deferred');
+    // RECORDED with no captured instant: v1 here read the clock as often as it did on the copy, or the recorded
+    // instants are not the ones this run stamped (`tools/replayedInstants.ts`)
+    if (outcome.recordedResult && getCapturedClock() === undefined && args.instantsExact?.() === false)
+      throw new OutcomePipelineDivergence({
+        matchUpId: args.request.matchUpId,
+        v1: 'read the clock on the stored record',
+        v2: 'recorded: the copy read it another number of times',
+      });
     const shadow = compareShadow({
       current: { ...args, drawDefinition: args.drawDefinition },
       before: shadowBefore,
