@@ -55,9 +55,8 @@ describe('C25 existing carries corrected past held BYEs preserve records, return
         expect(actual.notices).toEqual(v1.notices);
       }
     } else {
-      // the deeper controls are recorded whole (batch 3); TEAM stays v1's
-      const owned = profile.eventType !== 'TEAM';
-      expect(compareUndirectedWinner(scenario, owned, prepared).v1.results[0].success).toEqual(true);
+      // the deeper controls are recorded whole (batch 3), a TEAM draw's too (batch 4b)
+      expect(compareUndirectedWinner(scenario, true, prepared).v1.results[0].success).toEqual(true);
     }
   });
 

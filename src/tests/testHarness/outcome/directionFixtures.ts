@@ -6042,9 +6042,6 @@ export const PLAIN_BYE_ARRIVALS: [string, Scenario][] = PLAIN_BYE_RECIPES.flatMa
     ),
 );
 
-export const plainByeIsOwned = (scenario: Scenario) =>
-  !(scenario.drawProfile.drawType === DOUBLE_ELIMINATION && scenario.drawProfile.participantsCount === 2);
-
 // C21 captures cover one to four structural BYEs, a clean landing or a final BYE, and linked winner controls.
 export const HELD_BYE_RECIPES: [string, number, number, number, number][] = [
   [FEED_IN_CHAMPIONSHIP, 4, 3, 1, 2],
@@ -6177,7 +6174,7 @@ export const UNREACHED_WINNER_RECIPES: [
   [false, FIRST_MATCH_LOSER_CONSOLATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
   [true, SINGLE_ELIMINATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
   [true, FEED_IN_CHAMPIONSHIP, 8, 8, 'Main', 1, 1, 'Consolation', 1, 2, true, true],
-  [true, FEED_IN_CHAMPIONSHIP, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, false],
+  [true, FEED_IN_CHAMPIONSHIP, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
   [true, FEED_IN_CHAMPIONSHIP, 16, 15, 'Main', 2, 2, 'Consolation', 1, 1, true, true],
   [true, FIRST_ROUND_LOSER_CONSOLATION, 8, 8, 'Main', 1, 1, 'Consolation', 1, 2, true, true],
   [true, FIRST_ROUND_LOSER_CONSOLATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
@@ -6189,18 +6186,18 @@ export const UNREACHED_WINNER_RECIPES: [
   [true, OLYMPIC, 8, 8, 'East', 1, 2, 'East', 1, 2, true, true],
   [true, OLYMPIC, 16, 15, 'East', 2, 2, 'West', 1, 2, true, true],
   [true, DOUBLE_ELIMINATION, 8, 8, 'Main', 1, 1, 'Backdraw', 2, 2, true, true],
-  [true, DOUBLE_ELIMINATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, false],
+  [true, DOUBLE_ELIMINATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
   [true, DOUBLE_ELIMINATION, 16, 15, 'Main', 2, 2, 'Backdraw', 4, 1, true, true],
   [true, CURTIS_CONSOLATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
   [true, CURTIS_CONSOLATION, 16, 15, 'Main', 2, 2, 'Consolation 1', 1, 1, true, true],
   [true, MODIFIED_FEED_IN_CHAMPIONSHIP, 8, 8, 'Main', 1, 1, 'Consolation', 1, 2, true, true],
-  [true, MODIFIED_FEED_IN_CHAMPIONSHIP, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, false],
+  [true, MODIFIED_FEED_IN_CHAMPIONSHIP, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
   [true, MODIFIED_FEED_IN_CHAMPIONSHIP, 16, 15, 'Main', 2, 2, 'Consolation', 1, 1, true, true],
   [true, FEED_IN_CHAMPIONSHIP_TO_SF, 8, 8, 'Main', 1, 1, 'Consolation', 1, 2, true, true],
-  [true, FEED_IN_CHAMPIONSHIP_TO_SF, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, false],
+  [true, FEED_IN_CHAMPIONSHIP_TO_SF, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
   [true, FEED_IN_CHAMPIONSHIP_TO_SF, 16, 15, 'Main', 2, 2, 'Consolation', 1, 1, true, true],
   [true, FIRST_MATCH_LOSER_CONSOLATION, 8, 8, 'Main', 1, 1, 'Consolation', 1, 2, true, true],
-  [true, FIRST_MATCH_LOSER_CONSOLATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, false],
+  [true, FIRST_MATCH_LOSER_CONSOLATION, 8, 8, 'Main', 1, 2, 'Main', 1, 2, true, true],
   [true, FIRST_MATCH_LOSER_CONSOLATION, 16, 15, 'Main', 2, 2, 'Consolation', 1, 1, true, true],
 ];
 
@@ -6413,7 +6410,8 @@ export const TEAM_AWARD_NOTICE_CASES: TeamAwardNoticeCase[] = [
     lineUps: false,
     entered: 'bare',
     occupied: true,
-    owned: false,
+    // batch 4b: the planners abstain `team`, and the call is read off v1's whole write
+    owned: true,
   })),
   ...TEAM_AWARD_NOTICE_DRAWS.flatMap((drawType) =>
     [
@@ -6992,7 +6990,7 @@ export type C26SeatRecipe = {
   owned: boolean;
 };
 
-export function c26SeatRecipes([drawType, size, direct]: (typeof C26_SEAT_PROFILES)[number]) {
+export function c26SeatRecipes([drawType, size]: (typeof C26_SEAT_PROFILES)[number]) {
   return ['SINGLES', 'DOUBLES', 'TEAM'].flatMap((eventType) =>
     [WALKOVER, DEFAULTED, RETIRED].flatMap((carrierStatus, flavor) =>
       [DOUBLE_WALKOVER, DOUBLE_DEFAULT].map((status, entered): C26SeatRecipe => ({
@@ -7006,8 +7004,9 @@ export function c26SeatRecipes([drawType, size, direct]: (typeof C26_SEAT_PROFIL
         policyOff: false,
         carry: !!entered,
         // a seat the planners do not serve is recorded off the double-exit module (CA, 2026-11-16), and DOUBLE_ELIMINATION
-        // 4's planned ops, which leave settle work, off v1's whole write (`plan/recordedCall.ts`); TEAM stays owed
-        owned: direct || eventType !== 'TEAM',
+        // 4's planned ops, which leave settle work, off v1's whole write (`plan/recordedCall.ts`), a TEAM draw's too
+        // (batch 4b)
+        owned: true,
       })),
     ),
   );
@@ -7018,12 +7017,7 @@ export const C26_SEAT_CASES = C26_SEAT_PROFILES.flatMap(c26SeatRecipes).flatMap(
   return [
     [`C26 BYE beside carried award ${label}`, recipe] as const,
     ...(recipe.size === 16 && recipe.carrierStatus === WALKOVER
-      ? [
-          [
-            `C26 produced convergence control ${label}`,
-            { ...recipe, policyOff: true, owned: recipe.eventType !== 'TEAM' },
-          ] as const,
-        ]
+      ? [[`C26 produced convergence control ${label}`, { ...recipe, policyOff: true, owned: true }] as const]
       : []),
   ];
 });

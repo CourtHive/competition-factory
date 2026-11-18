@@ -456,8 +456,7 @@ describe.each([NATIVE, BRIDGE] as const)('uniform tally writer %s', (schema) => 
     expect(JSON.parse(v2.record)).toEqual(JSON.parse(v1.record));
     expect(v2.notices).toEqual(v1.notices);
     // BRIDGE abstains `write-mode`, and a winner corrected or cleared in a WIN_RATIO structure `link`: both are read
-    // off v1's whole write, which is not made for a TEAM dual or line
-    const owned = schema === NATIVE || recipe.eventType !== 'TEAM';
-    expect(v2.writes).toEqual(owned ? 0 : v1.writes);
+    // off v1's whole write, a TEAM dual's or line's too (batch 4b)
+    expect(v2.writes).toEqual(0);
   });
 });

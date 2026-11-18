@@ -430,7 +430,8 @@ export type OutcomeOp =
       op: 'replaceMatchUp';
       /**
        * RECORDED (CA, 2026-11-16): the stored matchUp as the double-exit module left it on a copy of the draw
-       * (`plan/recordedCascade.ts`), written whole
+       * (`plan/recordedCascade.ts`), written whole: its own fields. A dual's lines (`tieMatchUps`) are not among them:
+       * the dual keeps the lines it holds, and a line that changed has an op of its own
        */
       matchUpId: string;
       matchUp: MatchUp;
@@ -439,7 +440,10 @@ export type OutcomeOp =
     }
   | {
       op: 'replaceStructureState';
-      /** RECORDED: a top-level structure's own fields (its matchUps and child structures apart) as the module left them */
+      /**
+       * RECORDED: a structure's own fields (its matchUps and child structures apart) as the module left them; a round
+       * robin's group is a structure of its own, its tally among its fields
+       */
       structureId: string;
       state: Record<string, unknown>;
       recording?: Recording;
@@ -1067,15 +1071,17 @@ function foldRecorded(op: RecordedOp, index: DrawIndex, drawDefinition: DrawDefi
   let kept = DRAW_CHILDREN;
   if (op.op === 'replaceMatchUp') {
     target = index.matchUps.get(op.matchUpId);
-    kept = [];
+    kept = MATCHUP_CHILDREN;
   } else if (op.op === 'replaceStructureState') {
-    target = index.structures.get(op.structureId);
+    target = index.structures.get(op.structureId) ?? index.groups.get(op.structureId);
     kept = STRUCTURE_CHILDREN;
   }
   if (context.bindResultInputs && op.recording) return op.recording.mirror(drawDefinition, name, target, kept);
   return replaceOwn(target, state, kept, name);
 }
 
+/** a dual's lines are matchUps of their own, each written by its own op */
+export const MATCHUP_CHILDREN = ['tieMatchUps'];
 export const STRUCTURE_CHILDREN = ['matchUps', 'structures'];
 export const DRAW_CHILDREN = ['structures'];
 

@@ -23,8 +23,8 @@ import {
 const recorder = vi.hoisted(() => ({ refuse: false, ran: 0 }));
 vi.mock('@Mutate/matchUps/outcome/plan/recordedCall', async (original) => {
   const actual = await original<typeof import('@Mutate/matchUps/outcome/plan/recordedCall')>();
-  const recordWholeCall: typeof actual.recordWholeCall = (args, view) => {
-    const recorded = actual.recordWholeCall(args, view);
+  const recordWholeCall: typeof actual.recordWholeCall = (args) => {
+    const recorded = actual.recordWholeCall(args);
     recorder.ran += 1;
     return recorder.refuse ? undefined : recorded;
   };

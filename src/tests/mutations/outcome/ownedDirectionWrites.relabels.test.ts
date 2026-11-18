@@ -126,9 +126,6 @@ describe('C24 a played result carries its relabel past the loser BYE already hel
         expect(actual.record).toEqual(v1.record);
         expect(actual.notices).toEqual(v1.notices);
       }
-    } else
-      expect(
-        compareUndirectedWinner(scenario, drawProfile.eventType !== 'TEAM', prepared).v1.results[0].success,
-      ).toEqual(true);
+    } else expect(compareUndirectedWinner(scenario, true, prepared).v1.results[0].success).toEqual(true);
   });
 });
