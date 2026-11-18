@@ -1,4 +1,5 @@
 import { getStructureInconsistencies } from '@Query/drawDefinition/getStructureInconsistencies';
+import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
 import { isLinkObject, isMalformedRoundLink } from '@Query/drawDefinition/malformedLinks';
@@ -166,6 +167,7 @@ function droppedProgressionForLink(
   sourceStructureMatchUps: HydratedMatchUp[],
   targetStructure: Structure,
   feedsDisabledPosition: (matchUp: HydratedMatchUp) => boolean = () => false,
+  awaitsLuckyAdvancement: (matchUp: HydratedMatchUp, participantId: string) => boolean = () => false,
 ): Partial<Inconsistency>[] {
   const isLoserLink = link.linkType === LOSER;
   if (!isLoserLink && sourceStructure?.stage === QUALIFYING) return []; // qualifier placement is deferred (B2b)
@@ -196,7 +198,8 @@ function droppedProgressionForLink(
           loserTargetLink: link,
         })
       : true;
-    if (eligible && !targetParticipantIds.has(participantId) && !feedsDisabledPosition(matchUp)) {
+    const absent = eligible && !targetParticipantIds.has(participantId);
+    if (absent && !feedsDisabledPosition(matchUp) && !(isLoserLink && awaitsLuckyAdvancement(matchUp, participantId))) {
       inconsistencies.push({
         issueType: DROPPED_PROGRESSION,
         message: `a ${isLoserLink ? 'loser' : 'winner'} eligible to feed the linked target structure is absent from it`,
@@ -275,12 +278,31 @@ function getProgressionInconsistencies(
       }) as { disabledDrawPosition?: number };
       return !!target.disabledDrawPosition;
     };
+    // A LUCKY-BASED DRAW'S ROUND OF ODD SIZE SENDS NOBODY ON BY ITS RESULTS (`directParticipants`, `checkIsPreFeedRound`):
+    // its winners and its losers wait for `luckyDrawAdvancement`, which sends the winners and the lucky loser(s) chosen
+    // on in the SOURCE structure, and places in the linked structure only the losers it discards. So a loser of such a
+    // round is absent from the target, and not dropped, while the round has sent nobody on, and for good where they
+    // went on as a lucky loser. A loser the advancement discarded and did not place is still reported. Found
+    // 2026-11-17: ADAPTIVE 12, played with no double exit, reported every loser of its rounds of three.
+    const luckyBased = isLuckyBasedDraw(drawDefinition.drawType);
+    const roundOf = (roundNumber?: number) =>
+      sourceStructureMatchUps.filter((candidate) => !candidate.collectionId && candidate.roundNumber === roundNumber);
+    const awaitsLuckyAdvancement = (matchUp: HydratedMatchUp, participantId: string) => {
+      if (!luckyBased || !matchUp.roundNumber || roundOf(matchUp.roundNumber).length % 2 === 0) return false;
+      const nextRound = roundOf(matchUp.roundNumber + 1);
+      if (!nextRound.length) return false;
+      const sentOn = new Set(
+        nextRound.flatMap((candidate) => (candidate.sides ?? []).map((side) => side.participantId)).filter(Boolean),
+      );
+      return !sentOn.size || sentOn.has(participantId);
+    };
     return droppedProgressionForLink(
       link,
       sourceStructure,
       sourceStructureMatchUps,
       targetStructure,
       feedsDisabledPosition,
+      awaitsLuckyAdvancement,
     );
   });
 }
