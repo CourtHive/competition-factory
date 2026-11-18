@@ -1749,6 +1749,25 @@ from for a tally they do not write (a round robin group's, an ad hoc or lucky st
 write, under every refusal above. A recorded cascade (the double-exit module's) reads the same diff, so a group's
 fields it changed would be carried too; it is still not asked for a call in a group.
 
+A TEAM dual's call and a line's are recorded as any call is, and `team` is answered with every other reason a TEAM call
+abstains for (`exit`, `cascade`, `route`, a plan that leaves settle work, and the rest). v1 writes the line, its dual's
+tally (`updateTieMatchUpScore`: the sides and tieFormat it ensures, the score, the status), the dual's own direction
+where the line decides or un-decides it, the line-ups it carries onto the sides of the duals a team goes on to, and the
+draw's `lineUps` extension: all of it in the draw, so all of it recorded ops. Nothing in the recorder is TEAM's own but
+this: a line is a matchUp of its own, stored inside its dual. `replaceMatchUp` carries a matchUp's own fields with its
+`tieMatchUps` kept, as a structure's matchUps are kept; a line that changed has its own op, after its dual's; and a run
+that replaces the list a dual holds its lines in is discarded, as one that adds or moves a matchUp. A dual's op that
+carried its lines with it would write a line the op does not name: the line's stamp would not be told to the call's
+ledger (a stamp is once per entity per engine call), and a later write of that line in the same engine call (an
+`executionQueue`) would stamp it again, where v1 keeps the first. Apply leaves the copy's object graph across the dual
+and its lines as across any entities: a line-up object v1 writes onto a side and into the draw's extension is one object
+in both. A dual planned inside its line's plan (`asDual`) is still never recorded: the line's call is the one asked, and
+is recorded whole where its dual's part is not planned.
+
+**Recorded calls (batch 5): the abstentions that were left.** Each of the paragraphs below adds one reason to those a
+whole-call recording answers (`plan.ts` `RECORDED_WHOLE`), under every refusal above. A call with no captured instant
+(`clock`) is described under § 7.2's table.
+
 **Recorded calls: a draw stored without its edges.** `edges` is answered. v1 writes a draw's missing edges before it
 decides anything (`ensureGoesTo`: `winnerMatchUpId`, `loserMatchUpId`, and the finishing round and range `addGoesTo`
 adds, onto every matchUp that has one), and a call that succeeds announces the draw once for them (`announceGoesTo`: one
@@ -1786,21 +1805,6 @@ writes; the planners write notes on the call's own matchUp on the clean routes a
 writes them the notes are a matchUp's own field, so the recording carries them. Not recorded: notes that are not data.
 `addNotes` also stores the `{ testing: true }` object a test hands it, as it is; an entity whose fields hold a
 function cannot be held by an op (`recordedDiff.ts` `asData`), the recording is not made, and the call stays v1's.
-
-A TEAM dual's call and a line's are recorded as any call is, and `team` is answered with every other reason a TEAM call
-abstains for (`exit`, `cascade`, `route`, a plan that leaves settle work, and the rest). v1 writes the line, its dual's
-tally (`updateTieMatchUpScore`: the sides and tieFormat it ensures, the score, the status), the dual's own direction
-where the line decides or un-decides it, the line-ups it carries onto the sides of the duals a team goes on to, and the
-draw's `lineUps` extension: all of it in the draw, so all of it recorded ops. Nothing in the recorder is TEAM's own but
-this: a line is a matchUp of its own, stored inside its dual. `replaceMatchUp` carries a matchUp's own fields with its
-`tieMatchUps` kept, as a structure's matchUps are kept; a line that changed has its own op, after its dual's; and a run
-that replaces the list a dual holds its lines in is discarded, as one that adds or moves a matchUp. A dual's op that
-carried its lines with it would write a line the op does not name: the line's stamp would not be told to the call's
-ledger (a stamp is once per entity per engine call), and a later write of that line in the same engine call (an
-`executionQueue`) would stamp it again, where v1 keeps the first. Apply leaves the copy's object graph across the dual
-and its lines as across any entities: a line-up object v1 writes onto a side and into the draw's extension is one object
-in both. A dual planned inside its line's plan (`asDual`) is still never recorded: the line's call is the one asked, and
-is recorded whole where its dual's part is not planned.
 
 **What a recorded call returns.** v1 on the copy returns objects of the copy where on the stored record it returns the
 stored ones. A line's call returns its dual's tally (`tieMatchUpResult`), and where the dual's tieFormat declares its
