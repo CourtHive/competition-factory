@@ -21,7 +21,7 @@ Venue and scheduling management in TMX includes:
 - **Court Configuration** - Surface types, dimensions, and attributes
 - **Match Scheduling** - Assign matches to courts and times
 - **Schedule Optimization** - Auto-scheduling with constraints
-- **Schedule Display** - Multiple view formats (by court, by time, by round)
+- **Scheduling Modes** - The Scheduling tab has four: **Availability** (court hours), **Profile** (the [scheduling profile](../concepts/scheduling-profile.mdx)), **Check-In** (the matchUp check-in desk) and **Grid** (the day's order of play by court). A fifth, **Plan**, stages alternative schedules and is a beta behind a feature flag.
 - **Order of Play** - Generate and publish schedules
 - **Schedule Modifications** - Move matches, handle delays
 - **Resource Management** - Court availability and booking
@@ -300,14 +300,13 @@ function hasAdequateRest(participantId, proposedTime) {
 
 ## UI Components
 
-TMX uses these [courthive-components](https://courthive.github.io/courthive-components/):
+TMX builds this tab from these [courthive-components](https://courthive.github.io/courthive-components/) exports:
 
-- **VenueManager** - Venue and court configuration
-- **CourtGrid** - Visual court layout
-- **ScheduleCalendar** - Calendar-based schedule view
-- **OrderOfPlay** - Day schedule display
-- **CourtSchedule** - Single court timeline
-- **ScheduleConflicts** - Conflict detection and resolution
+- **createAvailabilityGrid** and **showCourtAvailabilityModal** - Availability mode: court hours
+- **createSchedulingProfile** - Profile mode: rounds placed on dates and venues
+- **createSchedulePage**, **buildScheduleGridCell** and **buildActiveStripPanel** - Grid mode: the order of play, the MatchUp Catalog and the strip of courts in play
+- **buildVenueCard** and **mapVenueToCardData** - the venue cards
+- **buildCourtCard** and **mapCourtToCardData** - the court cards
 
 ## Common Workflows
 

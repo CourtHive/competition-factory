@@ -5,7 +5,7 @@ sidebar_position: 2
 
 # Managing Participants in TMX
 
-The Participants tab in TMX provides comprehensive tools for managing tournament participants, from initial registration through check-in and assignment to events. This page demonstrates practical usage of the Competition Factory's [Participant Governor](../governors/participant-governor.md).
+The Participants tab in TMX provides comprehensive tools for managing tournament participants, from initial registration through sign-in and assignment to events. This page demonstrates practical usage of the Competition Factory's [Participant Governor](../governors/participant-governor.md).
 
 ![TMX Participants tab showing the participants table](/img/tmx/participants-table.png)
 
@@ -18,8 +18,8 @@ The screenshots on this page show TMX running locally with a tournament generate
 Participant management in TMX includes:
 
 - **Registration** - Adding new participants with required and optional information
-- **Import/Export** - Bulk operations via CSV, Google Sheets, or JSON
-- **Check-in** - Managing arrival and withdrawal status
+- **Import** - Bulk import from a Google Sheet or a CSV/TSV file
+- **Sign-in** - Signing participants in and out as they arrive (a matchUp's check-in is the Scheduling tab's **Check-In** desk)
 - **Search & Filter** - Finding participants by various criteria
 - **Editing** - Updating participant information
 - **Assignment** - Adding participants to events
@@ -137,13 +137,6 @@ _The **Actions** menu on the Participants tab: import from a Google sheet or a C
 // Mapped to factory participant structure
 ```
 
-#### JSON Import
-
-```js
-// Direct factory-compatible JSON
-tournamentEngine.setState(tournamentRecord);
-```
-
 ### Participant Assignment
 
 ```js
@@ -195,13 +188,16 @@ TMX uses the standard factory participant structure:
 
 ## UI Components
 
-TMX uses these [courthive-components](https://courthive.github.io/courthive-components/) for participant management:
+TMX builds this tab from these [courthive-components](https://courthive.github.io/courthive-components/) exports:
 
-- **ParticipantsList** - Table view with sorting and filtering
-- **ParticipantForm** - Add/edit participant details
-- **ParticipantSearch** - Real-time search interface
-- **BulkImport** - Import workflow component
-- **CheckInManager** - Check-in status tracking
+- **controlBar** - the toolbar above the participants table: search, filters and the **Actions** menu
+- **renderForm** and **renderButtons** - the add and edit participant forms
+- **cModal** - the dialogs those forms open in
+- **renderParticipant** - a participant as TMX's table cells show it
+- **buildRatingDistributionChart** - the histogram of the participants' ratings in the tab header
+- **renderTeamColorsEditor** - a team's colours
+
+The participants table itself is a [Tabulator](https://tabulator.info/) grid in TMX's own code.
 
 ## Common Patterns
 

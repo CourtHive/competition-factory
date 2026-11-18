@@ -18,7 +18,7 @@ The screenshots on this page show TMX running locally with a tournament generate
 Draw management in TMX includes:
 
 - **Draw Generation** - Multiple draw types and formats
-- **Seeding** - Various seeding profiles and manual overrides
+- **Seeding** - A seeding policy and seed count in the Configure draw drawer, plus manual seed overrides
 - **Position Assignment** - Manual and automatic participant placement
 - **Byes Management** - Automatic and manual bye placement
 - **Qualification** - Qualifying draw integration
@@ -149,6 +149,8 @@ _A round robin draw in **Grid** view: one results grid per group, with win/loss,
 
 ## Seeding Profiles
 
+These are the factory's `seedingProfile` values. TMX's Configure draw drawer exposes two of them through its **Seeding policy** select: **Separated (USTA)** is `SEPARATE` and **Adjacent (ITF)** is `CLUSTER`. A provider can lock the policy, and then the select offers only the provider's. `WATERFALL` is available through the factory API only.
+
 ### Waterfall (Traditional)
 
 ```js
@@ -227,13 +229,16 @@ if (result.error) throw new Error(result.error.message);
 
 ## UI Components
 
-TMX uses these [courthive-components](https://courthive.github.io/courthive-components/):
+TMX builds this tab from these [courthive-components](https://courthive.github.io/courthive-components/) exports:
 
-- **DrawDisplay** - Interactive bracket visualization
-- **DrawGeneration** - Draw creation wizard
-- **SeedingEditor** - Seeding assignment interface
-- **PositionEditor** - Drag-and-drop positioning
-- **QualifyingDrawManager** - Qualifying structure management
+- **renderStructure** and **renderContainer** - the bracket and round robin displays
+- **TopologyBuilderControl** - the draw builder, where a draw's structures and links are designed before generation
+- **getMatchUpFormatModal** - the score format chosen in the Configure draw drawer
+- **mountRoundProfileEditor** - the number of matchUps in each round, for the draw types that take a round profile
+- **buildDrawCard** and **mapDrawDefinitionToCardData** - the draw cards
+- **buildStructureMinimap** - the overview of a draw's structures
+
+The **Configure draw** drawer itself is TMX code built with **renderForm**; it is a single drawer, not a wizard.
 
 ## Common Workflows
 

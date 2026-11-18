@@ -338,14 +338,15 @@ tournamentEngine.setMatchUpStatus({
 
 ## UI Components
 
-TMX uses these [courthive-components](https://courthive.github.io/courthive-components/):
+TMX builds this tab from these [courthive-components](https://courthive.github.io/courthive-components/) exports:
 
-- **MatchUpsList** - Filterable list of matches
-- **ScoreEntry** - Format-aware score input
-- **MatchUpCard** - Match display with actions
-- **ScoreDisplay** - Tournament-style score formatting
-- **MatchUpStatus** - Status badges and indicators
-- **MatchFormatEditor** - Format configuration ([see in docs](../concepts/matchup-overview.md))
+- **openScoreEntryDialog** - format-aware score entry
+- **renderScorecard** - a team matchUp's scorecard
+- **getMatchUpFormatModal** - a matchUp's format ([see in docs](../concepts/matchup-overview.md))
+- **buildCompetitivenessBar** and **buildSegmentedBar** - the competitiveness and status summaries above the table
+- **controlBar** - the toolbar above the matchUps table
+
+The matchUps table itself is a [Tabulator](https://tabulator.info/) grid in TMX's own code.
 
 ## Common Workflows
 

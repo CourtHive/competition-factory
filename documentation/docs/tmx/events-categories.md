@@ -20,9 +20,9 @@ Event management in TMX includes:
 - **Event Creation** - Single or multiple events with categories
 - **Category Configuration** - Age groups, gender categories, rating ranges
 - **Entry Management** - Assigning participants to events
-- **Draw Size Configuration** - Setting draw sizes and structures
+- **Draw Creation** - Draw size and structures are set when a draw is added ([Draws](./draws.md))
 - **Flight Configuration** - Creating flights within events
-- **Publishing Settings** - Control visibility and public access
+- **Publishing** - Visibility is controlled on the **Publishing** tab, not in the event drawer
 
 ## Factory Methods Used
 
@@ -101,12 +101,11 @@ tournamentEngine.modifyEventEntries({
 
 ### Event Types
 
-TMX supports all factory event types:
+The **Add event** drawer offers the factory's three event types:
 
 - **SINGLES** - Individual competition
-- **DOUBLES** - Team of 2 players
-- **TEAM** - Multi-player teams
-- **SINGLES_AND_DOUBLES** - Combined events
+- **DOUBLES** - Pairs
+- **TEAM** - Multi-player teams, whose matchUps are played as a tie of singles and doubles
 
 ### Category System
 
@@ -190,14 +189,14 @@ tournamentEngine.addDrawDefinition({ eventId, drawDefinition });
 
 ## UI Components
 
-TMX uses these [courthive-components](https://courthive.github.io/courthive-components/):
+TMX builds this tab from these [courthive-components](https://courthive.github.io/courthive-components/) exports:
 
-- **EventsList** - Display all events with categories
-- **EventForm** - Create/edit events
-- **CategoryEditor** - Configure event categories
-- **FlightProfileEditor** - Configure flights ([see in docs](../concepts/events/flights.mdx))
-- **EntriesManager** - Assign participants to events
-- **DrawConfiguration** - Set draw parameters
+- **getCategoryModal** - the category editor that **Custom** opens from the event drawer
+- **getFlightProfileModal** - flights within an event ([see in docs](../concepts/events/flights.mdx))
+- **getMatchUpFormatModal** - an event's scoring format
+- **buildEventCard** and **mapEventToCardData** - the event cards of the cards view
+- **controlBar** - the toolbars above the events and entries tables
+- **dropDownButton** - the **Add draw** split button
 
 ## Common Workflows
 
