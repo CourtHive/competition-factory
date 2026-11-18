@@ -1023,7 +1023,8 @@ names the methods responsible. A footprint depends on params as well as the meth
 schedule change widens it to the whole record.
 
 Score entry includes `participants` unless `outcomePipeline: 'v2'` is passed: the v1 pipeline resolves a TEAM
-collection line's sides against the tournament's participants.
+collection line's sides against the tournament's participants. With `'v2'` it includes `drawParticipants` instead:
+v2 asks whether a line's own sides hold a participant before it gives the line a winner.
 
 `bulkMatchUpStatusUpdate` is score entry in every draw its outcomes name, however many draws and events that spans.
 An outcome without a `drawId` needs the whole record, and so do outcomes from more than one tournament, unless the
