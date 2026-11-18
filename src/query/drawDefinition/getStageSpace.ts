@@ -72,7 +72,12 @@ export function getStageSpace({
 
   if (entryStatus === QUALIFIER) {
     // qualifiers fill the qualifier positions, never the places left to direct entries
-    const qualifierEntriesCount = getStageEntryTypeCount({ entryStatus: QUALIFIER, drawDefinition, stage });
+    const qualifierEntriesCount = getStageEntryTypeCount({
+      entryStatus: QUALIFIER,
+      drawDefinition,
+      stageSequence,
+      stage,
+    });
     const qualifierPositionsAvailable = qualifierPositions - qualifierEntriesCount;
     if (stage !== VOLUNTARY_CONSOLATION && qualifierPositionsAvailable <= 0) {
       return { error: NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS };
@@ -80,9 +85,11 @@ export function getStageSpace({
     return { positionsAvailable: qualifierPositionsAvailable, ...SUCCESS };
   }
 
-  // every entry taking a place left to direct entries: direct-entry statuses and lucky losers
-  const wildcardEntriesCount = getStageEntryTypeCount({ entryStatus: WILDCARD, drawDefinition, stage });
-  const totalEntriesCount = getStagePlaceTakingEntriesCount({ drawDefinition, stage });
+  // every entry taking a place left to direct entries: direct-entry statuses and lucky losers. A sequence's places are
+  // taken by its own entries only: counting every sequence's, pre-qualifying's 32 positions less qualifying's 24 entries
+  // left 8 places, and 24 pre-qualifiers were left out of the draw (CA, 2026-11-17)
+  const wildcardEntriesCount = getStageEntryTypeCount({ entryStatus: WILDCARD, drawDefinition, stageSequence, stage });
+  const totalEntriesCount = getStagePlaceTakingEntriesCount({ drawDefinition, stageSequence, stage });
   const stageFull = stageDrawPositionsAvailable > 0 && totalEntriesCount >= stageDrawPositionsAvailable;
   const positionsAvailable = stageDrawPositionsAvailable - totalEntriesCount;
 
