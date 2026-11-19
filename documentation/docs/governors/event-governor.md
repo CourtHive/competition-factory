@@ -249,13 +249,16 @@ While deep copy is enabled (the default) `event` and `drawDefinition` are deep c
 
 ## getEventProperties
 
-Returns specific properties from an event object.
+Returns the scale values (seed, ranking, rating) of each participant entered in an event, and whether any entered
+participant has one. Scale values are read for the event's eventType and its category's categoryName (or
+ageCategoryCode).
 
 ```js
-const properties = engine.getEventProperties({
-  eventId, // required
-  properties, // optional array of property names
-});
+const { entryScaleAttributes, hasSeededParticipants, hasRankedParticipants, hasRatedParticipants } =
+  engine.getEventProperties({
+    eventId, // required
+  });
+// entryScaleAttributes: [{ participantId, participantName, seed, ranking, rating }]
 ```
 
 ---

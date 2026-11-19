@@ -967,12 +967,17 @@ enforcement. Consumers should prefer `isScheduleLocked`.
 
 ### courtGridRows
 
-Returns court grid data for pro scheduling visualization.
+Builds court grid rows for pro scheduling visualization from courts data, e.g. the `courtsData` returned by
+`competitionScheduleMatchUps`.
 
 ```js
-const { rows } = engine.courtGridRows({
-  scheduleDate, // required
+const { rows, courtPrefix } = engine.courtGridRows({
+  courtsData, // required - array of court objects, each with a matchUps array
+  scheduledDate, // optional - when given, rows blocked by grid bookings on that date are marked isBlocked
+  minRowsCount, // optional - minimum number of rows
+  courtPrefix, // optional - prefix of each row's court keys; defaults to 'C|'
 });
+// rows: [{ rowId: 'rowId-1', 'C|0': matchUp or { schedule }, 'C|1': ... }]
 ```
 
 ---
@@ -1016,12 +1021,16 @@ const { bookings } = engine.generateBookings({
 
 ### generateVirtualCourts
 
-Creates virtual courts for scheduling simulation.
+Creates virtual courts for one date, with bookings allocated to them, for scheduling simulation.
 
 ```js
-const { courts } = engine.generateVirtualCourts({
-  venueId, // required
-  courtsCount, // required
+const { virtualCourts, assignedBookings, unbookedMatchUpIds } = engine.generateVirtualCourts({
+  courts, // required - non-empty array of courts
+  scheduleDate, // required - date string
+  bookings, // optional - courtId-less bookings are allocated to available court time
+  periodLength, // optional - defaults to 30
+  remainingScheduleTimes, // optional - per-court end times already allocated
+  clearScheduleDates, // optional - true, or an array of dates, to ignore bookings on scheduleDate
 });
 ```
 
@@ -1255,12 +1264,11 @@ Confirm the result by re-running `proConflicts` — every normally-placed row is
 
 ### publicFindCourt
 
-Finds a court with privacy policies applied for public APIs.
+Finds a court and its venue, returning deep copies. No privacy policy is applied.
 
 ```js
-const { court } = engine.publicFindCourt({
+const { court, venue } = engine.publicFindCourt({
   courtId, // required
-  policyDefinitions, // optional
 });
 ```
 

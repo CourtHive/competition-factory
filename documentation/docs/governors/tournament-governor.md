@@ -231,11 +231,11 @@ When `activeDates` is provided, each date is validated as a proper date string a
 
 ## getAggregateTeamResults
 
-Returns aggregated results for team competitions across multiple tournaments.
+Returns aggregated team and individual results from the TEAM matchUps of the loaded tournament.
 
 ```js
-const { results } = engine.getAggregateTeamResults({
-  tournamentRecords, // required - array of tournament records
+const { teamResults, individualResults } = engine.getAggregateTeamResults({
+  finishingPositionRangeBounsPoints, // optional - bonus points keyed by finishing position range (name as spelled)
 });
 ```
 
@@ -249,12 +249,14 @@ const { results } = engine.getAggregateTeamResults({
 
 ## getAllowedMatchUpFormats
 
-Returns allowed matchUp formats based on event type and configuration.
+Returns the `matchUpFormats` of the attached scoring policy, filtered by category.
 
 ```js
-const { matchUpFormats } = engine.getAllowedMatchUpFormats({
-  eventType, // optional
+const matchUpFormats = engine.getAllowedMatchUpFormats({
+  categoryName, // optional - keep formats whose categoryNames include it
+  categoryType, // optional - keep formats whose categoryTypes include it
 });
+// returns an array (not an object); [] when no scoring policy is attached
 ```
 
 **Purpose:** Get valid format options for events.
@@ -421,7 +423,10 @@ const { penalties } = engine.getTournamentPenalties();
 Returns all persons (not just participants) associated with tournament.
 
 ```js
-const { persons } = engine.getTournamentPersons();
+const { tournamentPersons } = engine.getTournamentPersons({
+  participantFilters, // optional - restrict to the persons of filtered participants
+});
+// each person carries participantIds: the participants it appears in
 ```
 
 **Purpose:** Get all individuals including officials, staff, etc.

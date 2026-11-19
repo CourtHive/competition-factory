@@ -331,35 +331,35 @@ const { eventData, participants } = engine.getEventData({
 
 ## getEventPublishStatus
 
-Returns detailed publish status for a specific event.
+Returns the publish status object recorded for an event. The status object itself is returned, not wrapped in a
+key; nothing (`undefined`; `{}` through an engine) when the event has never been published.
 
 ```js
-const { eventPublishStatus } = engine.getEventPublishStatus({
+const eventPublishStatus = engine.getEventPublishStatus({
   eventId, // required
-  tournamentRecord, // required
-  event, // optional - event object if already loaded
+  status, // optional - defaults to PUBLIC
 });
 
-console.log(eventPublishStatus.published); // boolean
-console.log(eventPublishStatus.publishedDrawIds); // array of draw IDs
-console.log(eventPublishStatus.drawDetails); // granular details
+const drawDetail = eventPublishStatus.drawDetails?.[drawId];
+console.log(drawDetail?.publishingDetail?.published); // boolean - whether the draw is published
+console.log(drawDetail?.stageDetails); // per-stage details, if any
+console.log(drawDetail?.structureDetails); // per-structure details, if any
 ```
 
 **Returns:**
 
 ```ts
 {
-  eventPublishStatus: {
-    published: boolean;
-    publishedDrawIds?: string[];
-    drawDetails?: {
-      [drawId: string]: {
-        stages?: string[];
-        structures?: {
-          [structureId: string]: {
-            roundLimit?: number;
-            published?: boolean;
-          };
+  drawDetails?: {
+    [drawId: string]: {
+      publishingDetail: { published?: boolean; embargo?: string };
+      stageDetails?: { [stage: string]: { published?: boolean; embargo?: string } };
+      structureDetails?: {
+        [structureId: string]: {
+          published?: boolean;
+          embargo?: string;
+          roundLimit?: number;
+          scheduledRounds?: { [roundNumber: number]: { published?: boolean; embargo?: string } };
         };
       };
     };
@@ -429,32 +429,36 @@ A round can be both `hidden` and `embargoed` simultaneously — for example, whe
 
 ## getTournamentPublishStatus
 
-Returns publish status for tournament-level items (information, participants, order of play).
+Returns publish status for tournament-level items (participants, order of play). The status object itself is
+returned, not wrapped in a key; nothing (`undefined`; `{}` through an engine) when nothing has been published.
 
 ```js
-const { publishStatus } = engine.getTournamentPublishStatus({
-  tournamentRecord, // required
+const publishStatus = engine.getTournamentPublishStatus({
+  status, // optional - defaults to PUBLIC
 });
 
-console.log(publishStatus.participants.published); // boolean
-console.log(publishStatus.participants.publishedAt); // ISO timestamp
-console.log(publishStatus.orderOfPlay.published); // boolean
+console.log(publishStatus.participants?.published); // boolean
+console.log(publishStatus.participants?.embargo); // ISO timestamp, if embargoed
+console.log(publishStatus.orderOfPlay?.published); // boolean
 ```
 
 **Returns:**
 
 ```ts
 {
-  publishStatus: {
-    participants: {
-      published: boolean;
-      publishedAt?: string;
-    };
-    orderOfPlay: {
-      published: boolean;
-      publishedAt?: string;
-    };
+  participants?: {
+    published: boolean;
+    embargo?: string;
+    columns?: object;
   };
+  orderOfPlay?: {
+    published: boolean;
+    scheduledDates?: string[];
+    eventIds?: string[];
+    embargo?: string;
+    dateEmbargoes?: { [date: string]: string };
+  };
+  language?: string;
 }
 ```
 

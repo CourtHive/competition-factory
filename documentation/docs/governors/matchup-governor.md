@@ -239,24 +239,30 @@ engine.checkOutParticipant({
 
 ## calculateWinCriteria
 
-Calculates the win criteria for a matchUp based on format.
+Calculates the win criteria for a TEAM tieFormat from its collection values.
 
 ```js
-const { criteria } = engine.calculateWinCriteria({
-  matchUpFormat, // required
+const { valueGoal, aggregateValue } = engine.calculateWinCriteria({
+  collectionDefinitions, // the tieFormat's collectionDefinitions
+  collectionGroups, // optional - the tieFormat's collectionGroups
 });
+// valueGoal: the value a side must reach (more than half the total value);
+// aggregateValue: true instead, when no value total can be determined
 ```
 
 ---
 
 ## checkMatchUpIsComplete
 
-Checks if a matchUp has a winning side.
+Checks if a matchUp is complete: it has a completed matchUpStatus or a winning side.
 
 ```js
-const { isComplete } = engine.checkMatchUpIsComplete({
+const result = engine.checkMatchUpIsComplete({
   matchUp, // required
 });
+// true for a completed matchUpStatus, else the matchUp's winningSide (1 or 2);
+// otherwise nothing (undefined; `{}` through an engine) - not an object with an isComplete key
+const isComplete = result === true || result === 1 || result === 2;
 ```
 
 ---
@@ -566,13 +572,12 @@ the `undefined`-means-no-limit contract.
 
 ## getMatchUpDailyLimitsUpdate
 
-Calculates updated daily limits after a matchUp.
+Returns the methods that replay the loaded tournaments' daily limits (the `scheduleLimits` extension) on another
+engine, e.g. to sync local changes to a server. Takes no parameters; reads the loaded tournament records.
 
 ```js
-const { updatedLimits } = engine.getMatchUpDailyLimitsUpdate({
-  participantId, // required
-  matchUpFormat, // required
-});
+const { methods } = engine.getMatchUpDailyLimitsUpdate();
+// methods: [{ method: 'addExtension', params: { extension, discover: true } }, ...]
 ```
 
 ---
@@ -638,13 +643,12 @@ See [queryGovernor.getMatchUpFormatTiming](/docs/governors/query-governor#getmat
 
 ## getMatchUpFormatTimingUpdate
 
-Returns updated timing after format modifications.
+Returns the methods that replay the loaded tournaments' matchUpFormat timing (the `scheduleTiming` extension) on
+another engine, e.g. to sync local changes to a server. Takes no parameters; reads the loaded tournament records.
 
 ```js
-const { timing } = engine.getMatchUpFormatTimingUpdate({
-  matchUpFormat, // required
-  modifications, // required
-});
+const { methods } = engine.getMatchUpFormatTimingUpdate();
+// methods: [{ method: 'addExtension', params: { extension, discover: true } }, ...]
 ```
 
 ---
@@ -713,12 +717,14 @@ matchUpType), as `getEventData` and `allTournamentMatchUps({ inContext: true })`
 
 ## getMatchUpsStats
 
-Returns statistics for a collection of matchUps.
+Returns the competitive-band distribution of a collection of matchUps, as percentages.
 
 ```js
-const { stats } = engine.getMatchUpsStats({
+const { competitiveBands } = engine.getMatchUpsStats({
   matchUps, // required
+  profileBands, // optional - overrides the attached competitive bands policy
 });
+// e.g. { COMPETITIVE: 28.57, ROUTINE: 71.43, DECISIVE: 0, WALKOVER: 0, RETIRED: 0 }
 ```
 
 ---
@@ -1367,14 +1373,16 @@ const { changed } = engine.setParticipantCheckInState({
 
 ## substituteParticipant
 
-Substitutes one participant for another in a matchUp.
+Substitutes one team member for another in a tieMatchUp (a collection matchUp within a TEAM dual matchUp). The
+substitute must be another individual participant of the same team.
 
 ```js
 engine.substituteParticipant({
-  matchUpId, // required
+  matchUpId, // required - the tieMatchUpId
   drawId, // required
-  participantIdToRemove, // required
-  participantIdToAdd, // required
+  existingParticipantId, // required - the participant being replaced
+  substituteParticipantId, // required - a teammate of existingParticipantId
+  sideNumber, // optional - when provided, must be the side of existingParticipantId
 });
 ```
 

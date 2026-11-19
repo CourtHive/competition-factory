@@ -355,14 +355,13 @@ console.log(sets)
 
 ---
 
-## parse
+## parseMatchUpFormat
 
-Parses a matchUpFormat code string into a structured format object. Alias for `parseMatchUpFormat`.
+Parses a matchUpFormat code string into a structured format object. Takes the code as a positional argument and
+returns `undefined` for an invalid code.
 
 ```js
-const format = scoreGovernor.parse({
-  matchUpFormatCode, // required - format code string (e.g., 'SET3-S:6/TB7')
-});
+const format = scoreGovernor.parseMatchUpFormat('SET3-S:6/TB7'); // required - format code string
 ```
 
 **Purpose:** Convert format code strings to structured format objects.
@@ -462,14 +461,13 @@ const reversedScore = scoreGovernor.reverseScore({
 
 ---
 
-## stringify
+## stringifyMatchUpFormat
 
-Converts a structured matchUpFormat object to a format code string. Alias for `stringifyMatchUpFormat`.
+Converts a structured matchUpFormat object to a format code string. Takes the object as a positional argument and
+returns `undefined` when it is not an object.
 
 ```js
-const code = scoreGovernor.stringify({
-  matchUpFormat, // required - format object
-});
+const code = scoreGovernor.stringifyMatchUpFormat(format); // required - parsed format object
 ```
 
 **Purpose:** Convert format objects to compact code strings.

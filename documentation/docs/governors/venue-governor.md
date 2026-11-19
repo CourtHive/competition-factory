@@ -239,17 +239,19 @@ const { venue } = engine.findVenue({ venueId });
 
 ## generateCourts
 
-Generates multiple courts with sequential naming for a venue. Convenience method for quickly creating courts during testing or initial setup.
+Generates court objects. Convenience method for quickly creating courts during testing or initial setup. The courts
+are returned, not added to any venue; add them with `addCourt` or `modifyVenue`.
 
 ```js
 const { courts } = engine.generateCourts({
-  venueId, // required - venue to add courts to
-  courtsCount: 10, // number of courts to generate
-  courtNames, // optional - array of custom court names
-  courtIds, // optional - array of specific courtIds to use
-  startTime: '08:00', // optional - court availability start
-  endTime: '20:00', // optional - court availability end
-  dateAvailability, // optional - full dateAvailability configurations
+  count: 10, // required - number of courts to generate
+  namePrefix: 'Court', // optional - names courts 'Court 1', 'Court 2', ...
+  idPrefix, // optional - courtIds `${idPrefix}-1`, `${idPrefix}-2`, ...
+  courtNames, // optional - array of custom court names (consumed from the end)
+  uuids, // optional - array of courtIds to use (consumed from the end)
+  dates, // optional - availability dates; defaults to the tournament's startDate..endDate
+  startTime: '08:00', // optional - court availability start (default '08:00')
+  endTime: '20:00', // optional - court availability end (default '20:00')
 });
 ```
 
@@ -264,11 +266,10 @@ const { courts } = engine.generateCourts({
 
 **Notes:**
 
-- If `courtNames` not provided, generates names like "Court 1", "Court 2", etc.
-- If `courtIds` not provided, generates UUIDs automatically
-- Can specify default availability hours via `startTime` and `endTime`
-- For complex availability, use full `dateAvailability` objects
-- All courts added to specified venue
+- Without `courtNames` or `namePrefix`, courts have no `courtName`
+- Without `uuids` or `idPrefix`, courtIds are generated UUIDs
+- Each court gets one `dateAvailability` entry per date, from `startTime` to `endTime`
+- No venue is modified
 
 ---
 
@@ -312,14 +313,12 @@ const { venues, courts } = competitionEngine.getCompetitionVenues({
 
 ## getCourts
 
-Returns courts for a specific venue, with optional filtering and hydration. See examples: [Retrieving Venue Information](../concepts/venues-courts.md#retrieving-venue-information).
+Returns copies of the courts of the tournament's venues, each with its `venueId` added. See examples: [Retrieving Venue Information](../concepts/venues-courts.md#retrieving-venue-information).
 
 ```js
 const { courts } = engine.getCourts({
-  venueId, // optional - specific venue (omit for all venues)
-  dates, // optional - filter by date availability
-  ignoreDisabled, // optional - exclude disabled courts
-  convertExtensions, // optional - convert extensions format
+  venueId, // optional - specific venue
+  venueIds, // optional - specific venues (omit both for all venues)
 });
 ```
 
@@ -327,17 +326,16 @@ const { courts } = engine.getCourts({
 
 ```ts
 {
-  courts: HydratedCourt[];
+  courts: (Court & { venueId: string })[];
 }
 ```
 
-**Hydrated Court Properties:**
+**Court Properties:**
 
-- `dateAvailability` - Availability schedules
+- `dateAvailability` - Availability schedules, as stored
 - `courtName` - Display name
 - `courtId` - Unique identifier
-- Computed availability for specified dates
-- Disability status
+- `venueId` - The venue the court belongs to
 
 **Use Cases:**
 

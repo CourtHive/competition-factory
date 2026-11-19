@@ -136,7 +136,8 @@ tournamentEngine.addEventExtension({
 // Operation with drawId - middleware resolves drawDefinition
 tournamentEngine.automatedPositioning({
   drawId: 'draw-1',
-  seedingScaleNames: ['WTN', 'SEEDING'],
+  structureId: 'structure-1', // required - the structure to position
+  seedingScaleName: 'WTN', // optional - scale name used to seed
 });
 
 // Middleware handles:

@@ -2488,11 +2488,18 @@ Compares two tie format definitions and returns details about their differences,
 ```js
 const {
   different, // boolean — whether the formats differ
-  invalid, // boolean — whether comparison could not be performed
-  modifications, // array of modification descriptions
+  invalid, // falsy, or the array of collections whose values could not be totalled
+  valueDifference, // number — descendant total value minus ancestor total value
+  matchUpCountDifference, // number — descendant matchUp count minus ancestor matchUp count
+  matchUpFormatDifferences, // matchUpFormats present in only one of the two
+  nameDifference, // boolean — collection names differ (only with considerations.collectionName)
+  orderDifference, // boolean — collection order differs (only with considerations.collectionOrder)
+  ancestorDifferences, // { collectionIds only in ancestor, collectionsValue, groupsCount }
+  descendantDifferences, // { collectionIds only in descendant, collectionsValue, groupsCount }
 } = queryGovernor.compareTieFormats({
   ancestor, // required — the original tieFormat object
   descendant, // required — the modified tieFormat object
+  considerations, // optional — { collectionName, collectionOrder } booleans: also compare names / order
 });
 ```
 

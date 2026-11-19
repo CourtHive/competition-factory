@@ -360,35 +360,39 @@ const { valid, error, invalidParticipantIds } = engine.checkValidEntries({
 
 ## drawMatic
 
-Automated draw positioning system that intelligently assigns participants to draw positions. See [DrawMatic](/docs/concepts/draw-types/drawmatic) for full documentation.
+Generates rounds of matchUps for an AD_HOC structure, pairing participants with previous-opponent and team-member
+avoidance. The generated matchUps are returned, not added; add them with [addAdHocMatchUps](#addadhocmatchups). See
+[drawMatic](/docs/governors/generation-governor#drawmatic) for all parameters and
+[DrawMatic](/docs/concepts/draw-types/drawmatic) for the concept.
 
 ```js
-const result = engine.drawMatic({
+const { matchUps, roundResults } = engine.drawMatic({
   drawId, // required
-  structureId, // optional - specific structure
-  policyDefinitions, // optional - positioning policies
-  useExistingAdjustments, // optional boolean - preserve manual adjustments
-  participants, // optional - override participant data
+  roundsCount, // number of rounds to generate; defaults to 1
+  structureId, // optional - defaults to the latest AD_HOC stage
 });
 ```
 
-**Purpose:** AI-driven draw positioning for optimal tournament structure.
+**Purpose:** Dynamic round generation for AD_HOC draws.
 
 ---
 
 ## generateAdHocMatchUps
 
-Generates adhoc matchUps for custom tournament structures.
+Generates a round of matchUps for an AD_HOC structure. The generated matchUps are returned, not added; add them
+with [addAdHocMatchUps](#addadhocmatchups). See
+[generateAdHocMatchUps](/docs/governors/generation-governor#generateadhocmatchups) for all parameters.
 
 ```js
-const { matchUps } = engine.generateAdHocMatchUps({
-  participants, // required - array of participant IDs
-  matchUpsPerFlight, // optional - matchUps per round
-  uuids, // optional - specific matchUp IDs
+const { matchUps, roundNumber, matchUpsCount } = engine.generateAdHocMatchUps({
+  drawId, // required
+  participantIdPairings, // optional - e.g. [['id1', 'id2'], ['id3', 'id4']]
+  newRound, // optional boolean - auto-increment to the next roundNumber
+  matchUpIds, // optional - if not specified UUIDs are generated
 });
 ```
 
-**Purpose:** Create custom matchUp structures outside standard draw types.
+**Purpose:** Create matchUps for AD_HOC draws.
 
 ---
 
@@ -711,9 +715,9 @@ const { count } = engine.getAvailableMatchUpsCount({
 Returns available playoff configurations based on draw structure.
 
 ```js
-const { profiles } = engine.getAvailablePlayoffProfiles({
+const { positionsPlayedOff, playoffRounds, playoffRoundsRanges } = engine.getAvailablePlayoffProfiles({
   drawId, // required
-  structureId, // required
+  structureId, // optional - without it returns { availablePlayoffProfiles, positionsPlayedOff } for every structure
 });
 ```
 
@@ -761,16 +765,15 @@ const { valid, targets } = engine.getAvailableQualifyingTargets({
 
 ## getDrawParticipantRepresentativeIds
 
-Returns representative participant IDs for team draws.
+Returns the draw's participant representatives, as set by `setDrawParticipantRepresentativeIds`.
 
 ```js
-const { representativeIds } = engine.getDrawParticipantRepresentativeIds({
+const { representativeParticipantIds } = engine.getDrawParticipantRepresentativeIds({
   drawId, // required
-  participantId, // required
 });
 ```
 
-**Purpose:** Get team representatives in team competitions.
+**Purpose:** Get the participants who represent the field, e.g. at the draw ceremony.
 
 ---
 
@@ -861,16 +864,16 @@ const { positionAssignments } = engine.getPositionAssignments({
 
 ## getRandomQualifierList
 
-Generates randomized list of qualifiers.
+Returns a shuffled list of indices, one per qualifier position in the draw's MAIN structure (stageSequence 1).
 
 ```js
-const { qualifiers } = engine.getRandomQualifierList({
-  qualifyingCount, // required
-  participantIds, // required
+const qualifierIndices = engine.getRandomQualifierList({
+  drawId, // required
 });
+// e.g. [2, 3, 1, 0] for a MAIN structure with four qualifier positions
 ```
 
-**Purpose:** Random selection for qualifying positions.
+**Purpose:** Random ordering for placing qualifiers into qualifier positions.
 
 ---
 
@@ -910,16 +913,17 @@ const { seedAssignments } = engine.getStructureSeedAssignments({
 
 ## getTeamLineUp
 
-Returns the lineup for a team matchUp.
+Returns the lineUp stored on a draw for one team participant.
 
 ```js
-const { lineup } = engine.getTeamLineUp({
+const { lineUp } = engine.getTeamLineUp({
   drawId, // required
-  matchUpId, // required
+  participantId, // required - the TEAM participant's participantId
 });
+// lineUp: [{ participantId, collectionAssignments }] or undefined when none is stored
 ```
 
-**Purpose:** Get team member assignments for matchUp.
+**Purpose:** Get team member assignments for a team within a draw.
 
 ---
 
@@ -928,7 +932,7 @@ const { lineup } = engine.getTeamLineUp({
 Returns valid group size options for round robin draws.
 
 ```js
-const { groupSizes } = engine.getValidGroupSizes({
+const { validGroupSizes } = engine.getValidGroupSizes({
   drawSize, // required
 });
 ```
@@ -939,16 +943,16 @@ const { groupSizes } = engine.getValidGroupSizes({
 
 ## isAdHoc
 
-Checks if a structure is adhoc format.
+Checks if a structure is adhoc format. Reads only the `structure` object passed; `drawId` / `structureId` are not
+resolved to a structure.
 
 ```js
-const { isAdHoc } = engine.isAdHoc({
-  drawId, // required
-  structureId, // required
+const isAdHoc = engine.isAdHoc({
+  structure, // required - structure object (hydrated structures supported)
 });
 ```
 
-**Returns:** Boolean indicating adhoc structure.
+**Returns:** Boolean (not an object) indicating adhoc structure; `false` when no structure is passed.
 
 :::tip Three similar names, three different questions
 `isAdHoc` asks about a **structure** — does it carry bracket geometry. `isAdHocType` and `isLadder`
@@ -1001,13 +1005,13 @@ the two alike will render a ladder's standing as though the order were arbitrary
 Checks if a structure has all matchUps completed.
 
 ```js
-const { isCompleted } = engine.isCompletedStructure({
+const isCompleted = engine.isCompletedStructure({
   drawId, // required
   structureId, // required
 });
 ```
 
-**Returns:** Boolean indicating structure completion.
+**Returns:** Boolean (not an object) indicating structure completion.
 
 ---
 
@@ -1226,7 +1230,7 @@ engine.removeDrawEntries({
 
 ```js
 const {
-  deltedMatchUpsCount, // number
+  deletedMatchUpsCount, // number
   roundRemoved, // boolean
   success, // boolean
   error, // if any
@@ -1508,9 +1512,9 @@ Sets the display order of structures within a draw.
 ```js
 engine.setStructureOrder({
   drawId, // required
-  structureId, // required
-  orderNumber, // required - new order position
+  orderMap, // required - { [structureId]: structureOrder }; every value an integer (numeric strings accepted)
 });
+// structures are sorted by structureOrder; structures absent from orderMap keep their existing order value
 ```
 
 **Purpose:** Control structure display sequence.
