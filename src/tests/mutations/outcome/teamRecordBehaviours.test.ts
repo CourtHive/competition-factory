@@ -170,6 +170,55 @@ describe('a decided dual given an exit that carries, by a call that turns auto-c
   });
 });
 
+describe('a dual given an exit with a winner by a call that turns auto-calc on, its lines projecting no winner', () => {
+  const exit = { matchUpStatus: DEFAULTED, winningSide: 2 };
+
+  // CA, 2026-11-19: refused whether the dual is decided or not, and whether the exit carries or not
+  it.each([
+    ['a fresh dual, the exit carried', false, { enableAutoCalc: true, propagateExitStatus: true }],
+    ['a fresh dual, the exit not carried', false, { enableAutoCalc: true }],
+    ['a decided dual, the exit not carried', true, { enableAutoCalc: true }],
+    ['a decided dual, the exit carried', true, { enableAutoCalc: true, propagateExitStatus: true }],
+  ])('%s: refused, and nothing is written', (_label, decided, params) => {
+    generate();
+    const first = dual(1, 1);
+    if (decided) enter(first.matchUpId, { winningSide: 1 });
+    const before = record();
+    let result: any = set(first.matchUpId, exit, params);
+    expect(result.error?.code).toEqual(INVALID_MATCHUP_STATUS.code);
+    expect(result.info).toEqual('matchUpStatus: DEFAULTED');
+    expect(record()).toEqual(before);
+  });
+
+  // the lines decide a dual whose auto-calc is on: where they project a winner the exit is written with that winner,
+  // whichever winner the call names
+  it.each([
+    ['the winner the call names', 2],
+    ['the other winner', 1],
+  ])('accepted where the lines project %s, and written with the projected winner', (_label, projected) => {
+    generate();
+    const first = dual(1, 1);
+    for (const at of [0, 1]) enter(first.tieMatchUps[at].matchUpId, { winningSide: projected });
+    enter(first.matchUpId, exit, { enableAutoCalc: true });
+    const held = stored(first.matchUpId);
+    expect([held.matchUpStatus, held.winningSide]).toEqual([DEFAULTED, projected]);
+    expect(stored(first.winnerMatchUpId).drawPositions.filter(Boolean)).toEqual([first.drawPositions[projected - 1]]);
+  });
+
+  // the manual override on a fresh dual: not projected, the exit keeps the winner the call names
+  it.each([
+    ['the call disables auto-calc', { disableAutoCalc: true, propagateExitStatus: true }],
+    ['the call names neither flag', { propagateExitStatus: true }],
+  ])('a fresh dual scored by hand (%s): the exit is written with the winner it names', (_label, params) => {
+    generate();
+    const first = dual(1, 1);
+    enter(first.matchUpId, exit, params);
+    const held = stored(first.matchUpId);
+    expect([held.matchUpStatus, held.winningSide]).toEqual([DEFAULTED, 2]);
+    expect(stored(first.winnerMatchUpId).drawPositions.filter(Boolean)).toEqual([first.drawPositions[1]]);
+  });
+});
+
 describe('a dual decided by its own call stays directed as its lines are played', () => {
   it('a line corrected to the winner the dual was given: winner and loser stand where they were sent', () => {
     generate({ drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION });

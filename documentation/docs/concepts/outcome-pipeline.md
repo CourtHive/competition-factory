@@ -81,15 +81,18 @@ dual was left stamped and announced under the error. And a dual's call that turn
 winner its lines project in place of the call's: where they project none, on a dual that has propagated with its
 downstream active, the call names no winner and is refused row 15, whatever winner it was given.
 
-**A decided dual's exit that carries, entered by a call that turns auto-calc on** (CA, 2026-11-18): `{ WALKOVER |
-DEFAULTED | RETIRED, winningSide }` with `enableAutoCalc` and `propagateExitStatus` on a dual that holds a winner,
-where the dual's lines project no winner, is refused row 6 (`ERR_INVALID_MATCHUP_STATUS`, info `matchUpStatus: <the
-status>`) before anything is written. Accepted, it wrote an exit with no winner: the dual left undecided under an exit
-status, its winner taken back out of the next dual. The manual override stands: a dual scored by hand is not projected
-from its lines, so the same result is accepted with the winner the call names where the call disables auto-calc
-(`disableAutoCalc`), or names neither flag on a dual already flagged so. A call that names `enableAutoCalc` on a dual
-flagged as scored by hand turns its auto-calc on and is refused as any other. Where the lines project a winner the exit
-is written with that winner.
+**A dual's exit entered with a winner by a call that turns auto-calc on** (CA, 2026-11-18 and 2026-11-19): `{ WALKOVER |
+DEFAULTED | RETIRED, winningSide }` with `enableAutoCalc`, where the dual's lines project no winner, is refused row 6
+(`ERR_INVALID_MATCHUP_STATUS`, info `matchUpStatus: <the status>`) before anything is written: on a fresh dual or a
+decided one, with `propagateExitStatus` or without. The call's winner is replaced by the projected one, none, so
+accepted it wrote an exit with no winner (a fresh dual; a decided dual whose exit carries, left undecided under an exit
+status with its winner taken back out of the next dual) or an exit beside the winner the dual already held (a decided
+dual, no carry). The predicate is that the lines project NO winner. Lines that project a winner decide the dual, as
+they do for any call that turns auto-calc on: the exit is written with the projected winner, the one the call names or
+the other. The manual override stands: a dual scored by hand is not projected from its lines, so the same result is
+accepted with the winner the call names where the call disables auto-calc (`disableAutoCalc`), or names neither flag
+(a dual already flagged so, or a fresh one). A call that names `enableAutoCalc` on a dual flagged as scored by hand
+turns its auto-calc on and is refused as any other.
 
 These are stated of the record, for any implementation (`teamRecordBehaviours.test.ts`, which names no pipeline): a
 refused call leaves the stored record exactly as it was, every value and stamp, a TEAM dual's included; a TEAM line's

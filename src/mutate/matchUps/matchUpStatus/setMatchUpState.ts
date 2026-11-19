@@ -324,6 +324,7 @@ function writeMatchUpState(params: SetMatchUpStateArgs) {
 
   let dualWinningSideChange;
   let applyTeamWrites: (() => void) | undefined;
+  let unprojectedExit = false;
   if (isTeam) {
     const teamResult: any = handleTeamAutoCalc({
       tournamentRecord,
@@ -342,6 +343,7 @@ function writeMatchUpState(params: SetMatchUpStateArgs) {
     if (teamResult?.error) return teamResult;
     if (teamResult?.dualWinningSideChange !== undefined) dualWinningSideChange = teamResult.dualWinningSideChange;
     applyTeamWrites = teamResult.apply;
+    unprojectedExit = !!teamResult.unprojectedExit;
   }
 
   if (isTeam && matchUpStatus && [AWAITING_RESULT].includes(matchUpStatus)) {
@@ -460,7 +462,15 @@ function writeMatchUpState(params: SetMatchUpStateArgs) {
   });
   if (downstreamError) return downstreamError;
 
-  return resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeDownstream, applyTeamWrites, stack });
+  return resolveAndApplyOutcome({
+    dualWinningSideChange,
+    activeDownstream,
+    applyTeamWrites,
+    unprojectedExit,
+    params,
+    isTeam,
+    stack,
+  });
 }
 
 // Refuse to revert a COMPLETED matchUp that carries a *validated* winning score
@@ -762,10 +772,13 @@ function resolveAndApplyOutcome({
   dualWinningSideChange,
   activeDownstream,
   applyTeamWrites,
+  unprojectedExit,
   params,
   isTeam,
   stack,
 }: {
+  /** a TEAM dual's exit entered with a winner by a call that turns auto-calc on, the lines projecting none */
+  unprojectedExit?: boolean;
   dualWinningSideChange?: boolean;
   applyTeamWrites?: () => void;
   activeDownstream?: boolean;
@@ -825,12 +838,14 @@ function resolveAndApplyOutcome({
       stack,
     });
 
-  // § 2 row 6 on a DECIDED dual (CA, 2026-11-18): an exit entered with a winner by a call that turns auto-calc on and
-  // carries the exit (`propagateExitStatus`), where the lines project no winner. The call's winner is replaced by the
-  // projected one, none, and the exit was written with no winner: the dual left DEFAULTED and undecided, its winner
-  // taken back out of the next dual. Refused before anything is written. A dual scored by hand is not asked: a call
-  // that disables auto-calc, or names neither flag on a dual already so flagged, keeps the winner it names.
-  if (applyTeamWrites && exitWithNoProjectedWinner(params))
+  // § 2 row 6 on a TEAM dual (CA, 2026-11-18 and 2026-11-19): a single exit entered with a winner by a call that turns
+  // auto-calc on, where the lines project no winner. The call's winner is replaced by the projected one, none, and
+  // the exit was written with no winner (a fresh dual, or a decided one whose exit carries: left undecided under an
+  // exit status, its winner taken back out of the next dual) or beside the winner the dual already held (a decided
+  // dual, no carry). Refused before anything is written. A dual scored by hand is not projected: a call that disables
+  // auto-calc, or names neither flag on a dual already so flagged, keeps the winner it names. Lines that project a
+  // winner decide it: the exit is written with the projected winner.
+  if (applyTeamWrites && unprojectedExit)
     return decorateResult({
       result: { error: INVALID_MATCHUP_STATUS },
       info: 'matchUpStatus: ' + params.matchUpStatus,
@@ -966,13 +981,6 @@ function refusedAtTheStatusRoute(params: Parameters<typeof swapWinnerLoser>[0], 
   return refusesStatusRoute(params);
 }
 
-/** a decided dual's carried exit, auto-calc turned on by the call, its lines projecting no winner (`handleTeamAutoCalc`) */
-function exitWithNoProjectedWinner(params: Parameters<typeof swapWinnerLoser>[0]): boolean {
-  const { matchUp, matchUpStatus, winningSide } = params;
-  const carried = !!params.enableAutoCalc && !!params.propagateExitStatus && isExit(matchUpStatus);
-  return carried && !!matchUp.winningSide && !winningSide;
-}
-
 /**
  * What the dispatch in `resolveAndApplyOutcome` refuses for the matchUp's played-on downstream, read as it reads it and
  * writing nothing: a winner other than the one that stands (`winningSideWithDownstreamDependencies`: § 2 rows 13 and
@@ -1024,6 +1032,7 @@ function handleTeamAutoCalc({
   event,
 }) {
   let dualWinningSideChange;
+  let unprojectedExit = false;
   let autoCalcValue: true | undefined;
 
   // A score without sets (a record of how a level tie was decided, or the strings alone) keeps the dual's aggregate
@@ -1066,6 +1075,10 @@ function handleTeamAutoCalc({
       });
     }
 
+    // an exit entered with a winner where the lines project none: the call's winner is replaced by the projected one,
+    // so the exit would be written with no winner, or beside a winner it does not name (`unprojectedExit`)
+    unprojectedExit = isExit(params.matchUpStatus) && !!winningSide && !projectedWinningSide;
+
     // setting these parameters will enable noDownStreamDependencies to attemptToSetWinningSide
     Object.assign(params, {
       winningSide: projectedWinningSide,
@@ -1094,7 +1107,7 @@ function handleTeamAutoCalc({
     });
   };
 
-  return { dualWinningSideChange, apply };
+  return { dualWinningSideChange, unprojectedExit, apply };
 }
 
 function resolveQualifyingContext({ inContextMatchUp, winningSide, matchUp, params }) {
