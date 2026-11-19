@@ -273,6 +273,28 @@ export function shouldShowTiebreak(
   return !!analysis.hasTiebreakCondition && !!analysis.leadingSide;
 }
 
+/**
+ * Both sides' tiebreak points from the LOSER's, on the side the games say lost: the factory's `getTiebreakComplement`,
+ * as a keystroke derives them (`typeDigit`). With no tiebreak in the set's format there is no target to complete
+ * against, so only the points typed are recorded, as `tiebreakSides` does; nothing is invented.
+ */
+function tiebreakPair(lowValue: number, side1WonGames: boolean, setFormat?: SetFormat): Partial<ScoreEntrySet> {
+  const loserField = side1WonGames ? 'side2TiebreakScore' : 'side1TiebreakScore';
+  const tiebreakTo = setFormat?.tiebreakFormat?.tiebreakTo;
+  if (tiebreakTo === undefined) return { [loserField]: lowValue };
+
+  const pair = getTiebreakComplement({
+    lowValue,
+    tiebreakTo,
+    tiebreakNoAd: setFormat?.tiebreakFormat?.NoAD,
+    isSide1: !side1WonGames,
+  });
+  if (!pair) return { [loserField]: lowValue };
+
+  const [side1TiebreakScore, side2TiebreakScore] = pair;
+  return { side1TiebreakScore, side2TiebreakScore };
+}
+
 /** A factory set from typed values, with its winner and, from the loser's tiebreak points, the winner's. */
 export function buildSetScore(
   setIndex: number,
@@ -304,25 +326,8 @@ export function buildSetScore(
   const winningSide = getSetWinner(setIndex, scores, config);
   const setData: ScoreEntrySet = { setNumber: setIndex + 1, side1Score, side2Score, winningSide };
 
-  if (tiebreakScore !== undefined) {
-    const tiebreakTo = setFormat?.tiebreakFormat?.tiebreakTo || 7;
-    const isNoAd = setFormat?.tiebreakFormat?.NoAD;
-
-    let winnerScore: number;
-    if (tiebreakScore < tiebreakTo - 1) {
-      winnerScore = tiebreakTo;
-    } else {
-      winnerScore = isNoAd ? tiebreakScore + 1 : tiebreakScore + 2;
-    }
-
-    if (side1Score > side2Score) {
-      setData.side1TiebreakScore = winnerScore;
-      setData.side2TiebreakScore = tiebreakScore;
-    } else {
-      setData.side1TiebreakScore = tiebreakScore;
-      setData.side2TiebreakScore = winnerScore;
-    }
-  }
+  if (tiebreakScore !== undefined)
+    Object.assign(setData, tiebreakPair(tiebreakScore, side1Score > side2Score, setFormat));
 
   return setData;
 }
