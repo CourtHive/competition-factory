@@ -129,13 +129,13 @@ A **court** represents an individual playing surface within a venue. Courts have
   // Court attributes
   altitude?: number;            // Elevation in meters
   discipline?: string;          // The sport this court is for — see Court Discipline below
-  surfaceType?: string;         // 'HARD', 'CLAY', 'GRASS', 'CARPET', etc.
-  surfaceCategory?: string;     // 'INDOOR', 'OUTDOOR', 'COVERED'
+  surfaceCategory?: string;     // 'ARTIFICIAL', 'CARPET', 'CLAY', 'GRASS', 'HARD'
+  surfaceType?: string;         // free text, e.g. a product name
+  indoorOutdoor?: string;       // 'INDOOR', 'OUTDOOR', 'MIXED'
   courtDimensions?: string;     // Dimensions description
 
-  // Lighting and features
-  lighting?: boolean;           // Has lights for night play
-  lightingType?: string;        // 'LED', 'Metal Halide', etc.
+  // Lighting
+  floodlit?: boolean;           // Has lights for night play (lighting/lightingType are not Court attributes)
 
   // Scheduling
   dateAvailability?: DateAvailability[];  // When court is available
@@ -783,15 +783,14 @@ Common surface types:
 
 ### Lighting
 
-Courts with lighting can host evening matches:
+Floodlit courts can host evening matches:
 
 **API Reference:** [addVenue](/docs/governors/venue-governor#addvenue)
 
 ```js
 {
   courtName: 'Court 1',
-  lighting: true,
-  lightingType: 'LED',
+  floodlit: true,
   dateAvailability: [
     {
       // Can schedule until 11 PM with lights
@@ -848,7 +847,7 @@ Link to court/venue information:
 - **Priority courts first**: Stadium/Centre courts at top of list
 - **Group by surface**: Keep same surface types together
 - **Indoor vs outdoor**: Separate indoor from outdoor for weather planning
-- **Lighting indication**: Clearly mark courts with lights for evening scheduling
+- **Lighting indication**: Mark courts with lights (`floodlit: true`) for evening scheduling
 
 ### Multi-Venue Strategy
 
@@ -892,7 +891,7 @@ Link to court/venue information:
 // Outdoor courts (weather dependent)
 {
   courtName: 'Court 1',
-  surfaceCategory: 'OUTDOOR',
+  indoorOutdoor: 'OUTDOOR',
   dateAvailability: [
     {
       startTime: '09:00',
@@ -904,7 +903,7 @@ Link to court/venue information:
 // Indoor courts (backup for weather)
 {
   courtName: 'Indoor Court A',
-  surfaceCategory: 'INDOOR',
+  indoorOutdoor: 'INDOOR',
   dateAvailability: [
     {
       startTime: '08:00',
