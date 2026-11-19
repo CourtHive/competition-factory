@@ -345,10 +345,14 @@ const { matchUps } = tournamentEngine.allTournamentMatchUps({
   // Include full participant details (default)
   inContext: true,
 
-  // Exclude specific PII
+  // Withhold specific personal data: the participant policy template is an allow-list, so '*' keeps
+  // everything the template does not set to false (see Participant Policy)
   policyDefinitions: {
     participant: {
-      excludePersonDetails: ['addresses', 'contacts'],
+      participant: {
+        '*': true,
+        person: { '*': true, addresses: false, contacts: false },
+      },
     },
   },
 });
@@ -360,7 +364,11 @@ matchUps[0].sides.forEach((side) => {
 });
 ```
 
-**See:** [Participant Context](./participant-context.md) for complete hydration options.
+A policy without a `participant` template filters nothing, and the template is not validated: check the output of a
+new policy before publishing with it.
+
+**See:** [Participant Context](./participant-context.md) for complete hydration options, and
+[Participant Policy](/docs/policies/participantPolicy) for the template rules.
 
 ## Additional Context Parameters
 
