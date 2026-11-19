@@ -43,10 +43,9 @@ export async function asyncEngineInvoke(engine: { [key: string]: any }, args: an
 
     let result: ReturnType<typeof executeFunction>;
     try {
-      result =
-        (await withCallRandomSourceAsync(unthreadedSource, async () =>
-          executeFunction(engine, method, params, methodName, 'async'),
-        )) ?? {};
+      result = await withCallRandomSourceAsync(unthreadedSource, async () =>
+        executeFunction(engine, method, params, methodName, 'async'),
+      );
     } catch (err) {
       // executeFunction catches a SYNC throw outside devContext, but an async method's rejection arrives after it has
       // returned. Restore, then answer as the sync engine does: rethrow under devContext, otherwise the

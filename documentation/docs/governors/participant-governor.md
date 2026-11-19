@@ -401,7 +401,7 @@ const signInStatus = engine.getParticipantSignInStatus({
   participantId, // required
 });
 // 'SIGNED_IN' when the latest record is a sign-in; false when it is a sign-out;
-// nothing (undefined; `{}` through an engine) when no presence was ever recorded
+// nothing (undefined) when no presence was ever recorded
 ```
 
 **Purpose:** Check if participant has signed in for tournament/event.

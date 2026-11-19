@@ -261,8 +261,8 @@ const result = engine.checkMatchUpIsComplete({
   matchUp, // required
 });
 // true for a completed matchUpStatus, else the matchUp's winningSide (1 or 2);
-// otherwise nothing (undefined; `{}` through an engine) - not an object with an isComplete key
-const isComplete = result === true || result === 1 || result === 2;
+// otherwise nothing (undefined) - not an object with an isComplete key
+const isComplete = Boolean(result);
 ```
 
 ---

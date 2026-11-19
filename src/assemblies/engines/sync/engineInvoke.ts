@@ -49,12 +49,11 @@ export function engineInvoke(engine: { [key: string]: any }, args: any) {
       // setFactoryBackend); either way this shell stamps, notifies and rolls back around it
       const runLocal = () => executeFunction(engine, method, params, methodName, 'sync');
       const backend = getFactoryBackend();
-      result =
-        withCallRandomSource(unthreadedSource, () =>
-          backend?.implements(methodName)
-            ? (backend.invoke({ methodName, params, timeStamp, runLocal }) as ReturnType<typeof runLocal>)
-            : runLocal(),
-        ) ?? {};
+      result = withCallRandomSource(unthreadedSource, () =>
+        backend?.implements(methodName)
+          ? (backend.invoke({ methodName, params, timeStamp, runLocal }) as ReturnType<typeof runLocal>)
+          : runLocal(),
+      );
     } catch (err) {
       // thrown only under devContext (otherwise executeFunction catches): restore, then surface it
       if (captured) restoreOperation(captured);

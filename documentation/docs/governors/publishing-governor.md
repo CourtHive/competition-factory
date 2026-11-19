@@ -332,7 +332,7 @@ const { eventData, participants } = engine.getEventData({
 ## getEventPublishStatus
 
 Returns the publish status object recorded for an event. The status object itself is returned, not wrapped in a
-key; nothing (`undefined`; `{}` through an engine) when the event has never been published.
+key; nothing (`undefined`) when the event has never been published.
 
 ```js
 const eventPublishStatus = engine.getEventPublishStatus({
@@ -430,7 +430,7 @@ A round can be both `hidden` and `embargoed` simultaneously — for example, whe
 ## getTournamentPublishStatus
 
 Returns publish status for tournament-level items (participants, order of play). The status object itself is
-returned, not wrapped in a key; nothing (`undefined`; `{}` through an engine) when nothing has been published.
+returned, not wrapped in a key; nothing (`undefined`) when nothing has been published.
 
 ```js
 const publishStatus = engine.getTournamentPublishStatus({
