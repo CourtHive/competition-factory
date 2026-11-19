@@ -18,7 +18,7 @@ Comprehensive TMX documentation covering all aspects of the application:
 
 ### 📚 [TMX Overview](./tmx/overview.md)
 
-Learn about TMX architecture, features, and the local-first design pattern with optional server sync.
+Learn about TMX architecture, features, and how mutations reach the optional server.
 
 ### 👥 [Participants Management](./tmx/participants.md)
 
@@ -56,7 +56,7 @@ The TMX documentation demonstrates:
 
 ✅ **Practical Factory Usage** - Real-world implementation patterns  
 ✅ **Complete Workflows** - From participant registration to publishing results  
-✅ **Architecture Patterns** - Local-first design with optional server sync  
+✅ **Architecture Patterns** - A browser factory with an optional server  
 ✅ **Performance Optimization** - Efficient queries and minimal server communication  
 ✅ **Component Integration** - Using courthive-components with the factory  
 ✅ **Development Tools** - Browser console access and method logging
@@ -74,9 +74,11 @@ Clone and run locally:
 ```bash
 git clone https://github.com/CourtHive/TMX
 cd TMX
-npm install
-npm run dev
+pnpm install
+pnpm start
 ```
+
+TMX uses pnpm only (`npm` is refused); `pnpm start` runs the Vite dev server.
 
 ### For Documentation Readers
 

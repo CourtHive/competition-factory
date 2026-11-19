@@ -36,12 +36,14 @@ TMX is a full-featured tournament management system that runs entirely in the br
 ### 🔄 Optional Server Sync
 
 - **Execution Queue** - Only mutation requests sent to server, not full records
-- **Conflict Resolution** - Handles multi-user scenarios
-- **Slave/Master Modes** - Flexible data ownership models
+- **Server-First by Default** - The server executes and acknowledges before TMX applies a change; offline or
+  provider-less tournaments run local-only (see [Competition Factory Server](./factory-server.md))
+- **Safe Concurrency** - Writes to one tournament are serialized on the server; a record changed while offline is
+  saved back only if nobody else changed it meanwhile
 
 ### 🧩 Built on CourtHive Components
 
-TMX is built using [courthive-components](https://www.npmjs.com/package/courthive-components), a collection of React components designed specifically for use with Competition Factory:
+TMX is built using [courthive-components](https://www.npmjs.com/package/courthive-components), a library of vanilla TypeScript UI components designed for use with Competition Factory. Neither TMX nor the components use a framework: the UI is plain TypeScript and direct DOM manipulation.
 
 **[Component Storybook →](https://courthive.github.io/courthive-components/)**
 
@@ -61,7 +63,7 @@ Many of these components are used in the Factory documentation for interactive d
 │  TMX (Browser)                                      │
 │  ┌──────────────────┐  ┌────────────────────────┐   │
 │  │ UI Components    │  │ Local Tournament       │   │
-│  │ (React)          │←→│ Record                 │   │
+│  │ (vanilla TS/DOM) │←→│ Record                 │   │
 │  └──────────────────┘  └────────────────────────┘   │
 │           ↓                       ↓                 │
 │  ┌──────────────────────────────────────────────┐   │
@@ -90,8 +92,8 @@ TMX doesn't send full tournament records over the network. Instead:
 1. **Queries** happen locally using the browser's factory instance
 2. **Mutations** are structured as method calls with parameters and can be bulk processed
 3. **Server executes** the same factory methods with the same parameters
-4. **Results returned** to confirm or handle conflicts
-5. **State synchronized** between client and server
+4. **Results returned**: the acknowledgement, or a refusal that changes nothing
+5. **The same methods** are then applied by the browser's factory, and pushed to other connected clients
 
 Example execution queue entry:
 
@@ -163,9 +165,11 @@ Explore the TMX source code to see how factory methods are used:
 ```bash
 git clone https://github.com/CourtHive/TMX
 cd TMX
-npm install
-npm run dev
+pnpm install
+pnpm start
 ```
+
+TMX uses pnpm only (`npm` is refused); `pnpm start` runs the Vite dev server.
 
 Then explore the source in `src/` to see factory integration patterns.
 
