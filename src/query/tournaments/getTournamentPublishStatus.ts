@@ -12,12 +12,15 @@ export function getTournamentPublishStatus(params) {
 
   const { tournamentRecord, status = PUBLIC } = params;
   const itemType = `${PUBLISH}.${STATUS}`;
-  return makeDeepCopy(
-    getTournamentTimeItem({
-      tournamentRecord,
-      itemType,
-    })?.timeItem?.itemValue?.[status],
-    false,
-    true,
+  // an empty status object when nothing has been published (the engines no longer turn an undefined answer into {})
+  return (
+    makeDeepCopy(
+      getTournamentTimeItem({
+        tournamentRecord,
+        itemType,
+      })?.timeItem?.itemValue?.[status],
+      false,
+      true,
+    ) ?? {}
   );
 }
