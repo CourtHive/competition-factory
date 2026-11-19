@@ -8,6 +8,7 @@ import { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDeta
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
+import { getCachedParticipantLookup } from '@Query/matchUps/hydrationCache';
 import { getCollectionAssignment } from './getCollectionAssignment';
 import { getOrderedDrawPositions } from './getOrderedDrawPositions';
 import { normalizeTeamPresentation } from '@Validators/teamColors';
@@ -250,6 +251,7 @@ export function addMatchUpContext({
         positionAssignments,
         collectionPosition,
         unresolvedChoice,
+        hydrationCache,
         participantMap,
         drawDefinition,
         drawPositions,
@@ -393,6 +395,7 @@ export function addMatchUpContext({
     hydrateSides({
       tournamentParticipants,
       hydrateParticipants,
+      hydrationCache,
       positionAssignments,
       appliedPolicies,
       drawDefinition,
@@ -590,6 +593,7 @@ export function buildMatchUpSides({
 function hydrateSides({
   tournamentParticipants,
   hydrateParticipants,
+  hydrationCache,
   positionAssignments,
   appliedPolicies,
   drawDefinition,
@@ -618,6 +622,7 @@ function hydrateSides({
       getMappedParticipant,
       tournamentParticipants,
       hydrateParticipants,
+      hydrationCache,
       positionAssignments,
       appliedPolicies,
       drawDefinition,
@@ -639,6 +644,7 @@ function hydrateSides({
           getMappedIndividual(participantId) ||
           (tournamentParticipants
             ? findParticipant({
+                participantLookup: getCachedParticipantLookup({ hydrationCache, tournamentParticipants }),
                 tournamentParticipants,
                 internalUse: true,
                 contextProfile,
@@ -661,6 +667,7 @@ function hydrateSideParticipant({
   getMappedParticipant,
   tournamentParticipants,
   hydrateParticipants,
+  hydrationCache,
   positionAssignments,
   appliedPolicies,
   drawDefinition,
@@ -676,6 +683,7 @@ function hydrateSideParticipant({
     ? makeDeepCopy(mappedParticipant, undefined, true)
     : tournamentParticipants &&
       findParticipant({
+        participantLookup: getCachedParticipantLookup({ hydrationCache, tournamentParticipants }),
         policyDefinitions: appliedPolicies,
         participantId: side.participantId,
         tournamentParticipants,
