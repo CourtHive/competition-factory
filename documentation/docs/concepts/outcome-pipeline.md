@@ -1975,6 +1975,15 @@ v1 stamps each touched entity once per call, as v2 does (F2 (i), § 5 step 6). U
 `clock`; wrapping them in a new capture would change their direct-read and throw-prefix contract. Their ordered
 temporal path remains v2 work before v1 can be retired.
 
+**The direction check is the planners'** (CA, 2026-11-19). After the shadow, `differential` holds a call to the
+direction the planners state for it (§ 5 rule 1: the winner in the matchUp they name, the loser where its link says,
+what an exit produces or carries). That check is asked of a call the planners write. A call recorded whole is not asked
+it: its ops are v1's own write read off a copy, the shadow has compared the whole record with them, and the direction
+stated beside it is one the planners abstained from writing, which need not describe what v1 does (a double exit asked
+of a BYE, a result relabelled a carrying exit past a holder). Its direction tallies are counted `deferred`
+(`directionCheckOnOwnedCalls.test.ts`: the check throws on a planner-owned call whose stated direction is wrong, and is
+not asked of a recorded one).
+
 **Recorded with no captured instant (CA, 2026-11-18: adopt the replay).** A call made
 outside an engine has no captured instant and no stamp ledger: each stamp v1 writes reads the source where it is
 written, a source that advances gives each entity its own instant, and a source that fails leaves the writes made

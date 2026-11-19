@@ -330,6 +330,11 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     if (route === 'winner' && isExit(planned.matchUpStatus) && isRelabel(planned, view))
       differentialTally('winner:relabel-exit', direction?.loser?.exit ? 'compared' : 'deferred');
     if (!direction) return differentialTally(`${route}:direction`, 'deferred');
+    // A CALL RECORDED WHOLE IS NOT CHECKED AGAINST THE PLANNERS' DIRECTION (CA, 2026-11-19). Its ops are v1's own write
+    // read off a copy, and the shadow above has compared the whole record with them; the direction stated here is the
+    // planners', which they abstained from writing, and it need not describe what v1 does. A call the planners write
+    // keeps the check.
+    if (outcome.ops && outcome.recordedResult) return differentialTally(`${route}:direction`, 'deferred');
     checkDirection({ args, after, route, direction });
     differentialTally(`${route}:direction`, 'compared');
     if (planned !== args.request) differentialTally('team-autocalc:direction', 'compared');
