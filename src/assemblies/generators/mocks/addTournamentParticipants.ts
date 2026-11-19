@@ -9,6 +9,7 @@ import { generateRange } from '@Tools/arrays';
 import type { MockDrawProfile, MockEventProfile, MockParticipantsProfile } from '@Types/mocksTypes';
 import { INDIVIDUAL, TEAM } from '@Constants/participantConstants';
 import { Participant, Tournament } from '@Types/tournamentTypes';
+import { FEMALE, MALE } from '@Constants/genderConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { genParticipantId } from './genParticipantId';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -33,11 +34,12 @@ export function addTournamentParticipants({
 }: AddTournamentParticipantsArgs) {
   if (participantsProfile?.participantsCount === 0) return { addedCount: 0, ...SUCCESS };
 
-  const { participantsCount, participantType, largestTeamDraw, largestTeamSize, gendersCount } = getParticipantsCount({
-    participantsProfile,
-    eventProfiles,
-    drawProfiles,
-  });
+  const { participantsCount, participantType, largestTeamDraw, largestTeamSize, gendersCount, teamGenders } =
+    getParticipantsCount({
+      participantsProfile,
+      eventProfiles,
+      drawProfiles,
+    });
 
   const teamKey = participantsProfile?.teamKey;
   // the profile's own pool, then the call's (an undefined top-level `uuids` replaced the profile's)
@@ -73,16 +75,28 @@ export function addTournamentParticipants({
     if (result.error) return result;
   }
 
-  // generate Team participants
-  const allIndividualParticipantIds = participants
-    .filter(({ participantType }) => participantType === INDIVIDUAL)
-    .map(getParticipantId);
+  // generate Team participants: each team is dealt the men and women its tieFormat's gendered collections need, then
+  // filled to size from whoever is left, in order. Dealt in order alone, a team could lack a gender its lines need.
+  const individuals = participants.filter(({ participantType }) => participantType === INDIVIDUAL);
+  const ofSex = (sex: string) => individuals.filter(({ person }) => person?.sex === sex).map(getParticipantId);
+  const queues = { [MALE]: ofSex(MALE), [FEMALE]: ofSex(FEMALE) };
+  const dealt = new Set<string>();
+  const take = (ids: string[], count: number) => {
+    const taken = ids.filter((id) => !dealt.has(id)).slice(0, count);
+    taken.forEach((id) => dealt.add(id));
+    return taken;
+  };
+  // two passes: every team's gendered minimum first, then the fill to size, so an early team's fill cannot use up the
+  // men or women a later team needs
+  const teamMembers = generateRange(0, largestTeamDraw).map(() => [
+    ...take(queues[MALE], teamGenders[MALE]),
+    ...take(queues[FEMALE], teamGenders[FEMALE]),
+  ]);
+  const everyone = individuals.map(getParticipantId);
+  teamMembers.forEach((members) => members.push(...take(everyone, largestTeamSize - members.length)));
   const idPrefix = participantsProfile?.idPrefix ? `${TEAM}-${participantsProfile.idPrefix}` : undefined;
   const teamParticipants: Participant[] = generateRange(0, largestTeamDraw).map((teamIndex) => {
-    const individualParticipantIds = allIndividualParticipantIds.slice(
-      teamIndex * largestTeamSize,
-      (teamIndex + 1) * largestTeamSize,
-    );
+    const individualParticipantIds = teamMembers[teamIndex];
     const participantId = genParticipantId({
       index: teamIndex,
       participantType,
