@@ -15,6 +15,9 @@ import {
   MAIN,
   CONSOLATION,
   FIRST_MATCH_LOSER_CONSOLATION,
+  COMPASS,
+  PLAY_OFF,
+  ROUND_ROBIN_WITH_PLAYOFF,
 } from '@Constants/drawDefinitionConstants';
 
 // constants
@@ -32,7 +35,144 @@ function allMatchUps(drawDefinition: any): any[] {
   return result;
 }
 
+function generateDraw({ drawType, drawSize, eventId }: { drawType: string; drawSize: number; eventId: string }) {
+  mocksEngine.generateTournamentRecord({
+    eventProfiles: [{ eventId, eventName: eventId, participantsProfile: { participantsCount: drawSize } }],
+    setState: true,
+  });
+  const result: any = tournamentEngine.generateDrawDefinition({ drawType, drawSize, eventId });
+  expect(result.success).toEqual(true);
+  return result.drawDefinition;
+}
+
+function matchUpIdsOf(drawDefinition: any): string[] {
+  return allMatchUps(drawDefinition).flatMap((m) => [m.matchUpId, ...(m.tieMatchUps ?? []).map((t) => t.matchUpId)]);
+}
+
 describe('remapDrawDefinitionMatchUpIds', () => {
+  describe('target scoping', () => {
+    test('a target without a structure selector matches only the FIRST structure (COMPASS 32)', () => {
+      const drawDefinition = generateDraw({ drawType: COMPASS, drawSize: 32, eventId: 'remap-compass-32' });
+      // every one of the eight compass structures has a R1P1 matchUp
+      const withR1P1 = drawDefinition.structures.filter((s) =>
+        s.matchUps.some((m) => m.roundNumber === 1 && m.roundPosition === 1),
+      );
+      expect(withR1P1.length).toEqual(8);
+
+      const result: any = remapDrawDefinitionMatchUpIds({
+        targetMatchUpIds: [{ matchUpId: 'ext-r1p1', roundNumber: 1, roundPosition: 1 }],
+        drawDefinition,
+      });
+      expect(result.success).toEqual(true);
+      expect(result.remappedCount).toEqual(1);
+
+      const ids = matchUpIdsOf(drawDefinition);
+      expect(ids.filter((id) => id === 'ext-r1p1').length).toEqual(1);
+      expect(new Set(ids).size).toEqual(ids.length);
+
+      // the first structure in draw order (East) received the id
+      const [first] = drawDefinition.structures;
+      expect(first.matchUps.find((m) => m.roundNumber === 1 && m.roundPosition === 1).matchUpId).toEqual('ext-r1p1');
+    });
+
+    test('a structure selector still reaches a later structure alongside an unscoped target', () => {
+      const drawDefinition = generateDraw({ drawType: COMPASS, drawSize: 32, eventId: 'remap-compass-mixed' });
+      const result: any = remapDrawDefinitionMatchUpIds({
+        targetMatchUpIds: [
+          { matchUpId: 'ext-east', roundNumber: 1, roundPosition: 1 },
+          { matchUpId: 'ext-west', roundNumber: 1, roundPosition: 1, exitProfile: '0-1' },
+        ],
+        drawDefinition,
+      });
+      expect(result.success).toEqual(true);
+      expect(result.remappedCount).toEqual(2);
+      const west = drawDefinition.structures.find((s) => s.structureName === 'West');
+      expect(west.matchUps.find((m) => m.roundNumber === 1 && m.roundPosition === 1).matchUpId).toEqual('ext-west');
+      const ids = matchUpIdsOf(drawDefinition);
+      expect(new Set(ids).size).toEqual(ids.length);
+    });
+
+    test('refuses before writing when one matchUpId is given to two targets', () => {
+      const drawDefinition = generateDraw({ drawType: COMPASS, drawSize: 32, eventId: 'remap-dup-id' });
+      const before = matchUpIdsOf(drawDefinition);
+      const result: any = remapDrawDefinitionMatchUpIds({
+        targetMatchUpIds: [
+          { matchUpId: 'ext-dup', roundNumber: 1, roundPosition: 1, exitProfile: '0' },
+          { matchUpId: 'ext-dup', roundNumber: 1, roundPosition: 1, exitProfile: '0-1' },
+        ],
+        drawDefinition,
+      });
+      expect(result.error).toEqual(INVALID_VALUES);
+      expect(matchUpIdsOf(drawDefinition)).toEqual(before);
+    });
+
+    test('refuses before writing when two targets resolve to the same matchUp', () => {
+      const drawDefinition = generateDraw({ drawType: COMPASS, drawSize: 32, eventId: 'remap-dup-matchup' });
+      const before = matchUpIdsOf(drawDefinition);
+      const result: any = remapDrawDefinitionMatchUpIds({
+        targetMatchUpIds: [
+          { matchUpId: 'ext-a', roundNumber: 1, roundPosition: 1 },
+          { matchUpId: 'ext-b', roundNumber: 1, roundPosition: 1, stage: MAIN },
+        ],
+        drawDefinition,
+      });
+      expect(result.error).toEqual(INVALID_VALUES);
+      expect(matchUpIdsOf(drawDefinition)).toEqual(before);
+    });
+
+    test('refuses before writing when a target id is already held by an untargeted matchUp', () => {
+      const drawDefinition = generateDraw({ drawType: SINGLE_ELIMINATION, drawSize: 8, eventId: 'remap-collide' });
+      const before = matchUpIdsOf(drawDefinition);
+      const r1p2 = allMatchUps(drawDefinition).find((m) => m.roundNumber === 1 && m.roundPosition === 2);
+      const result: any = remapDrawDefinitionMatchUpIds({
+        targetMatchUpIds: [{ matchUpId: r1p2.matchUpId, roundNumber: 1, roundPosition: 1 }],
+        drawDefinition,
+      });
+      expect(result.error).toEqual(INVALID_VALUES);
+      expect(matchUpIdsOf(drawDefinition)).toEqual(before);
+    });
+
+    test('generateDrawDefinition surfaces a refused remap instead of ignoring it', () => {
+      const eventId = 'gen-remap-refused';
+      mocksEngine.generateTournamentRecord({
+        eventProfiles: [{ eventId, eventName: eventId, participantsProfile: { participantsCount: 8 } }],
+        setState: true,
+      });
+      const result: any = tournamentEngine.generateDrawDefinition({
+        targetMatchUpIds: [
+          { matchUpId: 'ext-dup', roundNumber: 1, roundPosition: 1 },
+          { matchUpId: 'ext-dup', roundNumber: 1, roundPosition: 2 },
+        ],
+        drawType: SINGLE_ELIMINATION,
+        drawSize: 8,
+        eventId,
+      });
+      expect(result.error).toEqual(INVALID_VALUES);
+    });
+  });
+
+  describe('round robin with playoff (reference page example)', () => {
+    test('group matchUps carry no roundPosition, so only the playoff target remaps', () => {
+      const drawDefinition = generateDraw({ drawType: ROUND_ROBIN_WITH_PLAYOFF, drawSize: 16, eventId: 'remap-rr' });
+      const container = drawDefinition.structures.find((s) => s.stage === MAIN);
+      const groupMatchUps = container.structures.flatMap((g) => g.matchUps);
+      expect(groupMatchUps.length).toBeGreaterThan(0);
+      // the fact the reference page must reflect: group matchUps have roundNumber + drawPositions only
+      expect(groupMatchUps.every((m) => m.roundPosition === undefined && m.drawPositions?.length === 2)).toEqual(true);
+
+      const result: any = remapDrawDefinitionMatchUpIds({
+        targetMatchUpIds: [{ matchUpId: 'playoff-r1p1', roundNumber: 1, roundPosition: 1, stage: PLAY_OFF }],
+        drawDefinition,
+      });
+      expect(result.success).toEqual(true);
+      expect(result.remappedCount).toEqual(1);
+      const playoff = drawDefinition.structures.find((s) => s.stage === PLAY_OFF);
+      expect(playoff.matchUps.find((m) => m.roundNumber === 1 && m.roundPosition === 1).matchUpId).toEqual(
+        'playoff-r1p1',
+      );
+    });
+  });
+
   describe('standalone function', () => {
     test('remaps targeted matchUps in a single elimination draw', () => {
       const drawSize = 8;

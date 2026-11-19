@@ -17,7 +17,13 @@ type RemapArgs = {
  *
  * Each target specifies a matchUpId to assign and a location fingerprint
  * (roundNumber + roundPosition + optional stage/stageSequence/exitProfile/structureId).
+ * Each target is assigned to the FIRST matchUp, in draw structure order, that its fingerprint
+ * matches; a target without a structure selector therefore lands in the first structure only.
  * MatchUps that don't match any target are left unchanged.
+ *
+ * The remap is refused (INVALID_VALUES, nothing written) when it would leave a matchUpId on more
+ * than one matchUp: the same matchUpId in two targets, two targets resolving to one matchUp, or a
+ * target matchUpId already held by a matchUp that is not being remapped.
  *
  * Cross-references (winnerMatchUpId, loserMatchUpId) are updated to reflect
  * any remapped IDs. tieMatchUp IDs are also remapped when targeted.
@@ -31,35 +37,42 @@ export function remapDrawDefinitionMatchUpIds({
 
   const { exitProfiles } = getExitProfiles({ drawDefinition });
   const structures = drawDefinition.structures ?? [];
+  const candidates = collectCandidates(structures, exitProfiles);
+
+  // Resolve every target before writing anything, so a refused remap leaves the draw untouched
+  const assignments = new Map<MatchUp, string>();
+  const targetIds = new Set<string>();
+  for (const target of targetMatchUpIds) {
+    if (targetIds.has(target.matchUpId)) {
+      return { error: INVALID_VALUES, info: `matchUpId ${target.matchUpId} is targeted more than once` };
+    }
+    targetIds.add(target.matchUpId);
+
+    const candidate = candidates.find((c) => targetMatches(target, c));
+    if (!candidate) continue;
+    if (assignments.has(candidate.matchUp)) {
+      return {
+        error: INVALID_VALUES,
+        info: `targets ${target.matchUpId} and ${assignments.get(candidate.matchUp)} resolve to one matchUp`,
+      };
+    }
+    assignments.set(candidate.matchUp, target.matchUpId);
+  }
+
+  for (const { matchUp } of candidates) {
+    if (!assignments.has(matchUp) && targetIds.has(matchUp.matchUpId)) {
+      return { error: INVALID_VALUES, info: `matchUpId ${matchUp.matchUpId} is already held by an untargeted matchUp` };
+    }
+  }
 
   // Build a map of oldMatchUpId → newMatchUpId for cross-reference updates
   const idMap: Record<string, string> = {};
   let remappedCount = 0;
-
-  for (const structure of structures) {
-    const structureExitProfiles: string[] = exitProfiles?.[structure.structureId] ?? [];
-
-    // Handle CONTAINER structures (round-robin groups)
-    const childStructures = structuresOf(structure);
-    if (childStructures?.length) {
-      for (const childStructure of childStructures) {
-        remappedCount += remapStructureMatchUps({
-          exitProfiles: structureExitProfiles,
-          structure: childStructure,
-          parentStructure: structure,
-          targetMatchUpIds,
-          idMap,
-        });
-      }
-    }
-
-    // Handle direct matchUps on the structure
-    remappedCount += remapStructureMatchUps({
-      exitProfiles: structureExitProfiles,
-      targetMatchUpIds,
-      structure,
-      idMap,
-    });
+  for (const [matchUp, matchUpId] of assignments) {
+    if (matchUp.matchUpId === matchUpId) continue;
+    idMap[matchUp.matchUpId] = matchUpId;
+    matchUp.matchUpId = matchUpId;
+    remappedCount++;
   }
 
   // Update cross-references across all matchUps
@@ -75,99 +88,59 @@ export function remapDrawDefinitionMatchUpIds({
   return { ...SUCCESS, remappedCount };
 }
 
-function remapStructureMatchUps({
-  parentStructure,
-  targetMatchUpIds,
-  exitProfiles,
-  structure,
-  idMap,
-}: {
-  parentStructure?: Structure;
-  targetMatchUpIds: TargetMatchUpId[];
+type Candidate = {
+  parentStructureId?: string;
   exitProfiles: string[];
-  structure: Structure;
-  idMap: Record<string, string>;
-}): number {
-  let count = 0;
-  const resolvedStage = parentStructure?.stage ?? structure.stage;
-  const resolvedStageSequence = parentStructure?.stageSequence ?? structure.stageSequence;
+  stageSequence?: number;
+  structureId: string;
+  matchUp: MatchUp;
+  stage?: string;
+};
 
-  for (const matchUp of matchUpsOf(structure) ?? []) {
-    const target = findTarget({
-      stageSequence: resolvedStageSequence,
-      roundPosition: matchUp.roundPosition,
-      roundNumber: matchUp.roundNumber,
-      structureId: structure.structureId,
-      parentStructureId: parentStructure?.structureId,
-      stage: resolvedStage,
-      targetMatchUpIds,
-      exitProfiles,
-    });
-
-    if (target && target.matchUpId !== matchUp.matchUpId) {
-      idMap[matchUp.matchUpId] = target.matchUpId;
-      matchUp.matchUpId = target.matchUpId;
-      count++;
-    }
-
-    // Remap tieMatchUps if targeted
-    for (const tieMatchUp of matchUp.tieMatchUps ?? []) {
-      const tieTarget = findTarget({
-        stageSequence: resolvedStageSequence,
-        roundPosition: tieMatchUp.roundPosition,
-        roundNumber: tieMatchUp.roundNumber,
-        structureId: structure.structureId,
-        parentStructureId: parentStructure?.structureId,
-        stage: resolvedStage,
-        targetMatchUpIds,
-        exitProfiles,
-      });
-
-      if (tieTarget && tieTarget.matchUpId !== tieMatchUp.matchUpId) {
-        idMap[tieMatchUp.matchUpId] = tieTarget.matchUpId;
-        tieMatchUp.matchUpId = tieTarget.matchUpId;
-        count++;
+// Every remappable matchUp (tieMatchUps included) in draw structure order; RR group matchUps take
+// the stage and stageSequence of their CONTAINER
+function collectCandidates(structures: Structure[], exitProfiles?: Record<string, string[]>): Candidate[] {
+  const candidates: Candidate[] = [];
+  const addStructure = (structure: Structure, parentStructure?: Structure) => {
+    const structureExitProfiles = exitProfiles?.[(parentStructure ?? structure).structureId] ?? [];
+    const stage = parentStructure?.stage ?? structure.stage;
+    const stageSequence = parentStructure?.stageSequence ?? structure.stageSequence;
+    for (const matchUp of matchUpsOf(structure) ?? []) {
+      for (const m of [matchUp, ...(matchUp.tieMatchUps ?? [])]) {
+        candidates.push({
+          parentStructureId: parentStructure?.structureId,
+          exitProfiles: structureExitProfiles,
+          structureId: structure.structureId,
+          stageSequence,
+          matchUp: m,
+          stage,
+        });
       }
     }
+  };
+
+  for (const structure of structures) {
+    for (const childStructure of structuresOf(structure) ?? []) addStructure(childStructure, structure);
+    addStructure(structure);
   }
 
-  return count;
+  return candidates;
 }
 
-function findTarget({
-  parentStructureId,
-  targetMatchUpIds,
-  stageSequence,
-  roundPosition,
-  exitProfiles,
-  structureId,
-  roundNumber,
-  stage,
-}: {
-  parentStructureId?: string;
-  targetMatchUpIds: TargetMatchUpId[];
-  stageSequence?: number;
-  roundPosition?: number;
-  exitProfiles: string[];
-  structureId: string;
-  roundNumber?: number;
-  stage?: string;
-}): TargetMatchUpId | undefined {
-  return targetMatchUpIds.find((t) => {
-    if (t.roundNumber !== roundNumber || t.roundPosition !== roundPosition) return false;
+function targetMatches(t: TargetMatchUpId, c: Candidate): boolean {
+  if (t.roundNumber !== c.matchUp.roundNumber || t.roundPosition !== c.matchUp.roundPosition) return false;
 
-    // If structureId is specified, match against the structure or its parent (for RR groups)
-    if (t.structureId) return t.structureId === structureId || t.structureId === parentStructureId;
+  // If structureId is specified, match against the structure or its parent (for RR groups)
+  if (t.structureId) return t.structureId === c.structureId || t.structureId === c.parentStructureId;
 
-    // If exitProfile is specified, check against computed profiles
-    if (t.exitProfile) return exitProfiles.includes(t.exitProfile);
+  // If exitProfile is specified, check against computed profiles
+  if (t.exitProfile) return c.exitProfiles.includes(t.exitProfile);
 
-    // Match by stage/stageSequence
-    if (t.stage && t.stage !== stage) return false;
-    if (t.stageSequence && t.stageSequence !== stageSequence) return false;
+  // Match by stage/stageSequence
+  if (t.stage && t.stage !== c.stage) return false;
+  if (t.stageSequence && t.stageSequence !== c.stageSequence) return false;
 
-    return true;
-  });
+  return true;
 }
 
 function updateCrossReferences(structure: Structure, idMap: Record<string, string>): void {
