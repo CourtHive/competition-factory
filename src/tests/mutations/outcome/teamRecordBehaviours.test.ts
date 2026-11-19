@@ -424,3 +424,27 @@ describe('a TEAM dual opposite a BYE takes no result', () => {
     expect(record()).toEqual(before);
   });
 });
+
+describe('a team arriving at a produced walkover records where it came from, its dual decided by its lines or its own call', () => {
+  it.each([
+    ['by its lines', true],
+    ['by its own call', false],
+  ])('decided %s: the next dual is won by the team, its arrival recorded from the dual', (_label, byLines) => {
+    generate();
+    enter(dual(1, 1).matchUpId, { matchUpStatus: DOUBLE_WALKOVER });
+    const second = dual(1, 2);
+    if (byLines) {
+      enter(second.tieMatchUps[1].matchUpId, { winningSide: 2 });
+      enter(second.tieMatchUps[2].matchUpId, { winningSide: 2 });
+    } else enter(second.matchUpId, { winningSide: 2 });
+
+    const final = stored(second.winnerMatchUpId);
+    expect([final.matchUpStatus, final.drawPositions.filter(Boolean)]).toEqual([WALKOVER, [second.drawPositions[1]]]);
+    const arrivedOn = final.winningSide;
+    expect(arrivedOn).toBeDefined();
+    expect(final.sideExitProvenance[arrivedOn]).toEqual({
+      previousMatchUpStatus: COMPLETED,
+      sourceMatchUpId: second.matchUpId,
+    });
+  });
+});

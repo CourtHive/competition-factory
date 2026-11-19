@@ -1435,7 +1435,10 @@ The next dual is announced by `directWinner`, and the call's `tieMatchUpResult` 
 carries nothing on. Where the next dual is a BYE the team passes on, the line-up is carried once the passage is
 written: the matchUp beyond is announced first (its assignment), then the BYE dual (`directWinner`), as v1's
 `propagateLineUp` runs after `assignDrawPosition` has returned (2026-11-19, FIRST_MATCH_LOSER_CONSOLATION 8: v2
-announced the BYE dual first).
+announced the BYE dual first). The arrival's origin is the dual, as for the dual's own call: a team the line sends
+into a produced walkover (or onto a BYE) is recorded there with `previousMatchUpStatus: COMPLETED` and the dual as its
+`sourceMatchUpId`, and the line-up carry, written after that record, names the notice (`directWinner`). v1 named the
+line as the source, found no round for it, and recorded nothing (2026-11-19, TEAM SINGLE_ELIMINATION 4, walk seed 12).
 
 Where a loser link sends the losing team on (a consolation, a compass direction), the loser is placed as any loser is,
 and the losing team's line-up is carried onto its side of the dual it lands in (`setSideLineUp`, v1's

@@ -174,7 +174,11 @@ function processDrawPositionDirecting({
     const result = directWinner({
       sourceMatchUpStatus: sourceStatus,
       winnerMatchUpDrawPositionIndex,
-      sourceMatchUpId: matchUpId,
+      // A LINE DECIDING ITS DUAL DIRECTS THE DUAL: the arrival's origin is the dual, as it is when the dual is decided by
+      // its own call. Named after the line, the origin was not found in the draw's rounds (`getPairedPreviousMatchUp`),
+      // and a team arriving at a produced walkover or a BYE was recorded with no provenance where the dual's own call
+      // records `previousMatchUpStatus: COMPLETED` (2026-11-19, TEAM SINGLE_ELIMINATION 4, walk seed 12)
+      sourceMatchUpId: (matchUp?.collectionId && dualMatchUp?.matchUpId) || matchUpId,
       inContextDrawMatchUps,
       projectedWinningSide,
       winningDrawPosition,
