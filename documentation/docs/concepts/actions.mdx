@@ -93,11 +93,17 @@ tournamentEngine.attachPolicies({
   policyDefinitions: {
     positionActions: {
       policyName: 'Restricted',
-      // Disable specific actions
-      disableAssignQualifier: true,
-      disableAssignLuckyLoser: true,
-      // Only allow actions before draw publication
-      requireUnpublished: true,
+      // Disable specific actions in every structure
+      enabledStructures: [
+        {
+          stages: [], // [] => all stages
+          stageSequences: [], // [] => all stageSequences
+          enabledActions: [], // [] => all actions enabled...
+          disabledActions: ['ASSIGN_QUALIFIER', 'LUCKY'], // ...except these
+        },
+      ],
+      // Disable all position actions in consolation structures
+      disabledStructures: [{ stages: ['CONSOLATION'] }],
     },
   },
 });
@@ -178,7 +184,9 @@ if (scoreAction) {
 
 ### Policy Configuration
 
-MatchUp actions can be restricted using the MatchUp Actions Policy:
+MatchUp actions can be restricted using the MatchUp Actions Policy. `SCHEDULE`, `SCORE`, `STATUS`, `EXIT` and
+`CLEAR_SCORE` are not governed by the policy: they are offered whenever the matchUp's state allows. See
+[MatchUp Actions Policy](/docs/policies/matchUpActions) for every key:
 
 **API Reference:** [matchUpActions](/docs/governors/query-governor#matchupactions)
 
@@ -187,17 +195,20 @@ tournamentEngine.attachPolicies({
   policyDefinitions: {
     matchUpActions: {
       policyName: 'TournamentDirector',
-      // Disable certain actions for published draws
-      disableScoreEntry: false,
-      requireRefereeAssignment: true, // Require referee before scoring
+      // Withhold referee and scorekeeper assignment in every structure
+      enabledStructures: [
+        {
+          stages: [],
+          stageSequences: [],
+          enabledActions: [],
+          disabledActions: ['REFEREE', 'SCOREKEEPER'],
+        },
+      ],
+      // Validate team assignments against participant gender and category
+      participants: { enforceGender: true, enforceCategory: true },
       // Control substitution rules
-      substitutionLimits: {
-        maxPerTeam: 2,
-        maxPerPosition: 1,
-      },
-      // Restrict scheduling actions
-      enableScheduleModification: true,
-      requireScheduleApproval: false,
+      substituteAfterCompleted: false,
+      substituteWithoutScore: true,
     },
   },
 });

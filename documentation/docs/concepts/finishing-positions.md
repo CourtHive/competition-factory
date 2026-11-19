@@ -162,7 +162,7 @@ The `finishingPositionRange` stored in `structureParticipation` is the **resolve
 The `getAvailablePlayoffProfiles` method (available on the [Query Governor](/docs/governors/query-governor#getavailableplayoffprofiles)) returns the available finishing positions for Round Robin playoff structures:
 
 ```js
-const { playoffFinishingPositionRanges } = engine.getPlayoffFinishingPositionRanges({
+const { playoffFinishingPositionRanges } = engine.getAvailablePlayoffProfiles({
   structureId,
   drawId,
 });

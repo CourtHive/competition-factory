@@ -319,8 +319,8 @@ const result = tournamentEngine.addEventEntries({
 
 ```js
 // Automatically validate all entries when event registration closes
-const { entries } = tournamentEngine.getEvent({ eventId });
-const participantIds = entries.map((e) => e.participantId);
+const { event } = tournamentEngine.getEvent({ eventId });
+const participantIds = event.entries.map((e) => e.participantId);
 
 const result = tournamentEngine.addEventEntries({
   participantIds,

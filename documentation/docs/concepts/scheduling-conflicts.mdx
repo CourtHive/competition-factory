@@ -238,15 +238,18 @@ These modifications persist at the tournament level and affect all subsequent sc
 For unavoidable conflicts (e.g., late-night match followed by early match next day):
 
 ```js
-// Document the exception
-tournamentEngine.addExtension({
-  matchUpId: 'match-456',
+// Document the exception on the draw, keyed by matchUpId
+// (no engine method attaches an extension to a single matchUp)
+tournamentEngine.addDrawDefinitionExtension({
+  drawId: 'draw-123',
   extension: {
     name: 'scheduleException',
     value: {
-      reason: 'Tournament director approved - player consent obtained',
-      approvedBy: 'TD Name',
-      timestamp: new Date().toISOString(),
+      'match-456': {
+        reason: 'Tournament director approved - player consent obtained',
+        approvedBy: 'TD Name',
+        timestamp: new Date().toISOString(),
+      },
     },
   },
 });

@@ -206,65 +206,42 @@ matchAssignments.forEach(({ matchUpId, courtId, scheduledTime }) => {
 
 ### Follow By Implementation
 
+The factory has no "follow" link between matchUps: an order of play is expressed as `courtOrder` on one court and
+date. A matchUp with a `courtOrder` and no `scheduledTime` follows the one before it on that court.
+
+**API Reference:** [addMatchUpScheduleItems](/docs/governors/schedule-governor#addmatchupscheduleitems)
+
 ```js
 // Stadium court with follow-by scheduling
 const stadiumSchedule = [
   {
     matchUpId: 'sf-match-1',
+    drawId: 'draw-123',
     courtId: 'centre-court',
-    scheduledTime: '13:00',
     scheduledDate: '2024-03-23',
+    scheduledTime: '13:00',
+    courtOrder: 1,
   },
   {
     matchUpId: 'sf-match-2',
+    drawId: 'draw-123',
     courtId: 'centre-court',
     scheduledDate: '2024-03-23',
-    // No scheduledTime - will follow sf-match-1
-    extensions: [
-      {
-        name: 'followMatchUp',
-        value: { matchUpId: 'sf-match-1' },
-      },
-    ],
+    courtOrder: 2, // No scheduledTime - follows sf-match-1
   },
   {
     matchUpId: 'final-match',
+    drawId: 'draw-123',
     courtId: 'centre-court',
     scheduledDate: '2024-03-24',
     scheduledTime: '15:00', // Not Before 3 PM
-    extensions: [
-      {
-        name: 'followMatchUp',
-        value: {
-          matchUpId: 'sf-match-2',
-          notBeforeTime: '15:00',
-        },
-      },
-    ],
+    courtOrder: 1,
   },
 ];
 
-// Apply follow-by schedule
-stadiumSchedule.forEach((schedule) => {
-  const { matchUpId, courtId, scheduledDate, scheduledTime, extensions } = schedule;
-
-  // Assign court
-  tournamentEngine.assignMatchUpCourt({ matchUpId, courtId });
-
-  // Add date
-  tournamentEngine.addMatchUpScheduledDate({ matchUpId, scheduledDate });
-
-  // Add time if specified (for first match or not-before matches)
-  if (scheduledTime) {
-    tournamentEngine.addMatchUpScheduledTime({ matchUpId, scheduledTime, scheduledDate });
-  }
-
-  // Add follow-by extension
-  if (extensions) {
-    extensions.forEach((extension) => {
-      tournamentEngine.addExtension({ matchUpId, extension });
-    });
-  }
+// Apply follow-by schedule: court, date, time and order in one call per matchUp
+stadiumSchedule.forEach(({ matchUpId, drawId, ...schedule }) => {
+  tournamentEngine.addMatchUpScheduleItems({ matchUpId, drawId, schedule });
 });
 ```
 
@@ -275,8 +252,6 @@ stadiumSchedule.forEach((schedule) => {
 ### Standard Grid
 
 Fixed 2-hour slots for predictability:
-
-**API Reference:** [addExtension](/docs/governors/tournament-governor#addextension)
 
 ```js
 {
@@ -755,7 +730,7 @@ const { matchUps } = engine.allCompetitionMatchUps({
 const result = engine.proAutoSchedule({
   scheduledDate: '2024-03-20',
   matchUps,
-  venueIds: ['venue-1'], // Optional
+  courtIds: ['court-1', 'court-2'], // Optional - defaults to every court
 });
 
 // Result includes conflict-free schedule

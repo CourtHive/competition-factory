@@ -379,11 +379,13 @@ if (timeItem) {
 
 **Get All Time Items**:
 
-**API Reference:** [getTimeItem](/docs/governors/query-governor#gettimeitem)
+**API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
 ```js
-const { participant } = tournamentEngine.getParticipants({
-  participantId: 'player-123',
+const {
+  participants: [participant],
+} = tournamentEngine.getParticipants({
+  participantFilters: { participantIds: ['player-123'] },
 });
 
 // Access all time items

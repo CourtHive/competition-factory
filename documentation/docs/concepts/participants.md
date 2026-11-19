@@ -387,10 +387,11 @@ const { participants } = tournamentEngine.getParticipants({
     { participantId: 'player-2', person: { ... } }
   ],
   matchUps: [...],               // Added by withMatchUps
-  statistics: {                  // Added by withStatistics
-    matchUpsWon: 5,
-    matchUpsLost: 2
-  }
+  statistics: [                  // Added by withStatistics
+    { statCode: 'winRatio', numerator: 5, denominator: 7, statValue: 0.714 },
+    { statCode: 'winRatio.SINGLES', numerator: 0, denominator: 0, statValue: 0 },
+    { statCode: 'winRatio.DOUBLES', numerator: 5, denominator: 7, statValue: 0.714 }
+  ]
 }
 ```
 
@@ -449,44 +450,50 @@ participants.forEach((pair) => {
 
 Find all grouping participants (PAIR, TEAM, GROUP) that include a specific individual:
 
-**API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
+**API Reference:** [getParticipantMembership](/docs/governors/query-governor#getparticipantmembership)
+
+The result is keyed by participantType, each key holding the grouping participants themselves (not ids); a type
+the individual belongs to none of is absent, so default each key:
 
 ```js
 const {
-  PAIR: doublesParticipantIds,
-  GROUP: groupParticipantIds,
-  TEAM: teamParticipantIds,
+  PAIR: pairParticipants = [],
+  GROUP: groupParticipants = [],
+  TEAM: teamParticipants = [],
 } = tournamentEngine.getParticipantMembership({
   participantId: 'player-123',
 });
 
-console.log(`Player appears in ${doublesParticipantIds.length} pairs`);
-console.log(`Player appears in ${teamParticipantIds.length} teams`);
+console.log(`Player appears in ${pairParticipants.length} pairs`);
+console.log(`Player appears in ${teamParticipants.length} teams`);
 ```
 
 ## Sign-In Management
 
 Track participant availability for matches:
 
-**API Reference:** [getParticipantMembership](/docs/governors/query-governor#getparticipantmembership)
+**API Reference:** [checkInParticipant](/docs/governors/matchup-governor#checkinparticipant)
 
 ```js
 // Check in a participant
 tournamentEngine.checkInParticipant({
   participantId: 'player-123',
   matchUpId: 'matchup-456',
+  drawId: 'draw-789',
 });
 
 // Check out a participant
 tournamentEngine.checkOutParticipant({
   participantId: 'player-123',
   matchUpId: 'matchup-456',
+  drawId: 'draw-789',
 });
 
 // Toggle sign-in state
 tournamentEngine.toggleParticipantCheckInState({
   participantId: 'player-123',
   matchUpId: 'matchup-456',
+  drawId: 'draw-789',
 });
 ```
 
