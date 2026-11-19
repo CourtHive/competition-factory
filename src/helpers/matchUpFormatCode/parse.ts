@@ -1,8 +1,7 @@
 import type { RotatingPartnerScoreContract } from '@Types/rotatingPartnerScoring';
 import { parseOvertimeFormat, type OvertimeFormat } from './overtimeFormat';
 import { parseCombinedPointFormat } from './combinedPointFormat';
-import { definedAttributes } from '@Tools/definedAttributes';
-import { isConvertableInteger } from '@Tools/math';
+import { isConvertableInteger } from '@Tools/numeric';
 import { isString } from '@Tools/objects';
 import { stringify } from './stringify';
 
@@ -383,11 +382,14 @@ function buildParsedFormat({
 
   if (!validSetsFormat || !validFinalSet) return undefined;
 
-  const result: ParsedFormat = definedAttributes({
-    setFormat,
-    exactly,
-    bestOf,
-  });
+  // Built without `definedAttributes`, which reads the engine's deep-copy setting from global state: a format is
+  // parsed by score entry with no engine at all (`tods-competition-factory/score-entry-state`). The two agree: a
+  // parsed setFormat holds no `undefined`, `null` or `''` at any depth, so the deep and shallow forms of
+  // `definedAttributes` both returned exactly these keys, in this order (measured 2026-11-19 over every format code in
+  // the factory's source and docs, 377 that parse).
+  const result: ParsedFormat = { setFormat };
+  if (isPresent(exactly)) result.exactly = exactly;
+  if (isPresent(bestOf)) result.bestOf = bestOf;
 
   if (matchRoot !== SET) result.matchRoot = matchRoot;
   if (aggregate) result.aggregate = true;
@@ -606,4 +608,9 @@ function isNoAD(formatstring) {
 function getNumber(formatstring: string | undefined) {
   const num = Number(formatstring);
   return Number.isSafeInteger(num) ? num : 0;
+}
+
+/** the values `definedAttributes` kept: anything but `undefined`, `null` and `''` */
+function isPresent(value: unknown): boolean {
+  return value !== undefined && value !== null && value !== '';
 }

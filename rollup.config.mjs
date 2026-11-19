@@ -10,6 +10,9 @@ import path from 'path';
 
 const tsConfig = JSON.parse(await fs.readFile(new URL('./tsconfig.base.json', import.meta.url)));
 const srcIndex = 'src/index.ts';
+// `tods-competition-factory/score-entry-state`: a headless score-entry draft with its own entry point, so a consumer
+// that needs it never loads the root barrel, an engine or global engine state.
+const scoreEntryStateIndex = 'src/scoreEntryState/index.ts';
 
 const basePath = fs.realpathSync(process.cwd());
 const distPath = path.resolve(basePath, 'dist');
@@ -92,7 +95,12 @@ function createExport({ input, folder, packageName, cjs, esm }) {
   };
 }
 
-const cjsExports = [{ input: srcIndex, cjs: true }].map(createExport);
+const cjsExports = [
+  { input: srcIndex, cjs: true },
+  // its own bundle, not a re-export of the root's: `require('tods-competition-factory/score-entry-state')` loads the
+  // draft and the scoring rules it reads, and nothing else
+  { input: scoreEntryStateIndex, cjs: true, folder: 'score-entry-state', packageName: 'score-entry-state' },
+].map(createExport);
 
 // Tree-shakeable ESM build: preserveModules keeps one output file per source
 // module (mirroring src/ under dist/esm/) instead of a single flattened
@@ -103,7 +111,9 @@ const cjsExports = [{ input: srcIndex, cjs: true }].map(createExport);
 // consumers generate their own maps when they re-bundle).
 const esmExport = [
   {
-    input: srcIndex,
+    // the score-entry-state entry is a second input to the same module tree: `dist/esm/scoreEntryState/index.mjs`
+    // imports the narrow scoring modules it reads, so a bundler resolving the subpath sees only that graph
+    input: [srcIndex, scoreEntryStateIndex],
     onwarn,
     plugins: [
       typescript({ tsconfig: './tsconfig.json', declaration: false, sourceMap: false, outDir: `${distPath}/esm` }),
@@ -141,4 +151,13 @@ const engineTypes = [
   },
 ];
 
-export default [...cjsExports, ...esmExport, ...engineTypes];
+const scoreEntryStateTypes = [
+  {
+    input: scoreEntryStateIndex,
+    onwarn,
+    plugins: [dts({ compilerOptions: { paths: tsConfig.compilerOptions.paths } })],
+    output: { file: `${distPath}/score-entry-state.d.ts`, format: 'es' },
+  },
+];
+
+export default [...cjsExports, ...esmExport, ...engineTypes, ...scoreEntryStateTypes];

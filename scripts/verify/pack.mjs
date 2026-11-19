@@ -111,6 +111,21 @@ try {
   fail('governors subpath smoke failed against tarball', err);
 }
 
+// The score-entry-state subpath, as a consumer of the PACKED tarball meets it: its declarations under Node's own
+// resolution in both formats with no DOM lib, then two drafts held at once by `require` and by `import`, with no DOM.
+// The CJS run also asserts that loading it loads nothing of the root bundle.
+log('score-entry-state subpath smoke (types nodenext, require + import, no DOM)…');
+try {
+  const out = [
+    run('npx --no-install tsc -p tsconfig.scoreEntryState.json', { cwd: fixture }),
+    run('node scoreEntryState.runtime.cjs', { cwd: fixture }),
+    run('node scoreEntryState.runtime.mjs', { cwd: fixture }),
+  ].join('');
+  process.stdout.write(out);
+} catch (err) {
+  fail('score-entry-state subpath smoke failed against tarball', err);
+}
+
 // 5. Clean stage.
 if (!process.env.VERIFY_PACK_KEEP) {
   rmSync(stage, { recursive: true, force: true });

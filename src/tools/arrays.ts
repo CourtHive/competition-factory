@@ -1,4 +1,4 @@
-import { isConvertableInteger } from './math';
+import { isConvertableInteger, instanceCount } from './numeric';
 import { randomSource } from '@Tools/prng';
 
 // returns only unique values within an array
@@ -51,16 +51,7 @@ export function numericSortValue(v) {
   return isConvertableInteger(v) ? v : Infinity;
 }
 
-// return an object whose attributes are values and whose values are counts for values
-// e.g. values=[1,2,2,3,4,4,5] produces { 1: 1, 2: 2, 3: 1, 4: 2, 5: 1}
-export function instanceCount(values): { [key: number | string]: number } {
-  if (!Array.isArray(values)) return {};
-  return values.reduce((a, c) => {
-    if (!a[c]) a[c] = 0;
-    a[c]++;
-    return a;
-  }, {});
-}
+export { instanceCount };
 
 // return an object whose attributes are value counts and values are arrays of values for each count
 // e.g. values=[1,2,2,3,4,4,5] produces { 1: ["1", "3", "5"], 2: ["2", "4"] }
