@@ -51,6 +51,8 @@ describe('Tournament Scheduling', () => {
 
 Create factory functions for common scenarios:
 
+<!-- doc-mock-examples:ignore — two files: a helper module and the test that imports it -->
+
 ```js
 // test/helpers/tournamentFactory.js
 export function createTournamentWithScheduling(options = {}) {
@@ -868,6 +870,8 @@ The `nonRandom` parameter enables fully reproducible tournament generation, whic
 ### Snapshot / Regression Testing
 
 Generate the same tournament every time to detect unintended changes:
+
+<!-- doc-mock-examples:ignore — a snapshot needs a vitest test context -->
 
 ```js
 test('tournament structure matches snapshot', () => {

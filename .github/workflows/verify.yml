@@ -295,6 +295,11 @@ jobs:
       - name: verify:docs-examples
         run: pnpm verify:docs-examples
 
+      # Every documented mocksEngine.generateTournamentRecord fence, run as written: it must not throw, and no
+      # generation in it may return an error it does not document (`// result.error -> CODE`).
+      - name: verify:docs-mock-examples
+        run: pnpm verify:docs-mock-examples
+
       - name: verify:pack
         run: pnpm verify:pack
 
