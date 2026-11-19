@@ -22,33 +22,33 @@ The **Voluntary Consolation Policy** (`POLICY_TYPE_VOLUNTARY_CONSOLATION`) contr
 {
   voluntaryConsolation: {
     policyName?: string;               // Optional policy identifier
-    winsLimit?: number;                // Most main-draw wins an eligible participant may have (1 or more)
+    winsLimit?: number;                // Most main-draw wins an eligible participant may have (0 = no wins)
     matchUpsLimit?: number;            // Most main-draw matchUps an eligible participant may have played
     requireLoss?: boolean;             // Default true: only participants who have lost
     requirePlay?: boolean;             // Default true: only participants who have played
     excludedMatchUpStatuses?: string[]; // matchUps with these statuses are not counted
     includeEventParticipants?: boolean; // consider event entries rather than draw entries
     allEntries?: boolean;              // consider every entry, placed in the draw or not
-    finishingRoundLimit?: number;      // see the caution below
+    finishingRoundLimit?: number;      // Consider only matchUps this many rounds from the final, and earlier
+    roundNumberLimit?: number;         // Consider only rounds 1 to this round
   }
 }
 ```
 
 **Attributes:**
 
-- **winsLimit**: the most main-draw wins an eligible participant may have. It is tested for truthiness, so `0` is
-  **no limit**, not "no wins". To admit only participants with no wins, use `matchUpsLimit: 1`: with the default
-  `requireLoss`, that is the first-round losers.
+- **winsLimit**: the most main-draw wins an eligible participant may have; `0` admits only participants with no wins.
+  Unset is no limit. (Up to 7.42.0, `0` was treated as no limit.)
 - **matchUpsLimit**: the most main-draw matchUps an eligible participant may have played.
 - **requireLoss** / **requirePlay**: both default to `true`, so a participant still in the draw, or one who has not
   played, is not eligible.
 
-:::caution finishingRoundLimit
-`finishingRound` counts back from the final (final = 1, semifinal = 2, …), and `finishingRoundLimit` **excludes** every
-matchUp whose `finishingRound` is at or above the limit, which in a large draw is the early rounds. `finishingRoundLimit:
-1` therefore excludes every matchUp, and no one is eligible. It is not a "lost in round N" rule; use `matchUpsLimit` or
-`winsLimit` for that.
-:::
+- **finishingRoundLimit** and **roundNumberLimit**: bound the matchUps considered to the early part of the draw, from
+  opposite ends. `finishingRound` counts back from the final (final = 1, semifinal = 2, quarterfinal = 3), so
+  `finishingRoundLimit: 3` considers the quarterfinals and earlier: a semifinal or final loser has no considered loss
+  and is not eligible. `roundNumberLimit: 2` considers rounds 1 and 2 only. In a completed 32 draw,
+  `finishingRoundLimit: 3` admits 28 (16 + 8 + 4) and `roundNumberLimit: 2` admits 24. (Up to 7.42.0 the first
+  compared the wrong way and the second read `finishingRound`.)
 
 ---
 
@@ -181,7 +181,7 @@ const { drawDefinition: consolationDraw } = tournamentEngine.generateDrawDefinit
 ## Notes
 
 - Policy is checked when calling `getEligibleVoluntaryConsolationParticipants`
-- **winsLimit**: Counts only completed wins in main draw; `0` means no limit
+- **winsLimit**: Counts only completed wins in main draw; `0` means no wins
 - **matchUpsLimit**: Counts main-draw matchUps played
 - Participants not yet eliminated are excluded (still active in main draw)
 - Participants already in consolation draw are excluded

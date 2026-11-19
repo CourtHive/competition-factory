@@ -240,3 +240,33 @@ test('DOUBLE_WALKOVER produceds participants eligible for voluntary consolation 
   expect(losingParticipantIds.length).toEqual(3);
   expect(eligibleParticipants.length).toEqual(3);
 });
+
+// The limits as specified in 2022: winsLimit 0 is "no wins"; roundNumberLimit N considers rounds 1..N; finishingRoundLimit
+// N considers matchUps N rounds before the final and earlier ("3 doesn't consider past QF"). A completed 32 draw has
+// 16 round-1 (R32) losers, 8 R16, 4 QF, 2 SF and 1 final loser: 31 in all.
+test('eligibility limits bound wins and the considered rounds as specified', () => {
+  const {
+    tournamentRecord,
+    drawIds: [drawId],
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 32 }],
+    completeAllMatchUps: true,
+  });
+  tournamentEngine.setState(tournamentRecord);
+
+  const eligibleCount = (params) =>
+    tournamentEngine.getEligibleVoluntaryConsolationParticipants({ drawId, ...params }).eligibleParticipants.length;
+
+  expect(eligibleCount({ winsLimit: 0 })).toEqual(16); // no wins: round-1 losers
+  expect(eligibleCount({ roundNumberLimit: 1 })).toEqual(16); // only round 1 considered
+  expect(eligibleCount({ roundNumberLimit: 2 })).toEqual(24);
+  expect(eligibleCount({ finishingRoundLimit: 5 })).toEqual(16); // finishingRound 5 is round 1 of 32
+  expect(eligibleCount({ finishingRoundLimit: 3 })).toEqual(28); // QF and earlier (16 + 8 + 4): SF and final losers excluded
+
+  // the same limits read from an attached policy
+  tournamentEngine.attachPolicies({
+    policyDefinitions: { voluntaryConsolation: { winsLimit: 0 } },
+    drawId,
+  });
+  expect(eligibleCount({})).toEqual(16);
+});

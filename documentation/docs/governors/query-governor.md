@@ -521,9 +521,9 @@ const { eligibleParticipants } = engine.getEligibleVoluntaryConsolationParticipa
   excludedMatchUpStatuses, // optional - array of matchUpStatuses which are excluded from matchUpsLimit
   includeQualifyingStage, // optional - allow losers in qualifying
   finishingRoundLimit, // optional number - limits considered matchUps by finishingRound, e.g. 3 doesn't consider past QF
-  roundNumberLimit, // optional number - limits matchUps by roundNumber
+  roundNumberLimit, // optional number - considers only rounds 1..roundNumberLimit
   matchUpsLimit, // optional number - limits the number of considered matchUps; works in tandem with excludedMatchUpStatuses
-  winsLimit, // defaults to 0, meaning only participants with no wins are eligible
+  winsLimit, // optional number - most wins an eligible participant may have; 0 = no wins, unset = no limit
   requireLoss, // optional boolean - defaults to true; if false then all participants who have played and appear in MAIN draw are considered
   requirePlay, // optional boolean - defaults to true; if false then all participants who appear in MAIN draw are considered
   allEntries, // optional boolean - consider all entries, regardless of whether placed in draw
