@@ -3,6 +3,7 @@ import { getStageParticipantsCount } from '@Query/drawDefinition/getStagePartici
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getStageParticipants } from '@Query/drawDefinition/getStageParticipants';
 import { generateFlightDrawDefinitions } from './generateFlightDrawDefinitions';
+import { eventGeneratesOwnParticipants } from './eventGeneratesOwnParticipants';
 import { generateEventParticipants } from './generateEventParticipants';
 import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { resolveCompletionOptions } from './resolveCompletionOptions';
@@ -74,7 +75,10 @@ export function generateEventWithFlights(params) {
     if (!gender && drawProfile.gender) gender = drawProfile?.gender;
   }
 
+  // an eventProfile's participantsProfile with more than a participantsCount: the event generates its own participants
+  const uniqueParticipants = eventGeneratesOwnParticipants(eventProfile);
   const { stageParticipantsCount, uniqueParticipantsCount, uniqueParticipantStages } = getStageParticipantsCount({
+    uniqueParticipants,
     drawProfiles,
     category,
     gender,
@@ -139,7 +143,8 @@ export function generateEventWithFlights(params) {
 
   // Generate Flights ---------------------------------------------------------
   const { stageParticipants } = getStageParticipants({
-    allUniqueParticipantIds,
+    // the participants this event generated for itself are not drawn from the pool as well
+    allUniqueParticipantIds: [...allUniqueParticipantIds, ...uniqueParticipantIds],
     stageParticipantsCount,
     eventParticipantType,
     targetParticipants,
@@ -148,6 +153,7 @@ export function generateEventWithFlights(params) {
 
   if (drawProfiles?.length) {
     const flightResult = generateFlights({
+      uniqueParticipants,
       uniqueDrawParticipants,
       useExistingParticipants,
       autoEntryPositions,
