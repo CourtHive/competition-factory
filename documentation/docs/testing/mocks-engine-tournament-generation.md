@@ -978,17 +978,20 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       drawSize: 8,
       eventType: 'TEAM',
       tieFormat: {
+        winCriteria: { valueGoal: 3 }, // a tieFormat needs win criteria and collection values (INVALID_TIE_FORMAT without)
         collectionDefinitions: [
           {
             collectionName: 'Singles',
             matchUpType: 'SINGLES',
             matchUpCount: 3,
+            matchUpValue: 1,
             matchUpFormat: 'SET3-S:6/TB7',
           },
           {
             collectionName: 'Doubles',
             matchUpType: 'DOUBLES',
             matchUpCount: 1,
+            matchUpValue: 1,
             matchUpFormat: 'SET3-S:6/TB7',
           },
         ],

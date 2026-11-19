@@ -110,36 +110,37 @@ Match C:
 
 ### ITF Follow By Implementation
 
-World Tennis (formerly the ITF) and many national federations use a standardized follow-by system:
+World Tennis (formerly the ITF) and many national federations use a standardized follow-by system. In the factory a
+follow-by court is a `courtOrder` per matchUp plus **time modifiers** on its schedule (`timeItemConstants`):
+`FOLLOWED_BY` for a match that follows the one before it, and `NOT_BEFORE` with a `scheduledTime` for a
+"not before" start.
 
 ```js
-// ITF-style scheduling
-const scheduleProfile = {
-  venues: [
-    {
-      venueId: 'centre-court',
-      venueName: 'Centre Court',
-      rounds: [
-        {
-          matchUpId: 'match-1',
-          scheduledTime: '11:00',
-          courtId: 'centre-court-1',
-        },
-        {
-          matchUpId: 'match-2',
-          followMatchUpId: 'match-1', // Follows match-1
-          courtId: 'centre-court-1',
-        },
-        {
-          matchUpId: 'match-3',
-          followMatchUpId: 'match-2', // Follows match-2
-          notBeforeTime: '16:00', // But not before 4 PM
-          courtId: 'centre-court-1',
-        },
-      ],
-    },
-  ],
-};
+import { timeItemConstants } from 'tods-competition-factory';
+const { FOLLOWED_BY, NOT_BEFORE } = timeItemConstants;
+
+const centreCourt = { venueId, courtId, scheduledDate: '2024-06-15' };
+
+// 11:00 start
+tournamentEngine.addMatchUpScheduleItems({
+  drawId,
+  matchUpId: 'match-1',
+  schedule: { ...centreCourt, courtOrder: 1, scheduledTime: '11:00' },
+});
+
+// follows match-1
+tournamentEngine.addMatchUpScheduleItems({
+  drawId,
+  matchUpId: 'match-2',
+  schedule: { ...centreCourt, courtOrder: 2, timeModifiers: [FOLLOWED_BY] },
+});
+
+// follows match-2, but not before 4 PM
+tournamentEngine.addMatchUpScheduleItems({
+  drawId,
+  matchUpId: 'match-3',
+  schedule: { ...centreCourt, courtOrder: 3, scheduledTime: '16:00', timeModifiers: [NOT_BEFORE] },
+});
 ```
 
 ### Follow By for TV Programming
@@ -351,13 +352,14 @@ Prioritize match assignments:
 // Priority assignment
 const assignments = [];
 
-// 1. Finals/semifinals on centre court with follow-by
+// 1. Finals/semifinals on centre court with follow-by: a court order, the first at a time and the rest
+// FOLLOWED_BY (timeItemConstants) — the schedule attributes addMatchUpScheduleItems / bulkScheduleMatchUps take
 featuredMatches.forEach((matchUpId, index) => {
   assignments.push({
     matchUpId,
     courtId: 'centre-court',
-    scheduledTime: index === 0 ? '14:00' : null,
-    followMatchUpId: index > 0 ? featuredMatches[index - 1] : null,
+    courtOrder: index + 1,
+    ...(index === 0 ? { scheduledTime: '14:00' } : { timeModifiers: [FOLLOWED_BY] }),
   });
 });
 
@@ -391,7 +393,8 @@ remainingMatches.forEach((matchUpId, index) => {
 Check for conflicts and constraints:
 
 ```js
-// Validate schedule
+// Validate schedule: validateProSchedule and resolveScheduleConflicts are your application's own functions, not
+// factory methods (for the factory's own conflict checks, see Scheduling Conflicts)
 const validation = validateProSchedule(assignments, {
   checkRecoveryTimes: true,
   checkDailyLimits: true,
