@@ -1006,6 +1006,8 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
 By default, `processTieFormat` computes per-team gender counts from the maximum gendered collection requirements. When a tieFormat requires more gendered players than the MAX-per-collection heuristic produces (e.g. collections needing 3 men and 3 women total, but the MAX only detects 2 of each), use `teamGenders` as a floor override:
 
 ```js
+import { fixtures, mocksEngine } from 'tods-competition-factory';
+
 const { tournamentRecord } = mocksEngine.generateTournamentRecord({
   drawProfiles: [
     {
@@ -1013,47 +1015,7 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventType: 'TEAM',
       teamNames: ['Team Alpha', 'Team Beta'],
       teamGenders: { MALE: 3, FEMALE: 3 }, // Override: at least 3M + 3F per team
-      tieFormat: {
-        tieFormatName: 'INTENNSE',
-        winCriteria: { aggregateValue: true },
-        collectionDefinitions: [
-          {
-            collectionName: "Men's Singles",
-            matchUpType: 'SINGLES',
-            matchUpCount: 2,
-            matchUpFormat: 'SET2XA-S:T10',
-            gender: 'MALE',
-          },
-          {
-            collectionName: "Women's Singles",
-            matchUpType: 'SINGLES',
-            matchUpCount: 2,
-            matchUpFormat: 'SET2XA-S:T10',
-            gender: 'FEMALE',
-          },
-          {
-            collectionName: "Men's Doubles",
-            matchUpType: 'DOUBLES',
-            matchUpCount: 1,
-            matchUpFormat: 'SET1A-S:T10',
-            gender: 'MALE',
-          },
-          {
-            collectionName: "Women's Doubles",
-            matchUpType: 'DOUBLES',
-            matchUpCount: 1,
-            matchUpFormat: 'SET1A-S:T10',
-            gender: 'FEMALE',
-          },
-          {
-            collectionName: 'Mixed Doubles',
-            matchUpType: 'DOUBLES',
-            matchUpCount: 1,
-            matchUpFormat: 'SET1A-S:T10',
-            gender: 'MIXED',
-          },
-        ],
-      },
+      tieFormat: fixtures.tieFormats.INTENNSE_2026, // 2 MS, 2 WS, 1 MD, 1 WD, 1 XD, aggregate value
     },
   ],
   completeAllMatchUps: true,

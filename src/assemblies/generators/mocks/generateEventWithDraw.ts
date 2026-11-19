@@ -890,6 +890,9 @@ export function generateEventWithDraw(params) {
   // so the supplied pool is used. Filtering by gender / eventType /
   // participantType still happens downstream via filterConsideredParticipants.
   // `gender: ANY` is "no gender constraint" — see getParticipantsCount.ts.
+  // `teamGenders` / `teamNames` are read only by buildTeamParticipants, so a TEAM draw that asks for either builds its
+  // own teams: the tournament pool's teams are dealt in order, gender-blind and named `Team N`.
+  const shapesTeams = eventType === TEAM && Boolean(drawProfile.teamGenders || drawProfile.teamNames?.length);
   const needsUniqueParticipants =
     !useExistingParticipants &&
     (participantsProfile?.participantsCount === 0 ||
@@ -898,6 +901,7 @@ export function generateEventWithDraw(params) {
       !tournamentRecord ||
       (gender && gender !== ANY) ||
       category ||
+      shapesTeams ||
       isHybrid);
 
   if (needsUniqueParticipants) {
