@@ -148,6 +148,24 @@ Targets are matched against matchUps in order of specificity:
 5. If `stageSequence` is specified, it must also match
 6. If none of the optional fields are specified, the target matches the **first** structure where `roundNumber` and `roundPosition` match
 
+Each target is assigned to **one** matchUp: the first, in the order of `drawDefinition.structures`, that its fields match. A target with only `roundNumber` and `roundPosition` in a COMPASS draw therefore remaps the East matchUp and none of the other seven structures; use `exitProfile`, `stage` or `structureId` to reach a later structure.
+
+:::note Corrected behavior
+
+Releases before this correction applied an unscoped target to **every** structure with a matchUp at that position, which put one external matchUpId on several matchUps of the same draw (eight in a 32-draw COMPASS). The rule above is now enforced by the source; the pinned source-local contract above predates it.
+
+:::
+
+### Refused remaps
+
+A matchUpId must identify exactly one matchUp. The remap is refused with `INVALID_VALUES`, and **no matchUpId is changed**, when:
+
+- the same `matchUpId` appears in more than one target
+- two targets resolve to the same matchUp (for example an unscoped target and a `stage: 'MAIN'` target at the same position)
+- a target's `matchUpId` is already held by a matchUp that no target remaps
+
+`generateDrawDefinition` returns the same error when its `targetMatchUpIds` are refused.
+
 ### Partial Targeting
 
 You don't need to target every matchUp. Untargeted matchUps keep their generated IDs. This is useful when importing partial data or when only some matchUps have external IDs.
@@ -202,17 +220,18 @@ See [Exit Profiles](/docs/concepts/exit-profiles) for a full explanation of how 
 
 ### Round Robin with Playoffs
 
-For round-robin structures (`structureType: CONTAINER`), matchUps live on child group structures. The `stage` and `stageSequence` of the parent container are used for matching:
+For round-robin structures (`structureType: CONTAINER`), matchUps live on child group structures, and the `stage` and `stageSequence` of the parent container are used for matching. **Round-robin group matchUps cannot be remapped by this method:** they carry a `roundNumber` and a pair of `drawPositions` but no `roundPosition`, so no target matches them, with or without a structure selector. Group matchUps keep their generated IDs.
+
+The playoff structures that follow the groups are elimination structures and are targeted as usual:
 
 ```js
 const targetMatchUpIds = [
-  // Group stage matchUps (stage: MAIN, stageSequence: 1)
-  { matchUpId: 'grp-r1p1', roundNumber: 1, roundPosition: 1, stage: 'MAIN', stageSequence: 1 },
-
   // Playoff matchUps from group winners (stage: PLAY_OFF)
   { matchUpId: 'playoff-r1p1', roundNumber: 1, roundPosition: 1, stage: 'PLAY_OFF' },
 ];
 ```
+
+An earlier version of this page showed a group target (`{ roundNumber: 1, roundPosition: 1, stage: 'MAIN', stageSequence: 1 }`); it matches nothing and returns `remappedCount: 0`.
 
 ## Cross-Reference Updates
 
@@ -256,7 +275,7 @@ const { drawDefinition } = engine.generateDrawDefinition({
 {
   success: boolean;
   remappedCount: number;  // how many matchUpIds were changed
-  error?: ErrorType;      // MISSING_DRAW_DEFINITION or INVALID_VALUES
+  error?: ErrorType;      // MISSING_DRAW_DEFINITION or INVALID_VALUES (see Refused remaps)
 }
 ```
 
