@@ -685,18 +685,20 @@ const { scaleItemsWithParticipantIds } = engine.generateSeedingScaleItems({
 
 ## generateVoluntaryConsolation
 
-Generates and optionally attaches a voluntary consolation structure to a draw. Voluntary consolations allow first-round losers to opt into a secondary draw.
+Generates a voluntary consolation structure for a draw without modifying the draw; attach the result with
+`attachConsolationStructures`. Voluntary consolations allow first-round losers to opt into a secondary draw. The
+structure is sized from the draw's VOLUNTARY_CONSOLATION stage entries.
 
 ```js
 const { structures, links } = engine.generateVoluntaryConsolation({
-  drawDefinition, // required - target drawDefinition
-  tournamentRecord, // required - tournament context
+  drawId, // required - draw for which the consolation is generated
+  drawType, // optional - defaults to SINGLE_ELIMINATION
   structureName, // optional - custom name (default: 'Voluntary Consolation')
   automated, // optional boolean - auto-position participants
   applyPositioning, // optional boolean - apply positioning policies
-  attachConsolation, // optional boolean - attach to drawDefinition
   placeByes, // optional boolean - place byes automatically
   matchUpType, // optional - SINGLES, DOUBLES, TEAM
+  matchUpFormat, // optional
   tieFormat, // optional - for TEAM matchUps
   seedingProfile, // optional - seeding strategy for consolation
   playoffAttributes, // optional - playoff structure naming
@@ -715,6 +717,12 @@ const { structures, links } = engine.generateVoluntaryConsolation({
 }
 ```
 
+The draw is not modified. Attach what was generated:
+
+```js
+engine.attachConsolationStructures({ drawId, structures, links });
+```
+
 **Purpose:** Creates a consolation draw for first-round losers who opt in voluntarily. Unlike automatic consolations, this requires manual participant selection.
 
 **When to Use:**
@@ -728,8 +736,9 @@ const { structures, links } = engine.generateVoluntaryConsolation({
 
 - Participants must voluntarily opt into the consolation
 - Only first-round losers are eligible
-- Generated structure is linked to main structure
-- Use `attachConsolation: true` to automatically attach to drawDefinition
+- `links` are those within the generated consolation (e.g. for a multi-structure `drawType`); none link it to the main
+  structure
+- Never attaches; pass `{ structures, links }` to `attachConsolationStructures`
 - Separate from `addVoluntaryConsolationStructure` which manages existing consolations
 
 ---

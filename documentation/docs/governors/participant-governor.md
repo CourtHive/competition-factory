@@ -258,14 +258,14 @@ participant is included), and groupings that lost a member are announced with `M
 
 ## filterParticipants
 
-Filters participants based on provided criteria.
+Filters the participants passed in; it does not read the tournament's participants.
 
 ```js
-const { filteredParticipants } = engine.filterParticipants({
-  tournamentRecord, // required
-  participantFilters, // required - filter criteria object
-  policyDefinitions, // optional
+const filteredParticipants = engine.filterParticipants({
+  participants, // required - the participants to filter; none passed returns []
+  participantFilters, // filter criteria object; empty returns participants unfiltered
 });
+// returns an array (not an object)
 ```
 
 **Purpose:** Query participants with complex filtering criteria.
@@ -379,13 +379,14 @@ const paymentStatus = engine.getParticipantPaymentStatus({
 
 ## getParticipantSignInStatus
 
-Returns sign-in status for a participant.
+Returns sign-in status for a participant: the latest recorded presence state.
 
 ```js
-const { signInStatus } = engine.getParticipantSignInStatus({
+const signInStatus = engine.getParticipantSignInStatus({
   participantId, // required
-  tournamentRecord, // required
 });
+// 'SIGNED_IN' when the latest record is a sign-in; false when it is a sign-out;
+// nothing (undefined; `{}` through an engine) when no presence was ever recorded
 ```
 
 **Purpose:** Check if participant has signed in for tournament/event.

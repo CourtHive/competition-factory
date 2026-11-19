@@ -368,19 +368,21 @@ const { matchUps } = tournamentEngine.allTournamentMatchUps();
 **Use**: [Policy Governor](./policy-governor.md)
 
 ```js
-import { policyConstants } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+
+const { POLICY_SCHEDULING_DEFAULT, POLICY_SEEDING_ITF } = fixtures.policies;
+
+// policyDefinitions is keyed by policy type, e.g. { scheduling: { ... } }
 
 // Attach scheduling policy
 tournamentEngine.attachPolicies({
-  policyType: policyConstants.POLICY_TYPE_SCHEDULING,
-  policyDefinition: { ... }
+  policyDefinitions: POLICY_SCHEDULING_DEFAULT,
 });
 
 // Attach seeding policy
 tournamentEngine.attachPolicies({
   eventId,
-  policyType: policyConstants.POLICY_TYPE_SEEDING,
-  policyDefinition: { ... }
+  policyDefinitions: POLICY_SEEDING_ITF,
 });
 ```
 

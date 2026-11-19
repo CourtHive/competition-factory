@@ -561,12 +561,13 @@ Removes participant entries from a drawDefinition (but not from the event).
 
 ```js
 const result = engine.removeDrawEntries({
-  participantIds, // required - array of participant IDs to remove
-  stage, // optional - target specific stage (MAIN, QUALIFYING)
-  stageSequence, // optional - target specific stage sequence
+  participantIds, // required - array of participant IDs to remove (from every stage of the draw)
+  stages, // optional - stages checked for participants already assigned positions, e.g. [MAIN]
+  autoEntryPositions, // optional - defaults to true; re-numbers the remaining entries' positions
   eventId, // required
   drawId, // required
 });
+// refused when any participantId is assigned a draw position (in `stages`, when given)
 ```
 
 **Purpose:** Removes entries from draw only, maintaining event entries.
