@@ -1,5 +1,48 @@
 # Changelog
 
+## [7.43.0](https://github.com/CourtHive/competition-factory/compare/v7.42.0...v7.43.0) (2026-11-19)
+
+
+### Features
+
+* **availability:** getCourtSchedulingSummary returns minutesByType ([#6454](https://github.com/CourtHive/competition-factory/issues/6454)) ([7e5ce24](https://github.com/CourtHive/competition-factory/commit/7e5ce24c387b62bb59beccfcc6295c1d16be7d27))
+* **ladder:** export ladderConstants with the whole ladder vocabulary ([#6457](https://github.com/CourtHive/competition-factory/issues/6457)) ([0ac22cb](https://github.com/CourtHive/competition-factory/commit/0ac22cb773ff98f39ddcebf6a1d1cc458122a9ae))
+* **qualifierProgression:** place qualifiers into a named target structure ([#6436](https://github.com/CourtHive/competition-factory/issues/6436)) ([4605f25](https://github.com/CourtHive/competition-factory/commit/4605f250083ad22adea955b2e761fd5dd1702598))
+* **score-entry-state:** headless score-entry draft as a tods-competition-factory subpath ([#6442](https://github.com/CourtHive/competition-factory/issues/6442)) ([530f1cd](https://github.com/CourtHive/competition-factory/commit/530f1cdb010551f8e3395bb43dd3cc3cc9b1a0c6))
+
+
+### Bug Fixes
+
+* **consolation:** eligibility limits behave as specified in 2022 ([c5c3ceb](https://github.com/CourtHive/competition-factory/commit/c5c3ceb953dc31b1bd4052ea430da06d55c5f8c2))
+* **engines:** return a method's undefined or null result as-is, not {} ([ae2c5c7](https://github.com/CourtHive/competition-factory/commit/ae2c5c7b8a858b0c970e53e806042e0bdef3e2c7))
+* **logging:** devContext perf: true times every call, not only those of 1ms or more ([01f83c5](https://github.com/CourtHive/competition-factory/commit/01f83c5a0693fd18a5056ee666d4fee977634c91))
+* **mocks:** honour an eventProfile's participantsProfile and its draws' qualifyingProfiles ([0115d6a](https://github.com/CourtHive/competition-factory/commit/0115d6aed0c74ac6e1227bc0e3166005c3112e69))
+* **mocks:** teamGenders and teamNames take effect with the default participantsProfile ([7b462bb](https://github.com/CourtHive/competition-factory/commit/7b462bbea9c90ff142c5c825a5a444d17f4e5b77))
+* **publishing:** getTournamentPublishStatus returns {} itself when nothing is published ([e144881](https://github.com/CourtHive/competition-factory/commit/e144881c20fc001de39acef22168d877399e027d))
+* **remap:** assign each target matchUpId to exactly one matchUp ([5fd75a7](https://github.com/CourtHive/competition-factory/commit/5fd75a7ba953e16c01477d2cd0e68922a6392192))
+* **scales:** getAggregateTeamResults reads finishingPositionRangeBonusPoints ([f3a9211](https://github.com/CourtHive/competition-factory/commit/f3a92110521fa757db45e4d10941ddd0bef36378))
+* **score-entry-state:** buildSetScore derives tiebreak points with getTiebreakComplement ([#6456](https://github.com/CourtHive/competition-factory/issues/6456)) ([e8924b0](https://github.com/CourtHive/competition-factory/commit/e8924b000bb2ea090668f15df83612bcfdd2c6cf))
+* **verify:** docs-methods also checks bare engine., tools. and governor calls ([5a0a2a6](https://github.com/CourtHive/competition-factory/commit/5a0a2a610895bd8ac4be18235adbad72711acd36))
+
+
+### Performance
+
+* true reached the numeric comparison as 1, so a call that finished within the millisecond ([01f83c5](https://github.com/CourtHive/competition-factory/commit/01f83c5a0693fd18a5056ee666d4fee977634c91))
+* true. ([01f83c5](https://github.com/CourtHive/competition-factory/commit/01f83c5a0693fd18a5056ee666d4fee977634c91))
+
+
+### Documentation
+
+* **concepts:** examples match the parameters and returns of the code ([c55bb48](https://github.com/CourtHive/competition-factory/commit/c55bb48d9d6276b318f0094ee91bf3d65ca617fb))
+* examples that succeed and do nothing, and policies documented backwards ([96b802b](https://github.com/CourtHive/competition-factory/commit/96b802bc60f64d6daf5a132dc45d544d71a50d3d))
+* **governors:** method sections match the parameters and returns of the code ([bb6f4ef](https://github.com/CourtHive/competition-factory/commit/bb6f4ef7766fd19d51892fad6ee068019fedbe92))
+* leftovers from the return-shapes batch ([511dd97](https://github.com/CourtHive/competition-factory/commit/511dd97ca3ec8dd487bdf843d5a2e8b6fe9225d1))
+* **policies, tools, testing:** examples run as written ([bfe6999](https://github.com/CourtHive/competition-factory/commit/bfe6999787588ca7d5c79f09bb7c06aa2f2adc59))
+* **privacy:** the participant policy examples use the attribute template the engine applies ([7e9c97a](https://github.com/CourtHive/competition-factory/commit/7e9c97af80b51f08e47ea15207dd10b4e53d8a4d))
+* **tmx:** describe the TMX and server that exist ([f510d40](https://github.com/CourtHive/competition-factory/commit/f510d406ebf43e1b9ed857e85955fc35a87bc9fc))
+* **tmx:** the browser-console page documents the dev object TMX actually builds ([fbe94d1](https://github.com/CourtHive/competition-factory/commit/fbe94d1d4fcfd5b4aa4fde54ed12628ed242da5b))
+* **tmx:** the TMX example pages' calls run as written ([01a9cce](https://github.com/CourtHive/competition-factory/commit/01a9cce6231bba6005d5170173e5055cb83f31dd))
+
 ## [7.42.0](https://github.com/CourtHive/competition-factory/compare/v7.41.0...v7.42.0) (2026-11-19)
 
 
