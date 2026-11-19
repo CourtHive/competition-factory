@@ -334,3 +334,42 @@ describe('a dual scored by hand keeps its double exit, and the exit it produced,
     expect(stored(final.matchUpId).drawPositions.filter(Boolean)).toEqual([arrived]);
   });
 });
+
+describe('a line entered again, its own winner unchanged, that hands a played-on dual to the other side is refused', () => {
+  // the dual's lines tally 2-1 to side 1; the dual is then decided for side 2 by its own call, and side 2 sent on
+  function decidedAgainstItsLines(playedOn: boolean) {
+    generate();
+    const first = dual(1, 1);
+    const [doubles, singles1, singles2] = first.tieMatchUps.map((tieMatchUp: any) => tieMatchUp.matchUpId);
+    enter(doubles, { winningSide: 1 });
+    enter(singles1, { matchUpStatus: WALKOVER, winningSide: 1 });
+    enter(singles2, won(2));
+    expect(stored(first.matchUpId).winningSide).toEqual(1);
+    enter(first.matchUpId, { matchUpStatus: WALKOVER, winningSide: 2 });
+    enter(dual(1, 2).matchUpId, { winningSide: 2 });
+    const final = dual(2, 1);
+    if (playedOn) enter(final.tieMatchUps[0].matchUpId, { matchUpStatus: DOUBLE_WALKOVER });
+    expect(stored(final.matchUpId).drawPositions).toContain(first.drawPositions[1]);
+    return { first, final, singles2 };
+  }
+
+  it.each([
+    ['its result entered again', won(2)],
+    ['relabelled an exit', { matchUpStatus: WALKOVER, winningSide: 2 }],
+  ])('%s: CANNOT_CHANGE_WINNING_SIDE, and the record is unchanged', (_label, outcome) => {
+    const { singles2 } = decidedAgainstItsLines(true);
+    const before = record();
+    const result = set(singles2, outcome);
+    expect(result.error).toEqual(CANNOT_CHANGE_WINNING_SIDE);
+    expect(record()).toEqual(before);
+  });
+
+  it('with the next dual not yet played on, the line hands the dual to side 1, who replaces side 2 there', () => {
+    const { first, final, singles2 } = decidedAgainstItsLines(false);
+    enter(singles2, won(2));
+    expect(stored(first.matchUpId).winningSide).toEqual(1);
+    const held = stored(final.matchUpId).drawPositions.filter(Boolean);
+    expect(held).toContain(first.drawPositions[0]);
+    expect(held).not.toContain(first.drawPositions[1]);
+  });
+});

@@ -1189,8 +1189,15 @@ function resolveTieMatchUpContext({
 
 /** rows 13 and 14: a winner named beneath a played-on downstream that is not the winner standing there */
 function changedWinnerRefusal(params) {
-  const { matchUp, winningSide, matchUpTieId, dualWinningSideChange } = params;
-  if (winningSide === matchUp.winningSide || (matchUpTieId && !dualWinningSideChange)) return undefined;
+  const { matchUp, winningSide, matchUpTieId, dualWinningSideChange, autoCalcDisabled } = params;
+  // A LINE WHOSE OWN WINNER STANDS CAN STILL CHANGE ITS DUAL'S: a dual decided by its own call holds a winner its lines
+  // need not project, and a line entered again (its winner unchanged, a score or an exit relabelled) tallies the dual
+  // afresh. Where the dual's winner has been played on that is a changed winner, refused as one; it was written, the
+  // dual handed to the other side with its first winner left standing in the next dual (2026-11-19, walk seed 13). A
+  // dual scored by hand is not tallied, so its lines change nothing there.
+  const dualChanges = !!matchUpTieId && !!dualWinningSideChange && !autoCalcDisabled;
+  if ((winningSide === matchUp.winningSide && !dualChanges) || (matchUpTieId && !dualWinningSideChange))
+    return undefined;
   // A double exit has no `winningSide` to change — it is the OUTCOME being changed, and naming
   // the missing field would contradict what the TD is looking at.
   const error = matchUp.winningSide ? CANNOT_CHANGE_WINNING_SIDE : CANNOT_CHANGE_OUTCOME;

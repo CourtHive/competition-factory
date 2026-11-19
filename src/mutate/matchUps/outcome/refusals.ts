@@ -303,7 +303,12 @@ function refuseDispatch(request: OutcomeRequest, view: OutcomeView): Refusal | u
     (!autoCalculated && winningSide && !view.matchUpTieId) || line?.projectedWinningSide || projected;
   if (matchUpWinner) {
     const effectiveWinningSide = view.isTeam && flags.enableAutoCalc ? projected : winningSide;
-    if (effectiveWinningSide === existing.winningSide || (view.matchUpTieId && !dualWinningSideChange))
+    // a line whose own winner stands still changes a dual its lines tally to the other side (`changedWinnerRefusal`)
+    const dualChanges = !!view.matchUpTieId && dualWinningSideChange && !line?.autoCalcDisabled;
+    if (
+      (effectiveWinningSide === existing.winningSide && !dualChanges) ||
+      (view.matchUpTieId && !dualWinningSideChange)
+    )
       return undefined;
     // rows 14 and 13, each written as its literal so `verify:outcome-spec` reads both. v1
     // (`winningSideWithDownstreamDependencies`) names the stored matchUp beside the winningSide (`namesMatchUp`)
