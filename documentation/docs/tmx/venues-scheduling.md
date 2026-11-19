@@ -260,6 +260,7 @@ tournamentEngine.bulkScheduleMatchUps({
 
 // Add actual times
 tournamentEngine.addMatchUpScheduleItems({
+  drawId,
   matchUpId,
   schedule: {
     startTime: '2024-06-15T14:05:00Z',
@@ -313,14 +314,16 @@ TMX builds this tab from these [courthive-components](https://courthive.github.i
 ### Complete Scheduling Setup
 
 ```js
-// 1. Create venue with courts
+// 1. Create venue with courts. Courts given inline are stored as given: without a courtId they get none, and
+// every matchUp below would be scheduled with courtId undefined. (addCourts generates ids.)
+const { UUID } = tools; // import { tools } from 'tods-competition-factory'
 const { venue } = tournamentEngine.addVenue({
   venue: {
     venueName: 'Main Club',
     courts: [
-      { courtName: 'Court 1', surfaceCategory: 'HARD' },
-      { courtName: 'Court 2', surfaceCategory: 'HARD' },
-      { courtName: 'Court 3', surfaceCategory: 'CLAY' },
+      { courtId: UUID(), courtName: 'Court 1', surfaceCategory: 'HARD' },
+      { courtId: UUID(), courtName: 'Court 2', surfaceCategory: 'HARD' },
+      { courtId: UUID(), courtName: 'Court 3', surfaceCategory: 'CLAY' },
     ],
   },
 });
