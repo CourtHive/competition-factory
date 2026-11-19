@@ -165,6 +165,8 @@ export type OutcomeView = {
     dualWinningSide?: number;
     projectedWinningSide?: number;
     autoCalcDisabled: boolean;
+    /** the dual is tallied by its lines' games or sets (`aggregateValue`, a `scoreValue` or a `setValue`), not by lines won */
+    talliedByScore?: boolean;
     /** the dual's score as `updateTieMatchUpScore` tallies it with this line's result in place (S7) */
     projectedScore?: OutcomeScore;
     /** the dual's lines with this line's result in place, as its round robin group's tally reads them (S7) */

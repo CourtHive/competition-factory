@@ -138,6 +138,9 @@ function reDirectsOrUnwinds(view: OutcomeView, { removing, correcting }: { remov
   if (!line) return false;
   const projectsDualWinner = line.projectedWinningSide === line.dualWinningSide;
   if (correcting && existing.winningSide !== line.dualWinningSide && projectsDualWinner) return true;
+  // ...and from the dual's winner to the other side under a tally that still names that winner (games or sets
+  // aggregated: the line keeps its score): the same clear, un-deciding and directing again
+  if (correcting && !!line.dualWinningSide && projectsDualWinner && line.talliedByScore) return true;
   if (!existing.winningSide && line.dualWinningSide && line.projectedWinningSide && !projectsDualWinner) return true;
   return removing && isDoubleExit(existing.matchUpStatus);
 }

@@ -1906,6 +1906,11 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
           projectedTieMatchUps,
         }),
         autoCalcDisabled: !!(dualMatchUp.disableAutoCalc ?? dualMatchUp._disableAutoCalc),
+        talliedByScore:
+          !!tieFormat?.winCriteria?.aggregateValue ||
+          !!tieFormat?.collectionDefinitions?.some(
+            (collection: { scoreValue?: number; setValue?: number }) => collection.scoreValue || collection.setValue,
+          ),
         dualRewrite: lineDualRewrite(
           { dualMatchUp, matchUpsMap, drawDefinition, structure, event },
           request,

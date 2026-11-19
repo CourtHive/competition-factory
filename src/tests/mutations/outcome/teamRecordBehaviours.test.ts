@@ -215,3 +215,43 @@ describe('a dual decided by its own call stays directed as its lines are played'
     );
   });
 });
+
+describe('a dual tallied by games: a line whose winner is named with no score keeps the score it holds', () => {
+  // the dual's winner is the side with more games across its lines (`aggregateValue`)
+  const tieFormat = {
+    winCriteria: { aggregateValue: true },
+    collectionDefinitions: [
+      { collectionId: 'doubles', collectionName: 'Doubles', matchUpType: 'DOUBLES', matchUpCount: 1, scoreValue: 1 },
+      { collectionId: 'singles', collectionName: 'Singles', matchUpType: 'SINGLES', matchUpCount: 2, scoreValue: 1 },
+    ].map((collection) => ({ ...collection, matchUpFormat: 'SET1-S:6/TB7' })),
+  };
+  const games = (winningSide: number, scoreString: string) =>
+    generateOutcomeFromScoreString({ scoreString, winningSide, matchUpFormat: 'SET1-S:6/TB7' }).outcome;
+
+  it.each([
+    ['the same winner', 2],
+    ['the other winner', 1],
+  ])(
+    '%s named alone on a line of a decided dual: the dual keeps its score, its winner and where it sent them',
+    (_label, winningSide) => {
+      generate({ drawSize: 4, tieFormat, tieFormatName: undefined });
+      const first = dual(1, 1);
+      const [doubles, singles1, singles2] = first.tieMatchUps.map((tieMatchUp: any) => tieMatchUp.matchUpId);
+      enter(doubles, games(2, '6-3'));
+      enter(singles1, games(1, '6-1'));
+      enter(singles2, games(2, '6-1'));
+      // 3 + 6 + 1 games against 6 + 1 + 6
+      const decided = stored(first.matchUpId);
+      expect([decided.winningSide, decided.score.scoreStringSide1]).toEqual([2, '10-13']);
+      const sent = stored(first.winnerMatchUpId).drawPositions.filter(Boolean);
+      expect(sent).toEqual([first.drawPositions[1]]);
+
+      enter(doubles, { winningSide });
+      const line = stored(doubles);
+      expect([line.winningSide, line.score.scoreStringSide1]).toEqual([winningSide, '3-6']);
+      const held = stored(first.matchUpId);
+      expect([held.matchUpStatus, held.winningSide, held.score.scoreStringSide1]).toEqual([COMPLETED, 2, '10-13']);
+      expect(stored(first.winnerMatchUpId).drawPositions.filter(Boolean)).toEqual(sent);
+    },
+  );
+});
