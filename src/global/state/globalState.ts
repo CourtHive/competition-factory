@@ -3,7 +3,11 @@ import syncGlobalState from './syncGlobalState';
 import type { NoticeState } from './noticeIdentity';
 
 // constants and types
-import { OUTCOME_PIPELINE_V1, OutcomePipelineMode, outcomePipelineModes } from '@Constants/outcomePipelineConstants';
+import {
+  OUTCOME_PIPELINE_DEFAULT,
+  OutcomePipelineMode,
+  outcomePipelineModes,
+} from '@Constants/outcomePipelineConstants';
 import { BRIDGE, LEGACY, NATIVE, SchemaWriteMode, schemaWriteModes } from '@Constants/schemaWriteModeConstants';
 import { STAMP_SCOPE_TOURNAMENT, StampScope, stampScopes } from '@Constants/stampScopeConstants';
 import { TournamentRecords, ResultType } from '@Types/factoryTypes';
@@ -102,7 +106,7 @@ const globalState: GlobalStateTypes = {
   },
   globalMethods: [],
   schemaWriteMode: NATIVE,
-  outcomePipeline: OUTCOME_PIPELINE_V1,
+  outcomePipeline: OUTCOME_PIPELINE_DEFAULT,
   stampScope: STAMP_SCOPE_TOURNAMENT,
   saveDrawDeletions: false,
   auditAuthorityServer: false,
@@ -391,7 +395,7 @@ export function getSchemaWriteMode(): SchemaWriteMode {
 
 export function setOutcomePipeline(mode?: OutcomePipelineMode): { success?: boolean; error?: ErrorType } {
   if (mode === undefined) {
-    globalState.outcomePipeline = OUTCOME_PIPELINE_V1;
+    globalState.outcomePipeline = OUTCOME_PIPELINE_DEFAULT;
     return { ...SUCCESS };
   }
   if (!outcomePipelineModes.includes(mode)) return { error: INVALID_VALUES };
