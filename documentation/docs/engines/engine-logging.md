@@ -25,10 +25,10 @@ setGlobalLog(customLoggingFunction);
 ```js
 import { globalState } from 'tods-competition-factory';
 const { setDevContext } = globalState;
-setDevContext({ perf: true, params: true, results: true, errors: true });
+setDevContext({ perf: true, params: true, result: true, errors: true });
 
 // - or -
-askEngine.devContext({ perf: true, params: true, results: true, errors: true });
+askEngine.devContext({ perf: true, params: true, result: true, errors: true });
 ```
 
 ## Logged Details
@@ -36,21 +36,22 @@ askEngine.devContext({ perf: true, params: true, results: true, errors: true });
 The values passed into `devContext` for the following attributes can be either boolean or an array of function names.
 
 - **errors**: log method errors (e.g. invalid parameters)
-- **results**: log results returned by function(s)
+- **result**: log results returned by function(s)
 - **params**: log values passed into function(s)
 
 ```js
 askEngine.devContext({ errors: true }); // log all errors reported by all methods
 askEngine.devContext({ params: true }); // log param values for all functions
-askEngine.devContext({ results: true }); // log results for all functions
+askEngine.devContext({ result: true }); // log results for all functions
 
-askEngine.devContext({ params: ['getParticipants'], results: true }); // log paramaters and results only four the `getParticipants` function
+askEngine.devContext({ params: ['getParticipants'], result: true }); // log parameters and results only for the `getParticipants` function
 ```
 
-For **perf** the value can be either boolean or a milliseconds threshold.
+For **perf** the value can be either `true` or a milliseconds threshold.
 
 - **perf**: log function execution time
 
 ```js
-askEngine.devContext({ perf: 200 }); // log function execution times greater than 200ms
+askEngine.devContext({ perf: true }); // log the execution time of every call
+askEngine.devContext({ perf: 200 }); // log execution times of 200ms or more
 ```

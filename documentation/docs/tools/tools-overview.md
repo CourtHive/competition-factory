@@ -84,9 +84,6 @@ they leave the governors and the engines: import them from `tools` (see
 - **isPowerOf2** - Check if number is a power of 2
 - **nearestPowerOf2** - Find nearest power of 2 to a number
 - **nextPowerOf2** - Find next power of 2 greater than number
-- **categoryCanContain** - Validate if one category can contain another (age ranges, ball types, etc.)
-- **tieFormatGenderValidityCheck** - Validate tie format against gender requirements
-- **validateTieFormat** - Comprehensive tie format validation
 
 ### ID & Code Generation
 
@@ -169,16 +166,6 @@ const matchUpsCSV = tools.JSON2CSV(matchUps, {
 
 // Deep copy with extension flattening
 const copy = tools.makeDeepCopy(participant, true); // convertExtensions = true
-```
-
-### Validation
-
-```js
-// Check if U16 category can be in U18 event
-const { valid } = tools.categoryCanContain({
-  category: { ageCategoryCode: 'U18' },
-  childCategory: { ageCategoryCode: 'U16' },
-});
 ```
 
 ## Key Features

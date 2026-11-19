@@ -4,6 +4,7 @@ import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParame
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { completeDrawMatchUps } from '@Generators/simulation/completeDrawMatchUps';
 import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
+import { getQualifyingEntryPlan } from '@Helpers/entries/getQualifyingEntryPlan';
 import { resolveCompletionOptions } from './resolveCompletionOptions';
 import { addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { applyOutcomes } from '@Mutate/simulation/applyOutcomes';
@@ -21,7 +22,6 @@ import { isFemale } from '@Validators/isFemale';
 import { findEvent } from '@Acquire/findEvent';
 import { generateRange } from '@Tools/arrays';
 import { isObject } from '@Tools/objects';
-import { coerceEven } from '@Tools/math';
 import { UUID } from '@Tools/UUID';
 import {
   addAdHocMatchUpsRecorded,
@@ -351,40 +351,21 @@ function addQualifyingEntries({
   event,
 }) {
   let qualifyingIndex = 0; // used to take slices of participants array
-  let roundTarget = 1;
 
-  const sequenceSort = (a, b) => a.stageSequence - b.stageSequence;
-  const roundTargetSort = (a, b) => a.roundTarget - b.roundTarget;
+  for (const { participantsCount, entryStageSequence, roundTarget } of getQualifyingEntryPlan(qualifyingProfiles)) {
+    const participantIds = qualifyingParticipantIds.slice(qualifyingIndex, qualifyingIndex + participantsCount);
+    const result = addEventEntriesRecorded({
+      entryStage: QUALIFYING,
+      entryStageSequence,
+      autoEntryPositions,
+      tournamentRecord,
+      participantIds,
+      roundTarget,
+      event,
+    });
+    if (result.error) return result;
 
-  for (const roundTargetProfile of qualifyingProfiles.sort(roundTargetSort)) {
-    roundTarget = roundTargetProfile.roundTarget || roundTarget;
-    let entryStageSequence = 1;
-    let qualifyingPositions;
-
-    for (const structureProfile of roundTargetProfile.structureProfiles.sort(sequenceSort)) {
-      const drawSize = structureProfile.drawSize || coerceEven(structureProfile.participantsCount);
-      const participantsCount = drawSize - (qualifyingPositions || 0); // minus qualifyingPositions
-      const participantIds = qualifyingParticipantIds.slice(qualifyingIndex, qualifyingIndex + participantsCount);
-      const result = addEventEntriesRecorded({
-        entryStage: QUALIFYING,
-        entryStageSequence,
-        autoEntryPositions,
-        tournamentRecord,
-        participantIds,
-        roundTarget,
-        event,
-      });
-
-      if (result.error) {
-        return result;
-      }
-
-      qualifyingPositions = structureProfile.qualifyingPositions;
-      qualifyingIndex += participantsCount;
-      entryStageSequence += 1;
-    }
-
-    roundTarget += 1;
+    qualifyingIndex += participantsCount;
   }
 
   return undefined;
@@ -890,6 +871,9 @@ export function generateEventWithDraw(params) {
   // so the supplied pool is used. Filtering by gender / eventType /
   // participantType still happens downstream via filterConsideredParticipants.
   // `gender: ANY` is "no gender constraint" — see getParticipantsCount.ts.
+  // `teamGenders` / `teamNames` are read only by buildTeamParticipants, so a TEAM draw that asks for either builds its
+  // own teams: the tournament pool's teams are dealt in order, gender-blind and named `Team N`.
+  const shapesTeams = eventType === TEAM && Boolean(drawProfile.teamGenders || drawProfile.teamNames?.length);
   const needsUniqueParticipants =
     !useExistingParticipants &&
     (participantsProfile?.participantsCount === 0 ||
@@ -898,6 +882,7 @@ export function generateEventWithDraw(params) {
       !tournamentRecord ||
       (gender && gender !== ANY) ||
       category ||
+      shapesTeams ||
       isHybrid);
 
   if (needsUniqueParticipants) {

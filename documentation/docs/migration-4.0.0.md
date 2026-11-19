@@ -133,7 +133,7 @@ by default, and `FactoryEngineTyped` is not exported. The snippet below records 
 readers migrating from that era.
 :::
 
-<!-- doc-imports:ignore — records a 3.8-era API that no longer exists -->
+<!-- doc-imports:ignore — records a 3.8-era API that no longer exists; doc-methods:ignore — a deliberate typo the type system rejects -->
 
 ```ts
 import { tournamentEngine, FactoryEngineTyped } from 'tods-competition-factory';

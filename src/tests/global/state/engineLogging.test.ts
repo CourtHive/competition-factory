@@ -174,6 +174,30 @@ describe('engineLogging', () => {
     expect(logCall.log.elapsed).toBe(100);
   });
 
+  it('logs every call with perf: true, including one that took 0ms', () => {
+    const mockLog = vi.fn();
+    setGlobalLog(mockLog);
+    setDevContext({ perf: true });
+
+    for (const elapsed of [0, 1, 250]) {
+      engineLogging({ engineType: 'test', methodName: 'testMethod', elapsed, params: {}, result: { success: true } });
+    }
+
+    expect(mockLog.mock.calls.map((call) => call[0].log.elapsed)).toEqual([0, 1, 250]);
+  });
+
+  it('logs a call taking exactly the perf threshold, and none below it', () => {
+    const mockLog = vi.fn();
+    setGlobalLog(mockLog);
+    setDevContext({ perf: 10 });
+
+    for (const elapsed of [9, 10, 11]) {
+      engineLogging({ engineType: 'test', methodName: 'testMethod', elapsed, params: {}, result: { success: true } });
+    }
+
+    expect(mockLog.mock.calls.map((call) => call[0].log.elapsed)).toEqual([10, 11]);
+  });
+
   it('does not log elapsed when below perf threshold', () => {
     const mockLog = vi.fn();
     setGlobalLog(mockLog);

@@ -25,14 +25,15 @@ A **venue** represents a physical location that contains one or more courts. Ven
   facilityId?: string;
 
   // Location information
-  address?: {
+  addresses?: {
     addressLine1?: string;
     addressLine2?: string;
     city?: string;
     state?: string;
     postalCode?: string;
-    country?: string;
-  };
+    countryCode?: string;
+    timeZone?: string;          // IANA timezone (e.g., 'America/New_York')
+  }[];
 
   latitude?: number;            // GPS coordinates
   longitude?: number;
@@ -70,14 +71,16 @@ const result = tournamentEngine.addVenue({
   venue: {
     venueName: 'Central Tennis Club',
     venueAbbreviation: 'CTC',
-    address: {
-      addressLine1: '123 Tennis Drive',
-      city: 'Austin',
-      state: 'TX',
-      postalCode: '78701',
-      country: 'USA',
-    },
-    timeZone: 'America/Chicago',
+    addresses: [
+      {
+        addressLine1: '123 Tennis Drive',
+        city: 'Austin',
+        state: 'TX',
+        postalCode: '78701',
+        countryCode: 'USA',
+        timeZone: 'America/Chicago',
+      },
+    ],
   },
 });
 
@@ -126,13 +129,13 @@ A **court** represents an individual playing surface within a venue. Courts have
   // Court attributes
   altitude?: number;            // Elevation in meters
   discipline?: string;          // The sport this court is for — see Court Discipline below
-  surfaceType?: string;         // 'HARD', 'CLAY', 'GRASS', 'CARPET', etc.
-  surfaceCategory?: string;     // 'INDOOR', 'OUTDOOR', 'COVERED'
+  surfaceCategory?: string;     // 'ARTIFICIAL', 'CARPET', 'CLAY', 'GRASS', 'HARD'
+  surfaceType?: string;         // free text, e.g. a product name
+  indoorOutdoor?: string;       // 'INDOOR', 'OUTDOOR', 'MIXED'
   courtDimensions?: string;     // Dimensions description
 
-  // Lighting and features
-  lighting?: boolean;           // Has lights for night play
-  lightingType?: string;        // 'LED', 'Metal Halide', etc.
+  // Lighting
+  floodlit?: boolean;           // Has lights for night play (lighting/lightingType are not Court attributes)
 
   // Scheduling
   dateAvailability?: DateAvailability[];  // When court is available
@@ -170,35 +173,31 @@ Two things it deliberately does not do:
 
 ### Creating Courts
 
+`addCourts` creates several courts from a count (`courtsCount`) or from names (`courtNames`); a call with neither
+returns `ERR_MISSING_COURTS_INFO`. It returns the new `courtIds`:
+
 ```js
 // Add courts to a venue
 const result = tournamentEngine.addCourts({
   venueId: 'venue-uuid',
-  courts: [
-    {
-      courtName: 'Court 1',
-      surfaceType: 'HARD',
-      surfaceCategory: 'OUTDOOR',
-      lighting: true,
-    },
-    {
-      courtName: 'Court 2',
-      surfaceType: 'HARD',
-      surfaceCategory: 'OUTDOOR',
-      lighting: true,
-    },
-    {
-      courtName: 'Stadium Court',
-      surfaceType: 'HARD',
-      surfaceCategory: 'OUTDOOR',
-      lighting: true,
-      notes: 'Priority court for finals',
-    },
-  ],
+  courtNames: ['Court 1', 'Court 2'],
 });
 
-const { courts } = result;
-console.log(courts.map((c) => c.courtId)); // Generated UUIDs
+const { courtIds } = result;
+console.log(courtIds); // Generated UUIDs
+
+// Add one court with its attributes
+const { court } = tournamentEngine.addCourt({
+  venueId: 'venue-uuid',
+  court: {
+    courtName: 'Stadium Court',
+    surfaceCategory: 'HARD',
+    indoorOutdoor: 'OUTDOOR',
+    floodlit: true,
+    notes: 'Priority court for finals',
+  },
+});
+console.log(court.courtId); // Generated UUID
 ```
 
 ### Modifying Courts
@@ -211,18 +210,13 @@ tournamentEngine.modifyCourt({
   courtId: 'court-uuid',
   modifications: {
     courtName: 'Centre Court',
-    lighting: true,
+    floodlit: true,
     notes: 'Stadium seating - 500 capacity',
   },
 });
 
-// Move court to different venue
-tournamentEngine.modifyCourt({
-  courtId: 'court-uuid',
-  modifications: {
-    venueId: 'new-venue-uuid',
-  },
-});
+// A court cannot be moved to another venue: `venueId` is not a modifiable attribute
+// (a modification naming only `venueId` returns ERR_NO_VALID_ATTRIBUTES)
 
 // Delete courts
 tournamentEngine.deleteCourts({
@@ -285,15 +279,11 @@ When `date` is **not specified**, the availability applies to **all tournament d
 // Courts available 9 AM to 9 PM every day
 tournamentEngine.addCourts({
   venueId: 'venue-uuid',
-  courts: [
+  courtNames: ['Court 1'],
+  dateAvailability: [
     {
-      courtName: 'Court 1',
-      dateAvailability: [
-        {
-          startTime: '09:00',
-          endTime: '21:00',
-        },
-      ],
+      startTime: '09:00',
+      endTime: '21:00',
     },
   ],
 });
@@ -649,13 +639,16 @@ Matches can be assigned to venues without specific courts:
 // Assign venue only (court TBD)
 tournamentEngine.assignMatchUpVenue({
   matchUpId: 'match-uuid',
+  drawId: 'draw-uuid',
   venueId: 'venue-uuid',
 });
 
 // Assign specific court
 tournamentEngine.assignMatchUpCourt({
   matchUpId: 'match-uuid',
+  drawId: 'draw-uuid',
   courtId: 'court-uuid',
+  courtDayDate: '2024-03-18',
 });
 ```
 
@@ -693,17 +686,14 @@ const practiceVenue = tournamentEngine.addVenue({
 // Add courts to each venue
 tournamentEngine.addCourts({
   venueId: mainVenue.venue.venueId,
-  courts: [{ courtName: 'Centre Court' }, { courtName: 'Court 1' }, { courtName: 'Court 2' }],
+  courtNames: ['Centre Court', 'Court 1', 'Court 2'],
+  dateAvailability: [{ startTime: '09:00', endTime: '21:00' }],
 });
 
 tournamentEngine.addCourts({
   venueId: practiceVenue.venue.venueId,
-  courts: [
-    { courtName: 'Practice Court 1' },
-    { courtName: 'Practice Court 2' },
-    { courtName: 'Practice Court 3' },
-    { courtName: 'Practice Court 4' },
-  ],
+  courtNames: ['Practice Court 1', 'Practice Court 2', 'Practice Court 3', 'Practice Court 4'],
+  dateAvailability: [{ startTime: '09:00', endTime: '21:00' }],
 });
 ```
 
@@ -716,15 +706,15 @@ tournamentEngine.addCourts({
 ```js
 // Schedule early rounds at practice venue
 tournamentEngine.scheduleMatchUps({
-  venueId: practiceVenue.venue.venueId,
-  date: '2024-03-18',
+  venueIds: [practiceVenue.venue.venueId],
+  scheduleDate: '2024-03-18',
   matchUpIds: earlyRoundMatchUpIds,
 });
 
 // Schedule finals at main stadium
 tournamentEngine.scheduleMatchUps({
-  venueId: mainVenue.venue.venueId,
-  date: '2024-03-24',
+  venueIds: [mainVenue.venue.venueId],
+  scheduleDate: '2024-03-24',
   matchUpIds: finalsMatchUpIds,
 });
 ```
@@ -793,15 +783,14 @@ Common surface types:
 
 ### Lighting
 
-Courts with lighting can host evening matches:
+Floodlit courts can host evening matches:
 
 **API Reference:** [addVenue](/docs/governors/venue-governor#addvenue)
 
 ```js
 {
   courtName: 'Court 1',
-  lighting: true,
-  lightingType: 'LED',
+  floodlit: true,
   dateAvailability: [
     {
       // Can schedule until 11 PM with lights
@@ -858,7 +847,7 @@ Link to court/venue information:
 - **Priority courts first**: Stadium/Centre courts at top of list
 - **Group by surface**: Keep same surface types together
 - **Indoor vs outdoor**: Separate indoor from outdoor for weather planning
-- **Lighting indication**: Clearly mark courts with lights for evening scheduling
+- **Lighting indication**: Mark courts with lights (`floodlit: true`) for evening scheduling
 
 ### Multi-Venue Strategy
 
@@ -902,7 +891,7 @@ Link to court/venue information:
 // Outdoor courts (weather dependent)
 {
   courtName: 'Court 1',
-  surfaceCategory: 'OUTDOOR',
+  indoorOutdoor: 'OUTDOOR',
   dateAvailability: [
     {
       startTime: '09:00',
@@ -914,7 +903,7 @@ Link to court/venue information:
 // Indoor courts (backup for weather)
 {
   courtName: 'Indoor Court A',
-  surfaceCategory: 'INDOOR',
+  indoorOutdoor: 'INDOOR',
   dateAvailability: [
     {
       startTime: '08:00',

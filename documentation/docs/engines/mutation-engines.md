@@ -391,7 +391,7 @@ globalState.setDevContext({
   errors: true, // Log errors
   params: true, // Log method parameters
   result: true, // Log method results
-  perf: 100, // Log methods taking >100ms
+  perf: 100, // Log methods taking 100ms or more (true: every method)
 });
 
 tournamentEngine.setState(tournamentRecord);
@@ -407,7 +407,7 @@ tournamentEngine.generateDrawDefinition({ drawSize: 32 });
 - `errors: true` - Log all errors
 - `params: true | ['methodName']` - Log parameters for all or specific methods
 - `result: true | ['methodName']` - Log results for all or specific methods
-- `perf: number` - Log methods exceeding threshold (ms)
+- `perf: true | number` - Log elapsed time for every method (`true`) or for methods taking at least that many ms
 - `exclude: ['methodName']` - Exclude specific methods from logging
 
 ---

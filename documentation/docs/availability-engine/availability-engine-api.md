@@ -439,7 +439,17 @@ interface CourtSchedulingSummary {
   scheduledMinutes: number; // SCHEDULED + LOCKED segments
   availableMinutes: number; // AVAILABLE segments (unblocked, unscheduled)
   blockedMinutes: number; // All other block types
+  minutesByType: Partial<Record<BlockType, number>>; // Every segment's minutes, keyed by its status
 }
+```
+
+`minutesByType` splits the three buckets by block type, so a caller can report practice separately from maintenance
+without reclassifying segments itself. Its values add up to the three bucket totals, and types with no time on the
+court are absent.
+
+```js
+const { minutesByType } = engine.getCourtSchedulingSummary(courtRef);
+const practiceMinutes = minutesByType.PRACTICE ?? 0;
 ```
 
 ### getDayBlocks

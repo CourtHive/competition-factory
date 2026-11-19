@@ -1,4 +1,5 @@
 import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
+import { eventGeneratesOwnParticipants } from './eventGeneratesOwnParticipants';
 import { processTieFormat } from './processTieFormat';
 
 // constants
@@ -89,11 +90,14 @@ export function getParticipantsCount({ participantsProfile, eventProfiles, drawP
     } = eventProfile;
 
     if (drawProfiles) {
+      // an event that generates its own participants is not drawn from the tournament pool
+      const eventUniqueParticipants = eventGeneratesOwnParticipants(eventProfile);
       for (const drawProfile of drawProfiles) {
         const { tieFormatName, tieFormat } = drawProfile;
 
         processDrawProfile({
           ...drawProfile,
+          uniqueParticipants: drawProfile.uniqueParticipants || eventUniqueParticipants,
           tieFormatName: tieFormatName || eventTieFormatName,
           tieFormat: tieFormat || eventTieFormat,
           eventType,

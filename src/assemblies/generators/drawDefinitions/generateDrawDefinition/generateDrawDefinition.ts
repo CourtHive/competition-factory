@@ -204,7 +204,8 @@ function generateDrawDefinitionDraft(params: GenerateDrawDefinitionArgs): Result
   }
 
   if (targetMatchUpIds?.length) {
-    remapDrawDefinitionMatchUpIds({ targetMatchUpIds, drawDefinition });
+    const remapResult = remapDrawDefinitionMatchUpIds({ targetMatchUpIds, drawDefinition });
+    if (remapResult.error) return decorateResult({ result: remapResult, stack });
   }
 
   const limitsResult = checkDrawCompositionLimits({

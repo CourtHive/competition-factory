@@ -396,7 +396,7 @@ const formatted = tools.dateTime.formatDate(new Date(), '-', 'YMD');
 const future = tools.dateTime.addDays(new Date(), 7);
 
 // Get date range
-const dates = tools.dateTime.generateDateRange('2024-01-01', '2024-01-07');
+const dates = tools.generateDateRange('2024-01-01', '2024-01-07');
 ```
 
 ### isValidEmbargoDate
@@ -923,14 +923,16 @@ tools.visualizeScheduledMatchUps({
 
 ### parseScoreString
 
-Parse a score string into structured data.
+Parse a score string into set objects. Exported by `scoreGovernor`, not `tools`.
 
 ```js
-const parsed = tools.parseScoreString({
+import { scoreGovernor } from 'tods-competition-factory';
+
+const sets = scoreGovernor.parseScoreString({
   scoreString: '6-4 3-6 7-6(3)',
   matchUpFormat: 'SET3-S:6/TB7',
 });
-// Result: { sets: [...], winningSide: 1, ... }
+// Result: [{ side1Score: 6, side2Score: 4, winningSide: 1, setNumber: 1 }, ...]
 ```
 
 ---

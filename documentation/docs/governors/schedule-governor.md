@@ -832,7 +832,7 @@ Clears schedule information from a specific matchUp.
 engine.clearMatchUpSchedule({
   matchUpId, // required
   drawId, // optional - optimizes lookup, triggers draw modification notice
-  scheduleAttributes, // optional - array of specific attributes to clear
+  scheduleAttributes, // optional - timeItem types to clear (timeItemConstants); default: every schedule item
 });
 ```
 
@@ -850,11 +850,13 @@ engine.clearMatchUpSchedule({
 **Clear Specific Attributes**:
 
 ```js
-import { scheduleConstants } from 'tods-competition-factory';
+import { timeItemConstants } from 'tods-competition-factory';
 
+// clears the time and keeps the date
 engine.clearMatchUpSchedule({
   matchUpId: 'match-123',
-  scheduleAttributes: [scheduleConstants.SCHEDULED_TIME, scheduleConstants.SCHEDULED_DATE],
+  drawId: 'draw-456',
+  scheduleAttributes: [timeItemConstants.SCHEDULED_TIME],
 });
 ```
 
@@ -868,10 +870,15 @@ Clears schedules from multiple matchUps based on criteria.
 engine.clearScheduledMatchUps({
   scheduledDates, // optional - array of dates to clear
   venueIds, // optional - array of venueIds to clear
-  scheduleAttributes, // optional - which attributes to clear
+  scheduleAttributes, // optional - which matchUps qualify (see below); default ['scheduledDate', 'scheduledTime', 'courtOrder']
   ignoreMatchUpStatuses, // optional - matchUp statuses to skip
 });
 ```
+
+`scheduleAttributes` selects matchUps, it does not limit what is cleared: a matchUp qualifies when its schedule has
+any of the listed attributes (schedule field names such as `'scheduledTime'`), and **every** schedule attribute of a
+qualifying matchUp is cleared, its date included. To clear only some attributes, use `clearMatchUpSchedule` per
+matchUp.
 
 #### clearScheduledMatchUps Examples
 
@@ -891,14 +898,12 @@ engine.clearScheduledMatchUps({
 });
 ```
 
-**Clear Only Times (Keep Dates)**:
+**Clear Only the MatchUps That Have a Time** (their dates are cleared too):
 
 ```js
-import { scheduleConstants } from 'tods-competition-factory';
-
 engine.clearScheduledMatchUps({
   scheduledDates: ['2024-06-15'],
-  scheduleAttributes: [scheduleConstants.SCHEDULED_TIME],
+  scheduleAttributes: ['scheduledTime'],
 });
 ```
 
@@ -962,12 +967,17 @@ enforcement. Consumers should prefer `isScheduleLocked`.
 
 ### courtGridRows
 
-Returns court grid data for pro scheduling visualization.
+Builds court grid rows for pro scheduling visualization from courts data, e.g. the `courtsData` returned by
+`competitionScheduleMatchUps`.
 
 ```js
-const { rows } = engine.courtGridRows({
-  scheduleDate, // required
+const { rows, courtPrefix } = engine.courtGridRows({
+  courtsData, // required - array of court objects, each with a matchUps array
+  scheduledDate, // optional - when given, rows blocked by grid bookings on that date are marked isBlocked
+  minRowsCount, // optional - minimum number of rows
+  courtPrefix, // optional - prefix of each row's court keys; defaults to 'C|'
 });
+// rows: [{ rowId: 'rowId-1', 'C|0': matchUp or { schedule }, 'C|1': ... }]
 ```
 
 ---
@@ -1011,12 +1021,16 @@ const { bookings } = engine.generateBookings({
 
 ### generateVirtualCourts
 
-Creates virtual courts for scheduling simulation.
+Creates virtual courts for one date, with bookings allocated to them, for scheduling simulation.
 
 ```js
-const { courts } = engine.generateVirtualCourts({
-  venueId, // required
-  courtsCount, // required
+const { virtualCourts, assignedBookings, unbookedMatchUpIds } = engine.generateVirtualCourts({
+  courts, // required - non-empty array of courts
+  scheduleDate, // required - date string
+  bookings, // optional - courtId-less bookings are allocated to available court time
+  periodLength, // optional - defaults to 30
+  remainingScheduleTimes, // optional - per-court end times already allocated
+  clearScheduleDates, // optional - true, or an array of dates, to ignore bookings on scheduleDate
 });
 ```
 
@@ -1250,12 +1264,11 @@ Confirm the result by re-running `proConflicts` — every normally-placed row is
 
 ### publicFindCourt
 
-Finds a court with privacy policies applied for public APIs.
+Finds a court and its venue, returning deep copies. No privacy policy is applied.
 
 ```js
-const { court } = engine.publicFindCourt({
+const { court, venue } = engine.publicFindCourt({
   courtId, // required
-  policyDefinitions, // optional
 });
 ```
 

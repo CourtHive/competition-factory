@@ -110,36 +110,37 @@ Match C:
 
 ### ITF Follow By Implementation
 
-World Tennis (formerly the ITF) and many national federations use a standardized follow-by system:
+World Tennis (formerly the ITF) and many national federations use a standardized follow-by system. In the factory a
+follow-by court is a `courtOrder` per matchUp plus **time modifiers** on its schedule (`timeItemConstants`):
+`FOLLOWED_BY` for a match that follows the one before it, and `NOT_BEFORE` with a `scheduledTime` for a
+"not before" start.
 
 ```js
-// ITF-style scheduling
-const scheduleProfile = {
-  venues: [
-    {
-      venueId: 'centre-court',
-      venueName: 'Centre Court',
-      rounds: [
-        {
-          matchUpId: 'match-1',
-          scheduledTime: '11:00',
-          courtId: 'centre-court-1',
-        },
-        {
-          matchUpId: 'match-2',
-          followMatchUpId: 'match-1', // Follows match-1
-          courtId: 'centre-court-1',
-        },
-        {
-          matchUpId: 'match-3',
-          followMatchUpId: 'match-2', // Follows match-2
-          notBeforeTime: '16:00', // But not before 4 PM
-          courtId: 'centre-court-1',
-        },
-      ],
-    },
-  ],
-};
+import { timeItemConstants } from 'tods-competition-factory';
+const { FOLLOWED_BY, NOT_BEFORE } = timeItemConstants;
+
+const centreCourt = { venueId, courtId, scheduledDate: '2024-06-15' };
+
+// 11:00 start
+tournamentEngine.addMatchUpScheduleItems({
+  drawId,
+  matchUpId: 'match-1',
+  schedule: { ...centreCourt, courtOrder: 1, scheduledTime: '11:00' },
+});
+
+// follows match-1
+tournamentEngine.addMatchUpScheduleItems({
+  drawId,
+  matchUpId: 'match-2',
+  schedule: { ...centreCourt, courtOrder: 2, timeModifiers: [FOLLOWED_BY] },
+});
+
+// follows match-2, but not before 4 PM
+tournamentEngine.addMatchUpScheduleItems({
+  drawId,
+  matchUpId: 'match-3',
+  schedule: { ...centreCourt, courtOrder: 3, scheduledTime: '16:00', timeModifiers: [NOT_BEFORE] },
+});
 ```
 
 ### Follow By for TV Programming
@@ -206,65 +207,42 @@ matchAssignments.forEach(({ matchUpId, courtId, scheduledTime }) => {
 
 ### Follow By Implementation
 
+The factory has no "follow" link between matchUps: an order of play is expressed as `courtOrder` on one court and
+date. A matchUp with a `courtOrder` and no `scheduledTime` follows the one before it on that court.
+
+**API Reference:** [addMatchUpScheduleItems](/docs/governors/schedule-governor#addmatchupscheduleitems)
+
 ```js
 // Stadium court with follow-by scheduling
 const stadiumSchedule = [
   {
     matchUpId: 'sf-match-1',
+    drawId: 'draw-123',
     courtId: 'centre-court',
-    scheduledTime: '13:00',
     scheduledDate: '2024-03-23',
+    scheduledTime: '13:00',
+    courtOrder: 1,
   },
   {
     matchUpId: 'sf-match-2',
+    drawId: 'draw-123',
     courtId: 'centre-court',
     scheduledDate: '2024-03-23',
-    // No scheduledTime - will follow sf-match-1
-    extensions: [
-      {
-        name: 'followMatchUp',
-        value: { matchUpId: 'sf-match-1' },
-      },
-    ],
+    courtOrder: 2, // No scheduledTime - follows sf-match-1
   },
   {
     matchUpId: 'final-match',
+    drawId: 'draw-123',
     courtId: 'centre-court',
     scheduledDate: '2024-03-24',
     scheduledTime: '15:00', // Not Before 3 PM
-    extensions: [
-      {
-        name: 'followMatchUp',
-        value: {
-          matchUpId: 'sf-match-2',
-          notBeforeTime: '15:00',
-        },
-      },
-    ],
+    courtOrder: 1,
   },
 ];
 
-// Apply follow-by schedule
-stadiumSchedule.forEach((schedule) => {
-  const { matchUpId, courtId, scheduledDate, scheduledTime, extensions } = schedule;
-
-  // Assign court
-  tournamentEngine.assignMatchUpCourt({ matchUpId, courtId });
-
-  // Add date
-  tournamentEngine.addMatchUpScheduledDate({ matchUpId, scheduledDate });
-
-  // Add time if specified (for first match or not-before matches)
-  if (scheduledTime) {
-    tournamentEngine.addMatchUpScheduledTime({ matchUpId, scheduledTime, scheduledDate });
-  }
-
-  // Add follow-by extension
-  if (extensions) {
-    extensions.forEach((extension) => {
-      tournamentEngine.addExtension({ matchUpId, extension });
-    });
-  }
+// Apply follow-by schedule: court, date, time and order in one call per matchUp
+stadiumSchedule.forEach(({ matchUpId, drawId, ...schedule }) => {
+  tournamentEngine.addMatchUpScheduleItems({ matchUpId, drawId, schedule });
 });
 ```
 
@@ -275,8 +253,6 @@ stadiumSchedule.forEach((schedule) => {
 ### Standard Grid
 
 Fixed 2-hour slots for predictability:
-
-**API Reference:** [addExtension](/docs/governors/tournament-governor#addextension)
 
 ```js
 {
@@ -376,13 +352,14 @@ Prioritize match assignments:
 // Priority assignment
 const assignments = [];
 
-// 1. Finals/semifinals on centre court with follow-by
+// 1. Finals/semifinals on centre court with follow-by: a court order, the first at a time and the rest
+// FOLLOWED_BY (timeItemConstants) — the schedule attributes addMatchUpScheduleItems / bulkScheduleMatchUps take
 featuredMatches.forEach((matchUpId, index) => {
   assignments.push({
     matchUpId,
     courtId: 'centre-court',
-    scheduledTime: index === 0 ? '14:00' : null,
-    followMatchUpId: index > 0 ? featuredMatches[index - 1] : null,
+    courtOrder: index + 1,
+    ...(index === 0 ? { scheduledTime: '14:00' } : { timeModifiers: [FOLLOWED_BY] }),
   });
 });
 
@@ -416,7 +393,8 @@ remainingMatches.forEach((matchUpId, index) => {
 Check for conflicts and constraints:
 
 ```js
-// Validate schedule
+// Validate schedule: validateProSchedule and resolveScheduleConflicts are your application's own functions, not
+// factory methods (for the factory's own conflict checks, see Scheduling Conflicts)
 const validation = validateProSchedule(assignments, {
   checkRecoveryTimes: true,
   checkDailyLimits: true,
@@ -755,7 +733,7 @@ const { matchUps } = engine.allCompetitionMatchUps({
 const result = engine.proAutoSchedule({
   scheduledDate: '2024-03-20',
   matchUps,
-  venueIds: ['venue-1'], // Optional
+  courtIds: ['court-1', 'court-2'], // Optional - defaults to every court
 });
 
 // Result includes conflict-free schedule

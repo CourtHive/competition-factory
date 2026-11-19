@@ -263,8 +263,7 @@ seedingProfile: {
   drawDefinition: {
     drawId: 'uuid',
     drawType: 'SINGLE_ELIMINATION',
-    drawSize: 32,
-    structures: [...],  // Array of structure definitions
+    structures: [...],  // Array of structure definitions (drawSize is not stored on the drawDefinition)
     links: [...],       // Participant flow between structures
     entries: [...]      // Draw entries with position assignments
   },

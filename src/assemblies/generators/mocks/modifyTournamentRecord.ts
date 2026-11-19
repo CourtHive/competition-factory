@@ -6,6 +6,7 @@ import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventTyp
 import { getStageParticipants } from '@Query/drawDefinition/getStageParticipants';
 import { generateFlightDrawDefinitions } from './generateFlightDrawDefinitions';
 import { addTournamentParticipants } from './addTournamentParticipants';
+import { eventGeneratesOwnParticipants } from './eventGeneratesOwnParticipants';
 import { generateEventParticipants } from './generateEventParticipants';
 import { generateEventWithFlights } from './generateEventWithFlights';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
@@ -94,7 +95,9 @@ function processExistingEvent({
     eventType;
 
   if (drawProfiles) {
+    const uniqueParticipants = eventGeneratesOwnParticipants(eventProfile);
     const { stageParticipantsCount, uniqueParticipantsCount, uniqueParticipantStages } = getStageParticipantsCount({
+      uniqueParticipants,
       drawProfiles,
       category,
       gender,
@@ -125,6 +128,7 @@ function processExistingEvent({
     });
 
     let result: any = generateFlights({
+      uniqueParticipants,
       uniqueDrawParticipants,
       autoEntryPositions: eventProfile.autoEntryPositions,
       stageParticipants,

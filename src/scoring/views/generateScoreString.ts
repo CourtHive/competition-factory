@@ -1,7 +1,7 @@
 import { withoutZeroZeroTiebreak } from '@Helpers/matchUpFormatCode/setRules/tiebreakSetShape';
 import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
-import { isNumeric } from '@Tools/math';
+import { isNumeric } from '@Tools/numeric';
 
 // constants and types
 import { ErrorType, MISSING_VALUE } from '@Constants/errorConditionConstants';

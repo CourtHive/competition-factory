@@ -387,10 +387,11 @@ const { participants } = tournamentEngine.getParticipants({
     { participantId: 'player-2', person: { ... } }
   ],
   matchUps: [...],               // Added by withMatchUps
-  statistics: {                  // Added by withStatistics
-    matchUpsWon: 5,
-    matchUpsLost: 2
-  }
+  statistics: [                  // Added by withStatistics
+    { statCode: 'winRatio', numerator: 5, denominator: 7, statValue: 0.714 },
+    { statCode: 'winRatio.SINGLES', numerator: 0, denominator: 0, statValue: 0 },
+    { statCode: 'winRatio.DOUBLES', numerator: 5, denominator: 7, statValue: 0.714 }
+  ]
 }
 ```
 
@@ -449,44 +450,50 @@ participants.forEach((pair) => {
 
 Find all grouping participants (PAIR, TEAM, GROUP) that include a specific individual:
 
-**API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
+**API Reference:** [getParticipantMembership](/docs/governors/query-governor#getparticipantmembership)
+
+The result is keyed by participantType, each key holding the grouping participants themselves (not ids); a type
+the individual belongs to none of is absent, so default each key:
 
 ```js
 const {
-  PAIR: doublesParticipantIds,
-  GROUP: groupParticipantIds,
-  TEAM: teamParticipantIds,
+  PAIR: pairParticipants = [],
+  GROUP: groupParticipants = [],
+  TEAM: teamParticipants = [],
 } = tournamentEngine.getParticipantMembership({
   participantId: 'player-123',
 });
 
-console.log(`Player appears in ${doublesParticipantIds.length} pairs`);
-console.log(`Player appears in ${teamParticipantIds.length} teams`);
+console.log(`Player appears in ${pairParticipants.length} pairs`);
+console.log(`Player appears in ${teamParticipants.length} teams`);
 ```
 
 ## Sign-In Management
 
 Track participant availability for matches:
 
-**API Reference:** [getParticipantMembership](/docs/governors/query-governor#getparticipantmembership)
+**API Reference:** [checkInParticipant](/docs/governors/matchup-governor#checkinparticipant)
 
 ```js
 // Check in a participant
 tournamentEngine.checkInParticipant({
   participantId: 'player-123',
   matchUpId: 'matchup-456',
+  drawId: 'draw-789',
 });
 
 // Check out a participant
 tournamentEngine.checkOutParticipant({
   participantId: 'player-123',
   matchUpId: 'matchup-456',
+  drawId: 'draw-789',
 });
 
 // Toggle sign-in state
 tournamentEngine.toggleParticipantCheckInState({
   participantId: 'player-123',
   matchUpId: 'matchup-456',
+  drawId: 'draw-789',
 });
 ```
 
@@ -564,33 +571,50 @@ mutation. Deleting a participant prunes them from both `individualParticipantIds
 
 ## Privacy and Data Protection
 
-Use Participant Policies to control which participant data is exposed:
+A [Participant Policy](/docs/policies/participantPolicy) controls which participant attributes leave the engine. It is
+an **attribute template** under `policyDefinitions.participant.participant`, and it is an **allow-list**:
 
-**API Reference:** [checkInParticipant](/docs/governors/matchup-governor#checkinparticipant)
+- an attribute is returned only when the template sets it to `true`; an attribute the template leaves out is dropped;
+- a nested object filters the nested object, and every element of an array (`individualParticipants`, `teams`);
+- `'*': true` keeps every attribute the template does not set to `false`, so a policy can deny a few attributes and
+  keep the rest.
 
-**API Reference:** [checkOutParticipant](/docs/governors/matchup-governor#checkoutparticipant)
-
-**API Reference:** [toggleParticipantCheckInState](/docs/governors/matchup-governor#toggleparticipantcheckinstate)
+The built-in `POLICY_PRIVACY_DEFAULT` keeps names, nationality, rankings and ratings, and drops contacts, addresses,
+birth dates, sex and person identifiers:
 
 ```js
-const participantPolicy = {
-  participant: {
-    // Hide birth dates
-    excludeBirthDates: true,
-    // Hide specific attributes
-    excludeAttributes: ['person.nationalityCode'],
-    // Only show initials
-    initialsOnly: true,
-  },
-};
+import { fixtures, tournamentEngine } from 'tods-competition-factory';
 
 const { participants } = tournamentEngine.getParticipants({
-  policyDefinitions: { participant: participantPolicy },
+  policyDefinitions: fixtures.policies.POLICY_PRIVACY_DEFAULT,
 });
-
-// Results respect privacy settings
-// { person: { standardFamilyName: 'F.', standardGivenName: 'R.' } }
 ```
+
+To deny specific attributes and keep everything else, use the wildcard:
+
+```js
+const { participants } = tournamentEngine.getParticipants({
+  policyDefinitions: {
+    participant: {
+      participant: {
+        '*': true,
+        contacts: false,
+        person: { '*': true, addresses: false, birthDate: false, contacts: false },
+      },
+    },
+  },
+});
+```
+
+:::warning
+The template is not validated. A key it does not recognize is not an error: a template whose keys match no attribute
+returns every participant as `{}`, and a policy without a `participant` template filters nothing at all. Check the
+output of a new policy before publishing with it.
+:::
+
+The policy applies wherever participants leave the engine, not only `getParticipants`: hydrated
+`matchUp.sides[].participant`, participant schedules and the `participantMap`. See
+[Participant Policy](/docs/policies/participantPolicy#where-the-policy-is-applied).
 
 ## Related Documentation
 

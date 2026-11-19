@@ -63,7 +63,7 @@ Where a mutation creates an entity the caller never named, it accepts a **pool**
 from rather than a single id:
 
 ```js
-engine.addFlights({ eventId, flightsCount: 3, uuids: ['f-1', 'f-2', 'f-3'] });
+engine.generateFlightProfile({ eventId, flightsCount: 3, uuids: ['f-1', 'f-2', 'f-3'] });
 ```
 
 A pool rather than a named id, because the caller cannot name something it did not ask to

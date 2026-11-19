@@ -314,7 +314,7 @@ const { matchUps } = tournamentEngine.allCompetitionMatchUps({
 
 // Now can use proAutoSchedule which needs participant context
 const result = tournamentEngine.proAutoSchedule({
-  scheduledDate: '2024-06-01',
+  scheduledDate: tournamentRecord.startDate, // a date within the mock's dates
   matchUps,
 });
 ```
@@ -342,7 +342,7 @@ describe('Competition Management', () => {
     const result = tournamentEngine.addMatchUpScheduleItems({
       matchUpId: matchUp.matchUpId,
       drawId: matchUp.drawId,
-      schedule: { scheduledDate: '2024-06-01' },
+      schedule: { scheduledDate: tournamentRecord.startDate }, // a date within the mock's dates
     });
 
     expect(result.success).toBe(true);
@@ -395,7 +395,7 @@ const { matchUps } = tournamentEngine.allCompetitionMatchUps({
 });
 
 const result = tournamentEngine.proAutoSchedule({
-  scheduledDate: '2024-06-01',
+  scheduledDate: tournamentRecord.startDate, // a date within the mock's dates
   matchUps,
 });
 ```

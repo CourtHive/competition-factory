@@ -11,7 +11,7 @@ The **Voluntary Consolation Policy** (`POLICY_TYPE_VOLUNTARY_CONSOLATION`) contr
 - Limiting consolation entry to early-round losers
 - Preventing strong players from dominating consolation
 - Setting maximum wins before consolation ineligibility
-- Defining finishing round limits for consolation entry
+- Limiting how many matchUps a participant has played
 - Ensuring competitive balance in consolation draws
 
 ---
@@ -21,17 +21,34 @@ The **Voluntary Consolation Policy** (`POLICY_TYPE_VOLUNTARY_CONSOLATION`) contr
 ```ts
 {
   voluntaryConsolation: {
-    policyName?: string;             // Optional policy identifier
-    winsLimit?: number;              // Max wins in main draw before ineligible
-    finishingRoundLimit?: number;    // Min finishing round for eligibility
+    policyName?: string;               // Optional policy identifier
+    winsLimit?: number;                // Most main-draw wins an eligible participant may have (0 = no wins)
+    matchUpsLimit?: number;            // Most main-draw matchUps an eligible participant may have played
+    requireLoss?: boolean;             // Default true: only participants who have lost
+    requirePlay?: boolean;             // Default true: only participants who have played
+    excludedMatchUpStatuses?: string[]; // matchUps with these statuses are not counted
+    includeEventParticipants?: boolean; // consider event entries rather than draw entries
+    allEntries?: boolean;              // consider every entry, placed in the draw or not
+    finishingRoundLimit?: number;      // Consider only matchUps this many rounds from the final, and earlier
+    roundNumberLimit?: number;         // Consider only rounds 1 to this round
   }
 }
 ```
 
 **Attributes:**
 
-- **winsLimit**: Maximum number of wins a participant can have in the main draw and still be eligible for consolation. Default: no limit.
-- **finishingRoundLimit**: Minimum `finishingRound` value required for eligibility. Participants who advance beyond this round are ineligible. Default: no limit.
+- **winsLimit**: the most main-draw wins an eligible participant may have; `0` admits only participants with no wins.
+  Unset is no limit. (Up to 7.42.0, `0` was treated as no limit.)
+- **matchUpsLimit**: the most main-draw matchUps an eligible participant may have played.
+- **requireLoss** / **requirePlay**: both default to `true`, so a participant still in the draw, or one who has not
+  played, is not eligible.
+
+- **finishingRoundLimit** and **roundNumberLimit**: bound the matchUps considered to the early part of the draw, from
+  opposite ends. `finishingRound` counts back from the final (final = 1, semifinal = 2, quarterfinal = 3), so
+  `finishingRoundLimit: 3` considers the quarterfinals and earlier: a semifinal or final loser has no considered loss
+  and is not eligible. `roundNumberLimit: 2` considers rounds 1 and 2 only. In a completed 32 draw,
+  `finishingRoundLimit: 3` admits 28 (16 + 8 + 4) and `roundNumberLimit: 2` admits 24. (Up to 7.42.0 the first
+  compared the wrong way and the second read `finishingRound`.)
 
 ---
 
@@ -43,15 +60,15 @@ The **Voluntary Consolation Policy** (`POLICY_TYPE_VOLUNTARY_CONSOLATION`) contr
 import { policyConstants } from 'tods-competition-factory';
 const { POLICY_TYPE_VOLUNTARY_CONSOLATION } = policyConstants;
 
-// Only first-round losers can enter consolation
+// Only first-round losers: played one matchUp, and lost it
 const firstRoundOnlyPolicy = {
   [POLICY_TYPE_VOLUNTARY_CONSOLATION]: {
     policyName: 'First Round Losers Only',
-    winsLimit: 0, // No wins allowed
-    finishingRoundLimit: 1, // Must lose in round 1
+    matchUpsLimit: 1,
   },
 };
 
+// attach to the MAIN draw: eligibility is read from the draw being lost in
 tournamentEngine.attachPolicies({
   policyDefinitions: firstRoundOnlyPolicy,
   drawId: 'main-draw-id',
@@ -61,25 +78,11 @@ tournamentEngine.attachPolicies({
 ### Limit to Early-Round Losers
 
 ```js
-// Players who win 1 or fewer matches can enter
+// Losers with at most one win: lost in round 1 or round 2
 const earlyLosersPolicy = {
   [POLICY_TYPE_VOLUNTARY_CONSOLATION]: {
     policyName: 'Early Round Losers',
-    winsLimit: 1, // Maximum 1 win
-    finishingRoundLimit: 2, // Lost in round 1 or 2
-  },
-};
-```
-
-### No Winners Allowed
-
-```js
-// Only players with zero wins
-const noWinnersPolicy = {
-  [POLICY_TYPE_VOLUNTARY_CONSOLATION]: {
-    policyName: 'No Winners',
-    winsLimit: 0,
-    // finishingRoundLimit not specified - any round OK as long as no wins
+    winsLimit: 1,
   },
 };
 ```
@@ -94,16 +97,14 @@ const { eligibleParticipants } = tournamentEngine.getEligibleVoluntaryConsolatio
   drawId: 'main-draw-id',
 });
 
-console.log(eligibleParticipants.length); // e.g., 16
 eligibleParticipants.forEach((participant) => {
-  console.log(`${participant.participantName}: ${participant.matchUpsWon} wins`);
+  console.log(participant.participantName);
 });
 
-// With custom policy parameters (override attached policy)
-const { eligibleParticipants } = tournamentEngine.getEligibleVoluntaryConsolationParticipants({
+// Parameters passed directly override the attached policy
+const { eligibleParticipants: earlyLosers } = tournamentEngine.getEligibleVoluntaryConsolationParticipants({
   drawId: 'main-draw-id',
   winsLimit: 1,
-  finishingRoundLimit: 2,
 });
 ```
 
@@ -114,66 +115,39 @@ const { eligibleParticipants } = tournamentEngine.getEligibleVoluntaryConsolatio
 ### 32-Draw With 16-Player Consolation
 
 ```js
-// Generate main draw
-const { drawDefinition } = tournamentEngine.generateDrawDefinition({
-  drawSize: 32,
-  drawType: SINGLE_ELIMINATION,
-  eventId: 'event-1',
-});
-
-// Attach voluntary consolation policy
+// Attach the policy to the main draw
 tournamentEngine.attachPolicies({
   policyDefinitions: {
     [POLICY_TYPE_VOLUNTARY_CONSOLATION]: {
-      winsLimit: 0, // First-round losers only
-      finishingRoundLimit: 1,
+      matchUpsLimit: 1, // first-round losers only
     },
   },
-  drawId: drawDefinition.drawId,
+  drawId: 'main-draw-id',
 });
 
-// After first round completes, get eligible participants
+// After the first round completes
 const { eligibleParticipants } = tournamentEngine.getEligibleVoluntaryConsolationParticipants({
-  drawId: drawDefinition.drawId,
+  drawId: 'main-draw-id',
 });
 
-// Should return 16 first-round losers
-console.log(eligibleParticipants.length); // 16
+console.log(eligibleParticipants.length); // 16: the first-round losers
 ```
 
-### Progressive Consolation Eligibility
+### Different Pools From One Main Draw
+
+The policy is read from the main draw, so two pools from the same draw are two calls with different parameters:
 
 ```js
-// Different consolation stages for different losers
-const policies = {
-  // Feed consolation: first-round losers
-  feedConsolation: {
-    [POLICY_TYPE_VOLUNTARY_CONSOLATION]: {
-      policyName: 'Feed Consolation',
-      winsLimit: 0,
-      finishingRoundLimit: 1,
-    },
-  },
-
-  // Playoff consolation: second-round losers
-  playoffConsolation: {
-    [POLICY_TYPE_VOLUNTARY_CONSOLATION]: {
-      policyName: 'Playoff Consolation',
-      winsLimit: 1,
-      finishingRoundLimit: 2,
-    },
-  },
-};
-
-// Attach to different consolation structures
-tournamentEngine.attachPolicies({
-  policyDefinitions: policies.feedConsolation,
-  drawId: 'feed-consolation-draw-id',
+// First-round losers (16 in a completed 32 draw)
+const { eligibleParticipants: firstRound } = tournamentEngine.getEligibleVoluntaryConsolationParticipants({
+  drawId: 'main-draw-id',
+  matchUpsLimit: 1,
 });
 
-tournamentEngine.attachPolicies({
-  policyDefinitions: policies.playoffConsolation,
-  drawId: 'playoff-consolation-draw-id',
+// Losers with at most one win: rounds 1 and 2 (24 once round 2 is complete)
+const { eligibleParticipants: firstTwoRounds } = tournamentEngine.getEligibleVoluntaryConsolationParticipants({
+  drawId: 'main-draw-id',
+  winsLimit: 1,
 });
 ```
 
@@ -207,13 +181,13 @@ const { drawDefinition: consolationDraw } = tournamentEngine.generateDrawDefinit
 ## Notes
 
 - Policy is checked when calling `getEligibleVoluntaryConsolationParticipants`
-- **winsLimit**: Counts only completed wins in main draw
-- **finishingRoundLimit**: Based on `finishingRound` attribute of matchUps
+- **winsLimit**: Counts only completed wins in main draw; `0` means no wins
+- **matchUpsLimit**: Counts main-draw matchUps played
 - Participants not yet eliminated are excluded (still active in main draw)
 - Participants already in consolation draw are excluded
 - Walkover matches count as wins for the winner
 - Retired matches count as wins for the winner
-- Both parameters are optional - omit for no restriction
+- Every limit is optional - omit for no restriction
 - Policy can be overridden by passing parameters directly to eligibility method
 - Typically attached at draw level (main draw)
 - Used during consolation draw generation to determine eligible pool

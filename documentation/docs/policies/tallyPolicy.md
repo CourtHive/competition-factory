@@ -13,28 +13,30 @@ const roundRobinTally = {
   groupTotalSetsPlayed: false, // optional - when true will calculate % of sets won based on total group sets played rather than participant sets played
   headToHead: { disabled: false },
   tallyDirectives: [
-    // these are the default values if no tallyDirectives provided; edit to suit
+    // an example (for team events: tieMatchUpsPct). With no tallyDirectives the engine uses matchUpsPct, then
+    // allDefaults, defaults, walkovers and retirements (reversed), then sets/games/points ratios, each first over all
+    // group matchUps and then over the tied participants' matchUps
     // groupTotals scopes the tally calculations to all sets or games or matches played by all participants
     // idsFilter scopes the tally calculations to only tied participants
     // with { idsFilter: false } the ratio is calculated from all group matchUps
     // with { idsFilter: true } the ratio is calculated from matchUps including tied participants
     // when { maxParticipants: 2 } is defined, the rule only applies when # of participants is <= maxParticipants
     // any attribute/idsFilter combination can be selectively disabled for Head to Head calculations
-    { attribute: 'matchUpsPct', idsFilter: false, disbleHeadToHead: false },
+    { attribute: 'matchUpsPct', idsFilter: false, disableHeadToHead: false },
     { attribute: 'allDefaults', reversed: true, idsFilter: false }, // reversed: true => reverses default which is greatest to least
     {
       attribute: 'tieMatchUpsPct',
       idsFilter: false,
-      disbleHeadToHead: false,
+      disableHeadToHead: false,
     },
-    { attribute: 'setsPct', idsFilter: false, disbleHeadToHead: false },
-    { attribute: 'gamesPct', idsFilter: false, disbleHeadToHead: false },
-    { attribute: 'pointsPct', idsFilter: false, disbleHeadToHead: false },
-    { attribute: 'matchUpsPct', idsFilter: true, disbleHeadToHead: false },
-    { attribute: 'tieMatchUpsPct', idsFilter: true, disbleHeadToHead: false },
-    { attribute: 'setsPct', idsFilter: true, disbleHeadToHead: false },
-    { attribute: 'gamesPct', idsFilter: true, disbleHeadToHead: false },
-    { attribute: 'pointsPct', idsFilter: true, disbleHeadToHead: false },
+    { attribute: 'setsPct', idsFilter: false, disableHeadToHead: false },
+    { attribute: 'gamesPct', idsFilter: false, disableHeadToHead: false },
+    { attribute: 'pointsPct', idsFilter: false, disableHeadToHead: false },
+    { attribute: 'matchUpsPct', idsFilter: true, disableHeadToHead: false },
+    { attribute: 'tieMatchUpsPct', idsFilter: true, disableHeadToHead: false },
+    { attribute: 'setsPct', idsFilter: true, disableHeadToHead: false },
+    { attribute: 'gamesPct', idsFilter: true, disableHeadToHead: false },
+    { attribute: 'pointsPct', idsFilter: true, disableHeadToHead: false },
   ],
   excludeMatchUpStatuses: [], // matchUpStatuses to exclude from calculations, e.g. ABANDONED, INCOMPLETE
   setsCreditForDefaults: false, // whether or not to award e.g. 2 sets won for participant who wins by opponent DEFAULT

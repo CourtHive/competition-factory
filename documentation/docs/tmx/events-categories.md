@@ -46,14 +46,12 @@ tournamentEngine.addEvent({
   },
 });
 
-// Create multiple events
-tournamentEngine.addEvent({
-  events: [
-    { eventName: "Men's Singles", eventType: 'SINGLES', gender: 'MALE' },
-    { eventName: "Women's Singles", eventType: 'SINGLES', gender: 'FEMALE' },
-    { eventName: 'Mixed Doubles', eventType: 'DOUBLES', gender: 'MIXED' },
-  ],
-});
+// Create multiple events: addEvent takes one event (there is no events array)
+[
+  { eventName: "Men's Singles", eventType: 'SINGLES', gender: 'MALE' },
+  { eventName: "Women's Singles", eventType: 'SINGLES', gender: 'FEMALE' },
+  { eventName: 'Mixed Doubles', eventType: 'DOUBLES', gender: 'MIXED' },
+].forEach((event) => tournamentEngine.addEvent({ event }));
 ```
 
 ### Managing Event Details
@@ -91,7 +89,7 @@ tournamentEngine.addEventEntries({
 });
 
 // Remove entries
-tournamentEngine.modifyEventEntries({
+tournamentEngine.removeEventEntries({
   eventId,
   participantIds: [id1],
 });
@@ -222,7 +220,7 @@ const eventId = createdEvent.eventId;
 const { participants } = tournamentEngine.getParticipants({
   participantFilters: {
     participantTypes: ['INDIVIDUAL'],
-    sex: 'MALE',
+    genders: ['MALE'], // the filter is genders (an array); an unknown key such as sex is ignored
   },
 });
 
@@ -234,13 +232,14 @@ tournamentEngine.addEventEntries({
   entryStatus: 'DIRECT_ACCEPTANCE',
 });
 
-// 4. Configure draw
-tournamentEngine.addDrawDefinition({
+// 4. Generate the draw, then attach it to the event
+const { drawDefinition } = tournamentEngine.generateDrawDefinition({
   eventId,
   drawSize: 32,
   drawType: 'SINGLE_ELIMINATION',
   seedingProfile: 'WATERFALL',
 });
+tournamentEngine.addDrawDefinition({ eventId, drawDefinition });
 ```
 
 ### Creating Multiple Age Group Events
@@ -277,7 +276,7 @@ const events = ageCategories.flatMap((cat) => [
   },
 ]);
 
-tournamentEngine.addEvent({ events });
+events.forEach((event) => tournamentEngine.addEvent({ event }));
 ```
 
 ### Auto-Assignment by Category

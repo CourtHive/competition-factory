@@ -280,6 +280,8 @@ const { drawDefinition } = engine.generateDrawDefinition({
 // Targeted matchUps get external IDs; untargeted matchUps get generated UUIDs
 ```
 
+Each target is assigned to the first matchUp, in structure order, that it matches, so a target without `stage`, `stageSequence`, `exitProfile` or `structureId` lands in the first structure only. When the targets would leave one matchUpId on more than one matchUp, generation returns `INVALID_VALUES` instead of a draw; see [Refused remaps](/docs/implementation/draws/remapDrawDefinitionMatchUpIds#refused-remaps).
+
 ## Replacing an existing draw (recovery)
 
 Calling `generateDrawDefinition` (or `addDrawDefinition`) again with an **existing `drawId`**

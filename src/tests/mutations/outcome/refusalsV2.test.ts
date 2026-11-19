@@ -10,6 +10,7 @@ import { afterEach, expect, it } from 'vitest';
 import { INVALID_VALUES, MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
 import { CANCELLED } from '@Constants/matchUpStatusConstants';
 import {
+  OUTCOME_PIPELINE_DEFAULT,
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
@@ -18,21 +19,21 @@ import {
 /**
  * S2a: the v2 refusals against the v1 pipeline.
  *
- * Three claims. The mode is engine state with v1 the default and a refused value. The authored
+ * Three claims. The mode is engine state with a named default and a refused value. The authored
  * corpus, which asserts a result code on every step, answers identically under v1, v2 and
  * differential: v2 refuses exactly where v1 does, with the same code, and accepts the rest. And a
  * divergence is a thrown error naming the matchUp and both answers, not a silent fallback.
  */
 afterEach(() => setOutcomePipeline());
 
-it('the mode is engine state: v1 by default, settable, and a refused value is an error', () => {
+it('the mode is engine state: the named default, settable, and a refused value is an error', () => {
   setOutcomePipeline(); // the suite may run under OUTCOME_PIPELINE=…; the default is what is claimed here
-  expect(getOutcomePipeline()).toEqual(OUTCOME_PIPELINE_V1);
+  expect(getOutcomePipeline()).toEqual(OUTCOME_PIPELINE_DEFAULT);
   expect(tournamentEngine.outcomePipeline(OUTCOME_PIPELINE_V2).success).toEqual(true);
   expect(tournamentEngine.getOutcomePipeline()).toEqual(OUTCOME_PIPELINE_V2);
   expect(tournamentEngine.outcomePipeline('v3').error).toEqual(INVALID_VALUES);
   expect(tournamentEngine.outcomePipeline().success).toEqual(true);
-  expect(getOutcomePipeline()).toEqual(OUTCOME_PIPELINE_V1);
+  expect(getOutcomePipeline()).toEqual(OUTCOME_PIPELINE_DEFAULT);
 });
 
 it('rows 1 to 5 are decided on the request alone, before the draw is consulted', () => {

@@ -521,9 +521,9 @@ const { eligibleParticipants } = engine.getEligibleVoluntaryConsolationParticipa
   excludedMatchUpStatuses, // optional - array of matchUpStatuses which are excluded from matchUpsLimit
   includeQualifyingStage, // optional - allow losers in qualifying
   finishingRoundLimit, // optional number - limits considered matchUps by finishingRound, e.g. 3 doesn't consider past QF
-  roundNumberLimit, // optional number - limits matchUps by roundNumber
+  roundNumberLimit, // optional number - considers only rounds 1..roundNumberLimit
   matchUpsLimit, // optional number - limits the number of considered matchUps; works in tandem with excludedMatchUpStatuses
-  winsLimit, // defaults to 0, meaning only participants with no wins are eligible
+  winsLimit, // optional number - most wins an eligible participant may have; 0 = no wins, unset = no limit
   requireLoss, // optional boolean - defaults to true; if false then all participants who have played and appear in MAIN draw are considered
   requirePlay, // optional boolean - defaults to true; if false then all participants who appear in MAIN draw are considered
   allEntries, // optional boolean - consider all entries, regardless of whether placed in draw
@@ -2488,11 +2488,18 @@ Compares two tie format definitions and returns details about their differences,
 ```js
 const {
   different, // boolean — whether the formats differ
-  invalid, // boolean — whether comparison could not be performed
-  modifications, // array of modification descriptions
+  invalid, // falsy, or the array of collections whose values could not be totalled
+  valueDifference, // number — descendant total value minus ancestor total value
+  matchUpCountDifference, // number — descendant matchUp count minus ancestor matchUp count
+  matchUpFormatDifferences, // matchUpFormats present in only one of the two
+  nameDifference, // boolean — collection names differ (only with considerations.collectionName)
+  orderDifference, // boolean — collection order differs (only with considerations.collectionOrder)
+  ancestorDifferences, // { collectionIds only in ancestor, collectionsValue, groupsCount }
+  descendantDifferences, // { collectionIds only in descendant, collectionsValue, groupsCount }
 } = queryGovernor.compareTieFormats({
   ancestor, // required — the original tieFormat object
   descendant, // required — the modified tieFormat object
+  considerations, // optional — { collectionName, collectionOrder } booleans: also compare names / order
 });
 ```
 

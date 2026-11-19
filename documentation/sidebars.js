@@ -317,6 +317,7 @@ module.exports = {
             },
             'scoring-engine/scoring-engine-api',
             'scoring-engine/event-handlers',
+            'scoring-engine/score-entry-state',
             'scoring-engine/format-support',
             'scoring-engine/scoring-engine-spec',
             'scoring-engine/visualization-applications',

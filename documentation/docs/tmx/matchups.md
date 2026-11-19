@@ -38,17 +38,11 @@ MatchUp management in TMX includes:
 const { matchUps } = tournamentEngine.allEventMatchUps({ eventId });
 
 // Get matchUps for a draw
-const { matchUps } = tournamentEngine.allTournamentMatchUps({
-  eventId,
-  drawId,
-});
+const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId });
 
-// Get matchUps for a round
-const { matchUps } = tournamentEngine.getRoundMatchUps({
-  eventId,
-  drawId,
-  structureId,
-  roundNumber: 1,
+// Get matchUps for a round (getRoundMatchUps groups matchUps you pass it; it does not fetch them)
+const { matchUps } = tournamentEngine.allTournamentMatchUps({
+  matchUpFilters: { drawIds: [drawId], structureIds: [structureId], roundNumbers: [1] },
 });
 
 // Get specific matchUp
@@ -88,30 +82,25 @@ tournamentEngine.setMatchUpStatus({
   },
 });
 
-// Score from string
-tournamentEngine.setMatchUpStatus({
-  eventId,
-  matchUpId,
-  outcome: {
-    scoreString: '6-4 6-3',
-    winningSide: 1,
-  },
-});
+// Score from string: outcome has no scoreString attribute (it would be ignored, and the matchUp completed with no
+// score); build the outcome from the string first
+const { outcome } = tournamentEngine.generateOutcomeFromScoreString({ scoreString: '6-4 6-3', winningSide: 1 });
+tournamentEngine.setMatchUpStatus({ drawId, matchUpId, outcome });
 ```
 
 ### Match Status Management
 
 ```js
-// Update match status
+// Update match status: the status goes in the outcome (a top-level matchUpStatus is ignored)
 tournamentEngine.setMatchUpStatus({
-  eventId,
+  drawId,
   matchUpId,
-  matchUpStatus: 'IN_PROGRESS',
+  outcome: { matchUpStatus: 'IN_PROGRESS' },
 });
 
 // Complete match with walkover
 tournamentEngine.setMatchUpStatus({
-  eventId,
+  drawId,
   matchUpId,
   outcome: {
     matchUpStatus: 'WALKOVER',
@@ -121,7 +110,7 @@ tournamentEngine.setMatchUpStatus({
 
 // Mark as retired
 tournamentEngine.setMatchUpStatus({
-  eventId,
+  drawId,
   matchUpId,
   outcome: {
     matchUpStatus: 'RETIRED',
@@ -168,18 +157,18 @@ TMX supports flexible match format codes:
 ### Standard Formats
 
 ```js
-'SET3-S:6/TB7'; // Best of 3 sets to 6 games, tiebreak at 7
-'SET3-S:6/TB7@6'; // Best of 3, TB at 6-6
-'SET3-S:6/TB7-F:TB10'; // Best of 3, final set super tiebreak to 10
-'SET1-S:8/TB7'; // 1 set to 8 games, TB at 7
+'SET3-S:6/TB7'; // Best of 3 sets to 6 games, tiebreak to 7 at 6-6
+'SET3-S:6/TB7@5'; // Best of 3, tiebreak played at 5-5 (@ sets where the tiebreak starts; the default is the set's games)
+'SET3-S:6/TB7-F:TB10'; // Best of 3, final set a match tiebreak to 10
+'SET1-S:8/TB7'; // 1 set to 8 games, tiebreak to 7 at 8-8
 'SET5-S:6/TB7'; // Best of 5 sets
 ```
 
 ### Timed Formats
 
 ```js
-'TIMED20'; // 20 minute timed match
-'TIMED25-NOAD'; // 25 minutes, no-ad scoring
+'T20'; // a 20 minute timed match (short form)
+'SET1-S:T25'; // a 25 minute timed set, long form
 ```
 
 ### Pro Set
@@ -192,7 +181,7 @@ TMX supports flexible match format codes:
 ### No-Ad Scoring
 
 ```js
-'SET3-S:6/TB7-NOAD'; // Best of 3, no-ad
+'SET3-S:6NOAD/TB7'; // Best of 3, no-ad games (NOAD qualifies the set, before the tiebreak)
 ```
 
 ## Key Features
@@ -223,7 +212,7 @@ if (setsWon1 === 1 && setsWon2 === 1) {
 
 // Submit score
 tournamentEngine.setMatchUpStatus({
-  eventId,
+  drawId,
   matchUpId,
   outcome: {
     score,
@@ -262,7 +251,7 @@ if (!valid) {
 // 5. Updates standings (for Round Robin)
 
 tournamentEngine.setMatchUpStatus({
-  eventId,
+  drawId,
   matchUpId,
   outcome: {
     score: {
@@ -292,7 +281,7 @@ policy attached to the tournament or event; without one, the dialog draws no rea
 ```js
 // Walkover
 tournamentEngine.setMatchUpStatus({
-  eventId,
+  drawId,
   matchUpId,
   outcome: {
     matchUpStatus: 'WALKOVER',
@@ -302,7 +291,7 @@ tournamentEngine.setMatchUpStatus({
 
 // Default
 tournamentEngine.setMatchUpStatus({
-  eventId,
+  drawId,
   matchUpId,
   outcome: {
     matchUpStatus: 'DEFAULTED',
@@ -312,7 +301,7 @@ tournamentEngine.setMatchUpStatus({
 
 // Double walkover
 tournamentEngine.setMatchUpStatus({
-  eventId,
+  drawId,
   matchUpId,
   outcome: {
     matchUpStatus: 'DOUBLE_WALKOVER',
@@ -321,7 +310,7 @@ tournamentEngine.setMatchUpStatus({
 
 // Retired
 tournamentEngine.setMatchUpStatus({
-  eventId,
+  drawId,
   matchUpId,
   outcome: {
     matchUpStatus: 'RETIRED',
@@ -378,7 +367,7 @@ const winningSide = score.sets.filter((s) => s.side1Score > s.side2Score).length
 
 // 5. Submit
 const result = tournamentEngine.setMatchUpStatus({
-  eventId,
+  drawId,
   matchUpId,
   outcome: { score, winningSide },
 });
@@ -398,12 +387,12 @@ let currentScore = { sets: [] };
 function updateSet(setNumber, side1Score, side2Score) {
   currentScore.sets[setNumber - 1] = { side1Score, side2Score };
 
-  // Save intermediate state
+  // Save intermediate state: a score with no winner leaves the matchUp IN_PROGRESS
   tournamentEngine.setMatchUpStatus({
-    eventId,
+    drawId,
     matchUpId,
-    matchUpStatus: 'IN_PROGRESS',
     outcome: {
+      matchUpStatus: 'IN_PROGRESS',
       score: currentScore,
     },
   });
@@ -411,7 +400,7 @@ function updateSet(setNumber, side1Score, side2Score) {
 
 function completeMatch(winningSide) {
   tournamentEngine.setMatchUpStatus({
-    eventId,
+    drawId,
     matchUpId,
     outcome: {
       score: currentScore,
@@ -427,41 +416,50 @@ function completeMatch(winningSide) {
 ```js
 // Import scores from external source
 const scores = [
-  { matchUpId: 'match1', scoreString: '6-4 6-3', winningSide: 1 },
-  { matchUpId: 'match2', scoreString: '7-6(5) 4-6 10-8', winningSide: 1 },
-  { matchUpId: 'match3', scoreString: 'WO', winningSide: 1, status: 'WALKOVER' },
+  { drawId, matchUpId: 'match1', scoreString: '6-4 6-3', winningSide: 1 },
+  { drawId, matchUpId: 'match2', scoreString: '7-6(5) 4-6 6-3', winningSide: 1 },
+  { drawId, matchUpId: 'match3', scoreString: 'WO', winningSide: 1, status: 'WALKOVER' },
 ];
 
 scores.forEach((s) => {
   const outcome =
     s.status === 'WALKOVER'
       ? { matchUpStatus: 'WALKOVER', winningSide: s.winningSide }
-      : { scoreString: s.scoreString, winningSide: s.winningSide };
+      : tournamentEngine.generateOutcomeFromScoreString({ scoreString: s.scoreString, winningSide: s.winningSide })
+          .outcome;
 
-  tournamentEngine.setMatchUpStatus({
-    eventId,
+  // a score that does not fit the matchUpFormat is refused: report it rather than skipping it silently
+  const result = tournamentEngine.setMatchUpStatus({
+    drawId: s.drawId,
     matchUpId: s.matchUpId,
     outcome,
   });
+  if (result.error) console.error(s.matchUpId, result.error);
 });
 ```
 
 ### Score Correction
 
 ```js
-// Remove incorrect score
-tournamentEngine.resetMatchUpLineUps({
-  eventId,
-  matchUpId,
-});
-
-// Re-enter correct score
+// Re-enter the correct score: a new outcome replaces the old one. Changing the winner is refused once the winner has
+// played on; a corrected score with the same winner is not
 tournamentEngine.setMatchUpStatus({
-  eventId,
+  drawId,
   matchUpId,
   outcome: {
     score: correctScore,
     winningSide: correctWinner,
+  },
+});
+
+// Or remove the outcome altogether (the CLEAR_SCORE action's payload)
+tournamentEngine.setMatchUpStatus({
+  drawId,
+  matchUpId,
+  outcome: {
+    matchUpStatus: 'TO_BE_PLAYED',
+    score: { scoreStringSide1: '', scoreStringSide2: '' },
+    winningSide: undefined,
   },
 });
 ```

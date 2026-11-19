@@ -3,7 +3,7 @@ import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPoin
 import { parse, ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
 import { overtimeDecision } from '@Scoring/analysis/overtimeScore';
 import { analyzeSet, SetAnalysisFields } from './analyzeSet';
-import { instanceCount } from '@Tools/arrays';
+import { instanceCount } from '@Tools/numeric';
 
 // constants and types
 import { DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';

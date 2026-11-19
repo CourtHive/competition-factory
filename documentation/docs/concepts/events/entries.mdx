@@ -319,8 +319,8 @@ const result = tournamentEngine.addEventEntries({
 
 ```js
 // Automatically validate all entries when event registration closes
-const { entries } = tournamentEngine.getEvent({ eventId });
-const participantIds = entries.map((e) => e.participantId);
+const { event } = tournamentEngine.getEvent({ eventId });
+const participantIds = event.entries.map((e) => e.participantId);
 
 const result = tournamentEngine.addEventEntries({
   participantIds,
@@ -400,26 +400,30 @@ If you need to separate participants by skill level, use [flight profiles](./fli
 
 ### Update Entry Status
 
-**API Reference:** [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition)
+**API Reference:** [modifyEntriesStatus](/docs/governors/entries-governor#modifyentriesstatus)
 
 ```js
-tournamentEngine.modifyEventEntries({
+tournamentEngine.modifyEntriesStatus({
   eventId,
   participantIds: ['player-id'],
-  entryStatus: 'WITHDRAWN',
+  entryStatus: 'WITHDRAWN', // refused for a participant already placed in a draw
 });
 ```
 
 ### Delete Entries
 
-**API Reference:** [modifyEventEntries](/docs/governors/entries-governor#modifyevententries)
+**API Reference:** [removeEventEntries](/docs/governors/entries-governor#removeevententries)
 
 ```js
-tournamentEngine.modifyEventEntries({
+// also removes the entries from the event's flights and draws
+tournamentEngine.removeEventEntries({
   eventId,
   participantIds: ['player-id'],
 });
 ```
+
+`modifyEventEntries` does neither: it rebuilds a doubles event's pair entries from `participantIdPairs` and
+`unpairedParticipantIds` (its `entryStatus` applies to the pairs it creates), and ignores `participantIds`.
 
 ## Entry Stages
 

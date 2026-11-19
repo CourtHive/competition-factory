@@ -31,10 +31,11 @@ The Participants feature uses these key factory methods:
 ### Adding Participants
 
 ```js
-// Single participant
+// Single participant: participantRole is required (ERR_MISSING_PARTICIPANT_ROLE without it)
 tournamentEngine.addParticipant({
   participant: {
     participantType: 'INDIVIDUAL',
+    participantRole: 'COMPETITOR',
     person: {
       standardGivenName: 'John',
       standardFamilyName: 'Doe',
@@ -207,6 +208,7 @@ The participants table itself is a [Tabulator](https://tabulator.info/) grid in 
 // 1. Create participant object
 const participant = {
   participantType: 'INDIVIDUAL',
+  participantRole: 'COMPETITOR',
   person: {
     standardGivenName: firstName,
     standardFamilyName: lastName,
@@ -214,12 +216,12 @@ const participant = {
   },
 };
 
-// 2. Add to tournament
-const result = tournamentEngine.addParticipant({ participant });
+// 2. Add to tournament (returnParticipant: the result carries only { success } without it)
+const result = tournamentEngine.addParticipant({ participant, returnParticipant: true });
 
 // 3. Handle result
 if (result.success) {
-  const { participant } = result;
+  const { participant: added } = result;
   // Update UI with new participant
 }
 ```
@@ -238,31 +240,27 @@ const result = tournamentEngine.addParticipants({
   participants: validated,
 });
 
-// 4. Report results
-console.log(`Added: ${result.added.length}`);
-console.log(`Duplicates: ${result.duplicates.length}`);
-console.log(`Errors: ${result.errors.length}`);
+// 4. Report results: { success, addedCount }, or { error } with nothing added
+if (result.error) console.error(result.error);
+else console.log(`Added: ${result.addedCount}`);
 ```
 
 ### Participant Check-in
 
 ```js
-// Add check-in time item
-tournamentEngine.addTimeItem({
-  itemType: 'CHECK_IN',
-  itemValue: new Date().toISOString(),
-  participants: [{ participantId }],
+// Tournament check-in is the participant's sign-in status
+tournamentEngine.modifyParticipantsSignInStatus({
+  participantIds: [participantId],
+  signInState: 'SIGNED_IN', // or 'SIGNED_OUT'
 });
 
-// Query checked-in participants
-const { participants } = tournamentEngine.getParticipants({
+// Query signed-in participants
+const { participants: checkedIn } = tournamentEngine.getParticipants({
   participantFilters: {
     participantTypes: ['INDIVIDUAL'],
+    signInStatus: 'SIGNED_IN',
   },
-  withScaleValues: true,
 });
-
-const checkedIn = participants.filter((p) => p.timeItems?.some((t) => t.itemType === 'CHECK_IN'));
 ```
 
 ## Best Practices

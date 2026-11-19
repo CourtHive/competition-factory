@@ -76,7 +76,8 @@ export const LAYERS = [
       'validators',
     ],
   ],
-  [3, 'queries', ['query', 'acquire', 'analyze']],
+  // the score-entry draft reads queries (analyzeSet, analyzeMatchUp) and never writes: a query-layer surface
+  [3, 'queries', ['query', 'acquire', 'analyze', 'scoreEntryState']],
   [4, 'mutations', ['mutate']],
   [5, 'generators', ['assemblies/generators']],
   [
