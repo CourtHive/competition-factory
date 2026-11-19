@@ -100,8 +100,7 @@ _A 16-draw doubles single elimination structure: each side is a pair, seeded pai
 ```js
 {
   drawType: 'COMPASS',
-  drawSize: 16,
-  compassDirection: 'EAST' // EAST, WEST, NORTH, SOUTH, NORTHEAST, etc.
+  drawSize: 16, // generates EAST (main), WEST, NORTH, SOUTH, … structures
 }
 ```
 
@@ -115,7 +114,7 @@ _A round robin draw in **Grid** view: one results grid per group, with win/loss,
 {
   drawType: 'ROUND_ROBIN',
   drawSize: 8,
-  groupSize: 4
+  structureOptions: { groupSize: 4 }, // a top-level groupSize is ignored
 }
 ```
 
@@ -124,8 +123,7 @@ _A round robin draw in **Grid** view: one results grid per group, with win/loss,
 ```js
 {
   drawType: 'FEED_IN_CHAMPIONSHIP',
-  drawSize: 32,
-  feedPolicy: 'TOP_DOWN'
+  drawSize: 32, // feed rounds alternate TOP_DOWN / BOTTOM_UP; a feed-in policy (policyDefinitions) changes that
 }
 ```
 
@@ -296,7 +294,7 @@ tournamentEngine.alternateDrawPositionAssignment({
   drawId,
   structureId,
   drawPosition: 10,
-  participantId: alternateId,
+  alternateParticipantId: alternateId,
 });
 ```
 

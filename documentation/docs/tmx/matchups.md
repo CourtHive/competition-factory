@@ -38,17 +38,11 @@ MatchUp management in TMX includes:
 const { matchUps } = tournamentEngine.allEventMatchUps({ eventId });
 
 // Get matchUps for a draw
-const { matchUps } = tournamentEngine.allTournamentMatchUps({
-  eventId,
-  drawId,
-});
+const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId });
 
-// Get matchUps for a round
-const { matchUps } = tournamentEngine.getRoundMatchUps({
-  eventId,
-  drawId,
-  structureId,
-  roundNumber: 1,
+// Get matchUps for a round (getRoundMatchUps groups matchUps you pass it; it does not fetch them)
+const { matchUps } = tournamentEngine.allTournamentMatchUps({
+  matchUpFilters: { drawIds: [drawId], structureIds: [structureId], roundNumbers: [1] },
 });
 
 // Get specific matchUp
@@ -106,7 +100,7 @@ tournamentEngine.setMatchUpStatus({
 
 // Complete match with walkover
 tournamentEngine.setMatchUpStatus({
-  eventId,
+  drawId,
   matchUpId,
   outcome: {
     matchUpStatus: 'WALKOVER',
@@ -116,7 +110,7 @@ tournamentEngine.setMatchUpStatus({
 
 // Mark as retired
 tournamentEngine.setMatchUpStatus({
-  eventId,
+  drawId,
   matchUpId,
   outcome: {
     matchUpStatus: 'RETIRED',
@@ -163,18 +157,18 @@ TMX supports flexible match format codes:
 ### Standard Formats
 
 ```js
-'SET3-S:6/TB7'; // Best of 3 sets to 6 games, tiebreak at 7
-'SET3-S:6/TB7@6'; // Best of 3, TB at 6-6
-'SET3-S:6/TB7-F:TB10'; // Best of 3, final set super tiebreak to 10
-'SET1-S:8/TB7'; // 1 set to 8 games, TB at 7
+'SET3-S:6/TB7'; // Best of 3 sets to 6 games, tiebreak to 7 at 6-6
+'SET3-S:6/TB7@5'; // Best of 3, tiebreak played at 5-5 (@ sets where the tiebreak starts; the default is the set's games)
+'SET3-S:6/TB7-F:TB10'; // Best of 3, final set a match tiebreak to 10
+'SET1-S:8/TB7'; // 1 set to 8 games, tiebreak to 7 at 8-8
 'SET5-S:6/TB7'; // Best of 5 sets
 ```
 
 ### Timed Formats
 
 ```js
-'TIMED20'; // 20 minute timed match
-'TIMED25-NOAD'; // 25 minutes, no-ad scoring
+'T20'; // a 20 minute timed match (short form)
+'SET1-S:T25'; // a 25 minute timed set, long form
 ```
 
 ### Pro Set
@@ -187,7 +181,7 @@ TMX supports flexible match format codes:
 ### No-Ad Scoring
 
 ```js
-'SET3-S:6/TB7-NOAD'; // Best of 3, no-ad
+'SET3-S:6NOAD/TB7'; // Best of 3, no-ad games (NOAD qualifies the set, before the tiebreak)
 ```
 
 ## Key Features
@@ -218,7 +212,7 @@ if (setsWon1 === 1 && setsWon2 === 1) {
 
 // Submit score
 tournamentEngine.setMatchUpStatus({
-  eventId,
+  drawId,
   matchUpId,
   outcome: {
     score,
@@ -257,7 +251,7 @@ if (!valid) {
 // 5. Updates standings (for Round Robin)
 
 tournamentEngine.setMatchUpStatus({
-  eventId,
+  drawId,
   matchUpId,
   outcome: {
     score: {
@@ -287,7 +281,7 @@ policy attached to the tournament or event; without one, the dialog draws no rea
 ```js
 // Walkover
 tournamentEngine.setMatchUpStatus({
-  eventId,
+  drawId,
   matchUpId,
   outcome: {
     matchUpStatus: 'WALKOVER',
@@ -297,7 +291,7 @@ tournamentEngine.setMatchUpStatus({
 
 // Default
 tournamentEngine.setMatchUpStatus({
-  eventId,
+  drawId,
   matchUpId,
   outcome: {
     matchUpStatus: 'DEFAULTED',
@@ -307,7 +301,7 @@ tournamentEngine.setMatchUpStatus({
 
 // Double walkover
 tournamentEngine.setMatchUpStatus({
-  eventId,
+  drawId,
   matchUpId,
   outcome: {
     matchUpStatus: 'DOUBLE_WALKOVER',
@@ -316,7 +310,7 @@ tournamentEngine.setMatchUpStatus({
 
 // Retired
 tournamentEngine.setMatchUpStatus({
-  eventId,
+  drawId,
   matchUpId,
   outcome: {
     matchUpStatus: 'RETIRED',
@@ -373,7 +367,7 @@ const winningSide = score.sets.filter((s) => s.side1Score > s.side2Score).length
 
 // 5. Submit
 const result = tournamentEngine.setMatchUpStatus({
-  eventId,
+  drawId,
   matchUpId,
   outcome: { score, winningSide },
 });
