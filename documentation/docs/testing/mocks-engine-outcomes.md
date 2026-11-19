@@ -21,6 +21,11 @@ Returns an outcome object with:
 
 - **score**: Complete score structure with sets
 - **winningSide**: 1 or 2 (or undefined for DOUBLE_WALKOVER, etc.)
+
+A forced `winningSide` is always the winner when the default status profile is used: its double exits, which have no
+winner, are left out. A `matchUpStatusProfile` you pass is used as written, and `winningSide` then names the winner of
+every outcome that has one.
+
 - **matchUpStatus**: 'COMPLETED', 'RETIRED', 'DEFAULTED', etc.
 
 ## Basic Usage
