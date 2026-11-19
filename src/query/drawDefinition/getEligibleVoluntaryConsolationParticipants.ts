@@ -153,7 +153,9 @@ function isParticipantEligible({
   const pid = participant.participantId;
   const lossOk = resolvedPolicy.requireLoss ? losingParticipantIdSet.has(pid) : true;
   const playOk = resolvedPolicy.requirePlay ? (participantMatchUps[pid] || 0) >= 0 : true;
-  const winsOk = resolvedPolicy.winsLimit ? (participantWins[pid] || 0) <= resolvedPolicy.winsLimit : true;
+  // winsLimit 0 means "no wins" (an unset limit is no limit): the TypeScript conversion's `!winsLimit` made 0 unlimited
+  const winsLimited = typeof resolvedPolicy.winsLimit === 'number' && !Number.isNaN(resolvedPolicy.winsLimit);
+  const winsOk = winsLimited ? (participantWins[pid] || 0) <= resolvedPolicy.winsLimit : true;
   const matchUpsOk = resolvedPolicy.matchUpsLimit ? participantMatchUps[pid] <= resolvedPolicy.matchUpsLimit : true;
   const notSelected = !voluntaryConsolationEntryIds.has(pid);
   return lossOk && playOk && winsOk && matchUpsOk && notSelected;
@@ -267,8 +269,12 @@ function isMatchUpRelevant({ matchUp, requirePlay, finishingRoundLimit, roundNum
     matchUp.matchUpStatus !== DOUBLE_WALKOVER
   )
     return false;
-  if (matchUp.finishingRound && finishingRoundLimit && matchUp.finishingRound >= finishingRoundLimit) return false;
-  if (matchUp.finishingRound && roundNumberLimit && matchUp.finishingRound <= roundNumberLimit) return false;
+  // Both limits bound the considered rounds to the early part of the draw, from opposite ends. finishingRound counts
+  // back from the final (final = 1), so finishingRoundLimit 3 considers the QF and earlier ("doesn't consider past QF");
+  // roundNumberLimit 2 considers rounds 1 and 2. Up to 7.42.0 the first comparison was inverted and the second read
+  // finishingRound.
+  if (matchUp.finishingRound && finishingRoundLimit && matchUp.finishingRound < finishingRoundLimit) return false;
+  if (matchUp.roundNumber && roundNumberLimit && matchUp.roundNumber > roundNumberLimit) return false;
   return true;
 }
 
