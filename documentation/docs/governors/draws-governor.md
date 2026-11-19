@@ -157,19 +157,6 @@ Refused with `QUALIFYING_CAPACITY_EXCEEDED` when the qualifiers this structure p
 
 ---
 
-## addVoluntaryConsolationStage
-
-Modifies the entryProfile for a draw to allow `{ entryStage: VOLUNTARY_CONSOLATION }`
-
-```js
-engine.addVoluntaryConsolationStage({
-  drawSize,
-  drawId,
-});
-```
-
----
-
 ## addVoluntaryConsolationStructure
 
 Generates a new structure within a `drawDefinition` if any draw entries are present for `{ entryStage: VOLUNTARY_CONSOLATION }`.
@@ -1132,21 +1119,6 @@ const { drawDefinition, event } = engine.findDrawDefinition({
   drawId, // required — the drawId to find
 });
 ```
-
----
-
-## publicFindDrawDefinition
-
-Finds a draw definition with privacy policies applied.
-
-```js
-const { drawDefinition } = engine.publicFindDrawDefinition({
-  drawId, // required
-  policyDefinitions, // optional
-});
-```
-
-**Purpose:** Get draw data for public APIs.
 
 ---
 

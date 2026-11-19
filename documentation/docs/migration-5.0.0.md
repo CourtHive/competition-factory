@@ -39,6 +39,8 @@ What you get for free:
 
 If you're upgrading to 5.0.0 to get a non-type-related fix (CODES schema reads, new mutations, etc.) but can't take the typed lift at the same time — for example, your TypeScript build has `noImplicitAny: false` and your code accesses methods that haven't been added to `MethodSignatures` yet — import the `Untyped` variants instead:
 
+<!-- doc-methods:ignore — an illustrative placeholder -->
+
 ```ts
 import { tournamentEngineUntyped, competitionEngineUntyped } from 'tods-competition-factory';
 

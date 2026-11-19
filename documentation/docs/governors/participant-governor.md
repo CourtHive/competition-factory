@@ -272,6 +272,21 @@ const filteredParticipants = engine.filterParticipants({
 
 ---
 
+## findParticipant
+
+Finds a participant by `participantId` or `personId`. A participant policy in `policyDefinitions` is applied to the
+returned participant (the engine method is the function exported as `publicFindParticipant`).
+
+```js
+const { participant } = engine.findParticipant({
+  participantId, // optional
+  personId, // optional
+  policyDefinitions, // optional - e.g. fixtures.policies.POLICY_PRIVACY_DEFAULT
+});
+```
+
+---
+
 ## getCompetitionParticipants
 
 Returns all participants across multiple tournaments in a competition.
@@ -856,23 +871,6 @@ console.log(scaleItem.scaleValue);
 **Purpose:** Low-level utility for extracting scale values from participant objects.
 
 **Note:** Use `getParticipantScaleItem` for engine-level queries with participantId.
-
----
-
-## publicFindParticipant
-
-Finds a participant using public-facing search criteria (typically for public APIs).
-
-```js
-const { participant } = engine.publicFindParticipant({
-  tournamentRecord, // required
-  participantId, // optional
-  personId, // optional
-  policyDefinitions, // optional - privacy policies applied
-});
-```
-
-**Purpose:** Query participants with privacy policies applied for public APIs.
 
 ---
 

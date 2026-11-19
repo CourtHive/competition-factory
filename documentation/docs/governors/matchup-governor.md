@@ -846,19 +846,6 @@ const {
 
 **8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`participantScheduledMatchUps`](/docs/implementation/records/participantScheduledMatchUps). Package-export status is a separate decision.
 
-## publicFindMatchUp
-
-Finds a matchUp with privacy policies applied.
-
-```js
-const { matchUp } = engine.publicFindMatchUp({
-  matchUpId, // required
-  policyDefinitions, // optional
-});
-```
-
----
-
 ## removeMatchUpSideParticipant
 
 Removes participant assigned to AD_HOC matchUp.

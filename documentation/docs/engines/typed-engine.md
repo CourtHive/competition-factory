@@ -4,6 +4,8 @@ title: Typed Engine Surface
 
 The `FactoryEngineTyped` type lets consumers opt into a closed, autocomplete-rich view of the engine. It catches typoed method names at compile time and — for the methods listed in `MethodSignatures` — gives real param and return types lifted from the source declarations.
 
+<!-- doc-methods:ignore — a deliberate typo the type system rejects -->
+
 ```ts
 import { tournamentEngine } from 'tods-competition-factory';
 import type { FactoryEngineTyped } from 'tods-competition-factory';

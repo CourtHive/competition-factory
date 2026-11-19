@@ -95,6 +95,8 @@ global?: boolean;               // Make methods globally available across all en
 
 **Examples:**
 
+<!-- doc-methods:ignore — a method the reader imported with importMethods -->
+
 ```js
 // Import simple methods
 engine.importMethods({
