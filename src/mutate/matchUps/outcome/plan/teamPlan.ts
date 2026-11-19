@@ -345,7 +345,8 @@ function assignedLineUpOps(
   const { participantId } = loser;
   const awarded = standingAwardArrival(view, loser);
   const replacedId = view.existing.winningSide ? storedLoserId(view) : undefined;
-  const replaced = !!replacedId && view.targets.loserTargetSeat?.participantId === replacedId;
+  // (a loser held opposite a structural BYE is taken back by the BYE's own path, C21, which announces no event)
+  const replaced = !!replacedId && view.targets.loserTargetSeat?.participantId === replacedId && !heldByeLoser(view);
   const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }) ?? {};
   const ops: OutcomeOp[] = [];
   // Carried passages keep their established order; a plain arrival returns from the furthest dual first (C20).
