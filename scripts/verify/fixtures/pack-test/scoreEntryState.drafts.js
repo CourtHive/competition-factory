@@ -1,0 +1,36 @@
+// Shared by the CJS and ESM runtime smokes of `tods-competition-factory/score-entry-state`: given the module, hold two
+// drafts at once, with no DOM and no engine, and prove neither sees the other.
+// Exported as a function of the module so each format loads it its own way.
+function exerciseDrafts(entry) {
+  const fail = (message) => {
+    throw new Error(`score-entry-state: ${message}`);
+  };
+  if (typeof globalThis.document !== 'undefined' || typeof globalThis.window !== 'undefined')
+    fail('this smoke must run with no DOM');
+
+  const G = (setIndex, side) => ({ setIndex, side, kind: 'games' });
+  const blank = entry.createScoreEntryModel({ matchUpFormat: 'SET3-S:6/TB7' });
+  const frozen = JSON.stringify(blank);
+
+  let first = entry.typeDigit(blank, { cell: G(0, 1), digit: 4, complement: true });
+  first = entry.typeDigit(first, { cell: G(1, 1), digit: 3, complement: true });
+  let second = entry.createScoreEntryModel({ matchUpFormat: 'SET1-S:TB10' });
+  second = entry.chooseEnding(second, { kind: 'side', sideNumber: 2, status: 'WALKOVER' });
+
+  if (JSON.stringify(blank) !== frozen) fail('a transition wrote into the draft it was given');
+  if (entry.scoreString(first) !== '4-6 3-6') fail(`first draft reads ${entry.scoreString(first)}`);
+  if (entry.winningSide(first) !== 2 || entry.matchUpStatus(first) !== 'COMPLETED') fail('first draft is not decided');
+  if (entry.hasEntry(second) || entry.winningSide(second) !== 1) fail('second draft saw the first');
+  if (entry.typeDigit(first, { cell: G(5, 1), digit: 1 }) !== first) fail('a refused transition must return its input');
+
+  const view = { model: first };
+  const gate = entry.clearGate({ openedOnRecordedOutcome: false, cleared: false, holdsEntry: entry.holdsEntry(view) });
+  const outcome = entry.toEngineOutcome({ ...entry.submission(view, gate, {}), sets: entry.enteredSets(first) });
+  if (outcome.matchUpStatus !== 'COMPLETED' || outcome.winningSide !== 2 || outcome.score.sets.length !== 2)
+    fail(`outcome ${JSON.stringify(outcome)}`);
+  const clear = entry.toEngineOutcome({ cleared: true });
+  if (JSON.stringify(clear) !== '{"score":{"sets":[]},"matchUpStatusCodes":[]}') fail('clear outcome');
+  return Object.keys(entry).length;
+}
+
+module.exports = { exerciseDrafts };

@@ -1,0 +1,15 @@
+{
+  // `tods-competition-factory/score-entry-state` under Node's own resolution (nodenext), both formats, with no DOM
+  // lib: a declaration that reached a DOM type or the root's types would fail here.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": false,
+    "types": [],
+    "lib": ["esnext"]
+  },
+  "include": ["scoreEntryState.types.mts", "scoreEntryState.types.cts"]
+}

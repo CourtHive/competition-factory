@@ -1,18 +1,17 @@
 import { createContext, initialState, positionOf, serverOf, step, INVALID_FORMAT } from '@Scoring/kernel/reduce';
-import { overtimeLayout, scoringPeriod, segmentClosed } from '@Helpers/matchUpFormatCode/overtimeContext';
 import { readChallenge, readPoint, readServer, CALCULATED_POINT_FIELDS } from '@Scoring/kernel/actions';
 import { replayLegacy, LEGACY_IGNORED_INPUT, LEGACY_REFUSED_INPUT } from '@Scoring/kernel/legacy';
 import { configuredFormat, DEFAULT_MATCHUP_FORMAT, takesInput } from '@Scoring/kernel/format';
 import { calculateMatchStatistics } from '@Query/scoring/statistics/standalone';
+import { segmentClosed } from '@Helpers/matchUpFormatCode/overtimeContext';
 import { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
-import { finalGoverns } from '@Helpers/matchUpFormatCode/matchRule';
 import { ruleInPlay, scoreOf } from '@Scoring/kernel/score';
+import { setInPlayFormat } from '@Scoring/kernel/setReplay';
 import { createMatchUp } from '@Scoring/v1/createMatchUp';
 import { getScoreboard } from '@Scoring/v1/getScoreboard';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { getEpisodes } from '@Scoring/v1/getEpisodes';
 import { materialize } from '@Scoring/kernel/record';
-import { setsWon } from '@Scoring/kernel/decide';
 import { nowIso } from '@Tools/clock';
 import {
   copyLineUps,
@@ -779,20 +778,7 @@ export class ScoringEngine {
   }
 
   getSetInPlayFormat(): SetFormatStructure | undefined {
-    const structure = this.structure();
-    const match = this.context().match;
-    if (!structure || !match) return undefined;
-    const closed = this.state.sets.filter((set) => set.winningSide || set.segmentComplete);
-    const setNumber = Math.min(positionOf(match, this.state).set.setNumber, Math.max(closed.length + 1, 1));
-    const layout = overtimeLayout(structure);
-    if (layout) {
-      const current = this.state.matchUpStatus === COMPLETED ? (this.state.sets.at(-1)?.setNumber ?? 1) : setNumber;
-      const period = scoringPeriod(layout, current);
-      if (period?.phase === 'OVERTIME') return structure.overtimeFormat?.setFormat;
-      return period?.phase === 'DECIDER' ? structure.finalSetFormat : structure.setFormat;
-    }
-    const final = finalGoverns(match, setNumber, setsWon(this.state.sets.slice(0, setNumber - 1)));
-    return final && structure.finalSetFormat ? structure.finalSetFormat : structure.setFormat;
+    return setInPlayFormat(this.matchUpFormat, this.context(), this.state);
   }
 
   // ===========================================================================

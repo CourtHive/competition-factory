@@ -79,6 +79,12 @@ const ALLOWED = {
   'mutate/matchUps/drawPositions/removeDirectedParticipants.ts': 'WRITE — deriveStatusCodes',
   'mutate/matchUps/matchUpStatus/attemptToSetMatchUpStatusBYE.ts': 'WRITE — blanks',
 
+  // the score-entry draft (`tods-competition-factory/score-entry-state`): the POLICY tenant, at the client end
+  'scoreEntryState/engineOutcome.ts':
+    "POLICY — a draft's chosen reason code, sent as the positional array a client submits (splitStatusCodes reads it); [] blanks it on a clear",
+  'scoreEntryState/statusCodes.ts':
+    'POLICY — the reason a recorded matchUp re-displays: sideStatusCodes and matchUpStatusCode first, [0] only for records written before them',
+
   // plumbing: a caller-supplied value passed through
   'assemblies/generators/simulation/completeDrawMatchUps.ts': 'PLUMBING — mock outcome',
   'mutate/simulation/applyOutcomes.ts': 'PLUMBING — a caller-supplied outcome passed to setMatchUpStatus',

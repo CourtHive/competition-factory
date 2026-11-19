@@ -49,3 +49,11 @@ if (fs.existsSync(governorsBarrel) && fs.existsSync(governorsEsm)) {
   fs.writeFileSync('./dist/governors.d.mts', `${header}export { ${list} } from './tods-competition-factory.mjs';\n`);
   fs.writeFileSync('./dist/governors.d.cts', `${header}export { ${list} } from './tods-competition-factory.cjs';\n`);
 }
+
+// The `tods-competition-factory/score-entry-state` subpath's declarations, split per format like the root's. Rollup
+// emits `dist/score-entry-state.d.ts` from the subpath's own entry, so these files declare the draft and nothing else.
+const scoreEntryStateDts = './dist/score-entry-state.d.ts';
+if (fs.existsSync(scoreEntryStateDts)) {
+  fs.copyFileSync(scoreEntryStateDts, './dist/score-entry-state.d.mts');
+  fs.copyFileSync(scoreEntryStateDts, './dist/score-entry-state.d.cts');
+}

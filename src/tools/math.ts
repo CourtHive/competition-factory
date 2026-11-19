@@ -1,7 +1,7 @@
+import { isConvertableInteger, isNumeric } from './numeric';
 import { randomSource } from '@Tools/prng';
 import { ensureInt } from './ensureInt';
 import { numericSort } from './sorting';
-import { isString } from './objects';
 
 export function isPowerOf2(n?) {
   if (Number.isNaN(Number(n))) return false;
@@ -36,10 +36,6 @@ export function nearestPowerOf2(val) {
   return Math.pow(2, Math.round(Math.log(val) / Math.log(2)));
 }
 
-export function isNumeric(value) {
-  return !Number.isNaN(Number.parseFloat(value));
-}
-
 export function isOdd(num) {
   const numInt = ensureInt(num);
   if (Number.isNaN(numInt)) return undefined;
@@ -62,11 +58,7 @@ export function randomInt(min, max, random?: () => number) {
   return Math.floor((random ?? randomSource())() * (max - min + 1)) + min;
 }
 
-// does accept e.e. '1.0'
-export function isConvertableInteger(n) {
-  if (isString(n) && !n.trim().length) return false;
-  return Number.isSafeInteger(typeof n === 'string' ? +n : n);
-}
+export { isConvertableInteger, isNumeric };
 
 // produces an approximated normal distribution between 0 and max
 export function weightedRandom(max = 1, weight = 3, round = true, random?: () => number) {

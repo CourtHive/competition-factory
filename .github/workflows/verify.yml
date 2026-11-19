@@ -272,6 +272,11 @@ jobs:
       - name: verify:consumer-bundle
         run: pnpm verify:consumer-bundle
 
+      # Needs dist. `tods-competition-factory/score-entry-state` reaches only score-entry and scoring code: no engine,
+      # global engine state, async_hooks, DOM or root barrel, in source, in the built ESM and CJS, and in its .d.ts.
+      - name: verify:score-entry-state
+        run: pnpm verify:score-entry-state
+
       - name: verify:surface
         run: pnpm verify:surface
 

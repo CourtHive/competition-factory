@@ -65,5 +65,6 @@
   "zone",
   "white",
   "finishingPosition",
-  "onlineResources"
+  "onlineResources",
+  "NEITHER"
 ]
