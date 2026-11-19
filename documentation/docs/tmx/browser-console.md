@@ -109,7 +109,10 @@ dev.context({ params: ['addEvent', 'addDrawDefinition'], result: ['addEvent'] })
 // Errors only (with their params and result), skipping noisy methods
 dev.context({ errors: true, exclude: ['getEvents'] });
 
-// Methods slower than 10ms, with their timing
+// The elapsed time of every call
+dev.context({ perf: true });
+
+// Only calls taking 10ms or more
 dev.context({ perf: 10 });
 
 // Turn logging off
@@ -297,7 +300,10 @@ dev.tournamentEngine.addEvent = function (params) {
 ### Performance Profiling
 
 ```js
-// Every method call that takes 10ms or more, with its elapsed time
+// Every method call with its elapsed time
+dev.context({ perf: true });
+
+// Or only those taking 10ms or more
 dev.context({ perf: 10 });
 
 // Or time one call yourself

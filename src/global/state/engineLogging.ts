@@ -35,6 +35,14 @@ const printsParams = (devContext: DevContextObject, methodName: string): boolean
 const printsErrors = (devContext: DevContextObject, methodName: string): boolean =>
   devContext.errors === true || (Array.isArray(devContext.errors) && devContext.errors.includes(methodName));
 
+/** the minimum elapsed ms to log: `true` is every call (0); a number (or numeric string) is itself; anything else is off */
+function getPerfThreshold(perf: unknown): number | undefined {
+  if (perf === true) return 0;
+  if (perf === false || perf === undefined || perf === null) return undefined;
+  const threshold = Number(perf);
+  return Number.isNaN(threshold) ? undefined : threshold;
+}
+
 export function engineLogging({ engineType, methodName, elapsed, params, result, dryRun }: EngineLoggingArgs) {
   const devContext: DevContextType = getDevContext();
   if (typeof devContext !== 'object') return;
@@ -49,12 +57,10 @@ export function engineLogging({ engineType, methodName, elapsed, params, result,
 
   const exclude = excludes(devContext, methodName);
 
-  if (
-    !exclude &&
-    ![undefined, false].includes(devContext.perf) &&
-    !isNaN(devContext.perf) &&
-    elapsed >= devContext.perf
-  ) {
+  // `perf: true` times every call; a number times calls taking at least that many ms. `true` used to reach the
+  // numeric comparison as 1, so a call that finished within the same millisecond was never logged.
+  const perfThreshold = getPerfThreshold(devContext.perf);
+  if (!exclude && perfThreshold !== undefined && elapsed >= perfThreshold) {
     log.elapsed = elapsed;
   }
 

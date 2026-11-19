@@ -61,6 +61,7 @@ export type DevContextType =
       params?: boolean | string[]; // log params for all methods or specified methods
       result?: boolean | string[]; // log result for all methods or specified methods
       exclude?: string[]; // exclude logging for specified methods
+      perf?: boolean | number; // log elapsed ms: true for every call, a number for calls taking at least that long
       [key: string]: any;
     }
   | boolean;
