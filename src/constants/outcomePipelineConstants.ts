@@ -13,6 +13,10 @@ export const OUTCOME_PIPELINE_V1 = 'v1';
 export const OUTCOME_PIPELINE_V2 = 'v2';
 export const OUTCOME_PIPELINE_DIFFERENTIAL = 'differential';
 
+// The pipeline that decides when no mode has been chosen: the engine's initial state, what
+// `setOutcomePipeline()` with no argument restores, and what the suite runs when OUTCOME_PIPELINE is unset.
+export const OUTCOME_PIPELINE_DEFAULT = OUTCOME_PIPELINE_V1;
+
 export type OutcomePipelineMode =
   typeof OUTCOME_PIPELINE_V1 | typeof OUTCOME_PIPELINE_V2 | typeof OUTCOME_PIPELINE_DIFFERENTIAL;
 
