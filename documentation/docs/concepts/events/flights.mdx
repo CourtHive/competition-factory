@@ -19,6 +19,8 @@ Try the interactive flight profile editor to see how flight configurations work:
 A flight profile defines how participants should be distributed across multiple flights:
 
 ```js
+import { flightConstants, tournamentEngine } from 'tods-competition-factory';
+
 const { flightProfile } = tournamentEngine.generateFlightProfile({
   eventId,
   flightsCount: 3, // Create 3 separate flights
@@ -29,15 +31,16 @@ const { flightProfile } = tournamentEngine.generateFlightProfile({
     scaleName: 'WTN', // Optional: specific rating system
     accessor: 'wtnRating', // Optional: specific property to return as value
   },
-  splitMethod: 'WATERFALL', // Distribution method
+  splitMethod: flightConstants.SPLIT_WATERFALL, // Distribution method; omit for level-based
 });
 ```
 
 ## Split Methods
 
-The `splitMethod` determines how participants are distributed across flights:
+The `splitMethod` determines how participants are distributed across flights. Use the `flightConstants` values:
+any other value, including `'WATERFALL'`, is treated as level-based.
 
-### WATERFALL (default)
+### WATERFALL (`flightConstants.SPLIT_WATERFALL`)
 
 Distributes participants evenly like dealing cards.
 
@@ -49,7 +52,7 @@ Distributes participants evenly like dealing cards.
 
 **When to use:** Creates balanced flights with mixed skill levels across all flights.
 
-### LEVEL_BASED
+### LEVEL_BASED (`flightConstants.SPLIT_LEVEL_BASED`, the default)
 
 Groups participants by skill tiers.
 
@@ -61,7 +64,7 @@ Groups participants by skill tiers.
 
 **When to use:** Creates skill-segregated competition where top players compete separately from lower-ranked players.
 
-### SHUTTLE
+### SHUTTLE (`flightConstants.SPLIT_SHUTTLE`)
 
 Snake/serpentine distribution pattern.
 
@@ -170,7 +173,7 @@ const { flightProfile } = tournamentEngine.generateFlightProfile({
 **API Reference:** [generateFlightProfile](/docs/governors/generation-governor#generateflightprofile)
 
 ```js
-import { tournamentEngine } from 'tods-competition-factory';
+import { flightConstants, tournamentEngine } from 'tods-competition-factory';
 
 // 1. Create event
 const event = {
@@ -197,7 +200,7 @@ tournamentEngine.addEventEntries({
 const { flightProfile } = tournamentEngine.generateFlightProfile({
   attachFlightProfile: true, // Attach immediately
   flightsCount: 3, // Championship, First Flight, Second Flight
-  splitMethod: 'LEVEL_BASED', // Top players in first flight
+  splitMethod: flightConstants.SPLIT_LEVEL_BASED, // Top players in first flight
   scaleAttributes: {
     scaleType: 'RATING',
     eventType: 'DOUBLES',
