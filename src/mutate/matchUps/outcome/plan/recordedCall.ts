@@ -2,6 +2,7 @@ import { withoutSettleTelemetry } from '@Mutate/matchUps/matchUpStatus/settleTel
 import {
   drawMatchUps,
   drawStructures,
+  nothingChanged,
   objectsOf,
   readBefore,
   recordedOps,
@@ -11,7 +12,9 @@ import {
 } from './recordedDiff';
 import { FORWARD_SETTLE_EXHAUSTED } from '@Mutate/matchUps/matchUpStatus/settleForwardConsequences';
 import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
+import { withClockSourceReader, type ClockSourceReading } from '@Tools/clock';
 import { withDraftWrites } from '@Global/state/withDraftWrites';
+import { withAmbientRandomSource } from '@Tools/prng';
 import { cloneState, restoreState } from '@Tools/cloneState';
 import { stampedInThisCall } from '../ops';
 import { Recording } from '../recording';
@@ -30,16 +33,25 @@ import type { OutcomeOp } from '../ops';
  * ops. Nothing here touches the stored record or the engine's notice state.
  *
  * Undefined, and the call stays v1's, wherever the copy's run is not known to be carried whole by those ops: more than
- * one tournament record; v1 returned an error, threw, or stopped its forward settle at the bound; it wrote outside the
- * draw, changed the call's own parameters, or added or moved a matchUp or a structure, a round robin's group or a
- * dual's line among them; it buffered a notice apply could not raise again; or its result holds an object of the copy
- * whose stored counterpart is not known to read as it does (`returnedOnStored`).
+ * one tournament record; v1 returned an error or threw; it wrote outside the draw, changed the call's own parameters,
+ * or added or moved a matchUp or a structure, a round robin's group or a dual's line among them; it buffered a notice
+ * apply could not raise again; or its result holds an object of the copy whose stored counterpart is not known to
+ * read as it does (`returnedOnStored`).
+ *
+ * A run whose forward settle STOPPED AT ITS BOUND is recorded as it stopped (CA, 2026-11-18): v1 succeeds there,
+ * leaves what the pass did not reach for the next call, and says so in its `FORWARD_SETTLE_EXHAUSTED` warning, which
+ * is in what the call returns. The program says so too (`forwardExhausted`), and is asked for no proof.
  *
  * A TEAM dual's call and a line's are recorded as any (batch 4b). v1 writes the line, its dual's tally
  * (`updateTieMatchUpScore`), the dual's own direction where the line decides or un-decides it, and the line-ups it
  * carries onto the next duals' sides and the draw's `lineUps` extension: all of it in the draw, so all of it ops.
  */
-export type RecordedCall = { ops: OutcomeOp[]; written: ResultType };
+export type RecordedCall = {
+  ops: OutcomeOp[];
+  written: ResultType;
+  /** asked only where a settle predicate finds work on `ops`: whether the passes themselves do (`settledOnCopy`) */
+  provesSettled?: () => boolean;
+};
 
 /**
  * every structure and matchUp of the draw, where it stands; and the list each dual holds its lines in, which a recorded
@@ -52,9 +64,16 @@ const placed = (drawDefinition: DrawDefinition): object[] => [
   ),
 ];
 
-/** v1's forward settle stopped at its bound: it warns, and leaves work this plan would not show */
-const unsettled = (written: ResultType) =>
+/**
+ * v1's forward settle stopped at its bound (`settleForwardConsequences`, `PASS_LIMIT`): it warns, naming a matchUp it
+ * did not reach, and leaves the rest of what the pass owes to the next call's settle
+ */
+const stoppedForward = (written: ResultType) =>
   !!written.warnings?.some((warning) => warning.code === FORWARD_SETTLE_EXHAUSTED);
+
+/** the recorded program of a run that stopped there, saying so (`ops.ts` `announceRecorded.forwardExhausted`) */
+const exhaustedProgram = (ops: OutcomeOp[]): OutcomeOp[] =>
+  ops.map((op) => (op.op === 'announceRecorded' ? { ...op, forwardExhausted: true } : op));
 
 /** every object under `root`, itself among them */
 function objectsUnder(root: object): Set<object> {
@@ -143,7 +162,7 @@ export function recordWholeCall(args: BuildViewArgs): RecordedCall | undefined {
           outside: outside(),
         };
         const ran = runOnCopy(args, { tournamentRecord, drawDefinition, event });
-        if (!ran || ran.error || unsettled(ran)) return undefined;
+        if (!ran || ran.error) return undefined;
         const after = placed(drawDefinition);
         const moved = after.length !== before.placed.length || after.some((entity, at) => entity !== before.placed[at]);
         if (moved || outside() !== before.outside) return undefined;
@@ -151,7 +170,11 @@ export function recordWholeCall(args: BuildViewArgs): RecordedCall | undefined {
         if (after.some((entity) => hasStaleScoredTime(entity as MatchUp))) return undefined;
         const ops = recordedOps({ drawDefinition, recording, before, marks: readMarks() });
         // last: the ops are read off the copy as the run left it, before the result is given the stored objects
-        return ops && returnedOnStored(ran, originals, drawDefinition) ? { ops, written: ran } : undefined;
+        if (!ops || !returnedOnStored(ran, originals, drawDefinition)) return undefined;
+        // stopped at the forward bound: what the pass left is v1's to leave, and running it again would do the rest
+        if (stoppedForward(ran)) return { ops: exhaustedProgram(ops), written: ran };
+        const provesSettled = () => settledOnCopy(args, { tournamentRecord, drawDefinition, event }, outside);
+        return { ops, written: ran, provesSettled };
       }),
     ),
   );
@@ -159,6 +182,58 @@ export function recordWholeCall(args: BuildViewArgs): RecordedCall | undefined {
   // v1 wrote into the call's own parameters, which the stored record's write is handed next: they are put back
   restoreState(kept);
   return undefined;
+}
+
+/**
+ * THE FIXPOINT, PROVED ON THE COPY. A has-work predicate (`settleWork.ts`) reads the working view a program leaves and
+ * may find work where the pass it stands for has none: it is an approximation, kept on the safe side. Where one finds
+ * work on a recording, the passes themselves are asked: the settle passes (`settleAfterWrite`) run once more on the
+ * copy as v1's run left it, with the readings taken of it as it then stands, as the next call's settle would take them
+ * (the same answer was measured with the readings v1's own run was handed). True only if that run changes NOTHING
+ * AT ALL, by the measure the recorder takes of a change (`nothingChanged`: every entity's own fields and the objects
+ * that hold them, so no field and no stamp; no notice buffered), and returns no error and no warning, stops at no
+ * bound, adds or moves no entity, writes nothing outside the draw or into the call's parameters, marks no tournament
+ * or topic modified, and reads neither the clock nor the random source. Then v1's write is settled: the passes have
+ * no work on it, whatever a predicate says.
+ *
+ * The run is handed neither source: a read is answered with a placeholder and counted, and the proof fails. So the
+ * instants and the draws the copy's first run kept are the call's, and v1 on the stored record is handed exactly
+ * those (`replayedInstants.ts`, `replayedDraws.ts`). False changes nothing either: the recording is dropped, as it was.
+ */
+function settledOnCopy(args: BuildViewArgs, copy: RecordCopy, outside: () => string): boolean {
+  const settle = args.settleOnCopy;
+  if (!settle) return false;
+  const requested = JSON.stringify(args.request);
+  return withNoticeMarks((readMarks) =>
+    withDraftWrites(() =>
+      withoutSettleTelemetry(() => {
+        const before = { ...readBefore(copy.drawDefinition), placed: placed(copy.drawDefinition), outside: outside() };
+        let reads = 0;
+        const unread: ClockSourceReading = { ms: 0 };
+        let again: ReturnType<typeof settle>;
+        try {
+          again = withClockSourceReader(
+            () => ((reads += 1), unread),
+            () =>
+              withAmbientRandomSource(
+                () => ((reads += 1), 0),
+                () => settle(copy),
+              ),
+          );
+        } catch {
+          return false;
+        }
+        if (!again || again.error || again.exhausted || again.warnings?.length || reads) return false;
+        const after = placed(copy.drawDefinition);
+        if (after.length !== before.placed.length || after.some((entity, at) => entity !== before.placed[at]))
+          return false;
+        if (outside() !== before.outside || JSON.stringify(args.request) !== requested) return false;
+        const marks = readMarks();
+        if (marks?.tournamentIds.length || marks?.topics.length) return false;
+        return nothingChanged(copy.drawDefinition, before);
+      }),
+    ),
+  );
 }
 
 /** a throw is v1's to make on the stored record, as it makes it today */

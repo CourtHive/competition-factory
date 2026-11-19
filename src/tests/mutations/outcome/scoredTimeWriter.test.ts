@@ -76,6 +76,15 @@ vi.mock('@Mutate/matchUps/outcome/settleWork', async (importOriginal) => {
     },
   };
 });
+// the retained refusal is a predictor's alone: no pass has that work, and a recording proved settled on its copy would
+// answer it (`plan/recordedCall.ts` `settledOnCopy`). The fallback under test is the one nothing answers, so with the
+// refusal retained no recording is made
+vi.mock('@Mutate/matchUps/outcome/plan/recordedCall', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@Mutate/matchUps/outcome/plan/recordedCall')>();
+  const recordWholeCall: typeof actual.recordWholeCall = (args) =>
+    writes.residual ? undefined : actual.recordWholeCall(args);
+  return { ...actual, recordWholeCall };
+});
 const topics = [MODIFY_MATCHUP, MODIFY_DRAW_DEFINITION, MODIFY_POSITION_ASSIGNMENTS, UPDATE_INCONTEXT_MATCHUP];
 afterEach(() => {
   setDeepCopy(true, {});

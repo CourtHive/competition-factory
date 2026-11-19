@@ -127,3 +127,24 @@ it('still probes leftover scoredTime when a retained exit and its consequences a
   );
   expect(work).toEqual(['reconcileScoredTimes']);
 });
+
+it('does not ask the forward pass of a program recorded at its bound, and asks every other pass', () => {
+  const { predict } = firstRound({
+    plant: (record) => {
+      const later = record.events[0].drawDefinitions[0].structures[0].matchUps.find((m: any) => m.roundNumber === 3);
+      later.schedule = { scoredTime: '2026-10-24T12:00:00.000Z' };
+    },
+  });
+  // CONTROL: a winner written and not advanced is the forward pass's work
+  const owed = (ops: OutcomeOp[]) => ops.filter((op) => op.op === 'setMatchUpResult');
+  expect(predict(COMPLETED, {}, owed)).toEqual(['settleForwardConsequences', 'reconcileScoredTimes']);
+  // v1 stopped there and said so (`announceRecorded.forwardExhausted`): what it left is not work the program misses
+  const stopped = (ops: OutcomeOp[]): OutcomeOp[] => [
+    ...owed(ops),
+    { op: 'announceRecorded', notices: [], forwardExhausted: true },
+  ];
+  expect(predict(COMPLETED, {}, stopped)).toEqual(['reconcileScoredTimes']);
+  // a recorded program that does not say so is asked as any is
+  const silent = (ops: OutcomeOp[]): OutcomeOp[] => [...owed(ops), { op: 'announceRecorded', notices: [] }];
+  expect(predict(COMPLETED, {}, silent)).toEqual(['settleForwardConsequences', 'reconcileScoredTimes']);
+});

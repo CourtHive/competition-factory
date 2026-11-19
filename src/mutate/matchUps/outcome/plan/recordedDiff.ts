@@ -2,6 +2,7 @@ import { DEFERRED_PAYLOAD, getCapturedStamps, getNoticeBuffer, getNoticeState } 
 import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { deferredQueryBinding } from '@Mutate/notifications/drawNotifications';
 import { DRAW_CHILDREN, MATCHUP_CHILDREN, RECORDED_ENTITY, recordedName, STRUCTURE_CHILDREN } from '../ops';
+import { cloneData } from '@Tools/cloneState';
 import { isObject } from '@Tools/objects';
 
 // constants and types
@@ -90,7 +91,7 @@ function recordedNotice({ topic, key, payload }: Notice): RecordedNotice | undef
   }
   const entity = RECORDED_ENTITY[topic];
   if (!entity) return undefined;
-  return { ...base, fields: structuredClone({ ...payload, [entity]: null }) };
+  return { ...base, fields: asData({ ...payload, [entity]: null }) };
 }
 
 /**
@@ -159,6 +160,32 @@ export function readBefore(drawDefinition: DrawDefinition) {
 }
 
 /**
+ * Whether the copy is, object for object, as `before` read it: every matchUp's, structure's and the draw's own fields
+ * read the same and are held by the same objects (`unchanged`, the measure `recordedOps` takes of a change), and no
+ * notice has been buffered since.
+ */
+export function nothingChanged(drawDefinition: DrawDefinition, before: RecordedBefore): boolean {
+  return (
+    drawMatchUps(drawDefinition).every((stored) =>
+      unchanged(ownState(stored, MATCHUP_CHILDREN), before.matchUps.get(stored.matchUpId)),
+    ) &&
+    drawStructures(drawDefinition).every((s) =>
+      unchanged(ownState(s, STRUCTURE_CHILDREN), before.structures.get(s.structureId)),
+    ) &&
+    unchanged(ownState(drawDefinition, DRAW_CHILDREN), before.draw) &&
+    (getNoticeBuffer() ?? []).every((notice) => before.notices.has(notice))
+  );
+}
+
+/**
+ * An op's own copy of an entity's fields, for the working view and the shadow to fold (apply leaves the copy's own
+ * graph: `Recording.mirror`). Fields that are not data (a function among the notes a caller handed `addNotes`, which
+ * v1 stores as they are) are copied as far as they can be, and what cannot be copied is held by reference
+ * (`cloneData`): the very function the call handed over, which is what v1 stores.
+ */
+const asData = cloneData;
+
+/**
  * What the writers changed on the copy since `before`, as ops, and the notices they buffered: an entity is changed
  * where its fields read differently or an object holding them is another (`unchanged`). Undefined where one of those
  * notices is one apply could not raise again on the stored record: the call stays v1's.
@@ -182,23 +209,19 @@ export function recordedOps({
   // a dual's own fields, then each of its lines': a line is a matchUp of its own, and stamps as one
   for (const stored of drawMatchUps(drawDefinition)) {
     const state = ownState(stored, MATCHUP_CHILDREN);
-    if (!unchanged(state, before.matchUps.get(stored.matchUpId)))
-      replace(
-        { op: 'replaceMatchUp', matchUpId: stored.matchUpId, matchUp: structuredClone(state) as MatchUp, recording },
-        stored,
-      );
+    if (unchanged(state, before.matchUps.get(stored.matchUpId))) continue;
+    const matchUp = asData(state) as MatchUp;
+    replace({ op: 'replaceMatchUp', matchUpId: stored.matchUpId, matchUp, recording }, stored);
   }
   for (const s of drawStructures(drawDefinition)) {
     const state = ownState(s, STRUCTURE_CHILDREN);
-    if (!unchanged(state, before.structures.get(s.structureId)))
-      replace({ op: 'replaceStructureState', structureId: s.structureId, state: structuredClone(state), recording }, s);
+    if (unchanged(state, before.structures.get(s.structureId))) continue;
+    replace({ op: 'replaceStructureState', structureId: s.structureId, state: asData(state), recording }, s);
   }
   const state = ownState(drawDefinition, DRAW_CHILDREN);
-  if (!unchanged(state, before.draw))
-    replace(
-      { op: 'replaceDrawState', drawId: drawDefinition.drawId, state: structuredClone(state), recording },
-      drawDefinition,
-    );
+  if (!unchanged(state, before.draw)) {
+    replace({ op: 'replaceDrawState', drawId: drawDefinition.drawId, state: asData(state), recording }, drawDefinition);
+  }
   const notices: RecordedNotice[] = [];
   for (const notice of getNoticeBuffer() ?? []) {
     if (before.notices.has(notice)) continue;

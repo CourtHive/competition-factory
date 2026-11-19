@@ -15,6 +15,7 @@ import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScor
 import { findOwedCarry } from '@Mutate/matchUps/matchUpStatus/reconcileCarriesPastByes';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
+import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 
 // constants and types
@@ -118,7 +119,22 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
     reconcileStaleExitOrigins: staleOrigins,
     reconcileCarriesPastByes: () =>
       !!findOwedCarry({ inContextDrawMatchUps: view, drawDefinition: draw, matchUpsMap: map }),
-    settleHeldExits: () => hasHeldExitWork({ inContextDrawMatchUps: view, drawDefinition: draw, matchUpsMap: map }),
+    settleHeldExits: () =>
+      hasHeldExitWork({
+        // what the pass's own detector is handed (`settleAfterWrite`): a production it asks about is made with these
+        context: {
+          appliedPolicies: getAppliedPolicies({
+            tournamentRecord: args.tournamentRecord,
+            drawDefinition: draw,
+            event: args.event,
+          }).appliedPolicies,
+          tournamentRecord: args.tournamentRecord,
+          event: args.event,
+        },
+        inContextDrawMatchUps: view,
+        drawDefinition: draw,
+        matchUpsMap: map,
+      }),
     reconcileByeAdvancements: () => !!findOwedByeAdvance(view),
     reconcileMissedLinkAdvancements: () =>
       !!findMissedLinkAdvancements({ inContextDrawMatchUps: view, drawDefinition: draw }).length,
@@ -166,7 +182,13 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
     )
   )
     return Object.keys(work) as SettleSite[];
-  return (Object.keys(work) as SettleSite[]).filter((site) => work[site]());
+  // RECORDED AT THE FORWARD BOUND (`ops.ts` `announceRecorded.forwardExhausted`): v1's forward settle stopped at its
+  // pass limit, succeeded, and warned of what it left. That remainder is what v1 leaves on the stored record, so it
+  // is not work the program misses: the pass's predicate is not asked, and every other pass's is
+  const exhausted = ops.some((op) => op.op === 'announceRecorded' && op.forwardExhausted);
+  return (Object.keys(work) as SettleSite[]).filter(
+    (site) => !(exhausted && site === 'settleForwardConsequences') && work[site](),
+  );
 }
 
 /** a matchUp of the working view carries the exit the call's matchUp sent across its loser link already */

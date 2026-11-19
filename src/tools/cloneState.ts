@@ -59,6 +59,21 @@ export function cloneState<T>(source: T): StateClone<T> {
 }
 
 /**
+ * A copy of a value that is data wherever it can be: `structuredClone`, and, where the value holds what that cannot
+ * copy (a function among the fields of an object a caller handed over), `cloneState`'s copy of it: every plain object
+ * and array copied, shared references kept shared, and whatever else it holds kept BY REFERENCE, as the record itself
+ * holds it. The fallback is taken only where `structuredClone` throws, so a value that is data is copied exactly as
+ * before.
+ */
+export function cloneData<T>(value: T): T {
+  try {
+    return structuredClone(value);
+  } catch {
+    return cloneState(value).copy;
+  }
+}
+
+/**
  * Writes a snapshot back INTO the original objects, so that every object present at capture keeps
  * its identity and regains its values; objects the operation created are dropped. Used when the
  * engine works on the caller's own objects (deep copy disabled), where replacing them would leave

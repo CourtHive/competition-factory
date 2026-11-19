@@ -359,7 +359,11 @@ function wholeCarry(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
  * tally the planners do not write (a group's is among the group's own fields, which a recording carries); a TEAM dual
  * or line the planners do not write (S7 plans a line's result, and the dual it decides); a call with no stamp ledger
  * (`clock`: no captured instant, or one captured without it); a draw stored without its edges, which v1 writes first
- * (`edges`: they are among the matchUps the copy's run changed)
+ * (`edges`: they are among the matchUps the copy's run changed);
+ * a stored winner taken away by a call that names none (`winner`: what S4 does not plan);
+ * a result under a per-matchUp competition policy (`competition`: the state v1 re-derives is the draw's own field);
+ * a schedule `scheduleOps` does not plan (`schedule`: timeItems, the matchUp's own field);
+ * notes the planners do not write (`notes`: a matchUp's own field wherever v1 writes them)
  */
 const RECORDED_WHOLE = new Set<AbstainReason>([
   'exit',
@@ -374,6 +378,10 @@ const RECORDED_WHOLE = new Set<AbstainReason>([
   'team',
   'clock',
   'edges',
+  'winner',
+  'competition',
+  'schedule',
+  'notes',
 ]);
 
 /**
@@ -398,9 +406,19 @@ function recordedWhole(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
   const answered = plan.ops ? unanswered(plan.ops) : RECORDED_WHOLE.has(plan.abstain);
   if (!answered) return plan;
   const recorded = args.recordWhole?.();
-  if (!recorded || args.settles?.(recorded.ops)) return plan;
-  return { ops: recorded.ops, shape: 'local', recordedResult: recorded.written };
+  if (!recorded) return plan;
+  // a predicate that finds work on v1's own write is answered by the passes themselves (`settledOnCopy`): only where
+  // they change nothing at all is the program marked settled, and no predicate is asked of it again
+  const settled = args.settles?.(recorded.ops)
+    ? recorded.provesSettled?.() && settledProgram(recorded.ops)
+    : recorded.ops;
+  if (!settled) return plan;
+  return { ops: settled, shape: 'local', recordedResult: recorded.written };
 }
+
+/** the recorded program, its notices marked settled by proof (`ops.ts` `announceRecorded.settledByProof`) */
+const settledProgram = (ops: OutcomeOp[]): OutcomeOp[] =>
+  ops.map((op) => (op.op === 'announceRecorded' ? { ...op, settledByProof: true } : op));
 
 function carriedWhole(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
   if (takeAdmittedCarry() !== args.request.matchUpId) return plan;

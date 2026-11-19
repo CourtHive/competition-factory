@@ -6084,7 +6084,6 @@ export const HELD_BYE_REMOVALS: [string, Scenario, boolean][] = HELD_BYE_RECIPES
       roundPosition,
     };
     const drawProfile = { drawType, drawSize, participantsCount };
-    const linkedWinner = drawType === DOUBLE_ELIMINATION && participantsCount === 2;
     return ([1, 2] as const).flatMap((side) => {
       const actions: [string, Record<string, unknown>, Record<string, unknown>, boolean][] = [
         ['clear', won(side), cleared, true],
@@ -6103,9 +6102,10 @@ export const HELD_BYE_REMOVALS: [string, Scenario, boolean][] = HELD_BYE_RECIPES
         };
         const cases: [string, Scenario, boolean][] = [[label, scenario, owned]];
         if ([DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(action)) {
-          // The linked winner's double exit under policy off: `predictSettleWork` still finds `settleHeldExits` work on
-          // what the recording leaves, so it is dropped whole and the call stays v1's (owed a ruling).
-          cases.push([`${label}, policy off`, { ...scenario, policyDefinitions: POLICY_OFF }, owned && !linkedWinner]);
+          // The linked winner's double exit under policy off converges the Main final, whose Decider is a settled BYE:
+          // `settleHeldExits` no longer produces there again (`aSettledByeTargetIsNotProducedAgain.test.ts`), no
+          // predicate finds that work on what the recording leaves, and the call is v2's as the rest are.
+          cases.push([`${label}, policy off`, { ...scenario, policyDefinitions: POLICY_OFF }, owned]);
         }
         return cases;
       });

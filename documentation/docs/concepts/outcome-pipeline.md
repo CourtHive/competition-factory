@@ -83,7 +83,7 @@ an exit with no winner, refused. v1 asks it before the dual's own writes (its si
 | 2   | `ERR_MISSING_DRAWDEF`                      | no draw could be resolved from `drawId` / `drawDefinition`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `setMatchUpStatus`                                                                                                                                                                                                                                                 |
 | 30  | `ERR_UNDECIDED_LEVEL_RESULT`               | COMPLETED with no `winningSide`, in a structure that advances a winner, on a level score of a format that can end level: a level result there names its winner and records how it was decided (`score.overtime.decidedIn: 'EXTERNAL'`, standings phase 2 § 1.1, CA 2026-11-04). The same check refuses any other winnerless COMPLETED there with `ERR_INVALID_SCORE` (`completed elimination results require a winningSide`). Asked between rows 2 and 3, before anything else is read                                                                                                                                       | `resolveRotatingPartnerOutcome`                                                                                                                                                                                                                                    |
 | 3   | `ERR_INVALID_WINNING_SIDE`                 | `winningSide` present and not 1 or 2; **0 is refused** (CA, 2026-10-01: there is never a `winningSide: 0`); a set's own `winningSide` likewise                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | `setMatchUpStatus`                                                                                                                                                                                                                                                 |
-| 23  | `ERR_INVALID_VALUES`                       | `notes` present and not a string. Checked here, between rows 3 and 4: notes are written last, onto the matchUp, after the score, so `addNotes` refusing them there was an error over a written result (2026-10-22). Numbered 23 so the existing rows keep their numbers                                                                                                                                                                                                                                                                                                                                                      | `setMatchUpStatus`                                                                                                                                                                                                                                                 |
+| 23  | `ERR_INVALID_VALUES`                       | `notes` present and not a string. Checked here, between rows 3 and 4: notes are written last, onto the matchUp, after the score, so `addNotes` refusing them there was an error over a written result (2026-10-22). Numbered 23 so the existing rows keep their numbers                                                                                                                                                                                                                                                                                                                                                      | `setMatchUpStatus`; every other, where the notes are data, is read off v1's whole write (`recordedWhole`)                                                                                                                                                          |
 | 4   | `ERR_UNRECOGNIZED_MATCHUP_FORMAT`          | the call's `matchUpFormat` is not well-formed (does not parse), or is well-formed but refused for new use (a tiebreak below `setTo − 1`, an aggregate of standard sets; scoring engine spec § 16 decision 19, CA 2026-10-18) AND differs from the format the matchUp plays under (matchUp, structure, draw, event): a score sent back with the stored format is not a new use                                                                                                                                                                                                                                                | `checkMatchUpFormatApplication`                                                                                                                                                                                                                                    |
 | 5   | `ERR_INVALID_VALUES`                       | `matchUpStatus` is one of CANCELLED, INCOMPLETE, ABANDONED, TO_BE_PLAYED with a `winningSide`; or a TEAM dual with AWAITING_RESULT                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | `validateMatchUpStateInputs`, `setMatchUpState`                                                                                                                                                                                                                    |
 | 6   | `ERR_INVALID_MATCHUP_STATUS`               | `matchUpStatus` is not a known status; or a directing outcome on a matchUp without two participants (§ 2.1); or no route accepts it (§ 3's fallthrough: an exit named with no winner; asked after row 15, where `attemptToSetMatchUpStatus` asks it)                                                                                                                                                                                                                                                                                                                                                                         | `validateMatchUpStateInputs`, `checkParticipants`, `attemptToSetMatchUpStatus`                                                                                                                                                                                     |
@@ -334,7 +334,12 @@ After the write, and only on success:
    refused call included (census family F2).
 5. **The draw is settled**: held exits are released (`settleHeldExits`), including to a participant
    who already passed the BYE holding them and carries no exit of their own (only an exit whose
-   origin is still a double exit travels this way); the drawPosition opposite a lone BYE, a
+   origin is still a double exit travels this way), and a convergence that has not produced its exit
+   produces it. Into a winner target that is the BYE it holds, with nobody in it and no matchUp beyond,
+   it produces only where that moves something, asked on a copy of the draw: a BYE does not always
+   record the exit produced into it, so such a convergence read as owed on every later call, and the
+   BYE was written over itself, announced and stamped each time
+   (`aSettledByeTargetIsNotProducedAgain`); the drawPosition opposite a lone BYE, a
    participant or an empty seat the structure placed there, goes on where its next matchUp has room
    (`reconcileByeAdvancements`; census A1, `theSeatLeftOppositeAByeGoesOn`); and a final that feeds a
    decider settles whether the decider is needed (`reconcileDeciders`) when a final's winner changed,
@@ -1682,7 +1687,7 @@ is not made, and the call stays v1's, for: a TEAM dual or line (batch 3 and 4a; 
 with no captured clock; a call that names more than one tournament record. Nor is it asked for where the call is
 refused: a refused call has no route, its refusal is its answer, and `differential` plans it only to set v1's refusal
 against v2's. It is discarded where v1's run on the copy returns an error, throws, or stops its forward settle at the
-bound; writes anything outside the draw; adds or moves a matchUp or a structure; writes a round robin group's own fields
+bound (recorded since: batch 5, below); writes anything outside the draw; adds or moves a matchUp or a structure; writes a round robin group's own fields
 (batch 3 and 4a; batch 4b, below, carries them); leaves a scored time on a matchUp with no score (the plan's own cleanup
 would clear it); changes the call's own parameters (which are put back); buffers a notice apply could not raise again;
 or returns a result that holds an object of the copy (batch 4b, below, returns the stored one where that is exact). A
@@ -1749,19 +1754,6 @@ from for a tally they do not write (a round robin group's, an ad hoc or lucky st
 write, under every refusal above. A recorded cascade (the double-exit module's) reads the same diff, so a group's
 fields it changed would be carried too; it is still not asked for a call in a group.
 
-**Recorded calls: a draw stored without its edges.** `edges` is answered. v1 writes a draw's missing edges before it
-decides anything (`ensureGoesTo`: `winnerMatchUpId`, `loserMatchUpId`, and the finishing round and range `addGoesTo`
-adds, onto every matchUp that has one), and a call that succeeds announces the draw once for them (`announceGoesTo`: one
-`modifyDrawDefinition`, which stamps the draw and each of its structures, and no `modifyMatchUp` for a matchUp whose
-only change is an edge). All of it is in the draw, so the copy's run carries it: a `replaceMatchUp` for each matchUp
-given an edge, which keeps the `updatedAt` it had, as v1 leaves it; the structures' and the draw's stamps in their own
-ops; the draw notice among the recorded notices. The recording is one op a matchUp at most (measured: 220 `replaceMatchUp`, one for
-each matchUp of a FIRST_MATCH_LOSER_CONSOLATION 128 that holds an edge), made once: the draw stores its edges from then on. A refused call
-has no route, is not asked for, and stores none of the edges, as before. `edges` is asked ahead of a schedule, notes,
-the client's codes and a competition policy, so a call recorded for it may be one a later reason would have held too:
-what v1 does for those on the copy is recorded with the rest, or the recording is discarded by the recorder's own
-rules, as for `write-mode` above.
-
 A TEAM dual's call and a line's are recorded as any call is, and `team` is answered with every other reason a TEAM call
 abstains for (`exit`, `cascade`, `route`, a plan that leaves settle work, and the rest). v1 writes the line, its dual's
 tally (`updateTieMatchUpScore`: the sides and tieFormat it ensures, the score, the status), the dual's own direction
@@ -1776,6 +1768,96 @@ ledger (a stamp is once per entity per engine call), and a later write of that l
 and its lines as across any entities: a line-up object v1 writes onto a side and into the draw's extension is one object
 in both. A dual planned inside its line's plan (`asDual`) is still never recorded: the line's call is the one asked, and
 is recorded whole where its dual's part is not planned.
+
+**Recorded calls (batch 5): the abstentions that were left.** Each of the paragraphs below adds one reason to those a
+whole-call recording answers (`plan.ts` `RECORDED_WHOLE`), under every refusal above. A call with no captured instant
+(`clock`) is described under § 7.2's table.
+
+**Recorded calls: a draw stored without its edges.** `edges` is answered. v1 writes a draw's missing edges before it
+decides anything (`ensureGoesTo`: `winnerMatchUpId`, `loserMatchUpId`, and the finishing round and range `addGoesTo`
+adds, onto every matchUp that has one), and a call that succeeds announces the draw once for them (`announceGoesTo`: one
+`modifyDrawDefinition`, which stamps the draw and each of its structures, and no `modifyMatchUp` for a matchUp whose
+only change is an edge). All of it is in the draw, so the copy's run carries it: a `replaceMatchUp` for each matchUp
+given an edge, which keeps the `updatedAt` it had, as v1 leaves it; the structures' and the draw's stamps in their own
+ops; the draw notice among the recorded notices. The recording is one op a matchUp at most (measured: 220 `replaceMatchUp`, one for
+each matchUp of a FIRST_MATCH_LOSER_CONSOLATION 128 that holds an edge), made once: the draw stores its edges from then on. A refused call
+has no route, is not asked for, and stores none of the edges, as before. `edges` is asked ahead of a schedule, notes,
+the client's codes and a competition policy, so a call recorded for it may be one a later reason would have held too:
+what v1 does for those on the copy is recorded with the rest, or the recording is discarded by the recorder's own
+rules, as for `write-mode` above.
+
+**Recorded calls: a stored winner taken away.** `winner` is answered. The planners plan a winner entered again, changed,
+swapped, or cleared with its status. What is left abstained `winner`: a decided result re-scored as unfinished
+(IN_PROGRESS, INCOMPLETE, AWAITING_RESULT, DEAD_RUBBER: v1 takes the winner back out of the next matchUp), and a decided
+result corrected to a tie its format permits (COMPLETED with no winner). All of it is v1's write in the draw (the
+matchUp's own fields, the next matchUp's position, a group's tally), so the recording carries it under every refusal
+above.
+
+**Recorded calls: a per-matchUp competition policy.** `competition` is answered. v1's score write brings the draw's
+stored competition state up to date (`processCompetitionMatchUp`: re-derived from every result of the draw) and
+announces the draw for it (`announceDrawChange`). The state is the draw's own field (`competitionState`, or its
+extension), so the recording carries it in `replaceDrawState`, with the draw notice among the recorded notices. Nothing
+is written outside the draw; a run that did would be discarded by the recorder's own rule.
+
+**Recorded calls: a schedule the planners do not write.** `schedule` is answered. v1 writes a call's schedule onto its
+matchUp as timeItems after the result, each stamped with the call's instant; the planners write what `scheduleOps` plans
+and abstained from the rest (a start and an end time, a schedule on a double exit asked for again). The timeItems are
+the matchUp's own field, so the recording carries them. A schedule v1 refuses is still refused before any plan (§ 2).
+
+**Recorded calls: notes the planners do not write.** `notes` is answered. v1 writes a call's notes onto its matchUp
+inside the score write (`addNotes`) and forwards the call's parameters, notes among them, to the exits a double exit
+writes; the planners write notes on the call's own matchUp on the clean routes and abstained from the rest. Wherever v1
+writes them the notes are a matchUp's own field, so the recording carries them.
+
+**Recorded calls: notes that are not data (CA, 2026-11-18).** `addNotes` also stores the `{ testing: true }` object a
+test hands it, as it is: the stored matchUp holds the caller's very object, whatever its fields hold, a function among
+them. Such a call was not recorded (a function cannot be copied, so no op could hold the matchUp), and stayed v1's. It
+is recorded: v1's run on the copy is handed the call's own parameters, so the copy's matchUp holds the caller's object,
+and apply leaves the copy's object graph on the stored matchUp (`Recording.mirror`: an object taken from the call is
+taken as it is). The stored matchUp therefore holds the very object v1 stores, each function in it the one handed over.
+The op's own copy of the matchUp, which the working view and the shadow fold, is a copy as far as one can be made
+(`tools/cloneState.ts` `cloneData`: `structuredClone`, and only where that throws, every plain object and array copied
+and whatever else is held kept by reference). The same copy is taken at three more places where v2 copies a stored
+matchUp or a folded view that may hold such a field (the working view's copy on write, the recorded fold,
+`differential`'s kept view): before, a later call on a record holding such notes threw there under `v2` and
+`differential` (`DataCloneError`), and the two measured (a result on the matchUp that holds them, a double exit beside
+it) now leave what v1 leaves. Other routes over such a record are not measured. `differential` compares the shadow with v1's record as text, which does not show a function; that
+the stored object is v1's, object for object and function for function, is held by `recordedNotesCall.test.ts`.
+
+**Recorded calls: a forward settle stopped at its bound (CA, 2026-11-18).** v1's forward settle acts on one owed
+answer per pass and stops after its pass limit (§ 6: `settleForwardConsequences`, 64 passes). A call that stops there
+succeeds: what the pass did not reach is left for the next call's settle, and the call returns a
+`FORWARD_SETTLE_EXHAUSTED` warning naming a matchUp it did not reach. Such a run was discarded, and the call stayed
+v1's. It is recorded as it stopped: the recorded ops are v1's write up to the bound and the passes that follow it, and
+the call returns what v1 returned on the copy, the warning in it. The program's `announceRecorded` op says so
+(`forwardExhausted: true`, `plan/recordedCall.ts`), and of such a program the forward pass's predicate is not asked
+(`settleWork.ts` `predictSettleWork`): the work it would find is the work v1 leaves, stated in the warning, not work the
+program misses. Every other predicate is asked, and where one finds work the recording is dropped: no proof is offered
+for it (`settledOnCopy` would run the forward pass again and do the rest). The next call, v1's or v2's, finds the
+remainder as v1 alone leaves it. Not this: a bounded loop that REFUSES at its bound (`SETTLE_BOUND_REACHED`, § 6) is
+an error, and a call v1 refuses on the copy is still v1's.
+
+**Recorded calls: settled by proof (EXPLORATORY, not ruled; its own commit).** A whole-call recording is v1's write
+as its own settle passes left it, and a recording a has-work predicate still found work on was dropped. The predicates
+approximate the passes, so where one finds work on a recording the passes themselves are asked
+(`plan/recordedCall.ts` `settledOnCopy`): `settleAfterWrite` runs once more on the copy as v1's run left it, with the
+readings taken of the copy as it then stands, as the next call's settle would take them. The recording is kept only if
+that run changes nothing at all by the measure the recorder takes of a change (every entity's own fields and the
+objects that hold them, so no field and no stamp; no notice buffered), returns no error and no warning, stops at no
+bound, adds or moves no entity, writes nothing outside the draw or into the call's parameters, marks no tournament or
+topic modified, and reads neither the clock nor the random source (it is handed neither: a read is answered with a
+placeholder, counted, and fails the proof, so the instants and draws the copy's first run kept stay the call's). The
+kept program's `announceRecorded` op says so (`settledByProof: true`), and `settleSites` asks no predicate of a program that
+carries it: the passes' answer stands in the predicates' place, and the plan reports no settle work because the passes
+have none. Anything else, and the recording is dropped as before.
+
+Measured on the batch 5 ledger's settle family (22 calls): `reconcileLinkAdvancements` found work the pass does not
+have (2 calls: a qualifier's removal held back by play downstream; a TEAM line in a dual won by WALKOVER whose winner
+was fed on), and those are proved and owned. `settleHeldExits` found work the pass DOES have (20 calls: a double exit
+beside a held exit, entered, asked for again, or made of a result): asked again, the pass leaves every value as it is
+and announces the matchUps it visits, which a later call's settle does too, with their stamps. That is a change, so
+those recordings are dropped and the calls stay v1's. With the readings v1's own run was handed, in place of fresh
+ones, every one of the 22 answers the same.
 
 **What a recorded call returns.** v1 on the copy returns objects of the copy where on the stored record it returns the
 stored ones. A line's call returns its dual's tally (`tieMatchUpResult`), and where the dual's tieFormat declares its
@@ -1807,11 +1889,11 @@ the slices that follow:
 | reason         | the call                                                                                                                                                                 | taken on by                                                                                                                                                                                                                                                              |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `team`         | is a dual or one of its lines, but a line's first result leaving its dual undecided (S7)                                                                                 | S7; batch 4b: what S7 does not plan is read off v1's whole write (`recordedWhole`)                                                                                                                                                                                       |
-| `schedule`     | carries a schedule                                                                                                                                                       | a later slice (§ 3.5.8 of the executor plan)                                                                                                                                                                                                                             |
+| `schedule`     | carries a schedule                                                                                                                                                       | a later slice (§ 3.5.8 of the executor plan); what `scheduleOps` does not plan is read off v1's whole write (`recordedWhole`)                                                                                                                                            |
 | `notes`        | carries notes, but on the call's own matchUp on the winner, score-only, removal and clear routes, not TEAM, no double exit before or after (S7)                          | S7; deferred: TEAM (the dual's tally write), a double exit (v1 forwards the call's params, notes included, to the exits it writes: v2 would write them on the produced exit too), the `{ testing }` fixture, every other route                                           |
 | `status-codes` | carries the client's positional status codes, split into side codes at the write                                                                                         | S2                                                                                                                                                                                                                                                                       |
 | `exit`         | has an exit status before or after, other than a single exit entered with a winner on a clean matchUp that carries nothing on, or carries it one level onto a clean seat | S5; the clean clears of a double or single exit, the clean single-exit corrections, a clean double exit given a winner, a double exit asked for again, a clean result turned into a double exit, a same-winner relabel its loser carries, or whose carry it withdraws S6 |
-| `winner`       | takes away or changes a winner already stored, so what it directed is taken back                                                                                         | S4                                                                                                                                                                                                                                                                       |
+| `winner`       | takes away or changes a winner already stored, so what it directed is taken back                                                                                         | S4; what S4 does not plan is read off v1's whole write (`recordedWhole`)                                                                                                                                                                                                 |
 | `loser`        | has a loser link, so the loser goes somewhere                                                                                                                            | S3                                                                                                                                                                                                                                                                       |
 | `link`         | sends its winner into another structure                                                                                                                                  | S3                                                                                                                                                                                                                                                                       |
 | `cascade`      | sends its winner to a matchUp holding a BYE, an exit or a result, so the winner goes on or meets it                                                                      | S5                                                                                                                                                                                                                                                                       |
@@ -1823,7 +1905,7 @@ the slices that follow:
 | `clock`        | has no existing captured instant; direct source reads, advancing values and throwing-write prefixes must remain ordered as in v1                                         | the ordered temporal executor, for the programs it certifies; every other is read off v1's whole write, with the instants it read (`recordedWhole`, below; CA, 2026-11-18)                                                                                               |
 | `settle`       | leaves a settle pass work on the working view (S2's has-work predicates, `settleWork.ts`), leftover state included                                                       | batch 4a: read off v1's whole write where it can be (`recordedWhole`); otherwise none: S2 owns only a call no pass has work for                                                                                                                                          |
 | `write-mode`   | is made in LEGACY or BRIDGE write mode, where v1 writes `scoredTime` as a timeItem, which the reducer does not                                                           | a later slice (F6: BRIDGE in with its evidence)                                                                                                                                                                                                                          |
-| `competition`  | names a winner where a per-matchUp competition policy applies: v1 updates ratings on the result (`processCompetitionMatchUp`)                                            | a later slice                                                                                                                                                                                                                                                            |
+| `competition`  | names a winner where a per-matchUp competition policy applies: v1 updates ratings on the result (`processCompetitionMatchUp`)                                            | a later slice; read off v1's whole write (`recordedWhole`): the competition state is the draw's own field                                                                                                                                                                |
 
 **Draw scope** (D): a supplied draw can be owned with an existing captured instant even when no tournament record
 holds it. The shadow copies the exact supplied draw and its real optional event/tournament roots together, preserving

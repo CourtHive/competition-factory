@@ -14,7 +14,7 @@ import { convergence, isRelabel, planDirection } from './direction';
 import { compareIndex, type IndexComparison } from './indexOracle';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
-import { cloneState, restoreState } from '@Tools/cloneState';
+import { cloneData, cloneState, restoreState } from '@Tools/cloneState';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { compareViews, hydrateShadow } from './viewOracle';
 import { isDoubleExit, isExit } from '@Validators/isExit';
@@ -954,6 +954,10 @@ function toResult(refusal: Refusal, args: BuildViewArgs): ResultType {
 /** S2's has-work predicates on a working view the call's ops leave, as `finalizePlan` reads them */
 function settleSites(args: BuildViewArgs, view: OutcomeView, working: WorkingView, ops: OutcomeOp[]): SettleSite[] {
   if (!args.drawDefinition || !view.inContextDrawMatchUps) return [];
+  // SETTLED BY PROOF: v1's settle passes, run again on the copy this recording was read off, changed nothing at all
+  // (`plan/recordedCall.ts` `settledOnCopy`). The predicates approximate those passes; where the passes were asked,
+  // theirs is the answer
+  if (ops.some((op) => op.op === 'announceRecorded' && op.settledByProof)) return [];
   return predictSettleWork({
     propagateRetirementAsExit: args.request.flags.propagateRetirementAsExit,
     propagateExitStatus: args.request.flags.propagateExitStatus,
@@ -1074,7 +1078,7 @@ function finalizePlan({
   for (const site of predicted) recordSettleEvent({ kind: 'predicted', site });
   return {
     ops: completedOps,
-    matchUps: keepFoldedView ? structuredClone(working.inContextDrawMatchUps) : undefined,
+    matchUps: keepFoldedView ? cloneData(working.inContextDrawMatchUps) : undefined,
     settle,
   };
 }
