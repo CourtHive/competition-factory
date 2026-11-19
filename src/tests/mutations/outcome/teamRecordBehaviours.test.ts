@@ -405,3 +405,22 @@ describe('a line deciding its dual into a BYE: the next dual is announced after 
     expect(announced.indexOf(beyond.matchUpId)).toBeLessThan(announced.indexOf(bye.matchUpId));
   });
 });
+
+describe('a TEAM dual opposite a BYE takes no result', () => {
+  it.each([
+    ['DEFAULTED, won by the team', { matchUpStatus: DEFAULTED }, 'team'],
+    ['DEFAULTED, won by the BYE', { matchUpStatus: DEFAULTED }, 'bye'],
+    ['WALKOVER, won by the BYE', { matchUpStatus: WALKOVER }, 'bye'],
+  ])('%s: refused INVALID_MATCHUP_STATUS, and the record is unchanged', (_label, outcome, to) => {
+    generate({ drawSize: 8, participantsCount: 6, drawType: FIRST_MATCH_LOSER_CONSOLATION });
+    const byeDual = tournamentEngine
+      .allDrawMatchUps({ drawId: DRAW_ID, inContext: true })
+      .matchUps.find((matchUp: any) => !matchUp.collectionId && matchUp.matchUpStatus === 'BYE');
+    const teamSide = byeDual.sides.find((side: any) => side.participantId).sideNumber;
+    const winningSide = to === 'team' ? teamSide : 3 - teamSide;
+    const before = record();
+    const result = set(byeDual.matchUpId, { ...outcome, winningSide });
+    expect(result.error).toEqual(INVALID_MATCHUP_STATUS);
+    expect(record()).toEqual(before);
+  });
+});

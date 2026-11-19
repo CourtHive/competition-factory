@@ -1315,7 +1315,16 @@ function checkParticipants({
     (assignedDrawPositions?.length === 2 &&
       positionAssignments
         ?.filter((assignment) => assignedDrawPositions.includes(assignment.drawPosition))
-        .every((assignment) => assignment.participantId));
+        .every((assignment) => assignment.participantId) &&
+      // A matchUp storing its own sides (a TEAM dual) is not read against the assignments above, and the empty list
+      // held every assignment it was asked about: a dual opposite a BYE read as two participants, and a winner or an
+      // exit entered on it was written, the BYE dual DEFAULTED and the BYE sent to the consolation as its loser
+      // (2026-11-19, TEAM FIRST_MATCH_LOSER_CONSOLATION 8/6). A BYE the dual holds is a BYE; its lines are not asked.
+      !(
+        matchUp?.sides &&
+        !matchUp.collectionId &&
+        allAssignments?.some((assignment) => assignment.bye && assignedDrawPositions.includes(assignment.drawPosition))
+      ));
   if (
     matchUpStatus &&
     // A single WALKOVER or DEFAULTED can stand with ONE participant present: carried there by the cascade,

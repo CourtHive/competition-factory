@@ -104,6 +104,19 @@ import {
 
 const LIVE_OR_UNSET = new Set<string | undefined>([undefined, TO_BE_PLAYED]);
 
+/**
+ * A TEAM dual (a matchUp storing its own sides) is not read against the draw's assignments for its participants
+ * (`checkParticipants`), but a BYE it holds is a BYE: no participant stands there. Its lines are not asked
+ */
+function dualHeldByABye(
+  matchUp: { sides?: unknown; collectionId?: string },
+  positionAssignments: PositionAssignment[],
+  drawPositions: number[],
+): boolean {
+  if (!matchUp.sides || matchUp.collectionId) return false;
+  return positionAssignments.some((assignment) => assignment.bye && drawPositions.includes(assignment.drawPosition));
+}
+
 /** § 2.1, as the spec states it: may an exit with one participant be awarded to the empty side? */
 function exitAwardable(
   positionAssignments: PositionAssignment[],
@@ -1847,7 +1860,8 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     (assignedDrawPositions?.length === 2 &&
       positionAssignments
         .filter((assignment) => assignedDrawPositions.includes(assignment.drawPosition))
-        .every((assignment) => assignment.participantId));
+        .every((assignment) => assignment.participantId) &&
+      !dualHeldByABye(matchUp, allAssignments, assignedDrawPositions));
 
   const feed = feedEligibilityChange({
     inContextDrawMatchUps,

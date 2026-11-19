@@ -166,6 +166,11 @@ two participants, with one family of exceptions and one rule inside it:
   drawPosition at all, is awardable; so is a QUALIFIER placeholder.
 - **A BYE is never the winning side.** The participant advances through the BYE and their carried
   exit occurs where they land. This was decided in two places before it was written here.
+- **A TEAM dual opposite a BYE holds one participant.** A dual stores its own sides (its line-ups), and its
+  participants were not read against the draw's assignments, so a dual opposite a BYE read as two: a winner or
+  an exit entered on it was written (the BYE dual DEFAULTED, the BYE sent to the consolation as its loser;
+  2026-11-19, TEAM FIRST_MATCH_LOSER_CONSOLATION 8/6). A BYE the dual holds is a BYE, and such a call is refused
+  row 6 in both pipelines. Its lines are not asked here.
 - A policy may switch the requirement off: `requireParticipantsForScoring: false`.
 - **No request flag is involved.** The waiver is how a director records a walkover or default before
   the second opponent arrives (CA, 2026-10-04): _"propagateExitStatus shouldn't have anything to do with
