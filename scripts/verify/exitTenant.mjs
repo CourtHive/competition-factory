@@ -79,7 +79,7 @@ const ALLOWED = {
   'mutate/matchUps/drawPositions/removeDirectedParticipants.ts': 'WRITE — deriveStatusCodes',
   'mutate/matchUps/matchUpStatus/attemptToSetMatchUpStatusBYE.ts': 'WRITE — blanks',
 
-  // the score-entry draft (`tods-competition-factory/score-entry-state`): the POLICY tenant, at the client end
+  // the score-entry state engine (`tods-competition-factory/score-entry-state`): the POLICY tenant, at the client end
   'scoreEntryState/engineOutcome.ts':
     "POLICY — a draft's chosen reason code, sent as the positional array a client submits (splitStatusCodes reads it); [] blanks it on a clear",
   'scoreEntryState/statusCodes.ts':

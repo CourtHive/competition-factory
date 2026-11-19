@@ -50,7 +50,7 @@
  * approach holds while it cannot yet be read as sets (Free Score's half-typed `6-4 re`). A model that owns
  * `otherMenuOpen` is a store, not an engine. courthive-components' score-entry dialog renders this model in all three
  * approaches; it moved here from that package (`tods-competition-factory/score-entry-state`) so a host with no DOM can
- * hold the same draft.
+ * hold the same score state.
  */
 
 import { getMaxSetScore, getTiebreakComplement } from '@Helpers/matchUpFormatCode/setRules/setComplement';
@@ -83,7 +83,7 @@ import {
 import type { MatchUpConfig, ScoreEntrySet, SetFormat, SideNumber } from './types';
 import type { ScoreEntryState } from './ending';
 
-/** The three ways of typing a score. A draft keeps one score whichever approach shows it. */
+/** The three ways of typing a score. A score state keeps one score whichever approach shows it. */
 export type ScoreEntryApproach = 'dynamicSets' | 'freeScore' | 'dialPad';
 
 /**

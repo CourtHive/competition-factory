@@ -39,7 +39,7 @@ what is imported.
 | -------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | `tods-competition-factory`                               | Engines, governors, `tools`, fixtures, constants, enums and types                  |
 | `tods-competition-factory/governors`                     | The governors alone, for assembling a [custom engine](./engines/custom-engines.md) |
-| `tods-competition-factory/score-entry-state`             | A headless [score-entry draft](./scoring-engine/score-entry-state.md), no engine   |
+| `tods-competition-factory/score-entry-state`             | A headless [score-entry state engine](./scoring-engine/score-entry-state.md)       |
 | `tods-competition-factory/schema/tournament.schema.json` | The JSON Schema of a tournament record                                             |
 
 ```js

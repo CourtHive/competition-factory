@@ -1,10 +1,10 @@
 /**
- * A score-entry draft, submitted, is what the factory's `setMatchUpStatus` records.
+ * A score state, submitted, is what the factory's `setMatchUpStatus` records.
  *
- * Each case drives a draft the way an operator does (typed cells, a chosen ending, a reopened result), takes what the
- * rules say Submit sends (`submission`), converts it (`toEngineOutcome`) and hands it to the authoritative
- * `setMatchUpStatus`. The stored matchUp must say what the draft said: the status, the winner, the score line the
- * draft showed, the positional reason, and for a clear, nothing at all.
+ * Each case drives a score state the way an operator does (typed cells, a chosen ending, a reopened result), takes what
+ * the rules say Submit sends (`submission`), converts it (`toEngineOutcome`) and hands it to the authoritative
+ * `setMatchUpStatus`. The stored matchUp must say what the score state said: the status, the winner, the score line the
+ * score state showed, the positional reason, and for a clear, nothing at all.
  */
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -56,7 +56,7 @@ function typed(model: ScoreEntryModel, ...sets: Array<[number, number, number?, 
   return next;
 }
 
-/** What Submit sends for a draft, through the draft's own rules, as the engine's outcome. */
+/** What Submit sends for a score state, through the score state's own rules, as the engine's outcome. */
 function submitted(model: ScoreEntryModel, gate: Partial<ClearGateInput> = {}, changedFormat?: string) {
   const view = { model };
   const reported = submission(
@@ -74,8 +74,8 @@ function apply(target: { drawId: string; matchUpId: string }, outcome: object) {
   return result;
 }
 
-describe('a submitted draft is what setMatchUpStatus records', () => {
-  it('a completed score: COMPLETED, the winner, and the line the draft showed', () => {
+describe('a submitted score state is what setMatchUpStatus records', () => {
+  it('a completed score: COMPLETED, the winner, and the line the score state showed', () => {
     const target = scoringTarget();
     const model = typed(createScoreEntryModel({ matchUpFormat: 'SET3-S:6/TB7' }), [6, 4], [6, 3]);
     const matchUp = apply(target, submitted(model));
@@ -118,7 +118,7 @@ describe('a submitted draft is what setMatchUpStatus records', () => {
     expect(matchUp.score.scoreStringSide1).toEqual('6-4 2-1');
   });
 
-  it('a reopened result hydrates the same draft, and resubmitting it changes nothing', () => {
+  it('a reopened result hydrates the same score state, and resubmitting it changes nothing', () => {
     const target = scoringTarget();
     let model = typed(createScoreEntryModel(), [3, 6]);
     model = chooseEnding(model, { kind: 'side', sideNumber: 1, status: DEFAULTED });
@@ -189,7 +189,7 @@ describe('a submitted draft is what setMatchUpStatus records', () => {
     expect(matchUp.matchUpStatusCodes ?? []).toEqual([]);
   });
 
-  it('a format changed in the draft rides along and is persisted with the result', () => {
+  it('a format changed in the score state rides along and is persisted with the result', () => {
     const target = scoringTarget();
     let model = changeFormat(createScoreEntryModel(), 'SET1-S:6/TB7');
     model = typed(model, [6, 2]);

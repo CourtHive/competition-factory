@@ -3,9 +3,9 @@ import type { OvertimeFormat } from '@Helpers/matchUpFormatCode/overtimeFormat';
 /**
  * The value contracts of `tods-competition-factory/score-entry-state`.
  *
- * Score entry is a DRAFT: what an operator has typed and chosen for one matchUp, before anything is submitted. It
- * holds no tournament, no matchUp record and no engine. A host supplies the format, any saved score or ending, and
- * the status restrictions its own `SCORE` action reported; the draft answers what the result would be.
+ * Score entry holds a SCORE STATE: what an operator has typed and chosen for one matchUp, before anything is submitted.
+ * It holds no tournament, no matchUp record and no engine. A host supplies the format, any saved score or ending, and
+ * the status restrictions its own `SCORE` action reported; the state engine answers what the result would be.
  */
 
 /** Which side: the side an ending happened to, a cell's side, or a winner. */

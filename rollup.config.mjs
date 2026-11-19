@@ -10,8 +10,8 @@ import path from 'path';
 
 const tsConfig = JSON.parse(await fs.readFile(new URL('./tsconfig.base.json', import.meta.url)));
 const srcIndex = 'src/index.ts';
-// `tods-competition-factory/score-entry-state`: a headless score-entry draft with its own entry point, so a consumer
-// that needs it never loads the root barrel, an engine or global engine state.
+// `tods-competition-factory/score-entry-state`: a headless score-entry state engine with its own entry point, so a
+// consumer that needs it never loads the root barrel, an engine or global engine state.
 const scoreEntryStateIndex = 'src/scoreEntryState/index.ts';
 
 const basePath = fs.realpathSync(process.cwd());
@@ -98,7 +98,7 @@ function createExport({ input, folder, packageName, cjs, esm }) {
 const cjsExports = [
   { input: srcIndex, cjs: true },
   // its own bundle, not a re-export of the root's: `require('tods-competition-factory/score-entry-state')` loads the
-  // draft and the scoring rules it reads, and nothing else
+  // score state and the scoring rules it reads, and nothing else
   { input: scoreEntryStateIndex, cjs: true, folder: 'score-entry-state', packageName: 'score-entry-state' },
 ].map(createExport);
 

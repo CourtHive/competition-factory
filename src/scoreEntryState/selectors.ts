@@ -156,7 +156,7 @@ export function matchUpStatus(model: ScoreEntryModel): string | undefined {
 }
 
 /**
- * What is wrong with a draft's score, as data. Every issue carries the index of the set it is in.
+ * What is wrong with a score state's score, as data. Every issue carries the index of the set it is in.
  *
  *   - `TIEBREAK_CONTRADICTION`: a tiebreak whose points say the other side won the set; `gamesWinner` won it on games
  *   - `INVALID_SET`: a set the factory's `validateSetScore` refuses, in its words (`message`)

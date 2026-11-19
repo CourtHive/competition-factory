@@ -152,8 +152,9 @@ export function resolveIrregularEnding(params: {
   winnerSelection: WinnerSelection;
 }): IrregularEndingResolution {
   const { winnerSelection } = params;
-  // The ending passes through as the status it names: a draft offers only `SELECTABLE_ENDINGS`, and an entry approach
-  // reports only a status it parsed. This is where a host's string becomes a status, so it is narrowed once, here.
+  // The ending passes through as the status it names: a score state offers only `SELECTABLE_ENDINGS`, and an entry
+  // approach reports only a status it parsed. This is where a host's string becomes a status, so it is narrowed once,
+  // here.
   const selectedOutcome = params.selectedOutcome as MatchUpStatusUnion | undefined;
 
   if (!selectedOutcome || selectedOutcome === COMPLETED) {

@@ -3,11 +3,12 @@
  * verify:score-entry-state — `tods-competition-factory/score-entry-state` reaches only score-entry and scoring code.
  *
  * WHY THIS EXISTS
- * The subpath is a headless score-entry draft that a browser, a worker or a Node process holds WITHOUT a tournament
- * engine. Its value is the graph it does not load: no root barrel, no engine, no global engine state, no async_hooks,
- * no DOM, no other package. That graph is one import away from breaking: on 2026-11-19 even `matchUpFormatCode.parse`
- * reached `global/state/globalState` (through `tools/definedAttributes` and `tools/math` → `tools/prng`), and nothing
- * would have noticed. `verify:layers` cannot see it: those edges are the five it already allows.
+ * The subpath is a headless score-entry state engine that a browser, a worker or a Node process holds WITHOUT a
+ * tournament engine. Its value is the graph it does not load: no root barrel, no engine, no global engine state, no
+ * async_hooks, no DOM, no other package. That graph is one import away from breaking: on 2026-11-19 even
+ * `matchUpFormatCode.parse` reached `global/state/globalState` (through `tools/definedAttributes` and `tools/math` →
+ * `tools/prng`), and nothing would have noticed. `verify:layers` cannot see it: those edges are the five it already
+ * allows.
  *
  * WHAT IT CHECKS
  *   1. source — every module the entry `src/scoreEntryState/index.ts` reaches at runtime (esbuild's resolution through
@@ -16,7 +17,7 @@
  *      dist tree, and no `document`, `window`, `process`, `require(` or Node builtin in the output. A minimal
  *      consumer (create, type a digit, read the score) is measured too, in bytes, and its modules listed.
  *   3. built CJS — the sources of `dist/score-entry-state/*.cjs.js` (its sourcemap) under the same rules.
- *   4. declarations — `dist/score-entry-state.d.ts` imports nothing: it declares the draft alone.
+ *   4. declarations — `dist/score-entry-state.d.ts` imports nothing: it declares the score state alone.
  * Steps 2–4 need `pnpm build`; without a dist they fail rather than pass.
  *
  * Run:        pnpm verify:score-entry-state            (--list prints every module of each graph)
@@ -36,7 +37,7 @@ const CJS_MAP = join(ROOT, 'dist/score-entry-state/score-entry-state.development
 const DTS = join(ROOT, 'dist/score-entry-state.d.ts');
 const LIST = process.argv.includes('--list');
 
-/** Where the draft and the scoring rules it reads live, under `src/` or `dist/esm/`. Nothing else may load. */
+/** Where the score state and the scoring rules it reads live, under `src/` or `dist/esm/`. Nothing else may load. */
 const ALLOWED = [
   'scoreEntryState/',
   'scoring/kernel/',
@@ -173,7 +174,7 @@ async function checkBuilt() {
       ` — ${full.modules.length} modules, ${full.bytes} B min / ${gzipSync(full.text, { level: 9 }).length} B gzip`,
     ) && ok;
 
-  // the narrowest real consumer: open a draft, type a digit, read the score
+  // the narrowest real consumer: open a score state, type a digit, read the score
   const minimal = await graph({
     contents: `import { createScoreEntryModel, typeDigit, scoreString } from '${ESM_ENTRY}';
 console.log(scoreString(typeDigit(createScoreEntryModel(), { cell: { setIndex: 0, side: 1, kind: 'games' }, digit: 4, complement: true })));`,

@@ -1,5 +1,5 @@
 /**
- * The draft's rules as codes: what is wrong with a score, which endings are offered and why not, what Clear and
+ * The score state's rules as codes: what is wrong with a score, which endings are offered and why not, what Clear and
  * Submit do. courthive-components words these codes (its tests pin the sentences); here they are pinned as data.
  */
 import { describe, expect, it } from 'vitest';

@@ -1,10 +1,10 @@
-// `require('tods-competition-factory/score-entry-state')` from the packed tarball: the draft works with no DOM, and
-// loading it loads none of the root bundle.
-const { exerciseDrafts } = require('./scoreEntryState.drafts.js');
+// `require('tods-competition-factory/score-entry-state')` from the packed tarball: the score state works with no DOM,
+// and loading it loads none of the root bundle.
+const { exerciseScoreStates } = require('./scoreEntryState.states.js');
 
 const before = new Set(Object.keys(globalThis));
 const entry = require('tods-competition-factory/score-entry-state');
-const exported = exerciseDrafts(entry);
+const exported = exerciseScoreStates(entry);
 
 const loaded = Object.keys(require.cache).filter((path) => path.includes('tods-competition-factory'));
 const outside = loaded.filter((path) => !/[\\/]dist[\\/]score-entry-state[\\/]/.test(path));
