@@ -1,6 +1,7 @@
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { ensuredDualSides } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 
@@ -19,7 +20,14 @@ import {
 } from './planShared';
 
 // constants and types
-import { COMPLETED, DEAD_RUBBER, DEFAULTED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import {
+  COMPLETED,
+  DEAD_RUBBER,
+  DEFAULTED,
+  IN_PROGRESS,
+  TO_BE_PLAYED,
+  WALKOVER,
+} from '@Constants/matchUpStatusConstants';
 import type { DrawDefinition, Score, Side } from '@Types/tournamentTypes';
 import { LINEUPS } from '@Constants/extensionConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
@@ -350,6 +358,21 @@ function assignedLineUpOps(
   const replacedId = view.existing.winningSide ? storedLoserId(view) : undefined;
   // (a loser held opposite a structural BYE is taken back by the BYE's own path, C21, which announces no event)
   const replaced = !!replacedId && view.targets.loserTargetSeat?.participantId === replacedId && !heldByeLoser(view);
+  // A loser replaced on a dual that stores a line-up for them: v1 takes them back first and deletes it
+  // (`removeDirectedLoser`), and whether that removal's notice, with the event, is the one the dual's notice keeps turns
+  // on the path the removal takes, which the planners do not follow. The call is v1's whole write (2026-11-19, TEAM
+  // FEED_IN_CHAMPIONSHIP 8/7 and FIRST_MATCH_LOSER_CONSOLATION 8/6, walk seeds 30 and 24, a RETIRED result changed: the
+  // event differed both ways)
+  // A result that stood as a walkover or default is not asked here: its correction is settled as v1's (`settle`).
+  if (
+    replacedId &&
+    loserMatchUpId &&
+    view.existing.matchUpStatus !== WALKOVER &&
+    view.existing.matchUpStatus !== DEFAULTED &&
+    view.targets.loserTargetSeat?.participantId === replacedId &&
+    storedLineUpAtIndex(view, drawDefinition, loserMatchUpId, loserTargetDrawPosition)
+  )
+    return false;
   const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }) ?? {};
   const ops: OutcomeOp[] = [];
   // Carried passages keep their established order; a plain arrival returns from the furthest dual first (C20).
@@ -478,20 +501,38 @@ export function carriedDualLanding(
   const seated = reached?.sides?.filter((side) => side.drawPosition) ?? [];
   if (seated.length !== 2) return undefined;
   const rawSides = storedSides(drawDefinition, landedOn);
+  const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS });
+  const loserSideNumber = reached?.sides?.find((side) => side.drawPosition === loserTargetDrawPosition)?.sideNumber;
   const ensuredSides = ensuredDualSides({
     contextSides: reached?.sides?.map((side) =>
       side.drawPosition === loserTargetDrawPosition ? { ...side, participantId } : side,
     ),
-    // The loser's assignment has already called updateSideLineUp, numbering both stored sides.
+    // The loser's assignment has already called updateSideLineUp, numbering both stored sides and writing the team's
+    // line-up, as the draw holds it, on the loser's side: a line-up a team taken back out of that seat left there (a
+    // result cleared) is replaced, not kept (2026-11-19, TEAM FEED_IN_CHAMPIONSHIP 8, walk seed 28)
     rawSides: [1, 2].map((sideNumber) => ({
       ...(rawSides?.find((side) => side.sideNumber === sideNumber) ?? {}),
       sideNumber,
+      ...(sideNumber === loserSideNumber
+        ? { lineUp: makeDeepCopy((lineUps as Record<string, LineUp> | undefined)?.[participantId], false, true) }
+        : {}),
     })),
-    lineUps: firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }),
+    lineUps,
   });
   return landing.map((op) =>
     op.op === 'setMatchUpResult' && op.matchUpId === landedOn ? { ...op, ensuredSides } : op,
   );
+}
+
+/** whether the stored side at the index of the hydrated side holding `drawPosition` holds a line-up */
+function storedLineUpAtIndex(
+  view: OutcomeView,
+  drawDefinition: DrawDefinition,
+  matchUpId: string,
+  drawPosition?: number,
+): boolean {
+  const index = indexed(view, matchUpId)?.sides?.findIndex((side) => side.drawPosition === drawPosition) ?? -1;
+  return index >= 0 && !!storedSides(drawDefinition, matchUpId)?.[index]?.lineUp;
 }
 
 /** a matchUp's sides as stored (not hydrated), read off the draw's structures */

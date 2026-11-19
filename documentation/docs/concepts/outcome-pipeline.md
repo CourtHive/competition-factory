@@ -1462,11 +1462,17 @@ carries them as `ensuredSides`, where they change, and the call returns no `tieM
 the dual: its winner's next dual takes no line-up. Where a loser link places the losing team, its assignment writes the
 team's line-up as the draw holds it on its side of each dual it reaches (`setSideLineUp`, `updateSideLineUp`, announced
 `updateSidLineUp`): past a BYE the dual beyond first, then the BYE matchUp. The loser's own dual is announced with no
-event (`assignTeamLineUp` hands `updateSideLineUp` none).
+event (`assignTeamLineUp` hands `updateSideLineUp` none). A dual whose played or retired result is changed to the other winner, its old loser
+seated where the link seats the new one and holding a line-up there, is read off v1's whole write (`team`): v1 takes
+the old loser back first and deletes that line-up (`removeDirectedLoser`), and whether that removal's notice, with its
+event, is the one the dual keeps turns on the path the removal takes (2026-11-19, walk seeds 24 and 30: v2 announced
+the event where v1 did not, and the reverse).
 
 **A dual's own exit carried across its loser link** (`propagateExitStatus`) is written on the dual it lands on as any
 carried exit is, by that dual's own call (`setMatchUpState`), whose `ensureSideLineUps` first writes its sides with the
-team arrived: the carried `setMatchUpResult` takes them as `ensuredSides`. That write comes after the team's line-up is
+team arrived: the carried `setMatchUpResult` takes them as `ensuredSides`. The loser's side there holds the line-up its assignment has just
+written (the team's, as the draw holds it), not one a team taken back out of that seat left behind (a result cleared:
+v1's clear leaves it, and the carried call replaces it; 2026-11-19, walk seed 28, where v2 kept the stale one). That write comes after the team's line-up is
 written there, so the dual is announced as the carried result is (`modifyMatchUpScore`, with its event). Past a BYE
 (RULE 1, and its passage) the dual it lands on is the one beyond: the BYE dual keeps its BYE and takes the team's
 line-up from the assignment, then records the carry beside its BYE, so it is announced as the carry is

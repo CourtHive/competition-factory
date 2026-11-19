@@ -6,8 +6,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 // constants
 import { CANNOT_CHANGE_WINNING_SIDE, INVALID_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
-import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
+import { FEED_IN_CHAMPIONSHIP, FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { DOMINANT_DUO, USTA_COLLEGE } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
 import {
   COMPLETED,
@@ -35,11 +35,11 @@ const DRAW_ID = 'd';
 const CLEARED = { matchUpStatus: TO_BE_PLAYED, score: { scoreStringSide1: '', scoreStringSide2: '' } };
 const won = (winningSide: number) => generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide }).outcome;
 
-function generate(drawProfile: Record<string, unknown> = { drawSize: 4 }) {
+function generate(drawProfile: Record<string, unknown> = { drawSize: 4 }, nonRandom = 1) {
   mocksEngine.generateTournamentRecord({
     drawProfiles: [{ eventType: TEAM, tieFormatName: DOMINANT_DUO, ...drawProfile, drawId: DRAW_ID }],
     setState: true,
-    nonRandom: 1,
+    nonRandom,
   });
   let result: any = tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: DRAW_ID });
   expect(result.success).toEqual(true);
@@ -446,5 +446,79 @@ describe('a team arriving at a produced walkover records where it came from, its
       previousMatchUpStatus: COMPLETED,
       sourceMatchUpId: second.matchUpId,
     });
+  });
+});
+
+describe("a losing team's line-up where its loser link seats it, after the dual's result changes", () => {
+  afterEach(() => setSubscriptions({ subscriptions: {} }));
+  const retired = (winningSide: number) => ({
+    ...generateOutcomeFromScoreString({ scoreString: '6-1 2-1', winningSide }).outcome,
+    matchUpStatus: RETIRED,
+  });
+  const lineUpOf = (participantId: string) =>
+    tournamentEngine
+      .getTournament()
+      .tournamentRecord.events[0].drawDefinitions[0].extensions?.find((extension: any) => extension.name === 'lineUps')
+      ?.value?.[participantId] ?? JSON.parse(record()).events[0].drawDefinitions[0].lineUps?.[participantId];
+  const players = (lineUp: any[] = []) => lineUp.map((assignment) => assignment.participantId).sort();
+  /** where the dual's loser is seated: the consolation dual holding them */
+  const loserSeat = (source: any) => {
+    const inContext = dual(source.roundNumber, source.roundPosition);
+    const loser = inContext.sides.find((side: any) => side.sideNumber !== inContext.winningSide)?.participantId;
+    const target = tournamentEngine
+      .allDrawMatchUps({ drawId: DRAW_ID, inContext: true })
+      .matchUps.find(
+        (matchUp: any) =>
+          !matchUp.collectionId &&
+          matchUp.structureName !== 'Main' &&
+          matchUp.sides?.some((side: any) => side.participantId === loser),
+      );
+    return { loser, target };
+  };
+
+  it('a dual cleared and given the other winner by a carried exit: the new loser takes its own line-up there', () => {
+    generate({ drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP }, 28);
+    const source = dual(1, 4);
+    enter(source.matchUpId, { matchUpStatus: WALKOVER, winningSide: 1 });
+    enter(dual(1, 2).matchUpId, { matchUpStatus: WALKOVER, winningSide: 1 });
+    enter(source.matchUpId, { matchUpStatus: TO_BE_PLAYED });
+    enter(source.matchUpId, { matchUpStatus: WALKOVER, winningSide: 2 }, { propagateExitStatus: true });
+
+    const { loser, target } = loserSeat(source);
+    expect(loser).toBeDefined();
+    const side = target.sides.find((held: any) => held.participantId === loser);
+    const storedSide = stored(target.matchUpId).sides.find((held: any) => held.sideNumber === side.sideNumber);
+    expect(players(storedSide.lineUp)).toEqual(players(lineUpOf(loser)));
+  });
+
+  // the dual the new loser is seated in is announced as v1 announces it: with the event where the removal of the loser
+  // it replaces announced it (a seat opposite a BYE, its line-up deleted), without it where the assignment alone did
+  it.each([
+    ['a played result to the other winner (FEED_IN_CHAMPIONSHIP 8/7, USTA_COLLEGE)', 30, false],
+    ['a played result to the other winner by walkover (FIRST_MATCH_LOSER_CONSOLATION 8/6)', 24, true],
+  ])('%s: the new loser takes its own line-up, and its dual is announced', (_label, seed, withEvent) => {
+    const college = seed === 30;
+    generate(
+      college
+        ? { drawSize: 8, participantsCount: 7, drawType: FEED_IN_CHAMPIONSHIP, tieFormatName: USTA_COLLEGE }
+        : { drawSize: 8, participantsCount: 6, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      seed,
+    );
+    if (college) enter(dual(1, 2).matchUpId, retired(1));
+    const source = dual(1, 3);
+    enter(source.matchUpId, retired(2));
+    const replaced = loserSeat(source).target;
+
+    const announced: any[] = [];
+    setSubscriptions({ subscriptions: { modifyMatchUp: (notices: any[]) => announced.push(...notices) } });
+    enter(source.matchUpId, college ? { winningSide: 1 } : { matchUpStatus: WALKOVER, winningSide: 1 });
+    const { loser, target } = loserSeat(source);
+    expect(target.matchUpId).toEqual(replaced.matchUpId);
+    const side = target.sides.find((held: any) => held.participantId === loser);
+    const storedSide = stored(target.matchUpId).sides.find((held: any) => held.sideNumber === side.sideNumber);
+    expect(players(storedSide.lineUp)).toEqual(players(lineUpOf(loser)));
+    const notice = announced.find((held) => held.matchUp?.matchUpId === target.matchUpId);
+    expect(notice?.context).toEqual('updateSidLineUp');
+    expect(!!notice?.eventId).toEqual(withEvent);
   });
 });
