@@ -783,7 +783,7 @@ it('respects custom policy definitions', () => {
 
   const actionTypes = validActions.map((a) => a.type);
 
-  expect(actionTypes).toEqual(['SEED_VALUE']);
+  expect(actionTypes).toEqual(['SEED_VALUE', 'REMOVE_SEED']);
   expect(actionTypes).not.toContain('SWAP');
   expect(actionTypes).not.toContain('REMOVE');
 });

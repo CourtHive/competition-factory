@@ -1148,7 +1148,7 @@ tournamentEngine.generateDrawDefinition({
 
 ```javascript
 import { drawDefinitionConstants, policyConstants } from 'tods-competition-factory';
-const { CLUSTER, QUALIFYING } = drawDefinitionConstants;
+const { CLUSTER } = drawDefinitionConstants;
 const { POLICY_TYPE_SEEDING } = policyConstants;
 
 const qualifyingSeeding = {
@@ -1166,11 +1166,12 @@ const qualifyingSeeding = {
   },
 };
 
+// qualifying-only draw: the event's QUALIFYING entries fill the qualifying structure
 tournamentEngine.generateDrawDefinition({
-  stage: QUALIFYING,
+  qualifyingProfiles: [{ structureProfiles: [{ drawSize: 16, seedsCount: 4, qualifyingPositions: 4 }] }],
   policyDefinitions: qualifyingSeeding,
-  drawSize: 16,
-  seedsCount: 4,
+  qualifyingOnly: true,
+  eventId,
 });
 ```
 

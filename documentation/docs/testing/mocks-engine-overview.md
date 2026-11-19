@@ -185,7 +185,7 @@ test('generate and manipulate tournament', () => {
   tournamentEngine.addMatchUpScheduleItems({
     matchUpId: matchUp.matchUpId,
     drawId: matchUp.drawId,
-    schedule: { scheduledDate: '2024-01-15' },
+    schedule: { scheduledDate: tournamentRecord.startDate }, // a date within the mock's dates
   });
 
   // Complete with outcome
