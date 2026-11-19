@@ -195,11 +195,8 @@ describe('an exit no route accepts on a TEAM dual is refused before the dual is 
     expect(v1.result.info).toEqual(`matchUpStatus: ${outcome.matchUpStatus}`);
   });
 
-  // the same exits a route accepts: without the flag the winner named stands, and a carried exit needs none
-  it.each([
-    ['without the flag', {}],
-    ['carried', { enableAutoCalc: true, propagateExitStatus: true }],
-  ])('a WALKOVER naming a winner is accepted %s, alike', (_label, params) => {
+  // the same exit a route accepts: without the flag the winner named stands
+  it.each([['without the flag', {}]])('a WALKOVER naming a winner is accepted %s, alike', (_label, params) => {
     generate(TEAM_DRAW);
     const prepared = stored();
     const call = { matchUpId: inRound(1).matchUpId, outcome: { matchUpStatus: WALKOVER, winningSide: 2 }, params };
@@ -210,5 +207,16 @@ describe('an exit no route accepts on a TEAM dual is refused before the dual is 
       expect(actual.result).toStrictEqual(v1.result);
       expect(actual.record).toEqual(v1.record);
     }
+  });
+
+  // carried, auto-calc turned on, lines projecting no winner: refused before anything is written (CA, 2026-11-19,
+  // the ruling of 56f04654af), in every mode
+  it('a WALKOVER naming a winner, carried with auto-calc enabled, is refused, alike', () => {
+    generate(TEAM_DRAW);
+    const prepared = stored();
+    const params = { enableAutoCalc: true, propagateExitStatus: true };
+    const call = { matchUpId: inRound(1).matchUpId, outcome: { matchUpStatus: WALKOVER, winningSide: 2 }, params };
+    const v1 = refusedAlike(prepared, call, INVALID_MATCHUP_STATUS.code);
+    expect(v1.result.info).toEqual(`matchUpStatus: ${WALKOVER}`);
   });
 });
