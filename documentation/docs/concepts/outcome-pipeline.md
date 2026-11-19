@@ -75,7 +75,28 @@ the stored dual beside the call's `winningSide`, as v1's `handleTeamAutoCalc` do
 Row 6's fallthrough clause is asked of the call as it is dispatched: a TEAM dual's call that turns auto-calc on takes
 the winner and score its lines project, whatever it names, so an exit entered with a winner the lines do not project is
 an exit with no winner, refused. v1 asks it before the dual's own writes (its sides and line-ups, `setMatchUpState`'s
-`refusedAtTheStatusRoute`), so the refusal leaves the record as it was.
+`refusedAtTheStatusRoute`), so the refusal leaves the record as it was. Rows 13, 14 and 15 on a TEAM dual's own call are
+asked before those writes too (`downstreamRefusal`, the dispatch's own question; 2026-11-18): refused after them, the
+dual was left stamped and announced under the error. And a dual's call that turns auto-calc on is dispatched with the
+winner its lines project in place of the call's: where they project none, on a dual that has propagated with its
+downstream active, the call names no winner and is refused row 15, whatever winner it was given.
+
+**A decided dual's exit that carries, entered by a call that turns auto-calc on** (CA, 2026-11-18): `{ WALKOVER |
+DEFAULTED | RETIRED, winningSide }` with `enableAutoCalc` and `propagateExitStatus` on a dual that holds a winner,
+where the dual's lines project no winner, is refused row 6 (`ERR_INVALID_MATCHUP_STATUS`, info `matchUpStatus: <the
+status>`) before anything is written. Accepted, it wrote an exit with no winner: the dual left undecided under an exit
+status, its winner taken back out of the next dual. The manual override stands: a dual scored by hand is not projected
+from its lines, so the same result is accepted with the winner the call names where the call disables auto-calc
+(`disableAutoCalc`), or names neither flag on a dual already flagged so. A call that names `enableAutoCalc` on a dual
+flagged as scored by hand turns its auto-calc on and is refused as any other. Where the lines project a winner the exit
+is written with that winner.
+
+These are stated of the record, for any implementation (`teamRecordBehaviours.test.ts`, which names no pipeline): a
+refused call leaves the stored record exactly as it was, every value and stamp, a TEAM dual's included; a TEAM line's
+double exit sends nobody on and writes nothing outside the line and its dual, entered or left (cleared, given a
+result, entered as the other double exit), so the next dual and every other matchUp keep their values and stamps; and
+a dual decided by its own call stays directed as its lines are played (its winner stands in the next dual, its loser
+where the link sent them, and a winner its lines hand to the other side replaces the first there).
 
 | #   | code                                       | condition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | where                                                                                                                                                                                                                                                              |
 | --- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -1233,6 +1254,9 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   (`attemptToSetMatchUpStatus`'s `alreadyInRequestedDoubleExit`). v2 plans it as no ops, whatever the double exit sent
   on (BYEs on loser seats, a produced exit awarded on). The differential therefore predicts no notices for an empty
   plan, including with `updateInContextMatchUp` subscribed; it does not infer an announcement from the request alone.
+  One write remains where the matchUp holds no `scoredTime` (a record older than the stamp, or one a failed write left):
+  v1 stamps a scored matchUp that lacks one where the call ends (`applyScoredTime`), with no notice and no `updatedAt`.
+  That call is not planned as no ops: it abstains (`exit`) and is read off v1's whole write, in every draw type.
 
   A **result turned into a double exit** (the `completed-to-double-exit` route: a played result, a WALKOVER or a
   DEFAULTED entered again as a DOUBLE_WALKOVER or DOUBLE_DEFAULT) is v1's `removeDirectedParticipants` followed by a
@@ -1345,7 +1369,10 @@ The line's result is any first result with a winner: scored, a winner alone (no 
 DEFAULTED, RETIRED with its score), each counted for its winner in the dual's tally. A line's double exit
 (DOUBLE_WALKOVER, DOUBLE_DEFAULT) is written as it stands (`only-score`): it counts for neither side, the dual is tallied
 without it, and nothing is produced or carried (a line's targets are its dual's; v1's `doubleExitAdvancement` does not
-run for it). v1 writes the line (as
+run for it). Leaving it (cleared, given a result, entered as the other double exit) therefore unwinds nothing: v1's
+`noDownstreamDependencies` does not run `removeDoubleExit` for a line (it had, with the line for a source and the dual's
+targets, and wrote a score and codes onto a next dual nobody had reached; 2026-11-18), and the planners leave a line's
+double exit cleared or replaced by a score with no winner to v1's whole write (`team`). v1 writes the line (as
 any result: `modifyMatchUpScore`, its `scoredTime`), then `updateTieMatchUpScore` writes the dual:
 
 1. it ensures the dual's side line-ups;
@@ -1440,7 +1467,11 @@ first entry writes none. A changed winner over a dual's own single exit stays v1
 stored winner, either side), is written as a first result is: the line rewritten, then the dual's tally re-read from its remaining lines, where the dual's winner does not change (a dual
 still undecided, or decided by its other lines) and the dual still holds a line's result. The line directs nothing, so
 nothing is taken back from the next dual, and a correction is neither a re-entered nor a changed winner. v1 clears it through `removeDirectedParticipants`, which returns no
-`tieMatchUpResult`, and neither does v2 (`dualTally.unreturned`).
+`tieMatchUpResult`, and neither does v2 (`dualTally.unreturned`). In a round robin the group is tallied with the line
+as the call leaves it: a call that brings no score and blanks none leaves the line the score it holds (a winner named
+again, alone), and its games and sets are counted (`writtenLine`'s `kept`). A line of a dual scored manually
+(auto-calc off) stays v1's, and its removal there is `attemptToModifyScore`'s write, not a removal's: nothing is taken
+back and the line keeps its score unless the call brings one, which is what `planWrite` states for the differential.
 
 **A dual's own call that disables or enables auto-calc** writes `disableAutoCalc` on the dual, or removes it, as v1's
 `handleTeamAutoCalc` does (through `setFirstClassOrExtension`, a field of the dual's `setMatchUpResult`). Enabling also
@@ -1464,6 +1495,17 @@ Not planned (they stayed v1's until batch 4b, which reads each off v1's whole wr
   `ERR_MISSING_ASSIGNMENTS` before any write (`directParticipants`, `attemptToModifyScore`'s `validToScore`, which lets
   through a scoring policy that does not require participants, and one side assigned where the line is ad hoc or a
   single exit), and v2 leaves the call, and the refusal, to v1;
+- a line corrected from the other side to the winner the dual holds: v1 clears the line first and tallies the dual
+  without it, and a dual its other lines do not decide (one decided by its own call) is un-decided there, what it
+  directed taken back, and then directed again with the line's new winner in place (`attemptToSetWinningSide`,
+  `redirectsUndecidedDual`; before 2026-11-18 it was written decided again with nobody sent on);
+- a fresh line that hands a decided dual to the other side (a dual decided by its own call, against its lines): v1
+  takes the old winner's direction back before it directs the new one (`handsOver`; before 2026-11-18 it directed
+  without, and returned `ERR_EXISTING_POSITION_ASSIGNMENT` after writing the line and the dual where the next dual was
+  full). "A fresh line cannot hand it to the other side" holds only for a dual its lines decided;
+- a dual's result relabelled an exit that carries, where the loser already stands in the dual it lands on: that
+  dual's own call ensures its sides first, which the landing planned for an arrival does not state
+  (`carriedDualLanding`);
 - a REPORTED score source (v1 returns before any tally).
 
 **A line that un-decides its dual** (S7, the `line-score` route: a decided dual whose lines, with this one in place,
@@ -1478,7 +1520,14 @@ dual, in progress or to be played, the winner removed (`clearedSingleExit` for t
 the dual's removal a line makes is not walled: v1's own removal (`removeDirected`) reports the playoff structures it
 reaches (`connectedStructures`, a flag on the result) and v2 does not read them, but the line's path
 (`scoreModification`) reports nothing and moves nobody in a positioned playoff, so the group's tally is re-read and the
-playoff stands as v1 leaves it (S7, O12).
+playoff stands as v1 leaves it (S7, O12). The dual's status is its tally's (`updateTieMatchUpScore`), not the removal's:
+a dual that holds a line's result is in progress though its score reads 0-0 (a doubles line that does not yet win its
+collection's point). And v1 takes back, with each team, the line-up the dual stores for them where they went: the
+winner's off its side of the next dual (`handleTeamPositionRemoval`, `removeSubsequentRoundsParticipant`, the key
+itself), the loser's off the dual its link fed, whose codes are derived again and which is announced
+(`removeDirectedLoser`). The planners' removal states neither, so a call that meets a stored side there abstains
+(`team`, `undecidingLeavesLineUp`) and is read off v1's whole write; the loser's side opposite a structural BYE is
+planned (C21).
 
 **A dual in a round robin, and a line of one** (S7), take their group's tally, as v1's `updateTallyIfNeeded` writes it
 from the dual's score write: the group's duals alone (`matchUpTypes: [TEAM]`), tallied under the one dual tally format
@@ -2133,6 +2182,17 @@ omits the event argument, but keyed notice coalescing retains the earlier event 
 The standingAwardArrival certificate therefore keeps event scope on that final notice.
 Other own-seat lineup notices retain their existing quiet scope. No result, record or
 admission changes; the plan describes the notice a subscriber actually receives.
+
+The same coalescing keeps the event in two more shapes (2026-11-18). A changed winner's new loser:
+the dual the loser link feeds was announced with the event when the first loser was taken back
+(`removeDirectedLoser`). And a winner this call places in a next dual that already sides its
+drawPosition (its stored sides name it): `assignMatchUpDrawPosition` announced the dual first. Only
+a winner entered again, who is assigned nothing new, leaves the line-up's notice the dual's own, quiet.
+
+`updateSideLineUp` writes the line-up on the stored side that holds the number and leaves the other
+side as it is stored (one `ensureSideLineUps` left unnumbered for a seat nobody holds stays so); both
+sides are made and numbered only where no stored side holds the number, as `propagateLineUp` and
+`propagateLoserLineUp` always make them. The `setSideLineUp` op announced `updateSidLineUp` folds so.
 
 ### A corrected result refreshes its recorded arrival (C23)
 
