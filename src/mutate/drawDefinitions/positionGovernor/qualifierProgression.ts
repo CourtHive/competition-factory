@@ -25,12 +25,14 @@ import {
   MISSING_MAIN_STRUCTURE,
   MISSING_QUALIFIED_PARTICIPANTS,
   NO_DRAW_POSITIONS_AVAILABLE_FOR_QUALIFIERS,
+  STRUCTURE_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
 
 interface QualifierProgressionArgs {
   drawDefinition: DrawDefinition;
   tournamentRecord: Tournament;
   targetRoundNumber?: number;
+  structureId?: string;
   event: Event;
   randomList?: number[];
 }
@@ -39,6 +41,7 @@ export function qualifierProgression({
   targetRoundNumber = 1,
   tournamentRecord,
   drawDefinition,
+  structureId,
   event,
   randomList,
 }: QualifierProgressionArgs): ResultType {
@@ -50,14 +53,17 @@ export function qualifierProgression({
   const assignedParticipants: { participantId: string; drawPosition: number }[] = [];
   const qualifyingParticipantIds: string[] = [];
 
-  const mainStructure = drawDefinition.structures?.find(
-    (structure) => structure.stage === MAIN && structure.stageSequence === 1,
-  );
+  // the structure qualifiers are placed into: MAIN stageSequence 1 unless one is named, e.g. a QUALIFYING stage that
+  // pre-qualifying feeds
+  const targetStructure = structureId
+    ? drawDefinition.structures?.find((structure) => structure.structureId === structureId)
+    : drawDefinition.structures?.find((structure) => structure.stage === MAIN && structure.stageSequence === 1);
 
-  if (!mainStructure) return decorateResult({ result: { error: MISSING_MAIN_STRUCTURE } });
+  if (!targetStructure)
+    return decorateResult({ result: { error: structureId ? STRUCTURE_NOT_FOUND : MISSING_MAIN_STRUCTURE } });
 
   const appliedPolicies =
-    getAppliedPolicies({ tournamentRecord, drawDefinition, structure: mainStructure, event }).appliedPolicies ?? {};
+    getAppliedPolicies({ tournamentRecord, drawDefinition, structure: targetStructure, event }).appliedPolicies ?? {};
 
   const policy = appliedPolicies[POLICY_TYPE_POSITION_ACTIONS];
   const requireCompletedStructures = policy?.requireCompletedStructures;
@@ -68,10 +74,10 @@ export function qualifierProgression({
   }: {
     qualifierPositions: { drawPosition: number; qualifier: boolean }[];
     positionAssignments: PositionAssignment[];
-  } = structureAssignedDrawPositions({ structure: mainStructure });
+  } = structureAssignedDrawPositions({ structure: targetStructure });
 
   const targetQualifierPositions = qualifierPositionsForRound({
-    structure: mainStructure,
+    structure: targetStructure,
     qualifierPositions,
     targetRoundNumber,
     drawDefinition,
@@ -90,7 +96,7 @@ export function qualifierProgression({
 
   const { relevantLinks: eliminationSourceLinks } =
     getSourceStructureIdsAndRelevantLinks({
-      structureId: mainStructure.structureId,
+      structureId: targetStructure.structureId,
       targetRoundNumber,
       linkType: WINNER, // links that traverse by ROUND: the winners of an elimination qualifying round
       drawDefinition,
@@ -98,7 +104,7 @@ export function qualifierProgression({
 
   const { relevantLinks: roundRobinSourceLinks } =
     getSourceStructureIdsAndRelevantLinks({
-      structureId: mainStructure.structureId,
+      structureId: targetStructure.structureId,
       targetRoundNumber,
       linkType: POSITION, // links that traverse by FINISHING POSITION: out of a round robin, labelled POSITION or WINNER
       drawDefinition,
@@ -127,7 +133,7 @@ export function qualifierProgression({
     if (participantToAssign) {
       const positionAssignmentResult: ResultType = qualifierDrawPositionAssignment({
         qualifyingParticipantId: participantToAssign,
-        structureId: mainStructure.structureId,
+        structureId: targetStructure.structureId,
         drawPosition,
         tournamentRecord,
         drawDefinition,
