@@ -244,7 +244,7 @@ Returns aggregated team and individual results from the TEAM matchUps of the loa
 
 ```js
 const { teamResults, individualResults } = engine.getAggregateTeamResults({
-  finishingPositionRangeBounsPoints, // optional - bonus points keyed by finishing position range (name as spelled)
+  finishingPositionRangeBonusPoints, // optional - bonus points keyed by finishing position range
 });
 ```
 
