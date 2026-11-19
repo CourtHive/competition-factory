@@ -10,7 +10,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
 
 type GetAggregateTeamResultsArgs = {
-  finishingPositionRangeBounsPoints?: { [key: string]: number };
+  finishingPositionRangeBonusPoints?: { [key: string]: number };
   tournamentRecord: Tournament;
 };
 
@@ -18,7 +18,7 @@ export function getAggregateTeamResults(params: GetAggregateTeamResultsArgs) {
   const paramsCheck = checkRequiredParameters(params, [{ [TOURNAMENT_RECORD]: true }]);
   if (paramsCheck.error) return paramsCheck;
 
-  const bonusPoints = params.finishingPositionRangeBounsPoints ?? {};
+  const bonusPoints = params.finishingPositionRangeBonusPoints ?? {};
   const teamBonusPointHashes = {};
 
   const getTeamParticipant = (participant) => {

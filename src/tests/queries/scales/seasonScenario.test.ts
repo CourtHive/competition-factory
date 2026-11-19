@@ -55,7 +55,7 @@ const tieFormat: UnmintedTieFormat = {
 };
 
 type Scenario = {
-  finishingPositionRangeBounsPoints: { [key: string]: number };
+  finishingPositionRangeBonusPoints: { [key: string]: number };
   structureOptions?: { groupSize: number };
   participantsPerTeam: number;
   drawType: DrawTypeUnion;
@@ -67,7 +67,7 @@ type Scenario = {
 
 const scenarios: Scenario[] = [
   {
-    finishingPositionRangeBounsPoints: { '1-1': 1 },
+    finishingPositionRangeBonusPoints: { '1-1': 1 },
     participantsPerTeam: 2,
     drawType: ROUND_ROBIN,
     matchUpsCount: 6,
@@ -76,7 +76,7 @@ const scenarios: Scenario[] = [
     drawSize: 4,
   },
   {
-    finishingPositionRangeBounsPoints: { '1-1': 2, '2-2': 1 },
+    finishingPositionRangeBonusPoints: { '1-1': 2, '2-2': 1 },
     drawType: ROUND_ROBIN_WITH_PLAYOFF,
     structureOptions: { groupSize: 3 },
     participantsPerTeam: 2,
@@ -163,7 +163,7 @@ it.each(scenarios.slice(1))('can aggregate team scores across SINGLES/DOUBLES ev
   // const aggregateIndividualResults = {};
   const aggregateTeamResults = {};
 
-  const { structureOptions, drawType, teamsCount, matchUpsCount, finishingPositionRangeBounsPoints } = scenario;
+  const { structureOptions, drawType, teamsCount, matchUpsCount, finishingPositionRangeBonusPoints } = scenario;
   // Now iterate through the season consistng of drawSize # of tournaments
   generateRange(0, teamsCount * roundsCount).forEach((i) => {
     const events = defined(tournamentEngine.getEvents().events, 'events');
@@ -200,8 +200,11 @@ it.each(scenarios.slice(1))('can aggregate team scores across SINGLES/DOUBLES ev
     }
 
     const { startDate, tournamentName } = tournamentEngine.getTournamentInfo().tournamentInfo ?? {};
-    const aggregate = tournamentEngine.getAggregateTeamResults({ finishingPositionRangeBounsPoints });
+    const aggregate = tournamentEngine.getAggregateTeamResults({ finishingPositionRangeBonusPoints });
     const teamResults = defined('teamResults' in aggregate ? aggregate.teamResults : undefined, 'teamResults');
+    // every scenario awards bonus points for first place, so a misnamed or ignored option shows as no bonus at all
+    const awardedBonus = Object.values(teamResults).reduce((total: number, team: any) => total + team.bonus, 0);
+    expect(awardedBonus).toBeGreaterThan(0);
 
     for (const teamParticipantId of Object.keys(teamResults)) {
       if (!aggregateTeamResults[teamParticipantId]) {
