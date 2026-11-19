@@ -1427,7 +1427,10 @@ carried onto its side there (`setSideLineUp`, v1's `propagateLineUp`):
 - on the side v1 reckons by roundPosition: a feed round's advancing team, or one advanced by position, is side 2.
 
 The next dual is announced by `directWinner`, and the call's `tieMatchUpResult` carries the dual's winner. A final
-carries nothing on.
+carries nothing on. Where the next dual is a BYE the team passes on, the line-up is carried once the passage is
+written: the matchUp beyond is announced first (its assignment), then the BYE dual (`directWinner`), as v1's
+`propagateLineUp` runs after `assignDrawPosition` has returned (2026-11-19, FIRST_MATCH_LOSER_CONSOLATION 8: v2
+announced the BYE dual first).
 
 Where a loser link sends the losing team on (a consolation, a compass direction), the loser is placed as any loser is,
 and the losing team's line-up is carried onto its side of the dual it lands in (`setSideLineUp`, v1's

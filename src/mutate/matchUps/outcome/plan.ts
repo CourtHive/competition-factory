@@ -589,7 +589,7 @@ function decidingLineOps(args: PlanArgs & { dual: DualCall; drawDefinition: Draw
   const placement = ops.findIndex(
     (op) => op.op === 'setMatchUpDrawPositions' && op.matchUpId === dual.direction?.winner?.matchUpId,
   );
-  if (carry) ops.splice(placement < 0 ? ops.length : placement + 1, 0, carry);
+  if (carry) ops.splice(placement < 0 ? ops.length : carriedAfter(ops, placement, dual), 0, carry);
   // the dual the loser lands in, otherwise untouched (the arrival is written on its structure's assignments), is stamped
   // by the carry's notice
   // past a BYE, the dual beyond takes the losing team's line-up first (its assignment's), as v1 announces the two
@@ -607,6 +607,34 @@ function decidingLineOps(args: PlanArgs & { dual: DualCall; drawDefinition: Draw
   if (loserCarry) ops.push(loserCarry, { op: 'stampUpdatedAt', entity: 'matchUp', id: loserCarry.matchUpId });
   ops.push(...settled);
   return { ops: [...resultOps(request, write, request.matchUpId as string), ...ops], shape: dualPlan.shape };
+}
+
+/**
+ * Where the winning team's line-up is carried onto the next dual: after the placement, and past a BYE after the
+ * passage on. v1's `propagateLineUp` runs once `assignDrawPosition` has returned, the BYE's advancement into the
+ * matchUp beyond among it, so the next dual's `directWinner` notice follows the matchUp beyond's assignment (2026-11-19,
+ * FIRST_MATCH_LOSER_CONSOLATION 8, a consolation dual decided by its line, its next dual a BYE)
+ */
+function carriedAfter(ops: OutcomeOp[], placement: number, dual: DualCall): number {
+  const inContext = dual.view.inContextDrawMatchUps;
+  const stampOf = (at: number, matchUpId: string) => {
+    const op = ops[at];
+    return op?.op === 'stampUpdatedAt' && op.entity === 'matchUp' && op.id === matchUpId;
+  };
+  let at = placement + 1;
+  let held = (ops[placement] as { matchUpId: string }).matchUpId;
+  if (stampOf(at, held)) at += 1;
+  let passed = false;
+  for (;;) {
+    const onward = inContext?.find((matchUp) => matchUp.matchUpId === held)?.winnerMatchUpId;
+    const op = ops[at];
+    if (!onward || op?.op !== 'setMatchUpDrawPositions' || op.matchUpId !== onward) break;
+    passed = true;
+    held = onward;
+    at += 1;
+    if (stampOf(at, held)) at += 1;
+  }
+  return passed ? at : placement + 1;
 }
 
 /** the call's plan as ops, or the reason it is v1's */

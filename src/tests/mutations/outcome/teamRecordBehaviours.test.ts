@@ -1,7 +1,8 @@
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
+import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 // constants
 import { CANNOT_CHANGE_WINNING_SIDE, INVALID_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
@@ -371,5 +372,36 @@ describe('a line entered again, its own winner unchanged, that hands a played-on
     const held = stored(final.matchUpId).drawPositions.filter(Boolean);
     expect(held).toContain(first.drawPositions[0]);
     expect(held).not.toContain(first.drawPositions[1]);
+  });
+});
+
+describe('a line deciding its dual into a BYE: the next dual is announced after the matchUp the BYE passes the team on to', () => {
+  afterEach(() => setSubscriptions({ subscriptions: {} }));
+
+  it('the consolation dual beyond is announced first, then the BYE dual with the team its line-up was carried onto', () => {
+    generate({ drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION });
+    const singles = (matchUp: any) => matchUp.tieMatchUps.filter((line: any) => line.matchUpType === 'SINGLES');
+    const [first, second] = singles(dual(1, 1));
+    enter(second.matchUpId, { winningSide: 1 });
+    enter(first.matchUpId, { matchUpStatus: WALKOVER, winningSide: 1 });
+    enter(singles(dual(1, 1, 'Consolation'))[1].matchUpId, { matchUpStatus: DEFAULTED, winningSide: 1 });
+    enter(dual(1, 2).matchUpId, { ...won(1), matchUpStatus: RETIRED });
+    const consolation = dual(1, 1, 'Consolation');
+    const bye = dual(2, 1, 'Consolation');
+    const beyond = dual(3, 1, 'Consolation');
+    expect(bye.matchUpStatus).toEqual('BYE');
+
+    const announced: string[] = [];
+    setSubscriptions({
+      subscriptions: {
+        modifyMatchUp: (notices: any[]) => notices.forEach(({ matchUp }) => announced.push(matchUp.matchUpId)),
+      },
+    });
+    const doubles = consolation.tieMatchUps.find((line: any) => line.matchUpType === 'DOUBLES');
+    enter(doubles.matchUpId, { matchUpStatus: WALKOVER, winningSide: 1 });
+    expect(stored(consolation.matchUpId).winningSide).toEqual(1);
+    expect(stored(beyond.matchUpId).drawPositions.filter(Boolean)).toHaveLength(1);
+    expect(announced.indexOf(beyond.matchUpId)).toBeGreaterThan(-1);
+    expect(announced.indexOf(beyond.matchUpId)).toBeLessThan(announced.indexOf(bye.matchUpId));
   });
 });
