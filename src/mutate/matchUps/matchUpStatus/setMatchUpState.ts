@@ -41,7 +41,7 @@ import { exitAwardable } from '@Helpers/outcome/exitAwardable';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
-import { isDoubleExit } from '@Validators/isExit';
+import { isDoubleExit, isExit } from '@Validators/isExit';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { clearsABye } from '@Query/matchUp/clearsABye';
@@ -825,6 +825,18 @@ function resolveAndApplyOutcome({
       stack,
     });
 
+  // § 2 row 6 on a DECIDED dual (CA, 2026-11-18): an exit entered with a winner by a call that turns auto-calc on and
+  // carries the exit (`propagateExitStatus`), where the lines project no winner. The call's winner is replaced by the
+  // projected one, none, and the exit was written with no winner: the dual left DEFAULTED and undecided, its winner
+  // taken back out of the next dual. Refused before anything is written. A dual scored by hand is not asked: a call
+  // that disables auto-calc, or names neither flag on a dual already so flagged, keeps the winner it names.
+  if (applyTeamWrites && exitWithNoProjectedWinner(params))
+    return decorateResult({
+      result: { error: INVALID_MATCHUP_STATUS },
+      info: 'matchUpStatus: ' + params.matchUpStatus,
+      stack,
+    });
+
   // § 2 rows 13, 14 and 15 on a TEAM dual: a result its played-on downstream does not allow (another winner, or no
   // action the dispatch accepts). They were refused by the dispatch below, after the dual's writes, which left the dual
   // stamped and announced under the error (measured 2026-11-18, TEAM SINGLE_ELIMINATION 4: a dual decided by its own
@@ -952,6 +964,13 @@ function refusedAtTheStatusRoute(params: Parameters<typeof swapWinnerLoser>[0], 
   // a double exit asked to become a single one is unwound first (`removeDoubleExit`): not asked here
   if ((activeDownstream && hasPropagated) || isDoubleExit(matchUp.matchUpStatus)) return false;
   return refusesStatusRoute(params);
+}
+
+/** a decided dual's carried exit, auto-calc turned on by the call, its lines projecting no winner (`handleTeamAutoCalc`) */
+function exitWithNoProjectedWinner(params: Parameters<typeof swapWinnerLoser>[0]): boolean {
+  const { matchUp, matchUpStatus, winningSide } = params;
+  const carried = !!params.enableAutoCalc && !!params.propagateExitStatus && isExit(matchUpStatus);
+  return carried && !!matchUp.winningSide && !winningSide;
 }
 
 /**

@@ -4,7 +4,7 @@ import { rewritesCarriedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProv
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { validateScore } from '@Scoring/analysis/validateScore';
 import { definedAttributes } from '@Tools/definedAttributes';
-import { isDoubleExit } from '@Validators/isExit';
+import { isDoubleExit, isExit } from '@Validators/isExit';
 import { chooseRoute } from './route';
 
 // constants and types
@@ -333,6 +333,17 @@ function refuseRoute(given: OutcomeRequest, view: OutcomeView): Refusal | undefi
   const request = projection
     ? { ...given, winningSide: projection.projectedWinningSide, score: projection.score }
     : given;
+  // a DECIDED dual's exit carried on (`propagateExitStatus`) by a call that turns auto-calc on, the lines projecting no
+  // winner: an exit with no winner, refused before anything is written (CA, 2026-11-18). A dual scored by hand (the
+  // call disables auto-calc, or names neither flag) is not projected and keeps the winner it names
+  if (
+    projection &&
+    !projection.projectedWinningSide &&
+    !!given.flags.propagateExitStatus &&
+    isExit(given.matchUpStatus) &&
+    !!view.existing.winningSide
+  )
+    return refuse(6, INVALID_MATCHUP_STATUS, { info: 'matchUpStatus: ' + given.matchUpStatus });
   const route = chooseRoute(request, view);
   // a line under manual scoring (the dual's auto-calc disabled) goes to `attemptToModifyScore`, not the removal
   if (route === 'remove-directed')
