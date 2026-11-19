@@ -20,7 +20,8 @@ name: Verify
 #   coverage        merges the 4 blobs (vitest --merge-reports --coverage): the thresholds and
 #                   coverage/coverage-summary.json are computed over the MERGED result
 #   slow-gates      route-differential, double-exit-sweep, deep-corrections and hydrations, one job each
-#   team-arms       verify:team-arms split 5 ways (vitest --shard), nineteen strictly selected TEAM files
+#   team-arms       verify:team-arms split 5 ways (vitest --shard), nineteen strictly selected TEAM files, once
+#                   under OUTCOME_PIPELINE=v1 and once under v2
 #   v2-arm          INFORMATIONAL: the suite under OUTCOME_PIPELINE=v2 on a dev PR touching the outcome pipeline,
 #                   split 4 ways (vitest --shard)
 #   differential-arm the suite under OUTCOME_PIPELINE=differential on a dev PR touching the outcome pipeline, split
@@ -295,7 +296,9 @@ jobs:
   # On the path to a release (a PR into master, or a push to master) coverage runs the WHOLE suite
   # under OUTCOME_PIPELINE=differential: every call runs v1 and the v2 outcome pipeline, v2 is
   # measured where it executes, and a divergence between them fails the job. Into dev, v2 is
-  # excluded from coverage instead (vitest.config.mts), so building it spends no margin.
+  # excluded from coverage instead (vitest.config.mts), so building it spends no margin, and the
+  # suite runs under OUTCOME_PIPELINE=v1, named rather than left to the engine's default: what
+  # coverage measures into dev does not move when that default does.
   #
   # The suite runs as 4 shards. A shard's own coverage is partial, so vitest.config.mts drops the
   # thresholds on a `--shard` run; the shard fails only on a failing test (a differential divergence
@@ -331,7 +334,7 @@ jobs:
           esac
           pnpm exec vitest run --coverage --shard=${{ matrix.shard }}/4 --reporter=default --reporter=blob --reporter=./scripts/shardTimingReporter.mjs "${workers[@]}"
         env:
-          OUTCOME_PIPELINE: ${{ (github.event_name == 'workflow_dispatch' || github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'differential' || '' }}
+          OUTCOME_PIPELINE: ${{ (github.event_name == 'workflow_dispatch' || github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'differential' || 'v1' }}
 
       # `.vitest/blob/blob-<shard>-4.json` (vitest's default); a dot-directory, hence include-hidden-files
       - uses: actions/upload-artifact@v7
@@ -392,7 +395,7 @@ jobs:
           fi
           pnpm exec vitest run --merge-reports=.vitest/blob --coverage --reporter=default
         env:
-          OUTCOME_PIPELINE: ${{ (github.event_name == 'workflow_dispatch' || github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'differential' || '' }}
+          OUTCOME_PIPELINE: ${{ (github.event_name == 'workflow_dispatch' || github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'differential' || 'v1' }}
 
       # How much margin the merged coverage has above the floors, in items (CA, 2026-10-05: report +
       # an absolute minimum). Written to the job summary on every run, and the run fails if any metric
@@ -554,6 +557,10 @@ jobs:
   # package.json alone: a file added there lands in some shard without touching this workflow. A shard
   # that receives no file fails (vitest exits 1 on "No test files found"), so raise the count only when
   # the file count grows past it.
+  #
+  # Each shard runs twice, under OUTCOME_PIPELINE=v1 and under v2, both named rather than left to the
+  # engine's default. No other job runs the TEAM arms with v2 alone deciding: they are inert in the
+  # suite the v2 arm runs, and under the differential v1's writes are the ones applied.
   team-arms:
     needs: scope
     if: needs.scope.outputs.light != 'true'
@@ -566,7 +573,8 @@ jobs:
         # the same Node matrix as `gates`
         node-version: [26]
         shard: [1, 2, 3, 4, 5]
-    name: team-arms ${{ matrix.shard }}/5 (node ${{ matrix.node-version }})
+        pipeline: [v1, v2]
+    name: team-arms ${{ matrix.shard }}/5 ${{ matrix.pipeline }} (node ${{ matrix.node-version }})
 
     steps:
       - uses: actions/checkout@v7
@@ -575,8 +583,10 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: verify:team-arms ${{ matrix.shard }}/5
+      - name: verify:team-arms ${{ matrix.shard }}/5 under OUTCOME_PIPELINE=${{ matrix.pipeline }}
         run: pnpm verify:team-arms --shard=${{ matrix.shard }}/5
+        env:
+          OUTCOME_PIPELINE: ${{ matrix.pipeline }}
 
   # The check master's branch protection requires is `verify (node 26)`, and this job is it. It
   # passes only when every other job passed, except that on a light run the heavy jobs must have been
