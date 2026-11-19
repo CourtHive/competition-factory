@@ -1,17 +1,17 @@
 /**
- * `tods-competition-factory/score-entry-state`: a headless score-entry DRAFT.
+ * `tods-competition-factory/score-entry-state`: a headless score-entry STATE ENGINE.
  *
  * One immutable value (`ScoreEntryModel`) holds what an operator has typed and chosen for one matchUp: the cells of
- * each set, half-entered sets included, and how the match ended. Transitions return the next model, or the SAME
- * object when they refuse. Selectors answer what the draft means; rules answer what may be submitted; `toEngineOutcome`
+ * each set, half-entered sets included, and how the match ended. Transitions return the next model, or the SAME object
+ * when they refuse. Selectors answer what the score state means; rules answer what may be submitted; `toEngineOutcome`
  * turns a submission into the `outcome` `setMatchUpStatus` reads.
  *
- * It holds a draft and nothing else. It loads no record, holds no tournament, authorizes nobody, performs no
+ * It holds a score state and nothing else. It loads no record, holds no tournament, authorizes nobody, performs no
  * advancement, queries nothing and submits nothing. A host supplies the format, any saved score and ending
  * (`createScoreEntryModel`), and the status restrictions and clear permission its own `SCORE` action reported
  * (`ScoreEntryRulesContext`, `ClearGateInput.clearable`). Every scoring rule is the factory's own, imported narrowly:
  * this entry point reaches no engine, no global engine state, no `async_hooks`, no DOM and no root barrel, so a
- * browser, a worker and a Node process can each hold independent drafts.
+ * browser, a worker and a Node process can each hold independent score states.
  *
  * A host's loop:
  *
@@ -57,7 +57,7 @@ export type {
 export type { ReportedOutcome, EngineOutcome } from './engineOutcome';
 export type { OvertimeProgress, OvertimePhase } from './overtime';
 
-// the draft: creation, hydration and transitions
+// the score state: creation, hydration and transitions
 export {
   DEFAULT_MATCH_UP_FORMAT,
   createScoreEntryModel,
@@ -116,7 +116,7 @@ export {
 } from './irregularEnding';
 export { groupKeyForStatus, recordedStatusCode, normalizeStatusCode, codesForStatus } from './statusCodes';
 
-// what the draft means
+// what the score state means
 export {
   TIEBREAK_CONTRADICTION,
   INVALID_SET,
@@ -162,7 +162,7 @@ export {
 } from './rules';
 export { toEngineOutcome, positionalCodes } from './engineOutcome';
 
-// the format rules a draft is judged by, all the factory's
+// the format rules a score state is judged by, all the factory's
 export {
   matchUpConfigFor,
   getSetFormatForIndex,

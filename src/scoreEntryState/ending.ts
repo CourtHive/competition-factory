@@ -17,7 +17,7 @@ import type { RecordedReason } from './statusCodes';
 import type { SideNumber } from './types';
 
 /**
- * The ENDING half of a score-entry draft: how a match ended, when it did not end on the score.
+ * The ENDING half of a score state: how a match ended, when it did not end on the score.
  *
  * An ending is chosen ON a side, which names the side the ending HAPPENED TO, so the winner is already known and no
  * separate winner question exists. The ten endings split exactly as the factory classifies them: three belong to a
@@ -41,7 +41,7 @@ export type ScoreEntryState = {
   reasonCode?: string;
 };
 
-/** What a draft's ending resolves to, plus the two things a resolution alone does not say. */
+/** What a score state's ending resolves to, plus the two things a resolution alone does not say. */
 export type ScoreEntryResolution = IrregularEndingResolution & {
   /** True when the ending means a typed score is discarded rather than submitted. */
   clearsScore: boolean;
@@ -54,8 +54,8 @@ export const emptyScoreEntryState: ScoreEntryState = {};
 
 /**
  * Record (or un-record) a per-side ending. Choosing the ending already selected on that side clears it, which is what
- * gives the draft a reachable empty state. A side ending clears a match ending and vice versa: both answer how the
- * match ended. `bothSidesOut` and `reasonCode` are qualifiers OF an ending and are dropped on any change of ending.
+ * gives the score state a reachable empty state. A side ending clears a match ending and vice versa: both answer how
+ * the match ended. `bothSidesOut` and `reasonCode` are qualifiers OF an ending and are dropped on any change of ending.
  */
 export function chooseSideEnding(state: ScoreEntryState, sideNumber: SideNumber, status: string): ScoreEntryState {
   const current = state.sideEnding;
@@ -102,10 +102,11 @@ export function chooseReasonCode(state: ScoreEntryState, code: string | undefine
 
 /**
  * The ending of a matchUp that ALREADY has an outcome (CA, 2026-09-28: *"we need to be able to open existing
- * outcomes!"*). A stored matchUp names the WINNER; the draft records the side the ending happened to, so hydration
- * runs that mapping backwards. A double exit records `bothSidesOut` (its `sideNumber: 1` decides nothing); an ending
- * that resolves nobody is a match ending; a single exit is recorded against `3 - winningSide`; and a winner-requiring
- * status with no winning side is a corrupt record, refused with the empty state rather than a guessed placement.
+ * outcomes!"*). A stored matchUp names the WINNER; the score state records the side the ending happened to, so
+ * hydration runs that mapping backwards. A double exit records `bothSidesOut` (its `sideNumber: 1` decides nothing); an
+ * ending that resolves nobody is a match ending; a single exit is recorded against `3 - winningSide`; and a
+ * winner-requiring status with no winning side is a corrupt record, refused with the empty state rather than a guessed
+ * placement.
  */
 export function hydrateScoreEntryState(matchUp?: RecordedReason): ScoreEntryState {
   const { selectedOutcome, winnerSelection } = hydrateIrregularEnding(matchUp);
