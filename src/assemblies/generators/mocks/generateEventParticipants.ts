@@ -14,18 +14,12 @@ import { DOUBLES, SINGLES } from '@Constants/eventConstants';
 import { Participant } from '@Types/tournamentTypes';
 
 export function generateEventParticipants(params) {
-  const {
-    participantsProfile = {},
-    uniqueParticipantsCount,
-    ratingsParameters,
-    tournamentRecord,
-    eventProfile,
-    eventIndex,
-    event,
-    uuids,
-  } = params;
+  const { uniqueParticipantsCount, ratingsParameters, tournamentRecord, eventProfile, eventIndex, event, uuids } =
+    params;
 
   const { category, gender, eventType } = event;
+  // the eventProfile's own participantsProfile is merged over the call's (top-level) one: the event wins
+  const participantsProfile = { ...params.participantsProfile, ...eventProfile.participantsProfile };
 
   const eventParticipantType =
     (isMatchUpEventType(SINGLES)(eventType) && INDIVIDUAL) ||
@@ -39,7 +33,8 @@ export function generateEventParticipants(params) {
     ? mainParticipantsCount + qualifyingParticipantsCount
     : (eventProfile.participantsProfile?.participantsCount ?? 0);
 
-  const sex = isGendered(gender) ? gender : undefined;
+  // a gendered event's entries must match its gender, so it wins over a participantsProfile sex
+  const sex = isGendered(gender) ? gender : participantsProfile.sex;
 
   // MIXED DOUBLES: ensure the person pool has balanced MALE/FEMALE counts so
   // `rebuildPairsAsMixed` (called after generation) can assemble M+F pairs.
@@ -49,13 +44,13 @@ export function generateEventParticipants(params) {
   const isMixedDoubles = eventParticipantType === PAIR && coercedGender(gender) === MIXED;
   const gendersCount = isMixedDoubles ? { [MALE]: participantsCount, [FEMALE]: participantsCount } : undefined;
 
-  const idPrefix = participantsProfile?.idPrefix ? `E-${eventIndex}-${participantsProfile?.idPrefix}` : undefined;
+  const idPrefix = participantsProfile.idPrefix ? `E-${eventIndex}-${participantsProfile.idPrefix}` : undefined;
   const generated = generateParticipants({
     ...participantsProfile,
     // the most specific setting wins: the eventProfile's, then its participantsProfile's, then the call's
-    scaledParticipantsCount: eventProfile.scaledParticipantsCount ?? participantsProfile?.scaledParticipantsCount,
-    rankingRange: eventProfile.rankingRange ?? participantsProfile?.rankingRange,
-    uuids: eventProfile.uuids || participantsProfile?.uuids || uuids,
+    scaledParticipantsCount: eventProfile.scaledParticipantsCount ?? participantsProfile.scaledParticipantsCount,
+    rankingRange: eventProfile.rankingRange ?? participantsProfile.rankingRange,
+    uuids: eventProfile.uuids || participantsProfile.uuids || uuids,
     consideredDate: tournamentRecord?.startDate,
     participantType: eventParticipantType,
     participantsCount,

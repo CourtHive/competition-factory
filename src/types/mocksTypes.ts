@@ -195,7 +195,8 @@ export type MockDrawProfile = Partial<
   };
 
 export type MockEventProfile = CompletionOptions & {
-  // the generate path reads only participantsCount; modifyTournamentRecord's existing-event path generates from it
+  // merged over the top-level participantsProfile for the participants the event generates; anything beyond
+  // participantsCount makes the event generate its own participants for every draw
   participantsProfile?: MockParticipantsProfile;
   policyDefinitions?: MockPolicyDefinitions;
   eventAttributes?: Record<string, unknown>;

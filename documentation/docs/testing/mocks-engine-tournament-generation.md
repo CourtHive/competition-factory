@@ -463,7 +463,12 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
 Event profiles allow more complex event configurations with multiple draws per event.
 
 :::tip Event-Level Participant Profiles
-Like `drawProfile`, each `eventProfile` specializes the tournament-level `participantsProfile` with its own `gender`, `category`, `rankingRange` and `scaledParticipantsCount`. An `eventProfile` accepts a `participantsProfile`, but only its `participantsCount` is read, and only for an event without `drawProfiles`.
+Like `drawProfile`, each `eventProfile` specializes the tournament-level `participantsProfile` with its own `gender`, `category`, `rankingRange` and `scaledParticipantsCount`. An `eventProfile` may also carry a `participantsProfile` of its own, merged over the tournament-level one (the event's setting winning) for the participants the event generates:
+
+- With anything beyond `participantsCount` (a `sex`, `nationalityCodes`, `idPrefix`, ...) the event generates its own participants for every draw, rather than drawing from the tournament pool, so those settings are honoured.
+- Its `participantsCount` sizes an event without `drawProfiles`; an event with `drawProfiles` is sized by its draws. A `participantsCount` alone leaves an event with `drawProfiles` drawing from the tournament pool.
+- A gendered event's `gender` wins over a `sex`: the event's entries must match it.
+
 :::
 
 ### Basic Event Profile
@@ -489,7 +494,9 @@ In CODES, **qualifying is a stage within a draw**, not a separate draw. A drawDe
 Do **NOT** create separate draws with `stage: 'QUALIFYING'` - this violates the CODES structure where draws describe participant progression between stages.
 :::
 
-Use `qualifyingProfiles` to create qualifying structures within a single draw:
+Use `qualifyingProfiles` to create qualifying structures within a single draw, in a top-level `drawProfile` or in an
+`eventProfile`'s `drawProfiles`. The MAIN places held for qualifiers are the final-stage `qualifyingPositions`, and
+the QUALIFYING entries are generated for the event (or drawn from the `participants` supplied, when there are):
 
 ```js
 const { tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -610,12 +617,14 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
 
 ### Participant Profile Hierarchy
 
-There is one `participantsProfile`, at the tournament level. Event and draw profiles specialize it with their own
-attributes, the most specific winning:
+The tournament-level `participantsProfile` is the default. Event and draw profiles specialize it, the most specific
+winning:
 
 1. **Profile-level** `gender`, `category`, `rankingRange`, `scaledParticipantsCount` of the `eventProfile` (or of a
    top-level `drawProfile`) that generates the participants (highest priority)
-2. **Tournament-level** `participantsProfile` (lowest priority)
+2. **Event-level** `participantsProfile` of an `eventProfile`, merged over the tournament-level one (a `drawProfile`
+   takes none)
+3. **Tournament-level** `participantsProfile` (lowest priority)
 
 ```js
 const { tournamentRecord } = mocksEngine.generateTournamentRecord({
