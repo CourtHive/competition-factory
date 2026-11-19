@@ -195,34 +195,39 @@ tournamentEngine.setParticipantScaleItem({
 
 ### Multiple Scale Items
 
-Set multiple scale items at once:
+Set multiple scale items at once. `setParticipantScaleItems` takes `scaleItemsWithParticipantIds`, a list of
+`{ participantId, scaleItems }`; a bare `participantId` and `scaleItems` are ignored and nothing is written.
 
-**API Reference:** [setParticipantScaleItem](/docs/governors/participant-governor#setparticipantscaleitem)
+**API Reference:** [setParticipantScaleItems](/docs/governors/participant-governor#setparticipantscaleitems)
 
 ```js
 tournamentEngine.setParticipantScaleItems({
-  participantId: 'player-123',
-  scaleItems: [
+  scaleItemsWithParticipantIds: [
     {
-      scaleType: 'RATING',
-      scaleValue: 8.3,
-      scaleName: 'WTN',
-      eventType: 'SINGLES',
-      scaleDate: '2024-06-15',
-    },
-    {
-      scaleType: 'RATING',
-      scaleValue: 7.8,
-      scaleName: 'WTN',
-      eventType: 'DOUBLES',
-      scaleDate: '2024-06-15',
-    },
-    {
-      scaleType: 'RANKING',
-      scaleValue: 142,
-      scaleName: 'ATP',
-      eventType: 'SINGLES',
-      scaleDate: '2024-06-15',
+      participantId: 'player-123',
+      scaleItems: [
+        {
+          scaleType: 'RATING',
+          scaleValue: 8.3,
+          scaleName: 'WTN',
+          eventType: 'SINGLES',
+          scaleDate: '2024-06-15',
+        },
+        {
+          scaleType: 'RATING',
+          scaleValue: 7.8,
+          scaleName: 'WTN',
+          eventType: 'DOUBLES',
+          scaleDate: '2024-06-15',
+        },
+        {
+          scaleType: 'RANKING',
+          scaleValue: 142,
+          scaleName: 'ATP',
+          eventType: 'SINGLES',
+          scaleDate: '2024-06-15',
+        },
+      ],
     },
   ],
 });
@@ -250,9 +255,8 @@ const participantScaleItems = [
   },
 ];
 
-participantScaleItems.forEach(({ participantId, scaleItems }) => {
-  tournamentEngine.setParticipantScaleItems({ participantId, scaleItems });
-});
+// one call for every participant
+tournamentEngine.setParticipantScaleItems({ scaleItemsWithParticipantIds: participantScaleItems });
 ```
 
 ## Retrieving Scale Items
@@ -380,7 +384,7 @@ Seeding determines participant placement within draw structures. The Competition
 
 1. **Client-Implemented Seeding** - Full control over seed order determination
 2. **Factory getScaledEntries()** - Helper method for sorting entries by scale values
-3. **Factory autoSeeding()** - Automatic seeding generation and assignment
+3. **Factory autoSeeding()** - Automatic seeding generation (saving it is a separate call)
 
 ### Client-Implemented Seeding
 
@@ -443,9 +447,7 @@ const { scaleItemsWithParticipantIds } = tournamentEngine.generateSeedingScaleIt
 });
 
 // Step 4: Save to participants
-scaleItemsWithParticipantIds.forEach(({ participantId, scaleItems }) => {
-  tournamentEngine.setParticipantScaleItems({ participantId, scaleItems });
-});
+tournamentEngine.setParticipantScaleItems({ scaleItemsWithParticipantIds });
 ```
 
 **Key Points:**
@@ -498,16 +500,15 @@ const { scaleItemsWithParticipantIds } = tournamentEngine.generateSeedingScaleIt
 });
 
 // Step 4: Save to participants
-scaleItemsWithParticipantIds.forEach(({ participantId, scaleItems }) => {
-  tournamentEngine.setParticipantScaleItems({ participantId, scaleItems });
-});
+tournamentEngine.setParticipantScaleItems({ scaleItemsWithParticipantIds });
 ```
 
 **See:** [queryGovernor.getScaledEntries](/docs/governors/query-governor#getscaledentries) for complete documentation.
 
 ### Using Factory autoSeeding()
 
-For fully automated seeding generation and assignment:
+For automated seeding generation. `autoSeeding` returns the seeding as `scaleItemsWithParticipantIds` and writes
+nothing; save it with `setParticipantScaleItems`. A seeding policy and a draw size decide how many seeds there are:
 
 **API Reference:** [getScaledEntries](/docs/governors/query-governor#getscaledentries)
 
@@ -518,22 +519,22 @@ For fully automated seeding generation and assignment:
 **API Reference:** [setParticipantScaleItems](/docs/governors/participant-governor#setparticipantscaleitems)
 
 ```js
-// Automatically generate and assign seeding based on WTN ratings
-const result = tournamentEngine.autoSeeding({
+import { fixtures, tournamentEngine } from 'tods-competition-factory';
+
+// Generate seeding from WTN ratings
+const { scaleItemsWithParticipantIds, error } = tournamentEngine.autoSeeding({
   eventId: 'singles-main',
-  policyDefinitions: {
-    seeding: {
-      seedingProfile: 'WTN',
-      scaleAttributes: {
-        scaleType: 'RATING',
-        scaleName: 'WTN',
-        eventType: 'SINGLES',
-      },
-    },
+  drawSize: 32,
+  scaleAttributes: {
+    scaleType: 'RATING',
+    scaleName: 'WTN',
+    eventType: 'SINGLES',
   },
+  policyDefinitions: fixtures.policies.POLICY_SEEDING_DEFAULT, // seeds count by draw size
 });
 
-// Seeds automatically generated and assigned to participants
+// Save it: until this call no participant has a seeding
+if (!error) tournamentEngine.setParticipantScaleItems({ scaleItemsWithParticipantIds });
 ```
 
 **Limitations:**
@@ -680,19 +681,14 @@ rankings.forEach(({ participantId, ranking }) => {
   });
 });
 
-// Auto-seed from rankings
-tournamentEngine.autoSeeding({
+// Seed from rankings, then save the seeding
+const { scaleItemsWithParticipantIds } = tournamentEngine.autoSeeding({
   eventId: 'singles-main',
-  policyDefinitions: {
-    seeding: {
-      scaleAttributes: {
-        scaleType: 'RANKING',
-        scaleName: 'ATP',
-        eventType: 'SINGLES',
-      },
-    },
-  },
+  drawSize: 32,
+  scaleAttributes: { scaleType: 'RANKING', scaleName: 'ATP', eventType: 'SINGLES' },
+  policyDefinitions: fixtures.policies.POLICY_SEEDING_DEFAULT,
 });
+tournamentEngine.setParticipantScaleItems({ scaleItemsWithParticipantIds });
 ```
 
 ### Multiple Rating Systems
@@ -729,8 +725,7 @@ const multipleRatings = [
 ];
 
 tournamentEngine.setParticipantScaleItems({
-  participantId: 'player-123',
-  scaleItems: multipleRatings,
+  scaleItemsWithParticipantIds: [{ participantId: 'player-123', scaleItems: multipleRatings }],
 });
 
 // Retrieve specific rating
@@ -842,15 +837,13 @@ Ensure scale items match the event they're used for:
 // For singles event, use singles ratings
 tournamentEngine.autoSeeding({
   eventId: 'singles-event',
-  policyDefinitions: {
-    seeding: {
-      scaleAttributes: {
-        scaleType: 'RATING',
-        scaleName: 'WTN',
-        eventType: 'SINGLES', // ✓ Matches event type
-      },
-    },
+  drawSize: 32,
+  scaleAttributes: {
+    scaleType: 'RATING',
+    scaleName: 'WTN',
+    eventType: 'SINGLES', // ✓ Matches event type
   },
+  policyDefinitions: fixtures.policies.POLICY_SEEDING_DEFAULT,
 });
 ```
 

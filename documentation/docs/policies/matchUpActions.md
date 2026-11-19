@@ -85,7 +85,12 @@ submission. The engine remains authoritative when the outcome is submitted.
 
 ## Available MatchUp Actions
 
-The following actions can be controlled by this policy:
+`enabledActions` and `disabledActions` govern the scheduling-detail, staffing, penalty and team actions below. An empty
+`enabledActions` enables every governed action.
+
+**SCHEDULE, SCORE, STATUS, EXIT and CLEAR_SCORE are not governed:** they are offered whenever the matchUp's state allows,
+under any policy, so no `enabledActions` list removes them. To stop a matchUp being changed, use a
+[mutation lock](/docs/concepts/mutation-locks).
 
 ### Core MatchUp Actions
 
@@ -226,18 +231,19 @@ tournamentEngine.attachPolicies({
 });
 ```
 
-### Restrict to Scheduling Only
+### Limit the Governed Actions to Scheduling
 
 ```js
-// Only allow scheduling - no scoring or status changes
-const scheduleOnlyPolicy = {
+// Of the governed actions, offer only date and time scheduling: no referee, scorekeeper, check-in, start/end or
+// penalty. SCHEDULE, SCORE and STATUS are not governed and are still offered.
+const schedulingPolicy = {
   [POLICY_TYPE_MATCHUP_ACTIONS]: {
-    policyName: 'Schedule Only',
+    policyName: 'Scheduling',
     enabledStructures: [
       {
         stages: [],
         stageSequences: [],
-        enabledActions: ['SCHEDULE'], // Only scheduling enabled
+        enabledActions: ['SCHEDULE_DATE', 'SCHEDULE_TIME'],
       },
     ],
   },
@@ -352,7 +358,8 @@ const clubTeamPolicy = {
 ### Live Scoring Only
 
 ```js
-// Only allow score entry and penalties (live scoring scenario)
+// Live scoring: penalties and start/end times; no referee, scorekeeper or check-in.
+// SCORE and STATUS (and SCHEDULE) are not governed: they are offered whatever this list says.
 const liveScoringPolicy = {
   [POLICY_TYPE_MATCHUP_ACTIONS]: {
     policyName: 'Live Scoring',
@@ -373,23 +380,11 @@ const liveScoringPolicy = {
 };
 ```
 
-### Disable All Actions (View Only)
+### No "View Only" Policy
 
-```js
-// Completely disable matchUp modifications
-const viewOnlyPolicy = {
-  [POLICY_TYPE_MATCHUP_ACTIONS]: {
-    policyName: 'View Only',
-    enabledStructures: [
-      {
-        stages: [],
-        stageSequences: [],
-        enabledActions: [], // Will return empty validActions
-      },
-    ],
-  },
-};
-```
+A matchUp actions policy cannot make a matchUp read-only: `enabledActions: []` enables every governed action, and
+SCHEDULE, SCORE and STATUS are offered under any policy. To prevent changes, use a
+[mutation lock](/docs/concepts/mutation-locks).
 
 ---
 
@@ -923,14 +918,14 @@ it('respects custom action restrictions', () => {
   tournamentEngine.setState(tournamentRecord);
   const [drawId] = drawIds;
 
-  // Policy: only allow scheduling
-  const scheduleOnlyPolicy = {
+  // Policy: of the governed actions, only REFEREE
+  const refereeOnlyPolicy = {
     [POLICY_TYPE_MATCHUP_ACTIONS]: {
       enabledStructures: [
         {
           stages: [],
           stageSequences: [],
-          enabledActions: ['SCHEDULE'],
+          enabledActions: ['REFEREE'],
         },
       ],
     },
@@ -940,16 +935,17 @@ it('respects custom action restrictions', () => {
   const matchUp = matchUps[0];
 
   const { validActions } = tournamentEngine.matchUpActions({
-    policyDefinitions: scheduleOnlyPolicy,
+    policyDefinitions: refereeOnlyPolicy,
     matchUpId: matchUp.matchUpId,
     drawId,
   });
 
   const actionTypes = validActions.map((a) => a.type);
 
-  expect(actionTypes).toEqual(['SCHEDULE']);
-  expect(actionTypes).not.toContain('SCORE');
-  expect(actionTypes).not.toContain('STATUS');
+  expect(actionTypes).toContain('REFEREE');
+  expect(actionTypes).not.toContain('SCOREKEEPER');
+  expect(actionTypes).not.toContain('CHECK_IN');
+  expect(actionTypes).toContain('SCORE'); // not governed by the policy
 });
 ```
 

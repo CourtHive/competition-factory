@@ -575,21 +575,20 @@ const result = engine.removeDrawEntries({
 
 ## removeEventEntries
 
-Removes participant entries from an event and optionally from associated draws.
+Removes participant entries from an event, and from every flight and draw of that event.
 
 ```js
-const result = engine.removeEventEntries({
-  participantIds, // required - array of participant IDs to remove
-  stage, // optional - target specific stage
-  stageSequence, // optional - target specific stage sequence
-  autoRemoveUnassigned, // optional boolean - remove if not positioned in draw
-  removeFromDrawEntries, // optional boolean - also remove from draw entries
+const { participantIdsRemoved } = engine.removeEventEntries({
+  participantIds, // array of participant IDs to remove
+  entryStatuses, // optional - only entries with one of these entryStatuses (or, without participantIds, all of them)
+  stage, // optional - only entries with this entryStage (or, without participantIds, all of them)
+  autoEntryPositions, // optional - renumber the remaining entries' entryPosition
   eventId, // required
-  drawId, // optional - specific draw to target
 });
 ```
 
-**Purpose:** Removes entries from event and optionally from draws.
+A participant already placed in a draw cannot be removed: the call is refused with
+`EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT` and nothing is removed.
 
 ---
 

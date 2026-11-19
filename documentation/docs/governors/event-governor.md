@@ -103,9 +103,7 @@ engine.assignSeedPositions({
   eventId,
   drawId,
 
-  stage, // opional; defaults to { stage: MAIN }
-  stageSequence, // optional; defaults to { stageSequence: 1 }
-  useExistingSeedLimits, // optional; restrict ability to assign seedNumbers beyond established limit
+  useExistingSeedLimit, // optional; restrict ability to assign seedNumbers beyond established limit
 });
 ```
 

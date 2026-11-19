@@ -88,25 +88,20 @@ tournamentEngine.setMatchUpStatus({
   },
 });
 
-// Score from string
-tournamentEngine.setMatchUpStatus({
-  eventId,
-  matchUpId,
-  outcome: {
-    scoreString: '6-4 6-3',
-    winningSide: 1,
-  },
-});
+// Score from string: outcome has no scoreString attribute (it would be ignored, and the matchUp completed with no
+// score); build the outcome from the string first
+const { outcome } = tournamentEngine.generateOutcomeFromScoreString({ scoreString: '6-4 6-3', winningSide: 1 });
+tournamentEngine.setMatchUpStatus({ drawId, matchUpId, outcome });
 ```
 
 ### Match Status Management
 
 ```js
-// Update match status
+// Update match status: the status goes in the outcome (a top-level matchUpStatus is ignored)
 tournamentEngine.setMatchUpStatus({
-  eventId,
+  drawId,
   matchUpId,
-  matchUpStatus: 'IN_PROGRESS',
+  outcome: { matchUpStatus: 'IN_PROGRESS' },
 });
 
 // Complete match with walkover
@@ -398,12 +393,12 @@ let currentScore = { sets: [] };
 function updateSet(setNumber, side1Score, side2Score) {
   currentScore.sets[setNumber - 1] = { side1Score, side2Score };
 
-  // Save intermediate state
+  // Save intermediate state: a score with no winner leaves the matchUp IN_PROGRESS
   tournamentEngine.setMatchUpStatus({
-    eventId,
+    drawId,
     matchUpId,
-    matchUpStatus: 'IN_PROGRESS',
     outcome: {
+      matchUpStatus: 'IN_PROGRESS',
       score: currentScore,
     },
   });
@@ -411,7 +406,7 @@ function updateSet(setNumber, side1Score, side2Score) {
 
 function completeMatch(winningSide) {
   tournamentEngine.setMatchUpStatus({
-    eventId,
+    drawId,
     matchUpId,
     outcome: {
       score: currentScore,
@@ -427,41 +422,50 @@ function completeMatch(winningSide) {
 ```js
 // Import scores from external source
 const scores = [
-  { matchUpId: 'match1', scoreString: '6-4 6-3', winningSide: 1 },
-  { matchUpId: 'match2', scoreString: '7-6(5) 4-6 10-8', winningSide: 1 },
-  { matchUpId: 'match3', scoreString: 'WO', winningSide: 1, status: 'WALKOVER' },
+  { drawId, matchUpId: 'match1', scoreString: '6-4 6-3', winningSide: 1 },
+  { drawId, matchUpId: 'match2', scoreString: '7-6(5) 4-6 6-3', winningSide: 1 },
+  { drawId, matchUpId: 'match3', scoreString: 'WO', winningSide: 1, status: 'WALKOVER' },
 ];
 
 scores.forEach((s) => {
   const outcome =
     s.status === 'WALKOVER'
       ? { matchUpStatus: 'WALKOVER', winningSide: s.winningSide }
-      : { scoreString: s.scoreString, winningSide: s.winningSide };
+      : tournamentEngine.generateOutcomeFromScoreString({ scoreString: s.scoreString, winningSide: s.winningSide })
+          .outcome;
 
-  tournamentEngine.setMatchUpStatus({
-    eventId,
+  // a score that does not fit the matchUpFormat is refused: report it rather than skipping it silently
+  const result = tournamentEngine.setMatchUpStatus({
+    drawId: s.drawId,
     matchUpId: s.matchUpId,
     outcome,
   });
+  if (result.error) console.error(s.matchUpId, result.error);
 });
 ```
 
 ### Score Correction
 
 ```js
-// Remove incorrect score
-tournamentEngine.resetMatchUpLineUps({
-  eventId,
-  matchUpId,
-});
-
-// Re-enter correct score
+// Re-enter the correct score: a new outcome replaces the old one. Changing the winner is refused once the winner has
+// played on; a corrected score with the same winner is not
 tournamentEngine.setMatchUpStatus({
-  eventId,
+  drawId,
   matchUpId,
   outcome: {
     score: correctScore,
     winningSide: correctWinner,
+  },
+});
+
+// Or remove the outcome altogether (the CLEAR_SCORE action's payload)
+tournamentEngine.setMatchUpStatus({
+  drawId,
+  matchUpId,
+  outcome: {
+    matchUpStatus: 'TO_BE_PLAYED',
+    score: { scoreStringSide1: '', scoreStringSide2: '' },
+    winningSide: undefined,
   },
 });
 ```

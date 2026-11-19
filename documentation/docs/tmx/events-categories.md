@@ -91,7 +91,7 @@ tournamentEngine.addEventEntries({
 });
 
 // Remove entries
-tournamentEngine.modifyEventEntries({
+tournamentEngine.removeEventEntries({
   eventId,
   participantIds: [id1],
 });
@@ -222,7 +222,7 @@ const eventId = createdEvent.eventId;
 const { participants } = tournamentEngine.getParticipants({
   participantFilters: {
     participantTypes: ['INDIVIDUAL'],
-    sex: 'MALE',
+    genders: ['MALE'], // the filter is genders (an array); an unknown key such as sex is ignored
   },
 });
 

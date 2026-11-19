@@ -832,7 +832,7 @@ Clears schedule information from a specific matchUp.
 engine.clearMatchUpSchedule({
   matchUpId, // required
   drawId, // optional - optimizes lookup, triggers draw modification notice
-  scheduleAttributes, // optional - array of specific attributes to clear
+  scheduleAttributes, // optional - timeItem types to clear (timeItemConstants); default: every schedule item
 });
 ```
 
@@ -850,11 +850,13 @@ engine.clearMatchUpSchedule({
 **Clear Specific Attributes**:
 
 ```js
-import { scheduleConstants } from 'tods-competition-factory';
+import { timeItemConstants } from 'tods-competition-factory';
 
+// clears the time and keeps the date
 engine.clearMatchUpSchedule({
   matchUpId: 'match-123',
-  scheduleAttributes: [scheduleConstants.SCHEDULED_TIME, scheduleConstants.SCHEDULED_DATE],
+  drawId: 'draw-456',
+  scheduleAttributes: [timeItemConstants.SCHEDULED_TIME],
 });
 ```
 
@@ -868,10 +870,15 @@ Clears schedules from multiple matchUps based on criteria.
 engine.clearScheduledMatchUps({
   scheduledDates, // optional - array of dates to clear
   venueIds, // optional - array of venueIds to clear
-  scheduleAttributes, // optional - which attributes to clear
+  scheduleAttributes, // optional - which matchUps qualify (see below); default ['scheduledDate', 'scheduledTime', 'courtOrder']
   ignoreMatchUpStatuses, // optional - matchUp statuses to skip
 });
 ```
+
+`scheduleAttributes` selects matchUps, it does not limit what is cleared: a matchUp qualifies when its schedule has
+any of the listed attributes (schedule field names such as `'scheduledTime'`), and **every** schedule attribute of a
+qualifying matchUp is cleared, its date included. To clear only some attributes, use `clearMatchUpSchedule` per
+matchUp.
 
 #### clearScheduledMatchUps Examples
 
@@ -891,14 +898,12 @@ engine.clearScheduledMatchUps({
 });
 ```
 
-**Clear Only Times (Keep Dates)**:
+**Clear Only the MatchUps That Have a Time** (their dates are cleared too):
 
 ```js
-import { scheduleConstants } from 'tods-competition-factory';
-
 engine.clearScheduledMatchUps({
   scheduledDates: ['2024-06-15'],
-  scheduleAttributes: [scheduleConstants.SCHEDULED_TIME],
+  scheduleAttributes: ['scheduledTime'],
 });
 ```
 
