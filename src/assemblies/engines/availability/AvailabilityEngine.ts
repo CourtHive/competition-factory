@@ -493,6 +493,7 @@ export class AvailabilityEngine {
     let scheduledMinutes = 0;
     let availableMinutes = 0;
     let blockedMinutes = 0;
+    const minutesByType: Partial<Record<BlockType, number>> = {};
 
     for (const day of this.getTournamentDays()) {
       const rail = this.getCourtRail(day, court);
@@ -502,6 +503,7 @@ export class AvailabilityEngine {
         const startMs = new Date(segment.start).getTime();
         const endMs = new Date(segment.end).getTime();
         const duration = (endMs - startMs) / 60000;
+        minutesByType[segment.status] = (minutesByType[segment.status] ?? 0) + duration;
 
         if (segment.status === BLOCK_TYPES.SCHEDULED || segment.status === BLOCK_TYPES.LOCKED) {
           scheduledMinutes += duration;
@@ -513,7 +515,7 @@ export class AvailabilityEngine {
       }
     }
 
-    return { scheduledMinutes, availableMinutes, blockedMinutes };
+    return { scheduledMinutes, availableMinutes, blockedMinutes, minutesByType };
   }
 
   /**

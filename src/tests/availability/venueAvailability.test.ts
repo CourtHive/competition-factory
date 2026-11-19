@@ -533,4 +533,33 @@ describe('getCourtSchedulingSummary', () => {
     expect(summary.blockedMinutes).toBe(60 + 30); // maintenance + practice
     expect(summary.availableMinutes).toBe(3 * 12 * 60 - 90 - 90); // 1980
   });
+
+  it('minutesByType splits every bucket by block type, so practice can be told from maintenance', () => {
+    const engine = new AvailabilityEngine();
+    const record = makeBasicRecord();
+    engine.init(record, { tournamentId: TOURNAMENT_ID });
+    engine.setVenueDefaultAvailability(TOURNAMENT_ID, VENUE_ID, { startTime: '08:00', endTime: '20:00' });
+
+    const blocks = [
+      { start: '2026-06-15T10:00:00', end: '2026-06-15T11:30:00', type: BLOCK_TYPES.SCHEDULED },
+      { start: '2026-06-16T12:00:00', end: '2026-06-16T13:00:00', type: BLOCK_TYPES.MAINTENANCE },
+      { start: '2026-06-17T08:00:00', end: '2026-06-17T08:30:00', type: BLOCK_TYPES.PRACTICE },
+      { start: '2026-06-17T09:00:00', end: '2026-06-17T10:00:00', type: BLOCK_TYPES.PRACTICE },
+    ];
+    for (const { start, end, type } of blocks) {
+      engine.applyBlock({ courts: [makeCourtRef()], timeRange: { start, end }, type: type as any });
+    }
+
+    const summary = engine.getCourtSchedulingSummary(makeCourtRef());
+    expect(summary.minutesByType).toEqual({
+      [BLOCK_TYPES.AVAILABLE]: 3 * 12 * 60 - 90 - 60 - 90,
+      [BLOCK_TYPES.SCHEDULED]: 90,
+      [BLOCK_TYPES.MAINTENANCE]: 60,
+      [BLOCK_TYPES.PRACTICE]: 90,
+    });
+    // the buckets are unchanged, and the split adds up to them
+    expect(summary.blockedMinutes).toBe(60 + 90);
+    const total = Object.values(summary.minutesByType).reduce((sum, minutes) => sum + minutes, 0);
+    expect(total).toBe(summary.scheduledMinutes + summary.availableMinutes + summary.blockedMinutes);
+  });
 });
