@@ -554,6 +554,18 @@ const { BUCHHOLZ, MEDIAN_BUCHHOLZ, SONNEBORN_BERGER, PROGRESSIVE_SCORE, SCORE_GR
 const { GEM_SCORE } = factoryConstants.tallyConstants; // 'GEMscore'
 ```
 
+**ladderConstants** - Ladder policy and record vocabulary
+
+```js
+const { RANK, SWAP, EITHER, FORFEIT_POSITION } = factoryConstants.ladderConstants;
+const policy = { ordering: RANK, movement: SWAP, resultValidation: EITHER };
+```
+
+The orderings (`RANK`, `RATING`), movements (`SWAP`, `INSERTION`), who validates a result (`PEER`, `OPERATOR`,
+`EITHER`), challenge states, movement triggers, lapse kinds, windows and consequences, and entry placements, each with
+its value list (`ladderOrderings`, `resultValidations`, ...), plus the `timeItem` types a ladder records
+(`CHALLENGE_ISSUED`, `RESULT_SUBMITTED`, ...).
+
 **rankingConstants** - Ranking-points pipeline vocabulary
 
 ```js

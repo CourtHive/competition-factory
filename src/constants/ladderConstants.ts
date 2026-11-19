@@ -34,8 +34,6 @@ export type LadderMovement = (typeof ladderMovements)[number];
 /** A challenge range of `ANY` means a participant may challenge anyone above them. */
 export const ANY = 'ANY';
 
-export const ladderConstants = { ANY, INSERTION, RANK, RATING, SWAP } as const;
-
 /**
  * The lifecycle of a challenge, as observed rather than stored.
  *
@@ -114,3 +112,52 @@ export const BOTTOM = 'BOTTOM';
 export const BY_RATING = 'BY_RATING';
 export const entryPlacements = [BOTTOM, BY_RATING] as const;
 export type EntryPlacement = (typeof entryPlacements)[number];
+
+/**
+ * The whole ladder vocabulary, exported as `ladderConstants` (and on `factoryConstants`), so a host writing a ladder
+ * policy or reading its records names a value instead of typing it: `resultValidation: ladderConstants.EITHER`.
+ * Every value and value list above is a member; `ladderConstants.test.ts` fails if one is left out.
+ */
+export const ladderConstants = {
+  RANK,
+  RATING,
+  SWAP,
+  INSERTION,
+  ANY,
+  PENDING,
+  EXPIRED,
+  ACCEPTED,
+  DECLINED,
+  CHALLENGE_ISSUED,
+  CHALLENGE_ACCEPTED,
+  CHALLENGE_DECLINED,
+  LADDER_PARTICIPANT_REMOVED,
+  PEER,
+  OPERATOR,
+  EITHER,
+  RESULT_SUBMITTED,
+  RESULT_CONFIRMED,
+  RESULT_DISPUTED,
+  RESULT,
+  FORFEIT,
+  DECLINE,
+  EXPIRY,
+  UNPLAYED,
+  SEASON,
+  ROLLING,
+  CONSECUTIVE,
+  FORFEIT_POSITION,
+  DROP,
+  REMOVE,
+  BOTTOM,
+  BY_RATING,
+  ladderOrderings,
+  ladderMovements,
+  challengeStates,
+  resultValidations,
+  movementTriggers,
+  lapseKinds,
+  lapseWindows,
+  lapseConsequences,
+  entryPlacements,
+} as const;
