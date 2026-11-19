@@ -63,20 +63,16 @@ By default, a participant in the tournament record contains only essential data.
       score: { ... }
     }
   ],
-  statistics: {                  // Added by withStatistics
-    matchUpsPlayed: 5,
-    matchUpsWon: 4,
-    matchUpsLost: 1,
-    setsWon: 9,
-    setsLost: 3,
-    gamesWon: 72,
-    gamesLost: 48
-  },
+  statistics: [                  // Added by withStatistics
+    { statCode: 'winRatio', numerator: 4, denominator: 5, statValue: 0.8 },
+    { statCode: 'winRatio.SINGLES', numerator: 4, denominator: 5, statValue: 0.8 },
+    { statCode: 'winRatio.DOUBLES', numerator: 0, denominator: 0, statValue: 0 }
+  ],
   opponents: [                   // Added by withOpponents
     { participantId: 'player-456', participantName: 'Djokovic' }
   ],
   rankings: {                    // Added by withScaleValues
-    SINGLES: { rating: 1250, ranking: 2 }
+    SINGLES: [{ scaleName: 'ATP', scaleValue: 2, scaleDate: '2024-01-15' }]
   }
 }
 ```
@@ -119,18 +115,20 @@ const { participants } = tournamentEngine.getParticipants({
 });
 
 participants.forEach((p) => {
-  const stats = p.statistics;
-  const winPct = ((stats.matchUpsWon / stats.matchUpsPlayed) * 100).toFixed(1);
-  console.log(`${p.person.standardFamilyName}: ${winPct}% (${stats.matchUpsWon}-${stats.matchUpsLost})`);
+  const winRatio = p.statistics?.find(({ statCode }) => statCode === 'winRatio');
+  if (!winRatio) return;
+  const { numerator: won, denominator: played, statValue } = winRatio;
+  const winPct = (statValue * 100).toFixed(1);
+  console.log(`${p.person.standardFamilyName}: ${winPct}% (${won}-${played - won})`);
 });
 ```
 
-**Statistics included:**
+**Statistics included:** an array of `{ statCode, numerator, denominator, statValue }`, where `numerator` is
+matchUps won, `denominator` is matchUps won plus lost, and `statValue` is their ratio (`0` when none were played):
 
-- `matchUpsPlayed`, `matchUpsWon`, `matchUpsLost`
-- `setsWon`, `setsLost`
-- `gamesWon`, `gamesLost`
-- `pointsWon`, `pointsLost` (if available)
+- `winRatio` — all matchUps
+- `winRatio.SINGLES` — SINGLES matchUps
+- `winRatio.DOUBLES` — DOUBLES matchUps
 
 ### withOpponents
 
@@ -239,18 +237,17 @@ participants.forEach((p) => {
 
 ```js
 // From:
-timeItems: [{
-  itemType: 'RANKING.SINGLES',
-  itemValue: '45',
-  itemDate: '2024-01-15'
-}]
+timeItems: [
+  {
+    itemType: 'SCALE.RANKING.SINGLES.U18',
+    itemValue: 45,
+    itemDate: '2024-01-15',
+  },
+];
 
 // To:
 rankings: {
-  SINGLES: {
-    ranking: 45,
-    rankingDate: '2024-01-15'
-  }
+  SINGLES: [{ scaleName: 'U18', scaleValue: 45, scaleDate: '2024-01-15' }];
 }
 ```
 
@@ -370,8 +367,8 @@ participants.forEach((participant) => {
   renderPlayerCard({
     name: `${participant.person.standardGivenName} ${participant.person.standardFamilyName}`,
     nationality: participant.person.nationalityCode,
-    ranking: participant.rankings?.SINGLES?.ranking,
-    rating: participant.ratings?.SINGLES?.rating,
+    ranking: participant.rankings?.SINGLES?.find(({ scaleName }) => scaleName === 'U18')?.scaleValue,
+    rating: participant.ratings?.SINGLES?.find(({ scaleName }) => scaleName === 'WTN')?.scaleValue,
     stats: participant.statistics,
     upcomingMatches: participant.matchUps.filter((m) => m.matchUpStatus === 'TO_BE_PLAYED'),
     completedMatches: participant.matchUps.filter((m) => m.matchUpStatus === 'COMPLETED'),

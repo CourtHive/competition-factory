@@ -265,7 +265,7 @@ tournamentEngine.setParticipantScaleItems({ scaleItemsWithParticipantIds: partic
 
 Retrieve the most recent scale item matching specific criteria:
 
-**API Reference:** [setParticipantScaleItems](/docs/governors/participant-governor#setparticipantscaleitems)
+**API Reference:** [getParticipantScaleItem](/docs/governors/query-governor#getparticipantscaleitem)
 
 ```js
 const { scaleItem } = tournamentEngine.getParticipantScaleItem({
@@ -277,28 +277,32 @@ const { scaleItem } = tournamentEngine.getParticipantScaleItem({
   },
 });
 
-// Returns the scale item with the latest scaleDate
+// Returns the most recently set scale item
 console.log(scaleItem.scaleValue); // 8.3
 console.log(scaleItem.scaleDate); // '2024-06-15'
 ```
 
-**Important:** When multiple scale items match the criteria, the one with the **latest scaleDate** is returned.
+**Important:** When multiple scale items match the criteria, the one **set most recently** (latest `createdAt`) is
+returned — not the one with the latest `scaleDate`. `scaleDate` is stored as the time item's `itemDate` and is not used
+to choose between values.
 
 ### Get All Scale Items
 
 Retrieve all scale items for a participant:
 
-**API Reference:** [getParticipantScaleItem](/docs/governors/query-governor#getparticipantscaleitem)
+**API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
 ```js
-const { participant } = tournamentEngine.getParticipants({
-  participantId: 'player-123',
+const {
+  participants: [participant],
+} = tournamentEngine.getParticipants({
+  participantFilters: { participantIds: ['player-123'] },
 });
 
-// Scale items stored as time items
+// Scale items are stored as time items whose itemType is 'SCALE.{scaleType}.{eventType}.{scaleName}'
 participant.timeItems?.forEach((timeItem) => {
-  if (timeItem.itemType === 'SCALE') {
-    console.log(`${timeItem.itemSubTypes}: ${timeItem.itemValue}`);
+  if (timeItem.itemType.startsWith('SCALE.')) {
+    console.log(`${timeItem.itemType}: ${timeItem.itemValue}`);
   }
 });
 ```
@@ -308,17 +312,15 @@ participant.timeItems?.forEach((timeItem) => {
 Get all ratings, rankings, or seedings:
 
 ```js
-const { participant } = tournamentEngine.getParticipants({
-  participantId: 'player-123',
+const {
+  participants: [participant],
+} = tournamentEngine.getParticipants({
+  participantFilters: { participantIds: ['player-123'] },
 });
 
-const ratings = participant.timeItems?.filter(
-  (item) => item.itemType === 'SCALE' && item.itemSubTypes?.includes('RATING'),
-);
+const ratings = participant.timeItems?.filter((item) => item.itemType.startsWith('SCALE.RATING.'));
 
-const rankings = participant.timeItems?.filter(
-  (item) => item.itemType === 'SCALE' && item.itemSubTypes?.includes('RANKING'),
-);
+const rankings = participant.timeItems?.filter((item) => item.itemType.startsWith('SCALE.RANKING.'));
 ```
 
 ## Time Items Integration
@@ -326,10 +328,9 @@ const rankings = participant.timeItems?.filter(
 Scale items are stored as [Time Items](./timeItems.md), providing temporal validity:
 
 ```js
-// Scale item as time item
+// Scale item as time item: itemType is 'SCALE.{scaleType}.{eventType}.{scaleName}'
 {
-  itemType: 'SCALE',
-  itemSubTypes: ['RATING', 'SINGLES', 'WTN'],
+  itemType: 'SCALE.RATING.SINGLES.WTN',
   itemValue: 8.3,
   itemDate: '2024-06-15',
   createdAt: '2024-06-15T10:30:00Z'
@@ -341,7 +342,7 @@ Scale items are stored as [Time Items](./timeItems.md), providing temporal valid
 Maintain history of participant ratings/rankings:
 
 ```js
-// Set rating from January
+// Set the January rating first
 tournamentEngine.setParticipantScaleItem({
   participantId: 'player-123',
   scaleItem: {
@@ -353,7 +354,7 @@ tournamentEngine.setParticipantScaleItem({
   },
 });
 
-// Set updated rating from June
+// Then set the updated June rating
 tournamentEngine.setParticipantScaleItem({
   participantId: 'player-123',
   scaleItem: {
@@ -365,7 +366,8 @@ tournamentEngine.setParticipantScaleItem({
   },
 });
 
-// getParticipantScaleItem returns the June value (latest)
+// getParticipantScaleItem returns the June value because it was set last
+// (setting January after June would return the January value: scaleDate does not decide)
 const { scaleItem } = tournamentEngine.getParticipantScaleItem({
   participantId: 'player-123',
   scaleAttributes: {
@@ -375,7 +377,7 @@ const { scaleItem } = tournamentEngine.getParticipantScaleItem({
   },
 });
 
-console.log(scaleItem.scaleValue); // 8.3 (latest)
+console.log(scaleItem.scaleValue); // 8.3 (most recently set)
 ```
 
 ## Generating Seeding Scale Items

@@ -668,16 +668,21 @@ Use descriptive, unique names that won't conflict with factory extensions:
 
 **Broadcast Information**:
 
+No engine method attaches an extension to a single matchUp (`addExtension` needs the `element` object itself, and
+returns `ERR_MISSING_VALUE` when given only ids). Keep matchUp-specific data in an extension on its draw, keyed by
+`matchUpId`:
+
 ```js
-tournamentEngine.addExtension({
-  matchUpId: 'match-123',
+tournamentEngine.addDrawDefinitionExtension({
   drawId: 'draw-456',
   extension: {
     name: 'broadcastSchedule',
     value: {
-      channel: 'ESPN',
-      broadcastTime: '14:00',
-      commentators: ['John Smith', 'Jane Doe'],
+      'match-123': {
+        channel: 'ESPN',
+        broadcastTime: '14:00',
+        commentators: ['John Smith', 'Jane Doe'],
+      },
     },
   },
 });
@@ -747,13 +752,13 @@ tournamentEngine.addDrawDefinitionExtension({
   }
 });
 
-// Add to matchUp
-tournamentEngine.addExtension({
-  matchUpId: 'match-456',
+// matchUp-specific data: no engine method targets a single matchUp,
+// so key it by matchUpId in a draw extension
+tournamentEngine.addDrawDefinitionExtension({
   drawId: 'draw-123',
   extension: {
     name: 'matchUpCustomData',
-    value: { ... }
+    value: { 'match-456': { ... } }
   }
 });
 ```

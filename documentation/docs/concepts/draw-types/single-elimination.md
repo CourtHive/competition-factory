@@ -6,7 +6,7 @@ title: Single Elimination
 
 A **Single Elimination** (also known as a knockout) draw is the simplest and most common tournament draw structure. Each participant plays until they lose; a single loss eliminates them from the competition. The draw progresses through rounds, halving the number of participants at each stage until a winner is determined.
 
-In the factory, this draw type is represented by the constant `SINGLE_ELIMINATION`. The aliases `KNOCKOUT` and `ELIMINATION` both resolve to the same value.
+In the factory, this draw type is represented by the constant `SINGLE_ELIMINATION`. The alias `KNOCKOUT` (`drawDefinitionConstants.KNOCKOUT`) resolves to the same value.
 
 ## Structure
 
