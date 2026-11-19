@@ -2016,7 +2016,11 @@ it: its ops are v1's own write read off a copy, the shadow has compared the whol
 stated beside it is one the planners abstained from writing, which need not describe what v1 does (a double exit asked
 of a BYE, a result relabelled a carrying exit past a holder). Its direction tallies are counted `deferred`
 (`directionCheckOnOwnedCalls.test.ts`: the check throws on a planner-owned call whose stated direction is wrong, and is
-not asked of a recorded one).
+not asked of a recorded one). The same holds for the dual a line's result makes its call (CA, 2026-11-19, a second
+ruling): on a line recorded whole neither the dual's winner the planners project (`checkDual`) nor the dual's direction
+is asked, and both tallies (`<route>:dual`, `<route>:dual-direction`) count it `deferred`; a line the planners write
+keeps both (found by walk seed 37: a line deciding a consolation dual that stands a carried walkover, whose winner v1
+keeps, recorded exactly by v2, threw on the dual's projected winner).
 
 **Recorded with no captured instant (CA, 2026-11-18: adopt the replay).** A call made
 outside an engine has no captured instant and no stamp ledger: each stamp v1 writes reads the source where it is

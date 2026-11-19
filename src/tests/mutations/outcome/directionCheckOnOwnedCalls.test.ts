@@ -8,6 +8,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 // constants
 import { OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { WALKOVER } from '@Constants/matchUpStatusConstants';
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
 
@@ -136,5 +137,73 @@ describe('the direction check', () => {
       if (tally('winner:direction').deferred === deferred + 1) recorded += 1;
     }
     expect(recorded).toBeGreaterThan(0);
+  });
+});
+
+describe("the dual's direction check, where a line's result makes its dual's call", () => {
+  // a TEAM SINGLE_ELIMINATION 4 whose first dual's lines are played one by one: the line that decides the dual makes the
+  // dual's own call, and the planners state the dual's direction (`planDual`)
+  const generateTeam = () => {
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawId: DRAW_ID, drawSize: 4, eventType: TEAM, tieFormatName: DOMINANT_DUO }],
+      setState: true,
+    });
+    tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: DRAW_ID });
+  };
+  const dualOf = (roundPosition: number) =>
+    matchUps().find(
+      (matchUp) => !matchUp.collectionId && matchUp.roundNumber === 1 && matchUp.roundPosition === roundPosition,
+    );
+  const set = (matchUpId: string, outcome: any) =>
+    tournamentEngine.setMatchUpStatus({ drawId: DRAW_ID, matchUpId, outcome });
+
+  it('fires on a line the planners write whose dual direction is stated wrong', () => {
+    generateTeam();
+    const [first, second] = dualOf(1).tieMatchUps;
+    expect(set(first.matchUpId, { winningSide: 1 }).success).toEqual(true);
+    const before = JSON.stringify(tournamentEngine.getTournament().tournamentRecord);
+    setOutcomePipeline(OUTCOME_PIPELINE_DIFFERENTIAL);
+
+    // stated right, it is compared
+    const compared = tally('winner:dual-direction').compared;
+    let result: any = set(second.matchUpId, { winningSide: 1 });
+    expect(result.success).toEqual(true);
+    expect(tally('winner:dual-direction').compared).toEqual(compared + 1);
+
+    // stated wrong, it throws
+    setOutcomePipeline(OUTCOME_PIPELINE_V1);
+    tournamentEngine.setState(JSON.parse(before));
+    setOutcomePipeline(OUTCOME_PIPELINE_DIFFERENTIAL);
+    stated.corrupt = elsewhere;
+    let thrown: any;
+    try {
+      set(second.matchUpId, { winningSide: 1 });
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(OutcomePipelineDivergence);
+    expect(thrown.v2).toContain('planned the winner into not-the-next-matchUp');
+  });
+
+  it('is not asked of a line recorded whole: neither the dual it projects nor its direction', () => {
+    // a dual decided by its own call, then handed to the other side by a fresh line, the next dual full: recorded
+    generateTeam();
+    const lines = dualOf(1).tieMatchUps;
+    expect(set(lines[2].matchUpId, { winningSide: 2 }).success).toEqual(true);
+    expect(set(dualOf(1).matchUpId, { winningSide: 1 }).success).toEqual(true);
+    expect(set(dualOf(2).matchUpId, { winningSide: 2 }).success).toEqual(true);
+    setOutcomePipeline(OUTCOME_PIPELINE_DIFFERENTIAL);
+    stated.corrupt = elsewhere;
+    const before = { dual: tally('winner:dual'), direction: tally('winner:dual-direction') };
+    const applied = tally('shadow:applied').compared;
+    const result: any = set(lines[0].matchUpId, { matchUpStatus: WALKOVER, winningSide: 2 });
+    expect(result.success).toEqual(true);
+    expect(stated.direction?.winner).toBeDefined();
+    expect(tally('shadow:applied').compared).toEqual(applied + 1);
+    expect(tally('winner:dual')).toEqual({ ...before.dual, deferred: before.dual.deferred + 1 });
+    expect(tally('winner:dual-direction')).toEqual({
+      ...before.direction,
+      deferred: before.direction.deferred + 1,
+    });
   });
 });

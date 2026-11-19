@@ -326,7 +326,9 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     checkShadow();
 
     // § 5 rule 1: the winner stands in the matchUp direction names, and the loser where its link says
-    if (dual) checkDual({ args, after, route, dual });
+    // A CALL RECORDED WHOLE IS NOT CHECKED AGAINST THE DUAL THE PLANNERS STATE EITHER (CA, 2026-11-19): neither the
+    // dual's winner they project nor its direction; the shadow has compared the whole record with v1's own write
+    if (dual) checkDual({ args, after, route, dual, recorded: !!(outcome.ops && outcome.recordedResult) });
     if (route === 'winner' && isExit(planned.matchUpStatus) && isRelabel(planned, view))
       differentialTally('winner:relabel-exit', direction?.loser?.exit ? 'compared' : 'deferred');
     if (!direction) return differentialTally(`${route}:direction`, 'deferred');
@@ -498,7 +500,11 @@ function planDual(args: BuildViewArgs, view: OutcomeView): DualPlan | undefined 
   return { matchUpId: line.dualMatchUpId, winningSide, direction: planDirection(request, dualView, 'winner') };
 }
 
-function checkDual({ args, after, route, dual }: CheckArgs & { dual: DualPlan }) {
+function checkDual({ args, after, route, dual, recorded }: CheckArgs & { dual: DualPlan; recorded: boolean }) {
+  if (recorded) {
+    differentialTally(`${route}:dual`, 'deferred');
+    return differentialTally(`${route}:dual-direction`, 'deferred');
+  }
   const stored = standing(after, dual.matchUpId);
   if (stored?.winningSide !== dual.winningSide)
     diverge(
