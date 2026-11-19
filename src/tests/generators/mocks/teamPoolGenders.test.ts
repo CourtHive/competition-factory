@@ -36,7 +36,7 @@ it.each([1, 2, 3, 4, 5, 6, 7, 8])('every pooled team meets its tieFormat gender 
 
 // 3 men's singles and 2 mixed doubles need 3 men and 2 women per team: 5, though the format's largest line asks only 4.
 // Teams of 4 could never field a valid line-up; dealt by gender without that floor, teams came out 5 and 3.
-it('sizes pooled teams to their gendered minimum, every team alike', () => {
+it.each([1, 2, 3, 4, 5, 6])('sizes pooled teams to their gendered minimum, every team alike (seed %s)', (nonRandom) => {
   const tieFormat = {
     winCriteria: { valueGoal: 3 },
     collectionDefinitions: [
@@ -45,8 +45,10 @@ it('sizes pooled teams to their gendered minimum, every team alike', () => {
     ],
   };
   const result = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ eventType: TEAM, tieFormat, drawSize: 4 }],
+    // 8 teams of 5: the minimums are every member, so a pool sized for one team's minimum runs short of men
+    drawProfiles: [{ eventType: TEAM, tieFormat, drawSize: 8 }],
     setState: true,
+    nonRandom,
   });
   expect(result.success).toEqual(true);
 
@@ -54,7 +56,7 @@ it('sizes pooled teams to their gendered minimum, every team alike', () => {
   const teams = tournamentEngine
     .getParticipants({ withIndividualParticipants: true })
     .participants.filter((participant) => entered.has(participant.participantId));
-  expect(teams.length).toEqual(4);
+  expect(teams.length).toEqual(8);
   for (const team of teams) {
     const sexes = team.individualParticipants.map((individual) => individual.person?.sex);
     expect(sexes.length).toEqual(5);
