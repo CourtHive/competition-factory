@@ -1,5 +1,23 @@
 # Changelog
 
+## [7.42.0](https://github.com/CourtHive/competition-factory/compare/v7.41.0...v7.42.0) (2026-11-19)
+
+
+### Features
+
+* **outcome:** record the residue whole so v2 owns every corpus call ([#6429](https://github.com/CourtHive/competition-factory/issues/6429)) ([e17c2fc](https://github.com/CourtHive/competition-factory/commit/e17c2fc1c0d822bb4c53f659043bd5a9c88add94))
+
+
+### Bug Fixes
+
+* **deps:** update tods-competition-factory to 7.41.0 ([#6427](https://github.com/CourtHive/competition-factory/issues/6427)) ([317d076](https://github.com/CourtHive/competition-factory/commit/317d0768032ace47f049c15c0c74f8960a47d559))
+* **outcome:** v1 fidelity fixes, lucky draw double exits and the v2 score entry footprint ([#6421](https://github.com/CourtHive/competition-factory/issues/6421)) ([91335e6](https://github.com/CourtHive/competition-factory/commit/91335e62ce76e8ba91d30db750bb04378823190b))
+
+
+### Documentation
+
+* bring the installation page up to the current package ([#6418](https://github.com/CourtHive/competition-factory/issues/6418)) ([c5fd909](https://github.com/CourtHive/competition-factory/commit/c5fd909b2f32fc5dcba6831eb0bc55eb25c2fc4c))
+
 ## [7.41.0](https://github.com/CourtHive/competition-factory/compare/v7.40.0...v7.41.0) (2026-11-18)
 
 
