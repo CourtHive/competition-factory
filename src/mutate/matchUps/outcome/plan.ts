@@ -55,6 +55,7 @@ import {
   removedByeLineUpOps,
   undecidingLeavesLineUp,
   loserLineUpCarry,
+  quietOnwardLineUps,
   teamReason,
 } from './plan/teamPlan';
 import {
@@ -650,7 +651,11 @@ function planOps(args: PlanArgs): OutcomePlan {
   // a refused call has no route and no write (the differential plans it beside its refusal): nothing to state as ops,
   // as `recordedWhole` records nothing for it. A line's double exit is the one shape no reason above stops without one
   if (!args.route || !args.write) return { abstain: 'route' };
-  return recordedPlanOps(args, drawDefinition, reason);
+  const planned = recordedPlanOps(args, drawDefinition, reason);
+  // a team an award sends on into a dual that already sides its position takes its line-up there (`quietOnwardLineUps`)
+  return view.isTeam && planned.ops
+    ? { ...planned, ops: quietOnwardLineUps(view, drawDefinition, planned.ops) }
+    : planned;
 }
 
 /** A propagated relabel returns the direction context even when its source previously held a played result. */

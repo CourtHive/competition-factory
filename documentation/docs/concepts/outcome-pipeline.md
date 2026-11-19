@@ -1468,6 +1468,12 @@ the old loser back first and deletes that line-up (`removeDirectedLoser`), and w
 event, is the one the dual keeps turns on the path the removal takes (2026-11-19, walk seeds 24 and 30: v2 announced
 the event where v1 did not, and the reverse).
 
+A team an exit's award sends on into a TEAM dual whose stored sides still side its drawPosition (a side an
+earlier unwind left holding the position) is written there by its assignment as v1 writes it (`assignTeamLineUp` →
+`updateSideLineUp`): the team's line-up as the draw holds it, after the quiet placement, so the dual is announced
+`updateSidLineUp`, with neither event nor tournament (`quietOnwardLineUps`; 2026-11-19, TEAM SINGLE_ELIMINATION 8/7,
+walk seed 40: v2 named the placement).
+
 **A dual's own exit carried across its loser link** (`propagateExitStatus`) is written on the dual it lands on as any
 carried exit is, by that dual's own call (`setMatchUpState`), whose `ensureSideLineUps` first writes its sides with the
 team arrived: the carried `setMatchUpResult` takes them as `ensuredSides`. The loser's side there holds the line-up its assignment has just

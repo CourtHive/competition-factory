@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 // constants
 import { CANNOT_CHANGE_WINNING_SIDE, INVALID_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
 import { FEED_IN_CHAMPIONSHIP, FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
-import { DOMINANT_DUO, USTA_COLLEGE } from '@Constants/tieFormatConstants';
+import { DOMINANT_DUO, LAVER_CUP, USTA_COLLEGE } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
 import {
   COMPLETED,
@@ -520,5 +520,28 @@ describe("a losing team's line-up where its loser link seats it, after the dual'
     const notice = announced.find((held) => held.matchUp?.matchUpId === target.matchUpId);
     expect(notice?.context).toEqual('updateSidLineUp');
     expect(!!notice?.eventId).toEqual(withEvent);
+  });
+});
+
+describe('a team an award sends on into a dual that still sides its position is announced by its line-up', () => {
+  afterEach(() => setSubscriptions({ subscriptions: {} }));
+
+  it('a double exit entered again on a dual its line undid: the final names the line-up write, quietly', () => {
+    generate({ drawSize: 8, participantsCount: 7, tieFormatName: LAVER_CUP }, 40);
+    const exited = dual(1, 2);
+    const final = dual(3, 1);
+    enter(exited.matchUpId, { matchUpStatus: DOUBLE_WALKOVER });
+    enter(final.matchUpId, CLEARED);
+    enter(exited.tieMatchUps[3].matchUpId, won(2));
+    expect(stored(final.matchUpId).drawPositions.filter(Boolean)).toEqual([]);
+
+    const announced: any[] = [];
+    setSubscriptions({ subscriptions: { modifyMatchUp: (notices: any[]) => announced.push(...notices) } });
+    enter(exited.matchUpId, { matchUpStatus: DOUBLE_WALKOVER }, { enableAutoCalc: true });
+    const awarded = stored(exited.winnerMatchUpId);
+    expect([awarded.matchUpStatus, awarded.winningSide]).toEqual([WALKOVER, 1]);
+    expect(stored(final.matchUpId).drawPositions.filter(Boolean)).toHaveLength(1);
+    const notice = announced.find((held) => held.matchUp?.matchUpId === final.matchUpId);
+    expect([notice?.context, !!notice?.eventId, !!notice?.tournamentId]).toEqual(['updateSidLineUp', false, false]);
   });
 });

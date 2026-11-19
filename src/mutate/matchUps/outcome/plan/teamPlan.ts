@@ -2,7 +2,7 @@ import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpS
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { ensuredDualSides } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
-import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
+import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 
 import {
@@ -660,4 +660,41 @@ function deciderAssignedLineUpOps(
     });
   }
   return [...ops, { op: 'stampUpdatedAt', entity: 'matchUp', id: loser.matchUpId }];
+}
+
+/**
+ * A team an exit's award sends on into a TEAM dual that already sides its drawPosition (a stored side kept there by an
+ * earlier unwind): v1's placement writes the team's line-up there, as the draw holds it, through its assignment
+ * (`assignTeamLineUp` → `updateSideLineUp`, announced `updateSidLineUp` with neither event nor tournament), after the
+ * position. The quiet placement is otherwise the dual's last writer, so the line-up is stated after it (2026-11-19,
+ * TEAM SINGLE_ELIMINATION 8/7, walk seed 40: a double exit entered again on a dual its line had undone).
+ */
+export function quietOnwardLineUps(view: OutcomeView, drawDefinition: DrawDefinition, ops: OutcomeOp[]): OutcomeOp[] {
+  const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }) ?? {};
+  return ops.flatMap((op): OutcomeOp[] => {
+    if (op.op !== 'setMatchUpDrawPositions' || op.announcesContext !== false) return [op];
+    const target = indexed(view, op.matchUpId);
+    if (target?.matchUpType !== 'TEAM') return [op];
+    const held = new Set((target.drawPositions ?? []).filter(Boolean));
+    const added = (op.drawPositions ?? []).filter((position) => !!position && !held.has(position));
+    const structure = drawDefinition.structures?.find((candidate) => candidate.structureId === target.structureId);
+    const assignments = positionAssignmentsOf(structure) ?? [];
+    // the hydrated side holds the position (its stored side kept it) but not the team: the draw's assignment names it
+    const sided = added.flatMap((position) => {
+      const sideNumber = target.sides?.find((candidate) => candidate.drawPosition === position)?.sideNumber;
+      const participantId = assignments.find((assignment) => assignment.drawPosition === position)?.participantId;
+      return participantId && (sideNumber === 1 || sideNumber === 2) ? [{ sideNumber, participantId }] : [];
+    });
+    return [
+      op,
+      ...sided.map(({ sideNumber, participantId }): OutcomeOp => ({
+        op: 'setSideLineUp',
+        matchUpId: op.matchUpId,
+        sideNumber,
+        lineUp: lineUps[participantId],
+        announcedAs: 'updateSidLineUp',
+        announcesEvent: false,
+      })),
+    ];
+  });
 }
