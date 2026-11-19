@@ -46,7 +46,11 @@ test('can add participant to tournament', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord();
   tournamentEngine.setState(tournamentRecord);
 
-  const participant = { participantName: 'Test Player' };
+  const participant = {
+    participantType: 'INDIVIDUAL',
+    participantRole: 'COMPETITOR',
+    person: { standardGivenName: 'Test', standardFamilyName: 'Player' },
+  };
   const result = tournamentEngine.addParticipant({ participant });
 
   expect(result.success).toBe(true);
@@ -69,10 +73,9 @@ test('handles BYEs in elimination draw', () => {
   });
 
   tournamentEngine.setState(tournamentRecord);
-  const { upcomingMatchUps } = tournamentEngine.tournamentMatchUps();
+  const { byeMatchUps } = tournamentEngine.tournamentMatchUps();
 
-  // Verify BYE handling
-  const byeMatchUps = upcomingMatchUps.filter((m) => m.matchUpStatus === 'BYE');
+  // Verify BYE handling: BYE matchUps are returned in their own group
   expect(byeMatchUps.length).toBe(3);
 });
 ```
@@ -129,7 +132,8 @@ test('can add multiple draws to event', () => {
     tournamentRecord,
     eventProfiles: [
       {
-        drawProfiles: [{ drawSize: 16, drawType: 'DOUBLES', drawName: 'Doubles' }],
+        eventType: 'DOUBLES',
+        drawProfiles: [{ drawSize: 16, drawName: 'Doubles' }],
       },
     ],
   });
@@ -216,7 +220,10 @@ Create reusable setup functions:
 
 ```js
 function createStandardTournament() {
-  const { tournamentRecord, drawId } = mocksEngine.generateTournamentRecord({
+  const {
+    tournamentRecord,
+    drawIds: [drawId],
+  } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 32 }],
   });
   tournamentEngine.setState(tournamentRecord);

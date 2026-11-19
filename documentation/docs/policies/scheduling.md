@@ -519,7 +519,7 @@ console.log(timing.recoveryMinutes); // 30 (doubles recovery shorter)
 ```js
 // If no specific timing found, falls back to default
 const timing = tournamentEngine.getMatchUpFormatTiming({
-  matchUpFormat: 'SET1-S:6NOAD', // Format not in policy
+  matchUpFormat: 'SET5-S:6/TB7', // Format not in policy
   eventType: 'SINGLES',
 });
 

@@ -175,48 +175,53 @@ const looseBands = {
 ### Get Match Competitive Profile
 
 ```js
-// Get competitive profile for a single match
-const { competitiveProfile } = tournamentEngine.getMatchUpCompetitiveProfile({
-  matchUpId: 'match-1',
+// Get competitive profile for a single completed matchUp (pass the matchUp object)
+const { matchUps } = tournamentEngine.allTournamentMatchUps({ matchUpFilters: { matchUpStatuses: ['COMPLETED'] } });
+const { competitiveness, pctSpread } = tournamentEngine.getMatchUpCompetitiveProfile({
+  matchUp: matchUps[0],
 });
 
-console.log(competitiveProfile);
+console.log(competitiveness);
 // 'DECISIVE' | 'ROUTINE' | 'COMPETITIVE'
 ```
 
 ### Get Tournament Statistics
 
 ```js
-// Analyze all matches in tournament
-const { competitiveBands } = tournamentEngine.getMatchUpsStats();
+// Analyze a set of matchUps (required)
+const { matchUps } = tournamentEngine.allTournamentMatchUps();
+const { competitiveBands } = tournamentEngine.getMatchUpsStats({ matchUps });
 
 console.log(competitiveBands);
-// {
-//   DECISIVE: { count: 15, pct: 25 },
-//   ROUTINE: { count: 35, pct: 58 },
-//   COMPETITIVE: { count: 10, pct: 17 }
-// }
+// percentages of matchUps with a winningSide:
+// { COMPETITIVE: 40, ROUTINE: 60, DECISIVE: 0, WALKOVER: 0, RETIRED: 0 }
 ```
 
-### Get Participant Statistics
+### Get Team Participant Statistics
+
+`getParticipantStats` reports on TEAM participants. Pass `teamParticipantId` (and optionally
+`opponentParticipantId`) to receive `teamStats` (and `opponentStats`); omit both to receive `allParticipantStats`
+for every team.
 
 ```js
-// Get competitive profile for specific participant
-const { participantStats } = tournamentEngine.getParticipantStats({
-  participantId: 'player-1',
+// Get competitive profile for a specific team participant
+const { teamStats } = tournamentEngine.getParticipantStats({
+  teamParticipantId,
   withCompetitiveProfiles: true,
 });
 
-console.log(participantStats.competitiveness);
+console.log(teamStats.competitiveness);
+// [won, lost] per band, e.g.
 // {
-//   decisive: { won: 5, lost: 1, played: 6 },
-//   routine: { won: 3, lost: 2, played: 5 },
-//   competitive: { won: 2, lost: 1, played: 3 }
+//   decisive: [3, 1],
+//   routine: [5, 4],
+//   competitive: [2, 2]
 // }
 
-console.log(participantStats.decisiveRatio); // 0.429 (6 of 14 matches)
-console.log(participantStats.routineRatio); // 0.357
-console.log(participantStats.competitiveRatio); // 0.214
+// For each band that was played: won / played in that band
+console.log(teamStats.decisiveRatio); // 0.75
+console.log(teamStats.routineRatio); // 0.56
+console.log(teamStats.competitiveRatio); // 0.5
 ```
 
 ---
@@ -260,18 +265,19 @@ The same flag works on `allEventMatchUps({ eventId, ... })` and `allDrawMatchUps
 
 ```js
 // Analyze competitiveness of tournament
-const { matchUpsStats } = tournamentEngine.getMatchUpsStats();
+const { matchUps } = tournamentEngine.allTournamentMatchUps();
+const { competitiveBands } = tournamentEngine.getMatchUpsStats({ matchUps });
 
-const { DECISIVE, ROUTINE, COMPETITIVE } = matchUpsStats.competitiveBands;
+const { DECISIVE, ROUTINE, COMPETITIVE } = competitiveBands; // percentages
 
 console.log(`Tournament Competitiveness:`);
-console.log(`  Decisive matches: ${DECISIVE.count} (${DECISIVE.pct}%)`);
-console.log(`  Routine matches: ${ROUTINE.count} (${ROUTINE.pct}%)`);
-console.log(`  Competitive matches: ${COMPETITIVE.count} (${COMPETITIVE.pct}%)`);
+console.log(`  Decisive matches: ${DECISIVE}%`);
+console.log(`  Routine matches: ${ROUTINE}%`);
+console.log(`  Competitive matches: ${COMPETITIVE}%`);
 
-if (COMPETITIVE.pct > 30) {
+if (COMPETITIVE > 30) {
   console.log('High-quality, competitive tournament!');
-} else if (DECISIVE.pct > 40) {
+} else if (DECISIVE > 40) {
   console.log('Many one-sided matches - consider better seeding');
 }
 ```
@@ -279,23 +285,19 @@ if (COMPETITIVE.pct > 30) {
 ### Seeding Effectiveness
 
 ```js
-// Analyze if top seeds are dominating (as expected)
-const topSeeds = [1, 2, 3, 4];
+// Analyze which teams are dominating (getParticipantStats reports on TEAM participants)
+const { allParticipantStats } = tournamentEngine.getParticipantStats({
+  withCompetitiveProfiles: true,
+});
 
-for (const seedNumber of topSeeds) {
-  const participant = getParticipantBySeed(seedNumber);
+for (const stats of allParticipantStats) {
+  const decisive = stats.competitiveness.decisive ?? [0, 0];
+  const decisivePct = (decisive[0] / (stats.matchUps[0] + stats.matchUps[1] || 1)) * 100;
 
-  const stats = tournamentEngine.getParticipantStats({
-    participantId: participant.participantId,
-    withCompetitiveProfiles: true,
-  });
-
-  const decisivePct = stats.decisiveRatio * 100;
-
-  console.log(`Seed ${seedNumber}: ${decisivePct.toFixed(1)}% decisive wins`);
+  console.log(`${stats.participantName}: ${decisivePct.toFixed(1)}% decisive wins`);
 
   if (decisivePct < 30) {
-    console.warn(`Seed ${seedNumber} not dominating - possible upset risk`);
+    console.warn(`${stats.participantName} not dominating - possible upset risk`);
   }
 }
 ```

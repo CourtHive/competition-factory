@@ -107,7 +107,6 @@ test('generates complete championship draw with qualifying', () => {
         drawSize: 64,
         drawName: "Women's Singles Championship",
         seedsCount: 16,
-        qualifiersCount: 8, // 8 positions for qualifiers
         qualifyingProfiles: [
           {
             roundTarget: 1, // Qualifiers enter round 1 of main draw
@@ -115,6 +114,7 @@ test('generates complete championship draw with qualifying', () => {
               {
                 stageSequence: 1,
                 drawSize: 16, // 16 players compete for 8 spots
+                qualifyingPositions: 8, // 8 positions for qualifiers
                 seedsCount: 4,
               },
             ],
@@ -141,15 +141,14 @@ test('generates complete championship draw with qualifying', () => {
 
 ```js
 test('generates playoffs for positions', () => {
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  const { tournamentRecord, drawIds } = mocksEngine.generateTournamentRecord({
     drawProfiles: [
       {
         drawSize: 16,
         withPlayoffs: {
-          roundProfiles: [{ 4: 1 }], // Playoffs from round 4
-          playoffPositions: [3, 4], // 3rd/4th place playoff
+          roundProfiles: [{ 3: 1 }], // Playoff for the losers of round 3 (the semifinals): 3rd/4th place
           playoffAttributes: {
-            '0-4': { name: 'Bronze Medal Match', abbreviation: 'BM' },
+            '0-3': { name: 'Bronze Medal Match', abbreviation: 'BM' },
           },
         },
       },
@@ -157,7 +156,7 @@ test('generates playoffs for positions', () => {
   });
 
   tournamentEngine.setState(tournamentRecord);
-  const { drawDefinition } = tournamentEngine.getEvent();
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId: drawIds[0] });
 
   const playoffStructures = drawDefinition.structures.filter((s) => s.stage === 'PLAY_OFF');
 
@@ -171,7 +170,7 @@ The `withPlayoffs` parameter supports recursive nesting via `roundPlayoffs`. Thi
 
 ```js
 test('generates full COMPASS topology via recursive withPlayoffs', () => {
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  const { tournamentRecord, drawIds } = mocksEngine.generateTournamentRecord({
     drawProfiles: [
       {
         drawSize: 32,
@@ -215,7 +214,7 @@ test('generates full COMPASS topology via recursive withPlayoffs', () => {
   });
 
   tournamentEngine.setState(tournamentRecord);
-  const { drawDefinition } = tournamentEngine.getEvent();
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId: drawIds[0] });
 
   // Full COMPASS: 8 structures, 7 LOSER links, 72 matchUps
   expect(drawDefinition.structures.length).toBe(8);
@@ -251,8 +250,10 @@ test('detects participant conflicts in scheduling', () => {
     nextMatchUps: true,
   });
 
+  const scheduledDate = tournamentRecord.startDate; // a date within the mock's dates
+
   const result = tournamentEngine.proAutoSchedule({
-    scheduledDate: '2024-06-01',
+    scheduledDate,
     matchUps,
   });
 
@@ -262,7 +263,7 @@ test('detects participant conflicts in scheduling', () => {
   ({ matchUps } = tournamentEngine.allCompetitionMatchUps({
     inContext: true,
     nextMatchUps: true,
-    matchUpFilters: { scheduledDate: '2024-06-01' },
+    matchUpFilters: { scheduledDate },
   }));
 
   const { rowIssues } = tournamentEngine.proConflicts({ matchUps });
@@ -292,6 +293,7 @@ test('schedules matches with time slots', () => {
   tournamentEngine.setState(tournamentRecord);
 
   const { matchUps } = tournamentEngine.allTournamentMatchUps();
+  const scheduledDate = tournamentRecord.startDate; // a date within the mock's dates
 
   matchUps.slice(0, 4).forEach((matchUp, index) => {
     const scheduledTime = `${8 + index * 2}:00`;
@@ -300,14 +302,14 @@ test('schedules matches with time slots', () => {
       matchUpId: matchUp.matchUpId,
       drawId: matchUp.drawId,
       schedule: {
-        scheduledDate: '2024-06-01',
+        scheduledDate,
         scheduledTime,
       },
     });
   });
 
   const { dateMatchUps } = tournamentEngine.competitionScheduleMatchUps({
-    matchUpFilters: { scheduledDate: '2024-06-01' },
+    matchUpFilters: { scheduledDate },
   });
 
   expect(dateMatchUps.length).toBe(4);
@@ -475,7 +477,7 @@ test('handles various match outcomes', () => {
 
 ```js
 test('manages alternates and direct acceptances', () => {
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  const { tournamentRecord, drawIds } = mocksEngine.generateTournamentRecord({
     participantsProfile: { participantsCount: 50 },
     drawProfiles: [
       {
@@ -488,7 +490,7 @@ test('manages alternates and direct acceptances', () => {
   tournamentEngine.setState(tournamentRecord);
 
   const { participants } = tournamentEngine.getParticipants();
-  const { event } = tournamentEngine.getEvent();
+  const { event } = tournamentEngine.getEvent({ drawId: drawIds[0] });
   const { entries } = event;
 
   const directAcceptance = entries.filter((e) => e.entryStatus === 'DIRECT_ACCEPTANCE');
@@ -503,7 +505,7 @@ test('manages alternates and direct acceptances', () => {
 
 ```js
 test('seeds participants by rating', () => {
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  const { tournamentRecord, drawIds } = mocksEngine.generateTournamentRecord({
     participantsProfile: {
       participantsCount: 64,
       category: { categoryName: 'Open', ratingType: 'WTN' },
@@ -519,12 +521,15 @@ test('seeds participants by rating', () => {
 
   tournamentEngine.setState(tournamentRecord);
 
-  const { seedAssignments } = tournamentEngine.getEvent();
-  expect(Object.keys(seedAssignments).length).toBe(8);
+  const drawId = drawIds[0];
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  const { structureId, seedAssignments } = drawDefinition.structures[0]; // seedAssignments live on the structure
+  expect(seedAssignments.length).toBe(8);
 
   // Verify top seeds are in expected positions
-  const { positionAssignments } = tournamentEngine.getPositionAssignments();
-  const topSeedPosition = positionAssignments.find((pa) => pa.seedNumber === 1);
+  const { positionAssignments } = tournamentEngine.getPositionAssignments({ drawId, structureId });
+  const topSeed = seedAssignments.find((sa) => sa.seedNumber === 1);
+  const topSeedPosition = positionAssignments.find((pa) => pa.participantId === topSeed.participantId);
 
   expect(topSeedPosition.drawPosition).toBe(1);
 });
@@ -539,7 +544,7 @@ test('creates teams from participant attributes', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     participantsProfile: {
       participantsCount: 64,
-      teamKey: 'person.addresses[0].state', // Group by state
+      teamKey: { accessor: 'person.addresses.state' }, // Group by state
       addressProps: {
         statesProfile: {
           CA: 16,
@@ -549,12 +554,6 @@ test('creates teams from participant attributes', () => {
         },
       },
     },
-    drawProfiles: [
-      {
-        drawSize: 4,
-        eventType: 'TEAM',
-      },
-    ],
   });
 
   tournamentEngine.setState(tournamentRecord);
@@ -915,6 +914,9 @@ test('reproduce specific draw configuration', () => {
 Use the same seed to compare output before and after a code change:
 
 ```js
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_SEEDING_DEFAULT, POLICY_SEEDING_ITF } = fixtures.policies;
+
 test('new seeding algorithm preserves draw fairness', () => {
   const seed = 42;
 
@@ -922,7 +924,7 @@ test('new seeding algorithm preserves draw fairness', () => {
   const { tournamentRecord: oldResult } = mocksEngine.generateTournamentRecord({
     nonRandom: seed,
     drawProfiles: [{ drawSize: 32, seedsCount: 8 }],
-    policyDefinitions: POLICY_SEEDING_USTA,
+    policyDefinitions: POLICY_SEEDING_DEFAULT,
   });
 
   const { tournamentRecord: newResult } = mocksEngine.generateTournamentRecord({

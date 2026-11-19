@@ -280,7 +280,7 @@ The full ingest pattern — generate skeleton → assign positions → apply out
 Draw profiles define the structure of draws within events. Each profile creates a separate event with a single draw.
 
 :::tip Scoped Participant Generation
-Each `drawProfile` can include its own `participantsProfile` to generate participants specifically for that draw, overriding or extending the tournament-level `participantsProfile`. This is useful when you need different participant demographics for different events.
+Each `drawProfile` generates participants for its own event from the tournament-level `participantsProfile`, specialized by the drawProfile's `gender` (which sets person sex for MALE/FEMALE), `category`, `rankingRange` and `scaledParticipantsCount`. A drawProfile does not accept a `participantsProfile` of its own: it is refused as an unknown mocksEngine option.
 :::
 
 ### Basic Draw
@@ -392,38 +392,36 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
 
 ### Draw-Specific Participant Profiles
 
-Each `drawProfile` can include its own `participantsProfile` to generate participants with specific demographics:
+Each `drawProfile` specializes the tournament-level `participantsProfile` with its own `gender` and `category`:
 
 ```js
 const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  // Tournament-level (applies to every draw's generated participants)
+  participantsProfile: {
+    nationalityCodes: ['USA', 'CAN', 'MEX'], // North American players
+    scaleAllParticipants: true, // All get ratings
+  },
   drawProfiles: [
     {
       drawSize: 32,
       eventType: 'SINGLES',
-      gender: 'FEMALE', // Event gender category
-      participantsProfile: {
-        sex: 'FEMALE', // Person sex - generates female participants
-        category: {
-          categoryName: 'U18',
-          ageCategoryCode: 'U18',
-        },
-        scaleAllParticipants: true, // All get ratings
+      gender: 'FEMALE', // Event gender category - also generates female participants
+      category: {
+        categoryName: 'U18',
+        ageCategoryCode: 'U18',
       },
     },
     {
       drawSize: 16,
       eventType: 'DOUBLES',
-      gender: 'MALE', // Event gender category
-      participantsProfile: {
-        sex: 'MALE', // Person sex - generates male participants
-        nationalityCodes: ['USA', 'CAN', 'MEX'], // North American players
-      },
+      gender: 'MALE', // Event gender category - also generates male participants
     },
   ],
 });
 ```
 
-This creates two separate participant pools - one for each event. Draw-level `participantsProfile` properties override tournament-level settings:
+This creates two separate participant pools - one for each event. A drawProfile's `gender` overrides the
+tournament-level `sex`:
 
 ```js
 const { tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -439,9 +437,7 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     },
     {
       drawSize: 16,
-      participantsProfile: {
-        sex: 'MALE', // Overrides tournament-level to create MALE participants
-      },
+      gender: 'MALE', // Overrides tournament-level to create MALE participants
     },
   ],
 });
@@ -467,7 +463,7 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
 Event profiles allow more complex event configurations with multiple draws per event.
 
 :::tip Event-Level Participant Profiles
-Like `drawProfile`, each `eventProfile` can include its own `participantsProfile` to generate participants specifically for that event. This applies to all draws within the event unless a draw overrides it with its own `participantsProfile`.
+Like `drawProfile`, each `eventProfile` specializes the tournament-level `participantsProfile` with its own `gender`, `category`, `rankingRange` and `scaledParticipantsCount`. An `eventProfile` accepts a `participantsProfile`, but only its `participantsCount` is read, and only for an event without `drawProfiles`.
 :::
 
 ### Basic Event Profile
@@ -501,7 +497,6 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     {
       drawSize: 32,
       drawName: 'Singles Championship',
-      qualifiersCount: 8, // 8 positions for qualifiers in main draw
       qualifyingProfiles: [
         {
           roundTarget: 1, // Which round of main draw qualifiers enter
@@ -509,6 +504,7 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
             {
               stageSequence: 1,
               drawSize: 16, // 16 players compete for 8 qualifying spots
+              qualifyingPositions: 8, // 8 positions for qualifiers in main draw
               seedsCount: 4,
             },
           ],
@@ -551,10 +547,9 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
         ageCategoryCode: 'OPEN',
         categoryName: 'Open',
       },
-      matchUpFormat: 'SET3-S:6/TB7-F:TB10',
       surfaceCategory: 'CLAY',
       ballType: 'REGULAR_DUTY',
-      drawProfiles: [{ drawSize: 16 }],
+      drawProfiles: [{ drawSize: 16, matchUpFormat: 'SET3-S:6/TB7-F:TB10' }], // matchUpFormat is a drawProfile key
     },
   ],
 });
@@ -591,46 +586,23 @@ beside `PrizeMoney`'s `{ amount, currencyCode }` — two shapes for one concept,
 whether the number was dollars or cents.
 :::
 
-### Event-Level Participant Profiles
+### Event-Level Participant Attributes
 
-Each `eventProfile` can include a `participantsProfile` that applies to all draws within that event:
+An `eventProfile`'s `gender` and `category` apply to the participants generated for all draws within that event:
 
 ```js
 const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  participantsProfile: { scaleAllParticipants: true },
   eventProfiles: [
     {
       eventName: "Women's Championship",
       eventType: 'SINGLES',
-      gender: 'FEMALE',
-      // Event-level participantsProfile
-      participantsProfile: {
-        sex: 'FEMALE',
-        participantsCount: 128,
-        category: {
-          categoryName: 'Open',
-          ratingType: 'WTN',
-        },
-        scaleAllParticipants: true,
+      gender: 'FEMALE', // generates female participants
+      category: {
+        categoryName: 'Open',
+        ratingType: 'WTN',
       },
-      drawProfiles: [
-        {
-          drawSize: 64,
-          drawName: 'Singles Championship',
-          qualifiersCount: 16, // 16 qualifying positions
-          qualifyingProfiles: [
-            {
-              roundTarget: 1,
-              structureProfiles: [
-                {
-                  stageSequence: 1,
-                  drawSize: 32, // 32 players compete for 16 spots
-                  seedsCount: 8,
-                },
-              ],
-            },
-          ],
-        },
-      ],
+      drawProfiles: [{ drawSize: 64, drawName: 'Singles Championship' }],
     },
   ],
 });
@@ -638,11 +610,12 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
 
 ### Participant Profile Hierarchy
 
-The participant generation follows this priority order:
+There is one `participantsProfile`, at the tournament level. Event and draw profiles specialize it with their own
+attributes, the most specific winning:
 
-1. **Draw-level** `participantsProfile` (highest priority)
-2. **Event-level** `participantsProfile`
-3. **Tournament-level** `participantsProfile` (lowest priority)
+1. **Profile-level** `gender`, `category`, `rankingRange`, `scaledParticipantsCount` of the `eventProfile` (or of a
+   top-level `drawProfile`) that generates the participants (highest priority)
+2. **Tournament-level** `participantsProfile` (lowest priority)
 
 ```js
 const { tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -654,23 +627,13 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
   eventProfiles: [
     {
       eventName: 'International Singles',
-      // Event-level (overrides tournament-level for this event)
-      participantsProfile: {
-        nationalityCodes: ['GBR', 'FRA', 'ESP'], // Overrides tournament-level
-        sex: 'FEMALE', // Adds to tournament-level
-      },
+      gender: 'FEMALE', // Event-level: female participants for every draw in this event
       drawProfiles: [
         {
           drawSize: 32,
-          // Uses event-level participantsProfile
+          // Uses tournament-level nationalityCodes, event-level gender
         },
-        {
-          drawSize: 16,
-          // Draw-level (overrides both)
-          participantsProfile: {
-            nationalityCodes: ['JPN', 'CHN', 'KOR'], // Asian players only
-          },
-        },
+        { drawSize: 16 },
       ],
     },
   ],
@@ -686,11 +649,10 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       drawSize: 16,
       drawType: 'SINGLE_ELIMINATION',
       withPlayoffs: {
-        roundProfiles: [{ 3: 1 }, { 4: 1 }], // Create playoffs from rounds 3 and 4
-        playoffPositions: [3, 4], // For 3rd/4th place
+        roundProfiles: [{ 2: 1 }, { 3: 1 }], // Playoffs for the losers of rounds 2 and 3 (round 4 is the final)
         playoffAttributes: {
+          '0-2': { name: '5-8 Playoff', abbreviation: 'P' },
           '0-3': { name: 'Bronze', abbreviation: 'B' },
-          '0-4': { name: 'Gold', abbreviation: 'G' },
         },
       },
     },
@@ -917,11 +879,12 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
 Policies applied to a specific draw override event and tournament-level policies:
 
 ```js
-import { POLICY_SEEDING_ITF, POLICY_SEEDING_USTA } from '@Fixtures/policies/seeding';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_SEEDING_ITF, POLICY_SEEDING_DEFAULT } = fixtures.policies;
 
 const { tournamentRecord } = mocksEngine.generateTournamentRecord({
   // Tournament-level default
-  policyDefinitions: POLICY_SEEDING_USTA,
+  policyDefinitions: POLICY_SEEDING_DEFAULT,
 
   drawProfiles: [
     {
@@ -933,7 +896,7 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     {
       drawSize: 16,
       drawName: 'Amateur Draw',
-      // Uses tournament-level USTA seeding
+      // Uses tournament-level default seeding
     },
   ],
 });
@@ -951,27 +914,24 @@ const { tournamentRecord, eventIds } = mocksEngine.generateTournamentRecord({
     participantsCount: 128,
     sex: 'MALE',
   },
-  eventProfiles: [
+  // qualifyingProfiles are generated from top-level drawProfiles (each creates its own event)
+  drawProfiles: [
     {
       eventName: "Men's Singles",
       eventType: 'SINGLES',
       gender: 'MALE',
-      drawProfiles: [
+      drawSize: 64,
+      drawName: 'Singles Championship',
+      seedsCount: 16,
+      qualifyingProfiles: [
         {
-          drawSize: 64,
-          drawName: 'Singles Championship',
-          seedsCount: 16,
-          qualifiersCount: 8, // 8 qualifier positions in main draw
-          qualifyingProfiles: [
+          roundTarget: 1,
+          structureProfiles: [
             {
-              roundTarget: 1,
-              structureProfiles: [
-                {
-                  stageSequence: 1,
-                  drawSize: 16, // 16 players for 8 qualifying spots
-                  seedsCount: 4,
-                },
-              ],
+              stageSequence: 1,
+              drawSize: 16, // 16 players for 8 qualifying spots
+              qualifyingPositions: 8, // 8 qualifier positions in main draw
+              seedsCount: 4,
             },
           ],
         },
@@ -981,12 +941,8 @@ const { tournamentRecord, eventIds } = mocksEngine.generateTournamentRecord({
       eventName: "Men's Doubles",
       eventType: 'DOUBLES',
       gender: 'MALE',
-      drawProfiles: [
-        {
-          drawSize: 32,
-          seedsCount: 8,
-        },
-      ],
+      drawSize: 32,
+      seedsCount: 8,
     },
   ],
   venueProfiles: [
