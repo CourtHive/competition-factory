@@ -295,8 +295,12 @@ function refuseDispatch(request: OutcomeRequest, view: OutcomeView): Refusal | u
   const hasPropagated = !!existing.winningSide || isDoubleExit(existing.matchUpStatus);
   if (!view.activeDownstream || !hasPropagated) return undefined;
 
-  const projected = view.isTeam && flags.enableAutoCalc ? view.dualProjection?.projectedWinningSide : undefined;
-  const matchUpWinner = (winningSide && !view.matchUpTieId) || line?.projectedWinningSide || projected;
+  // a TEAM dual's call that turns auto-calc on is dispatched with the winner its lines project in place of the call's
+  // (`handleTeamAutoCalc`): where they project none, the call names no winner, whatever it was given
+  const autoCalculated = view.isTeam && !!flags.enableAutoCalc;
+  const projected = autoCalculated ? view.dualProjection?.projectedWinningSide : undefined;
+  const matchUpWinner =
+    (!autoCalculated && winningSide && !view.matchUpTieId) || line?.projectedWinningSide || projected;
   if (matchUpWinner) {
     const effectiveWinningSide = view.isTeam && flags.enableAutoCalc ? projected : winningSide;
     if (effectiveWinningSide === existing.winningSide || (view.matchUpTieId && !dualWinningSideChange))

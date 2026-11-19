@@ -7,16 +7,19 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { setClock } from '@Tools/clock';
 
 // constants and types
-import { FEED_IN_CHAMPIONSHIP, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import { FEED_IN_CHAMPIONSHIP, FIRST_MATCH_LOSER_CONSOLATION, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { DOMINANT_DUO, USTA_COLLEGE } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
+import { NO_VALID_ACTIONS } from '@Constants/errorConditionConstants';
 import {
   COMPLETED,
   DEFAULTED,
   DOUBLE_DEFAULT,
   DOUBLE_WALKOVER,
   IN_PROGRESS,
+  RETIRED,
   TO_BE_PLAYED,
+  WALKOVER,
 } from '@Constants/matchUpStatusConstants';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
@@ -257,5 +260,148 @@ describe("a round robin's tally keeps the score of a line whose winner is entere
       .filter((tally: any) => tally?.gamesWon);
     // 6-1 6-1: both teams of the dual hold the games of the line
     expect(tallies.map((tally: any) => tally.gamesWon).sort((a: number, b: number) => a - b)).toEqual([2, 12]);
+  });
+});
+
+describe("a team's line-up notice keeps the event an earlier notice of the call gave its dual", () => {
+  // `updateSideLineUp` announces with no event, and v1 keeps the event of a notice the same call already made for the
+  // matchUp. v2 marked the line-up's notice eventless wherever the assignment wrote it
+  it('a changed winner: the dual its loser link feeds was announced when the first loser was taken back', () => {
+    const prepared = prepareCall(() => {
+      generate({ drawSize: 8, participantsCount: 7, drawType: FEED_IN_CHAMPIONSHIP, tieFormatName: USTA_COLLEGE });
+      const first = dual('Main', 1, 3);
+      enter(first.matchUpId, { matchUpStatus: DEFAULTED, winningSide: 2 });
+      const retired = generateOutcomeFromScoreString({ scoreString: '6-1 2-1', winningSide: 1 }).outcome;
+      return call(first.matchUpId, { ...retired, matchUpStatus: RETIRED });
+    });
+    const v1 = alike(prepared);
+    expect(v1.result.success).toEqual(true);
+    const lineUpNotices = v1.notices.filter((notice) => notice.includes('"context":"updateSidLineUp"'));
+    expect(lineUpNotices.length).toEqual(1);
+    expect(lineUpNotices[0]).toContain('"eventId"');
+  });
+});
+
+describe('a line that un-decides its dual leaves it in progress', () => {
+  // the dual's status is its tally's: it holds a line's result, though a doubles line that does not yet win its
+  // collection's point leaves the score 0-0. The planners wrote the removal's status, to be played
+  it.each([
+    ['a round robin', { drawSize: 4, drawType: ROUND_ROBIN }],
+    ['an elimination draw', { drawSize: 8 }],
+  ])('%s: a doubles line won on a dual decided by its own call', (_label, profile) => {
+    const prepared = prepareCall(() => {
+      generate({ ...profile, tieFormatName: USTA_COLLEGE });
+      const [first] = duals();
+      enter(first.matchUpId, { winningSide: 2 });
+      const doubles = first.tieMatchUps.find((tieMatchUp: any) => tieMatchUp.matchUpType === 'DOUBLES').matchUpId;
+      return call(doubles, { matchUpStatus: WALKOVER, winningSide: 1 });
+    });
+    const v1 = alike(prepared);
+    expect(v1.result.success).toEqual(true);
+    const held = storedMatchUp(v1.record, duals()[0].matchUpId);
+    expect([held.matchUpStatus, held.winningSide, held.score.scoreStringSide1]).toEqual([
+      IN_PROGRESS,
+      undefined,
+      '0-0',
+    ]);
+  });
+});
+
+describe('a dual holding a double exit that has been played on, its auto-calc turned on', () => {
+  // the call is dispatched with the winner its lines project, none, whatever winner it names: no action is valid
+  // (row 15). v2 read the call's own winner, passed the dispatch and refused it as a status no route accepts (row 6)
+  it('a winner named with enableAutoCalc is refused: no action is valid', () => {
+    const prepared = prepareCall(() => {
+      generate({ drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP });
+      // its produced exit meets the other first-round dual's in the next round, and a line is entered in the
+      // consolation dual its loser link feeds: the double exit has been played on
+      enter(dual('Main', 1, 4).matchUpId, { matchUpStatus: DOUBLE_WALKOVER });
+      enter(dual('Main', 1, 3).matchUpId, { matchUpStatus: DOUBLE_WALKOVER });
+      enter(line(dual('Consolation', 1, 2), 2), { matchUpStatus: DOUBLE_WALKOVER });
+      return call(dual('Main', 1, 4).matchUpId, { winningSide: 1 }, { enableAutoCalc: true });
+    });
+    const v1 = alike(prepared);
+    expect(v1.result.error?.code).toEqual(NO_VALID_ACTIONS.code);
+    expect(storedMatchUp(v1.record, prepared.params.matchUpId as string)).toEqual(
+      storedMatchUp(JSON.stringify(prepared.prepared), prepared.params.matchUpId as string),
+    );
+  });
+});
+
+describe('a dual decided by its own call, against or beside its lines, stays directed as its lines are played', () => {
+  const retired = (winningSide: number) => ({
+    ...generateOutcomeFromScoreString({ scoreString: '6-1 2-1', winningSide }).outcome,
+    matchUpStatus: RETIRED,
+  });
+
+  // v1 cleared the corrected line, tallied the dual without it (no winner: its direction taken back), then read the
+  // dual's winner as unchanged and sent nobody on: COMPLETED, its winner out of the next dual, its loser out of the
+  // consolation. v2 left the direction standing
+  it('a line corrected to the winner the dual was given: the winner and the loser stand where they were sent', () => {
+    const prepared = prepareCall(() => {
+      generate({ drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION });
+      const first = dual('Main', 1, 3);
+      enter(line(first, 0), { winningSide: 1 });
+      enter(line(first, 1), won(2));
+      enter(first.matchUpId, retired(1));
+      return call(line(first, 1), won(1));
+    });
+    const first = dual('Main', 1, 3);
+    const placed = (record: string) => [
+      storedMatchUp(record, first.winnerMatchUpId).drawPositions,
+      JSON.parse(record).events[0].drawDefinitions[0].structures[1].positionAssignments.filter(
+        (assignment: any) => assignment.participantId,
+      ).length,
+    ];
+    const before = placed(JSON.stringify(prepared.prepared));
+    expect(before[1]).toEqual(1);
+    const v1 = alike(prepared);
+    expect(v1.result.success).toEqual(true);
+    const held = storedMatchUp(v1.record, first.matchUpId);
+    expect([held.matchUpStatus, held.winningSide, held.score.scoreStringSide1]).toEqual([COMPLETED, 1, '2-0']);
+    expect(placed(v1.record)).toEqual(before);
+  });
+
+  // v1 directed the new winner without taking the old one back: with the next dual full the call returned
+  // EXISTING_POSITION_ASSIGNMENT after writing the line and the dual. v2 wrote the same and returned success
+  it.each([
+    ['the next dual full', true],
+    ['the next dual holding the old winner alone', false],
+  ])('a fresh line that hands the dual to the other side, %s: the new winner replaces the old', (_label, full) => {
+    const prepared = prepareCall(() => {
+      generate({ drawSize: 4 });
+      const first = dual('Main', 1, 1);
+      enter(line(first, 2), won(2));
+      enter(first.matchUpId, { winningSide: 1 });
+      if (full) enter(dual('Main', 1, 2).matchUpId, { winningSide: 2 });
+      return call(line(first, 0), { winningSide: 2 });
+    });
+    const first = dual('Main', 1, 1);
+    const [, loserPosition] = first.drawPositions;
+    const v1 = alike(prepared);
+    expect(v1.result.success).toEqual(true);
+    const held = storedMatchUp(v1.record, first.matchUpId);
+    expect([held.matchUpStatus, held.winningSide]).toEqual([COMPLETED, 2]);
+    const next = storedMatchUp(v1.record, first.winnerMatchUpId).drawPositions.filter(Boolean);
+    expect(next).toEqual(full ? [loserPosition, 4] : [loserPosition]);
+  });
+});
+
+describe('a result relabelled an exit that carries, where the loser already stands', () => {
+  // the exit is written on the loser's dual by that dual's own call, which ensures its sides first; the plan stated
+  // them only for a loser who arrives
+  it('the dual the exit lands on stores its sides', () => {
+    const prepared = prepareCall(() => {
+      generate({ drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP });
+      const first = dual('Main', 1, 4);
+      enter(first.matchUpId, { matchUpStatus: WALKOVER, winningSide: 2 });
+      return call(first.matchUpId, { matchUpStatus: DEFAULTED, winningSide: 2 }, { propagateExitStatus: true });
+    });
+    const landed = dual('Main', 1, 4).loserMatchUpId;
+    const v1 = alike(prepared);
+    expect(v1.result.success).toEqual(true);
+    const written = storedMatchUp(v1.record, landed);
+    expect(written.matchUpStatus).toEqual(DEFAULTED);
+    expect(written.sides.map((side: any) => side.drawPosition).filter(Boolean).length).toEqual(2);
   });
 });

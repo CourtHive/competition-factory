@@ -524,7 +524,13 @@ function undecidingLineOps(args: PlanArgs & { dual: DualCall; drawDefinition: Dr
   if (removedLineUps === false) return { abstain: 'team' };
   const dualOps = dualPlan.ops.map((op): OutcomeOp =>
     op.op === 'setMatchUpResult' && op.matchUpId === line.dualMatchUpId
-      ? { ...op, dualTally: { ...op.dualTally, unreturned: true } }
+      ? {
+          ...op,
+          // the status is the tally's (`updateTieMatchUpScore`), not the removal's: a dual holding a line's result is in
+          // progress though its score reads 0-0 (a doubles line that does not yet win its collection's point)
+          ...(line.projectedStatus ? { matchUpStatus: line.projectedStatus } : {}),
+          dualTally: { ...op.dualTally, unreturned: true },
+        }
       : op,
   );
 
