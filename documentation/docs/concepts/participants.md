@@ -564,33 +564,50 @@ mutation. Deleting a participant prunes them from both `individualParticipantIds
 
 ## Privacy and Data Protection
 
-Use Participant Policies to control which participant data is exposed:
+A [Participant Policy](/docs/policies/participantPolicy) controls which participant attributes leave the engine. It is
+an **attribute template** under `policyDefinitions.participant.participant`, and it is an **allow-list**:
 
-**API Reference:** [checkInParticipant](/docs/governors/matchup-governor#checkinparticipant)
+- an attribute is returned only when the template sets it to `true`; an attribute the template leaves out is dropped;
+- a nested object filters the nested object, and every element of an array (`individualParticipants`, `teams`);
+- `'*': true` keeps every attribute the template does not set to `false`, so a policy can deny a few attributes and
+  keep the rest.
 
-**API Reference:** [checkOutParticipant](/docs/governors/matchup-governor#checkoutparticipant)
-
-**API Reference:** [toggleParticipantCheckInState](/docs/governors/matchup-governor#toggleparticipantcheckinstate)
+The built-in `POLICY_PRIVACY_DEFAULT` keeps names, nationality, rankings and ratings, and drops contacts, addresses,
+birth dates, sex and person identifiers:
 
 ```js
-const participantPolicy = {
-  participant: {
-    // Hide birth dates
-    excludeBirthDates: true,
-    // Hide specific attributes
-    excludeAttributes: ['person.nationalityCode'],
-    // Only show initials
-    initialsOnly: true,
-  },
-};
+import { fixtures, tournamentEngine } from 'tods-competition-factory';
 
 const { participants } = tournamentEngine.getParticipants({
-  policyDefinitions: { participant: participantPolicy },
+  policyDefinitions: fixtures.policies.POLICY_PRIVACY_DEFAULT,
 });
-
-// Results respect privacy settings
-// { person: { standardFamilyName: 'F.', standardGivenName: 'R.' } }
 ```
+
+To deny specific attributes and keep everything else, use the wildcard:
+
+```js
+const { participants } = tournamentEngine.getParticipants({
+  policyDefinitions: {
+    participant: {
+      participant: {
+        '*': true,
+        contacts: false,
+        person: { '*': true, addresses: false, birthDate: false, contacts: false },
+      },
+    },
+  },
+});
+```
+
+:::warning
+The template is not validated. A key it does not recognize is not an error: a template whose keys match no attribute
+returns every participant as `{}`, and a policy without a `participant` template filters nothing at all. Check the
+output of a new policy before publishing with it.
+:::
+
+The policy applies wherever participants leave the engine, not only `getParticipants`: hydrated
+`matchUp.sides[].participant`, participant schedules and the `participantMap`. See
+[Participant Policy](/docs/policies/participantPolicy#where-the-policy-is-applied).
 
 ## Related Documentation
 
