@@ -8,7 +8,6 @@ import mocksEngine from '@Assemblies/engines/mock';
 // constants
 import { OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
-import { BYE, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
 
@@ -89,14 +88,13 @@ describe('the direction check', () => {
   });
 
   it('is not asked of a call recorded whole, which its shadow compares', () => {
-    // a double exit asked of a TEAM dual that holds a BYE, in a consolation draw: the planners abstain, the call is
-    // recorded, and the direction they state for a double exit does not describe what v1 does with a BYE
+    // a TEAM dual's winner changed, in a consolation draw, nothing played on: the planners state a direction for the
+    // new winner and abstain, the call is recorded whole, and the direction they state is not asked of it
     mocksEngine.generateTournamentRecord({
       drawProfiles: [
         {
           drawType: FIRST_MATCH_LOSER_CONSOLATION,
           tieFormatName: DOMINANT_DUO,
-          participantsCount: 6,
           drawId: DRAW_ID,
           eventType: TEAM,
           drawSize: 8,
@@ -107,7 +105,7 @@ describe('the direction check', () => {
     });
     tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: DRAW_ID });
     const duals = matchUps().filter(
-      (matchUp) => !matchUp.collectionId && matchUp.stage === 'MAIN' && matchUp.matchUpStatus === BYE,
+      (matchUp) => !matchUp.collectionId && matchUp.stage === 'MAIN' && matchUp.roundNumber === 1,
     );
     expect(duals.length).toBeGreaterThan(0);
     const before = JSON.stringify(tournamentEngine.getTournament().tournamentRecord);
@@ -115,18 +113,27 @@ describe('the direction check', () => {
     for (const dual of duals) {
       setOutcomePipeline(OUTCOME_PIPELINE_V1);
       tournamentEngine.setState(JSON.parse(before));
+      let result: any = tournamentEngine.setMatchUpStatus({
+        drawId: DRAW_ID,
+        matchUpId: dual.matchUpId,
+        outcome: { winningSide: 1 },
+      });
+      expect(result.success).toEqual(true);
       setOutcomePipeline(OUTCOME_PIPELINE_DIFFERENTIAL);
       stated.direction = undefined;
       // whatever the planners state for it, wrong included
       stated.corrupt = elsewhere;
       const applied = tally('shadow:applied').compared;
-      const deferred = tally('double-exit:direction').deferred;
-      const call = { drawId: DRAW_ID, matchUpId: dual.matchUpId, outcome: { matchUpStatus: DOUBLE_WALKOVER } };
-      let result: any = tournamentEngine.setMatchUpStatus(call);
+      const deferred = tally('winner:direction').deferred;
+      const compared = tally('winner:direction').compared;
+      const call = { drawId: DRAW_ID, matchUpId: dual.matchUpId, outcome: { winningSide: 2 } };
+      result = tournamentEngine.setMatchUpStatus(call);
       expect(result.success).toEqual(true);
+      expect(stated.direction?.winner).toBeDefined();
       // the whole record was compared, and the direction was not
       expect(tally('shadow:applied').compared).toEqual(applied + 1);
-      if (tally('double-exit:direction').deferred === deferred + 1) recorded += 1;
+      expect(tally('winner:direction').compared).toEqual(compared);
+      if (tally('winner:direction').deferred === deferred + 1) recorded += 1;
     }
     expect(recorded).toBeGreaterThan(0);
   });
