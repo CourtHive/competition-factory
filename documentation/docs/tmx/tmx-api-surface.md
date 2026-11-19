@@ -12,7 +12,7 @@ This page documents all `tods-competition-factory` methods used by the **TMX cli
 
 ## TMX Mutation Methods
 
-These 70 methods are invoked via `mutationRequest()` on the client, sent through Socket.IO to the server's `executionQueue`, executed by the factory engine, then applied locally on acknowledgment.
+These methods are invoked via `mutationRequest()` on the client and sent over HTTP (`POST /factory`) to the server's `executionQueue`, executed by the server's factory engine, then applied locally on acknowledgment (see [Competition Factory Server](./factory-server.md)). The tables are a selection by area: TMX's complete list, about 145 methods, is [`src/constants/mutationConstants.ts`](https://github.com/CourtHive/TMX/blob/main/src/constants/mutationConstants.ts).
 
 ### Event Management
 
@@ -24,23 +24,24 @@ These 70 methods are invoked via `mutationRequest()` on the client, sent through
 
 ### Draw Management
 
-| Method                                                                                    | Governor | Context                                          |
-| ----------------------------------------------------------------------------------------- | -------- | ------------------------------------------------ |
-| [addDrawDefinition](/docs/governors/event-governor#adddrawdefinition)                     | Event    | Attach a draw definition to an event             |
-| [deleteDrawDefinitions](/docs/governors/event-governor#deletedrawdefinitions)             | Event    | Remove draw definitions                          |
-| [modifyDrawDefinition](/docs/governors/draws-governor#modifydrawdefinition)               | Draws    | Update draw definition properties                |
-| [resetDrawDefinition](/docs/governors/draws-governor#resetdrawdefinition)                 | Draws    | Reset a draw to its initial state                |
-| [removeStructure](/docs/governors/draws-governor#removestructure)                         | Draws    | Remove a structure from a draw                   |
-| [renameStructures](/docs/governors/draws-governor#renamestructures)                       | Draws    | Rename structures within a draw                  |
-| [addPlayoffStructures](/docs/governors/draws-governor#addplayoffstructures)               | Draws    | Add playoff structures to a draw                 |
-| [automatedPlayoffPositioning](/docs/governors/draws-governor#automatedplayoffpositioning) | Draws    | Auto-position participants in playoff structures |
-| [attachQualifyingStructure](/docs/governors/draws-governor#attachqualifyingstructure)     | Draws    | Link a qualifying structure to a main draw       |
+| Method                                                                                              | Governor | Context                                          |
+| --------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------ |
+| [addDrawDefinition](/docs/governors/event-governor#adddrawdefinition)                               | Event    | Attach a draw definition to an event             |
+| [deleteDrawDefinitions](/docs/governors/event-governor#deletedrawdefinitions)                       | Event    | Remove draw definitions                          |
+| [modifyDrawDefinition](/docs/governors/draws-governor#modifydrawdefinition)                         | Draws    | Update draw definition properties                |
+| [resetDrawDefinition](/docs/governors/draws-governor#resetdrawdefinition)                           | Draws    | Reset a draw to its initial state                |
+| [removeStructure](/docs/governors/draws-governor#removestructure)                                   | Draws    | Remove a structure from a draw                   |
+| [renameStructures](/docs/governors/draws-governor#renamestructures)                                 | Draws    | Rename structures within a draw                  |
+| [attachPlayoffStructures](/docs/governors/generation-governor#generateandpopulateplayoffstructures) | Draws    | Attach generated playoff structures to a draw    |
+| [automatedPlayoffPositioning](/docs/governors/draws-governor#automatedplayoffpositioning)           | Draws    | Auto-position participants in playoff structures |
+| [attachQualifyingStructure](/docs/governors/draws-governor#attachqualifyingstructure)               | Draws    | Link a qualifying structure to a main draw       |
 
 ### Draw Generation
 
+TMX generates a draw locally (`generateDrawDefinition` is a query that returns the draw) and sends `addDrawDefinition` to attach it.
+
 | Method                                                                                | Governor   | Context                                   |
 | ------------------------------------------------------------------------------------- | ---------- | ----------------------------------------- |
-| [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition)  | Generation | Generate a complete draw definition       |
 | [generateFlightProfile](/docs/governors/generation-governor#generateflightprofile)    | Generation | Generate flight profile for an event      |
 | [attachFlightProfile](/docs/governors/event-governor#attachflightprofile)             | Event      | Attach a flight profile to an event       |
 | [deleteFlightAndFlightDraw](/docs/governors/event-governor#deleteflightandflightdraw) | Event      | Remove a flight and its associated draw   |
