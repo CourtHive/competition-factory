@@ -899,7 +899,8 @@ function advanceDrawPosition(params) {
       : advanceIntoWinnerMatchUp(params);
   }
 
-  if (inContextMatchUp && !inContextMatchUp.feedRound) {
+  // a lucky draw's double exit advances nobody (CA, 2026-11-17): whoever arrives beside its empty seat waits there
+  if (inContextMatchUp && !inContextMatchUp.feedRound && !isLuckyBasedDraw(params.drawDefinition?.drawType)) {
     const { pairedPreviousMatchUpIsDoubleExit } = getPairedPreviousMatchUpIsDoubleExit({
       targetMatchUp: matchUp,
       drawPosition,

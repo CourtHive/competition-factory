@@ -34,7 +34,8 @@ export type MethodFootprint = {
 };
 
 export type FootprintContext = {
-  // which outcome pipeline will run: v1 hydrates a TEAM collection line's sides against participants before scoring
+  // which outcome pipeline will run: v1 hydrates a TEAM collection line's sides against every participant before
+  // scoring, v2 against those the draw references
   outcomePipeline?: OutcomePipelineMode;
   // the tournament whose footprint is asked for, when several are loaded; without it, the footprint is the method's
   // whole reach, and a method spanning tournaments needs every record whole
@@ -64,9 +65,11 @@ const scheduleRule: FootprintRule = (params, context) =>
 const scoreRule: FootprintRule = (params, context) => {
   // a score that also schedules is checked as a schedule
   if (params?.schedule && params?.proConflictDetection) return TOURNAMENT;
-  // v2 decides from what the draw stores; v1 (and `differential`, which runs v1 too) resolves a TEAM collection
-  // line's sides against the tournament's participants, more than the draw's own slice
-  const extra: FootprintShard[] = context.outcomePipeline === OUTCOME_PIPELINE_V2 ? [] : ['participants'];
+  // v1 (and `differential`, which runs v1 too) resolves a TEAM collection line's sides against the tournament's
+  // participants, more than the draw's own slice. v2 decides from the draw and the participants it references: a line
+  // given a winner is asked whether its own sides hold a participant (`teamReason`, `lineValidToScore`)
+  const extra: FootprintShard[] =
+    context.outcomePipeline === OUTCOME_PIPELINE_V2 ? ['drawParticipants'] : ['participants'];
   return drawScoped(extra)(params, context);
 };
 
@@ -81,7 +84,8 @@ const bulkStatusRule: FootprintRule = (params, context) => {
   const tournamentIds = new Set(outcomes.map((outcome) => outcome?.tournamentId));
   const drawIds = outcomes.map((outcome) => outcome?.drawId).filter((drawId): drawId is string => !!drawId);
   if (!outcomes.length || tournamentIds.size > 1 || drawIds.length < outcomes.length) return TOURNAMENT;
-  const extra: FootprintShard[] = context.outcomePipeline === OUTCOME_PIPELINE_V2 ? [] : ['participants'];
+  const extra: FootprintShard[] =
+    context.outcomePipeline === OUTCOME_PIPELINE_V2 ? ['drawParticipants'] : ['participants'];
   return { shards: ['shell', 'draw', ...extra], drawIds: [...new Set(drawIds)] };
 };
 

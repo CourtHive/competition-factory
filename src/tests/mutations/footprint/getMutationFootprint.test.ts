@@ -31,7 +31,7 @@ describe('getMutationFootprint', () => {
     expect(result.tournament).toEqual(true);
   });
 
-  it('loads participants for score entry unless v2 decides', () => {
+  it('loads every participant for score entry, or those of the draw where v2 decides', () => {
     let result: any = getMutationFootprint({ methods: [score] });
     expect(result).toEqual({
       shards: ['shell', 'draw', 'participants'],
@@ -42,7 +42,7 @@ describe('getMutationFootprint', () => {
     });
 
     result = getMutationFootprint({ methods: [score], outcomePipeline: OUTCOME_PIPELINE_V2 });
-    expect(result.shards).toEqual(['shell', 'draw']);
+    expect(result.shards).toEqual(['shell', 'draw', 'drawParticipants']);
   });
 
   it('takes the union of a queue, and widens with the params', () => {
@@ -99,7 +99,7 @@ describe('getMutationFootprint', () => {
     let result: any = bulk([T1D1, T1D2, { ...T1D1, matchUpId: 'M3' }]);
     expect(result.shards).toEqual(['shell', 'draw', 'participants']);
     expect(result.drawIds).toEqual(['D1', 'D2']);
-    expect(bulk([T1D1], OUTCOME_PIPELINE_V2).shards).toEqual(['shell', 'draw']);
+    expect(bulk([T1D1], OUTCOME_PIPELINE_V2).shards).toEqual(['shell', 'draw', 'drawParticipants']);
 
     // a draw it cannot name, outcomes across tournaments, or nothing to scope by
     result = bulk([T1D1, { ...T1D2, drawId: undefined }]);

@@ -49,7 +49,6 @@ type Writer = (copy: RecordCopy, args: BuildViewArgs) => unknown;
 const refused: [string, Writer][] = [
   ['the call cannot be run on a copy', () => undefined],
   ['v1 returns an error', () => ({ error: { code: 'ERR', message: 'refused' } })],
-  ['v1 stops its forward settle at the bound', () => ({ ...SUCCESS, warnings: [{ code: FORWARD_SETTLE_EXHAUSTED }] })],
   [
     'v1 throws',
     () => {
@@ -110,6 +109,32 @@ it.each(refused)('is not made where %s', (_label, writer) => {
   const writeOnCopy = (copy: RecordCopy) => writer(copy, args) as ReturnType<NonNullable<BuildViewArgs['writeOnCopy']>>;
   expect(recordWholeCall({ ...args, writeOnCopy })).toBeUndefined();
   expect(canonicalJson(args.tournamentRecord)).toEqual(before);
+});
+
+/**
+ * v1 succeeds where its forward settle stops at the bound, and warns (CA, 2026-11-18: recorded, with v1's warning). The
+ * program says the run stopped there, and offers no proof of a fixpoint: running the passes again would do the rest.
+ */
+it('is made where v1 stops its forward settle at the bound, and says so', () => {
+  const { args, before } = prepare();
+  const written = { ...SUCCESS, warnings: [{ code: FORWARD_SETTLE_EXHAUSTED, matchUpIds: ['owed'] }] };
+  const writeOnCopy = (copy: RecordCopy) => {
+    first(copy).notes = 'written';
+    return written;
+  };
+  const recorded = recordWholeCall({ ...args, writeOnCopy });
+  expect(recorded?.written).toBe(written);
+  expect(recorded?.ops).toMatchObject([{ op: 'replaceMatchUp' }, { op: 'announceRecorded', forwardExhausted: true }]);
+  expect(recorded?.provesSettled).toBeUndefined();
+  expect(canonicalJson(args.tournamentRecord)).toEqual(before);
+
+  // CONTROL: a run that did not stop there says nothing of the bound, and can be asked for its proof
+  const settled = recordWholeCall({
+    ...args,
+    writeOnCopy: (copy) => ((first(copy).notes = 'written'), { ...SUCCESS }),
+  });
+  expect(settled?.ops.some((op) => op.op === 'announceRecorded' && op.forwardExhausted)).toEqual(false);
+  expect(settled?.provesSettled).toBeDefined();
 });
 
 it('is not made with no writer', () => {

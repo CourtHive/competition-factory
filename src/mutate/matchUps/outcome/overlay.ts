@@ -1,6 +1,7 @@
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { buildStructuralIndex } from '@Query/matchUps/structuralIndex';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { cloneData } from '@Tools/cloneState';
 import { applyOutcomeOps } from './ops';
 
 // constants and types
@@ -136,7 +137,7 @@ export function createWorkingView({
     const matchUps = matchUpsOf(structureHolding(structureId));
     const index = matchUps?.findIndex((matchUp) => matchUp.matchUpId === parentId) ?? -1;
     if (!matchUps || index < 0) return;
-    matchUps[index] = structuredClone(matchUps[index]);
+    matchUps[index] = cloneData(matchUps[index]);
     for (const copied of [matchUps[index], ...(matchUps[index].tieMatchUps ?? [])])
       copiedMatchUps.set(copied.matchUpId, copied);
     work.copiedMatchUps += 1;

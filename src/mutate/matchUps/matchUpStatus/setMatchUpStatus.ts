@@ -255,6 +255,8 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // where it is written: the copy's readings are kept and handed, in order, to v1's run on the stored record, so the
   // source is read as v1 alone reads it and both runs stamp the same instants (`replayedInstants.ts`).
   const draws = replayedDraws();
+  // each copy this call's v1 wrote, with the readings its settle passes were handed
+  const copies = new WeakMap<object, V1Target>();
   const instants = replayedInstants();
   const v2 = decideOutcomeV2({
     request: {
@@ -275,6 +277,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
       },
     },
     writeOnCopy: (copy) => draws.record(() => instants.record(() => writeOnCopy(copy))),
+    settleOnCopy,
     instantsExact: instants.exact,
     recordDraws: draws.record,
     policyDefinitions,
@@ -310,7 +313,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     if (named.length > 1 || (named.length && named[0] !== copied?.tournamentId)) return undefined;
     const records = copied ? { [copied.tournamentId]: copied } : tournamentRecords;
     const map = getMatchUpsMap({ drawDefinition: copy.drawDefinition });
-    return runV1({
+    const target: V1Target = {
       params: { ...params, ...copy, tournamentRecord: copied as Tournament, tournamentRecords: records },
       doubleExitsBefore: new Set(
         map.drawMatchUps.filter((matchUp) => isDoubleExit(matchUp.matchUpStatus)).map((m) => m.matchUpId),
@@ -320,6 +323,29 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
       tournamentRecords: records,
       matchUpsMap: map,
       onCopy: true,
+    };
+    copies.set(copy.drawDefinition, target);
+    return runV1(target);
+  }
+
+  /**
+   * RECORDED, THE FIXPOINT (`outcome/plan/recordedCall.ts` `settledOnCopy`): the settle passes run once more on the copy
+   * v1 has written, with this call's parameters and the readings taken of the copy as it now stands (its double exits,
+   * its deciders), as the next call's settle would take them. Undefined for a copy this call did not write.
+   */
+  function settleOnCopy(copy: RecordCopy) {
+    const target = copies.get(copy.drawDefinition);
+    if (!target) return undefined;
+    const map = getMatchUpsMap({ drawDefinition: copy.drawDefinition });
+    return settleAfterWrite({
+      doubleExitsBefore: new Set(
+        map.drawMatchUps.filter((matchUp) => isDoubleExit(matchUp.matchUpStatus)).map((m) => m.matchUpId),
+      ),
+      deciderSnapshotBefore: getDeciderSnapshot(copy.drawDefinition),
+      finalsBefore: getDeciderFinals(copy.drawDefinition),
+      params: { ...target.params, matchUpId },
+      propagateExitStatus,
+      matchUpsMap: map,
     });
   }
 

@@ -50,6 +50,7 @@ import { isObject } from '@Tools/objects';
 import { nowIso } from '@Tools/clock';
 import {
   noDownstreamDependencies,
+  refusesStatusRoute,
   removesDirected,
 } from '@Mutate/drawDefinitions/matchUpGovernor/noDownstreamDependencies';
 
@@ -813,6 +814,17 @@ function resolveAndApplyOutcome({
   if (removesDirected(params) && removalMissingDrawPositions(params))
     return decorateResult({ result: { error: MISSING_DRAW_POSITIONS }, stack });
 
+  // § 2 row 6's fallthrough clause on a TEAM dual: a status no route accepts as named (an exit with no winner, which an
+  // exit entered with one becomes when the call turns auto-calc on and the lines project none). It was refused by
+  // `attemptToSetMatchUpStatus` after the dual's writes below, which left its sides and line-ups under the error
+  // (item 3, CA 2026-11-17). Asked here, with what the dispatch reads, so the error leaves the record unchanged.
+  if (applyTeamWrites && refusedAtTheStatusRoute(params, !!activeDownstream))
+    return decorateResult({
+      result: { error: INVALID_MATCHUP_STATUS },
+      info: 'matchUpStatus: ' + params.matchUpStatus,
+      stack,
+    });
+
   // the TEAM dual's auto-calc and lineUps, now that nothing before the outcome's own writes can refuse
   applyTeamWrites?.();
 
@@ -921,6 +933,17 @@ function resolveAndApplyOutcome({
 // is removed so a subsequent re-score gets a fresh stamp. A lightweight proxy
 // for when the match actually finished (TD-behavior analytics) when no explicit
 // END_TIME timeItem is recorded; an actual endTime supersedes it at read time.
+/** the dispatch below takes the call to `noDownstreamDependencies`, whose status route refuses it (`refusesStatusRoute`) */
+function refusedAtTheStatusRoute(params: Parameters<typeof swapWinnerLoser>[0], activeDownstream: boolean): boolean {
+  const { matchUp, matchUpStatus, winningSide, score } = params;
+  if (clearsABye({ storedMatchUpStatus: matchUp?.matchUpStatus, matchUpStatus, score, winningSide })) return false;
+  if (isUndirectedDrawnOutcome(params, activeDownstream)) return false;
+  const hasPropagated = !!matchUp.winningSide || isDoubleExit(matchUp.matchUpStatus);
+  // a double exit asked to become a single one is unwound first (`removeDoubleExit`): not asked here
+  if ((activeDownstream && hasPropagated) || isDoubleExit(matchUp.matchUpStatus)) return false;
+  return refusesStatusRoute(params);
+}
+
 function applyScoredTime({ matchUp }) {
   const action = scoredTimeAction(matchUp);
   if (action === 'initialize') {

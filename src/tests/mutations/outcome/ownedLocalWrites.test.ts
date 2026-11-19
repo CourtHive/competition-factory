@@ -191,23 +191,26 @@ describe('what v2 does not own goes to v1, whole', () => {
     expect(v2.record).toEqual(v1.record);
   });
 
-  it('a double exit asked for again, carrying a schedule: v1 writes the schedule alone, so v2 abstains (S7)', () => {
+  it('a double exit asked for again, carrying a schedule: v1 writes the schedule alone, and v2 records it (batch 5)', () => {
     const steps: Step[] = [
       () => ({ outcome: { matchUpStatus: DOUBLE_WALKOVER } }),
       () => ({ outcome: { matchUpStatus: DOUBLE_WALKOVER }, schedule: { scheduledDate: startDate() } }),
     ];
     const v1 = play(OUTCOME_PIPELINE_V1, steps);
     const v2 = play(OUTCOME_PIPELINE_V2, steps);
-    expect(v2.v1Writes).toEqual(1);
+    expect(v1.v1Writes).toEqual(2);
+    expect(v2.v1Writes).toEqual(0);
     expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
   });
 
-  it('a schedule carrying a start and an end time: v1 writes them as timeItems, so v2 abstains (S7)', () => {
+  it('a schedule carrying a start and an end time: v1 writes them as timeItems, and v2 records them (batch 5)', () => {
     const steps: Step[] = [() => ({ outcome: { winningSide: 1 }, schedule: { startTime: '10:00', endTime: '11:00' } })];
     const v1 = play(OUTCOME_PIPELINE_V1, steps);
     const v2 = play(OUTCOME_PIPELINE_V2, steps);
-    expect(v2.v1Writes).toEqual(1);
+    expect(v1.v1Writes).toEqual(1);
+    expect(v2.v1Writes).toEqual(0);
+    expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
   });
 

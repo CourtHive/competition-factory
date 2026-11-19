@@ -6,6 +6,7 @@ import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExte
 import { scoredTimeAction } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { getCapturedStamps } from '@Global/state/globalState';
+import { cloneData } from '@Tools/cloneState';
 import { isAnyExit } from '@Validators/isExit';
 import { nowIso } from '@Tools/clock';
 import {
@@ -464,6 +465,19 @@ export type OutcomeOp =
        * not anyone subscribes, so the buffer alone does not say. Absent where the provider cannot expose its marks
        */
       marks?: { tournamentIds: string[]; topics: string[] };
+      /**
+       * SETTLED BY PROOF (`plan/recordedCall.ts` `settledOnCopy`): the call's settle passes, run once more on what this
+       * program leaves, changed nothing at all. Set only where a has-work predicate found work on the program, and the
+       * passes themselves were then asked: no predicate is asked of it again (`decide.ts` `settleSites`)
+       */
+      settledByProof?: true;
+      /**
+       * STOPPED AT THE FORWARD BOUND (`plan/recordedCall.ts`): v1's forward settle stopped at its pass limit on the run
+       * this program was read off, and the call returns its `FORWARD_SETTLE_EXHAUSTED` warning. What that pass still
+       * owes on what the program leaves is what v1 leaves owed: `settleForwardConsequences` is not asked of it
+       * (`settleWork.ts` `predictSettleWork`); every other predicate is
+       */
+      forwardExhausted?: true;
     }
   | { op: 'stampUpdatedAt'; entity: 'matchUp' | 'structure' | 'drawDefinition'; id: string };
 
@@ -1091,7 +1105,8 @@ function replaceOwn(target: object | undefined, state: Record<string, unknown>, 
   const own = target as Record<string, unknown>;
   const stampedBefore = own.updatedAt;
   for (const key of Object.keys(own)) if (!kept.includes(key) && !(key in state)) delete own[key];
-  for (const [key, value] of Object.entries(structuredClone(state))) if (!kept.includes(key)) own[key] = value;
+  // a fresh copy for each fold; what is not data among the fields is held by reference (`cloneData`)
+  for (const [key, value] of Object.entries(cloneData(state))) if (!kept.includes(key)) own[key] = value;
   if (own.updatedAt !== stampedBefore) getCapturedStamps()?.add(target);
   return {};
 }

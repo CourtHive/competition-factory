@@ -5,6 +5,7 @@ import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propag
 import { getSideExitProvenance, carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { firstRoundFeedersWon } from '@Mutate/matchUps/drawPositions/drawPositionPlacement';
 import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
+import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/withdrawByeSeats';
 import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { byeSeatStands } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
@@ -61,6 +62,17 @@ export function removeDoubleExit(params) {
   iteration += 1;
 
   const stack = 'removeDoubleExit';
+
+  // A LUCKY DRAW'S DOUBLE EXIT PRODUCED NOTHING (`doubleExitAdvancement`, CA 2026-11-17), so there is nothing to take
+  // back: visiting its targets wrote a status, codes and a score onto matchUps nobody had reached. A record whose
+  // double exit did produce one, before that ruling, names this matchUp as the exit's source and is unwound as ever
+  const producedHere = (matchUpsMap?.drawMatchUps ?? []).some((candidate) =>
+    Object.values(getSideExitProvenance({ matchUp: candidate }) ?? {}).some(
+      (entry) => entry?.sourceMatchUpId === matchUpId,
+    ),
+  );
+  if (iteration === 1 && isLuckyBasedDraw(drawDefinition?.drawType) && !producedHere)
+    return decorateResult({ result: { ...SUCCESS }, stack });
 
   // WHOSE RESULT IS GOING AWAY. The unwind cascades, so by the time it reaches a convergence target
   // several upstream results may have been taken back, and a target can hold an origin from an

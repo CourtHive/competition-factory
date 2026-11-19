@@ -2125,6 +2125,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         !!inContextMatchUp?.containerStructureId ||
         !!isAdHoc({ structure }) ||
         !!isLucky({ drawDefinition, structure }),
+      luckyBased: isLuckyBasedDraw(drawDefinition?.drawType),
       // v1 propagates a BYE into a first-match feed a loser can no longer reach (`propagateUnfillableLoserBye`), set
       // going by a winner filling the round that feeds it
       // v1 writes a draw's missing edges before deciding (`ensureGoesTo`): edge repair is S2's `setEdges`

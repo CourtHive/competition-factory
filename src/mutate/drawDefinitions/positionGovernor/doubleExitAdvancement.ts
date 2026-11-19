@@ -20,6 +20,7 @@ import { settleUnlessIdle } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
+import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
@@ -28,6 +29,7 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { withDraftWrites } from '@Global/state/withDraftWrites';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
 import { overlap } from '@Tools/arrays';
@@ -124,6 +126,15 @@ function logAdvancement(method, details) {
   pushGlobalLog({ method, ...details });
 }
 
+/**
+ * Where a double exit sends nobody on. A round robin group's matchUp (a container's) has no next matchUp. And A LUCKY
+ * DRAW'S DOUBLE EXIT ADVANCES NOBODY (CA, 2026-11-17): it is written on its own matchUp and produces nothing in the next
+ * round, no exit awarded to whoever stands or arrives there, no position sent on, no advance withdrawn. Who goes on
+ * from a lucky draw's round is chosen (`luckyDrawAdvancement`), and a double exit chooses nobody.
+ */
+const producesNothing = (structure: Structure, drawDefinition?: DrawDefinition): boolean =>
+  structure.structureType === CONTAINER || isLuckyBasedDraw(drawDefinition?.drawType);
+
 export function doubleExitAdvancement(args) {
   // THE CALL'S SCORE STAYS ON THE MATCHUP IT WAS ENTERED ON. Every write below spreads these params into
   // `modifyMatchUpScore` for ANOTHER matchUp (the produced exit, a convergence, a carry), so a score the double exit's
@@ -133,7 +144,7 @@ export function doubleExitAdvancement(args) {
   const { tournamentRecord, appliedPolicies, drawDefinition, matchUpsMap, targetData, structure, event } = params;
   const stack = 'doubleExitAdvancement';
 
-  if (structure.structureType === CONTAINER) return decorateResult({ result: { ...SUCCESS }, stack });
+  if (producesNothing(structure, drawDefinition)) return decorateResult({ result: { ...SUCCESS }, stack });
 
   const { matchUp: sourceMatchUp, targetMatchUps, targetLinks } = targetData;
   const { loserMatchUp, winnerMatchUp, loserTargetDrawPosition } = targetMatchUps;
@@ -922,7 +933,8 @@ function conditionallyAdvanceDrawPosition(params) {
   if (!noContextTargetMatchUp) return { error: MISSING_MATCHUP };
 
   const sourceDrawPositions = sourceMatchUp?.drawPositions ?? [];
-  let targetMatchUpDrawPositions = noContextTargetMatchUp.drawPositions?.filter(Boolean);
+  // a matchUp nobody has reached may store no drawPositions at all (a lucky draw's later rounds)
+  let targetMatchUpDrawPositions = noContextTargetMatchUp.drawPositions?.filter(Boolean) ?? [];
 
   const sameStructure = sourceMatchUp?.structureId === targetMatchUp.structureId;
 
@@ -1618,7 +1630,7 @@ function advanceFromTarget({
   const noContextNextWinnerMatchUp = matchUpsMap.drawMatchUps.find(
     (matchUp) => matchUp.matchUpId === nextWinnerMatchUp.matchUpId,
   );
-  const nextWinnerMatchUpDrawPositions = noContextNextWinnerMatchUp?.drawPositions?.filter(Boolean);
+  const nextWinnerMatchUpDrawPositions = noContextNextWinnerMatchUp?.drawPositions?.filter(Boolean) ?? [];
   const nextWinnerMatchUpHasDrawPosition = nextWinnerMatchUpDrawPositions.length === 1;
 
   if (drawPositionToAdvance) {
@@ -3374,7 +3386,13 @@ export function settleHeldExits({
   // same, and write nothing
   return settleUnlessIdle({
     run: () => settleHeldExitsPass({ tournamentRecord, appliedPolicies, drawDefinition, matchUpsMap, event }),
-    detect: (inContextDrawMatchUps) => hasHeldExitWork({ inContextDrawMatchUps, drawDefinition, matchUpsMap }),
+    detect: (inContextDrawMatchUps) =>
+      hasHeldExitWork({
+        context: { tournamentRecord, appliedPolicies, event },
+        inContextDrawMatchUps,
+        drawDefinition,
+        matchUpsMap,
+      }),
     idle: { ...SUCCESS } as ResultType & { produced?: boolean },
     site: 'settleHeldExits',
     drawDefinition,
@@ -3450,11 +3468,14 @@ function produceStrandedConvergences({
   event?: Event;
 }): (ResultType & { produced?: boolean }) | undefined {
   const produced = new Set<string>();
+  const context = { tournamentRecord, appliedPolicies, event };
   const done = () => (produced.size ? { ...SUCCESS, produced: true } : undefined);
   const nextStranded = () => {
     const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
     const stranded = inContextDrawMatchUps.find(
-      (matchUp) => !produced.has(matchUp.matchUpId) && strandsItsExit({ inContextDrawMatchUps, matchUpsMap, matchUp }),
+      (matchUp) =>
+        !produced.has(matchUp.matchUpId) &&
+        strandsItsExit({ inContextDrawMatchUps, drawDefinition, matchUpsMap, matchUp, context }),
     );
     return { inContextDrawMatchUps, stranded };
   };
@@ -3462,57 +3483,16 @@ function produceStrandedConvergences({
     const { inContextDrawMatchUps, stranded } = nextStranded();
     if (!stranded) return done();
     produced.add(stranded.matchUpId);
-    // what it sent on as a single exit, before an arrival converged it, is withdrawn first, as `convergeCarriedExit` does
-    applyWithdrawnExits({
-      withdrawnExits: withdrawProducedExits({
-        mappedMatchUps: matchUpsMap.mappedMatchUps,
-        sourceMatchUpId: stranded.matchUpId,
-        drawDefinition,
-      }),
+    const result = produceConvergence({
       tournamentRecord,
+      appliedPolicies,
+      inContextDrawMatchUps,
       drawDefinition,
       matchUpsMap,
+      stranded,
       event,
     });
-    const { structure } = findStructure({ drawDefinition, structureId: stranded.structureId });
-    const result = advanceConvergedWinner({
-      params: {
-        tournamentRecord,
-        appliedPolicies,
-        inContextDrawMatchUps,
-        drawDefinition,
-        matchUpsMap,
-        structure,
-        event,
-      },
-      DOUBLE_EXIT: stranded.matchUpStatus,
-      convergedMatchUp: stranded,
-      stack: 'settleHeldExits',
-      drawDefinition,
-      matchUpsMap,
-    });
     if (result?.error) return result;
-    // ...and serves its loser link as a convergence does: an arrival that converged a single exit awarded to its seat
-    // had already sent the first carrier on as that exit's loser, and a double exit has no loser (census A1 wave 3 G5,
-    // COMPASS 16/16 20672521: `West|2|1`'s first carrier stayed in `Southwest|1|1` when the second came through a BYE;
-    // `aByeRecordsNoArrivalByResult`)
-    const served = serveConvergedLoserLink({
-      params: {
-        matchUpStatus: stranded.matchUpStatus,
-        tournamentRecord,
-        appliedPolicies,
-        inContextDrawMatchUps,
-        drawDefinition,
-        matchUpsMap,
-        structure,
-        event,
-      },
-      convergedMatchUp: stranded,
-      stack: 'settleHeldExits',
-      drawDefinition,
-      matchUpsMap,
-    });
-    if (served?.error) return served;
   }
   // at the bound: refused only if a convergence is still stranded (F9 (i), CA 2026-10-24), and recorded for the census
   if (!nextStranded().stranded) return done();
@@ -3520,14 +3500,126 @@ function produceStrandedConvergences({
   return { error: SETTLE_BOUND_REACHED, info: 'produceStrandedConvergences' };
 }
 
-function strandsItsExit({
+/** one stranded convergence, produced: what it sent on as a single exit withdrawn, its exit produced, its loser link served */
+function produceConvergence({
   inContextDrawMatchUps,
+  tournamentRecord,
+  appliedPolicies,
+  drawDefinition,
   matchUpsMap,
-  matchUp,
+  stranded,
+  event,
 }: {
   inContextDrawMatchUps: HydratedMatchUp[];
+  appliedPolicies?: PolicyDefinitions;
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+  stranded: HydratedMatchUp;
+  event?: Event;
+}): ResultType | undefined {
+  // what it sent on as a single exit, before an arrival converged it, is withdrawn first, as `convergeCarriedExit` does
+  applyWithdrawnExits({
+    withdrawnExits: withdrawProducedExits({
+      mappedMatchUps: matchUpsMap.mappedMatchUps,
+      sourceMatchUpId: stranded.matchUpId,
+      drawDefinition,
+    }),
+    tournamentRecord,
+    drawDefinition,
+    matchUpsMap,
+    event,
+  });
+  const { structure } = findStructure({ drawDefinition, structureId: stranded.structureId });
+  const result = advanceConvergedWinner({
+    params: {
+      tournamentRecord,
+      appliedPolicies,
+      inContextDrawMatchUps,
+      drawDefinition,
+      matchUpsMap,
+      structure,
+      event,
+    },
+    DOUBLE_EXIT: stranded.matchUpStatus,
+    convergedMatchUp: stranded,
+    stack: 'settleHeldExits',
+    drawDefinition,
+    matchUpsMap,
+  });
+  if (result?.error) return result;
+  // ...and serves its loser link as a convergence does: an arrival that converged a single exit awarded to its seat
+  // had already sent the first carrier on as that exit's loser, and a double exit has no loser (census A1 wave 3 G5,
+  // COMPASS 16/16 20672521: `West|2|1`'s first carrier stayed in `Southwest|1|1` when the second came through a BYE;
+  // `aByeRecordsNoArrivalByResult`)
+  const served = serveConvergedLoserLink({
+    params: {
+      matchUpStatus: stranded.matchUpStatus,
+      tournamentRecord,
+      appliedPolicies,
+      inContextDrawMatchUps,
+      drawDefinition,
+      matchUpsMap,
+      structure,
+      event,
+    },
+    convergedMatchUp: stranded,
+    stack: 'settleHeldExits',
+    drawDefinition,
+    matchUpsMap,
+  });
+  return served?.error ? served : undefined;
+}
+
+/** what a production is made with besides the draw: read by `strandsItsExit` only to ask `productionMoves` */
+type StrandContext = { tournamentRecord?: Tournament; appliedPolicies?: PolicyDefinitions; event?: Event };
+
+/**
+ * WHETHER PRODUCING A CONVERGENCE WOULD MOVE ANYTHING, asked on a copy of the draw: the production itself
+ * (`produceConvergence`) run there, and the copy read again, stamps apart. What it announces is discarded with the
+ * copy (`withDraftWrites`). An error is the production's own to return, on the draw.
+ */
+function productionMoves({
+  tournamentRecord,
+  appliedPolicies,
+  drawDefinition,
+  matchUp,
+  event,
+}: StrandContext & { drawDefinition: DrawDefinition; matchUp: HydratedMatchUp }): boolean {
+  return withDraftWrites(() => {
+    const copy: DrawDefinition = structuredClone(drawDefinition);
+    const matchUpsMap = getMatchUpsMap({ drawDefinition: copy });
+    const read = () => JSON.stringify(copy, (key, value) => (key === 'updatedAt' ? undefined : value));
+    const before = read();
+    const inContextDrawMatchUps =
+      getAllDrawMatchUps({ inContext: true, drawDefinition: copy, matchUpsMap })?.matchUps ?? [];
+    const stranded = inContextDrawMatchUps.find((candidate) => candidate.matchUpId === matchUp.matchUpId);
+    if (!stranded) return true;
+    const result = produceConvergence({
+      drawDefinition: copy,
+      inContextDrawMatchUps,
+      tournamentRecord,
+      appliedPolicies,
+      matchUpsMap,
+      stranded,
+      event,
+    });
+    return !!result?.error || read() !== before;
+  });
+}
+
+function strandsItsExit({
+  inContextDrawMatchUps,
+  drawDefinition,
+  matchUpsMap,
+  matchUp,
+  context,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
   matchUpsMap: MatchUpsMap;
   matchUp: HydratedMatchUp;
+  context?: StrandContext;
 }): boolean {
   if (matchUp.collectionId || !isDoubleExit(matchUp.matchUpStatus) || !matchUp.winnerMatchUpId) return false;
   const stored = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === matchUp.matchUpId);
@@ -3535,6 +3627,14 @@ function strandsItsExit({
   if (!carriedExitStatus(provenance?.[1]) || !carriedExitStatus(provenance?.[2])) return false;
   const target = inContextDrawMatchUps.find((candidate) => candidate.matchUpId === matchUp.winnerMatchUpId);
   if (!target) return false;
+  // A TARGET THAT IS THE BYE IT HOLDS, WITH NOBODY IN IT AND NOWHERE ON, IS OWED ONLY WHAT A PRODUCTION WOULD MOVE. A
+  // BYE does not always record the exit produced into it (a DOUBLE_ELIMINATION Decider, reached across the Main
+  // final's link, records none), so such a convergence never read as having produced, and every later call's settle
+  // produced there again: the BYE written over itself value for value, announced and stamped each time, on any call
+  // anywhere in the draw (measured 2026-11-18; `aSettledByeTargetIsNotProducedAgain.test.ts`). Where the BYE does record
+  // it (FEED_IN_CHAMPIONSHIP's consolation final, `aCarryArrivingBesideALoneSeatTakesItsOwnSide`) the first production
+  // moves the record and the second does not. So the production is asked, on a copy: what moves nothing is not owed.
+  if (settledByeEnd(target, matchUpsMap) && !productionMoves({ ...context, drawDefinition, matchUp })) return false;
   // a target decided only by an exit awarded to the seat this convergence feeds is still owed its produced exit: the
   // two meet there (RULE 4), as when the convergence came first (census s16 DOUBLE_ELIMINATION 16/11, 20605236:
   // `Backdraw|4|2` held `Main|3|1`'s carried walkover, awarded to the seat `Backdraw|3|2` feeds, and stalled)
@@ -3542,6 +3642,14 @@ function strandsItsExit({
   const storedTarget = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === target.matchUpId);
   const targetProvenance = getSideExitProvenance({ matchUp: storedTarget }) ?? {};
   return !Object.values(targetProvenance).some((entry) => entry?.sourceMatchUpId === matchUp.matchUpId);
+}
+
+/** a BYE as it stands (no winner, no score), nobody in it, and no winner or loser target beyond it */
+function settledByeEnd(target: HydratedMatchUp, matchUpsMap: MatchUpsMap): boolean {
+  if (target.winnerMatchUpId || target.loserMatchUpId || target.sides?.some((side) => side?.participantId))
+    return false;
+  const stored = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === target.matchUpId);
+  return stored?.matchUpStatus === BYE && !stored.winningSide && !checkScoreHasValue({ score: stored.score });
 }
 
 /** the target is decided only by an exit awarded to the side `feeder` delivers to, and nobody sits there */
@@ -3821,15 +3929,18 @@ export function hasHeldExitWork({
   inContextDrawMatchUps,
   drawDefinition,
   matchUpsMap,
+  context,
 }: {
   inContextDrawMatchUps: HydratedMatchUp[];
   drawDefinition: DrawDefinition;
   matchUpsMap: MatchUpsMap;
+  /** what the pass's production is made with (`strandsItsExit` asks it on a copy of the draw) */
+  context?: StrandContext;
 }): boolean {
   return inContextDrawMatchUps.some(
     (matchUp) =>
       !!getHeldExit({ inContextDrawMatchUps, drawDefinition, matchUpsMap, matchUp }) ||
-      strandsItsExit({ inContextDrawMatchUps, matchUpsMap, matchUp }) ||
+      strandsItsExit({ inContextDrawMatchUps, drawDefinition, matchUpsMap, matchUp, context }) ||
       !!getByeCrossing({ inContextDrawMatchUps, drawDefinition, matchUp }) ||
       isHolderBesideBye({ drawDefinition, matchUp }),
   );

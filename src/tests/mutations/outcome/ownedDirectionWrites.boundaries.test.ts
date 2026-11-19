@@ -610,20 +610,22 @@ describe('under v2, a refused outcome returns exactly the result v1 returns', ()
   });
 });
 
-describe('under v2, notes on a double exit are v1s (S7: v1 forwards the calls params to the exits it writes)', () => {
-  it('a double walkover with notes abstains `notes`, and v2 leaves exactly what v1 leaves', () => {
+describe('under v2, notes on a double exit are recorded (batch 5: v1 forwards the calls params to the exits it writes)', () => {
+  it('a double walkover with notes is read off v1s whole write, and v2 leaves exactly what v1 leaves', () => {
     const scenario: Scenario = {
       drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
       steps: [{ target: R1(1), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: NOTED }],
     };
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const applied = () => getDifferentialTally()['shadow:applied']?.compared ?? 0;
     const deferred = () => getDifferentialTally()['shadow:abstain:notes']?.deferred ?? 0;
-    const before = deferred();
+    const before = { applied: applied(), deferred: deferred() };
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
     expect(compared.results).toEqual(v1.results);
-    expect(deferred()).toEqual(before + 1);
+    expect({ applied: applied(), deferred: deferred() }).toEqual({ ...before, applied: before.applied + 1 });
+    expect(v1.v1Writes).toBeGreaterThan(0);
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
-    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.v1Writes).toEqual(0);
     expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
   });

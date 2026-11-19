@@ -113,6 +113,13 @@ import type {
  */
 
 /**
+ * A lucky draw's double exit produces nothing (`doubleExitAdvancement`, CA 2026-11-17): entered, cleared or replaced, it
+ * is read off v1's whole write, the planners' produced exit and its unwind having nothing to state there.
+ */
+const luckyDoubleExit = ({ view, request }: Pick<PlanArgs, 'view' | 'request'>): boolean =>
+  !!view.draw.luckyBased && (isDoubleExit(request.matchUpStatus) || isDoubleExit(view.existing.matchUpStatus));
+
+/**
  * S5: an exit is planned only as a single WALKOVER, DEFAULTED or RETIRED entered with a winner on a matchUp that holds
  * no result, whose loser carries nothing on: `propagateExitStatus` off, or on with nothing to carry (no loser link, or a
  * retirement the policy does not propagate). v1 then directs it as a played result (`directParticipants`): the winner
@@ -176,7 +183,7 @@ function abstainReason(args: PlanArgs): AbstainReason | SeatObligation | undefin
   // its dual's, and its dual is tallied without it. A line's single exit still meets `exitReason` (a DEFAULTED under a
   // scoring policy's `incompleteAssignmentsOnDefault` writes `processCodes`, v1's)
   if (view.line && isDoubleExit(request.matchUpStatus)) return undefined;
-  const exit = exitReason(args);
+  const exit = luckyDoubleExit(args) ? 'exit' : exitReason(args);
   if (typeof exit === 'string') return exit;
   if (satisfiedDoubleExit(view, request, args.route)) return undefined;
   // S4: a score changed beneath an active downstream keeps its winner and re-directs nothing (`apply-values`)
@@ -352,7 +359,11 @@ function wholeCarry(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
  * tally the planners do not write (a group's is among the group's own fields, which a recording carries); a TEAM dual
  * or line the planners do not write (S7 plans a line's result, and the dual it decides); a call with no stamp ledger
  * (`clock`: no captured instant, or one captured without it); a draw stored without its edges, which v1 writes first
- * (`edges`: they are among the matchUps the copy's run changed)
+ * (`edges`: they are among the matchUps the copy's run changed);
+ * a stored winner taken away by a call that names none (`winner`: what S4 does not plan);
+ * a result under a per-matchUp competition policy (`competition`: the state v1 re-derives is the draw's own field);
+ * a schedule `scheduleOps` does not plan (`schedule`: timeItems, the matchUp's own field);
+ * notes the planners do not write (`notes`: a matchUp's own field wherever v1 writes them)
  */
 const RECORDED_WHOLE = new Set<AbstainReason>([
   'exit',
@@ -367,6 +378,10 @@ const RECORDED_WHOLE = new Set<AbstainReason>([
   'team',
   'clock',
   'edges',
+  'winner',
+  'competition',
+  'schedule',
+  'notes',
 ]);
 
 /**
@@ -391,9 +406,19 @@ function recordedWhole(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
   const answered = plan.ops ? unanswered(plan.ops) : RECORDED_WHOLE.has(plan.abstain);
   if (!answered) return plan;
   const recorded = args.recordWhole?.();
-  if (!recorded || args.settles?.(recorded.ops)) return plan;
-  return { ops: recorded.ops, shape: 'local', recordedResult: recorded.written };
+  if (!recorded) return plan;
+  // a predicate that finds work on v1's own write is answered by the passes themselves (`settledOnCopy`): only where
+  // they change nothing at all is the program marked settled, and no predicate is asked of it again
+  const settled = args.settles?.(recorded.ops)
+    ? recorded.provesSettled?.() && settledProgram(recorded.ops)
+    : recorded.ops;
+  if (!settled) return plan;
+  return { ops: settled, shape: 'local', recordedResult: recorded.written };
 }
+
+/** the recorded program, its notices marked settled by proof (`ops.ts` `announceRecorded.settledByProof`) */
+const settledProgram = (ops: OutcomeOp[]): OutcomeOp[] =>
+  ops.map((op) => (op.op === 'announceRecorded' ? { ...op, settledByProof: true } : op));
 
 function carriedWhole(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
   if (takeAdmittedCarry() !== args.request.matchUpId) return plan;
@@ -574,6 +599,9 @@ function planOps(args: PlanArgs): OutcomePlan {
   if (args.dual) return lineDualOps({ ...args, dual: args.dual, drawDefinition });
   // a double exit asked for again: v1 writes nothing (`satisfiedDoubleExit`)
   if (satisfiedDoubleExit(view, request, args.route)) return { ops: [], shape: 'local' };
+  // a refused call has no route and no write (the differential plans it beside its refusal): nothing to state as ops,
+  // as `recordedWhole` records nothing for it. A line's double exit is the one shape no reason above stops without one
+  if (!args.route || !args.write) return { abstain: 'route' };
   return recordedPlanOps(args, drawDefinition, reason);
 }
 
