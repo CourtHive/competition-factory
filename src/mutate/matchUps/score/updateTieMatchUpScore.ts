@@ -9,10 +9,19 @@ import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { isActiveMatchUp } from '@Query/matchUp/activeMatchUp';
 import { findTournamentId } from '@Acquire/findTournamentId';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
+import { isPropagatedExit } from '@Helpers/drawTopology/sideExitProvenance';
+import { isExit } from '@Validators/isExit';
 
 // constants and types
 import { COMPLETED, completedMatchUpStatuses, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { DrawDefinition, Event, MatchUpStatusUnion, TieScoreSourceEnum, Tournament } from '@Types/tournamentTypes';
+import {
+  DrawDefinition,
+  Event,
+  MatchUp,
+  MatchUpStatusUnion,
+  TieScoreSourceEnum,
+  Tournament,
+} from '@Types/tournamentTypes';
 import { PolicyDefinitions, TournamentRecords, MatchUpsMap } from '@Types/factoryTypes';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -108,6 +117,7 @@ export function updateTieMatchUpScore(params: UpdateTieMatchUpScoreArgs): {
     event,
   })?.tieFormat;
 
+  const heldTieFormat = matchUp.tieFormat;
   matchUp.tieFormat = copyTieFormat(tieFormat);
 
   const scoreResult = generateTieMatchUpScore({
@@ -119,6 +129,14 @@ export function updateTieMatchUpScore(params: UpdateTieMatchUpScoreArgs): {
   });
 
   const { winningSide, set, scoreStringSide1, scoreStringSide2 } = scoreResult;
+
+  // A DUAL HOLDING AN EXIT THE CASCADE PUT THERE, PENDING, KEEPS IT AS ITS LINES ARE PLAYED. A double exit's produced
+  // walkover (or a carried exit) stands on the dual with no winner until somebody arrives, and its provenance says where
+  // it came from. Tallied afresh from lines that decide nothing, the dual was written to be played and the provenance
+  // cleared, while the double exit that produced it still stood: an arrival later went on past a dual left to be played
+  // (2026-11-19, TEAM SINGLE_ELIMINATION 8/7 LAVER_CUP, walk seed 39; the line-level neighbour of a dual scored by hand,
+  // `unwindDualDoubleExit`). The dual keeps its exit until its lines decide it.
+  if (keepsPendingCascadeExit(matchUp, winningSide, heldTieFormat)) return { ...SUCCESS, score: matchUp.score };
 
   const setHasValue = set?.side1Score || set?.side2Score;
   if (exitWhenNoValues && !matchUp.score && !setHasValue) {
@@ -202,4 +220,18 @@ export function updateTieMatchUpScore(params: UpdateTieMatchUpScoreArgs): {
     tieFormatRemoved,
     winningSide,
   };
+}
+
+/** the dual holds a pending exit the cascade put there, its lines decide nothing: kept as it stands, its tieFormat too */
+function keepsPendingCascadeExit(
+  matchUp: MatchUp,
+  winningSide?: number,
+  heldTieFormat?: MatchUp['tieFormat'],
+): boolean {
+  const projectsWinner = !!winningSide && [1, 2].includes(winningSide);
+  if (projectsWinner || matchUp.winningSide || !isExit(matchUp.matchUpStatus) || !isPropagatedExit({ matchUp }))
+    return false;
+  if (heldTieFormat) matchUp.tieFormat = heldTieFormat;
+  else delete matchUp.tieFormat;
+  return true;
 }

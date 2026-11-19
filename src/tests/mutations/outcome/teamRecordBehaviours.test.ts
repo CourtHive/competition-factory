@@ -545,3 +545,32 @@ describe('a team an award sends on into a dual that still sides its position is 
     expect([notice?.context, !!notice?.eventId, !!notice?.tournamentId]).toEqual(['updateSidLineUp', false, false]);
   });
 });
+
+describe('a dual holding the walkover a double exit produced keeps it, and its provenance, as its lines are played', () => {
+  it.each([
+    ['cleared', { matchUpStatus: TO_BE_PLAYED }],
+    ['cleared with an empty score', CLEARED],
+  ])('a line %s: the walkover stands, and the team arriving there takes it and goes on', (_label, outcome) => {
+    generate({ drawSize: 8, tieFormatName: USTA_COLLEGE });
+    const exited = dual(1, 4);
+    enter(exited.matchUpId, { matchUpStatus: DOUBLE_WALKOVER });
+    const produced = () => stored(exited.winnerMatchUpId);
+    const provenance = produced().sideExitProvenance;
+    expect([produced().matchUpStatus, !!provenance]).toEqual([WALKOVER, true]);
+
+    enter(dual(2, 2).tieMatchUps[6].matchUpId, outcome);
+    expect(stored(exited.matchUpId).matchUpStatus).toEqual(DOUBLE_WALKOVER);
+    expect([produced().matchUpStatus, produced().sideExitProvenance, produced().winningSide]).toEqual([
+      WALKOVER,
+      provenance,
+      undefined,
+    ]);
+
+    const feeder = dual(1, 3);
+    enter(feeder.matchUpId, { winningSide: 2 });
+    const arrived = feeder.drawPositions[1];
+    expect([produced().matchUpStatus, produced().drawPositions.filter(Boolean)]).toEqual([WALKOVER, [arrived]]);
+    expect(produced().winningSide).toBeDefined();
+    expect(stored(dual(3, 1).matchUpId).drawPositions.filter(Boolean)).toEqual([arrived]);
+  });
+});
