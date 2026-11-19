@@ -430,7 +430,7 @@ A round can be both `hidden` and `embargoed` simultaneously — for example, whe
 ## getTournamentPublishStatus
 
 Returns publish status for tournament-level items (participants, order of play). The status object itself is
-returned, not wrapped in a key; nothing (`undefined`) when nothing has been published.
+returned, not wrapped in a key; an empty object (`{}`) when nothing has been published.
 
 ```js
 const publishStatus = engine.getTournamentPublishStatus({
