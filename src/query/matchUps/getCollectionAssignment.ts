@@ -1,5 +1,6 @@
 import { getCollectionPositionAssignments } from '@Query/hierarchical/tieFormats/getCollectionPositionAssignments';
-import { getPairedParticipant } from '@Query/participant/getPairedParticipant';
+import { getCachedParticipantLookup, HydrationCache } from '@Query/matchUps/hydrationCache';
+import { findPairedParticipant } from '@Query/participant/getPairedParticipant';
 import { getTeamLineUp } from '@Query/drawDefinition/getTeamLineUp';
 import { attributeFilter } from '@Tools/attributeFilter';
 
@@ -11,6 +12,8 @@ import { DOUBLES } from '@Constants/matchUpTypes';
 type GetDrawPositionCollectionAssignmentArgs = {
   positionAssignments: PositionAssignment[];
   tournamentParticipants?: Participant[];
+  /** the read's cache: the pair and the team are then found in its lookup over `tournamentParticipants`, not by a scan */
+  hydrationCache?: HydrationCache;
   /** `participant` template of a supplied participant privacy policy; undefined means no filtering. */
   participantTemplate?: any;
   participantMap?: ParticipantMap;
@@ -37,6 +40,7 @@ export function getCollectionAssignment({
   participantTemplate,
   collectionPosition,
   drawPositions = [],
+  hydrationCache,
   participantMap,
   drawDefinition,
   collectionId,
@@ -72,8 +76,9 @@ export function getCollectionAssignment({
         const pairedParticipant = pairedParticipantId && participantMap[pairedParticipantId]?.participant;
         const participant =
           pairedParticipant ||
-          // resort to brute force
-          getPairedParticipant({
+          // resort to the participant list: the read's lookup over it when there is one, else a scan
+          findPairedParticipant({
+            participantLookup: getCachedParticipantLookup({ hydrationCache, tournamentParticipants }),
             participantIds: assignedParticipantIds,
             tournamentParticipants,
           }).participant;
@@ -92,6 +97,14 @@ export function getCollectionAssignment({
       return { [attribute]: { participantId, teamParticipant, substitutions } };
     }
     return undefined;
+  };
+
+  // the first participant with this id, or with none when the position is unassigned, as the scan answers
+  const firstWithParticipantId = (teamParticipantId?: string) => {
+    const participantLookup = getCachedParticipantLookup({ hydrationCache, tournamentParticipants });
+    return participantLookup
+      ? participantLookup.firstById.get(teamParticipantId)
+      : tournamentParticipants?.find(({ participantId }) => participantId === teamParticipantId);
   };
 
   if (!drawPositions?.length) {
@@ -121,7 +134,7 @@ export function getCollectionAssignment({
         const teamParticipant =
           side?.teamParticipant ||
           (teamParticipantId && participantMap?.[teamParticipantId]?.participant) ||
-          tournamentParticipants?.find(({ participantId }) => participantId === teamParticipantId);
+          firstWithParticipantId(teamParticipantId);
 
         const lineUp =
           side?.lineUp ||
