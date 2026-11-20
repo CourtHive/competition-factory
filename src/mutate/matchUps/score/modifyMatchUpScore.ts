@@ -1,7 +1,7 @@
 import { updateAssignmentParticipantResults } from '@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults';
+import { modifyMatchUpNotice, deferInContextMatchUp, deferredQuery } from '@Mutate/notifications/drawNotifications';
 import { attributeDerivedStatusCodes, splitStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { processCompetitionMatchUp } from '@Mutate/drawDefinitions/competition/processCompetitionMatchUp';
-import { modifyMatchUpNotice, deferInContextMatchUp, deferredQuery } from '@Mutate/notifications/drawNotifications';
 import { clearResolvedSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
 import type { DerivedStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
@@ -428,8 +428,17 @@ function updateTallyIfNeeded({
       }) || structure
     : structure;
 
+  // A GROUP INHERITS ITS CONTAINER'S FORMAT. Hydrated out of its container, a group matchUp storing no format of its
+  // own fell past the container to the draw's, so where the two differ (record soak 2026-11-18, class D8) its sets were
+  // annotated under another format than every other read gives them (whole-draw hydration, the structural index), and a
+  // match tiebreak the container's format decides the match by was credited no game
+  const inheriting =
+    isRoundRobin && tallyStructure !== structure && !tallyStructure.matchUpFormat && structure.matchUpFormat
+      ? { ...tallyStructure, matchUpFormat: structure.matchUpFormat }
+      : tallyStructure;
+
   const { matchUps } = getAllStructureMatchUps({
-    structure: tallyStructure,
+    structure: inheriting,
     afterRecoveryTimes: false,
     tournamentRecord,
     inContext: true,

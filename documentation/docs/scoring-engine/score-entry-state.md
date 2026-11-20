@@ -2,36 +2,36 @@
 title: Score Entry State
 ---
 
-`tods-competition-factory/score-entry-state` is a headless score-entry **draft**: what an operator has typed and chosen
-for one matchUp, before anything is submitted. It is the state engine behind courthive-components' score-entry dialog,
-published on its own entry point so a host with no DOM and no tournament engine (a mobile app, a worker, a server) can
-hold the same draft under the same rules.
+`tods-competition-factory/score-entry-state` is a headless score-entry **state engine**. Its value is a **score
+state**: what an operator has typed and chosen for one matchUp, before anything is submitted. It is the engine behind
+courthive-components' score-entry dialog, published on its own entry point so a host with no DOM and no tournament
+engine (a mobile app, a worker, a server) can hold the same score state under the same rules.
 
 ```js
 import * as scoreEntry from 'tods-competition-factory/score-entry-state';
 ```
 
-The entry point loads the draft and the factory scoring rules it reads, and nothing else. It does not load the package
-root, an engine, global engine state, `async_hooks` or any DOM API, and it ships in both ESM and CommonJS with its own
-type declarations. `verify:score-entry-state` holds that.
+The entry point loads the state engine and the factory scoring rules it reads, and nothing else. It does not load the
+package root, an engine, global engine state, `async_hooks` or any DOM API, and it ships in both ESM and CommonJS with
+its own type declarations. `verify:score-entry-state` holds that.
 
 ## What it owns, and what it does not
 
-The draft owns the score as entered, cell by cell (a half-entered set is kept), the ending (retired, walkover, a double
-exit, a suspension, ...) with its reason code, and the answers derived from them: the score line, whether the result is
-complete, who won, what is wrong, and what Submit would send.
+The score state holds the score as entered, cell by cell (a half-entered set is kept), the ending (retired, walkover, a
+double exit, a suspension, ...) with its reason code, and the answers derived from them: the score line, whether the
+result is complete, who won, what is wrong, and what Submit would send.
 
 It never loads a record, holds a tournament, authorizes a caller, performs advancement, queries a network or submits a
 mutation. The host supplies the matchUp format, any saved score and ending, the statuses its own `SCORE` action refuses,
 and whether a recorded result may be cleared. It submits the outcome itself, for example to a server's `executionQueue`
 as a `setMatchUpStatus` call.
 
-## A draft, start to finish
+## A score state, start to finish
 
 ```js
 import * as scoreEntry from 'tods-competition-factory/score-entry-state';
 
-// open a draft, empty or from a recorded matchUp
+// open a score state, empty or from a recorded matchUp
 let model = scoreEntry.createScoreEntryModel({
   matchUpFormat: 'SET3-S:6/TB7',
   sets: matchUp?.score?.sets,
@@ -76,7 +76,7 @@ returns the **same** object, so a caller can tell a refusal from a change by ide
 
 ## Problems are codes
 
-The draft reports what is wrong as data, and a host words it:
+The state engine reports what is wrong as data, and a host words it:
 
 ```js
 scoreEntry.scoreEntryIssue(model);
@@ -96,6 +96,6 @@ scoreEntry.endingRefusal('RETIRED', view); // 'ENDING_NEEDS_SCORE'
 - a reason code travels as a positional `matchUpStatusCodes` array: the side that did not win at its index for a single
   exit, both for a double exit, index 0 for an ending that resolves nobody;
 - a clear is `{ score: { sets: [] }, matchUpStatusCodes: [] }`, which removes the score and the codes;
-- a format changed in the draft rides along as `matchUpFormat`.
+- a format changed in the score state rides along as `matchUpFormat`.
 
 `setMatchUpStatus` writes the derived score strings into the outcome it is given, so pass a copy if you reuse it.

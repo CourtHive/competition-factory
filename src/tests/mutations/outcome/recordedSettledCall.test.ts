@@ -14,15 +14,15 @@ import { randomSource } from '@Tools/prng';
 
 // constants and types
 import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
-import { COMPLETED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { RecordedCall } from '@Tests/testHarness/outcome/recordedCallHarness';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
-import type { AbstainReason } from '@Mutate/matchUps/outcome/types';
+import { COMPLETED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
+import type { AbstainReason } from '@Mutate/matchUps/outcome/types';
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { MODIFY_MATCHUP } from '@Constants/topicConstants';
-import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import type { Tournament } from '@Types/tournamentTypes';
+import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
@@ -214,8 +214,22 @@ const tally = (key: string) => {
 describe('a recording a settle predicate finds work on, where the passes themselves find none, is v2s', () => {
   const PROVED: [string, AbstainReason, () => Record<string, unknown>][] = [
     ['a qualifier whose removal play downstream holds back', 'link', qualifierHeldBack],
-    ['a line scored in a dual won by WALKOVER, its winner already fed on', 'team', walkoverDualLine],
   ];
+
+  // CA, 2026-11-20 (class 4): a dual decided by its own exit keeps its winner while its lines project none. The line no
+  // longer un-decides the WALKOVER dual, so nothing is taken back from the consolation, no settle predicate finds work on
+  // v1's write, and the recording is kept without the proof: v1's own settle is the only run on a copy. (Before the
+  // ruling this row stood in PROVED, and in the FAULT rows below, as the TEAM line in a FIRST_MATCH_LOSER_CONSOLATION.)
+  it('a line scored in a dual won by WALKOVER, its winner already fed on, keeps the dual and needs no proof (team)', () => {
+    const call = prepareCall(walkoverDualLine);
+    expectRecordedWhole(call, 'team', recorder);
+    settle.onCopy = 0;
+    expect(playCall(OUTCOME_PIPELINE_V2, call).v1Writes).toEqual(0);
+    expect(settle.onCopy).toEqual(1);
+    const line = matchUps().find((m) => m.matchUpId === call.params.matchUpId);
+    const dual = matchUps().find((m) => m.matchUpId === line.matchUpTieId);
+    expect([dual.matchUpStatus, dual.winningSide]).toEqual([WALKOVER, 1]);
+  });
 
   it.each(PROVED)('%s (%s)', (_label, reason, build) => {
     const call = prepareCall(build);

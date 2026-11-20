@@ -1,11 +1,13 @@
+import { lineTakesPlayedOnDualWinner } from '@Mutate/matchUps/matchUpStatus/lineTakesPlayedOnDualWinner';
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
 import { rewritesCarriedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { lineDirectsUnfedDual } from '@Query/matchUp/lineDirectsUnfedDual';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { validateScore } from '@Scoring/analysis/validateScore';
 import { definedAttributes } from '@Tools/definedAttributes';
-import { isDoubleExit } from '@Validators/isExit';
-import { chooseRoute } from './route';
+import { chooseRoute, dualWinningSideChange } from './route';
+import { isDoubleExit, isExit } from '@Validators/isExit';
 
 // constants and types
 import type { OutcomeRequest, OutcomeView, Refusal } from './types';
@@ -292,14 +294,41 @@ function refuseDispatch(request: OutcomeRequest, view: OutcomeView): Refusal | u
       context: { dualMatchUpId: line.dualMatchUpId, dualMatchUpStatus: line.dualMatchUpStatus },
     });
 
+  // row 14 (CA, 2026-11-19; line-decided duals, 2026-11-20): a line whose tally would take away its dual's winner, sent on
+  // to a played-on downstream
+  if (
+    lineTakesPlayedOnDualWinner({
+      projectedWinningSide: line?.projectedWinningSide,
+      autoCalcDisabled: line?.autoCalcDisabled,
+      dualWinningSide: line?.dualWinningSide,
+      lineDecided: line?.dualLineDecided,
+      activeDownstream: view.activeDownstream,
+      isLine: !!line,
+    })
+  )
+    return refuse(14, CANNOT_CHANGE_WINNING_SIDE, {
+      info: "the line would take away its dual's winner, whose downstream has been played on",
+      context: { winningSide },
+      namesMatchUp: true,
+    });
+
   const hasPropagated = !!existing.winningSide || isDoubleExit(existing.matchUpStatus);
   if (!view.activeDownstream || !hasPropagated) return undefined;
 
-  const projected = view.isTeam && flags.enableAutoCalc ? view.dualProjection?.projectedWinningSide : undefined;
-  const matchUpWinner = (winningSide && !view.matchUpTieId) || line?.projectedWinningSide || projected;
+  // a TEAM dual's call that turns auto-calc on is dispatched with the winner its lines project in place of the call's
+  // (`handleTeamAutoCalc`): where they project none, the call names no winner, whatever it was given
+  const autoCalculated = view.isTeam && !!flags.enableAutoCalc;
+  const projected = autoCalculated ? view.dualProjection?.projectedWinningSide : undefined;
+  const matchUpWinner =
+    (!autoCalculated && winningSide && !view.matchUpTieId) || line?.projectedWinningSide || projected;
   if (matchUpWinner) {
     const effectiveWinningSide = view.isTeam && flags.enableAutoCalc ? projected : winningSide;
-    if (effectiveWinningSide === existing.winningSide || (view.matchUpTieId && !dualWinningSideChange))
+    // a line whose own winner stands still changes a dual its lines tally to the other side (`changedWinnerRefusal`)
+    const dualChanges = !!view.matchUpTieId && dualWinningSideChange && !line?.autoCalcDisabled;
+    if (
+      (effectiveWinningSide === existing.winningSide && !dualChanges) ||
+      (view.matchUpTieId && !dualWinningSideChange)
+    )
       return undefined;
     // rows 14 and 13, each written as its literal so `verify:outcome-spec` reads both. v1
     // (`winningSideWithDownstreamDependencies`) names the stored matchUp beside the winningSide (`namesMatchUp`)
@@ -329,10 +358,34 @@ function refuseRoute(given: OutcomeRequest, view: OutcomeView): Refusal | undefi
   const request = projection
     ? { ...given, winningSide: projection.projectedWinningSide, score: projection.score }
     : given;
+  // a TEAM dual's single exit entered with a winner by a call that turns auto-calc on, the lines projecting no winner:
+  // an exit with no winner, or beside a winner it does not name; refused before anything is written (CA, 2026-11-18 and
+  // 2026-11-19), whether the dual is decided or not and whether the exit carries or not. A dual scored by hand (the call
+  // disables auto-calc, or names neither flag) is not projected and keeps the winner it names
+  if (projection && !projection.projectedWinningSide && isExit(given.matchUpStatus) && !!given.winningSide)
+    return refuse(6, INVALID_MATCHUP_STATUS, { info: 'matchUpStatus: ' + given.matchUpStatus });
   const route = chooseRoute(request, view);
   // a line under manual scoring (the dual's auto-calc disabled) goes to `attemptToModifyScore`, not the removal
   if (route === 'remove-directed')
     return view.removalMissingDrawPositions && !view.line?.autoCalcDisabled
+      ? refuse(24, MISSING_DRAW_POSITIONS)
+      : undefined;
+  // a decided result turned into a double exit takes back what it directed first, through the same removal: on a
+  // matchUp holding no drawPositions v1 refuses there, before it writes (record soak 2026-11-18, class D5's residue)
+  if (route === 'completed-to-double-exit' && !view.line && view.removalMissingDrawPositions)
+    return refuse(24, MISSING_DRAW_POSITIONS);
+  // a line whose dual holds no drawPositions, the line directing it or taking back what it directed (v1's
+  // `attemptToSetWinningSide`, before either path writes)
+  if (route === 'winner' && view.line)
+    return lineDirectsUnfedDual({
+      dualUnfed: !!view.removalMissingDrawPositions,
+      dualWinningSideChange: dualWinningSideChange(request, view),
+      projectedWinningSide: view.line.projectedWinningSide,
+      autoCalcDisabled: view.line.autoCalcDisabled,
+      dualWinningSide: view.line.dualWinningSide,
+      lineWinningSide: view.existing.winningSide,
+      winningSide: request.winningSide,
+    })
       ? refuse(24, MISSING_DRAW_POSITIONS)
       : undefined;
   if (route !== 'refused') return undefined;
@@ -350,6 +403,7 @@ export function refuseOutcome(request: OutcomeRequest, view: OutcomeView): Refus
     refuseAgainstDraw(request, view) ??
     refuseSchedule(view) ??
     (view.missingDrawPositions ? refuse(24, MISSING_DRAW_POSITIONS) : undefined) ??
+    (view.heldSeat ? refuse(31, view.heldSeat.error, { context: view.heldSeat.context }) : undefined) ??
     refuseDispatch(request, view) ??
     refuseRoute(request, view)
   );

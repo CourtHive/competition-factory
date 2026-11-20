@@ -1,8 +1,9 @@
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
+import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { ensuredDualSides } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
-import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { isDoubleExit, isExit } from '@Validators/isExit';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 import {
   CLEAR_SCORE,
@@ -13,16 +14,25 @@ import {
   indexed,
   heldByeLoser,
   loserByeArrival,
+  sideDrawPosition,
   standingAwardArrival,
+  storedLoserId,
 } from './planShared';
 
 // constants and types
-import { COMPLETED, DEAD_RUBBER, DEFAULTED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { DrawDefinition, Score, Side } from '@Types/tournamentTypes';
 import { LINEUPS } from '@Constants/extensionConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { LineUp } from '@Types/factoryTypes';
 import type { OutcomeOp } from '../ops';
+import {
+  COMPLETED,
+  DEAD_RUBBER,
+  DEFAULTED,
+  IN_PROGRESS,
+  TO_BE_PLAYED,
+  WALKOVER,
+} from '@Constants/matchUpStatusConstants';
 import type {
   AbstainReason,
   DirectionPlan,
@@ -94,6 +104,7 @@ export function teamReason({
   if (!removing && !correcting && !undeciding && (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide))
     return 'team';
   if (line.autoCalcDisabled || line.dualRewrite.scoreReported || !line.projectedScore) return 'team';
+  if (reDirectsOrUnwinds(view, { removing, correcting })) return 'team';
   // a line given a winner whose own sides do not both hold a participant (no line-up assigned): v1 refuses it before
   // its first write (`directParticipants` → `attemptToModifyScore`'s `validToScore`, MISSING_ASSIGNMENTS)
   if (route === 'winner' && !lineValidToScore(view, request)) return 'team';
@@ -118,6 +129,28 @@ export function teamReason({
   // a line that decides its dual: the dual's own call is planned with it (`decidingLineOps`, S7)
   if (line.projectedWinningSide) return dual && line.projectedStatus === COMPLETED ? undefined : 'team';
   return line.projectedStatus === IN_PROGRESS ? undefined : 'team';
+}
+
+/**
+ * Three line shapes v1 does more for than the line and its dual's tally, each read off v1's whole write:
+ *  - a line corrected from the other side to the dual's own winner: v1 clears the line first and tallies the dual
+ *    without it, and a dual its other lines do not decide (one decided by its own call) is un-decided there and then
+ *    directed again (`attemptToSetWinningSide`, `redirectsUndecidedDual`): taken back and sent on, stamped, announced;
+ *  - a fresh line that hands a decided dual to the other side (a dual decided by its own call, against its lines): v1
+ *    takes the old winner's direction back and directs the new one (`attemptToSetWinningSide`, `handsOver`);
+ *  - a line's own double exit cleared or replaced by a score with no winner: it produced nothing, so there is no
+ *    unwind to plan as a draw matchUp's double exit has one (`unwoundOps`).
+ */
+function reDirectsOrUnwinds(view: OutcomeView, { removing, correcting }: { removing: boolean; correcting: boolean }) {
+  const { line, existing } = view;
+  if (!line) return false;
+  const projectsDualWinner = line.projectedWinningSide === line.dualWinningSide;
+  if (correcting && existing.winningSide !== line.dualWinningSide && projectsDualWinner) return true;
+  // ...and from the dual's winner to the other side under a tally that still names that winner (games or sets
+  // aggregated: the line keeps its score): the same clear, un-deciding and directing again
+  if (correcting && !!line.dualWinningSide && projectsDualWinner && line.talliedByScore) return true;
+  if (!existing.winningSide && line.dualWinningSide && line.projectedWinningSide && !projectsDualWinner) return true;
+  return removing && isDoubleExit(existing.matchUpStatus);
 }
 
 /**
@@ -322,6 +355,24 @@ function assignedLineUpOps(
   const { loserMatchUpId, loserTargetDrawPosition, loserByePassage } = view.targets;
   const { participantId } = loser;
   const awarded = standingAwardArrival(view, loser);
+  const replacedId = view.existing.winningSide ? storedLoserId(view) : undefined;
+  // (a loser held opposite a structural BYE is taken back by the BYE's own path, C21, which announces no event)
+  const replaced = !!replacedId && view.targets.loserTargetSeat?.participantId === replacedId && !heldByeLoser(view);
+  // A loser replaced on a dual that stores a line-up for them: v1 takes them back first and deletes it
+  // (`removeDirectedLoser`), and whether that removal's notice, with the event, is the one the dual's notice keeps turns
+  // on the path the removal takes, which the planners do not follow. The call is v1's whole write (2026-11-19, TEAM
+  // FEED_IN_CHAMPIONSHIP 8/7 and FIRST_MATCH_LOSER_CONSOLATION 8/6, walk seeds 30 and 24, a RETIRED result changed: the
+  // event differed both ways)
+  // A result that stood as a walkover or default is not asked here: its correction is settled as v1's (`settle`).
+  if (
+    replacedId &&
+    loserMatchUpId &&
+    view.existing.matchUpStatus !== WALKOVER &&
+    view.existing.matchUpStatus !== DEFAULTED &&
+    view.targets.loserTargetSeat?.participantId === replacedId &&
+    storedLineUpAtIndex(view, drawDefinition, loserMatchUpId, loserTargetDrawPosition)
+  )
+    return false;
   const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }) ?? {};
   const ops: OutcomeOp[] = [];
   // Carried passages keep their established order; a plain arrival returns from the furthest dual first (C20).
@@ -341,8 +392,9 @@ function assignedLineUpOps(
       lineUp: lineUps[participantId],
       announcedAs: 'updateSidLineUp',
       // The own dual's lineup writer omits the event. An assignment at a standing award already
-      // announced it, and v1 retains that identity when the keyed notices coalesce (C24N).
-      ...(matchUpId === loserMatchUpId && !awarded ? { announcesEvent: false as const } : {}),
+      // announced it, and v1 retains that identity when the keyed notices coalesce (C24N). So does a changed winner:
+      // the loser it replaces there was taken back first, announced with the event (`removeDirectedLoser`)
+      ...(matchUpId === loserMatchUpId && !awarded && !replaced ? { announcesEvent: false as const } : {}),
     });
   }
   // the dual the loser lands in is otherwise untouched (the arrival is written on its structure's assignments): its
@@ -407,7 +459,9 @@ function winnerLineUpOps(args: PlanArgs & { drawDefinition: DrawDefinition }): O
       sideNumber,
       lineUp: lineUps[next.participantId],
       announcedAs: 'updateSidLineUp',
-      announcesEvent: false,
+      // a winner who already stands there is assigned nothing new, and the line-up's notice is the dual's only one;
+      // one placed by this call was announced with the event first (`assignMatchUpDrawPosition`), which v1 keeps
+      ...(view.existing.winningSide === write?.winningSide ? { announcesEvent: false as const } : {}),
     },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId },
   ];
@@ -430,7 +484,10 @@ export function carriedDualLanding(
 ): OutcomeOp[] | undefined {
   const { loserTargetDrawPosition } = view.targets;
   const written = landing.filter((op) => op.op === 'setMatchUpResult');
-  if (!written.length || !loser?.arrives) return landing;
+  if (!written.length) return landing;
+  // a carry written on a dual the loser already stands in (a result relabelled an exit that carries): that dual's own
+  // call still ensures its sides first, which the landing as planned for an arrival does not state
+  if (!loser?.arrives) return undefined;
   const { participantId } = loser;
   // the carry lands on one dual: the one the loser reaches, or past a BYE the dual beyond it (RULE 1, its passage); a
   // carry on past that dual (its own loser link: the carrier placed again, whose assignment writes the team's line-up
@@ -444,20 +501,38 @@ export function carriedDualLanding(
   const seated = reached?.sides?.filter((side) => side.drawPosition) ?? [];
   if (seated.length !== 2) return undefined;
   const rawSides = storedSides(drawDefinition, landedOn);
+  const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS });
+  const loserSideNumber = reached?.sides?.find((side) => side.drawPosition === loserTargetDrawPosition)?.sideNumber;
   const ensuredSides = ensuredDualSides({
     contextSides: reached?.sides?.map((side) =>
       side.drawPosition === loserTargetDrawPosition ? { ...side, participantId } : side,
     ),
-    // The loser's assignment has already called updateSideLineUp, numbering both stored sides.
+    // The loser's assignment has already called updateSideLineUp, numbering both stored sides and writing the team's
+    // line-up, as the draw holds it, on the loser's side: a line-up a team taken back out of that seat left there (a
+    // result cleared) is replaced, not kept (2026-11-19, TEAM FEED_IN_CHAMPIONSHIP 8, walk seed 28)
     rawSides: [1, 2].map((sideNumber) => ({
       ...(rawSides?.find((side) => side.sideNumber === sideNumber) ?? {}),
       sideNumber,
+      ...(sideNumber === loserSideNumber
+        ? { lineUp: makeDeepCopy((lineUps as Record<string, LineUp> | undefined)?.[participantId], false, true) }
+        : {}),
     })),
-    lineUps: firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }),
+    lineUps,
   });
   return landing.map((op) =>
     op.op === 'setMatchUpResult' && op.matchUpId === landedOn ? { ...op, ensuredSides } : op,
   );
+}
+
+/** whether the stored side at the index of the hydrated side holding `drawPosition` holds a line-up */
+function storedLineUpAtIndex(
+  view: OutcomeView,
+  drawDefinition: DrawDefinition,
+  matchUpId: string,
+  drawPosition?: number,
+): boolean {
+  const index = indexed(view, matchUpId)?.sides?.findIndex((side) => side.drawPosition === drawPosition) ?? -1;
+  return index >= 0 && !!storedSides(drawDefinition, matchUpId)?.[index]?.lineUp;
 }
 
 /** a matchUp's sides as stored (not hydrated), read off the draw's structures */
@@ -467,6 +542,34 @@ function storedSides(drawDefinition: DrawDefinition, matchUpId: string): Side[] 
     if (found) return found.sides;
   }
   return undefined;
+}
+
+/**
+ * A line un-decides its dual: v1 takes the dual's winner back out of the next dual and its loser back out of the dual
+ * their link feeds, and with each the line-up the dual stores for them there. The winner's goes where the stored side
+ * at the index of their hydrated side holds one (`positionClear`'s `handleTeamPositionRemoval`), and the key itself off the side
+ * numbered as theirs (`removeSubsequentRoundsParticipant`); the loser's wherever
+ * that stored side exists, with the target's codes derived again and the target announced (`removeDirectedLoser`). The
+ * removal the planners make (`undecidingLineOps`: the dual's own, as any matchUp's) states neither, so a call that
+ * meets one is v1's whole. The loser's side opposite a structural BYE is planned (`removedByeLineUpOps`, C21).
+ */
+export function undecidingLeavesLineUp(view: OutcomeView, drawDefinition: DrawDefinition): boolean {
+  const { targets, existing } = view;
+  const sidesOf = (matchUpId?: string, drawPosition?: number) => {
+    const hydrated = matchUpId ? indexed(view, matchUpId) : undefined;
+    const index = drawPosition ? (hydrated?.sides?.findIndex((side) => side.drawPosition === drawPosition) ?? -1) : -1;
+    const stored = matchUpId && index >= 0 ? storedSides(drawDefinition, matchUpId) : undefined;
+    const sideNumber = hydrated?.sides?.[index]?.sideNumber;
+    return {
+      atIndex: stored?.[index],
+      numbered: stored?.find((side) => !!sideNumber && side.sideNumber === sideNumber),
+    };
+  };
+  const winnerPosition = existing.winningSide ? sideDrawPosition(view, existing.winningSide as 1 | 2) : undefined;
+  const winner = sidesOf(targets.winnerMatchUpId, winnerPosition);
+  // the side numbered as theirs loses the key itself, whatever it holds (`removeSubsequentRoundsParticipant`)
+  if (winner.atIndex?.lineUp || (winner.numbered && 'lineUp' in winner.numbered)) return true;
+  return !heldByeLoser(view) && !!sidesOf(targets.loserMatchUpId, targets.loserTargetDrawPosition).atIndex;
 }
 
 /** C21: a line un-decides its dual; v1 deletes the losing team's entry line-up after releasing its seat. */
@@ -557,4 +660,41 @@ function deciderAssignedLineUpOps(
     });
   }
   return [...ops, { op: 'stampUpdatedAt', entity: 'matchUp', id: loser.matchUpId }];
+}
+
+/**
+ * A team an exit's award sends on into a TEAM dual that already sides its drawPosition (a stored side kept there by an
+ * earlier unwind): v1's placement writes the team's line-up there, as the draw holds it, through its assignment
+ * (`assignTeamLineUp` → `updateSideLineUp`, announced `updateSidLineUp` with neither event nor tournament), after the
+ * position. The quiet placement is otherwise the dual's last writer, so the line-up is stated after it (2026-11-19,
+ * TEAM SINGLE_ELIMINATION 8/7, walk seed 40: a double exit entered again on a dual its line had undone).
+ */
+export function quietOnwardLineUps(view: OutcomeView, drawDefinition: DrawDefinition, ops: OutcomeOp[]): OutcomeOp[] {
+  const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }) ?? {};
+  return ops.flatMap((op): OutcomeOp[] => {
+    if (op.op !== 'setMatchUpDrawPositions' || op.announcesContext !== false) return [op];
+    const target = indexed(view, op.matchUpId);
+    if (target?.matchUpType !== 'TEAM') return [op];
+    const held = new Set((target.drawPositions ?? []).filter(Boolean));
+    const added = (op.drawPositions ?? []).filter((position) => !!position && !held.has(position));
+    const structure = drawDefinition.structures?.find((candidate) => candidate.structureId === target.structureId);
+    const assignments = positionAssignmentsOf(structure) ?? [];
+    // the hydrated side holds the position (its stored side kept it) but not the team: the draw's assignment names it
+    const sided = added.flatMap((position) => {
+      const sideNumber = target.sides?.find((candidate) => candidate.drawPosition === position)?.sideNumber;
+      const participantId = assignments.find((assignment) => assignment.drawPosition === position)?.participantId;
+      return participantId && (sideNumber === 1 || sideNumber === 2) ? [{ sideNumber, participantId }] : [];
+    });
+    return [
+      op,
+      ...sided.map(({ sideNumber, participantId }): OutcomeOp => ({
+        op: 'setSideLineUp',
+        matchUpId: op.matchUpId,
+        sideNumber,
+        lineUp: lineUps[participantId],
+        announcedAs: 'updateSidLineUp',
+        announcesEvent: false,
+      })),
+    ];
+  });
 }

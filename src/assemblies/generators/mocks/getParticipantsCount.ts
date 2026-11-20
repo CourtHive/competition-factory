@@ -19,6 +19,8 @@ export function getParticipantsCount({ participantsProfile, eventProfiles, drawP
     [MALE]: 0,
     [ANY]: 0,
   };
+  // the most of each gender any TEAM draw's tieFormat needs on ONE team; the pool must hold that many per team
+  const teamGenders = { [MALE]: 0, [FEMALE]: 0 };
   let largestDoublesDraw = 0,
     largestSinglesDraw = 0,
     largestTeamSize = 0,
@@ -61,7 +63,8 @@ export function getParticipantsCount({ participantsProfile, eventProfiles, drawP
       if (!requiresUniqueParticipants) {
         largestDoublesDraw = Math.max(largestDoublesDraw, maxDoublesDraw);
       }
-      Object.keys(genders).forEach((key) => (gendersCount[key] += genders[key]));
+      teamGenders[MALE] = Math.max(teamGenders[MALE], genders[MALE] ?? 0);
+      teamGenders[FEMALE] = Math.max(teamGenders[FEMALE], genders[FEMALE] ?? 0);
     } else if (isDoubles) {
       if (requiresUniqueParticipants) {
         const additionalParticipantsCount = (drawSize + alternatesCount) * 2;
@@ -119,6 +122,13 @@ export function getParticipantsCount({ participantsProfile, eventProfiles, drawP
       processDrawProfile({ ...drawProfile, eventType: drawProfile?.eventType ?? drawProfile?.matchUpType });
     }
   }
+  // a team is never smaller than its gendered minimum (3 men's singles and 2 mixed pairs need 5, though the format's
+  // largest line asks 4) — the per-draw path applies the same floor for teamGenders
+  largestTeamSize = Math.max(largestTeamSize, teamGenders[MALE] + teamGenders[FEMALE]);
+  // every pooled team is dealt its gendered minimum, so the pool holds it once per team (it held it once in all)
+  gendersCount[MALE] += teamGenders[MALE] * largestTeamDraw;
+  gendersCount[FEMALE] += teamGenders[FEMALE] * largestTeamDraw;
+
   const individualCompetitorsCount = Math.max(
     largestTeamDraw * largestTeamSize,
     largestDoublesDraw * 2,
@@ -152,5 +162,6 @@ export function getParticipantsCount({ participantsProfile, eventProfiles, drawP
     largestTeamSize,
     participantType,
     gendersCount,
+    teamGenders,
   };
 }

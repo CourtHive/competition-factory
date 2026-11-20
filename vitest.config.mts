@@ -149,11 +149,13 @@ export default defineConfig({
         'src/assemblies/governors/**',
         'src/assemblies/tools/**',
         'src/fixtures/data/**',
-        // The v2 outcome pipeline runs only under OUTCOME_PIPELINE=differential (or v2). On the default
-        // run it is barely executed, so counting it would make every v2 PR spend coverage margin it
-        // cannot earn. CA, 2026-10-02: measure it where it runs, on the path to a release. `verify.yml`
-        // sets the differential mode for PRs into master and pushes to master, which lifts this.
-        ...(process.env.OUTCOME_PIPELINE === 'differential' ? [] : ['src/mutate/matchUps/outcome/**']),
+        // The v2 outcome pipeline is measured wherever it runs (CA, 2026-10-02: measure it where it runs). Since
+        // the flip (Path A step 3) it is the default, so an unset OUTCOME_PIPELINE, `v2` and `differential` all
+        // measure it, and `verify.yml` runs coverage under v2 into dev and under the differential on the path to a
+        // release. Only a run on the v1 fallback (OUTCOME_PIPELINE=v1) leaves it out, where it is barely executed.
+        // v1's code stays in the measured set on every run: v2 hands every call it does not own to v1 whole, so
+        // that code still executes under v2; nothing v1-only is excluded (a decision for CA, not this file).
+        ...(process.env.OUTCOME_PIPELINE === 'v1' ? ['src/mutate/matchUps/outcome/**'] : []),
       ],
       provider: 'v8',
       // Two-tier coverage gates:

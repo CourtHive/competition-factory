@@ -10,6 +10,9 @@ import type { MatchUpWrite, Refusal } from './types';
  * (`refuseRoute`: rows 28 and 6), so no status code is deferred; `MISSING_ASSIGNMENTS` stays, for the calls v2
  * abstains from (a line under manual scoring, a line given a winner with no line-up assigned): where v2 has a complete
  * plan for the call it is a divergence (`compareDecisions`, `planned`).
+ *
+ * The direction check (`decide.ts` `checkDirection`, § 5 rule 1) is asked of the calls the planners write. A call
+ * recorded whole is compared by its shadow, the whole record, and not against the planners' direction (CA, 2026-11-19).
  */
 export const APPLY_STAGE_CODES: ReadonlySet<string> = new Set([
   // INVALID_TIME, INVALID_DATE and ANACHRONISM are not: v2 refuses a schedule as v1's writer refuses it, rows 16, 25

@@ -1,18 +1,19 @@
-import { takeAdmittedCarry, withPendingCarry, type CarrySource } from './plan/pendingCarry';
 import { clearedSingleExit, correctedSingleExit, refreshedArrivalOps, relabelledExit } from './plan/exitCorrections';
 import { getCapturedClock, getCapturedStamps, writeLegacyEnabled } from '@Global/state/globalState';
 import { producedRelayAfterOps, unwoundOps, unwoundPath, unwoundView } from './plan/unwindPath';
 import { standaloneBareWinnerOps, standaloneCarriedWinnerOps } from './plan/standaloneIndirect';
+import { carriedReason, heldByeCarryWithdrawal, retainedByeCarry } from './plan/carriedExit';
+import { takeAdmittedCarry, withPendingCarry, type CarrySource } from './plan/pendingCarry';
 import { retainedCarriedAwardOps, terminalOccupiedWinnerOps } from './plan/terminalAward';
 import { notesReason, scheduleOps, scheduleReason } from './plan/schedulePlan';
 import { autoCalcWrite, resultOps, writtenScore } from './plan/resultOps';
 import { producedExitOps, producedReason } from './plan/producedExit';
-import { carriedReason, heldByeCarryWithdrawal, retainedByeCarry } from './plan/carriedExit';
+import { doubleExitSeatOps, keptOutByeChain } from './plan/byeChain';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { convergedReason } from './plan/carriedConvergence';
 import { groupTally, writtenLine } from './plan/tallyOps';
 import { withFinishingOrder } from './finishingOrderOps';
-import { doubleExitSeatOps, keptOutByeChain } from './plan/byeChain';
+import { relabelledLoserElsewhere } from './direction';
 import {
   APPLY_VALUES,
   CLEAR_SCORE,
@@ -33,6 +34,7 @@ import {
   satisfiedDoubleExit,
   seatBye,
   structureStamps,
+  winnerStandsPastUndecided,
 } from './plan/planShared';
 import {
   givenWinnerReason,
@@ -42,6 +44,7 @@ import {
   unwoundConvergedFor,
   unwoundKeptOutOps,
   unwoundThrough,
+  withdrawnCarryThrough,
 } from './plan/givenWinner';
 import {
   carriedDualLanding,
@@ -53,7 +56,9 @@ import {
   deciderLineUpOps,
   loserLineUpBeyond,
   removedByeLineUpOps,
+  undecidingLeavesLineUp,
   loserLineUpCarry,
+  quietOnwardLineUps,
   teamReason,
 } from './plan/teamPlan';
 import {
@@ -120,6 +125,15 @@ const luckyDoubleExit = ({ view, request }: Pick<PlanArgs, 'view' | 'request'>):
   !!view.draw.luckyBased && (isDoubleExit(request.matchUpStatus) || isDoubleExit(view.existing.matchUpStatus));
 
 /**
+ * A double exit asked for again is satisfied, and v1 writes nothing of it (`satisfiedDoubleExit`). One stored with no
+ * `scoredTime` (a record older than the stamp, or one a failed write left) is still stamped by v1 where the call ends
+ * (`applyScoredTime`: a scored matchUp holding none is given one, with no notice and no `updatedAt`). That one write is
+ * read off v1's whole write.
+ */
+const unstampedDoubleExit = ({ view, request, route }: Pick<PlanArgs, 'view' | 'request' | 'route'>): boolean =>
+  satisfiedDoubleExit(view, request, route) && !view.existing.scoredTime;
+
+/**
  * S5: an exit is planned only as a single WALKOVER, DEFAULTED or RETIRED entered with a winner on a matchUp that holds
  * no result, whose loser carries nothing on: `propagateExitStatus` off, or on with nothing to carry (no loser link, or a
  * retirement the policy does not propagate). v1 then directs it as a played result (`directParticipants`): the winner
@@ -169,12 +183,38 @@ function exitReason(args: ExitReasonArgs): AbstainReason | SeatObligation | unde
   return undefined;
 }
 
+/**
+ * Shapes the factory never makes, which a record converted from elsewhere may hold (record soak 2026-11-18): the call is
+ * v1's whole there, read off its write on a copy.
+ */
+function convertedShapeReason({ request, view, write, route }: PlanArgs): AbstainReason | undefined {
+  // a relabel whose loser does not stand where their link sends them: v1 settles them where they stand, or seats them
+  if (route === APPLY_VALUES && relabelledLoserElsewhere(request, view)) return 'loser';
+  // a winner taken away or changed, who stands beyond an undecided next matchUp: v1's removal reaches every later round
+  const takenBack = !!view.existing.winningSide && write?.winningSide !== view.existing.winningSide;
+  return takenBack && !view.line && winnerStandsPastUndecided(view) ? 'winner' : undefined;
+}
+
+/**
+ * A line on a dual decided by its own exit or call that keeps its winner (CA, 2026-11-20, class 4): v1 writes the line
+ * and leaves the dual as it stands, which no planner plans. Asked last, so a call another reason already abstains from
+ * keeps that reason: only a call the planners would otherwise plan is handed to v1's whole write (`team`). So is a line
+ * whose tally relabels the dual's own exit a played result, which settles the exit's carry (`relabelDualExitByTally`).
+ */
 function abstainReason(args: PlanArgs): AbstainReason | SeatObligation | undefined {
+  const reason = abstainReasonOf(args);
+  if (reason || !(args.view.line?.keepsDualDecision || args.view.line?.relabelsDualExit)) return reason;
+  return 'team';
+}
+
+function abstainReasonOf(args: PlanArgs): AbstainReason | SeatObligation | undefined {
   const { request, view, write, direction } = args;
   const team = teamReason(args);
   if (team) return team;
   if (writeLegacyEnabled()) return 'write-mode';
   if (!view.draw.storesEdges) return 'edges';
+  const converted = convertedShapeReason(args);
+  if (converted) return converted;
   if (scheduleReason(args)) return 'schedule';
   if (notesReason(request, view, args.route)) return 'notes';
   if (request.matchUpStatusCodes?.length) return 'status-codes';
@@ -183,6 +223,7 @@ function abstainReason(args: PlanArgs): AbstainReason | SeatObligation | undefin
   // its dual's, and its dual is tallied without it. A line's single exit still meets `exitReason` (a DEFAULTED under a
   // scoring policy's `incompleteAssignmentsOnDefault` writes `processCodes`, v1's)
   if (view.line && isDoubleExit(request.matchUpStatus)) return undefined;
+  if (unstampedDoubleExit(args)) return 'exit';
   const exit = luckyDoubleExit(args) ? 'exit' : exitReason(args);
   if (typeof exit === 'string') return exit;
   if (satisfiedDoubleExit(view, request, args.route)) return undefined;
@@ -455,6 +496,7 @@ function lineDualPlan(
               line.projectedTieMatchUps,
               request.matchUpId as string,
               writtenScore(request, write),
+              args.view.existing.score as Score | undefined,
             ),
           }
         : matchUp,
@@ -502,6 +544,8 @@ function undecidingLineOps(args: PlanArgs & { dual: DualCall; drawDefinition: Dr
   const line = view.line;
   const write = args.write;
   if (!line || !write || dual.route !== REMOVE_DIRECTED) return { abstain: 'team' };
+  // a line-up the dual stores for the team taken back, in the next dual or the loser's: v1 takes it too
+  if (undecidingLeavesLineUp(dual.view, args.drawDefinition)) return { abstain: 'team' };
   const dualPlan = lineDualPlan(args, line, write);
   if (!dualPlan.ops) return dualPlan;
   // the dual's removal writes it as its tally leaves it (the projected score, no winner); `scoreModification` returns
@@ -510,7 +554,13 @@ function undecidingLineOps(args: PlanArgs & { dual: DualCall; drawDefinition: Dr
   if (removedLineUps === false) return { abstain: 'team' };
   const dualOps = dualPlan.ops.map((op): OutcomeOp =>
     op.op === 'setMatchUpResult' && op.matchUpId === line.dualMatchUpId
-      ? { ...op, dualTally: { ...op.dualTally, unreturned: true } }
+      ? {
+          ...op,
+          // the status is the tally's (`updateTieMatchUpScore`), not the removal's: a dual holding a line's result is in
+          // progress though its score reads 0-0 (a doubles line that does not yet win its collection's point)
+          ...(line.projectedStatus ? { matchUpStatus: line.projectedStatus } : {}),
+          dualTally: { ...op.dualTally, unreturned: true },
+        }
       : op,
   );
 
@@ -569,7 +619,10 @@ function decidingLineOps(args: PlanArgs & { dual: DualCall; drawDefinition: Draw
   const placement = ops.findIndex(
     (op) => op.op === 'setMatchUpDrawPositions' && op.matchUpId === dual.direction?.winner?.matchUpId,
   );
-  if (carry) ops.splice(placement < 0 ? ops.length : placement + 1, 0, carry);
+  if (carry) {
+    const at = placement < 0 ? ops.length : Math.max(carriedAfter(ops, placement, dual), reservedAfter(ops, dual));
+    ops.splice(at, 0, carry);
+  }
   // the dual the loser lands in, otherwise untouched (the arrival is written on its structure's assignments), is stamped
   // by the carry's notice
   // past a BYE, the dual beyond takes the losing team's line-up first (its assignment's), as v1 announces the two
@@ -589,6 +642,51 @@ function decidingLineOps(args: PlanArgs & { dual: DualCall; drawDefinition: Draw
   return { ops: [...resultOps(request, write, request.matchUpId as string), ...ops], shape: dualPlan.shape };
 }
 
+/**
+ * Where the winning team's line-up is carried onto the next dual: after the placement, and past a BYE after the
+ * passage on. v1's `propagateLineUp` runs once `assignDrawPosition` has returned, the BYE's advancement into the
+ * matchUp beyond among it, so the next dual's `directWinner` notice follows the matchUp beyond's assignment (2026-11-19,
+ * FIRST_MATCH_LOSER_CONSOLATION 8, a consolation dual decided by its line, its next dual a BYE)
+ */
+function carriedAfter(ops: OutcomeOp[], placement: number, dual: DualCall): number {
+  const inContext = dual.view.inContextDrawMatchUps;
+  const stampOf = (at: number, matchUpId: string) => {
+    const op = ops[at];
+    return op?.op === 'stampUpdatedAt' && op.entity === 'matchUp' && op.id === matchUpId;
+  };
+  let at = placement + 1;
+  let held = (ops[placement] as { matchUpId: string }).matchUpId;
+  if (stampOf(at, held)) at += 1;
+  let passed = false;
+  for (;;) {
+    const onward = inContext?.find((matchUp) => matchUp.matchUpId === held)?.winnerMatchUpId;
+    const op = ops[at];
+    if (!onward || op?.op !== 'setMatchUpDrawPositions' || op.matchUpId !== onward) break;
+    passed = true;
+    held = onward;
+    at += 1;
+    if (stampOf(at, held)) at += 1;
+  }
+  return passed ? at : placement + 1;
+}
+
+/**
+ * Past the FIRST_MATCHUP reservation the winner's arrival makes: v1's `propagateConsolationBye` runs within
+ * `assignMatchUpDrawPosition`, before `directWinner` carries the line-up, so the consolation BYE dual's
+ * `setMatchUpStatusBye` notice precedes the next dual's `directWinner` (2026-11-20, FIRST_MATCH_LOSER_CONSOLATION 8,
+ * a Main dual decided by its line beside a first-round feeder already decided). v2 writes the reservation among the
+ * loser's arrival, after the placement; the carry follows it. Without a reservation, nothing moves (0).
+ */
+function reservedAfter(ops: OutcomeOp[], dual: DualCall): number {
+  const reservation = dual.view.targets.reservations?.[dual.request.winningSide as 1 | 2];
+  if (reservation?.kind !== 'reserve') return 0;
+  const bye = ops.findIndex((op) => op.op === 'setMatchUpBye' && op.matchUpId === reservation.matchUpId);
+  if (bye < 0) return 0;
+  const stamp = ops[bye + 1];
+  const stamped = stamp?.op === 'stampUpdatedAt' && stamp.entity === 'matchUp' && stamp.id === reservation.matchUpId;
+  return bye + (stamped ? 2 : 1);
+}
+
 /** the call's plan as ops, or the reason it is v1's */
 function planOps(args: PlanArgs): OutcomePlan {
   const reason = abstainReason(args);
@@ -602,7 +700,11 @@ function planOps(args: PlanArgs): OutcomePlan {
   // a refused call has no route and no write (the differential plans it beside its refusal): nothing to state as ops,
   // as `recordedWhole` records nothing for it. A line's double exit is the one shape no reason above stops without one
   if (!args.route || !args.write) return { abstain: 'route' };
-  return recordedPlanOps(args, drawDefinition, reason);
+  const planned = recordedPlanOps(args, drawDefinition, reason);
+  // a team an award sends on into a dual that already sides its position takes its line-up there (`quietOnwardLineUps`)
+  return view.isTeam && planned.ops
+    ? { ...planned, ops: quietOnwardLineUps(view, drawDefinition, planned.ops) }
+    : planned;
 }
 
 /** A propagated relabel returns the direction context even when its source previously held a played result. */
@@ -654,6 +756,55 @@ function keptOutSeatOps(view: OutcomeView, seat: { structureId: string; drawPosi
   if (!view.targets.loserTargetSeat?.opponentHeld) return seatBye(seat);
   const chain = keptOutByeChain(view, seat);
   return chain ? [...chain.assigns, ...chain.writes] : [];
+}
+
+/**
+ * The matchUp a loser seated opposite a BYE goes on into: the clean one beyond (`loserThroughBye`), a passage's end, or
+ * where the unwind left their position standing (`unwoundThrough`); otherwise where the call withdraws the old loser's
+ * carry and their position still stands (`withdrawnCarryThrough`, C28), returned as `withdrawnThrough` too
+ */
+function loserThroughBye(
+  view: OutcomeView,
+  loser: DirectionPlan['loser'] | undefined,
+  plainPassage: ReturnType<typeof loserByeArrival>,
+  unwound: OutcomeOp[],
+  ops: OutcomeOp[],
+  sourceMatchUpId?: string,
+) {
+  if (!loser?.arrives || !view.targets.loserTargetSeat?.opponentBye) return {};
+  const standing =
+    view.targets.loserThroughBye ??
+    view.targets.loserByePassage?.through ??
+    plainPassage?.through ??
+    unwoundThrough(view, unwound, sourceMatchUpId);
+  if (standing) return { loserThrough: standing };
+  const withdrawnThrough = withdrawnCarryThrough(view, ops);
+  return { loserThrough: withdrawnThrough, withdrawnThrough };
+}
+
+/**
+ * The line-up the new loser's assignment writes on the matchUp beyond the BYE whose withdrawn carry v1's settle pass
+ * re-derives after the call (`reconcileScoredTimes`): that pass is the matchUp's last writer and names its notice, so the
+ * line-up's write announces nothing of its own (C28, a changed winner)
+ */
+function quietUnderReconcile(
+  lineUps: OutcomeOp[] | false,
+  through: { matchUpId: string } | undefined,
+  ops: OutcomeOp[],
+): OutcomeOp[] | false {
+  const reconciled =
+    through &&
+    ops.some(
+      (op) =>
+        op.op === 'setMatchUpResult' &&
+        op.matchUpId === through.matchUpId &&
+        op.withdrawsCarry &&
+        op.announcedAs === 'reconcileScoredTimes',
+    );
+  if (!lineUps || !reconciled) return lineUps;
+  return lineUps.map((op) =>
+    op.op === 'setSideLineUp' && op.matchUpId === through.matchUpId ? { ...op, quiet: true as const } : op,
+  );
 }
 
 /** A recorded single-call plan after the shared refusal, dual and no-op gates. */
@@ -708,21 +859,30 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   const plainPassage = loserByeArrival(view, loser, args.route, write);
   // a participant placed opposite a BYE goes on through it, a loser fed onto the seat or a winner into a BYE-held
   // target: their position joins the next matchUp, which is stamped
-  const loserThrough =
-    loser?.arrives && view.targets.loserTargetSeat?.opponentBye
-      ? (view.targets.loserThroughBye ??
-        view.targets.loserByePassage?.through ??
-        plainPassage?.through ??
-        unwoundThrough(view, unwound, request.matchUpId))
-      : undefined;
-  // the loser's own position, where the unwind left it standing in the matchUp beyond (`unwoundThrough`)
+  const { loserThrough, withdrawnThrough } = loserThroughBye(
+    view,
+    loser,
+    plainPassage,
+    unwound,
+    ops,
+    request.matchUpId,
+  );
+  // the loser's own position, where the unwind left it standing in the matchUp beyond (`unwoundThrough`). Not a carry
+  // this call withdraws there (`withdrawnCarryThrough`): the withdrawal deleted the winner's key, and the re-keyed
+  // positions leave it deleted, as v1's assignment does
   const placedThrough =
-    loserThrough && !view.targets.loserThroughBye && !view.targets.loserByePassage?.through && !plainPassage?.through;
+    loserThrough &&
+    !withdrawnThrough &&
+    !view.targets.loserThroughBye &&
+    !view.targets.loserByePassage?.through &&
+    !plainPassage?.through;
   const winnerThrough =
     winner && view.targets.winner?.hasBye ? view.targets.winnerThroughBye?.[write.winningSide as 1 | 2] : undefined;
   // a dual's own call: its loser's assignment writes the team's line-up where it lands (S7)
   const dualCall = view.isTeam && !view.line && !args.asDual;
-  const lineUps = dualCall ? dualLineUpOps({ ...args, drawDefinition }, loser, loserThrough) : [];
+  const lineUps = dualCall
+    ? quietUnderReconcile(dualLineUpOps({ ...args, drawDefinition }, loser, loserThrough), withdrawnThrough, ops)
+    : [];
   if (!lineUps) return { abstain: 'team' };
   // a carried exit's write on the matchUp the loser lands in (S5)
   // The carrier's assignment returns before progressExitStatus announces its provenance beside the BYE.
@@ -812,7 +972,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
         matchUpId: line.dualMatchUpId,
         matchUpWrite: { matchUpStatus: line.projectedStatus, winningSide: line.projectedWinningSide } as MatchUpWrite,
         score: line.projectedScore as Score | undefined,
-        tieMatchUps: writtenLine(line.projectedTieMatchUps, matchUpId, score),
+        tieMatchUps: writtenLine(line.projectedTieMatchUps, matchUpId, score, view.existing.score as Score | undefined),
       }
     : { matchUpId, matchUpWrite: write, score, matchUpFormat: request.matchUpFormat };
   // Tally and result notices can stamp the same entity. Without the call's ledger, ordered stamp effects remain owed.

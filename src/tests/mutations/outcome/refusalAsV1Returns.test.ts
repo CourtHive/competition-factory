@@ -8,6 +8,10 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { setClock } from '@Tools/clock';
 
 // constants and types
+import { CANNOT_CHANGE_WINNING_SIDE, INVALID_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
+import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
+import { TEAM } from '@Constants/eventConstants';
 import {
   DEFAULTED,
   DOUBLE_DEFAULT,
@@ -16,10 +20,6 @@ import {
   TO_BE_PLAYED,
   WALKOVER,
 } from '@Constants/matchUpStatusConstants';
-import { CANNOT_CHANGE_WINNING_SIDE, INVALID_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
-import { TEAM } from '@Constants/eventConstants';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
@@ -137,6 +137,29 @@ describe("a refusal's context holds the keys v1's holds", () => {
   });
 });
 
+// rows 14 and 13 on a TEAM dual's own call: v1 refused them in its dispatch, after the dual's own writes (its sides and
+// line-ups, announced), so the error left the dual stamped. Asked before those writes, the record is unchanged
+describe('a TEAM dual whose winner has played on, given another result, is refused with the record unchanged', () => {
+  it.each([
+    ['decided by its own call', (dual: any) => [[dual.matchUpId, { winningSide: 2 }]]],
+    ['decided by its lines', (dual: any) => [0, 1].map((at) => [dual.tieMatchUps[at].matchUpId, { winningSide: 2 }])],
+  ])('%s, the other winner named', (_label, decide) => {
+    generate(TEAM_DRAW);
+    const [first, second] = top().filter((matchUp: any) => matchUp.roundNumber === 1);
+    const played = [
+      ...decide(first),
+      [second.matchUpId, { winningSide: 1 }],
+      [first.winnerMatchUpId, { winningSide: 1 }],
+    ];
+    for (const [matchUpId, outcome] of played as [string, Record<string, unknown>][])
+      expect(tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId, outcome }).success).toEqual(true);
+    const call = { matchUpId: first.matchUpId, outcome: { winningSide: 1 } };
+    const v1 = refusedAlike(stored(), call, CANNOT_CHANGE_WINNING_SIDE.code);
+    expect(v1.keys).toEqual(['winningSide', 'matchUp']);
+    expect(v1.result.context.matchUp.matchUpId).toEqual(first.matchUpId);
+  });
+});
+
 describe('a refused call is compared under the differential without a plan', () => {
   // row 6: the dual's seats hold nobody. A line's double exit is the one shape the planners let through with no route
   it.each([DOUBLE_DEFAULT, DOUBLE_WALKOVER])("a line's %s on a dual nobody has reached", (matchUpStatus) => {
@@ -172,11 +195,8 @@ describe('an exit no route accepts on a TEAM dual is refused before the dual is 
     expect(v1.result.info).toEqual(`matchUpStatus: ${outcome.matchUpStatus}`);
   });
 
-  // the same exits a route accepts: without the flag the winner named stands, and a carried exit needs none
-  it.each([
-    ['without the flag', {}],
-    ['carried', { enableAutoCalc: true, propagateExitStatus: true }],
-  ])('a WALKOVER naming a winner is accepted %s, alike', (_label, params) => {
+  // the same exit a route accepts: without the flag the winner named stands
+  it.each([['without the flag', {}]])('a WALKOVER naming a winner is accepted %s, alike', (_label, params) => {
     generate(TEAM_DRAW);
     const prepared = stored();
     const call = { matchUpId: inRound(1).matchUpId, outcome: { matchUpStatus: WALKOVER, winningSide: 2 }, params };
@@ -187,5 +207,16 @@ describe('an exit no route accepts on a TEAM dual is refused before the dual is 
       expect(actual.result).toStrictEqual(v1.result);
       expect(actual.record).toEqual(v1.record);
     }
+  });
+
+  // carried, auto-calc turned on, lines projecting no winner: refused before anything is written (CA, 2026-11-19,
+  // the ruling of 56f04654af), in every mode
+  it('a WALKOVER naming a winner, carried with auto-calc enabled, is refused, alike', () => {
+    generate(TEAM_DRAW);
+    const prepared = stored();
+    const params = { enableAutoCalc: true, propagateExitStatus: true };
+    const call = { matchUpId: inRound(1).matchUpId, outcome: { matchUpStatus: WALKOVER, winningSide: 2 }, params };
+    const v1 = refusedAlike(prepared, call, INVALID_MATCHUP_STATUS.code);
+    expect(v1.result.info).toEqual(`matchUpStatus: ${WALKOVER}`);
   });
 });

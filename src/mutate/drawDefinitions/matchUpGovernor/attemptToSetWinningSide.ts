@@ -1,7 +1,7 @@
-import { removeDirectedParticipants } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { refreshArrivalsFrom } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
-import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { directParticipants } from '@Mutate/matchUps/drawPositions/directParticipants';
+import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { lineDirectsUnfedDual } from '@Query/matchUp/lineDirectsUnfedDual';
 import { checkConnectedStructures } from './checkConnectedStructures';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -9,8 +9,13 @@ import { attemptToModifyScore } from './attemptToModifyScore';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { replaceQualifier } from './replaceQualifier';
 import { placeQualifier } from './placeQualifier';
+import {
+  removalMissingDrawPositions,
+  removeDirectedParticipants,
+} from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 
 // constants
+import { MISSING_DRAW_POSITIONS } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -31,7 +36,32 @@ export function attemptToSetWinningSide(params) {
     return attemptToModifyScore(params);
   }
 
-  if (matchUp.winningSide && matchUp.winningSide !== winningSide) {
+  // § 2 row 24 on a line: its dual holds no drawPositions, and the line would direct it or take back what it directed
+  if (
+    params.isCollectionMatchUp &&
+    lineDirectsUnfedDual({
+      dualUnfed: removalMissingDrawPositions({ structure, targetData: params.targetData }),
+      dualWinningSideChange: params.dualWinningSideChange,
+      projectedWinningSide: params.projectedWinningSide,
+      dualWinningSide: dualMatchUp?.winningSide,
+      lineWinningSide: matchUp.winningSide,
+      autoCalcDisabled: false,
+      winningSide,
+    })
+  )
+    return decorateResult({ result: { error: MISSING_DRAW_POSITIONS }, stack });
+
+  const corrected = !!matchUp.winningSide && matchUp.winningSide !== winningSide;
+  // A FRESH LINE THAT HANDS A DECIDED DUAL TO THE OTHER SIDE (a dual decided by its own call, against its lines): what
+  // the dual directed is taken back first, as for a corrected line. Directed without that, the new winner met the old
+  // one in the next dual and the call returned `EXISTING_POSITION_ASSIGNMENT` after writing the line and the dual
+  // (measured 2026-11-18, TEAM SINGLE_ELIMINATION 4: the final full, the dual left won by a team not in it).
+  const handsOver =
+    !!params.isCollectionMatchUp &&
+    !!dualMatchUp?.winningSide &&
+    !!params.projectedWinningSide &&
+    params.projectedWinningSide !== dualMatchUp.winningSide;
+  if (corrected || handsOver) {
     // only applies when progression is based on WIN_RATIO, e.g. ROUND_ROBIN_WITH_PLAYOFF
     const { connectedStructureIds } = checkConnectedStructures({
       drawDefinition,
@@ -48,7 +78,9 @@ export function attemptToSetWinningSide(params) {
   }
 
   // Seems we need a while loop here to handle repeated propagation of exit statuses?
-  const result = directParticipants(params);
+  const result = directParticipants(
+    redirectsUndecidedDual(params) ? { ...params, dualWinningSideChange: true } : params,
+  );
   if (result.context?.progressExitStatus) Object.assign(context, result.context);
   if (result.error) return decorateResult({ result, stack });
   if (matchUp.winningSide === winningSide) refreshArrivals(params);
@@ -83,6 +115,28 @@ export function attemptToSetWinningSide(params) {
     ),
     stack,
   });
+}
+
+/**
+ * A LINE CORRECTED UNDER A DUAL ITS OTHER LINES DO NOT DECIDE. The correction first clears the line and tallies the dual
+ * without it (`removeDirectedParticipants`); where that tally names no winner (a dual decided by its own call, its
+ * lines level without this one) the dual is un-decided there and what it directed is taken back. The line's new winner
+ * then projects the winner the dual held before, so `dualWinningSideChange`, read before the clear, says nothing
+ * changed, and the dual was written decided again with nobody sent on: COMPLETED, its winner out of the next dual and
+ * its loser out of the dual its link feeds (measured 2026-11-18, TEAM FIRST_MATCH_LOSER_CONSOLATION 8, DOMINANT_DUO).
+ * The dual as it now stands is asked: holding no winner while the lines project one, it is directed.
+ */
+function redirectsUndecidedDual(params: {
+  isCollectionMatchUp?: boolean;
+  dualWinningSideChange?: boolean;
+  projectedWinningSide?: number;
+  matchUpsMap?: MatchUpsMap;
+  matchUpTieId?: string;
+}): boolean {
+  const { matchUpTieId, matchUpsMap, projectedWinningSide, dualWinningSideChange } = params;
+  if (!params.isCollectionMatchUp || dualWinningSideChange || !projectedWinningSide) return false;
+  const dual = matchUpsMap?.drawMatchUps?.find((candidate) => candidate.matchUpId === matchUpTieId);
+  return !!dual && !dual.winningSide;
 }
 
 // the same winner, re-directed into the seat they hold: the arrival they left onward follows the new result

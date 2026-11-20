@@ -1,10 +1,10 @@
+import { addNotice, DEFERRED_PAYLOAD, getTopics, markModified } from '@Global/state/globalState';
 import { scoredTimeAction } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
-import { getInContextMatchUp } from '@Mutate/matchUps/score/modifyMatchUpScore';
+import { UNANNOUNCED_WRITE, UNNAMED_TOURNAMENT } from '@Global/state/noticeIdentity';
 import { applyOutcomeOps, RECORDED_ENTITY, splitScoredTimeCleanup } from './ops';
+import { getInContextMatchUp } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { findStructure } from '@Acquire/findStructure';
-import { addNotice, DEFERRED_PAYLOAD, getTopics, markModified } from '@Global/state/globalState';
-import { UNANNOUNCED_WRITE, UNNAMED_TOURNAMENT } from '@Global/state/noticeIdentity';
 import {
   liveNoticeEffects,
   type NoticeEffects,
@@ -17,10 +17,10 @@ import {
 } from '@Mutate/notifications/drawNotifications';
 
 // constants and types
+import { MODIFY_DRAW_DEFINITION, MODIFY_MATCHUP, UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import type { BuildViewArgs, OutcomeView, PlanShape, Route } from './types';
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { MODIFY_DRAW_DEFINITION, MODIFY_MATCHUP, UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
 import type { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
 import type { ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -975,14 +975,16 @@ function namedWriters(ops: OutcomeOp[]) {
   const settled = new Map<string, string>();
   const lineUpUnevented = new Set<string>();
   // a carry recorded beside the BYE a team's line-up is written on (a dual's passage, S7): v1 records it after the
-  // line-up, so the carry's notice is the matchUp's, with its event
-  const relayed = new Set(ops.flatMap((op) => (op.op === 'mergeSideExitProvenance' ? [op.matchUpId] : [])));
-  for (const op of ops) {
+  // line-up, so the carry's notice is the matchUp's, with its event. Recorded BEFORE the line-up (a team's arrival at a
+  // produced exit, its origin stamped as it is placed), the line-up is the last writer and names the notice
+  const relayedAfter = (at: number, matchUpId: string) =>
+    ops.some((op, index) => index > at && op.op === 'mergeSideExitProvenance' && op.matchUpId === matchUpId);
+  for (const [at, op] of ops.entries()) {
     if ((op.op === 'mergeSideExitProvenance' || op.op === 'setSideExitProvenance') && op.announcedAs) {
       settled.set(op.matchUpId, op.announcedAs);
       lineUpUnevented.delete(op.matchUpId);
     } else if (op.op === 'setSideLineUp') {
-      if (op.quiet || relayed.has(op.matchUpId)) continue;
+      if (op.quiet || relayedAfter(at, op.matchUpId)) continue;
       settled.set(op.matchUpId, op.announcedAs);
       if (op.announcesEvent === false) lineUpUnevented.add(op.matchUpId);
     } else if (

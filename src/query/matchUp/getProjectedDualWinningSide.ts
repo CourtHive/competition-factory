@@ -4,8 +4,8 @@ import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants types and fixtures
+import { COMPLETED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { MatchUpsMap } from '@Types/factoryTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 import {
@@ -46,7 +46,16 @@ export function getProjectedDualWinningSide({
   for (const tieMatchUp of projectedDualMatchUp?.tieMatchUps ?? []) {
     if (tieMatchUp.matchUpId === matchUp.matchUpId) {
       tieMatchUp.winningSide = winningSide;
-      tieMatchUp.score = score;
+      /**
+       * A WINNER NAMED WITH NO SCORE KEEPS THE SCORE THE LINE HOLDS, as the write keeps it (`modifyMatchUpScore`: the
+       * score is replaced only by one the call brings, and blanked only by a walkover). The projection gave the line
+       * the call's score, none, so a dual tallied by games or sets (`aggregateValue`, `scoreValue`, `setValue`) was
+       * projected without the line's: its projected score was not the one `updateTieMatchUpScore` then wrote, and a
+       * winner entered again on a line of a decided dual projected the dual level or lost (found by the record soak,
+       * 2026-11-18: a dual stored 29-43 projected 26-37).
+       */
+      const keepsScore = !!winningSide && !score && matchUpStatus !== WALKOVER;
+      tieMatchUp.score = keepsScore ? tieMatchUp.score : score;
       /**
        * THE PROJECTION MIRRORS THE WRITE. A line entered as a bare `{ winningSide }` — no score, no
        * status — is recorded COMPLETED with that winner (`applyMatchUpValues`: `winningSide && COMPLETED`),

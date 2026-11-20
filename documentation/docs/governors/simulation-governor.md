@@ -207,17 +207,16 @@ The `outcomes` of a `drawProfile` (`mocksEngine.generateTournamentRecord`) are a
 Generates a complete outcome object for a matchUp. See [mocksEngine documentation](../testing/mocks-engine-outcomes.md) for comprehensive details.
 
 ```js
-const outcome = simulationGovernor.generateOutcome({
-  matchUpStatus: 'COMPLETED',
-  winningSide: 1,
+const { outcome } = simulationGovernor.generateOutcome({
   matchUpFormat: 'SET3-S:6/TB7',
+  winningSide: 1,
 });
 ```
 
 **Quick Reference:**
 
 - Creates valid outcome object with score
-- Supports all matchUp statuses (COMPLETED, DEFAULTED, RETIRED, etc.)
+- Draws its matchUpStatus from `matchUpStatusProfile` (COMPLETED, DEFAULTED, RETIRED, etc.)
 - Generates realistic scores based on matchUpFormat
 - Can specify winner or generate randomly
 - See full docs for score generation options

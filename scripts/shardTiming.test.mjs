@@ -157,6 +157,19 @@ test('requires independent verified CI observations in one tier, inventory and w
   }
 });
 
+test('the pr tier calibrates from v2 coverage runs only: weights measured under v1 are a different cohort', () => {
+  const prReport = (day, pipeline) => {
+    const data = shards(day).map((shard) => ({ ...shard, context: { ...shard.context, tier: 'pr', pipeline } }));
+    return mergeTimings(data, inventory, {}, true);
+  };
+  assert.deepEqual(
+    Object.values(calibrate([prReport(1, 'v2'), prReport(2, 'v2')], inventory, 'pr').weights),
+    [1.5, 1.5, 1.5, 1.5],
+  );
+  assert.throws(() => calibrate([prReport(1, 'v1'), prReport(2, 'v1')], inventory, 'pr'), /incorrect pipeline/);
+  assert.throws(() => calibrate([prReport(1, 'v2'), prReport(2, 'v1')], inventory, 'pr'), /mixed calibration cohorts/);
+});
+
 test('new files and changed case inventories use fresh observations instead of stale medians', () => {
   const old = report(1),
     current = report(2);

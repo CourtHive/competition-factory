@@ -1,7 +1,7 @@
 // Shared by the CJS and ESM runtime smokes of `tods-competition-factory/score-entry-state`: given the module, hold two
-// drafts at once, with no DOM and no engine, and prove neither sees the other.
+// score states at once, with no DOM and no engine, and prove neither sees the other.
 // Exported as a function of the module so each format loads it its own way.
-function exerciseDrafts(entry) {
+function exerciseScoreStates(entry) {
   const fail = (message) => {
     throw new Error(`score-entry-state: ${message}`);
   };
@@ -17,10 +17,11 @@ function exerciseDrafts(entry) {
   let second = entry.createScoreEntryModel({ matchUpFormat: 'SET1-S:TB10' });
   second = entry.chooseEnding(second, { kind: 'side', sideNumber: 2, status: 'WALKOVER' });
 
-  if (JSON.stringify(blank) !== frozen) fail('a transition wrote into the draft it was given');
-  if (entry.scoreString(first) !== '4-6 3-6') fail(`first draft reads ${entry.scoreString(first)}`);
-  if (entry.winningSide(first) !== 2 || entry.matchUpStatus(first) !== 'COMPLETED') fail('first draft is not decided');
-  if (entry.hasEntry(second) || entry.winningSide(second) !== 1) fail('second draft saw the first');
+  if (JSON.stringify(blank) !== frozen) fail('a transition wrote into the score state it was given');
+  if (entry.scoreString(first) !== '4-6 3-6') fail(`first score state reads ${entry.scoreString(first)}`);
+  if (entry.winningSide(first) !== 2 || entry.matchUpStatus(first) !== 'COMPLETED')
+    fail('first score state is not decided');
+  if (entry.hasEntry(second) || entry.winningSide(second) !== 1) fail('second score state saw the first');
   if (entry.typeDigit(first, { cell: G(5, 1), digit: 1 }) !== first) fail('a refused transition must return its input');
 
   const view = { model: first };
@@ -33,4 +34,4 @@ function exerciseDrafts(entry) {
   return Object.keys(entry).length;
 }
 
-module.exports = { exerciseDrafts };
+module.exports = { exerciseScoreStates };

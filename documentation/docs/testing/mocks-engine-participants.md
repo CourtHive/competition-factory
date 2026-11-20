@@ -633,6 +633,8 @@ When `participants` is a non-empty array:
 
 The full pattern — generate canonical shape, then infill positions and outcomes from parsed source data:
 
+<!-- doc-mock-examples:ignore — buildParticipantsFromUpstream is the reader's own parser -->
+
 ```js
 import { mocksEngine, tournamentEngine } from 'tods-competition-factory';
 

@@ -149,6 +149,8 @@ const loadEvent = (engine: any = tournamentEngine) => engine.setState(structured
 
 A seed configured before generation reproduces the draw: positions, BYEs, qualifier slots, and the ids it mints.
 
+<!-- doc-mock-examples:ignore — placements() is the test file's helper -->
+
 ```ts
 // randomnessExamples.test.ts › a seeded source regenerates the same draw: positions, byes, qualifiers and ids
 const drawProfiles = [{ drawSize: 32, participantsCount: 25, qualifiersCount: 2 }];

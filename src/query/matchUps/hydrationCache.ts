@@ -1,7 +1,8 @@
+import { buildParticipantLookup, ParticipantLookup } from '@Query/participants/participantLookup';
 import { getVenueData } from '@Query/venues/getVenueData';
 
 // constants and types
-import { Tournament } from '@Types/tournamentTypes';
+import { Participant, Tournament } from '@Types/tournamentTypes';
 
 /**
  * Lookups shared by every matchUp hydrated in ONE read. A query creates it (or receives it from the query
@@ -12,9 +13,13 @@ import { Tournament } from '@Types/tournamentTypes';
  *
  * Venue data is keyed by record and then by venueId, so a cache handed on to a query over a different
  * record, or a linked one, cannot answer for it. A miss (unknown venueId) is cached too.
+ *
+ * A participant lookup is keyed by the participant LIST it indexes (the array itself), for the same reason: a
+ * read that hydrates from two lists gets two lookups.
  */
 export type HydrationCache = {
   venueData: WeakMap<Tournament, Map<string, VenueData | undefined>>;
+  participantLookups?: WeakMap<Participant[], { size: number; lookup?: ParticipantLookup }>;
 };
 
 /** What hydration reads from getVenueData: the names it attaches to a schedule. */
@@ -26,7 +31,32 @@ export type VenueData = {
 };
 
 export function createHydrationCache(): HydrationCache {
-  return { venueData: new WeakMap() };
+  return { venueData: new WeakMap(), participantLookups: new WeakMap() };
+}
+
+/**
+ * The lookup over this participant list, built on first use in the read and shared by every matchUp after it.
+ * Hydration without a `participantMap` found each side's participant, each individual of a pair, each line's team
+ * and each doubles line's pair by scanning the whole list; the lookup answers the same from a Map.
+ *
+ * Undefined without a cache, or for a list a lookup cannot answer for (`buildParticipantLookup`): the caller scans.
+ * Nothing in a read adds or re-keys a participant, which is what makes the snapshot safe. A cache held past its
+ * read, against this file's rule, is rebuilt when the list's length has changed; an in-place edit it cannot see.
+ */
+export function getCachedParticipantLookup(params: {
+  tournamentParticipants?: Participant[];
+  hydrationCache?: HydrationCache;
+}): ParticipantLookup | undefined {
+  const { hydrationCache, tournamentParticipants } = params;
+  if (!hydrationCache || !Array.isArray(tournamentParticipants)) return undefined;
+
+  hydrationCache.participantLookups ??= new WeakMap();
+  let cached = hydrationCache.participantLookups.get(tournamentParticipants);
+  if (cached?.size !== tournamentParticipants.length) {
+    cached = { size: tournamentParticipants.length, lookup: buildParticipantLookup(tournamentParticipants) };
+    hydrationCache.participantLookups.set(tournamentParticipants, cached);
+  }
+  return cached.lookup;
 }
 
 /**

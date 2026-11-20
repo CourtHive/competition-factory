@@ -84,8 +84,10 @@ export function addFinishingRounds({
       ...roundNumbers.map((roundNumber) => {
         const finishingRound = (roundsCount ?? 0) + 1 - roundNumber - finishingRoundOffset;
         const matchUpsCount = roundProfile[roundNumber].matchUpsCount;
-        const finishingData = {
-          finishingPositionRange: {},
+        const finishingData: {
+          finishingRound: number;
+          finishingPositionRange?: { loser: number[]; winner: number[] };
+        } = {
           finishingRound,
         };
 
@@ -101,7 +103,11 @@ export function addFinishingRounds({
         const slicer = upcomingMatchUps + finalPosition - matchUpsCount;
         const loser = finishingRange(positionRange.slice(slicer));
         const winner = finishingRange(positionRange.slice(0, slicer), true);
-        finishingData.finishingPositionRange = { loser, winner };
+        // A RANGE THAT CANNOT BE DERIVED IS ABSENT, as it is on a matchUp with no roundNumber: a structure whose rounds
+        // are not all numbered (results-only records: one numbered matchUp among unnumbered ones) leaves a slice empty,
+        // and the minimum of nothing is Infinity, which was stored (record soak 2026-11-18) and serialised as null
+        const derived = [...loser, ...winner].every((position) => Number.isFinite(position));
+        if (derived) finishingData.finishingPositionRange = { loser, winner };
 
         return { [roundNumber]: finishingData };
       }),

@@ -164,7 +164,7 @@ function adjustAggregateForWinningSide({ maxSetScore, side1Total, side2Total, wi
 export function generateOutcome(params) {
   const { winningSide: paramWinningSide, defaultWithScorePercent: rawDefaultPercent = 2 } = params;
   const {
-    matchUpStatusProfile = defaultStatusProfile, // { matchUpStatusProfile: {} } will always return only { matchUpStatus: COMPLETED }
+    matchUpStatusProfile: givenStatusProfile, // { matchUpStatusProfile: {} } will always return only { matchUpStatus: COMPLETED }
     matchUpFormat = FORMAT_STANDARD,
     pointsPerMinute = 2.5,
     sideWeight = 4,
@@ -172,6 +172,15 @@ export function generateOutcome(params) {
   } = params;
 
   const clampedDefaultPercent = Math.min(rawDefaultPercent, 100);
+
+  // A double exit has no winner, so a forced winningSide leaves them out of the DEFAULT profile, which drew one about
+  // 2 % of the time: a "won" matchUp came back with no winner. A caller's own profile is honoured as written —
+  // completeDrawMatchUps forces side 1 and passes { DOUBLE_WALKOVER: 10 } meaning "side 1 wins whatever has a winner".
+  const matchUpStatusProfile =
+    givenStatusProfile ??
+    (paramWinningSide
+      ? Object.fromEntries(Object.entries(defaultStatusProfile).filter(([status]) => !doubleStatuses.has(status)))
+      : defaultStatusProfile);
 
   const validation = validateOutcomeParams({
     winningSide: paramWinningSide,

@@ -17,6 +17,14 @@ const median = (items) => {
 };
 const finite = (value) => Number.isFinite(value) && value >= 0;
 
+// The outcome pipeline each tier's coverage shards run under (verify.yml `coverage-shard`): checkpoints and master
+// pushes under the differential, PRs into dev under v2, the engine's default since the flip (Path A step 3). The
+// pipeline is part of the cohort, so weights measured under one pipeline never calibrate another; the `pr` weights
+// recorded under v1 before the flip are recalibrated from CI runs of the new cohort, never from local timings.
+export const COVERAGE_PIPELINE_BY_TIER = { full: 'differential', pr: 'v2' };
+// What an unset OUTCOME_PIPELINE runs (OUTCOME_PIPELINE_DEFAULT in src/constants/outcomePipelineConstants.ts)
+const DEFAULT_OUTCOME_PIPELINE = 'v2';
+
 export function timingContext(config, env = process.env) {
   return {
     ci: env.GITHUB_ACTIONS === 'true',
@@ -25,7 +33,7 @@ export function timingContext(config, env = process.env) {
     sha: env.GITHUB_SHA ?? null,
     startedAt: new Date().toISOString(),
     tier: env.FACTORY_MATRIX_TIER || 'full',
-    pipeline: env.OUTCOME_PIPELINE || 'v1',
+    pipeline: env.OUTCOME_PIPELINE || DEFAULT_OUTCOME_PIPELINE,
     backend: env.FACTORY_BACKEND || 'native',
     teamArms: env.TEAM_ARMS === '1',
     timezone: env.TZ || Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -179,7 +187,7 @@ export function calibrate(reports, expectedFiles, tier, window = 5) {
       'mixed calibration cohorts',
     );
     assert.equal(report.context.tier, tier, 'mixed matrix tiers');
-    assert.equal(report.context.pipeline, tier === 'full' ? 'differential' : 'v1', 'incorrect pipeline');
+    assert.equal(report.context.pipeline, COVERAGE_PIPELINE_BY_TIER[tier], 'incorrect pipeline');
     assert(!ids.has(report.context.runId), 'duplicate CI run');
     ids.add(report.context.runId);
     assert(Number.isFinite(Date.parse(report.context.startedAt)), 'missing run timestamp');

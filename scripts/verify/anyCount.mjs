@@ -54,6 +54,20 @@ export function countAny(source) {
 
 const toPosix = (path) => path.split(sep).join('/');
 
+/** Child Git commands choose their repository by cwd, never by the calling hook's local Git variables. */
+function gitEnvironment() {
+  const env = { ...process.env };
+  const names = execFileSync('git', ['rev-parse', '--local-env-vars'], {
+    encoding: 'utf8',
+    timeout: 60_000,
+    killSignal: 'SIGKILL',
+  })
+    .trim()
+    .split('\n');
+  for (const name of names) delete env[name];
+  return env;
+}
+
 /**
  * The untracked paths under `srcDir` that `.gitignore` ignores, relative to `rootDir` as git prints them
  * (`/` separators, a trailing `/` on a directory). Tracked files are never ignored, so they are always counted.
@@ -72,7 +86,14 @@ export function gitIgnored(rootDir, srcDir) {
         '--directory',
         toPosix(relative(rootDir, srcDir)) || '.',
       ],
-      { cwd: rootDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 60_000, killSignal: 'SIGKILL' },
+      {
+        env: gitEnvironment(),
+        cwd: rootDir,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+        timeout: 60_000,
+        killSignal: 'SIGKILL',
+      },
     );
     return new Set(out.split('\0').filter(Boolean));
   } catch {
@@ -162,7 +183,7 @@ function run({ update, acceptRise }) {
   return 0;
 }
 
-function selfTest() {
+function selfTest({ hookProbe = true } = {}) {
   const failures = [];
   const expect = (label, actual, wanted) => {
     if (actual !== wanted) failures.push(`${label}: expected ${wanted}, got ${actual}`);
@@ -189,7 +210,13 @@ function selfTest() {
     writeFileSync(join(dir, 'src', 'tests', 't.ts'), 'let skipped: any;');
     expect('outside a checkout nothing is ignored', gitIgnored(dir, join(dir, 'src')).size, 0);
     // an ignored directory is not walked; an untracked file that is NOT ignored still is
-    execFileSync('git', ['init', '-q'], { cwd: dir, stdio: 'ignore', timeout: 60_000, killSignal: 'SIGKILL' });
+    execFileSync('git', ['init', '-q'], {
+      env: gitEnvironment(),
+      cwd: dir,
+      stdio: 'ignore',
+      timeout: 60_000,
+      killSignal: 'SIGKILL',
+    });
     writeFileSync(join(dir, '.gitignore'), 'scratch\n');
     mkdirSync(join(dir, 'src', 'scratch'), { recursive: true });
     writeFileSync(join(dir, 'src', 'scratch', 's.ts'), 'let ignored: any; let alsoIgnored: any;');
@@ -205,6 +232,56 @@ function selfTest() {
     rmSync(dir, { recursive: true, force: true });
   }
 
+  if (hookProbe) {
+    const parent = mkdtempSync(join(tmpdir(), 'any-count-hook-'));
+    const env = gitEnvironment();
+    const git = (args, cwd = parent) =>
+      execFileSync('git', args, {
+        cwd,
+        env,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+        timeout: 60_000,
+        killSignal: 'SIGKILL',
+      });
+    try {
+      git(['init', '-q']);
+      git([
+        '-c',
+        'user.name=Fixture',
+        '-c',
+        'user.email=fixture@example.test',
+        '-c',
+        'core.hooksPath=/dev/null',
+        'commit',
+        '--allow-empty',
+        '-qm',
+        'fixture',
+      ]);
+      const linked = join(parent, 'linked');
+      git(['worktree', 'add', '--detach', '-q', linked]);
+      const gitDir = git(['rev-parse', '--absolute-git-dir'], linked).trim();
+      const config = join(parent, '.git', 'config');
+      const before = readFileSync(config, 'utf8');
+      let passed = true;
+      try {
+        execFileSync(process.execPath, [fileURLToPath(import.meta.url), '--self-test', '--hook-child'], {
+          cwd: linked,
+          env: { ...env, GIT_DIR: gitDir, GIT_INDEX_FILE: join(gitDir, 'index') },
+          stdio: ['ignore', 'pipe', 'pipe'],
+          timeout: 60_000,
+          killSignal: 'SIGKILL',
+        });
+      } catch {
+        passed = false;
+      }
+      expect('self-test passes under linked-worktree hook environment', passed, true);
+      expect('hook self-test preserves parent config bytes', readFileSync(config, 'utf8'), before);
+    } finally {
+      rmSync(parent, { recursive: true, force: true });
+    }
+  }
+
   if (failures.length) {
     console.error('[verify:any-count] SELF-TEST FAILED');
     for (const failure of failures) console.error(`  ${failure}`);
@@ -218,6 +295,6 @@ function selfTest() {
 
 const args = new Set(process.argv.slice(2));
 const code = args.has('--self-test')
-  ? selfTest()
+  ? selfTest({ hookProbe: !args.has('--hook-child') })
   : run({ update: args.has('--update-baseline'), acceptRise: args.has('--accept-rise') });
 process.exit(code);

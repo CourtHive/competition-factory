@@ -1,5 +1,3 @@
-import { recordDoubleExitCascade } from './plan/recordedCascade';
-import { recordWholeCall } from './plan/recordedCall';
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
 import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
@@ -9,18 +7,20 @@ import { PREDICTED_CALL, predictSettleWork, type SettleSite } from './settleWork
 import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { topLevelStructureId } from '@Mutate/notifications/drawNotifications';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
+import { cloneData, cloneState, restoreState } from '@Tools/cloneState';
 import { addGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
 import { convergence, isRelabel, planDirection } from './direction';
 import { compareIndex, type IndexComparison } from './indexOracle';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { recordDoubleExitCascade } from './plan/recordedCascade';
 import { positionTargets } from '@Query/matchUp/positionTargets';
-import { cloneData, cloneState, restoreState } from '@Tools/cloneState';
+import { createWorkingView, type WorkingView } from './overlay';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { compareViews, hydrateShadow } from './viewOracle';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
+import { recordWholeCall } from './plan/recordedCall';
 import { observeWrite, planWrite } from './write';
-import { createWorkingView, type WorkingView } from './overlay';
 import { refuseOutcome } from './refusals';
 import { stampedInThisCall } from './ops';
 import { buildOutcomeView } from './view';
@@ -326,10 +326,17 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     checkShadow();
 
     // § 5 rule 1: the winner stands in the matchUp direction names, and the loser where its link says
-    if (dual) checkDual({ args, after, route, dual });
+    // A CALL RECORDED WHOLE IS NOT CHECKED AGAINST THE DUAL THE PLANNERS STATE EITHER (CA, 2026-11-19): neither the
+    // dual's winner they project nor its direction; the shadow has compared the whole record with v1's own write
+    if (dual) checkDual({ args, after, route, dual, recorded: !!(outcome.ops && outcome.recordedResult) });
     if (route === 'winner' && isExit(planned.matchUpStatus) && isRelabel(planned, view))
       differentialTally('winner:relabel-exit', direction?.loser?.exit ? 'compared' : 'deferred');
     if (!direction) return differentialTally(`${route}:direction`, 'deferred');
+    // A CALL RECORDED WHOLE IS NOT CHECKED AGAINST THE PLANNERS' DIRECTION (CA, 2026-11-19). Its ops are v1's own write
+    // read off a copy, and the shadow above has compared the whole record with them; the direction stated here is the
+    // planners', which they abstained from writing, and it need not describe what v1 does. A call the planners write
+    // keeps the check.
+    if (outcome.ops && outcome.recordedResult) return differentialTally(`${route}:direction`, 'deferred');
     checkDirection({ args, after, route, direction });
     differentialTally(`${route}:direction`, 'compared');
     if (planned !== args.request) differentialTally('team-autocalc:direction', 'compared');
@@ -493,7 +500,11 @@ function planDual(args: BuildViewArgs, view: OutcomeView): DualPlan | undefined 
   return { matchUpId: line.dualMatchUpId, winningSide, direction: planDirection(request, dualView, 'winner') };
 }
 
-function checkDual({ args, after, route, dual }: CheckArgs & { dual: DualPlan }) {
+function checkDual({ args, after, route, dual, recorded }: CheckArgs & { dual: DualPlan; recorded: boolean }) {
+  if (recorded) {
+    differentialTally(`${route}:dual`, 'deferred');
+    return differentialTally(`${route}:dual-direction`, 'deferred');
+  }
   const stored = standing(after, dual.matchUpId);
   if (stored?.winningSide !== dual.winningSide)
     diverge(

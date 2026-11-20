@@ -1,10 +1,10 @@
 /**
- * From what a draft reports to what the factory's `setMatchUpStatus` reads: the canonical `outcome` a host sends
- * (to CFS's executionQueue, or to an engine) for a score-entry draft.
+ * From what a score state reports to what the factory's `setMatchUpStatus` reads: the canonical `outcome` a host sends
+ * (to CFS's executionQueue, or to an engine) for a score state.
  *
  * CA, 2026-10-08: *"Shouldn't the new score entry modal be built in such a way that it cleanly
  * understands and integrates with the factory setMatchUpStatus method?"* It should. The mapping lives here, with
- * the draft; courthive-components' dialog applies it on Submit, and a host hands the result on as its `outcome`.
+ * the score state; courthive-components' dialog applies it on Submit, and a host hands the result on as its `outcome`.
  *
  * Every line is a MEASURED difference between the two shapes (2026-10-01 against factory 7.4.0, re-measured
  * 2026-10-05 against 7.5.0; pinned by `src/tests/scoreEntryState/engineOutcome.test.ts` against `setMatchUpStatus`):
@@ -31,7 +31,7 @@ import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import type { ScoreEntrySet } from './types';
 
-/** What a draft reports on Submit (`submission`), with the entered sets added. */
+/** What a score state reports on Submit (`submission`), with the entered sets added. */
 export type ReportedOutcome = {
   matchUpStatus?: MatchUpStatusUnion;
   winningSide?: number;

@@ -2,9 +2,9 @@ import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/sta
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import POLICY_SCORING_DEFAULT from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
 import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
-import { afterEach, describe, expect, it, vi } from 'vitest';
 import { v1Writes } from '@Tests/testHarness/outcome/directionCounter';
 import { storedGraph } from '@Tests/testHarness/outcome/objectGraph';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -1849,6 +1849,8 @@ const RECORDED: [string, Scenario][] = [
     },
   ],
   [
+    // the title is the fixed corpus's identity for these calls, so it stands: since CA's 2026-11-20 class 4 ruling the
+    // line no longer un-decides the dual (decided by its own call, it keeps its winner)
     "a line DEFAULTED under a scoring policy's processCodes un-deciding its dual: v1's (the codes on the line, exitReason)",
     {
       drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },

@@ -1,3 +1,4 @@
+import { createHydrationCache, getCachedParticipantLookup, HydrationCache } from './hydrationCache';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
@@ -86,9 +87,13 @@ export function buildStructuralIndex({
   const matchUps: HydratedMatchUp[] = [];
   const participants = tournamentRecord?.participants;
   const participantIds = new Set((participants ?? []).map(({ participantId }) => participantId));
+  // this build's own: the lines' teams and pairs are found in one lookup over the participants, built when a line
+  // first needs it and dropped with the build, so the next build (after a write) reads the list as it then is
+  const hydrationCache = createHydrationCache();
   for (const structure of drawDefinition.structures ?? []) {
     if (structureIds && !structureIds.has(structure.structureId)) continue;
     const indexed = indexStructure({
+      hydrationCache,
       drawDefinition,
       participantIds,
       participants,
@@ -116,6 +121,7 @@ function annotates(matchUpFormat: string): boolean {
 type Member = { matchUp: MatchUp; structureId: string; containerStructureId?: string };
 
 function indexStructure({
+  hydrationCache,
   drawDefinition,
   participantIds,
   participants,
@@ -124,6 +130,7 @@ function indexStructure({
   event,
   team,
 }: {
+  hydrationCache: HydrationCache;
   drawDefinition: DrawDefinition;
   participantIds: Set<string>;
   participants?: Participant[];
@@ -169,8 +176,9 @@ function indexStructure({
     matchUps: members.flatMap((member) => {
       if (matchUpIds && !matchUpIds.has(member.matchUp.matchUpId)) return [];
       const entry = indexMatchUp({ ...member, ...shared, event });
-      if (!member.matchUp.tieMatchUps) return [entry];
-      const lines = indexLines({ dual: member, dualEntry: entry, participants, shared, event });
+      // an empty `tieMatchUps` is no dual: hydration drops the empty array (`onlyDefined`), and the entry holds none
+      if (!member.matchUp.tieMatchUps?.length) return [entry];
+      const lines = indexLines({ dual: member, dualEntry: entry, hydrationCache, participants, shared, event });
       entry.tieMatchUps = lines;
       return [entry, ...lines];
     }),
@@ -181,12 +189,14 @@ type Shared = Omit<Parameters<typeof indexMatchUp>[0], keyof Member | 'event' | 
 
 /** a dual's lines, each built through its dual as hydration builds it (`processTieMatchUps`) */
 function indexLines({
+  hydrationCache,
   participants,
   dualEntry,
   shared,
   event,
   dual,
 }: {
+  hydrationCache: HydrationCache;
   participants?: Participant[];
   dualEntry: HydratedMatchUp;
   shared: Shared;
@@ -199,7 +209,7 @@ function indexLines({
   // the line-ups by side, as the dual's sides carry them; the team is found from the positions where none is given, or,
   // in a draw with no positions (an ad hoc league), from the side's team, as hydration hands it on (`processTieMatchUps`)
   const sideLineUps = dualEntry.sides?.map(({ drawPosition, sideNumber, lineUp, participantId }: any) => ({
-    teamParticipant: sideTeam(participants, participantId),
+    teamParticipant: sideTeam({ hydrationCache, participants, participantId }),
     drawPosition,
     sideNumber,
     lineUp,
@@ -228,6 +238,7 @@ function indexLines({
       collectionId: matchUp.collectionId as string,
       tournamentParticipants: participants,
       positionAssignments,
+      hydrationCache,
       drawDefinition,
       drawPositions,
       sideLineUps,
@@ -256,12 +267,29 @@ function indexLines({
 }
 
 /** a dual side's team participant, the values hydration hands its lines (`processTieMatchUps`) */
-function sideTeam(participants: Participant[] | undefined, participantId?: string) {
-  const team = participantId
-    ? participants?.find(
-        (participant) => participant.participantId === participantId && participant.participantType === TEAM,
-      )
-    : undefined;
+function sideTeam({
+  hydrationCache,
+  participants,
+  participantId,
+}: {
+  hydrationCache: HydrationCache;
+  participants?: Participant[];
+  participantId?: string;
+}) {
+  if (!participantId) return undefined;
+
+  // The first participant with this id is the team when it is a TEAM. When it is not (an id held twice, or by
+  // another type), a TEAM further down the list may still hold it, and only the scan finds that one. Nobody
+  // holding the id is nobody for the scan too.
+  const participantLookup = getCachedParticipantLookup({ hydrationCache, tournamentParticipants: participants });
+  const first = participantLookup?.firstById.get(participantId);
+  const scanForTeam = () =>
+    participantLookup && !first
+      ? undefined
+      : participants?.find(
+          (participant) => participant.participantId === participantId && participant.participantType === TEAM,
+        );
+  const team = first?.participantType === TEAM ? first : scanForTeam();
   return (
     team &&
     definedAttributes({

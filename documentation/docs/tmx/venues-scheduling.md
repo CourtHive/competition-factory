@@ -32,7 +32,7 @@ Venue and scheduling management in TMX includes:
 
 ![TMX Venues tab with one venue expanded to show its eight courts](/img/tmx/venues-table.png)
 
-_The Venues tab with a venue row expanded to list its courts. **Add venue** and **Add courts** open the corresponding drawers._
+_The Venues tab with a venue row expanded to list its courts. **Add venue** and **Add courts** open the corresponding drawers. Each court shows its scheduled time (the matchUps placed on its grid, at their average length), its unscheduled time, and the time held for practice or blocked for maintenance, from the court's timed bookings._
 
 ```js
 // Add venue

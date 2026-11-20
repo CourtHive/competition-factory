@@ -1,7 +1,7 @@
 import type { MatchUpsMap, PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import type { ErrorType } from '@Constants/errorConditionConstants';
-import type { RecordDraws } from '@Tools/replayedDraws';
 import type { OutcomeOp, TemporalProjection } from './ops';
+import type { RecordDraws } from '@Tools/replayedDraws';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { WorkingView } from './overlay';
 import type {
@@ -158,13 +158,27 @@ export type OutcomeView = {
    * `removeDirectedParticipants` refuses before its first write; asked of the `remove-directed` route after the dispatch
    */
   removalMissingDrawPositions?: boolean;
+  /**
+   * § 2 row 31: a winner or a loser whose seat is held by somebody else (v1's `heldSeatRefusal`, asked before the first
+   * write): the error v1's placement raised, and its context
+   */
+  heldSeat?: { error: ErrorType; context: Record<string, unknown> };
   /** a line of a dual: what the dual projects once this line is written */
   line?: {
     dualMatchUpId: string;
     dualMatchUpStatus?: MatchUpStatusUnion;
     dualWinningSide?: number;
+    /** v1's projected winner: the dual's own where `keepsDualDecision` */
     projectedWinningSide?: number;
+    /** the dual, decided by its own exit or call, keeps its winner while its lines project none (`dualKeepsOwnDecision`) */
+    keepsDualDecision?: boolean;
+    /** the dual's winner is the one its lines projected before this write (`dualKeepsOwnDecision`): row 14 asks of it */
+    dualLineDecided?: boolean;
+    /** the tally relabels the dual's own single exit a played result by the same winner (`relabelDualExitByTally`) */
+    relabelsDualExit?: boolean;
     autoCalcDisabled: boolean;
+    /** the dual is tallied by its lines' games or sets (`aggregateValue`, a `scoreValue` or a `setValue`), not by lines won */
+    talliedByScore?: boolean;
     /** the dual's score as `updateTieMatchUpScore` tallies it with this line's result in place (S7) */
     projectedScore?: OutcomeScore;
     /** the dual's lines with this line's result in place, as its round robin group's tally reads them (S7) */

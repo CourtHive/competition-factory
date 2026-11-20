@@ -1,5 +1,5 @@
 /**
- * A draft's rules about endings, clearing and submitting, as pure functions of the model.
+ * A score state's rules about endings, clearing and submitting, as pure functions of the model.
  *
  * Nothing in them is about the DOM: each answers a question from the model, plus the two things an entry approach
  * knows that the model cannot (`ScoreEntryView`). A host decides where things sit and what they are called; whether
@@ -305,7 +305,7 @@ export function clearGate(input: ClearGateInput): ClearGate {
  * the score alone would make a walkover unsubmittable. A PROBLEM closes it regardless: a 3-7 is not made submittable
  * by also being marked Suspended. `submitRefusedNow` is the refused removal (`clearGate`), which a host explains.
  *
- * Clear is live whenever the draft holds anything — an ENDING counts even with no score typed.
+ * Clear is live whenever the score state holds anything — an ENDING counts even with no score typed.
  */
 export function footerState(
   view: ScoreEntryView,

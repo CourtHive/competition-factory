@@ -13,6 +13,8 @@ import { dirname, join, resolve } from 'node:path';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
+import { gzipSync } from 'node:zlib';
+import { build } from 'esbuild';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FACTORY_ROOT = resolve(__dirname, '../..');
@@ -112,8 +114,8 @@ try {
 }
 
 // The score-entry-state subpath, as a consumer of the PACKED tarball meets it: its declarations under Node's own
-// resolution in both formats with no DOM lib, then two drafts held at once by `require` and by `import`, with no DOM.
-// The CJS run also asserts that loading it loads nothing of the root bundle.
+// resolution in both formats with no DOM lib, then two score states held at once by `require` and by `import`, with no
+// DOM. The CJS run also asserts that loading it loads nothing of the root bundle.
 log('score-entry-state subpath smoke (types nodenext, require + import, no DOM)…');
 try {
   const out = [
@@ -124,6 +126,43 @@ try {
   process.stdout.write(out);
 } catch (err) {
   fail('score-entry-state subpath smoke failed against tarball', err);
+}
+
+// Both package conditions, type declarations without DOM, and a browser bundle through the public exports map.
+log('constants subpath smoke (types nodenext, require + import, packed browser bundle)…');
+try {
+  process.stdout.write(
+    [
+      run('npx --no-install tsc -p tsconfig.constants.json', { cwd: fixture }),
+      run('node constants.runtime.cjs', { cwd: fixture }),
+      run('node constants.runtime.mjs', { cwd: fixture }),
+      run('node constants.runtime.cjs', { cwd: fixture, env: { ...process.env, NODE_ENV: 'production' } }),
+    ].join(''),
+  );
+  const browser = await build({
+    absWorkingDir: fixture,
+    stdin: {
+      contents:
+        "import { matchUpStatusConstants } from 'tods-competition-factory/constants'; console.log(matchUpStatusConstants.COMPLETED);",
+      resolveDir: fixture,
+    },
+    bundle: true,
+    write: false,
+    metafile: true,
+    platform: 'browser',
+    format: 'esm',
+    minify: true,
+  });
+  const inputs = Object.keys(browser.metafile.inputs).filter((p) => p !== '<stdin>');
+  if (!inputs.length || inputs.some((p) => !p.replaceAll('\\', '/').includes('/dist/esm/constants/'))) {
+    throw new Error(`packed constants browser graph escaped constants: ${inputs.join(', ')}`);
+  }
+  const bytes = browser.outputFiles[0].contents;
+  log(
+    `packed constants consumer: ${bytes.length} B min / ${gzipSync(bytes).length} B gzip; ${inputs.length} constants modules`,
+  );
+} catch (err) {
+  fail('constants subpath smoke failed against tarball', err);
 }
 
 // 5. Clean stage.
