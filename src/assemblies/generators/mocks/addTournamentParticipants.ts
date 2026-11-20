@@ -47,6 +47,7 @@ export function addTournamentParticipants({
 
   const generated = generateParticipants({
     consideredDate: startDate,
+    consideredEndDate: tournamentRecord?.endDate,
     ...participantsProfile,
     participantsCount,
     participantType,

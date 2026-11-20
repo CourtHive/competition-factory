@@ -52,6 +52,7 @@ export function generateEventParticipants(params) {
     rankingRange: eventProfile.rankingRange ?? participantsProfile.rankingRange,
     uuids: eventProfile.uuids || participantsProfile.uuids || uuids,
     consideredDate: tournamentRecord?.startDate,
+    consideredEndDate: tournamentRecord?.endDate,
     participantType: eventParticipantType,
     participantsCount,
     ratingsParameters,

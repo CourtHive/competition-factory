@@ -128,4 +128,49 @@ describe('setTournamentCategories', () => {
     expect(result.error).toEqual(TOURNAMENT_CATEGORY_IN_USE);
     expect(result.referenced).toEqual(expect.arrayContaining(['U18', 'U16']));
   });
+
+  /**
+   * The guard is against removal: a category events use may not be taken out of the list. A category events use
+   * that the list never held is not removed by anything, so it does not block a change. Before, it did: a
+   * tournament whose events named two undefined categories could not define either (each attempt left the other
+   * undefined and was refused), nor add any unrelated category, until it defined every one in a single call.
+   */
+  it('defines one undefined event category while another stays undefined', () => {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 8 }, { drawSize: 8 }],
+    });
+    tournamentRecord.events[0].category = { categoryName: 'U18', ageCategoryCode: 'U18' };
+    tournamentRecord.events[1].category = { categoryName: 'U16', ageCategoryCode: 'U16' };
+    tournamentEngine.setState(tournamentRecord);
+
+    let result: any = tournamentEngine.setTournamentCategories({
+      categories: [{ categoryName: 'U18', type: AGE, ageCategoryCode: 'U18' }],
+    });
+    expect(result.success).toBe(true);
+
+    // and an unrelated category, with U16 still undefined
+    result = tournamentEngine.setTournamentCategories({
+      categories: [
+        { categoryName: 'U18', type: AGE, ageCategoryCode: 'U18' },
+        { categoryName: 'Open', type: AGE },
+      ],
+    });
+    expect(result.success).toBe(true);
+    expect(tournamentEngine.getTournament().tournamentRecord.tournamentCategories).toHaveLength(2);
+  });
+
+  it('still refuses removing a defined category in use, naming only what is removed', () => {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 8 }, { drawSize: 8 }],
+    });
+    tournamentRecord.events[0].category = { categoryName: 'U18', ageCategoryCode: 'U18' };
+    tournamentRecord.events[1].category = { categoryName: 'U16', ageCategoryCode: 'U16' };
+    tournamentRecord.tournamentCategories = [{ categoryName: 'U18', type: AGE, ageCategoryCode: 'U18' }];
+    tournamentEngine.setState(tournamentRecord);
+
+    let result: any = tournamentEngine.setTournamentCategories({ categories: [] });
+    expect(result.error).toEqual(TOURNAMENT_CATEGORY_IN_USE);
+    // U16 was never defined, so it is not being removed
+    expect(result.referenced).toEqual(['U18']);
+  });
 });

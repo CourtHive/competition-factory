@@ -4,7 +4,7 @@ import { definedAttributes } from '@Tools/definedAttributes';
 import { generatePersonData } from './generatePersonData';
 import { coercedSex } from '@Helpers/coercedSex';
 import { isFemale } from '@Validators/isFemale';
-import { dateFromDay } from '@Tools/dateTime';
+import { addDays, dateFromDay } from '@Tools/dateTime';
 import { ensureInt } from '@Tools/ensureInt';
 import { isMale } from '@Validators/isMale';
 
@@ -17,6 +17,7 @@ export function generatePersons(params?) {
   let count = params?.count || 1;
   const {
     personExtensions,
+    consideredEndDate,
     consideredDate,
     isMock = true,
     gendersCount,
@@ -136,10 +137,7 @@ export function generatePersons(params?) {
     });
   }
 
-  const { ageMinDate, ageMaxDate } = getCategoryAgeDetails({
-    consideredDate,
-    category,
-  });
+  const { ageMinDate, ageMaxDate } = birthDateWindow({ category, consideredDate, consideredEndDate });
 
   const rangeStart = ensureInt(ageMinDate?.slice(0, 4) || 0) || ensureInt(ageMaxDate?.slice(0, 4) || 0) - 3;
 
@@ -151,7 +149,7 @@ export function generatePersons(params?) {
     const [start, end] = yearRange ?? [];
     const birthYear = yearRange && randomPop(generateRange(start, end), random);
     const birthDay = randomPop(generateRange(0, 365), random);
-    const birthDate = birthYear && dateFromDay(birthYear, birthDay);
+    const birthDate = birthYear && withinWindow(dateFromDay(birthYear, birthDay), yearRange, ageMinDate, ageMaxDate);
 
     return Object.assign(
       definedAttributes({
@@ -167,4 +165,44 @@ export function generatePersons(params?) {
     persons: (persons.length && persons) || shuffledPersons[0],
     nationalityCodes,
   };
+}
+
+/**
+ * The birth dates a category admits on every day of the event: born on or after the later of the
+ * earliest dates allowed at its start and its end, and on or before the earlier of the latest. Eligibility
+ * is checked at both ends, so a window taken from the first day alone lets a player age out by the last.
+ */
+function birthDateWindow({ category, consideredDate, consideredEndDate }) {
+  const atStart = getCategoryAgeDetails({ consideredDate, category });
+  const atEnd =
+    consideredEndDate && consideredEndDate !== consideredDate
+      ? getCategoryAgeDetails({ consideredDate: consideredEndDate, category })
+      : atStart;
+  // ISO dates sort as strings; an absent bound is no bound
+  const latest = (...dates: (string | undefined)[]) => dates.filter(Boolean).sort().at(-1);
+  const earliest = (...dates: (string | undefined)[]) => dates.filter(Boolean).sort()[0];
+  return {
+    ageMinDate: latest(atStart.ageMinDate, atEnd.ageMinDate),
+    ageMaxDate: earliest(atStart.ageMaxDate, atEnd.ageMaxDate),
+  };
+}
+
+const DAY_MS = 86400000;
+
+/**
+ * A drawn birth date moved into the category's window when it falls outside it. Years are drawn whole,
+ * then any day of them, so the first and last years overrun the window's dates (most of 2008 for "U18"
+ * on 2026-11-20). The date is folded back in by its distance from the window's start rather than
+ * redrawn, so a seed draws exactly what it drew before and a date that was already eligible is unchanged.
+ */
+function withinWindow(birthDate: string, yearRange, ageMinDate?: string, ageMaxDate?: string): string {
+  if (!yearRange) return birthDate;
+  const [startYear, endYear] = yearRange;
+  const lower = ageMinDate || `${startYear}-01-01`;
+  const upper = ageMaxDate || `${endYear}-12-31`;
+  if (birthDate >= lower && birthDate <= upper) return birthDate;
+  const span = Math.round((Date.parse(upper) - Date.parse(lower)) / DAY_MS) + 1;
+  if (span <= 0) return birthDate;
+  const offset = Math.round((Date.parse(birthDate) - Date.parse(lower)) / DAY_MS);
+  return addDays(lower, ((offset % span) + span) % span);
 }

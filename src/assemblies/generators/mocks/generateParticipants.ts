@@ -37,6 +37,7 @@ export function generateParticipants(params): {
     ratingsParameters = defaultRatingsParameters,
     valuesInstanceLimit,
     ratingsValues = [],
+    consideredEndDate,
     consideredDate,
     categories,
     category,
@@ -103,6 +104,7 @@ export function generateParticipants(params): {
   const result = generatePersons({
     count: individualParticipantsCount,
     personExtensions,
+    consideredEndDate,
     consideredDate,
     gendersCount,
     personData,
@@ -369,7 +371,13 @@ export function generateParticipants(params): {
 }
 
 function addScaleItem({ scaleValue: itemValue, participant, eventType, scaleType, category }) {
-  const scaleName = category.categoryName || category.ratingType || category.ageCategoryCode;
+  // a rating is read, by eligibility and by DrawMatic, under its ratingType; a ranking or seeding belongs to
+  // the category. Filed under a rating category's own name it was a rating nothing found: "Missing DUPR rating"
+  const scaleName =
+    (scaleType === RATING && category.ratingType) ||
+    category.categoryName ||
+    category.ratingType ||
+    category.ageCategoryCode;
   const itemType = [SCALE, scaleType, eventType, scaleName].join('.');
   const timeItem = { itemValue, itemType };
   if (scaleName && itemValue) {
