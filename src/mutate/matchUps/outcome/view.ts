@@ -1,4 +1,9 @@
-import { getSideExitProvenance, carriedExitStatus, isPropagatedExit } from '@Helpers/drawTopology/sideExitProvenance';
+import {
+  getSideExitProvenance,
+  carriedExitStatus,
+  exitCarriedFrom,
+  isPropagatedExit,
+} from '@Helpers/drawTopology/sideExitProvenance';
 import { scheduleRefusal as scheduleWriteRefusal } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { assignedSeatsHeld, exitAwardable } from '@Helpers/outcome/exitAwardable';
@@ -2202,13 +2207,19 @@ function lineViewOf({
         dualWinningSide: dualMatchUp.winningSide,
         keepsDualDecision,
         dualLineDecided,
-        // the tally relabels the dual's own single exit a played result by the same winner (`relabelDualExitByTally`)
+        // the tally relabels the dual's own single exit a played result by the same winner, and that exit was carried to
+        // its loser: the relabel withdraws the carry (`relabelDualExitByTally`). With nothing carried, the relabel is the
+        // tally's own write, which the planners write
         relabelsDualExit:
           !keepsDualDecision &&
+          !!request.flags.propagateExitStatus &&
           !!dualMatchUp.winningSide &&
           projectedWinningSide === dualMatchUp.winningSide &&
           isExit(dualMatchUp.matchUpStatus) &&
-          !isDoubleExit(dualMatchUp.matchUpStatus),
+          !isDoubleExit(dualMatchUp.matchUpStatus) &&
+          !!inContextDrawMatchUps?.some((candidate) =>
+            exitCarriedFrom({ sourceMatchUpId: matchUpTieId, matchUp: candidate }),
+          ),
         projectedScore,
         projectedTieMatchUps,
         projectedStatus: projectedDualStatus({
