@@ -217,16 +217,21 @@ export function setTournamentCategories({ tournamentRecord, categories }) {
   if (paramsCheck.error) return paramsCheck;
   categories = (categories ?? []).filter((category) => category.categoryName && category.type);
 
-  // Reject any removal that would leave an event.category orphaned. The
-  // join key matches what consumers use (ageCategoryCode if present, else
-  // categoryName); both are walked so a partial-shape event reference
-  // still gets caught.
-  const incomingCodes = new Set<string>();
-  const incomingNames = new Set<string>();
-  for (const category of categories) {
-    if (category.ageCategoryCode) incomingCodes.add(category.ageCategoryCode);
-    if (category.categoryName) incomingNames.add(category.categoryName);
-  }
+  // Reject any removal that would leave an event.category orphaned. The join key matches what consumers use
+  // (ageCategoryCode if present, else categoryName); both are walked so a partial-shape event reference still gets
+  // caught. Only a REMOVAL is refused: a reference the current list does not define is not removed by this call, and
+  // refusing on it meant a tournament with two undefined event categories could define neither one at a time.
+  const keysOf = (list: any[]) => {
+    const keys = new Set<string>();
+    for (const category of list ?? []) {
+      if (category?.ageCategoryCode) keys.add(category.ageCategoryCode);
+      if (category?.categoryName) keys.add(category.categoryName);
+    }
+    return keys;
+  };
+  const incoming = keysOf(categories);
+  const current = keysOf(tournamentRecord.tournamentCategories);
+  const isRemoved = (key: string) => current.has(key) && !incoming.has(key);
 
   const referenced: string[] = [];
   for (const event of tournamentRecord.events ?? []) {
@@ -234,13 +239,12 @@ export function setTournamentCategories({ tournamentRecord, categories }) {
     if (!eventCategory) continue;
     const code = eventCategory.ageCategoryCode;
     const name = eventCategory.categoryName;
-    if (code && !incomingCodes.has(code) && !incomingNames.has(code)) {
-      referenced.push(code);
+    // as before, each of the event's keys must survive; now only a key the current list defines can be orphaned
+    if (code && !incoming.has(code)) {
+      if (isRemoved(code)) referenced.push(code);
       continue;
     }
-    if (name && !incomingNames.has(name) && !incomingCodes.has(name)) {
-      referenced.push(name);
-    }
+    if (name && isRemoved(name)) referenced.push(name);
   }
 
   if (referenced.length) {
