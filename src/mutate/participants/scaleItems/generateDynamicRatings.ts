@@ -11,10 +11,16 @@ import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { recorded } from '@Mutate/simulation/scenarioRecorder';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { findStructure } from '@Acquire/findStructure';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { findPolicy } from '@Acquire/findPolicy';
 
 // constants, fixtures and types
-import { INVALID_VALUES, MISSING_MATCHUP_IDS, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import {
+  INVALID_VALUES,
+  MISSING_MATCHUP_IDS,
+  MISSING_VALUE,
+  PARTICIPANT_NOT_FOUND,
+} from '@Constants/errorConditionConstants';
 import { ARRAY, ERROR, OF_TYPE, TOURNAMENT_RECORD, VALIDATE } from '@Constants/attributeConstants';
 import { completedMatchUpStatuses, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { POLICY_RATINGS_DEFAULT } from '@Fixtures/policies/POLICY_RATINGS_DEFAULT';
@@ -24,19 +30,32 @@ import type { competitionFormat } from '@Types/competitionFormat';
 import { POLICY_TYPE_RATINGS } from '@Constants/policyConstants';
 import { HydratedMatchUp, HydratedSide } from '@Types/hydrated';
 import type { RatingsPolicy } from '@Types/ratingsPolicyTypes';
-import { Event, EventTypeUnion } from '@Types/tournamentTypes';
+import { Event, EventTypeUnion, Participant, Tournament } from '@Types/tournamentTypes';
 import { DYNAMIC, RATING } from '@Constants/scaleConstants';
 import { PAIR } from '@Constants/participantConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ELO } from '@Constants/ratingConstants';
-import { ResultType } from '@Types/factoryTypes';
+import { ResultType, ScaleItem } from '@Types/factoryTypes';
 
 // the ratings write, logged when a scenario is recorded (see scenarioRecorder)
 const addDynamicRatingsRecorded = recorded('addDynamicRatings', addDynamicRatings);
 
+/**
+ * Rates `matchUps` (or those named by `matchUpIds`) in draw order — stage, structure sequence, round, position (see
+ * `matchUpSort`) — carrying each rating forward to the next matchUp. The caller's `matchUps` array is not reordered.
+ *
+ * The write contract (RATINGS-103):
+ * - every `matchesPlayed` count must be a finite non-negative integer; otherwise nothing is computed or written
+ * - with `updateParticipantRatings`, the values are written once, after every matchUp has been rated, and all or
+ *   nothing: a write that fails leaves the record as it was and its error is returned
+ * - `processedMatchUpIds` are the matchUps the run admitted (a WALKOVER a policy EXCLUDEs is not admitted);
+ *   `ratedMatchUpIds` are those whose result actually moved ratings (not, e.g., a DOUBLE_WALKOVER). Only a rated
+ *   matchUp adds to a player's career count for a MATCHES_PLAYED K
+ */
 export function generateDynamicRatings(params): ResultType & {
   modifiedScaleValues?: { [key: string]: number };
   processedMatchUpIds?: string[];
+  ratedMatchUpIds?: string[];
   ratingsPolicyNames?: string[];
   sourceRatingType?: string;
   outputScaleName?: string;
@@ -73,8 +92,9 @@ export function generateDynamicRatings(params): ResultType & {
 
   const modifiedScaleValues = {};
 
-  const matchUps =
-    (params.matchUps ||
+  // a copy: the run sorts into draw order, and the caller's array is theirs
+  const matchUps: HydratedMatchUp[] = [
+    ...((params.matchUps ||
       (refreshDynamic && // when { refreshDynamic: true } use allDrawMatchUps
         allDrawMatchUps({
           drawDefinition,
@@ -87,7 +107,8 @@ export function generateDynamicRatings(params): ResultType & {
         tournamentRecord,
         inContext: true,
       }).matchUps) ??
-    [];
+      []),
+  ];
 
   const dynamicScaleName = `${computeRatingType}.${DYNAMIC}`;
   const outputScaleName = asDynamic ? dynamicScaleName : computeRatingType;
@@ -117,6 +138,10 @@ export function generateDynamicRatings(params): ResultType & {
   );
 
   // a MATCHES_PLAYED K reads each player's career count, which only the caller holds: refuse before any write
+  const invalidCounts = invalidCareerCounts(matchesPlayed);
+  if (invalidCounts) {
+    return { error: INVALID_VALUES, info: `matchesPlayed: not a non-negative integer count for ${invalidCounts}` };
+  }
   const careerCounts: Record<string, number> = { ...matchesPlayed };
   const uncounted = rated
     .filter(({ policy }) => policy.k.rule === 'MATCHES_PLAYED')
@@ -126,6 +151,7 @@ export function generateDynamicRatings(params): ResultType & {
     return { error: MISSING_VALUE, info: `matchesPlayed: no career count for ${[...new Set(uncounted)].join(', ')}` };
   }
 
+  const ratedMatchUpIds: string[] = [];
   for (const { matchUp, policy } of rated) {
     const { endDate, sides } = matchUp;
 
@@ -185,7 +211,8 @@ export function generateDynamicRatings(params): ResultType & {
     const kOfTier = tierK(policy.kByTier, [event?.eventTier, tournamentRecord.tournamentTier]);
     const kFor = (participantId: string) => kOfTier ?? kOf(policy.k, careerCounts[participantId]);
 
-    if (result) {
+    const ratingsMoved =
+      !!result &&
       updateRatingsForMatchUp({
         expectation: policy.expectation,
         sideParticipantIds,
@@ -196,17 +223,22 @@ export function generateDynamicRatings(params): ResultType & {
         result,
         kFor,
       });
-    }
 
-    for (const participantId of Object.values(sideParticipantIds).flat()) {
-      if (careerCounts[participantId] !== undefined) careerCounts[participantId] += 1;
+    // a matchUp that moved no rating (a DOUBLE_WALKOVER, a side without a participant) is not a match played
+    if (ratingsMoved) {
+      ratedMatchUpIds.push(matchUp.matchUpId);
+      for (const participantId of Object.values(sideParticipantIds).flat()) {
+        if (careerCounts[participantId] !== undefined) careerCounts[participantId] += 1;
+      }
     }
 
     Object.assign(modifiedScaleValues, scaleItemMap);
+  }
 
-    if (updateParticipantRatings) {
-      addDynamicRatingsRecorded({ tournamentRecord, modifiedScaleValues, removePriorValues });
-    }
+  // one write, after every matchUp is rated, all or nothing
+  if (updateParticipantRatings) {
+    const written = writeRatings({ tournamentRecord, modifiedScaleValues, removePriorValues });
+    if (written.error) return written;
   }
 
   const processedMatchUpIds = rated.map(({ matchUp }) => matchUp.matchUpId);
@@ -218,9 +250,53 @@ export function generateDynamicRatings(params): ResultType & {
     modifiedScaleValues,
     outputScaleName,
     processedMatchUpIds,
+    ratedMatchUpIds,
     ratingsPolicyNames,
     ...(isEloNative && { sourceRatingType: ratingType }),
   };
+}
+
+/** The participantIds whose `matchesPlayed` count is not a finite non-negative integer, or undefined when all are. */
+function invalidCareerCounts(matchesPlayed: unknown): string | undefined {
+  if (matchesPlayed === undefined || matchesPlayed === null) return undefined;
+  if (!matchesPlayed || typeof matchesPlayed !== 'object' || Array.isArray(matchesPlayed)) {
+    return 'matchesPlayed (not an object)';
+  }
+  const invalid = Object.entries(matchesPlayed)
+    .filter(([, count]) => !Number.isInteger(count) || (count as number) < 0)
+    .map(([participantId]) => participantId);
+  return invalid.length ? invalid.join(', ') : undefined;
+}
+
+/**
+ * The run's ratings, written all or nothing: every participant must be in the record before anything is written,
+ * and a write that still fails restores the timeItems of the participants already written.
+ */
+type WriteRatingsArgs = {
+  modifiedScaleValues: Record<string, ScaleItem>;
+  removePriorValues?: boolean;
+  tournamentRecord: Tournament;
+};
+function writeRatings({ tournamentRecord, modifiedScaleValues, removePriorValues }: WriteRatingsArgs): ResultType {
+  const participantIds = Object.keys(modifiedScaleValues);
+  const participants = participantIds.map((participantId) =>
+    tournamentRecord.participants?.find((participant) => participant.participantId === participantId),
+  );
+  const missing = participantIds.filter((_, index) => !participants[index]);
+  if (missing.length) return { error: PARTICIPANT_NOT_FOUND, info: `ratings not written: ${missing.join(', ')}` };
+
+  const snapshots = (participants as Participant[]).map((participant) => ({
+    participant,
+    timeItems: participant.timeItems && makeDeepCopy(participant.timeItems, false, true),
+  }));
+  const result = addDynamicRatingsRecorded({ tournamentRecord, modifiedScaleValues, removePriorValues });
+  if (result.error) {
+    for (const { participant, timeItems } of snapshots) {
+      if (timeItems) participant.timeItems = timeItems;
+      else delete participant.timeItems;
+    }
+  }
+  return result;
 }
 
 function resolveParticipantScaleItem({
@@ -364,11 +440,11 @@ function updateRatingsForMatchUp({
   accessor,
   result,
   kFor,
-}: UpdateRatingsForMatchUpArgs) {
+}: UpdateRatingsForMatchUpArgs): boolean {
   const { winningSide, winnerActual, loserActual, margin, protectLosses, winnerMinimumGain } = result;
   const winnerIds = sideParticipantIds[winningSide] ?? [];
   const loserIds = sideParticipantIds[3 - winningSide] ?? [];
-  if (!winnerIds.length || !loserIds.length) return;
+  if (!winnerIds.length || !loserIds.length) return false;
 
   const { defaultInitialization, decimalsCount = 0 } = ratingsParameters[computeRatingType] ?? {};
   const ratingOf = (participantId: string) => {
@@ -410,6 +486,7 @@ function updateRatingsForMatchUp({
   };
   rate(winnerIds, true);
   rate(loserIds, false);
+  return true;
 }
 
 /** The competitionFormat a matchUp is played under: its structure's, then its drawDefinition's, then its event's. */
