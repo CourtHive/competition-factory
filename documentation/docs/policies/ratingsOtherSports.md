@@ -23,6 +23,8 @@ World Rugby and FIVB rankings are points on their own scales, not Elo ratings: r
 
 The examples share this helper. It records one result in a round robin (where a level result may stand) and, when given, the two sides' starting ratings.
 
+<!-- doc-mock-examples:ignore — a shared helper; verify:docs-examples runs it under each example -->
+
 ```ts
 function recordResult({
   matchUpFormat,

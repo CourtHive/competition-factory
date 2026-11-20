@@ -136,7 +136,8 @@ mocksEngine.generateTournamentRecord({
       tieFormat: {
         scoreSource: 'REPORTED', // ...and no line detail either
         winCriteria: { valueGoal: 2 },
-        collectionDefinitions: [/* still describes what was played */],
+        // still describes what was played: three singles lines, best of three
+        collectionDefinitions: [{ collectionId: 'S', matchUpType: 'SINGLES', matchUpCount: 3, matchUpValue: 1 }],
       },
     },
   ],
@@ -199,10 +200,17 @@ mocksEngine.generateTournamentRecord({
 ## Complete Example
 
 ```js
-import { mocksEngine, tournamentEngine } from 'tods-competition-factory';
-import { COLLEGE_DEFAULT } from 'tods-competition-factory/constants/tieFormatConstants';
-import { MALE } from 'tods-competition-factory/constants/genderConstants';
-import { TEAM } from 'tods-competition-factory/constants/participantConstants';
+import {
+  participantConstants,
+  tieFormatConstants,
+  tournamentEngine,
+  genderConstants,
+  mocksEngine,
+} from 'tods-competition-factory';
+
+const { COLLEGE_DEFAULT } = tieFormatConstants;
+const { TEAM } = participantConstants;
+const { MALE } = genderConstants;
 
 const { tournamentRecord } = mocksEngine.generateTournamentRecord({
   setState: true,

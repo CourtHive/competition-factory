@@ -568,6 +568,8 @@ const {
 
 // Remove final, then semi-final
 const matchUps = tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps;
+const finalMatchUpId = matchUps.find(({ roundNumber }) => roundNumber === 2).matchUpId;
+const semiMatchUpId = matchUps.find(({ roundNumber }) => roundNumber === 1).matchUpId;
 
 mocksEngine.removeMatchUpOutcome({
   tournamentRecord,

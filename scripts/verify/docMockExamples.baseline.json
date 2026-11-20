@@ -1,0 +1,6 @@
+{
+  "comment": "Documented mocksEngine fences that fail when run. Shrink this by fixing them — never grow it to silence a finding. Regenerate: pnpm verify:docs-mock-examples --update-baseline",
+  "generated": "node scripts/verify/docMockExamples.mjs --update-baseline",
+  "count": 0,
+  "entries": []
+}

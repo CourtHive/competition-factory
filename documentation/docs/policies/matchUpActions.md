@@ -818,7 +818,8 @@ it('enables scoring for ready matchUps', () => {
   tournamentEngine.setState(tournamentRecord);
   const [drawId] = drawIds;
 
-  const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId });
+  // inContext: true hydrates each matchUp's sides with its participants
+  const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId, inContext: true });
   const readyMatchUp = matchUps.find(
     (m) => m.matchUpStatus === 'TO_BE_PLAYED' && m.sides?.every((s) => s.participantId),
   );
