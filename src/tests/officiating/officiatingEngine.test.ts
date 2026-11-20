@@ -1074,3 +1074,56 @@ describe('Officiating Engine — Conflict of Interest', () => {
     expect(state.officialRecords[officialRecordId].conflictDeclarations).toHaveLength(0);
   });
 });
+
+describe('Officiating Engine — Execution Queue refuses before the first write (TRACKER-009)', () => {
+  const addUmpire = {
+    method: 'addCertification',
+    params: { organisationId: 'org-001', certificationFamily: 'UMPIRE' },
+  };
+
+  const certificationCount = () => {
+    let record: any = officiatingEngine.getOfficialRecord({});
+    return record.officialRecord.certifications.length;
+  };
+
+  beforeEach(() => {
+    officiatingEngine.reset();
+    officiatingEngine.createOfficialRecord({ personId: 'person-pre', organisationId: 'org-001' });
+  });
+
+  it.each([
+    ['a null directive', null, 'directive must be an object'],
+    ['a numeric directive', 0, 'directive must be an object'],
+    ['a string directive', 'x', 'directive must be an object'],
+    ['non-object params', { method: 'addCertification', params: 'x' }, 'params must be an object'],
+    ['a non-object pipe', { method: 'addCertification', pipe: 'x' }, 'pipe must be an object'],
+    ['an unknown method', { method: 'nonexistentMethod' }, 'Method not found: nonexistentMethod'],
+  ])('refuses %s after a write and leaves the write undone', (_, later, message) => {
+    for (const rollbackOnError of [true, false]) {
+      let result: any = officiatingEngine.executionQueue([addUmpire, later as any], rollbackOnError);
+      expect(result.error).toEqual(INVALID_VALUES);
+      expect(result.context.message).toEqual(message);
+      expect(certificationCount()).toEqual(0);
+    }
+  });
+
+  it('refuses a pipe on the first directive', () => {
+    let result: any = officiatingEngine.executionQueue([{ ...addUmpire, pipe: { certificationId: true } }], true);
+    expect(result.error).toEqual(INVALID_VALUES);
+    expect(result.context.message).toEqual('pipe requires a preceding directive');
+    expect(certificationCount()).toEqual(0);
+  });
+
+  it('restores the snapshot when a later directive throws, and rethrows', () => {
+    const engine: any = officiatingEngine;
+    engine.throwingMethod = () => {
+      throw new Error('boom');
+    };
+    try {
+      expect(() => officiatingEngine.executionQueue([addUmpire, { method: 'throwingMethod' }], true)).toThrow('boom');
+      expect(certificationCount()).toEqual(0);
+    } finally {
+      delete engine.throwingMethod;
+    }
+  });
+});
