@@ -103,7 +103,7 @@ stands before the write (`dualKeepsOwnDecision`):
   no winner), took its team back out of the next dual and reset a result there. Once its lines project a winner the
   tally takes over as on any dual: the other side is a changed winner (row 14 where the dual's own call would be), and
   the same winner on a WALKOVER dual whose loser a `FIRST_MATCHUP` link has fed is row 12, as the dual's own
-  correction to a scored win is. v1 writes these lines itself and v2 records v1's whole write (`team`).
+  correction to a scored win is. Where that exit was carried to the loser (`propagateExitStatus`), the tally's relabel withdraws the carry as the dual's own relabel does (`relabelDualExitByTally`). v1 writes these lines itself and v2 records v1's whole write (`team`).
 - A LINE-DECIDED dual (its winner is the one its lines projected) whose winner a line write would change or remove,
   with the dual's downstream active, is refused row 14 before any write (`lineTakesPlayedOnDualWinner`). A dual scored
   by hand is exempt: it is not tallied, so its lines change nothing there. CA considered, and rejected, accepting such a
