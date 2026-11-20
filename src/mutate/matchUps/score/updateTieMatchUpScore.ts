@@ -6,14 +6,17 @@ import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension
 import { ensureSideLineUps } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
+import { isPropagatedExit } from '@Helpers/drawTopology/sideExitProvenance';
 import { isActiveMatchUp } from '@Query/matchUp/activeMatchUp';
 import { findTournamentId } from '@Acquire/findTournamentId';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
-import { isPropagatedExit } from '@Helpers/drawTopology/sideExitProvenance';
 import { isExit } from '@Validators/isExit';
 
 // constants and types
 import { COMPLETED, completedMatchUpStatuses, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { PolicyDefinitions, TournamentRecords, MatchUpsMap } from '@Types/factoryTypes';
+import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
+import { SUCCESS } from '@Constants/resultConstants';
 import {
   DrawDefinition,
   Event,
@@ -22,9 +25,6 @@ import {
   TieScoreSourceEnum,
   Tournament,
 } from '@Types/tournamentTypes';
-import { PolicyDefinitions, TournamentRecords, MatchUpsMap } from '@Types/factoryTypes';
-import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
-import { SUCCESS } from '@Constants/resultConstants';
 import {
   ErrorType,
   INVALID_MATCHUP,

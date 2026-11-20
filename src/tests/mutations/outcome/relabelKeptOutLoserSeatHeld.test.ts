@@ -17,7 +17,7 @@ const MODES: OutcomePipelineMode[] = [OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2, 
 
 /**
  * A RELABEL WHOSE KEPT-OUT LOSER HAS NO BYE IN THE FED SEAT IS v1's WHOLE (record soak 2026-11-18, class D3: 34 calls,
- * five UTR draws, each inconsistent as loaded).
+ * five ingested draws, each inconsistent as loaded).
  *
  * In a FIRST_MATCH_LOSER_CONSOLATION a second-round loser who won their first match is kept out of the consolation, and
  * a propagated BYE takes the fed seat. A record converted from a system whose consolation takes second-round losers
@@ -73,7 +73,7 @@ describe.each(MODES)('pipeline %s', (mode) => {
       );
     const before = seats();
     const outcome = { matchUpStatus: COMPLETED, winningSide: source.winningSide, ...change };
-    const result = tournamentEngine.setMatchUpStatus({ drawId, matchUpId: source.matchUpId, outcome });
+    let result: any = tournamentEngine.setMatchUpStatus({ drawId, matchUpId: source.matchUpId, outcome });
     expect(result.success).toEqual(true);
 
     const written = structureOf(tournamentEngine.getEvent({ drawId }).drawDefinition, MAIN).matchUps.find(

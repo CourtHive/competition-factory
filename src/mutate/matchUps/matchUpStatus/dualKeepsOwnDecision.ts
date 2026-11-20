@@ -1,6 +1,6 @@
 import { generateTieMatchUpScore } from '@Query/matchUp/tieMatchUpScore/generateTieMatchUpScore';
 
-// types
+// constants and types
 import type { DrawDefinition, Event, Structure, TieFormat } from '@Types/tournamentTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { MatchUpsMap } from '@Types/factoryTypes';

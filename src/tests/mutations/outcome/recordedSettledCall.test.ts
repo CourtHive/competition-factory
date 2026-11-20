@@ -14,15 +14,15 @@ import { randomSource } from '@Tools/prng';
 
 // constants and types
 import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
-import { COMPLETED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { RecordedCall } from '@Tests/testHarness/outcome/recordedCallHarness';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
-import type { AbstainReason } from '@Mutate/matchUps/outcome/types';
+import { COMPLETED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
+import type { AbstainReason } from '@Mutate/matchUps/outcome/types';
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { MODIFY_MATCHUP } from '@Constants/topicConstants';
-import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import type { Tournament } from '@Types/tournamentTypes';
+import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,

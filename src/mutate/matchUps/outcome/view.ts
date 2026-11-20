@@ -1,12 +1,6 @@
-import {
-  getSideExitProvenance,
-  carriedExitStatus,
-  exitCarriedFrom,
-  isPropagatedExit,
-} from '@Helpers/drawTopology/sideExitProvenance';
+import { feedEligibilityChange, lineFeedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { scheduleRefusal as scheduleWriteRefusal } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
-import { assignedSeatsHeld, exitAwardable } from '@Helpers/outcome/exitAwardable';
 import { removalMissingDrawPositions } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { fedLoserPlacementRefusal } from '@Mutate/matchUps/drawPositions/reconcileFedLoserEligibility';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
@@ -16,13 +10,13 @@ import { generateTieMatchUpScore } from '@Query/matchUp/tieMatchUpScore/generate
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
 import { resolveTieScoreSource } from '@Query/hierarchical/tieFormats/resolveTieScoreSource';
-import { feedEligibilityChange, lineFeedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { dualKeepsOwnDecision } from '@Mutate/matchUps/matchUpStatus/dualKeepsOwnDecision';
 import { correctionKindChange } from '@Mutate/matchUps/matchUpStatus/correctionKindGuard';
 import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinningSide';
-import { dualKeepsOwnDecision } from '@Mutate/matchUps/matchUpStatus/dualKeepsOwnDecision';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
+import { assignedSeatsHeld, exitAwardable } from '@Helpers/outcome/exitAwardable';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
@@ -47,6 +41,7 @@ import { buildStructuralIndex } from '@Query/matchUps/structuralIndex';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
+import { heldSeatRefusal } from '@Query/matchUp/heldSeatRefusal';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { isActiveMatchUp } from '@Query/matchUp/activeMatchUp';
@@ -57,6 +52,12 @@ import { canonicalJson } from '@Tools/canonicalJson';
 import { overlap, unique } from '@Tools/arrays';
 import { isObject } from '@Tools/objects';
 import {
+  getSideExitProvenance,
+  carriedExitStatus,
+  exitCarriedFrom,
+  isPropagatedExit,
+} from '@Helpers/drawTopology/sideExitProvenance';
+import {
   relabelledPathFeedChanges,
   relabelledPathFeedRefusal,
 } from '@Mutate/matchUps/drawPositions/relabelledPathFeeds';
@@ -64,15 +65,14 @@ import {
   missingDrawPositionsRefusal,
   type MissingDrawPositionsParams,
 } from '@Query/matchUp/missingDrawPositionsRefusal';
-import { heldSeatRefusal } from '@Query/matchUp/heldSeatRefusal';
 
 // constants and types
 import { BYE, COMPLETED, IN_PROGRESS, TO_BE_PLAYED, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCHUP, CONTAINER, LOSER, WIN_RATIO, QUALIFYING, DRAW } from '@Constants/drawDefinitionConstants';
 import type { BuildViewArgs, OutcomeRequest, OutcomeScore, OutcomeView, Reservation, ThroughBye } from './types';
 import type { ByePassage, ByeWalk, CarryLevel, WinnerLinkSeat, WinnerLoserSeat } from './types';
-import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import type { PositionTargetsResult } from '@Query/matchUp/positionTargets';
+import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import type { ErrorType } from '@Constants/errorConditionConstants';
 import { TieScoreSourceEnum } from '@Types/tournamentTypes';
 import { LINEUPS } from '@Constants/extensionConstants';

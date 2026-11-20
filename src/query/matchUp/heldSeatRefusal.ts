@@ -1,18 +1,24 @@
 import { drawPositionAssignmentRefusal } from '@Query/drawDefinition/drawPositionAssignmentRefusal';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
+import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
-import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
-import { findStructure } from '@Acquire/findStructure';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
-import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
+import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
+import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
+import { DRAW_POSITION_ASSIGNED, DRAW_POSITION_OCCUPIED, type ErrorType } from '@Constants/errorConditionConstants';
+import { BYE, COMPLETED, DEFAULTED, RETIRED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { positionTargets, type PositionTargetsResult } from '@Query/matchUp/positionTargets';
+import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
+import type { HydratedMatchUp } from '@Types/hydrated';
+import { TEAM } from '@Constants/matchUpTypes';
 import type {
   DrawDefinition,
   Event,
@@ -22,12 +28,10 @@ import type {
   Structure,
   Tournament,
 } from '@Types/tournamentTypes';
-import { DRAW_POSITION_ASSIGNED, DRAW_POSITION_OCCUPIED, type ErrorType } from '@Constants/errorConditionConstants';
-import { positionTargets, type PositionTargetsResult } from '@Query/matchUp/positionTargets';
-import { BYE, COMPLETED, DEFAULTED, RETIRED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
-import type { HydratedMatchUp } from '@Types/hydrated';
-import { TEAM } from '@Constants/matchUpTypes';
+
+const CARRIED_EXITS_WITH_RETIRED = new Set<string>([RETIRED, WALKOVER, DEFAULTED]);
+const CARRIED_EXITS = new Set<string>([WALKOVER, DEFAULTED]);
+const COMPLETED_OR_BYE = new Set<string>([COMPLETED, BYE]);
 
 /**
  * A WINNER OR A LOSER WITH NO SEAT TO TAKE IS REFUSED BEFORE THE FIRST WRITE (CA, 2026-10-22: an error leaves the record
@@ -151,7 +155,7 @@ function heldWinnerSeat({
   if (!drawPosition) return undefined;
   const previous = replaced ? sidePosition(3 - winningSide) : undefined;
   const held = (winnerMatchUp.drawPositions ?? []).filter((position) => !!position && position !== previous);
-  if (held.length < 2 || held.includes(drawPosition)) return undefined;
+  if (held.length < 2 || new Set(held).has(drawPosition)) return undefined;
 
   // a propagated BYE standing in a later round than its own gives the seat up (`yieldSquattingPropagatedBye`)
   const { positionAssignments } = structureAssignedDrawPositions({
@@ -177,8 +181,8 @@ function relabelledCarrySeat(params: HeldSeatParams, participantId?: string): He
 
 /** the call's exit follows its loser on: a WALKOVER or DEFAULTED under `propagateExitStatus`, a RETIRED by policy */
 function carriesExit(params: HeldSeatParams): boolean {
-  const carried = params.propagateRetirementAsExit ? [RETIRED, WALKOVER, DEFAULTED] : [WALKOVER, DEFAULTED];
-  return !!params.propagateExitStatus && carried.includes(params.matchUpStatus as string);
+  const carried = params.propagateRetirementAsExit ? CARRIED_EXITS_WITH_RETIRED : CARRIED_EXITS;
+  return !!params.propagateExitStatus && carried.has(params.matchUpStatus as string);
 }
 
 function heldLoserSeat({
@@ -207,7 +211,7 @@ function heldLoserSeat({
   // changes what the loser's reads, and the question cannot be asked before it
   if (loserMatchUp.structureId === structure.structureId || loserMatchUp.matchUpId === winnerMatchUp?.matchUpId)
     return undefined;
-  const targetDrawPositions = (loserMatchUp.drawPositions ?? []) as number[];
+  const targetDrawPositions = new Set((loserMatchUp.drawPositions ?? []) as number[]);
   const fedFirstMatch = loserTargetLink.linkCondition === FIRST_MATCHUP && loserMatchUp.roundNumber === 2;
 
   const assignmentsOf = (structureId: string) =>
@@ -218,7 +222,7 @@ function heldLoserSeat({
   )?.participantId;
   if (!loserParticipantId) return undefined;
   const seats = assignmentsOf(loserTargetLink.target.structureId).filter((assignment: PositionAssignment) =>
-    targetDrawPositions.includes(assignment.drawPosition),
+    targetDrawPositions.has(assignment.drawPosition),
   );
   // the levels a carried exit goes on to. A stored winner the call replaces is taken back out of every seat first
   const carried = () =>
@@ -338,8 +342,8 @@ function heldCarrySeat({
     structureAssignedDrawPositions({ drawDefinition: drawDefinition as DrawDefinition, structureId })
       .positionAssignments ?? [];
   const seatsOf = (matchUp: HydratedMatchUp) => {
-    const positions = (matchUp.drawPositions ?? []) as number[];
-    return assignmentsOf(matchUp.structureId).filter((a: PositionAssignment) => positions.includes(a.drawPosition));
+    const positions = new Set((matchUp.drawPositions ?? []) as number[]);
+    return assignmentsOf(matchUp.structureId).filter((a: PositionAssignment) => positions.has(a.drawPosition));
   };
   // where the loser stands furthest in the landing's structure, if they stand in it
   const standing = inContextDrawMatchUps
@@ -355,7 +359,7 @@ function heldCarrySeat({
   for (let level = 0; level < CARRY_LEVELS; level += 1) {
     // a result of its own stops the carry; a matchUp merely abandoned, suspended or under way holds none
     const status = current.matchUpStatus ?? TO_BE_PLAYED;
-    if (current.winningSide || isAnyExit(status) || [COMPLETED, BYE].includes(status)) return undefined;
+    if (current.winningSide || isAnyExit(status) || COMPLETED_OR_BYE.has(status)) return undefined;
     // a BYE beside a seat the loser has yet to take: they would go on past it, and where to is not read here
     const seated = current === standing;
     if (!seated && seatsOf(current).some((seat: PositionAssignment) => seat.bye)) return undefined;

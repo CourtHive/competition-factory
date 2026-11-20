@@ -9,8 +9,8 @@ import { setClock } from '@Tools/clock';
 // constants and types
 import { FEED_IN_CHAMPIONSHIP, FIRST_MATCH_LOSER_CONSOLATION, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { DOMINANT_DUO, USTA_COLLEGE } from '@Constants/tieFormatConstants';
-import { TEAM } from '@Constants/eventConstants';
 import { NO_VALID_ACTIONS } from '@Constants/errorConditionConstants';
+import { TEAM } from '@Constants/eventConstants';
 import {
   COMPLETED,
   DEFAULTED,

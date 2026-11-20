@@ -1,7 +1,7 @@
 import type { MatchUpsMap, PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import type { ErrorType } from '@Constants/errorConditionConstants';
-import type { RecordDraws } from '@Tools/replayedDraws';
 import type { OutcomeOp, TemporalProjection } from './ops';
+import type { RecordDraws } from '@Tools/replayedDraws';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { WorkingView } from './overlay';
 import type {

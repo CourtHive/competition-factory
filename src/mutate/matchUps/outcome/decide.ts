@@ -1,5 +1,3 @@
-import { recordDoubleExitCascade } from './plan/recordedCascade';
-import { recordWholeCall } from './plan/recordedCall';
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
 import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
@@ -9,18 +7,20 @@ import { PREDICTED_CALL, predictSettleWork, type SettleSite } from './settleWork
 import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { topLevelStructureId } from '@Mutate/notifications/drawNotifications';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
+import { cloneData, cloneState, restoreState } from '@Tools/cloneState';
 import { addGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
 import { convergence, isRelabel, planDirection } from './direction';
 import { compareIndex, type IndexComparison } from './indexOracle';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { recordDoubleExitCascade } from './plan/recordedCascade';
 import { positionTargets } from '@Query/matchUp/positionTargets';
-import { cloneData, cloneState, restoreState } from '@Tools/cloneState';
+import { createWorkingView, type WorkingView } from './overlay';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { compareViews, hydrateShadow } from './viewOracle';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
+import { recordWholeCall } from './plan/recordedCall';
 import { observeWrite, planWrite } from './write';
-import { createWorkingView, type WorkingView } from './overlay';
 import { refuseOutcome } from './refusals';
 import { stampedInThisCall } from './ops';
 import { buildOutcomeView } from './view';

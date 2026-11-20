@@ -1,11 +1,7 @@
-import {
-  removalMissingDrawPositions,
-  removeDirectedParticipants,
-} from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
-import { lineDirectsUnfedDual } from '@Query/matchUp/lineDirectsUnfedDual';
 import { refreshArrivalsFrom } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
-import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { directParticipants } from '@Mutate/matchUps/drawPositions/directParticipants';
+import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { lineDirectsUnfedDual } from '@Query/matchUp/lineDirectsUnfedDual';
 import { checkConnectedStructures } from './checkConnectedStructures';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -13,6 +9,10 @@ import { attemptToModifyScore } from './attemptToModifyScore';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { replaceQualifier } from './replaceQualifier';
 import { placeQualifier } from './placeQualifier';
+import {
+  removalMissingDrawPositions,
+  removeDirectedParticipants,
+} from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 
 // constants
 import { MISSING_DRAW_POSITIONS } from '@Constants/errorConditionConstants';

@@ -7,6 +7,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, expect, it } from 'vitest';
 
 // constants
+import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Constants/outcomePipelineConstants';
 import { CANNOT_CHANGE_OUTCOME } from '@Constants/errorConditionConstants';
 import {
@@ -16,7 +17,6 @@ import {
   COMPASS,
   MAIN,
 } from '@Constants/drawDefinitionConstants';
-import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
  * F2: a relabel withdraws ONE origin of a converged exit (census 9000008).

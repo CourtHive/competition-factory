@@ -2,9 +2,9 @@ import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/sta
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import POLICY_SCORING_DEFAULT from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
 import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
-import { afterEach, describe, expect, it, vi } from 'vitest';
 import { v1Writes } from '@Tests/testHarness/outcome/directionCounter';
 import { storedGraph } from '@Tests/testHarness/outcome/objectGraph';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';

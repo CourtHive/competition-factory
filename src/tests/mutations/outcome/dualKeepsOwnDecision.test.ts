@@ -1,15 +1,15 @@
 import { setOutcomePipeline } from '@Global/state/globalState';
+import { afterEach, describe, expect, it } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
-import { afterEach, describe, expect, it } from 'vitest';
 
 // constants
-import { CANNOT_CHANGE_WINNING_SIDE } from '@Constants/errorConditionConstants';
+import { COMPLETED, DEFAULTED, IN_PROGRESS, RETIRED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { CONSOLATION, FEED_IN_CHAMPIONSHIP, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { CANNOT_CHANGE_WINNING_SIDE } from '@Constants/errorConditionConstants';
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
-import { COMPLETED, DEFAULTED, IN_PROGRESS, RETIRED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
@@ -86,7 +86,7 @@ describe('a dual decided by its own exit or call keeps its winner while its line
     expect(set(A.matchUpId, { matchUpStatus: WALKOVER, winningSide: 1 }).success).toEqual(true);
     decideRest();
     begin();
-    const result = set(lines[1].matchUpId, lineOutcome(lines[1], 2));
+    let result: any = set(lines[1].matchUpId, lineOutcome(lines[1], 2));
     expect(result.success, JSON.stringify(result.error)).toEqual(true);
     expect(find(lines[1].matchUpId).winningSide).toEqual(2);
     expectKept(A, final, WALKOVER);
@@ -98,7 +98,7 @@ describe('a dual decided by its own exit or call keeps its winner while its line
     expect(set(A.matchUpId, { winningSide: 1 }).success).toEqual(true);
     decideRest();
     begin();
-    const result = set(lines[1].matchUpId, lineOutcome(lines[1], 2));
+    let result: any = set(lines[1].matchUpId, lineOutcome(lines[1], 2));
     expect(result.success, JSON.stringify(result.error)).toEqual(true);
     expectKept(A, final, COMPLETED);
   });
@@ -109,7 +109,7 @@ describe('a dual decided by its own exit or call keeps its winner while its line
     expect(set(A.matchUpId, { winningSide: 1 }).success).toEqual(true);
     decideRest();
     begin();
-    const result = set(lines[0].matchUpId, { matchUpStatus: DEFAULTED, winningSide: 1 });
+    let result: any = set(lines[0].matchUpId, { matchUpStatus: DEFAULTED, winningSide: 1 });
     expect(result.success, JSON.stringify(result.error)).toEqual(true);
     expectKept(A, final, COMPLETED);
   });
@@ -121,7 +121,7 @@ describe('a dual decided by its own exit or call keeps its winner while its line
     expect(set(A.matchUpId, { winningSide: 1 }).success).toEqual(true);
     decideRest();
     begin();
-    const result = set(lines[0].matchUpId, lineOutcome(lines[0], 1, RETIRED));
+    let result: any = set(lines[0].matchUpId, lineOutcome(lines[0], 1, RETIRED));
     expect(result.success, JSON.stringify(result.error)).toEqual(true);
     expectKept(A, final, COMPLETED);
     // the dual's own call handing it to the other side stays refused, its winner played on
@@ -181,7 +181,7 @@ describe('a line-decided dual: a line taking its winner away beneath a played-on
 
   it.each(MODES)('%s: CONTROL, a dual scored by hand is not tallied, so its lines are written', (mode) => {
     const { A, final, lines } = lineDecided(mode, true);
-    const result = set(lines[0].matchUpId, lineOutcome(lines[0], 2));
+    let result: any = set(lines[0].matchUpId, lineOutcome(lines[0], 2));
     expect(result.success, JSON.stringify(result.error)).toEqual(true);
     expectKept(A, final, COMPLETED);
     expect(find(A.matchUpId).matchUpStatus).not.toEqual(IN_PROGRESS);
@@ -234,7 +234,7 @@ describe("a line whose tally relabels its dual's carried exit settles the carry"
     expect(set(singles.matchUpId, lineOutcome(singles, 1)).success).toEqual(true);
     expect(find(dual.matchUpId).matchUpStatus).toEqual(DEFAULTED);
     setOutcomePipeline(mode);
-    const result = set(doubles.matchUpId, { winningSide: 1 }, { propagateExitStatus: true });
+    let result: any = set(doubles.matchUpId, { winningSide: 1 }, { propagateExitStatus: true });
     expect(result.success, JSON.stringify(result.error)).toEqual(true);
     expect([find(dual.matchUpId).matchUpStatus, find(dual.matchUpId).winningSide]).toEqual([COMPLETED, 1]);
     expect([find(carriedId).matchUpStatus, find(carriedId).winningSide]).toEqual([TO_BE_PLAYED, undefined]);

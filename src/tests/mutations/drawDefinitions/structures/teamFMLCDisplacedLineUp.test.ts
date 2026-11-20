@@ -4,12 +4,14 @@ import { expect, it } from 'vitest';
 
 // constants
 import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
+import { CANNOT_CHANGE_FEED_ELIGIBILITY } from '@Constants/errorConditionConstants';
 import { BYE, COMPLETED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import { RANKING } from '@Constants/scaleConstants';
-import { CANNOT_CHANGE_FEED_ELIGIBILITY } from '@Constants/errorConditionConstants';
+
+// Fixtures
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 
 // A TEAM FIRST_MATCH_LOSER_CONSOLATION draw of 8 with DOMINANT_DUO (two singles and a doubles; two rubbers win

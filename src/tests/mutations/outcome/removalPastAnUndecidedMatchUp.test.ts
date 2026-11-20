@@ -17,7 +17,7 @@ const MODES: OutcomePipelineMode[] = [OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2, 
 
 /**
  * A WINNER TAKEN BACK IS TAKEN OUT OF EVERY LATER ROUND THAT HOLDS THEM (record soak 2026-11-18, classes D6 and D7:
- * six calls on UTR draws, each inconsistent as loaded, ADVANCED_FROM_UNDECIDED).
+ * six calls on ingested draws, each inconsistent as loaded, ADVANCED_FROM_UNDECIDED).
  *
  * A converted record may hold a winner's drawPosition beyond a matchUp that is not decided: in the matchUp after it
  * (D7), or, in a structure whose later rounds are not halvings, in a matchUp off the winner's path that holds a result
@@ -79,7 +79,7 @@ describe.each(MODES)('pipeline %s', (mode) => {
       expect(tournamentEngine.getDrawInconsistencies({ drawId }).valid).toEqual(false);
       setOutcomePipeline(mode);
 
-      const result = tournamentEngine.setMatchUpStatus({ drawId, matchUpId: source.matchUpId, outcome });
+      let result: any = tournamentEngine.setMatchUpStatus({ drawId, matchUpId: source.matchUpId, outcome });
       expect(result.success).toEqual(true);
 
       const stored = (roundNumber: number) =>

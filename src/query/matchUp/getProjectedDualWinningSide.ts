@@ -4,8 +4,8 @@ import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants types and fixtures
-import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { COMPLETED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { MatchUpsMap } from '@Types/factoryTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 import {

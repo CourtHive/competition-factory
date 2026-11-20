@@ -1,9 +1,9 @@
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
+import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { ensuredDualSides } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
-import { makeDeepCopy } from '@Tools/makeDeepCopy';
-import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { isDoubleExit, isExit } from '@Validators/isExit';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 import {
   CLEAR_SCORE,
@@ -20,6 +20,11 @@ import {
 } from './planShared';
 
 // constants and types
+import type { DrawDefinition, Score, Side } from '@Types/tournamentTypes';
+import { LINEUPS } from '@Constants/extensionConstants';
+import type { HydratedMatchUp } from '@Types/hydrated';
+import type { LineUp } from '@Types/factoryTypes';
+import type { OutcomeOp } from '../ops';
 import {
   COMPLETED,
   DEAD_RUBBER,
@@ -28,11 +33,6 @@ import {
   TO_BE_PLAYED,
   WALKOVER,
 } from '@Constants/matchUpStatusConstants';
-import type { DrawDefinition, Score, Side } from '@Types/tournamentTypes';
-import { LINEUPS } from '@Constants/extensionConstants';
-import type { HydratedMatchUp } from '@Types/hydrated';
-import type { LineUp } from '@Types/factoryTypes';
-import type { OutcomeOp } from '../ops';
 import type {
   AbstainReason,
   DirectionPlan,

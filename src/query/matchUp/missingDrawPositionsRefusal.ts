@@ -1,15 +1,15 @@
-import { isDrawnResult } from '@Query/matchUps/roundRobinTally/drawnResults';
 import { resolveScoringFormat } from '@Query/hierarchical/resolveScoringFormat';
+import { isDrawnResult } from '@Query/matchUps/roundRobinTally/drawnResults';
 import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { isDoubleExit, isExit } from '@Validators/isExit';
+import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 
 // constants and types
 import type { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Structure } from '@Types/tournamentTypes';
 import { MISSING_DRAW_POSITIONS } from '@Constants/errorConditionConstants';
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { WIN_RATIO } from '@Constants/drawDefinitionConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 type UndirectedDrawnOutcomeParams = Readonly<{
   drawDefinition?: Readonly<

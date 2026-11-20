@@ -1,8 +1,8 @@
 import { playCall, prepareCall } from '@Tests/testHarness/outcome/recordedCallHarness';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
-import { afterEach, expect, it } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import { afterEach, expect, it } from 'vitest';
 import { setClock } from '@Tools/clock';
 
 // constants

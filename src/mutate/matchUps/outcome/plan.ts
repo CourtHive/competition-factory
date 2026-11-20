@@ -1,19 +1,19 @@
-import { takeAdmittedCarry, withPendingCarry, type CarrySource } from './plan/pendingCarry';
 import { clearedSingleExit, correctedSingleExit, refreshedArrivalOps, relabelledExit } from './plan/exitCorrections';
 import { getCapturedClock, getCapturedStamps, writeLegacyEnabled } from '@Global/state/globalState';
 import { producedRelayAfterOps, unwoundOps, unwoundPath, unwoundView } from './plan/unwindPath';
 import { standaloneBareWinnerOps, standaloneCarriedWinnerOps } from './plan/standaloneIndirect';
+import { carriedReason, heldByeCarryWithdrawal, retainedByeCarry } from './plan/carriedExit';
+import { takeAdmittedCarry, withPendingCarry, type CarrySource } from './plan/pendingCarry';
 import { retainedCarriedAwardOps, terminalOccupiedWinnerOps } from './plan/terminalAward';
 import { notesReason, scheduleOps, scheduleReason } from './plan/schedulePlan';
 import { autoCalcWrite, resultOps, writtenScore } from './plan/resultOps';
 import { producedExitOps, producedReason } from './plan/producedExit';
-import { carriedReason, heldByeCarryWithdrawal, retainedByeCarry } from './plan/carriedExit';
+import { doubleExitSeatOps, keptOutByeChain } from './plan/byeChain';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { convergedReason } from './plan/carriedConvergence';
 import { groupTally, writtenLine } from './plan/tallyOps';
 import { withFinishingOrder } from './finishingOrderOps';
 import { relabelledLoserElsewhere } from './direction';
-import { doubleExitSeatOps, keptOutByeChain } from './plan/byeChain';
 import {
   APPLY_VALUES,
   CLEAR_SCORE,

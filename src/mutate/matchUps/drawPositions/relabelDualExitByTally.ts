@@ -2,9 +2,9 @@ import { relabelWithoutDirection } from '@Mutate/matchUps/drawPositions/relabelL
 import { isDoubleExit, isExit } from '@Validators/isExit';
 
 // constants and types
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import type { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 type RelabelDualExitParams = {
   dualMatchUp?: Pick<MatchUp, 'matchUpId' | 'matchUpStatus' | 'winningSide'>;

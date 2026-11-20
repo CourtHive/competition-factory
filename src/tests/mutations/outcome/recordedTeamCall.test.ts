@@ -1,7 +1,7 @@
 import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
-import { v1Writes } from '@Tests/testHarness/outcome/directionCounter';
 import { storedGraph, storedRecord } from '@Tests/testHarness/outcome/objectGraph';
+import { v1Writes } from '@Tests/testHarness/outcome/directionCounter';
 import { TOPICS } from '@Tests/testHarness/outcome/directionFixtures';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
@@ -462,7 +462,7 @@ describe("along a seeded walk of a TEAM draw, a call a recording is asked for le
     let record = stored();
     const total = { asked: 0, made: 0, owned: 0 };
     // 160 steps (was 120): a dual's exit awarded to its present team against a claimed empty seat is now refused
-    // (option D prototype), which shortened the DOUBLE_ELIMINATION 8 walk to 19 recordings made, under its floor of 20
+    // (option D, CA 2026-11-20), which shortened the DOUBLE_ELIMINATION 8 walk to 19 recordings made, under its floor of 20
     for (let step = 0; step < 160; step++) {
       tournamentEngine.setState(structuredClone(record));
       const call = nextCall(random);

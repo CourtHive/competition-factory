@@ -50,7 +50,7 @@ const dual = (roundNumber: number, roundPosition: number) =>
     .matchUps.find((m) => m.roundNumber === roundNumber && m.roundPosition === roundPosition);
 
 const set = (matchUpId: string, outcome: any) => {
-  const result = tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId, outcome });
+  let result: any = tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId, outcome });
   expect(result.error).toBeUndefined();
 };
 
@@ -94,7 +94,7 @@ describe('a line given a winner under a dual holding no drawPositions is refused
         const { matchUpId, outcome } = setup();
         const before = structuredClone(tournamentEngine.getTournament().tournamentRecord);
         setOutcomePipeline(mode);
-        const result = tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId, outcome });
+        let result: any = tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId, outcome });
         expect(result.error?.code).toEqual(MISSING_DRAW_POSITIONS.code);
         expect(tournamentEngine.getTournament().tournamentRecord).toEqual(before);
       });

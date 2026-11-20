@@ -6,8 +6,8 @@ import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExte
 import { scoredTimeAction } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { getCapturedStamps } from '@Global/state/globalState';
-import { cloneData } from '@Tools/cloneState';
 import { isAnyExit } from '@Validators/isExit';
+import { cloneData } from '@Tools/cloneState';
 import { nowIso } from '@Tools/clock';
 import {
   mergeSideExitProvenance,
@@ -17,11 +17,11 @@ import {
   clearSideExitProvenance,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
-import type { Recording } from './recording';
 // constants and types
 import { MODIFY_DRAW_DEFINITION, MODIFY_MATCHUP, MODIFY_POSITION_ASSIGNMENTS } from '@Constants/topicConstants';
 import { completedMatchUpStatuses, BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
+import type { Recording } from './recording';
 import type {
   DrawDefinition,
   MatchUp,

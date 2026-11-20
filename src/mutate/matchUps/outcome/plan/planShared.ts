@@ -1,6 +1,6 @@
+import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
-import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
 import { TEAM } from '@Constants/matchUpTypes';
 
 // constants and types

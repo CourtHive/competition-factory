@@ -26,7 +26,7 @@ const MODES: OutcomePipelineMode[] = [OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2, 
  *  - PLACED BY ANOTHER FEED (USTA feed-in championships, 1,100 matchUps): the consolation rounds were filled in an order
  *    the links' feed profiles do not describe, and the stored `loserMatchUpId` names where the loser was put. The loser
  *    stands in the link's round, in another matchUp. `getDrawInconsistencies` finds nothing wrong with the draw.
- *  - NEVER PLACED (UTR consolation draws): the loser is in no matchUp of the link's structure.
+ *  - NEVER PLACED (ingested consolation draws): the loser is in no matchUp of the link's structure.
  *
  * The write is the matchUp's own in both pipelines; only the plan's claim differed, and `differential` raised it. Where
  * the loser does not stand in the link's matchUp the call is now read off v1's whole write (`loser`), so a relabel that
@@ -129,7 +129,7 @@ describe.each(MODES)('pipeline %s', (mode) => {
       expect(linkTarget.sides.some(({ participantId }) => participantId === loserId)).toEqual(false);
 
       const outcome = { matchUpStatus: source.matchUpStatus, winningSide: source.winningSide, ...change };
-      const result = tournamentEngine.setMatchUpStatus({ drawId, matchUpId, outcome });
+      let result: any = tournamentEngine.setMatchUpStatus({ drawId, matchUpId, outcome });
       expect(result.success).toEqual(true);
 
       const after = stored();

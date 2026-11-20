@@ -210,7 +210,7 @@ describe.each(MODES)('pipeline %s', (mode) => {
     setOutcomePipeline(mode);
 
     const before = structuredClone(tournamentEngine.getTournament().tournamentRecord);
-    const result = tournamentEngine.setMatchUpStatus({ drawId, matchUpId, outcome, ...params });
+    let result: any = tournamentEngine.setMatchUpStatus({ drawId, matchUpId, outcome, ...params });
     expect(result.error?.code).toEqual(error.code);
     expect(tournamentEngine.getTournament().tournamentRecord).toEqual(before);
   });

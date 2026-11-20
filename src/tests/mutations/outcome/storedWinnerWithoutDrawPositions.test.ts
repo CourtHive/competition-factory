@@ -4,8 +4,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 
 // constants and types
-import { MISSING_DRAW_POSITIONS } from '@Constants/errorConditionConstants';
 import { COMPLETED, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
+import { MISSING_DRAW_POSITIONS } from '@Constants/errorConditionConstants';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
@@ -65,7 +65,7 @@ describe.each(MODES)('pipeline %s', (mode) => {
     setOutcomePipeline(mode);
 
     const before = structuredClone(tournamentEngine.getTournament().tournamentRecord);
-    const result = tournamentEngine.setMatchUpStatus({ drawId, matchUpId, outcome });
+    let result: any = tournamentEngine.setMatchUpStatus({ drawId, matchUpId, outcome });
     expect(result.error?.code).toEqual(MISSING_DRAW_POSITIONS.code);
     expect(tournamentEngine.getTournament().tournamentRecord).toEqual(before);
   });

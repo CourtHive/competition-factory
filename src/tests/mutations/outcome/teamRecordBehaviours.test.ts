@@ -1,12 +1,12 @@
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { setSubscriptions } from '@Global/state/globalState';
+import { afterEach, describe, expect, it } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
-import { afterEach, describe, expect, it } from 'vitest';
 
 // constants
-import { CANNOT_CHANGE_WINNING_SIDE, INVALID_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
 import { FEED_IN_CHAMPIONSHIP, FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { CANNOT_CHANGE_WINNING_SIDE, INVALID_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
 import { DOMINANT_DUO, LAVER_CUP, USTA_COLLEGE } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
 import {
@@ -360,7 +360,7 @@ describe('a line entered again, its own winner unchanged, that hands a played-on
   ])('%s: CANNOT_CHANGE_WINNING_SIDE, and the record is unchanged', (_label, outcome) => {
     const { singles2 } = decidedAgainstItsLines(true);
     const before = record();
-    const result = set(singles2, outcome);
+    let result: any = set(singles2, outcome);
     expect(result.error).toEqual(CANNOT_CHANGE_WINNING_SIDE);
     expect(record()).toEqual(before);
   });
@@ -419,7 +419,7 @@ describe('a TEAM dual opposite a BYE takes no result', () => {
     const teamSide = byeDual.sides.find((side: any) => side.participantId).sideNumber;
     const winningSide = to === 'team' ? teamSide : 3 - teamSide;
     const before = record();
-    const result = set(byeDual.matchUpId, { ...outcome, winningSide });
+    let result: any = set(byeDual.matchUpId, { ...outcome, winningSide });
     expect(result.error).toEqual(INVALID_MATCHUP_STATUS);
     expect(record()).toEqual(before);
   });

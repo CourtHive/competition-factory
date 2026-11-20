@@ -1,5 +1,5 @@
+import { feedEligibilityChange, lineFeedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { missingDrawPositionsRefusal, isUndirectedDrawnOutcome } from '@Query/matchUp/missingDrawPositionsRefusal';
-import { heldSeatRefusal } from '@Query/matchUp/heldSeatRefusal';
 import { addMatchUpScheduleItems, scheduleRefusal } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { removalMissingDrawPositions } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
@@ -8,7 +8,6 @@ import { refreshArrivals } from '@Mutate/drawDefinitions/matchUpGovernor/attempt
 import { generateTieMatchUpScore } from '@Query/matchUp/tieMatchUpScore/generateTieMatchUpScore';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
-import { feedEligibilityChange, lineFeedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { correctionKindChange } from '@Mutate/matchUps/matchUpStatus/correctionKindGuard';
 import { relabelWithoutDirection } from '@Mutate/matchUps/drawPositions/relabelLoserExit';
 import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinningSide';
@@ -19,6 +18,7 @@ import { ensureGoesTo, holdGoesTo, type GoesToHold } from '@Query/matchUps/addGo
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
+import { assignedSeatsHeld, exitAwardable } from '@Helpers/outcome/exitAwardable';
 import { collectionChoiceOutcomeRefusal } from '@Query/matchUp/collectionChoice';
 import { swapWinnerLoser } from '@Mutate/matchUps/drawPositions/swapWinnerLoser';
 import { resolveScoringFormat } from '@Query/hierarchical/resolveScoringFormat';
@@ -28,6 +28,7 @@ import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { isDeciderStructure } from '@Query/drawDefinition/deciderStructures';
 import { isPropagatedExit } from '@Helpers/drawTopology/sideExitProvenance';
+import { lineTakesPlayedOnDualWinner } from './lineTakesPlayedOnDualWinner';
 import { validateDrawTallyOptions } from '@Validators/validateTallyPolicy';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -36,14 +37,13 @@ import { isPartialDualScore } from '@Scoring/analysis/isPartialDualScore';
 import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { heldSeatRefusal } from '@Query/matchUp/heldSeatRefusal';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { validateScore } from '@Scoring/analysis/validateScore';
-import { assignedSeatsHeld, exitAwardable } from '@Helpers/outcome/exitAwardable';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
+import { dualKeepsOwnDecision } from './dualKeepsOwnDecision';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
-import { dualKeepsOwnDecision } from './dualKeepsOwnDecision';
-import { lineTakesPlayedOnDualWinner } from './lineTakesPlayedOnDualWinner';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
@@ -59,9 +59,9 @@ import {
 
 // constants and types
 import type { DerivedStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
-import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
+import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';

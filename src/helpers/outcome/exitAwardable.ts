@@ -121,7 +121,7 @@ export function exitAwardable({
  *
  * A TEAM dual stores its own sides, and was not read against the draw's assignments at all: the empty list it was
  * asked against held every assignment vacuously, so a dual read as two participants opposite a BYE (2026-11-19) and
- * opposite a claimed EMPTY seat (prototype option D, pending CA's ruling: TEAM FIRST_MATCH_LOSER_CONSOLATION 8,
+ * opposite a claimed EMPTY seat (option D narrowed, CA's ruling 2026-11-20: TEAM FIRST_MATCH_LOSER_CONSOLATION 8,
  * `Consolation|1|1` DEFAULTED to its present team before the main loser arrived). A singles matchUp refuses both. The
  * dual is now read against the assignments as a singles matchUp is, so the one-participant waiver and `exitAwardable`
  * decide it: an exit awarded to the team already present is refused, one awarded to the awaited seat is kept. A LINE (a matchUp with a `collectionId`) carries its dual's drawPositions and is not asked here.
@@ -137,8 +137,9 @@ export function assignedSeatsHeld({
 }): boolean {
   if (assignedDrawPositions?.length !== 2) return false;
   if (matchUp?.sides && !isTeamDual(matchUp)) return true;
+  const assigned = new Set(assignedDrawPositions);
   return (positionAssignments ?? [])
-    .filter((assignment) => assignedDrawPositions.includes(assignment.drawPosition))
+    .filter((assignment) => assigned.has(assignment.drawPosition))
     .every((assignment) => assignment.participantId);
 }
 

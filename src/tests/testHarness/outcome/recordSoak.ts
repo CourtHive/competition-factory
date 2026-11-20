@@ -1,10 +1,10 @@
-import { getDifferentialTally, takeVerificationFailures } from '@Mutate/matchUps/outcome/differential';
-import { checkArrivalsTrue, checkLoserSeatsDerived } from '@Tests/testHarness/exitPropagation/properties';
 import { generateSchedule, prepareDraw, replay, rng, shrink } from '@Tests/testHarness/exitPropagation/sweep';
+import { checkArrivalsTrue, checkLoserSeatsDerived } from '@Tests/testHarness/exitPropagation/properties';
+import { getDifferentialTally, takeVerificationFailures } from '@Mutate/matchUps/outcome/differential';
 import { getInvariantViolations } from '@Tests/testHarness/exitPropagation/invariants';
+import { migrateTournamentRecord } from '@Mutate/tournaments/migrateTournamentRecord';
 import { v1Writes } from '@Tests/testHarness/outcome/directionCounter';
 import { soakDraw } from '@Tests/testHarness/outcome/recordSoakState';
-import { migrateTournamentRecord } from '@Mutate/tournaments/migrateTournamentRecord';
 import { getOutcomePipeline } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import path from 'node:path';
@@ -19,8 +19,8 @@ import {
 
 // constants and types
 import { OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
-import type { ScenarioConfig, Step } from '@Tests/testHarness/exitPropagation/sweep';
 import type { PropertyFailure } from '@Tests/testHarness/exitPropagation/transitions';
+import type { ScenarioConfig, Step } from '@Tests/testHarness/exitPropagation/sweep';
 import type { ReplayStep } from '@Tests/testHarness/exitPropagation/replayTypes';
 import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 

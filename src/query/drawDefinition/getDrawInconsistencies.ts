@@ -1,9 +1,9 @@
 import { getStructureInconsistencies } from '@Query/drawDefinition/getStructureInconsistencies';
-import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
 import { isLinkObject, isMalformedRoundLink } from '@Query/drawDefinition/malformedLinks';
 import { isPropagatedExit } from '@Helpers/drawTopology/sideExitProvenance';
+import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
 import { traversesByRound } from '@Helpers/drawTopology/linkTraversal';
 import { getTargetMatchUp } from '@Query/matchUps/getTargetMatchUp';

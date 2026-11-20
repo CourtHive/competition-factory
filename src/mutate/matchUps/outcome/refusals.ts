@@ -1,13 +1,13 @@
+import { lineTakesPlayedOnDualWinner } from '@Mutate/matchUps/matchUpStatus/lineTakesPlayedOnDualWinner';
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
-import { lineTakesPlayedOnDualWinner } from '@Mutate/matchUps/matchUpStatus/lineTakesPlayedOnDualWinner';
 import { rewritesCarriedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { lineDirectsUnfedDual } from '@Query/matchUp/lineDirectsUnfedDual';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { validateScore } from '@Scoring/analysis/validateScore';
 import { definedAttributes } from '@Tools/definedAttributes';
-import { isDoubleExit, isExit } from '@Validators/isExit';
 import { chooseRoute, dualWinningSideChange } from './route';
+import { isDoubleExit, isExit } from '@Validators/isExit';
 
 // constants and types
 import type { OutcomeRequest, OutcomeView, Refusal } from './types';

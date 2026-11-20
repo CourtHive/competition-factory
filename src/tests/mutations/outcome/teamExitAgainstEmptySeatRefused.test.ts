@@ -1,15 +1,15 @@
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { setOutcomePipeline } from '@Global/state/globalState';
+import { afterEach, describe, expect, it } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
-import { afterEach, describe, expect, it } from 'vitest';
 
 // constants
+import { DEFAULTED, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { INVALID_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
-import { DEFAULTED, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
@@ -17,8 +17,8 @@ import {
 } from '@Constants/outcomePipelineConstants';
 
 /**
- * A TEAM DUAL'S EXIT AGAINST AN EMPTY SEAT IS REFUSED AS A SINGLES MATCHUP'S IS (prototype of option D, pending CA's
- * ruling). § 2 row 6, its participants clause (§ 2.1).
+ * A TEAM DUAL'S EXIT AGAINST AN EMPTY SEAT IS REFUSED AS A SINGLES MATCHUP'S IS (option D narrowed, CA's ruling
+ * 2026-11-20). § 2 row 6, its participants clause (§ 2.1).
  *
  * FIRST_MATCH_LOSER_CONSOLATION 8, DOMINANT_DUO. `Main|1|1`'s loser reaches `Consolation|1|1` dp 3; dp 4 is claimed and
  * empty until `Main|1|2` is decided. A single exit entered there before then is waived only when it awards the exit to
@@ -77,7 +77,7 @@ describe('an exit against a claimed empty seat is refused, TEAM dual or singles'
 
     setOutcomePipeline(mode);
     const before = record();
-    const result = set('Consolation|1|1', { matchUpStatus: DEFAULTED, winningSide: 1 });
+    let result: any = set('Consolation|1|1', { matchUpStatus: DEFAULTED, winningSide: 1 });
     expect(result.error?.code).toEqual(INVALID_MATCHUP_STATUS.code);
     expect(record()).toEqual(before);
 
@@ -104,7 +104,7 @@ describe('an exit against a claimed empty seat is refused, TEAM dual or singles'
         { matchUpStatus: WALKOVER, winningSide: 1 },
         { winningSide: 1 },
       ]) {
-        const result = set('Consolation|1|1', outcome);
+        let result: any = set('Consolation|1|1', outcome);
         expect(result.error?.code, JSON.stringify(outcome)).toEqual(INVALID_MATCHUP_STATUS.code);
       }
       expect(record()).toEqual(before);
@@ -119,7 +119,7 @@ describe('CONTROL: the waiver and the produced exit are unchanged', () => {
     setup(team);
     expect(set('Main|1|1', { winningSide: 1 }).success).toEqual(true);
     setOutcomePipeline(mode);
-    const result = set('Consolation|1|1', { matchUpStatus: DEFAULTED, winningSide: 2 });
+    let result: any = set('Consolation|1|1', { matchUpStatus: DEFAULTED, winningSide: 2 });
     if (team) {
       expect(result.success, JSON.stringify(result.error)).toEqual(true);
       expect([at('Consolation|1|1').matchUpStatus, at('Consolation|1|1').winningSide]).toEqual([DEFAULTED, 2]);
@@ -131,7 +131,7 @@ describe('CONTROL: the waiver and the produced exit are unchanged', () => {
     expect(set('Main|1|1', { winningSide: 1 }).success).toEqual(true);
     setOutcomePipeline(mode);
     // `Main|2|1` holds dp 1; its other seat is fed by `Main|1|2`, still to be played
-    const result = set('Main|2|1', { matchUpStatus: WALKOVER, winningSide: 2 });
+    let result: any = set('Main|2|1', { matchUpStatus: WALKOVER, winningSide: 2 });
     expect(result.success, JSON.stringify(result.error)).toEqual(true);
     expect([at('Main|2|1').matchUpStatus, at('Main|2|1').winningSide]).toEqual([WALKOVER, 2]);
   });
@@ -143,7 +143,7 @@ describe('CONTROL: the waiver and the produced exit are unchanged', () => {
     expect([produced.matchUpStatus, produced.winningSide]).toEqual([WALKOVER, undefined]);
 
     setOutcomePipeline(mode);
-    const result = set('Main|1|2', { winningSide: 1 });
+    let result: any = set('Main|1|2', { winningSide: 1 });
     expect(result.success, JSON.stringify(result.error)).toEqual(true);
     const winner = at('Main|1|2').sides[0].participantId;
     expect([at('Main|2|1').matchUpStatus, at('Main|2|1').winningSide]).toEqual([WALKOVER, 2]);

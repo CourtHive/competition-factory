@@ -4,8 +4,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 
 // constants and types
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { TALLY } from '@Constants/extensionConstants';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,

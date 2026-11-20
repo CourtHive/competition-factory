@@ -1,10 +1,10 @@
+import { addNotice, DEFERRED_PAYLOAD, getTopics, markModified } from '@Global/state/globalState';
 import { scoredTimeAction } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
-import { getInContextMatchUp } from '@Mutate/matchUps/score/modifyMatchUpScore';
+import { UNANNOUNCED_WRITE, UNNAMED_TOURNAMENT } from '@Global/state/noticeIdentity';
 import { applyOutcomeOps, RECORDED_ENTITY, splitScoredTimeCleanup } from './ops';
+import { getInContextMatchUp } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { findStructure } from '@Acquire/findStructure';
-import { addNotice, DEFERRED_PAYLOAD, getTopics, markModified } from '@Global/state/globalState';
-import { UNANNOUNCED_WRITE, UNNAMED_TOURNAMENT } from '@Global/state/noticeIdentity';
 import {
   liveNoticeEffects,
   type NoticeEffects,
@@ -17,10 +17,10 @@ import {
 } from '@Mutate/notifications/drawNotifications';
 
 // constants and types
+import { MODIFY_DRAW_DEFINITION, MODIFY_MATCHUP, UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import type { BuildViewArgs, OutcomeView, PlanShape, Route } from './types';
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { MODIFY_DRAW_DEFINITION, MODIFY_MATCHUP, UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
 import type { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
 import type { ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';

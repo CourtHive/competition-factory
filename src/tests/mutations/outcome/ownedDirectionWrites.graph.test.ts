@@ -178,7 +178,7 @@ function writeKeepingDual(
   counter.calls = 0;
   counter.active = true;
   try {
-    const result = tournamentEngine.setMatchUpStatus({ drawId, matchUpId: lineId, outcome });
+    let result: any = tournamentEngine.setMatchUpStatus({ drawId, matchUpId: lineId, outcome });
     expect(result).toMatchObject({ success: true });
     expect(counter.calls).toBe(1);
   } finally {

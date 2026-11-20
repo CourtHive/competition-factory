@@ -8,6 +8,10 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { setClock } from '@Tools/clock';
 
 // constants and types
+import { CANNOT_CHANGE_WINNING_SIDE, INVALID_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
+import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
+import { TEAM } from '@Constants/eventConstants';
 import {
   DEFAULTED,
   DOUBLE_DEFAULT,
@@ -16,10 +20,6 @@ import {
   TO_BE_PLAYED,
   WALKOVER,
 } from '@Constants/matchUpStatusConstants';
-import { CANNOT_CHANGE_WINNING_SIDE, INVALID_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
-import { TEAM } from '@Constants/eventConstants';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
