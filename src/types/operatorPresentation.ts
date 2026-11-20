@@ -1,5 +1,6 @@
 /**
- * Version one of the read-only presentation facet of an operator document.
+ * EXPLORATORY / UNPUBLISHED presentation candidate; not operator-document contract v1.
+ * Publication is held until that complete contract is reviewed.
  * CFS must wrap it with verified audience, source revision and time validity before delivery.
  * These DTOs carry no records, action eligibility, mutation payloads or transport/session behavior.
  */
@@ -24,6 +25,8 @@ export type OperatorMatchPresentation = {
   readonly schedule?: {
     readonly date?: string;
     readonly time?: string;
+    /** Producer-supplied venue IANA zone; never inferred from the browser. */
+    readonly timeZone?: string;
     readonly court?: string;
     readonly venue?: string;
   };

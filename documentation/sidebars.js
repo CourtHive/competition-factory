@@ -32,6 +32,7 @@ module.exports = {
       label: 'Concepts',
       items: [
         'concepts/performance',
+        'concepts/operator-presentation',
         {
           type: 'category',
           label: 'Tournament Setup',

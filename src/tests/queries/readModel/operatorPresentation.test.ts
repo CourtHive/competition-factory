@@ -116,6 +116,20 @@ describe('operator presentation — canonical factory decisions, explicit displa
     },
   );
 
+  it('forwards producer-resolved venue zones without falling back to a browser or tournament guess', () => {
+    const input = match({ schedule: { scheduledDate: '2026-11-20', scheduledTime: '10:30', venueId: 'v1' } });
+    const view = operatorMatchPresentation(input, { venueTimeZone: 'America/New_York' });
+    expect(view.schedule?.timeZone).toBe('America/New_York');
+    expect(operatorMatchPresentation(input).schedule?.timeZone).toBeUndefined();
+    let result: any = operatorDrawPresentation({
+      drawId: 'd',
+      structureId: 's',
+      matchUps: [input],
+      venueTimeZones: { v1: 'Asia/Tokyo' },
+    });
+    expect(result.presentation.rounds[0].matches[0].schedule.timeZone).toBe('Asia/Tokyo');
+  });
+
   it('returns an explicit empty structure and refuses mixed contexts or duplicate identities', () => {
     let result: any = operatorDrawPresentation({ drawId: 'd', structureId: 's', matchUps: [] });
     expect(result.presentation.rounds).toEqual([]);

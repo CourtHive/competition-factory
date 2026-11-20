@@ -16,7 +16,10 @@ import type { ResultType } from '@Types/factoryTypes';
  * This is not an authorization boundary or an action offer; CFS must authorize/filter upstream and add the document
  * envelope (audience, source revision, freshness). Only explicitly selected display fields leave this projector.
  */
-export function operatorMatchPresentation(matchUp: HydratedMatchUp): OperatorMatchPresentation {
+export function operatorMatchPresentation(
+  matchUp: HydratedMatchUp,
+  { venueTimeZone }: { venueTimeZone?: string } = {},
+): OperatorMatchPresentation {
   const scoreText = generateScoreString({
     sets: [...(matchUp.score?.sets ?? [])], // the canonical formatter sorts its array; never give it the input array
     matchUpFormat: matchUp.matchUpFormat,
@@ -50,6 +53,7 @@ export function operatorMatchPresentation(matchUp: HydratedMatchUp): OperatorMat
       ? {
           date: matchUp.schedule.scheduledDate,
           time: matchUp.schedule.scheduledTime,
+          timeZone: venueTimeZone,
           court: matchUp.schedule.courtName,
           venue: matchUp.schedule.venueName,
         }
@@ -63,11 +67,13 @@ export function operatorMatchPresentation(matchUp: HydratedMatchUp): OperatorMat
  */
 export function operatorDrawPresentation({
   winnerLinkRoundNumbers,
+  venueTimeZones,
   structureId,
   matchUps,
   drawId,
 }: {
   winnerLinkRoundNumbers?: number[];
+  venueTimeZones?: Readonly<Record<string, string>>;
   matchUps: HydratedMatchUp[];
   structureId: string;
   drawId: string;
@@ -99,7 +105,11 @@ export function operatorDrawPresentation({
         roundNumber,
         name: roundData.roundProfile?.[roundNumber]?.roundName,
         feedRound: !!roundData.roundProfile?.[roundNumber]?.feedRound,
-        matches: (roundData.roundMatchUps?.[roundNumber] ?? []).map(operatorMatchPresentation),
+        matches: (roundData.roundMatchUps?.[roundNumber] ?? []).map((matchUp) =>
+          operatorMatchPresentation(matchUp, {
+            venueTimeZone: matchUp.schedule?.venueId ? venueTimeZones?.[matchUp.schedule.venueId] : undefined,
+          }),
+        ),
       })),
     },
   };
