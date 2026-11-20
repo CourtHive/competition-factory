@@ -44,6 +44,7 @@ import {
   unwoundConvergedFor,
   unwoundKeptOutOps,
   unwoundThrough,
+  withdrawnCarryThrough,
 } from './plan/givenWinner';
 import {
   carriedDualLanding,
@@ -757,6 +758,55 @@ function keptOutSeatOps(view: OutcomeView, seat: { structureId: string; drawPosi
   return chain ? [...chain.assigns, ...chain.writes] : [];
 }
 
+/**
+ * The matchUp a loser seated opposite a BYE goes on into: the clean one beyond (`loserThroughBye`), a passage's end, or
+ * where the unwind left their position standing (`unwoundThrough`); otherwise where the call withdraws the old loser's
+ * carry and their position still stands (`withdrawnCarryThrough`, C28), returned as `withdrawnThrough` too
+ */
+function loserThroughBye(
+  view: OutcomeView,
+  loser: DirectionPlan['loser'] | undefined,
+  plainPassage: ReturnType<typeof loserByeArrival>,
+  unwound: OutcomeOp[],
+  ops: OutcomeOp[],
+  sourceMatchUpId?: string,
+) {
+  if (!loser?.arrives || !view.targets.loserTargetSeat?.opponentBye) return {};
+  const standing =
+    view.targets.loserThroughBye ??
+    view.targets.loserByePassage?.through ??
+    plainPassage?.through ??
+    unwoundThrough(view, unwound, sourceMatchUpId);
+  if (standing) return { loserThrough: standing };
+  const withdrawnThrough = withdrawnCarryThrough(view, ops);
+  return { loserThrough: withdrawnThrough, withdrawnThrough };
+}
+
+/**
+ * The line-up the new loser's assignment writes on the matchUp beyond the BYE whose withdrawn carry v1's settle pass
+ * re-derives after the call (`reconcileScoredTimes`): that pass is the matchUp's last writer and names its notice, so the
+ * line-up's write announces nothing of its own (C28, a changed winner)
+ */
+function quietUnderReconcile(
+  lineUps: OutcomeOp[] | false,
+  through: { matchUpId: string } | undefined,
+  ops: OutcomeOp[],
+): OutcomeOp[] | false {
+  const reconciled =
+    through &&
+    ops.some(
+      (op) =>
+        op.op === 'setMatchUpResult' &&
+        op.matchUpId === through.matchUpId &&
+        op.withdrawsCarry &&
+        op.announcedAs === 'reconcileScoredTimes',
+    );
+  if (!lineUps || !reconciled) return lineUps;
+  return lineUps.map((op) =>
+    op.op === 'setSideLineUp' && op.matchUpId === through.matchUpId ? { ...op, quiet: true as const } : op,
+  );
+}
+
 /** A recorded single-call plan after the shared refusal, dual and no-op gates. */
 function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObligation?: SeatObligation): OutcomePlan {
   const { request, view } = args;
@@ -809,13 +859,14 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   const plainPassage = loserByeArrival(view, loser, args.route, write);
   // a participant placed opposite a BYE goes on through it, a loser fed onto the seat or a winner into a BYE-held
   // target: their position joins the next matchUp, which is stamped
-  const loserThrough =
-    loser?.arrives && view.targets.loserTargetSeat?.opponentBye
-      ? (view.targets.loserThroughBye ??
-        view.targets.loserByePassage?.through ??
-        plainPassage?.through ??
-        unwoundThrough(view, unwound, request.matchUpId))
-      : undefined;
+  const { loserThrough, withdrawnThrough } = loserThroughBye(
+    view,
+    loser,
+    plainPassage,
+    unwound,
+    ops,
+    request.matchUpId,
+  );
   // the loser's own position, where the unwind left it standing in the matchUp beyond (`unwoundThrough`)
   const placedThrough =
     loserThrough && !view.targets.loserThroughBye && !view.targets.loserByePassage?.through && !plainPassage?.through;
@@ -823,7 +874,9 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
     winner && view.targets.winner?.hasBye ? view.targets.winnerThroughBye?.[write.winningSide as 1 | 2] : undefined;
   // a dual's own call: its loser's assignment writes the team's line-up where it lands (S7)
   const dualCall = view.isTeam && !view.line && !args.asDual;
-  const lineUps = dualCall ? dualLineUpOps({ ...args, drawDefinition }, loser, loserThrough) : [];
+  const lineUps = dualCall
+    ? quietUnderReconcile(dualLineUpOps({ ...args, drawDefinition }, loser, loserThrough), withdrawnThrough, ops)
+    : [];
   if (!lineUps) return { abstain: 'team' };
   // a carried exit's write on the matchUp the loser lands in (S5)
   // The carrier's assignment returns before progressExitStatus announces its provenance beside the BYE.

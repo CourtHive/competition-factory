@@ -1495,7 +1495,12 @@ That dual is announced by `directLoser`. A loser kept out of a first-match feed 
 A loser seated opposite a BYE carries its line-up onto the BYE matchUp as above and goes on through it into the dual
 beyond, whose side takes the team's line-up as the draw holds it (`setSideLineUp`, v1's `updateSideLineUp` at the
 loser's assignment), on the side holding the loser's drawPosition, announced `updateSidLineUp` before the BYE matchUp's
-`directLoser`. A team the draw holds no line-up for takes none there, as v1 writes it.
+`directLoser`. A team the draw holds no line-up for takes none there, as v1 writes it. Where the winner changes and the
+old loser's walkover was carried past that BYE (C28), the call withdraws the carry from the dual beyond, where the seat's
+position still stands, and the new loser's assignment writes its line-up there too (`withdrawnCarryThrough`). That write
+announces nothing of its own: v1's settle pass re-derives the dual after the call and names its notice
+(`reconcileScoredTimes`, after the BYE matchUp). Found 2026-11-20 in TEAM FIRST_MATCH_LOSER_CONSOLATION 8/6, walk seed
+36, where v2 had kept the old loser's line-up.
 
 **A dual's own call given a winner** (scored or not, or a single exit) is written and directed as any winner is
 (`directParticipants`): the result with its status codes and `scoredTime`, the winner placed in the next dual (announced

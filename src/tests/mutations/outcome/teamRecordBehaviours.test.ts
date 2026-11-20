@@ -521,6 +521,40 @@ describe("a losing team's line-up where its loser link seats it, after the dual'
     expect(notice?.context).toEqual('updateSidLineUp');
     expect(!!notice?.eventId).toEqual(withEvent);
   });
+
+  it('a walkover carried past the BYE, then corrected to the other winner: every consolation dual the new loser reaches takes its line-up', () => {
+    generate({ drawSize: 8, participantsCount: 6, drawType: FIRST_MATCH_LOSER_CONSOLATION }, 36);
+    const source = dual(1, 2);
+    enter(source.matchUpId, { matchUpStatus: WALKOVER, winningSide: 1 }, { propagateExitStatus: true });
+    const beyond = dual(2, 1, 'Consolation');
+    expect(beyond.matchUpStatus).toEqual(WALKOVER);
+
+    const announced: any[] = [];
+    setSubscriptions({ subscriptions: { modifyMatchUp: (notices: any[]) => announced.push(...notices) } });
+    enter(source.matchUpId, { winningSide: 2 });
+    const loser = dual(1, 2).sides.find((side: any) => side.sideNumber === 1).participantId;
+    const reached = tournamentEngine
+      .allDrawMatchUps({ drawId: DRAW_ID, inContext: true })
+      .matchUps.filter(
+        (matchUp: any) =>
+          !matchUp.collectionId &&
+          matchUp.structureName === 'Consolation' &&
+          matchUp.sides?.some((side: any) => side.participantId === loser),
+      );
+    // the BYE dual the loser is seated in and the dual beyond it, its carried walkover withdrawn
+    expect(reached.map((matchUp: any) => matchUp.roundNumber).sort()).toEqual([1, 2]);
+    for (const matchUp of reached) {
+      const side = matchUp.sides.find((held: any) => held.participantId === loser);
+      const storedSide = stored(matchUp.matchUpId).sides.find((held: any) => held.sideNumber === side.sideNumber);
+      expect(players(storedSide.lineUp)).toEqual(players(lineUpOf(loser)));
+    }
+    expect(dual(2, 1, 'Consolation').matchUpStatus).toEqual(TO_BE_PLAYED);
+    // the dual beyond is announced by the pass that withdraws the carried walkover, after the BYE dual
+    const order = announced.map((notice) => notice.matchUp?.matchUpId);
+    const notice = announced.find((held) => held.matchUp?.matchUpId === beyond.matchUpId);
+    expect(notice?.context).toEqual('reconcileScoredTimes');
+    expect(order.indexOf(beyond.matchUpId)).toBeGreaterThan(order.indexOf(dual(1, 1, 'Consolation').matchUpId));
+  });
 });
 
 describe('a team an award sends on into a dual that still sides its position is announced by its line-up', () => {
