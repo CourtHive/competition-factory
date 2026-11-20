@@ -65,3 +65,8 @@ if (fs.existsSync(constantsDts)) {
   fs.copyFileSync(constantsDts, './dist/constants.d.mts');
   fs.copyFileSync(constantsDts, './dist/constants.d.cts');
 }
+
+// A types-only operator presentation contract: deliberately no runtime export condition.
+for (const ext of ['mts', 'cts']) {
+  fs.copyFileSync('./dist/operator-types.d.ts', `./dist/operator-types.d.${ext}`);
+}

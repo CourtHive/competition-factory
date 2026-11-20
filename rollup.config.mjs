@@ -172,4 +172,20 @@ const constantsTypes = [
   },
 ];
 
-export default [...cjsExports, ...esmExport, ...engineTypes, ...scoreEntryStateTypes, ...constantsTypes];
+const operatorTypes = [
+  {
+    input: 'src/types/operatorPresentation.ts',
+    onwarn,
+    plugins: [dts({ compilerOptions: { paths: tsConfig.compilerOptions.paths } })],
+    output: { file: `${distPath}/operator-types.d.ts`, format: 'es' },
+  },
+];
+
+export default [
+  ...cjsExports,
+  ...esmExport,
+  ...engineTypes,
+  ...scoreEntryStateTypes,
+  ...constantsTypes,
+  ...operatorTypes,
+];

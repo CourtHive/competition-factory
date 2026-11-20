@@ -165,6 +165,32 @@ try {
   fail('constants subpath smoke failed against tarball', err);
 }
 
+// The first read-only operator presentation contract is types-only: it must never load a runtime module.
+log('operator presentation contracts (types only, both module formats)…');
+try {
+  process.stdout.write(run('npx --no-install tsc -p tsconfig.operator.json', { cwd: fixture }));
+  process.stdout.write(run('node operator.runtime.mjs', { cwd: fixture }));
+  const result = await build({
+    absWorkingDir: fixture,
+    stdin: {
+      contents:
+        "import type { OperatorDrawPresentation } from 'tods-competition-factory/operator-types'; export const value: OperatorDrawPresentation | undefined = undefined;",
+      resolveDir: fixture,
+      loader: 'ts',
+    },
+    bundle: true,
+    write: false,
+    metafile: true,
+    format: 'esm',
+    platform: 'browser',
+  });
+  if (Object.keys(result.metafile.inputs).some((path) => path !== '<stdin>'))
+    throw new Error('operator types retained a runtime dependency');
+  log('operator types erase completely in a packed browser consumer');
+} catch (err) {
+  fail('operator presentation contract smoke failed against tarball', err);
+}
+
 // 5. Clean stage.
 if (!process.env.VERIFY_PACK_KEEP) {
   rmSync(stage, { recursive: true, force: true });

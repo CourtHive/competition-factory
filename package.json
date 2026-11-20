@@ -79,6 +79,14 @@
         "types": "./dist/constants.d.cts",
         "default": "./dist/constants/index.js"
       }
+    },
+    "./operator-types": {
+      "import": {
+        "types": "./dist/operator-types.d.mts"
+      },
+      "require": {
+        "types": "./dist/operator-types.d.cts"
+      }
     }
   },
   "types": "dist/tods-competition-factory.d.ts",
