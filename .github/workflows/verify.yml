@@ -22,8 +22,9 @@ name: Verify
 #   slow-gates      route-differential, double-exit-sweep, deep-corrections and hydrations, one job each
 #   team-arms       verify:team-arms split 5 ways (vitest --shard), nineteen strictly selected TEAM files, once
 #                   under OUTCOME_PIPELINE=v1 and once under v2
-#   v2-arm          INFORMATIONAL: the suite under OUTCOME_PIPELINE=v2 on a dev PR touching the outcome pipeline,
-#                   split 4 ways (vitest --shard)
+#   pipeline-arm    the suite under the outcome pipeline the coverage run does not run alone, split 4 ways: the
+#                   v1 fallback into dev (coverage runs v2, the default), v2 on the path to a release (coverage
+#                   runs the differential, whose applied writes are v1's)
 #   differential-arm the suite under OUTCOME_PIPELINE=differential on a dev PR touching the outcome pipeline, split
 #                   4 ways: a divergence between v1 and v2 fails it (into master the coverage shards run it)
 #   verify          `verify (node N)`, the check master's branch protection requires: it passes only
@@ -308,11 +309,12 @@ jobs:
         run: pnpm verify:pack
 
   # On the path to a release (a PR into master, or a push to master) coverage runs the WHOLE suite
-  # under OUTCOME_PIPELINE=differential: every call runs v1 and the v2 outcome pipeline, v2 is
-  # measured where it executes, and a divergence between them fails the job. Into dev, v2 is
-  # excluded from coverage instead (vitest.config.mts), so building it spends no margin, and the
-  # suite runs under OUTCOME_PIPELINE=v1, named rather than left to the engine's default: what
-  # coverage measures into dev does not move when that default does.
+  # under OUTCOME_PIPELINE=differential: every call runs v1 and the v2 outcome pipeline, both are
+  # measured where they execute, and a divergence between them fails the job. Into dev the suite
+  # runs under OUTCOME_PIPELINE=v2, the engine's default since the flip (Path A step 3), and v2 is
+  # measured there too (vitest.config.mts leaves it out only under v1). Named rather than left to
+  # the engine's default: what coverage measures does not move when that default does. The v1
+  # fallback, kept through 7.x, runs in `pipeline-arm`.
   #
   # The suite runs as 4 shards. A shard's own coverage is partial, so vitest.config.mts drops the
   # thresholds on a `--shard` run; the shard fails only on a failing test (a differential divergence
@@ -348,7 +350,7 @@ jobs:
           esac
           pnpm exec vitest run --coverage --shard=${{ matrix.shard }}/4 --reporter=default --reporter=blob --reporter=./scripts/shardTimingReporter.mjs "${workers[@]}"
         env:
-          OUTCOME_PIPELINE: ${{ (github.event_name == 'workflow_dispatch' || github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'differential' || 'v1' }}
+          OUTCOME_PIPELINE: ${{ (github.event_name == 'workflow_dispatch' || github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'differential' || 'v2' }}
 
       # `.vitest/blob/blob-<shard>-4.json` (vitest's default); a dot-directory, hence include-hidden-files
       - uses: actions/upload-artifact@v7
@@ -409,7 +411,7 @@ jobs:
           fi
           pnpm exec vitest run --merge-reports=.vitest/blob --coverage --reporter=default
         env:
-          OUTCOME_PIPELINE: ${{ (github.event_name == 'workflow_dispatch' || github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'differential' || 'v1' }}
+          OUTCOME_PIPELINE: ${{ (github.event_name == 'workflow_dispatch' || github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'differential' || 'v2' }}
 
       # How much margin the merged coverage has above the floors, in items (CA, 2026-10-05: report +
       # an absolute minimum). Written to the job summary on every run, and the run fails if any metric
@@ -474,59 +476,44 @@ jobs:
       - name: verify:${{ matrix.gate }}
         run: pnpm verify:${{ matrix.gate }}
 
-  # THE v2 ARM (outcome v2 executor plan § 6.0, "The CI arm"), INFORMATIONAL until S2 makes it required.
-  # The whole suite under OUTCOME_PIPELINE=v2, on a PR into dev that touches the outcome pipeline's
-  # paths. It is not in `verify`'s needs and it never fails the run: a red here is read, not gated on.
-  # Until then only checkpoints run `differential`, and nothing ran `v2`.
-  #
-  # SHARDED 4 ways (CA, 2026-10-28), as coverage is: as one job it ran the whole suite on one runner and
-  # was the slowest job in a dev PR run (33-34 min against 7-15 for a coverage shard, #5909 and #5910).
-  # A shard is informational like the whole was, and each repeats the cheap path check.
-  v2-arm:
+  # THE PIPELINE ARM (Path A step 3, the flip). The whole suite under the outcome pipeline the coverage run does not
+  # run alone, so every tier runs the default (v2) alone, the v1 fallback's writes, and the differential:
+  # - into dev, coverage runs v2 (the default), and this arm runs the v1 fallback, kept selectable through 7.x, so it
+  #   cannot rot unseen before it is removed. It replaces the informational v2 arm, which ran v2 while v1 was the
+  #   default. It is REQUIRED and runs on every heavy run, not only on outcome paths: v1 was the gated suite on every
+  #   dev PR until the flip, and a change outside the outcome paths (mocks, policies, queries) can break it.
+  # - on the path to a release, coverage runs the differential, whose applied writes are v1's, so this arm runs v2,
+  #   the default production runs, alone.
+  # SHARDED 4 ways, as coverage is (the v2 arm as one job took 33-34 min, #5909 and #5910).
+  pipeline-arm:
     needs: scope
-    if: github.event_name == 'pull_request' && github.base_ref == 'dev' && needs.scope.outputs.light != 'true'
-    continue-on-error: true
-    # slowest measured as ONE job: 34 min; a shard is a quarter of that
+    if: needs.scope.outputs.light != 'true'
+    # slowest measured as ONE job (the v2 arm): 34 min; a shard is a quarter of that
     timeout-minutes: 30
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         shard: [1, 2, 3, 4]
-    name: v2-arm ${{ matrix.shard }}/4
+    name: pipeline-arm ${{ matrix.shard }}/4
+    env:
+      # the complement of `coverage-shard`'s OUTCOME_PIPELINE: v1 where coverage runs v2, v2 where it runs the differential
+      OUTCOME_PIPELINE: ${{ (github.event_name == 'workflow_dispatch' || github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'v2' || 'v1' }}
+      TZ: UTC
     steps:
       - uses: actions/checkout@v7
-        with:
-          # the PR's merge commit and its first parent, the base tip (as release-scope.sh reads them)
-          fetch-depth: 2
 
-      - name: touches the outcome pipeline
-        id: paths
-        run: |
-          # the outcome paths, and the queries the v2 view decides by (addGoesTo, positionTargets, the draw reads)
-          if git diff --name-only HEAD^1 HEAD | grep -qE '^src/(mutate/(matchUps|drawDefinitions/positionGovernor|drawDefinitions/matchUpGovernor)|query/(matchUps|matchUp|drawDefinition))/'; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "no outcome pipeline path changed; the v2 arm does not run"
-          fi
-
-      - if: steps.paths.outputs.run == 'true'
-        uses: ./.github/actions/setup
+      - uses: ./.github/actions/setup
         with:
           node-version: 26
 
-      - name: vitest under OUTCOME_PIPELINE=v2, shard ${{ matrix.shard }}/4
-        if: steps.paths.outputs.run == 'true'
+      - name: vitest under OUTCOME_PIPELINE=${{ env.OUTCOME_PIPELINE }}, shard ${{ matrix.shard }}/4
         run: pnpm exec vitest run --shard=${{ matrix.shard }}/4
-        env:
-          OUTCOME_PIPELINE: v2
-          TZ: UTC
 
   # The differential on a dev PR: every call runs v1 and the v2 outcome pipeline, and a divergence between them (a
   # write, a notice, a decision) fails the shard. Into master the coverage shards run the whole suite this way; into
-  # dev they do not (v2 is kept out of coverage there, vitest.config.mts), so before this arm a divergence a dev PR
-  # introduced surfaced only at the next checkpoint (outcome v2 executor plan, S7). Same paths as the v2 arm.
+  # dev they run v2 alone, so before this arm a divergence a dev PR introduced surfaced only at the next checkpoint
+  # (outcome v2 executor plan, S7). It runs on the outcome pipeline's paths only.
   differential-arm:
     needs: scope
     if: github.event_name == 'pull_request' && github.base_ref == 'dev' && needs.scope.outputs.light != 'true'
@@ -572,9 +559,9 @@ jobs:
   # that receives no file fails (vitest exits 1 on "No test files found"), so raise the count only when
   # the file count grows past it.
   #
-  # Each shard runs twice, under OUTCOME_PIPELINE=v1 and under v2, both named rather than left to the
-  # engine's default. No other job runs the TEAM arms with v2 alone deciding: they are inert in the
-  # suite the v2 arm runs, and under the differential v1's writes are the ones applied.
+  # Each shard runs twice, under OUTCOME_PIPELINE=v1 (the fallback) and under v2 (the default), both named
+  # rather than left to the engine's default. The TEAM arms are inert in every other suite run, so this is the
+  # only job that runs them; under the differential v1's writes are the ones applied.
   team-arms:
     needs: scope
     if: needs.scope.outputs.light != 'true'
@@ -607,7 +594,7 @@ jobs:
   # SKIPPED (any other result, cancelled included, fails it). It runs whatever its needs did, so a red
   # job still produces a red `verify (node N)` rather than a missing one.
   verify:
-    needs: [scope, gates, coverage-shard, coverage, slow-gates, team-arms, differential-arm]
+    needs: [scope, gates, coverage-shard, coverage, slow-gates, team-arms, pipeline-arm, differential-arm]
     if: >
       always() && (
         github.event_name != 'push' ||
@@ -632,6 +619,7 @@ jobs:
           COVERAGE: ${{ needs.coverage.result }}
           SLOW: ${{ needs.slow-gates.result }}
           TEAM: ${{ needs.team-arms.result }}
+          PIPELINE_ARM: ${{ needs.pipeline-arm.result }}
           DIFFERENTIAL: ${{ needs.differential-arm.result }}
           DEV_PR: ${{ github.event_name == 'pull_request' && github.base_ref == 'dev' }}
         run: |
@@ -650,5 +638,6 @@ jobs:
           check coverage "$COVERAGE" "$heavy"
           check slow-gates "$SLOW" "$heavy"
           check team-arms "$TEAM" "$heavy"
+          check pipeline-arm "$PIPELINE_ARM" "$heavy"
           check differential-arm "$DIFFERENTIAL" "$differential"
           exit $bad
