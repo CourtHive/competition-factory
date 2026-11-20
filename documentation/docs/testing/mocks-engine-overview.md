@@ -188,9 +188,11 @@ test('generate and manipulate tournament', () => {
     schedule: { scheduledDate: tournamentRecord.startDate }, // a date within the mock's dates
   });
 
-  // Complete with outcome
+  // Complete with outcome. A forced winningSide never draws a double walkover, which would also put a
+  // produced WALKOVER into the next round and make two completed matchUps
   const { outcome } = mocksEngine.generateOutcome({
     matchUpFormat: matchUp.matchUpFormat,
+    winningSide: 1,
   });
 
   tournamentEngine.setMatchUpStatus({
