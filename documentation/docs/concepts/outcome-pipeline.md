@@ -210,6 +210,15 @@ two participants, with one family of exceptions and one rule inside it:
   an exit entered on it was written (the BYE dual DEFAULTED, the BYE sent to the consolation as its loser;
   2026-11-19, TEAM FIRST_MATCH_LOSER_CONSOLATION 8/6). A BYE the dual holds is a BYE, and such a call is refused
   row 6 in both pipelines. Its lines are not asked here.
+- **A TEAM dual opposite a claimed empty seat holds one participant** (CA, 2026-11-20). The dual is read
+  against the draw's assignments as a singles matchUp is, so the waiver above decides a directing outcome entered
+  there: an exit, or a bare winner, awarded to the team already present is refused row 6 (`ERR_INVALID_MATCHUP_STATUS`)
+  before anything is written, in both pipelines. An exit awarded to the empty seat is kept: on a dual that seat is
+  awaited, not a phantom, as it always was for a dual (C22), where a singles matchUp refuses it. Accepted, the first
+  was written (TEAM FIRST_MATCH_LOSER_CONSOLATION 8, DOMINANT_DUO: `Consolation|1|1` DEFAULTED to its present team
+  before the main loser arrived), and the arrival later took the default and was advanced into a full matchUp under
+  a swallowed error; a bare winner was refused `ERR_MISSING_ASSIGNMENTS` only after v1's writes
+  (`teamExitAgainstEmptySeatRefused.test.ts`).
 - A policy may switch the requirement off: `requireParticipantsForScoring: false`.
 - **No request flag is involved.** The waiver is how a director records a walkover or default before
   the second opponent arrives (CA, 2026-10-04): _"propagateExitStatus shouldn't have anything to do with

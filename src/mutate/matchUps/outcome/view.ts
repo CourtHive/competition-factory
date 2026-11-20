@@ -1,6 +1,7 @@
 import { getSideExitProvenance, carriedExitStatus, isPropagatedExit } from '@Helpers/drawTopology/sideExitProvenance';
 import { scheduleRefusal as scheduleWriteRefusal } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
+import { assignedSeatsHeld, exitAwardable } from '@Helpers/outcome/exitAwardable';
 import { removalMissingDrawPositions } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { fedLoserPlacementRefusal } from '@Mutate/matchUps/drawPositions/reconcileFedLoserEligibility';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
@@ -105,36 +106,6 @@ import {
  */
 
 const LIVE_OR_UNSET = new Set<string | undefined>([undefined, TO_BE_PLAYED]);
-
-/**
- * A TEAM dual (a matchUp storing its own sides) is not read against the draw's assignments for its participants
- * (`checkParticipants`), but a BYE it holds is a BYE: no participant stands there. Its lines are not asked
- */
-function dualHeldByABye(
-  matchUp: { sides?: unknown; collectionId?: string },
-  positionAssignments: PositionAssignment[],
-  drawPositions: number[],
-): boolean {
-  if (!matchUp.sides || matchUp.collectionId) return false;
-  return positionAssignments.some((assignment) => assignment.bye && drawPositions.includes(assignment.drawPosition));
-}
-
-/** § 2.1, as the spec states it: may an exit with one participant be awarded to the empty side? */
-function exitAwardable(
-  positionAssignments: PositionAssignment[],
-  inContextMatchUp: HydratedMatchUp | undefined,
-  winningSide?: number,
-): boolean {
-  const winnerSide = (inContextMatchUp?.sides ?? []).find((side) => side?.sideNumber === winningSide);
-  if (winnerSide?.participantId) return false;
-  if (winnerSide?.qualifier) return true;
-  if (winnerSide?.bye) return false;
-  if (winnerSide?.drawPosition === undefined) return true;
-  const assignment = positionAssignments.find((entry) => entry.drawPosition === winnerSide.drawPosition);
-  if (!assignment) return true;
-  if (assignment.bye) return false;
-  return !!(assignment.participantId || assignment.qualifier);
-}
 
 /**
  * The exit statuses carried into a matchUp from ELSEWHERE: an entry this matchUp produced is unwound
@@ -1856,15 +1827,11 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
   const count = inContextMatchUp?.sides?.map((side) => side.participantId).filter(Boolean).length ?? 0;
   const allAssignments =
     getPositionAssignments({ structureId: structure?.structureId, drawDefinition }).positionAssignments ?? [];
-  const positionAssignments = matchUp.sides ? [] : allAssignments;
+  // the same participants clause v1 asks (`checkParticipants`): a TEAM dual is read against the assignments too
   const required =
     count === 2 ||
     (!!matchUp.collectionId && isAdHoc({ structure }) && count >= 1) ||
-    (assignedDrawPositions?.length === 2 &&
-      positionAssignments
-        .filter((assignment) => assignedDrawPositions.includes(assignment.drawPosition))
-        .every((assignment) => assignment.participantId) &&
-      !dualHeldByABye(matchUp, allAssignments, assignedDrawPositions));
+    assignedSeatsHeld({ assignedDrawPositions, positionAssignments: allAssignments, matchUp });
 
   const feed = feedEligibilityChange({
     inContextDrawMatchUps,
@@ -1956,7 +1923,12 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     participants: {
       required: !!required,
       count,
-      exitAwardable: exitAwardable(allAssignments, inContextMatchUp, request.winningSide),
+      exitAwardable: exitAwardable({
+        positionAssignments: allAssignments,
+        winningSide: request.winningSide,
+        inContextMatchUp,
+        matchUp,
+      }),
       requireForScoring,
     },
     feedEligibilityBlockedBy: feed?.sourceRoundMatchUpId ?? lineFeed?.sourceRoundMatchUpId,

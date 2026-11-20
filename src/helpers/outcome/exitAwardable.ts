@@ -63,7 +63,9 @@ export function exitAwardable({
   positionAssignments,
   inContextMatchUp,
   winningSide,
+  matchUp,
 }: {
+  matchUp?: { sides?: unknown; collectionId?: string };
   positionAssignments?: PositionAssignment[];
   inContextMatchUp?: HydratedMatchUp;
   winningSide?: number;
@@ -105,5 +107,42 @@ export function exitAwardable({
   // a BYE assignment is refused for the same reason a BYE side is
   if (assignment.bye) return false;
 
+  // A TEAM dual's claimed seat that holds nobody yet is AWAITED, not a phantom: the exit is recorded for the team that
+  // will arrive there (C22, `ownedDirectionWrites.unreached`). Only the dual's own seats are asked (`assignedSeatsHeld`),
+  // and this keeps what a dual already accepted; a singles matchUp still refuses the same seat.
+  if (isTeamDual(matchUp)) return true;
+
   return !!(assignment.participantId || assignment.qualifier);
+}
+
+/**
+ * Whether a matchUp's two assigned drawPositions both hold a participant — § 2 row 6's participants clause, asked by
+ * both pipelines (`checkParticipants`, the outcome view).
+ *
+ * A TEAM dual stores its own sides, and was not read against the draw's assignments at all: the empty list it was
+ * asked against held every assignment vacuously, so a dual read as two participants opposite a BYE (2026-11-19) and
+ * opposite a claimed EMPTY seat (prototype option D, pending CA's ruling: TEAM FIRST_MATCH_LOSER_CONSOLATION 8,
+ * `Consolation|1|1` DEFAULTED to its present team before the main loser arrived). A singles matchUp refuses both. The
+ * dual is now read against the assignments as a singles matchUp is, so the one-participant waiver and `exitAwardable`
+ * decide it: an exit awarded to the team already present is refused, one awarded to the awaited seat is kept. A LINE (a matchUp with a `collectionId`) carries its dual's drawPositions and is not asked here.
+ */
+export function assignedSeatsHeld({
+  assignedDrawPositions,
+  positionAssignments,
+  matchUp,
+}: {
+  matchUp?: { sides?: unknown; collectionId?: string };
+  positionAssignments?: PositionAssignment[];
+  assignedDrawPositions?: number[];
+}): boolean {
+  if (assignedDrawPositions?.length !== 2) return false;
+  if (matchUp?.sides && !isTeamDual(matchUp)) return true;
+  return (positionAssignments ?? [])
+    .filter((assignment) => assignedDrawPositions.includes(assignment.drawPosition))
+    .every((assignment) => assignment.participantId);
+}
+
+/** a matchUp storing its own sides that is not a line: a TEAM dual */
+function isTeamDual(matchUp?: { sides?: unknown; collectionId?: string }): boolean {
+  return !!matchUp?.sides && !matchUp.collectionId;
 }

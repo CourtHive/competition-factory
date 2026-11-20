@@ -461,7 +461,9 @@ describe("along a seeded walk of a TEAM draw, a call a recording is asked for le
     const random = createSeededRandom(seed);
     let record = stored();
     const total = { asked: 0, made: 0, owned: 0 };
-    for (let step = 0; step < 120; step++) {
+    // 160 steps (was 120): a dual's exit awarded to its present team against a claimed empty seat is now refused
+    // (option D prototype), which shortened the DOUBLE_ELIMINATION 8 walk to 19 recordings made, under its floor of 20
+    for (let step = 0; step < 160; step++) {
       tournamentEngine.setState(structuredClone(record));
       const call = nextCall(random);
       const v1 = play(OUTCOME_PIPELINE_V1, record, [call]);

@@ -38,7 +38,7 @@ import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { validateScore } from '@Scoring/analysis/validateScore';
-import { exitAwardable } from '@Helpers/outcome/exitAwardable';
+import { assignedSeatsHeld, exitAwardable } from '@Helpers/outcome/exitAwardable';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
@@ -1362,18 +1362,8 @@ function checkParticipants({
 
   const participantsCount = inContextMatchUp?.sides?.map((side) => side.participantId).filter(Boolean).length;
 
-  const positionAssignments = matchUp?.sides
-    ? []
-    : getPositionAssignments({
-        structureId: structure?.structureId,
-        drawDefinition,
-      }).positionAssignments;
-
-  // `positionAssignments` above is deliberately empty when the matchUp carries its own sides — the
-  // `requiredParticipants` branch below only needs it in the other case. `exitAwardable` needs the
-  // real assignments either way, to tell an unfilled feed slot from a seat that is claimed and
-  // vacant, so it is read separately rather than by widening the one above and changing what
-  // `requiredParticipants` sees.
+  // The real assignments, for `exitAwardable` (to tell an unfilled feed slot from a seat that is claimed and vacant)
+  // and for the participants clause itself, which asks them of a TEAM dual too (`assignedSeatsHeld`).
   const allAssignments = getPositionAssignments({
     structureId: structure?.structureId,
     drawDefinition,
@@ -1383,19 +1373,7 @@ function checkParticipants({
     (participantsCount && participantsCount === 2) ||
     // matchUp may be doubles or singles but if it is a tieMatchUp in a TEAM event and is adHoc and has a single participant
     (matchUp.collectionId && isAdHoc({ structure }) && participantsCount && participantsCount >= 1) ||
-    (assignedDrawPositions?.length === 2 &&
-      positionAssignments
-        ?.filter((assignment) => assignedDrawPositions.includes(assignment.drawPosition))
-        .every((assignment) => assignment.participantId) &&
-      // A matchUp storing its own sides (a TEAM dual) is not read against the assignments above, and the empty list
-      // held every assignment it was asked about: a dual opposite a BYE read as two participants, and a winner or an
-      // exit entered on it was written, the BYE dual DEFAULTED and the BYE sent to the consolation as its loser
-      // (2026-11-19, TEAM FIRST_MATCH_LOSER_CONSOLATION 8/6). A BYE the dual holds is a BYE; its lines are not asked.
-      !(
-        matchUp?.sides &&
-        !matchUp.collectionId &&
-        allAssignments?.some((assignment) => assignment.bye && assignedDrawPositions.includes(assignment.drawPosition))
-      ));
+    assignedSeatsHeld({ assignedDrawPositions, positionAssignments: allAssignments, matchUp });
   if (
     matchUpStatus &&
     // A single WALKOVER or DEFAULTED can stand with ONE participant present: carried there by the cascade,
@@ -1419,7 +1397,7 @@ function checkParticipants({
     // `propagatingExit`.
     (propagatingExit ||
       !winningSide ||
-      exitAwardable({ positionAssignments: allAssignments, inContextMatchUp, winningSide })) &&
+      exitAwardable({ positionAssignments: allAssignments, inContextMatchUp, winningSide, matchUp })) &&
     // A DOUBLE exit is two exits, one per seat, so a DIRECT one needs both seats reached. CA,
     // 2026-10-04: *"How can three entities arrive in one matchUp which can only hold two
     // drawPositions?"* Entered beside an unreached seat, the arrival later meets a double exit already

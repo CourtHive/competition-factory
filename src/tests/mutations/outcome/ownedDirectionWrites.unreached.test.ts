@@ -10,6 +10,7 @@ import {
   R1,
   prepareUnreachedWinner,
   compareUndirectedWinner,
+  play,
   UNREACHED_WINNERS,
   undirectedOutcome,
   LINKED_PRE_FEEDS,
@@ -20,8 +21,12 @@ import {
 // constants and types
 import { DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { Scenario } from '@Tests/testHarness/outcome/directionFixtures';
-import { OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
-import { MISSING_ASSIGNMENTS } from '@Constants/errorConditionConstants';
+import {
+  OUTCOME_PIPELINE_DIFFERENTIAL,
+  OUTCOME_PIPELINE_V1,
+  OUTCOME_PIPELINE_V2,
+} from '@Constants/outcomePipelineConstants';
+import { INVALID_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
 import {
   ADAPTIVE,
   AD_HOC,
@@ -108,11 +113,22 @@ describe('C22 the TEAM refusal prefix remains owed, while the scoring-policy ove
       policyDefinitions,
       steps: [{ target: { structureName, roundNumber, roundPosition }, outcome: { winningSide: side } }],
     };
-    const { v1 } = compareUndirectedWinner(scenario, !requireParticipants, prepared);
-    if (requireParticipants) {
-      expect(v1.results[0].error).toEqual(MISSING_ASSIGNMENTS);
-      expect(v1.record).not.toEqual(v1.recordBefore);
-    } else expect(v1.results[0].success).toEqual(true);
+    if (!requireParticipants) {
+      expect(compareUndirectedWinner(scenario, true, prepared).v1.results[0].success).toEqual(true);
+      return;
+    }
+    // option D prototype: a winner named for the present team against a claimed empty seat is refused row 6 before any
+    // write, in both pipelines (it was ERR_MISSING_ASSIGNMENTS, raised by v1 after its writes and owed by v2)
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario, { prepared });
+    expect(v1.results[0].error?.code).toEqual(INVALID_MATCHUP_STATUS.code);
+    expect(v1.record).toEqual(v1.recordBefore);
+    for (const mode of [OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V2] as const) {
+      const actual = play(mode, scenario, { prepared });
+      expect(actual.results).toEqual(v1.results);
+      expect(actual.record).toEqual(v1.record);
+      expect(actual.notices).toEqual(v1.notices);
+      if (mode === OUTCOME_PIPELINE_V2) expect(actual.v1Writes).toEqual(0);
+    }
   });
 });
 
