@@ -574,3 +574,34 @@ describe('a dual holding the walkover a double exit produced keeps it, and its p
     expect(stored(dual(3, 1).matchUpId).drawPositions.filter(Boolean)).toEqual([arrived]);
   });
 });
+
+describe("a line deciding its dual beside a decided feeder: the consolation BYE the winner's arrival reserves is announced before the next dual", () => {
+  afterEach(() => setSubscriptions({ subscriptions: {} }));
+
+  it('the reserved consolation dual is announced first, then the next dual the line-up is carried onto, then the loser', () => {
+    generate({ drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION }, 18);
+    enter(dual(1, 1).matchUpId, { winningSide: 2 });
+    const decided = dual(1, 2);
+    const next = dual(2, 1);
+    const reserved = dual(2, 1, 'Consolation');
+    const landing = dual(1, 1, 'Consolation');
+    const lines = decided.tieMatchUps;
+    const [doubles] = lines.filter((line: any) => line.matchUpType === 'DOUBLES');
+    const [singles] = lines.filter((line: any) => line.matchUpType === 'SINGLES');
+    enter(doubles.matchUpId, { matchUpStatus: WALKOVER, winningSide: 2 });
+
+    const announced: string[] = [];
+    setSubscriptions({
+      subscriptions: {
+        modifyMatchUp: (notices: any[]) => notices.forEach(({ matchUp }) => announced.push(matchUp.matchUpId)),
+      },
+    });
+    enter(singles.matchUpId, { matchUpStatus: WALKOVER, winningSide: 2 });
+    expect(stored(decided.matchUpId).winningSide).toEqual(2);
+    expect(stored(next.matchUpId).drawPositions.filter(Boolean)).toHaveLength(2);
+    expect(stored(reserved.matchUpId).matchUpStatus).toEqual('BYE');
+    const order = [reserved, next, landing].map(({ matchUpId }) => announced.indexOf(matchUpId));
+    expect(order.every((at) => at > -1)).toEqual(true);
+    expect(order).toEqual([...order].sort((a, b) => a - b));
+  });
+});

@@ -618,7 +618,10 @@ function decidingLineOps(args: PlanArgs & { dual: DualCall; drawDefinition: Draw
   const placement = ops.findIndex(
     (op) => op.op === 'setMatchUpDrawPositions' && op.matchUpId === dual.direction?.winner?.matchUpId,
   );
-  if (carry) ops.splice(placement < 0 ? ops.length : carriedAfter(ops, placement, dual), 0, carry);
+  if (carry) {
+    const at = placement < 0 ? ops.length : Math.max(carriedAfter(ops, placement, dual), reservedAfter(ops, dual));
+    ops.splice(at, 0, carry);
+  }
   // the dual the loser lands in, otherwise untouched (the arrival is written on its structure's assignments), is stamped
   // by the carry's notice
   // past a BYE, the dual beyond takes the losing team's line-up first (its assignment's), as v1 announces the two
@@ -664,6 +667,23 @@ function carriedAfter(ops: OutcomeOp[], placement: number, dual: DualCall): numb
     if (stampOf(at, held)) at += 1;
   }
   return passed ? at : placement + 1;
+}
+
+/**
+ * Past the FIRST_MATCHUP reservation the winner's arrival makes: v1's `propagateConsolationBye` runs within
+ * `assignMatchUpDrawPosition`, before `directWinner` carries the line-up, so the consolation BYE dual's
+ * `setMatchUpStatusBye` notice precedes the next dual's `directWinner` (2026-11-20, FIRST_MATCH_LOSER_CONSOLATION 8,
+ * a Main dual decided by its line beside a first-round feeder already decided). v2 writes the reservation among the
+ * loser's arrival, after the placement; the carry follows it. Without a reservation, nothing moves (0).
+ */
+function reservedAfter(ops: OutcomeOp[], dual: DualCall): number {
+  const reservation = dual.view.targets.reservations?.[dual.request.winningSide as 1 | 2];
+  if (reservation?.kind !== 'reserve') return 0;
+  const bye = ops.findIndex((op) => op.op === 'setMatchUpBye' && op.matchUpId === reservation.matchUpId);
+  if (bye < 0) return 0;
+  const stamp = ops[bye + 1];
+  const stamped = stamp?.op === 'stampUpdatedAt' && stamp.entity === 'matchUp' && stamp.id === reservation.matchUpId;
+  return bye + (stamped ? 2 : 1);
 }
 
 /** the call's plan as ops, or the reason it is v1's */
