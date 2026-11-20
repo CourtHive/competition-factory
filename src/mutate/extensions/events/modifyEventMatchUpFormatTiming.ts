@@ -12,6 +12,7 @@ import { isNumeric } from '@Tools/math';
 import { TOURNAMENT_RECORD, EVENT } from '@Constants/attributeConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SINGLES } from '@Constants/matchUpTypes';
+import { TEAM_EVENT } from '@Constants/eventConstants';
 
 type ModifyEventMatchUpFormatTimingArgs = {
   tournamentRecord: Tournament;
@@ -71,16 +72,20 @@ export function modifyEventMatchUpFormatTiming(params: ModifyEventMatchUpFormatT
   const newAverageTimes = averageTimes.map(newTiming).filter((f) => f?.categoryNames?.length);
   const newRecoveryTimes = recoveryTimes.map(newTiming).filter((f) => f?.categoryNames?.length);
 
+  // the override is the event's, for this format: a TEAM event's times whichever line plays the format, so it is the
+  // default rather than a TEAM figure, which no line reads (CA 2026-11-20)
+  const minutesKey = event?.eventType === TEAM_EVENT ? 'default' : event?.eventType || SINGLES;
+
   if (validAverageMinutes) {
     Object.assign(currentAverageTime.minutes, {
-      [event?.eventType || SINGLES]: averageMinutes,
+      [minutesKey]: averageMinutes,
     });
     newAverageTimes.push(currentAverageTime);
   }
 
   if (validRecoveryMinutes) {
     Object.assign(currentRecoveryTime.minutes, {
-      [event?.eventType || SINGLES]: recoveryMinutes,
+      [minutesKey]: recoveryMinutes,
     });
     newRecoveryTimes.push(currentRecoveryTime);
   }

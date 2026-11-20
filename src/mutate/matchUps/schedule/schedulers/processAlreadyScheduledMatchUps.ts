@@ -71,20 +71,25 @@ export function timedMatchUpMinutes({
   matchUp: HydratedMatchUp;
 }): Minutes | undefined {
   if (!tournamentRecords || !matchUp.matchUpFormat || !matchUp.tournamentId) return undefined;
-  // minutes depend only on the tournament, the event and the format: resolved once per combination in a call
-  const key = `${matchUp.tournamentId}|${matchUp.eventId}|${matchUp.matchUpFormat}`;
+  // minutes depend on the tournament, the event, the draw (its policy), the line's type and the format: resolved once
+  // per combination in a call
+  const key = [matchUp.tournamentId, matchUp.eventId, matchUp.drawId, matchUp.matchUpType, matchUp.matchUpFormat].join(
+    '|',
+  );
   if (memo.has(key)) return memo.get(key);
   const tournamentRecord = tournamentRecords[matchUp.tournamentId];
   const { event } = findEvent({ tournamentRecord, eventId: matchUp.eventId });
-  const { category, eventType } = event ?? {};
+  const { category } = event ?? {};
   const timing = findMatchUpFormatTiming({
     categoryName: timingCategoryName(event),
     categoryType: timingCategoryType(category),
     tournamentId: matchUp.tournamentId,
     matchUpFormat: matchUp.matchUpFormat,
     eventId: matchUp.eventId,
+    drawId: matchUp.drawId,
     tournamentRecords,
-    eventType,
+    // a line is timed by its own type, never by its TEAM event's
+    eventType: matchUp.matchUpType ?? event?.eventType,
   });
   const minutes = 'error' in timing ? undefined : timing;
   memo.set(key, minutes);

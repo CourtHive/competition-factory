@@ -8,15 +8,50 @@ import { hasSchedule } from '@Query/matchUp/hasSchedule';
 
 // constants and types
 import { MISSING_MATCHUPS, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
-import { EventTypeUnion, Tournament } from '@Types/tournamentTypes';
+import { Event, EventTypeUnion, Tournament } from '@Types/tournamentTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 
+type ScheduleTiming = ReturnType<typeof getScheduleTiming>['scheduleTiming'];
+
 /** an event as bookings read it: its type, and the scheduling policy timing that applies to it */
 export type EventBookingTiming = {
-  scheduleTiming?: ReturnType<typeof getScheduleTiming>['scheduleTiming'];
+  scheduleTiming?: ScheduleTiming;
+  /** the timing of each of its draws that carries a scheduling policy of its own (draw > event > tournament) */
+  drawScheduleTimings?: { [drawId: string]: ScheduleTiming };
   eventType?: EventTypeUnion;
 };
+
+/**
+ * The timing a matchUp is booked with: its draw's when the draw carries its own policy, else its event's; and its own
+ * type, so a line of a TEAM event is timed as the SINGLES or DOUBLES it is. A team matchUp holds no court of its own.
+ */
+export function bookingTimingFor(
+  eventTiming: EventBookingTiming | undefined,
+  matchUp: { drawId?: string; matchUpType?: string },
+): { scheduleTiming?: ScheduleTiming; eventType?: EventTypeUnion } {
+  const drawTiming = matchUp.drawId ? eventTiming?.drawScheduleTimings?.[matchUp.drawId] : undefined;
+  return {
+    scheduleTiming: drawTiming ?? eventTiming?.scheduleTiming,
+    eventType: (matchUp.matchUpType as EventTypeUnion | undefined) ?? eventTiming?.eventType,
+  };
+}
+
+/** an event's booking timing: its own, and that of each draw whose scheduling policy is its own */
+export function eventBookingTiming(tournamentRecord: Tournament, event: Event): EventBookingTiming {
+  const { scheduleTiming } = getScheduleTiming({ tournamentRecord, event });
+  const drawScheduleTimings: { [drawId: string]: ScheduleTiming } = {};
+  for (const drawDefinition of event.drawDefinitions ?? []) {
+    const drawTiming = getScheduleTiming({ tournamentRecord, drawDefinition, event }).scheduleTiming;
+    // only a draw that carries a policy of its own differs; recording only those keeps every other view unchanged
+    if (drawTiming.policy !== scheduleTiming.policy) drawScheduleTimings[drawDefinition.drawId] = drawTiming;
+  }
+  return {
+    eventType: event.eventType,
+    scheduleTiming,
+    ...(Object.keys(drawScheduleTimings).length ? { drawScheduleTimings } : {}),
+  };
+}
 export type EventBookingTimings = { [eventId: string]: EventBookingTiming };
 
 type GenerateBookingsArgs = {
@@ -80,8 +115,9 @@ export function generateBookings({
     (!venueIds.length || venueIds.includes(venueOf(matchUp) ?? '')) && matchUp.matchUpStatus !== BYE;
   const relevantMatchUps = dateScheduledMatchUps?.filter(inVenues);
 
-  const timingOf = ({ eventId, matchUpFormat }: HydratedMatchUp) => {
-    const { eventType, scheduleTiming } = eventDetails[eventId];
+  const timingOf = (matchUp: HydratedMatchUp) => {
+    const { matchUpFormat } = matchUp;
+    const { eventType, scheduleTiming } = bookingTimingFor(eventDetails[matchUp.eventId], matchUp);
     // the same minutes the matchUp is timed with (§ 3.3): the record's timing, else the default policy
     const timingDetails = resolveTimingDetails({
       defaultAverageMinutes: averageMatchUpMinutes,
@@ -152,8 +188,7 @@ export function getEventBookingTimings(tournamentRecords: { [key: string]: Tourn
   const timings: EventBookingTimings = {};
   for (const tournamentRecord of Object.values(tournamentRecords)) {
     for (const event of tournamentRecord.events ?? []) {
-      const { scheduleTiming } = getScheduleTiming({ tournamentRecord, event });
-      timings[event.eventId] = { eventType: event.eventType, scheduleTiming };
+      timings[event.eventId] = eventBookingTiming(tournamentRecord, event);
     }
   }
   return timings;

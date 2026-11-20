@@ -1,5 +1,6 @@
 import { findMatchupFormatAverageTimes } from '@Acquire/findMatchUpFormatTimes';
 import { findCategoryTiming } from '@Acquire/findCategoryTiming';
+import { eventOverrideMinutes } from './eventOverrideMinutes';
 
 export function getMatchUpFormatAverageTimes({
   matchUpFormat,
@@ -16,7 +17,7 @@ export function getMatchUpFormatAverageTimes({
     findMatchupFormatAverageTimes({
       ...eventScheduling,
       matchUpFormat,
-    });
+    })?.map(eventOverrideMinutes);
 
   const tournamentAverageTimes =
     tournamentScheduling?.matchUpAverageTimes &&

@@ -210,19 +210,22 @@ function roundMinutes(
   inRound: HydratedMatchUp[],
   tournamentRecords: BuildSchedulingViewArgs['tournamentRecords'],
 ) {
-  const matchUpFormat = inRound.find(({ matchUpFormat }) => matchUpFormat)?.matchUpFormat;
+  const formatted = inRound.find(({ matchUpFormat }) => matchUpFormat);
+  const matchUpFormat = formatted?.matchUpFormat;
   if (!matchUpFormat) return { minutes: undefined };
   const tournamentRecord = tournamentRecords[round.tournamentId];
   const event = tournamentRecord ? findEvent({ tournamentRecord, drawId: round.drawId }).event : undefined;
-  const { eventType, category } = event ?? {};
+  const { category } = event ?? {};
   const timing = findMatchUpFormatTiming({
     categoryName: timingCategoryName(event),
     categoryType: timingCategoryType(category),
+    // a line is timed by its own type, never by its TEAM event's
+    eventType: formatted?.matchUpType ?? event?.eventType,
     tournamentId: round.tournamentId,
     eventId: round.eventId,
+    drawId: round.drawId,
     tournamentRecords,
     matchUpFormat,
-    eventType,
   });
   if ('error' in timing) return { error: timing.error };
   const { averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes } = timing;

@@ -172,8 +172,8 @@ function endMinutes(matchUp: HydratedMatchUp, time: string, averageMinutes: numb
 function timingOf(tournamentRecords: TournamentRecords) {
   const memo = new Map<string, { averageMinutes?: number; overnightMinutes?: number }>();
   return (matchUp: HydratedMatchUp) => {
-    const { tournamentId, eventId, matchUpFormat } = matchUp;
-    const key = `${tournamentId}|${eventId}|${matchUpFormat}`;
+    const { tournamentId, eventId, drawId, matchUpType, matchUpFormat } = matchUp;
+    const key = [tournamentId, eventId, drawId, matchUpType, matchUpFormat].join('|');
     if (memo.has(key)) return memo.get(key) ?? {};
     let result: { averageMinutes?: number; overnightMinutes?: number } = {};
     const tournamentRecord = tournamentId ? tournamentRecords[tournamentId] : undefined;
@@ -183,11 +183,13 @@ function timingOf(tournamentRecords: TournamentRecords) {
       const timing = findMatchUpFormatTiming({
         categoryName: timingCategoryName(event),
         categoryType: timingCategoryType(category),
-        eventType: event?.eventType,
+        // a line is timed by its own type, never by its TEAM event's
+        eventType: matchUpType ?? event?.eventType,
         tournamentRecords,
         matchUpFormat,
         tournamentId,
         eventId,
+        drawId,
       });
       if (!('error' in timing))
         result = { averageMinutes: timing.averageMinutes, overnightMinutes: timing.overnightMinutes };

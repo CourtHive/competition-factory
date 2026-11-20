@@ -55,6 +55,9 @@ export function getRoundTiming({ round, matchUps, events, tournamentRecords }) {
   const event = events.find((event) => event.eventId === round.eventId);
   const { eventType, categoryType } = event ?? {};
   const formatCounts = instanceCount(matchUps.map(({ matchUpFormat }) => matchUpFormat));
+  // a line is timed by its own type, never by its TEAM event's
+  const typeOf = (matchUpFormat: string) =>
+    matchUps.find((matchUp) => matchUp.matchUpFormat === matchUpFormat)?.matchUpType ?? eventType;
 
   let roundMinutes = 0;
   Object.keys(formatCounts).forEach((matchUpFormat) => {
@@ -63,10 +66,11 @@ export function getRoundTiming({ round, matchUps, events, tournamentRecords }) {
       categoryName: timingCategoryName(event),
       tournamentId: round.tournamentId,
       eventId: round.eventId,
+      drawId: round.drawId,
+      eventType: typeOf(matchUpFormat),
       tournamentRecords,
       matchUpFormat,
       categoryType,
-      eventType,
     });
     if (result.error) return result;
     const formatMinutes = result.averageMinutes * formatCount;
