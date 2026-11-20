@@ -93,9 +93,11 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_DIFFERENTIAL] as const)(
     expect(onward.sideExitProvenance?.[2]?.matchUpStatus).toEqual(WALKOVER);
     expect((tournamentEngine.getDrawInconsistencies({ drawId }) as any).inconsistencies ?? []).toEqual([]);
 
-    // the differential compared the convergence rather than passing it by
+    // the call is recorded whole: the differential defers its direction, not checked (CA, 2026-11-19)
     const tally = getDifferentialTally()['winner:loser-exit-past-bye-converged'];
-    if (mode === OUTCOME_PIPELINE_DIFFERENTIAL) expect(tally?.compared).toEqual(1);
-    else expect(tally).toBeUndefined();
+    expect(tally).toBeUndefined();
+    const direction = getDifferentialTally()['winner:direction'];
+    if (mode === OUTCOME_PIPELINE_DIFFERENTIAL) expect(direction).toEqual({ compared: 0, deferred: 1 });
+    else expect(direction).toBeUndefined();
   },
 );

@@ -8,8 +8,10 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 type UnwindDualDoubleExitArgs = {
   isCollectionMatchUp?: boolean;
+  disableAutoCalc?: boolean;
   matchUpsMap?: MatchUpsMap;
-  dualMatchUp?: MatchUp;
+  /** hydrated: `_disableAutoCalc` is the legacy alias of the first-class flag */
+  dualMatchUp?: MatchUp & { _disableAutoCalc?: boolean };
 };
 
 /**
@@ -37,10 +39,20 @@ type UnwindDualDoubleExitArgs = {
  * exactly as it is for a direct re-score; `targetData` is already the dual's — `setMatchUpState`
  * resolves targets for `matchUpTieId` when there is one. The dual's own new status is then written by
  * the tie-score path as before.
+ *
+ * A DUAL SCORED BY HAND KEEPS ITS DOUBLE EXIT, AND SO DOES WHAT IT PRODUCED. Under `disableAutoCalc` a line's result
+ * is written with the dual left as it stands (`attemptToModifyScore`): the dual is not recomputed and stays the double
+ * exit it is. The unwind still ran, and took back the exit the dual had produced while the dual went on holding it: the
+ * next dual reset to TO_BE_PLAYED, a team arriving there later still carried on past it into the round after (measured
+ * 2026-11-19, TEAM SINGLE_ELIMINATION 8, USTA_COLLEGE, walk seed 11). A call that turns auto-calc back on
+ * (`disableAutoCalc: false`) recomputes the dual, and unwinds as before.
  */
 export function unwindDualDoubleExit(params: UnwindDualDoubleExitArgs): ResultType {
-  const { isCollectionMatchUp, dualMatchUp, matchUpsMap } = params;
+  const { isCollectionMatchUp, dualMatchUp, matchUpsMap, disableAutoCalc } = params;
   if (!isCollectionMatchUp || !dualMatchUp || !isDoubleExit(dualMatchUp.matchUpStatus)) return { ...SUCCESS };
+  // first-class (NATIVE) with fallback to the legacy `_disableAutoCalc` hydrated alias (LEGACY writeMode)
+  const scoredByHand = (dualMatchUp.disableAutoCalc ?? dualMatchUp._disableAutoCalc) && disableAutoCalc !== false;
+  if (scoredByHand) return { ...SUCCESS };
 
   const rawDual =
     matchUpsMap?.drawMatchUps?.find((candidate) => candidate.matchUpId === dualMatchUp.matchUpId) ?? dualMatchUp;

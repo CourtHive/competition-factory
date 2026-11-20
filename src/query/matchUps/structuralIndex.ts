@@ -169,7 +169,8 @@ function indexStructure({
     matchUps: members.flatMap((member) => {
       if (matchUpIds && !matchUpIds.has(member.matchUp.matchUpId)) return [];
       const entry = indexMatchUp({ ...member, ...shared, event });
-      if (!member.matchUp.tieMatchUps) return [entry];
+      // an empty `tieMatchUps` is no dual: hydration drops the empty array (`onlyDefined`), and the entry holds none
+      if (!member.matchUp.tieMatchUps?.length) return [entry];
       const lines = indexLines({ dual: member, dualEntry: entry, participants, shared, event });
       entry.tieMatchUps = lines;
       return [entry, ...lines];

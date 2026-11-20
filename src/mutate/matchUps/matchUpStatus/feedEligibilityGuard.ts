@@ -212,3 +212,45 @@ function reservationPlayedOn({
 
   return { participantDrawPosition: advancedDrawPosition, sourceRoundMatchUpId: playedOn.matchUpId };
 }
+
+/**
+ * A LINE WHOSE TALLY RELABELS ITS DUAL ASKS THE DUAL'S QUESTION (§ 2 row 12; CA, 2026-11-20, class 4).
+ *
+ * A dual decided by its own exit keeps it while its lines project no winner (`dualKeepsOwnDecision`). Once they project
+ * that same winner the tally takes over and writes the dual COMPLETED: a WALKOVER corrected to a scored win by the same
+ * winner, which the dual's own call is refused where the loser has already been directed. Its line is refused alike;
+ * accepted, it left the loser standing in a FIRST_MATCHUP consolation it was no longer eligible for (it used to reach the
+ * same end only through the un-deciding the ruling removed, which took back the next dual's result).
+ *
+ * Asked with the tally's own projection (`projectedWinningSide` as `getProjectedDualWinningSide` returns it, never the
+ * kept winner). A dual scored by hand is not tallied, so its lines relabel nothing.
+ */
+export function lineFeedEligibilityChange({
+  inContextDrawMatchUps,
+  projectedWinningSide,
+  autoCalcDisabled,
+  projectedScore,
+  drawDefinition,
+  dualMatchUp,
+  structure,
+}: {
+  inContextDrawMatchUps?: HydratedMatchUp[];
+  drawDefinition?: DrawDefinition;
+  projectedWinningSide?: number;
+  dualMatchUp?: HydratedMatchUp;
+  autoCalcDisabled?: boolean;
+  structure?: Structure;
+  projectedScore?: Score;
+}): { participantDrawPosition: number; sourceRoundMatchUpId?: string } | undefined {
+  if (!dualMatchUp || autoCalcDisabled || !projectedWinningSide) return undefined;
+  if (projectedWinningSide !== dualMatchUp.winningSide) return undefined;
+  return feedEligibilityChange({
+    winningSide: projectedWinningSide,
+    matchUp: dualMatchUp as MatchUp,
+    score: projectedScore,
+    matchUpStatus: COMPLETED,
+    inContextDrawMatchUps,
+    drawDefinition,
+    structure,
+  });
+}

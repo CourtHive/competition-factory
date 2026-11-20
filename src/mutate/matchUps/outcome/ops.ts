@@ -6,8 +6,8 @@ import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExte
 import { scoredTimeAction } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { getCapturedStamps } from '@Global/state/globalState';
-import { cloneData } from '@Tools/cloneState';
 import { isAnyExit } from '@Validators/isExit';
+import { cloneData } from '@Tools/cloneState';
 import { nowIso } from '@Tools/clock';
 import {
   mergeSideExitProvenance,
@@ -17,11 +17,11 @@ import {
   clearSideExitProvenance,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
-import type { Recording } from './recording';
 // constants and types
 import { MODIFY_DRAW_DEFINITION, MODIFY_MATCHUP, MODIFY_POSITION_ASSIGNMENTS } from '@Constants/topicConstants';
 import { completedMatchUpStatuses, BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
+import type { Recording } from './recording';
 import type {
   DrawDefinition,
   MatchUp,
@@ -840,6 +840,13 @@ function foldSideLineUp(op: OpOf<'setSideLineUp'>, { matchUps }: DrawIndex): Fol
     return {};
   }
   const lineUp = structuredClone(op.lineUp) as TeamCompetitor[];
+  // v1's `updateSideLineUp` writes the line-up on the stored side that holds the number and leaves the other as it is
+  // stored (an unnumbered side `ensureSideLineUps` left for a seat nobody holds stays unnumbered); only where no stored
+  // side holds the number are both made and numbered, as `propagateLineUp` and `propagateLoserLineUp` always make them
+  if (op.announcedAs === 'updateSidLineUp' && matchUp.sides?.some((side) => side.sideNumber === op.sideNumber)) {
+    for (const side of matchUp.sides) if (side.sideNumber === op.sideNumber) side.lineUp = lineUp;
+    return {};
+  }
   matchUp.sides = [1, 2].map((sideNumber) => ({
     ...(matchUp.sides?.find((each) => each.sideNumber === sideNumber) ?? {}),
     sideNumber,

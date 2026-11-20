@@ -7,6 +7,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, expect, it } from 'vitest';
 
 // constants
+import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Constants/outcomePipelineConstants';
 import { CANNOT_CHANGE_OUTCOME } from '@Constants/errorConditionConstants';
 import {
@@ -16,7 +17,6 @@ import {
   COMPASS,
   MAIN,
 } from '@Constants/drawDefinitionConstants';
-import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
  * F2: a relabel withdraws ONE origin of a converged exit (census 9000008).
@@ -101,7 +101,9 @@ it('re-derives the convergence to the kept exit, which the relabelled loser wins
   expect(next.matchUpStatus).toEqual(TO_BE_PLAYED);
   expect(occupants(next)).toEqual([relabelled]);
   expect(errors()).toEqual([]);
-  expect(getDifferentialTally()['winner:loser-withdrawn-converged']).toEqual({ compared: 1, deferred: 0 });
+  // the call is recorded whole: its direction is deferred, not checked (CA, 2026-11-19)
+  expect(getDifferentialTally()['winner:loser-withdrawn-converged']).toBeUndefined();
+  expect(getDifferentialTally()['winner:direction']).toEqual({ compared: 2, deferred: 1 });
 });
 
 it('the reverse label follows on a convergence: DOUBLE_DEFAULT becomes a DOUBLE_WALKOVER, and so does its product', () => {

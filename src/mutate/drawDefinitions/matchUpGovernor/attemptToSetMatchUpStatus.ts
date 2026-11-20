@@ -4,16 +4,16 @@ import { removeDirectedParticipants } from '@Mutate/matchUps/drawPositions/remov
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
-import { decorateResult } from '@Functions/global/decorateResult';
 import { isDoubleExit as isDoubleExitStatus } from '@Validators/isExit';
+import { decorateResult } from '@Functions/global/decorateResult';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { rereadTargets } from './rereadTargets';
 
 // constants
 import { INVALID_MATCHUP_STATUS, UNRECOGNIZED_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
 import type { MatchUp, MatchUpStatusUnion } from '@Types/tournamentTypes';
-import { SUCCESS } from '@Constants/resultConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
+import { SUCCESS } from '@Constants/resultConstants';
 import {
   BYE,
   CANCELLED,
@@ -205,6 +205,7 @@ function scoreModification(params) {
   if (isCollectionMatchUp) {
     const { matchUpTieId, drawDefinition, matchUpsMap } = params;
     const tieMatchUpResult = updateTieMatchUpScore({
+      keepsDecision: params.keepsDualDecision,
       tournamentRecord: params.tournamentRecord,
       appliedPolicies: params.appliedPolicies,
       matchUpId: matchUpTieId,

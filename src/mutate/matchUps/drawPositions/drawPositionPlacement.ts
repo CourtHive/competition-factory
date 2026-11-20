@@ -1584,7 +1584,11 @@ export function assignDrawPosition({
       event,
     });
   } else {
-    addDrawPositionToMatchUps({
+    // A REFUSAL PLACING THE POSITION INTO ITS MATCHUPS IS THE ASSIGNMENT'S REFUSAL (CA, 2026-11-20, with option D). It
+    // was dropped here, so a placement whose onward advance was refused (ERR_EXISTING_POSITION_ASSIGNMENT) reported
+    // success over a draw it had left inconsistent. The one known path to it, an exit on a TEAM dual awarded to its
+    // present team opposite an empty seat, is now refused upstream (`teamExitAgainstEmptySeatRefused.test.ts`).
+    const placed = addDrawPositionToMatchUps({
       provisionalPositioning,
       initialMatchUpIds,
       arrivesWithExit,
@@ -1597,6 +1601,7 @@ export function assignDrawPosition({
       structure,
       event,
     });
+    if (placed.error) return decorateResult({ result: placed, stack });
   }
 
   const drawEntry = drawDefinition.entries?.find((entry) => entry.participantId === participantId);

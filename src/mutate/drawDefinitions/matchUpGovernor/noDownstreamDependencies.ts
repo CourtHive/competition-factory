@@ -1,9 +1,9 @@
+import { attemptToSetMatchUpStatus, statusFallsThrough, type StatusRouteParams } from './attemptToSetMatchUpStatus';
 import { removeDirectedParticipants } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { lastSetFormatIsTimed } from '@Query/matchUp/lastSetFormatisTimed';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
-import { attemptToSetMatchUpStatus, statusFallsThrough, type StatusRouteParams } from './attemptToSetMatchUpStatus';
 import { checkConnectedStructures } from './checkConnectedStructures';
 import { attemptToSetWinningSide } from './attemptToSetWinningSide';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -53,8 +53,15 @@ export function noDownstreamDependencies(params) {
    * still unwinds nothing — that case is idempotent and `attemptToSetMatchUpStatus` short-circuits
    * it earlier anyway.
    */
+  // A TEAM LINE'S DOUBLE EXIT PRODUCED NOTHING: it is written as it stands and its dual tallied without it
+  // (`attemptToSetMatchUpStatus`, `onlyModifyScore`), never advanced. Leaving it has nothing to unwind, and the unwind
+  // run for it walked the DUAL's targets with the line for a source: clearing a line's double exit wrote a score and
+  // codes onto the next dual, which nobody had reached, and announced it (measured 2026-11-18, TEAM SINGLE_ELIMINATION
+  // 4). The dual's own double exit is unwound below (`unwindDualDoubleExit`).
   const doubleExitCleanup =
-    [DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUp?.matchUpStatus) && matchUpStatus !== matchUp?.matchUpStatus;
+    !params.isCollectionMatchUp &&
+    [DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUp?.matchUpStatus) &&
+    matchUpStatus !== matchUp?.matchUpStatus;
   if (doubleExitCleanup) {
     const result = removeDoubleExit(params);
     if (result.error) return decorateResult({ result, stack });
@@ -218,6 +225,7 @@ function scoreModification(params) {
   if (params.isCollectionMatchUp) {
     const { matchUpTieId, drawDefinition, event, matchUpsMap } = params;
     const tieResult = updateTieMatchUpScore({
+      keepsDecision: params.keepsDualDecision,
       tournamentRecord: params.tournamentRecord,
       appliedPolicies: params.appliedPolicies,
       matchUpId: matchUpTieId,

@@ -110,6 +110,13 @@ function winnerWrite(request: OutcomeRequest, view: OutcomeView): WriteArgs {
   };
 }
 
+/**
+ * `noDownstreamDependencies`' `removeDirected` on a line whose dual is scored manually: the dual's auto-calc is
+ * disabled and the call does not say otherwise, so nothing is taken back and `attemptToModifyScore` writes the line
+ */
+const manualLine = (request: OutcomeRequest, view: OutcomeView): boolean =>
+  !!view.line?.autoCalcDisabled && request.flags.disableAutoCalc !== false;
+
 /** `noDownstreamDependencies`' `removeScore`, read by its two removal routes */
 function removalRemovesScore(request: OutcomeRequest, view: OutcomeView): boolean {
   const { matchUpStatus } = request;
@@ -150,6 +157,20 @@ export function planWrite(request: OutcomeRequest, view: OutcomeView, route: Rou
     case 'propagating':
       return applyScoreAndStatus(asIs, request, view);
     case 'remove-directed':
+      // a line of a dual scored manually (auto-calc disabled): v1's removal is `attemptToModifyScore`, which takes
+      // nothing back and writes the line as the call names it, its score kept unless the call brings one
+      if (manualLine(request, view))
+        return applyScoreAndStatus(
+          {
+            matchUpStatusCodes: matchUpStatusCodes ?? [],
+            removeScore: matchUpStatus === WALKOVER,
+            removeWinningSide: true,
+            matchUpStatus,
+            score,
+          },
+          request,
+          view,
+        );
       return applyScoreAndStatus(
         {
           ...asIs,

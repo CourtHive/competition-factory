@@ -17,16 +17,19 @@ import type { OutcomeOp } from '../ops';
 /**
  * A dual's projected lines with the call's line holding its score as a round robin group's tally reads it (S7): as
  * written, then annotated as hydration annotates it under the line's format (`annotateScoreSets`: a tiebreak-only set
- * read as 1-0), since v1 tallies the group's hydrated duals
+ * read as 1-0), since v1 tallies the group's hydrated duals. A call that brings no score and blanks none leaves the
+ * line the score it holds (`kept`), which the projection replaced with the call's (`getProjectedDualWinningSide`).
  */
 export function writtenLine(
   tieMatchUps: HydratedMatchUp['tieMatchUps'],
   matchUpId: string,
   score?: Score,
+  kept?: Score,
 ): HydratedMatchUp['tieMatchUps'] {
   return tieMatchUps?.map((tieMatchUp) => {
     if (tieMatchUp.matchUpId !== matchUpId) return tieMatchUp;
-    const read = { ...tieMatchUp, score: score && structuredClone(score) };
+    const held = score ?? kept;
+    const read = { ...tieMatchUp, score: held && structuredClone(held) };
     if (read.score?.sets?.length && read.matchUpFormat) annotateScoreSets(read, read.matchUpFormat);
     return read;
   });

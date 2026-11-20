@@ -436,6 +436,26 @@ export function unwoundThrough(
 }
 
 /**
+ * A changed winner whose old loser carried its exit through the BYE held opposite them (C28): the call withdraws the carry
+ * from the matchUp beyond (`heldByeCarryWithdrawal`), where the seat's position stands still. The new loser arrives
+ * opposite the BYE and goes on through it, and v1's assignment writes that matchUp as it writes any it advances into
+ * (`advanceIntoWinnerMatchUp` → `assignMatchUpDrawPosition`): a dual's side takes the new loser's line-up there (2026-11-20,
+ * TEAM FIRST_MATCH_LOSER_CONSOLATION 8/6, walk seed 36, a propagated walkover corrected to the other winner). Read as the
+ * withdrawal leaves it; a carry that landed further on (more than one BYE passed) is not read here.
+ */
+export function withdrawnCarryThrough(view: OutcomeView, ops: OutcomeOp[]): ThroughBye | undefined {
+  const { loserMatchUpId, loserTargetDrawPosition: drawPosition } = view.targets;
+  const next = indexed(view, indexed(view, loserMatchUpId)?.winnerMatchUpId);
+  if (!next || !drawPosition) return undefined;
+  const drawPositions = positionsOf(next);
+  if (!drawPositions.includes(drawPosition)) return undefined;
+  const withdrawn = ops.some(
+    (op) => op.op === 'setMatchUpResult' && op.withdrawsCarry && op.matchUpId === next.matchUpId,
+  );
+  return withdrawn ? { matchUpId: next.matchUpId, drawPositions } : undefined;
+}
+
+/**
  * The BYE-held matchUps a position passes after `from` (walls, never reached refusing: a matchUp no BYE holds, no
  * standing BYE, the position not there, a structure crossed), each a BYE by another standing BYE and holding the position
  * already (the BYEs advanced it structurally), to the structure's last round, or to the passage's landing the unwind

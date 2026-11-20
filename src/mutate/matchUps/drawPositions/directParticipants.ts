@@ -5,6 +5,7 @@ import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { isDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { relabelDualExitByTally } from './relabelDualExitByTally';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { directWinner } from './directWinner';
 import { directLoser } from './directLoser';
@@ -52,6 +53,7 @@ export function directParticipants(params): ResultType {
   if (isCollectionMatchUp) {
     const { matchUpTieId, matchUpsMap } = params;
     const tieMatchUpResult = updateTieMatchUpScore({
+      keepsDecision: params.keepsDualDecision,
       appliedPolicies: params.appliedPolicies,
       matchUpId: matchUpTieId,
       tournamentRecord,
@@ -65,6 +67,9 @@ export function directParticipants(params): ResultType {
     const matchUpTie = inContextDrawMatchUps.find(({ matchUpId }) => matchUpId === matchUpTieId);
     drawPositions = matchUpTie?.drawPositions;
     if (!dualWinningSideChange) {
+      // the tally relabels the dual's own exit a played result by the same winner: its carry is settled (class 4)
+      const relabelled = relabelDualExitByTally(params, tieMatchUpResult);
+      if (relabelled.error) return decorateResult({ result: relabelled, stack });
       return decorateResult({ result: { ...SUCCESS, ...annotate }, stack });
     }
   }
@@ -174,7 +179,11 @@ function processDrawPositionDirecting({
     const result = directWinner({
       sourceMatchUpStatus: sourceStatus,
       winnerMatchUpDrawPositionIndex,
-      sourceMatchUpId: matchUpId,
+      // A LINE DECIDING ITS DUAL DIRECTS THE DUAL: the arrival's origin is the dual, as it is when the dual is decided by
+      // its own call. Named after the line, the origin was not found in the draw's rounds (`getPairedPreviousMatchUp`),
+      // and a team arriving at a produced walkover or a BYE was recorded with no provenance where the dual's own call
+      // records `previousMatchUpStatus: COMPLETED` (2026-11-19, TEAM SINGLE_ELIMINATION 4, walk seed 12)
+      sourceMatchUpId: (matchUp?.collectionId && dualMatchUp?.matchUpId) || matchUpId,
       inContextDrawMatchUps,
       projectedWinningSide,
       winningDrawPosition,

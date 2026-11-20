@@ -1,3 +1,4 @@
+import { feedEligibilityChange, lineFeedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { missingDrawPositionsRefusal, isUndirectedDrawnOutcome } from '@Query/matchUp/missingDrawPositionsRefusal';
 import { addMatchUpScheduleItems, scheduleRefusal } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { removalMissingDrawPositions } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
@@ -7,7 +8,6 @@ import { refreshArrivals } from '@Mutate/drawDefinitions/matchUpGovernor/attempt
 import { generateTieMatchUpScore } from '@Query/matchUp/tieMatchUpScore/generateTieMatchUpScore';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
-import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { correctionKindChange } from '@Mutate/matchUps/matchUpStatus/correctionKindGuard';
 import { relabelWithoutDirection } from '@Mutate/matchUps/drawPositions/relabelLoserExit';
 import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinningSide';
@@ -18,6 +18,7 @@ import { ensureGoesTo, holdGoesTo, type GoesToHold } from '@Query/matchUps/addGo
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
+import { assignedSeatsHeld, exitAwardable } from '@Helpers/outcome/exitAwardable';
 import { collectionChoiceOutcomeRefusal } from '@Query/matchUp/collectionChoice';
 import { swapWinnerLoser } from '@Mutate/matchUps/drawPositions/swapWinnerLoser';
 import { resolveScoringFormat } from '@Query/hierarchical/resolveScoringFormat';
@@ -27,6 +28,7 @@ import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { isDeciderStructure } from '@Query/drawDefinition/deciderStructures';
 import { isPropagatedExit } from '@Helpers/drawTopology/sideExitProvenance';
+import { lineTakesPlayedOnDualWinner } from './lineTakesPlayedOnDualWinner';
 import { validateDrawTallyOptions } from '@Validators/validateTallyPolicy';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -35,13 +37,14 @@ import { isPartialDualScore } from '@Scoring/analysis/isPartialDualScore';
 import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { heldSeatRefusal } from '@Query/matchUp/heldSeatRefusal';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { validateScore } from '@Scoring/analysis/validateScore';
-import { exitAwardable } from '@Helpers/outcome/exitAwardable';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
+import { dualKeepsOwnDecision } from './dualKeepsOwnDecision';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
-import { isDoubleExit } from '@Validators/isExit';
+import { isDoubleExit, isExit } from '@Validators/isExit';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { clearsABye } from '@Query/matchUp/clearsABye';
@@ -56,9 +59,9 @@ import {
 
 // constants and types
 import type { DerivedStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
-import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
+import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
@@ -124,6 +127,12 @@ type SetMatchUpStateArgs = {
   allowChangePropagation?: boolean;
   disableScoreValidation?: boolean;
   projectedWinningSide?: number;
+  /** set from the tie context (`resolveTieMatchUpContext`) for a line: the tally's own projection, its score, the dual */
+  talliedWinningSide?: number;
+  projectedDualScore?: Score;
+  dualMatchUp?: HydratedMatchUp;
+  keepsDualDecision?: boolean;
+  dualLineDecided?: boolean;
   propagateExitStatus?: boolean;
   /** set ONLY by `setMatchUpStatus`, which holds the draw's missing edges and announces them itself (`announceGoesTo`) */
   edgesHeld?: boolean;
@@ -324,6 +333,7 @@ function writeMatchUpState(params: SetMatchUpStateArgs) {
 
   let dualWinningSideChange;
   let applyTeamWrites: (() => void) | undefined;
+  let unprojectedExit = false;
   if (isTeam) {
     const teamResult: any = handleTeamAutoCalc({
       tournamentRecord,
@@ -342,6 +352,7 @@ function writeMatchUpState(params: SetMatchUpStateArgs) {
     if (teamResult?.error) return teamResult;
     if (teamResult?.dualWinningSideChange !== undefined) dualWinningSideChange = teamResult.dualWinningSideChange;
     applyTeamWrites = teamResult.apply;
+    unprojectedExit = !!teamResult.unprojectedExit;
   }
 
   if (isTeam && matchUpStatus && [AWAITING_RESULT].includes(matchUpStatus)) {
@@ -448,6 +459,15 @@ function writeMatchUpState(params: SetMatchUpStateArgs) {
       structure,
       matchUp,
       score,
+    }) ??
+    lineFeedEligibilityRefusal({
+      projectedWinningSide: params.talliedWinningSide,
+      autoCalcDisabled: params.autoCalcDisabled,
+      projectedScore: params.projectedDualScore,
+      dualMatchUp: params.dualMatchUp,
+      inContextDrawMatchUps,
+      drawDefinition,
+      structure,
     });
   if (preWriteRefusal) return preWriteRefusal;
 
@@ -460,7 +480,15 @@ function writeMatchUpState(params: SetMatchUpStateArgs) {
   });
   if (downstreamError) return downstreamError;
 
-  return resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeDownstream, applyTeamWrites, stack });
+  return resolveAndApplyOutcome({
+    dualWinningSideChange,
+    activeDownstream,
+    applyTeamWrites,
+    unprojectedExit,
+    params,
+    isTeam,
+    stack,
+  });
 }
 
 // Refuse to revert a COMPLETED matchUp that carries a *validated* winning score
@@ -762,10 +790,13 @@ function resolveAndApplyOutcome({
   dualWinningSideChange,
   activeDownstream,
   applyTeamWrites,
+  unprojectedExit,
   params,
   isTeam,
   stack,
 }: {
+  /** a TEAM dual's exit entered with a winner by a call that turns auto-calc on, the lines projecting none */
+  unprojectedExit?: boolean;
   dualWinningSideChange?: boolean;
   applyTeamWrites?: () => void;
   activeDownstream?: boolean;
@@ -807,6 +838,10 @@ function resolveAndApplyOutcome({
   const unplaceable = missingDrawPositionsRefusal({ params, activeDownstream: !!activeDownstream });
   if (unplaceable) return unplaceable;
 
+  // a winner or a loser whose seat is held by somebody else: `directParticipants` met it after writing the result
+  const held = heldSeatRefusal({ params, activeDownstream: !!activeDownstream });
+  if (held) return decorateResult({ result: { error: held.error }, context: held.context, stack });
+
   // § 2 row 24's removal clause: `removeDirectedParticipants` refuses a score with no winner on a matchUp (a line's
   // dual) holding no drawPositions. A first entry (nothing holds a winner there) reaches it after the dual's writes
   // below, which left `sides` on an unfed dual under the error (measured 2026-11-01, TEAM SINGLE_ELIMINATION 4, the
@@ -824,6 +859,30 @@ function resolveAndApplyOutcome({
       info: 'matchUpStatus: ' + params.matchUpStatus,
       stack,
     });
+
+  // § 2 row 6 on a TEAM dual (CA, 2026-11-18 and 2026-11-19): a single exit entered with a winner by a call that turns
+  // auto-calc on, where the lines project no winner. The call's winner is replaced by the projected one, none, and
+  // the exit was written with no winner (a fresh dual, or a decided one whose exit carries: left undecided under an
+  // exit status, its winner taken back out of the next dual) or beside the winner the dual already held (a decided
+  // dual, no carry). Refused before anything is written. A dual scored by hand is not projected: a call that disables
+  // auto-calc, or names neither flag on a dual already so flagged, keeps the winner it names. Lines that project a
+  // winner decide it: the exit is written with the projected winner.
+  if (applyTeamWrites && unprojectedExit)
+    return decorateResult({
+      result: { error: INVALID_MATCHUP_STATUS },
+      info: 'matchUpStatus: ' + params.matchUpStatus,
+      stack,
+    });
+
+  // § 2 rows 13, 14 and 15 on a TEAM dual: a result its played-on downstream does not allow (another winner, or no
+  // action the dispatch accepts). They were refused by the dispatch below, after the dual's writes, which left the dual
+  // stamped and announced under the error (measured 2026-11-18, TEAM SINGLE_ELIMINATION 4: a dual decided by its own
+  // call, its winner played on, given the other winner). Asked here, as the dispatch asks, so the error leaves the
+  // record unchanged.
+  if (applyTeamWrites) {
+    const refusal = downstreamRefusal(params, !!activeDownstream);
+    if (refusal) return decorateResult({ result: refusal, stack });
+  }
 
   // the TEAM dual's auto-calc and lineUps, now that nothing before the outcome's own writes can refuse
   applyTeamWrites?.();
@@ -861,26 +920,8 @@ function resolveAndApplyOutcome({
    */
   const hasPropagated = !!matchUp.winningSide || isDoubleExit(matchUp.matchUpStatus);
 
-  /**
-   * A LINE OF A DUAL THAT HOLDS A DOUBLE EXIT, WITH THE DUAL'S DOWNSTREAM ACTIVE, IS REFUSED — as a
-   * direct re-score of that dual is.
-   *
-   * `hasPropagated` reads the LINE, which has sent nothing, so every line took the no-downstream
-   * branch however active the dual's downstream was. Scoring it then recomputed the dual out of its
-   * double exit, and the unwind that follows (`unwindDualDoubleExit`) would take back a produced
-   * walkover whose winner has already PLAYED the next round — measured 2026-10-01 on a TEAM
-   * SINGLE_ELIMINATION 8: the final, COMPLETED 2-0, reset to TO_BE_PLAYED with one team left in it.
-   * The dual's own re-score is refused in exactly this state by `winningSideWithDownstreamDependencies`;
-   * its lines get the same answer.
-   */
-  if (params.isCollectionMatchUp && isDoubleExit(params.dualMatchUp?.matchUpStatus) && activeDownstream) {
-    return decorateResult({
-      result: { error: CANNOT_CHANGE_OUTCOME },
-      info: 'the dual holds a double exit whose produced result has been played on',
-      context: { dualMatchUpId: params.dualMatchUp.matchUpId, dualMatchUpStatus: params.dualMatchUp.matchUpStatus },
-      stack,
-    });
-  }
+  const lineRefusal = lineDualRefusal(params, !!activeDownstream, winningSide, matchUp, stack);
+  if (lineRefusal) return lineRefusal;
 
   let result;
   // A BYE has no result to clear: the call leaves it the BYE it is, and still applies its schedule (`clearsABye`)
@@ -944,6 +985,23 @@ function refusedAtTheStatusRoute(params: Parameters<typeof swapWinnerLoser>[0], 
   return refusesStatusRoute(params);
 }
 
+/**
+ * What the dispatch in `resolveAndApplyOutcome` refuses for the matchUp's played-on downstream, read as it reads it and
+ * writing nothing: a winner other than the one that stands (`winningSideWithDownstreamDependencies`: § 2 rows 13 and
+ * 14), or neither a winner nor a directing status (row 15). Undefined where the dispatch writes.
+ */
+function downstreamRefusal(params: Parameters<typeof swapWinnerLoser>[0], activeDownstream: boolean) {
+  const { matchUp, matchUpStatus, winningSide, score } = params;
+  if (clearsABye({ storedMatchUpStatus: matchUp?.matchUpStatus, matchUpStatus, score, winningSide })) return undefined;
+  if (isUndirectedDrawnOutcome(params, activeDownstream)) return undefined;
+  const hasPropagated = !!matchUp.winningSide || isDoubleExit(matchUp.matchUpStatus);
+  if (!activeDownstream || !hasPropagated) return undefined;
+  const matchUpWinner = (winningSide && !params.matchUpTieId) || params.projectedWinningSide;
+  if (matchUpWinner) return changedWinnerRefusal(params);
+  if (isDirectingMatchUpStatus({ matchUpStatus }) || params.autoCalcDisabled) return undefined;
+  return { error: NO_VALID_ACTIONS };
+}
+
 function applyScoredTime({ matchUp }) {
   const action = scoredTimeAction(matchUp);
   if (action === 'initialize') {
@@ -978,6 +1036,7 @@ function handleTeamAutoCalc({
   event,
 }) {
   let dualWinningSideChange;
+  let unprojectedExit = false;
   let autoCalcValue: true | undefined;
 
   // A score without sets (a record of how a level tie was decided, or the strings alone) keeps the dual's aggregate
@@ -1020,6 +1079,10 @@ function handleTeamAutoCalc({
       });
     }
 
+    // an exit entered with a winner where the lines project none: the call's winner is replaced by the projected one,
+    // so the exit would be written with no winner, or beside a winner it does not name (`unprojectedExit`)
+    unprojectedExit = isExit(params.matchUpStatus) && !!winningSide && !projectedWinningSide;
+
     // setting these parameters will enable noDownStreamDependencies to attemptToSetWinningSide
     Object.assign(params, {
       winningSide: projectedWinningSide,
@@ -1048,7 +1111,7 @@ function handleTeamAutoCalc({
     });
   };
 
-  return { dualWinningSideChange, apply };
+  return { dualWinningSideChange, unprojectedExit, apply };
 }
 
 function resolveQualifyingContext({ inContextMatchUp, winningSide, matchUp, params }) {
@@ -1099,7 +1162,7 @@ function resolveTieMatchUpContext({
     event,
   })?.tieFormat;
 
-  const { projectedWinningSide } = getProjectedDualWinningSide({
+  const { projectedWinningSide, projectedScore } = getProjectedDualWinningSide({
     drawDefinition,
     matchUpStatus,
     dualMatchUp,
@@ -1112,15 +1175,34 @@ function resolveTieMatchUpContext({
     score,
   });
 
-  const existingDualMatchUpWinningSide = dualMatchUp.winningSide;
-  const dualWinningSideChange = projectedWinningSide !== existingDualMatchUpWinningSide;
   // first-class (NATIVE) with fallback to the legacy `_disableAutoCalc` hydrated alias (LEGACY)
   const autoCalcDisabled = dualMatchUp.disableAutoCalc ?? dualMatchUp._disableAutoCalc;
+  // a dual decided by its own exit or call keeps its winner while its lines project none: that winner is the projected
+  // one, so nothing downstream reads the line as taking it away (CA, 2026-11-20, class 4)
+  const { keepsDecision: keepsDualDecision, lineDecided: dualLineDecided } = dualKeepsOwnDecision({
+    projectedWinningSide,
+    autoCalcDisabled,
+    drawDefinition,
+    dualMatchUp,
+    matchUpsMap,
+    tieFormat,
+    structure,
+    event,
+  });
+
+  const existingDualMatchUpWinningSide = dualMatchUp.winningSide;
+  const keptWinningSide = keepsDualDecision ? existingDualMatchUpWinningSide : projectedWinningSide;
+  const dualWinningSideChange = keptWinningSide !== existingDualMatchUpWinningSide;
 
   return {
+    projectedWinningSide: keptWinningSide,
+    // the tally's own projection, as the line's feed-eligibility question reads it (row 12)
+    talliedWinningSide: projectedWinningSide,
+    projectedDualScore: projectedScore,
     isCollectionMatchUp: true,
     dualWinningSideChange,
-    projectedWinningSide,
+    keepsDualDecision,
+    dualLineDecided,
     autoCalcDisabled,
     matchUpTieId,
     dualMatchUp,
@@ -1128,9 +1210,78 @@ function resolveTieMatchUpContext({
   };
 }
 
+/**
+ * A LINE OF A DUAL THAT HOLDS A DOUBLE EXIT, WITH THE DUAL'S DOWNSTREAM ACTIVE, IS REFUSED — as a
+ * direct re-score of that dual is.
+ *
+ * `hasPropagated` reads the LINE, which has sent nothing, so every line took the no-downstream
+ * branch however active the dual's downstream was. Scoring it then recomputed the dual out of its
+ * double exit, and the unwind that follows (`unwindDualDoubleExit`) would take back a produced
+ * walkover whose winner has already PLAYED the next round — measured 2026-10-01 on a TEAM
+ * SINGLE_ELIMINATION 8: the final, COMPLETED 2-0, reset to TO_BE_PLAYED with one team left in it.
+ * The dual's own re-score is refused in exactly this state by `winningSideWithDownstreamDependencies`;
+ * its lines get the same answer.
+ */
+function lineDualRefusal(params, activeDownstream: boolean, winningSide?: number, matchUp?: MatchUp, stack?: string) {
+  if (params.isCollectionMatchUp && isDoubleExit(params.dualMatchUp?.matchUpStatus) && activeDownstream) {
+    return decorateResult({
+      result: { error: CANNOT_CHANGE_OUTCOME },
+      info: 'the dual holds a double exit whose produced result has been played on',
+      context: { dualMatchUpId: params.dualMatchUp.matchUpId, dualMatchUpStatus: params.dualMatchUp.matchUpStatus },
+      stack,
+    });
+  }
+  return lineTakesDualWinnerRefusal(params, activeDownstream, winningSide, matchUp);
+}
+
+/**
+ * § 2 row 14 (CA, 2026-11-19; line-decided duals, 2026-11-20): a TEAM line whose tally would take away the winner its
+ * lines gave the dual, sent on to a played-on downstream. Asked of the dual before anything is written, whether or not
+ * the line itself has propagated
+ */
+function lineTakesDualWinnerRefusal(params, activeDownstream: boolean, winningSide?: number, matchUp?: MatchUp) {
+  const refused = lineTakesPlayedOnDualWinner({
+    dualWinningSide: params.isCollectionMatchUp ? params.dualMatchUp?.winningSide : undefined,
+    autoCalcDisabled: params.autoCalcDisabled && params.disableAutoCalc !== false,
+    projectedWinningSide: params.projectedWinningSide,
+    isLine: params.isCollectionMatchUp,
+    lineDecided: params.dualLineDecided,
+    activeDownstream,
+  });
+  if (!refused) return undefined;
+  return decorateResult({
+    stack: 'winningSideWithDownstreamDependencies',
+    result: { error: CANNOT_CHANGE_WINNING_SIDE },
+    info: "the line would take away its dual's winner, whose downstream has been played on",
+    context: { winningSide, matchUp },
+  });
+}
+
+/** rows 13 and 14: a winner named beneath a played-on downstream that is not the winner standing there */
+function changedWinnerRefusal(params) {
+  const { matchUp, winningSide, matchUpTieId, dualWinningSideChange, autoCalcDisabled } = params;
+  // A LINE WHOSE OWN WINNER STANDS CAN STILL CHANGE ITS DUAL'S: a dual decided by its own call holds a winner its lines
+  // need not project, and a line entered again (its winner unchanged, a score or an exit relabelled) tallies the dual
+  // afresh. Where the dual's winner has been played on that is a changed winner, refused as one; it was written, the
+  // dual handed to the other side with its first winner left standing in the next dual (2026-11-19, walk seed 13). A
+  // dual scored by hand is not tallied, so its lines change nothing there.
+  const dualChanges = !!matchUpTieId && !!dualWinningSideChange && !autoCalcDisabled;
+  if ((winningSide === matchUp.winningSide && !dualChanges) || (matchUpTieId && !dualWinningSideChange))
+    return undefined;
+  // A double exit has no `winningSide` to change — it is the OUTCOME being changed, and naming
+  // the missing field would contradict what the TD is looking at.
+  const error = matchUp.winningSide ? CANNOT_CHANGE_WINNING_SIDE : CANNOT_CHANGE_OUTCOME;
+  return decorateResult({
+    stack: 'winningSideWithDownstreamDependencies',
+    result: { error },
+    context: { winningSide, matchUp },
+  });
+}
+
 function winningSideWithDownstreamDependencies(params) {
-  const { matchUp, winningSide, matchUpTieId, dualWinningSideChange } = params;
-  if (winningSide === matchUp.winningSide || (matchUpTieId && !dualWinningSideChange)) {
+  const { matchUp, winningSide } = params;
+  const refusal = changedWinnerRefusal(params);
+  if (!refusal) {
     const relabel = !!winningSide && winningSide === matchUp.winningSide && !params.isCollectionMatchUp;
     const result = applyMatchUpValues(params);
     if (result.error || !relabel) return result;
@@ -1144,16 +1295,8 @@ function winningSideWithDownstreamDependencies(params) {
     if (relabelled.error) return relabelled;
     const { context } = relabelled;
     return context ? { ...result, context: { ...((result as any).context ?? {}), ...context } } : result;
-  } else {
-    // A double exit has no `winningSide` to change — it is the OUTCOME being changed, and naming
-    // the missing field would contradict what the TD is looking at.
-    const error = matchUp.winningSide ? CANNOT_CHANGE_WINNING_SIDE : CANNOT_CHANGE_OUTCOME;
-    return decorateResult({
-      stack: 'winningSideWithDownstreamDependencies',
-      result: { error },
-      context: { winningSide, matchUp },
-    });
   }
+  return refusal;
 }
 
 function applyMatchUpValues(params) {
@@ -1188,6 +1331,7 @@ function applyMatchUpValues(params) {
   if (params.isCollectionMatchUp) {
     const { matchUpTieId, drawDefinition, matchUpsMap } = params;
     const tieMatchUpResult = updateTieMatchUpScore({
+      keepsDecision: params.keepsDualDecision,
       appliedPolicies: params.appliedPolicies,
       matchUpId: matchUpTieId,
       tournamentRecord,
@@ -1218,18 +1362,8 @@ function checkParticipants({
 
   const participantsCount = inContextMatchUp?.sides?.map((side) => side.participantId).filter(Boolean).length;
 
-  const positionAssignments = matchUp?.sides
-    ? []
-    : getPositionAssignments({
-        structureId: structure?.structureId,
-        drawDefinition,
-      }).positionAssignments;
-
-  // `positionAssignments` above is deliberately empty when the matchUp carries its own sides — the
-  // `requiredParticipants` branch below only needs it in the other case. `exitAwardable` needs the
-  // real assignments either way, to tell an unfilled feed slot from a seat that is claimed and
-  // vacant, so it is read separately rather than by widening the one above and changing what
-  // `requiredParticipants` sees.
+  // The real assignments, for `exitAwardable` (to tell an unfilled feed slot from a seat that is claimed and vacant)
+  // and for the participants clause itself, which asks them of a TEAM dual too (`assignedSeatsHeld`).
   const allAssignments = getPositionAssignments({
     structureId: structure?.structureId,
     drawDefinition,
@@ -1239,10 +1373,7 @@ function checkParticipants({
     (participantsCount && participantsCount === 2) ||
     // matchUp may be doubles or singles but if it is a tieMatchUp in a TEAM event and is adHoc and has a single participant
     (matchUp.collectionId && isAdHoc({ structure }) && participantsCount && participantsCount >= 1) ||
-    (assignedDrawPositions?.length === 2 &&
-      positionAssignments
-        ?.filter((assignment) => assignedDrawPositions.includes(assignment.drawPosition))
-        .every((assignment) => assignment.participantId));
+    assignedSeatsHeld({ assignedDrawPositions, positionAssignments: allAssignments, matchUp });
   if (
     matchUpStatus &&
     // A single WALKOVER or DEFAULTED can stand with ONE participant present: carried there by the cascade,
@@ -1266,7 +1397,7 @@ function checkParticipants({
     // `propagatingExit`.
     (propagatingExit ||
       !winningSide ||
-      exitAwardable({ positionAssignments: allAssignments, inContextMatchUp, winningSide })) &&
+      exitAwardable({ positionAssignments: allAssignments, inContextMatchUp, winningSide, matchUp })) &&
     // A DOUBLE exit is two exits, one per seat, so a DIRECT one needs both seats reached. CA,
     // 2026-10-04: *"How can three entities arrive in one matchUp which can only hold two
     // drawPositions?"* Entered beside an unreached seat, the arrival later meets a double exit already
@@ -1372,6 +1503,22 @@ function feedEligibilityRefusal(args: Parameters<typeof feedEligibilityChange>[0
       currentMatchUpStatus: args.matchUp?.matchUpStatus,
       blockingMatchUpId: eligibilityChange.sourceRoundMatchUpId,
       matchUpStatus: args.matchUpStatus,
+    },
+    stack: 'feedEligibility',
+  });
+}
+
+/** a line whose tally relabels its dual, the dual's loser already directed under the previous outcome (row 12) */
+function lineFeedEligibilityRefusal(args: Parameters<typeof lineFeedEligibilityChange>[0]) {
+  const eligibilityChange = lineFeedEligibilityChange(args);
+  if (!eligibilityChange) return undefined;
+  return decorateResult({
+    result: { error: CANNOT_CHANGE_FEED_ELIGIBILITY },
+    info: 'the line relabels its dual, whose loser has already been directed under the previous outcome',
+    context: {
+      currentMatchUpStatus: args.dualMatchUp?.matchUpStatus,
+      blockingMatchUpId: eligibilityChange.sourceRoundMatchUpId,
+      matchUpStatus: COMPLETED,
     },
     stack: 'feedEligibility',
   });

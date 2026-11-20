@@ -1,4 +1,4 @@
-import { getSideExitProvenance, carriedExitStatus, isPropagatedExit } from '@Helpers/drawTopology/sideExitProvenance';
+import { feedEligibilityChange, lineFeedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { scheduleRefusal as scheduleWriteRefusal } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { removalMissingDrawPositions } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
@@ -10,12 +10,13 @@ import { generateTieMatchUpScore } from '@Query/matchUp/tieMatchUpScore/generate
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
 import { resolveTieScoreSource } from '@Query/hierarchical/tieFormats/resolveTieScoreSource';
-import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { dualKeepsOwnDecision } from '@Mutate/matchUps/matchUpStatus/dualKeepsOwnDecision';
 import { correctionKindChange } from '@Mutate/matchUps/matchUpStatus/correctionKindGuard';
 import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinningSide';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
+import { assignedSeatsHeld, exitAwardable } from '@Helpers/outcome/exitAwardable';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
@@ -40,6 +41,7 @@ import { buildStructuralIndex } from '@Query/matchUps/structuralIndex';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
+import { heldSeatRefusal } from '@Query/matchUp/heldSeatRefusal';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { isActiveMatchUp } from '@Query/matchUp/activeMatchUp';
@@ -49,6 +51,12 @@ import { findStructure } from '@Acquire/findStructure';
 import { canonicalJson } from '@Tools/canonicalJson';
 import { overlap, unique } from '@Tools/arrays';
 import { isObject } from '@Tools/objects';
+import {
+  getSideExitProvenance,
+  carriedExitStatus,
+  exitCarriedFrom,
+  isPropagatedExit,
+} from '@Helpers/drawTopology/sideExitProvenance';
 import {
   relabelledPathFeedChanges,
   relabelledPathFeedRefusal,
@@ -63,8 +71,8 @@ import { BYE, COMPLETED, IN_PROGRESS, TO_BE_PLAYED, completedMatchUpStatuses } f
 import { FIRST_MATCHUP, CONTAINER, LOSER, WIN_RATIO, QUALIFYING, DRAW } from '@Constants/drawDefinitionConstants';
 import type { BuildViewArgs, OutcomeRequest, OutcomeScore, OutcomeView, Reservation, ThroughBye } from './types';
 import type { ByePassage, ByeWalk, CarryLevel, WinnerLinkSeat, WinnerLoserSeat } from './types';
-import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import type { PositionTargetsResult } from '@Query/matchUp/positionTargets';
+import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import type { ErrorType } from '@Constants/errorConditionConstants';
 import { TieScoreSourceEnum } from '@Types/tournamentTypes';
 import { LINEUPS } from '@Constants/extensionConstants';
@@ -103,23 +111,6 @@ import {
  */
 
 const LIVE_OR_UNSET = new Set<string | undefined>([undefined, TO_BE_PLAYED]);
-
-/** § 2.1, as the spec states it: may an exit with one participant be awarded to the empty side? */
-function exitAwardable(
-  positionAssignments: PositionAssignment[],
-  inContextMatchUp: HydratedMatchUp | undefined,
-  winningSide?: number,
-): boolean {
-  const winnerSide = (inContextMatchUp?.sides ?? []).find((side) => side?.sideNumber === winningSide);
-  if (winnerSide?.participantId) return false;
-  if (winnerSide?.qualifier) return true;
-  if (winnerSide?.bye) return false;
-  if (winnerSide?.drawPosition === undefined) return true;
-  const assignment = positionAssignments.find((entry) => entry.drawPosition === winnerSide.drawPosition);
-  if (!assignment) return true;
-  if (assignment.bye) return false;
-  return !!(assignment.participantId || assignment.qualifier);
-}
 
 /**
  * The exit statuses carried into a matchUp from ELSEWHERE: an entry this matchUp produced is unwound
@@ -1690,6 +1681,7 @@ function missingDrawPositions({
 }): boolean {
   const params = {
     ...rest,
+    allowChangePropagation: request.flags.allowChangePropagation,
     propagateExitStatus: request.flags.propagateExitStatus,
     matchUpStatus: request.matchUpStatus,
     matchUpFormat: request.matchUpFormat,
@@ -1840,14 +1832,11 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
   const count = inContextMatchUp?.sides?.map((side) => side.participantId).filter(Boolean).length ?? 0;
   const allAssignments =
     getPositionAssignments({ structureId: structure?.structureId, drawDefinition }).positionAssignments ?? [];
-  const positionAssignments = matchUp.sides ? [] : allAssignments;
+  // the same participants clause v1 asks (`checkParticipants`): a TEAM dual is read against the assignments too
   const required =
     count === 2 ||
     (!!matchUp.collectionId && isAdHoc({ structure }) && count >= 1) ||
-    (assignedDrawPositions?.length === 2 &&
-      positionAssignments
-        .filter((assignment) => assignedDrawPositions.includes(assignment.drawPosition))
-        .every((assignment) => assignment.participantId));
+    assignedSeatsHeld({ assignedDrawPositions, positionAssignments: allAssignments, matchUp });
 
   const feed = feedEligibilityChange({
     inContextDrawMatchUps,
@@ -1874,46 +1863,16 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         matchUp,
       });
 
-  let line: OutcomeView['line'];
-  if (matchUpTieId) {
-    // the dual from the call's one hydration, not a second in-context read (§ 3.6; S7): the projection works on a copy
-    const dualMatchUp = inContextDrawMatchUps?.find((candidate) => candidate.matchUpId === matchUpTieId);
-    if (dualMatchUp) {
-      const tieFormat = resolveTieFormat({ matchUp: dualMatchUp, drawDefinition, structure, event })?.tieFormat;
-      const { projectedWinningSide, projectedScore, projectedTieMatchUps } = getProjectedDualWinningSide({
-        matchUpStatus: request.matchUpStatus,
-        winningSide: request.winningSide,
-        score: request.score,
-        drawDefinition,
-        dualMatchUp,
-        matchUpsMap,
-        tieFormat,
-        structure,
-        matchUp,
-        event,
-      });
-      line = {
-        dualMatchUpId: matchUpTieId,
-        dualMatchUpStatus: dualMatchUp.matchUpStatus,
-        dualWinningSide: dualMatchUp.winningSide,
-        projectedWinningSide,
-        projectedScore,
-        projectedTieMatchUps,
-        projectedStatus: projectedDualStatus({
-          dualMatchUp,
-          projectedWinningSide,
-          projectedScore,
-          projectedTieMatchUps,
-        }),
-        autoCalcDisabled: !!(dualMatchUp.disableAutoCalc ?? dualMatchUp._disableAutoCalc),
-        dualRewrite: lineDualRewrite(
-          { dualMatchUp, matchUpsMap, drawDefinition, structure, event },
-          request,
-          projectedWinningSide,
-        ),
-      };
-    }
-  }
+  const { line, lineFeed } = lineViewOf({
+    inContextDrawMatchUps,
+    drawDefinition,
+    matchUpTieId,
+    matchUpsMap,
+    structure,
+    request,
+    matchUp,
+    event,
+  });
 
   const dualSides = dualCallSides({ isTeam, inContextMatchUp, matchUpsMap, drawDefinition, structure, event });
 
@@ -1969,10 +1928,15 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     participants: {
       required: !!required,
       count,
-      exitAwardable: exitAwardable(allAssignments, inContextMatchUp, request.winningSide),
+      exitAwardable: exitAwardable({
+        positionAssignments: allAssignments,
+        winningSide: request.winningSide,
+        inContextMatchUp,
+        matchUp,
+      }),
       requireForScoring,
     },
-    feedEligibilityBlockedBy: feed?.sourceRoundMatchUpId,
+    feedEligibilityBlockedBy: feed?.sourceRoundMatchUpId ?? lineFeed?.sourceRoundMatchUpId,
     correctionKindBlockedBy: kind?.blockingMatchUpId,
     swapMeetsActivePosition: swapMeetsActivePosition({
       loserTargetLink: targetData?.targetLinks?.loserTargetLink,
@@ -2000,6 +1964,25 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     // § 2 row 24's removal clause, read where `removeDirectedParticipants` reads it: the targets' copy of the matchUp
     // (the dual's for a line), whose `drawPositions` are undefined until a feeder decides
     removalMissingDrawPositions: removalMissingDrawPositions({ structure, targetData }),
+    // § 2 row 31: v1's own rule (`heldSeatRefusal`), asked of the call as v1 asks it
+    heldSeat: heldSeatRefusal({
+      params: {
+        propagateRetirementAsExit: request.flags.propagateRetirementAsExit,
+        allowChangePropagation: request.flags.allowChangePropagation,
+        propagateExitStatus: request.flags.propagateExitStatus,
+        matchUpStatus: request.matchUpStatus,
+        winningSide: request.winningSide,
+        inContextDrawMatchUps,
+        tournamentRecord,
+        inContextMatchUp,
+        drawDefinition,
+        targetData,
+        structure,
+        matchUp,
+        event,
+      },
+      activeDownstream,
+    }),
     line,
     dualProjection,
     targets: {
@@ -2153,6 +2136,113 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       timedTie: !!(inContextMatchUp?.collectionId && lastSetFormatIsTimed({ ...inContextMatchUp })),
     },
   };
+}
+
+/** a line of a dual: what the dual projects once this line is written, and the row 12 question its tally asks */
+function lineViewOf({
+  inContextDrawMatchUps,
+  drawDefinition,
+  matchUpTieId,
+  matchUpsMap,
+  structure,
+  request,
+  matchUp,
+  event,
+}: {
+  inContextDrawMatchUps?: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  matchUpTieId?: string;
+  matchUpsMap?: MatchUpsMap;
+  structure?: Structure;
+  request: OutcomeRequest;
+  matchUp: MatchUp;
+  event?: Event;
+}) {
+  let line: OutcomeView['line'];
+  let lineFeed: ReturnType<typeof lineFeedEligibilityChange>;
+  if (matchUpTieId) {
+    // the dual from the call's one hydration, not a second in-context read (§ 3.6; S7): the projection works on a copy
+    const dualMatchUp = inContextDrawMatchUps?.find((candidate) => candidate.matchUpId === matchUpTieId);
+    if (dualMatchUp) {
+      const tieFormat = resolveTieFormat({ matchUp: dualMatchUp, drawDefinition, structure, event })?.tieFormat;
+      const { projectedWinningSide, projectedScore, projectedTieMatchUps } = getProjectedDualWinningSide({
+        matchUpStatus: request.matchUpStatus,
+        winningSide: request.winningSide,
+        score: request.score,
+        drawDefinition,
+        dualMatchUp,
+        matchUpsMap,
+        tieFormat,
+        structure,
+        matchUp,
+        event,
+      });
+      const autoCalcDisabled = !!(dualMatchUp.disableAutoCalc ?? dualMatchUp._disableAutoCalc);
+      // v1's own read (`resolveTieMatchUpContext`): a dual decided by its own exit or call keeps its winner while its
+      // lines project none, and that winner is the projected one (CA, 2026-11-20, class 4)
+      const { keepsDecision: keepsDualDecision, lineDecided: dualLineDecided } = dualKeepsOwnDecision({
+        projectedWinningSide,
+        autoCalcDisabled,
+        drawDefinition,
+        dualMatchUp,
+        matchUpsMap,
+        tieFormat,
+        structure,
+        event,
+      });
+      // row 12, v1's own read (`lineFeedEligibilityRefusal`): the tally relabels the dual, its loser already directed
+      lineFeed = lineFeedEligibilityChange({
+        inContextDrawMatchUps,
+        projectedWinningSide,
+        autoCalcDisabled,
+        projectedScore,
+        drawDefinition,
+        dualMatchUp,
+        structure,
+      });
+      line = {
+        projectedWinningSide: keepsDualDecision ? dualMatchUp.winningSide : projectedWinningSide,
+        dualMatchUpId: matchUpTieId,
+        dualMatchUpStatus: dualMatchUp.matchUpStatus,
+        dualWinningSide: dualMatchUp.winningSide,
+        keepsDualDecision,
+        dualLineDecided,
+        // the tally relabels the dual's own single exit a played result by the same winner, and that exit was carried to
+        // its loser: the relabel withdraws the carry (`relabelDualExitByTally`). With nothing carried, the relabel is the
+        // tally's own write, which the planners write
+        relabelsDualExit:
+          !keepsDualDecision &&
+          !!request.flags.propagateExitStatus &&
+          !!dualMatchUp.winningSide &&
+          projectedWinningSide === dualMatchUp.winningSide &&
+          isExit(dualMatchUp.matchUpStatus) &&
+          !isDoubleExit(dualMatchUp.matchUpStatus) &&
+          !!inContextDrawMatchUps?.some((candidate) =>
+            exitCarriedFrom({ sourceMatchUpId: matchUpTieId, matchUp: candidate }),
+          ),
+        projectedScore,
+        projectedTieMatchUps,
+        projectedStatus: projectedDualStatus({
+          dualMatchUp,
+          projectedWinningSide,
+          projectedScore,
+          projectedTieMatchUps,
+        }),
+        autoCalcDisabled,
+        talliedByScore:
+          !!tieFormat?.winCriteria?.aggregateValue ||
+          !!tieFormat?.collectionDefinitions?.some(
+            (collection: { scoreValue?: number; setValue?: number }) => collection.scoreValue || collection.setValue,
+          ),
+        dualRewrite: lineDualRewrite(
+          { dualMatchUp, matchUpsMap, drawDefinition, structure, event },
+          request,
+          projectedWinningSide,
+        ),
+      };
+    }
+  }
+  return { line, lineFeed };
 }
 
 /** the dual's status as v1's `updateTieMatchUpScore` derives it from its tally and its lines (S7) */
