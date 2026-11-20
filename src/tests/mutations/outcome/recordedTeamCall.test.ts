@@ -326,11 +326,11 @@ describe("a TEAM call v1 refuses on the copy is not recorded, and is v1's", () =
 
 /**
  * A line's double exit names no winner, so it is never routed `line-score`. On a dual decided by its own call (an exit,
- * or a winner alone) the lines then project no winner: v1 takes the dual's winner back out of the next dual, writes the
- * line, and tallies the dual in progress. The planners do not plan that removal and abstain (`team`); the call is
- * recorded whole.
+ * or a winner alone) the lines then project no winner, and the dual keeps its winner (CA, 2026-11-20, class 4): v1
+ * writes the line and leaves the dual, and what it directed, as they stand. The planners abstain (`team`); the call is
+ * recorded whole. (Before the ruling v1 took the dual's winner back out of the next dual and tallied it in progress.)
  */
-describe("a line's double exit that un-decides a dual decided by its own call is recorded", () => {
+describe("a line's double exit on a dual decided by its own call is recorded, and the dual keeps its winner", () => {
   const nextDual = (record: string, matchUpId: string) =>
     JSON.parse(record).events[0].drawDefinitions[0].structures[0].matchUps.find(
       (matchUp: MatchUp) => matchUp.matchUpId === matchUpId,
@@ -359,14 +359,14 @@ describe("a line's double exit that un-decides a dual decided by its own call is
       expect(actual.record).toEqual(v1.record);
       expect(actual.notices).toEqual(v1.notices);
       expect(actual.graph).toEqual(v1.graph);
-      // the dual holds no winner, and nobody stands in the next dual for it
-      expect(nextDual(actual.record, dual.matchUpId).winningSide).toBeUndefined();
-      expect((nextDual(actual.record, dual.winnerMatchUpId).drawPositions ?? []).filter(Boolean)).toEqual([]);
+      // the dual keeps its winner, and that winner stands in the next dual
+      expect(nextDual(actual.record, dual.matchUpId).winningSide).toEqual(decided.winningSide);
+      expect((nextDual(actual.record, dual.winnerMatchUpId).drawPositions ?? []).filter(Boolean).length).toEqual(1);
     }
   });
 
   // the next dual holds the exit a neighbouring dual's own double exit produced there, awarded to this dual's winner:
-  // v1 takes the winner back out of it, and the produced exit stands with nobody to be awarded it
+  // the dual keeps its winner (class 4), so the award stands
   it("a line's double exit on a dual decided by its own call, its winner awarded a produced exit in the next dual", () => {
     generate({ drawSize: 8, drawType: SINGLE_ELIMINATION, tieFormatName: USTA_COLLEGE });
     const [, , third, fourth] = duals().filter((each: any) => each.roundNumber === 1);
@@ -379,6 +379,8 @@ describe("a line's double exit that un-decides a dual decided by its own call is
     const calls: Call[] = [{ matchUpId: fourth.tieMatchUps[5].matchUpId, outcome: { matchUpStatus: DOUBLE_WALKOVER } }];
     const v1 = play(OUTCOME_PIPELINE_V1, prepared, calls);
     expect(JSON.parse(v1.results)[0].success).toEqual(true);
+    expect(nextDual(v1.record, fourth.matchUpId).winningSide).toEqual(2);
+    expect((nextDual(v1.record, fourth.winnerMatchUpId).drawPositions ?? []).filter(Boolean).length).toEqual(1);
     for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
       const actual = play(mode, prepared, calls);
       expect([actual.asked, actual.made]).toEqual([1, 1]);

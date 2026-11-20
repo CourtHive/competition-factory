@@ -9,6 +9,8 @@ import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import { RANKING } from '@Constants/scaleConstants';
+import { CANNOT_CHANGE_FEED_ELIGIBILITY } from '@Constants/errorConditionConstants';
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 
 // A TEAM FIRST_MATCH_LOSER_CONSOLATION draw of 8 with DOMINANT_DUO (two singles and a doubles; two rubbers win
 // the dual). A round 1 WALKOVER is not a win, so its winner losing round 2 is fed into the consolation with its
@@ -76,9 +78,40 @@ it('a TEAM withheld from the consolation leaves no lineUp on the BYE that replac
   };
   expect(storedSides().some((side) => side.lineUp?.length)).toEqual(true);
 
-  // the WALKOVER is corrected to a scored win: the round 2 loss is no longer a first match
+  // CA, 2026-11-20 (class 4): the WALKOVER dual keeps its winner while its lines project none, so its first line leaves
+  // the round 2 dual and the fed loser as they stand. The line that would complete the tally relabels the dual to a scored
+  // win with its loser already fed, and is refused as the dual's own call is (row 12). Before the ruling the first line
+  // un-decided the dual and reset round 2, which is how the correction used to reach the withheld loser.
+  const [firstLine, secondLine] = matchUps().filter((m) => m.matchUpTieId === walkoverDual.matchUpId);
+  const lineOutcome = (rubber: any, winningSide: number) =>
+    mocksEngine.generateOutcomeFromScoreString({
+      scoreString: rubber.matchUpFormat.startsWith('SET3') ? '6-1 6-1' : '8-1',
+      winningSide,
+    }).outcome;
+  result = tournamentEngine.setMatchUpStatus({
+    matchUpId: firstLine.matchUpId,
+    outcome: lineOutcome(firstLine, 1),
+    drawId,
+  });
+  expect(result.success).toEqual(true);
+  expect(matchUps().find((m) => m.matchUpId === walkoverDual.matchUpId).matchUpStatus).toEqual(WALKOVER);
+  expect(fedDual()?.matchUpId).toEqual(fedMatchUpId);
+  result = tournamentEngine.setMatchUpStatus({
+    matchUpId: secondLine.matchUpId,
+    outcome: lineOutcome(secondLine, 1),
+    drawId,
+  });
+  expect(result.error).toEqual(CANNOT_CHANGE_FEED_ELIGIBILITY);
+
+  // round 2 is cleared (its loser taken back out of the consolation), the WALKOVER corrected to a scored win, and
+  // round 2 played again: the loss is no longer a first match
+  for (const rubber of matchUps().filter((m) => m.matchUpTieId === roundTwoDual.matchUpId)) {
+    result = tournamentEngine.setMatchUpStatus({ matchUpId: rubber.matchUpId, outcome: toBePlayed, drawId });
+    expect(result.success).toEqual(true);
+  }
   playDual(walkoverDual.matchUpId, 1);
   expect(matchUps().find((m) => m.matchUpId === walkoverDual.matchUpId).matchUpStatus).toEqual(COMPLETED);
+  playDual(roundTwoDual.matchUpId, 3 - walkoverSide.sideNumber);
 
   expect(fedDual()).toBeUndefined();
   const byeDual = matchUps().find((m) => m.matchUpId === fedMatchUpId);

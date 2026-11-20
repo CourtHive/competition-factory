@@ -42,6 +42,8 @@ type UpdateTieMatchUpScoreArgs = {
   matchUpStatus?: MatchUpStatusUnion;
   tournamentId?: string;
   removeScore?: boolean;
+  /** the dual was decided by its own exit or call, and the line write leaves its lines projecting no winner */
+  keepsDecision?: boolean;
   matchUpId: string;
   event?: Event;
 };
@@ -138,6 +140,14 @@ export function updateTieMatchUpScore(params: UpdateTieMatchUpScoreArgs): {
   // `unwindDualDoubleExit`). The dual keeps its exit until its lines decide it.
   if (keepsPendingCascadeExit(matchUp, winningSide, heldTieFormat)) return { ...SUCCESS, score: matchUp.score };
 
+  // A DUAL DECIDED BY ITS OWN EXIT OR ITS OWN CALL KEEPS ITS WINNER WHILE ITS LINES PROJECT NONE (CA, 2026-11-20,
+  // class 4; `dualKeepsOwnDecision`). Tallied afresh, it was un-decided by its first line: its winner taken back out of
+  // the next dual and the result there reset. It stands as it is until its lines name a winner of their own.
+  if (params.keepsDecision && !winningSide) {
+    restoreTieFormat(matchUp, heldTieFormat);
+    return { ...SUCCESS, score: matchUp.score };
+  }
+
   const setHasValue = set?.side1Score || set?.side2Score;
   if (exitWhenNoValues && !matchUp.score && !setHasValue) {
     return { ...SUCCESS };
@@ -231,7 +241,11 @@ function keepsPendingCascadeExit(
   const projectsWinner = !!winningSide && [1, 2].includes(winningSide);
   if (projectsWinner || matchUp.winningSide || !isExit(matchUp.matchUpStatus) || !isPropagatedExit({ matchUp }))
     return false;
+  restoreTieFormat(matchUp, heldTieFormat);
+  return true;
+}
+
+function restoreTieFormat(matchUp: MatchUp, heldTieFormat?: MatchUp['tieFormat']) {
   if (heldTieFormat) matchUp.tieFormat = heldTieFormat;
   else delete matchUp.tieFormat;
-  return true;
 }

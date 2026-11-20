@@ -98,6 +98,7 @@ export function removeDirectedParticipants(params): {
   if (isCollectionMatchUp) {
     const { matchUpTieId, matchUpsMap } = params;
     tieMatchUpResult = updateTieMatchUpScore({
+      keepsDecision: params.keepsDualDecision,
       appliedPolicies: params.appliedPolicies,
       matchUpId: matchUpTieId,
       tournamentRecord,

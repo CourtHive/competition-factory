@@ -177,9 +177,11 @@ describe("a line's double exit produced nothing, and leaving it touches nothing 
   });
 });
 
-describe('a line that un-decides its dual takes back the line-ups the dual sent on', () => {
-  // the planners' removal took the team's drawPosition back and left its line-up stored on the side it had held
-  it('the winner: its line-up leaves the next dual, where a call on that dual had stored its sides', () => {
+// CA, 2026-11-20 (class 4): a dual decided by its own call keeps its winner while its lines project none, so these lines no longer un-decide
+// it. The line-ups it sent on stay where they were sent (before the ruling they left with the un-deciding; the walk found
+// the planners' removal leaving them behind, which is why the cases stand here)
+describe('a line on a dual decided by its own call leaves the line-ups the dual sent on', () => {
+  it('the winner: its line-up stays in the next dual, where a call on that dual had stored its sides', () => {
     const prepared = prepareCall(() => {
       generate({ drawSize: 8 });
       const first = dual('Main', 1, 4);
@@ -194,11 +196,12 @@ describe('a line that un-decides its dual takes back the line-ups the dual sent 
     const v1 = alike(prepared);
     expect(v1.result.success).toEqual(true);
     const after = storedMatchUp(v1.record, next);
-    expect(after.drawPositions.filter(Boolean)).toEqual([]);
-    expect(after.sides.filter((side: any) => side.lineUp?.length)).toEqual([]);
+    expect(after.drawPositions.filter(Boolean).length).toEqual(1);
+    expect(after.sides.filter((side: any) => side.lineUp?.length).length).toEqual(1);
+    expect(storedMatchUp(v1.record, dual('Main', 1, 4).matchUpId).winningSide).toEqual(2);
   });
 
-  it('the loser: its line-up leaves the dual its loser link fed', () => {
+  it('the loser: its line-up stays in the dual its loser link fed', () => {
     const prepared = prepareCall(() => {
       generate({ drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP });
       const first = dual('Main', 1, 2);
@@ -210,7 +213,8 @@ describe('a line that un-decides its dual takes back the line-ups the dual sent 
     expect(sidesBefore.filter((side: any) => side.lineUp?.length).length).toEqual(1);
     const v1 = alike(prepared);
     expect(v1.result.success).toEqual(true);
-    expect(storedMatchUp(v1.record, fed).sides.filter((side: any) => side.lineUp?.length)).toEqual([]);
+    expect(storedMatchUp(v1.record, fed).sides.filter((side: any) => side.lineUp?.length).length).toEqual(1);
+    expect(storedMatchUp(v1.record, dual('Main', 1, 2).matchUpId).winningSide).toEqual(2);
   });
 });
 
@@ -282,9 +286,9 @@ describe("a team's line-up notice keeps the event an earlier notice of the call 
   });
 });
 
-describe('a line that un-decides its dual leaves it in progress', () => {
-  // the dual's status is its tally's: it holds a line's result, though a doubles line that does not yet win its
-  // collection's point leaves the score 0-0. The planners wrote the removal's status, to be played
+// CA, 2026-11-20 (class 4): the line no longer un-decides the dual. Before the ruling the dual went IN_PROGRESS at 0-0 (a doubles line
+// that does not yet win its collection's point), where the planners wrote the removal's status, to be played
+describe('a line on a dual decided by its own call leaves the dual decided', () => {
   it.each([
     ['a round robin', { drawSize: 4, drawType: ROUND_ROBIN }],
     ['an elimination draw', { drawSize: 8 }],
@@ -299,11 +303,7 @@ describe('a line that un-decides its dual leaves it in progress', () => {
     const v1 = alike(prepared);
     expect(v1.result.success).toEqual(true);
     const held = storedMatchUp(v1.record, duals()[0].matchUpId);
-    expect([held.matchUpStatus, held.winningSide, held.score.scoreStringSide1]).toEqual([
-      IN_PROGRESS,
-      undefined,
-      '0-0',
-    ]);
+    expect([held.matchUpStatus, held.winningSide]).toEqual([COMPLETED, 2]);
   });
 });
 

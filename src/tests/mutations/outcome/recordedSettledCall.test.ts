@@ -214,8 +214,22 @@ const tally = (key: string) => {
 describe('a recording a settle predicate finds work on, where the passes themselves find none, is v2s', () => {
   const PROVED: [string, AbstainReason, () => Record<string, unknown>][] = [
     ['a qualifier whose removal play downstream holds back', 'link', qualifierHeldBack],
-    ['a line scored in a dual won by WALKOVER, its winner already fed on', 'team', walkoverDualLine],
   ];
+
+  // CA, 2026-11-20 (class 4): a dual decided by its own exit keeps its winner while its lines project none. The line no
+  // longer un-decides the WALKOVER dual, so nothing is taken back from the consolation, no settle predicate finds work on
+  // v1's write, and the recording is kept without the proof: v1's own settle is the only run on a copy. (Before the
+  // ruling this row stood in PROVED, and in the FAULT rows below, as the TEAM line in a FIRST_MATCH_LOSER_CONSOLATION.)
+  it('a line scored in a dual won by WALKOVER, its winner already fed on, keeps the dual and needs no proof (team)', () => {
+    const call = prepareCall(walkoverDualLine);
+    expectRecordedWhole(call, 'team', recorder);
+    settle.onCopy = 0;
+    expect(playCall(OUTCOME_PIPELINE_V2, call).v1Writes).toEqual(0);
+    expect(settle.onCopy).toEqual(1);
+    const line = matchUps().find((m) => m.matchUpId === call.params.matchUpId);
+    const dual = matchUps().find((m) => m.matchUpId === line.matchUpTieId);
+    expect([dual.matchUpStatus, dual.winningSide]).toEqual([WALKOVER, 1]);
+  });
 
   it.each(PROVED)('%s (%s)', (_label, reason, build) => {
     const call = prepareCall(build);

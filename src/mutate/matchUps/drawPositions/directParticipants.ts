@@ -52,6 +52,7 @@ export function directParticipants(params): ResultType {
   if (isCollectionMatchUp) {
     const { matchUpTieId, matchUpsMap } = params;
     const tieMatchUpResult = updateTieMatchUpScore({
+      keepsDecision: params.keepsDualDecision,
       appliedPolicies: params.appliedPolicies,
       matchUpId: matchUpTieId,
       tournamentRecord,

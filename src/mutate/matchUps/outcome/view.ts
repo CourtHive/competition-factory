@@ -10,10 +10,11 @@ import { generateTieMatchUpScore } from '@Query/matchUp/tieMatchUpScore/generate
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
 import { resolveTieScoreSource } from '@Query/hierarchical/tieFormats/resolveTieScoreSource';
-import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
+import { feedEligibilityChange, lineFeedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { correctionKindChange } from '@Mutate/matchUps/matchUpStatus/correctionKindGuard';
 import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinningSide';
+import { dualKeepsOwnDecision } from '@Mutate/matchUps/matchUpStatus/dualKeepsOwnDecision';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
@@ -1888,51 +1889,16 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         matchUp,
       });
 
-  let line: OutcomeView['line'];
-  if (matchUpTieId) {
-    // the dual from the call's one hydration, not a second in-context read (§ 3.6; S7): the projection works on a copy
-    const dualMatchUp = inContextDrawMatchUps?.find((candidate) => candidate.matchUpId === matchUpTieId);
-    if (dualMatchUp) {
-      const tieFormat = resolveTieFormat({ matchUp: dualMatchUp, drawDefinition, structure, event })?.tieFormat;
-      const { projectedWinningSide, projectedScore, projectedTieMatchUps } = getProjectedDualWinningSide({
-        matchUpStatus: request.matchUpStatus,
-        winningSide: request.winningSide,
-        score: request.score,
-        drawDefinition,
-        dualMatchUp,
-        matchUpsMap,
-        tieFormat,
-        structure,
-        matchUp,
-        event,
-      });
-      line = {
-        dualMatchUpId: matchUpTieId,
-        dualMatchUpStatus: dualMatchUp.matchUpStatus,
-        dualWinningSide: dualMatchUp.winningSide,
-        projectedWinningSide,
-        projectedScore,
-        projectedTieMatchUps,
-        projectedStatus: projectedDualStatus({
-          dualMatchUp,
-          projectedWinningSide,
-          projectedScore,
-          projectedTieMatchUps,
-        }),
-        autoCalcDisabled: !!(dualMatchUp.disableAutoCalc ?? dualMatchUp._disableAutoCalc),
-        talliedByScore:
-          !!tieFormat?.winCriteria?.aggregateValue ||
-          !!tieFormat?.collectionDefinitions?.some(
-            (collection: { scoreValue?: number; setValue?: number }) => collection.scoreValue || collection.setValue,
-          ),
-        dualRewrite: lineDualRewrite(
-          { dualMatchUp, matchUpsMap, drawDefinition, structure, event },
-          request,
-          projectedWinningSide,
-        ),
-      };
-    }
-  }
+  const { line, lineFeed } = lineViewOf({
+    inContextDrawMatchUps,
+    drawDefinition,
+    matchUpTieId,
+    matchUpsMap,
+    structure,
+    request,
+    matchUp,
+    event,
+  });
 
   const dualSides = dualCallSides({ isTeam, inContextMatchUp, matchUpsMap, drawDefinition, structure, event });
 
@@ -1991,7 +1957,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       exitAwardable: exitAwardable(allAssignments, inContextMatchUp, request.winningSide),
       requireForScoring,
     },
-    feedEligibilityBlockedBy: feed?.sourceRoundMatchUpId,
+    feedEligibilityBlockedBy: feed?.sourceRoundMatchUpId ?? lineFeed?.sourceRoundMatchUpId,
     correctionKindBlockedBy: kind?.blockingMatchUpId,
     swapMeetsActivePosition: swapMeetsActivePosition({
       loserTargetLink: targetData?.targetLinks?.loserTargetLink,
@@ -2172,6 +2138,100 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       timedTie: !!(inContextMatchUp?.collectionId && lastSetFormatIsTimed({ ...inContextMatchUp })),
     },
   };
+}
+
+/** a line of a dual: what the dual projects once this line is written, and the row 12 question its tally asks */
+function lineViewOf({
+  inContextDrawMatchUps,
+  drawDefinition,
+  matchUpTieId,
+  matchUpsMap,
+  structure,
+  request,
+  matchUp,
+  event,
+}: {
+  inContextDrawMatchUps?: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  matchUpTieId?: string;
+  matchUpsMap?: MatchUpsMap;
+  structure?: Structure;
+  request: OutcomeRequest;
+  matchUp: MatchUp;
+  event?: Event;
+}) {
+  let line: OutcomeView['line'];
+  let lineFeed: ReturnType<typeof lineFeedEligibilityChange>;
+  if (matchUpTieId) {
+    // the dual from the call's one hydration, not a second in-context read (§ 3.6; S7): the projection works on a copy
+    const dualMatchUp = inContextDrawMatchUps?.find((candidate) => candidate.matchUpId === matchUpTieId);
+    if (dualMatchUp) {
+      const tieFormat = resolveTieFormat({ matchUp: dualMatchUp, drawDefinition, structure, event })?.tieFormat;
+      const { projectedWinningSide, projectedScore, projectedTieMatchUps } = getProjectedDualWinningSide({
+        matchUpStatus: request.matchUpStatus,
+        winningSide: request.winningSide,
+        score: request.score,
+        drawDefinition,
+        dualMatchUp,
+        matchUpsMap,
+        tieFormat,
+        structure,
+        matchUp,
+        event,
+      });
+      const autoCalcDisabled = !!(dualMatchUp.disableAutoCalc ?? dualMatchUp._disableAutoCalc);
+      // v1's own read (`resolveTieMatchUpContext`): a dual decided by its own exit or call keeps its winner while its
+      // lines project none, and that winner is the projected one (CA, 2026-11-20, class 4)
+      const { keepsDecision: keepsDualDecision, lineDecided: dualLineDecided } = dualKeepsOwnDecision({
+        projectedWinningSide,
+        autoCalcDisabled,
+        drawDefinition,
+        dualMatchUp,
+        matchUpsMap,
+        tieFormat,
+        structure,
+        event,
+      });
+      // row 12, v1's own read (`lineFeedEligibilityRefusal`): the tally relabels the dual, its loser already directed
+      lineFeed = lineFeedEligibilityChange({
+        inContextDrawMatchUps,
+        projectedWinningSide,
+        autoCalcDisabled,
+        projectedScore,
+        drawDefinition,
+        dualMatchUp,
+        structure,
+      });
+      line = {
+        projectedWinningSide: keepsDualDecision ? dualMatchUp.winningSide : projectedWinningSide,
+        dualMatchUpId: matchUpTieId,
+        dualMatchUpStatus: dualMatchUp.matchUpStatus,
+        dualWinningSide: dualMatchUp.winningSide,
+        keepsDualDecision,
+        dualLineDecided,
+        projectedScore,
+        projectedTieMatchUps,
+        projectedStatus: projectedDualStatus({
+          dualMatchUp,
+          projectedWinningSide,
+          projectedScore,
+          projectedTieMatchUps,
+        }),
+        autoCalcDisabled,
+        talliedByScore:
+          !!tieFormat?.winCriteria?.aggregateValue ||
+          !!tieFormat?.collectionDefinitions?.some(
+            (collection: { scoreValue?: number; setValue?: number }) => collection.scoreValue || collection.setValue,
+          ),
+        dualRewrite: lineDualRewrite(
+          { dualMatchUp, matchUpsMap, drawDefinition, structure, event },
+          request,
+          projectedWinningSide,
+        ),
+      };
+    }
+  }
+  return { line, lineFeed };
 }
 
 /** the dual's status as v1's `updateTieMatchUpScore` derives it from its tally and its lines (S7) */

@@ -1849,7 +1849,7 @@ const RECORDED: [string, Scenario][] = [
     },
   ],
   [
-    "a line DEFAULTED under a scoring policy's processCodes un-deciding its dual: v1's (the codes on the line, exitReason)",
+    "a line DEFAULTED under a scoring policy's processCodes on a dual decided by its own call, which keeps its winner (CA 2026-11-20): v1's (the codes on the line, exitReason)",
     {
       drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },
       policyDefinitions: POLICY_SCORING_DEFAULT,

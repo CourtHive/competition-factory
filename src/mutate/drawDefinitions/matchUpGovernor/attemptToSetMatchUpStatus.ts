@@ -205,6 +205,7 @@ function scoreModification(params) {
   if (isCollectionMatchUp) {
     const { matchUpTieId, drawDefinition, matchUpsMap } = params;
     const tieMatchUpResult = updateTieMatchUpScore({
+      keepsDecision: params.keepsDualDecision,
       tournamentRecord: params.tournamentRecord,
       appliedPolicies: params.appliedPolicies,
       matchUpId: matchUpTieId,

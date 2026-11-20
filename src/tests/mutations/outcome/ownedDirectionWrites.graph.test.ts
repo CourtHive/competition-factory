@@ -157,6 +157,36 @@ function write(
 
 const won = () => generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 1 }).outcome;
 
+/**
+ * CA, 2026-11-20 (class 4): a line on a dual decided by its own exit or call that keeps its winner (its lines projecting none). v1
+ * writes the line and leaves the dual as it stands; v2 records v1's whole write, run on a copy (so v1's writer is
+ * called once there, never on the stored record). The dual's own keys and values are compared before and after.
+ */
+function writeKeepingDual(
+  mode: typeof OUTCOME_PIPELINE_V1 | typeof OUTCOME_PIPELINE_V2,
+  drawId: string,
+  dual: any,
+  lineId: string,
+  outcome: object,
+) {
+  const own = (matchUp: any) => {
+    const { tieMatchUps: _lines, updatedAt: _stamp, ...rest } = matchUp;
+    return JSON.stringify(rest, Object.keys(rest));
+  };
+  const before = own(dual);
+  setOutcomePipeline(mode);
+  counter.calls = 0;
+  counter.active = true;
+  try {
+    const result = tournamentEngine.setMatchUpStatus({ drawId, matchUpId: lineId, outcome });
+    expect(result).toMatchObject({ success: true });
+    expect(counter.calls).toBe(1);
+  } finally {
+    counter.active = false;
+  }
+  expect(own(dual)).toEqual(before);
+}
+
 function observeNoticeTopics(includeDraw = false) {
   const relevant = [MODIFY_MATCHUP, MODIFY_POSITION_ASSIGNMENTS, ...(includeDraw ? [MODIFY_DRAW_DEFINITION] : [])];
   const topics: string[] = [];
@@ -682,7 +712,9 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
 );
 
 it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
-  '%s explicitly clears an untouched line winner when its double default undecides a dual',
+  // CA, 2026-11-20 (class 4): the line's double default no longer un-decides the dual, so nothing clears the line's winner explicitly
+  // (before the ruling v1's removal wrote it an own undefined `winningSide`)
+  '%s leaves a dual decided by its own call as it stands when a line takes a double default',
   (mode) => {
     const { drawId, matchUps } = fresh({
       drawSize: 4,
@@ -694,10 +726,10 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     write(OUTCOME_PIPELINE_V1, drawId, dual.matchUpId, { winningSide: 1 });
     const line = dual.tieMatchUps![0];
     expect(Object.hasOwn(line, 'winningSide')).toBe(false);
-    write(mode, drawId, line.matchUpId, { matchUpStatus: DOUBLE_DEFAULT });
+    writeKeepingDual(mode, drawId, dual, line.matchUpId, { matchUpStatus: DOUBLE_DEFAULT });
     expect(line.matchUpStatus).toBe(DOUBLE_DEFAULT);
-    expect(Object.hasOwn(line, 'winningSide')).toBe(true);
-    expect(line.winningSide).toBeUndefined();
+    expect(Object.hasOwn(line, 'winningSide')).toBe(false);
+    expect(dual.winningSide).toBe(1);
   },
 );
 
@@ -737,7 +769,9 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
 );
 
 it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
-  '%s announces a fresh line before the dual withdrawal it causes',
+  // CA, 2026-11-20 (class 4): the fresh line no longer un-decides the dual, so there is no withdrawal to announce: only the line and its
+  // dual are named (before the ruling the line's callback followed the withdrawal's modifications)
+  '%s announces a fresh line on a dual decided by its own call with no withdrawal',
   (mode) => {
     const { drawId, record } = fresh({
       drawSize: 8,
@@ -768,7 +802,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     setSubscriptions({
       subscriptions: { [UPDATE_INCONTEXT_MATCHUP]: () => undefined, [MODIFY_MATCHUP]: () => undefined },
     });
-    write(mode, drawId, line.matchUpId, won());
+    writeKeepingDual(mode, drawId, dual, line.matchUpId, won());
     expect(Object.hasOwn(dual, 'tieFormatId')).toBe(false);
     expect(observed.at(-1)?.[0]).toBe(UPDATE_INCONTEXT_MATCHUP);
     const buffer = buffers.at(-1)!;
@@ -776,8 +810,8 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     const otherModifications = buffer.flatMap((n, index) =>
       n.topic === MODIFY_MATCHUP && n.key !== line.matchUpId && n.key !== dual.matchUpId ? [index] : [],
     );
-    expect(otherModifications.length).toBeGreaterThan(0);
-    expect(lineCallback).toBeGreaterThan(Math.max(...otherModifications));
+    expect(lineCallback).toBeGreaterThanOrEqual(0);
+    expect(otherModifications).toEqual([]);
   },
 );
 
@@ -985,7 +1019,9 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
 );
 
 it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
-  '%s retains the own undefined tieFormatId from the initial empty dual tally',
+  // CA, 2026-11-20 (class 4): the line no longer un-decides the dual, so there is no empty tally to write it an own undefined
+  // `tieFormatId`: the dual keeps its keys as they stood
+  '%s leaves the keys of a dual decided by its own call as they stood when its first line is won',
   (mode) => {
     const { drawId, matchUps } = fresh({
       drawType: ROUND_ROBIN,
@@ -996,10 +1032,8 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     const dual = matchUps.find((matchUp) => matchUp.tieMatchUps?.length && matchUp.matchUpStatus === TO_BE_PLAYED)!;
     write(OUTCOME_PIPELINE_V1, drawId, dual.matchUpId, { winningSide: 1 });
     const line = dual.tieMatchUps![0];
-    write(mode, drawId, line.matchUpId, { winningSide: 1 });
-    expect(Object.hasOwn(dual, 'tieFormatId')).toBe(true);
-    expect(dual.tieFormatId).toBeUndefined();
-    expect(dual.tieFormat).toBeDefined();
+    writeKeepingDual(mode, drawId, dual, line.matchUpId, { winningSide: 1 });
+    expect(dual.winningSide).toBe(1);
   },
 );
 
@@ -1068,7 +1102,8 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     });
     const dual = matchUps.find((matchUp) => matchUp.tieMatchUps?.length && matchUp.matchUpStatus === TO_BE_PLAYED)!;
     write(OUTCOME_PIPELINE_V1, drawId, dual.matchUpId, { winningSide: 1 });
-    write(mode, drawId, dual.tieMatchUps![0].matchUpId, { winningSide: 1, matchUpStatus: DEFAULTED });
+    // CA, 2026-11-20 (class 4): the dual decided by its own call keeps its winner, and v2 records v1's write
+    writeKeepingDual(mode, drawId, dual, dual.tieMatchUps![0].matchUpId, { winningSide: 1, matchUpStatus: DEFAULTED });
     expect(Object.hasOwn(dual, 'tieFormatId')).toBe(false);
   },
 );
@@ -1452,7 +1487,9 @@ it.each(
   ([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const).flatMap((mode) =>
     [false, true].map((custom) => [mode, custom] as const),
   ),
-)('%s deletes the empty initial dual score before recreating the final tally, custom=%s', (mode, custom) => {
+)('%s leaves a dual decided by its own RETIRED as it stands when its first line is won, custom=%s', (mode, custom) => {
+  // CA, 2026-11-20 (class 4): the line no longer un-decides the dual, so its score is not deleted and tallied afresh (before the ruling
+  // it was rewritten 1-0 with its tieFormat keys before its score)
   const { drawId, matchUps, record } = fresh({
     drawType: ROUND_ROBIN,
     eventType: TEAM,
@@ -1466,11 +1503,8 @@ it.each(
     score: { sets: [{ side1Score: 6, side2Score: 3 }], scoreStringSide1: '6-3', scoreStringSide2: '3-6' },
   });
   if (custom) dual.tieFormat = { ...record.events![0].tieFormat!, tieFormatName: 'retained custom dual format' };
-  write(mode, drawId, dual.tieMatchUps![0].matchUpId, { winningSide: 1 });
-  expect(dual.score?.scoreStringSide1).toBe('1-0');
-  expect(Object.hasOwn(dual, 'tieFormatId')).toBe(!custom);
-  const keys = Object.keys(dual);
-  expect(keys.indexOf('score')).toBeGreaterThan(keys.indexOf(custom ? 'tieFormat' : 'tieFormatId'));
+  writeKeepingDual(mode, drawId, dual, dual.tieMatchUps![0].matchUpId, { winningSide: 1 });
+  expect([dual.matchUpStatus, dual.winningSide, dual.score?.scoreStringSide1]).toEqual([RETIRED, 1, '6-3']);
 });
 
 it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(

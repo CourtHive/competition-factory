@@ -1,5 +1,6 @@
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
+import { lineTakesPlayedOnDualWinner } from '@Mutate/matchUps/matchUpStatus/lineTakesPlayedOnDualWinner';
 import { rewritesCarriedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { validateScore } from '@Scoring/analysis/validateScore';
@@ -290,6 +291,24 @@ function refuseDispatch(request: OutcomeRequest, view: OutcomeView): Refusal | u
     return refuse(13, CANNOT_CHANGE_OUTCOME, {
       info: 'the dual holds a double exit whose produced result has been played on',
       context: { dualMatchUpId: line.dualMatchUpId, dualMatchUpStatus: line.dualMatchUpStatus },
+    });
+
+  // row 14 (CA, 2026-11-19; line-decided duals, 2026-11-20): a line whose tally would take away its dual's winner, sent on
+  // to a played-on downstream
+  if (
+    lineTakesPlayedOnDualWinner({
+      projectedWinningSide: line?.projectedWinningSide,
+      autoCalcDisabled: line?.autoCalcDisabled,
+      dualWinningSide: line?.dualWinningSide,
+      lineDecided: line?.dualLineDecided,
+      activeDownstream: view.activeDownstream,
+      isLine: !!line,
+    })
+  )
+    return refuse(14, CANNOT_CHANGE_WINNING_SIDE, {
+      info: "the line would take away its dual's winner, whose downstream has been played on",
+      context: { winningSide },
+      namesMatchUp: true,
     });
 
   const hasPropagated = !!existing.winningSide || isDoubleExit(existing.matchUpStatus);

@@ -180,7 +180,18 @@ function exitReason(args: ExitReasonArgs): AbstainReason | SeatObligation | unde
   return undefined;
 }
 
+/**
+ * A line on a dual decided by its own exit or call that keeps its winner (CA, 2026-11-20, class 4): v1 writes the line
+ * and leaves the dual as it stands, which no planner plans. Asked last, so a call another reason already abstains from
+ * keeps that reason: only a call the planners would otherwise plan is handed to v1's whole write (`team`).
+ */
 function abstainReason(args: PlanArgs): AbstainReason | SeatObligation | undefined {
+  const reason = abstainReasonOf(args);
+  if (reason || !args.view.line?.keepsDualDecision) return reason;
+  return 'team';
+}
+
+function abstainReasonOf(args: PlanArgs): AbstainReason | SeatObligation | undefined {
   const { request, view, write, direction } = args;
   const team = teamReason(args);
   if (team) return team;
