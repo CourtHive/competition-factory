@@ -20,6 +20,7 @@ import { TEAM } from '@Constants/eventConstants';
 import {
   FIRST_MATCH_LOSER_CONSOLATION,
   DOUBLE_ELIMINATION,
+  SINGLE_ELIMINATION,
   CONSOLATION,
   COMPASS,
   MAIN,
@@ -631,6 +632,32 @@ export function authoredScenarios(): Authored[] {
           ...claim(feeder?.matchUpStatus === BYE, 'East|1|1, which feeds the seat, is a BYE matchUp'),
           ...claim(byes.length === 1, 'West|1|1 holds one BYE: the fed seat kept it, the cleared claim took the other'),
           ...claim(!claims.length, 'no claim is left on West|1|1: the fed BYE stands on the draw, not on a claim'),
+        ];
+      },
+    });
+  }
+
+  // § 2 row 23 and § 7.2: a refusal leaves missing edges missing; a later accepted call stores them.
+  {
+    const { tournamentRecord, at } = generate({ drawSize: 4, drawType: SINGLE_ELIMINATION });
+    const source = at(MAIN, 1, 1);
+    const target = at(MAIN, 2, 1);
+    const structure = tournamentRecord.events[0].drawDefinitions[0].structures[0];
+    for (const matchUp of structure.matchUps) {
+      delete matchUp.winnerMatchUpId;
+      delete matchUp.loserMatchUpId;
+    }
+    out.push({
+      scenarioId: 'authored/outcome-adversarial/missing-edges-after-refusal',
+      ref: 'spec § 2 row 23 and § 7.2: refusal is atomic and accepted outcomes restore missing edges',
+      initialRecord: tournamentRecord,
+      directives: [sms(source, win(), { notes: 7 }), sms(source, win(), { notes: 'accepted' })],
+      expected: ['ERR_INVALID_VALUES', 'ok'],
+      finalState: (record) => {
+        const stored = matchUpAt(record, MAIN, 1, 1);
+        return [
+          ...claim(stored?.winnerMatchUpId === target.matchUpId, 'the accepted result restores the winner edge'),
+          ...claim(stored?.notes === 'accepted', 'the accepted result stores its notes'),
         ];
       },
     });
