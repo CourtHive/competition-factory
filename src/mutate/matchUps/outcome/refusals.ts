@@ -2,11 +2,12 @@ import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/ma
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
 import { lineTakesPlayedOnDualWinner } from '@Mutate/matchUps/matchUpStatus/lineTakesPlayedOnDualWinner';
 import { rewritesCarriedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { lineDirectsUnfedDual } from '@Query/matchUp/lineDirectsUnfedDual';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { validateScore } from '@Scoring/analysis/validateScore';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { isDoubleExit, isExit } from '@Validators/isExit';
-import { chooseRoute } from './route';
+import { chooseRoute, dualWinningSideChange } from './route';
 
 // constants and types
 import type { OutcomeRequest, OutcomeView, Refusal } from './types';
@@ -373,6 +374,20 @@ function refuseRoute(given: OutcomeRequest, view: OutcomeView): Refusal | undefi
   // matchUp holding no drawPositions v1 refuses there, before it writes (record soak 2026-11-18, class D5's residue)
   if (route === 'completed-to-double-exit' && !view.line && view.removalMissingDrawPositions)
     return refuse(24, MISSING_DRAW_POSITIONS);
+  // a line whose dual holds no drawPositions, the line directing it or taking back what it directed (v1's
+  // `attemptToSetWinningSide`, before either path writes)
+  if (route === 'winner' && view.line)
+    return lineDirectsUnfedDual({
+      dualUnfed: !!view.removalMissingDrawPositions,
+      dualWinningSideChange: dualWinningSideChange(request, view),
+      projectedWinningSide: view.line.projectedWinningSide,
+      autoCalcDisabled: view.line.autoCalcDisabled,
+      dualWinningSide: view.line.dualWinningSide,
+      lineWinningSide: view.existing.winningSide,
+      winningSide: request.winningSide,
+    })
+      ? refuse(24, MISSING_DRAW_POSITIONS)
+      : undefined;
   if (route !== 'refused') return undefined;
   const { matchUpStatus } = request;
   if (matchUpStatus === BYE) return refuse(28, INVALID_MATCHUP_STATUS_BYE, { info: 'matchUp does not include BYE' });

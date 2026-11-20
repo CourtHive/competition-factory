@@ -1,4 +1,8 @@
-import { removeDirectedParticipants } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
+import {
+  removalMissingDrawPositions,
+  removeDirectedParticipants,
+} from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
+import { lineDirectsUnfedDual } from '@Query/matchUp/lineDirectsUnfedDual';
 import { refreshArrivalsFrom } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { directParticipants } from '@Mutate/matchUps/drawPositions/directParticipants';
@@ -11,6 +15,7 @@ import { replaceQualifier } from './replaceQualifier';
 import { placeQualifier } from './placeQualifier';
 
 // constants
+import { MISSING_DRAW_POSITIONS } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -30,6 +35,21 @@ export function attemptToSetWinningSide(params) {
   if ((dualMatchUp?.disableAutoCalc ?? dualMatchUp?._disableAutoCalc) && disableAutoCalc !== false) {
     return attemptToModifyScore(params);
   }
+
+  // § 2 row 24 on a line: its dual holds no drawPositions, and the line would direct it or take back what it directed
+  if (
+    params.isCollectionMatchUp &&
+    lineDirectsUnfedDual({
+      dualUnfed: removalMissingDrawPositions({ structure, targetData: params.targetData }),
+      dualWinningSideChange: params.dualWinningSideChange,
+      projectedWinningSide: params.projectedWinningSide,
+      dualWinningSide: dualMatchUp?.winningSide,
+      lineWinningSide: matchUp.winningSide,
+      autoCalcDisabled: false,
+      winningSide,
+    })
+  )
+    return decorateResult({ result: { error: MISSING_DRAW_POSITIONS }, stack });
 
   const corrected = !!matchUp.winningSide && matchUp.winningSide !== winningSide;
   // A FRESH LINE THAT HANDS A DECIDED DUAL TO THE OTHER SIDE (a dual decided by its own call, against its lines): what
