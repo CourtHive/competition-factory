@@ -55,7 +55,9 @@ export type {
   ReadModelPublicParticipantRow,
 } from '@Types/readModelTypes';
 export { operatorDrawPresentation, operatorMatchPresentation } from './operatorPresentation';
+export { operatorPresentationSchemas } from './operatorPresentationSchema';
 export type {
+  OperatorPresentationAudience,
   OperatorDrawPresentation,
   OperatorRoundPresentation,
   OperatorMatchPresentation,

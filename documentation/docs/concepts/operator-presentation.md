@@ -15,8 +15,9 @@ Published factory 7.43.0 does not provide these APIs.
 
 The server-side `readModel` candidate provides `operatorMatchPresentation` and `operatorDrawPresentation`.
 They consume an **already authorized, hydrated** match subset and emit selected display fields only.
-The producer must perform authorization/privacy filtering before projection. These functions do not authorize
-an operator or establish that the draw exists. CFS still needs to add source revision, audience, policy/build
+CFS must authorize the source scope and supply the verified audience before projection. The factory builder owns
+per-audience field minimization; query selects an authorized variant and never strips a broader payload. These
+functions do not verify a live grant or establish that the draw exists. CFS still needs to add source revision, policy/build
 generation, calculation time and time validity before query can serve a complete operator document.
 
 The projector calls the existing factory `getRoundMatchUps`, `generateScoreString`, `checkScoreHasValue` and
@@ -36,7 +37,9 @@ function buildPresentation(input: Parameters<typeof readModel.operatorDrawPresen
 The input identifies one draw and structure and supplies its authorized hydrated matchUps. Optional
 `winnerLinkRoundNumbers` come from the canonical producer context. Optional `venueTimeZones` maps venue IDs
 to producer-resolved IANA zones; the projector forwards the matching zone, never the browser's zone.
-`operatorMatchPresentation(matchUp, { venueTimeZone })` accepts the resolved zone for one match.
+`operatorMatchPresentation(matchUp, { audience, venueTimeZone })` accepts the resolved zone for one match and
+returns `{ presentation }` or an error, like the draw builder. Both builders require a declared audience; omission,
+unknown values and prototype-property names are refused without a fallback payload.
 Missing zone data remains missing; a renderer must label that uncertainty rather than invent a zone.
 
 Draw projection refuses duplicate match identities, mixed draw/structure contexts and unrepresentable rounds.
@@ -67,6 +70,28 @@ fields and refusal instead of silent data loss. Packed-package checks exercise b
 DOM libraries, runtime-import refusal and browser type erasure. These do not prove CFS/query integration.
 
 Before publication: agree the complete contract, audience/privacy semantics, source/time freshness and scope
-boundaries; rebase onto the independently merged constants work; update consumers to the actual published version;
-and qualify a live-day result that changes advancement. Presentation-only timings exclude actions, readiness/rest,
+boundaries; keep the independently merged constants work intact; update consumers to the actual published version;
+and qualify the CFS producer path with a result that changes advancement. Presentation-only timings exclude actions, readiness/rest,
 conflicts, mutation, queue/DB work and publication fences, so they cannot replace the full operator-document benchmark.
+
+## Audience exposure checks
+
+The provisional audience catalog is `recorder` and `director`, for the basic match/draw display screens only.
+Both currently allow the same minimal display fields; neither includes a director-only person-details screen.
+These unpublished names are not the final deployment audience set. Measure full variants before fixing that set.
+
+`readModel.operatorPresentationSchemas[audience].match` and `.draw` declare the serialized field allow-lists.
+Every object, including nested sides, schedules and rounds, refuses additional properties. Tests compile these
+schemas against actual serialized builder output. Independent screen-policy assertions detect a deliberately widened
+recorder schema, even when that widened schema would accept a planted director field. Unknown audience and
+nested-field plants are also tested. The factory package gains no runtime JSON-schema-validator dependency.
+
+Contact information, birth dates and raw person/participant records are excluded for both roles. Display text fields
+accept strings only, so a malformed name object cannot carry a protected record through an allowed field name.
+Any future protected field needs a named screen, declared audience and consent rules before it is emitted.
+
+The catalog chooses data shape, not permission. A caller-supplied role is not proof of entitlement. Query/CFS must
+verify current grants and scope before delivery/commands, including cached document reads after revocation. Those
+operator integrations and their deliberate-violation checks are not implemented by this presentation candidate.
+No app server or SSR is introduced. Session persistence, cookie mode/CSP and logout/provider/expiry wipe tests
+remain app-shell gates; renderer teardown is not claimed as complete session erasure.

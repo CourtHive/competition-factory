@@ -4,6 +4,8 @@
  * CFS must wrap it with verified audience, source revision and time validity before delivery.
  * These DTOs carry no records, action eligibility, mutation payloads or transport/session behavior.
  */
+export type OperatorPresentationAudience = 'recorder' | 'director';
+
 export type OperatorSidePresentation = {
   readonly sideNumber: 1 | 2;
   readonly participantId?: string;
@@ -15,6 +17,7 @@ export type OperatorSidePresentation = {
 };
 
 export type OperatorMatchPresentation = {
+  readonly audience: OperatorPresentationAudience;
   readonly matchUpId: string;
   readonly roundPosition?: number;
   readonly status?: string;
@@ -40,6 +43,7 @@ export type OperatorRoundPresentation = {
 };
 
 export type OperatorDrawPresentation = {
+  readonly audience: OperatorPresentationAudience;
   readonly schemaVersion: 'operator-presentation.v1';
   readonly drawId: string;
   readonly structureId: string;

@@ -5,11 +5,13 @@ assert.throws(() => require('tods-competition-factory/operator-types'), { code: 
 await assert.rejects(import('tods-competition-factory/operator-types'), { code: 'ERR_PACKAGE_PATH_NOT_EXPORTED' });
 const { readModel } = await import('tods-competition-factory');
 assert.deepEqual(
-  readModel.operatorDrawPresentation({ drawId: 'd', structureId: 's', matchUps: [] }).presentation.rounds,
+  readModel.operatorDrawPresentation({ audience: 'recorder', drawId: 'd', structureId: 's', matchUps: [] }).presentation
+    .rounds,
   [],
 );
 assert.equal(
   readModel.operatorDrawPresentation({
+    audience: 'recorder',
     drawId: 'd',
     structureId: 's',
     matchUps: [{ matchUpId: 'unrounded', drawId: 'd', structureId: 's' }],
@@ -18,3 +20,10 @@ assert.equal(
   'unrounded input must not become a successful empty draw',
 );
 console.log('[operator-types] declarations resolve in both formats; runtime imports refused; producer export works');
+
+assert.equal(
+  readModel.operatorDrawPresentation({ drawId: 'd', structureId: 's', matchUps: [] }).presentation,
+  undefined,
+);
+assert.ok(readModel.operatorMatchPresentation({ matchUpId: 'm' }, { audience: 'public' }).error);
+assert.equal(readModel.operatorPresentationSchemas.recorder.match.additionalProperties, false);
