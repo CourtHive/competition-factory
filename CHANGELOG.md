@@ -1,5 +1,37 @@
 # Changelog
 
+## [7.44.0](https://github.com/CourtHive/competition-factory/compare/v7.43.0...v7.44.0) (2026-11-20)
+
+
+### Features
+
+* add isolated constants package export ([#6470](https://github.com/CourtHive/competition-factory/issues/6470)) ([f89e417](https://github.com/CourtHive/competition-factory/commit/f89e4179d77dcbd2fbcc705e5953e3eaf386cdd2))
+* **outcome:** v2 is the default outcome pipeline; v1 kept as a fallback through 7.x ([#6469](https://github.com/CourtHive/competition-factory/issues/6469)) ([96c8b7b](https://github.com/CourtHive/competition-factory/commit/96c8b7b0a16b8f839507479b0e10cd875d30eef1))
+
+
+### Bug Fixes
+
+* **deps:** update tods-competition-factory to 7.43.0 ([#6461](https://github.com/CourtHive/competition-factory/issues/6461)) ([eb79243](https://github.com/CourtHive/competition-factory/commit/eb79243937db6b9da1c6e6ad6e02cb800ef0aeb4))
+* **mocks:** generate participants eligible for their event's category ([#6475](https://github.com/CourtHive/competition-factory/issues/6475)) ([9a48b8f](https://github.com/CourtHive/competition-factory/commit/9a48b8f211bbcf5f75071a5f548d72a3dd33b25e))
+* **mocks:** pooled TEAM participants meet their tieFormat's gender needs ([#6463](https://github.com/CourtHive/competition-factory/issues/6463)) ([9be0572](https://github.com/CourtHive/competition-factory/commit/9be057264578b530aa378d776309ffce3799a56b))
+* **outcome:** TEAM close-out, class 4, soak findings, walk fixes and option D ([#6467](https://github.com/CourtHive/competition-factory/issues/6467)) ([4a2ec09](https://github.com/CourtHive/competition-factory/commit/4a2ec09aa60b5d6d8f3f5a79cdee149cd03453cd))
+* prevent hook self-test from changing parent Git config ([#6472](https://github.com/CourtHive/competition-factory/issues/6472)) ([7963e36](https://github.com/CourtHive/competition-factory/commit/7963e369686f0c13cc18b57cfd8f09da918351ac))
+* **tournaments:** setTournamentCategories refuses only the removal of a category in use ([#6476](https://github.com/CourtHive/competition-factory/issues/6476)) ([2d2d948](https://github.com/CourtHive/competition-factory/commit/2d2d948e059860156bc0fe3c65d160de42d20e65))
+* **verify:** run every documented generateTournamentRecord fence; generateOutcome honours a forced winner ([#6464](https://github.com/CourtHive/competition-factory/issues/6464)) ([82134e1](https://github.com/CourtHive/competition-factory/commit/82134e10678cd9c373d2fee86fb44abd3f77283b))
+
+
+### Performance
+
+* **hydration:** find team draw participants in a per-read lookup ([#6468](https://github.com/CourtHive/competition-factory/issues/6468)) ([2bfa00b](https://github.com/CourtHive/competition-factory/commit/2bfa00bce21c158dcc1258e094eea083ceb3ab9d))
+
+
+### Documentation
+
+* **query:** name every publish surface in the tournament published roll-up ([#6471](https://github.com/CourtHive/competition-factory/issues/6471)) ([0df9a43](https://github.com/CourtHive/competition-factory/commit/0df9a4392e370b6b12528b63892c459d8710e454))
+* **score-entry-state:** call it a state engine holding a score state, not a draft ([#6462](https://github.com/CourtHive/competition-factory/issues/6462)) ([884bc73](https://github.com/CourtHive/competition-factory/commit/884bc73e444cc3d089ac44cc1d4ca579fae51199))
+* **tmx:** recapture the venues table with its Scheduled, Practice and Blocked headers ([#6466](https://github.com/CourtHive/competition-factory/issues/6466)) ([f3885af](https://github.com/CourtHive/competition-factory/commit/f3885afb0861f8eb332330a7f6e464bb45d1de16))
+* **tmx:** recapture the venues table with the scheduled count, surfaces and court time columns ([#6465](https://github.com/CourtHive/competition-factory/issues/6465)) ([bb532c8](https://github.com/CourtHive/competition-factory/commit/bb532c858de6ac0285d811193c05439da7697220))
+
 ## [7.43.0](https://github.com/CourtHive/competition-factory/compare/v7.42.0...v7.43.0) (2026-11-19)
 
 
