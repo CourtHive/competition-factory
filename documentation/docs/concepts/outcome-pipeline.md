@@ -609,15 +609,18 @@ See [harness measurement limits](../testing/exit-propagation-harness.md#measurem
 from the corpus. It works over a read-only view of the draw: `refuseOutcome(request, view)` is § 2
 as one pure function, `chooseRoute` is § 3, `planWrite` is § 4 and `planDirection` is § 5's
 direction and exit propagation. v1 is the pipeline as written across `setMatchUpState` and the
-matchUpGovernor routes, and it is still the only one that writes.
+matchUpGovernor routes. v2 writes the calls it owns and hands every other call to v1 whole.
+
+**v2 is the default** (Path A step 3). v1 stays selectable as a fallback through 7.x. The selector is
+deprecated in 7.x and removed in 8.0.0 (see [migration to 8.0.0](../migration-8.0.0.md#other-800-changes)).
 
 The mode is process-wide, set with
 [`engine.outcomePipeline(mode)`](../engines/engine-methods.md#outcomepipeline) and read with
 [`engine.getOutcomePipeline()`](../engines/engine-methods.md#getoutcomepipeline); no argument
-restores `v1`, and an unknown mode is `INVALID_VALUES`.
+restores `v2`, and an unknown mode is `INVALID_VALUES`.
 
-- **`v1`** (the default): nothing is built and nothing is decided by v2.
-- **`v2`**: v2 decides the refusals. A refusal it raises is the call's result and v1 is not asked.
+- **`v1`** (the fallback, deprecated): nothing is built and nothing is decided by v2.
+- **`v2`** (the default): v2 decides the refusals. A refusal it raises is the call's result and v1 is not asked.
   An outcome it accepts is planned (§ 7.2); a call whose complete plan is a shape v2 owns is written
   by v2 (`outcome/apply.ts`: the plan's ops folded into the stored draw by the one reducer, then
   v1's own notices for what was written) and v1 is not asked; every other call is handed to v1
@@ -1388,8 +1391,8 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   and deferred decisions by route.
 
 `OUTCOME_PIPELINE=differential vitest run` is the gate. It runs in CI for pull requests into `master`
-and on `master` itself — every checkpoint — and nowhere else, so a test added since the last checkpoint
-has never run under it until then: run `OUTCOME_PIPELINE=differential TZ=UTC npx vitest run` locally
+and on `master` itself — every checkpoint — and, on a pull request into `dev`, only when the outcome
+pipeline's paths change, so a test added elsewhere since the last checkpoint may not have run under it: run `OUTCOME_PIPELINE=differential TZ=UTC npx vitest run` locally
 before opening one (a plain green suite predicts nothing about it). Since 7.9.0 the view reads a
 BYE-holder occupant's carry where it was written, a round on, so a withdrawn BYE's convergence is
 planned as v1 writes it; and the exit-beside-a-BYE invariant holds under either `doubleExitPropagateBye`

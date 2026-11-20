@@ -18,6 +18,7 @@ self-reported results, `RANK` or `RATING` ordering, and eighteen new engine meth
 - **Upgrade mechanics** in detail: the [6.x to 7.0.0 migration guide](./migration-7.0.0.md).
 - **Every commit**: [CHANGELOG.md](https://github.com/CourtHive/competition-factory/blob/master/CHANGELOG.md).
 - **Measured gains**: [performance across 7.x](#performance-across-7x).
+- **Outcome v2 is the default**: [adoption notes](#adoption-notes-outcome-v2-default). Act on them if you select the outcome pipeline or compute mutation footprints.
 - **New in 7.23.0**: [adoption notes](#adoption-notes-7230). Act on them if you schedule across venues or time under-age events.
 - **New in 7.22.0**: [adoption notes](#adoption-notes-7220). Act on them if you write schedule dates or times.
 - **New in 7.17.0**: [the published schema declares every stored field](#adoption-notes-7170). Act on it if you validate stored records against your own schema.
@@ -92,6 +93,22 @@ the structural index and writes the local calls it owns.
 owned the FIRST_MATCH_LOSER_CONSOLATION and BYE-advancement routes: every comparison complete, nothing opened. The
 later v2 slices (ad hoc, lucky, and the first two corrections) passed the differential suite and CI, not that gate. v1 remains the
 default and writes every call unless v2 is chosen.
+
+## Outcome v2 becomes the default {#adoption-notes-outcome-v2-default}
+
+<!-- release number to be filled in when the flip ships -->
+
+The outcome pipeline (`setMatchUpStatus` and the methods that route through it) now runs **v2** unless another mode
+is chosen. v2 is the clean-room re-implementation written from [the outcome pipeline specification](./concepts/outcome-pipeline.md#71-two-implementations-s2).
+It writes the calls it owns and hands every other call to v1 whole, so records, notices and results are those v1
+gave for the same calls. The flip followed a clean soak on production records and the TEAM walk.
+
+| Area                         | Change                                                                                                                                                                                                                                                                                                                                                                        |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Default pipeline             | **Behaviour change.** `engine.getOutcomePipeline()` returns `'v2'` on a fresh engine, and `engine.outcomePipeline()` with no argument restores `'v2'`.                                                                                                                                                                                                                        |
+| The v1 fallback              | `engine.outcomePipeline('v1')` selects v1, process-wide, and is kept through 7.x. Use it only to fall back while a difference is reported.                                                                                                                                                                                                                                    |
+| The selector                 | **Deprecated.** `engine.outcomePipeline`, `engine.getOutcomePipeline`, `globalState.setOutcomePipeline` / `getOutcomePipeline` and the `outcomePipeline` option of `tools.getMutationFootprint` remain callable in 7.x, accept only `'v2'` once the modes are removed, and are deleted in 8.0.0 ([migration](./migration-8.0.0.md#the-outcome-pipeline-selector-is-removed)). |
+| `tools.getMutationFootprint` | Unchanged without the option: score entry still asks for every participant (the v1 footprint), a superset of what v2 reads. Pass `outcomePipeline: engine.getOutcomePipeline()` to load only the draw's participants.                                                                                                                                                         |
 
 ## 7.29.0 adoption notes {#adoption-notes-7290}
 

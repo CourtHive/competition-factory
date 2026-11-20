@@ -57,3 +57,12 @@ Use [the supported storage, ingest, draw-addition and read-projection routes](/d
 ## Other 8.0.0 changes
 
 This page covers the governor transition; it is not yet a complete release migration checklist. Consolidate the other approved breaking changes here before cutting 8.0.0.
+
+### The outcome pipeline selector is removed
+
+v2 is the outcome pipeline's default in 7.x, and `v1` stays selectable as a fallback through 7.x (see
+[the outcome pipeline § 7.1](/docs/concepts/outcome-pipeline#71-two-implementations-s2)). The selector is
+deprecated in 7.x and removed in 8.0.0: `engine.outcomePipeline` and `engine.getOutcomePipeline`, `globalState`'s
+`setOutcomePipeline` and `getOutcomePipeline`, and the `outcomePipeline` option of `tools.getMutationFootprint`. Once
+the `v1` and `differential` modes are removed, still within 7.x, the selector accepts only `'v2'`. Remove the calls;
+nothing replaces them, because there is one pipeline.
