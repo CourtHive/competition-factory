@@ -927,23 +927,25 @@ engine.setCompetitionClock(); // competition time follows setClock again
 
 ## outcomePipeline
 
-Chooses which implementation of the outcome pipeline (`setMatchUpStatus`) decides. `'v1'` is the original pipeline and the default. `'v2'` is the clean-room re-implementation written from the [outcome pipeline spec](/docs/concepts/outcome-pipeline#71-two-implementations-s2). `'differential'` runs both: v2 decides first, v1 runs, and a disagreement throws before anything is written.
+Chooses which implementation of the outcome pipeline (`setMatchUpStatus`) decides. `'v2'`, the clean-room re-implementation written from the [outcome pipeline spec](/docs/concepts/outcome-pipeline#71-two-implementations-s2), is the default. `'v1'` is the original pipeline, kept as a fallback through 7.x. `'differential'` runs both: v2 decides first, v1 runs, and a disagreement throws before anything is written.
 
-No argument restores `'v1'`. Any other value is refused with `INVALID_VALUES`. Process-wide, like `schemaWriteMode`: a run configuration, not request state. Added in 7.5.0.
+No argument restores `'v2'`. Any other value is refused with `INVALID_VALUES`. Process-wide, like `schemaWriteMode`: a run configuration, not request state. Added in 7.5.0; v2 the default since the flip.
+
+**Deprecated.** The selector is deprecated in 7.x and removed in 8.0.0. Once the `v1` and `differential` modes are removed (still in 7.x), it accepts only `'v2'`.
 
 ```js
-engine.outcomePipeline('differential');
-engine.outcomePipeline(); // back to 'v1'
+engine.outcomePipeline('v1'); // the fallback
+engine.outcomePipeline(); // back to 'v2'
 ```
 
 ---
 
 ## getOutcomePipeline
 
-Returns the current outcome pipeline mode: `'v1'`, `'v2'` or `'differential'`. Added in 7.5.0.
+Returns the current outcome pipeline mode: `'v1'`, `'v2'` or `'differential'`. Added in 7.5.0. Deprecated in 7.x and removed in 8.0.0, with [`outcomePipeline`](#outcomepipeline).
 
 ```js
-const mode = engine.getOutcomePipeline(); // 'v1'
+const mode = engine.getOutcomePipeline(); // 'v2'
 ```
 
 ---

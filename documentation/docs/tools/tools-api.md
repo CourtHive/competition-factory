@@ -1002,7 +1002,7 @@ What part of a record an executionQueue reads and may write: the union of its me
 ```js
 const footprint = tools.getMutationFootprint({
   methods: [{ method: 'setMatchUpStatus', params: { drawId, matchUpId, outcome } }],
-  outcomePipeline: 'v2', // optional; which outcome pipeline will run
+  outcomePipeline: 'v2', // optional, deprecated; which outcome pipeline will run
 });
 // { tournament: false, shards: ['shell', 'draw'], drawIds: [drawId], eventIds: [], wholeRecordMethods: [] }
 ```
@@ -1026,7 +1026,9 @@ schedule change widens it to the whole record.
 
 Score entry includes `participants` unless `outcomePipeline: 'v2'` is passed: the v1 pipeline resolves a TEAM
 collection line's sides against the tournament's participants. With `'v2'` it includes `drawParticipants` instead:
-v2 asks whether a line's own sides hold a participant before it gives the line a winner.
+v2 asks whether a line's own sides hold a participant before it gives the line a winner. Without the option the
+answer is the wider v1 footprint, a superset of what the default (v2) needs; pass `engine.getOutcomePipeline()` to
+load only what the running pipeline reads. The option is deprecated in 7.x and removed in 8.0.0.
 
 `bulkMatchUpStatusUpdate` is score entry in every draw its outcomes name, however many draws and events that spans.
 An outcome without a `drawId` needs the whole record, and so do outcomes from more than one tournament, unless the
