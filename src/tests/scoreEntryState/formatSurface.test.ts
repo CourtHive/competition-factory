@@ -1,14 +1,29 @@
-import { parseMatchUpFormat, stringifyMatchUpFormat, retainScoreForFormat } from '../../scoreEntryState';
+import { checkSetIsComplete as canonicalComplete } from '@Helpers/matchUpFormatCode/setRules/setCompletion';
 import { retainScoreForFormat as canonicalRetain } from '@Query/matchUp/retainScoreForFormat';
 import { stringify as canonicalStringify } from '@Helpers/matchUpFormatCode/stringify';
 import { parse as canonicalParse } from '@Helpers/matchUpFormatCode/parse';
 import { describe, expect, it } from 'vitest';
+import {
+  parseMatchUpFormat,
+  stringifyMatchUpFormat,
+  retainScoreForFormat,
+  finalSetGoverns,
+  aggregateDeciderSetNumber,
+  checkSetIsComplete,
+} from '../../scoreEntryState';
+import {
+  finalSetGoverns as canonicalFinal,
+  aggregateDeciderSetNumber as canonicalDecider,
+} from '@Helpers/matchUpFormatCode/aggregateDecider';
 
 describe('pure format editor surface', () => {
   it('exports the canonical operations without a second implementation', () => {
     expect(parseMatchUpFormat).toBe(canonicalParse);
     expect(stringifyMatchUpFormat).toBe(canonicalStringify);
     expect(retainScoreForFormat).toBe(canonicalRetain);
+    expect(finalSetGoverns).toBe(canonicalFinal);
+    expect(aggregateDeciderSetNumber).toBe(canonicalDecider);
+    expect(checkSetIsComplete).toBe(canonicalComplete);
   });
   it('round trips a deciding match tiebreak and rejects malformed input', () => {
     const code = 'SET3-S:6NOAD/TB7-F:TB10';
