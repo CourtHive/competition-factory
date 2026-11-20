@@ -1141,7 +1141,7 @@ recovery countdowns — then has nothing live to act on.
 `scenarioProfile` shifts the generated schedule so it straddles a chosen moment.
 
 ```js
-const today = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
+const today = '2026-09-23'; // in an app: the current local date
 const { tournamentRecord, scenarioResult } = mocksEngine.generateTournamentRecord({
   startDate: today,
   drawProfiles: [{ drawId: 'd1', drawSize: 16 }],
@@ -1150,7 +1150,7 @@ const { tournamentRecord, scenarioResult } = mocksEngine.generateTournamentRecor
   autoSchedule: true,
 
   scenarioProfile: {
-    anchor: 'NOW', // or an ISO datetime, e.g. '2026-09-23T15:00'
+    anchor: '2026-09-23T15:00', // or 'NOW' (the default): the clock at call time
     minutesBeforeAnchor: 120, // the FIRST matchUp starts this long before the anchor
     assignCourts: true, // also place matchUps on courts
   },
@@ -1168,6 +1168,10 @@ const { tournamentRecord, scenarioResult } = mocksEngine.generateTournamentRecor
 
 ### What it does and does not do
 
+- It stays inside the tournament's dates. An anchor less than `minutesBeforeAnchor` after midnight would
+  move the first matchUps into the previous day, and is refused with `INVALID_DATE` — so `anchor: 'NOW'` with
+  `startDate` set to today fails in the first hours of the day. Start the tournament a day earlier, or
+  anchor on a fixed datetime, when that matters.
 - It **shifts**, it does not re-derive. The spacing the scheduler produced — which honours matchUp
   average and recovery minutes — is preserved exactly. Only the times move.
 - `minutesBeforeAnchor` is what puts matchUps on **both sides** of the anchor: some finished, some
