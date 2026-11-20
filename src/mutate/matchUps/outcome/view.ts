@@ -2230,6 +2230,13 @@ function lineViewOf({
         dualWinningSide: dualMatchUp.winningSide,
         keepsDualDecision,
         dualLineDecided,
+        // the tally relabels the dual's own single exit a played result by the same winner (`relabelDualExitByTally`)
+        relabelsDualExit:
+          !keepsDualDecision &&
+          !!dualMatchUp.winningSide &&
+          projectedWinningSide === dualMatchUp.winningSide &&
+          isExit(dualMatchUp.matchUpStatus) &&
+          !isDoubleExit(dualMatchUp.matchUpStatus),
         projectedScore,
         projectedTieMatchUps,
         projectedStatus: projectedDualStatus({

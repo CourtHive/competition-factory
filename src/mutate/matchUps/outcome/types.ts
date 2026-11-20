@@ -174,6 +174,8 @@ export type OutcomeView = {
     keepsDualDecision?: boolean;
     /** the dual's winner is the one its lines projected before this write (`dualKeepsOwnDecision`): row 14 asks of it */
     dualLineDecided?: boolean;
+    /** the tally relabels the dual's own single exit a played result by the same winner (`relabelDualExitByTally`) */
+    relabelsDualExit?: boolean;
     autoCalcDisabled: boolean;
     /** the dual is tallied by its lines' games or sets (`aggregateValue`, a `scoreValue` or a `setValue`), not by lines won */
     talliedByScore?: boolean;

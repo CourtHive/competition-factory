@@ -6,6 +6,7 @@ import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { isDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
+import { relabelDualExitByTally } from './relabelDualExitByTally';
 import { directWinner } from './directWinner';
 import { directLoser } from './directLoser';
 import { isExit } from '@Validators/isExit';
@@ -66,6 +67,9 @@ export function directParticipants(params): ResultType {
     const matchUpTie = inContextDrawMatchUps.find(({ matchUpId }) => matchUpId === matchUpTieId);
     drawPositions = matchUpTie?.drawPositions;
     if (!dualWinningSideChange) {
+      // the tally relabels the dual's own exit a played result by the same winner: its carry is settled (class 4)
+      const relabelled = relabelDualExitByTally(params, tieMatchUpResult);
+      if (relabelled.error) return decorateResult({ result: relabelled, stack });
       return decorateResult({ result: { ...SUCCESS, ...annotate }, stack });
     }
   }

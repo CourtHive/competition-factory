@@ -197,11 +197,12 @@ function convertedShapeReason({ request, view, write, route }: PlanArgs): Abstai
 /**
  * A line on a dual decided by its own exit or call that keeps its winner (CA, 2026-11-20, class 4): v1 writes the line
  * and leaves the dual as it stands, which no planner plans. Asked last, so a call another reason already abstains from
- * keeps that reason: only a call the planners would otherwise plan is handed to v1's whole write (`team`).
+ * keeps that reason: only a call the planners would otherwise plan is handed to v1's whole write (`team`). So is a line
+ * whose tally relabels the dual's own exit a played result, which settles the exit's carry (`relabelDualExitByTally`).
  */
 function abstainReason(args: PlanArgs): AbstainReason | SeatObligation | undefined {
   const reason = abstainReasonOf(args);
-  if (reason || !args.view.line?.keepsDualDecision) return reason;
+  if (reason || !(args.view.line?.keepsDualDecision || args.view.line?.relabelsDualExit)) return reason;
   return 'team';
 }
 

@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 // constants
 import { CANNOT_CHANGE_WINNING_SIDE } from '@Constants/errorConditionConstants';
-import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { CONSOLATION, FEED_IN_CHAMPIONSHIP, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
@@ -185,5 +185,58 @@ describe('a line-decided dual: a line taking its winner away beneath a played-on
     expect(result.success, JSON.stringify(result.error)).toEqual(true);
     expectKept(A, final, COMPLETED);
     expect(find(A.matchUpId).matchUpStatus).not.toEqual(IN_PROGRESS);
+  });
+});
+
+// the tally relabels the dual's own DEFAULTED a played result by the same winner, its default carried to the loser
+// (`propagateExitStatus`): the carry is withdrawn, as the dual's own relabel withdraws it (`relabelDualExitByTally`;
+// walk FIC8 duo seed 16, 2026-11-20)
+describe("a line whose tally relabels its dual's carried exit settles the carry", () => {
+  it.each(MODES)('%s: the consolation matchUp the default was carried to is left to be played', (mode) => {
+    setOutcomePipeline(OUTCOME_PIPELINE_V1);
+    const {
+      eventIds: [eventId],
+    } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [
+        {
+          drawType: FEED_IN_CHAMPIONSHIP,
+          tieFormatName: DOMINANT_DUO,
+          eventType: TEAM_EVENT,
+          drawSize: 8,
+          drawId: 'd',
+        },
+      ],
+      nonRandom: 1,
+      setState: true,
+    });
+    expect(
+      tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: 'd', eventId }).success,
+    ).toEqual(true);
+    const dual = matchUps().find(
+      (m) => m.matchUpType === TEAM_MATCHUP && m.roundNumber === 1 && m.stage !== CONSOLATION,
+    );
+    expect(
+      set(dual.matchUpId, { matchUpStatus: DEFAULTED, winningSide: 1 }, { propagateExitStatus: true }).success,
+    ).toEqual(true);
+    const loser = find(dual.matchUpId).sides.find((side: any) => side.sideNumber === 2).participantId;
+    const carried = () =>
+      matchUps().find(
+        (m) =>
+          m.matchUpType === TEAM_MATCHUP &&
+          m.stage === CONSOLATION &&
+          m.sides?.some((side: any) => side.participantId === loser),
+      );
+    const { matchUpId: carriedId } = carried();
+    expect([find(carriedId).matchUpStatus, !!find(carriedId).winningSide]).toEqual([DEFAULTED, true]);
+    const lines = matchUps().filter((m) => m.matchUpTieId === dual.matchUpId);
+    const singles = lines.find((line) => line.matchUpFormat.startsWith('SET3'));
+    const doubles = lines.find((line) => !line.matchUpFormat.startsWith('SET3'));
+    expect(set(singles.matchUpId, lineOutcome(singles, 1)).success).toEqual(true);
+    expect(find(dual.matchUpId).matchUpStatus).toEqual(DEFAULTED);
+    setOutcomePipeline(mode);
+    const result = set(doubles.matchUpId, { winningSide: 1 }, { propagateExitStatus: true });
+    expect(result.success, JSON.stringify(result.error)).toEqual(true);
+    expect([find(dual.matchUpId).matchUpStatus, find(dual.matchUpId).winningSide]).toEqual([COMPLETED, 1]);
+    expect([find(carriedId).matchUpStatus, find(carriedId).winningSide]).toEqual([TO_BE_PLAYED, undefined]);
   });
 });
