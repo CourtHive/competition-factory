@@ -189,3 +189,11 @@ export {
 export { isCompletedCombinedPointTie, isCompletedLevelClose } from './levelClose';
 export { tiebreakOnlyTarget, completeTiebreakOnly } from './tiebreakEntry';
 export { scoreLine } from './scoreLine';
+
+// Existing canonical format operations needed by score-entry editors; no governor or engine barrel.
+export { parse as parseMatchUpFormat } from '@Helpers/matchUpFormatCode/parse';
+export { stringify as stringifyMatchUpFormat } from '@Helpers/matchUpFormatCode/stringify';
+export { retainScoreForFormat } from '@Query/matchUp/retainScoreForFormat';
+export type { RetainScoreArgs, RetainedScore } from '@Query/matchUp/retainScoreForFormat';
+export { finalSetGoverns, aggregateDeciderSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
+export { checkSetIsComplete } from '@Helpers/matchUpFormatCode/setRules/setCompletion';

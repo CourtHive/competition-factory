@@ -99,3 +99,15 @@ scoreEntry.endingRefusal('RETIRED', view); // 'ENDING_NEEDS_SCORE'
 - a format changed in the score state rides along as `matchUpFormat`.
 
 `setMatchUpStatus` writes the derived score strings into the outcome it is given, so pass a copy if you reuse it.
+
+## Format editors (unreleased)
+
+This subpath additionally exports `parseMatchUpFormat`, `stringifyMatchUpFormat` and
+`retainScoreForFormat`, `finalSetGoverns`, `aggregateDeciderSetNumber` and `checkSetIsComplete` from this subpath. They are the existing canonical functions, exported directly; the
+format picker needs no root factory import or governor. These additions are not part of published 7.43.0 or 7.44.0.
+`RetainScoreArgs` and `RetainedScore` describe the retention input and report.
+
+Use `changeFormat(model, nextCode)` to change the score state. Use `retainScoreForFormat` only to explain which
+sets that change discards, passing `previousMatchUpFormat` when known. It reports the kept sets, discarded sets
+and validator reason; it neither authorizes changing a tournament's format nor persists the change. CFS must
+validate the offered action again when executing the command.
