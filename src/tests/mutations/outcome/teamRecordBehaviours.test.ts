@@ -549,6 +549,13 @@ describe("a losing team's line-up where its loser link seats it, after the dual'
       expect(players(storedSide.lineUp)).toEqual(players(lineUpOf(loser)));
     }
     expect(dual(2, 1, 'Consolation').matchUpStatus).toEqual(TO_BE_PLAYED);
+    // the withdrawn walkover leaves no winner's key behind on the stored dual, not even an undefined one
+    // (read off the record as held, not through JSON, which drops an undefined key)
+    const held = tournamentEngine
+      .getTournament()
+      .tournamentRecord.events[0].drawDefinitions[0].structures.flatMap((structure: any) => structure.matchUps)
+      .find((matchUp: any) => matchUp.matchUpId === beyond.matchUpId);
+    expect(Object.hasOwn(held, 'winningSide')).toEqual(false);
     // the dual beyond is announced by the pass that withdraws the carried walkover, after the BYE dual
     const order = announced.map((notice) => notice.matchUp?.matchUpId);
     const notice = announced.find((held) => held.matchUp?.matchUpId === beyond.matchUpId);

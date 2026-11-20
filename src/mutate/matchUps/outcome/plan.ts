@@ -867,9 +867,15 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
     ops,
     request.matchUpId,
   );
-  // the loser's own position, where the unwind left it standing in the matchUp beyond (`unwoundThrough`)
+  // the loser's own position, where the unwind left it standing in the matchUp beyond (`unwoundThrough`). Not a carry
+  // this call withdraws there (`withdrawnCarryThrough`): the withdrawal deleted the winner's key, and the re-keyed
+  // positions leave it deleted, as v1's assignment does
   const placedThrough =
-    loserThrough && !view.targets.loserThroughBye && !view.targets.loserByePassage?.through && !plainPassage?.through;
+    loserThrough &&
+    !withdrawnThrough &&
+    !view.targets.loserThroughBye &&
+    !view.targets.loserByePassage?.through &&
+    !plainPassage?.through;
   const winnerThrough =
     winner && view.targets.winner?.hasBye ? view.targets.winnerThroughBye?.[write.winningSide as 1 | 2] : undefined;
   // a dual's own call: its loser's assignment writes the team's line-up where it lands (S7)
