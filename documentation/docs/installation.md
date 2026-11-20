@@ -38,9 +38,19 @@ what is imported.
 | Import                                                   | What it provides                                                                   |
 | -------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | `tods-competition-factory`                               | Engines, governors, `tools`, fixtures, constants, enums and types                  |
+| `tods-competition-factory/constants`                     | Named constants only, without loading engines, global state or fixtures            |
 | `tods-competition-factory/governors`                     | The governors alone, for assembling a [custom engine](./engines/custom-engines.md) |
 | `tods-competition-factory/score-entry-state`             | A headless [score-entry state engine](./scoring-engine/score-entry-state.md)       |
 | `tods-competition-factory/schema/tournament.schema.json` | The JSON Schema of a tournament record                                             |
+
+For a constants-only consumer, use the dedicated subpath (ESM and CommonJS with their own declarations):
+
+```ts
+import { matchUpStatusConstants, entryStatusConstants } from 'tods-competition-factory/constants';
+```
+
+It exports the same named constants as the root constants namespace. Existing root imports and `factoryConstants`
+remain available. Policies and scoring-format fixtures are separate and are not part of this subpath.
 
 ```js
 import { scoreGovernor, drawsGovernor } from 'tods-competition-factory/governors';

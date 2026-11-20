@@ -58,3 +58,10 @@ if (fs.existsSync(scoreEntryStateDts)) {
   fs.copyFileSync(scoreEntryStateDts, './dist/score-entry-state.d.mts');
   fs.copyFileSync(scoreEntryStateDts, './dist/score-entry-state.d.cts');
 }
+
+// The constants declarations are built from their own entry, never from the root declarations.
+const constantsDts = './dist/constants.d.ts';
+if (fs.existsSync(constantsDts)) {
+  fs.copyFileSync(constantsDts, './dist/constants.d.mts');
+  fs.copyFileSync(constantsDts, './dist/constants.d.cts');
+}
