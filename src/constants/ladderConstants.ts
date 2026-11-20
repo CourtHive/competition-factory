@@ -53,6 +53,12 @@ export const CHALLENGE_ISSUED = 'ladder.challenge.issued';
 export const CHALLENGE_ACCEPTED = 'ladder.challenge.accepted';
 export const CHALLENGE_DECLINED = 'ladder.challenge.declined';
 
+/**
+ * `matchUp.timeItem.itemType` recording that a RESULT's movement was applied, so a second
+ * application is answered as already applied rather than re-moving (or failing on) the standing.
+ */
+export const MOVEMENT_APPLIED = 'ladder.movement.applied';
+
 /** An operator removed a participant by hand — see `removeLadderParticipant`. */
 export const LADDER_PARTICIPANT_REMOVED = 'ladder.participant.removed';
 
@@ -132,6 +138,7 @@ export const ladderConstants = {
   CHALLENGE_ACCEPTED,
   CHALLENGE_DECLINED,
   LADDER_PARTICIPANT_REMOVED,
+  MOVEMENT_APPLIED,
   PEER,
   OPERATOR,
   EITHER,

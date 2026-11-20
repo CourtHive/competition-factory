@@ -1,5 +1,5 @@
+import { mirrorFailure, mirrorStandingToScale, snapshotStanding } from '@Mutate/ladder/mirrorStandingToScale';
 import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
-import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
 import { ladderStandingNotice } from '@Mutate/ladder/ladderNotices';
 import { getLadderOrdering } from '@Query/ladder/getLadderPolicy';
 import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
@@ -53,6 +53,7 @@ export function removeLadderParticipant(params: RemoveArgs): ResultType & { vaca
   if (!target) return { error: PARTICIPANT_NOT_FOUND };
 
   const vacatedPosition = target.drawPosition;
+  const restore = snapshotStanding(structure);
   structure.positionAssignments = assignments.filter((a) => a.participantId !== participantId);
 
   const touched: any[] = [];
@@ -67,14 +68,19 @@ export function removeLadderParticipant(params: RemoveArgs): ResultType & { vaca
     }
   }
 
+  // The shared writer, as every other standing move uses: it skips an assignment with no
+  // participantId and supplies the eventType without which no scale item is written at all. It runs
+  // BEFORE the removal is recorded, so a refusal leaves neither the standing nor its log changed.
+  const mirrored = mirrorStandingToScale({ ...params, appliedAt: removedAt, touched });
+  if (mirrored.error) {
+    restore();
+    return mirrorFailure(mirrored);
+  }
+
   addTimeItem({
     timeItem: { itemType: LADDER_PARTICIPANT_REMOVED, itemValue: { participantId, reason }, itemDate: removedAt },
     element: structure,
   });
-
-  // The shared writer, as every other standing move uses: it skips an assignment with no
-  // participantId and supplies the eventType without which no scale item is written at all.
-  mirrorStandingToScale({ ...params, appliedAt: removedAt, touched });
   ladderStandingNotice({ ...params, structure });
 
   return { ...SUCCESS, vacatedPosition };

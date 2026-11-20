@@ -1,7 +1,7 @@
+import { mirrorFailure, mirrorStandingToScale, snapshotStanding } from '@Mutate/ladder/mirrorStandingToScale';
 import { getLadderOrdering, getLadderPolicy } from '@Query/ladder/getLadderPolicy';
 import { participantScaleItem } from '@Query/participant/participantScaleItem';
 import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
-import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
 import { ladderStandingNotice } from '@Mutate/ladder/ladderNotices';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { isLadder } from '@Query/drawDefinition/isLadder';
@@ -130,6 +130,7 @@ export function addLadderParticipant(params: AddArgs): ResultType & { drawPositi
   }
 
   const touched: PositionAssignment[] = [];
+  const restore = snapshotStanding(structure);
   for (const assignment of assignments) {
     if (assignment.drawPosition >= target) {
       assignment.drawPosition += 1;
@@ -138,7 +139,11 @@ export function addLadderParticipant(params: AddArgs): ResultType & { drawPositi
   }
   assignments.push({ drawPosition: target, participantId });
 
-  mirrorStandingToScale({ ...params, appliedAt: addedAt, touched });
+  const mirrored = mirrorStandingToScale({ ...params, appliedAt: addedAt, touched });
+  if (mirrored.error) {
+    restore();
+    return mirrorFailure(mirrored);
+  }
   ladderStandingNotice({ ...params, structure });
   return { ...SUCCESS, drawPosition: target };
 }

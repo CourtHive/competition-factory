@@ -15,6 +15,9 @@ import {
   V2_MEASURES,
 } from '@Constants/tallyMeasureConstants';
 
+/** beyond this, 10 ** precision outruns a double: 10 ** 400 is Infinity, and every rounded value becomes NaN */
+export const MAX_PRECISION = 10;
+
 type ValidateTallyPolicyArgs = {
   tallyPolicy?: RoundRobinTallyPolicy;
   /** measures beyond the round-robin ledger's that this caller's ledger carries (a season's tie-score values) */
@@ -84,9 +87,9 @@ export function tallyPolicyErrors(tallyPolicy: RoundRobinTallyPolicy, extraMeasu
   if (
     precision !== undefined &&
     precision !== 'EXACT' &&
-    !(Number.isInteger(precision) && (precision as number) >= 0)
+    !(Number.isInteger(precision) && (precision as number) >= 0 && (precision as number) <= MAX_PRECISION)
   ) {
-    errors.push("precision must be a whole number of decimal places, or 'EXACT'");
+    errors.push(`precision must be a whole number of decimal places from 0 to ${MAX_PRECISION}, or 'EXACT'`);
   }
   const { denominator } = tallyPolicy;
   if (denominator !== undefined && !DENOMINATORS.includes(denominator as string)) {
