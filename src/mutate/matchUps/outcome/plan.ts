@@ -12,6 +12,7 @@ import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { convergedReason } from './plan/carriedConvergence';
 import { groupTally, writtenLine } from './plan/tallyOps';
 import { withFinishingOrder } from './finishingOrderOps';
+import { relabelledLoserElsewhere } from './direction';
 import { doubleExitSeatOps, keptOutByeChain } from './plan/byeChain';
 import {
   APPLY_VALUES,
@@ -33,6 +34,7 @@ import {
   satisfiedDoubleExit,
   seatBye,
   structureStamps,
+  winnerStandsPastUndecided,
 } from './plan/planShared';
 import {
   givenWinnerReason,
@@ -181,6 +183,18 @@ function exitReason(args: ExitReasonArgs): AbstainReason | SeatObligation | unde
 }
 
 /**
+ * Shapes the factory never makes, which a record converted from elsewhere may hold (record soak 2026-11-18): the call is
+ * v1's whole there, read off its write on a copy.
+ */
+function convertedShapeReason({ request, view, write, route }: PlanArgs): AbstainReason | undefined {
+  // a relabel whose loser does not stand where their link sends them: v1 settles them where they stand, or seats them
+  if (route === APPLY_VALUES && relabelledLoserElsewhere(request, view)) return 'loser';
+  // a winner taken away or changed, who stands beyond an undecided next matchUp: v1's removal reaches every later round
+  const takenBack = !!view.existing.winningSide && write?.winningSide !== view.existing.winningSide;
+  return takenBack && !view.line && winnerStandsPastUndecided(view) ? 'winner' : undefined;
+}
+
+/**
  * A line on a dual decided by its own exit or call that keeps its winner (CA, 2026-11-20, class 4): v1 writes the line
  * and leaves the dual as it stands, which no planner plans. Asked last, so a call another reason already abstains from
  * keeps that reason: only a call the planners would otherwise plan is handed to v1's whole write (`team`).
@@ -197,6 +211,8 @@ function abstainReasonOf(args: PlanArgs): AbstainReason | SeatObligation | undef
   if (team) return team;
   if (writeLegacyEnabled()) return 'write-mode';
   if (!view.draw.storesEdges) return 'edges';
+  const converted = convertedShapeReason(args);
+  if (converted) return converted;
   if (scheduleReason(args)) return 'schedule';
   if (notesReason(request, view, args.route)) return 'notes';
   if (request.matchUpStatusCodes?.length) return 'status-codes';

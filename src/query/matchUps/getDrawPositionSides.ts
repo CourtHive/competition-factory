@@ -136,11 +136,24 @@ export function getSideDrawPosition({
 }): number | undefined {
   if (!sideNumber) return undefined;
   const drawPositions = matchUp?.drawPositions ?? [];
-  if (drawPositions.filter(Boolean).length === 2) return drawPositions[sideNumber - 1];
-  if (!drawPositions.some(Boolean)) return undefined;
+  const present = drawPositions.filter(Boolean);
+  if (!present.length) return undefined;
 
   // `sides` binds only once hydration has placed the position on one of them
   const sides = matchUp?.sides?.filter((side: any) => side?.drawPosition);
+  // BOTH PRESENT: the hydrated sides bind them where they name the same two positions. The stored order binds only
+  // while it is ascending, and a record stored before the writers normalised it may hold `[12, 9]` (record soak
+  // 2026-11-18, class D9): indexed, side 1 was position 12 while every view showed position 9 on side 1, and the
+  // participant the caller did not name was advanced. `migrateTournamentRecord` sorts such a record; nothing migrates
+  // one on load
+  if (present.length === 2) {
+    const bound =
+      sides?.length === 2 && present.every((position) => sides.some((side: any) => side.drawPosition === position));
+    return bound
+      ? sides.find((side: any) => side.sideNumber === sideNumber)?.drawPosition
+      : drawPositions[sideNumber - 1];
+  }
+
   if (sides?.length) return sides.find((side: any) => side.sideNumber === sideNumber)?.drawPosition;
 
   return getDrawPositionSides({ drawDefinition, structureId, matchUp })?.find((side) => side.sideNumber === sideNumber)

@@ -58,6 +58,7 @@ import {
   missingDrawPositionsRefusal,
   type MissingDrawPositionsParams,
 } from '@Query/matchUp/missingDrawPositionsRefusal';
+import { heldSeatRefusal } from '@Query/matchUp/heldSeatRefusal';
 
 // constants and types
 import { BYE, COMPLETED, IN_PROGRESS, TO_BE_PLAYED, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
@@ -1704,6 +1705,7 @@ function missingDrawPositions({
 }): boolean {
   const params = {
     ...rest,
+    allowChangePropagation: request.flags.allowChangePropagation,
     propagateExitStatus: request.flags.propagateExitStatus,
     matchUpStatus: request.matchUpStatus,
     matchUpFormat: request.matchUpFormat,
@@ -1985,6 +1987,25 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     // § 2 row 24's removal clause, read where `removeDirectedParticipants` reads it: the targets' copy of the matchUp
     // (the dual's for a line), whose `drawPositions` are undefined until a feeder decides
     removalMissingDrawPositions: removalMissingDrawPositions({ structure, targetData }),
+    // § 2 row 31: v1's own rule (`heldSeatRefusal`), asked of the call as v1 asks it
+    heldSeat: heldSeatRefusal({
+      params: {
+        propagateRetirementAsExit: request.flags.propagateRetirementAsExit,
+        allowChangePropagation: request.flags.allowChangePropagation,
+        propagateExitStatus: request.flags.propagateExitStatus,
+        matchUpStatus: request.matchUpStatus,
+        winningSide: request.winningSide,
+        inContextDrawMatchUps,
+        tournamentRecord,
+        inContextMatchUp,
+        drawDefinition,
+        targetData,
+        structure,
+        matchUp,
+        event,
+      },
+      activeDownstream,
+    }),
     line,
     dualProjection,
     targets: {

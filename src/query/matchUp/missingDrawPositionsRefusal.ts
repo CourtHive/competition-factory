@@ -33,9 +33,15 @@ type UndirectedDrawnOutcomeParams = Readonly<{
  * winner: measured on `dev` 01ce40e544, a SINGLE_ELIMINATION matchUp stored without `drawPositions`, scored under
  * `requireParticipantsForScoring: false`, returned the error over a written result (CA, 2026-10-22: an error leaves the
  * record unchanged, and no mutation relies on rollback). The same question, asked of the same matchUp, on the route
- * that reaches it: a matchUp that has sent nothing (so neither the swap nor the downstream-dependency route), not a
- * line of a dual, not ad hoc, given a winner or an exit to carry. Read before anything is written, so it cannot drift
- * from what `directParticipants` reads.
+ * that reaches it: not a line of a dual, not ad hoc, given a winner or an exit to carry, and neither on the swap nor on
+ * the downstream-dependency route. Read before anything is written, so it cannot drift from what `directParticipants`
+ * reads.
+ *
+ * A MATCHUP THAT ALREADY HOLDS A WINNER reaches `directParticipants` too when it is given a winner again with nothing
+ * downstream active (CA, 2026-11-19; record soak class D5: a matchUp of a draw labelled AD_HOC that stores a
+ * `roundPosition`, so is not ad hoc, and no `drawPositions`). It was exempt as a matchUp that "has sent something", and
+ * v1 returned the error over a written matchUp while v2 returned success. A stored double exit is still exempt: its
+ * unwind runs first.
  */
 /** what `missingDrawPositionsRefusal` reads of the call: the outcome view (v2) asks it with the same values */
 export type MissingDrawPositionsParams = UndirectedDrawnOutcomeParams & {
@@ -43,6 +49,7 @@ export type MissingDrawPositionsParams = UndirectedDrawnOutcomeParams & {
     Pick<MatchUp, 'drawPositions' | 'collectionId' | 'winningSide' | 'matchUpStatus' | 'matchUpFormat'>
   >;
   readonly propagateExitStatus?: boolean;
+  readonly allowChangePropagation?: boolean;
 };
 
 export function missingDrawPositionsRefusal({
@@ -54,7 +61,11 @@ export function missingDrawPositionsRefusal({
 }) {
   const { matchUp, structure, matchUpStatus } = params;
   if (matchUp.drawPositions || matchUp.collectionId || isAdHoc({ structure })) return undefined;
-  if (matchUp.winningSide || isDoubleExit(matchUp.matchUpStatus)) return undefined;
+  if (isDoubleExit(matchUp.matchUpStatus)) return undefined;
+  // A STORED WINNER given a winner again reaches `directParticipants` too, unless the call is written without direction
+  // (an active downstream) or exchanges two placed paths (a swap): record soak 2026-11-18, class D5
+  const swap = !!params.allowChangePropagation && !!params.winningSide && matchUp.winningSide !== params.winningSide;
+  if (matchUp.winningSide && (activeDownstream || swap)) return undefined;
   const directs = !!params.winningSide || (!!params.propagateExitStatus && isExit(matchUpStatus));
   if (!directs || isUndirectedDrawnOutcome(params, activeDownstream)) return undefined;
   return decorateResult({ result: { error: MISSING_DRAW_POSITIONS }, stack: 'setMatchUpStatus' });

@@ -1,5 +1,5 @@
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
-import { isDoubleExit } from '@Validators/isExit';
+import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
 import { TEAM } from '@Constants/matchUpTypes';
 
@@ -130,6 +130,33 @@ export const sideOf = (matchUp: HydratedMatchUp | undefined, drawPosition?: numb
 
 export const indexed = (view: OutcomeView, matchUpId?: string) =>
   view.inContextDrawMatchUps?.find((matchUp) => matchUp.matchUpId === matchUpId);
+
+/**
+ * The stored winner's drawPosition stands in a LATER round than the next matchUp, which is not decided (no winner, no
+ * exit, no BYE): an advance the factory never makes, held by converted records (record soak 2026-11-18, D6 and D7). v1's
+ * removal takes the position out of every later round of the structure and resets a result it finds there
+ * (`removeDirectedParticipants`); the planned removal takes back the next matchUp alone. So a call that takes the
+ * winner away, or changes it, is v1's whole there (`abstainReason`: `winner`).
+ */
+export function winnerStandsPastUndecided(view: OutcomeView): boolean {
+  const { existing, targets } = view;
+  const { 1: first, 2: second } = targets.sideDrawPositions;
+  const bySide = new Map([
+    [1, first],
+    [2, second],
+  ]);
+  const position = bySide.get(existing.winningSide ?? 0);
+  const next = indexed(view, targets.winnerMatchUpId);
+  if (!position || !next || next.structureId !== targets.source.structureId) return false;
+  if (next.matchUpStatus === BYE || next.winningSide || isAnyExit(next.matchUpStatus)) return false;
+  return !!view.inContextDrawMatchUps?.some(
+    (matchUp) =>
+      !matchUp.collectionId &&
+      matchUp.structureId === next.structureId &&
+      (matchUp.roundNumber ?? 0) > (next.roundNumber ?? 0) &&
+      !!matchUp.drawPositions?.includes(position),
+  );
+}
 
 /**
  * Where a participant awarded an exit goes on to, as v1's nested direction sends them (`directWinner`): their position

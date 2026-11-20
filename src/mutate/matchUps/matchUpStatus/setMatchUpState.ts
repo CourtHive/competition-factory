@@ -1,4 +1,5 @@
 import { missingDrawPositionsRefusal, isUndirectedDrawnOutcome } from '@Query/matchUp/missingDrawPositionsRefusal';
+import { heldSeatRefusal } from '@Query/matchUp/heldSeatRefusal';
 import { addMatchUpScheduleItems, scheduleRefusal } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { removalMissingDrawPositions } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
@@ -836,6 +837,10 @@ function resolveAndApplyOutcome({
 
   const unplaceable = missingDrawPositionsRefusal({ params, activeDownstream: !!activeDownstream });
   if (unplaceable) return unplaceable;
+
+  // a winner or a loser whose seat is held by somebody else: `directParticipants` met it after writing the result
+  const held = heldSeatRefusal({ params, activeDownstream: !!activeDownstream });
+  if (held) return decorateResult({ result: { error: held.error }, context: held.context, stack });
 
   // § 2 row 24's removal clause: `removeDirectedParticipants` refuses a score with no winner on a matchUp (a line's
   // dual) holding no drawPositions. A first entry (nothing holds a winner there) reaches it after the dual's writes

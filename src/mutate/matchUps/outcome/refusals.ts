@@ -369,6 +369,10 @@ function refuseRoute(given: OutcomeRequest, view: OutcomeView): Refusal | undefi
     return view.removalMissingDrawPositions && !view.line?.autoCalcDisabled
       ? refuse(24, MISSING_DRAW_POSITIONS)
       : undefined;
+  // a decided result turned into a double exit takes back what it directed first, through the same removal: on a
+  // matchUp holding no drawPositions v1 refuses there, before it writes (record soak 2026-11-18, class D5's residue)
+  if (route === 'completed-to-double-exit' && !view.line && view.removalMissingDrawPositions)
+    return refuse(24, MISSING_DRAW_POSITIONS);
   if (route !== 'refused') return undefined;
   const { matchUpStatus } = request;
   if (matchUpStatus === BYE) return refuse(28, INVALID_MATCHUP_STATUS_BYE, { info: 'matchUp does not include BYE' });
@@ -384,6 +388,7 @@ export function refuseOutcome(request: OutcomeRequest, view: OutcomeView): Refus
     refuseAgainstDraw(request, view) ??
     refuseSchedule(view) ??
     (view.missingDrawPositions ? refuse(24, MISSING_DRAW_POSITIONS) : undefined) ??
+    (view.heldSeat ? refuse(31, view.heldSeat.error, { context: view.heldSeat.context }) : undefined) ??
     refuseDispatch(request, view) ??
     refuseRoute(request, view)
   );

@@ -149,8 +149,31 @@ function planRelabelled(request: OutcomeRequest, view: OutcomeView): DirectionPl
   if (!isRelabel(request, view) || view.line || view.matchUpTieId || view.isTeam) return undefined;
   const winningSide = request.winningSide;
   if (winningSide !== 1 && winningSide !== 2) return undefined;
+  if (relabelledLoserElsewhere(request, view)) return undefined;
   const loser = planLoser(request, view, winningSide === 1 ? 2 : 1, true);
   return loser ? { loser } : undefined;
+}
+
+/**
+ * A relabel's loser is planned where the loser LINK sends them, and on this route nobody is placed: the plan only
+ * states that they stand there. A record need not hold them there (record soak 2026-11-18: a converted draw whose
+ * consolation was filled in another order than its links' feed profiles describe, the stored `loserMatchUpId` naming
+ * another matchUp of the link's round; or a loser never placed). v1 reads the loser where they stand in the link's
+ * structure (`relabelLoserExit`), and may seat one a free seat is owed to. So the loser's half is not planned there, and
+ * the call is v1's whole (`abstainReason`: `loser`).
+ */
+export function relabelledLoserElsewhere(request: OutcomeRequest, view: OutcomeView): boolean {
+  if (!isRelabel(request, view) || view.line || view.matchUpTieId || view.isTeam) return false;
+  const winningSide = request.winningSide;
+  if (winningSide !== 1 && winningSide !== 2) return false;
+  const loser = planLoser(request, view, winningSide === 1 ? 2 : 1, true);
+  const target = view.inContextDrawMatchUps?.find((matchUp) => matchUp.matchUpId === loser?.matchUpId);
+  if (!loser || !target) return false;
+  if (loser.arrives) return !target.sides?.some((side) => side?.participantId === loser.participantId);
+  // KEPT OUT of a first-match feed: the plan states the propagated BYE that took their place on the fed seat. A record
+  // whose consolation took second-round losers holds somebody there instead (soak class D3): v1's, whole, as above
+  const seat = loser.bye && target.sides?.find((side) => side?.drawPosition === loser.bye?.drawPosition);
+  return !!loser.bye && !seat?.bye;
 }
 
 /** C24: a played result's loser already passed a BYE into a clean same-structure passage. */
