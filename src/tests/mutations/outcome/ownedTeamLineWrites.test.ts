@@ -1849,7 +1849,9 @@ const RECORDED: [string, Scenario][] = [
     },
   ],
   [
-    "a line DEFAULTED under a scoring policy's processCodes on a dual decided by its own call, which keeps its winner (CA 2026-11-20): v1's (the codes on the line, exitReason)",
+    // the title is the fixed corpus's identity for these calls, so it stands: since CA's 2026-11-20 class 4 ruling the
+    // line no longer un-decides the dual (decided by its own call, it keeps its winner)
+    "a line DEFAULTED under a scoring policy's processCodes un-deciding its dual: v1's (the codes on the line, exitReason)",
     {
       drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },
       policyDefinitions: POLICY_SCORING_DEFAULT,
