@@ -71,7 +71,7 @@ function categoryOf(event?: Event): { categoryName?: string; categoryType?: stri
 /**
  * A timing lookup valid for one analysis pass.
  *
- * Memoised per `matchUpFormat|matchUpType|eventId`. The cache is per-call rather
+ * Memoised per `matchUpFormat|matchUpType|eventId|drawId` (a draw can carry its own scheduling policy). The cache is per-call rather
  * than module-level on purpose: a scheduling policy can be attached or modified
  * between calls, and a stale average is a wrong answer that looks like a right
  * one.
@@ -83,15 +83,18 @@ export function makeTimingResolver(tournamentRecord: Tournament): (matchUp: Hydr
   return (matchUp: HydratedMatchUp) => {
     const matchUpFormat = matchUp.matchUpFormat ?? '';
     const eventId = matchUp.eventId ?? '';
-    const key = `${matchUpFormat}|${matchUp.matchUpType ?? ''}|${eventId}`;
+    const drawId = matchUp.drawId ?? '';
+    const key = `${matchUpFormat}|${matchUp.matchUpType ?? ''}|${eventId}|${drawId}`;
     const cached = cache.get(key);
     if (cached) return cached;
 
     let timing = FALLBACK_TIMING;
     if (matchUpFormat) {
       const event = events.get(eventId);
+      const drawDefinition = event?.drawDefinitions?.find((draw) => draw.drawId === drawId);
       const result: any = getMatchUpFormatTiming({
         eventType: matchUp.matchUpType,
+        drawDefinition,
         ...categoryOf(event),
         tournamentRecord,
         matchUpFormat,

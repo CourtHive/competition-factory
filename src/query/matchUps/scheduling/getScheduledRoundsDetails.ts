@@ -140,15 +140,17 @@ export function getScheduledRoundsDetails(params: GetScheduledRoundsDetailsArgs)
     }
 
     for (const matchUpFormat of matchUpFormatOrder) {
-      const { eventType, category } = event ?? {};
+      const { category } = event ?? {};
       const { typeChangeRecoveryMinutes, recoveryMinutes, averageMinutes, error } = findMatchUpFormatTiming({
         categoryName: timingCategoryName(event),
         categoryType: timingCategoryType(category),
         tournamentId: round.tournamentId,
         eventId: round.eventId,
+        drawId: round.drawId,
         tournamentRecords,
         matchUpFormat,
-        eventType,
+        // a line is timed by its own type, never by its TEAM event's
+        eventType: matchUpFormatCohorts[matchUpFormat]?.[0]?.matchUpType ?? event?.eventType,
       });
       if (error) {
         // a round whose timing cannot be found is reported as an error, not as a scheduled round

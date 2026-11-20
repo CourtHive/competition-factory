@@ -361,8 +361,6 @@ function computeRecoveryTimes({
       recoveryMinutes = 0,
       typeChangeRecoveryMinutes = 0,
     } = matchUpFormatTimes({
-      // a collection matchUp is a line of a TEAM event: it also reads the event's TEAM-keyed minutes
-      teamLine: !!matchUp.collectionId,
       timingDetails,
       eventType,
     }));

@@ -1,5 +1,5 @@
 import { matchUpFormatTimes, resolveTimingDetails } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
-import { getScheduleTiming } from '@Query/extensions/matchUpFormatTiming/getScheduleTiming';
+import { bookingTimingFor, eventBookingTiming } from '@Query/scheduling/generateBookings';
 import { competitionScheduleMatchUps } from '@Query/matchUps/competitionScheduleMatchUps';
 import { extractDate, extractTime, sameDay, timeStringMinutes } from '@Tools/dateTime';
 import { recordsDefaultPeriodLength } from '@Query/scheduling/defaultPeriodLength';
@@ -11,7 +11,7 @@ import { getMatchUpId } from '@Functions/global/extractors';
 
 // constants and types
 import { ErrorType, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
-import { Tournament } from '@Types/tournamentTypes';
+import { EventTypeUnion, Tournament } from '@Types/tournamentTypes';
 
 type CalculateScheduleTimesArgs = {
   tournamentRecords: { [key: string]: Tournament };
@@ -101,16 +101,9 @@ export function calculateScheduleTimes({
     {},
     ...tournaments
       .map((tournamentRecord) =>
-        (tournamentRecord.events ?? []).map((event) => {
-          const { scheduleTiming } = getScheduleTiming({
-            tournamentRecord,
-            event,
-          });
-
-          return {
-            [event.eventId]: { event, scheduleTiming },
-          };
-        }),
+        (tournamentRecord.events ?? []).map((event) => ({
+          [event.eventId]: eventBookingTiming(tournamentRecord, event),
+        })),
       )
       .flat(),
   );
@@ -131,16 +124,16 @@ export function calculateScheduleTimes({
   relevantMatchUps.push(...dateMatchUps);
   relevantMatchUps.push(...completedMatchUps);
 
-  const timingOf = ({ eventId, matchUpFormat }: { eventId: string; matchUpFormat?: string }) => {
-    const { event, scheduleTiming } = eventDetails[eventId];
-    const eventType = event?.eventType;
+  const timingOf = (matchUp: { eventId: string; drawId?: string; matchUpType?: string; matchUpFormat?: string }) => {
+    const { matchUpFormat } = matchUp;
+    const { eventType, scheduleTiming } = bookingTimingFor(eventDetails[matchUp.eventId], matchUp);
     const timingDetails = resolveTimingDetails({
       defaultAverageMinutes: averageMatchUpMinutes,
       scheduleTiming,
       defaultRecoveryMinutes,
       matchUpFormat,
     });
-    return matchUpFormatTimes({ eventType, timingDetails });
+    return matchUpFormatTimes({ eventType: eventType as EventTypeUnion, timingDetails });
   };
 
   // only a matchUp timed on the date holds a court (scheduling-pipeline.md § 3.9): one dated without a time has no
