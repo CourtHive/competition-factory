@@ -3,15 +3,16 @@ import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structu
 import { resolveLadderStructure } from '@Query/ladder/resolveLadderContext';
 import { isLadder } from '@Query/drawDefinition/isLadder';
 
+import { mirrorFailure, mirrorStandingToScale, snapshotStanding } from '@Mutate/ladder/mirrorStandingToScale';
 import { generateDynamicRatings } from '@Mutate/participants/scaleItems/generateDynamicRatings';
-import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
+import { ladderMatchUpNotice, ladderStandingNotice } from '@Mutate/ladder/ladderNotices';
 import { getResultAttestation } from '@Query/ladder/getResultAttestation';
-import { ladderStandingNotice } from '@Mutate/ladder/ladderNotices';
+import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
 
 // constants and types
-import { FORFEIT, INSERTION, RANK, RESULT, movementTriggers } from '@Constants/ladderConstants';
+import { FORFEIT, INSERTION, MOVEMENT_APPLIED, RANK, RESULT, movementTriggers } from '@Constants/ladderConstants';
+import type { PositionAssignment, TimeItem } from '@Types/tournamentTypes';
 import type { MovementTrigger } from '@Constants/ladderConstants';
-import type { PositionAssignment } from '@Types/tournamentTypes';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
@@ -87,12 +88,18 @@ function resolveTrigger(params: MovementArgs) {
     return { error: INVALID_VALUES, info: `matchUp is ${matchUp.matchUpStatus}, not ${COMPLETED}` };
   }
 
+  // A result moves a standing once. Re-applying it (a retry, or a re-confirmation after a dispute)
+  // says so explicitly instead of failing on positions the first application already changed.
+  // Reversing a movement after a dispute is a separate, undecided question (D9), not handled here.
+  const applied = (matchUp.timeItems as TimeItem[] | undefined)?.find((item) => item.itemType === MOVEMENT_APPLIED);
+  if (applied) return { alreadyApplied: true, appliedMovement: applied.itemValue };
+
   // side 1 is the challenger — issueChallenge writes it that way.
   const challengerParticipantId = matchUp.sides?.[0]?.participantId;
   const defenderParticipantId = matchUp.sides?.[1]?.participantId;
   if (!challengerParticipantId || !defenderParticipantId) return { error: PARTICIPANT_NOT_FOUND };
 
-  return { challengerParticipantId, defenderParticipantId, challengerPrevails: matchUp.winningSide === 1 };
+  return { challengerParticipantId, defenderParticipantId, challengerPrevails: matchUp.winningSide === 1, matchUp };
 }
 
 /**
@@ -105,7 +112,12 @@ function resolveTrigger(params: MovementArgs) {
  * scale, `positionAssignments` is a projection, and there is no movement to apply. That early
  * return is why `getLadderOrdering` had to exist before any of this was written.
  */
-export function applyLadderMovement(params: MovementArgs): ResultType & { moved?: boolean; ratingsUpdated?: boolean } {
+export function applyLadderMovement(params: MovementArgs): ResultType & {
+  moved?: boolean;
+  ratingsUpdated?: boolean;
+  alreadyApplied?: boolean;
+  appliedMovement?: unknown;
+} {
   const { appliedAt, drawDefinition } = params;
   const structure = resolveLadderStructure(params);
 
@@ -118,7 +130,21 @@ export function applyLadderMovement(params: MovementArgs): ResultType & { moved?
 
   const resolved = resolveTrigger(params);
   if (resolved.error) return resolved;
-  const { challengerParticipantId, defenderParticipantId, challengerPrevails } = resolved;
+  if ('alreadyApplied' in resolved) {
+    return { ...SUCCESS, moved: false, alreadyApplied: true, appliedMovement: resolved.appliedMovement };
+  }
+  const { challengerParticipantId, defenderParticipantId, challengerPrevails, matchUp } = resolved;
+  // the RESULT path's marker, written only once the movement (or its absence) has fully succeeded
+  const markApplied = (outcome: { moved: boolean; ratingsUpdated?: boolean }) => {
+    if (matchUp) {
+      addTimeItem({
+        timeItem: { itemType: MOVEMENT_APPLIED, itemValue: { ...outcome, appliedAt }, itemDate: appliedAt },
+        element: matchUp,
+      });
+      if (structure) ladderMatchUpNotice({ ...params, structure, matchUp });
+    }
+    return { ...SUCCESS, ...outcome };
+  };
 
   if (getLadderOrdering({ ...params }) !== RANK) {
     // A RATING ladder has no positional movement by design — the ordering IS the scale, and
@@ -140,13 +166,13 @@ export function applyLadderMovement(params: MovementArgs): ResultType & { moved?
         asDynamic: true,
       });
       if (ratingResult.error) return ratingResult;
-      return { ...SUCCESS, moved: false, ratingsUpdated: true };
+      return markApplied({ moved: false, ratingsUpdated: true });
     }
-    return { ...SUCCESS, moved: false };
+    return markApplied({ moved: false });
   }
 
   // The defender keeps their position when they hold off the challenger; nobody else is affected.
-  if (!challengerPrevails) return { ...SUCCESS, moved: false };
+  if (!challengerPrevails) return markApplied({ moved: false });
 
   const assignments = positionAssignmentsOf(structure) ?? [];
   const assignmentOf = (participantId: string) => assignments.find((a) => a.participantId === participantId);
@@ -162,6 +188,7 @@ export function applyLadderMovement(params: MovementArgs): ResultType & { moved?
 
   const movement = getLadderMovement({ ...params });
   const touched: PositionAssignment[] = [];
+  const restore = snapshotStanding(structure);
 
   if (movement === INSERTION) {
     // The winner takes the defender's position and everyone from there down to the winner's old
@@ -181,7 +208,11 @@ export function applyLadderMovement(params: MovementArgs): ResultType & { moved?
     touched.push(challenger, defender);
   }
 
-  mirrorStandingToScale({ ...params, touched });
+  const mirrored = mirrorStandingToScale({ ...params, touched });
+  if (mirrored.error) {
+    restore();
+    return mirrorFailure(mirrored);
+  }
   if (structure) ladderStandingNotice({ ...params, structure });
-  return { ...SUCCESS, moved: true };
+  return markApplied({ moved: true });
 }

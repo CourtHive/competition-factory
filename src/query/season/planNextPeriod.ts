@@ -3,6 +3,8 @@ import { decorateResult } from '@Functions/global/decorateResult';
 import { TierMovementEnum } from '@Types/tournamentTypes';
 
 // constants and types
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { ResultType } from '@Types/factoryTypes';
 import type {
   Season,
   SeasonMovementOverride,
@@ -12,8 +14,6 @@ import type {
   SeasonPlacement,
   SeasonSubject,
 } from '@Types/seasonTypes';
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
-import { ResultType } from '@Types/factoryTypes';
 
 type PlanNextPeriodArgs = {
   season: Season;
@@ -65,6 +65,9 @@ export function planNextPeriod(params: PlanNextPeriodArgs): PlanNextPeriodResult
     });
   }
 
+  const proposalError = proposalsError(movements, tiers);
+  if (proposalError) return decorateResult({ ...proposalError, stack });
+
   const overridden = new Map(overrides.map((override) => [subjectKey(override.subject), override]));
   const tiedFrom = new Map<string, string>();
   for (const tie of tiedAtCut) for (const subject of tie.subjects) tiedFrom.set(subjectKey(subject), tie.tierId);
@@ -113,6 +116,32 @@ export function planNextPeriod(params: PlanNextPeriodArgs): PlanNextPeriodResult
     .map((tier) => ({ tierId: tier.tierId, subjects: placed.get(tier.tierId) ?? [] }));
 
   return { nextPeriodId: next?.periodId, placements, revisions };
+}
+
+/**
+ * Proposals are checked as overrides are (SEASON-101): a proposal to an unknown tier would silently drop its subject,
+ * and a subject proposed twice would be placed twice, or into two tiers. Each refusal names what it found.
+ */
+function proposalsError(movements: SeasonMovementProposal[], tiers: Map<string, unknown>) {
+  const unknownTier = movements.find((proposal) => !tiers.has(proposal.toTierId));
+  if (unknownTier) {
+    return { result: { error: INVALID_VALUES }, context: { proposal: unknownTier }, info: 'unknown toTierId' };
+  }
+  const bySubject = new Map<string, SeasonMovementProposal[]>();
+  for (const proposal of movements) {
+    const key = subjectKey(proposal.subject);
+    bySubject.set(key, [...(bySubject.get(key) ?? []), proposal]);
+  }
+  const repeated = [...bySubject.values()].find((proposals) => proposals.length > 1);
+  if (repeated) {
+    const conflicting = new Set(repeated.map((proposal) => proposal.toTierId)).size > 1;
+    return {
+      result: { error: INVALID_VALUES },
+      context: { subject: repeated[0].subject, proposals: repeated },
+      info: conflicting ? 'conflicting proposals for one subject' : 'duplicate proposals for one subject',
+    };
+  }
+  return undefined;
 }
 
 function revision({

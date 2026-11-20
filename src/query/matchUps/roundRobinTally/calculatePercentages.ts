@@ -15,7 +15,8 @@ export function calculatePercentages({
   const bracketGamesForSet = parsedGroupMatchUpFormat.setFormat?.setTo;
   // EXACT compares unrounded: IEEE division is correctly rounded, so equal fractions give equal values (spec § 5.10)
   const exact = tallyPolicy?.precision === 'EXACT';
-  const precision = Math.pow(10, (!exact && tallyPolicy?.precision) || 3);
+  // `??`, not `||`: precision 0 rounds to whole numbers rather than reading as the default 3
+  const precision = exact ? 1 : Math.pow(10, tallyPolicy?.precision ?? 3);
   const round = (value: number) => (exact ? value : Math.round(value * precision) / precision);
   // one zero-denominator rule per family (spec § 5.10): a share of nothing is 0
   const percentage = (part: number, whole: number) => (whole ? round(part / whole) : 0);
