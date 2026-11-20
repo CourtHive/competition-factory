@@ -3,7 +3,18 @@ import { isDoubleExit, isExit } from '@Validators/isExit';
 
 // constants and types
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
-import type { ResultType } from '@Types/factoryTypes';
+import type { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
+import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
+
+type RelabelDualExitParams = {
+  dualMatchUp?: Pick<MatchUp, 'matchUpId' | 'matchUpStatus' | 'winningSide'>;
+  propagateRetirementAsExit?: boolean;
+  propagateExitStatus?: boolean;
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  matchUpsMap?: MatchUpsMap;
+  event?: Event;
+};
 
 /**
  * A LINE WHOSE TALLY RELABELS ITS DUAL'S OWN EXIT SETTLES THE LOSER AS THE DUAL'S OWN RELABEL DOES (CA, 2026-11-20,
@@ -17,7 +28,7 @@ import type { ResultType } from '@Types/factoryTypes';
  * first line un-decided the dual). Asked after the tally is written, with the line call's own exit flags, as the dual's
  * relabel asks them.
  */
-export function relabelDualExitByTally(params: any, tallied?: { winningSide?: number }): ResultType {
+export function relabelDualExitByTally(params: RelabelDualExitParams, tallied?: { winningSide?: number }): ResultType {
   const before = params.dualMatchUp;
   if (!before?.winningSide || !isExit(before.matchUpStatus) || isDoubleExit(before.matchUpStatus)) return {};
   if (!tallied?.winningSide || tallied.winningSide !== before.winningSide) return {};
