@@ -10,6 +10,7 @@ import path from 'path';
 
 const tsConfig = JSON.parse(await fs.readFile(new URL('./tsconfig.base.json', import.meta.url)));
 const srcIndex = 'src/index.ts';
+const constantsIndex = 'src/constants/index.ts';
 // `tods-competition-factory/score-entry-state`: a headless score-entry state engine with its own entry point, so a
 // consumer that needs it never loads the root barrel, an engine or global engine state.
 const scoreEntryStateIndex = 'src/scoreEntryState/index.ts';
@@ -97,6 +98,8 @@ function createExport({ input, folder, packageName, cjs, esm }) {
 
 const cjsExports = [
   { input: srcIndex, cjs: true },
+  // Separate from the root bundle: a constants consumer loads no engine or global state.
+  { input: constantsIndex, cjs: true, folder: 'constants', packageName: 'constants' },
   // its own bundle, not a re-export of the root's: `require('tods-competition-factory/score-entry-state')` loads the
   // score state and the scoring rules it reads, and nothing else
   { input: scoreEntryStateIndex, cjs: true, folder: 'score-entry-state', packageName: 'score-entry-state' },
@@ -113,7 +116,7 @@ const esmExport = [
   {
     // the score-entry-state entry is a second input to the same module tree: `dist/esm/scoreEntryState/index.mjs`
     // imports the narrow scoring modules it reads, so a bundler resolving the subpath sees only that graph
-    input: [srcIndex, scoreEntryStateIndex],
+    input: [srcIndex, scoreEntryStateIndex, constantsIndex],
     onwarn,
     plugins: [
       typescript({ tsconfig: './tsconfig.json', declaration: false, sourceMap: false, outDir: `${distPath}/esm` }),
@@ -160,4 +163,13 @@ const scoreEntryStateTypes = [
   },
 ];
 
-export default [...cjsExports, ...esmExport, ...engineTypes, ...scoreEntryStateTypes];
+const constantsTypes = [
+  {
+    input: constantsIndex,
+    onwarn,
+    plugins: [dts({ compilerOptions: { paths: tsConfig.compilerOptions.paths } })],
+    output: { file: `${distPath}/constants.d.ts`, format: 'es' },
+  },
+];
+
+export default [...cjsExports, ...esmExport, ...engineTypes, ...scoreEntryStateTypes, ...constantsTypes];

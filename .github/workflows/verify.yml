@@ -277,6 +277,10 @@ jobs:
       - name: verify:score-entry-state
         run: pnpm verify:score-entry-state
 
+      # The constants-only package graph must stay independent of the tournament engine.
+      - name: verify:constants
+        run: pnpm verify:constants
+
       - name: verify:surface
         run: pnpm verify:surface
 
