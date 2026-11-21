@@ -1,16 +1,20 @@
 import { getCollectionPositionAssignments } from '@Query/hierarchical/tieFormats/getCollectionPositionAssignments';
+import { addDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getTieMatchUpContext } from '@Query/hierarchical/tieFormats/getTieMatchUpContext';
-import { getPairedParticipant } from '@Query/participant/getPairedParticipant';
-import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { deleteParticipants } from '@Mutate/participants/deleteParticipants';
-import { updateTeamLineUp } from '@Mutate/drawDefinitions/updateTeamLineUp';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { checkTeamMembership, getTeamMemberships } from './teamMembership';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getParticipants } from '@Query/participants/getParticipants';
-import { addParticipant } from '@Mutate/participants/addParticipant';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { planReplacementLineUp } from './planReplacementLineUp';
+import { validateLineUp } from '@Validators/validateTeamLineUp';
+import { replacementEffects } from './planReplacementEffects';
+import { planReplacementPair } from './planReplacementPair';
 import { pushGlobalLog } from '@Functions/global/globalLog';
-import { ensureSideLineUps } from './ensureSideLineUps';
+import { LINEUPS } from '@Constants/extensionConstants';
+import { ensuredDualSides } from './ensureSideLineUps';
+import { addNotice } from '@Global/state/globalState';
+import { planFieldWrite } from '@Mutate/planCommit';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { unique } from '@Tools/arrays';
 
@@ -19,8 +23,6 @@ import { CollectionAssignment, DrawDefinition, Event, TeamCompetitor, Tournament
 import POLICY_MATCHUP_ACTIONS_DEFAULT from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
 import { LineUp, PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import { POLICY_TYPE_MATCHUP_ACTIONS } from '@Constants/policyConstants';
-import { COMPETITOR } from '@Constants/participantRoles';
-import { PAIR } from '@Constants/participantConstants';
 import { coercedGender } from '@Helpers/coercedGender';
 import { SUCCESS } from '@Constants/resultConstants';
 import { isGendered } from '@Validators/isGendered';
@@ -106,18 +108,14 @@ export function replaceTieMatchUpParticipantId(params: ReplaceTieMatchUpParticip
 
   const substitutionProcessCodes = matchUpActionsPolicy?.processCodes?.substitution;
 
-  ensureSideLineUps({
-    tournamentId: tournamentRecord.tournamentId,
-    eventId: event.eventId,
-    inContextDualMatchUp,
-    drawDefinition,
-    dualMatchUp,
-    event,
+  const sides = ensuredDualSides({
+    contextSides: inContextDualMatchUp?.sides,
+    rawSides: dualMatchUp?.sides,
+    lineUps: firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }),
   });
+  const dualMatchUpSide = dualMatchUp && sides?.find(({ sideNumber }) => sideNumber === side.sideNumber);
 
-  const dualMatchUpSide = dualMatchUp?.sides?.find(({ sideNumber }) => sideNumber === side.sideNumber);
-
-  if (!dualMatchUpSide) {
+  if (!sides || !dualMatchUpSide) {
     return decorateResult({
       result: {
         sideNumber: side.sideNumber,
@@ -173,32 +171,47 @@ export function replaceTieMatchUpParticipantId(params: ReplaceTieMatchUpParticip
     collectionId,
   });
 
-  dualMatchUpSide.lineUp = modifiedLineUp;
+  const sideIndex = sides.indexOf(dualMatchUpSide);
 
+  const { writes, notices, effects } = replacementEffects();
+  writes.push(planFieldWrite(dualMatchUp, 'sides', sides));
+  const noticeContext = { tournamentId: tournamentRecord.tournamentId, drawDefinition, event };
+  modifyMatchUpNotice({ ...noticeContext, matchUp: dualMatchUp, context: 'ensureSidLineUps' }, effects);
+  // Assign to the side installed by the array setter (it may cast each side to a subdocument).
+  writes.push(() => {
+    dualMatchUp.sides![sideIndex].lineUp = modifiedLineUp;
+  });
+  let lineUps;
   if (teamParticipantId && tieFormat) {
-    const result = updateTeamLineUp({
-      participantId: teamParticipantId,
-      lineUp: modifiedLineUp,
-      drawDefinition,
-      tieFormat,
-    });
-    if (result.error) return decorateResult({ result, stack });
-  } else {
-    pushGlobalLog({ method: 'replaceTieMatchUpParticipant', issue: 'team participantId not found' });
+    if (typeof teamParticipantId !== 'string')
+      return decorateResult({ result: { error: MISSING_PARTICIPANT_ID }, stack });
+    const validation = validateLineUp({ lineUp: modifiedLineUp, tieFormat });
+    if (!validation.valid) return decorateResult({ result: validation, stack });
+    lineUps = planReplacementLineUp({ drawDefinition, teamParticipantId, modifiedLineUp, writes });
+    addDrawNotice({ drawDefinition }, effects);
   }
 
   const pairResult = isDoubles
-    ? manageDoublesPairParticipants({
+    ? planReplacementPair({
         existingIndividualParticipantIds,
         individualParticipantIds,
         tournamentRecord,
+        drawDefinition,
+        dualMatchUp,
+        event,
+        sides: sides.map((s, i) => (i === sideIndex ? { ...s, lineUp: modifiedLineUp } : s)),
+        lineUps,
         stack,
+        writes,
+        notices,
       })
-    : { participantAdded: undefined, participantRemoved: undefined };
-  if (pairResult.error) return pairResult;
-  const { participantAdded, participantRemoved } = pairResult;
+    : {};
+  if ('error' in pairResult) return pairResult;
+  const { getParticipantAdded, participantRemoved } = pairResult;
 
-  handleProcessCodes({
+  planProcessCodes({
+    effects,
+    writes,
     substitutionProcessCodes,
     tournamentRecord,
     drawDefinition,
@@ -209,17 +222,19 @@ export function replaceTieMatchUpParticipantId(params: ReplaceTieMatchUpParticip
     event,
   });
 
-  if (dualMatchUp) {
-    modifyMatchUpNotice({
-      tournamentId: tournamentRecord?.tournamentId,
-      matchUp: dualMatchUp,
-      context: stack,
-      drawDefinition,
-      event,
-    });
+  modifyMatchUpNotice({ ...noticeContext, matchUp: dualMatchUp, context: stack }, effects);
+  for (const write of writes) write();
+  for (const notice of notices) addNotice(typeof notice === 'function' ? notice() : notice);
+  if (!teamParticipantId || !tieFormat) {
+    pushGlobalLog({ method: 'replaceTieMatchUpParticipant', issue: 'team participantId not found' });
   }
-
-  return { ...SUCCESS, modifiedLineUp, participantRemoved, participantAdded, warnings: membership.warnings };
+  return {
+    ...SUCCESS,
+    modifiedLineUp,
+    participantRemoved,
+    participantAdded: getParticipantAdded?.(),
+    warnings: membership.warnings,
+  };
 }
 
 function validateParticipantsAndGender({
@@ -293,7 +308,8 @@ function buildModifiedLineUp({
 
   const modifiedLineUp =
     teamLineUp?.map((teamCompetitor) => {
-      const modifiedCompetitor = makeDeepCopy(teamCompetitor, false, true);
+      const copy = makeDeepCopy(teamCompetitor, false, true);
+      const modifiedCompetitor = copy === teamCompetitor ? { ...copy } : copy;
 
       if (![existingParticipantId, newParticipantId].includes(modifiedCompetitor.participantId)) {
         return modifiedCompetitor;
@@ -320,13 +336,12 @@ function buildModifiedLineUp({
       }
 
       if (modifiedCompetitor.participantId === newParticipantId) {
-        modifiedCompetitor.collectionAssignments ??= [];
         const assignment: CollectionAssignment = { collectionId, collectionPosition };
         if (substitution) {
           assignment.previousParticipantId = existingParticipantId;
           assignment.substitutionOrder = (substitutionOrder ?? 0) + 1;
         }
-        modifiedCompetitor.collectionAssignments.push(assignment);
+        modifiedCompetitor.collectionAssignments = [...(modifiedCompetitor.collectionAssignments ?? []), assignment];
       }
 
       return modifiedCompetitor;
@@ -348,53 +363,9 @@ function buildModifiedLineUp({
   return modifiedLineUp;
 }
 
-function manageDoublesPairParticipants({
-  existingIndividualParticipantIds,
-  individualParticipantIds,
-  tournamentRecord,
-  stack,
-}): ResultType & { participantAdded?: string; participantRemoved?: string } {
-  let participantAdded;
-  let participantRemoved;
-
-  let result = getPairedParticipant({
-    participantIds: individualParticipantIds,
-    tournamentRecord,
-  });
-
-  if (!result.participant) {
-    const participant = {
-      participantRole: COMPETITOR,
-      individualParticipantIds,
-      participantType: PAIR,
-    };
-    const addResult = addParticipant({
-      returnParticipant: true,
-      pairOverride: true,
-      tournamentRecord,
-      participant,
-    });
-    if (addResult.error) return decorateResult({ result: addResult, stack });
-    participantAdded = addResult.participant?.participantId;
-  }
-
-  result = getPairedParticipant({
-    participantIds: existingIndividualParticipantIds,
-    tournamentRecord,
-  });
-  const existingPairParticipantId = result.participant?.participantId;
-  if (existingPairParticipantId) {
-    const deleteResult = deleteParticipants({
-      participantIds: [existingPairParticipantId],
-      tournamentRecord,
-    });
-    if (deleteResult.success) participantRemoved = existingPairParticipantId;
-  }
-
-  return { participantAdded, participantRemoved };
-}
-
-function handleProcessCodes({
+function planProcessCodes({
+  writes,
+  effects,
   substitutionProcessCodes,
   tournamentRecord,
   drawDefinition,
@@ -407,25 +378,37 @@ function handleProcessCodes({
   if (substitution || side.substitutions?.length === 1) {
     if (substitution) {
       if (substitutionProcessCodes && tieMatchUp) {
-        tieMatchUp.processCodes = unique([...(tieMatchUp?.processCodes ?? []), ...substitutionProcessCodes]);
+        writes.push(
+          planFieldWrite(
+            tieMatchUp,
+            'processCodes',
+            unique([...(tieMatchUp.processCodes ?? []), ...substitutionProcessCodes]),
+          ),
+        );
       }
-    } else {
-      for (const substitutionProcessCode of substitutionProcessCodes ?? []) {
-        const codeIndex = tieMatchUp?.processCodes?.lastIndexOf(substitutionProcessCode);
-        if (codeIndex !== undefined) {
-          tieMatchUp?.processCodes?.splice(codeIndex, 1);
-        }
+    } else if (tieMatchUp?.processCodes) {
+      const codes = tieMatchUp.processCodes;
+      const remaining = [...codes];
+      for (const code of substitutionProcessCodes ?? []) {
+        const index = remaining.lastIndexOf(code);
+        remaining.splice(index, 1);
+        writes.push(() => {
+          codes.splice(index, 1);
+        });
       }
     }
 
     if (tieMatchUp) {
-      modifyMatchUpNotice({
-        tournamentId: tournamentRecord?.tournamentId,
-        matchUp: tieMatchUp,
-        context: stack,
-        drawDefinition,
-        event,
-      });
+      modifyMatchUpNotice(
+        {
+          tournamentId: tournamentRecord?.tournamentId,
+          matchUp: tieMatchUp,
+          context: stack,
+          drawDefinition,
+          event,
+        },
+        effects,
+      );
     }
   }
 }

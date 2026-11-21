@@ -27,6 +27,7 @@ import {
 
 /** Explicit primitive effects keep a private replay off the live provider and clock. */
 export type NoticeEffects = {
+  planStamp?: (entity: { updatedAt?: string | Date }) => void;
   readClock: (effect: ClockEffect) => number;
   addNotice: typeof addNotice;
   getCapturedStamps: typeof getCapturedStamps;
@@ -44,15 +45,18 @@ export const liveNoticeEffects: NoticeEffects = { readClock: nowMs, addNotice, g
  * stamp moves on, as before.
  */
 function stampUpdatedAt(entity?: { updatedAt?: string | Date } | null, effects = liveNoticeEffects) {
+  if (!entity) return;
+  if (effects.planStamp) return effects.planStamp(entity);
   const stamped = effects.getCapturedStamps();
-  if (!entity || stamped?.has(entity)) return undefined;
-  const previous = entity.updatedAt;
-  const prevMs = typeof previous === 'string' ? new Date(previous).getTime() : previous?.getTime();
-  const timeStamp = effects.readClock({ kind: 'updatedAt', target: entity });
-  const next = prevMs !== undefined && !Number.isNaN(prevMs) && timeStamp <= prevMs ? prevMs + 1 : timeStamp;
-  entity.updatedAt = new Date(next).toISOString();
+  if (stamped?.has(entity)) return;
+  entity.updatedAt = nextUpdatedAt(entity.updatedAt, effects.readClock({ kind: 'updatedAt', target: entity }));
   stamped?.add(entity);
-  return undefined;
+}
+
+export function nextUpdatedAt(previous: string | Date | undefined, timeStamp: number) {
+  const prevMs = typeof previous === 'string' ? new Date(previous).getTime() : previous?.getTime();
+  const next = prevMs !== undefined && !Number.isNaN(prevMs) && timeStamp <= prevMs ? prevMs + 1 : timeStamp;
+  return new Date(next).toISOString();
 }
 
 function drawUpdatedAt(drawDefinition: DrawDefinition, structureIds?: string[], effects = liveNoticeEffects) {
@@ -375,7 +379,10 @@ type AddDrawNoticeArgs = {
   tournamentId?: string;
   eventId?: string;
 };
-export function addDrawNotice({ tournamentId, eventId, drawDefinition }: AddDrawNoticeArgs): {
+export function addDrawNotice(
+  { tournamentId, eventId, drawDefinition }: AddDrawNoticeArgs,
+  effects = liveNoticeEffects,
+): {
   success?: boolean;
   error?: ErrorType;
 } {
@@ -383,8 +390,8 @@ export function addDrawNotice({ tournamentId, eventId, drawDefinition }: AddDraw
     pushGlobalLog({ method: 'drawNotifications', error: MISSING_DRAW_DEFINITION });
     return { error: MISSING_DRAW_DEFINITION };
   }
-  drawUpdatedAt(drawDefinition);
-  addNotice({
+  drawUpdatedAt(drawDefinition, undefined, effects);
+  effects.addNotice({
     payload: { drawDefinition, tournamentId, eventId },
     topic: ADD_DRAW_DEFINITION,
     key: drawDefinition.drawId,

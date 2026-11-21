@@ -24,8 +24,14 @@ type ModifyParticipantsNoticeArgs = {
  * participant change always sets `mutationStatus` (persistence). When no
  * subscription exists, `getPayloads` returns nothing and the union is trivial.
  */
-export function modifyParticipantsNotice({ tournamentId, participants }: ModifyParticipantsNoticeArgs) {
-  if (!participants?.length) return { ...SUCCESS };
+export function modifyParticipantsNotice(params: ModifyParticipantsNoticeArgs) {
+  const notice = planModifyParticipantsNotice(params);
+  if (notice) addNotice(notice);
+  return { ...SUCCESS };
+}
+
+export function planModifyParticipantsNotice({ tournamentId, participants }: ModifyParticipantsNoticeArgs) {
+  if (!participants?.length) return;
 
   const byId = new Map<string, Participant>();
   const buffered = getPayloads({ topic: MODIFY_PARTICIPANTS }).find(
@@ -38,11 +44,9 @@ export function modifyParticipantsNotice({ tournamentId, participants }: ModifyP
     if (participant?.participantId) byId.set(participant.participantId, participant);
   }
 
-  addNotice({
+  return {
     topic: MODIFY_PARTICIPANTS,
     key: tournamentId,
     payload: { tournamentId, participants: [...byId.values()] },
-  });
-
-  return { ...SUCCESS };
+  };
 }

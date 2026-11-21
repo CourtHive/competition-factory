@@ -3,7 +3,6 @@
     "F-019": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-e0caca8e2808f3acc519637aeb714699fcf9decc55a0e4e0e8524740e08f8bbe",
     "F-008": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-0b8ef85b5d4aa8db9b085f1d1e019de0a73c30248cc29089e82caaf0ac55bdc1",
     "F-009": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-b467984b227aa55a3dcdfec53ffc92b110b657eb1253862d74c58bf7c918dadb",
-    "F-010": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-c2b5ac6c64e124f097fa19eb3778db8176dabeb62803c3204eeb77396c52fb49",
     "F-011": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-7f2e8e6148d52b207556e9958aac3126409874b2326a4942c6a1d0df7b502b91",
     "F-013": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-84c889669b97889b919b0db9782aa1f9d582c4002137ea41d036a4bd8e0c21b1",
     "F-014": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-6ca70d9c78e30736cbac87cf97189d8737db673dbcb28b24721f55386a94ce84",
@@ -29,7 +28,9 @@
         "method": "generateDynamicRatings",
         "error": "ERR_INVALID_SCALE_ITEM",
         "reason": "F-019",
-        "paths": ["/factory/timeStamp"]
+        "paths": [
+          "/factory/timeStamp"
+        ]
       }
     ],
     "src/tests/engines/asyncWrapperContract.test.ts::async wrapper contract > 4. a thrown method or an unknown method leaves every other context untouched": [
@@ -37,7 +38,9 @@
         "method": "boom",
         "error": "boom",
         "reason": "asyncWrapperContract",
-        "paths": ["/tournamentName"]
+        "paths": [
+          "/tournamentName"
+        ]
       }
     ],
     "src/tests/mutations/drawDefinitions/positionGovernor/nonForwardAdvanceRefused.test.ts::a BYE in a record whose round-2 matchUp repeats a round-1 matchUpId is refused, not recursed": [
@@ -60,7 +63,9 @@
         "method": "addDrawEntries",
         "error": "ERR_INVALID_ENTRIES",
         "reason": "fixtureStamp",
-        "paths": ["/factory"],
+        "paths": [
+          "/factory"
+        ],
         "pending": true
       }
     ],
@@ -69,7 +74,9 @@
         "method": "setMatchUpFormat",
         "error": "ERR_INVALID_VALUES",
         "reason": "fixtureStamp",
-        "paths": ["/factory"],
+        "paths": [
+          "/factory"
+        ],
         "pending": true
       }
     ],
@@ -78,7 +85,9 @@
         "method": "setMatchUpFormat",
         "error": "ERR_INVALID_VALUES",
         "reason": "fixtureStamp",
-        "paths": ["/factory"],
+        "paths": [
+          "/factory"
+        ],
         "pending": true
       }
     ],
@@ -87,7 +96,9 @@
         "method": "setMatchUpFormat",
         "error": "ERR_INVALID_VALUES",
         "reason": "fixtureStamp",
-        "paths": ["/factory"],
+        "paths": [
+          "/factory"
+        ],
         "pending": true
       }
     ],
@@ -96,7 +107,9 @@
         "method": "setMatchUpFormat",
         "error": "ERR_INVALID_VALUES",
         "reason": "fixtureStamp",
-        "paths": ["/factory"],
+        "paths": [
+          "/factory"
+        ],
         "pending": true
       }
     ],
@@ -105,7 +118,9 @@
         "method": "setMatchUpFormat",
         "error": "ERR_INVALID_VALUES",
         "reason": "fixtureStamp",
-        "paths": ["/factory"],
+        "paths": [
+          "/factory"
+        ],
         "pending": true
       }
     ],
@@ -114,7 +129,10 @@
         "method": "deleteDrawDefinitions",
         "error": "Global state provider error",
         "reason": "setStateProvider",
-        "paths": ["/events/0/drawDefinitions/0", "/events/0/extensions"]
+        "paths": [
+          "/events/0/drawDefinitions/0",
+          "/events/0/extensions"
+        ]
       }
     ],
     "src/tests/mutations/errorPaths/cascadeWriteErrorsReachTheCaller.test.ts::a failed write at conditionallyAdvanceDrawPosition fails the call and is returned (v1 residual) (matrix seed 7)": [
@@ -515,39 +533,6 @@
         ]
       }
     ],
-    "src/tests/mutations/matchUps/tieMatchUpLineUpEdges.test.ts::a substitution reads a line-up entry with no collection assignments as empty": [
-      {
-        "method": "replaceTieMatchUpParticipantId",
-        "error": "ERR_INVALID_VALUES",
-        "reason": "F-010",
-        "paths": [
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/displaySideNumber",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/drawPosition",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/lineUp",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/1/displaySideNumber",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/1/drawPosition",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
-          "/events/0/drawDefinitions/0/structures/0/updatedAt",
-          "/events/0/drawDefinitions/0/updatedAt",
-          "/factory/timeStamp"
-        ]
-      }
-    ],
-    "src/tests/mutations/matchUps/tieMatchUpLineUpEdges.test.ts::replacing a doubles pair with a pair participant returns the pair creation error": [
-      {
-        "method": "replaceTieMatchUpParticipantId",
-        "error": "ERR_INVALID_PARTICIPANT_IDS",
-        "reason": "F-010",
-        "paths": [
-          "/events/0/drawDefinitions/0/lineUps/9b577638-b20c-4f12-85ad-8e4fe03e0fb3/2",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/lineUp/2",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
-          "/events/0/drawDefinitions/0/structures/0/updatedAt",
-          "/events/0/drawDefinitions/0/updatedAt",
-          "/factory/timeStamp"
-        ]
-      }
-    ],
     "src/tests/mutations/outcome/aLateRefusalIsCompared.test.ts::a refusal planted at carryAfterForward > is a deferred refusal under differential when its code is an apply-stage code": [
       {
         "method": "setMatchUpStatus",
@@ -809,7 +794,9 @@
         "method": "addParticipant",
         "error": "ERR_INVALID_PARTICIPANT_TYPE",
         "reason": "F-018",
-        "paths": ["/participants"]
+        "paths": [
+          "/participants"
+        ]
       }
     ],
     "src/tests/mutations/participants/individualParticipantMerge.test.ts::individual participant merge > preview is pure; transfers data and references, records an alias and refuses resurrection": [
@@ -817,21 +804,10 @@
         "method": "addParticipant",
         "error": "PARTICIPANT_ID_RETIRED",
         "reason": "fixtureStamp",
-        "paths": ["/factory/timeStamp"],
-        "pending": true
-      }
-    ],
-    "src/tests/mutations/participants/team/onePlayerOneTeam.test.ts::one player, one team, per event > replaceTieMatchUpParticipantId refuses another team’s player": [
-      {
-        "method": "replaceTieMatchUpParticipantId",
-        "error": "ERR_SHARED_INDIVIDUAL_PARTICIPANT",
-        "reason": "F-010",
         "paths": [
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
-          "/events/0/drawDefinitions/0/structures/0/updatedAt",
-          "/events/0/drawDefinitions/0/updatedAt",
           "/factory/timeStamp"
-        ]
+        ],
+        "pending": true
       }
     ],
     "src/tests/mutations/scheduling/proConflicts.test.ts::proConflicts - Comprehensive Conflict Detection > prevents double booking of same court slot (courtId, courtOrder, scheduledDate)": [
@@ -839,7 +815,9 @@
         "method": "addMatchUpScheduleItems",
         "error": "ERR_SCHEDULE_CONFLICT_DOUBLE_BOOKING",
         "reason": "F-007",
-        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/1/schedule"]
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/1/schedule"
+        ]
       }
     ],
     "src/tests/mutations/scheduling/scheduleMatchUps.test.ts::[writeMode: legacy] > can schedule many attributes at once": [
@@ -847,19 +825,25 @@
         "method": "addMatchUpScheduleItems",
         "error": "ERR_INVALID_RESUME_TIME",
         "reason": "F-007",
-        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"]
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"
+        ]
       },
       {
         "method": "addMatchUpScheduleItems",
         "error": "ERR_INVALID_STOP_TIME",
         "reason": "F-007",
-        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"]
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"
+        ]
       },
       {
         "method": "addMatchUpScheduleItems",
         "error": "ERR_INVALID_END_TIME",
         "reason": "F-007",
-        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"]
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"
+        ]
       }
     ],
     "src/tests/mutations/scheduling/scheduleMatchUps.test.ts::[writeMode: native] > can schedule many attributes at once": [
@@ -867,19 +851,25 @@
         "method": "addMatchUpScheduleItems",
         "error": "ERR_INVALID_RESUME_TIME",
         "reason": "F-007",
-        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"]
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"
+        ]
       },
       {
         "method": "addMatchUpScheduleItems",
         "error": "ERR_INVALID_STOP_TIME",
         "reason": "F-007",
-        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"]
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"
+        ]
       },
       {
         "method": "addMatchUpScheduleItems",
         "error": "ERR_INVALID_END_TIME",
         "reason": "F-007",
-        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"]
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"
+        ]
       }
     ],
     "src/tests/mutations/scheduling/updatedSchedulingProfile.test.ts::can update a schedulingProfile when venues change": [
@@ -887,7 +877,9 @@
         "method": "addSchedulingProfileRound",
         "error": "ERR_INVALID_VALUES",
         "reason": "F-011",
-        "paths": ["/scheduling/profile/0/venues/0/rounds/1"]
+        "paths": [
+          "/scheduling/profile/0/venues/0/rounds/1"
+        ]
       }
     ],
     "src/tests/mutations/subscriptions/inContextNoticeAfterSuccess.test.ts::updateInContextMatchUp > is never built, nor sent, for a call refused after its write": [
@@ -914,7 +906,10 @@
         "method": "modifyVenue",
         "error": "ERR_SCHEDULED_MATCHUPS",
         "reason": "F-014",
-        "paths": ["/venues/0/venueAbbreviation", "/venues/0/venueName"]
+        "paths": [
+          "/venues/0/venueAbbreviation",
+          "/venues/0/venueName"
+        ]
       }
     ],
     "src/tests/mutations/venues/deleteCourts.test.ts::deleteCourts > stops on first error and preserves remaining courts": [
@@ -939,7 +934,11 @@
         "method": "modifyVenue",
         "error": "ERR_INVALID_TIME",
         "reason": "F-014",
-        "paths": ["/venues/0/courts", "/venues/0/venueAbbreviation", "/venues/0/venueName"]
+        "paths": [
+          "/venues/0/courts",
+          "/venues/0/venueAbbreviation",
+          "/venues/0/venueName"
+        ]
       }
     ],
     "src/tests/refactoring/scheduleCoverage.test.ts::addMatchUpTimeModifiers coverage > returns error for non-array timeModifiers": [
@@ -947,7 +946,9 @@
         "method": "addMatchUpScheduleItems",
         "error": "ERR_INVALID_VALUES",
         "reason": "F-007",
-        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule"]
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule"
+        ]
       }
     ],
     "src/tests/refactoring/scheduleCoverage.test.ts::proConflictDetection in addMatchUpScheduleItems > detects double-booking when proConflictDetection is true": [
@@ -955,7 +956,9 @@
         "method": "addMatchUpScheduleItems",
         "error": "ERR_SCHEDULE_CONFLICT_DOUBLE_BOOKING",
         "reason": "F-007",
-        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/1/schedule"]
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/1/schedule"
+        ]
       }
     ]
   }

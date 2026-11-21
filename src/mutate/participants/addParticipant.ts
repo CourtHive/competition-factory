@@ -1,16 +1,15 @@
-import { generatePairParticipantName } from '@Functions/participants/generatePairParticipantName';
 import { coercePersonSex, isUnrecognizedSex, UNRECOGNIZED_SEX_INFO } from '@Helpers/coercedSex';
 import { retiredParticipantCheck } from '@Query/participants/individualMerge/aliases';
-import { indexParticipant, pairKey, ParticipantsIndex } from './participantsIndex';
+import { indexParticipant, ParticipantsIndex } from './participantsIndex';
 import { normalizePersonNames } from '@Helpers/normalizedPersonName';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { planPairParticipant } from './planPairParticipant';
 import { normalizeGender } from '@Helpers/coercedGender';
 import { addNotice } from '@Global/state/globalState';
 import { collapseWhitespace } from '@Tools/strings';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { planTeamColors } from './teamColors';
-import { intersection } from '@Tools/arrays';
 import { UUID } from '@Tools/UUID';
 
 // constants and types
@@ -20,10 +19,8 @@ import { ADD_PARTICIPANTS } from '@Constants/topicConstants';
 import { TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
-  INVALID_PARTICIPANT_IDS,
   INVALID_PARTICIPANT_TYPE,
   MISSING_PARTICIPANT_ROLE,
-  MISSING_PARTICIPANT_IDS,
   MISSING_PERSON_DETAILS,
   MISSING_TOURNAMENT_RECORD,
   PARTICIPANT_ID_EXISTS,
@@ -78,105 +75,20 @@ function validateBaseParticipant(participant, tournamentRecord, participantsInde
 }
 
 function validatePairParticipant({
-  participant,
-  tournamentParticipants,
-  participantsIndex,
-  pairOverride,
-  allowDuplicateParticipantIdPairs,
   returnParticipant,
-}: {
-  participant: AddParticipantType['participant'];
-  tournamentParticipants: Participant[];
-  participantsIndex?: ParticipantsIndex;
-  pairOverride?: boolean;
-  allowDuplicateParticipantIdPairs?: boolean;
-  returnParticipant?: boolean;
-}) {
-  const stack = 'addParticipant';
-
-  if (participant.person) return { error: INVALID_VALUES, person: participant.person };
-  if (!participant.individualParticipantIds) {
-    return decorateResult({
-      result: { error: MISSING_PARTICIPANT_IDS },
-      stack,
-    });
-  }
-  if (participant.individualParticipantIds.length !== 2 && !pairOverride) {
-    return decorateResult({
-      info: 'PAIR must be 2 individualParticipantIds',
-      result: { error: INVALID_PARTICIPANT_IDS },
-      stack,
-    });
-  }
-
-  const individualParticipantIds =
-    participantsIndex?.individualIds ??
-    new Set(tournamentParticipants.filter((p) => p.participantType === INDIVIDUAL).map((p) => p.participantId));
-
-  if (!Array.isArray(participant.individualParticipantIds))
-    return decorateResult({
-      result: { error: INVALID_PARTICIPANT_IDS },
-      stack,
-    });
-
-  const validPairParticipants = participant.individualParticipantIds.reduce(
-    (valid, participantId) => individualParticipantIds.has(participantId) && valid,
-    true,
-  );
-  if (!validPairParticipants)
-    return decorateResult({
-      result: { error: INVALID_PARTICIPANT_IDS },
-      stack,
-    });
-
-  const existingPairParticipant = findExistingPair({ participant, tournamentParticipants, participantsIndex });
-
-  if (existingPairParticipant && !allowDuplicateParticipantIdPairs) {
+  ...params
+}: Parameters<typeof planPairParticipant>[0] & { returnParticipant?: boolean }) {
+  const pair = planPairParticipant(params);
+  if (pair && 'existing' in pair)
     return {
       earlyReturn: true,
       ...SUCCESS,
       existingParticipant: true,
-      participant: returnParticipant && makeDeepCopy(existingPairParticipant.participant),
+      participant: returnParticipant && makeDeepCopy(pair.existing),
     };
-  }
-
-  if (!participant.participantName) {
-    const individualParticipants = participantsIndex
-      ? pairIndividualsInRecordOrder({ participant, tournamentParticipants, participantsIndex })
-      : tournamentParticipants.filter((tp) => participant.individualParticipantIds?.includes(tp.participantId));
-
-    participant.participantName = generatePairParticipantName({ individualParticipants });
-  }
-
+  if (pair && 'error' in pair) return pair;
+  if (pair && 'participantName' in pair) params.participant.participantName = pair.participantName;
   return undefined;
-}
-
-/**
- * The first PAIR in record order sharing two distinct individualParticipantIds with the participant. The index answers
- * when both pairs hold exactly two distinct ids (a pair with fewer can match nothing); otherwise the record is scanned.
- */
-function findExistingPair({ participant, tournamentParticipants, participantsIndex }) {
-  const distinct = new Set(participant.individualParticipantIds ?? []).size;
-  if (participantsIndex && !participantsIndex.irregularPairs && distinct <= 2) {
-    const key = pairKey(participant.individualParticipantIds);
-    const existing = key ? participantsIndex.pairs.get(key) : undefined;
-    return existing && { individualParticipantIds: existing.individualParticipantIds, participant: existing };
-  }
-  return tournamentParticipants
-    .filter((p) => p.participantType === PAIR)
-    .map((p) => ({ individualParticipantIds: p.individualParticipantIds, participant: p }))
-    .find(
-      (existing) => intersection(existing.individualParticipantIds, participant.individualParticipantIds).length === 2,
-    );
-}
-
-/** the record's participants a pair names, in record order (each once, as a filter of the record gives them) */
-function pairIndividualsInRecordOrder({ participant, tournamentParticipants, participantsIndex }) {
-  const positions = [...new Set<string>(participant.individualParticipantIds ?? [])]
-    .map((id) => participantsIndex.positions.get(id))
-    .filter((position) => position !== undefined)
-    .sort((a, b) => a - b);
-  return positions.map((position) => tournamentParticipants[position]);
 }
 
 function validateTeamGroupParticipant({ participant, tournamentIndividualParticipantIds }) {
