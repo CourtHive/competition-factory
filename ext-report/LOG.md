@@ -1,0 +1,17 @@
+# Work log
+
+## 2026-11-20
+
+- Established the clean three-mode baseline at `7963e36968` and ran spec, type, lint, layering and hydration gates.
+- Ran corpus verification. Its harvest returned 68 failures. Generated deterministic sources individually.
+- Isolated `ext/report` in a local worktree. Added a replay driver and a test-only whole-recording census.
+- Added the missing-edges refusal scenario, ran it in all modes and committed the manifest separately.
+- Ran E1 on 16 authored cases, E2 on generated singles and TEAM draws, and E4 on a public TEAM fixture.
+- Ran the 52-cell matrix in all modes. Reduced two candidate stalls to single seeded invocations.
+
+## 2026-11-21
+
+- Verified v1 TEAM arms and separate commands for actual differential route and deep-correction runs.
+- Corrected a corpus reader string-size failure with line-by-line streaming.
+- Tested a schedule-only native prototype on `ext/v3-schedule`. Corrected its notice prediction.
+- Recorded a remaining assertion that requires the existing ownership boundary.

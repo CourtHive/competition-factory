@@ -1,0 +1,1541 @@
+[
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 41,
+    "calls": 15,
+    "mutationMs": 42.752081999997245,
+    "traversalMs": 58.99937500000124,
+    "index": {
+      "batches": 15,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.3266249999996944,
+      "incrementalMs": 1.5576259999998001,
+      "fullMs": 1.4740420000016456,
+      "shadowEntries": 225
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 42,
+    "calls": 15,
+    "mutationMs": 20.776126000002478,
+    "traversalMs": 31.267916000000696,
+    "index": {
+      "batches": 15,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.13633300000037707,
+      "incrementalMs": 1.224540999997771,
+      "fullMs": 1.117207999999664,
+      "shadowEntries": 225
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 43,
+    "calls": 15,
+    "mutationMs": 17.22712500000307,
+    "traversalMs": 25.64812499999971,
+    "index": {
+      "batches": 15,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.13562500000080036,
+      "incrementalMs": 1.5563339999953314,
+      "fullMs": 0.9041679999972985,
+      "shadowEntries": 225
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 15,
+    "mutationMs": 14.53371000000152,
+    "traversalMs": 23.636124999999083,
+    "index": {
+      "batches": 15,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.12891700000000128,
+      "incrementalMs": 0.9092479999999341,
+      "fullMs": 0.9500030000017432,
+      "shadowEntries": 225
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 15,
+    "mutationMs": 15.803959999999279,
+    "traversalMs": 25.039749999999913,
+    "index": {
+      "batches": 15,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.12674999999944703,
+      "incrementalMs": 0.9647919999970327,
+      "fullMs": 0.831292000002577,
+      "shadowEntries": 225
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 15,
+    "mutationMs": 14.098211000000447,
+    "traversalMs": 22.57037500000115,
+    "index": {
+      "batches": 15,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.11120800000026065,
+      "incrementalMs": 0.833835999990697,
+      "fullMs": 0.815959000001385,
+      "shadowEntries": 225
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 19,
+    "mutationMs": 18.71625199999653,
+    "traversalMs": 27.597584000001007,
+    "index": {
+      "batches": 19,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.1169579999987036,
+      "incrementalMs": 0.9828739999975369,
+      "fullMs": 1.497455999997328,
+      "shadowEntries": 285
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 19,
+    "mutationMs": 18.628625999999713,
+    "traversalMs": 27.113083000000188,
+    "index": {
+      "batches": 19,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.11283299999922747,
+      "incrementalMs": 1.0643750000035652,
+      "fullMs": 1.0120819999938249,
+      "shadowEntries": 285
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 19,
+    "mutationMs": 16.990836000000854,
+    "traversalMs": 25.640625,
+    "index": {
+      "batches": 19,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.11549999999988358,
+      "incrementalMs": 1.3096670000013546,
+      "fullMs": 1.0102070000011736,
+      "shadowEntries": 285
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 41,
+    "calls": 31,
+    "mutationMs": 41.584165999993274,
+    "traversalMs": 69.61137499999859,
+    "index": {
+      "batches": 31,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.198500000000422,
+      "incrementalMs": 2.071795000003476,
+      "fullMs": 2.995457000004535,
+      "shadowEntries": 961
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 42,
+    "calls": 31,
+    "mutationMs": 40.709500999997545,
+    "traversalMs": 68.29204100000061,
+    "index": {
+      "batches": 31,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.20633300000008603,
+      "incrementalMs": 2.3315419999998994,
+      "fullMs": 3.194459000002098,
+      "shadowEntries": 961
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 43,
+    "calls": 31,
+    "mutationMs": 40.287498000001506,
+    "traversalMs": 66.73966699999983,
+    "index": {
+      "batches": 31,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.18891699999949196,
+      "incrementalMs": 2.1242959999981395,
+      "fullMs": 2.848246999996263,
+      "shadowEntries": 961
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 31,
+    "mutationMs": 37.83670700000039,
+    "traversalMs": 66.046875,
+    "index": {
+      "batches": 31,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.2083329999986745,
+      "incrementalMs": 2.388125999999829,
+      "fullMs": 3.4728310000064084,
+      "shadowEntries": 961
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 31,
+    "mutationMs": 30.99425200001133,
+    "traversalMs": 56.50383300000067,
+    "index": {
+      "batches": 31,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.19012499999917054,
+      "incrementalMs": 1.9115830000009737,
+      "fullMs": 2.8148349999937636,
+      "shadowEntries": 961
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 31,
+    "mutationMs": 33.94312699999864,
+    "traversalMs": 61.98962500000016,
+    "index": {
+      "batches": 31,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.1922500000000582,
+      "incrementalMs": 1.939248000002408,
+      "fullMs": 2.873204999994414,
+      "shadowEntries": 961
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 39,
+    "mutationMs": 45.172665999993114,
+    "traversalMs": 77.25766599999952,
+    "index": {
+      "batches": 39,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.19091699999989942,
+      "incrementalMs": 2.430502000004708,
+      "fullMs": 4.075205999997706,
+      "shadowEntries": 1209
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 39,
+    "mutationMs": 45.200747999995656,
+    "traversalMs": 76.96345800000017,
+    "index": {
+      "batches": 39,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.1871659999997064,
+      "incrementalMs": 2.5073339999944437,
+      "fullMs": 3.7454199999938282,
+      "shadowEntries": 1209
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 39,
+    "mutationMs": 43.50354100000368,
+    "traversalMs": 73.23595800000112,
+    "index": {
+      "batches": 39,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.17874999999912689,
+      "incrementalMs": 2.461003000007622,
+      "fullMs": 3.560585999999603,
+      "shadowEntries": 1209
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 41,
+    "calls": 63,
+    "mutationMs": 124.2221600000048,
+    "traversalMs": 225.2691249999989,
+    "index": {
+      "batches": 63,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.36599999999998545,
+      "incrementalMs": 6.185837000008178,
+      "fullMs": 11.511426000000938,
+      "shadowEntries": 3969
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 42,
+    "calls": 63,
+    "mutationMs": 114.73116700000901,
+    "traversalMs": 214.27795900000092,
+    "index": {
+      "batches": 63,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.37629199999901175,
+      "incrementalMs": 6.095290999997815,
+      "fullMs": 11.543089000000691,
+      "shadowEntries": 3969
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 43,
+    "calls": 63,
+    "mutationMs": 111.52387399999498,
+    "traversalMs": 210.85929100000067,
+    "index": {
+      "batches": 63,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.33116599999993923,
+      "incrementalMs": 5.827165000002424,
+      "fullMs": 10.746292999996513,
+      "shadowEntries": 3969
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 63,
+    "mutationMs": 106.48554499999773,
+    "traversalMs": 206.05162500000006,
+    "index": {
+      "batches": 63,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.33666700000139826,
+      "incrementalMs": 5.963332999997874,
+      "fullMs": 10.674251000004006,
+      "shadowEntries": 3969
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 63,
+    "mutationMs": 103.30103999999301,
+    "traversalMs": 199.21041700000023,
+    "index": {
+      "batches": 63,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.3346660000006523,
+      "incrementalMs": 5.928793000008227,
+      "fullMs": 11.222500000005311,
+      "shadowEntries": 3969
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 63,
+    "mutationMs": 98.34699699999692,
+    "traversalMs": 191.46766600000046,
+    "index": {
+      "batches": 63,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.3482499999990978,
+      "incrementalMs": 5.937917000004745,
+      "fullMs": 10.724166000007244,
+      "shadowEntries": 3969
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 79,
+    "mutationMs": 126.1047970000036,
+    "traversalMs": 233.32195800000045,
+    "index": {
+      "batches": 79,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.3318749999998545,
+      "incrementalMs": 6.608126999999513,
+      "fullMs": 13.979992999988099,
+      "shadowEntries": 4977
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 79,
+    "mutationMs": 126.2520010000062,
+    "traversalMs": 233.38858400000026,
+    "index": {
+      "batches": 79,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.3289999999997235,
+      "incrementalMs": 7.035664999995788,
+      "fullMs": 13.342906000010771,
+      "shadowEntries": 4977
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 79,
+    "mutationMs": 121.3641679999946,
+    "traversalMs": 226.49083399999836,
+    "index": {
+      "batches": 79,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.33383300000059535,
+      "incrementalMs": 6.948917000005167,
+      "fullMs": 13.216876999988017,
+      "shadowEntries": 4977
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 41,
+    "calls": 127,
+    "mutationMs": 401.54100299999664,
+    "traversalMs": 778.1560829999999,
+    "index": {
+      "batches": 127,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.615417000000889,
+      "incrementalMs": 18.507245000002513,
+      "fullMs": 42.81321000000389,
+      "shadowEntries": 16129
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 42,
+    "calls": 127,
+    "mutationMs": 348.42595000000983,
+    "traversalMs": 720.7603749999998,
+    "index": {
+      "batches": 127,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.6383750000004511,
+      "incrementalMs": 17.714086000014504,
+      "fullMs": 41.354992999997194,
+      "shadowEntries": 16129
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 43,
+    "calls": 127,
+    "mutationMs": 347.2827580000212,
+    "traversalMs": 721.2331670000003,
+    "index": {
+      "batches": 127,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.6479159999998956,
+      "incrementalMs": 17.167287000014767,
+      "fullMs": 41.0224990000097,
+      "shadowEntries": 16129
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 127,
+    "mutationMs": 323.43824999999197,
+    "traversalMs": 693.7506250000006,
+    "index": {
+      "batches": 127,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.6631669999987935,
+      "incrementalMs": 18.08745499998986,
+      "fullMs": 40.68199999999342,
+      "shadowEntries": 16129
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 127,
+    "mutationMs": 319.0907880000086,
+    "traversalMs": 691.9442080000008,
+    "index": {
+      "batches": 127,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.6355000000003201,
+      "incrementalMs": 16.834585000000516,
+      "fullMs": 41.28946299998279,
+      "shadowEntries": 16129
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 127,
+    "mutationMs": 319.42904299998554,
+    "traversalMs": 688.2907919999998,
+    "index": {
+      "batches": 127,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.6269169999977748,
+      "incrementalMs": 17.773368000001938,
+      "fullMs": 40.695038999987446,
+      "shadowEntries": 16129
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 159,
+    "mutationMs": 418.0599670000083,
+    "traversalMs": 842.4310000000005,
+    "index": {
+      "batches": 159,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.6564589999979944,
+      "incrementalMs": 20.716125000013562,
+      "fullMs": 52.76862599999731,
+      "shadowEntries": 20193
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 159,
+    "mutationMs": 412.75807400001213,
+    "traversalMs": 836.2297500000022,
+    "index": {
+      "batches": 159,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.6328340000000026,
+      "incrementalMs": 20.889664999980596,
+      "fullMs": 53.5699540000096,
+      "shadowEntries": 20193
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 159,
+    "mutationMs": 427.05807999998433,
+    "traversalMs": 853.0618749999994,
+    "index": {
+      "batches": 159,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.6564169999983278,
+      "incrementalMs": 22.931330999996135,
+      "fullMs": 54.17070899999817,
+      "shadowEntries": 20193
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 41,
+    "calls": 255,
+    "mutationMs": 1467.8585059999787,
+    "traversalMs": 3337.1819590000014,
+    "index": {
+      "batches": 255,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 1.2316659999996773,
+      "incrementalMs": 65.13566899998477,
+      "fullMs": 167.6737999999641,
+      "shadowEntries": 65025
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 42,
+    "calls": 255,
+    "mutationMs": 1272.7305819999965,
+    "traversalMs": 2869.6307500000003,
+    "index": {
+      "batches": 255,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 1.8986670000012964,
+      "incrementalMs": 62.82928000000538,
+      "fullMs": 166.55775399995764,
+      "shadowEntries": 65025
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 43,
+    "calls": 255,
+    "mutationMs": 1273.6570440000141,
+    "traversalMs": 2857.7547909999994,
+    "index": {
+      "batches": 255,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 1.8827500000006694,
+      "incrementalMs": 63.45882700000584,
+      "fullMs": 167.28687499999796,
+      "shadowEntries": 65025
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 255,
+    "mutationMs": 1179.956238999992,
+    "traversalMs": 2768.0415420000027,
+    "index": {
+      "batches": 255,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 1.2143329999998969,
+      "incrementalMs": 63.892378000015015,
+      "fullMs": 165.97213599996758,
+      "shadowEntries": 65025
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 255,
+    "mutationMs": 1174.9191619999838,
+    "traversalMs": 2993.2392910000053,
+    "index": {
+      "batches": 255,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 1.2258749999964493,
+      "incrementalMs": 63.34598900004494,
+      "fullMs": 165.4167480000906,
+      "shadowEntries": 65025
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 255,
+    "mutationMs": 1186.4571590000342,
+    "traversalMs": 3027.1170830000046,
+    "index": {
+      "batches": 255,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 1.2865410000013071,
+      "incrementalMs": 62.60291400002461,
+      "fullMs": 167.57938299996022,
+      "shadowEntries": 65025
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 319,
+    "mutationMs": 1570.9486640000468,
+    "traversalMs": 3399.133249999999,
+    "index": {
+      "batches": 319,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 1.2417079999941052,
+      "incrementalMs": 82.33870199994999,
+      "fullMs": 214.56451999997807,
+      "shadowEntries": 81345
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 319,
+    "mutationMs": 1579.3508709998787,
+    "traversalMs": 3379.8937499999956,
+    "index": {
+      "batches": 319,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 1.2732089999990421,
+      "incrementalMs": 82.05703600008565,
+      "fullMs": 218.07113299988123,
+      "shadowEntries": 81345
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 319,
+    "mutationMs": 1552.477198000066,
+    "traversalMs": 3347.128917000002,
+    "index": {
+      "batches": 319,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 1.2538750000021537,
+      "incrementalMs": 80.62934599995788,
+      "fullMs": 217.48282100007782,
+      "shadowEntries": 81345
+    }
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 41,
+    "calls": 7,
+    "mutationMs": 25.925084000002244,
+    "traversalMs": 44.05129200000374,
+    "index": {
+      "batches": 7,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.8488330000036513,
+      "incrementalMs": 1.7308320000011008,
+      "fullMs": 3.0640419999908772,
+      "shadowEntries": 490
+    }
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 42,
+    "calls": 7,
+    "mutationMs": 20.133123999992677,
+    "traversalMs": 37.51670799999556,
+    "index": {
+      "batches": 7,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.6100829999995767,
+      "incrementalMs": 1.4482090000092285,
+      "fullMs": 2.8602930000051856,
+      "shadowEntries": 490
+    }
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 43,
+    "calls": 7,
+    "mutationMs": 21.535209000008763,
+    "traversalMs": 36.61808299999393,
+    "index": {
+      "batches": 7,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.5455409999995027,
+      "incrementalMs": 1.3947499999994761,
+      "fullMs": 4.035749999980908,
+      "shadowEntries": 490
+    }
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 7,
+    "mutationMs": 18.326082999999926,
+    "traversalMs": 34.930292000004556,
+    "index": {
+      "batches": 7,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.5549160000009579,
+      "incrementalMs": 1.423707000016293,
+      "fullMs": 2.7632489999887184,
+      "shadowEntries": 490
+    }
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 7,
+    "mutationMs": 18.69866799999727,
+    "traversalMs": 35.806375000000116,
+    "index": {
+      "batches": 7,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.5705000000016298,
+      "incrementalMs": 1.4094179999956395,
+      "fullMs": 2.8722500000003492,
+      "shadowEntries": 490
+    }
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 7,
+    "mutationMs": 18.29216699999961,
+    "traversalMs": 34.8290829999969,
+    "index": {
+      "batches": 7,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.5570000000006985,
+      "incrementalMs": 1.3345010000048205,
+      "fullMs": 2.5745829999941634,
+      "shadowEntries": 490
+    }
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 9,
+    "mutationMs": 23.94504300000699,
+    "traversalMs": 41.47270800000115,
+    "index": {
+      "batches": 9,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.5475839999999152,
+      "incrementalMs": 1.7864160000026459,
+      "fullMs": 3.3434590000106255,
+      "shadowEntries": 630
+    }
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 9,
+    "mutationMs": 22.825877000002947,
+    "traversalMs": 39.91279200000281,
+    "index": {
+      "batches": 9,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.5244160000002012,
+      "incrementalMs": 1.668206000009377,
+      "fullMs": 3.326500000002852,
+      "shadowEntries": 630
+    }
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 9,
+    "mutationMs": 23.492832999989332,
+    "traversalMs": 40.91812500000378,
+    "index": {
+      "batches": 9,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.5224579999994603,
+      "incrementalMs": 1.6981249999953434,
+      "fullMs": 3.312960999988718,
+      "shadowEntries": 630
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 41,
+    "calls": 15,
+    "mutationMs": 66.1552920000031,
+    "traversalMs": 132.30574999999953,
+    "index": {
+      "batches": 15,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 1.0524590000059106,
+      "incrementalMs": 3.4903750000012224,
+      "fullMs": 12.622708000017155,
+      "shadowEntries": 2250
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 42,
+    "calls": 15,
+    "mutationMs": 58.674831000003906,
+    "traversalMs": 130.72124999999505,
+    "index": {
+      "batches": 15,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 1.061374999997497,
+      "incrementalMs": 3.3877920000086306,
+      "fullMs": 9.616206999991846,
+      "shadowEntries": 2250
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 43,
+    "calls": 15,
+    "mutationMs": 50.059914999998,
+    "traversalMs": 95.09737499999756,
+    "index": {
+      "batches": 15,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.7634580000012647,
+      "incrementalMs": 3.0180010000040056,
+      "fullMs": 7.496959999996761,
+      "shadowEntries": 2250
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 15,
+    "mutationMs": 47.429415000005974,
+    "traversalMs": 92.72691699999996,
+    "index": {
+      "batches": 15,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.7244579999969574,
+      "incrementalMs": 2.7279580000031274,
+      "fullMs": 8.270874000008916,
+      "shadowEntries": 2250
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 15,
+    "mutationMs": 45.97883200000069,
+    "traversalMs": 90.90245799999684,
+    "index": {
+      "batches": 15,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.7387500000040745,
+      "incrementalMs": 2.71641800001089,
+      "fullMs": 7.148665999986406,
+      "shadowEntries": 2250
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 15,
+    "mutationMs": 45.0319190000082,
+    "traversalMs": 87.60775000000285,
+    "index": {
+      "batches": 15,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.7182919999977457,
+      "incrementalMs": 2.8232939999943483,
+      "fullMs": 7.131458000003477,
+      "shadowEntries": 2250
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 19,
+    "mutationMs": 56.0881279999885,
+    "traversalMs": 104.49770799999533,
+    "index": {
+      "batches": 19,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.7418330000000424,
+      "incrementalMs": 3.242456999978458,
+      "fullMs": 8.981626000000688,
+      "shadowEntries": 2850
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 19,
+    "mutationMs": 55.09533199998987,
+    "traversalMs": 101.20333299999766,
+    "index": {
+      "batches": 19,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.7026660000046832,
+      "incrementalMs": 3.159293000018806,
+      "fullMs": 8.776085000012245,
+      "shadowEntries": 2850
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 19,
+    "mutationMs": 58.00045900000987,
+    "traversalMs": 102.77754100000311,
+    "index": {
+      "batches": 19,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 0.7166670000005979,
+      "incrementalMs": 3.2548750000132713,
+      "fullMs": 9.788875000012922,
+      "shadowEntries": 2850
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 41,
+    "calls": 31,
+    "mutationMs": 166.58720999999787,
+    "traversalMs": 333.73416599999473,
+    "index": {
+      "batches": 31,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 1.3761670000021695,
+      "incrementalMs": 8.344921999996586,
+      "fullMs": 32.44566499999928,
+      "shadowEntries": 9610
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 42,
+    "calls": 31,
+    "mutationMs": 162.1180849999946,
+    "traversalMs": 328.21654200000194,
+    "index": {
+      "batches": 31,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 1.385416000004625,
+      "incrementalMs": 7.544790000021749,
+      "fullMs": 32.89891900001385,
+      "shadowEntries": 9610
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 43,
+    "calls": 31,
+    "mutationMs": 161.42528799999127,
+    "traversalMs": 333.5694999999978,
+    "index": {
+      "batches": 31,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 1.3882079999966663,
+      "incrementalMs": 7.676622000042698,
+      "fullMs": 30.484665000003588,
+      "shadowEntries": 9610
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 31,
+    "mutationMs": 152.98054399997636,
+    "traversalMs": 318.16387499999837,
+    "index": {
+      "batches": 31,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 1.368624999995518,
+      "incrementalMs": 8.10458199999266,
+      "fullMs": 32.420081999989634,
+      "shadowEntries": 9610
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 31,
+    "mutationMs": 153.43283299999166,
+    "traversalMs": 327.6262080000015,
+    "index": {
+      "batches": 31,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 1.4546249999984866,
+      "incrementalMs": 7.507704999981797,
+      "fullMs": 31.64699800001108,
+      "shadowEntries": 9610
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 31,
+    "mutationMs": 153.01591500001086,
+    "traversalMs": 328.5613749999975,
+    "index": {
+      "batches": 31,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 1.4179169999988517,
+      "incrementalMs": 7.72296099999221,
+      "fullMs": 31.3300429999872,
+      "shadowEntries": 9610
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 39,
+    "mutationMs": 196.91133499996067,
+    "traversalMs": 390.00379200000316,
+    "index": {
+      "batches": 39,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 1.4730839999974705,
+      "incrementalMs": 9.94050199996127,
+      "fullMs": 37.97033399998327,
+      "shadowEntries": 12090
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 39,
+    "mutationMs": 193.68712600001163,
+    "traversalMs": 388.46841599999607,
+    "index": {
+      "batches": 39,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 1.3823750000010477,
+      "incrementalMs": 8.845288000040455,
+      "fullMs": 41.129960999991454,
+      "shadowEntries": 12090
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 39,
+    "mutationMs": 196.1937109999708,
+    "traversalMs": 389.8352500000037,
+    "index": {
+      "batches": 39,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 1.5270830000008573,
+      "incrementalMs": 9.051750000013271,
+      "fullMs": 38.381539000016346,
+      "shadowEntries": 12090
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 41,
+    "calls": 63,
+    "mutationMs": 615.5435390000493,
+    "traversalMs": 1418.4497499999998,
+    "index": {
+      "batches": 63,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 2.926500000001397,
+      "incrementalMs": 24.96395599997777,
+      "fullMs": 125.75170599996636,
+      "shadowEntries": 39690
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 42,
+    "calls": 63,
+    "mutationMs": 598.4774559999714,
+    "traversalMs": 1313.0244999999995,
+    "index": {
+      "batches": 63,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 2.868792000001122,
+      "incrementalMs": 23.684539000074437,
+      "fullMs": 130.139290000021,
+      "shadowEntries": 39690
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 43,
+    "calls": 63,
+    "mutationMs": 594.9106670000183,
+    "traversalMs": 1306.7198749999952,
+    "index": {
+      "batches": 63,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 3.1364580000008573,
+      "incrementalMs": 24.19171199999255,
+      "fullMs": 129.50037500000326,
+      "shadowEntries": 39690
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 63,
+    "mutationMs": 561.3549550000098,
+    "traversalMs": 1270.0440839999937,
+    "index": {
+      "batches": 63,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 2.801207999997132,
+      "incrementalMs": 23.27924799996981,
+      "fullMs": 127.5180779999937,
+      "shadowEntries": 39690
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 63,
+    "mutationMs": 556.3991640000313,
+    "traversalMs": 1261.8399170000048,
+    "index": {
+      "batches": 63,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 2.8841669999965234,
+      "incrementalMs": 23.601961000029405,
+      "fullMs": 128.33891100001347,
+      "shadowEntries": 39690
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 63,
+    "mutationMs": 570.7253280000077,
+    "traversalMs": 1287.623249999997,
+    "index": {
+      "batches": 63,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 2.9584580000009737,
+      "incrementalMs": 25.097748000021966,
+      "fullMs": 131.5658749999784,
+      "shadowEntries": 39690
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 79,
+    "mutationMs": 720.6940049999976,
+    "traversalMs": 1515.5527920000022,
+    "index": {
+      "batches": 79,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 2.918874999995751,
+      "incrementalMs": 28.02779100000771,
+      "fullMs": 161.16274899998825,
+      "shadowEntries": 49770
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 79,
+    "mutationMs": 721.6892920000028,
+    "traversalMs": 1511.822208000005,
+    "index": {
+      "batches": 79,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 2.8726669999959995,
+      "incrementalMs": 30.128625000012107,
+      "fullMs": 156.2825420000081,
+      "shadowEntries": 49770
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 79,
+    "mutationMs": 746.0181200000079,
+    "traversalMs": 1618.320499999987,
+    "index": {
+      "batches": 79,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 2.8887499999982538,
+      "incrementalMs": 30.427789999870583,
+      "fullMs": 158.0100029999303,
+      "shadowEntries": 49770
+    }
+  }
+]

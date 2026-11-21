@@ -1,0 +1,731 @@
+[
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 41,
+    "calls": 15,
+    "mutationMs": 31.2554590000002,
+    "traversalMs": 44.52629100000013
+  },
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 42,
+    "calls": 15,
+    "mutationMs": 12.162623999999596,
+    "traversalMs": 20.69729200000006
+  },
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 43,
+    "calls": 15,
+    "mutationMs": 10.86533200000008,
+    "traversalMs": 18.529708000000028
+  },
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 15,
+    "mutationMs": 9.531458999999813,
+    "traversalMs": 15.987165999999888
+  },
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 15,
+    "mutationMs": 9.027125999999726,
+    "traversalMs": 15.625332999999955
+  },
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 15,
+    "mutationMs": 8.350664000000506,
+    "traversalMs": 15.217375000000175
+  },
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 19,
+    "mutationMs": 11.424791000000141,
+    "traversalMs": 18.463458000000173
+  },
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 19,
+    "mutationMs": 10.441331000000446,
+    "traversalMs": 17.323249999999916
+  },
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 19,
+    "mutationMs": 10.206793000000516,
+    "traversalMs": 16.852208999999903
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 41,
+    "calls": 31,
+    "mutationMs": 27.06687100000022,
+    "traversalMs": 50.7147080000002
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 42,
+    "calls": 31,
+    "mutationMs": 23.670290000000705,
+    "traversalMs": 46.839082999999846
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 43,
+    "calls": 31,
+    "mutationMs": 23.556751000000304,
+    "traversalMs": 46.78520800000001
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 31,
+    "mutationMs": 21.110790999999153,
+    "traversalMs": 44.348792
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 31,
+    "mutationMs": 21.571626000000606,
+    "traversalMs": 44.193833999999924
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 31,
+    "mutationMs": 19.770747000000256,
+    "traversalMs": 42.92887500000006
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 39,
+    "mutationMs": 25.836540000000923,
+    "traversalMs": 51.29304100000013
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 39,
+    "mutationMs": 26.890332999999828,
+    "traversalMs": 52.74525000000017
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 39,
+    "mutationMs": 24.225336000000198,
+    "traversalMs": 48.84137499999997
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 41,
+    "calls": 63,
+    "mutationMs": 74.91687800000045,
+    "traversalMs": 158.08375
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 42,
+    "calls": 63,
+    "mutationMs": 68.45429200000012,
+    "traversalMs": 154.33175000000028
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 43,
+    "calls": 63,
+    "mutationMs": 62.94146299999966,
+    "traversalMs": 144.96008299999994
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 63,
+    "mutationMs": 54.829335999997966,
+    "traversalMs": 136.05545900000016
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 63,
+    "mutationMs": 53.770919000000504,
+    "traversalMs": 133.47758299999987
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 63,
+    "mutationMs": 53.54595999999901,
+    "traversalMs": 132.43837499999972
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 79,
+    "mutationMs": 69.28429100000176,
+    "traversalMs": 159.69087500000023
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 79,
+    "mutationMs": 70.24504000000206,
+    "traversalMs": 160.81758299999956
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 79,
+    "mutationMs": 68.33979199999885,
+    "traversalMs": 158.4026670000003
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 41,
+    "calls": 127,
+    "mutationMs": 244.08950099999856,
+    "traversalMs": 561.3917499999998
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 42,
+    "calls": 127,
+    "mutationMs": 200.55108200000222,
+    "traversalMs": 516.8518750000003
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 43,
+    "calls": 127,
+    "mutationMs": 199.75811699999485,
+    "traversalMs": 516.7824170000004
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 127,
+    "mutationMs": 196.6082069999984,
+    "traversalMs": 523.988042
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 127,
+    "mutationMs": 199.18809099999908,
+    "traversalMs": 527.0385419999993
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 127,
+    "mutationMs": 187.25304700000834,
+    "traversalMs": 504.6743749999996
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 159,
+    "mutationMs": 240.52203700000337,
+    "traversalMs": 604.7002919999995
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 159,
+    "mutationMs": 236.03646799999842,
+    "traversalMs": 596.9326659999997
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 159,
+    "mutationMs": 229.1503300000022,
+    "traversalMs": 589.751291999999
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 41,
+    "calls": 255,
+    "mutationMs": 890.8374129999938,
+    "traversalMs": 2466.991084000001
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 42,
+    "calls": 255,
+    "mutationMs": 748.6477010000071,
+    "traversalMs": 2333.287042
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 43,
+    "calls": 255,
+    "mutationMs": 781.3448279999993,
+    "traversalMs": 2401.9942499999997
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 255,
+    "mutationMs": 682.297914000028,
+    "traversalMs": 2041.7279580000013
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 255,
+    "mutationMs": 705.0374589999847,
+    "traversalMs": 2097.5356250000004
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 255,
+    "mutationMs": 679.6209970000018,
+    "traversalMs": 2050.419582999999
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 319,
+    "mutationMs": 913.177465999961,
+    "traversalMs": 2506.2130830000024
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 319,
+    "mutationMs": 897.3191510000433,
+    "traversalMs": 2468.8230000000003
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 319,
+    "mutationMs": 887.3718780000418,
+    "traversalMs": 2474.570917000001
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 41,
+    "calls": 7,
+    "mutationMs": 11.870208000000275,
+    "traversalMs": 23.159707999999227
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 42,
+    "calls": 7,
+    "mutationMs": 8.621040999998513,
+    "traversalMs": 18.472999999998137
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 43,
+    "calls": 7,
+    "mutationMs": 8.302000000006956,
+    "traversalMs": 17.561875000003056
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 7,
+    "mutationMs": 7.4542919999985315,
+    "traversalMs": 16.30158300000039
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 7,
+    "mutationMs": 7.000666999992973,
+    "traversalMs": 15.524874999999156
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 7,
+    "mutationMs": 6.619665000001987,
+    "traversalMs": 15.228666999999405
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 9,
+    "mutationMs": 9.367832999996608,
+    "traversalMs": 19.04583300000013
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 9,
+    "mutationMs": 9.172419000005902,
+    "traversalMs": 18.032666999999492
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 9,
+    "mutationMs": 8.967832000005728,
+    "traversalMs": 18.45195800000147
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 41,
+    "calls": 15,
+    "mutationMs": 25.91345899999942,
+    "traversalMs": 62.81645800000115
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 42,
+    "calls": 15,
+    "mutationMs": 25.229623000002903,
+    "traversalMs": 61.4824170000029
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 43,
+    "calls": 15,
+    "mutationMs": 22.918044000005466,
+    "traversalMs": 57.40604099999837
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 15,
+    "mutationMs": 22.69662800000151,
+    "traversalMs": 58.10362499999974
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 15,
+    "mutationMs": 21.61233299999367,
+    "traversalMs": 56.68404200000077
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 15,
+    "mutationMs": 21.76862600000095,
+    "traversalMs": 56.83295900000303
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 19,
+    "mutationMs": 27.161001999997097,
+    "traversalMs": 64.3782910000009
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 19,
+    "mutationMs": 29.13129200000185,
+    "traversalMs": 67.91258299999754
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 19,
+    "mutationMs": 27.513415999990684,
+    "traversalMs": 66.36108299999978
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 41,
+    "calls": 31,
+    "mutationMs": 81.35266500000944,
+    "traversalMs": 224.07983400000012
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 42,
+    "calls": 31,
+    "mutationMs": 81.08158400001048,
+    "traversalMs": 226.778624999999
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 43,
+    "calls": 31,
+    "mutationMs": 78.22854199999347,
+    "traversalMs": 219.05983300000298
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 31,
+    "mutationMs": 72.47991599998932,
+    "traversalMs": 214.1736669999991
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 31,
+    "mutationMs": 73.60178899999664,
+    "traversalMs": 215.45699999999852
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 31,
+    "mutationMs": 72.06958399999712,
+    "traversalMs": 214.49129099999845
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 39,
+    "mutationMs": 98.27316599999176,
+    "traversalMs": 259.17604199999914
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 39,
+    "mutationMs": 95.70008500000404,
+    "traversalMs": 256.3712909999995
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 39,
+    "mutationMs": 99.49929499999416,
+    "traversalMs": 264.4758750000001
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 41,
+    "calls": 63,
+    "mutationMs": 302.76616899997316,
+    "traversalMs": 899.5902500000011
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 42,
+    "calls": 63,
+    "mutationMs": 298.9593309999982,
+    "traversalMs": 980.3579160000008
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 43,
+    "calls": 63,
+    "mutationMs": 296.5685820000217,
+    "traversalMs": 980.1232919999966
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 63,
+    "mutationMs": 269.2289629999941,
+    "traversalMs": 946.6199590000033
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 63,
+    "mutationMs": 269.3895060000141,
+    "traversalMs": 858.0220830000035
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 63,
+    "mutationMs": 266.78591900000174,
+    "traversalMs": 850.6323330000014
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 79,
+    "mutationMs": 344.7414190000127,
+    "traversalMs": 1011.466290999997
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 79,
+    "mutationMs": 354.17629400001897,
+    "traversalMs": 1026.471375000001
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 79,
+    "mutationMs": 347.9219180000073,
+    "traversalMs": 1017.7562499999985
+  }
+]
