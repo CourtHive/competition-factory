@@ -1,4 +1,3 @@
-import { expectRecordedWhole, playCall, prepareCall } from '@Tests/testHarness/outcome/recordedCallHarness';
 import { addNotice, deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
 import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
@@ -11,6 +10,12 @@ import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { nowIso, setClock } from '@Tools/clock';
 import { randomSource } from '@Tools/prng';
+import {
+  expectPlayedParity,
+  expectRecordedWhole,
+  playCall,
+  prepareCall,
+} from '@Tests/testHarness/outcome/recordedCallHarness';
 
 // constants and types
 import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
@@ -257,7 +262,7 @@ describe('a recording a settle predicate finds work on, where the passes themsel
         settle.fault = undefined;
         expect(settle.onCopy).toEqual(2);
         expect(actual.v1Writes).toBeGreaterThan(0);
-        expect({ ...actual, v1Writes: 0 }).toEqual({ ...v1, v1Writes: 0 });
+        expectPlayedParity(actual, v1);
       }
       expect({ abstained: tally(`shadow:abstain:${reason}`), applied: tally('shadow:applied') }).toEqual({
         abstained: before.abstained + 1,

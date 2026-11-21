@@ -1,4 +1,5 @@
 import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { captureReturn, expectReturnParity } from '@Tests/testHarness/outcome/returnParity';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import * as stateWriter from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import * as recording from '@Mutate/matchUps/outcome/plan/recordedCall';
@@ -79,18 +80,19 @@ function play(mode: OutcomePipelineMode, prepared: any, { matchUpId, outcome, pa
   });
   setOutcomePipeline(mode);
   setClock('2026-10-25T00:01:00.000Z');
-  const { stack, ...result }: any = tournamentEngine.setMatchUpStatus({
-    outcome: structuredClone(outcome),
-    drawId: 'd',
-    matchUpId,
-    ...params,
-  });
+  const returned = captureReturn(
+    tournamentEngine.setMatchUpStatus({
+      outcome: structuredClone(outcome),
+      drawId: 'd',
+      matchUpId,
+      ...params,
+    }),
+  );
   return {
     record: canonicalJson(tournamentEngine.getTournament().tournamentRecord),
-    graph: storedGraph(result),
-    arrayStack: Array.isArray(stack),
-    material: result,
-    result: canonicalJson(result),
+    graph: storedGraph(returned.result),
+    returned,
+    result: canonicalJson(returned.result),
     notices,
   };
 }
@@ -104,8 +106,7 @@ function alike(prepared: any, call: Call, context?: string, assertNative = false
     writer?.mockClear();
     const actual = play(mode, prepared, call);
     if (writer && mode === OUTCOME_PIPELINE_V2) expect(writer).not.toHaveBeenCalled();
-    if (v1.arrayStack) expect(actual.arrayStack, context).toBe(true);
-    expect(actual.material, context).toStrictEqual(v1.material);
+    expectReturnParity(actual.returned, v1.returned, context);
     expect(actual.record, context).toEqual(v1.record);
     expect(actual.notices, context).toEqual(v1.notices);
     expect(actual.graph, context).toEqual(v1.graph);
@@ -245,6 +246,6 @@ it('preserves the public error fields and diagnostic array on a refused lucky ou
   generate(8);
   const { matchUpId } = drawMatchUps().find((matchUp) => matchUp.roundNumber === 1);
   const refused = alike(stored(), { matchUpId, outcome: { matchUpStatus: 'INVALID_STATUS' } });
-  expect(refused.material.error).toBeDefined();
-  expect(refused.arrayStack).toBe(true);
+  expect(refused.returned.result.error).toBeDefined();
+  expect(refused.returned.arrayStack).toBe(true);
 });
