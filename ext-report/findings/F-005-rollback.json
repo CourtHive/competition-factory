@@ -1,0 +1,30 @@
+{
+  "totals": {
+    "scenarios": 2,
+    "steps": 2,
+    "disagreements": 2,
+    "commonDrift": 0
+  },
+  "differences": [
+    {
+      "file": "controls.jsonl",
+      "scenarioId": "recorded/src/tests/mutations/outcome/recordedteamcall/along-a-seeded-walk-of-a-team-draw-a-call-a-recording-is-asked-for-leaves-what-v1-s-write-leaves-feed-in-championship-8/part-294",
+      "disagreement": true,
+      "v1": [],
+      "v2": [],
+      "differential": {
+        "exception": "outcome pipeline divergence on 5ce12016-ac81-45fc-9d65-21b4f0eac231: v1 ERR_EXISTING_POSITION_ASSIGNMENT, v2 ok"
+      }
+    },
+    {
+      "file": "controls.jsonl",
+      "scenarioId": "recorded/src/tests/mutations/outcome/recordedteamcall/along-a-seeded-walk-of-a-team-draw-a-call-a-recording-is-asked-for-leaves-what-v1-s-write-leaves-single-elimination-8-of-7-laver-cup/part-216",
+      "disagreement": true,
+      "v1": [],
+      "v2": [],
+      "differential": {
+        "exception": "outcome pipeline divergence on 381c0a87-0e9e-4c97-8b58-cbed105f280c: v1 ERR_EXISTING_POSITION_ASSIGNMENT, v2 ok"
+      }
+    }
+  ]
+}

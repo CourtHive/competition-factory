@@ -1,6 +1,6 @@
 import { resetIndexExperiment } from '@Tests/testHarness/outcomeExternalIndex';
 import { nextPlayable } from '@Tests/testHarness/exitPropagation/driver';
-import { setOutcomePipeline } from '@Global/state/globalState';
+import { getOutcomePipeline, setOutcomePipeline } from '@Global/state/globalState';
 import { readFileSync, writeFileSync } from 'node:fs';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -73,6 +73,7 @@ function measure(drawSize: number, eventType: typeof SINGLES | typeof TEAM, work
   expect(nextPlayable(drawId)).toBeUndefined();
   const index = resetIndexExperiment();
   return {
+    pipeline: getOutcomePipeline(),
     drawSize,
     eventType,
     workload,

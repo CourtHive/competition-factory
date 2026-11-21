@@ -12,12 +12,13 @@ For the controlling agent, start with the [v3 review handoff](V3_REVIEW.md).
 - **VERIFIED** Two TEAM presets reached a shared `STALLED_POSITION` report on generated odd fields. The four-position
   controls passed. Whether to change the audit or setup needs a ruling.
 - **VERIFIED** The suite census counted 9,397 successful recordings. Exit, cascade and TEAM account for 77%.
-- **VERIFIED** Harvest replay found two distinct TEAM partial writes and differential failures.
+- **VERIFIED** Two harvested TEAM inputs expose one shared-writer atomicity defect in released 7.44.0.
 - **VERIFIED** A schedule-only prototype exposed a notice assumption and then an existing ownership assertion.
-- **VERIFIED** The authored E1 pilot needed no extra writes. The E2 singles mutation curve grew 3.9× from 128 to 256
-  positions for about 2× the calls.
+- **VERIFIED** E1 found no extra writes on the measured calls. In the quiet v2 E2 run, scored TEAM draws took 9.08 ms/call at 128 positions and 19.14 ms/call at 256 (127 and 255 calls).
 
 ## 2. Baseline
+
+**VERIFIED** Release tag `v7.44.0` (`98a7200e48`) contains the baseline. The outcome pipeline, matchUpStatus implementation and held-seat predicate have no diff from baseline to inspected `origin/dev` at `1b0e927bf8`. In 7.44.0 v2 became the default. V1 remains selectable in 7.x. Production v3 follows the first shipped sole-mode release, scheduled for 8.0 when the selector is removed.
 
 **VERIFIED** `7963e369686f0c13cc18b57cfd8f09da918351ac`, Node 26.8.1, UTC, six workers.
 
@@ -60,6 +61,22 @@ to the harvested expectation. The replay ledger provides exact scenario IDs for 
 of shared drift. The official coverage reader independently fails on the 1.08 GB JSONL file because it reads each
 complete file as one string. The deterministic-source coverage comparison below is independent of that exception.
 
+### Harvest drift triage
+
+**VERIFIED.** Joined all 949 common-drift ledger rows (2.27% of 41,829 scenarios) to their original directives and recorded results across 172 source files. Classify once per scenario in the order shown. A normalized directive result is success or the error code. For a step omitted from the mismatch ledger, both its result and state hash matched the stored expectation. [Classification script](../scripts/ext/triageHarvestDrift.mjs) · [per-scenario classifications](harvest-drift-triage.json)
+
+| First applicable observation                                  | Scenarios | Interpretation                                                                                                                                            |
+| ------------------------------------------------------------- | --------: | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Replay threw                                                  |         3 | All three are scheduling-conflict cases and throw while reading `matchUpIds` from an undefined value. Investigate replay setup and scheduling separately. |
+| Initial hash differs                                          |        15 | The loaded state diverges before the first directive. Check normalization and state restoration first.                                                    |
+| A directive result differs                                    |       202 | At least one success or error code differs from the recorded result. Inspect missing prerequisites before attributing a case to the engine.               |
+| Results agree and replay stays at the initial hash throughout |        31 | At least one recorded step expects a state change.                                                                                                        |
+| Results agree and replay changes state                        |       698 | At least one post-step hash differs. `setMatchUpStatus` is the first mismatching directive in 234. Compare field-level deltas and captured context.       |
+
+**Two cases traced.** The head-to-head test generates draws, completes them and calls `addDrawDefinition`. Its harvested scenario contains nine `generateDrawDefinition` directives. The first hash matches, then eight patches add draws while the replay hash stays at its initial value. The missing additions explain this drift. In the mocks-source scenario ending in `part-2`, the initial event has no draw. Two `addEventEntries` directives precede a `setMatchUpStatus` whose recorded patch introduces a whole draw. Replay returns `ERR_NOT_FOUND_DRAWDEF`. Neither directive prefix constructs the state required by the recorded expectation. [Head-to-head source](../src/analyze/report/tests/headtohead.test.ts) · [harvest recorder](../src/tests/testHarness/corpus/recorder.ts)
+
+**Assessment.** The classifications describe symptoms. The two incomplete captures establish a harness problem for those examples. Root causes for the other 947 remain open. Resolve or explicitly account for shared drift before using the harvest as a release gate. Differential exposes mode disagreements. The unchanged-record invariant independently diagnoses F-005 even when both standalone modes produce the same incorrect state.
+
 ## 3. Findings
 
 | ID    | Class      | Title                                                                   | Severity                        | Repro                                                                          | Spec                    | Verified          |
@@ -68,7 +85,7 @@ complete file as one string. The deterministic-source coverage comparison below 
 | F-002 | G          | Odd TEAM fields can end a generated walk with a stalled downstream seat | Low pending adjudication        | `src/tests/mutations/exitPropagation/outcomeExternalTeamStall.test.ts`         | §§ 5–6, TEAM completion | Yes, audit result |
 | F-003 | G          | Bare winner re-entry retains a blank score                              | Low                             | `src/tests/mutations/exitPropagation/outcomeExternalLaws.test.ts`              | §§ 3–4                  | Yes               |
 | F-004 | T, harness | Harvested corpus exceeds coverage reader string limit                   | Medium for corpus qualification | `src/tests/corpus/coverage.test.ts`                                            | § 8, corpus README      | Yes               |
-| F-005 | P, D       | TEAM retirement writes before a held-seat refusal                       | High                            | `src/tests/mutations/exitPropagation/outcomeExternalDifferentialRepro.test.ts` | row 31, § 6             | Yes               |
+| F-005 | P, D       | TEAM retirement writes before a held-seat refusal                       | Moderate for direct callers     | `src/tests/mutations/exitPropagation/outcomeExternalDifferentialRepro.test.ts` | row 31, § 6             | Yes               |
 
 ## 4. Corpus extension
 
@@ -155,24 +172,35 @@ notice count. All 85 step hashes matched. The 2,727 oracle scenarios contributed
 All 66,771 step hashes matched. The notice counter observes length, so it cannot establish whether a same-key
 notice was replaced. The experiment caps extra sweeps at eight and records repeat hashes separately from cap hits.
 
-**VERIFIED E2.** Median mutation milliseconds per full draw on v2 over three seeds. Samples include traversal time
+**VERIFIED E2.** Original E2 run, median milliseconds summed across every mutation in one completed draw, over three seeds. The run command selected v2. The original JSON did not capture effective mode. Samples include traversal time
 separately. Scores use side 1, exits use a WALKOVER every fourth result, and unwind immediately corrects that exit to
 a score with change propagation enabled. TEAM measures dual-level calls on generated COLLEGE_DEFAULT draws.
 Other test activity overlapped this benchmark, so use the curve as a first measurement.
 
-| Event   | Positions |  Score |   Exit | Unwind |
-| ------- | --------: | -----: | -----: | -----: |
-| SINGLES |        16 |   12.2 |    9.0 |   10.4 |
-| SINGLES |        32 |   23.7 |   21.1 |   25.8 |
-| SINGLES |        64 |   68.5 |   53.8 |   69.3 |
-| SINGLES |       128 |  200.6 |  196.6 |  236.0 |
-| SINGLES |       256 |  781.3 |  682.3 |  897.3 |
-| TEAM    |         8 |    8.6 |    7.0 |    9.2 |
-| TEAM    |        16 |   25.2 |   21.8 |   27.5 |
-| TEAM    |        32 |   81.1 |   72.5 |   98.3 |
-| TEAM    |        64 |  299.0 |  269.2 |  347.9 |
-| TEAM    |       128 | 1310.8 | 1202.0 | 1535.6 |
-| TEAM    |       256 | 5518.5 | 4914.1 | 6171.8 |
+| Event   | Positions | Score (ms/draw) | Exit (ms/draw) | Unwind (ms/draw) |
+| ------- | --------: | --------------: | -------------: | ---------------: |
+| SINGLES |        16 |            12.2 |            9.0 |             10.4 |
+| SINGLES |        32 |            23.7 |           21.1 |             25.8 |
+| SINGLES |        64 |            68.5 |           53.8 |             69.3 |
+| SINGLES |       128 |           200.6 |          196.6 |            236.0 |
+| SINGLES |       256 |           781.3 |          682.3 |            897.3 |
+| TEAM    |         8 |             8.6 |            7.0 |              9.2 |
+| TEAM    |        16 |            25.2 |           21.8 |             27.5 |
+| TEAM    |        32 |            81.1 |           72.5 |             98.3 |
+| TEAM    |        64 |           299.0 |          269.2 |            347.9 |
+| TEAM    |       128 |          1310.8 |         1202.0 |           1535.6 |
+| TEAM    |       256 |          5518.5 |         4914.1 |           6171.8 |
+
+The original scored draws used 127 calls at 128 positions and 255 at 256. Dividing each draw’s summed mutation time by its call count gives 1.58 → 3.06 ms/call for singles and 10.32 → 21.64 ms/call for TEAM. These are mean call times within the median draw. Individual call latency varies. Exit has the same call count as score. Unwind adds a correction after every fourth match. The measured upper sizes are consistent with roughly linear growth in average work per call and quadratic growth over a whole draw.
+
+**VERIFIED E2 rerun.** The same score, exit and unwind workloads ran sequentially in two one-worker commands. All 99 samples store the effective pipeline read from the engine (`v2`). On the 28-core host, aggregate CPU was 95.9% idle immediately before the run and 87.1–96.0% idle during the monitored intervals. No other benchmark or suite was started during timing. The table shows scored draws. The total is the median of three per-draw sums of mutation time. The per-call figure divides that total by the calls in each draw. Fixture construction and traversal overhead are excluded. [Standard sizes](e2-quiet-standard.json) · [large TEAM sizes](e2-quiet-large-team.json) · [host observations](e2-quiet-host.json)
+
+| Event   | Positions | Calls per draw | Whole draw, ms | Mean ms/call |
+| ------- | --------: | -------------: | -------------: | -----------: |
+| Singles |       128 |            127 |          186.8 |         1.47 |
+| Singles |       256 |            255 |          713.8 |         2.80 |
+| TEAM    |       128 |            127 |        1,153.7 |         9.08 |
+| TEAM    |       256 |            255 |        4,880.1 |        19.14 |
 
 **VERIFIED E3.** An opt-in reducer hook retained a separate working view across accepted v2 batches. It applied the
 same ops before comparing result, score, positions, occupants, edges and line identities with a fresh index. Across
@@ -207,8 +235,7 @@ mismatches, 5.0 ms of incremental maintenance and 9.4 ms of fresh rebuilds.
 
 **BELIEVED** Grow v3 in TypeScript inside `outcome/`, keeping the reducer, view oracle and v2 harness. First certify
 the bounded planner pilots and capture writer coverage by abstention reason. Then address the large shared exit,
-cascade and TEAM families. After v2's sole-mode release, exercise the fixed-point and cache candidates and qualify
-record migration. Delete the recorder only after complete reachability, parity on unchanged contract fields, zero
+cascade and TEAM families. Run fixed-point and planner-index experiments now. Production adoption and record migration follow the first sole-mode release, scheduled for 8.0. Delete the recorder only after complete reachability, parity on unchanged contract fields, zero
 unexplained fallback and CA-approved deltas. Keep an executable snapshot of the retired path as a test oracle during
 qualification.
 
@@ -242,9 +269,9 @@ normalization each need independent consumer validation.
 5. Should coverage read the public JSONL incrementally? Options are bounded file generation or a streaming
    coverage reader. Recommend streaming so source identity and manifest semantics stay intact.
 
-6. For F-005, should the held-seat check be extended or should placement be certified before the TEAM writer
-   begins? Recommend identifying the first unsafe placement in the two saved repros and extending row 31 when
-   both fit its semantics.
+6. For F-005, prioritize the shared row 31 preflight so v2 refuses both TEAM inputs before the legacy fallback writes. Direct and non-rollback callers are exposed. TMX queue rollback and the CFS success-only save contain the defect on the reviewed production paths. Recommend scheduled v2 hardening. [Mechanism and scope](findings/F-005.md)
+
+7. Should CA retire or retain the November 11 OUTCOME-101 / G4 condition? Recommend retaining the per-population cost obligation. The November 19 flip criterion used soak and walk parity, and 7.44.0 shipped with v2 as default. The reviewed decisions contain no explicit retirement of the November 11 condition. The close-out measured 1.5–2.6× v1 for sampled whole-call recordings. A passing relative regression bound leaves open the absolute cost owed. Join the historical cohorts to current ownership and judge remaining cohorts against the applicable bounds before selector removal. Ask CA to record retirement, remediation or acceptance for each remaining excess. [G4 ruling](https://github.com/CourtHive/Mentat/blob/27243d54/assessment/2026-11-11-outcome-v2-g4-ruling.md) · [close-out and flip criterion](https://github.com/CourtHive/Mentat/blob/27243d54/statuses/2026-11-19-outcome-v1-retirement-closeout-and-soak.md)
 
 ## 7. What I did not do, and why
 
@@ -338,4 +365,12 @@ mkdir -p /tmp/outcome-loser-replay
 rg -F 'oracle/census/first-match-loser-consolation-' .corpus-out/oracles/oracle-census.jsonl | head -20 > /tmp/outcome-loser-replay/oracle.jsonl
 OUTCOME_PIPELINE=v2 TZ=UTC OUTCOME_EXTERNAL_CORPUS=/tmp/outcome-loser-replay OUTCOME_EXTERNAL_COVERAGE_JSONL=/tmp/outcome-loser-writers.jsonl pnpm exec vitest run --config scripts/ext/outcomeCensus.config.mts src/tests/corpus/outcomeExternalReplay.test.ts
 node scripts/ext/summarizeOutcomeWriters.mjs /tmp/outcome-writers.jsonl /tmp/outcome-direction-writers.jsonl /tmp/outcome-loser-writers.jsonl
+```
+
+Reproduce the drift classification after the harvested replay above, using the directory that contains the original source JSONL files. To repeat the quiet E2 comparison, use one worker, run the two commands in sequence with other benchmarks stopped, and record host CPU availability.
+
+```sh
+node scripts/ext/triageHarvestDrift.mjs /tmp/outcome-harvest-details.jsonl "$OUTCOME_EXTERNAL_CORPUS" > /tmp/outcome-drift-triage.json
+OUTCOME_PIPELINE=v2 TZ=UTC OUTCOME_EXTERNAL_COST_JSON=/tmp/outcome-e2-quiet-standard.json pnpm exec vitest run --maxWorkers=1 src/tests/mutations/exitPropagation/outcomeExternalCost.test.ts
+OUTCOME_PIPELINE=v2 TZ=UTC OUTCOME_EXTERNAL_LARGE_TEAM=1 OUTCOME_EXTERNAL_COST_JSON=/tmp/outcome-e2-quiet-large-team.json pnpm exec vitest run --maxWorkers=1 src/tests/mutations/exitPropagation/outcomeExternalCost.test.ts
 ```

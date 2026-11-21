@@ -13,6 +13,8 @@ it.skipIf(process.env.OUTCOME_EXTERNAL_DIFF_REPRO !== '1').each(cases)(
   'refuses a retired %s dual without writing the record',
   (_label, fixture) => {
     const scenario = JSON.parse(readFileSync(`ext-report/findings/${fixture}`, 'utf8'));
+    // The harvested hash describes the partial write. Grade the refusal against the contract.
+    scenario.steps[0].hash = scenario.initial.hash;
     let exception: string | undefined;
     let mismatches: ReturnType<typeof replayThroughEngine> = [];
     try {

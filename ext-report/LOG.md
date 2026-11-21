@@ -23,3 +23,6 @@
 - Completed sampled writer reach for all 17 observed whole-call recording reasons.
 - Reverified the report branch under the ordinary differential suite and reproduced the coverage exception in all modes.
 - Finished the 41,829-scenario harvested replay. Reduced four disagreement rows to two distinct single-call TEAM partial writes.
+- Reviewed the released F-005 path and consumer rollback boundaries. Checked both fixtures with rollback enabled and disabled.
+- Classified all 949 shared-drift scenarios and traced two incomplete directive captures.
+- Repeated E2 on a quiet host, recording the effective pipeline for 99 samples. Updated the controlling-agent handoff with per-call and per-draw timing, the 8.0 milestone, and the outstanding G4 ruling.
