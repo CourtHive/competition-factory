@@ -531,6 +531,8 @@ export type DirectionPlan = {
     matchUpId: string;
     participantId: string;
     arrives: boolean;
+    /** A winner re-entry leaves this source's existing carry on the seated loser. */
+    retainedCarry?: true;
     /** when the loser is kept out of an FMLC feed: the propagated BYE that takes their place */
     bye?: { structureId: string; drawPosition: number };
     /** S2c: the exit the loser carries into the target, which the side opposite them wins */

@@ -1,3 +1,5 @@
+import { standingMatchUp } from '../drawPositions/relabelLoserExit';
+import { bareResultRequest, cleanWinnerTarget, indexed, sideDrawPosition } from './plan/planShared';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 
 // constants and types
@@ -68,6 +70,8 @@ function planLoser(
   const structureId = view.targets.loserStructureId;
   const bye =
     !arrives && positions.length && structureId ? { structureId, drawPosition: Math.min(...positions) } : undefined;
+  if (!relabelled && arrives && retainedLoserCarry(request, view, participantId, matchUpId))
+    return { participantId, matchUpId, arrives, retainedCarry: true };
   const carried = arrives ? carriedExit(request, view, relabelled) : undefined;
   // the carried exit meets one already there (its status, or carried in on the other side): they converge
   const standing = view.targets.loserMatchUpCarriedStatuses; // this matchUp's own product excluded
@@ -88,6 +92,56 @@ function planLoser(
     ...(carriedPast ? { carriedPast } : {}),
     ...(withdrawn ? { withdrawn } : {}),
   };
+}
+
+/**
+ * On winner re-entry, directLoser finds the seated participant before it considers placing them.
+ * relabelLoserExit leaves the direct carry alone when its label already agrees, including a carry
+ * that converged with the other side. Verify the standing match that writer reads, plus the
+ * origins elsewhere that refreshArrivals and relabelByeHeldCarries could otherwise rewrite.
+ */
+function retainedLoserCarry(request: OutcomeRequest, view: OutcomeView, participantId: string, matchUpId: string) {
+  const { matchUpStatus: status, winningSide } = request;
+  const { targets } = view;
+  if (!isRelabel(request, view) || (winningSide !== 1 && winningSide !== 2) || view.isTeam) return false;
+  if (!request.flags.propagateExitStatus || (status !== WALKOVER && status !== DEFAULTED)) return false;
+  if (view.existing.hasSideExitProvenance || view.existing.carriedExit) return false;
+  if (status !== view.existing.matchUpStatus || !targets.loserMatchUpCarriesSourceExit) return false;
+  if (!bareResultRequest(request)) return false;
+  if (!winnerAlreadySeated(view, winningSide)) return false;
+  if (!targets.loserStructureId || targets.loserTargetSeat?.participantId !== participantId) return false;
+  const standing = standingMatchUp(view.inContextDrawMatchUps, targets.loserStructureId, participantId);
+  if (!standing || standing.matchUpId !== matchUpId) return false;
+  const side = standing.sides?.find((candidate) => candidate.participantId === participantId)?.sideNumber;
+  const origin = (side === 1 || side === 2) && standing.sideExitProvenance?.[side];
+  if (!origin || origin.sourceMatchUpId !== request.matchUpId || origin.matchUpStatus !== status) return false;
+  return !view.inContextDrawMatchUps?.some((matchUp) =>
+    Object.values(matchUp.sideExitProvenance ?? {}).some(
+      (entry) =>
+        entry.sourceMatchUpId === request.matchUpId &&
+        (entry.previousMatchUpStatus !== status || (entry.matchUpStatus && entry.matchUpStatus !== status)),
+    ),
+  );
+}
+
+/** A clean same-structure re-entry that cannot reserve a consolation seat or advance past the other feeder. */
+function winnerAlreadySeated(view: OutcomeView, side: 1 | 2): boolean {
+  const { targets } = view;
+  if (!targets.winner || targets.byeTarget || targets.winnerLink || targets.reservations) return false;
+  if (cleanWinnerTarget(view, targets.winner, side)) return false;
+  const winner = indexed(view, targets.winnerMatchUpId);
+  const participantId = targets.sideParticipantIds[side];
+  if (
+    !participantId ||
+    !winner?.sides?.some((s) => s.participantId === participantId && s.drawPosition === sideDrawPosition(view, side))
+  )
+    return false;
+  return !view.inContextDrawMatchUps?.some(
+    (feeder) =>
+      feeder.structureId === winner.structureId &&
+      (feeder.winnerMatchUpId === winner.matchUpId || feeder.loserMatchUpId === winner.matchUpId) &&
+      isDoubleExit(feeder.matchUpStatus),
+  );
 }
 
 /**
