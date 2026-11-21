@@ -31,15 +31,30 @@ it.each([SINGLES, DOUBLES, TEAM])('filters %s by the readiness computed on hydra
   expect(
     ids(tournamentEngine.allTournamentMatchUps({ inContext: false, matchUpFilters: { readyToScore: true } }).matchUps),
   ).toEqual(expected);
+  const { tournamentRecord } = tournamentEngine.getTournament();
+  const event = tournamentRecord.events[0];
+  const drawDefinition = event.drawDefinitions[0];
+  const structure = drawDefinition.structures[0];
+  const groupKeys = ['upcomingMatchUps', 'pendingMatchUps', 'completedMatchUps', 'abandonedMatchUps', 'byeMatchUps'];
+  const grouped = (result) => groupKeys.flatMap((key) => result[key] ?? []);
+  const scoped = { tournamentRecord, event, drawDefinition, structure, inContext: true };
   const filter = { readyToScore: true };
   for (const query of [
+    (matchUpFilters) => tournamentEngine.allCompetitionMatchUps({ matchUpFilters }).matchUps,
     (matchUpFilters) => tournamentEngine.allTournamentMatchUps({ matchUpFilters }).matchUps,
+    (matchUpFilters) => tournamentEngine.allEventMatchUps({ ...scoped, matchUpFilters }).matchUps,
+    (matchUpFilters) => tournamentEngine.getAllStructureMatchUps({ ...scoped, matchUpFilters }).matchUps,
+    (matchUpFilters) => grouped(tournamentEngine.getCompetitionMatchUps({ inContext: true, matchUpFilters })),
+    (matchUpFilters) => grouped(tournamentEngine.tournamentMatchUps({ inContext: true, matchUpFilters })),
+    (matchUpFilters) => grouped(tournamentEngine.eventMatchUps({ ...scoped, matchUpFilters })),
+    (matchUpFilters) => grouped(tournamentEngine.drawMatchUps({ ...scoped, matchUpFilters })),
+    (matchUpFilters) => tournamentEngine.getAllDrawMatchUps({ ...scoped, matchUpFilters }).matchUps,
     (matchUpFilters) => tournamentEngine.allDrawMatchUps({ drawId, inContext: true, matchUpFilters }).matchUps,
     (matchUpFilters) => tournamentEngine.competitionScheduleMatchUps({ matchUpFilters }).dateMatchUps,
   ]) {
     const all = query({});
     const ready = all.filter((m) => m.readyToScore);
-    expect(ready.length).toBeGreaterThan(0);
+    expect(ready.length, query.toString()).toBeGreaterThan(0);
     expect(ready.length).toBeLessThan(all.length);
     if (eventType === TEAM) expect(ready.some((m) => m.matchUpTieId)).toBe(true);
     expect(ids(query(filter))).toEqual(ids(ready));
