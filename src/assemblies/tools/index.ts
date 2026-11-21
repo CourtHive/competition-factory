@@ -57,6 +57,7 @@ export { dehydrateMatchUps } from '@Mutate/tournaments/dehydrate';
 // loaded, so tools rather than engine methods, which resolve from state. `reduceRecordToFootprint` builds the partial
 // record such a layer would assemble.
 export { getMutationFootprint } from '@Query/footprint/getMutationFootprint';
+export { getQueryFootprint } from '@Query/footprint/getQueryFootprint';
 export { reduceRecordToFootprint } from '@Query/footprint/reduceRecordToFootprint';
 // The read the engine makes of every attribute promoted from an extension: first-class when present, else the legacy
 // extension. Here rather than on a governor because a governor export becomes an engine method, and this reads an

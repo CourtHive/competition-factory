@@ -1072,6 +1072,46 @@ const partial = tools.reduceRecordToFootprint({ tournamentRecord, footprint });
 
 ---
 
+## Query Footprints
+
+### getQueryFootprint
+
+An additive query-load planner using the same shard shape, reducer and engine guard as mutation footprints. It
+calls no engine and makes no action decisions. The server still invokes the canonical factory query on loaded state.
+
+```js
+const params = { eventId, drawId, matchUpId };
+const footprint = tools.getQueryFootprint({ methods: [{ method: 'matchUpActions', params }] });
+// { tournament: false, shards: ['shell', 'draw', 'eventDraws', 'participants'],
+//   drawIds: [drawId], eventIds: [eventId], wholeRecordMethods: [] }
+const partial = tools.reduceRecordToFootprint({ tournamentRecord, footprint });
+tournamentEngine.setState(partial);
+tournamentEngine.loadedFootprint(footprint); // mark the state object AFTER setState
+const result = tournamentEngine.matchUpActions(params);
+```
+
+Declared queries: `matchUpActions` and `positionActions`. Each needs nonempty `eventId` and `drawId`: the shell,
+its target draw, **every draw of that event and every tournament participant**. Alternates, other flights,
+qualifiers, pairs and team line-ups need more context than the target match alone. This intentionally conservative
+first declaration does not claim a minimal load. The guard also checks that the target draw belongs to the named
+event. Supplying an unrelated event does not satisfy its context requirement.
+
+Unknown queries, mutation names, missing scope and empty batches require the whole record; `wholeRecordMethods`
+names responsible methods. Several queries union their requirements. For several tournaments, pass `tournamentId`
+and `activeTournamentId` as with `getMutationFootprint`, and mark each installed record separately.
+
+The reducer above demonstrates correctness with an already loaded record; it does **not** implement selective
+physical storage reads. A sharded loader must obtain a consistent snapshot and truthfully declare completeness of
+event draws and participants. Use the engine wrapper: calling a governor function directly bypasses its guard.
+Whole-record deployments need no mark and keep existing behavior.
+
+A footprint is neither authorization nor a wire contract. A server must separately restrict allowed query names
+and parameters, verify the caller's current grant, and minimize results to audience-allowed fields. Never accept a
+client-supplied `tournamentRecord`, `drawDefinition`, participant pool or loaded-footprint assertion as trusted state.
+The raw action query can include participant records; do not send it to a thin client without server-side minimization.
+
+---
+
 ## Not in tools Module
 
 The following functions are available through **governors**, not the tools module:

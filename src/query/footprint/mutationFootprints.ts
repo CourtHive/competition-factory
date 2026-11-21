@@ -31,6 +31,8 @@ export type MethodFootprint = {
   shards: FootprintShard[];
   drawIds?: string[];
   eventIds?: string[];
+  // For event-context queries: the named draw must actually belong to this event. Not a loader assertion.
+  drawEventIds?: Record<string, string>;
 };
 
 export type FootprintContext = {

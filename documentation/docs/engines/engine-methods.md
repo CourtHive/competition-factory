@@ -982,8 +982,9 @@ const scope = engine.getStampScope(); // 'tournament'
 ## loadedFootprint
 
 Partial-record mode, for a storage layer that loaded only part of a tournament record: it tells the engine which part
-the record in state holds, as returned by [`tools.getMutationFootprint`](/docs/tools/tools-api#getmutationfootprint).
-From then on the engine **refuses**, with `FOOTPRINT_NOT_LOADED` and before anything is written, any method whose
+the record in state holds, as returned by [`tools.getMutationFootprint`](/docs/tools/tools-api#getmutationfootprint) or
+[`tools.getQueryFootprint`](/docs/tools/tools-api#getqueryfootprint).
+From then on the engine **refuses**, with `FOOTPRINT_NOT_LOADED` and before reading or writing, any method whose
 declared footprint needs more than was loaded. That includes every method with no declared footprint, queries among
 them, because on a partial record a read of missing data gives a wrong answer rather than an error. An
 `executionQueue` is checked whole, before its first directive runs.
@@ -1003,7 +1004,10 @@ engine.executionQueue(methods); // refused with FOOTPRINT_NOT_LOADED if any meth
 ````
 
 The draws a method needs are checked against the record itself. The event's draws and the participants are checked
-against the mark, because the record cannot show that they are missing.
+against the mark, because the record cannot show that they are missing. Query declarations for `matchUpActions` and
+`positionActions` additionally check the target draw's event binding. Unclassified queries still need a whole record;
+a successful load plan does not grant permission or minimize returned fields. The mark is a trusted loader assertion,
+never client input. Direct governor calls bypass the engine guard.
 
 ---
 
