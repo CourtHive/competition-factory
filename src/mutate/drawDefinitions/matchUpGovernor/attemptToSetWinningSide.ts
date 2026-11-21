@@ -5,7 +5,7 @@ import { lineDirectsUnfedDual } from '@Query/matchUp/lineDirectsUnfedDual';
 import { checkConnectedStructures } from './checkConnectedStructures';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { attemptToModifyScore } from './attemptToModifyScore';
+import { attemptToModifyScore, scoreAssignmentRefusal } from './attemptToModifyScore';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { replaceQualifier } from './replaceQualifier';
 import { placeQualifier } from './placeQualifier';
@@ -62,6 +62,13 @@ export function attemptToSetWinningSide(params) {
     !!params.projectedWinningSide &&
     params.projectedWinningSide !== dualMatchUp.winningSide;
   if (corrected || handsOver) {
+    // Removing a corrected line retallies its dual. Check the replacement score's assignments
+    // before that first write. An unfed dual retains the removal's earlier draw-position refusal.
+    if (params.isCollectionMatchUp && !removalMissingDrawPositions({ structure, targetData: params.targetData })) {
+      const refusal = scoreAssignmentRefusal(params);
+      if (refusal) return refusal;
+    }
+
     // only applies when progression is based on WIN_RATIO, e.g. ROUND_ROBIN_WITH_PLAYOFF
     const { connectedStructureIds } = checkConnectedStructures({
       drawDefinition,
