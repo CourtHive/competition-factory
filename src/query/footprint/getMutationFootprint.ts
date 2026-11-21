@@ -1,20 +1,12 @@
-import { FootprintContext, FootprintShard, getMethodFootprint } from './mutationFootprints';
+import { FootprintContext, getMethodFootprint } from './mutationFootprints';
+import type { RecordFootprint } from './collectFootprints';
+import { collectFootprints } from './collectFootprints';
 
-export type MutationFootprint = {
-  // true when any method needs the whole record; `shards`, `drawIds` and `eventIds` then say nothing more
-  tournament: boolean;
-  shards: FootprintShard[];
-  drawIds: string[];
-  eventIds: string[];
-  // the methods that needed the whole record: no declared footprint, or params that left the scope open
-  wholeRecordMethods: string[];
-};
+export type MutationFootprint = RecordFootprint;
 
 type GetMutationFootprintArgs = FootprintContext & {
   methods: { method: string; params?: Record<string, any> }[];
 };
-
-const SHARD_ORDER: FootprintShard[] = ['shell', 'draw', 'drawParticipants', 'eventDraws', 'participants', 'tournament'];
 
 /**
  * The footprint of an executionQueue: the union of its methods' footprints (`mutationFootprints.ts`). A storage
@@ -36,26 +28,7 @@ export function getMutationFootprint({
   tournamentId,
   methods,
 }: GetMutationFootprintArgs): MutationFootprint {
-  const shards = new Set<FootprintShard>();
-  const drawIds = new Set<string>();
-  const eventIds = new Set<string>();
-  const wholeRecordMethods: string[] = [];
-
-  for (const { method, params } of Array.isArray(methods) ? methods : []) {
-    const footprint = getMethodFootprint(method, params, { outcomePipeline, tournamentId, activeTournamentId });
-    if (footprint.shards.includes('tournament') && !wholeRecordMethods.includes(method))
-      wholeRecordMethods.push(method);
-    footprint.shards.forEach((shard) => shards.add(shard));
-    footprint.drawIds?.forEach((drawId) => drawIds.add(drawId));
-    footprint.eventIds?.forEach((eventId) => eventIds.add(eventId));
-  }
-
-  const tournament = !methods?.length || shards.has('tournament');
-  return {
-    shards: tournament ? ['tournament'] : SHARD_ORDER.filter((shard) => shards.has(shard)),
-    drawIds: tournament ? [] : [...drawIds],
-    eventIds: tournament ? [] : [...eventIds],
-    wholeRecordMethods,
-    tournament,
-  };
+  return collectFootprints(methods, (method, params) =>
+    getMethodFootprint(method, params, { outcomePipeline, tournamentId, activeTournamentId }),
+  );
 }

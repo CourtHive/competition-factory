@@ -1,5 +1,4 @@
 import { includesMatchUpEventType } from '@Helpers/matchUpEventTypes/includesMatchUpEventType';
-import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { scheduledMatchUpDate } from './matchUp/scheduledMatchUpDate';
 import { scheduledMatchUpTime } from './matchUp/scheduledMatchUpTime';
 import { matchUpAllocatedCourts } from './matchUp/courtAllocations';
@@ -8,7 +7,6 @@ import { matchUpAssignedVenueId } from './matchUp/venueAssignment';
 import { extractDate, sameDay } from '@Tools/dateTime';
 
 // constants and types
-import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { MatchUpFilters } from '@Types/factoryTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
@@ -135,7 +133,7 @@ export function filterMatchUps(params: FilterMatchUpsArgs) {
 }
 
 function passesBasicFilters({ matchUp, readyToScore, hasWinningSide, isMatchUpTie, isCollectionMatchUp }) {
-  if (readyToScore && !isMatchUpEventType(TEAM_MATCHUP)(matchUp) && !matchUp.readyToScore) return false;
+  if (readyToScore && !matchUp.readyToScore) return false;
   if (matchUp.winningSide && hasWinningSide && ![1, 2].includes(matchUp.winningSide)) return false;
   if (isMatchUpTie !== undefined) {
     if (isMatchUpTie && !matchUp.tieMatchUps) return false;

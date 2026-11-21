@@ -392,13 +392,15 @@ function makeTimingResolver({
 }): TimingResolver {
   const cache = new Map<string, FormatTiming>();
   return (matchUp, playedMinutes) => {
-    const key = [matchUp.matchUpFormat, matchUp.matchUpType, matchUp.eventId, playedMinutes].join('|');
+    const key = [matchUp.matchUpFormat, matchUp.matchUpType, matchUp.eventId, matchUp.drawId, playedMinutes].join('|');
     const cached = cache.get(key);
     if (cached) return cached;
 
     const event = eventsById[matchUp.eventId];
     const category = event?.category;
+    const drawDefinition = event?.drawDefinitions?.find((draw) => draw.drawId === matchUp.drawId);
     const timing = getMatchUpFormatTiming({
+      drawDefinition,
       categoryName: timingCategoryName(event),
       // Passed explicitly as well as via `event`: an explicit value still wins,
       // and published factories at or below 6.29.1 discard the resolved one.

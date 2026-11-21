@@ -395,7 +395,7 @@ function withRatio(participantResults: ParticipantResults, attribute: string, po
   const inputs = RATIO_INPUTS[attribute];
   if (!inputs) return participantResults;
   const exact = policy.precision === 'EXACT';
-  const scale = Math.pow(10, (!exact && (policy.precision as number)) || 3);
+  const scale = exact ? 1 : Math.pow(10, (policy.precision as number | undefined) ?? 3);
   const view: ParticipantResults = {};
   for (const [participantId, results] of Object.entries(participantResults)) {
     const won = Number(results[inputs[0]] ?? 0);
@@ -533,7 +533,8 @@ function recordAgainst(results: ParticipantTally | undefined, opponents: Set<str
 /** a computed fraction at the policy's precision: 3 decimal places by default, or EXACT */
 function atPrecision(value: number, policy: StandingsPolicy) {
   if (policy.precision === 'EXACT') return value;
-  const scale = Math.pow(10, (policy.precision as number) || 3);
+  // `??`, not `||`: precision 0 is a whole-number rule, not the default (STANDINGS-104)
+  const scale = Math.pow(10, (policy.precision as number | undefined) ?? 3);
   return Math.round(value * scale) / scale;
 }
 

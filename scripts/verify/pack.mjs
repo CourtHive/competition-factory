@@ -113,6 +113,18 @@ try {
   fail('governors subpath smoke failed against tarball', err);
 }
 
+log('query footprint planner and engine guard (require + import)…');
+try {
+  for (const file of ['queryFootprints.runtime.cjs', 'queryFootprints.runtime.mjs']) {
+    process.stdout.write(run(`node ${file}`, { cwd: fixture }));
+  }
+  process.stdout.write(
+    run('node queryFootprints.runtime.cjs', { cwd: fixture, env: { ...process.env, NODE_ENV: 'production' } }),
+  );
+} catch (err) {
+  fail('query footprint smoke failed against tarball', err);
+}
+
 // The score-entry-state subpath, as a consumer of the PACKED tarball meets it: its declarations under Node's own
 // resolution in both formats with no DOM lib, then two score states held at once by `require` and by `import`, with no
 // DOM. The CJS run also asserts that loading it loads nothing of the root bundle.

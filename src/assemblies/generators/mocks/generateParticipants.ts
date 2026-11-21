@@ -23,6 +23,9 @@ import { COMPETITOR } from '@Constants/participantRoles';
 import { HydratedParticipant } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';
 
+/** Extra 2,000-draw rounds for a narrow rating band before drawing within the band itself. */
+const MAX_TOP_UP_ROUNDS = 25;
+
 export function generateParticipants(params): {
   participants?: HydratedParticipant[];
   error?: ErrorType;
@@ -447,21 +450,34 @@ function genRatings(params) {
     const inverted = range[0] > range[1];
     const skew = inverted ? 2 : 0.7;
     const [min, max] = range.slice().sort((a, b) => a - b);
+    const inBand = (rating) => (!ratingMax || rating <= ratingMax) && (!ratingMin || rating >= ratingMin);
+    // overgenerate because filter and restricted range will impact final count
+    const drawInBand = () =>
+      generateRange(0, 2000)
+        .map(() => skewedDistribution(min, max, skew, step, decimalsCount, random))
+        .filter(inBand);
     const generateRatings = () => {
-      const ratingsBucket = generateRange(0, 2000) // overgenerate because filter and restricted range will impact final count
-        .map(() => skewedDistribution(min, max, skew, step, decimalsCount, random));
-      return ratingsBucket
-        .filter((rating) => (!ratingMax || rating <= ratingMax) && (!ratingMin || rating >= ratingMin))
-        .slice(0, scaledParticipantsCount || randomInt(20, 30, random))
-        .map((scaleValue) => {
-          return !accessors
-            ? scaleValue
-            : Object.assign(
-                {},
-                ...accessors.map((accessor) => ({ [accessor]: scaleValue })),
-                getAttributes(attributes),
-              );
-        });
+      const ratingsBucket = drawInBand();
+      const count = scaledParticipantsCount || randomInt(20, 30, random);
+      // A band in the scale's thin tail can keep fewer than `count` of the 2,000 draws, and the participants past the
+      // last kept value got no rating at all. Draw more until there are enough; a call that already had enough draws
+      // exactly what it drew before.
+      for (let round = 0; ratingsBucket.length < count && round < MAX_TOP_UP_ROUNDS; round++)
+        ratingsBucket.push(...drawInBand());
+      // A band the scale's distribution practically never reaches (DUPR 2.0-2.3 is ~5 standard deviations out) is
+      // filled by the same skewed draw mapped onto the band itself, so every participant generated for it is rated.
+      const bandMin = Math.max(min, ratingMin ?? min);
+      const bandMax = Math.min(max, ratingMax ?? max);
+      // bounded: a step coarser than the band can round every value out of it
+      for (let attempt = 0; ratingsBucket.length < count && bandMin <= bandMax && attempt < count * 100; attempt++) {
+        const rating = skewedDistribution(bandMin, bandMax, skew, step, decimalsCount, random);
+        if (inBand(rating)) ratingsBucket.push(rating);
+      }
+      return ratingsBucket.slice(0, count).map((scaleValue) => {
+        return !accessors
+          ? scaleValue
+          : Object.assign({}, ...accessors.map((accessor) => ({ [accessor]: scaleValue })), getAttributes(attributes));
+      });
     };
 
     const generatedRatings = generateRatings();
