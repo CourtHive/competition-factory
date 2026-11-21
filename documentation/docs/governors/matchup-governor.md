@@ -820,6 +820,12 @@ const { valid } = engine.isValidMatchUpFormat({
 
 Returns available actions for a matchUp. The returned `validActions` array contains action objects with `type`, `method`, and `payload` that can be dispatched. Action types include `SCORE`, `STATUS`, `SCHEDULE`, `REFEREE`, `ADD_PENALTY`, `START`, and `END`.
 
+`SCORE` and `CLEAR_SCORE` independently honor the applicable matchUp-action policy's `enabledActions`,
+`disabledActions` and enabled structure scope. Disabling `SCORE` does not disable `CLEAR_SCORE`, or vice versa.
+The default policy continues to allow both, subject to the existing scoring/readiness and downstream guards.
+An absent `CLEAR_SCORE` must not be reconstructed from `SCORE`: correction and removal have different constraints.
+Action policies describe offers; they do not replace live caller authorization or validation of a submitted outcome.
+
 ```js
 const {
   validActions, // array of action objects
