@@ -6,7 +6,6 @@
     "F-013": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-84c889669b97889b919b0db9782aa1f9d582c4002137ea41d036a4bd8e0c21b1",
     "F-014": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-6ca70d9c78e30736cbac87cf97189d8737db673dbcb28b24721f55386a94ce84",
     "F-016": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-96071fd34d3c3845e7eac73e054511994d1a218c3c2c217d724a752edd39a03d",
-    "F-018": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-727b0fd9be5cd539078711e6f4d9d0640d92591cf39c94b18f0e27938253d0af",
     "F-007": "https://github.com/CourtHive/competition-factory/pull/6503",
     "cascadeWriteErrorsReachTheCaller": "Forced downstream write error",
     "reconcileDeciderReturnsItsError": "Injected reconciliation failure",
@@ -759,14 +758,6 @@
           "/events/0/drawDefinitions/0/updatedAt",
           "/factory/timeStamp"
         ]
-      }
-    ],
-    "src/tests/mutations/participants/addParticipant.test.ts::will not add invalid individual participants": [
-      {
-        "method": "addParticipant",
-        "error": "ERR_INVALID_PARTICIPANT_TYPE",
-        "reason": "F-018",
-        "paths": ["/participants"]
       }
     ],
     "src/tests/mutations/participants/individualParticipantMerge.test.ts::individual participant merge > preview is pure; transfers data and references, records an alias and refuses resurrection": [
