@@ -22,17 +22,17 @@ A fresh capture of the implicated source files produced 6,496 scenarios, 18,592 
 ## Findings awaiting disposition
 
 - F-007 covers ordering and late assignment refusals. [Scheduling preflight](https://github.com/CourtHive/competition-factory/pull/6503)
-- F-008 — A refused bulk outcome leaves an earlier winner. [Fixture and rollback controls](https://github.com/CourtHive/competition-factory/pull/6504)
-- F-009 — A refused ad hoc reset clears an earlier match. [Fixture and rollback controls](https://github.com/CourtHive/competition-factory/pull/6505)
-- F-010 — A refused TEAM replacement modifies the line-up. [Fixture and rollback controls](https://github.com/CourtHive/competition-factory/pull/6506)
-- F-011 — An invalid round stays in its scheduling profile. [Fixture and rollback controls](https://github.com/CourtHive/competition-factory/pull/6507)
-- F-012 — An invalid timing edit removes a category. [Fixture and rollback controls](https://github.com/CourtHive/competition-factory/pull/6508)
-- F-013 — A refused court deletion removes an earlier court. [Fixture and rollback controls](https://github.com/CourtHive/competition-factory/pull/6509)
-- F-014 — A rejected court edit changes the venue. [Fixture and rollback controls](https://github.com/CourtHive/competition-factory/pull/6510)
-- F-015 — An invalid scale date creates participant time items. [Fixture and rollback controls](https://github.com/CourtHive/competition-factory/pull/6511)
-- F-016 — A refused BYE placement changes the draw. [Fixture and rollback controls](https://github.com/CourtHive/competition-factory/pull/6512)
-- F-017 — A missing penalty creates participant penalty arrays. [Fixture and rollback controls](https://github.com/CourtHive/competition-factory/pull/6513)
-- F-018 — An invalid participant creates the participant list. [Fixture and rollback controls](https://github.com/CourtHive/competition-factory/pull/6514)
+- F-008 — A refused bulk outcome leaves an earlier winner. [Fixture and rollback controls](../findings/F-008/README.md)
+- F-009 — A refused ad hoc reset clears an earlier match. [Fixture and rollback controls](../findings/F-009/README.md)
+- F-010 — A refused TEAM replacement modifies the line-up. [Fixture and rollback controls](../findings/F-010/README.md)
+- F-011 — An invalid round stays in its scheduling profile. [Fixture and rollback controls](../findings/F-011/README.md)
+- F-012 — An invalid timing edit removes a category. [Fixture and rollback controls](../findings/F-012/README.md)
+- F-013 — A refused court deletion removes an earlier court. [Fixture and rollback controls](../findings/F-013/README.md)
+- F-014 — A rejected court edit changes the venue. [Fixture and rollback controls](../findings/F-014/README.md)
+- F-015 — An invalid scale date creates participant time items. [Fixture and rollback controls](../findings/F-015/README.md)
+- F-016 — A refused BYE placement changes the draw. [Fixture and rollback controls](../findings/F-016/README.md)
+- F-017 — A missing penalty creates participant penalty arrays. [Fixture and rollback controls](../findings/F-017/README.md)
+- F-018 — An invalid participant creates the participant list. [Fixture and rollback controls](../findings/F-018/README.md)
 
 ## Reproduce
 
