@@ -1,0 +1,130 @@
+{
+  "postSchedulePilot": 9395,
+  "mergedDev": 9399,
+  "addedTestRecordings": [
+    "seats the main dual loser after RETIRED when the consolation seat is free",
+    "seats the main dual loser after WALKOVER when the consolation seat is free",
+    "seats the main dual loser after DEFAULTED when the consolation seat is free"
+  ],
+  "existingTeamFile": {
+    "source": "src/tests/mutations/outcome/recordedTeamCall.test.ts",
+    "postSchedulePilot": 467,
+    "mergedDev": 468,
+    "changes": [
+      {
+        "sourceTest": "along a seeded walk of a TEAM draw, a call a recording is asked for leaves what v1's write leaves > FEED_IN_CHAMPIONSHIP 8",
+        "reason": "team",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "clear-score",
+        "before": 14,
+        "after": 15
+      },
+      {
+        "sourceTest": "along a seeded walk of a TEAM draw, a call a recording is asked for leaves what v1's write leaves > SINGLE_ELIMINATION 8 of 7, LAVER_CUP",
+        "reason": "cascade",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "before": 2,
+        "after": 3
+      },
+      {
+        "sourceTest": "along a seeded walk of a TEAM draw, a call a recording is asked for leaves what v1's write leaves > SINGLE_ELIMINATION 8 of 7, LAVER_CUP",
+        "reason": "team",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "apply-values",
+        "before": 12,
+        "after": 15
+      },
+      {
+        "sourceTest": "along a seeded walk of a TEAM draw, a call a recording is asked for leaves what v1's write leaves > SINGLE_ELIMINATION 8 of 7, LAVER_CUP",
+        "reason": "team",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "line-score",
+        "before": 12,
+        "after": 9
+      },
+      {
+        "sourceTest": "along a seeded walk of a TEAM draw, a call a recording is asked for leaves what v1's write leaves > SINGLE_ELIMINATION 8 of 7, LAVER_CUP",
+        "reason": "team",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "only-score",
+        "before": 8,
+        "after": 7
+      },
+      {
+        "sourceTest": "along a seeded walk of a TEAM draw, a call a recording is asked for leaves what v1's write leaves > SINGLE_ELIMINATION 8 of 7, LAVER_CUP",
+        "reason": "team",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "remove-directed",
+        "before": 5,
+        "after": 4
+      },
+      {
+        "sourceTest": "along a seeded walk of a TEAM draw, a call a recording is asked for leaves what v1's write leaves > SINGLE_ELIMINATION 8 of 7, LAVER_CUP",
+        "reason": "team",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "before": 16,
+        "after": 17
+      }
+    ]
+  },
+  "suiteCellChanges": [
+    {
+      "reason": "cascade",
+      "drawType": "SINGLE_ELIMINATION",
+      "route": "winner",
+      "before": 17,
+      "after": 18
+    },
+    {
+      "reason": "exit",
+      "drawType": "FEED_IN_CHAMPIONSHIP",
+      "route": "winner",
+      "before": 99,
+      "after": 102
+    },
+    {
+      "reason": "team",
+      "drawType": "FEED_IN_CHAMPIONSHIP",
+      "route": "clear-score",
+      "before": 14,
+      "after": 15
+    },
+    {
+      "reason": "team",
+      "drawType": "SINGLE_ELIMINATION",
+      "route": "apply-values",
+      "before": 32,
+      "after": 35
+    },
+    {
+      "reason": "team",
+      "drawType": "SINGLE_ELIMINATION",
+      "route": "line-score",
+      "before": 22,
+      "after": 19
+    },
+    {
+      "reason": "team",
+      "drawType": "SINGLE_ELIMINATION",
+      "route": "only-score",
+      "before": 21,
+      "after": 20
+    },
+    {
+      "reason": "team",
+      "drawType": "SINGLE_ELIMINATION",
+      "route": "remove-directed",
+      "before": 70,
+      "after": 69
+    },
+    {
+      "reason": "team",
+      "drawType": "SINGLE_ELIMINATION",
+      "route": "winner",
+      "before": 95,
+      "after": 96
+    }
+  ]
+}

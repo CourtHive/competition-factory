@@ -58,7 +58,7 @@ TZ=UTC pnpm exec vitest run src/tests/mutations/outcome/{luckyDoubleExit,unstamp
 
 **VERIFIED.** The existing lucky-repeat comparison strips the public `stack` before comparing results. On all five generated draw sizes the stamped repeat passed its stored-record and ordered-notice controls, yet changing ownership shortened the raw result. On merged dev, v1, v2 and differential returned the same helper stack. With the proposed change, v2 returned only `["setMatchUpStatus"]`. V1 and differential retained `["noDownStreamDependencies", "setMatchUpStatus", "setMatchUpStatus"]`. The difference is visible on the public synchronous engine call. The full suite census observed nine already-stamped lucky repeats and one unstamped lucky repeat. The other five exit/noop calls also lacked their stamp. [Captured public returns and observed cells](lucky-repeat.json)
 
-**Decision for CA.** Earlier parity work explicitly excluded the diagnostic helper stack; V3-1 asks for matching returned results. Recommend explicitly carrying that exclusion into V3-1 if callers may see different helper names across implementations. If raw return identity is required here, retain the recording until a faithful compatibility return has been designed and tested. No engine change is submitted. The 292-source harvest attribution and expanded benchmark are pending at the requested stop.
+**CA ruling.** On successful and error returns the contents of the top-level diagnostic stack may differ across versions and modes. V2 must still supply an array wherever v1 does. Every other returned field is material. This resolves the compatibility question for the nine stamped lucky repeats. [Spec and public documentation PR](https://github.com/CourtHive/competition-factory/pull/6494)
 
 To verify the difference, use a disposable worktree at `0408a87119` and save the linked probe patch outside it. Apply only the observation hunk for the reference. Apply the planner hunk for the prototype. Five repeats run per arm; the log prints every mode's public return. The patch is review evidence. [Two-hunk reproduction](lucky-repeat.patch)
 
@@ -68,3 +68,9 @@ LUCKY_RAW=1 TZ=UTC pnpm exec vitest run src/tests/mutations/outcome/luckyDoubleE
 git apply --include='src/mutate/**' "$PROBE_PATCH"
 LUCKY_RAW=1 TZ=UTC pnpm exec vitest run src/tests/mutations/outcome/luckyDoubleExit.test.ts -t 'asked again, it changes nothing'
 ```
+
+## Census baseline for V3-1
+
+**VERIFIED.** Use 9,399 at merged dev `0408a87119` as the reference for this ownership move. The earlier #6488 census counted 9,395. Three additional `exit / FEED_IN_CHAMPIONSHIP / winner` recordings came from #6487's free-consolation-seat controls, one each for RETIRED, WALKOVER and DEFAULTED. The existing eight-position, seven-entrant Laver Cup test produced one additional `cascade / SINGLE_ELIMINATION / winner` recording. Scoped runs of `recordedTeamCall.test.ts` on #6488 and merged dev counted 467 and 468 successful recordings. Six TEAM route/draw cells also changed within that file; together their difference is zero, leaving TEAM at 968. The two file-level changes account for every cell difference between the suite censuses. [Counts by source and cell](baseline-reconciliation.json)
+
+Reproduce the file attribution with the census config above. On `940f95a8b8` and `0408a87119`, run the recorder-instrumented v2 suite scoped to `src/tests/mutations/outcome/recordedTeamCall.test.ts`. Then run `src/tests/mutations/exitPropagation/outcomeExternalDifferentialRepro.test.ts` at the latter commit. To separate cases inside a file, record Vitest's `expect.getState().currentTestName` with each successful recording.
