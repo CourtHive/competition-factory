@@ -47,10 +47,10 @@ const COMPLETED_OR_BYE = new Set<string>([COMPLETED, BYE]);
  *    the loser link's matchUp, the link is not a first-match feed (which places the loser or a BYE), and none of that
  *    matchUp's seats is free or a propagated BYE.
  *
- * The factory's own draws do not reach either: the next matchUp cannot be full before this one is decided. A record
- * converted from elsewhere can hold them (a stored winner who is not the side that advanced, a consolation seated in
- * another order). The same questions are asked here of the same values, on the route that reaches the placement: a
- * winner named, on a matchUp with drawPositions that is not a line, a dual, ad hoc or in a lucky draw; not beneath an
+ * Converted records can hold either shape (a stored winner who is not the side that advanced, a consolation seated
+ * in another order). On a generated TEAM draw a line can already have fed a seat before its undecided dual is awarded
+ * by retirement. That award directs the winner and must check the winner's seat as well. The same questions are asked here of the same values, on the route that reaches the placement: a
+ * winner named, on a matchUp with drawPositions outside lines, ad hoc and lucky draws; not beneath an
  * active downstream (nothing is directed there), not a swap, and not over a stored double exit (its unwind runs first).
  * A stored winner that the call replaces is taken back first, so the seat they hold counts as free, as does the seat the
  * new winner holds in the loser's matchUp.
@@ -95,7 +95,9 @@ export function heldSeatRefusal({
   if (!drawDefinition || !structure || !targetData?.targetMatchUps) return undefined;
   if (winningSide !== 1 && winningSide !== 2) return undefined;
   if (!matchUp.drawPositions || matchUp.collectionId || isAdHoc({ structure })) return undefined;
-  if (matchUp.tieMatchUps || isMatchUpEventType(TEAM)(matchUp.matchUpType)) return undefined;
+  const dual = !!matchUp.tieMatchUps || isMatchUpEventType(TEAM)(matchUp.matchUpType);
+  // An undecided dual awarded by retirement directs its winner into the next round.
+  if (dual && (matchUp.winningSide || params.matchUpStatus !== RETIRED)) return undefined;
   if (isLuckyBasedDraw(drawDefinition.drawType)) return undefined;
   // a stored double exit is unwound first: what it produced in the next matchUp is taken back, so the winner's question
   // cannot be asked of the draw as it stands. The loser's can: the BYE it placed on their seat is a propagated one
@@ -120,16 +122,18 @@ export function heldSeatRefusal({
     (winnerPlaced && !unwound
       ? heldWinnerSeat({ targetData, structure, drawDefinition, replaced, sidePosition, winningSide })
       : undefined) ??
-    heldLoserSeat({
-      winnerParticipantId: replaced ? sideParticipantId(winningSide) : undefined,
-      loserDrawPosition: sidePosition(3 - winningSide),
-      inContextDrawMatchUps: carriesExit(params) ? params.inContextDrawMatchUps : undefined,
-      tournamentRecord: params.tournamentRecord,
-      event: params.event,
-      drawDefinition,
-      targetData,
-      structure,
-    })
+    (dual
+      ? undefined
+      : heldLoserSeat({
+          winnerParticipantId: replaced ? sideParticipantId(winningSide) : undefined,
+          loserDrawPosition: sidePosition(3 - winningSide),
+          inContextDrawMatchUps: carriesExit(params) ? params.inContextDrawMatchUps : undefined,
+          tournamentRecord: params.tournamentRecord,
+          event: params.event,
+          drawDefinition,
+          targetData,
+          structure,
+        }))
   );
 }
 
