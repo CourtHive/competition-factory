@@ -1,0 +1,2669 @@
+{
+  "recorded/src/tests/corpus/authoredsources/every-authored-scenario-writes-replays-both-ways-and-the-engine-answers-as-the-spec-says/part-22": [
+    {
+      "index": 5,
+      "previous": "sha256:874f8a1b8001b07b33032361f0929cd75df34624e62649efc14d2ece0806ac1a",
+      "after": "sha256:5e8d7bfa091d0e6e5875217be1cbbaef0d298504e6a233499b328713b73a4c8a",
+      "method": "setMatchUpStatus",
+      "error": "ERR_INCOMPATIBLE_MATCHUP_STATUS",
+      "paths": ["/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/corpus/authoredsources/every-authored-scenario-writes-replays-both-ways-and-the-engine-answers-as-the-spec-says/part-6": [
+    {
+      "index": 5,
+      "previous": "sha256:874f8a1b8001b07b33032361f0929cd75df34624e62649efc14d2ece0806ac1a",
+      "after": "sha256:5e8d7bfa091d0e6e5875217be1cbbaef0d298504e6a233499b328713b73a4c8a",
+      "method": "setMatchUpStatus",
+      "error": "ERR_INCOMPATIBLE_MATCHUP_STATUS",
+      "paths": ["/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/corpus/schedulingsources/every-scheduling-scenario-writes-replays-both-ways-and-holds-its-claims-known-failures-fail-theirs/part-6": [
+    {
+      "index": 1,
+      "previous": "sha256:c1c3d27b02ec891476e914563bc5ef4ed8c1fcd01a2ae706e9d76fe88365ca73",
+      "after": "sha256:38a839460b390d19ffd7855caa5bf3b3ab90f30756ae9c028fa9dc606d23247a",
+      "method": "scheduleProfileRounds",
+      "error": "ERR_NO_VALID_DATES",
+      "paths": ["/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/corpus/schedulingsources/every-scheduling-scenario-writes-replays-both-ways-and-holds-its-claims-known-failures-fail-theirs/part-66": [
+    {
+      "index": 1,
+      "previous": "sha256:c1c3d27b02ec891476e914563bc5ef4ed8c1fcd01a2ae706e9d76fe88365ca73",
+      "after": "sha256:38a839460b390d19ffd7855caa5bf3b3ab90f30756ae9c028fa9dc606d23247a",
+      "method": "scheduleProfileRounds",
+      "error": "ERR_NO_VALID_DATES",
+      "paths": ["/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/forge/builders/eventbuilder/engine-build-event-fluent-eventbuilder-create-rollbackonerror-true-forwards-the-flag-to-executionqueue": [
+    {
+      "index": 1,
+      "previous": "sha256:cb967ae5e75617439491e33e889c37f5d117f45fbec83fce4451377f357942c9",
+      "after": "sha256:f7c5582d30a1886733d1fca013c1585861e6553073ca9c3a949dfda0eb33fe8c",
+      "method": "addEventEntries",
+      "error": "ERR_INVALID_PARTICIPANT_IDS",
+      "paths": ["/events/0/drawDefinitions/0", "/events/0/flightProfile"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/generators/drawdefinitions/adhoc/drawmaticgeneration/cannot-use-drawmatic-when-there-are-no-entries-present": [
+    {
+      "index": 1,
+      "previous": "sha256:eb3cb7f703582ee2948a6bc46ec970d46ebc3009228b6f49a059a2a2b14716c9",
+      "after": "sha256:ce8a84baa519ab376540fbf703b18985d456163774062f6d0c0a1e48034b386f",
+      "method": "drawMatic",
+      "error": "ERR_MISSING_PARTICIPANT_IDS",
+      "paths": ["/events/0/drawDefinitions/0", "/events/0/flightProfile", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/generators/drawdefinitions/adhoc/sharedindividualguard/refuses-a-round-robin-pairing-shape-over-entrants-that-share-individuals": [
+    {
+      "index": 2,
+      "previous": "sha256:0ae5397f08b1e12356a07efc7f489c7577a2f70d80af721aba2b6d320eb3891f",
+      "after": "sha256:7d249ac9d1d900821878298561cafd980c9b5192374fb9d3c3c68bb269408b12",
+      "method": "generateAdHocRounds",
+      "error": "ERR_SHARED_INDIVIDUAL_PARTICIPANT",
+      "paths": ["/events/0/drawDefinitions/0", "/events/0/flightProfile", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/generators/drawdefinitions/adhoc/sharedindividualguard/refuses-an-explicit-adhoc-pairing-that-shares-an-individual": [
+    {
+      "index": 2,
+      "previous": "sha256:c4f40c6a4f940e3a4dd2d7e4793e953815865ccf63337a8a000a0940d54c80ee",
+      "after": "sha256:8ad81a093651bfd97aedb5e41646d97c7848cf22f490c797d4ab45a8bee2abf7",
+      "method": "generateAdHocMatchUps",
+      "error": "ERR_SHARED_INDIVIDUAL_PARTICIPANT",
+      "paths": ["/events/0/drawDefinitions/0", "/events/0/flightProfile", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/generators/drawdefinitions/adhoc/sharedindividualround/refuses-a-swiss-round-whose-entrants-share-an-individual": [
+    {
+      "index": 2,
+      "previous": "sha256:b16eaa9b3a83f2c99ddcaa5fe64845e88884e1db3d7699c0ce039357389054f0",
+      "after": "sha256:5988eb771624b71f1bb85fa3df9245ae4b29fe68d0d464ec3ab39d7be0bb32d2",
+      "method": "generateSwissRound",
+      "error": "ERR_SHARED_INDIVIDUAL_PARTICIPANT",
+      "paths": ["/events/0/drawDefinitions/0", "/events/0/flightProfile", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/generators/statcrewmatchupid/generatestatcrew-matchupid-refuses-a-matchupid-that-is-not-a-team-matchup-of-the-tournament-or-not-in-the-given-draw": [
+    {
+      "index": 2,
+      "previous": "sha256:0405a69ca8e12ef7bed840f6445ccd55e076f3f8fa2471855184007fe6109e76",
+      "after": "sha256:3a825ebe6b4c8f08569b35a4e11d986b10f6b96b936d477111eb46bb3155ebbf",
+      "method": "generateStatCrew",
+      "error": "ERR_NOT_FOUND_MATCHUP",
+      "paths": ["/events/1/drawDefinitions/0", "/events/1/flightProfile", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/drawdefinitions/competitionprofile/competition-profile-mutation-locks-enforces-a-draws-lock-at-draw-scope-for-set-and-remove": [
+    {
+      "index": 1,
+      "previous": "sha256:9dd89c7bc75d43243976573b0999a124800cdbc191443b9345d1185ba19f67ac",
+      "after": "sha256:88689a90ceacaac8545b3d0ccf195a2c47eb9e4f71b78ec19862dbdde801ed28",
+      "method": "setCompetitionProfile",
+      "error": "ERR_MUTATION_LOCKED",
+      "paths": [
+        "/events/0/drawDefinitions/0/extensions",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/extensions",
+        "/factory/timeStamp"
+      ],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/drawdefinitions/competitionprofile/competition-profile-mutation-locks-enforces-a-draws-lock-at-event-scope-for-set-and-remove": [
+    {
+      "index": 1,
+      "previous": "sha256:e5662ae905a64dde5d42f4304eba3a65e80a348a627585f1624b034cc15de895",
+      "after": "sha256:12f1a9b77e1f92abea165d4d8baa954667ea0460cbbb36d52c100e44e2214b2f",
+      "method": "setCompetitionProfile",
+      "error": "ERR_MUTATION_LOCKED",
+      "paths": ["/events/0/extensions", "/extensions", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/drawdefinitions/competitionprofile/competition-profile-mutation-locks-enforces-a-draws-lock-at-tournament-scope-for-set-and-remove": [
+    {
+      "index": 1,
+      "previous": "sha256:ab84560337391ac8595addc213e3de43ca2216757649138a677ac05248acf05a",
+      "after": "sha256:48fe1afd9d18ae23e7be0631e4b3bdccfb1046fdfbcf0433b5c60c0d9d6dec7d",
+      "method": "setCompetitionProfile",
+      "error": "ERR_MUTATION_LOCKED",
+      "paths": ["/extensions", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/drawdefinitions/competitionprofile/persisted-policy-approved-scoring-choices-locks-changed-choices-after-matchups-exist-and-supports-engine-draws-locks": [
+    {
+      "index": 1,
+      "previous": "sha256:1dbfc82625839b91e118fab4a115ae4e7b4f1b91b019184915581767fc7e90fe",
+      "after": "sha256:fb2e3e1474d44e2c31b139dee00fa90c7bc67f1bbc85de90fdac34e12a595d73",
+      "method": "setRotatingPartnerScoring",
+      "error": "ERR_MUTATION_LOCKED",
+      "paths": [
+        "/events/0/drawDefinitions/0/extensions",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/extensions",
+        "/factory/timeStamp"
+      ],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/drawdefinitions/drawtypespecific/adhoc/adhocparticipantresults/participantresults-recalculated-when-manually-scored-team-matchups-deleted": [
+    {
+      "index": 1,
+      "previous": "sha256:4a6f8ed3f60a685d0cd8e6c79c234daac8b7985f3a7fdddbe759c98cf0f64e87",
+      "after": "sha256:938da219227d2ea1450df0454dc5bebd8cbe66d7c1b913ea40ea730982b4f033",
+      "method": "deleteAdHocMatchUps",
+      "error": "ERR_SCORES_PRESENT",
+      "paths": ["/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/drawdefinitions/drawtypespecific/adhoc/adhocscenarios/can-add-matchups-to-an-existing-adhoc-round": [
+    {
+      "index": 1,
+      "previous": "sha256:dee1334faed1d3f3dae56d6148a2fc8e64417589334a0bbe96b128fa5847eeb0",
+      "after": "sha256:921f82a553818cbcc503e4ad6e4d122d024c0a6f2e6b882fc2c0dda9f206d25d",
+      "method": "generateAdHocMatchUps",
+      "error": "ERR_MISSING_DRAWDEF",
+      "paths": ["/events/0/drawDefinitions/0", "/events/0/flightProfile", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/drawdefinitions/drawtypespecific/adhoc/adhocscenarios/can-remove-adhoc-rounds": [
+    {
+      "index": 1,
+      "previous": "sha256:37d01a4f3d2ac3c591ff2c90de6f1a6cc1d0e461fbc1baa081546f558c906ca1",
+      "after": "sha256:4bc4972411353fb1b5abb469e2a715d334e05ba86de190597c1668feb147f2b6",
+      "method": "removeRoundMatchUps",
+      "error": "ERR_MISSING_DRAWDEF",
+      "paths": ["/events/0/drawDefinitions/0", "/events/0/flightProfile", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/drawdefinitions/generationwarnsentriesnotplaced/draw-generation-warns-of-the-entries-it-leaves-out-qualifying-drawentries-that-overfill-an-existing-placeholder-are-refused-not-left-out": [
+    {
+      "index": 3,
+      "previous": "sha256:f15b8d77e0bfbbcd14d7b25e3e8dc122d95dd7a3778bea625b4d8cc1dd2e209c",
+      "after": "sha256:2f118d2baa355d4fdf78fb55952bf3bef739e38c2fff432867b9847851bc9e31",
+      "method": "generateDrawDefinition",
+      "error": "ERR_INSUFFICIENT_DRAW_POSITIONS",
+      "paths": ["/events/0/drawDefinitions/0", "/events/0/flightProfile", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/drawdefinitions/positiongovernor/qualifierprogressionbranches/qualifierprogression-with-no-main-draw-qualifier-positions": [
+    {
+      "index": 3,
+      "previous": "sha256:3cfc0849d607826be11848ea1e3654e2755a7a4d5826d3fb261faa5045fab740",
+      "after": "sha256:62f513c15a9d554226339ab58a181738573a370c0c3d2b734c5f56f88068a8a5",
+      "method": "qualifierProgression",
+      "error": "ERR_UNCHANGED_NO_DRAW_POSITIONS_FOR_QUALIFIERS",
+      "paths": ["/events/0/drawDefinitions/0", "/events/0/flightProfile", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/drawdefinitions/positiongovernor/qualifierprogressionbranches/qualifierprogression-with-no-qualified-participants-no-completed-matchups": [
+    {
+      "index": 3,
+      "previous": "sha256:980b5de9bea44cb76c64ca54ba3d7beee734c4e332c0b7933d77dbe8f4dad4b5",
+      "after": "sha256:18b31b43614bf0c0661c03c651045c3da300a194e9b326082908c158ffa3f9fe",
+      "method": "qualifierProgression",
+      "error": "ERR_MISSING_QUALIFIED_PARTICIPANTS",
+      "paths": ["/events/0/drawDefinitions/0", "/events/0/flightProfile", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/drawdefinitions/positiongovernor/qualifierprogressionbranches/qualifierprogression-with-rr-qualifying-structure": [
+    {
+      "index": 3,
+      "previous": "sha256:52e975772e545b5fd0a9e288225deb8ffc830492756811ee45f277dc6b0d06da",
+      "after": "sha256:d75dd888966d1bd2b98245d38d6da612365ab2ed1073a58f5fd5be4eac26e585",
+      "method": "qualifierProgression",
+      "error": "ERR_MISSING_QUALIFIED_PARTICIPANTS",
+      "paths": ["/events/0/drawDefinitions/0", "/events/0/flightProfile", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/drawdefinitions/rotatingpartnerentries/refuses-rotating-individuals-in-an-ordinary-draw-in-the-same-doubles-event": [
+    {
+      "index": 0,
+      "previous": "sha256:63cb0b76e4170e4dbd07ac13152293c9249399e12027c71ff9ec6ad107ebcabb",
+      "after": "sha256:f52d16546a63e095ecd04d51c45e8f07c7f0eed3dac170780c0cdd018592be8d",
+      "method": "addDrawEntries",
+      "error": "ERR_INVALID_ENTRIES",
+      "paths": ["/factory"],
+      "reason": "fixtureStamp"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:2dc367d44e640b2b5b279a1c633b91abee18cbbed80c2671a152d9cb4f10abb3",
+      "after": "sha256:44a7843054065b33d5530de28293af0f5368552fc0437f7b375ff48c2cc665d2",
+      "method": "addDrawEntries",
+      "error": "ERR_INVALID_ENTRIES",
+      "paths": ["/factory"],
+      "reason": "fixtureStamp"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:cfb77827700a4ba422457678a0e1b1f4251de21c18a8b8318074f8b18ce096bf",
+      "after": "sha256:679622144afa481f1d2217bd699b4c53341dfad60d7f60c706bd6385aa9283bb",
+      "method": "addDrawEntries",
+      "error": "ERR_INVALID_ENTRIES",
+      "paths": ["/factory"],
+      "reason": "fixtureStamp"
+    }
+  ],
+  "recorded/src/tests/mutations/drawdefinitions/rotatingpartnerround/locks-applied-round-formats-at-draw-scope": [
+    {
+      "index": 0,
+      "previous": "sha256:3d1ef897c2823e629687158f05a3e11f875f7f39bee8eca5281ca7524d2445f5",
+      "after": "sha256:c252cb1f412a4c5f217dc718da971f8f356bb68eb170aac308c2fedaf566bba5",
+      "method": "setMatchUpFormat",
+      "error": "ERR_INVALID_VALUES",
+      "paths": ["/factory"],
+      "reason": "fixtureStamp"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:420207f02d3d1946d37dec887c30e37c0f21caf539e0c732178752dce276628c",
+      "after": "sha256:5bd9bd1385b6107c509398386976d308440a07e249361e62a8218f4cdb0cfe4f",
+      "method": "setMatchUpFormat",
+      "error": "ERR_INVALID_VALUES",
+      "paths": ["/factory"],
+      "reason": "fixtureStamp"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:9025aecff052e89912300477d5e95a6c788d74ccff19afd4840776b74ab4c6ef",
+      "after": "sha256:d2e05f2a39a483cdd4c3bd909af6c722439cb0921d4b92150ccec360afae772b",
+      "method": "setMatchUpFormat",
+      "error": "ERR_INVALID_VALUES",
+      "paths": ["/factory"],
+      "reason": "fixtureStamp"
+    }
+  ],
+  "recorded/src/tests/mutations/drawdefinitions/rotatingpartnerround/locks-applied-round-formats-at-event-scope": [
+    {
+      "index": 0,
+      "previous": "sha256:5bca309bd8f879bd6813ce2219d8782cb7d208e6bbb37d58acc6e000546e4297",
+      "after": "sha256:51850ef54bddc3ec5ea5d7c3286e6f815d5169715955e2c3734922ddbaf2b249",
+      "method": "setMatchUpFormat",
+      "error": "ERR_INVALID_VALUES",
+      "paths": ["/factory"],
+      "reason": "fixtureStamp"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:725690ab22deb7eedcddfb01b5d1da21417cb0290c0952a98d2d489408b92c04",
+      "after": "sha256:8286e089207f172513144ad695b0ea2ccd64144317076734e6c851eff6cabcff",
+      "method": "setMatchUpFormat",
+      "error": "ERR_INVALID_VALUES",
+      "paths": ["/factory"],
+      "reason": "fixtureStamp"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:8107c34bddf9350b6524c80f9934995c8a783ba742e07e9b3d9c6d6715d84460",
+      "after": "sha256:4c4fd5867759c8fd794946810ad69f2ecbdbb591eddfb2e0d998f4b392c14ce4",
+      "method": "setMatchUpFormat",
+      "error": "ERR_INVALID_VALUES",
+      "paths": ["/factory"],
+      "reason": "fixtureStamp"
+    }
+  ],
+  "recorded/src/tests/mutations/drawdefinitions/rotatingpartnerround/locks-applied-round-formats-at-matchup-scope": [
+    {
+      "index": 0,
+      "previous": "sha256:dbe9b9e6d969665dcc09eb4555615bebd768169d05d36b7e2da5e529cf265396",
+      "after": "sha256:e8caf700b02f3b828a74b8226e8eb0c1a2712aa33830f1ea3ce2eda65281a6c5",
+      "method": "setMatchUpFormat",
+      "error": "ERR_INVALID_VALUES",
+      "paths": ["/factory"],
+      "reason": "fixtureStamp"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:c536e0439a46cee81f2d0540f2a3451fa92c590a0f4225c0acb89a60d4c87f06",
+      "after": "sha256:8b0b69b4beb309d04de3d468fa34bce3938e89f49cde856cb859c4677372d4d6",
+      "method": "setMatchUpFormat",
+      "error": "ERR_INVALID_VALUES",
+      "paths": ["/factory"],
+      "reason": "fixtureStamp"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:31964eacaf956ac8dec0a7ea6cd146d1729a18d54dabe6a3164d8f28fd2666ef",
+      "after": "sha256:67be79a91a88ec061899576c95ec60784b0f1c4eb4fc7693d0b0939ab2a5e44d",
+      "method": "setMatchUpFormat",
+      "error": "ERR_INVALID_VALUES",
+      "paths": ["/factory"],
+      "reason": "fixtureStamp"
+    }
+  ],
+  "recorded/src/tests/mutations/drawdefinitions/rotatingpartnerround/locks-applied-round-formats-at-structure-scope": [
+    {
+      "index": 0,
+      "previous": "sha256:35a27fb312485ef0fd7060ad8f906dabe6ecdb89f4f478099a570625322b419c",
+      "after": "sha256:c33bad06d5858884092c13ff315ba61a5d099249d6437c7a1eb3ff35bc69d0bd",
+      "method": "setMatchUpFormat",
+      "error": "ERR_INVALID_VALUES",
+      "paths": ["/factory"],
+      "reason": "fixtureStamp"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:d499eddc18392cef2a880cdd193efc1b113006115c3ef350574f70aecc0b1a23",
+      "after": "sha256:e1fcbdeac34b7525335e97f748dc96dc9be4cb3fd3b81b579c905d02d7c5118e",
+      "method": "setMatchUpFormat",
+      "error": "ERR_INVALID_VALUES",
+      "paths": ["/factory"],
+      "reason": "fixtureStamp"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:5364e3acaad9b575abfb4b5417719e290d338eca314acd898151d900ca8d88cd",
+      "after": "sha256:3bd63e87910d59cccf50c1dcd03e2daf186f8726305f6bd12b9b554a43a29feb",
+      "method": "setMatchUpFormat",
+      "error": "ERR_INVALID_VALUES",
+      "paths": ["/factory"],
+      "reason": "fixtureStamp"
+    }
+  ],
+  "recorded/src/tests/mutations/drawdefinitions/rotatingpartnerround/retry-identity-includes-pairings-and-score-rules-and-force-cannot-strip-an-applied-format": [
+    {
+      "index": 0,
+      "previous": "sha256:d7d11529d702a95f3ccd34221d8a154afbc0295b5e26743626078f0ccfda4f16",
+      "after": "sha256:79dbdf9efd1474413d71c2df7e21e9d6e8c4ccc989c163ac0266b1556f5ff141",
+      "method": "setMatchUpFormat",
+      "error": "ERR_INVALID_VALUES",
+      "paths": ["/factory"],
+      "reason": "fixtureStamp"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:1d8a4529c257ad38274c6007f6165e3ef4de2516e504796ba9a9802cc3baeb7f",
+      "after": "sha256:70660d63359af41985a4c2982f92569f9c3dd59652a25278d4132480401436c3",
+      "method": "setMatchUpFormat",
+      "error": "ERR_INVALID_VALUES",
+      "paths": ["/factory"],
+      "reason": "fixtureStamp"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:506a53b1a9c3cdeb36c07b35db11ee1ebd3bbc18dcfbe2fde4bf8c1cbe996fe9",
+      "after": "sha256:06336ee485f1bb0d40558b71b97e09905056809f67c8e273244cf06777b480d2",
+      "method": "setMatchUpFormat",
+      "error": "ERR_INVALID_VALUES",
+      "paths": ["/factory"],
+      "reason": "fixtureStamp"
+    }
+  ],
+  "recorded/src/tests/mutations/drawdefinitions/sanctionedgenerationentrylimits/qualifying-added-to-an-existing-main-draw-refuses-three-qualifying-wildcard-entries-when-two-are-sanctioned": [
+    {
+      "index": 2,
+      "previous": "sha256:c615dc6142caa1fbb1aa1556abfd94a55930ebea3c928c66f86fdcaf89428dfb",
+      "after": "sha256:9b91204d9b36018e8cd72dabaed57b644cecca8844a03afbf5a8ec0786cc7f9e",
+      "method": "generateDrawDefinition",
+      "error": "ERR_UNCHANGED_NO_AVAILABLE_STAGE_SPACE",
+      "paths": ["/events/0/drawDefinitions/0", "/events/0/flightProfile", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/drawdefinitions/structures/qualifying/addqualifyingrefusesoverfullentries/adding-qualifying-to-an-existing-draw-refuses-overfull-drawentries-12-drawentries-into-an-8-qualifying-structure-with-ignorestagespace-refused-the-draw-unchanged": [
+    {
+      "index": 3,
+      "previous": "sha256:cd99523027c2f6a8c928e35075fd43b857dd1aeb62fc9c709fa7b8ab09af7f07",
+      "after": "sha256:9713a72ee11f190b0b8fabf3b4ab79f661d70fcd7795851c309cbe88ec96a398",
+      "method": "generateDrawDefinition",
+      "error": "ERR_INSUFFICIENT_DRAW_POSITIONS",
+      "paths": ["/events/0/drawDefinitions/0", "/events/0/flightProfile", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/drawdefinitions/structures/qualifying/addqualifyingrefusesoverfullentries/adding-qualifying-to-an-existing-draw-refuses-overfull-drawentries-12-drawentries-into-an-8-qualifying-structure-without-ignorestagespace-refused-the-draw-unchanged": [
+    {
+      "index": 3,
+      "previous": "sha256:86c6fad961d21af8cfc624421ce706f59119e8643c877018e44851084dda3b1d",
+      "after": "sha256:dda5d29d6eb622491af7500a6180451b2956e0af9c77835d0cda316b0ae09c82",
+      "method": "generateDrawDefinition",
+      "error": "ERR_UNCHANGED_NO_AVAILABLE_STAGE_SPACE",
+      "paths": ["/events/0/drawDefinitions/0", "/events/0/flightProfile", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/drawdefinitions/structures/qualifying/feedinqualifying/a-feed-in-qualifying-structure-can-be-added-to-an-existing-main": [
+    {
+      "index": 3,
+      "previous": "sha256:48f0eb100557f6cf4cb9f9a95d39f6f2f710df4b3a3c34a2cd003f26eb348aef",
+      "after": "sha256:73f6c9a7a3452a83a2ebcd32fc5c8b1336c5c70623a9d4bad030534d812d746d",
+      "method": "generateQualifyingStructure",
+      "error": "ERR_INVALID_VALUES",
+      "paths": ["/events/0/drawDefinitions/0", "/events/0/flightProfile", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/drawdefinitions/structures/qualifying/qualifierprogression/can-assign-all-available-qualified-participants-to-the-main-structure-qualifying-draw-positions": [
+    {
+      "index": 3,
+      "previous": "sha256:16c44b4b34cf1c307a1ec5240154a1ba3a954c149f801d50560b814b80179fe7",
+      "after": "sha256:25b4bbf10771e18ff344ff7ba8765ba5f2df3e47312f455c849e6b442a5f6d39",
+      "method": "qualifierProgression",
+      "error": "ERR_UNCHANGED_NO_DRAW_POSITIONS_FOR_QUALIFIERS",
+      "paths": ["/events/0/drawDefinitions/0", "/events/0/flightProfile", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    },
+    {
+      "index": 5,
+      "previous": "sha256:25b4bbf10771e18ff344ff7ba8765ba5f2df3e47312f455c849e6b442a5f6d39",
+      "after": "sha256:e88242c655f0afce370f5b3a1a1bdf595278f134732bb4a6daaff36afc7dc338",
+      "method": "qualifierProgression",
+      "error": "ERR_MISSING_QUALIFIED_PARTICIPANTS",
+      "paths": ["/events/0/drawDefinitions/1", "/events/0/flightProfile/flights/1", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/drawdefinitions/structures/qualifying/qualifierprogressionteams/can-assign-all-available-qualified-participants-to-the-main-structure-qualifying-draw-positions-for-a-team-event": [
+    {
+      "index": 3,
+      "previous": "sha256:95cbeb0700e6ad6a6c5cf33650c076d79852bad5c94ef0df8f3c995d86a2eddb",
+      "after": "sha256:b2968a1bec643c57266f76472b58c9d7b5b1ef34bd04c57aa2bdf2e72111e3eb",
+      "method": "qualifierProgression",
+      "error": "ERR_UNCHANGED_NO_DRAW_POSITIONS_FOR_QUALIFIERS",
+      "paths": ["/events/0/drawDefinitions/0", "/events/0/flightProfile", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    },
+    {
+      "index": 5,
+      "previous": "sha256:b2968a1bec643c57266f76472b58c9d7b5b1ef34bd04c57aa2bdf2e72111e3eb",
+      "after": "sha256:ba60a4babe5136a80867b34d7b1959825ee72f32f3f5f3ea8d29bcd148ed491d",
+      "method": "qualifierProgression",
+      "error": "ERR_MISSING_QUALIFIED_PARTICIPANTS",
+      "paths": ["/events/0/drawDefinitions/1", "/events/0/flightProfile/flights/1", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/drawdefinitions/teamevents/teamadhoc/can-assign-participants-to-singles-doubles-matchups-in-team-adhoc-events": [
+    {
+      "index": 3,
+      "previous": "sha256:82ba4a9cece000d99abd43309900eeba379c74fce81c429cbf8b9a3477f38591",
+      "after": "sha256:c0355d9bd57ed1294948b5866498a5be4c980834219a88c98cf4ef2531c9d1b0",
+      "method": "assignTieMatchUpParticipantId",
+      "error": "ERR_SHARED_INDIVIDUAL_PARTICIPANT",
+      "paths": ["/factory/timeStamp", "/venues/0/courts"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/entries/sharedindividualdrawentries/refuses-adding-a-pair-to-bracketed-draw-entries-when-an-individual-is-already-entered": [
+    {
+      "index": 2,
+      "previous": "sha256:144e6604cfa539b305e3d391b63b610a4c2ce8e189711161e309383efee16f6c",
+      "after": "sha256:15a4ed599606f3e42036ae0dd0fb556c751706424b8099c0983b2f5568d002fa",
+      "method": "addDrawEntries",
+      "error": "ERR_SHARED_INDIVIDUAL_PARTICIPANT",
+      "paths": ["/events/0/drawDefinitions/0", "/events/0/flightProfile", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/entries/sharedindividualdrawentries/refuses-when-both-halves-of-the-conflict-arrive-in-the-same-adddrawentries-call": [
+    {
+      "index": 2,
+      "previous": "sha256:b1fdd799f17110180655a09cdb9a7c7857c9b1f96b6c10f010cefa568b947300",
+      "after": "sha256:2b21fc148ce0b5590095a3658007e7d0d398c80aa8e69436adba1e8c2bebb10e",
+      "method": "addDrawEntries",
+      "error": "ERR_SHARED_INDIVIDUAL_PARTICIPANT",
+      "paths": ["/events/0/drawDefinitions/0", "/events/0/flightProfile", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/errorpaths/cascadewriteerrorsreachthecaller/a-failed-write-at-conditionallyadvancedrawposition-fails-the-call-and-is-returned-v1-residual-matrix-seed-7": [
+    {
+      "index": 0,
+      "previous": "sha256:999172487d4c9956cb9f0025394595a3a5fd5c5f41f7926a447fddba200501c5",
+      "after": "sha256:0ca4496be08950e6cd47a81b48b98e39dfeb5f219ed22737dcc97220338e654e",
+      "method": "setMatchUpStatus",
+      "error": "ERR_FORCED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "cascadeWriteErrorsReachTheCaller"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:681f7332623ef6500089866ef3ed040eb24b7318a4bd683a061b73ef3d937b3b",
+      "after": "sha256:13d77f920cac45ffb1d6539dbb4a9a02afe42cd43ffc9654cdd58cb78d771205",
+      "method": "setMatchUpStatus",
+      "error": "ERR_FORCED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "cascadeWriteErrorsReachTheCaller"
+    }
+  ],
+  "recorded/src/tests/mutations/errorpaths/cascadewriteerrorsreachthecaller/a-failed-write-at-conditionallyremovedrawposition-fails-the-correction-and-is-returned-v1-residual-deep-seed-7000009/part-2": [
+    {
+      "index": 4,
+      "previous": "sha256:da25bd7418fb8680bf20fdfac4b5666d485e88b70f767d3299402f6e27a77631",
+      "after": "sha256:a1354ea5ae8bd27c8d4823f65e582d3e40330b32d3f1e5679862ffcf87861b45",
+      "method": "setMatchUpStatus",
+      "error": "ERR_FORCED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/6/drawPositions/1",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/6/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "cascadeWriteErrorsReachTheCaller"
+    },
+    {
+      "index": 4,
+      "previous": "sha256:acea2929f8ef9cfea2956687600e9692c798375ad777daf400187ae695816e19",
+      "after": "sha256:f960d53d3e434d9391c5ef648aaaf362808810e610de6959760a73e7fb4d3859",
+      "method": "setMatchUpStatus",
+      "error": "ERR_FORCED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/6/drawPositions/1",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/6/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "cascadeWriteErrorsReachTheCaller"
+    }
+  ],
+  "recorded/src/tests/mutations/errorpaths/cascadewriteerrorsreachthecaller/a-failed-write-at-doubleexitadvancement-fails-the-call-and-is-returned-v1-residual-matrix-seed-77": [
+    {
+      "index": 0,
+      "previous": "sha256:e134cc3a0e66461e2f591f4e8314d985eece74a8dc0e65648881e70530c08d28",
+      "after": "sha256:f9761f36a91d1cf85ff93b700295c34d84b4128366dba4846b9aac3cd79f2521",
+      "method": "setMatchUpStatus",
+      "error": "ERR_FORCED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/1/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/1/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/1/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/1/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "cascadeWriteErrorsReachTheCaller"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:fdd904a98376e75e8a0c82426424fdf26deb3903ba3609bf895a3feff2f9a17c",
+      "after": "sha256:b00de2ee566d7dd5427cf89341a625fa95b8fb8f192e542d915bb55ccd87f89f",
+      "method": "setMatchUpStatus",
+      "error": "ERR_FORCED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/1/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/1/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/1/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/1/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "cascadeWriteErrorsReachTheCaller"
+    }
+  ],
+  "recorded/src/tests/mutations/errorpaths/cascadewriteerrorsreachthecaller/a-failed-write-at-settleheldexits-fails-the-call-and-is-returned-v1-residual-matrix-seed-77": [
+    {
+      "index": 2,
+      "previous": "sha256:6dd9e52fa3e51ca87f6e67e4039e5556888bd45b68d0f88779ff44c412a6ffd8",
+      "after": "sha256:5e054f2a961004ed28b422620f00bae2627b46ab1275a43866867207d492bdfb",
+      "method": "setMatchUpStatus",
+      "error": "ERR_FORCED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/3/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/3/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/3/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/3/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/3/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/5/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/5/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/5/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/5/sideExitProvenance",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/5/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/5/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/6/drawPositions/1",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/6/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/sideExitProvenance",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/2/drawPositions/1",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/2/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/3/score",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/3/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/3/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/4/drawPositions/1",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/2/bye",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/2/byeFromPropagation",
+        "/events/0/drawDefinitions/0/structures/1/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "cascadeWriteErrorsReachTheCaller"
+    },
+    {
+      "index": 2,
+      "previous": "sha256:09f598bfe574da9c592aa9e87575cb5d0d1648c4fffb4d55c5955d92e23661a9",
+      "after": "sha256:f2ab6727af9f7b027654676a052f8c3a8c1a8cc1c09bbd8fe2ab360d7ae26e37",
+      "method": "setMatchUpStatus",
+      "error": "ERR_FORCED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/3/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/3/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/3/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/3/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/3/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/5/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/5/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/5/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/5/sideExitProvenance",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/5/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/5/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/6/drawPositions/1",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/6/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/sideExitProvenance",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/2/drawPositions/1",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/2/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/3/score",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/3/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/3/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/4/drawPositions/1",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/2/bye",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/2/byeFromPropagation",
+        "/events/0/drawDefinitions/0/structures/1/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "cascadeWriteErrorsReachTheCaller"
+    }
+  ],
+  "recorded/src/tests/mutations/errorpaths/cascadewriteerrorsreachthecaller/a-failed-write-at-withdrawexitfrombyechain-fails-the-correction-and-is-returned-v1-residual-deep-seed-7000545/part-2": [
+    {
+      "index": 4,
+      "previous": "sha256:be92b4cafeea60a26954156b16ee2c9d1af35d86fcfae51d3f8f0f242e2c4b3e",
+      "after": "sha256:6b5fd6d207d941f54ac2435691f0709c4ffe7e131dd217064956f2722467afb5",
+      "method": "setMatchUpStatus",
+      "error": "ERR_FORCED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/6/sideExitProvenance",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/6/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/6/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/6/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/7/drawPositions/1",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/7/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/7/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/7/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/7/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/5/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/5/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/0/bye",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/0/byeFromPropagation",
+        "/events/0/drawDefinitions/0/structures/1/updatedAt",
+        "/events/0/drawDefinitions/0/structures/2/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/2/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/2/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/2/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "cascadeWriteErrorsReachTheCaller"
+    },
+    {
+      "index": 4,
+      "previous": "sha256:f3a4cc8e834637d72d9701d1aecdb98156c0f689008f2f361ae54fcd3730ffa0",
+      "after": "sha256:b86b2638715aaf5aa5e123a216ad3ae809579f6236e8268c92e51c21bf7e2c3c",
+      "method": "setMatchUpStatus",
+      "error": "ERR_FORCED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/6/sideExitProvenance",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/6/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/6/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/6/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/7/drawPositions/1",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/7/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/7/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/7/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/7/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/5/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/5/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/0/bye",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/0/byeFromPropagation",
+        "/events/0/drawDefinitions/0/structures/1/updatedAt",
+        "/events/0/drawDefinitions/0/structures/2/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/2/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/2/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/2/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "cascadeWriteErrorsReachTheCaller"
+    }
+  ],
+  "recorded/src/tests/mutations/errorpaths/cascadewriteerrorsreachthecaller/a-failed-write-of-a-team-dual-s-status-fails-the-line-score-that-caused-it-v1-residual": [
+    {
+      "index": 1,
+      "previous": "sha256:5deee8f212c25e07463462e73a572014a30a47897c1d4049a28843889d94c007",
+      "after": "sha256:bf8641d9c1e5be5926798dd7964f69d99facb6b3bdbe10fb6d9a437d64bdbfd2",
+      "method": "setMatchUpStatus",
+      "error": "ERR_FORCED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/displaySideNumber",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/drawPosition",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/lineUp",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/1/displaySideNumber",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/1/drawPosition",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/1/lineUp",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieFormat",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/orderOfFinish",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "cascadeWriteErrorsReachTheCaller"
+    },
+    {
+      "index": 1,
+      "previous": "sha256:b463fcd4025f7a1bc2d7ded7aa3671e781ac27f34e82a923ea202eefab2a0bdb",
+      "after": "sha256:f29844ec768609b75af813435e0735bed597ad0826a4a08d45d206b86b9ac4eb",
+      "method": "setMatchUpStatus",
+      "error": "ERR_FORCED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/displaySideNumber",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/drawPosition",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/lineUp",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/1/displaySideNumber",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/1/drawPosition",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/1/lineUp",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieFormat",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/orderOfFinish",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "cascadeWriteErrorsReachTheCaller"
+    }
+  ],
+  "recorded/src/tests/mutations/errorpaths/reconciledeciderreturnsitserror/returns-the-error-when-the-write-to-the-decider-fails-v1-residual-the-final-stays-scored": [
+    {
+      "index": 13,
+      "previous": "sha256:cfbf9502169af1d69ee41807b482b9ab3382f4a5e8ff9d4177164046ac5ae259",
+      "after": "sha256:ca1b2623a8c861d977ac595c8ba1d00959606c953cec746a181bba53b3a39929",
+      "method": "setMatchUpStatus",
+      "error": "ERR_FORCED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/7/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/7/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/7/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/7/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/7/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/2/positionAssignments/0/participantId",
+        "/events/0/drawDefinitions/0/structures/2/positionAssignments/1/participantId",
+        "/events/0/drawDefinitions/0/structures/2/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "reconcileDeciderReturnsItsError"
+    },
+    {
+      "index": 13,
+      "previous": "sha256:6c45b531b3756e9303186b3231713603b142bbe02c1b264f7faf42e7c1d0444a",
+      "after": "sha256:bd3c402198295460dcc50eccba95252672715e73d9744ea5a323df93060de03a",
+      "method": "setMatchUpStatus",
+      "error": "ERR_FORCED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/7/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/7/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/7/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/7/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/7/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/2/positionAssignments/0/participantId",
+        "/events/0/drawDefinitions/0/structures/2/positionAssignments/1/participantId",
+        "/events/0/drawDefinitions/0/structures/2/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "reconcileDeciderReturnsItsError"
+    }
+  ],
+  "recorded/src/tests/mutations/events/bulkmatchupstatusupdaterefusals/bulkmatchupstatusupdate-locates-every-outcome-before-applying-any-a-later-outcome-refused-by-setmatchupstatus-rollbackonerror-false": [
+    {
+      "index": 0,
+      "previous": "sha256:defd9373b6e290a531d062df35d19723f6bfa9ec12a1d5caabccbd3cbf73826c",
+      "after": "sha256:b72b76d0324ffc190b5c4648b5e084cc3db6dc5500d7b99b2be016d82561ac09",
+      "method": "bulkMatchUpStatusUpdate",
+      "error": "ERR_INVALID_MATCHUP_STATUS",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "F-008"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:d25e16f2495f22af11e9b95faa00b2129b5339d299316f3721f5b987f4cf795a",
+      "after": "sha256:37d3c031e1b37559e47bee147241877bd037251fb782e32587af2c19f6fd6c5a",
+      "method": "bulkMatchUpStatusUpdate",
+      "error": "ERR_INVALID_MATCHUP_STATUS",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "F-008"
+    }
+  ],
+  "recorded/src/tests/mutations/events/entries/genderedentries/accepts-both-short-and-long-form-genders-for-ungrouped-doubles-entries": [
+    {
+      "index": 6,
+      "previous": "sha256:dd189109e017f4fafda14b5800acf13ac634bb89faa1f62b944acc856964c2a7",
+      "after": "sha256:43f38ca7424d97794844e50405a9e19a752b5b64462330d04d571103a0094e8e",
+      "method": "addEventEntries",
+      "error": "ERR_INVALID_PARTICIPANT_IDS",
+      "paths": ["/events/4", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    },
+    {
+      "index": 7,
+      "previous": "sha256:43f38ca7424d97794844e50405a9e19a752b5b64462330d04d571103a0094e8e",
+      "after": "sha256:21592fff89d364e6843a1d9b051a53a66b9d7a105364e866cb31652c49d7e49c",
+      "method": "addEventEntries",
+      "error": "ERR_INVALID_PARTICIPANT_IDS",
+      "paths": ["/events/5", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/events/entries/genderedentries/accepts-both-short-form-m-f-and-long-form-male-female-gender-values": [
+    {
+      "index": 8,
+      "previous": "sha256:47b619c574bfc677e283974cccd73563da369e07f5ae3f0ad870b3372654e59d",
+      "after": "sha256:c737f4b73a95aa15a3320fed5d3eb1dfab2897b75514fca7d769a854db144bed",
+      "method": "addEventEntries",
+      "error": "ERR_INVALID_PARTICIPANT_IDS",
+      "paths": ["/events/4", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    },
+    {
+      "index": 9,
+      "previous": "sha256:c737f4b73a95aa15a3320fed5d3eb1dfab2897b75514fca7d769a854db144bed",
+      "after": "sha256:033d0730fba327f2171211f86f37486531b2271665b058d686e74acc04298c0c",
+      "method": "addEventEntries",
+      "error": "ERR_INVALID_PARTICIPANT_IDS",
+      "paths": ["/events/5", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/events/entries/modifyentriesstatus/can-account-for-individuals-appearing-in-multiple-doubles-pairs": [
+    {
+      "index": 3,
+      "previous": "sha256:35d9baf288505902a78cd6433fb9b6952881d8e2ee15c2c11dbe27415dc5a201",
+      "after": "sha256:379702ed87ebcda6382ccf7fcc1f7b9840f59972013c9ec3ccf8f27eb08825d4",
+      "method": "modifyEntriesStatus",
+      "error": "ERR_EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT",
+      "paths": ["/events/0/drawDefinitions/0", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/events/entries/modifyentriesstatusrefusesbeforewrite/modifyentriesstatus-refuses-a-mixed-unassigned-assigned-list-before-writing-any-entry-drawid-d1": [
+    {
+      "index": 3,
+      "previous": "sha256:3da1dc1fc085e35518208173969f4e81df31af1eb20074b2d94fa91204f93090",
+      "after": "sha256:8f471e192f2e5a4a648961e082adb67b10eee48c6cb07b82574586aded31d07a",
+      "method": "modifyEntriesStatus",
+      "error": "ERR_EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT",
+      "paths": ["/events/0/drawDefinitions/0", "/events/0/flightProfile", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/events/entries/modifyentriesstatusrefusesbeforewrite/modifyentriesstatus-refuses-a-mixed-unassigned-assigned-list-before-writing-any-entry-drawid-undefined": [
+    {
+      "index": 3,
+      "previous": "sha256:46fc80334c24e7938f7d458c88037f1d2e9997cc5015e22e103dcc66b893e0f2",
+      "after": "sha256:00c9e1f20f7da4b08ff7921f7be45a516edc0154399b345dead26ba59bb9458f",
+      "method": "modifyEntriesStatus",
+      "error": "ERR_EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT",
+      "paths": ["/events/0/drawDefinitions/0", "/events/0/flightProfile", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/events/entries/modifyflightentries/will-modify-flight-drawentries-when-no-drawdefinition-is-present": [
+    {
+      "index": 9,
+      "previous": "sha256:77b4801aafa1bd95dd5cd704595658a7b86bdd18abef14b417a732a9e4e069e9",
+      "after": "sha256:6128e83e109036fd8e203d156c5fc7c4494ce5f93fb342ae595aa7ef6afb4d69",
+      "method": "removeDrawEntries",
+      "error": "ERR_MISSING_DRAW_ID",
+      "paths": ["/events/0/drawDefinitions/2", "/events/0/flightProfile/flights/2/drawName", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/events/generateadhoc/will-not-allow-addition-of-ad-hoc-matchups-to-other-draw-types": [
+    {
+      "index": 2,
+      "previous": "sha256:883f7df228d3f7e54adac616486b570eac37002b169e4d1a78188ddafeaf3217",
+      "after": "sha256:c43e8e9d1c5560e00c5c3161d1165528794528b1230517663e6b17f87524e941",
+      "method": "generateAdHocMatchUps",
+      "error": "ERR_INVALID_VALUES",
+      "paths": ["/events/1/drawDefinitions/0", "/events/1/flightProfile", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/events/scopedflightgeneration/appends-flights-for-the-participants-a-deleted-flight-freed-leaving-the-flighted-draw-untouched": [
+    {
+      "index": 2,
+      "previous": "sha256:6e9b96f5798321b6ee12aaa5e323c5f7138c2dedd311407bacb17ae92b6009de",
+      "after": "sha256:6345ee245ca137508a8bb00cb5afc612cb728c9a74c8138f634afeb76de3a135",
+      "method": "generateFlightProfile",
+      "error": "ERR_EXISTING_FLIGHT_PROFILE",
+      "paths": [
+        "/events/0/drawDefinitions/0",
+        "/events/0/flightProfile/flights/0/drawOrder",
+        "/events/0/flightProfile/flights/1",
+        "/factory/timeStamp"
+      ],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/exitpropagation/asettleloopatitsboundrefuses/crosslinksthroughbyes-refuses-with-settle-bound-reached-naming-itself-when-its-bound-is-reached-with-work-left": [
+    {
+      "index": 7,
+      "previous": "sha256:e250c4ac01cad0ebc4d5aa63abc27030d3103d57b22b5ecaba7dcfc2a370f58f",
+      "after": "sha256:c633d325e9eac6d1311cc2a5cacadad2e0e608633f97be6b441c7cefa31a3760",
+      "method": "setMatchUpStatus",
+      "error": "ERR_SETTLE_BOUND_REACHED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/9/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/9/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/9/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/9/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/9/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/12/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/12/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/12/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/12/sideExitProvenance",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/12/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/12/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/14/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/14/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/14/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/15/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/15/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/5/winningSide",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/5/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/5/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/8/score",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/8/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/8/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/8/sideExitProvenance/2",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/8/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/10/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/10/sideExitProvenance",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/10/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/11/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/11/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/12/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/12/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/12/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/12/score",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/12/sideExitProvenance",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/12/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/12/winningSide",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/13/drawPositions/1",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/13/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/2/bye",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/2/byeFromPropagation",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/4/bye",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/4/byeFromPropagation",
+        "/events/0/drawDefinitions/0/structures/1/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "aSettleLoopAtItsBoundRefuses"
+    },
+    {
+      "index": 7,
+      "previous": "sha256:63060fe019e97da2c4cfb38ee28df2ef949d4d4d25c0ea6d3e0a6483b05f4b71",
+      "after": "sha256:73e5f293381d1b0e72f67057f214dd2beab3f86cc2f82c933569549d512076b9",
+      "method": "setMatchUpStatus",
+      "error": "ERR_SETTLE_BOUND_REACHED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/9/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/9/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/9/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/9/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/9/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/12/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/12/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/12/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/12/sideExitProvenance",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/12/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/12/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/14/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/14/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/14/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/15/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/15/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/5/winningSide",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/5/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/5/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/8/score",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/8/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/8/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/8/sideExitProvenance/2",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/8/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/10/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/10/sideExitProvenance",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/10/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/11/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/11/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/12/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/12/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/12/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/12/score",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/12/sideExitProvenance",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/12/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/12/winningSide",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/13/drawPositions/1",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/13/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/2/bye",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/2/byeFromPropagation",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/4/bye",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/4/byeFromPropagation",
+        "/events/0/drawDefinitions/0/structures/1/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "aSettleLoopAtItsBoundRefuses"
+    }
+  ],
+  "recorded/src/tests/mutations/exitpropagation/asettleloopatitsboundrefuses/producestrandedconvergences-refuses-with-settle-bound-reached-naming-itself-when-its-bound-is-reached-with-work-left": [
+    {
+      "index": 7,
+      "previous": "sha256:b8fc513e490890d4eafdb8e6770456e0cc8e4651f801953aa5644db441da57b9",
+      "after": "sha256:60e39bc8698c1f33033624fc72e8794f43230df8497472de8b262146c0459d03",
+      "method": "setMatchUpStatus",
+      "error": "ERR_SETTLE_BOUND_REACHED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/9/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/9/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/9/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/9/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/9/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/12/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/12/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/12/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/12/sideExitProvenance",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/12/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/12/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/14/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/14/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/14/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/15/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/15/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/5/winningSide",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/5/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/5/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/8/score",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/8/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/8/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/8/sideExitProvenance/2",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/8/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/11/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/11/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/12/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/12/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/2/bye",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/2/byeFromPropagation",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/4/bye",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/4/byeFromPropagation",
+        "/events/0/drawDefinitions/0/structures/1/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "aSettleLoopAtItsBoundRefuses"
+    },
+    {
+      "index": 7,
+      "previous": "sha256:3ab749ae6d2f5e883f843442637479b62a55ce4ec5c256a3d6c3592195e26c75",
+      "after": "sha256:5dfdb116d5a91628ca810bd815ead055936092fc5adc896a9f9efe4282fc53a4",
+      "method": "setMatchUpStatus",
+      "error": "ERR_SETTLE_BOUND_REACHED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/9/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/9/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/9/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/9/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/9/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/12/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/12/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/12/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/12/sideExitProvenance",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/12/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/12/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/14/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/14/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/14/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/15/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/15/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/5/winningSide",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/5/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/5/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/8/score",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/8/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/8/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/8/sideExitProvenance/2",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/8/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/11/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/11/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/12/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/12/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/2/bye",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/2/byeFromPropagation",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/4/bye",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/4/byeFromPropagation",
+        "/events/0/drawDefinitions/0/structures/1/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "aSettleLoopAtItsBoundRefuses"
+    }
+  ],
+  "recorded/src/tests/mutations/exitpropagation/asettleloopatitsboundrefuses/propagateexitfrom-refuses-with-settle-bound-reached-naming-itself-when-its-bound-is-reached-with-work-left": [
+    {
+      "index": 0,
+      "previous": "sha256:0b303dc8bd182156f78a6973e60367f093fad924b2ba512f3ed0e7f042f5aab5",
+      "after": "sha256:59643414b22654a21e1f3f99113f61a2389e40e167abab8915436776f49654ea",
+      "method": "setMatchUpStatus",
+      "error": "ERR_SETTLE_BOUND_REACHED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/2/participantId",
+        "/events/0/drawDefinitions/0/structures/1/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "aSettleLoopAtItsBoundRefuses"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:933d5ae27068ead92627fb83b4c15a34ef03394ebf4c18473bcf52f6a7c98d35",
+      "after": "sha256:34808870aba1544619ded925ce0c15ef6cfd21754d1ed193c53bff40d1f49486",
+      "method": "setMatchUpStatus",
+      "error": "ERR_SETTLE_BOUND_REACHED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/2/participantId",
+        "/events/0/drawDefinitions/0/structures/1/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "aSettleLoopAtItsBoundRefuses"
+    }
+  ],
+  "recorded/src/tests/mutations/exitpropagation/asettleloopatitsboundrefuses/sendheldexitson-refuses-with-settle-bound-reached-naming-itself-when-its-bound-is-reached-with-work-left/part-4": [
+    {
+      "index": 1,
+      "previous": "sha256:bf44f8cc84100a87905b815d7008ee8b0a5e96c6cd19f19756d8c06bc559a05e",
+      "after": "sha256:cc572ee7493b4349fa09acac2c2e01c0fe10eb7f9c8cabbaca9a50ba932328f5",
+      "method": "setMatchUpStatus",
+      "error": "ERR_SETTLE_BOUND_REACHED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/1/matchUps/1/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/1/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/1/schedule",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/1/score",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/1/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/3/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/3/sideExitProvenance",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/3/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/4/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/4/score",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "aSettleLoopAtItsBoundRefuses"
+    },
+    {
+      "index": 1,
+      "previous": "sha256:b5d808719e4e7f2736436d5345f55e4a9c418c41b1fcdc0e607345447b526a53",
+      "after": "sha256:77721b599b322b6d46847fdab6d40b59654b15116ec21c42e5cf02b79fecdcda",
+      "method": "setMatchUpStatus",
+      "error": "ERR_SETTLE_BOUND_REACHED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/1/matchUps/1/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/1/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/1/schedule",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/1/score",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/1/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/3/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/3/sideExitProvenance",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/3/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/4/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/4/score",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "aSettleLoopAtItsBoundRefuses"
+    }
+  ],
+  "recorded/src/tests/mutations/exitpropagation/asettlepassreportswhatitcannotdo/setmatchupstatus-refuses-when-reconcilelinkadvancements-reports-under-v1-with-the-error": [
+    {
+      "index": 0,
+      "previous": "sha256:79efd789fc9f2ff7cb78e45b88f3dd5245ba62e1c21bb3a7bffe15285144fe78",
+      "after": "sha256:78c0de9235162dd4322b9912593f3d6dd6b647607ce9c243ba3b8686e31bd148",
+      "method": "setMatchUpStatus",
+      "error": "ERR_SETTLE_BOUND_REACHED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/5/participantId",
+        "/events/0/drawDefinitions/0/structures/1/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "aSettlePassReportsWhatItCannotDo"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:0959b5ba48bf7ceb24cd64510945e6a20981a6d75e4994f150d6ce589dd7021b",
+      "after": "sha256:735b04be53853aeffb42c2840ba8ee0d201ed0251c8bb87d4135d2f241a7cd48",
+      "method": "setMatchUpStatus",
+      "error": "ERR_SETTLE_BOUND_REACHED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/5/participantId",
+        "/events/0/drawDefinitions/0/structures/1/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "aSettlePassReportsWhatItCannotDo"
+    }
+  ],
+  "recorded/src/tests/mutations/exitpropagation/asettlepassreportswhatitcannotdo/setmatchupstatus-refuses-when-reconcilemissedlinkadvancements-reports-under-v1-with-the-error": [
+    {
+      "index": 0,
+      "previous": "sha256:436ef8b6e65961f87707b322123769a180903e878be165c120e0fc00157ff61d",
+      "after": "sha256:7b10b4740029da20d30ea5bcaf4895cfdbacc97086aa5a24cf2f8dee8de9af07",
+      "method": "setMatchUpStatus",
+      "error": "ERR_PLANTED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/5/participantId",
+        "/events/0/drawDefinitions/0/structures/1/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "aSettlePassReportsWhatItCannotDo"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:bdff5e3c158054c8c6aab86852fe4ee93c01eed38ad707e05ccb1c0875255318",
+      "after": "sha256:20d4cc5da86433a0633fec87bb48ddd4fa4ffc398064375f33bc961a5d8e2fb6",
+      "method": "setMatchUpStatus",
+      "error": "ERR_PLANTED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/5/participantId",
+        "/events/0/drawDefinitions/0/structures/1/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "aSettlePassReportsWhatItCannotDo"
+    }
+  ],
+  "recorded/src/tests/mutations/exitpropagation/asettlereadsthedrawitleft/a-refusal-repairs-nothing-even-a-stale-entry-an-earlier-call-left": [
+    {
+      "index": 4,
+      "previous": "sha256:45cc156cc4f45b35745eec0ab79966ad994c567c489e4fddf21cf16062cb07f3",
+      "after": "sha256:0aa4c65c97aefd8b3739451b2cbd61342d5a2dd0ac9920a4b3f3467c0b83219d",
+      "method": "setMatchUpStatus",
+      "error": "ERR_UNCHANGED_CANNOT_CHANGE_OUTCOME",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/1/matchUps/4/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/4/sideExitProvenance",
+        "/factory/timeStamp"
+      ],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/matchups/resetadhocmatchups/returns-error-when-resetmatchuplineups-fails-for-team-matchups-with-removeassignments": [
+    {
+      "index": 0,
+      "previous": "sha256:2bc531b6bb02bbb17f6b791a5abf28b5ef33699c73c614cd1ba4860fa127b394",
+      "after": "sha256:487262167f2d16215aa1696f39bb223feac6d8f96a72901995a4ed4c4d852e77",
+      "method": "resetAdHocMatchUps",
+      "error": "ERR_INVALID_MATCHUP",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/1/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/1/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/1/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/2/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/2/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/2/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/0",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/3",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "resetAdHocMatchUps"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:0322bc6d39237b05d4c7fdea02084ad3c61554621f7408673321f4d3f685f738",
+      "after": "sha256:3e9106649a53bf05a5eca8586d6a214574924771a02a3d48e98f027a12290155",
+      "method": "resetAdHocMatchUps",
+      "error": "ERR_INVALID_MATCHUP",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/1/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/1/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/1/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/2/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/2/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/2/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/0",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/3",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "resetAdHocMatchUps"
+    }
+  ],
+  "recorded/src/tests/mutations/matchups/tiematchuplineupedges/a-substitution-reads-a-line-up-entry-with-no-collection-assignments-as-empty": [
+    {
+      "index": 0,
+      "previous": "sha256:92caa64fd4802b9bfcef2fa9814f34cf3a672af2e949fedd1dd862451e0962be",
+      "after": "sha256:5ee1dd69ba1e038cf04da775ef77f26a1aabcd66620f0e0b78cf26a1ea772d19",
+      "method": "replaceTieMatchUpParticipantId",
+      "error": "ERR_INVALID_VALUES",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/displaySideNumber",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/drawPosition",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/lineUp",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/1/displaySideNumber",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/1/drawPosition",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "F-010"
+    }
+  ],
+  "recorded/src/tests/mutations/matchups/tiematchuplineupedges/replacing-a-doubles-pair-with-a-pair-participant-returns-the-pair-creation-error": [
+    {
+      "index": 2,
+      "previous": "sha256:cb507159ab863468d09ccc673facb832b3c255cd52258fd8ce917b2e5039ca49",
+      "after": "sha256:77a2c3b46cff84c1d5559f98462f8192edcc798df56d92177808061c44c2e190",
+      "method": "replaceTieMatchUpParticipantId",
+      "error": "ERR_INVALID_PARTICIPANT_IDS",
+      "paths": [
+        "/events/0/drawDefinitions/0/lineUps/9b577638-b20c-4f12-85ad-8e4fe03e0fb3/2",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/lineUp/2",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "F-010"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/alaterefusaliscompared/a-refusal-planted-at-carryafterforward-is-a-deferred-refusal-under-differential-when-its-code-is-an-apply-stage-code": [
+    {
+      "index": 0,
+      "previous": "sha256:03c341970b5db1861996415fdbf2136f9762329d7042ab2873383986ac03100b",
+      "after": "sha256:e8d5e78ec030ba0868f47f12b48696a51a0c31427e49e04cf00d45ca339265d5",
+      "method": "setMatchUpStatus",
+      "error": "ERR_FORCED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpFormat",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "aLateRefusalIsCompared"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:08ed0a142de5020f7502b6993b2919896a938e7d4d0b2ba95c6c012931caeaa1",
+      "after": "sha256:619f3e35c347d0c28074282aa999fe0c0910f5474f1ada4e345b43b80d8c4d8a",
+      "method": "setMatchUpStatus",
+      "error": "ERR_FORCED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpFormat",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "aLateRefusalIsCompared"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/alaterefusaliscompared/a-refusal-planted-at-carryafterforward-is-refused-under-v1-over-the-write-it-came-after": [
+    {
+      "index": 0,
+      "previous": "sha256:e95f05f1eff61e71c6bb689911856caaf2a699f6fc3fe4f583c79f549e37c33a",
+      "after": "sha256:71499a89cfba02fe1fa53736dc343f2ff9d1f64aa6626014e0859c85a5819e49",
+      "method": "setMatchUpStatus",
+      "error": "ERR_PLANTED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpFormat",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "aLateRefusalIsCompared"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:c2b60221bbc29951af62d990b8fb02003a902d974113680b97ccd9c3df4189e1",
+      "after": "sha256:8d5e6ab3c79be7d5a16e41be580ce1d3ad23c04b19a9aa7d1865cce2778450c5",
+      "method": "setMatchUpStatus",
+      "error": "ERR_PLANTED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpFormat",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "aLateRefusalIsCompared"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/alaterefusaliscompared/a-refusal-planted-at-forward-is-a-deferred-refusal-under-differential-when-its-code-is-an-apply-stage-code": [
+    {
+      "index": 0,
+      "previous": "sha256:34d7bc9034973831c049093c34b51a3cf6c00bab83422871b6dbf84a3dbf8039",
+      "after": "sha256:4a577e321632e5ff11ddcf4b27b0f0fd57814ac8b6cd70cfe61fc33f63c713ca",
+      "method": "setMatchUpStatus",
+      "error": "ERR_FORCED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpFormat",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "aLateRefusalIsCompared"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:bdf2a3430f97ac764bdb39c93db7a99042863df6ffba3807d249e5ad4c4b58d5",
+      "after": "sha256:52cea35efd3aacea778c75dfe4f0b353081e3a66e96ce7a1c902f54d8cae73cf",
+      "method": "setMatchUpStatus",
+      "error": "ERR_FORCED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpFormat",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "aLateRefusalIsCompared"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/alaterefusaliscompared/a-refusal-planted-at-forward-is-refused-under-v1-over-the-write-it-came-after": [
+    {
+      "index": 0,
+      "previous": "sha256:de7972ec1df827e65948378f54b9e410ee2e726dd8295201529642849769e2d9",
+      "after": "sha256:027dfca3ec220471ee5591a8a83f38c58773776b4079c3b3ce3c4e087ccbaac0",
+      "method": "setMatchUpStatus",
+      "error": "ERR_PLANTED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpFormat",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "aLateRefusalIsCompared"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:7a901c3c4578cb32758292d8a6de3c716af6854e6836d738c182923b3ed8b829",
+      "after": "sha256:17a714f73d5e689dbc10c709e2862c8b95c96be76f250dc51602dc72ed2de53c",
+      "method": "setMatchUpStatus",
+      "error": "ERR_PLANTED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpFormat",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "aLateRefusalIsCompared"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/alaterefusaliscompared/a-refusal-planted-at-settledraw-is-a-deferred-refusal-under-differential-when-its-code-is-an-apply-stage-code": [
+    {
+      "index": 0,
+      "previous": "sha256:d550afd6000457869e5f59163cf5d1284be3f8d105dd899d8ef7e70797363979",
+      "after": "sha256:9de8053281fcf6e45013c37e6b4b4c02c7390d4e7b824fa461d2c0160af22ce8",
+      "method": "setMatchUpStatus",
+      "error": "ERR_FORCED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpFormat",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "aLateRefusalIsCompared"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:c2327dd30af1e070b5a90b4b88f38c34c3dfb3f63fdb4b3c1535060bc94f9017",
+      "after": "sha256:96ec9adfcff1b76159648217afff444246be9c7ffa6b756911acfef612125c81",
+      "method": "setMatchUpStatus",
+      "error": "ERR_FORCED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpFormat",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "aLateRefusalIsCompared"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/alaterefusaliscompared/a-refusal-planted-at-settledraw-is-refused-under-v1-over-the-write-it-came-after": [
+    {
+      "index": 0,
+      "previous": "sha256:fab7e493bd902a76cdd5ee4a55cd9e56a3a9980606d779efd5f34758e594772c",
+      "after": "sha256:a5fe995391fb4b5aa07d4b064177d6070de238c73cb4b5a957f491c8983402cb",
+      "method": "setMatchUpStatus",
+      "error": "ERR_PLANTED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpFormat",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "aLateRefusalIsCompared"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:dcb9dde147b3ff94bedf1899fc89d6109d8320966c04d4022ce67dd439ff63f7",
+      "after": "sha256:968029287eda6376fa3c52fce668cf8133e6abf20da6ccb8dc76ed10bf7d4b6d",
+      "method": "setMatchUpStatus",
+      "error": "ERR_PLANTED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpFormat",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "aLateRefusalIsCompared"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/owneddirectionwrites/under-v2-an-exit-v2-does-not-plan-is-v1s-whole-f9-a-carry-that-would-reach-v1s-bound-is-v1s-which-refuses-there-v2-never-plans-the-bound": [
+    {
+      "index": 0,
+      "previous": "sha256:2af08550e0bcb4d372b04c7c33958d22d8d5b0ce87ce9c2fd984da33f52c20d7",
+      "after": "sha256:85cdfe7dac6f0e450782a878404144d0e188d988c99e3518d801f338c094d19b",
+      "method": "setMatchUpStatus",
+      "error": "ERR_SETTLE_BOUND_REACHED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/sideExitProvenance",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/0/participantId",
+        "/events/0/drawDefinitions/0/structures/1/updatedAt",
+        "/events/0/drawDefinitions/0/structures/3/positionAssignments/0/participantId",
+        "/events/0/drawDefinitions/0/structures/3/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "ownedDirectionWrites"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/owneddirectionwrites/under-v2-an-exit-v2-does-not-plan-is-v1s-whole-f9-a-carry-that-would-reach-v1s-bound-is-v1s-which-refuses-there-v2-never-plans-the-bound/part-2": [
+    {
+      "index": 0,
+      "previous": "sha256:2af08550e0bcb4d372b04c7c33958d22d8d5b0ce87ce9c2fd984da33f52c20d7",
+      "after": "sha256:85cdfe7dac6f0e450782a878404144d0e188d988c99e3518d801f338c094d19b",
+      "method": "setMatchUpStatus",
+      "error": "ERR_SETTLE_BOUND_REACHED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/score",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/sideExitProvenance",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/0/participantId",
+        "/events/0/drawDefinitions/0/structures/1/updatedAt",
+        "/events/0/drawDefinitions/0/structures/3/positionAssignments/0/participantId",
+        "/events/0/drawDefinitions/0/structures/3/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "ownedDirectionWrites"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/owneddirectionwrites/under-v2-an-exit-v2-does-not-plan-is-v1s-whole-f9-s6-tail-a-bye-passage-costs-v1-one-iteration-per-bye-passed-so-a-carry-within-the-levels-can-still-reach-the-bound": [
+    {
+      "index": 0,
+      "previous": "sha256:d1fb255a6062c536f8410c37f6880e16da8c7f4a8e851b07369656475ce9a890",
+      "after": "sha256:bfe32774c4c0675d84b3971e4249fdf09b452de3ad5d61d55ca0584b398ac7c3",
+      "method": "setMatchUpStatus",
+      "error": "ERR_SETTLE_BOUND_REACHED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/10/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/10/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/2/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/2/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/2/schedule",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/2/score",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/2/sideExitProvenance",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/2/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/2/winningSide",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/4/participantId",
+        "/events/0/drawDefinitions/0/structures/1/updatedAt",
+        "/events/0/drawDefinitions/0/structures/3/matchUps/1/sideExitProvenance",
+        "/events/0/drawDefinitions/0/structures/3/matchUps/1/updatedAt",
+        "/events/0/drawDefinitions/0/structures/3/matchUps/2/updatedAt",
+        "/events/0/drawDefinitions/0/structures/3/positionAssignments/2/participantId",
+        "/events/0/drawDefinitions/0/structures/3/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "ownedDirectionWrites"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/owneddirectionwrites/under-v2-an-exit-v2-does-not-plan-is-v1s-whole-f9-s6-tail-a-bye-passage-costs-v1-one-iteration-per-bye-passed-so-a-carry-within-the-levels-can-still-reach-the-bound/part-2": [
+    {
+      "index": 0,
+      "previous": "sha256:d1fb255a6062c536f8410c37f6880e16da8c7f4a8e851b07369656475ce9a890",
+      "after": "sha256:bfe32774c4c0675d84b3971e4249fdf09b452de3ad5d61d55ca0584b398ac7c3",
+      "method": "setMatchUpStatus",
+      "error": "ERR_SETTLE_BOUND_REACHED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/score",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/10/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/10/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/2/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/2/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/2/schedule",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/2/score",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/2/sideExitProvenance",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/2/updatedAt",
+        "/events/0/drawDefinitions/0/structures/1/matchUps/2/winningSide",
+        "/events/0/drawDefinitions/0/structures/1/positionAssignments/4/participantId",
+        "/events/0/drawDefinitions/0/structures/1/updatedAt",
+        "/events/0/drawDefinitions/0/structures/3/matchUps/1/sideExitProvenance",
+        "/events/0/drawDefinitions/0/structures/3/matchUps/1/updatedAt",
+        "/events/0/drawDefinitions/0/structures/3/matchUps/2/updatedAt",
+        "/events/0/drawDefinitions/0/structures/3/positionAssignments/2/participantId",
+        "/events/0/drawDefinitions/0/structures/3/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "ownedDirectionWrites"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/refusalsv2/every-authored-scenario-answers-the-same-under-v1-v2-and-differential/part-22": [
+    {
+      "index": 5,
+      "previous": "sha256:60701ebebf2c21318cc2bfa886a033c7af65529dba407cf164d955dae789ec35",
+      "after": "sha256:6b20105a38a760c08387d111beca3d31d579fbf7618ffb53a005615dd149db78",
+      "method": "setMatchUpStatus",
+      "error": "ERR_INCOMPATIBLE_MATCHUP_STATUS",
+      "paths": ["/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/refusalsv2/every-authored-scenario-answers-the-same-under-v1-v2-and-differential/part-24": [
+    {
+      "index": 3,
+      "previous": "sha256:a3ec7539fd320be1f9748a429e1da5c7ed7550c48b6ab1aba7910b17d4e327ac",
+      "after": "sha256:38e906dba4768f1ad468cb14d190966d148fbf4dfe0b330a1b0360e659d72944",
+      "method": "setMatchUpStatus",
+      "error": "ERR_UNCHANGED_CANNOT_CHANGE_WINNING_SIDE",
+      "paths": ["/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/refusalsv2/every-authored-scenario-answers-the-same-under-v1-v2-and-differential/part-25": [
+    {
+      "index": 4,
+      "previous": "sha256:59a445f2a4786f394015f99b621c386611a34ec6108cd5af168cc85c18047863",
+      "after": "sha256:cbd0a320d6522c23d8427df48e624ff16beb07bb7fef6d393781c4de3048b1bb",
+      "method": "setMatchUpStatus",
+      "error": "ERR_INCOMPATIBLE_MATCHUP_STATUS",
+      "paths": ["/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/refusalsv2/every-authored-scenario-answers-the-same-under-v1-v2-and-differential/part-38": [
+    {
+      "index": 5,
+      "previous": "sha256:87a627cd92f48f1cb638c641f1196626ab8d491d8cba989e15628d0ffec77313",
+      "after": "sha256:33471e5184369b8b3ff3c9750e7abfaa5433289e081b7716a54cef1582ac3c34",
+      "method": "setMatchUpStatus",
+      "error": "ERR_INCOMPATIBLE_MATCHUP_STATUS",
+      "paths": ["/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/refusalsv2/every-authored-scenario-answers-the-same-under-v1-v2-and-differential/part-40": [
+    {
+      "index": 3,
+      "previous": "sha256:fb1713fad7b948b6eb23e3fbea11b632d8cbda595cb26836b4bf30c1bad619d3",
+      "after": "sha256:27eabd0503e3e230df1496d593b7f24991564c989b042e72bc242e6b8ce407c7",
+      "method": "setMatchUpStatus",
+      "error": "ERR_UNCHANGED_CANNOT_CHANGE_WINNING_SIDE",
+      "paths": ["/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/refusalsv2/every-authored-scenario-answers-the-same-under-v1-v2-and-differential/part-41": [
+    {
+      "index": 4,
+      "previous": "sha256:f76e1893756ca4c799c40537dce86f1a1f9affebd2cae3cb94199b83d357a689",
+      "after": "sha256:c3f66bcd7a9db9bb7ef12c15cfe1bcc8e4238e6e4403fbe5659b367c842ea685",
+      "method": "setMatchUpStatus",
+      "error": "ERR_INCOMPATIBLE_MATCHUP_STATUS",
+      "paths": ["/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/refusalsv2/every-authored-scenario-answers-the-same-under-v1-v2-and-differential/part-6": [
+    {
+      "index": 5,
+      "previous": "sha256:ff8fcf528a73cca882055f6e85dedbf002b404dca294b0ebace2df14d70e55b2",
+      "after": "sha256:73db8a162a065a393a99f08c08331077d5ecbce93473600374c79f06a5fc1aa0",
+      "method": "setMatchUpStatus",
+      "error": "ERR_INCOMPATIBLE_MATCHUP_STATUS",
+      "paths": ["/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/refusalsv2/every-authored-scenario-answers-the-same-under-v1-v2-and-differential/part-8": [
+    {
+      "index": 3,
+      "previous": "sha256:139e34f67a518decd236855f6e99708070e8fd089997040062d50e0ca6443478",
+      "after": "sha256:2b2f4304970fb7400f986effcc60d84b5c169ec7588574cdb85b494032d03623",
+      "method": "setMatchUpStatus",
+      "error": "ERR_UNCHANGED_CANNOT_CHANGE_WINNING_SIDE",
+      "paths": ["/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/refusalsv2/every-authored-scenario-answers-the-same-under-v1-v2-and-differential/part-9": [
+    {
+      "index": 4,
+      "previous": "sha256:612bd12b7d1d6d9bc6ef45fa0cf21f596aa81b45a055d49566e274628a26a522",
+      "after": "sha256:eaf5b502da8fd51c963f3502d8efee47cfb8e1493a6cf09816c600caf39b5f78",
+      "method": "setMatchUpStatus",
+      "error": "ERR_INCOMPATIBLE_MATCHUP_STATUS",
+      "paths": ["/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/resetadhocselectorentry/routes-the-outer-reset-through-the-selector-with-the-existing-public-contract-valid-then-unknown": [
+    {
+      "index": 0,
+      "previous": "sha256:0131131a1e8199b39596788b0a936853b271f690fb5066d94db3d7503128d664",
+      "after": "sha256:a0b98e1140d23a4a4caad390de2cf36dede374a58c5678ad52cbb2976cbce758",
+      "method": "resetAdHocMatchUps",
+      "error": "ERR_NOT_FOUND_MATCHUP",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule/scoredTime",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score/sets",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score/scoreStringSide1",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score/scoreStringSide2",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/0/tally/groupOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/0/tally/rankOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/0/tally/provisionalOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/groupOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/rankOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/GEMscore",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/defeats/0",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/defeats/1",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/gamesDiff",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/gamesLost",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/gamesPct",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/gamesWon",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/matchUpsLost",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/provisionalOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/result",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/setsDiff",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/setsLost",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/groupOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/rankOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/GEMscore",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/gamesDiff",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/gamesLost",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/gamesPct",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/gamesWon",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/matchUpsWon",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/provisionalOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/result",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/setsDiff",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/setsWon",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/victories/0",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/victories/1",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/3/tally/groupOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/3/tally/rankOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/3/tally/provisionalOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/4/tally/groupOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/4/tally/rankOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/4/tally/provisionalOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/5/tally/groupOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/5/tally/rankOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/5/tally/provisionalOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/6/tally/groupOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/6/tally/rankOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/6/tally/provisionalOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/7/tally/groupOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/7/tally/rankOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/7/tally/provisionalOrder",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "F-009"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/resetadhocselectorentry/routes-the-outer-reset-through-the-selector-with-the-existing-public-contract-valid-then-unknown/part-2": [
+    {
+      "index": 0,
+      "previous": "sha256:0131131a1e8199b39596788b0a936853b271f690fb5066d94db3d7503128d664",
+      "after": "sha256:a0b98e1140d23a4a4caad390de2cf36dede374a58c5678ad52cbb2976cbce758",
+      "method": "resetAdHocMatchUps",
+      "error": "ERR_NOT_FOUND_MATCHUP",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule/scoredTime",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score/sets",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score/scoreStringSide1",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score/scoreStringSide2",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/0/tally/groupOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/0/tally/rankOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/0/tally/provisionalOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/groupOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/rankOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/GEMscore",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/defeats/0",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/defeats/1",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/gamesDiff",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/gamesLost",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/gamesPct",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/gamesWon",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/matchUpsLost",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/provisionalOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/result",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/setsDiff",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/setsLost",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/groupOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/rankOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/GEMscore",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/gamesDiff",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/gamesLost",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/gamesPct",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/gamesWon",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/matchUpsWon",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/provisionalOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/result",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/setsDiff",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/setsWon",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/victories/0",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/victories/1",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/3/tally/groupOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/3/tally/rankOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/3/tally/provisionalOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/4/tally/groupOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/4/tally/rankOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/4/tally/provisionalOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/5/tally/groupOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/5/tally/rankOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/5/tally/provisionalOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/6/tally/groupOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/6/tally/rankOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/6/tally/provisionalOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/7/tally/groupOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/7/tally/rankOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/7/tally/provisionalOrder",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "F-009"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/resetadhocselectorentry/routes-the-outer-reset-through-the-selector-with-the-existing-public-contract-valid-then-unknown/part-3": [
+    {
+      "index": 0,
+      "previous": "sha256:0131131a1e8199b39596788b0a936853b271f690fb5066d94db3d7503128d664",
+      "after": "sha256:a0b98e1140d23a4a4caad390de2cf36dede374a58c5678ad52cbb2976cbce758",
+      "method": "resetAdHocMatchUps",
+      "error": "ERR_NOT_FOUND_MATCHUP",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule/scoredTime",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score/sets",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score/scoreStringSide1",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/score/scoreStringSide2",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/0/tally/groupOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/0/tally/rankOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/0/tally/provisionalOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/groupOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/rankOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/GEMscore",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/defeats/0",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/defeats/1",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/gamesDiff",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/gamesLost",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/gamesPct",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/gamesWon",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/matchUpsLost",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/provisionalOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/result",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/setsDiff",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/setsLost",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/groupOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/rankOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/GEMscore",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/gamesDiff",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/gamesLost",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/gamesPct",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/gamesWon",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/matchUpsWon",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/provisionalOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/result",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/setsDiff",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/setsWon",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/victories/0",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/victories/1",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/3/tally/groupOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/3/tally/rankOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/3/tally/provisionalOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/4/tally/groupOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/4/tally/rankOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/4/tally/provisionalOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/5/tally/groupOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/5/tally/rankOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/5/tally/provisionalOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/6/tally/groupOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/6/tally/rankOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/6/tally/provisionalOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/7/tally/groupOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/7/tally/rankOrder",
+        "/events/0/drawDefinitions/0/structures/0/positionAssignments/7/tally/provisionalOrder",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "F-009"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/routesandwritev2/every-accepted-authored-step-is-planned-written-as-planned-and-its-winner-lands-where-direction-says/part-6": [
+    {
+      "index": 5,
+      "previous": "sha256:5e6261c53c84b6e87d673ec41441ec68cd165eab64b73bb7e21bffdead1f8b51",
+      "after": "sha256:4165d4c2e7f7109144345ca26e4d300b9af3fe31704dd8408e9b0ec513f494f1",
+      "method": "setMatchUpStatus",
+      "error": "ERR_INCOMPATIBLE_MATCHUP_STATUS",
+      "paths": ["/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/routesandwritev2/every-accepted-authored-step-is-planned-written-as-planned-and-its-winner-lands-where-direction-says/part-8": [
+    {
+      "index": 3,
+      "previous": "sha256:f7cce63163a72d5b2ba97416d195726253589d52f577123e31eb3446cdaf7820",
+      "after": "sha256:72d392f01b9786fee1d27ead569e58c4a98468b9f6225fdc70a1d0715f2426f0",
+      "method": "setMatchUpStatus",
+      "error": "ERR_UNCHANGED_CANNOT_CHANGE_WINNING_SIDE",
+      "paths": ["/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/outcome/routesandwritev2/every-accepted-authored-step-is-planned-written-as-planned-and-its-winner-lands-where-direction-says/part-9": [
+    {
+      "index": 4,
+      "previous": "sha256:c40f81be9017bf36c1455517e85151ed74ed1b50ff18e9f84860194d9eecb441",
+      "after": "sha256:a3fc8dba190d9f0990d4cca26499b339a5e6a61f8085f2221a0a9133a300d89e",
+      "method": "setMatchUpStatus",
+      "error": "ERR_INCOMPATIBLE_MATCHUP_STATUS",
+      "paths": ["/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/participants/team/oneplayeroneteam/one-player-one-team-per-event-replacetiematchupparticipantid-refuses-another-team-s-player": [
+    {
+      "index": 1,
+      "previous": "sha256:ec653de83f99bcc755a6c6189516acbe2c2f8b2f96b21e30142e3a0eaee2c216",
+      "after": "sha256:a59bf03feb8135aa1ef4640bbc19139b8c76ef3c9682eb7dbd95a67bec44a3ab",
+      "method": "replaceTieMatchUpParticipantId",
+      "error": "ERR_SHARED_INDIVIDUAL_PARTICIPANT",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "F-010"
+    },
+    {
+      "index": 1,
+      "previous": "sha256:a2d71a568414b4931a23688b83fc9337a0863afd98c4eed6332066185fa470ae",
+      "after": "sha256:e06830da1e2049acaa1eaa6c2a9fbd699cc19c52c51fa9d2527dbc47686f8d04",
+      "method": "replaceTieMatchUpParticipantId",
+      "error": "ERR_SHARED_INDIVIDUAL_PARTICIPANT",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "F-010"
+    }
+  ],
+  "recorded/src/tests/mutations/scheduling/bulkscheduling/can-bulk-schedule-matchups": [
+    {
+      "index": 2,
+      "previous": "sha256:91634fc5ec532ec8d04b51a9e169e26534940191ef4d6e9f298785897b12f083",
+      "after": "sha256:655c11c5263217afe6c7e579a04427586f0b61f97e9a94294bc48dadbe4f9cbf",
+      "method": "bulkScheduleTournamentMatchUps",
+      "error": "ERR_INVALID_TIME",
+      "paths": ["/events/0/drawDefinitions/0", "/events/0/flightProfile", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/scheduling/proautoschedule/will-not-save-overlapping-timemodifiers": [
+    {
+      "index": 2,
+      "previous": "sha256:662b572e630e8ffd587668828f6b0eb26bd8f1757102cded848d52f7aca7ec6b",
+      "after": "sha256:082265f679f804b790ecc112c7fa0518759dff7a87b297310ba07cc2a2df461e",
+      "method": "bulkScheduleMatchUps",
+      "error": "ERR_INVALID_VALUES",
+      "paths": ["/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/scheduling/proconflicts/proconflicts-comprehensive-conflict-detection-prevents-double-booking-of-same-court-slot-courtid-courtorder-scheduleddate": [
+    {
+      "index": 1,
+      "previous": "sha256:67c76f634974c24f8b3692d1c880e9ee68ced5965bce4f1fd6066ff31d93d158",
+      "after": "sha256:118eef095cf843d01d58ab786a2ca8b3416d5bf3f8041048e1ddf13eab3f8bb8",
+      "method": "addMatchUpScheduleItems",
+      "error": "ERR_SCHEDULE_CONFLICT_DOUBLE_BOOKING",
+      "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/1/schedule"],
+      "reason": "F-007"
+    },
+    {
+      "index": 1,
+      "previous": "sha256:c18e59161247ae2eae98f41f0a3dbdc1b2da0cb331c503872e8426ec0c54b08a",
+      "after": "sha256:0279237b02b761a93464bdca430afbf363c598f135f5c4d73ed84ece7012859e",
+      "method": "addMatchUpScheduleItems",
+      "error": "ERR_SCHEDULE_CONFLICT_DOUBLE_BOOKING",
+      "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/1/schedule"],
+      "reason": "F-007"
+    }
+  ],
+  "recorded/src/tests/mutations/scheduling/schedulelocks/reports-an-officiating-conflict-on-a-locked-matchup-the-lock-must-not-mask-it": [
+    {
+      "index": 3,
+      "previous": "sha256:b13ddf0f61864727c8ccec4eb9b1c232c542f700fb6d9feca20487c66f7a8f50",
+      "after": "sha256:48b73f5f5527587c1100e8686f7f77a028c7cb49757a6e48c9d6aedda21d9907",
+      "method": "addMatchUpOfficial",
+      "error": "ERR_OFFICIAL_CONFLICT_OF_INTEREST",
+      "paths": ["/factory/timeStamp", "/participants/8"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/scheduling/schedulematchups/writemode-legacy-can-schedule-many-attributes-at-once-2": [
+    {
+      "index": 0,
+      "previous": "sha256:9afd4f3fb5a1265a635dda31de47149697420f45dc106481aba2a6a9b91b7b87",
+      "after": "sha256:2077f1dc6f73bfc4380027b3c3a5545edd1db2ba4339bb9371c82c0f57ce68d3",
+      "method": "addMatchUpScheduleItems",
+      "error": "ERR_INVALID_RESUME_TIME",
+      "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"],
+      "reason": "F-007"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:9e8de31934c00b3ea269391d7b7fa4b61aadc593fbc5a7fc3929385a7e905fdc",
+      "after": "sha256:01c151c1f7c9fe972e7c1b78b32a0f82929ceaa507fca34e3ba224d5f1f38880",
+      "method": "addMatchUpScheduleItems",
+      "error": "ERR_INVALID_RESUME_TIME",
+      "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"],
+      "reason": "F-007"
+    }
+  ],
+  "recorded/src/tests/mutations/scheduling/schedulematchups/writemode-legacy-can-schedule-many-attributes-at-once-3": [
+    {
+      "index": 0,
+      "previous": "sha256:ecf38788da1a5d44e9b16653f712351ec246baa8734b80e86e53c021a390130a",
+      "after": "sha256:530819d4b077712c38ba8aed9c4ebd236e3d8bf10e058e4ce1326c21fff3a384",
+      "method": "addMatchUpScheduleItems",
+      "error": "ERR_INVALID_STOP_TIME",
+      "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"],
+      "reason": "F-007"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:ded653cfe90d5f1e09eb2166d3d5d6dbe4a2480dd92863586661200771f184fa",
+      "after": "sha256:4904cc987c6331501dcc0d873b38b44a4e61e49394bfe38d93a8cf2ce61a0f9d",
+      "method": "addMatchUpScheduleItems",
+      "error": "ERR_INVALID_STOP_TIME",
+      "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"],
+      "reason": "F-007"
+    }
+  ],
+  "recorded/src/tests/mutations/scheduling/schedulematchups/writemode-legacy-can-schedule-many-attributes-at-once-4": [
+    {
+      "index": 0,
+      "previous": "sha256:e6544a43745174d716e51a4a93a2cc16a6c1adcd541f268ef1f35cd3ebb9ffd3",
+      "after": "sha256:a00f17969e9de9e9ad8486b4ee86419e38303317cd156b2511d9ef7f87928c5d",
+      "method": "addMatchUpScheduleItems",
+      "error": "ERR_INVALID_END_TIME",
+      "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"],
+      "reason": "F-007"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:51cfb435b26280ef9e9630f97ab2f6dcfa70087477086069a065c181978871b2",
+      "after": "sha256:4b6e83905b16733a8e7ae9ce6b07059d3660d7cddd207d7cfece388bfed32bc2",
+      "method": "addMatchUpScheduleItems",
+      "error": "ERR_INVALID_END_TIME",
+      "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"],
+      "reason": "F-007"
+    }
+  ],
+  "recorded/src/tests/mutations/scheduling/schedulematchups/writemode-native-can-schedule-many-attributes-at-once-2": [
+    {
+      "index": 0,
+      "previous": "sha256:f59db615bd32fd2a65cb4f80d89d1c3cfedd37ff21eb1d1d830f95146d4f7ee3",
+      "after": "sha256:d5a99f904da009bcece49fe27bc0b2019148b06857cd851823bf91f82177bad3",
+      "method": "addMatchUpScheduleItems",
+      "error": "ERR_INVALID_RESUME_TIME",
+      "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"],
+      "reason": "F-007"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:20cfec323ed8eec213acd5c16493b4b35a95bbb5649373a67d67d367a5ff608f",
+      "after": "sha256:d8be21b975edf7fd9fe7e4f56c1a24ceb260f55333b240df1cd1c58afd3ed30a",
+      "method": "addMatchUpScheduleItems",
+      "error": "ERR_INVALID_RESUME_TIME",
+      "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"],
+      "reason": "F-007"
+    }
+  ],
+  "recorded/src/tests/mutations/scheduling/schedulematchups/writemode-native-can-schedule-many-attributes-at-once-3": [
+    {
+      "index": 0,
+      "previous": "sha256:a4fa87634cc503e715aff84fcaa89345f25936f2e8caa52278d21f756fba7bb8",
+      "after": "sha256:238953b72da0f11d8fca78c22b8246ca8a7a7c6450f1ae779138475f28aab4db",
+      "method": "addMatchUpScheduleItems",
+      "error": "ERR_INVALID_STOP_TIME",
+      "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"],
+      "reason": "F-007"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:f26bd0a172e44538246c46b71abbe9dc03ef8332edf0a3d77f782573f997163a",
+      "after": "sha256:aa6b07ac7f73b969542d9f05c64ec64e7682cb88487f0308060bf4b57965b437",
+      "method": "addMatchUpScheduleItems",
+      "error": "ERR_INVALID_STOP_TIME",
+      "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"],
+      "reason": "F-007"
+    }
+  ],
+  "recorded/src/tests/mutations/scheduling/schedulematchups/writemode-native-can-schedule-many-attributes-at-once-4": [
+    {
+      "index": 0,
+      "previous": "sha256:4dae818918270966854c4ad4ee7fe5c4ca6686e6622d4d6170420d9a2bfeaa82",
+      "after": "sha256:2afe4cbb81d5d4995e2b546e0dd8189b4d6c1ac177e3577ac37a2a1ab736fa63",
+      "method": "addMatchUpScheduleItems",
+      "error": "ERR_INVALID_END_TIME",
+      "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"],
+      "reason": "F-007"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:7717478faa82684f4f228eac526592f8fce69e275642ee483d927638045c6f16",
+      "after": "sha256:805b8b9e3d2376af3322732212a100363df6bea162f8d26390def4cbe1b373f7",
+      "method": "addMatchUpScheduleItems",
+      "error": "ERR_INVALID_END_TIME",
+      "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"],
+      "reason": "F-007"
+    }
+  ],
+  "recorded/src/tests/mutations/scheduling/updatedschedulingprofile/can-update-a-schedulingprofile-when-venues-change": [
+    {
+      "index": 3,
+      "previous": "sha256:9095de88b7b40b08b9a43a047769e49b1af16448a3cd8cb0c6b309f3c3fac7bb",
+      "after": "sha256:e247d1755d95f062e6aa35a1f57f5f2822bd2a5d1e7d0e87da94bf0d6fe2d6c0",
+      "method": "addSchedulingProfileRound",
+      "error": "ERR_INVALID_VALUES",
+      "paths": ["/scheduling/profile/0/venues/0/rounds/1"],
+      "reason": "F-011"
+    }
+  ],
+  "recorded/src/tests/mutations/subscriptions/incontextnoticeaftersuccess/updateincontextmatchup-is-never-built-nor-sent-for-a-call-refused-after-its-write": [
+    {
+      "index": 0,
+      "previous": "sha256:22b190540cad4ca3c75c324ccfcc02611a041c2b36c528be9e1f19f119ed4c3a",
+      "after": "sha256:189f04768260006e60e19f5f07e1a1148fa8f6712997b5815d71651ea25a3900",
+      "method": "setMatchUpStatus",
+      "error": "ERR_PLANTED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "inContextNoticeAfterSuccess"
+    },
+    {
+      "index": 0,
+      "previous": "sha256:9bbccaa9f6c2032c32ef7f5a4550d5185e6e4fc4127b3ca4249e7d02cf512081",
+      "after": "sha256:5536062bce564a4ec1688089b2ccf42f7a11a606c7d0e183d08aae9d263174e9",
+      "method": "setMatchUpStatus",
+      "error": "ERR_PLANTED",
+      "paths": [
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+        "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/factory/timeStamp"
+      ],
+      "reason": "inContextNoticeAfterSuccess"
+    }
+  ],
+  "recorded/src/tests/mutations/timeitems/drawdefinitiontimeitems/can-add-and-read-timeitems-from-events": [
+    {
+      "index": 2,
+      "previous": "sha256:78246668950a06ea13c5159f2de0e82455ca532b0e6c600f4cb2dce350cb6eb7",
+      "after": "sha256:ab4a175675a3ea4bec2d7388cc4842e7c68f404310e9644b0d7ca5267dced10e",
+      "method": "addDrawDefinitionTimeItem",
+      "error": "ERR_MISSING_TIME_ITEM",
+      "paths": ["/events/0/drawDefinitions/0", "/events/0/flightProfile", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/tournaments/sanctionconstraints/setsanctionconstraints-stores-the-limits-on-the-sanction-the-record-validates-and-generation-enforces-them": [
+    {
+      "index": 3,
+      "previous": "sha256:2a24305592df037392e0e288c2dc5a4350a6d244dad55ddddcac17b2baba5673",
+      "after": "sha256:c4009b4425d704bee726e958d3864ea86d530bf9fc2cc97bf455dee16cc28bd7",
+      "method": "generateDrawDefinition",
+      "error": "ERR_UNCHANGED_NO_AVAILABLE_STAGE_SPACE",
+      "paths": ["/factory/timeStamp", "/sanction/constraints"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/mutations/tournaments/sanctionconstraints/the-legacy-extension-is-still-read-and-the-sanction-wins-when-both-are-present": [
+    {
+      "index": 2,
+      "previous": "sha256:f430dd1c7e01f60c542c4deee0a0de71e608dbc4ae4d3002c8c4654fff02b35c",
+      "after": "sha256:2adee6b1e8dddb14ce77e39393da6dd9b84f833f2828817583a85b9c432f6b5c",
+      "method": "generateDrawDefinition",
+      "error": "ERR_UNCHANGED_NO_AVAILABLE_STAGE_SPACE",
+      "paths": ["/extensions", "/factory/timeStamp"],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/queries/matchups/competitionschedulematchups/auto-schedules-venue-if-only-one-venue-provided": [
+    {
+      "index": 2,
+      "previous": "sha256:76f6b12185a6d3d6a1fd63394d66ec771086d9c34f0f381f8c5cb7675c32ce30",
+      "after": "sha256:cbfb83aabb344b9a744bcf97423812969d657feec3e42e3accd906b981ac72bd",
+      "method": "reorderUpcomingMatchUps",
+      "error": "ERR_MISSING_VALUE",
+      "paths": [
+        "/events/0/timeItems/0/createdAt",
+        "/events/0/timeItems/0/itemValue/PUBLIC/displaySettings",
+        "/factory/timeStamp"
+      ],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/queries/matchups/rotatingpartnertimedactivation/preserves-scoring-and-mutation-locks-for-timed-allow": [
+    {
+      "index": 2,
+      "previous": "sha256:535bd7f7865707ceae8a153594f8374e986366384c1adbbf328c5b26e834bd7f",
+      "after": "sha256:257f13533331a99135cd1de4f3cfde396f2236dd14ba3a1873a79046c56887e8",
+      "method": "generateRotatingPartnerRound",
+      "error": "ERR_MUTATION_LOCKED",
+      "paths": [
+        "/events/0/drawDefinitions/0/extensions",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/extensions/1",
+        "/factory/timeStamp"
+      ],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/queries/matchups/rotatingpartnertimedactivation/preserves-scoring-and-mutation-locks-for-timed-deciding-point": [
+    {
+      "index": 2,
+      "previous": "sha256:090166b5c70704fed99b3d61d5a8e5e3c6fa7c079a50d95e169db6d709dab0df",
+      "after": "sha256:9d014079c8faf9682974a264125ddb04a3d4e07280907c5bc6680a85c9be6353",
+      "method": "generateRotatingPartnerRound",
+      "error": "ERR_MUTATION_LOCKED",
+      "paths": [
+        "/events/0/drawDefinitions/0/extensions",
+        "/events/0/drawDefinitions/0/structures/0/updatedAt",
+        "/events/0/drawDefinitions/0/updatedAt",
+        "/extensions/1",
+        "/factory/timeStamp"
+      ],
+      "reason": "oldBoundary"
+    }
+  ],
+  "recorded/src/tests/refactoring/schedulecoverage/addmatchuptimemodifiers-coverage-returns-error-for-non-array-timemodifiers": [
+    {
+      "index": 0,
+      "previous": "sha256:00b692fb989f0f427bb0bee628fe9f50490981ca4c377d6fb116dbe68a716e32",
+      "after": "sha256:9afd3859709af00dc6882ce47bcbc13b63299821e363182d95a34c42e003ce5d",
+      "method": "addMatchUpScheduleItems",
+      "error": "ERR_INVALID_VALUES",
+      "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule"],
+      "reason": "F-007"
+    }
+  ],
+  "recorded/src/tests/refactoring/schedulecoverage/proconflictdetection-in-addmatchupscheduleitems-detects-double-booking-when-proconflictdetection-is-true": [
+    {
+      "index": 1,
+      "previous": "sha256:e898df9164444765eaa1aea6e419351ba45f93ad1678d875c9b74a240640aab3",
+      "after": "sha256:add31a19b3f5b38018f2ab8b9035c7063e04cac7629b4dba84d20065af981159",
+      "method": "addMatchUpScheduleItems",
+      "error": "ERR_SCHEDULE_CONFLICT_DOUBLE_BOOKING",
+      "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/1/schedule"],
+      "reason": "F-007"
+    }
+  ]
+}
