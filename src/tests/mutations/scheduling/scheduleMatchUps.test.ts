@@ -1,5 +1,6 @@
 import { writeModeMatrix } from '@Tests/testHarness/writeModeMatrix';
 import { setSubscriptions } from '@Global/state/globalState';
+import { canonicalJson } from '@Tools/canonicalJson';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -11,6 +12,8 @@ import { LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { OFFICIAL } from '@Constants/participantRoles';
 import {
+  INVALID_PARTICIPANT_ID,
+  VENUE_NOT_FOUND,
   COURT_NOT_FOUND,
   INVALID_END_TIME,
   INVALID_RESUME_TIME,
@@ -475,6 +478,14 @@ writeModeMatrix(
 
     const scheduleScenarios = [
       {
+        schedule: { startTime: '09:00', homeParticipantId: 'absent' },
+        error: INVALID_PARTICIPANT_ID,
+      },
+      {
+        schedule: { startTime: '09:00', venueId: 'absent' },
+        error: VENUE_NOT_FOUND,
+      },
+      {
         schedule: { startTime: '09:00', resumeTime: '08:00' },
         error: INVALID_RESUME_TIME,
       },
@@ -488,7 +499,7 @@ writeModeMatrix(
       },
     ];
 
-    it.each(scheduleScenarios)('can schedule many attributes at once', (scheduleScenario) => {
+    it.each(scheduleScenarios)('refuses $error.code without storing the start time', (scheduleScenario) => {
       const { tournamentRecord } = mocksEngine.generateTournamentRecord({
         drawProfiles: [{ drawSize: 8 }],
       });
@@ -500,13 +511,14 @@ writeModeMatrix(
       const { tournamentId, drawId, matchUpId } = matchUps[0];
       const { schedule, error } = scheduleScenario;
 
-      const result = tournamentEngine.addMatchUpScheduleItems({
-        tournamentId,
-        matchUpId,
-        schedule,
-        drawId,
-      });
+      const record = () => canonicalJson(tournamentEngine.getTournament().tournamentRecord);
+      const before = record();
+      const result = tournamentEngine.executionQueue(
+        [{ method: 'addMatchUpScheduleItems', params: { tournamentId, drawId, matchUpId, schedule } }],
+        false,
+      );
       expect(result.error).toEqual(error);
+      expect(record()).toEqual(before);
     });
   },
   [NATIVE, LEGACY],
