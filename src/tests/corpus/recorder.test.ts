@@ -129,3 +129,30 @@ it.skipIf(process.env.CORPUS_RECORD === '1')(
     expect(stats.skipped).toEqual({ 'tournament-records-2': 1 });
   },
 );
+
+it.skipIf(process.env.CORPUS_RECORD === '1')('starts a new scenario after an unrecorded draw insertion', () => {
+  const {
+    eventIds: [eventId],
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 4 }],
+    nonRandom: 7,
+    setState: true,
+  });
+  outDir = fs.mkdtempSync(path.join(tmpdir(), 'corpus-'));
+  recorder = new CorpusRecorder({ outDir });
+  recorder.beginTest({ file: 'draw.test.ts', name: 'insert between calls', seed: 7, ordinal: 1 });
+  const generate = () => tournamentEngine.generateDrawDefinition({ eventId, drawSize: 4 });
+  const { drawDefinition } = generate();
+  expect(tournamentEngine.addDrawDefinition({ eventId, drawDefinition }).success).toBe(true);
+  expect(generate().drawDefinition).toBeDefined();
+  recorder.endTest();
+  recorder.stop();
+  const [stats] = recorder.flushSummary();
+  expect(stats).toMatchObject({ tests: 1, scenarios: 2, steps: 2, invalid: 0 });
+  const file = fs.readdirSync(outDir).find((name) => name.endsWith('.jsonl') && !name.startsWith('_'))!;
+  for (const line of fs.readFileSync(path.join(outDir, file), 'utf8').trim().split('\n')) {
+    const scenario = JSON.parse(line);
+    expect(replayAsReader(structuredClone(scenario))).toEqual([]);
+    expect(replayThroughEngine(scenario)).toEqual([]);
+  }
+});
