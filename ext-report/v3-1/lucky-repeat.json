@@ -1,0 +1,69 @@
+{
+  "reference": {
+    "v1": {
+      "success": true,
+      "stack": ["noDownStreamDependencies", "setMatchUpStatus", "setMatchUpStatus"]
+    },
+    "v2": {
+      "success": true,
+      "stack": ["noDownStreamDependencies", "setMatchUpStatus", "setMatchUpStatus"]
+    },
+    "differential": {
+      "success": true,
+      "stack": ["noDownStreamDependencies", "setMatchUpStatus", "setMatchUpStatus"]
+    }
+  },
+  "prototype": {
+    "v1": {
+      "success": true,
+      "stack": ["noDownStreamDependencies", "setMatchUpStatus", "setMatchUpStatus"]
+    },
+    "v2": {
+      "success": true,
+      "stack": ["setMatchUpStatus"]
+    },
+    "differential": {
+      "success": true,
+      "stack": ["noDownStreamDependencies", "setMatchUpStatus", "setMatchUpStatus"]
+    }
+  },
+  "drawSizes": [5, 7, 8, 11, 12],
+  "exitNoopRecordings": [
+    {
+      "drawType": "AD_HOC",
+      "alreadyStamped": false,
+      "ops": ["replaceMatchUp", "announceRecorded"],
+      "count": 1
+    },
+    {
+      "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+      "alreadyStamped": false,
+      "ops": ["replaceMatchUp", "announceRecorded"],
+      "count": 1
+    },
+    {
+      "drawType": "LUCKY_DRAW",
+      "alreadyStamped": false,
+      "ops": ["replaceMatchUp", "announceRecorded"],
+      "count": 1
+    },
+    {
+      "drawType": "LUCKY_DRAW",
+      "alreadyStamped": true,
+      "ops": ["announceRecorded"],
+      "count": 9
+    },
+    {
+      "drawType": "ROUND_ROBIN",
+      "alreadyStamped": false,
+      "ops": ["replaceMatchUp", "announceRecorded"],
+      "count": 1
+    },
+    {
+      "drawType": "SINGLE_ELIMINATION",
+      "alreadyStamped": false,
+      "ops": ["replaceMatchUp", "announceRecorded"],
+      "count": 2
+    }
+  ]
+}

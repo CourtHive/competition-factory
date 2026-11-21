@@ -1,6 +1,6 @@
 # Planning an exit and its downstream placements
 
-**VERIFIED.** In the post-schedule-pilot suite census, 3,972 successful whole-call recordings first abstained for exit and 2,314 for cascade. Together they account for 6,286 of 9,395 recordings (66.9%). The largest two groups are both winner routes. A route identifies dispatch, and the reason identifies the first uncovered planner obligation. Neither tells us how many seats a particular call touched. A draw-type restriction alone cannot certify a move. [Full reason × draw type × route table](cells.md)
+**VERIFIED.** On merged dev `0408a87119`, 3,975 successful whole-call recordings first abstained for exit and 2,315 for cascade. Together they account for 6,290 of 9,399 recordings (66.9%). The accepted post-pilot census counted 6,286 of 9,395. The largest two groups are both winner routes. A route identifies dispatch, and the reason identifies the first uncovered planner obligation. Neither tells us how many seats a particular call touched. A draw-type restriction alone cannot certify a move. [Full reason × draw type × route table](cells.md)
 
 ## Ranked populations
 
@@ -8,8 +8,8 @@
 
 | Family / route                     | Calls | Risk                                                      | Required work and distinct landing precondition                                                                                                                                                                                           |
 | ---------------------------------- | ----: | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Exit / winner                      | 1,766 | High                                                      | Write result and origin, place winner, then carry or reserve on the loser link. Resolve both destinations and actual exit policy. An exited opponent at the destination can turn this into convergence and another advance.               |
-| Cascade / winner                   | 1,264 | High                                                      | Place and advance, then visit the BYE, held exit or played landing beyond it. Establish the incumbent's identity and the target's own result before advancing a second time.                                                              |
+| Exit / winner                      | 1,769 | High                                                      | Write result and origin, place winner, then carry or reserve on the loser link. Resolve both destinations and actual exit policy. An exited opponent at the destination can turn this into convergence and another advance.               |
+| Cascade / winner                   | 1,265 | High                                                      | Place and advance, then visit the BYE, held exit or played landing beyond it. Establish the incumbent's identity and the target's own result before advancing a second time.                                                              |
 | Exit / double-exit                 |   945 | High                                                      | Set both origins, reserve the unfillable seat, carry the produced exit and converge where its other feeder has arrived. A lucky draw produces no onward entrant. Distinguish a pending feeder from a structural BYE.                      |
 | Exit / clear-score                 |   473 | Very high                                                 | Remove the source exit, release only the BYEs, relays and awards it produced, then restore an unrelated surviving origin. Trace the source through every structure it reached before clearing.                                            |
 | Cascade / completed-to-double-exit |   373 | Very high                                                 | Take back both directed paths before reserving and advancing the double exit. Verify that every downstream result is removable and that the remaining feeder is still entitled to its seat.                                               |
@@ -46,10 +46,25 @@
 
 **BELIEVED first slice.** Prefer a bare, already-stamped lucky double exit asked again over a singleton cell whose only fixture needs a new timestamp. The lucky repeat already has a permanent v1 oracle on five draw sizes. Keep first entry, clear, unstamped repeat, schedule, score, status codes, notes and any outstanding settle work on their existing paths. Qualification requires recorder-off proof, three full suites, step-level harvest and an isolated census delta. Private fixed corpus, production soak and private TEAM fuzz remain owed.
 
-**Reproduction.** From the report branch at `a4de0df61f`, read `ext-report/followup/schedule-census.json` (`candidate.rows`). Filter on reason exit or cascade, group by reason and route and sum calls. Group once more by drawType to reproduce the full matrix. Inspect `writer-reach.json` for sampled writer seams; its coverage counts are lower bounds. For the stamped/unstamped distinction on merged dev `0408a87119`, run:
+**Reproduction.** The attached `suite-census.json` holds all counted cells. Read `rows`, filter on reason exit or cascade, group by reason and route and sum calls; include drawType to reproduce the full matrix. To repeat the measurement in a disposable checkout at `0408a87119`, copy `scripts/ext/outcomeCensus.config.mts` and `src/tests/testHarness/outcomeExternalCensus.ts` from the existing report branch at `a4de0df61f` into their corresponding paths. Give `OUTCOME_EXTERNAL_CENSUS_JSONL` a fresh empty output file, and run `TZ=UTC OUTCOME_PIPELINE=v2 pnpm exec vitest run --config scripts/ext/outcomeCensus.config.mts --maxWorkers=8 --reporter=dot` with that variable exported. Sum each key over the output lines. This run passed 33,626 tests and skipped 1,565. The diagnostic tap additionally logged the ops and stamps for exit/noop. For the stamped/unstamped distinction on merged dev `0408a87119`, run:
 
 ```sh
 TZ=UTC pnpm exec vitest run src/tests/mutations/outcome/{luckyDoubleExit,unstampedDoubleExitAskedAgain}.test.ts
 ```
 
 [Outcome pipeline specification](../../documentation/docs/concepts/outcome-pipeline.md) · [Native operations](../../src/mutate/matchUps/outcome/ops.ts) · [Planner gates](../../src/mutate/matchUps/outcome/plan.ts) · [Recorded cascade](../../src/mutate/matchUps/outcome/plan/recordedCascade.ts)
+
+## Ownership decision after the probe
+
+**VERIFIED.** The existing lucky-repeat comparison strips the public `stack` before comparing results. On all five generated draw sizes the stamped repeat passed its stored-record and ordered-notice controls, yet changing ownership shortened the raw result. On merged dev, v1, v2 and differential returned the same helper stack. With the proposed change, v2 returned only `["setMatchUpStatus"]`. V1 and differential retained `["noDownStreamDependencies", "setMatchUpStatus", "setMatchUpStatus"]`. The difference is visible on the public synchronous engine call. The full suite census observed nine already-stamped lucky repeats and one unstamped lucky repeat. The other five exit/noop calls also lacked their stamp. [Captured public returns and observed cells](lucky-repeat.json)
+
+**Decision for CA.** Earlier parity work explicitly excluded the diagnostic helper stack; V3-1 asks for matching returned results. Recommend explicitly carrying that exclusion into V3-1 if callers may see different helper names across implementations. If raw return identity is required here, retain the recording until a faithful compatibility return has been designed and tested. No engine change is submitted. The 292-source harvest attribution and expanded benchmark are pending at the requested stop.
+
+To verify the difference, use a disposable worktree at `0408a87119` and save the linked probe patch outside it. Apply only the observation hunk for the reference. Apply the planner hunk for the prototype. Five repeats run per arm; the log prints every mode's public return. The patch is review evidence. [Two-hunk reproduction](lucky-repeat.patch)
+
+```sh
+git apply --include='src/tests/**' "$PROBE_PATCH"
+LUCKY_RAW=1 TZ=UTC pnpm exec vitest run src/tests/mutations/outcome/luckyDoubleExit.test.ts -t 'asked again, it changes nothing'
+git apply --include='src/mutate/**' "$PROBE_PATCH"
+LUCKY_RAW=1 TZ=UTC pnpm exec vitest run src/tests/mutations/outcome/luckyDoubleExit.test.ts -t 'asked again, it changes nothing'
+```
