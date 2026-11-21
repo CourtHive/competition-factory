@@ -127,7 +127,8 @@ export function plannedNotices({
   };
   // a call recorded whole announces what it recorded, and nothing besides (`plan/recordedCall.ts`)
   const recordedWhole = prefix.every((op) => RECORDED_OPS.has(op.op));
-  const notices = new Set<string>(prefix.length && !recordedWhole ? [`${UPDATE_INCONTEXT_MATCHUP}|${matchUpId}`] : []);
+  const scheduleOnly = prefix.every((op) => op.op === 'setMatchUpSchedule');
+  const notices = new Set<string>(!recordedWhole && !scheduleOnly ? [`${UPDATE_INCONTEXT_MATCHUP}|${matchUpId}`] : []);
   for (const op of ops) {
     // every score write announces its matchUp in context, as `apply.ts` defers it: a TEAM line's dual too (S7)
     if (op.op === 'setMatchUpResult' && !op.announcedAs) notices.add(`${UPDATE_INCONTEXT_MATCHUP}|${op.matchUpId}`);

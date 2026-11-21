@@ -1,4 +1,4 @@
-import { expectRecordedWhole, prepareCall } from '@Tests/testHarness/outcome/recordedCallHarness';
+import { expectRecordedWhole, playCall, prepareCall } from '@Tests/testHarness/outcome/recordedCallHarness';
 import { findTarget, R1, won } from '@Tests/testHarness/outcome/directionFixtures';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -7,7 +7,11 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { setClock } from '@Tools/clock';
 
 // constants
-import { OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
+import {
+  OUTCOME_PIPELINE_DIFFERENTIAL,
+  OUTCOME_PIPELINE_V1,
+  OUTCOME_PIPELINE_V2,
+} from '@Constants/outcomePipelineConstants';
 import { DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 
 // counts v1's matchUp writes on the stored record (`directionCounter.ts`: a write to a recorded call's copy is not one)
@@ -45,7 +49,7 @@ afterEach(() => {
  *
  * v1 writes a call's schedule onto its matchUp as timeItems after the result (`setMatchUpState`'s schedule step), each
  * stamped with the call's instant. The planners write the schedules `scheduleOps` plans and abstain `schedule` from
- * the rest: a start and an end time, a schedule on a double exit asked for again. The timeItems are the matchUp's own
+ * the rest, including a start and an end time. A repeated double exit can carry a native date update. The timeItems are the matchUp's own
  * field, so they are in the recording. A schedule v1 refuses (an end before its start, a time out of order with a
  * linked matchUp) is refused before any plan, as it was (`scheduleRefusedBeforeTheOutcome.test.ts`).
  */
@@ -87,6 +91,19 @@ const timeItems = (record: string, matchUpId: unknown) =>
 describe('a call that carries a schedule the planners do not write is recorded whole', () => {
   it.each(ROWS)('%s', (_label, build) => {
     const call = prepareCall(build);
+    if (call.params.schedule && 'scheduledDate' in Object(call.params.schedule)) {
+      // The date is planned even when the recorder is unavailable. Compare ordered notices and all stored stamps.
+      recorder.refuse = true;
+      const v1 = playCall(OUTCOME_PIPELINE_V1, call);
+      expect(v1.result.success).toBe(true);
+      expect(v1.v1Writes).toBeGreaterThan(0);
+      for (const mode of [OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V2] as const) {
+        const actual = playCall(mode, call);
+        if (mode === OUTCOME_PIPELINE_V2) expect(actual.v1Writes).toBe(0);
+        expect({ ...actual, v1Writes: 0 }).toEqual({ ...v1, v1Writes: 0 });
+      }
+      return;
+    }
     const v1 = expectRecordedWhole(call, 'schedule', recorder);
     // CONTROL: v1 wrote the start and the end, a timeItem for each
     const before = timeItems(JSON.stringify(call.prepared), call.params.matchUpId);
