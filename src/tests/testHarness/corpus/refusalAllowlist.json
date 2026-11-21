@@ -5,7 +5,6 @@
     "F-009": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-b467984b227aa55a3dcdfec53ffc92b110b657eb1253862d74c58bf7c918dadb",
     "F-010": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-c2b5ac6c64e124f097fa19eb3778db8176dabeb62803c3204eeb77396c52fb49",
     "F-011": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-7f2e8e6148d52b207556e9958aac3126409874b2326a4942c6a1d0df7b502b91",
-    "F-012": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-18cafb18e50059f15df5f0640d9bf30712ea27e33cfc48a67cd7cb428e883992",
     "F-013": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-84c889669b97889b919b0db9782aa1f9d582c4002137ea41d036a4bd8e0c21b1",
     "F-014": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-6ca70d9c78e30736cbac87cf97189d8737db673dbcb28b24721f55386a94ce84",
     "F-015": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-02ad9785ea1e43808c92ae026bac2fe193005a50d06d9663061539fe2e917764",
@@ -549,14 +548,6 @@
           "/events/0/drawDefinitions/0/updatedAt",
           "/factory/timeStamp"
         ]
-      }
-    ],
-    "src/tests/mutations/notifications/noticeBatchB.test.ts::event attribute writers announce the event with MODIFY_EVENT > modifyEventMatchUpFormatTiming and removeEventMatchUpFormatTiming": [
-      {
-        "method": "modifyEventMatchUpFormatTiming",
-        "error": "ERR_INVALID_VALUES",
-        "reason": "F-012",
-        "paths": ["/events/0/extensions/0/value/matchUpAverageTimes/0/averageTimes/0/categoryNames/0"]
       }
     ],
     "src/tests/mutations/outcome/aLateRefusalIsCompared.test.ts::a refusal planted at carryAfterForward > is a deferred refusal under differential when its code is an apply-stage code": [
