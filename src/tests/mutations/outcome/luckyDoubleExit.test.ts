@@ -128,8 +128,10 @@ describe.each([5, 7, 8, 11, 12])('LUCKY_DRAW %i: a first-round double exit', (dr
         (matchUp) => matchUp.roundNumber === 1 && matchUp.matchUpStatus === TO_BE_PLAYED,
       );
       expect(open.length).toBeGreaterThan(1);
+      const recorder = vi.spyOn(recording, 'recordWholeCall').mockReturnValue(undefined);
       for (const { matchUpId } of open) {
-        const v1 = alike(prepared, { matchUpId, outcome: { matchUpStatus } }, `R1 ${matchUpId}`);
+        const v1 = alike(prepared, { matchUpId, outcome: { matchUpStatus } }, `R1 ${matchUpId}`, true);
+        expect(recorder).not.toHaveBeenCalled();
         expect(JSON.parse(v1.result)).toEqual({ success: true });
         const after = storedMatchUps(v1.record);
         expect(after.find((matchUp) => matchUp.matchUpId === matchUpId)?.matchUpStatus).toEqual(matchUpStatus);
@@ -164,6 +166,24 @@ describe.each([5, 7, 8, 11, 12])('LUCKY_DRAW %i: a first-round double exit', (dr
       before.filter((matchUp) => matchUp.matchUpId !== matchUpId),
     );
   });
+});
+
+it('records a first lucky double exit carrying notes and a correction from a played result', () => {
+  generate(8);
+  const { matchUpId } = drawMatchUps().find((matchUp) => matchUp.roundNumber === 1);
+  const before = stored();
+  expect(tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId, outcome: won(1) }).success).toBe(true);
+  const decided = stored();
+  const recorder = vi.spyOn(recording, 'recordWholeCall');
+  for (const [prepared, params] of [
+    [before, { notes: 'director entry' }],
+    [decided, {}],
+  ] as const) {
+    recorder.mockClear();
+    const v1 = alike(prepared, { matchUpId, outcome: { matchUpStatus: DOUBLE_DEFAULT }, params });
+    expect(v1.returned.result.success).toBe(true);
+    expect(recorder).toHaveBeenCalled();
+  }
 });
 
 // a double exit stored with no `scoredTime` (an older record's, or one a failed write left): v1 stamps it when the same
