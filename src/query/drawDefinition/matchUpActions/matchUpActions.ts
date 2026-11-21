@@ -360,7 +360,7 @@ function addStandardActions({
 
   if (isInComplete && readyToScore) validActions.push({ type: STATUS });
 
-  if (scoringActive && readyToScore && !carriedExit) {
+  if (scoringActive && readyToScore && !carriedExit && isAvailableAction({ policyActions, action: SCORE })) {
     validActions.push({
       info: 'set outcome and winningSide',
       method: SCORE_METHOD,
@@ -396,7 +396,13 @@ function addStandardActions({
   const hasOutcomeToRemove =
     !!matchUp.winningSide || (!!matchUp.matchUpStatus && matchUp.matchUpStatus !== TO_BE_PLAYED);
   const clearWouldBeRefused = activeDownstream || hasPropagatedExitDownstream({ targetData, matchUpsMap });
-  if (scoringActive && hasOutcomeToRemove && !clearWouldBeRefused && !carriedExit) {
+  if (
+    scoringActive &&
+    hasOutcomeToRemove &&
+    !clearWouldBeRefused &&
+    !carriedExit &&
+    isAvailableAction({ policyActions, action: CLEAR_SCORE })
+  ) {
     validActions.push({
       info: 'remove the existing outcome',
       method: SCORE_METHOD,
