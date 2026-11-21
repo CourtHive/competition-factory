@@ -1,5 +1,6 @@
 import { writeModeMatrix } from '@Tests/testHarness/writeModeMatrix';
 import { setSubscriptions } from '@Global/state/globalState';
+import { canonicalJson } from '@Tools/canonicalJson';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -11,6 +12,8 @@ import { LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { OFFICIAL } from '@Constants/participantRoles';
 import {
+  INVALID_PARTICIPANT_ID,
+  VENUE_NOT_FOUND,
   COURT_NOT_FOUND,
   INVALID_END_TIME,
   INVALID_RESUME_TIME,
@@ -390,6 +393,7 @@ writeModeMatrix(
           resumeTime: '08:35',
           endTime: '10:15',
         },
+        rollbackOnError: false,
       });
       expect(result.success).toEqual(true);
       expect(matchUpModifyNotices.length).toEqual(1);
@@ -399,6 +403,15 @@ writeModeMatrix(
       const modifiedMatchUp = tournamentEngine.allCompetitionMatchUps({
         matchUpFilters: { matchUpIds: [modifiedMatchUpId] },
       }).matchUps[0];
+      expect(modifiedMatchUp.schedule.scheduledTime).toBe('08:00');
+      for (const [type, time] of [
+        [START_TIME, '08:15'],
+        [STOP_TIME, '08:20'],
+        [RESUME_TIME, '08:35'],
+        [END_TIME, '10:15'],
+      ]) {
+        expect(modifiedMatchUp.timeItems.find((item) => item.itemType === type)?.itemValue).toBe(time);
+      }
       if (legacy) expect(modifiedMatchUp.timeItems.length).toEqual(5);
 
       ({ tournamentId, drawId, matchUpId } = matchUps[1]);
@@ -475,6 +488,14 @@ writeModeMatrix(
 
     const scheduleScenarios = [
       {
+        schedule: { startTime: '09:00', homeParticipantId: 'absent' },
+        error: INVALID_PARTICIPANT_ID,
+      },
+      {
+        schedule: { startTime: '09:00', venueId: 'absent' },
+        error: VENUE_NOT_FOUND,
+      },
+      {
         schedule: { startTime: '09:00', resumeTime: '08:00' },
         error: INVALID_RESUME_TIME,
       },
@@ -488,7 +509,7 @@ writeModeMatrix(
       },
     ];
 
-    it.each(scheduleScenarios)('can schedule many attributes at once', (scheduleScenario) => {
+    it.each(scheduleScenarios)('refuses $error.code without storing the start time', (scheduleScenario) => {
       const { tournamentRecord } = mocksEngine.generateTournamentRecord({
         drawProfiles: [{ drawSize: 8 }],
       });
@@ -500,13 +521,14 @@ writeModeMatrix(
       const { tournamentId, drawId, matchUpId } = matchUps[0];
       const { schedule, error } = scheduleScenario;
 
-      const result = tournamentEngine.addMatchUpScheduleItems({
-        tournamentId,
-        matchUpId,
-        schedule,
-        drawId,
-      });
+      const record = () => canonicalJson(tournamentEngine.getTournament().tournamentRecord);
+      const before = record();
+      const result = tournamentEngine.executionQueue(
+        [{ method: 'addMatchUpScheduleItems', params: { tournamentId, drawId, matchUpId, schedule } }],
+        false,
+      );
       expect(result.error).toEqual(error);
+      expect(record()).toEqual(before);
     });
   },
   [NATIVE, LEGACY],
