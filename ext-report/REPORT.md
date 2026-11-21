@@ -10,6 +10,7 @@
 - **VERIFIED** Two TEAM presets reached a shared `STALLED_POSITION` report on generated odd fields. The four-position
   controls passed. Whether to change the audit or setup needs a ruling.
 - **VERIFIED** The suite census counted 9,397 successful recordings. Exit, cascade and TEAM account for 77%.
+- **VERIFIED** Harvest replay found two distinct TEAM partial writes and differential failures.
 - **VERIFIED** A schedule-only prototype exposed a notice assumption and then an existing ownership assertion.
 - **VERIFIED** The authored E1 pilot needed no extra writes. The E2 singles mutation curve grew 3.9× from 128 to 256
   positions for about 2× the calls.
@@ -23,6 +24,9 @@
 | v1           |        2,283 |            41 |       33,517 |         1,562 |
 | v2           |        2,283 |            41 |       33,517 |         1,562 |
 | differential |        2,283 |            41 |       33,517 |         1,562 |
+
+**VERIFIED** The report branch's normal differential run passed 33,513 tests with 1,624 skipped. The opt-in
+exploration tests are among the skips. The report worktree uses the same locked dependencies as the baseline.
 
 **VERIFIED** TEAM arms passed 1,528 per mode. Route differential, double-exit sweep, deep corrections, and hydration
 gates passed. The route and deep-correction package scripts hard-code v2. The underlying commands were also run
@@ -47,21 +51,22 @@ comparison.
 | Scheduling             |        60 |    579 |                  0 |            0 |
 | Oracles                |     2,727 | 66,771 |                  0 |            0 |
 
-**VERIFIED** The dedicated grammar and scoring tests gave 377 passing cases per mode. The first harvested replay
-attempt failed to read a JSONL file larger than the runtime's string limit. The replay now streams line by line.
-The harvested scenarios can drift in all three modes. A difference shared by all three is separate from v1/v2
-outcome parity. The standalone official coverage gate fails on the same oversized file because it also
-reads each complete JSONL as one string. The deterministic-source coverage comparison below is independent
-of that exception.
+**VERIFIED** The dedicated grammar and scoring tests gave 377 passing cases per mode. The streaming replay
+completed all 41,829 harvested scenarios and 181,471 steps. It found four mode disagreements, representing two
+duplicated one-call inputs (F-005), and 949 scenarios with drift shared across all modes. Shared drift is relative
+to the harvested expectation. The replay ledger provides exact scenario IDs for the mode differences and examples
+of shared drift. The official coverage reader independently fails on the 1.08 GB JSONL file because it reads each
+complete file as one string. The deterministic-source coverage comparison below is independent of that exception.
 
 ## 3. Findings
 
-| ID    | Class      | Title                                                                   | Severity                        | Repro                                                                  | Spec                    | Verified          |
-| ----- | ---------- | ----------------------------------------------------------------------- | ------------------------------- | ---------------------------------------------------------------------- | ----------------------- | ----------------- |
-| F-001 | G, harness | Recording changes the observed ad hoc stamp                             | Medium for corpus qualification | `src/tests/mutations/outcome/ownedDirectionWrites.graph.test.ts`       | § 4, § 8                | Yes               |
-| F-002 | G          | Odd TEAM fields can end a generated walk with a stalled downstream seat | Low pending adjudication        | `src/tests/mutations/exitPropagation/outcomeExternalTeamStall.test.ts` | §§ 5–6, TEAM completion | Yes, audit result |
-| F-003 | G          | Bare winner re-entry retains a blank score                              | Low                             | `src/tests/mutations/exitPropagation/outcomeExternalLaws.test.ts`      | §§ 3–4                  | Yes               |
-| F-004 | T, harness | Harvested corpus exceeds coverage reader string limit                   | Medium for corpus qualification | `src/tests/corpus/coverage.test.ts`                                    | § 8, corpus README      | Yes               |
+| ID    | Class      | Title                                                                   | Severity                        | Repro                                                                          | Spec                    | Verified          |
+| ----- | ---------- | ----------------------------------------------------------------------- | ------------------------------- | ------------------------------------------------------------------------------ | ----------------------- | ----------------- |
+| F-001 | G, harness | Recording changes the observed ad hoc stamp                             | Medium for corpus qualification | `src/tests/mutations/outcome/ownedDirectionWrites.graph.test.ts`               | § 4, § 8                | Yes               |
+| F-002 | G          | Odd TEAM fields can end a generated walk with a stalled downstream seat | Low pending adjudication        | `src/tests/mutations/exitPropagation/outcomeExternalTeamStall.test.ts`         | §§ 5–6, TEAM completion | Yes, audit result |
+| F-003 | G          | Bare winner re-entry retains a blank score                              | Low                             | `src/tests/mutations/exitPropagation/outcomeExternalLaws.test.ts`              | §§ 3–4                  | Yes               |
+| F-004 | T, harness | Harvested corpus exceeds coverage reader string limit                   | Medium for corpus qualification | `src/tests/corpus/coverage.test.ts`                                            | § 8, corpus README      | Yes               |
+| F-005 | P, D       | TEAM retirement writes before a held-seat refusal                       | High                            | `src/tests/mutations/exitPropagation/outcomeExternalDifferentialRepro.test.ts` | row 31, § 6             | Yes               |
 
 ## 4. Corpus extension
 
@@ -94,7 +99,7 @@ in Vitest's transform and test harness. It tags a successful recording with the 
 recording and counts it only when v2 returns the recorded result. A successful plan physically recorded because it
 left more work is labeled `settle`, or `clock` when the uncaptured-clock phase certification failed. Explicit mode
 switches within the suite are honored. The instrumented config ran 33,513 passing and 1,563 skipped tests. The clean
-run had four more passing tests. Counts are call occurrences, so the suite and corpus populations may overlap.
+run had four more passing tests. Counts are call occurrences, so the suite and corpus populations may overlap. The v2 replay counted 17,188 whole-call recordings in harvested scenarios and 2,744 across the deterministic tournament sources.
 
 | Reason       | v2 suite recordings | Candidate legacy writer seam                                      | Native plan and risk                                                                                                                                                             | Spec                     | Estimate              |
 | ------------ | ------------------: | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | --------------------- |
@@ -119,7 +124,7 @@ run had four more passing tests. Counts are call occurrences, so the suite and c
 
 **VERIFIED** `writer-reach.json` lists files and executed functions from precise coverage around accepted copy
 writes in 15 focused recording test files and two direction-write files. The instrument takes the first accepted copy for each reason per test
-file. Counts are lower bounds. The focus run covered 16 reasons and did not sample `loser`. No successful
+file. Counts are lower bounds. The test sample and 20 FMLC oracle cases covered all 17 observed reasons. No successful
 `no-record` recording appeared. See the reproduction commands.
 
 **BELIEVED** The writer seams and effort estimates above are source-reading hypotheses. The top two buckets are
@@ -153,21 +158,23 @@ separately. Scores use side 1, exits use a WALKOVER every fourth result, and unw
 a score with change propagation enabled. TEAM measures dual-level calls on generated COLLEGE_DEFAULT draws.
 Other test activity overlapped this benchmark, so use the curve as a first measurement.
 
-| Event   | Positions | Score |  Exit | Unwind |
-| ------- | --------: | ----: | ----: | -----: |
-| SINGLES |        16 |  12.2 |   9.0 |   10.4 |
-| SINGLES |        32 |  23.7 |  21.1 |   25.8 |
-| SINGLES |        64 |  68.5 |  53.8 |   69.3 |
-| SINGLES |       128 | 200.6 | 196.6 |  236.0 |
-| SINGLES |       256 | 781.3 | 682.3 |  897.3 |
-| TEAM    |         8 |   8.6 |   7.0 |    9.2 |
-| TEAM    |        16 |  25.2 |  21.8 |   27.5 |
-| TEAM    |        32 |  81.1 |  72.5 |   98.3 |
-| TEAM    |        64 | 299.0 | 269.2 |  347.9 |
+| Event   | Positions |  Score |   Exit | Unwind |
+| ------- | --------: | -----: | -----: | -----: |
+| SINGLES |        16 |   12.2 |    9.0 |   10.4 |
+| SINGLES |        32 |   23.7 |   21.1 |   25.8 |
+| SINGLES |        64 |   68.5 |   53.8 |   69.3 |
+| SINGLES |       128 |  200.6 |  196.6 |  236.0 |
+| SINGLES |       256 |  781.3 |  682.3 |  897.3 |
+| TEAM    |         8 |    8.6 |    7.0 |    9.2 |
+| TEAM    |        16 |   25.2 |   21.8 |   27.5 |
+| TEAM    |        32 |   81.1 |   72.5 |   98.3 |
+| TEAM    |        64 |  299.0 |  269.2 |  347.9 |
+| TEAM    |       128 | 1310.8 | 1202.0 | 1535.6 |
+| TEAM    |       256 | 5518.5 | 4914.1 | 6171.8 |
 
 **VERIFIED E3.** An opt-in reducer hook retained a separate working view across accepted v2 batches. It applied the
 same ops before comparing result, score, positions, occupants, edges and line identities with a fresh index. Across
-5,925 batches and 1,350,141 fresh-index entries there were no mismatches, errors or whole-view invalidations. The
+9,651 batches and 9,265,521 fresh-index entries there were no mismatches, errors or whole-view invalidations. The
 projection does not compare every index field or stamp. The engine still planned with its ordinary index.
 
 | Event / positions | Workload | Incremental ms | Fresh ms |
@@ -179,6 +186,9 @@ projection does not compare every index field or stamp. The engine still planned
 | SINGLES / 256     | unwind   |           82.1 |    217.5 |
 | TEAM / 64         | score    |           24.2 |    129.5 |
 | TEAM / 64         | unwind   |           30.1 |    158.0 |
+| TEAM / 128        | score    |           75.0 |    471.6 |
+| TEAM / 256        | score    |          298.5 |   2126.4 |
+| TEAM / 256        | unwind   |          344.9 |   2571.9 |
 
 **BELIEVED** Key the index by tournament-record instance and share the overlay's invalidation rule. State replacement,
 non-outcome writers, rollback and broad record replacement need explicit invalidation. The current overlay still
@@ -229,6 +239,10 @@ normalization each need independent consumer validation.
    for v2 and a canonical rule only as part of storage normalization.
 5. Should coverage read the public JSONL incrementally? Options are bounded file generation or a streaming
    coverage reader. Recommend streaming so source identity and manifest semantics stay intact.
+
+6. For F-005, should the held-seat check be extended or should placement be certified before the TEAM writer
+   begins? Recommend identifying the first unsafe placement in the two saved repros and extending row 31 when
+   both fit its semantics.
 
 ## 7. What I did not do, and why
 
@@ -305,4 +319,21 @@ The full oracle E1 arm uses oracle JSONL generated by `pnpm run corpus:oracles`.
 ```sh
 TZ=UTC OUTCOME_EXTERNAL_CORPUS="$PWD/.corpus-out" OUTCOME_EXTERNAL_CORPUS_GLOB='oracles/*.jsonl' OUTCOME_EXTERNAL_FIXPOINT_JSON=/tmp/outcome-oracle-fixpoint.json OUTCOME_EXTERNAL_REPLAY_JSON=/tmp/outcome-oracle-replay.json pnpm exec vitest run --config scripts/ext/outcomeFixpoint.config.mts src/tests/corpus/outcomeExternalReplay.test.ts
 OUTCOME_PIPELINE=v2 TZ=UTC OUTCOME_EXTERNAL_CORPUS="$PWD/.corpus-out" OUTCOME_EXTERNAL_CORPUS_GLOB='src-*.jsonl' OUTCOME_EXTERNAL_REPLAY_JSON=/tmp/outcome-harvest-replay.json OUTCOME_EXTERNAL_REPLAY_DETAILS=/tmp/outcome-harvest-details.jsonl OUTCOME_EXTERNAL_CENSUS_JSONL=/tmp/outcome-harvest-census.jsonl pnpm exec vitest run --config scripts/ext/outcomeCensus.config.mts src/tests/corpus/outcomeExternalReplay.test.ts
+```
+
+To extend both curves to the two upper TEAM sizes, run the large-TEAM arms separately.
+
+```sh
+TZ=UTC OUTCOME_PIPELINE=v2 OUTCOME_EXTERNAL_LARGE_TEAM=1 OUTCOME_EXTERNAL_COST_JSON=/tmp/outcome-e2-large-team.json pnpm exec vitest run src/tests/mutations/exitPropagation/outcomeExternalCost.test.ts
+TZ=UTC OUTCOME_PIPELINE=v2 OUTCOME_EXTERNAL_INDEX=1 OUTCOME_EXTERNAL_LARGE_TEAM=1 OUTCOME_EXTERNAL_COST_JSON=/tmp/outcome-e3-large-team.json pnpm exec vitest run --config scripts/ext/outcomeIndex.config.mts src/tests/mutations/exitPropagation/outcomeExternalCost.test.ts
+```
+
+The follow-up writer reach uses two direction-write files and the first 20 FMLC census cases.
+
+```sh
+OUTCOME_PIPELINE=v2 TZ=UTC OUTCOME_EXTERNAL_COVERAGE_JSONL=/tmp/outcome-direction-writers.jsonl pnpm exec vitest run --config scripts/ext/outcomeCensus.config.mts src/tests/mutations/outcome/ownedDirectionWrites.boundaries.test.ts src/tests/mutations/outcome/ownedDirectionWrites.relabels.test.ts
+mkdir -p /tmp/outcome-loser-replay
+rg -F 'oracle/census/first-match-loser-consolation-' .corpus-out/oracles/oracle-census.jsonl | head -20 > /tmp/outcome-loser-replay/oracle.jsonl
+OUTCOME_PIPELINE=v2 TZ=UTC OUTCOME_EXTERNAL_CORPUS=/tmp/outcome-loser-replay OUTCOME_EXTERNAL_COVERAGE_JSONL=/tmp/outcome-loser-writers.jsonl pnpm exec vitest run --config scripts/ext/outcomeCensus.config.mts src/tests/corpus/outcomeExternalReplay.test.ts
+node scripts/ext/summarizeOutcomeWriters.mjs /tmp/outcome-writers.jsonl /tmp/outcome-direction-writers.jsonl /tmp/outcome-loser-writers.jsonl
 ```

@@ -1,0 +1,164 @@
+[
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 41,
+    "calls": 127,
+    "mutationMs": 1504.5991290000009,
+    "traversalMs": 4828.499
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 42,
+    "calls": 127,
+    "mutationMs": 1301.892372000003,
+    "traversalMs": 4378.815542
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 43,
+    "calls": 127,
+    "mutationMs": 1310.7680850000106,
+    "traversalMs": 4383.308792
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 127,
+    "mutationMs": 1200.2307070000006,
+    "traversalMs": 4264.697584
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 127,
+    "mutationMs": 1202.0055949999878,
+    "traversalMs": 4329.209041000002
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 127,
+    "mutationMs": 1216.3190819999872,
+    "traversalMs": 4330.963499999998
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 159,
+    "mutationMs": 1531.3937930000102,
+    "traversalMs": 4541.841333000004
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 159,
+    "mutationMs": 1540.7490460000045,
+    "traversalMs": 4579.663207999998
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 159,
+    "mutationMs": 1535.5911710000146,
+    "traversalMs": 4550.458500000001
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 41,
+    "calls": 255,
+    "mutationMs": 5728.996503999959,
+    "traversalMs": 19353.573916
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 42,
+    "calls": 255,
+    "mutationMs": 5518.478558000075,
+    "traversalMs": 19197.989875
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 43,
+    "calls": 255,
+    "mutationMs": 5467.609706999909,
+    "traversalMs": 18995.51241699999
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 255,
+    "mutationMs": 4914.083625999934,
+    "traversalMs": 18258.428209000005
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 255,
+    "mutationMs": 4922.062759000139,
+    "traversalMs": 18230.265541999994
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 255,
+    "mutationMs": 4762.846209000156,
+    "traversalMs": 18004.452457999985
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 319,
+    "mutationMs": 6137.011406999838,
+    "traversalMs": 19184.841874999984
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 319,
+    "mutationMs": 6171.818801000074,
+    "traversalMs": 19229.17633399999
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 319,
+    "mutationMs": 6212.56400399984,
+    "traversalMs": 19303.007332999987
+  }
+]

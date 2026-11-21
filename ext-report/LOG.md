@@ -19,3 +19,7 @@
 - Measured the retained-index candidate across the E2 workloads and on a public TEAM line correction.
 - Reduced the bare-winner re-entry difference to three calls in a two-position draw.
 - Reproduced the official coverage reader exception on a 1.08 GB harvested file.
+- Extended singles and TEAM benchmarking through 256 positions. Checked the E3 projections after 9,651 accepted batches.
+- Completed sampled writer reach for all 17 observed whole-call recording reasons.
+- Reverified the report branch under the ordinary differential suite and reproduced the coverage exception in all modes.
+- Finished the 41,829-scenario harvested replay. Reduced four disagreement rows to two distinct single-call TEAM partial writes.

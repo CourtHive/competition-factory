@@ -1,0 +1,637 @@
+{
+  "totals": {
+    "scenarios": 41829,
+    "steps": 181471,
+    "disagreements": 4,
+    "commonDrift": 949
+  },
+  "modeDisagreements": [
+    {
+      "file": "src-tests-mutations-outcome-recordedteamcall-test-ts.jsonl",
+      "scenarioId": "recorded/src/tests/mutations/outcome/recordedteamcall/along-a-seeded-walk-of-a-team-draw-a-call-a-recording-is-asked-for-leaves-what-v1-s-write-leaves-single-elimination-8-of-7-laver-cup/part-216",
+      "disagreement": true,
+      "v1": [],
+      "v2": [],
+      "differential": {
+        "exception": "outcome pipeline divergence on 381c0a87-0e9e-4c97-8b58-cbed105f280c: v1 ERR_EXISTING_POSITION_ASSIGNMENT, v2 ok"
+      }
+    },
+    {
+      "file": "src-tests-mutations-outcome-recordedteamcall-test-ts.jsonl",
+      "scenarioId": "recorded/src/tests/mutations/outcome/recordedteamcall/along-a-seeded-walk-of-a-team-draw-a-call-a-recording-is-asked-for-leaves-what-v1-s-write-leaves-single-elimination-8-of-7-laver-cup/part-217",
+      "disagreement": true,
+      "v1": [],
+      "v2": [],
+      "differential": {
+        "exception": "outcome pipeline divergence on 381c0a87-0e9e-4c97-8b58-cbed105f280c: v1 ERR_EXISTING_POSITION_ASSIGNMENT, v2 ok"
+      }
+    },
+    {
+      "file": "src-tests-mutations-outcome-recordedteamcall-test-ts.jsonl",
+      "scenarioId": "recorded/src/tests/mutations/outcome/recordedteamcall/along-a-seeded-walk-of-a-team-draw-a-call-a-recording-is-asked-for-leaves-what-v1-s-write-leaves-feed-in-championship-8/part-294",
+      "disagreement": true,
+      "v1": [],
+      "v2": [],
+      "differential": {
+        "exception": "outcome pipeline divergence on 5ce12016-ac81-45fc-9d65-21b4f0eac231: v1 ERR_EXISTING_POSITION_ASSIGNMENT, v2 ok"
+      }
+    },
+    {
+      "file": "src-tests-mutations-outcome-recordedteamcall-test-ts.jsonl",
+      "scenarioId": "recorded/src/tests/mutations/outcome/recordedteamcall/along-a-seeded-walk-of-a-team-draw-a-call-a-recording-is-asked-for-leaves-what-v1-s-write-leaves-feed-in-championship-8/part-295",
+      "disagreement": true,
+      "v1": [],
+      "v2": [],
+      "differential": {
+        "exception": "outcome pipeline divergence on 5ce12016-ac81-45fc-9d65-21b4f0eac231: v1 ERR_EXISTING_POSITION_ASSIGNMENT, v2 ok"
+      }
+    }
+  ],
+  "commonDriftExamples": [
+    {
+      "file": "src-analyze-report-tests-headtohead-test-ts.jsonl",
+      "scenarioId": "recorded/src/analyze/report/tests/headtohead/can-generate-h2h-reports-with-competitors-in-common",
+      "disagreement": false,
+      "v1": [
+        {
+          "step": 1,
+          "expected": "sha256:6240b5ea5056e19e8bd092d410bf0dc400b35ff56748ffc39558d91e76257fc3",
+          "actual": "sha256:61dfe8decf9fd1c66dc8fc50d989b583108ae3624a1b24185898642ee0bbddb6",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 2,
+          "expected": "sha256:fcd6e1dab9d8f5a7ba9e23bc48ad5ace51cbfef40d2a342e3a4bb7b6efaf03b7",
+          "actual": "sha256:61dfe8decf9fd1c66dc8fc50d989b583108ae3624a1b24185898642ee0bbddb6",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 3,
+          "expected": "sha256:f4eb806bdce0caedb2a3e2694cf6df1238f862e033df1966705190c90eca4de2",
+          "actual": "sha256:61dfe8decf9fd1c66dc8fc50d989b583108ae3624a1b24185898642ee0bbddb6",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 4,
+          "expected": "sha256:68f8e90cca7b0f449c0207190a12767b546e83a869678edb8a619de9cdb015e9",
+          "actual": "sha256:61dfe8decf9fd1c66dc8fc50d989b583108ae3624a1b24185898642ee0bbddb6",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 5,
+          "expected": "sha256:de90002331d37fd64be22a298097e81d642176d295c07fa2f2fef42d925dc88e",
+          "actual": "sha256:61dfe8decf9fd1c66dc8fc50d989b583108ae3624a1b24185898642ee0bbddb6",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 6,
+          "expected": "sha256:87f091ada87efe83d268573125b77730c3cd43f3274b10a093e3f24015c92ce9",
+          "actual": "sha256:61dfe8decf9fd1c66dc8fc50d989b583108ae3624a1b24185898642ee0bbddb6",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 7,
+          "expected": "sha256:b8e252d8dbe4b125da6e158f8a66ed97c60005022d23052bf9df50b93d5768bf",
+          "actual": "sha256:61dfe8decf9fd1c66dc8fc50d989b583108ae3624a1b24185898642ee0bbddb6",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 8,
+          "expected": "sha256:597ddba422d48ab7546649cf417833731eb87ea4e0f3f5f433a2095b8c964d3e",
+          "actual": "sha256:61dfe8decf9fd1c66dc8fc50d989b583108ae3624a1b24185898642ee0bbddb6",
+          "result": {
+            "success": true
+          }
+        }
+      ],
+      "v2": [
+        {
+          "step": 1,
+          "expected": "sha256:6240b5ea5056e19e8bd092d410bf0dc400b35ff56748ffc39558d91e76257fc3",
+          "actual": "sha256:61dfe8decf9fd1c66dc8fc50d989b583108ae3624a1b24185898642ee0bbddb6",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 2,
+          "expected": "sha256:fcd6e1dab9d8f5a7ba9e23bc48ad5ace51cbfef40d2a342e3a4bb7b6efaf03b7",
+          "actual": "sha256:61dfe8decf9fd1c66dc8fc50d989b583108ae3624a1b24185898642ee0bbddb6",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 3,
+          "expected": "sha256:f4eb806bdce0caedb2a3e2694cf6df1238f862e033df1966705190c90eca4de2",
+          "actual": "sha256:61dfe8decf9fd1c66dc8fc50d989b583108ae3624a1b24185898642ee0bbddb6",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 4,
+          "expected": "sha256:68f8e90cca7b0f449c0207190a12767b546e83a869678edb8a619de9cdb015e9",
+          "actual": "sha256:61dfe8decf9fd1c66dc8fc50d989b583108ae3624a1b24185898642ee0bbddb6",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 5,
+          "expected": "sha256:de90002331d37fd64be22a298097e81d642176d295c07fa2f2fef42d925dc88e",
+          "actual": "sha256:61dfe8decf9fd1c66dc8fc50d989b583108ae3624a1b24185898642ee0bbddb6",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 6,
+          "expected": "sha256:87f091ada87efe83d268573125b77730c3cd43f3274b10a093e3f24015c92ce9",
+          "actual": "sha256:61dfe8decf9fd1c66dc8fc50d989b583108ae3624a1b24185898642ee0bbddb6",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 7,
+          "expected": "sha256:b8e252d8dbe4b125da6e158f8a66ed97c60005022d23052bf9df50b93d5768bf",
+          "actual": "sha256:61dfe8decf9fd1c66dc8fc50d989b583108ae3624a1b24185898642ee0bbddb6",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 8,
+          "expected": "sha256:597ddba422d48ab7546649cf417833731eb87ea4e0f3f5f433a2095b8c964d3e",
+          "actual": "sha256:61dfe8decf9fd1c66dc8fc50d989b583108ae3624a1b24185898642ee0bbddb6",
+          "result": {
+            "success": true
+          }
+        }
+      ],
+      "differential": [
+        {
+          "step": 1,
+          "expected": "sha256:6240b5ea5056e19e8bd092d410bf0dc400b35ff56748ffc39558d91e76257fc3",
+          "actual": "sha256:61dfe8decf9fd1c66dc8fc50d989b583108ae3624a1b24185898642ee0bbddb6",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 2,
+          "expected": "sha256:fcd6e1dab9d8f5a7ba9e23bc48ad5ace51cbfef40d2a342e3a4bb7b6efaf03b7",
+          "actual": "sha256:61dfe8decf9fd1c66dc8fc50d989b583108ae3624a1b24185898642ee0bbddb6",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 3,
+          "expected": "sha256:f4eb806bdce0caedb2a3e2694cf6df1238f862e033df1966705190c90eca4de2",
+          "actual": "sha256:61dfe8decf9fd1c66dc8fc50d989b583108ae3624a1b24185898642ee0bbddb6",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 4,
+          "expected": "sha256:68f8e90cca7b0f449c0207190a12767b546e83a869678edb8a619de9cdb015e9",
+          "actual": "sha256:61dfe8decf9fd1c66dc8fc50d989b583108ae3624a1b24185898642ee0bbddb6",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 5,
+          "expected": "sha256:de90002331d37fd64be22a298097e81d642176d295c07fa2f2fef42d925dc88e",
+          "actual": "sha256:61dfe8decf9fd1c66dc8fc50d989b583108ae3624a1b24185898642ee0bbddb6",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 6,
+          "expected": "sha256:87f091ada87efe83d268573125b77730c3cd43f3274b10a093e3f24015c92ce9",
+          "actual": "sha256:61dfe8decf9fd1c66dc8fc50d989b583108ae3624a1b24185898642ee0bbddb6",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 7,
+          "expected": "sha256:b8e252d8dbe4b125da6e158f8a66ed97c60005022d23052bf9df50b93d5768bf",
+          "actual": "sha256:61dfe8decf9fd1c66dc8fc50d989b583108ae3624a1b24185898642ee0bbddb6",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 8,
+          "expected": "sha256:597ddba422d48ab7546649cf417833731eb87ea4e0f3f5f433a2095b8c964d3e",
+          "actual": "sha256:61dfe8decf9fd1c66dc8fc50d989b583108ae3624a1b24185898642ee0bbddb6",
+          "result": {
+            "success": true
+          }
+        }
+      ]
+    },
+    {
+      "file": "src-tests-corpus-authoredsources-test-ts.jsonl",
+      "scenarioId": "recorded/src/tests/corpus/authoredsources/every-authored-scenario-writes-replays-both-ways-and-the-engine-answers-as-the-spec-says",
+      "disagreement": false,
+      "v1": [
+        {
+          "step": 0,
+          "expected": "sha256:43cb612b56542745ef35cda3c1226fe3be7b524de3178cc17db30864da2416c9",
+          "actual": "sha256:d3ab6622ce9feb2e26621437a6f8aa89fc2aee22d98e89cda1d9b4842dbae9fa",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 1,
+          "expected": "sha256:686c9661c36a94343459cc3f9cec6d1689cbd5dd41ae3c19cb7b4ddc361af4db",
+          "actual": "sha256:872098db0649bc3fff398c7f9b705cd2e4a0bc6331346cb4a28c68ee060dacaf",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 2,
+          "expected": "sha256:1bf1b525109fe01d0f1967b883401106e90051f4522bb55d449974ea5f8c86d7",
+          "actual": "sha256:1e5ce8dc8fd4621e9f8ed5b226715efdedd5a27661943621e00b757bd7d0ad1f",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 3,
+          "expected": "sha256:f0b7243b43035221ed7c9c0bea4ac424d43ceeb86c8907c11b6a7e3c4637683c",
+          "actual": "sha256:9178576f77595a8fa954bdd64eb3b1a94bc9886e61c6c3ef5ef4d24aca421302",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 4,
+          "expected": "sha256:d0a23a10b4ecf4bf0a757468d8718febb3881fc367975fa5c4cae0b78dd7ce3e",
+          "actual": "sha256:b9676a4860a2dd5d73aefde0b953b432e508945764eeaa1b5e6b48f8f739cc4b",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 5,
+          "expected": "sha256:82f3dc7abf7ddc30baeb0753116bc4ff260487b2ec336cd137209e198fe7414b",
+          "actual": "sha256:0e0f85e2488db337f654e7ac7238c09086722bb71327d0e353b63053123857b9",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 6,
+          "expected": "sha256:ae36de436e5751ce70ce999cc6525c881ddbd93e342c0b24b8937e4e24c02681",
+          "actual": "sha256:39e49cc5480c46f5fee431afdbfb6fb46cf48b0cfd2e72b85d6f19404b8f8397",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 7,
+          "expected": "sha256:60ac8fa6202335b6ef3685befc9f327fe9b7bfd1bd407aece52b91ee62ba818e",
+          "actual": "sha256:adea1ee6d237693ba582776bf74c9948099d6cd2e43463fc1b0117d2495ba965",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 8,
+          "expected": "sha256:d248f7e5ea378b07392b1f6e2dfe18d13114081a92d495f4ac5535faca3b9dd3",
+          "actual": "sha256:3f801aba50cb0e7607dc0e4eff5cb3067b893e377541bb97433c1a38744cac8b",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 9,
+          "expected": "sha256:7a4ff30322c1d3de19a9a2858a6ec6371c62d17b53ad37c57b01895c5e21166b",
+          "actual": "sha256:fc992e8e678c1c821b736228a96be95a6c9a92279abe7c27f21996d27dc7e91e",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 10,
+          "expected": "sha256:3dda60f6b1bd0e7cdf30562709be2fa6a2f033ffcb3560d50e4903f2a327d0bc",
+          "actual": "sha256:2d286ef9b903bd5d4efc2b37002e503b850835b0610c70aa8c07b5ac9134235c",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 11,
+          "expected": "sha256:f994f4c74c627fb246e7d3c76ef365d1726cea5cc83eb4753da4bf96a0404e70",
+          "actual": "sha256:2649367f98478440429203f889a1901564e7b45cdee84a683815baef59e65ed6",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 12,
+          "expected": "sha256:c8f8b1794cfe276c1caefa7f5621481e30ea1ed846ebebb333473bbc68d8e5d2",
+          "actual": "sha256:9c743b7c8bc5cb322ad94ea0d8616a3ac1af7d6a41f772a67a43399f1ff6e56e",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 13,
+          "expected": "sha256:233664b1be83058d1b1f189390f231d52b21ba53f166266cc2f48abb38f3bf80",
+          "actual": "sha256:aa49976dccf66ba9862f0a0f7d1ad41a5c8eecccdb8447ea0bc2eaf4a2cde0dd",
+          "result": {
+            "success": true
+          }
+        }
+      ],
+      "v2": [
+        {
+          "step": 0,
+          "expected": "sha256:43cb612b56542745ef35cda3c1226fe3be7b524de3178cc17db30864da2416c9",
+          "actual": "sha256:d3ab6622ce9feb2e26621437a6f8aa89fc2aee22d98e89cda1d9b4842dbae9fa",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 1,
+          "expected": "sha256:686c9661c36a94343459cc3f9cec6d1689cbd5dd41ae3c19cb7b4ddc361af4db",
+          "actual": "sha256:872098db0649bc3fff398c7f9b705cd2e4a0bc6331346cb4a28c68ee060dacaf",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 2,
+          "expected": "sha256:1bf1b525109fe01d0f1967b883401106e90051f4522bb55d449974ea5f8c86d7",
+          "actual": "sha256:1e5ce8dc8fd4621e9f8ed5b226715efdedd5a27661943621e00b757bd7d0ad1f",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 3,
+          "expected": "sha256:f0b7243b43035221ed7c9c0bea4ac424d43ceeb86c8907c11b6a7e3c4637683c",
+          "actual": "sha256:9178576f77595a8fa954bdd64eb3b1a94bc9886e61c6c3ef5ef4d24aca421302",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 4,
+          "expected": "sha256:d0a23a10b4ecf4bf0a757468d8718febb3881fc367975fa5c4cae0b78dd7ce3e",
+          "actual": "sha256:b9676a4860a2dd5d73aefde0b953b432e508945764eeaa1b5e6b48f8f739cc4b",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 5,
+          "expected": "sha256:82f3dc7abf7ddc30baeb0753116bc4ff260487b2ec336cd137209e198fe7414b",
+          "actual": "sha256:0e0f85e2488db337f654e7ac7238c09086722bb71327d0e353b63053123857b9",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 6,
+          "expected": "sha256:ae36de436e5751ce70ce999cc6525c881ddbd93e342c0b24b8937e4e24c02681",
+          "actual": "sha256:39e49cc5480c46f5fee431afdbfb6fb46cf48b0cfd2e72b85d6f19404b8f8397",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 7,
+          "expected": "sha256:60ac8fa6202335b6ef3685befc9f327fe9b7bfd1bd407aece52b91ee62ba818e",
+          "actual": "sha256:adea1ee6d237693ba582776bf74c9948099d6cd2e43463fc1b0117d2495ba965",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 8,
+          "expected": "sha256:d248f7e5ea378b07392b1f6e2dfe18d13114081a92d495f4ac5535faca3b9dd3",
+          "actual": "sha256:3f801aba50cb0e7607dc0e4eff5cb3067b893e377541bb97433c1a38744cac8b",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 9,
+          "expected": "sha256:7a4ff30322c1d3de19a9a2858a6ec6371c62d17b53ad37c57b01895c5e21166b",
+          "actual": "sha256:fc992e8e678c1c821b736228a96be95a6c9a92279abe7c27f21996d27dc7e91e",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 10,
+          "expected": "sha256:3dda60f6b1bd0e7cdf30562709be2fa6a2f033ffcb3560d50e4903f2a327d0bc",
+          "actual": "sha256:2d286ef9b903bd5d4efc2b37002e503b850835b0610c70aa8c07b5ac9134235c",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 11,
+          "expected": "sha256:f994f4c74c627fb246e7d3c76ef365d1726cea5cc83eb4753da4bf96a0404e70",
+          "actual": "sha256:2649367f98478440429203f889a1901564e7b45cdee84a683815baef59e65ed6",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 12,
+          "expected": "sha256:c8f8b1794cfe276c1caefa7f5621481e30ea1ed846ebebb333473bbc68d8e5d2",
+          "actual": "sha256:9c743b7c8bc5cb322ad94ea0d8616a3ac1af7d6a41f772a67a43399f1ff6e56e",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 13,
+          "expected": "sha256:233664b1be83058d1b1f189390f231d52b21ba53f166266cc2f48abb38f3bf80",
+          "actual": "sha256:aa49976dccf66ba9862f0a0f7d1ad41a5c8eecccdb8447ea0bc2eaf4a2cde0dd",
+          "result": {
+            "success": true
+          }
+        }
+      ],
+      "differential": [
+        {
+          "step": 0,
+          "expected": "sha256:43cb612b56542745ef35cda3c1226fe3be7b524de3178cc17db30864da2416c9",
+          "actual": "sha256:d3ab6622ce9feb2e26621437a6f8aa89fc2aee22d98e89cda1d9b4842dbae9fa",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 1,
+          "expected": "sha256:686c9661c36a94343459cc3f9cec6d1689cbd5dd41ae3c19cb7b4ddc361af4db",
+          "actual": "sha256:872098db0649bc3fff398c7f9b705cd2e4a0bc6331346cb4a28c68ee060dacaf",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 2,
+          "expected": "sha256:1bf1b525109fe01d0f1967b883401106e90051f4522bb55d449974ea5f8c86d7",
+          "actual": "sha256:1e5ce8dc8fd4621e9f8ed5b226715efdedd5a27661943621e00b757bd7d0ad1f",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 3,
+          "expected": "sha256:f0b7243b43035221ed7c9c0bea4ac424d43ceeb86c8907c11b6a7e3c4637683c",
+          "actual": "sha256:9178576f77595a8fa954bdd64eb3b1a94bc9886e61c6c3ef5ef4d24aca421302",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 4,
+          "expected": "sha256:d0a23a10b4ecf4bf0a757468d8718febb3881fc367975fa5c4cae0b78dd7ce3e",
+          "actual": "sha256:b9676a4860a2dd5d73aefde0b953b432e508945764eeaa1b5e6b48f8f739cc4b",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 5,
+          "expected": "sha256:82f3dc7abf7ddc30baeb0753116bc4ff260487b2ec336cd137209e198fe7414b",
+          "actual": "sha256:0e0f85e2488db337f654e7ac7238c09086722bb71327d0e353b63053123857b9",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 6,
+          "expected": "sha256:ae36de436e5751ce70ce999cc6525c881ddbd93e342c0b24b8937e4e24c02681",
+          "actual": "sha256:39e49cc5480c46f5fee431afdbfb6fb46cf48b0cfd2e72b85d6f19404b8f8397",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 7,
+          "expected": "sha256:60ac8fa6202335b6ef3685befc9f327fe9b7bfd1bd407aece52b91ee62ba818e",
+          "actual": "sha256:adea1ee6d237693ba582776bf74c9948099d6cd2e43463fc1b0117d2495ba965",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 8,
+          "expected": "sha256:d248f7e5ea378b07392b1f6e2dfe18d13114081a92d495f4ac5535faca3b9dd3",
+          "actual": "sha256:3f801aba50cb0e7607dc0e4eff5cb3067b893e377541bb97433c1a38744cac8b",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 9,
+          "expected": "sha256:7a4ff30322c1d3de19a9a2858a6ec6371c62d17b53ad37c57b01895c5e21166b",
+          "actual": "sha256:fc992e8e678c1c821b736228a96be95a6c9a92279abe7c27f21996d27dc7e91e",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 10,
+          "expected": "sha256:3dda60f6b1bd0e7cdf30562709be2fa6a2f033ffcb3560d50e4903f2a327d0bc",
+          "actual": "sha256:2d286ef9b903bd5d4efc2b37002e503b850835b0610c70aa8c07b5ac9134235c",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 11,
+          "expected": "sha256:f994f4c74c627fb246e7d3c76ef365d1726cea5cc83eb4753da4bf96a0404e70",
+          "actual": "sha256:2649367f98478440429203f889a1901564e7b45cdee84a683815baef59e65ed6",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 12,
+          "expected": "sha256:c8f8b1794cfe276c1caefa7f5621481e30ea1ed846ebebb333473bbc68d8e5d2",
+          "actual": "sha256:9c743b7c8bc5cb322ad94ea0d8616a3ac1af7d6a41f772a67a43399f1ff6e56e",
+          "result": {
+            "success": true
+          }
+        },
+        {
+          "step": 13,
+          "expected": "sha256:233664b1be83058d1b1f189390f231d52b21ba53f166266cc2f48abb38f3bf80",
+          "actual": "sha256:aa49976dccf66ba9862f0a0f7d1ad41a5c8eecccdb8447ea0bc2eaf4a2cde0dd",
+          "result": {
+            "success": true
+          }
+        }
+      ]
+    },
+    {
+      "file": "src-tests-corpus-authoredsources-test-ts.jsonl",
+      "scenarioId": "recorded/src/tests/corpus/authoredsources/every-authored-scenario-writes-replays-both-ways-and-the-engine-answers-as-the-spec-says/part-3",
+      "disagreement": false,
+      "v1": [
+        {
+          "step": 0,
+          "expected": "sha256:16181cfe8ecde706154dd942dd2ef77e8c81880c21a6f091ad2b9cb475b0c165",
+          "actual": "sha256:be5e7a0120f128ccd8d707516edb444c851edd51675b48e3a809de12bf987103",
+          "result": {
+            "success": true
+          }
+        }
+      ],
+      "v2": [
+        {
+          "step": 0,
+          "expected": "sha256:16181cfe8ecde706154dd942dd2ef77e8c81880c21a6f091ad2b9cb475b0c165",
+          "actual": "sha256:be5e7a0120f128ccd8d707516edb444c851edd51675b48e3a809de12bf987103",
+          "result": {
+            "success": true
+          }
+        }
+      ],
+      "differential": [
+        {
+          "step": 0,
+          "expected": "sha256:16181cfe8ecde706154dd942dd2ef77e8c81880c21a6f091ad2b9cb475b0c165",
+          "actual": "sha256:be5e7a0120f128ccd8d707516edb444c851edd51675b48e3a809de12bf987103",
+          "result": {
+            "success": true
+          }
+        }
+      ]
+    }
+  ]
+}

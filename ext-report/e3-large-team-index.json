@@ -1,0 +1,344 @@
+[
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 41,
+    "calls": 127,
+    "mutationMs": 2254.183410999998,
+    "traversalMs": 5433.405250000001,
+    "index": {
+      "batches": 127,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 7.472458000000188,
+      "incrementalMs": 85.0905760000096,
+      "fullMs": 489.4147579999908,
+      "shadowEntries": 161290
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 42,
+    "calls": 127,
+    "mutationMs": 2076.136541,
+    "traversalMs": 5136.820208000001,
+    "index": {
+      "batches": 127,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 6.076374999998734,
+      "incrementalMs": 75.00096100000155,
+      "fullMs": 471.5686680000035,
+      "shadowEntries": 161290
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 43,
+    "calls": 127,
+    "mutationMs": 2068.2204610000117,
+    "traversalMs": 5168.970207999999,
+    "index": {
+      "batches": 127,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 5.38774999999805,
+      "incrementalMs": 74.50153999999384,
+      "fullMs": 469.0632069999956,
+      "shadowEntries": 161290
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 127,
+    "mutationMs": 1961.858995000006,
+    "traversalMs": 5032.7196250000015,
+    "index": {
+      "batches": 127,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 6.139917000000423,
+      "incrementalMs": 73.60808400002861,
+      "fullMs": 465.636373999987,
+      "shadowEntries": 161290
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 127,
+    "mutationMs": 1965.8615469999859,
+    "traversalMs": 5023.801874999997,
+    "index": {
+      "batches": 127,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 6.199125000002823,
+      "incrementalMs": 75.17224000002534,
+      "fullMs": 464.51537399999506,
+      "shadowEntries": 161290
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 127,
+    "mutationMs": 1951.837207999979,
+    "traversalMs": 5027.91675,
+    "index": {
+      "batches": 127,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 5.395040999999765,
+      "incrementalMs": 69.75891199995385,
+      "fullMs": 462.8229930000307,
+      "shadowEntries": 161290
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 159,
+    "mutationMs": 2502.405960000033,
+    "traversalMs": 5505.581249999996,
+    "index": {
+      "batches": 159,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 5.330834000000323,
+      "incrementalMs": 89.24137199997494,
+      "fullMs": 592.6666590000023,
+      "shadowEntries": 201930
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 159,
+    "mutationMs": 2533.7773689999376,
+    "traversalMs": 5536.099290999999,
+    "index": {
+      "batches": 159,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 11.494375000002037,
+      "incrementalMs": 103.77545600008307,
+      "fullMs": 587.3483449999694,
+      "shadowEntries": 201930
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 159,
+    "mutationMs": 2489.2906589999984,
+    "traversalMs": 5498.146584000002,
+    "index": {
+      "batches": 159,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 5.11804100000154,
+      "incrementalMs": 89.406375999999,
+      "fullMs": 594.2160830000139,
+      "shadowEntries": 201930
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 41,
+    "calls": 255,
+    "mutationMs": 9182.221046999948,
+    "traversalMs": 22962.533499999998,
+    "index": {
+      "batches": 255,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 11.197375000003376,
+      "incrementalMs": 303.5042890000186,
+      "fullMs": 2192.9154560000097,
+      "shadowEntries": 650250
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 42,
+    "calls": 255,
+    "mutationMs": 8715.443668000094,
+    "traversalMs": 22174.978000000003,
+    "index": {
+      "batches": 255,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 11.388542000000598,
+      "incrementalMs": 298.46587099978933,
+      "fullMs": 2126.432803999982,
+      "shadowEntries": 650250
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 43,
+    "calls": 255,
+    "mutationMs": 8646.922798000087,
+    "traversalMs": 21958.406041999988,
+    "index": {
+      "batches": 255,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 11.460124999997788,
+      "incrementalMs": 289.22995600012655,
+      "fullMs": 2116.4112190000596,
+      "shadowEntries": 650250
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 255,
+    "mutationMs": 8016.893245999818,
+    "traversalMs": 21194.341082999992,
+    "index": {
+      "batches": 255,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 11.965500000005704,
+      "incrementalMs": 283.8968379997532,
+      "fullMs": 2084.3699950000737,
+      "shadowEntries": 650250
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 255,
+    "mutationMs": 8083.743589999969,
+    "traversalMs": 21378.980666000018,
+    "index": {
+      "batches": 255,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 12.094166999973822,
+      "incrementalMs": 291.7606099998229,
+      "fullMs": 2112.88245499981,
+      "shadowEntries": 650250
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 255,
+    "mutationMs": 8098.964615999925,
+    "traversalMs": 21445.883792000008,
+    "index": {
+      "batches": 255,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 12.23741699999664,
+      "incrementalMs": 291.29524799998035,
+      "fullMs": 2096.69516499975,
+      "shadowEntries": 650250
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 319,
+    "mutationMs": 10245.495325999742,
+    "traversalMs": 23315.977874999982,
+    "index": {
+      "batches": 319,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 12.135667000024114,
+      "incrementalMs": 363.0375880001229,
+      "fullMs": 2628.4608260001987,
+      "shadowEntries": 813450
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 319,
+    "mutationMs": 9887.39000199968,
+    "traversalMs": 22593.016208000015,
+    "index": {
+      "batches": 319,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 11.957499999989523,
+      "incrementalMs": 344.924715000001,
+      "fullMs": 2571.882466000301,
+      "shadowEntries": 813450
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 319,
+    "mutationMs": 9781.259505999915,
+    "traversalMs": 22440.559708999994,
+    "index": {
+      "batches": 319,
+      "rebuilt": 0,
+      "disagreed": 0,
+      "errors": 0,
+      "initialMs": 11.476666000002297,
+      "incrementalMs": 333.3813309996913,
+      "fullMs": 2533.9044879997964,
+      "shadowEntries": 813450
+    }
+  }
+]
