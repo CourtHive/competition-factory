@@ -361,7 +361,7 @@ function addStandardActions({
 
   if (isInComplete && readyToScore) validActions.push({ type: STATUS });
 
-  if (scoringActive && readyToScore && !carriedExit && isAvailableAction({ policyActions, action: SCORE })) {
+  if (scoringActive && readyToScore && !carriedExit) {
     validActions.push({
       info: 'set outcome and winningSide',
       method: SCORE_METHOD,
@@ -396,13 +396,7 @@ function addStandardActions({
   // these 20 cells in quarantine in the first place.
   const { hasOutcomeToRemove } = resultEntryContext(matchUp);
   const clearWouldBeRefused = activeDownstream || hasPropagatedExitDownstream({ targetData, matchUpsMap });
-  if (
-    scoringActive &&
-    hasOutcomeToRemove &&
-    !clearWouldBeRefused &&
-    !carriedExit &&
-    isAvailableAction({ policyActions, action: CLEAR_SCORE })
-  ) {
+  if (scoringActive && hasOutcomeToRemove && !clearWouldBeRefused && !carriedExit) {
     validActions.push({
       info: 'remove the existing outcome',
       method: SCORE_METHOD,
