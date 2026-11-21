@@ -1,5 +1,5 @@
-import { canonicalJson } from '@Tools/canonicalJson';
 import { setOutcomePipeline } from '@Global/state/globalState';
+import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, expect, it } from 'vitest';
