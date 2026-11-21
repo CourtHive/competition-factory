@@ -39,7 +39,7 @@ test('only the exact known source and changed fields receive its exception', asy
         ],
       };
       await writeFile(join(dir, 'test.jsonl'), JSON.stringify(scenario) + '\n');
-      const run = spawnSync(process.execPath, [script, dir], { encoding: 'utf8' });
+      const run = spawnSync(process.execPath, [script, dir], { encoding: 'utf8', timeout: 10000 });
       assert.equal(run.status, expected, run.stderr);
       assert.equal(JSON.parse(run.stderr).unexpected, expected);
     }
