@@ -8,7 +8,6 @@
     "F-013": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-84c889669b97889b919b0db9782aa1f9d582c4002137ea41d036a4bd8e0c21b1",
     "F-014": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-6ca70d9c78e30736cbac87cf97189d8737db673dbcb28b24721f55386a94ce84",
     "F-016": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-96071fd34d3c3845e7eac73e054511994d1a218c3c2c217d724a752edd39a03d",
-    "F-017": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-4326006ee97920d622eeb4e8edddc54d3c9befce1f6ac035d3487deb4d713427",
     "F-018": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-727b0fd9be5cd539078711e6f4d9d0640d92591cf39c94b18f0e27938253d0af",
     "F-007": "https://github.com/CourtHive/competition-factory/pull/6503",
     "cascadeWriteErrorsReachTheCaller": "Forced downstream write error",
@@ -820,24 +819,6 @@
         "reason": "fixtureStamp",
         "paths": ["/factory/timeStamp"],
         "pending": true
-      }
-    ],
-    "src/tests/mutations/participants/penaltyCoverage.test.ts::penalty edge cases > modifyPenalty returns error for invalid modifications": [
-      {
-        "method": "modifyPenalty",
-        "error": "ERR_NOT_FOUND_PENALTY",
-        "reason": "F-017",
-        "paths": [
-          "/participants/1/penalties",
-          "/participants/2/penalties",
-          "/participants/3/penalties",
-          "/participants/4/penalties",
-          "/participants/5/penalties",
-          "/participants/6/penalties",
-          "/participants/7/penalties",
-          "/participants/8/penalties",
-          "/participants/9/penalties"
-        ]
       }
     ],
     "src/tests/mutations/participants/team/onePlayerOneTeam.test.ts::one player, one team, per event > replaceTieMatchUpParticipantId refuses another team’s player": [
