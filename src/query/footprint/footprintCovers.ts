@@ -1,6 +1,6 @@
 // types
-import type { LoadedFootprint } from '@Global/state/loadedFootprint';
 import type { FootprintShard, MethodFootprint } from './mutationFootprints';
+import type { LoadedFootprint } from '@Global/state/loadedFootprint';
 import type { Tournament } from '@Types/tournamentTypes';
 
 type FootprintCoversArgs = {
@@ -35,10 +35,20 @@ export function footprintCovers({ required, loaded, tournamentRecord }: Footprin
 
   const missing: string[] = [];
   const requiredDrawIds = required.drawIds ?? [];
+  const eventBindingsCovered = Object.entries(required.drawEventIds ?? {}).every(([drawId, eventId]) =>
+    tournamentRecord.events?.some(
+      (event) => event.eventId === eventId && event.drawDefinitions?.some((draw) => draw.drawId === drawId),
+    ),
+  );
   for (const shard of required.shards) {
     if (shard === 'shell') continue;
     if (shard === 'draw' && requiredDrawIds.every((drawId) => recordDrawIds.has(drawId))) continue;
-    if (shard === 'eventDraws' && (required.eventIds ?? []).every((eventId) => loadedEventIds.has(eventId))) continue;
+    if (
+      shard === 'eventDraws' &&
+      eventBindingsCovered &&
+      (required.eventIds ?? []).every((eventId) => loadedEventIds.has(eventId))
+    )
+      continue;
     if (shard === 'participants' && has('participants')) continue;
     if (
       shard === 'drawParticipants' &&
