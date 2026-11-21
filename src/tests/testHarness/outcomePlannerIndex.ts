@@ -1,7 +1,7 @@
 import { buildStructuralIndex, type StructuralIndex } from '@Query/matchUps/structuralIndex';
 import { createWorkingView } from '@Mutate/matchUps/outcome/overlay';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { canonicalJson } from '@Tools/canonicalJson';
+import { inspect } from 'node:util';
 import { mustNotWrite } from './queryPurity/methodKinds';
 
 // constants and types
@@ -76,5 +76,6 @@ export function tracePlannerDecisions(trace?: string[]) {
   plans = trace;
 }
 export function observePlan(outcome: unknown) {
-  if (plans) plans.push(canonicalJson(outcome));
+  // Some recorded plans own explicitly undefined fields. Preserve those keys during comparison.
+  if (plans) plans.push(inspect(outcome, { sorted: true, depth: null, maxArrayLength: null, maxStringLength: null }));
 }
