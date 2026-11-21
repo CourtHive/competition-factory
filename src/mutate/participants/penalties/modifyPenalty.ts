@@ -30,8 +30,10 @@ export function modifyPenalty(params): ResultType & { penalty?: Penalty; modific
       return plan;
     }
     for (const write of writes) write();
+    // Reassigning a document array can cast its entries into new subdocuments.
+    const penalty = plan.committedPenalty();
     modifyParticipantsNotice(plan.payload);
-    return plan.result;
+    return { ...SUCCESS, penalty };
   }
   return { error: PENALTY_NOT_FOUND };
 }
@@ -53,13 +55,13 @@ function planPenalty({ tournamentRecord, modifications, penaltyId }: ModifyPenal
   );
   if (!attributes.length) return { error: NO_VALID_ATTRIBUTES };
 
-  let first: Penalty | undefined;
+  let committedPenalty: (() => Penalty | undefined) | undefined;
   const modified: Participant[] = [];
   for (const participant of tournamentRecord.participants ?? []) {
     let matched = false;
-    const penalties = (participant.penalties ?? []).map((penalty) => {
+    const penalties = (participant.penalties ?? []).map((penalty, index) => {
       if (penalty.penaltyId === penaltyId) {
-        first ??= penalty;
+        committedPenalty ??= () => participant.penalties?.[index];
         matched = true;
         for (const key of attributes) {
           const value = modifications[key];
@@ -71,9 +73,9 @@ function planPenalty({ tournamentRecord, modifications, penaltyId }: ModifyPenal
     writes.push(planFieldWrite(participant, 'penalties', penalties));
     if (matched) modified.push(participant);
   }
-  if (!first) return { error: PENALTY_NOT_FOUND };
+  if (!committedPenalty) return { error: PENALTY_NOT_FOUND };
   return {
-    result: { ...SUCCESS, penalty: first },
+    committedPenalty,
     payload: { tournamentId: tournamentRecord.tournamentId, participants: modified },
   };
 }
