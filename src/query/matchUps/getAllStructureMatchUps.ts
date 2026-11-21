@@ -120,9 +120,9 @@ function getAllStructureMatchUpsUnredacted(params: GetAllStructureMatchUps): All
     drawDefinition,
     context = {},
     structure,
-    inContext,
     event,
   } = params;
+  const inContext = params.inContext || matchUpFilters?.readyToScore || contextFilters?.readyToScore;
 
   let { seedAssignments, contextContent, exitProfiles, matchUpsMap } = params;
 
@@ -237,6 +237,8 @@ function getAllStructureMatchUpsUnredacted(params: GetAllStructureMatchUps): All
     matchUps = filterMatchUps({
       matchUps: tieMatchUpIds.size ? matchUps.filter((m) => !tieMatchUpIds.has(m.matchUpId)) : matchUps,
       ...matchUpFilters,
+      // Readiness is derived by addMatchUpContext and applied in the post-hydration pass.
+      readyToScore: false,
       filterMatchUpTypes: false,
       filterMatchUpIds: false,
     }).concat(tieMatchUpIds.size ? matchUps.filter((m) => tieMatchUpIds.has(m.matchUpId)) : []);
