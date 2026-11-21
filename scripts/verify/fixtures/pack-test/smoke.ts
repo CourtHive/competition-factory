@@ -24,6 +24,7 @@ import {
   forge,
   factoryConstants,
   topicConstants,
+  tools,
   // Exported as `version` (the source name `factoryVersion` is aliased at the
   // package boundary). Aliased to `factoryVersion` here to avoid shadowing.
   version as factoryVersion,
@@ -46,6 +47,18 @@ import type {
 // --- Cast to the typed engine surface ---
 
 const engine = tournamentEngine as unknown as FactoryEngineTyped;
+
+// A server can plan operator-query loads before it has installed any engine state.
+const queryFootprint = tools.getQueryFootprint({
+  methods: [{ method: 'matchUpActions', params: { drawId: 'D1', eventId: 'E1', matchUpId: 'M1' } }],
+});
+const eventScopes: string[] = queryFootprint.eventIds;
+const queryPartial: Tournament = tools.reduceRecordToFootprint({
+  tournamentRecord: { tournamentId: 'T' },
+  footprint: queryFootprint,
+});
+void eventScopes;
+void queryPartial;
 
 // --- Engine method via the typed surface (typed param + return) ---
 
@@ -145,5 +158,3 @@ const carriesPointsToMatch: SmokePointsTo['pointsToMatch'] = [0, 0];
 
 export type { SmokeGame, SmokeSet, SmokePoint };
 export { neededIsEpisodeNeeded, carriesPointsToMatch };
-
-console.log('verify:pack — smoke imports compiled');
