@@ -89,6 +89,7 @@ import {
 // constants and types
 import { DEFAULTED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { DrawDefinition, Score } from '@Types/tournamentTypes';
+import { LUCKY_DRAW } from '@Constants/drawDefinitionConstants';
 import type { OutcomeOp } from './ops';
 import type {
   AbstainReason,
@@ -224,7 +225,24 @@ function abstainReasonOf(args: PlanArgs): AbstainReason | SeatObligation | undef
   // scoring policy's `incompleteAssignmentsOnDefault` writes `processCodes`, v1's)
   if (view.line && isDoubleExit(request.matchUpStatus)) return undefined;
   if (unstampedDoubleExit(args)) return 'exit';
-  const exit = luckyDoubleExit(args) ? 'exit' : exitReason(args);
+  if (luckyDoubleExit(args)) {
+    // A bare repeat has already produced everything a lucky double exit produces. A missing stamp
+    // was checked above. Leave requests with additional fields and all other lucky exits recorded.
+    const { score, matchUpFormat, matchUpStatusCodes, carries } = request;
+    if (
+      view.drawType === LUCKY_DRAW &&
+      !view.isTeam &&
+      satisfiedDoubleExit(view, request, args.route) &&
+      score === undefined &&
+      matchUpFormat === undefined &&
+      matchUpStatusCodes === undefined &&
+      carries?.notes === undefined &&
+      carries?.schedule === undefined
+    )
+      return undefined;
+    return 'exit';
+  }
+  const exit = exitReason(args);
   if (typeof exit === 'string') return exit;
   if (satisfiedDoubleExit(view, request, args.route)) return undefined;
   // S4: a score changed beneath an active downstream keeps its winner and re-directs nothing (`apply-values`)
