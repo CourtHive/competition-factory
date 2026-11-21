@@ -1,11 +1,11 @@
 import { refreshArrivalsFrom } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { directParticipants } from '@Mutate/matchUps/drawPositions/directParticipants';
+import { attemptToModifyScore, scoreAssignmentRefusal } from './attemptToModifyScore';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { lineDirectsUnfedDual } from '@Query/matchUp/lineDirectsUnfedDual';
 import { checkConnectedStructures } from './checkConnectedStructures';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { attemptToModifyScore, scoreAssignmentRefusal } from './attemptToModifyScore';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { replaceQualifier } from './replaceQualifier';
 import { placeQualifier } from './placeQualifier';
