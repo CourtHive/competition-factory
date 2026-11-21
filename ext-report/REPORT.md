@@ -1,5 +1,7 @@
 # Outcome pipeline adjudication
 
+For the controlling agent, start with the [v3 review handoff](V3_REVIEW.md).
+
 ## 1. Summary
 
 - **VERIFIED** Clean `dev` at `7963e36968` passed 33,517 tests each under v1, v2 and differential.
