@@ -1,6 +1,6 @@
 import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
-import { CLEAR_SCORE, REMOVE_DIRECTED, satisfiedDoubleExit } from './planShared';
+import { CLEAR_SCORE, REMOVE_DIRECTED } from './planShared';
 import { isDoubleExit } from '@Validators/isExit';
 
 // constants and types
@@ -38,16 +38,13 @@ const PLANNED_SCHEDULE = new Set(['scheduledDate', 'scheduledTime', 'courtId', '
  * `validateOnly`) and writes it after (`disableNotice`), before `applyScoredTime` stamps onto it. v2 plans it where the
  * write lands on the matchUp alone, a date, a time, a court, a venue or a court order, as v1's own writer leaves it on a
  * copy of the matchUp (`scheduledFor`). Stays v1's: a schedule v1 refuses (an apply-stage refusal), any other attribute
- * (start, stop, resume and end times, officials, ...), and a double exit asked for again. A result turned into a double
- * exit is planned through `planOps` too, so it carries the schedule. A TEAM line is held in its dual's `tieMatchUps`, not
+ * (start, stop, resume and end times, officials, ...). Both a new double exit and an idempotent double exit carry schedules. A TEAM line is held in its dual's `tieMatchUps`, not
  * a structure's matchUps, so `scheduledFor` finds none and it stays v1's.
  */
 export function scheduleReason(args: PlanArgs): boolean {
   const schedule = args.request.carries?.schedule;
   if (!schedule) return false;
   if (Object.keys(schedule).some((key) => !PLANNED_SCHEDULE.has(key))) return true;
-  // a double exit asked for again writes nothing (`satisfiedDoubleExit`): v1 still writes the schedule
-  if (satisfiedDoubleExit(args.view, args.request, args.route)) return true;
   return !scheduledFor(args);
 }
 
