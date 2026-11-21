@@ -1,5 +1,5 @@
 import { standingMatchUp } from '../drawPositions/relabelLoserExit';
-import { bareResultRequest, cleanWinnerTarget, indexed } from './plan/planShared';
+import { bareResultRequest, cleanWinnerTarget, indexed, sideDrawPosition } from './plan/planShared';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 
 // constants and types
@@ -133,7 +133,7 @@ function winnerAlreadySeated(view: OutcomeView, side: 1 | 2): boolean {
   const participantId = targets.sideParticipantIds[side];
   if (
     !participantId ||
-    !winner?.sides?.some((s) => s.participantId === participantId && s.drawPosition === targets.sideDrawPositions[side])
+    !winner?.sides?.some((s) => s.participantId === participantId && s.drawPosition === sideDrawPosition(view, side))
   )
     return false;
   return !view.inContextDrawMatchUps?.some(
