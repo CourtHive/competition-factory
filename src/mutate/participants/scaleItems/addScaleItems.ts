@@ -8,6 +8,7 @@ import { addNotice, getTopics } from '@Global/state/globalState';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { isValidDateString } from '@Tools/dateTime';
 import { findEvent } from '@Acquire/findEvent';
+import { planFieldWrite } from '@Mutate/planCommit';
 import { nowIso } from '@Tools/clock';
 
 // constants and types
@@ -40,7 +41,7 @@ export function setParticipantScaleItem(params: SetParticipantScaleItemArgs) {
   const { removePriorValues, tournamentRecord, participantId, scaleItem } = params;
   let equivalentValue, participant;
 
-  if (!isValidScaleItem({ scaleItem })) return { error: INVALID_SCALE_ITEM };
+  if (!scaleItem || !isValidScaleItem({ scaleItem })) return { error: INVALID_SCALE_ITEM };
 
   if (participantId && Array.isArray(tournamentRecord.participants)) {
     participant = tournamentRecord.participants.find((participant) => participant.participantId === participantId);
@@ -139,21 +140,30 @@ function isValidScaleItem({ scaleItem }) {
   return !!validScaleItem;
 }
 
-export function addParticipantScaleItem({ removePriorValues, participant, scaleItem }): ResultType & {
+type ScaleItemWriteArgs = {
+  participant: Participant;
+  scaleItem: ScaleItem & { createdAt?: string; scaleId?: string };
+  removePriorValues?: boolean;
+};
+
+export function addParticipantScaleItem(params: ScaleItemWriteArgs): ResultType & {
   valueChanged?: boolean;
-  newValue?: any;
+  newValue?: ScaleItem['scaleValue'];
 } {
+  const plan = planParticipantScaleItem(params);
+  if ('error' in plan) return plan;
+  plan.commit?.();
+  return { ...SUCCESS, valueChanged: plan.valueChanged, newValue: params.scaleItem.scaleValue };
+}
+
+function planParticipantScaleItem({ removePriorValues, participant, scaleItem }: ScaleItemWriteArgs) {
   if (!participant) {
     return { error: MISSING_PARTICIPANT };
   }
 
-  const scaleItemAttributes = scaleItem && Object.keys(scaleItem);
-  const requiredAttributes = ['scaleType', 'eventType', 'scaleName'];
-  const validScaleItem =
-    requiredAttributes.filter((attribute) => scaleItemAttributes.includes(attribute) && scaleItem[attribute]).length ===
-    requiredAttributes.length;
-
-  if (!validScaleItem) return { error: INVALID_SCALE_ITEM };
+  if (!isValidScaleItem({ scaleItem }) || !scaleItem.scaleType || !scaleItem.eventType || !scaleItem.scaleName) {
+    return { error: INVALID_SCALE_ITEM };
+  }
 
   // Honour a `createdAt` already on the caller's scaleItem rather than stamping
   // over it. No new parameter is needed here — the caller already supplies the
@@ -168,48 +178,42 @@ export function addParticipantScaleItem({ removePriorValues, participant, scaleI
   // Distinct from `scaleItem.scaleDate`, which is the date the rating APPLIES
   // to; `createdAt` is when it was recorded.
   const createdAt = scaleItem.createdAt ?? nowIso();
-  participant.timeItems ??= [];
 
   const { scaleItem: existingScaleItem } = participantScaleItem({
     scaleAttributes: scaleItem,
     participant,
   });
 
-  const isUndefined = (value) => [undefined, null, ''].includes(value);
+  const isUndefined = (value: unknown) => value == null || value === '';
 
   const valueChanged =
     !(isUndefined(existingScaleItem?.scaleValue) && isUndefined(scaleItem.scaleValue)) &&
     JSON.stringify(existingScaleItem?.scaleValue) !== JSON.stringify(scaleItem.scaleValue);
 
-  if (valueChanged) {
-    // Validate scaleDate format if provided
-    if (scaleItem.scaleDate && typeof scaleItem.scaleDate === 'string' && !isValidDateString(scaleItem.scaleDate)) {
-      return { error: INVALID_DATE };
-    }
-
-    const { scaleType, eventType, scaleName } = scaleItem;
-    const itemType = [SCALE, scaleType, eventType, scaleName].join('.');
-
-    const timeItem = definedAttributes({
-      itemValue: scaleItem.scaleValue,
-      itemDate: scaleItem.scaleDate,
-      createdAt,
-      itemType,
-    });
-
-    // if there is a unique identifier for the scale
-    if (scaleItem.scaleId) {
-      timeItem.itemSubTypes = [scaleItem.scaleId];
-    }
-
-    if (removePriorValues) {
-      participant.timeItems = participant.timeItems.filter((timeItem) => timeItem.itemType !== itemType);
-    }
-
-    participant.timeItems.push(timeItem);
+  const existing = participant.timeItems;
+  if (!valueChanged) {
+    // A successful empty-on-empty call historically initialized the list, without a notice.
+    return { valueChanged, commit: existing == null ? planFieldWrite(participant, 'timeItems', []) : undefined };
+  }
+  if (scaleItem.scaleDate && typeof scaleItem.scaleDate === 'string' && !isValidDateString(scaleItem.scaleDate)) {
+    return { error: INVALID_DATE };
   }
 
-  return { ...SUCCESS, valueChanged, newValue: scaleItem.scaleValue };
+  const itemType = [SCALE, scaleItem.scaleType, scaleItem.eventType, scaleItem.scaleName].join('.');
+  const timeItem = definedAttributes({
+    itemValue: scaleItem.scaleValue,
+    itemDate: scaleItem.scaleDate,
+    createdAt,
+    itemType,
+  });
+  if (scaleItem.scaleId) timeItem.itemSubTypes = [scaleItem.scaleId];
+
+  if (existing && !removePriorValues) {
+    return { valueChanged, commit: planFieldWrite(existing, existing.length, timeItem) };
+  }
+  const next = (existing ?? []).filter((item) => item.itemType !== itemType);
+  next.push(timeItem);
+  return { valueChanged, commit: planFieldWrite(participant, 'timeItems', next) };
 }
 
 function buildScaleItemsMap(scaleItemsWithParticipantIds) {
