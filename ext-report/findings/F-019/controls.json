@@ -1,0 +1,65 @@
+[
+  {
+    "mode": "v1",
+    "route": "direct",
+    "pending": false,
+    "code": "ERR_INVALID_SCALE_ITEM",
+    "paths": ["/factory/timeStamp"]
+  },
+  {
+    "mode": "v1",
+    "route": "queue-off",
+    "pending": false,
+    "code": "ERR_INVALID_SCALE_ITEM",
+    "paths": ["/factory/timeStamp"]
+  },
+  {
+    "mode": "v1",
+    "route": "queue-on",
+    "pending": false,
+    "code": "ERR_INVALID_SCALE_ITEM",
+    "paths": []
+  },
+  {
+    "mode": "v2",
+    "route": "direct",
+    "pending": false,
+    "code": "ERR_INVALID_SCALE_ITEM",
+    "paths": ["/factory/timeStamp"]
+  },
+  {
+    "mode": "v2",
+    "route": "queue-off",
+    "pending": false,
+    "code": "ERR_INVALID_SCALE_ITEM",
+    "paths": ["/factory/timeStamp"]
+  },
+  {
+    "mode": "v2",
+    "route": "queue-on",
+    "pending": false,
+    "code": "ERR_INVALID_SCALE_ITEM",
+    "paths": []
+  },
+  {
+    "mode": "differential",
+    "route": "direct",
+    "pending": false,
+    "code": "ERR_INVALID_SCALE_ITEM",
+    "paths": ["/factory/timeStamp"]
+  },
+  {
+    "mode": "differential",
+    "route": "queue-off",
+    "pending": false,
+    "code": "ERR_INVALID_SCALE_ITEM",
+    "paths": ["/factory/timeStamp"]
+  },
+  {
+    "mode": "differential",
+    "route": "queue-on",
+    "pending": false,
+    "code": "ERR_INVALID_SCALE_ITEM",
+    "paths": []
+  }
+]

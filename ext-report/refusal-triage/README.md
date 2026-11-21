@@ -7,7 +7,7 @@ The replays use factory dev `c4a629c135`, including the F-005 and F-006 fixes. E
 | Bounded, 7,786 scenarios     |               45 |          18 |                   21 |                  6 |
 | Historical, 41,829 scenarios |              118 |          23 |                   25 |                 70 |
 
-The six original suite cases are the stop, resume and end ordering examples in both storage representations. All six are F-007. The broader instrumented suite identified 52 distinct active test identities. The live observation file retains their methods, refusal values, changed paths and pre-call mutation flags. The gate in [#6500](https://github.com/CourtHive/competition-factory/pull/6500) scopes each exception to its source and observed fields.
+The six original suite cases are the stop, resume and end ordering examples in both storage representations. All six are F-007. The broader instrumented suite identified 53 distinct active test identities after the subsequent Button run exposed F-019. The live observation file retains their methods, refusal values, changed paths and pre-call mutation flags. The gate in [#6500](https://github.com/CourtHive/competition-factory/pull/6500) scopes each exception to its source and observed fields.
 
 ## What reproduced
 
@@ -33,6 +33,8 @@ A fresh capture of the implicated source files produced 6,496 scenarios, 18,592 
 - F-016 — A refused BYE placement changes the draw. [Fixture and rollback controls](../findings/F-016/README.md)
 - F-017 — A missing penalty creates participant penalty arrays. [Fixture and rollback controls](../findings/F-017/README.md)
 - F-018 — An invalid participant creates the participant list. [Fixture and rollback controls](../findings/F-018/README.md)
+
+- F-019 — A ratings refusal restores participant time items but advances the tournament timestamp. [Fixture and rollback controls](../findings/F-019/README.md)
 
 ## Reproduce
 
