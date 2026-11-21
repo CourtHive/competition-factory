@@ -89,6 +89,7 @@ import {
 // constants and types
 import { DEFAULTED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { DrawDefinition, Score } from '@Types/tournamentTypes';
+import { LUCKY_DRAW } from '@Constants/drawDefinitionConstants';
 import type { OutcomeOp } from './ops';
 import type {
   AbstainReason,
@@ -183,6 +184,23 @@ function exitReason(args: ExitReasonArgs): AbstainReason | SeatObligation | unde
   return undefined;
 }
 
+function plannedExitReason(args: PlanArgs): ReturnType<typeof exitReason> {
+  if (!luckyDoubleExit(args)) return exitReason(args);
+  // An identical, already-stamped lucky double exit directs nobody on repeat. Keep ADAPTIVE
+  // draws, TEAM calls and requests carrying additional fields on the existing recorder path.
+  const { view, request, route } = args;
+  const bareRepeat =
+    view.drawType === LUCKY_DRAW &&
+    !view.isTeam &&
+    satisfiedDoubleExit(view, request, route) &&
+    request.score === undefined &&
+    request.matchUpFormat === undefined &&
+    request.matchUpStatusCodes === undefined &&
+    request.carries?.notes === undefined &&
+    request.carries?.schedule === undefined;
+  return bareRepeat ? undefined : 'exit';
+}
+
 /**
  * Shapes the factory never makes, which a record converted from elsewhere may hold (record soak 2026-11-18): the call is
  * v1's whole there, read off its write on a copy.
@@ -224,7 +242,7 @@ function abstainReasonOf(args: PlanArgs): AbstainReason | SeatObligation | undef
   // scoring policy's `incompleteAssignmentsOnDefault` writes `processCodes`, v1's)
   if (view.line && isDoubleExit(request.matchUpStatus)) return undefined;
   if (unstampedDoubleExit(args)) return 'exit';
-  const exit = luckyDoubleExit(args) ? 'exit' : exitReason(args);
+  const exit = plannedExitReason(args);
   if (typeof exit === 'string') return exit;
   if (satisfiedDoubleExit(view, request, args.route)) return undefined;
   // S4: a score changed beneath an active downstream keeps its winner and re-directs nothing (`apply-values`)
