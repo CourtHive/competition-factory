@@ -485,3 +485,60 @@ describe("along a seeded walk of a TEAM draw, a call a recording is asked for le
     expect(total.owned).toBeGreaterThanOrEqual(20);
   });
 });
+
+describe.each([DEFAULTED, WALKOVER, RETIRED])('F-006: replacing a stored %s', (matchUpStatus) => {
+  for (const matchUpType of ['SINGLES', 'DOUBLES']) {
+    for (const winningSide of [1, 2]) {
+      it.each([true, false])(`on a ${matchUpType} line with side ${winningSide} winning, decisive=%s`, (decisive) => {
+        generate({ drawSize: 2, tieFormatName: DOMINANT_DUO }, { bare: true });
+        const prepared = stored();
+        const dual = prepared.events![0].drawDefinitions![0].structures![0].matchUps![0];
+        const line = dual.tieMatchUps!.find((m) => m.matchUpType === matchUpType)!;
+        const oldWinner = 3 - winningSide;
+        Object.assign(line, { matchUpStatus, winningSide: oldWinner });
+        if (decisive) {
+          // Split the other two points. The correction now hands a decided dual to the other side.
+          dual
+            .tieMatchUps!.filter((m) => m !== line)
+            .forEach((m, i) => Object.assign(m, { matchUpStatus: WALKOVER, winningSide: i + 1 }));
+        }
+        const points = [1, 2].map((side) => Number(decisive) + Number(side === oldWinner));
+        Object.assign(dual, {
+          ...(decisive && { winningSide: oldWinner }),
+          matchUpStatus: decisive ? 'COMPLETED' : 'IN_PROGRESS',
+          score: {
+            scoreStringSide1: points.join('-'),
+            scoreStringSide2: [...points].reverse().join('-'),
+            sets: [{ setNumber: 1, side1Score: points[0], side2Score: points[1] }],
+          },
+        });
+        const directive = {
+          method: 'setMatchUpStatus',
+          params: {
+            drawId: 'd',
+            matchUpId: line.matchUpId,
+            outcome: won(winningSide, matchUpType === 'DOUBLES' ? '8-1' : '6-1 6-1'),
+          },
+        };
+        for (const mode of [OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+          setOutcomePipeline(mode);
+          expect(tournamentEngine.setState(structuredClone(prepared)).success).toBe(true);
+          const before = canonicalJson(stored());
+          const refused = tournamentEngine.executionQueue([structuredClone(directive)], false);
+          expect(refused.error?.code).toBe(MISSING_ASSIGNMENTS.code);
+          expect(canonicalJson(stored()) === before).toBe(true);
+
+          // The same stored outcome and score correction, this time with both line-ups attached.
+          expect(
+            tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: 'd' }).success,
+          ).toBe(true);
+          const accepted = tournamentEngine.executionQueue([structuredClone(directive)], false);
+          expect(accepted.success).toBe(true);
+          const corrected = duals()[0];
+          expect(corrected.tieMatchUps.find((m) => m.matchUpId === line.matchUpId).winningSide).toBe(winningSide);
+          expect(corrected.winningSide).toBe(decisive ? winningSide : undefined);
+        }
+      });
+    }
+  }
+});
