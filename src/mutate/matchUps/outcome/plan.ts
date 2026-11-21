@@ -119,8 +119,7 @@ import type {
  */
 
 /**
- * A lucky draw's double exit produces nothing (`doubleExitAdvancement`, CA 2026-11-17): entered, cleared or replaced, it
- * is read off v1's whole write, the planners' produced exit and its unwind having nothing to state there.
+ * A lucky draw's double exit produces no downstream entrant (`doubleExitAdvancement`, CA 2026-11-17).
  */
 const luckyDoubleExit = ({ view, request }: Pick<PlanArgs, 'view' | 'request'>): boolean =>
   !!view.draw.luckyBased && (isDoubleExit(request.matchUpStatus) || isDoubleExit(view.existing.matchUpStatus));
@@ -186,19 +185,31 @@ function exitReason(args: ExitReasonArgs): AbstainReason | SeatObligation | unde
 
 function plannedExitReason(args: PlanArgs): ReturnType<typeof exitReason> {
   if (!luckyDoubleExit(args)) return exitReason(args);
-  // An identical, already-stamped lucky double exit directs nobody on repeat. Keep ADAPTIVE
-  // draws, TEAM calls and requests carrying additional fields on the existing recorder path.
   const { view, request, route } = args;
-  const bareRepeat =
+  const bareLuckyCall =
     view.drawType === LUCKY_DRAW &&
     !view.isTeam &&
-    satisfiedDoubleExit(view, request, route) &&
     request.score === undefined &&
     request.matchUpFormat === undefined &&
     request.matchUpStatusCodes === undefined &&
     request.carries?.notes === undefined &&
     request.carries?.schedule === undefined;
-  return bareRepeat ? undefined : 'exit';
+  if (!bareLuckyCall) return 'exit';
+  if (satisfiedDoubleExit(view, request, route)) return undefined;
+  // The writer scores a fresh double exit before doubleExitAdvancement returns. A correction
+  // can reach this builder on a projected open match after removal, with removesWinningSide set.
+  const first =
+    route === DOUBLE_EXIT &&
+    view.existing.matchUpStatus === TO_BE_PLAYED &&
+    !args.write?.removesWinningSide &&
+    !view.existing.winningSide &&
+    !request.winningSide &&
+    isDoubleExit(request.matchUpStatus) &&
+    !args.direction &&
+    !view.targets.loserMatchUpId &&
+    !view.targets.loserLink &&
+    !view.targets.byeTarget;
+  return first ? undefined : 'exit';
 }
 
 /**
