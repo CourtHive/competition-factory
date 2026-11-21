@@ -31,6 +31,20 @@ function exerciseScoreStates(entry) {
     fail(`outcome ${JSON.stringify(outcome)}`);
   const clear = entry.toEngineOutcome({ cleared: true });
   if (JSON.stringify(clear) !== '{"score":{"sets":[]},"matchUpStatusCodes":[]}') fail('clear outcome');
+  // The format editor and free-score adapter consume these narrow operations in both module formats.
+  const code = 'SET3-S:6NOAD/TB7-F:TB10';
+  const format = entry.parseMatchUpFormat(code);
+  if (entry.stringifyMatchUpFormat(format) !== code) fail('format editor codec');
+  if (!entry.finalSetGoverns(format, 3, true)) fail('deciding-set format');
+  if (typeof entry.aggregateDeciderSetNumber !== 'function') fail('aggregate decider export');
+  if (!entry.checkSetIsComplete({ set: { side1Score: 6, side2Score: 4 }, matchUpScoringFormat: format }))
+    fail('canonical set completion');
+  const retained = entry.retainScoreForFormat({
+    sets: [{ setNumber: 1, side1Score: 6, side2Score: 4 }],
+    previousMatchUpFormat: 'SET3-S:6/TB7',
+    matchUpFormat: code,
+  });
+  if (retained.sets.length !== 1 || retained.discarded.length) fail('format retention');
   return Object.keys(entry).length;
 }
 
