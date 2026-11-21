@@ -1749,6 +1749,12 @@ origins or geometry remain outside this certificate. No operation or view field 
 
 ## 7.2 The plan as ops (S1)
 
+**Public return parity.** For successful outcomes and refusals, compare every field of the returned
+result except the contents of the top-level `result.stack`. Where v1 returns an array, v2 must also
+return an array. The entries form a diagnostic trace of the implementation and may change across
+versions or pipeline modes. All other fields, including warnings, error details and context, remain
+material. This rule also applies when a native plan takes ownership from the whole-call recorder.
+
 A quiet produced-award placement can put back the exact position a preceding release removed. Its final
 notice is then the assignment's, while retaining its quiet identity. The notice projection derives this
 from the actual released position and later position-write data; a different position, withdrawal or BYE
