@@ -65,6 +65,30 @@ it does not establish operator-document contract v1 or a semver promise suitable
 
 ## Qualification and remaining work
 
+### Internal result-decision preparation
+
+The held source candidate also contains `src/query/readModel/operatorResultDecisions.ts`. It is deliberately
+**not exported from `readModel` or `/operator-types`**. It resolves one explicitly supplied tournament/draw/match,
+clones the source before legacy query decoration, and asks canonical `matchUpActions` for scoring/removal offers.
+It emits only IDs, resolved format, disabled statuses and typed result-intention candidates. It never emits
+participants, person fields, generic method/payload templates or a dependency token supplied by a caller.
+
+The factory-owned `resultEntryContext` classifies an unscored live match as initial entry; an existing score,
+winner or terminal outcome requires reviewed correction. The existing `CLEAR_SCORE` recorded-state predicate
+is shared without broadening its behavior. Candidate availability comes from canonical offers, not a second
+set of eligibility branches. Unknown audiences/scopes, TEAM/collection models and unusable formats are refused.
+
+These preparation objects say `wireReady: false` and `state: 'candidate'`, never the wire contract's `offered`.
+Reviewed dependency construction/checking, time-validity horizons and live verified capabilities remain required
+before an operator document can expose them as executable offers. No source-revision envelope, CFS command
+adapter, publication fence or query endpoint is implemented here. The whole-record clone is a conservative
+input-isolation cost, not an optimized per-day build; measure a shared captured build context before fan-out.
+
+Tests generate competition scenarios with mocksEngine, drive score drafts through the pure scoring model,
+and execute canonical mutations to assert actual advancement, correction and removal. Additional cases cover
+BYEs/unfilled sides, policy denial, doubles, inherited/invalid format, stale global state and immutable/protected
+input. Schema-only or mocked authorization tests do not substitute for those engine checks or future service tests.
+
 Focused tests cover immutable input, canonical score/upset behavior, ordering, TEAM filtering, explicit selected
 fields and refusal instead of silent data loss. Packed-package checks exercise both declaration formats without
 DOM libraries, runtime-import refusal and browser type erasure. These do not prove CFS/query integration.

@@ -8,6 +8,7 @@ import { isCompletedStructure } from '@Query/drawDefinition/structureActions';
 import { isPropagatedExit } from '@Helpers/drawTopology/sideExitProvenance';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
+import { resultEntryContext } from '@Query/matchUp/resultEntryContext';
 import { collectionMatchUpActions } from './collectionMatchUpActions';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -393,8 +394,7 @@ function addStandardActions({
   // from SCORE. `hasPropagatedExitDownstream` is the same gate setMatchUpState applies on its
   // isClearScore branch — consulted here rather than re-derived, which is the divergence that put
   // these 20 cells in quarantine in the first place.
-  const hasOutcomeToRemove =
-    !!matchUp.winningSide || (!!matchUp.matchUpStatus && matchUp.matchUpStatus !== TO_BE_PLAYED);
+  const { hasOutcomeToRemove } = resultEntryContext(matchUp);
   const clearWouldBeRefused = activeDownstream || hasPropagatedExitDownstream({ targetData, matchUpsMap });
   if (
     scoringActive &&
