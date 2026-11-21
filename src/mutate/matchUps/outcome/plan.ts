@@ -184,6 +184,23 @@ function exitReason(args: ExitReasonArgs): AbstainReason | SeatObligation | unde
   return undefined;
 }
 
+function plannedExitReason(args: PlanArgs): ReturnType<typeof exitReason> {
+  if (!luckyDoubleExit(args)) return exitReason(args);
+  // An identical, already-stamped lucky double exit directs nobody on repeat. Keep ADAPTIVE
+  // draws, TEAM calls and requests carrying additional fields on the existing recorder path.
+  const { view, request, route } = args;
+  const bareRepeat =
+    view.drawType === LUCKY_DRAW &&
+    !view.isTeam &&
+    satisfiedDoubleExit(view, request, route) &&
+    request.score === undefined &&
+    request.matchUpFormat === undefined &&
+    request.matchUpStatusCodes === undefined &&
+    request.carries?.notes === undefined &&
+    request.carries?.schedule === undefined;
+  return bareRepeat ? undefined : 'exit';
+}
+
 /**
  * Shapes the factory never makes, which a record converted from elsewhere may hold (record soak 2026-11-18): the call is
  * v1's whole there, read off its write on a copy.
@@ -225,24 +242,7 @@ function abstainReasonOf(args: PlanArgs): AbstainReason | SeatObligation | undef
   // scoring policy's `incompleteAssignmentsOnDefault` writes `processCodes`, v1's)
   if (view.line && isDoubleExit(request.matchUpStatus)) return undefined;
   if (unstampedDoubleExit(args)) return 'exit';
-  if (luckyDoubleExit(args)) {
-    // A bare repeat has already produced everything a lucky double exit produces. A missing stamp
-    // was checked above. Leave requests with additional fields and all other lucky exits recorded.
-    const { score, matchUpFormat, matchUpStatusCodes, carries } = request;
-    if (
-      view.drawType === LUCKY_DRAW &&
-      !view.isTeam &&
-      satisfiedDoubleExit(view, request, args.route) &&
-      score === undefined &&
-      matchUpFormat === undefined &&
-      matchUpStatusCodes === undefined &&
-      carries?.notes === undefined &&
-      carries?.schedule === undefined
-    )
-      return undefined;
-    return 'exit';
-  }
-  const exit = exitReason(args);
+  const exit = plannedExitReason(args);
   if (typeof exit === 'string') return exit;
   if (satisfiedDoubleExit(view, request, args.route)) return undefined;
   // S4: a score changed beneath an active downstream keeps its winner and re-directs nothing (`apply-values`)
