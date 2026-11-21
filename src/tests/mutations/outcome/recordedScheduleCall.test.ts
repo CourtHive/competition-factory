@@ -1,4 +1,9 @@
-import { expectRecordedWhole, playCall, prepareCall } from '@Tests/testHarness/outcome/recordedCallHarness';
+import {
+  expectPlayedParity,
+  expectRecordedWhole,
+  playCall,
+  prepareCall,
+} from '@Tests/testHarness/outcome/recordedCallHarness';
 import { findTarget, R1, won } from '@Tests/testHarness/outcome/directionFixtures';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -100,7 +105,7 @@ describe('a call that carries a schedule the planners do not write is recorded w
       for (const mode of [OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V2] as const) {
         const actual = playCall(mode, call);
         if (mode === OUTCOME_PIPELINE_V2) expect(actual.v1Writes).toBe(0);
-        expect({ ...actual, v1Writes: 0 }).toEqual({ ...v1, v1Writes: 0 });
+        expectPlayedParity(actual, v1);
       }
       return;
     }
