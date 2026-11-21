@@ -26,3 +26,6 @@
 - Reviewed the released F-005 path and consumer rollback boundaries. Checked both fixtures with rollback enabled and disabled.
 - Classified all 949 shared-drift scenarios and traced two incomplete directive captures.
 - Repeated E2 on a quiet host, recording the effective pipeline for 99 samples. Updated the controlling-agent handoff with per-call and per-draw timing, the 8.0 milestone, and the outstanding G4 ruling.
+- Qualified F-005 and schedule ownership on separate branches in the three ordinary suites. Opened #6487 and #6488.
+- Bounded the harvest recorder across unobserved writes, re-recorded and replayed 172 source files on paired bases, and opened #6489.
+- Verified 99 fresh/retained planner traces, timed 99 pairs on a quiet host, and opened the opt-in experiment as #6491. Results and raw observations are in FOLLOWUP.md.

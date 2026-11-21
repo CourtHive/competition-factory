@@ -1,0 +1,1586 @@
+[
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 41,
+    "calls": 15,
+    "pipeline": "v2",
+    "freshDigest": "eb2d994b6aba2e8984debd0a79fd05a607623d630333bcf362e7464c4c399660",
+    "retainedDigest": "eb2d994b6aba2e8984debd0a79fd05a607623d630333bcf362e7464c4c399660",
+    "retainedIndex": {
+      "hits": 14,
+      "builds": 1,
+      "updates": 15,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 42,
+    "calls": 15,
+    "pipeline": "v2",
+    "freshDigest": "2d24b87cf82296ab99c81b26ab9f2d2a4eb3e0d0f666f4fc0dba32c3c2da015d",
+    "retainedDigest": "2d24b87cf82296ab99c81b26ab9f2d2a4eb3e0d0f666f4fc0dba32c3c2da015d",
+    "retainedIndex": {
+      "hits": 14,
+      "builds": 1,
+      "updates": 15,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 43,
+    "calls": 15,
+    "pipeline": "v2",
+    "freshDigest": "fd4fcc5093566e7c35fb475b6da0a93e71a2efcd8b1d65bb1b30c02b4ac097bc",
+    "retainedDigest": "fd4fcc5093566e7c35fb475b6da0a93e71a2efcd8b1d65bb1b30c02b4ac097bc",
+    "retainedIndex": {
+      "hits": 14,
+      "builds": 1,
+      "updates": 15,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 15,
+    "pipeline": "v2",
+    "freshDigest": "be6fac437c09fdea47acc54969d587124fabb263999c6339d11c9987f2b45cb8",
+    "retainedDigest": "be6fac437c09fdea47acc54969d587124fabb263999c6339d11c9987f2b45cb8",
+    "retainedIndex": {
+      "hits": 14,
+      "builds": 1,
+      "updates": 15,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 15,
+    "pipeline": "v2",
+    "freshDigest": "b6244f8cbaf2e1115670c944482ac86ab0fcd43e12e894c5592dc45f3947e899",
+    "retainedDigest": "b6244f8cbaf2e1115670c944482ac86ab0fcd43e12e894c5592dc45f3947e899",
+    "retainedIndex": {
+      "hits": 14,
+      "builds": 1,
+      "updates": 15,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 15,
+    "pipeline": "v2",
+    "freshDigest": "fba678e919741e4fbd7b6e2b629f392e043c17d56cec2e71f63e4bd5abab03e3",
+    "retainedDigest": "fba678e919741e4fbd7b6e2b629f392e043c17d56cec2e71f63e4bd5abab03e3",
+    "retainedIndex": {
+      "hits": 14,
+      "builds": 1,
+      "updates": 15,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 19,
+    "pipeline": "v2",
+    "freshDigest": "2782b9d5a66e03515ff23b61e30693d502ce55498f09de1dc7b28c628e5a5d54",
+    "retainedDigest": "2782b9d5a66e03515ff23b61e30693d502ce55498f09de1dc7b28c628e5a5d54",
+    "retainedIndex": {
+      "hits": 18,
+      "builds": 1,
+      "updates": 19,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 19,
+    "pipeline": "v2",
+    "freshDigest": "91c76f0e0b3d845f94af99bcf252000a98458420f39a0e05cb5ab8260868228f",
+    "retainedDigest": "91c76f0e0b3d845f94af99bcf252000a98458420f39a0e05cb5ab8260868228f",
+    "retainedIndex": {
+      "hits": 18,
+      "builds": 1,
+      "updates": 19,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 19,
+    "pipeline": "v2",
+    "freshDigest": "2f343fd65d24d437932393c851288a5210d6361d2dd2d6f3f93c82014911bbdd",
+    "retainedDigest": "2f343fd65d24d437932393c851288a5210d6361d2dd2d6f3f93c82014911bbdd",
+    "retainedIndex": {
+      "hits": 18,
+      "builds": 1,
+      "updates": 19,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 41,
+    "calls": 31,
+    "pipeline": "v2",
+    "freshDigest": "54112c73c842ecffc053ef534491400b153abba046bdd1c26d7c5afe782a07a3",
+    "retainedDigest": "54112c73c842ecffc053ef534491400b153abba046bdd1c26d7c5afe782a07a3",
+    "retainedIndex": {
+      "hits": 30,
+      "builds": 1,
+      "updates": 31,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 42,
+    "calls": 31,
+    "pipeline": "v2",
+    "freshDigest": "e1b19f24088b5e5bde614e7964415bf883a9d981f3caaa475579960602381f07",
+    "retainedDigest": "e1b19f24088b5e5bde614e7964415bf883a9d981f3caaa475579960602381f07",
+    "retainedIndex": {
+      "hits": 30,
+      "builds": 1,
+      "updates": 31,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 43,
+    "calls": 31,
+    "pipeline": "v2",
+    "freshDigest": "ee6514dfbdf61ccb7254ba7ca32a70b8733d951a93acdc5b3a2a9c38da4f6e43",
+    "retainedDigest": "ee6514dfbdf61ccb7254ba7ca32a70b8733d951a93acdc5b3a2a9c38da4f6e43",
+    "retainedIndex": {
+      "hits": 30,
+      "builds": 1,
+      "updates": 31,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 31,
+    "pipeline": "v2",
+    "freshDigest": "6d8d63d161c185da03cd683fa6373dbb2eaa5b71e24457c9868bccf4e6c7d012",
+    "retainedDigest": "6d8d63d161c185da03cd683fa6373dbb2eaa5b71e24457c9868bccf4e6c7d012",
+    "retainedIndex": {
+      "hits": 30,
+      "builds": 1,
+      "updates": 31,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 31,
+    "pipeline": "v2",
+    "freshDigest": "ead6b03267b7a41f0b1aa9c30b791a4890d1afe475a322d321c6265ba08bf316",
+    "retainedDigest": "ead6b03267b7a41f0b1aa9c30b791a4890d1afe475a322d321c6265ba08bf316",
+    "retainedIndex": {
+      "hits": 30,
+      "builds": 1,
+      "updates": 31,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 31,
+    "pipeline": "v2",
+    "freshDigest": "7feabf7c0c061a369a1e7d1831a6059352f165cea8eebe1f3e60438ae8c45cdc",
+    "retainedDigest": "7feabf7c0c061a369a1e7d1831a6059352f165cea8eebe1f3e60438ae8c45cdc",
+    "retainedIndex": {
+      "hits": 30,
+      "builds": 1,
+      "updates": 31,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 39,
+    "pipeline": "v2",
+    "freshDigest": "19c8c50174842eebcccbdd38349d88c215a1c0a97ce0d66b370b86f426199483",
+    "retainedDigest": "19c8c50174842eebcccbdd38349d88c215a1c0a97ce0d66b370b86f426199483",
+    "retainedIndex": {
+      "hits": 38,
+      "builds": 1,
+      "updates": 39,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 39,
+    "pipeline": "v2",
+    "freshDigest": "b69b56bb3095c3d094746f33a379905beb00ee015e10e3fe188b7eceea80cba6",
+    "retainedDigest": "b69b56bb3095c3d094746f33a379905beb00ee015e10e3fe188b7eceea80cba6",
+    "retainedIndex": {
+      "hits": 38,
+      "builds": 1,
+      "updates": 39,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 39,
+    "pipeline": "v2",
+    "freshDigest": "b3482f87c3bb49a52310ea56a38459417299d21c7b6a4854193d0037ad64b867",
+    "retainedDigest": "b3482f87c3bb49a52310ea56a38459417299d21c7b6a4854193d0037ad64b867",
+    "retainedIndex": {
+      "hits": 38,
+      "builds": 1,
+      "updates": 39,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 41,
+    "calls": 63,
+    "pipeline": "v2",
+    "freshDigest": "a3bc6debb4166bec84b5d90a79dd900cbd4c6596fea7654b991bdc3f06a98ab0",
+    "retainedDigest": "a3bc6debb4166bec84b5d90a79dd900cbd4c6596fea7654b991bdc3f06a98ab0",
+    "retainedIndex": {
+      "hits": 62,
+      "builds": 1,
+      "updates": 63,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 42,
+    "calls": 63,
+    "pipeline": "v2",
+    "freshDigest": "a83426381c8ace730c4f247aeefaba685997677bff8f506ded8b795c886ba44b",
+    "retainedDigest": "a83426381c8ace730c4f247aeefaba685997677bff8f506ded8b795c886ba44b",
+    "retainedIndex": {
+      "hits": 62,
+      "builds": 1,
+      "updates": 63,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 43,
+    "calls": 63,
+    "pipeline": "v2",
+    "freshDigest": "9529a3e66d9ee7c36490fb49247788addbabe616ffbc163e360db660cb3e0e26",
+    "retainedDigest": "9529a3e66d9ee7c36490fb49247788addbabe616ffbc163e360db660cb3e0e26",
+    "retainedIndex": {
+      "hits": 62,
+      "builds": 1,
+      "updates": 63,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 63,
+    "pipeline": "v2",
+    "freshDigest": "1e13792c33de878f9994672108bc2f013a4928195ea44623bde0b9988e7fa218",
+    "retainedDigest": "1e13792c33de878f9994672108bc2f013a4928195ea44623bde0b9988e7fa218",
+    "retainedIndex": {
+      "hits": 62,
+      "builds": 1,
+      "updates": 63,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 63,
+    "pipeline": "v2",
+    "freshDigest": "2de9626cf7b35331d9502eada7b9e41a9e98754bb11b25072c519f453dc405d3",
+    "retainedDigest": "2de9626cf7b35331d9502eada7b9e41a9e98754bb11b25072c519f453dc405d3",
+    "retainedIndex": {
+      "hits": 62,
+      "builds": 1,
+      "updates": 63,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 63,
+    "pipeline": "v2",
+    "freshDigest": "8a9690ae646c4147680908b32e9dd3ad37d29f5bc843b6d448cbc5b7435960a9",
+    "retainedDigest": "8a9690ae646c4147680908b32e9dd3ad37d29f5bc843b6d448cbc5b7435960a9",
+    "retainedIndex": {
+      "hits": 62,
+      "builds": 1,
+      "updates": 63,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 79,
+    "pipeline": "v2",
+    "freshDigest": "91ec5fa4f1aa1b9fe311008e10cbc96026a0aff393b49e7be6a6870c531fbe1f",
+    "retainedDigest": "91ec5fa4f1aa1b9fe311008e10cbc96026a0aff393b49e7be6a6870c531fbe1f",
+    "retainedIndex": {
+      "hits": 78,
+      "builds": 1,
+      "updates": 79,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 79,
+    "pipeline": "v2",
+    "freshDigest": "920eb8dca0405273b9d693b7bb6b309508e0b85a1f0b833b56f6c96b0b075f71",
+    "retainedDigest": "920eb8dca0405273b9d693b7bb6b309508e0b85a1f0b833b56f6c96b0b075f71",
+    "retainedIndex": {
+      "hits": 78,
+      "builds": 1,
+      "updates": 79,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 79,
+    "pipeline": "v2",
+    "freshDigest": "780e6de00cfc9a5b2467c67ae1a4a58c3dc748bee58e1ef29fd06edd19cf072d",
+    "retainedDigest": "780e6de00cfc9a5b2467c67ae1a4a58c3dc748bee58e1ef29fd06edd19cf072d",
+    "retainedIndex": {
+      "hits": 78,
+      "builds": 1,
+      "updates": 79,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 41,
+    "calls": 127,
+    "pipeline": "v2",
+    "freshDigest": "cee9e93ac951abce9476e14eef29db7a4bb525af27c6e72680b7b16ff1cbbb7e",
+    "retainedDigest": "cee9e93ac951abce9476e14eef29db7a4bb525af27c6e72680b7b16ff1cbbb7e",
+    "retainedIndex": {
+      "hits": 126,
+      "builds": 1,
+      "updates": 127,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 42,
+    "calls": 127,
+    "pipeline": "v2",
+    "freshDigest": "03ba5daf6a5235daf3f3f7affdbc9091240388e0faa2712b07c93e2ad3ee215d",
+    "retainedDigest": "03ba5daf6a5235daf3f3f7affdbc9091240388e0faa2712b07c93e2ad3ee215d",
+    "retainedIndex": {
+      "hits": 126,
+      "builds": 1,
+      "updates": 127,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 43,
+    "calls": 127,
+    "pipeline": "v2",
+    "freshDigest": "c02a63f47aee24b303e2aff698812777ebb9b3a28b87c92f9c20a0cec12353b2",
+    "retainedDigest": "c02a63f47aee24b303e2aff698812777ebb9b3a28b87c92f9c20a0cec12353b2",
+    "retainedIndex": {
+      "hits": 126,
+      "builds": 1,
+      "updates": 127,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 127,
+    "pipeline": "v2",
+    "freshDigest": "fd36a64e985aec99cf76b9c7bcf5ed4bdebc3d6d654c5d8b820c14762d730186",
+    "retainedDigest": "fd36a64e985aec99cf76b9c7bcf5ed4bdebc3d6d654c5d8b820c14762d730186",
+    "retainedIndex": {
+      "hits": 126,
+      "builds": 1,
+      "updates": 127,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 127,
+    "pipeline": "v2",
+    "freshDigest": "d7a0661395b626aa14af0f87e371171a61241c36a1fd7ec096b742897addfe47",
+    "retainedDigest": "d7a0661395b626aa14af0f87e371171a61241c36a1fd7ec096b742897addfe47",
+    "retainedIndex": {
+      "hits": 126,
+      "builds": 1,
+      "updates": 127,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 127,
+    "pipeline": "v2",
+    "freshDigest": "910415df683f7bf8a9cdabca2c659468ac136089b5e9efd58e83c6e47999a55d",
+    "retainedDigest": "910415df683f7bf8a9cdabca2c659468ac136089b5e9efd58e83c6e47999a55d",
+    "retainedIndex": {
+      "hits": 126,
+      "builds": 1,
+      "updates": 127,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 159,
+    "pipeline": "v2",
+    "freshDigest": "e3ea3e46b9b482020b4e0ec75a2e2a195b9db03b3bdb33217821c1229b5b0de1",
+    "retainedDigest": "e3ea3e46b9b482020b4e0ec75a2e2a195b9db03b3bdb33217821c1229b5b0de1",
+    "retainedIndex": {
+      "hits": 158,
+      "builds": 1,
+      "updates": 159,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 159,
+    "pipeline": "v2",
+    "freshDigest": "770b69cb8bae46818160b54a3dca996b2d6b8970c384be9d80dcdc4f8e83dad8",
+    "retainedDigest": "770b69cb8bae46818160b54a3dca996b2d6b8970c384be9d80dcdc4f8e83dad8",
+    "retainedIndex": {
+      "hits": 158,
+      "builds": 1,
+      "updates": 159,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 159,
+    "pipeline": "v2",
+    "freshDigest": "4e0256bc0241f2ac396cd2b864a5c527e57e29fb34d51e8a59b6f4d97f763c86",
+    "retainedDigest": "4e0256bc0241f2ac396cd2b864a5c527e57e29fb34d51e8a59b6f4d97f763c86",
+    "retainedIndex": {
+      "hits": 158,
+      "builds": 1,
+      "updates": 159,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 41,
+    "calls": 255,
+    "pipeline": "v2",
+    "freshDigest": "b1419a04b173c9e9f7ba9a39134a112964b53ff774c565df0ec90c59460df625",
+    "retainedDigest": "b1419a04b173c9e9f7ba9a39134a112964b53ff774c565df0ec90c59460df625",
+    "retainedIndex": {
+      "hits": 254,
+      "builds": 1,
+      "updates": 255,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 42,
+    "calls": 255,
+    "pipeline": "v2",
+    "freshDigest": "b282d6eb9b1cc035ff07ee53723f232cc09ba4d263367411a5d424011702c6f5",
+    "retainedDigest": "b282d6eb9b1cc035ff07ee53723f232cc09ba4d263367411a5d424011702c6f5",
+    "retainedIndex": {
+      "hits": 254,
+      "builds": 1,
+      "updates": 255,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "score",
+    "seed": 43,
+    "calls": 255,
+    "pipeline": "v2",
+    "freshDigest": "08561f75ebb054c55b9063dae577f314fa0ca6fb58ddbe90967861e02acbc9ce",
+    "retainedDigest": "08561f75ebb054c55b9063dae577f314fa0ca6fb58ddbe90967861e02acbc9ce",
+    "retainedIndex": {
+      "hits": 254,
+      "builds": 1,
+      "updates": 255,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 255,
+    "pipeline": "v2",
+    "freshDigest": "f3155bd77324d2c33afc0872d9dd819caeac9a7c515dff58e00dacde02e579a2",
+    "retainedDigest": "f3155bd77324d2c33afc0872d9dd819caeac9a7c515dff58e00dacde02e579a2",
+    "retainedIndex": {
+      "hits": 254,
+      "builds": 1,
+      "updates": 255,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 255,
+    "pipeline": "v2",
+    "freshDigest": "4b8f543fd402b0b871de93718b9854655633f3a9b6f38c39f52231952784568e",
+    "retainedDigest": "4b8f543fd402b0b871de93718b9854655633f3a9b6f38c39f52231952784568e",
+    "retainedIndex": {
+      "hits": 254,
+      "builds": 1,
+      "updates": 255,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 255,
+    "pipeline": "v2",
+    "freshDigest": "202e44c197d30104bcc88018de7d8c1b17431e5c8205818b54297d49e13e9cdd",
+    "retainedDigest": "202e44c197d30104bcc88018de7d8c1b17431e5c8205818b54297d49e13e9cdd",
+    "retainedIndex": {
+      "hits": 254,
+      "builds": 1,
+      "updates": 255,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 319,
+    "pipeline": "v2",
+    "freshDigest": "0389c8d5fd24b3c34058dd9b570da1b04089d62864898feba852e247aadb1bc8",
+    "retainedDigest": "0389c8d5fd24b3c34058dd9b570da1b04089d62864898feba852e247aadb1bc8",
+    "retainedIndex": {
+      "hits": 318,
+      "builds": 1,
+      "updates": 319,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 319,
+    "pipeline": "v2",
+    "freshDigest": "7a5a1d474d30a60ef4e3f738b4ecfb9c385fa9285044a2918a201cdbbff63ffe",
+    "retainedDigest": "7a5a1d474d30a60ef4e3f738b4ecfb9c385fa9285044a2918a201cdbbff63ffe",
+    "retainedIndex": {
+      "hits": 318,
+      "builds": 1,
+      "updates": 319,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "SINGLES",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 319,
+    "pipeline": "v2",
+    "freshDigest": "af8c96e850a7a16afd626dd21196994f93d087411042c74ce1207ec8ef298178",
+    "retainedDigest": "af8c96e850a7a16afd626dd21196994f93d087411042c74ce1207ec8ef298178",
+    "retainedIndex": {
+      "hits": 318,
+      "builds": 1,
+      "updates": 319,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 41,
+    "calls": 7,
+    "pipeline": "v2",
+    "freshDigest": "6303c1023bcd84fd97ee94fd77c947571a3738d53bddf68844cea57ef1c3c2f5",
+    "retainedDigest": "6303c1023bcd84fd97ee94fd77c947571a3738d53bddf68844cea57ef1c3c2f5",
+    "retainedIndex": {
+      "hits": 6,
+      "builds": 1,
+      "updates": 7,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 42,
+    "calls": 7,
+    "pipeline": "v2",
+    "freshDigest": "e74a4d14ebcaaf5fbc7b30e1a325913a18fb8f4a4a7c9029d6492f727b0783b6",
+    "retainedDigest": "e74a4d14ebcaaf5fbc7b30e1a325913a18fb8f4a4a7c9029d6492f727b0783b6",
+    "retainedIndex": {
+      "hits": 6,
+      "builds": 1,
+      "updates": 7,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 43,
+    "calls": 7,
+    "pipeline": "v2",
+    "freshDigest": "7ff1fd4a7378cea4a135e55251df657d17bf55d460098f0c2da30098f80a5329",
+    "retainedDigest": "7ff1fd4a7378cea4a135e55251df657d17bf55d460098f0c2da30098f80a5329",
+    "retainedIndex": {
+      "hits": 6,
+      "builds": 1,
+      "updates": 7,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 7,
+    "pipeline": "v2",
+    "freshDigest": "6196d5e8eeba17e78103ec0fc986d6b50113bbce5c0404d361c1535f154b1ee1",
+    "retainedDigest": "6196d5e8eeba17e78103ec0fc986d6b50113bbce5c0404d361c1535f154b1ee1",
+    "retainedIndex": {
+      "hits": 6,
+      "builds": 1,
+      "updates": 7,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 7,
+    "pipeline": "v2",
+    "freshDigest": "7111bb283dda62423936f765d7c7a3e71e2e3e5c41a027547212a9f738fdfcee",
+    "retainedDigest": "7111bb283dda62423936f765d7c7a3e71e2e3e5c41a027547212a9f738fdfcee",
+    "retainedIndex": {
+      "hits": 6,
+      "builds": 1,
+      "updates": 7,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 7,
+    "pipeline": "v2",
+    "freshDigest": "0eb9e99eb4fcce24054e8b1e5f227f1f2f281c7868da3e8a817b18f7c9553b09",
+    "retainedDigest": "0eb9e99eb4fcce24054e8b1e5f227f1f2f281c7868da3e8a817b18f7c9553b09",
+    "retainedIndex": {
+      "hits": 6,
+      "builds": 1,
+      "updates": 7,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 9,
+    "pipeline": "v2",
+    "freshDigest": "8e5bce9e5db4f9dbe63472e4c5fad4bd3499cf427920652385531a9c7d718438",
+    "retainedDigest": "8e5bce9e5db4f9dbe63472e4c5fad4bd3499cf427920652385531a9c7d718438",
+    "retainedIndex": {
+      "hits": 8,
+      "builds": 1,
+      "updates": 9,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 9,
+    "pipeline": "v2",
+    "freshDigest": "2f50d351a21cc279e8d48582f581b3142bd19d6ff9eb6e8d6373cc99aa964c14",
+    "retainedDigest": "2f50d351a21cc279e8d48582f581b3142bd19d6ff9eb6e8d6373cc99aa964c14",
+    "retainedIndex": {
+      "hits": 8,
+      "builds": 1,
+      "updates": 9,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 8,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 9,
+    "pipeline": "v2",
+    "freshDigest": "f04cf5d98c8ec8b1355777ae350092562e9906909e0978796b36140a2c7d5ae5",
+    "retainedDigest": "f04cf5d98c8ec8b1355777ae350092562e9906909e0978796b36140a2c7d5ae5",
+    "retainedIndex": {
+      "hits": 8,
+      "builds": 1,
+      "updates": 9,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 41,
+    "calls": 15,
+    "pipeline": "v2",
+    "freshDigest": "846079af78e29727e47660dcc2ba8267aba9e7b2942039e6a8fef423d5e51380",
+    "retainedDigest": "846079af78e29727e47660dcc2ba8267aba9e7b2942039e6a8fef423d5e51380",
+    "retainedIndex": {
+      "hits": 14,
+      "builds": 1,
+      "updates": 15,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 42,
+    "calls": 15,
+    "pipeline": "v2",
+    "freshDigest": "f5ccffa42c5d4029cb741a5f137393cc96c74328b0f01efc3210128dc1823d25",
+    "retainedDigest": "f5ccffa42c5d4029cb741a5f137393cc96c74328b0f01efc3210128dc1823d25",
+    "retainedIndex": {
+      "hits": 14,
+      "builds": 1,
+      "updates": 15,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 43,
+    "calls": 15,
+    "pipeline": "v2",
+    "freshDigest": "48dbda20e17c7371e5f5a5e7d1e48e15401253f93782edbb4eca0e1083905ccd",
+    "retainedDigest": "48dbda20e17c7371e5f5a5e7d1e48e15401253f93782edbb4eca0e1083905ccd",
+    "retainedIndex": {
+      "hits": 14,
+      "builds": 1,
+      "updates": 15,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 15,
+    "pipeline": "v2",
+    "freshDigest": "249fe1086bc8cce4a9db6ce8045c986f497b17e202664f6d5bae7e46c54fcd69",
+    "retainedDigest": "249fe1086bc8cce4a9db6ce8045c986f497b17e202664f6d5bae7e46c54fcd69",
+    "retainedIndex": {
+      "hits": 14,
+      "builds": 1,
+      "updates": 15,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 15,
+    "pipeline": "v2",
+    "freshDigest": "12d37361e88b5293bee04ae029669785f786a48a4b9b04889fcf1e014d0e4786",
+    "retainedDigest": "12d37361e88b5293bee04ae029669785f786a48a4b9b04889fcf1e014d0e4786",
+    "retainedIndex": {
+      "hits": 14,
+      "builds": 1,
+      "updates": 15,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 15,
+    "pipeline": "v2",
+    "freshDigest": "2554b031fabe0e089cc9526fe31aa70ee4f1d38110beae4b878fa887e92f1f6a",
+    "retainedDigest": "2554b031fabe0e089cc9526fe31aa70ee4f1d38110beae4b878fa887e92f1f6a",
+    "retainedIndex": {
+      "hits": 14,
+      "builds": 1,
+      "updates": 15,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 19,
+    "pipeline": "v2",
+    "freshDigest": "de7af357a912a968b449f78d14b4153c9337a922034bb768291467a9434cfeab",
+    "retainedDigest": "de7af357a912a968b449f78d14b4153c9337a922034bb768291467a9434cfeab",
+    "retainedIndex": {
+      "hits": 18,
+      "builds": 1,
+      "updates": 19,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 19,
+    "pipeline": "v2",
+    "freshDigest": "2f2ef15d0d90ef330f6a283611f9a04cde3b3c407877a39de13d34aff63359c4",
+    "retainedDigest": "2f2ef15d0d90ef330f6a283611f9a04cde3b3c407877a39de13d34aff63359c4",
+    "retainedIndex": {
+      "hits": 18,
+      "builds": 1,
+      "updates": 19,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 16,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 19,
+    "pipeline": "v2",
+    "freshDigest": "8a1430b181d518a8ee8755cbc8acf2205ba1344171ef1183eb91424429390455",
+    "retainedDigest": "8a1430b181d518a8ee8755cbc8acf2205ba1344171ef1183eb91424429390455",
+    "retainedIndex": {
+      "hits": 18,
+      "builds": 1,
+      "updates": 19,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 41,
+    "calls": 31,
+    "pipeline": "v2",
+    "freshDigest": "475db369b69f5dd00c77317ffaec8c6309d077cb31b3c568623942acb32e1309",
+    "retainedDigest": "475db369b69f5dd00c77317ffaec8c6309d077cb31b3c568623942acb32e1309",
+    "retainedIndex": {
+      "hits": 30,
+      "builds": 1,
+      "updates": 31,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 42,
+    "calls": 31,
+    "pipeline": "v2",
+    "freshDigest": "e41bf96a577cda6f0113d10ad93ab4cc3f6ea6d6d2ba4e9d478b4eb01cd03c41",
+    "retainedDigest": "e41bf96a577cda6f0113d10ad93ab4cc3f6ea6d6d2ba4e9d478b4eb01cd03c41",
+    "retainedIndex": {
+      "hits": 30,
+      "builds": 1,
+      "updates": 31,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 43,
+    "calls": 31,
+    "pipeline": "v2",
+    "freshDigest": "3237c5b882fb2c42d8e1778d5ee848208616b82bec4d39b1b967ae1b31a89c54",
+    "retainedDigest": "3237c5b882fb2c42d8e1778d5ee848208616b82bec4d39b1b967ae1b31a89c54",
+    "retainedIndex": {
+      "hits": 30,
+      "builds": 1,
+      "updates": 31,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 31,
+    "pipeline": "v2",
+    "freshDigest": "229f94c35f478a726f592780b090fa41d20fdc3d6da7a56257e8a6bb8aa714d0",
+    "retainedDigest": "229f94c35f478a726f592780b090fa41d20fdc3d6da7a56257e8a6bb8aa714d0",
+    "retainedIndex": {
+      "hits": 30,
+      "builds": 1,
+      "updates": 31,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 31,
+    "pipeline": "v2",
+    "freshDigest": "b7cfcdd7ded8224f660730fd8c000ea6ee829c51c2471efc0442e65a0c7a84df",
+    "retainedDigest": "b7cfcdd7ded8224f660730fd8c000ea6ee829c51c2471efc0442e65a0c7a84df",
+    "retainedIndex": {
+      "hits": 30,
+      "builds": 1,
+      "updates": 31,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 31,
+    "pipeline": "v2",
+    "freshDigest": "b50af8f8a7a3d518a90db8a0f12c5e825d70339917ef6ef82c80ecb1e1844e82",
+    "retainedDigest": "b50af8f8a7a3d518a90db8a0f12c5e825d70339917ef6ef82c80ecb1e1844e82",
+    "retainedIndex": {
+      "hits": 30,
+      "builds": 1,
+      "updates": 31,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 39,
+    "pipeline": "v2",
+    "freshDigest": "0fa07effff9c5d0ba866c179bf7437a0c8161eb772460421b6046a080706cd69",
+    "retainedDigest": "0fa07effff9c5d0ba866c179bf7437a0c8161eb772460421b6046a080706cd69",
+    "retainedIndex": {
+      "hits": 38,
+      "builds": 1,
+      "updates": 39,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 39,
+    "pipeline": "v2",
+    "freshDigest": "5ddd41d982b290f36efcd403f3c7812a007f239e87aeddb2c7372ea539487955",
+    "retainedDigest": "5ddd41d982b290f36efcd403f3c7812a007f239e87aeddb2c7372ea539487955",
+    "retainedIndex": {
+      "hits": 38,
+      "builds": 1,
+      "updates": 39,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 32,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 39,
+    "pipeline": "v2",
+    "freshDigest": "207f2939b46a8edd89e37919cbdc9e498632b441b0b2a3ee5fdec864897d1e61",
+    "retainedDigest": "207f2939b46a8edd89e37919cbdc9e498632b441b0b2a3ee5fdec864897d1e61",
+    "retainedIndex": {
+      "hits": 38,
+      "builds": 1,
+      "updates": 39,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 41,
+    "calls": 63,
+    "pipeline": "v2",
+    "freshDigest": "848d9592488b974ce4c60095df823035cc9858a4f014a6abedb97e4d5b24cfe7",
+    "retainedDigest": "848d9592488b974ce4c60095df823035cc9858a4f014a6abedb97e4d5b24cfe7",
+    "retainedIndex": {
+      "hits": 62,
+      "builds": 1,
+      "updates": 63,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 42,
+    "calls": 63,
+    "pipeline": "v2",
+    "freshDigest": "116e22bd464cc8ae40e3050699c28aae9cbda038f9e16bb0cb92ed756ddf0b4c",
+    "retainedDigest": "116e22bd464cc8ae40e3050699c28aae9cbda038f9e16bb0cb92ed756ddf0b4c",
+    "retainedIndex": {
+      "hits": 62,
+      "builds": 1,
+      "updates": 63,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 43,
+    "calls": 63,
+    "pipeline": "v2",
+    "freshDigest": "0eda1f3b5d296ecb12dd29c8fc28e774f798049b51b703bb923e3d48bdae460d",
+    "retainedDigest": "0eda1f3b5d296ecb12dd29c8fc28e774f798049b51b703bb923e3d48bdae460d",
+    "retainedIndex": {
+      "hits": 62,
+      "builds": 1,
+      "updates": 63,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 63,
+    "pipeline": "v2",
+    "freshDigest": "38f60f249f21f49d502d0a6e5f7778db77113f8849212c55693d783b342fe9fb",
+    "retainedDigest": "38f60f249f21f49d502d0a6e5f7778db77113f8849212c55693d783b342fe9fb",
+    "retainedIndex": {
+      "hits": 62,
+      "builds": 1,
+      "updates": 63,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 63,
+    "pipeline": "v2",
+    "freshDigest": "2bc0f5af0626e1ab71df3be21b4de97076a9a7f88b9b461ef44ba2bc2d00be0a",
+    "retainedDigest": "2bc0f5af0626e1ab71df3be21b4de97076a9a7f88b9b461ef44ba2bc2d00be0a",
+    "retainedIndex": {
+      "hits": 62,
+      "builds": 1,
+      "updates": 63,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 63,
+    "pipeline": "v2",
+    "freshDigest": "7422dcf230a91c14090d61f5ecd30ceae22737714e261c807d73f167577eaa82",
+    "retainedDigest": "7422dcf230a91c14090d61f5ecd30ceae22737714e261c807d73f167577eaa82",
+    "retainedIndex": {
+      "hits": 62,
+      "builds": 1,
+      "updates": 63,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 79,
+    "pipeline": "v2",
+    "freshDigest": "4a41f19c0f5e05391b023de2ef776d40cc31b6455a25f3c03ac8f710f075e0fb",
+    "retainedDigest": "4a41f19c0f5e05391b023de2ef776d40cc31b6455a25f3c03ac8f710f075e0fb",
+    "retainedIndex": {
+      "hits": 78,
+      "builds": 1,
+      "updates": 79,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 79,
+    "pipeline": "v2",
+    "freshDigest": "36900516da4014e17082ef1f5a12a94299555b1d6f6763fb5f5f59d3005a3174",
+    "retainedDigest": "36900516da4014e17082ef1f5a12a94299555b1d6f6763fb5f5f59d3005a3174",
+    "retainedIndex": {
+      "hits": 78,
+      "builds": 1,
+      "updates": 79,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 64,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 79,
+    "pipeline": "v2",
+    "freshDigest": "e5b23e8278a843549df617fa0dcd5db356689a6c4d5eab1f8a290055642fb366",
+    "retainedDigest": "e5b23e8278a843549df617fa0dcd5db356689a6c4d5eab1f8a290055642fb366",
+    "retainedIndex": {
+      "hits": 78,
+      "builds": 1,
+      "updates": 79,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 41,
+    "calls": 127,
+    "pipeline": "v2",
+    "freshDigest": "89192b7679cd1a39cff7a599d1c4d288118ad7e6531fa37cd83fa980ca19aa0d",
+    "retainedDigest": "89192b7679cd1a39cff7a599d1c4d288118ad7e6531fa37cd83fa980ca19aa0d",
+    "retainedIndex": {
+      "hits": 126,
+      "builds": 1,
+      "updates": 127,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 42,
+    "calls": 127,
+    "pipeline": "v2",
+    "freshDigest": "0e2c737aa79cfb5c2db0c8f27a4bce13b37d66102d1d0fa2eaf45c0088fae717",
+    "retainedDigest": "0e2c737aa79cfb5c2db0c8f27a4bce13b37d66102d1d0fa2eaf45c0088fae717",
+    "retainedIndex": {
+      "hits": 126,
+      "builds": 1,
+      "updates": 127,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 43,
+    "calls": 127,
+    "pipeline": "v2",
+    "freshDigest": "2f300d006c18cc23a02362576a342174098cf00ce840fa447f1d4d7ca2dac7cb",
+    "retainedDigest": "2f300d006c18cc23a02362576a342174098cf00ce840fa447f1d4d7ca2dac7cb",
+    "retainedIndex": {
+      "hits": 126,
+      "builds": 1,
+      "updates": 127,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 127,
+    "pipeline": "v2",
+    "freshDigest": "a91791fc29ead1b03d58e9144dbdd9702f900a0200b80a019da0538f9c25f032",
+    "retainedDigest": "a91791fc29ead1b03d58e9144dbdd9702f900a0200b80a019da0538f9c25f032",
+    "retainedIndex": {
+      "hits": 126,
+      "builds": 1,
+      "updates": 127,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 127,
+    "pipeline": "v2",
+    "freshDigest": "023bd0bda3348360806573e8f22bfa7f05e0025e6e4ee672e5263bb1eb6e59d4",
+    "retainedDigest": "023bd0bda3348360806573e8f22bfa7f05e0025e6e4ee672e5263bb1eb6e59d4",
+    "retainedIndex": {
+      "hits": 126,
+      "builds": 1,
+      "updates": 127,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 127,
+    "pipeline": "v2",
+    "freshDigest": "7585f936874783d43b13b041a31d49ee56fda566883f2154277e935cecd45001",
+    "retainedDigest": "7585f936874783d43b13b041a31d49ee56fda566883f2154277e935cecd45001",
+    "retainedIndex": {
+      "hits": 126,
+      "builds": 1,
+      "updates": 127,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 159,
+    "pipeline": "v2",
+    "freshDigest": "117ee55334d927194376af4511261aa9af100bcc95d6dad9bd5af0a4ce2efc09",
+    "retainedDigest": "117ee55334d927194376af4511261aa9af100bcc95d6dad9bd5af0a4ce2efc09",
+    "retainedIndex": {
+      "hits": 158,
+      "builds": 1,
+      "updates": 159,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 159,
+    "pipeline": "v2",
+    "freshDigest": "d5677dab03be5309c8d43784b3e5c75a1bed1e34d6f06196fbe721fdf5bdca54",
+    "retainedDigest": "d5677dab03be5309c8d43784b3e5c75a1bed1e34d6f06196fbe721fdf5bdca54",
+    "retainedIndex": {
+      "hits": 158,
+      "builds": 1,
+      "updates": 159,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 128,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 159,
+    "pipeline": "v2",
+    "freshDigest": "fc3b8590215a0504445d31f13dd3f25a58662872616cd94b484677c3f7049031",
+    "retainedDigest": "fc3b8590215a0504445d31f13dd3f25a58662872616cd94b484677c3f7049031",
+    "retainedIndex": {
+      "hits": 158,
+      "builds": 1,
+      "updates": 159,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 41,
+    "calls": 255,
+    "pipeline": "v2",
+    "freshDigest": "c4b05cbc7f97f7e7a13e698678e60f3a2fdbbfdfe54ac9668e223298218c25c8",
+    "retainedDigest": "c4b05cbc7f97f7e7a13e698678e60f3a2fdbbfdfe54ac9668e223298218c25c8",
+    "retainedIndex": {
+      "hits": 254,
+      "builds": 1,
+      "updates": 255,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 42,
+    "calls": 255,
+    "pipeline": "v2",
+    "freshDigest": "1f69c5aad602d4d549c41964ea3f5b03e596755f2b015097d0b031166eaa1e80",
+    "retainedDigest": "1f69c5aad602d4d549c41964ea3f5b03e596755f2b015097d0b031166eaa1e80",
+    "retainedIndex": {
+      "hits": 254,
+      "builds": 1,
+      "updates": 255,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "score",
+    "seed": 43,
+    "calls": 255,
+    "pipeline": "v2",
+    "freshDigest": "ffadcd492902f19c1311b6bf65e4f938726b90ce4942c8bf7431bac4d75de401",
+    "retainedDigest": "ffadcd492902f19c1311b6bf65e4f938726b90ce4942c8bf7431bac4d75de401",
+    "retainedIndex": {
+      "hits": 254,
+      "builds": 1,
+      "updates": 255,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 41,
+    "calls": 255,
+    "pipeline": "v2",
+    "freshDigest": "9feb018fb12f2edaace166803c9d6e931854547de1d1bdecfa3b239a46157926",
+    "retainedDigest": "9feb018fb12f2edaace166803c9d6e931854547de1d1bdecfa3b239a46157926",
+    "retainedIndex": {
+      "hits": 254,
+      "builds": 1,
+      "updates": 255,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 42,
+    "calls": 255,
+    "pipeline": "v2",
+    "freshDigest": "3b4046c6c53bd838fd788715e1f555b9b32913f8daa88e1e0fb43a5afe48817b",
+    "retainedDigest": "3b4046c6c53bd838fd788715e1f555b9b32913f8daa88e1e0fb43a5afe48817b",
+    "retainedIndex": {
+      "hits": 254,
+      "builds": 1,
+      "updates": 255,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "exit",
+    "seed": 43,
+    "calls": 255,
+    "pipeline": "v2",
+    "freshDigest": "24373dbda9d2f8f53d627c79ffb97e1520e4039aa9b06c4675e58065f38bc75c",
+    "retainedDigest": "24373dbda9d2f8f53d627c79ffb97e1520e4039aa9b06c4675e58065f38bc75c",
+    "retainedIndex": {
+      "hits": 254,
+      "builds": 1,
+      "updates": 255,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 41,
+    "calls": 319,
+    "pipeline": "v2",
+    "freshDigest": "723bc2effc07647801ca36751a14e85147ffeefcf4f4e8cb4e013774694340a1",
+    "retainedDigest": "723bc2effc07647801ca36751a14e85147ffeefcf4f4e8cb4e013774694340a1",
+    "retainedIndex": {
+      "hits": 318,
+      "builds": 1,
+      "updates": 319,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 42,
+    "calls": 319,
+    "pipeline": "v2",
+    "freshDigest": "65f3e55299e3da5d1aefd1283ac568da2404c02a5a0cc097c824452df06017cd",
+    "retainedDigest": "65f3e55299e3da5d1aefd1283ac568da2404c02a5a0cc097c824452df06017cd",
+    "retainedIndex": {
+      "hits": 318,
+      "builds": 1,
+      "updates": 319,
+      "invalidations": 0
+    }
+  },
+  {
+    "drawSize": 256,
+    "eventType": "TEAM",
+    "workload": "unwind",
+    "seed": 43,
+    "calls": 319,
+    "pipeline": "v2",
+    "freshDigest": "3044a7dcf96fd0117751f16cf459e301a35cca8d91a9262e8e436f4dd3e0c202",
+    "retainedDigest": "3044a7dcf96fd0117751f16cf459e301a35cca8d91a9262e8e436f4dd3e0c202",
+    "retainedIndex": {
+      "hits": 318,
+      "builds": 1,
+      "updates": 319,
+      "invalidations": 0
+    }
+  }
+]

@@ -1,0 +1,2647 @@
+{
+  "before": {
+    "files": 172,
+    "scenarios": 6848,
+    "steps": 21432,
+    "modeDisagreements": 4,
+    "commonDrift": 927,
+    "initialHashMismatches": 15,
+    "postStepMismatches": 3171,
+    "exceptions": 3
+  },
+  "after": {
+    "files": 172,
+    "scenarios": 7671,
+    "steps": 21432,
+    "modeDisagreements": 4,
+    "commonDrift": 953,
+    "initialHashMismatches": 21,
+    "postStepMismatches": 1673,
+    "exceptions": 0
+  },
+  "sourceTestsWithDrift": {
+    "before": 484,
+    "after": 292,
+    "both": 292,
+    "resolved": [
+      "src/analyze/report/tests/headToHead.test.ts::can generate H2H reports with Competitors In Common",
+      "src/tests/corpus/mocksSource.test.ts::every mocks scenario writes from its method list, succeeds at every step, and replays both ways",
+      "src/tests/events/hybridEventType.test.ts::HYBRID eventType > scores a HYBRID matchUp and winner progresses",
+      "src/tests/forge/builders/eventBuilder.test.ts::engine.build.event \u2014 fluent EventBuilder > .create({ rollbackOnError: true }) forwards the flag to executionQueue",
+      "src/tests/generators/drawDefinitions/adHoc/drawMaticGeneration.test.ts::can use drawMatic to generate rounds in existing AD_HOC draws",
+      "src/tests/generators/drawDefinitions/adHoc/drawMaticGeneration.test.ts::cannot use drawMatic when there are no entries present",
+      "src/tests/generators/drawDefinitions/adHoc/sharedIndividualGuard.test.ts::refuses a ROUND_ROBIN pairing shape over entrants that share individuals",
+      "src/tests/generators/drawDefinitions/adHoc/sharedIndividualGuard.test.ts::drawMatic never pairs two PAIRs that share an individual",
+      "src/tests/generators/drawDefinitions/adHoc/sharedIndividualGuard.test.ts::refuses an explicit adHoc pairing that shares an individual",
+      "src/tests/generators/drawDefinitions/adHoc/sharedIndividualGuard.test.ts::refuses assigning a participant opposite a PAIR they belong to",
+      "src/tests/generators/drawDefinitions/adHoc/sharedIndividualRound.test.ts::drawMatic never schedules one individual in two matchUps of the same round",
+      "src/tests/generators/drawDefinitions/adHoc/sharedIndividualRound.test.ts::drawMatic schedules only one matchUp when every entrant overlaps two others",
+      "src/tests/generators/drawDefinitions/adHoc/sharedIndividualRound.test.ts::refuses a swiss round whose entrants share an individual",
+      "src/tests/generators/drawDefinitions/adHoc/sharedIndividualRound.test.ts::manual assignment neither offers nor accepts a participant sharing an individual with the opponent or the round",
+      "src/tests/generators/drawDefinitions/adHoc/swissQualifying.test.ts::Swiss draw with qualifying structure > Swiss round excludes QUALIFYING stage entries before qualifying completes",
+      "src/tests/generators/drawDefinitions/adHoc/swissQualifying.test.ts::Swiss draw with qualifying structure > Swiss round includes qualifying winners after qualifying completes",
+      "src/tests/generators/drawDefinitions/compassViaWithPlayoffs.test.ts::COMPASS via withPlayoffs \u2014 exploration > chained addPlayoffStructures can reproduce full COMPASS topology",
+      "src/tests/generators/mocks/participantScales.test.ts::generates participants with rankings and ratings with additional embellishments",
+      "src/tests/generators/statCrewMatchUpId.test.ts::generateStatCrew matchUpId > stamps each game with the matchUp it reports, index-aligned with xml and json",
+      "src/tests/generators/statCrewMatchUpId.test.ts::generateStatCrew matchUpId > matchUpId selects that dual alone, even between the same two teams",
+      "src/tests/generators/statCrewMatchUpId.test.ts::generateStatCrew matchUpId > drawId limits the export to that draw",
+      "src/tests/generators/statCrewMatchUpId.test.ts::generateStatCrew matchUpId > refuses a matchUpId that is not a TEAM matchUp of the tournament, or not in the given draw",
+      "src/tests/generators/statCrewMatchUpId.test.ts::generateStatCrew matchUpId > a game in a multi-dual record is a tournament game and carries the tournament's name",
+      "src/tests/global/tournamentSchedulingSchema.test.ts::Tournament.scheduling > a record written by every method that stores a scheduling leaf validates",
+      "src/tests/mutations/checkIn/attributionNeverEmitted.test.ts::omits the attester from hydrated matchUps",
+      "src/tests/mutations/coverageProConflicts.test.ts::proConflicts coverage \u2014 participant and court conflicts > detects participant conflicts when singles+doubles share participants on same row",
+      "src/tests/mutations/drawDefinitions/drawTypeSpecific/adHoc/adHocScenarios.test.ts::adHoc matchUpActions can restrict adHoc round participants to diallow recurrence in the same round",
+      "src/tests/mutations/drawDefinitions/drawTypeSpecific/adHoc/adHocScenarios.test.ts::can remove adHoc rounds",
+      "src/tests/mutations/drawDefinitions/drawTypeSpecific/adHoc/adHocScenarios.test.ts::can add matchUps to an existing adHoc round",
+      "src/tests/mutations/drawDefinitions/finishingPositionRanges/fprSingleElim.test.ts::generates correct finishingPositionRanges for SINGLE_ELIMINATION draws",
+      "src/tests/mutations/drawDefinitions/generationWarnsEntriesNotPlaced.test.ts::draw generation warns of the entries it leaves out > qualifying drawEntries that overfill an existing placeholder are refused, not left out",
+      "src/tests/mutations/drawDefinitions/positionGovernor/qualifierProgressionBranches.test.ts::qualifierProgression with no main draw qualifier positions",
+      "src/tests/mutations/drawDefinitions/positionGovernor/qualifierProgressionBranches.test.ts::qualifierProgression with no qualified participants (no completed matchUps)",
+      "src/tests/mutations/drawDefinitions/positionGovernor/qualifierProgressionBranches.test.ts::qualifierProgression with completed qualifying draws",
+      "src/tests/mutations/drawDefinitions/positionGovernor/qualifierProgressionBranches.test.ts::qualifierProgression without randomList",
+      "src/tests/mutations/drawDefinitions/positionGovernor/qualifierProgressionBranches.test.ts::qualifierProgression with randomList",
+      "src/tests/mutations/drawDefinitions/positionGovernor/qualifierProgressionBranches.test.ts::qualifierProgression with requireCompletedStructures policy and incomplete structure",
+      "src/tests/mutations/drawDefinitions/positionGovernor/qualifierProgressionBranches.test.ts::qualifierProgression with requireCompletedStructures policy and completed structure",
+      "src/tests/mutations/drawDefinitions/positionGovernor/qualifierProgressionBranches.test.ts::qualifierProgression with RR qualifying structure",
+      "src/tests/mutations/drawDefinitions/positionGovernor/qualifierProgressionBranches.test.ts::qualifierProgression with specific targetRoundNumber",
+      "src/tests/mutations/drawDefinitions/positionGovernor/qualifierProgressionBranches.test.ts::qualifierProgression with targetRoundNumber that matches no links",
+      "src/tests/mutations/drawDefinitions/positionGovernor/qualifierProgressionBranches.test.ts::qualifierProgression with winningSide 2 (side 2 wins qualifying)",
+      "src/tests/mutations/drawDefinitions/positionGovernor/qualifierProgressionBranches.test.ts::qualifierProgression skips already-assigned participants",
+      "src/tests/mutations/drawDefinitions/positionGovernor/qualifierProgressionBranches.test.ts::qualifierProgression with completed RR qualifying structure and POSITION links",
+      "src/tests/mutations/drawDefinitions/positionGovernor/qualifierProgressionBranches.test.ts::qualifierProgression with fewer qualifier positions than qualified participants",
+      "src/tests/mutations/drawDefinitions/positioning/drawShell.test.ts::a draw generated before its entries > SINGLE_ELIMINATION: entries arriving later are placed with the qualifiers and BYEs when the draw is positioned",
+      "src/tests/mutations/drawDefinitions/positioning/drawShell.test.ts::a draw generated before its entries > FEED_IN: entries arriving later are placed with the qualifiers and BYEs when the draw is positioned",
+      "src/tests/mutations/drawDefinitions/positioning/drawShell.test.ts::a draw generated before its entries > ROUND_ROBIN: entries arriving later are placed with the qualifiers and BYEs when the draw is positioned",
+      "src/tests/mutations/drawDefinitions/positioning/drawShell.test.ts::a draw generated before its entries > a main that only qualifiers will fill gets its qualifier seats and BYEs when positioned",
+      "src/tests/mutations/drawDefinitions/positioning/drawShell.test.ts::a draw generated before its entries is seeded when it is positioned > the seeds are the best-seeded entries present, and they are placed",
+      "src/tests/mutations/drawDefinitions/positioning/drawShell.test.ts::a draw generated before its entries is seeded when it is positioned > the seeding policy limits the seeds by the entries present when it is positioned",
+      "src/tests/mutations/drawDefinitions/positioning/drawShell.test.ts::a draw generated before its entries is seeded when it is positioned > a positioning computed apart is replayed with its seeds",
+      "src/tests/mutations/drawDefinitions/positioning/drawShell.test.ts::a draw generated before its entries is seeded when it is positioned > with no seeding, it seeds by ranking when asked",
+      "src/tests/mutations/drawDefinitions/positioning/drawShell.test.ts::a draw generated before its entries is seeded when it is positioned > seeds chosen when the draw was generated are kept",
+      "src/tests/mutations/drawDefinitions/positioning/drawShell.test.ts::a draw generated before its entries is seeded when it is positioned > a structure someone is already placed in is not seeded",
+      "src/tests/mutations/drawDefinitions/removeStructure.test.ts::will not delete structures when scores are present",
+      "src/tests/mutations/drawDefinitions/resetDrawDefinition.test.ts::resets elimination voluntary consolation by clearing scores but keeping matchUps",
+      "src/tests/mutations/drawDefinitions/sanctionedGenerationEntryLimits.test.ts::qualifying added to an existing main draw > refuses three QUALIFYING WILDCARD entries when two are sanctioned",
+      "src/tests/mutations/drawDefinitions/sanctionedGenerationEntryLimits.test.ts::qualifying added to an existing main draw > generates qualifying holding two QUALIFYING WILDCARD entries",
+      "src/tests/mutations/drawDefinitions/sanctionedGenerationEntryLimits.test.ts::unsanctioned events and unmatched constraints are unaffected > constraints that do not match the event do not bound it",
+      "src/tests/mutations/drawDefinitions/setMatchUpStatus/propagateExitStatus.test.ts::scoring policy gates propagateExitStatus: USTA policy (true) propagates with no params flag",
+      "src/tests/mutations/drawDefinitions/setMatchUpStatus/propagateExitStatus.test.ts::scoring policy gates propagateExitStatus: DEFAULT policy (false) does not propagate with no params flag",
+      "src/tests/mutations/drawDefinitions/setMatchUpStatus/propagateExitStatus.test.ts::scoring policy gates propagateExitStatus: params true overrides an absent/false policy",
+      "src/tests/mutations/drawDefinitions/structures/feedRoundsProfile.test.ts::seeds take the latest feed round, and qualifiers routed to R3 the round before it",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/addQualifyingRefusesOverfullEntries.test.ts::adding qualifying to an existing draw refuses overfull drawEntries > 12 drawEntries into an 8 qualifying structure, with ignoreStageSpace: refused, the draw unchanged",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/addQualifyingRefusesOverfullEntries.test.ts::adding qualifying to an existing draw refuses overfull drawEntries > 12 drawEntries into an 8 qualifying structure, without ignoreStageSpace: refused, the draw unchanged",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/addQualifyingRefusesOverfullEntries.test.ts::adding qualifying to an existing draw refuses overfull drawEntries > 8 drawEntries into an 8 qualifying structure succeed, with no warning",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/feedInMainAfterQualifyingFirst.test.ts::FEED_IN main populated after qualifying-first > with no MAIN entries, Automated places nothing until the main is positioned",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/feedInMainAfterQualifyingFirst.test.ts::FEED_IN main populated after qualifying-first > BYEs leave the qualifiers their round-1 room and spill onto fed positions",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/feedInQualifying.test.ts::qualifying seeds take the fed positions, lowest seeds latest, and the rest spread across round 1",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/feedInQualifying.test.ts::with fewer seeds than fed positions, the seeds take the fed positions and the rest go to unseeded entries",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/feedInQualifying.test.ts::FEED_IN qualifiers progress into the main draw",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/feedInQualifying.test.ts::a FEED_IN qualifying structure can be added to an existing main",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/generateQualifyingDraw.test.ts::can generateDrawDefinition and place qualifiers",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/mainThenQualifyingTieFormat.test.ts::can generateDrawDefinition a main structure, then generate a qualifying structure with a different tieFormat saved to the structure",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/qualifierProgression.test.ts::can assign all available qualified participants to the main structure qualifying draw positions",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/qualifierProgressionTeams.test.ts::can assign all available qualified participants to the main structure qualifying draw positions for a team event",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/qualifyingEntriesConsistency.test.ts::adding qualifying to an existing draw with no drawEntries takes the event QUALIFYING entries > into a placeholder: the first 8 of 12, the other 4 warned, the stored draw untouched until committed",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/qualifyingEntriesConsistency.test.ts::adding qualifying to an existing draw with no drawEntries takes the event QUALIFYING entries > into a placeholder: an exact fit takes all 8, with no warning",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/qualifyingEntriesConsistency.test.ts::adding qualifying to an existing draw with no drawEntries takes the event QUALIFYING entries > into a main with no placeholder: the first 8 of 12, the other 4 warned",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/qualifyingEntriesConsistency.test.ts::adding qualifying to an existing draw with no drawEntries takes the event QUALIFYING entries > a draw already holding QUALIFYING entries keeps them and takes none from the event",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/qualifyingEntriesConsistency.test.ts::adding qualifying to an existing draw with no drawEntries takes the event QUALIFYING entries > explicit drawEntries are still the only qualifying entries taken",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/qualifyingFirst.test.ts::can generate qualifying-first draw via generateDrawDefinition with automated positioning",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/qualifyingFirstJourney.test.ts::qualifying-first user journey > step 2 \u2014 populate main (SINGLE_ELIMINATION) > preserves qualifying structure and positions all MAIN entries with qualifier spots reserved",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/qualifyingFirstJourney.test.ts::qualifying-first user journey > step 2 \u2014 populate main (SINGLE_ELIMINATION) > preserves qualifying structure when populate main is saved via addDrawDefinition",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/qualifyingFirstJourney.test.ts::qualifying-first user journey > step 2 \u2014 populate main (ROUND_ROBIN) > populates main with round robin, preserves qualifying, reserves qualifier spots",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/qualifyingFirstJourney.test.ts::qualifying-first user journey > step 2 \u2014 populate main (SWISS) > populates Swiss main with positionAssignments and reserves qualifier spots",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/qualifyingFirstJourney.test.ts::qualifying-first user journey > step 2 \u2014 populate main (LUCKY_DRAW) > populates lucky draw main with all entries positioned and qualifier spots reserved",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/qualifyingFirstJourney.test.ts::qualifying-first user journey > drawType preservation > populate main does not overwrite existing qualifying link source.structureId",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/qualifyingFirstRoundRobin.test.ts::a populated round robin qualifying structure is kept when the main draw is generated",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/qualifyingPermutations.test.ts::can generate qualifying with varying participantsCount",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/qualifyingPlaceholderPositioning.test.ts::qualifying placeholder positioning: TMX two-step flow > positions participants in both structures in full two-step flow",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/qualifyingPlaceholderPositioning.test.ts::qualifying placeholder positioning: TMX two-step flow > Swiss draw with qualifying: full two-step flow with getEventData",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/qualifyingSeeding.test.ts::can generate and seed a qualifying structure",
+      "src/tests/mutations/drawDefinitions/structures/qualifying/qualifyingWithSeeding.test.ts::can generate and seed a qualifying structure",
+      "src/tests/mutations/drawDefinitions/structures/roundRobin/roundRobinAutoSeeding.test.ts::can autoSeed by Rankings and then generate Round Robin",
+      "src/tests/mutations/drawDefinitions/structures/roundRobin/roundRobinPlayoffsPriorityPlacement.test.ts::can advance players in Round Robin with Playoffs => 2 x 4 x 4",
+      "src/tests/mutations/drawDefinitions/structures/roundRobin/roundRobinPlayoffsPriorityPlacement.test.ts::can advance players in Round Robin with Playoffs",
+      "src/tests/mutations/drawDefinitions/structures/roundRobin/roundRobinSeededByePlacement.test.ts::can generate ROUND_ROBIN draw which ignores seeded bye placement",
+      "src/tests/mutations/drawDefinitions/structures/roundRobin/roundRobinwithPlayoffs.test.ts::can advance players in Round Robin with Playoffs",
+      "src/tests/mutations/drawDefinitions/structures/roundRobin/roundRobinwithPlayoffs.test.ts::can advance players in Round Robin with Playoffs with 5 per playoff structure",
+      "src/tests/mutations/drawDefinitions/structures/roundRobin/roundRobinWithPlayoffsByes.test.ts::can generate Playoffs for Round Robins when BYEs are present (2)",
+      "src/tests/mutations/drawDefinitions/structures/roundRobin/roundRobinWithPlayoffsByes.test.ts::can generate Playoffs for Round Robins when BYEs are present (3)",
+      "src/tests/mutations/drawDefinitions/structures/roundRobin/roundRobinWithPlayoffsByes.test.ts::can generate Playoffs for Round Robins when BYEs are present (4)",
+      "src/tests/mutations/drawDefinitions/structures/roundRobin/roundRobinWithPlayoffsByes.test.ts::can generate Playoffs for Round Robins when BYEs are present (7)",
+      "src/tests/mutations/drawDefinitions/structures/roundRobin/roundRobinWithPlayoffsPositionActions.test.ts::disables placement actions for Round Robin Playoffs until all groups are complete",
+      "src/tests/mutations/drawDefinitions/structures/roundRobin/roundRobinWithPlayoffsSingleGroup.test.ts::can generate Playoffs for Round Robin with 2 groups of 5, each with BYE",
+      "src/tests/mutations/entries/competitorRoleGate.test.ts::addEventEntries role gate > REFUSES an entry for a participant carrying a non-competitor role, and accepts the same participant once the role is COMPETITOR",
+      "src/tests/mutations/entries/sanctionedDrawEntryLimits.test.ts::an unsanctioned event is unaffected > an event the sanctioning constraints do not match is unaffected",
+      "src/tests/mutations/entries/sharedIndividualDrawEntries.test.ts::refuses adding a PAIR to bracketed draw entries when an individual is already entered",
+      "src/tests/mutations/entries/sharedIndividualDrawEntries.test.ts::refuses when both halves of the conflict arrive in the same addDrawEntries call",
+      "src/tests/mutations/entries/sharedIndividualDrawEntries.test.ts::permits overlapping PAIRs in AD_HOC draw entries -- the flexible doubles case",
+      "src/tests/mutations/entries/stageSpaceCountsAccepted.test.ts::getStageSpace counts every entry that takes a direct-acceptance place > a draw full with SPECIAL_EXEMPT entries refuses another entry",
+      "src/tests/mutations/entries/stageSpaceCountsAccepted.test.ts::getStageSpace counts every entry that takes a direct-acceptance place > a draw full with ORGANISER_ACCEPTANCE entries refuses another entry",
+      "src/tests/mutations/entries/stageSpaceCountsAccepted.test.ts::getStageSpace counts every entry that takes a direct-acceptance place > a draw full with JUNIOR_EXEMPT entries refuses another entry",
+      "src/tests/mutations/entries/stageSpaceCountsAccepted.test.ts::getStageSpace counts every entry that takes a direct-acceptance place > a draw full with CONFIRMED entries refuses another entry",
+      "src/tests/mutations/entries/stageSpaceCountsAccepted.test.ts::getStageSpace counts every entry that takes a direct-acceptance place > a draw full with WILDCARD entries refuses another entry",
+      "src/tests/mutations/entries/stageSpaceCountsAccepted.test.ts::getStageSpace counts every entry that takes a direct-acceptance place > a draw full with DIRECT_ACCEPTANCE entries refuses another entry",
+      "src/tests/mutations/entries/stageSpaceCountsAccepted.test.ts::getStageSpace counts every entry that takes a direct-acceptance place > a draw full with LUCKY_LOSER entries refuses another entry",
+      "src/tests/mutations/events/addEvent.test.ts::can generate an event with a draw and attach it to a tournamentRecord",
+      "src/tests/mutations/events/drawGenerationSeeding.test.ts::can sort entries by scaleAttributes when generatingflighProfiles",
+      "src/tests/mutations/events/drawGenerationSeeding.test.ts::can constrain seedsCount by policyDefinitions",
+      "src/tests/mutations/events/entries/autoSeeding.test.ts::can autoSeed by Rankings",
+      "src/tests/mutations/events/entries/createDestroyPairEntries.test.ts::can add doubles events to a tournament record",
+      "src/tests/mutations/events/entries/deleteFlightAndFlightDraw.test.ts::can delete flight and flightDrawDefinition",
+      "src/tests/mutations/events/entries/deleteFlightAndFlightDraw.test.ts::a refused draw deletion leaves the flight and its draw in place",
+      "src/tests/mutations/events/entries/genderedEntries.test.ts::accepts both short form (M/F) and long form (MALE/FEMALE) gender values",
+      "src/tests/mutations/events/entries/genderedEntries.test.ts::accepts both short and long form genders for ungrouped doubles entries",
+      "src/tests/mutations/events/entries/modifyEntriesStatus.test.ts::can account for individuals appearing in multiple doubles pairs",
+      "src/tests/mutations/events/entries/modifyEntriesStatus.test.ts::disallows invalid entryTypes for TEAM events",
+      "src/tests/mutations/events/entries/modifyEntriesStatusRefusesBeforeWrite.test.ts::modifyEntriesStatus refuses a mixed [unassigned, assigned] list before writing any entry (drawId: undefined)",
+      "src/tests/mutations/events/entries/modifyEntriesStatusRefusesBeforeWrite.test.ts::modifyEntriesStatus refuses a mixed [unassigned, assigned] list before writing any entry (drawId: d1)",
+      "src/tests/mutations/events/entries/modifyFlightEntries.test.ts::will modify flight.drawEntries when no drawDefinition is present",
+      "src/tests/mutations/events/entries/setEntryQualifyingPath.test.ts::setEntryQualifyingPath > with a drawId, changes that flight's and draw's entries; without one, every copy",
+      "src/tests/mutations/events/events.test.ts::can add events to a tournament record",
+      "src/tests/mutations/events/flightProfiles.test.ts::can create and return flighProfiles with drawDefinitions",
+      "src/tests/mutations/events/flightProfiles.test.ts::deleteFlightProfileAndFlightDraws deletes flights with generated drawDefinitions",
+      "src/tests/mutations/events/generateAdHoc.test.ts::will not allow addition of AD_HOC matchUps to other draw types",
+      "src/tests/mutations/events/generateLineUps.test.ts::can generate lineUps for TEAM events",
+      "src/tests/mutations/events/modifyDrawNames.test.ts::can modify flightNames and drawNames",
+      "src/tests/mutations/events/modifyDrawNames.test.ts::can modify drawNames when no flightProfile",
+      "src/tests/mutations/events/scaledFlightProfile.test.ts::can sort entries by scaleAttributes when generatingflighProfiles",
+      "src/tests/mutations/events/scopedFlightGeneration.test.ts::appends flights for the participants a deleted flight freed, leaving the flighted draw untouched",
+      "src/tests/mutations/events/stableFlightNumbers.test.ts::a draw added for an ungenerated flight keeps the flight number and takes its display order",
+      "src/tests/mutations/events/updateDrawIdsOrder.test.ts::can modify the drawOrder of flightProfile.flights and drawDefniitions within an event",
+      "src/tests/mutations/exitPropagation/aSettleReadsTheDrawItLeft.test.ts::a refusal repairs nothing, even a stale entry an earlier call left",
+      "src/tests/mutations/matchUps/changePropagationPolicy.test.ts::allowChangePropagation is honoured from POLICY, not only from params",
+      "src/tests/mutations/participants/deleteParticipantsRefusesFirst.test.ts::destroyGroupEntry keeps the TEAM participant and touches no other event when its deletion is refused",
+      "src/tests/mutations/participants/team/onePlayerOneTeam.test.ts::one player, one team, per event > assignTieMatchUpParticipantId: another team refused, no team warned, own roster plain",
+      "src/tests/mutations/participants/team/onePlayerOneTeam.test.ts::one player, one team, per event > replaceTieMatchUpParticipantId refuses another team\u2019s player",
+      "src/tests/mutations/participants/team/publishedTieFormatUsable.test.ts::published tieFormat fixtures are usable directly > scores a dual built from a published fixture",
+      "src/tests/mutations/participants/team/scaledTeamAssignments.test.ts::can automatically assign participants to teams using individualParticipantIds and scaleAttributes",
+      "src/tests/mutations/participants/team/scaledTeamAssignments.test.ts::can automatically assign participants to teams using scaledParticipants",
+      "src/tests/mutations/participants/team/scaledTeamAssignments.test.ts::will cleanup UNGROUPED participant entries if TEAM entry is added AFTER team assignments are made",
+      "src/tests/mutations/participants/team/scaledTeamAssignments.test.ts::can determine teams from DIRECT_ACCEPTANCE entries of a TEAM event",
+      "src/tests/mutations/participants/team/teamQualifying.test.ts::Modifying tieFormats supported for TEAM QUALIFYING events",
+      "src/tests/mutations/participants/team/tieFormatAggregation.test.ts::can aggregate tieFormats found in drawDefinitions to event.tieFormats",
+      "src/tests/mutations/publishing/publishingEventData.test.ts::can filter out unPublished draws when publishing event",
+      "src/tests/mutations/scheduling/bulkScheduling.test.ts::can bulk schedule matchUps",
+      "src/tests/mutations/scheduling/clearScheduledMatchUps2.test.ts::can clear matchUp schedules",
+      "src/tests/mutations/scheduling/crossingMidnight.test.ts::a participant's recovery past midnight holds them in another event the next date",
+      "src/tests/mutations/scheduling/enableDisableVenuesCourts.test.ts::can disable and enable courts and venues",
+      "src/tests/mutations/scheduling/eventDateAutoSkip.test.ts::scheduleProfileRounds > an unconstrained call is unchanged: no skips member, no warnings",
+      "src/tests/mutations/scheduling/eventDateAutoSkip.test.ts::scheduleProfileRounds > honours event activeDates over weekdays, and the event range",
+      "src/tests/mutations/scheduling/honorsMatchUpDailyLimits.test.ts::can set and honor matchUpDailyLimits",
+      "src/tests/mutations/scheduling/proColumnResolve.test.ts::proColumnResolve - court-preserving conflict resolution > clears a forced cross-column participant conflict without moving courts or times",
+      "src/tests/mutations/scheduling/proConflicts.test.ts::proConflicts - Comprehensive Conflict Detection > detects conflicts when doubles participants appear in singles matches on same row",
+      "src/tests/mutations/scheduling/requestConflictsByDate.test.ts::request conflicts are reported under their date > a two-day run keys conflicts by date only, each under the date of its request, and the audit counts them",
+      "src/tests/mutations/scheduling/scheduleLocks.test.ts::assigns an official to a locked matchUp \u2014 an official is not a placement",
+      "src/tests/mutations/scheduling/scheduleLocks.test.ts::reports an officiating conflict on a locked matchUp \u2014 the lock must not mask it",
+      "src/tests/mutations/scheduling/scheduleMatchUps2.test.ts::[writeMode: native] > can add events, venues, and schedule matchUps and modify drawDefinition.updatedAt",
+      "src/tests/mutations/scheduling/scheduleProfileRoundsMultipleEvents.test.ts::auto schedules multiple events at multiple venues and tracks participants across venues",
+      "src/tests/mutations/tieFormat/modifyCollectionDefinitionCoverage.test.ts::modifyCollectionDefinition additional branch coverage > removes collectionAssignments when gender is modified on a collectionDefinition",
+      "src/tests/mutations/tieFormats/addCollectionDefinition.test.ts::can add collectionDefinitions to tieFormat in a structure",
+      "src/tests/mutations/tieFormats/addCollectionDefinition.test.ts::added collectionDefinitions do not appear in inProgress matchUps",
+      "src/tests/mutations/tieFormats/modifyCollectionDefinition.test.ts::can modify collectionDefinitions for a tieFormat on a structure",
+      "src/tests/mutations/tieFormats/removeCollectionDefinition.test.ts::deleted collectionDefinitions are not removed from inProgress matchUps",
+      "src/tests/mutations/tieFormats/removeCollectionDefinition.test.ts::removing collectionDefinition will not recalculate score or remove advanced winner if there is a manual scoring override",
+      "src/tests/mutations/timeItems/drawDefinitionTimeItems.test.ts::can add and read timeItems from events",
+      "src/tests/mutations/tournaments/sanctionConstraints.test.ts::setSanctionConstraints > stores the limits on the sanction, the record validates, and generation enforces them",
+      "src/tests/mutations/tournaments/sanctionConstraints.test.ts::the legacy extension > is still read, and the sanction wins when both are present",
+      "src/tests/mutations/tournaments/tournament.test.ts::can generate a tournament with events and draws",
+      "src/tests/mutations/tournaments/tournamentDatesTrims.test.ts::setTournamentDates trims the scheduling profile to the new range > shrink: dates outside the new range leave the profile, reported with their rounds",
+      "src/tests/mutations/venues/courtDeletion.test.ts::can add events, venues, and schedule matchUps",
+      "src/tests/queries/events/getEventsFlightScales.test.ts::getEvents withScaleValues \u2014 a flight with no generated draw > plain-number ELO ratings: no throw, and both flights carry their stats",
+      "src/tests/queries/events/getEventsFlightScales.test.ts::getEvents withScaleValues \u2014 a flight with no generated draw > accessor-object ratings (WTN), with a zero kept: the planned flight is counted too",
+      "src/tests/queries/events/getEventsFlightScales.test.ts::getEvents withScaleValues \u2014 a flight with no generated draw > rankings only: the planned flight collects them, through the same bucket",
+      "src/tests/queries/matchUps/competitionScheduleMatchUps.test.ts::auto schedules venue if only one venue provided",
+      "src/tests/queries/scales/getAggregateTeamResults.test.ts::can aggregate team scores across SINGLES/DOUBLES events",
+      "src/tests/queries/scales/seasonScenario.test.ts::can aggregate team scores across SINGLES/DOUBLES events",
+      "src/tests/queries/scheduling/getEventDateIssues.test.ts::agrees with the predicate for every reason, and reads a scheduledTime with no scheduledDate",
+      "src/tests/refactoring/drawPositionsCoverage.test.ts::assignMatchUpSideParticipant > assigns participant and swaps sides when no sideNumber provided"
+    ],
+    "introduced": []
+  },
+  "byFile": {
+    "src-analyze-report-tests-headtohead-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 9,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 9,
+        "steps": 9,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-corpus-authoredsources-test-ts.jsonl": {
+      "before": {
+        "scenarios": 34,
+        "steps": 204,
+        "modeDisagreements": 0,
+        "commonDrift": 33
+      },
+      "after": {
+        "scenarios": 69,
+        "steps": 204,
+        "modeDisagreements": 0,
+        "commonDrift": 46
+      }
+    },
+    "src-tests-corpus-mockssource-test-ts.jsonl": {
+      "before": {
+        "scenarios": 56,
+        "steps": 610,
+        "modeDisagreements": 0,
+        "commonDrift": 34
+      },
+      "after": {
+        "scenarios": 94,
+        "steps": 610,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-corpus-queuesource-test-ts.jsonl": {
+      "before": {
+        "scenarios": 10,
+        "steps": 10,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      },
+      "after": {
+        "scenarios": 10,
+        "steps": 10,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      }
+    },
+    "src-tests-corpus-schedulingscale-test-ts.jsonl": {
+      "before": {
+        "scenarios": 4,
+        "steps": 39,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      },
+      "after": {
+        "scenarios": 8,
+        "steps": 39,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      }
+    },
+    "src-tests-corpus-schedulingsources-test-ts.jsonl": {
+      "before": {
+        "scenarios": 120,
+        "steps": 1158,
+        "modeDisagreements": 0,
+        "commonDrift": 118
+      },
+      "after": {
+        "scenarios": 232,
+        "steps": 1158,
+        "modeDisagreements": 0,
+        "commonDrift": 118
+      }
+    },
+    "src-tests-engines-borrowedintegratorflow-test-ts.jsonl": {
+      "before": {
+        "scenarios": 4,
+        "steps": 5,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      },
+      "after": {
+        "scenarios": 4,
+        "steps": 5,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      }
+    },
+    "src-tests-engines-refusedqueuenotices-test-ts.jsonl": {
+      "before": {
+        "scenarios": 5,
+        "steps": 12,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      },
+      "after": {
+        "scenarios": 8,
+        "steps": 12,
+        "modeDisagreements": 0,
+        "commonDrift": 6
+      }
+    },
+    "src-tests-events-hybrideventtype-test-ts.jsonl": {
+      "before": {
+        "scenarios": 6,
+        "steps": 12,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 7,
+        "steps": 12,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-forge-builders-eventbuilder-test-ts.jsonl": {
+      "before": {
+        "scenarios": 4,
+        "steps": 7,
+        "modeDisagreements": 0,
+        "commonDrift": 3
+      },
+      "after": {
+        "scenarios": 7,
+        "steps": 7,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      }
+    },
+    "src-tests-generators-drawdefinitions-adhoc-drawmaticgeneration-test-ts.jsonl": {
+      "before": {
+        "scenarios": 18,
+        "steps": 42,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      },
+      "after": {
+        "scenarios": 20,
+        "steps": 42,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-generators-drawdefinitions-adhoc-sharedindividualguard-test-ts.jsonl": {
+      "before": {
+        "scenarios": 6,
+        "steps": 19,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      },
+      "after": {
+        "scenarios": 10,
+        "steps": 19,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-generators-drawdefinitions-adhoc-sharedindividualround-test-ts.jsonl": {
+      "before": {
+        "scenarios": 4,
+        "steps": 50,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      },
+      "after": {
+        "scenarios": 8,
+        "steps": 50,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-generators-drawdefinitions-adhoc-swissqualifying-test-ts.jsonl": {
+      "before": {
+        "scenarios": 2,
+        "steps": 9,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      },
+      "after": {
+        "scenarios": 5,
+        "steps": 9,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-generators-drawdefinitions-compassviawithplayoffs-test-ts.jsonl": {
+      "before": {
+        "scenarios": 5,
+        "steps": 8,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 6,
+        "steps": 8,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-generators-drawdefinitions-getdrawfitqualify-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 1,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 1,
+        "steps": 1,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      }
+    },
+    "src-tests-generators-mocks-participantscales-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 3,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 3,
+        "steps": 3,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-generators-statcrewmatchupid-test-ts.jsonl": {
+      "before": {
+        "scenarios": 6,
+        "steps": 19,
+        "modeDisagreements": 0,
+        "commonDrift": 5
+      },
+      "after": {
+        "scenarios": 11,
+        "steps": 19,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-global-matchupschedulefirstclass-test-ts.jsonl": {
+      "before": {
+        "scenarios": 20,
+        "steps": 26,
+        "modeDisagreements": 0,
+        "commonDrift": 14
+      },
+      "after": {
+        "scenarios": 20,
+        "steps": 26,
+        "modeDisagreements": 0,
+        "commonDrift": 14
+      }
+    },
+    "src-tests-global-schemacoversstoredtypes-test-ts.jsonl": {
+      "before": {
+        "scenarios": 2,
+        "steps": 6,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 6,
+        "steps": 6,
+        "modeDisagreements": 0,
+        "commonDrift": 5
+      }
+    },
+    "src-tests-global-tournamentschedulingschema-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 4,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 2,
+        "steps": 4,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mocks-methodlistreplay-test-ts.jsonl": {
+      "before": {
+        "scenarios": 28,
+        "steps": 305,
+        "modeDisagreements": 0,
+        "commonDrift": 28
+      },
+      "after": {
+        "scenarios": 47,
+        "steps": 305,
+        "modeDisagreements": 0,
+        "commonDrift": 45
+      }
+    },
+    "src-tests-mocks-modifymethodlistreplay-test-ts.jsonl": {
+      "before": {
+        "scenarios": 5,
+        "steps": 15,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      },
+      "after": {
+        "scenarios": 8,
+        "steps": 15,
+        "modeDisagreements": 0,
+        "commonDrift": 6
+      }
+    },
+    "src-tests-mutations-checkin-attributionneveremitted-test-ts.jsonl": {
+      "before": {
+        "scenarios": 5,
+        "steps": 6,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 6,
+        "steps": 6,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-checkin-presenceattribution-test-ts.jsonl": {
+      "before": {
+        "scenarios": 8,
+        "steps": 26,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      },
+      "after": {
+        "scenarios": 8,
+        "steps": 26,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      }
+    },
+    "src-tests-mutations-checkin-setparticipantcheckinstate-test-ts.jsonl": {
+      "before": {
+        "scenarios": 9,
+        "steps": 24,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 9,
+        "steps": 24,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      }
+    },
+    "src-tests-mutations-coverageproconflicts-test-ts.jsonl": {
+      "before": {
+        "scenarios": 9,
+        "steps": 13,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 10,
+        "steps": 13,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-competitionprofile-test-ts.jsonl": {
+      "before": {
+        "scenarios": 6,
+        "steps": 19,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      },
+      "after": {
+        "scenarios": 13,
+        "steps": 19,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      }
+    },
+    "src-tests-mutations-drawdefinitions-composethenwrite-swapandremovalcompose-test-ts.jsonl": {
+      "before": {
+        "scenarios": 3,
+        "steps": 3,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      },
+      "after": {
+        "scenarios": 3,
+        "steps": 3,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      }
+    },
+    "src-tests-mutations-drawdefinitions-directingparticipants-disableautocalc-teamdisableautocalc-test-ts.jsonl": {
+      "before": {
+        "scenarios": 3,
+        "steps": 14,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 4,
+        "steps": 14,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      }
+    },
+    "src-tests-mutations-drawdefinitions-draft-draftpositioning-test-ts.jsonl": {
+      "before": {
+        "scenarios": 38,
+        "steps": 185,
+        "modeDisagreements": 0,
+        "commonDrift": 11
+      },
+      "after": {
+        "scenarios": 38,
+        "steps": 185,
+        "modeDisagreements": 0,
+        "commonDrift": 11
+      }
+    },
+    "src-tests-mutations-drawdefinitions-drawotherids-test-ts.jsonl": {
+      "before": {
+        "scenarios": 12,
+        "steps": 19,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      },
+      "after": {
+        "scenarios": 12,
+        "steps": 19,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      }
+    },
+    "src-tests-mutations-drawdefinitions-drawtypespecific-adhoc-adhocparticipantresults-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 3,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 2,
+        "steps": 3,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      }
+    },
+    "src-tests-mutations-drawdefinitions-drawtypespecific-adhoc-adhocscenarios-test-ts.jsonl": {
+      "before": {
+        "scenarios": 5,
+        "steps": 35,
+        "modeDisagreements": 0,
+        "commonDrift": 3
+      },
+      "after": {
+        "scenarios": 9,
+        "steps": 35,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-finishingpositionranges-fprsingleelim-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 15,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 2,
+        "steps": 15,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-generationwarnsentriesnotplaced-test-ts.jsonl": {
+      "before": {
+        "scenarios": 7,
+        "steps": 20,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 8,
+        "steps": 20,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-positiongovernor-qualifierprogressionbranches-test-ts.jsonl": {
+      "before": {
+        "scenarios": 14,
+        "steps": 155,
+        "modeDisagreements": 0,
+        "commonDrift": 14
+      },
+      "after": {
+        "scenarios": 28,
+        "steps": 155,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-positiongovernor-qualifiersfollowunseeded-test-ts.jsonl": {
+      "before": {
+        "scenarios": 7,
+        "steps": 13,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 7,
+        "steps": 13,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      }
+    },
+    "src-tests-mutations-drawdefinitions-positioning-drawshell-test-ts.jsonl": {
+      "before": {
+        "scenarios": 16,
+        "steps": 62,
+        "modeDisagreements": 0,
+        "commonDrift": 12
+      },
+      "after": {
+        "scenarios": 34,
+        "steps": 62,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-removestructure-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 4,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 2,
+        "steps": 4,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-resetclearsdisablelinks-test-ts.jsonl": {
+      "before": {
+        "scenarios": 3,
+        "steps": 38,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 3,
+        "steps": 38,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      }
+    },
+    "src-tests-mutations-drawdefinitions-resetdrawdefinition-test-ts.jsonl": {
+      "before": {
+        "scenarios": 19,
+        "steps": 30,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 20,
+        "steps": 30,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-rotatingpartnerentries-test-ts.jsonl": {
+      "before": {
+        "scenarios": 2,
+        "steps": 3,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 2,
+        "steps": 3,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      }
+    },
+    "src-tests-mutations-drawdefinitions-rotatingpartnerround-test-ts.jsonl": {
+      "before": {
+        "scenarios": 10,
+        "steps": 11,
+        "modeDisagreements": 0,
+        "commonDrift": 10
+      },
+      "after": {
+        "scenarios": 10,
+        "steps": 11,
+        "modeDisagreements": 0,
+        "commonDrift": 10
+      }
+    },
+    "src-tests-mutations-drawdefinitions-sanctionedgenerationentrylimits-test-ts.jsonl": {
+      "before": {
+        "scenarios": 12,
+        "steps": 38,
+        "modeDisagreements": 0,
+        "commonDrift": 3
+      },
+      "after": {
+        "scenarios": 15,
+        "steps": 38,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-setmatchupstatus-propagateexitstatus-test-ts.jsonl": {
+      "before": {
+        "scenarios": 27,
+        "steps": 149,
+        "modeDisagreements": 0,
+        "commonDrift": 3
+      },
+      "after": {
+        "scenarios": 30,
+        "steps": 149,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-structures-feedroundsprofile-test-ts.jsonl": {
+      "before": {
+        "scenarios": 2,
+        "steps": 10,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 3,
+        "steps": 10,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-structures-populateplayoffstructures-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 2,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 1,
+        "steps": 2,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      }
+    },
+    "src-tests-mutations-drawdefinitions-structures-qualifying-addqualifyingrefusesoverfullentries-test-ts.jsonl": {
+      "before": {
+        "scenarios": 5,
+        "steps": 21,
+        "modeDisagreements": 0,
+        "commonDrift": 3
+      },
+      "after": {
+        "scenarios": 8,
+        "steps": 21,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-structures-qualifying-feedinmainafterqualifyingfirst-test-ts.jsonl": {
+      "before": {
+        "scenarios": 27,
+        "steps": 108,
+        "modeDisagreements": 0,
+        "commonDrift": 27
+      },
+      "after": {
+        "scenarios": 55,
+        "steps": 108,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-structures-qualifying-feedinqualifying-test-ts.jsonl": {
+      "before": {
+        "scenarios": 18,
+        "steps": 50,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      },
+      "after": {
+        "scenarios": 22,
+        "steps": 50,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-structures-qualifying-generatequalifyingdraw-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 4,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 2,
+        "steps": 4,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-structures-qualifying-mainthenqualifyingtieformat-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 4,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 2,
+        "steps": 4,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-structures-qualifying-qualifierprogression-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 19,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 3,
+        "steps": 19,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-structures-qualifying-qualifierprogressionteams-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 91,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 3,
+        "steps": 91,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-structures-qualifying-qualifyingentriesconsistency-test-ts.jsonl": {
+      "before": {
+        "scenarios": 15,
+        "steps": 50,
+        "modeDisagreements": 0,
+        "commonDrift": 5
+      },
+      "after": {
+        "scenarios": 20,
+        "steps": 50,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-structures-qualifying-qualifyingfirst-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 4,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 2,
+        "steps": 4,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-structures-qualifying-qualifyingfirstjourney-test-ts.jsonl": {
+      "before": {
+        "scenarios": 8,
+        "steps": 30,
+        "modeDisagreements": 0,
+        "commonDrift": 6
+      },
+      "after": {
+        "scenarios": 14,
+        "steps": 30,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-structures-qualifying-qualifyingfirstroundrobin-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 4,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 2,
+        "steps": 4,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-structures-qualifying-qualifyingpermutations-test-ts.jsonl": {
+      "before": {
+        "scenarios": 3,
+        "steps": 6,
+        "modeDisagreements": 0,
+        "commonDrift": 3
+      },
+      "after": {
+        "scenarios": 6,
+        "steps": 6,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-structures-qualifying-qualifyingplaceholderpositioning-test-ts.jsonl": {
+      "before": {
+        "scenarios": 6,
+        "steps": 20,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      },
+      "after": {
+        "scenarios": 8,
+        "steps": 20,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-structures-qualifying-qualifyingseeding-test-ts.jsonl": {
+      "before": {
+        "scenarios": 2,
+        "steps": 6,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      },
+      "after": {
+        "scenarios": 4,
+        "steps": 6,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-structures-qualifying-qualifyingwithseeding-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 4,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 3,
+        "steps": 4,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-structures-roundrobin-roundrobinautoseeding-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 5,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 5,
+        "steps": 5,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-structures-roundrobin-roundrobinplayoffspriorityplacement-test-ts.jsonl": {
+      "before": {
+        "scenarios": 2,
+        "steps": 62,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      },
+      "after": {
+        "scenarios": 4,
+        "steps": 62,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-structures-roundrobin-roundrobinseededbyeplacement-test-ts.jsonl": {
+      "before": {
+        "scenarios": 4,
+        "steps": 8,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      },
+      "after": {
+        "scenarios": 8,
+        "steps": 8,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-structures-roundrobin-roundrobinwithplayoffs-test-ts.jsonl": {
+      "before": {
+        "scenarios": 2,
+        "steps": 66,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      },
+      "after": {
+        "scenarios": 4,
+        "steps": 66,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-structures-roundrobin-roundrobinwithplayoffsbyes-test-ts.jsonl": {
+      "before": {
+        "scenarios": 6,
+        "steps": 83,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      },
+      "after": {
+        "scenarios": 10,
+        "steps": 83,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-structures-roundrobin-roundrobinwithplayoffspositionactions-test-ts.jsonl": {
+      "before": {
+        "scenarios": 3,
+        "steps": 59,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 4,
+        "steps": 59,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-structures-roundrobin-roundrobinwithplayoffssinglegroup-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 15,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 2,
+        "steps": 15,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-drawdefinitions-teamevents-teamadhoc-test-ts.jsonl": {
+      "before": {
+        "scenarios": 2,
+        "steps": 13,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 6,
+        "steps": 13,
+        "modeDisagreements": 0,
+        "commonDrift": 3
+      }
+    },
+    "src-tests-mutations-entries-competitorrolegate-test-ts.jsonl": {
+      "before": {
+        "scenarios": 3,
+        "steps": 5,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 4,
+        "steps": 5,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-entries-sanctioneddrawentrylimits-test-ts.jsonl": {
+      "before": {
+        "scenarios": 7,
+        "steps": 19,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 8,
+        "steps": 19,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-entries-sharedindividualdrawentries-test-ts.jsonl": {
+      "before": {
+        "scenarios": 8,
+        "steps": 19,
+        "modeDisagreements": 0,
+        "commonDrift": 3
+      },
+      "after": {
+        "scenarios": 11,
+        "steps": 19,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-entries-stagespacecountsaccepted-test-ts.jsonl": {
+      "before": {
+        "scenarios": 9,
+        "steps": 36,
+        "modeDisagreements": 0,
+        "commonDrift": 7
+      },
+      "after": {
+        "scenarios": 16,
+        "steps": 36,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-errorpaths-cascadewriteerrorsreachthecaller-test-ts.jsonl": {
+      "before": {
+        "scenarios": 12,
+        "steps": 49,
+        "modeDisagreements": 0,
+        "commonDrift": 9
+      },
+      "after": {
+        "scenarios": 12,
+        "steps": 49,
+        "modeDisagreements": 0,
+        "commonDrift": 9
+      }
+    },
+    "src-tests-mutations-errorpaths-reconciledeciderreturnsitserror-test-ts.jsonl": {
+      "before": {
+        "scenarios": 4,
+        "steps": 43,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 4,
+        "steps": 43,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      }
+    },
+    "src-tests-mutations-events-addevent-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 2,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 2,
+        "steps": 2,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-events-addremoverrplayoffs-test-ts.jsonl": {
+      "before": {
+        "scenarios": 8,
+        "steps": 16,
+        "modeDisagreements": 0,
+        "commonDrift": 8
+      },
+      "after": {
+        "scenarios": 16,
+        "steps": 16,
+        "modeDisagreements": 0,
+        "commonDrift": 9
+      }
+    },
+    "src-tests-mutations-events-bulkmatchupstatusupdaterefusals-test-ts.jsonl": {
+      "before": {
+        "scenarios": 11,
+        "steps": 13,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 11,
+        "steps": 13,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      }
+    },
+    "src-tests-mutations-events-drawgenerationseeding-test-ts.jsonl": {
+      "before": {
+        "scenarios": 4,
+        "steps": 12,
+        "modeDisagreements": 0,
+        "commonDrift": 3
+      },
+      "after": {
+        "scenarios": 7,
+        "steps": 12,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-events-entries-autoseeding-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 3,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 3,
+        "steps": 3,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-events-entries-createdestroypairentries-test-ts.jsonl": {
+      "before": {
+        "scenarios": 5,
+        "steps": 28,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 6,
+        "steps": 28,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-events-entries-deleteflightandflightdraw-test-ts.jsonl": {
+      "before": {
+        "scenarios": 5,
+        "steps": 13,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      },
+      "after": {
+        "scenarios": 7,
+        "steps": 13,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-events-entries-genderedentries-test-ts.jsonl": {
+      "before": {
+        "scenarios": 4,
+        "steps": 27,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      },
+      "after": {
+        "scenarios": 14,
+        "steps": 27,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-events-entries-modifyentriesstatus-test-ts.jsonl": {
+      "before": {
+        "scenarios": 5,
+        "steps": 25,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      },
+      "after": {
+        "scenarios": 7,
+        "steps": 25,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-events-entries-modifyentriesstatusrefusesbeforewrite-test-ts.jsonl": {
+      "before": {
+        "scenarios": 2,
+        "steps": 10,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      },
+      "after": {
+        "scenarios": 4,
+        "steps": 10,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-events-entries-modifyflightentries-test-ts.jsonl": {
+      "before": {
+        "scenarios": 2,
+        "steps": 14,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 5,
+        "steps": 14,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-events-entries-setentryqualifyingpath-test-ts.jsonl": {
+      "before": {
+        "scenarios": 4,
+        "steps": 24,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 5,
+        "steps": 24,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-events-events-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 3,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 2,
+        "steps": 3,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-events-flightprofiles-test-ts.jsonl": {
+      "before": {
+        "scenarios": 3,
+        "steps": 13,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      },
+      "after": {
+        "scenarios": 6,
+        "steps": 13,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-events-generateadhoc-test-ts.jsonl": {
+      "before": {
+        "scenarios": 3,
+        "steps": 31,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 5,
+        "steps": 31,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-events-generatelineups-test-ts.jsonl": {
+      "before": {
+        "scenarios": 3,
+        "steps": 6,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 4,
+        "steps": 6,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-events-modifydrawnames-test-ts.jsonl": {
+      "before": {
+        "scenarios": 3,
+        "steps": 15,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      },
+      "after": {
+        "scenarios": 9,
+        "steps": 15,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-events-scaledflightprofile-test-ts.jsonl": {
+      "before": {
+        "scenarios": 2,
+        "steps": 7,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 3,
+        "steps": 7,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-events-scopedflightgeneration-test-ts.jsonl": {
+      "before": {
+        "scenarios": 4,
+        "steps": 9,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 5,
+        "steps": 9,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-events-stableflightnumbers-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 2,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 2,
+        "steps": 2,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-events-updatedrawidsorder-test-ts.jsonl": {
+      "before": {
+        "scenarios": 2,
+        "steps": 7,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 4,
+        "steps": 7,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-exitpropagation-asettleloopatitsboundrefuses-test-ts.jsonl": {
+      "before": {
+        "scenarios": 7,
+        "steps": 24,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      },
+      "after": {
+        "scenarios": 7,
+        "steps": 24,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      }
+    },
+    "src-tests-mutations-exitpropagation-asettlepassreportswhatitcannotdo-test-ts.jsonl": {
+      "before": {
+        "scenarios": 5,
+        "steps": 41,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      },
+      "after": {
+        "scenarios": 5,
+        "steps": 41,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      }
+    },
+    "src-tests-mutations-exitpropagation-asettlereadsthedrawitleft-test-ts.jsonl": {
+      "before": {
+        "scenarios": 4,
+        "steps": 17,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 5,
+        "steps": 17,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-extensions-stampscope-test-ts.jsonl": {
+      "before": {
+        "scenarios": 4,
+        "steps": 4,
+        "modeDisagreements": 0,
+        "commonDrift": 3
+      },
+      "after": {
+        "scenarios": 4,
+        "steps": 4,
+        "modeDisagreements": 0,
+        "commonDrift": 3
+      }
+    },
+    "src-tests-mutations-footprint-partialrecordmode-test-ts.jsonl": {
+      "before": {
+        "scenarios": 6,
+        "steps": 7,
+        "modeDisagreements": 0,
+        "commonDrift": 3
+      },
+      "after": {
+        "scenarios": 6,
+        "steps": 7,
+        "modeDisagreements": 0,
+        "commonDrift": 3
+      }
+    },
+    "src-tests-mutations-matchups-changepropagationpolicy-test-ts.jsonl": {
+      "before": {
+        "scenarios": 4,
+        "steps": 8,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 5,
+        "steps": 8,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-matchups-resetadhocmatchups-test-ts.jsonl": {
+      "before": {
+        "scenarios": 11,
+        "steps": 20,
+        "modeDisagreements": 0,
+        "commonDrift": 3
+      },
+      "after": {
+        "scenarios": 11,
+        "steps": 20,
+        "modeDisagreements": 0,
+        "commonDrift": 3
+      }
+    },
+    "src-tests-mutations-notifications-noticebatcha-test-ts.jsonl": {
+      "before": {
+        "scenarios": 9,
+        "steps": 18,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 9,
+        "steps": 18,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      }
+    },
+    "src-tests-mutations-notifications-noticebatchc-test-ts.jsonl": {
+      "before": {
+        "scenarios": 5,
+        "steps": 18,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 5,
+        "steps": 18,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      }
+    },
+    "src-tests-mutations-notifications-onestampperentitypercall-test-ts.jsonl": {
+      "before": {
+        "scenarios": 5,
+        "steps": 13,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 5,
+        "steps": 13,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      }
+    },
+    "src-tests-mutations-outcome-alaterefusaliscompared-test-ts.jsonl": {
+      "before": {
+        "scenarios": 12,
+        "steps": 15,
+        "modeDisagreements": 0,
+        "commonDrift": 6
+      },
+      "after": {
+        "scenarios": 12,
+        "steps": 15,
+        "modeDisagreements": 0,
+        "commonDrift": 6
+      }
+    },
+    "src-tests-mutations-outcome-owneddirectionwrites-test-ts.jsonl": {
+      "before": {
+        "scenarios": 2342,
+        "steps": 11200,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      },
+      "after": {
+        "scenarios": 2342,
+        "steps": 11200,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-outcome-ownedenabletieautocalc-test-ts.jsonl": {
+      "before": {
+        "scenarios": 69,
+        "steps": 291,
+        "modeDisagreements": 0,
+        "commonDrift": 12
+      },
+      "after": {
+        "scenarios": 69,
+        "steps": 291,
+        "modeDisagreements": 0,
+        "commonDrift": 12
+      }
+    },
+    "src-tests-mutations-outcome-ownedlocalwrites-test-ts.jsonl": {
+      "before": {
+        "scenarios": 42,
+        "steps": 72,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      },
+      "after": {
+        "scenarios": 42,
+        "steps": 72,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      }
+    },
+    "src-tests-mutations-outcome-recordedcallreasons-test-ts.jsonl": {
+      "before": {
+        "scenarios": 48,
+        "steps": 86,
+        "modeDisagreements": 0,
+        "commonDrift": 24
+      },
+      "after": {
+        "scenarios": 48,
+        "steps": 86,
+        "modeDisagreements": 0,
+        "commonDrift": 24
+      }
+    },
+    "src-tests-mutations-outcome-recordedteamcall-test-ts.jsonl": {
+      "before": {
+        "scenarios": 2615,
+        "steps": 2626,
+        "modeDisagreements": 4,
+        "commonDrift": 3
+      },
+      "after": {
+        "scenarios": 2615,
+        "steps": 2626,
+        "modeDisagreements": 4,
+        "commonDrift": 3
+      }
+    },
+    "src-tests-mutations-outcome-refusalsv2-test-ts.jsonl": {
+      "before": {
+        "scenarios": 50,
+        "steps": 289,
+        "modeDisagreements": 0,
+        "commonDrift": 49
+      },
+      "after": {
+        "scenarios": 243,
+        "steps": 289,
+        "modeDisagreements": 0,
+        "commonDrift": 233
+      }
+    },
+    "src-tests-mutations-outcome-resetadhocselectorentry-test-ts.jsonl": {
+      "before": {
+        "scenarios": 30,
+        "steps": 36,
+        "modeDisagreements": 0,
+        "commonDrift": 6
+      },
+      "after": {
+        "scenarios": 30,
+        "steps": 36,
+        "modeDisagreements": 0,
+        "commonDrift": 6
+      }
+    },
+    "src-tests-mutations-outcome-routesandwritev2-test-ts.jsonl": {
+      "before": {
+        "scenarios": 18,
+        "steps": 119,
+        "modeDisagreements": 0,
+        "commonDrift": 17
+      },
+      "after": {
+        "scenarios": 91,
+        "steps": 119,
+        "modeDisagreements": 0,
+        "commonDrift": 87
+      }
+    },
+    "src-tests-mutations-outcome-uniformtallywriter-test-ts.jsonl": {
+      "before": {
+        "scenarios": 124,
+        "steps": 128,
+        "modeDisagreements": 0,
+        "commonDrift": 50
+      },
+      "after": {
+        "scenarios": 124,
+        "steps": 128,
+        "modeDisagreements": 0,
+        "commonDrift": 50
+      }
+    },
+    "src-tests-mutations-participants-deleteparticipantsrefusesfirst-test-ts.jsonl": {
+      "before": {
+        "scenarios": 4,
+        "steps": 5,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 5,
+        "steps": 5,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-participants-team-oneplayeroneteam-test-ts.jsonl": {
+      "before": {
+        "scenarios": 5,
+        "steps": 14,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      },
+      "after": {
+        "scenarios": 7,
+        "steps": 14,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-participants-team-publishedtieformatusable-test-ts.jsonl": {
+      "before": {
+        "scenarios": 6,
+        "steps": 21,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 7,
+        "steps": 21,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-participants-team-scaledteamassignments-test-ts.jsonl": {
+      "before": {
+        "scenarios": 5,
+        "steps": 11,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      },
+      "after": {
+        "scenarios": 9,
+        "steps": 11,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-participants-team-teamqualifying-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 4,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 2,
+        "steps": 4,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-participants-team-tieformataggregation-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 2,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 2,
+        "steps": 2,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-publishing-publishingeventdata-test-ts.jsonl": {
+      "before": {
+        "scenarios": 5,
+        "steps": 14,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 7,
+        "steps": 14,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-scheduling-bulkscheduling-test-ts.jsonl": {
+      "before": {
+        "scenarios": 2,
+        "steps": 11,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 3,
+        "steps": 11,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-scheduling-byeschedulingpreservation-test-ts.jsonl": {
+      "before": {
+        "scenarios": 16,
+        "steps": 67,
+        "modeDisagreements": 0,
+        "commonDrift": 5
+      },
+      "after": {
+        "scenarios": 16,
+        "steps": 67,
+        "modeDisagreements": 0,
+        "commonDrift": 5
+      }
+    },
+    "src-tests-mutations-scheduling-clearcourtwithoutdate-test-ts.jsonl": {
+      "before": {
+        "scenarios": 6,
+        "steps": 24,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      },
+      "after": {
+        "scenarios": 6,
+        "steps": 24,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      }
+    },
+    "src-tests-mutations-scheduling-clearscheduledmatchups2-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 5,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 2,
+        "steps": 5,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-scheduling-clearschedulewritemodeparity-test-ts.jsonl": {
+      "before": {
+        "scenarios": 6,
+        "steps": 12,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      },
+      "after": {
+        "scenarios": 6,
+        "steps": 12,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      }
+    },
+    "src-tests-mutations-scheduling-crossingmidnight-test-ts.jsonl": {
+      "before": {
+        "scenarios": 7,
+        "steps": 24,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 8,
+        "steps": 24,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-scheduling-enabledisablevenuescourts-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 6,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 4,
+        "steps": 6,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-scheduling-eventdateautoskip-test-ts.jsonl": {
+      "before": {
+        "scenarios": 10,
+        "steps": 26,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      },
+      "after": {
+        "scenarios": 13,
+        "steps": 26,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-scheduling-honorsmatchupdailylimits-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 3,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 2,
+        "steps": 3,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-scheduling-periodlengthstages-test-ts.jsonl": {
+      "before": {
+        "scenarios": 44,
+        "steps": 117,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 44,
+        "steps": 117,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      }
+    },
+    "src-tests-mutations-scheduling-proautoschedule-test-ts.jsonl": {
+      "before": {
+        "scenarios": 5,
+        "steps": 12,
+        "modeDisagreements": 0,
+        "commonDrift": 5
+      },
+      "after": {
+        "scenarios": 11,
+        "steps": 12,
+        "modeDisagreements": 0,
+        "commonDrift": 11
+      }
+    },
+    "src-tests-mutations-scheduling-procolumnresolve-test-ts.jsonl": {
+      "before": {
+        "scenarios": 5,
+        "steps": 15,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 6,
+        "steps": 15,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-scheduling-proconflicts-test-ts.jsonl": {
+      "before": {
+        "scenarios": 10,
+        "steps": 16,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 11,
+        "steps": 16,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-scheduling-requestconflictsbydate-test-ts.jsonl": {
+      "before": {
+        "scenarios": 4,
+        "steps": 10,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 5,
+        "steps": 10,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-scheduling-schedulebehaviormatrix-test-ts.jsonl": {
+      "before": {
+        "scenarios": 6,
+        "steps": 6,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      },
+      "after": {
+        "scenarios": 6,
+        "steps": 6,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      }
+    },
+    "src-tests-mutations-scheduling-scheduleitemscalledat-test-ts.jsonl": {
+      "before": {
+        "scenarios": 5,
+        "steps": 7,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 5,
+        "steps": 7,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      }
+    },
+    "src-tests-mutations-scheduling-schedulelocks-test-ts.jsonl": {
+      "before": {
+        "scenarios": 25,
+        "steps": 97,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      },
+      "after": {
+        "scenarios": 27,
+        "steps": 97,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-scheduling-schedulematchups-test-ts.jsonl": {
+      "before": {
+        "scenarios": 20,
+        "steps": 76,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      },
+      "after": {
+        "scenarios": 20,
+        "steps": 76,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      }
+    },
+    "src-tests-mutations-scheduling-schedulematchups2-test-ts.jsonl": {
+      "before": {
+        "scenarios": 9,
+        "steps": 43,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      },
+      "after": {
+        "scenarios": 11,
+        "steps": 43,
+        "modeDisagreements": 0,
+        "commonDrift": 4
+      }
+    },
+    "src-tests-mutations-scheduling-schedulemutationupdatedat-test-ts.jsonl": {
+      "before": {
+        "scenarios": 36,
+        "steps": 36,
+        "modeDisagreements": 0,
+        "commonDrift": 12
+      },
+      "after": {
+        "scenarios": 36,
+        "steps": 36,
+        "modeDisagreements": 0,
+        "commonDrift": 12
+      }
+    },
+    "src-tests-mutations-scheduling-scheduleprofileroundsmultipleevents-test-ts.jsonl": {
+      "before": {
+        "scenarios": 2,
+        "steps": 14,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 4,
+        "steps": 14,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-scheduling-schedulingprofiledateswarning-test-ts.jsonl": {
+      "before": {
+        "scenarios": 5,
+        "steps": 7,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 5,
+        "steps": 7,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      }
+    },
+    "src-tests-mutations-scheduling-vnext-playedorderguard-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 13,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 1,
+        "steps": 13,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      }
+    },
+    "src-tests-mutations-subscriptions-incontextnoticeaftersuccess-test-ts.jsonl": {
+      "before": {
+        "scenarios": 3,
+        "steps": 3,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 3,
+        "steps": 3,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      }
+    },
+    "src-tests-mutations-tieformat-modifycollectiondefinitioncoverage-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 4,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 2,
+        "steps": 4,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-tieformats-addcollectiondefinition-test-ts.jsonl": {
+      "before": {
+        "scenarios": 3,
+        "steps": 21,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      },
+      "after": {
+        "scenarios": 5,
+        "steps": 21,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-tieformats-modifycollectiondefinition-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 4,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 2,
+        "steps": 4,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-tieformats-removecollectiondefinition-test-ts.jsonl": {
+      "before": {
+        "scenarios": 3,
+        "steps": 15,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      },
+      "after": {
+        "scenarios": 5,
+        "steps": 15,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-timeitems-drawdefinitiontimeitems-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 6,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 2,
+        "steps": 6,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-tournaments-mutationlocks-test-ts.jsonl": {
+      "before": {
+        "scenarios": 10,
+        "steps": 11,
+        "modeDisagreements": 0,
+        "commonDrift": 8
+      },
+      "after": {
+        "scenarios": 10,
+        "steps": 11,
+        "modeDisagreements": 0,
+        "commonDrift": 8
+      }
+    },
+    "src-tests-mutations-tournaments-sanctionconstraints-test-ts.jsonl": {
+      "before": {
+        "scenarios": 18,
+        "steps": 38,
+        "modeDisagreements": 0,
+        "commonDrift": 3
+      },
+      "after": {
+        "scenarios": 20,
+        "steps": 38,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      }
+    },
+    "src-tests-mutations-tournaments-tournament-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 4,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 2,
+        "steps": 4,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-tournaments-tournamentdatestrims-test-ts.jsonl": {
+      "before": {
+        "scenarios": 9,
+        "steps": 11,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 10,
+        "steps": 11,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-mutations-venues-courtdeletion-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 6,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 2,
+        "steps": 6,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-queries-events-geteventsflightscales-test-ts.jsonl": {
+      "before": {
+        "scenarios": 4,
+        "steps": 12,
+        "modeDisagreements": 0,
+        "commonDrift": 3
+      },
+      "after": {
+        "scenarios": 7,
+        "steps": 12,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-queries-matchups-competitionschedulematchups-test-ts.jsonl": {
+      "before": {
+        "scenarios": 3,
+        "steps": 8,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 5,
+        "steps": 8,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-queries-matchups-matchupfiltershasparticipants-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 1,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 1,
+        "steps": 1,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      }
+    },
+    "src-tests-queries-matchups-rotatingpartnerstandings-test-ts.jsonl": {
+      "before": {
+        "scenarios": 3,
+        "steps": 6,
+        "modeDisagreements": 0,
+        "commonDrift": 3
+      },
+      "after": {
+        "scenarios": 3,
+        "steps": 6,
+        "modeDisagreements": 0,
+        "commonDrift": 3
+      }
+    },
+    "src-tests-queries-matchups-rotatingpartnertimedactivation-test-ts.jsonl": {
+      "before": {
+        "scenarios": 202,
+        "steps": 649,
+        "modeDisagreements": 0,
+        "commonDrift": 106
+      },
+      "after": {
+        "scenarios": 204,
+        "steps": 649,
+        "modeDisagreements": 0,
+        "commonDrift": 106
+      }
+    },
+    "src-tests-queries-matchups-rotatingpartnertimedoutcomepreflight-test-ts.jsonl": {
+      "before": {
+        "scenarios": 54,
+        "steps": 78,
+        "modeDisagreements": 0,
+        "commonDrift": 20
+      },
+      "after": {
+        "scenarios": 54,
+        "steps": 78,
+        "modeDisagreements": 0,
+        "commonDrift": 20
+      }
+    },
+    "src-tests-queries-matchups-schedulehydrationregression-test-ts.jsonl": {
+      "before": {
+        "scenarios": 9,
+        "steps": 35,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      },
+      "after": {
+        "scenarios": 9,
+        "steps": 35,
+        "modeDisagreements": 0,
+        "commonDrift": 2
+      }
+    },
+    "src-tests-queries-matchups-schedulingmatchups-test-ts.jsonl": {
+      "before": {
+        "scenarios": 2,
+        "steps": 2,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 2,
+        "steps": 2,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      }
+    },
+    "src-tests-queries-scales-getaggregateteamresults-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 2,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 2,
+        "steps": 2,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-queries-scales-seasonscenario-test-ts.jsonl": {
+      "before": {
+        "scenarios": 18,
+        "steps": 55,
+        "modeDisagreements": 0,
+        "commonDrift": 18
+      },
+      "after": {
+        "scenarios": 54,
+        "steps": 55,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-queries-scheduling-geteventdateissues-test-ts.jsonl": {
+      "before": {
+        "scenarios": 2,
+        "steps": 11,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 3,
+        "steps": 11,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-refactoring-drawpositionscoverage-test-ts.jsonl": {
+      "before": {
+        "scenarios": 40,
+        "steps": 46,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 41,
+        "steps": 46,
+        "modeDisagreements": 0,
+        "commonDrift": 0
+      }
+    },
+    "src-tests-tools-makedeepcopy-test-ts.jsonl": {
+      "before": {
+        "scenarios": 1,
+        "steps": 1,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      },
+      "after": {
+        "scenarios": 1,
+        "steps": 1,
+        "modeDisagreements": 0,
+        "commonDrift": 1
+      }
+    }
+  },
+  "commonDriftClassification": {
+    "reference": {
+      "result agrees and replay stays at initial state": 31,
+      "result agrees and replay changes state": 680,
+      "directive result differs": 198,
+      "exception": 3,
+      "initial hash differs": 15
+    },
+    "bound": {
+      "result agrees and replay changes state": 890,
+      "directive result differs": 35,
+      "initial hash differs": 21,
+      "result agrees and replay stays at initial state": 7
+    }
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "base": [
+    {
+      "file": "src/tests/mutations/outcome/recordedScheduleCall.test.ts",
+      "currentTestName": "a call that carries a schedule the planners do not write is recorded whole > a result with a start and an end time",
+      "drawType": "SINGLE_ELIMINATION",
+      "route": "winner"
+    },
+    {
+      "file": "src/tests/mutations/outcome/recordedScheduleCall.test.ts",
+      "currentTestName": "a call that carries a schedule the planners do not write is recorded whole > a double exit asked for again, with a scheduled date",
+      "drawType": "SINGLE_ELIMINATION",
+      "route": "noop"
+    },
+    {
+      "file": "src/tests/mutations/outcome/ownedLocalWrites.test.ts",
+      "currentTestName": "what v2 does not own goes to v1, whole > a double exit asked for again, carrying a schedule: v1 writes the schedule alone, and v2 records it (batch 5)",
+      "drawType": "SINGLE_ELIMINATION",
+      "route": "noop"
+    },
+    {
+      "file": "src/tests/mutations/outcome/ownedLocalWrites.test.ts",
+      "currentTestName": "what v2 does not own goes to v1, whole > a schedule carrying a start and an end time: v1 writes them as timeItems, and v2 records them (batch 5)",
+      "drawType": "SINGLE_ELIMINATION",
+      "route": "winner"
+    }
+  ],
+  "candidate": [
+    {
+      "file": "src/tests/mutations/outcome/recordedScheduleCall.test.ts",
+      "currentTestName": "a call that carries a schedule the planners do not write is recorded whole > a result with a start and an end time",
+      "drawType": "SINGLE_ELIMINATION",
+      "route": "winner"
+    },
+    {
+      "file": "src/tests/mutations/outcome/ownedLocalWrites.test.ts",
+      "currentTestName": "what v2 does not own goes to v1, whole > a schedule carrying a start and an end time: v1 writes them as timeItems, and v2 records them (batch 5)",
+      "drawType": "SINGLE_ELIMINATION",
+      "route": "winner"
+    }
+  ],
+  "replay": {
+    "base": {
+      "totals": {
+        "scenarios": 9,
+        "steps": 13,
+        "disagreements": 0,
+        "commonDrift": 0
+      },
+      "differences": []
+    },
+    "candidate": {
+      "totals": {
+        "scenarios": 9,
+        "steps": 13,
+        "disagreements": 0,
+        "commonDrift": 0
+      },
+      "differences": []
+    }
+  }
+}

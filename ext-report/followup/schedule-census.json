@@ -1,0 +1,4112 @@
+{
+  "reference": {
+    "total": 9397,
+    "byReason": {
+      "cascade": 2314,
+      "clock": 38,
+      "competition": 19,
+      "edges": 143,
+      "exit": 3972,
+      "link": 184,
+      "loser": 463,
+      "notes": 13,
+      "provenance": 8,
+      "route": 560,
+      "schedule": 5,
+      "settle": 397,
+      "status-codes": 156,
+      "tallied": 14,
+      "team": 968,
+      "winner": 15,
+      "write-mode": 128
+    },
+    "rows": [
+      {
+        "reason": "cascade",
+        "drawType": "COMPASS",
+        "route": "completed-to-double-exit",
+        "calls": 49
+      },
+      {
+        "reason": "cascade",
+        "drawType": "COMPASS",
+        "route": "remove-directed",
+        "calls": 97
+      },
+      {
+        "reason": "cascade",
+        "drawType": "COMPASS",
+        "route": "swap",
+        "calls": 24
+      },
+      {
+        "reason": "cascade",
+        "drawType": "COMPASS",
+        "route": "winner",
+        "calls": 213
+      },
+      {
+        "reason": "cascade",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "completed-to-double-exit",
+        "calls": 35
+      },
+      {
+        "reason": "cascade",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "remove-directed",
+        "calls": 19
+      },
+      {
+        "reason": "cascade",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "swap",
+        "calls": 21
+      },
+      {
+        "reason": "cascade",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "winner",
+        "calls": 70
+      },
+      {
+        "reason": "cascade",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "completed-to-double-exit",
+        "calls": 84
+      },
+      {
+        "reason": "cascade",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "remove-directed",
+        "calls": 41
+      },
+      {
+        "reason": "cascade",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "swap",
+        "calls": 35
+      },
+      {
+        "reason": "cascade",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "winner",
+        "calls": 298
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_QF",
+        "route": "winner",
+        "calls": 4
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_R16",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "completed-to-double-exit",
+        "calls": 20
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "remove-directed",
+        "calls": 14
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "swap",
+        "calls": 26
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "winner",
+        "calls": 83
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "completed-to-double-exit",
+        "calls": 31
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "remove-directed",
+        "calls": 29
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "swap",
+        "calls": 30
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 137
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "completed-to-double-exit",
+        "calls": 44
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "remove-directed",
+        "calls": 58
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "swap",
+        "calls": 58
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 234
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "completed-to-double-exit",
+        "calls": 26
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "remove-directed",
+        "calls": 19
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "swap",
+        "calls": 24
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 33
+      },
+      {
+        "reason": "cascade",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "completed-to-double-exit",
+        "calls": 31
+      },
+      {
+        "reason": "cascade",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "remove-directed",
+        "calls": 7
+      },
+      {
+        "reason": "cascade",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "swap",
+        "calls": 22
+      },
+      {
+        "reason": "cascade",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 88
+      },
+      {
+        "reason": "cascade",
+        "drawType": "OLYMPIC",
+        "route": "completed-to-double-exit",
+        "calls": 33
+      },
+      {
+        "reason": "cascade",
+        "drawType": "OLYMPIC",
+        "route": "remove-directed",
+        "calls": 41
+      },
+      {
+        "reason": "cascade",
+        "drawType": "OLYMPIC",
+        "route": "swap",
+        "calls": 23
+      },
+      {
+        "reason": "cascade",
+        "drawType": "OLYMPIC",
+        "route": "winner",
+        "calls": 74
+      },
+      {
+        "reason": "cascade",
+        "drawType": "PLAYOFF",
+        "route": "winner",
+        "calls": 12
+      },
+      {
+        "reason": "cascade",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "completed-to-double-exit",
+        "calls": 20
+      },
+      {
+        "reason": "cascade",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "remove-directed",
+        "calls": 22
+      },
+      {
+        "reason": "cascade",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "swap",
+        "calls": 67
+      },
+      {
+        "reason": "cascade",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 17
+      },
+      {
+        "reason": "clock",
+        "drawType": "AD_HOC",
+        "route": "winner",
+        "calls": 3
+      },
+      {
+        "reason": "clock",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 9
+      },
+      {
+        "reason": "clock",
+        "drawType": "ROUND_ROBIN",
+        "route": "winner",
+        "calls": 17
+      },
+      {
+        "reason": "clock",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "clear",
+        "calls": 3
+      },
+      {
+        "reason": "clock",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "remove-directed",
+        "calls": 3
+      },
+      {
+        "reason": "clock",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 3
+      },
+      {
+        "reason": "competition",
+        "drawType": "AD_HOC",
+        "route": "winner",
+        "calls": 19
+      },
+      {
+        "reason": "edges",
+        "drawType": "AD_HOC",
+        "route": "clear-score",
+        "calls": 2
+      },
+      {
+        "reason": "edges",
+        "drawType": "AD_HOC",
+        "route": "winner",
+        "calls": 2
+      },
+      {
+        "reason": "edges",
+        "drawType": "COMPASS",
+        "route": "double-exit",
+        "calls": 5
+      },
+      {
+        "reason": "edges",
+        "drawType": "COMPASS",
+        "route": "winner",
+        "calls": 10
+      },
+      {
+        "reason": "edges",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "double-exit",
+        "calls": 4
+      },
+      {
+        "reason": "edges",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "winner",
+        "calls": 8
+      },
+      {
+        "reason": "edges",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "double-exit",
+        "calls": 4
+      },
+      {
+        "reason": "edges",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "winner",
+        "calls": 6
+      },
+      {
+        "reason": "edges",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_R16",
+        "route": "double-exit",
+        "calls": 2
+      },
+      {
+        "reason": "edges",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_R16",
+        "route": "winner",
+        "calls": 6
+      },
+      {
+        "reason": "edges",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "double-exit",
+        "calls": 4
+      },
+      {
+        "reason": "edges",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "winner",
+        "calls": 6
+      },
+      {
+        "reason": "edges",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "double-exit",
+        "calls": 4
+      },
+      {
+        "reason": "edges",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 6
+      },
+      {
+        "reason": "edges",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "double-exit",
+        "calls": 6
+      },
+      {
+        "reason": "edges",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 16
+      },
+      {
+        "reason": "edges",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "double-exit",
+        "calls": 4
+      },
+      {
+        "reason": "edges",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 6
+      },
+      {
+        "reason": "edges",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "double-exit",
+        "calls": 4
+      },
+      {
+        "reason": "edges",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 6
+      },
+      {
+        "reason": "edges",
+        "drawType": "OLYMPIC",
+        "route": "double-exit",
+        "calls": 4
+      },
+      {
+        "reason": "edges",
+        "drawType": "OLYMPIC",
+        "route": "winner",
+        "calls": 6
+      },
+      {
+        "reason": "edges",
+        "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "edges",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "double-exit",
+        "calls": 5
+      },
+      {
+        "reason": "edges",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 15
+      },
+      {
+        "reason": "edges",
+        "drawType": "SWISS",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "exit",
+        "drawType": "AD_HOC",
+        "route": "noop",
+        "calls": 1
+      },
+      {
+        "reason": "exit",
+        "drawType": "ADAPTIVE",
+        "route": "double-exit",
+        "calls": 4
+      },
+      {
+        "reason": "exit",
+        "drawType": "COMPASS",
+        "route": "apply-values",
+        "calls": 125
+      },
+      {
+        "reason": "exit",
+        "drawType": "COMPASS",
+        "route": "clear-score",
+        "calls": 109
+      },
+      {
+        "reason": "exit",
+        "drawType": "COMPASS",
+        "route": "completed-to-double-exit",
+        "calls": 7
+      },
+      {
+        "reason": "exit",
+        "drawType": "COMPASS",
+        "route": "double-exit",
+        "calls": 76
+      },
+      {
+        "reason": "exit",
+        "drawType": "COMPASS",
+        "route": "swap",
+        "calls": 32
+      },
+      {
+        "reason": "exit",
+        "drawType": "COMPASS",
+        "route": "winner",
+        "calls": 621
+      },
+      {
+        "reason": "exit",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "apply-values",
+        "calls": 14
+      },
+      {
+        "reason": "exit",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "clear-score",
+        "calls": 27
+      },
+      {
+        "reason": "exit",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "double-exit",
+        "calls": 20
+      },
+      {
+        "reason": "exit",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "swap",
+        "calls": 17
+      },
+      {
+        "reason": "exit",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "winner",
+        "calls": 116
+      },
+      {
+        "reason": "exit",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "apply-values",
+        "calls": 67
+      },
+      {
+        "reason": "exit",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "clear-score",
+        "calls": 66
+      },
+      {
+        "reason": "exit",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "completed-to-double-exit",
+        "calls": 25
+      },
+      {
+        "reason": "exit",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "double-exit",
+        "calls": 346
+      },
+      {
+        "reason": "exit",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "swap",
+        "calls": 55
+      },
+      {
+        "reason": "exit",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "winner",
+        "calls": 336
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_QF",
+        "route": "winner",
+        "calls": 2
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_R16",
+        "route": "double-exit",
+        "calls": 4
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "apply-values",
+        "calls": 23
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "clear-score",
+        "calls": 5
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "completed-to-double-exit",
+        "calls": 5
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "double-exit",
+        "calls": 30
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "swap",
+        "calls": 25
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "winner",
+        "calls": 89
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "apply-values",
+        "calls": 32
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "clear-score",
+        "calls": 42
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "completed-to-double-exit",
+        "calls": 12
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "double-exit",
+        "calls": 117
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "swap",
+        "calls": 31
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 99
+      },
+      {
+        "reason": "exit",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "apply-values",
+        "calls": 45
+      },
+      {
+        "reason": "exit",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "clear-score",
+        "calls": 86
+      },
+      {
+        "reason": "exit",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "completed-to-double-exit",
+        "calls": 9
+      },
+      {
+        "reason": "exit",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "double-exit",
+        "calls": 88
+      },
+      {
+        "reason": "exit",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "noop",
+        "calls": 1
+      },
+      {
+        "reason": "exit",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "swap",
+        "calls": 86
+      },
+      {
+        "reason": "exit",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 128
+      },
+      {
+        "reason": "exit",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "apply-values",
+        "calls": 12
+      },
+      {
+        "reason": "exit",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "clear-score",
+        "calls": 37
+      },
+      {
+        "reason": "exit",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "double-exit",
+        "calls": 29
+      },
+      {
+        "reason": "exit",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "swap",
+        "calls": 19
+      },
+      {
+        "reason": "exit",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 53
+      },
+      {
+        "reason": "exit",
+        "drawType": "LUCKY_DRAW",
+        "route": "clear-score",
+        "calls": 13
+      },
+      {
+        "reason": "exit",
+        "drawType": "LUCKY_DRAW",
+        "route": "completed-to-double-exit",
+        "calls": 18
+      },
+      {
+        "reason": "exit",
+        "drawType": "LUCKY_DRAW",
+        "route": "double-exit",
+        "calls": 118
+      },
+      {
+        "reason": "exit",
+        "drawType": "LUCKY_DRAW",
+        "route": "noop",
+        "calls": 10
+      },
+      {
+        "reason": "exit",
+        "drawType": "LUCKY_DRAW",
+        "route": "winner",
+        "calls": 20
+      },
+      {
+        "reason": "exit",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "apply-values",
+        "calls": 19
+      },
+      {
+        "reason": "exit",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "clear-score",
+        "calls": 32
+      },
+      {
+        "reason": "exit",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "completed-to-double-exit",
+        "calls": 4
+      },
+      {
+        "reason": "exit",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "double-exit",
+        "calls": 29
+      },
+      {
+        "reason": "exit",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "swap",
+        "calls": 17
+      },
+      {
+        "reason": "exit",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 80
+      },
+      {
+        "reason": "exit",
+        "drawType": "OLYMPIC",
+        "route": "apply-values",
+        "calls": 26
+      },
+      {
+        "reason": "exit",
+        "drawType": "OLYMPIC",
+        "route": "clear-score",
+        "calls": 52
+      },
+      {
+        "reason": "exit",
+        "drawType": "OLYMPIC",
+        "route": "completed-to-double-exit",
+        "calls": 3
+      },
+      {
+        "reason": "exit",
+        "drawType": "OLYMPIC",
+        "route": "double-exit",
+        "calls": 50
+      },
+      {
+        "reason": "exit",
+        "drawType": "OLYMPIC",
+        "route": "swap",
+        "calls": 33
+      },
+      {
+        "reason": "exit",
+        "drawType": "OLYMPIC",
+        "route": "winner",
+        "calls": 178
+      },
+      {
+        "reason": "exit",
+        "drawType": "PLAYOFF",
+        "route": "double-exit",
+        "calls": 3
+      },
+      {
+        "reason": "exit",
+        "drawType": "PLAYOFF",
+        "route": "winner",
+        "calls": 4
+      },
+      {
+        "reason": "exit",
+        "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
+        "route": "winner",
+        "calls": 3
+      },
+      {
+        "reason": "exit",
+        "drawType": "ROUND_ROBIN",
+        "route": "noop",
+        "calls": 1
+      },
+      {
+        "reason": "exit",
+        "drawType": "ROUND_ROBIN",
+        "route": "winner",
+        "calls": 6
+      },
+      {
+        "reason": "exit",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "clear-score",
+        "calls": 4
+      },
+      {
+        "reason": "exit",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "clear",
+        "calls": 4
+      },
+      {
+        "reason": "exit",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "completed-to-double-exit",
+        "calls": 1
+      },
+      {
+        "reason": "exit",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "double-exit",
+        "calls": 31
+      },
+      {
+        "reason": "exit",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "existing-winner-removed",
+        "calls": 7
+      },
+      {
+        "reason": "exit",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "noop",
+        "calls": 2
+      },
+      {
+        "reason": "exit",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 31
+      },
+      {
+        "reason": "link",
+        "drawType": "AD_HOC",
+        "route": "remove-directed",
+        "calls": 22
+      },
+      {
+        "reason": "link",
+        "drawType": "AD_HOC",
+        "route": "winner",
+        "calls": 6
+      },
+      {
+        "reason": "link",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "completed-to-double-exit",
+        "calls": 2
+      },
+      {
+        "reason": "link",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "remove-directed",
+        "calls": 2
+      },
+      {
+        "reason": "link",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "swap",
+        "calls": 12
+      },
+      {
+        "reason": "link",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "winner",
+        "calls": 12
+      },
+      {
+        "reason": "link",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "swap",
+        "calls": 26
+      },
+      {
+        "reason": "link",
+        "drawType": "PAGE_PLAYOFF",
+        "route": "winner",
+        "calls": 3
+      },
+      {
+        "reason": "link",
+        "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
+        "route": "remove-directed",
+        "calls": 2
+      },
+      {
+        "reason": "link",
+        "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
+        "route": "winner",
+        "calls": 7
+      },
+      {
+        "reason": "link",
+        "drawType": "ROUND_ROBIN",
+        "route": "remove-directed",
+        "calls": 7
+      },
+      {
+        "reason": "link",
+        "drawType": "ROUND_ROBIN",
+        "route": "winner",
+        "calls": 17
+      },
+      {
+        "reason": "link",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "remove-directed",
+        "calls": 28
+      },
+      {
+        "reason": "link",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 38
+      },
+      {
+        "reason": "loser",
+        "drawType": "COMPASS",
+        "route": "winner",
+        "calls": 55
+      },
+      {
+        "reason": "loser",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "winner",
+        "calls": 20
+      },
+      {
+        "reason": "loser",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "completed-to-double-exit",
+        "calls": 2
+      },
+      {
+        "reason": "loser",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "remove-directed",
+        "calls": 3
+      },
+      {
+        "reason": "loser",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "winner",
+        "calls": 54
+      },
+      {
+        "reason": "loser",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "winner",
+        "calls": 21
+      },
+      {
+        "reason": "loser",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 37
+      },
+      {
+        "reason": "loser",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "apply-values",
+        "calls": 2
+      },
+      {
+        "reason": "loser",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "completed-to-double-exit",
+        "calls": 43
+      },
+      {
+        "reason": "loser",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "remove-directed",
+        "calls": 57
+      },
+      {
+        "reason": "loser",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 138
+      },
+      {
+        "reason": "loser",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "apply-values",
+        "calls": 4
+      },
+      {
+        "reason": "loser",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 5
+      },
+      {
+        "reason": "loser",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 12
+      },
+      {
+        "reason": "loser",
+        "drawType": "OLYMPIC",
+        "route": "winner",
+        "calls": 10
+      },
+      {
+        "reason": "notes",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "notes",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "clear-score",
+        "calls": 4
+      },
+      {
+        "reason": "notes",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "clear",
+        "calls": 4
+      },
+      {
+        "reason": "notes",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "double-exit",
+        "calls": 3
+      },
+      {
+        "reason": "notes",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "provenance",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "apply-values",
+        "calls": 1
+      },
+      {
+        "reason": "provenance",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "provenance",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "winner",
+        "calls": 2
+      },
+      {
+        "reason": "provenance",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "apply-values",
+        "calls": 1
+      },
+      {
+        "reason": "provenance",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "provenance",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "provenance",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "route",
+        "drawType": "AD_HOC",
+        "route": "apply-values",
+        "calls": 10
+      },
+      {
+        "reason": "route",
+        "drawType": "AD_HOC",
+        "route": "clear",
+        "calls": 2
+      },
+      {
+        "reason": "route",
+        "drawType": "ADAPTIVE",
+        "route": "winner",
+        "calls": 15
+      },
+      {
+        "reason": "route",
+        "drawType": "COMPASS",
+        "route": "noop",
+        "calls": 32
+      },
+      {
+        "reason": "route",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "noop",
+        "calls": 2
+      },
+      {
+        "reason": "route",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "clear",
+        "calls": 1
+      },
+      {
+        "reason": "route",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "route",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "noop",
+        "calls": 1
+      },
+      {
+        "reason": "route",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "remove-directed",
+        "calls": 1
+      },
+      {
+        "reason": "route",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "route",
+        "drawType": "FEED_IN",
+        "route": "winner",
+        "calls": 4
+      },
+      {
+        "reason": "route",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "noop",
+        "calls": 14
+      },
+      {
+        "reason": "route",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "noop",
+        "calls": 4
+      },
+      {
+        "reason": "route",
+        "drawType": "LADDER",
+        "route": "clear",
+        "calls": 1
+      },
+      {
+        "reason": "route",
+        "drawType": "LUCKY_DRAW",
+        "route": "winner",
+        "calls": 112
+      },
+      {
+        "reason": "route",
+        "drawType": "OLYMPIC",
+        "route": "noop",
+        "calls": 20
+      },
+      {
+        "reason": "route",
+        "drawType": "ROUND_ROBIN",
+        "route": "apply-values",
+        "calls": 10
+      },
+      {
+        "reason": "route",
+        "drawType": "ROUND_ROBIN",
+        "route": "clear",
+        "calls": 4
+      },
+      {
+        "reason": "route",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "bye",
+        "calls": 1
+      },
+      {
+        "reason": "route",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "clear",
+        "calls": 31
+      },
+      {
+        "reason": "route",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "noop",
+        "calls": 2
+      },
+      {
+        "reason": "route",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "remove-directed",
+        "calls": 37
+      },
+      {
+        "reason": "route",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 251
+      },
+      {
+        "reason": "route",
+        "drawType": "SWISS",
+        "route": "winner",
+        "calls": 3
+      },
+      {
+        "reason": "schedule",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "noop",
+        "calls": 2
+      },
+      {
+        "reason": "schedule",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 3
+      },
+      {
+        "reason": "settle",
+        "drawType": "ADAPTIVE",
+        "route": "winner",
+        "calls": 16
+      },
+      {
+        "reason": "settle",
+        "drawType": "COMPASS",
+        "route": "double-exit",
+        "calls": 10
+      },
+      {
+        "reason": "settle",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "clear-score",
+        "calls": 4
+      },
+      {
+        "reason": "settle",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "double-exit",
+        "calls": 3
+      },
+      {
+        "reason": "settle",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "clear-score",
+        "calls": 6
+      },
+      {
+        "reason": "settle",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "completed-to-double-exit",
+        "calls": 1
+      },
+      {
+        "reason": "settle",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "double-exit",
+        "calls": 41
+      },
+      {
+        "reason": "settle",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "swap",
+        "calls": 6
+      },
+      {
+        "reason": "settle",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "winner",
+        "calls": 6
+      },
+      {
+        "reason": "settle",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "clear-score",
+        "calls": 2
+      },
+      {
+        "reason": "settle",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "completed-to-double-exit",
+        "calls": 1
+      },
+      {
+        "reason": "settle",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "double-exit",
+        "calls": 35
+      },
+      {
+        "reason": "settle",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "winner",
+        "calls": 8
+      },
+      {
+        "reason": "settle",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "clear-score",
+        "calls": 6
+      },
+      {
+        "reason": "settle",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "completed-to-double-exit",
+        "calls": 2
+      },
+      {
+        "reason": "settle",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "double-exit",
+        "calls": 32
+      },
+      {
+        "reason": "settle",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 17
+      },
+      {
+        "reason": "settle",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "apply-values",
+        "calls": 7
+      },
+      {
+        "reason": "settle",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "clear-score",
+        "calls": 9
+      },
+      {
+        "reason": "settle",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "double-exit",
+        "calls": 1
+      },
+      {
+        "reason": "settle",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "only-score",
+        "calls": 1
+      },
+      {
+        "reason": "settle",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "remove-directed",
+        "calls": 28
+      },
+      {
+        "reason": "settle",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "swap",
+        "calls": 31
+      },
+      {
+        "reason": "settle",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 111
+      },
+      {
+        "reason": "settle",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "clear-score",
+        "calls": 7
+      },
+      {
+        "reason": "settle",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "double-exit",
+        "calls": 1
+      },
+      {
+        "reason": "settle",
+        "drawType": "OLYMPIC",
+        "route": "clear-score",
+        "calls": 1
+      },
+      {
+        "reason": "settle",
+        "drawType": "ROUND_ROBIN",
+        "route": "clear-score",
+        "calls": 1
+      },
+      {
+        "reason": "settle",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "noop",
+        "calls": 1
+      },
+      {
+        "reason": "settle",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 2
+      },
+      {
+        "reason": "status-codes",
+        "drawType": "AD_HOC",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "status-codes",
+        "drawType": "COMPASS",
+        "route": "clear",
+        "calls": 1
+      },
+      {
+        "reason": "status-codes",
+        "drawType": "COMPASS",
+        "route": "winner",
+        "calls": 3
+      },
+      {
+        "reason": "status-codes",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "status-codes",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "double-exit",
+        "calls": 2
+      },
+      {
+        "reason": "status-codes",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 2
+      },
+      {
+        "reason": "status-codes",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "double-exit",
+        "calls": 10
+      },
+      {
+        "reason": "status-codes",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 33
+      },
+      {
+        "reason": "status-codes",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "clear",
+        "calls": 15
+      },
+      {
+        "reason": "status-codes",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "double-exit",
+        "calls": 33
+      },
+      {
+        "reason": "status-codes",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "only-score",
+        "calls": 2
+      },
+      {
+        "reason": "status-codes",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 53
+      },
+      {
+        "reason": "tallied",
+        "drawType": "AD_HOC",
+        "route": "completed-to-double-exit",
+        "calls": 2
+      },
+      {
+        "reason": "tallied",
+        "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
+        "route": "completed-to-double-exit",
+        "calls": 6
+      },
+      {
+        "reason": "tallied",
+        "drawType": "ROUND_ROBIN",
+        "route": "completed-to-double-exit",
+        "calls": 6
+      },
+      {
+        "reason": "team",
+        "drawType": "AD_HOC",
+        "route": "clear-score",
+        "calls": 8
+      },
+      {
+        "reason": "team",
+        "drawType": "COMPASS",
+        "route": "apply-values",
+        "calls": 2
+      },
+      {
+        "reason": "team",
+        "drawType": "COMPASS",
+        "route": "clear-score",
+        "calls": 22
+      },
+      {
+        "reason": "team",
+        "drawType": "COMPASS",
+        "route": "noop",
+        "calls": 1
+      },
+      {
+        "reason": "team",
+        "drawType": "COMPASS",
+        "route": "only-score",
+        "calls": 7
+      },
+      {
+        "reason": "team",
+        "drawType": "COMPASS",
+        "route": "remove-directed",
+        "calls": 24
+      },
+      {
+        "reason": "team",
+        "drawType": "COMPASS",
+        "route": "winner",
+        "calls": 50
+      },
+      {
+        "reason": "team",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "remove-directed",
+        "calls": 2
+      },
+      {
+        "reason": "team",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "winner",
+        "calls": 4
+      },
+      {
+        "reason": "team",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "apply-values",
+        "calls": 1
+      },
+      {
+        "reason": "team",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "clear-score",
+        "calls": 15
+      },
+      {
+        "reason": "team",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "existing-winner-removed",
+        "calls": 1
+      },
+      {
+        "reason": "team",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "noop",
+        "calls": 1
+      },
+      {
+        "reason": "team",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "only-score",
+        "calls": 2
+      },
+      {
+        "reason": "team",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "remove-directed",
+        "calls": 7
+      },
+      {
+        "reason": "team",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "winner",
+        "calls": 33
+      },
+      {
+        "reason": "team",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "remove-directed",
+        "calls": 2
+      },
+      {
+        "reason": "team",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "winner",
+        "calls": 6
+      },
+      {
+        "reason": "team",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "apply-values",
+        "calls": 81
+      },
+      {
+        "reason": "team",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "clear-score",
+        "calls": 14
+      },
+      {
+        "reason": "team",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "line-score",
+        "calls": 2
+      },
+      {
+        "reason": "team",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "only-score",
+        "calls": 7
+      },
+      {
+        "reason": "team",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "remove-directed",
+        "calls": 11
+      },
+      {
+        "reason": "team",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 35
+      },
+      {
+        "reason": "team",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "apply-values",
+        "calls": 8
+      },
+      {
+        "reason": "team",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "clear-score",
+        "calls": 8
+      },
+      {
+        "reason": "team",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "line-score",
+        "calls": 2
+      },
+      {
+        "reason": "team",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "only-score",
+        "calls": 4
+      },
+      {
+        "reason": "team",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "remove-directed",
+        "calls": 6
+      },
+      {
+        "reason": "team",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 22
+      },
+      {
+        "reason": "team",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "clear-score",
+        "calls": 4
+      },
+      {
+        "reason": "team",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "remove-directed",
+        "calls": 8
+      },
+      {
+        "reason": "team",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 18
+      },
+      {
+        "reason": "team",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "remove-directed",
+        "calls": 2
+      },
+      {
+        "reason": "team",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 6
+      },
+      {
+        "reason": "team",
+        "drawType": "OLYMPIC",
+        "route": "clear-score",
+        "calls": 4
+      },
+      {
+        "reason": "team",
+        "drawType": "OLYMPIC",
+        "route": "remove-directed",
+        "calls": 6
+      },
+      {
+        "reason": "team",
+        "drawType": "OLYMPIC",
+        "route": "winner",
+        "calls": 18
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
+        "route": "clear-score",
+        "calls": 22
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
+        "route": "double-exit",
+        "calls": 1
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
+        "route": "line-score",
+        "calls": 8
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
+        "route": "noop",
+        "calls": 2
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
+        "route": "only-score",
+        "calls": 9
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
+        "route": "remove-directed",
+        "calls": 8
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
+        "route": "winner",
+        "calls": 28
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN",
+        "route": "apply-values",
+        "calls": 28
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN",
+        "route": "clear-score",
+        "calls": 10
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN",
+        "route": "double-exit",
+        "calls": 1
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN",
+        "route": "line-score",
+        "calls": 4
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN",
+        "route": "only-score",
+        "calls": 13
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN",
+        "route": "remove-directed",
+        "calls": 16
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN",
+        "route": "team-round-robin",
+        "calls": 1
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN",
+        "route": "winner",
+        "calls": 52
+      },
+      {
+        "reason": "team",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "apply-values",
+        "calls": 32
+      },
+      {
+        "reason": "team",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "clear-score",
+        "calls": 65
+      },
+      {
+        "reason": "team",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "double-exit",
+        "calls": 2
+      },
+      {
+        "reason": "team",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "line-score",
+        "calls": 22
+      },
+      {
+        "reason": "team",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "noop",
+        "calls": 4
+      },
+      {
+        "reason": "team",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "only-score",
+        "calls": 21
+      },
+      {
+        "reason": "team",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "remove-directed",
+        "calls": 70
+      },
+      {
+        "reason": "team",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 95
+      },
+      {
+        "reason": "winner",
+        "drawType": "AD_HOC",
+        "route": "apply-values",
+        "calls": 1
+      },
+      {
+        "reason": "winner",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "existing-winner-removed",
+        "calls": 1
+      },
+      {
+        "reason": "winner",
+        "drawType": "ROUND_ROBIN",
+        "route": "apply-values",
+        "calls": 2
+      },
+      {
+        "reason": "winner",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "existing-winner-removed",
+        "calls": 9
+      },
+      {
+        "reason": "winner",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "remove-directed",
+        "calls": 1
+      },
+      {
+        "reason": "winner",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "write-mode",
+        "drawType": "AD_HOC",
+        "route": "apply-values",
+        "calls": 6
+      },
+      {
+        "reason": "write-mode",
+        "drawType": "AD_HOC",
+        "route": "clear-score",
+        "calls": 4
+      },
+      {
+        "reason": "write-mode",
+        "drawType": "AD_HOC",
+        "route": "clear",
+        "calls": 8
+      },
+      {
+        "reason": "write-mode",
+        "drawType": "AD_HOC",
+        "route": "remove-directed",
+        "calls": 6
+      },
+      {
+        "reason": "write-mode",
+        "drawType": "AD_HOC",
+        "route": "winner",
+        "calls": 58
+      },
+      {
+        "reason": "write-mode",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 8
+      },
+      {
+        "reason": "write-mode",
+        "drawType": "ROUND_ROBIN",
+        "route": "winner",
+        "calls": 24
+      },
+      {
+        "reason": "write-mode",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "clear",
+        "calls": 2
+      },
+      {
+        "reason": "write-mode",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "remove-directed",
+        "calls": 3
+      },
+      {
+        "reason": "write-mode",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 9
+      }
+    ]
+  },
+  "candidate": {
+    "total": 9395,
+    "byReason": {
+      "cascade": 2314,
+      "clock": 38,
+      "competition": 19,
+      "edges": 143,
+      "exit": 3972,
+      "link": 184,
+      "loser": 463,
+      "notes": 13,
+      "provenance": 8,
+      "route": 560,
+      "schedule": 3,
+      "settle": 397,
+      "status-codes": 156,
+      "tallied": 14,
+      "team": 968,
+      "winner": 15,
+      "write-mode": 128
+    },
+    "rows": [
+      {
+        "reason": "cascade",
+        "drawType": "COMPASS",
+        "route": "completed-to-double-exit",
+        "calls": 49
+      },
+      {
+        "reason": "cascade",
+        "drawType": "COMPASS",
+        "route": "remove-directed",
+        "calls": 97
+      },
+      {
+        "reason": "cascade",
+        "drawType": "COMPASS",
+        "route": "swap",
+        "calls": 24
+      },
+      {
+        "reason": "cascade",
+        "drawType": "COMPASS",
+        "route": "winner",
+        "calls": 213
+      },
+      {
+        "reason": "cascade",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "completed-to-double-exit",
+        "calls": 35
+      },
+      {
+        "reason": "cascade",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "remove-directed",
+        "calls": 19
+      },
+      {
+        "reason": "cascade",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "swap",
+        "calls": 21
+      },
+      {
+        "reason": "cascade",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "winner",
+        "calls": 70
+      },
+      {
+        "reason": "cascade",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "completed-to-double-exit",
+        "calls": 84
+      },
+      {
+        "reason": "cascade",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "remove-directed",
+        "calls": 41
+      },
+      {
+        "reason": "cascade",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "swap",
+        "calls": 35
+      },
+      {
+        "reason": "cascade",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "winner",
+        "calls": 298
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_QF",
+        "route": "winner",
+        "calls": 4
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_R16",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "completed-to-double-exit",
+        "calls": 20
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "remove-directed",
+        "calls": 14
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "swap",
+        "calls": 26
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "winner",
+        "calls": 83
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "completed-to-double-exit",
+        "calls": 31
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "remove-directed",
+        "calls": 29
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "swap",
+        "calls": 30
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 137
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "completed-to-double-exit",
+        "calls": 44
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "remove-directed",
+        "calls": 58
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "swap",
+        "calls": 58
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 234
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "completed-to-double-exit",
+        "calls": 26
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "remove-directed",
+        "calls": 19
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "swap",
+        "calls": 24
+      },
+      {
+        "reason": "cascade",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 33
+      },
+      {
+        "reason": "cascade",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "completed-to-double-exit",
+        "calls": 31
+      },
+      {
+        "reason": "cascade",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "remove-directed",
+        "calls": 7
+      },
+      {
+        "reason": "cascade",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "swap",
+        "calls": 22
+      },
+      {
+        "reason": "cascade",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 88
+      },
+      {
+        "reason": "cascade",
+        "drawType": "OLYMPIC",
+        "route": "completed-to-double-exit",
+        "calls": 33
+      },
+      {
+        "reason": "cascade",
+        "drawType": "OLYMPIC",
+        "route": "remove-directed",
+        "calls": 41
+      },
+      {
+        "reason": "cascade",
+        "drawType": "OLYMPIC",
+        "route": "swap",
+        "calls": 23
+      },
+      {
+        "reason": "cascade",
+        "drawType": "OLYMPIC",
+        "route": "winner",
+        "calls": 74
+      },
+      {
+        "reason": "cascade",
+        "drawType": "PLAYOFF",
+        "route": "winner",
+        "calls": 12
+      },
+      {
+        "reason": "cascade",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "completed-to-double-exit",
+        "calls": 20
+      },
+      {
+        "reason": "cascade",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "remove-directed",
+        "calls": 22
+      },
+      {
+        "reason": "cascade",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "swap",
+        "calls": 67
+      },
+      {
+        "reason": "cascade",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 17
+      },
+      {
+        "reason": "clock",
+        "drawType": "AD_HOC",
+        "route": "winner",
+        "calls": 3
+      },
+      {
+        "reason": "clock",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 9
+      },
+      {
+        "reason": "clock",
+        "drawType": "ROUND_ROBIN",
+        "route": "winner",
+        "calls": 17
+      },
+      {
+        "reason": "clock",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "clear",
+        "calls": 3
+      },
+      {
+        "reason": "clock",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "remove-directed",
+        "calls": 3
+      },
+      {
+        "reason": "clock",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 3
+      },
+      {
+        "reason": "competition",
+        "drawType": "AD_HOC",
+        "route": "winner",
+        "calls": 19
+      },
+      {
+        "reason": "edges",
+        "drawType": "AD_HOC",
+        "route": "clear-score",
+        "calls": 2
+      },
+      {
+        "reason": "edges",
+        "drawType": "AD_HOC",
+        "route": "winner",
+        "calls": 2
+      },
+      {
+        "reason": "edges",
+        "drawType": "COMPASS",
+        "route": "double-exit",
+        "calls": 5
+      },
+      {
+        "reason": "edges",
+        "drawType": "COMPASS",
+        "route": "winner",
+        "calls": 10
+      },
+      {
+        "reason": "edges",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "double-exit",
+        "calls": 4
+      },
+      {
+        "reason": "edges",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "winner",
+        "calls": 8
+      },
+      {
+        "reason": "edges",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "double-exit",
+        "calls": 4
+      },
+      {
+        "reason": "edges",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "winner",
+        "calls": 6
+      },
+      {
+        "reason": "edges",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_R16",
+        "route": "double-exit",
+        "calls": 2
+      },
+      {
+        "reason": "edges",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_R16",
+        "route": "winner",
+        "calls": 6
+      },
+      {
+        "reason": "edges",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "double-exit",
+        "calls": 4
+      },
+      {
+        "reason": "edges",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "winner",
+        "calls": 6
+      },
+      {
+        "reason": "edges",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "double-exit",
+        "calls": 4
+      },
+      {
+        "reason": "edges",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 6
+      },
+      {
+        "reason": "edges",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "double-exit",
+        "calls": 6
+      },
+      {
+        "reason": "edges",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 16
+      },
+      {
+        "reason": "edges",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "double-exit",
+        "calls": 4
+      },
+      {
+        "reason": "edges",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 6
+      },
+      {
+        "reason": "edges",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "double-exit",
+        "calls": 4
+      },
+      {
+        "reason": "edges",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 6
+      },
+      {
+        "reason": "edges",
+        "drawType": "OLYMPIC",
+        "route": "double-exit",
+        "calls": 4
+      },
+      {
+        "reason": "edges",
+        "drawType": "OLYMPIC",
+        "route": "winner",
+        "calls": 6
+      },
+      {
+        "reason": "edges",
+        "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "edges",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "double-exit",
+        "calls": 5
+      },
+      {
+        "reason": "edges",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 15
+      },
+      {
+        "reason": "edges",
+        "drawType": "SWISS",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "exit",
+        "drawType": "AD_HOC",
+        "route": "noop",
+        "calls": 1
+      },
+      {
+        "reason": "exit",
+        "drawType": "ADAPTIVE",
+        "route": "double-exit",
+        "calls": 4
+      },
+      {
+        "reason": "exit",
+        "drawType": "COMPASS",
+        "route": "apply-values",
+        "calls": 125
+      },
+      {
+        "reason": "exit",
+        "drawType": "COMPASS",
+        "route": "clear-score",
+        "calls": 109
+      },
+      {
+        "reason": "exit",
+        "drawType": "COMPASS",
+        "route": "completed-to-double-exit",
+        "calls": 7
+      },
+      {
+        "reason": "exit",
+        "drawType": "COMPASS",
+        "route": "double-exit",
+        "calls": 76
+      },
+      {
+        "reason": "exit",
+        "drawType": "COMPASS",
+        "route": "swap",
+        "calls": 32
+      },
+      {
+        "reason": "exit",
+        "drawType": "COMPASS",
+        "route": "winner",
+        "calls": 621
+      },
+      {
+        "reason": "exit",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "apply-values",
+        "calls": 14
+      },
+      {
+        "reason": "exit",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "clear-score",
+        "calls": 27
+      },
+      {
+        "reason": "exit",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "double-exit",
+        "calls": 20
+      },
+      {
+        "reason": "exit",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "swap",
+        "calls": 17
+      },
+      {
+        "reason": "exit",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "winner",
+        "calls": 116
+      },
+      {
+        "reason": "exit",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "apply-values",
+        "calls": 67
+      },
+      {
+        "reason": "exit",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "clear-score",
+        "calls": 66
+      },
+      {
+        "reason": "exit",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "completed-to-double-exit",
+        "calls": 25
+      },
+      {
+        "reason": "exit",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "double-exit",
+        "calls": 346
+      },
+      {
+        "reason": "exit",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "swap",
+        "calls": 55
+      },
+      {
+        "reason": "exit",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "winner",
+        "calls": 336
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_QF",
+        "route": "winner",
+        "calls": 2
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_R16",
+        "route": "double-exit",
+        "calls": 4
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "apply-values",
+        "calls": 23
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "clear-score",
+        "calls": 5
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "completed-to-double-exit",
+        "calls": 5
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "double-exit",
+        "calls": 30
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "swap",
+        "calls": 25
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "winner",
+        "calls": 89
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "apply-values",
+        "calls": 32
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "clear-score",
+        "calls": 42
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "completed-to-double-exit",
+        "calls": 12
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "double-exit",
+        "calls": 117
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "swap",
+        "calls": 31
+      },
+      {
+        "reason": "exit",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 99
+      },
+      {
+        "reason": "exit",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "apply-values",
+        "calls": 45
+      },
+      {
+        "reason": "exit",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "clear-score",
+        "calls": 86
+      },
+      {
+        "reason": "exit",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "completed-to-double-exit",
+        "calls": 9
+      },
+      {
+        "reason": "exit",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "double-exit",
+        "calls": 88
+      },
+      {
+        "reason": "exit",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "noop",
+        "calls": 1
+      },
+      {
+        "reason": "exit",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "swap",
+        "calls": 86
+      },
+      {
+        "reason": "exit",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 128
+      },
+      {
+        "reason": "exit",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "apply-values",
+        "calls": 12
+      },
+      {
+        "reason": "exit",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "clear-score",
+        "calls": 37
+      },
+      {
+        "reason": "exit",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "double-exit",
+        "calls": 29
+      },
+      {
+        "reason": "exit",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "swap",
+        "calls": 19
+      },
+      {
+        "reason": "exit",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 53
+      },
+      {
+        "reason": "exit",
+        "drawType": "LUCKY_DRAW",
+        "route": "clear-score",
+        "calls": 13
+      },
+      {
+        "reason": "exit",
+        "drawType": "LUCKY_DRAW",
+        "route": "completed-to-double-exit",
+        "calls": 18
+      },
+      {
+        "reason": "exit",
+        "drawType": "LUCKY_DRAW",
+        "route": "double-exit",
+        "calls": 118
+      },
+      {
+        "reason": "exit",
+        "drawType": "LUCKY_DRAW",
+        "route": "noop",
+        "calls": 10
+      },
+      {
+        "reason": "exit",
+        "drawType": "LUCKY_DRAW",
+        "route": "winner",
+        "calls": 20
+      },
+      {
+        "reason": "exit",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "apply-values",
+        "calls": 19
+      },
+      {
+        "reason": "exit",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "clear-score",
+        "calls": 32
+      },
+      {
+        "reason": "exit",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "completed-to-double-exit",
+        "calls": 4
+      },
+      {
+        "reason": "exit",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "double-exit",
+        "calls": 29
+      },
+      {
+        "reason": "exit",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "swap",
+        "calls": 17
+      },
+      {
+        "reason": "exit",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 80
+      },
+      {
+        "reason": "exit",
+        "drawType": "OLYMPIC",
+        "route": "apply-values",
+        "calls": 26
+      },
+      {
+        "reason": "exit",
+        "drawType": "OLYMPIC",
+        "route": "clear-score",
+        "calls": 52
+      },
+      {
+        "reason": "exit",
+        "drawType": "OLYMPIC",
+        "route": "completed-to-double-exit",
+        "calls": 3
+      },
+      {
+        "reason": "exit",
+        "drawType": "OLYMPIC",
+        "route": "double-exit",
+        "calls": 50
+      },
+      {
+        "reason": "exit",
+        "drawType": "OLYMPIC",
+        "route": "swap",
+        "calls": 33
+      },
+      {
+        "reason": "exit",
+        "drawType": "OLYMPIC",
+        "route": "winner",
+        "calls": 178
+      },
+      {
+        "reason": "exit",
+        "drawType": "PLAYOFF",
+        "route": "double-exit",
+        "calls": 3
+      },
+      {
+        "reason": "exit",
+        "drawType": "PLAYOFF",
+        "route": "winner",
+        "calls": 4
+      },
+      {
+        "reason": "exit",
+        "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
+        "route": "winner",
+        "calls": 3
+      },
+      {
+        "reason": "exit",
+        "drawType": "ROUND_ROBIN",
+        "route": "noop",
+        "calls": 1
+      },
+      {
+        "reason": "exit",
+        "drawType": "ROUND_ROBIN",
+        "route": "winner",
+        "calls": 6
+      },
+      {
+        "reason": "exit",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "clear-score",
+        "calls": 4
+      },
+      {
+        "reason": "exit",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "clear",
+        "calls": 4
+      },
+      {
+        "reason": "exit",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "completed-to-double-exit",
+        "calls": 1
+      },
+      {
+        "reason": "exit",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "double-exit",
+        "calls": 31
+      },
+      {
+        "reason": "exit",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "existing-winner-removed",
+        "calls": 7
+      },
+      {
+        "reason": "exit",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "noop",
+        "calls": 2
+      },
+      {
+        "reason": "exit",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 31
+      },
+      {
+        "reason": "link",
+        "drawType": "AD_HOC",
+        "route": "remove-directed",
+        "calls": 22
+      },
+      {
+        "reason": "link",
+        "drawType": "AD_HOC",
+        "route": "winner",
+        "calls": 6
+      },
+      {
+        "reason": "link",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "completed-to-double-exit",
+        "calls": 2
+      },
+      {
+        "reason": "link",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "remove-directed",
+        "calls": 2
+      },
+      {
+        "reason": "link",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "swap",
+        "calls": 12
+      },
+      {
+        "reason": "link",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "winner",
+        "calls": 12
+      },
+      {
+        "reason": "link",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "swap",
+        "calls": 26
+      },
+      {
+        "reason": "link",
+        "drawType": "PAGE_PLAYOFF",
+        "route": "winner",
+        "calls": 3
+      },
+      {
+        "reason": "link",
+        "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
+        "route": "remove-directed",
+        "calls": 2
+      },
+      {
+        "reason": "link",
+        "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
+        "route": "winner",
+        "calls": 7
+      },
+      {
+        "reason": "link",
+        "drawType": "ROUND_ROBIN",
+        "route": "remove-directed",
+        "calls": 7
+      },
+      {
+        "reason": "link",
+        "drawType": "ROUND_ROBIN",
+        "route": "winner",
+        "calls": 17
+      },
+      {
+        "reason": "link",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "remove-directed",
+        "calls": 28
+      },
+      {
+        "reason": "link",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 38
+      },
+      {
+        "reason": "loser",
+        "drawType": "COMPASS",
+        "route": "winner",
+        "calls": 55
+      },
+      {
+        "reason": "loser",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "winner",
+        "calls": 20
+      },
+      {
+        "reason": "loser",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "completed-to-double-exit",
+        "calls": 2
+      },
+      {
+        "reason": "loser",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "remove-directed",
+        "calls": 3
+      },
+      {
+        "reason": "loser",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "winner",
+        "calls": 54
+      },
+      {
+        "reason": "loser",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "winner",
+        "calls": 21
+      },
+      {
+        "reason": "loser",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 37
+      },
+      {
+        "reason": "loser",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "apply-values",
+        "calls": 2
+      },
+      {
+        "reason": "loser",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "completed-to-double-exit",
+        "calls": 43
+      },
+      {
+        "reason": "loser",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "remove-directed",
+        "calls": 57
+      },
+      {
+        "reason": "loser",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 138
+      },
+      {
+        "reason": "loser",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "apply-values",
+        "calls": 4
+      },
+      {
+        "reason": "loser",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 5
+      },
+      {
+        "reason": "loser",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 12
+      },
+      {
+        "reason": "loser",
+        "drawType": "OLYMPIC",
+        "route": "winner",
+        "calls": 10
+      },
+      {
+        "reason": "notes",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "notes",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "clear-score",
+        "calls": 4
+      },
+      {
+        "reason": "notes",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "clear",
+        "calls": 4
+      },
+      {
+        "reason": "notes",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "double-exit",
+        "calls": 3
+      },
+      {
+        "reason": "notes",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "provenance",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "apply-values",
+        "calls": 1
+      },
+      {
+        "reason": "provenance",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "provenance",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "winner",
+        "calls": 2
+      },
+      {
+        "reason": "provenance",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "apply-values",
+        "calls": 1
+      },
+      {
+        "reason": "provenance",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "provenance",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "provenance",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "route",
+        "drawType": "AD_HOC",
+        "route": "apply-values",
+        "calls": 10
+      },
+      {
+        "reason": "route",
+        "drawType": "AD_HOC",
+        "route": "clear",
+        "calls": 2
+      },
+      {
+        "reason": "route",
+        "drawType": "ADAPTIVE",
+        "route": "winner",
+        "calls": 15
+      },
+      {
+        "reason": "route",
+        "drawType": "COMPASS",
+        "route": "noop",
+        "calls": 32
+      },
+      {
+        "reason": "route",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "noop",
+        "calls": 2
+      },
+      {
+        "reason": "route",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "clear",
+        "calls": 1
+      },
+      {
+        "reason": "route",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "route",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "noop",
+        "calls": 1
+      },
+      {
+        "reason": "route",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "remove-directed",
+        "calls": 1
+      },
+      {
+        "reason": "route",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "route",
+        "drawType": "FEED_IN",
+        "route": "winner",
+        "calls": 4
+      },
+      {
+        "reason": "route",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "noop",
+        "calls": 14
+      },
+      {
+        "reason": "route",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "noop",
+        "calls": 4
+      },
+      {
+        "reason": "route",
+        "drawType": "LADDER",
+        "route": "clear",
+        "calls": 1
+      },
+      {
+        "reason": "route",
+        "drawType": "LUCKY_DRAW",
+        "route": "winner",
+        "calls": 112
+      },
+      {
+        "reason": "route",
+        "drawType": "OLYMPIC",
+        "route": "noop",
+        "calls": 20
+      },
+      {
+        "reason": "route",
+        "drawType": "ROUND_ROBIN",
+        "route": "apply-values",
+        "calls": 10
+      },
+      {
+        "reason": "route",
+        "drawType": "ROUND_ROBIN",
+        "route": "clear",
+        "calls": 4
+      },
+      {
+        "reason": "route",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "bye",
+        "calls": 1
+      },
+      {
+        "reason": "route",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "clear",
+        "calls": 31
+      },
+      {
+        "reason": "route",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "noop",
+        "calls": 2
+      },
+      {
+        "reason": "route",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "remove-directed",
+        "calls": 37
+      },
+      {
+        "reason": "route",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 251
+      },
+      {
+        "reason": "route",
+        "drawType": "SWISS",
+        "route": "winner",
+        "calls": 3
+      },
+      {
+        "reason": "schedule",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 3
+      },
+      {
+        "reason": "settle",
+        "drawType": "ADAPTIVE",
+        "route": "winner",
+        "calls": 16
+      },
+      {
+        "reason": "settle",
+        "drawType": "COMPASS",
+        "route": "double-exit",
+        "calls": 10
+      },
+      {
+        "reason": "settle",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "clear-score",
+        "calls": 4
+      },
+      {
+        "reason": "settle",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "double-exit",
+        "calls": 3
+      },
+      {
+        "reason": "settle",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "clear-score",
+        "calls": 6
+      },
+      {
+        "reason": "settle",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "completed-to-double-exit",
+        "calls": 1
+      },
+      {
+        "reason": "settle",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "double-exit",
+        "calls": 41
+      },
+      {
+        "reason": "settle",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "swap",
+        "calls": 6
+      },
+      {
+        "reason": "settle",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "winner",
+        "calls": 6
+      },
+      {
+        "reason": "settle",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "clear-score",
+        "calls": 2
+      },
+      {
+        "reason": "settle",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "completed-to-double-exit",
+        "calls": 1
+      },
+      {
+        "reason": "settle",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "double-exit",
+        "calls": 35
+      },
+      {
+        "reason": "settle",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "winner",
+        "calls": 8
+      },
+      {
+        "reason": "settle",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "clear-score",
+        "calls": 6
+      },
+      {
+        "reason": "settle",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "completed-to-double-exit",
+        "calls": 2
+      },
+      {
+        "reason": "settle",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "double-exit",
+        "calls": 32
+      },
+      {
+        "reason": "settle",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 17
+      },
+      {
+        "reason": "settle",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "apply-values",
+        "calls": 7
+      },
+      {
+        "reason": "settle",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "clear-score",
+        "calls": 9
+      },
+      {
+        "reason": "settle",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "double-exit",
+        "calls": 1
+      },
+      {
+        "reason": "settle",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "only-score",
+        "calls": 1
+      },
+      {
+        "reason": "settle",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "remove-directed",
+        "calls": 28
+      },
+      {
+        "reason": "settle",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "swap",
+        "calls": 31
+      },
+      {
+        "reason": "settle",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 111
+      },
+      {
+        "reason": "settle",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "clear-score",
+        "calls": 7
+      },
+      {
+        "reason": "settle",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "double-exit",
+        "calls": 1
+      },
+      {
+        "reason": "settle",
+        "drawType": "OLYMPIC",
+        "route": "clear-score",
+        "calls": 1
+      },
+      {
+        "reason": "settle",
+        "drawType": "ROUND_ROBIN",
+        "route": "clear-score",
+        "calls": 1
+      },
+      {
+        "reason": "settle",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "noop",
+        "calls": 1
+      },
+      {
+        "reason": "settle",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 2
+      },
+      {
+        "reason": "status-codes",
+        "drawType": "AD_HOC",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "status-codes",
+        "drawType": "COMPASS",
+        "route": "clear",
+        "calls": 1
+      },
+      {
+        "reason": "status-codes",
+        "drawType": "COMPASS",
+        "route": "winner",
+        "calls": 3
+      },
+      {
+        "reason": "status-codes",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "status-codes",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "double-exit",
+        "calls": 2
+      },
+      {
+        "reason": "status-codes",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 2
+      },
+      {
+        "reason": "status-codes",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "double-exit",
+        "calls": 10
+      },
+      {
+        "reason": "status-codes",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 33
+      },
+      {
+        "reason": "status-codes",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "clear",
+        "calls": 15
+      },
+      {
+        "reason": "status-codes",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "double-exit",
+        "calls": 33
+      },
+      {
+        "reason": "status-codes",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "only-score",
+        "calls": 2
+      },
+      {
+        "reason": "status-codes",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 53
+      },
+      {
+        "reason": "tallied",
+        "drawType": "AD_HOC",
+        "route": "completed-to-double-exit",
+        "calls": 2
+      },
+      {
+        "reason": "tallied",
+        "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
+        "route": "completed-to-double-exit",
+        "calls": 6
+      },
+      {
+        "reason": "tallied",
+        "drawType": "ROUND_ROBIN",
+        "route": "completed-to-double-exit",
+        "calls": 6
+      },
+      {
+        "reason": "team",
+        "drawType": "AD_HOC",
+        "route": "clear-score",
+        "calls": 8
+      },
+      {
+        "reason": "team",
+        "drawType": "COMPASS",
+        "route": "apply-values",
+        "calls": 2
+      },
+      {
+        "reason": "team",
+        "drawType": "COMPASS",
+        "route": "clear-score",
+        "calls": 22
+      },
+      {
+        "reason": "team",
+        "drawType": "COMPASS",
+        "route": "noop",
+        "calls": 1
+      },
+      {
+        "reason": "team",
+        "drawType": "COMPASS",
+        "route": "only-score",
+        "calls": 7
+      },
+      {
+        "reason": "team",
+        "drawType": "COMPASS",
+        "route": "remove-directed",
+        "calls": 24
+      },
+      {
+        "reason": "team",
+        "drawType": "COMPASS",
+        "route": "winner",
+        "calls": 50
+      },
+      {
+        "reason": "team",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "remove-directed",
+        "calls": 2
+      },
+      {
+        "reason": "team",
+        "drawType": "CURTIS_CONSOLATION",
+        "route": "winner",
+        "calls": 4
+      },
+      {
+        "reason": "team",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "apply-values",
+        "calls": 1
+      },
+      {
+        "reason": "team",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "clear-score",
+        "calls": 15
+      },
+      {
+        "reason": "team",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "existing-winner-removed",
+        "calls": 1
+      },
+      {
+        "reason": "team",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "noop",
+        "calls": 1
+      },
+      {
+        "reason": "team",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "only-score",
+        "calls": 2
+      },
+      {
+        "reason": "team",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "remove-directed",
+        "calls": 7
+      },
+      {
+        "reason": "team",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "winner",
+        "calls": 33
+      },
+      {
+        "reason": "team",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "remove-directed",
+        "calls": 2
+      },
+      {
+        "reason": "team",
+        "drawType": "FEED_IN_CHAMPIONSHIP_TO_SF",
+        "route": "winner",
+        "calls": 6
+      },
+      {
+        "reason": "team",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "apply-values",
+        "calls": 81
+      },
+      {
+        "reason": "team",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "clear-score",
+        "calls": 14
+      },
+      {
+        "reason": "team",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "line-score",
+        "calls": 2
+      },
+      {
+        "reason": "team",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "only-score",
+        "calls": 7
+      },
+      {
+        "reason": "team",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "remove-directed",
+        "calls": 11
+      },
+      {
+        "reason": "team",
+        "drawType": "FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 35
+      },
+      {
+        "reason": "team",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "apply-values",
+        "calls": 8
+      },
+      {
+        "reason": "team",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "clear-score",
+        "calls": 8
+      },
+      {
+        "reason": "team",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "line-score",
+        "calls": 2
+      },
+      {
+        "reason": "team",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "only-score",
+        "calls": 4
+      },
+      {
+        "reason": "team",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "remove-directed",
+        "calls": 6
+      },
+      {
+        "reason": "team",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 22
+      },
+      {
+        "reason": "team",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "clear-score",
+        "calls": 4
+      },
+      {
+        "reason": "team",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "remove-directed",
+        "calls": 8
+      },
+      {
+        "reason": "team",
+        "drawType": "FIRST_ROUND_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 18
+      },
+      {
+        "reason": "team",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "remove-directed",
+        "calls": 2
+      },
+      {
+        "reason": "team",
+        "drawType": "MODIFIED_FEED_IN_CHAMPIONSHIP",
+        "route": "winner",
+        "calls": 6
+      },
+      {
+        "reason": "team",
+        "drawType": "OLYMPIC",
+        "route": "clear-score",
+        "calls": 4
+      },
+      {
+        "reason": "team",
+        "drawType": "OLYMPIC",
+        "route": "remove-directed",
+        "calls": 6
+      },
+      {
+        "reason": "team",
+        "drawType": "OLYMPIC",
+        "route": "winner",
+        "calls": 18
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
+        "route": "clear-score",
+        "calls": 22
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
+        "route": "double-exit",
+        "calls": 1
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
+        "route": "line-score",
+        "calls": 8
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
+        "route": "noop",
+        "calls": 2
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
+        "route": "only-score",
+        "calls": 9
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
+        "route": "remove-directed",
+        "calls": 8
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
+        "route": "winner",
+        "calls": 28
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN",
+        "route": "apply-values",
+        "calls": 28
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN",
+        "route": "clear-score",
+        "calls": 10
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN",
+        "route": "double-exit",
+        "calls": 1
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN",
+        "route": "line-score",
+        "calls": 4
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN",
+        "route": "only-score",
+        "calls": 13
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN",
+        "route": "remove-directed",
+        "calls": 16
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN",
+        "route": "team-round-robin",
+        "calls": 1
+      },
+      {
+        "reason": "team",
+        "drawType": "ROUND_ROBIN",
+        "route": "winner",
+        "calls": 52
+      },
+      {
+        "reason": "team",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "apply-values",
+        "calls": 32
+      },
+      {
+        "reason": "team",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "clear-score",
+        "calls": 65
+      },
+      {
+        "reason": "team",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "double-exit",
+        "calls": 2
+      },
+      {
+        "reason": "team",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "line-score",
+        "calls": 22
+      },
+      {
+        "reason": "team",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "noop",
+        "calls": 4
+      },
+      {
+        "reason": "team",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "only-score",
+        "calls": 21
+      },
+      {
+        "reason": "team",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "remove-directed",
+        "calls": 70
+      },
+      {
+        "reason": "team",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 95
+      },
+      {
+        "reason": "winner",
+        "drawType": "AD_HOC",
+        "route": "apply-values",
+        "calls": 1
+      },
+      {
+        "reason": "winner",
+        "drawType": "DOUBLE_ELIMINATION",
+        "route": "existing-winner-removed",
+        "calls": 1
+      },
+      {
+        "reason": "winner",
+        "drawType": "ROUND_ROBIN",
+        "route": "apply-values",
+        "calls": 2
+      },
+      {
+        "reason": "winner",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "existing-winner-removed",
+        "calls": 9
+      },
+      {
+        "reason": "winner",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "remove-directed",
+        "calls": 1
+      },
+      {
+        "reason": "winner",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 1
+      },
+      {
+        "reason": "write-mode",
+        "drawType": "AD_HOC",
+        "route": "apply-values",
+        "calls": 6
+      },
+      {
+        "reason": "write-mode",
+        "drawType": "AD_HOC",
+        "route": "clear-score",
+        "calls": 4
+      },
+      {
+        "reason": "write-mode",
+        "drawType": "AD_HOC",
+        "route": "clear",
+        "calls": 8
+      },
+      {
+        "reason": "write-mode",
+        "drawType": "AD_HOC",
+        "route": "remove-directed",
+        "calls": 6
+      },
+      {
+        "reason": "write-mode",
+        "drawType": "AD_HOC",
+        "route": "winner",
+        "calls": 58
+      },
+      {
+        "reason": "write-mode",
+        "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+        "route": "winner",
+        "calls": 8
+      },
+      {
+        "reason": "write-mode",
+        "drawType": "ROUND_ROBIN",
+        "route": "winner",
+        "calls": 24
+      },
+      {
+        "reason": "write-mode",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "clear",
+        "calls": 2
+      },
+      {
+        "reason": "write-mode",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "remove-directed",
+        "calls": 3
+      },
+      {
+        "reason": "write-mode",
+        "drawType": "SINGLE_ELIMINATION",
+        "route": "winner",
+        "calls": 9
+      }
+    ]
+  }
+}
