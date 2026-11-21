@@ -1,0 +1,44 @@
+[
+  {
+    "mode": "v1",
+    "rollback": false,
+    "code": "ERR_MISSING_ASSIGNMENTS",
+    "before": "sha256:5ecd66a4efc7de52b432fff4ed1a09847bbe76c3bf1eda77bade439e9bbf0bf4",
+    "after": "sha256:9e9da262c22820773971f9bf19868d7f1504e2c70b7568c0c0d3ce88d260f577"
+  },
+  {
+    "mode": "v1",
+    "rollback": true,
+    "code": "ERR_MISSING_ASSIGNMENTS",
+    "before": "sha256:5ecd66a4efc7de52b432fff4ed1a09847bbe76c3bf1eda77bade439e9bbf0bf4",
+    "after": "sha256:5ecd66a4efc7de52b432fff4ed1a09847bbe76c3bf1eda77bade439e9bbf0bf4"
+  },
+  {
+    "mode": "v2",
+    "rollback": false,
+    "code": "ERR_MISSING_ASSIGNMENTS",
+    "before": "sha256:5ecd66a4efc7de52b432fff4ed1a09847bbe76c3bf1eda77bade439e9bbf0bf4",
+    "after": "sha256:9e9da262c22820773971f9bf19868d7f1504e2c70b7568c0c0d3ce88d260f577"
+  },
+  {
+    "mode": "v2",
+    "rollback": true,
+    "code": "ERR_MISSING_ASSIGNMENTS",
+    "before": "sha256:5ecd66a4efc7de52b432fff4ed1a09847bbe76c3bf1eda77bade439e9bbf0bf4",
+    "after": "sha256:5ecd66a4efc7de52b432fff4ed1a09847bbe76c3bf1eda77bade439e9bbf0bf4"
+  },
+  {
+    "mode": "differential",
+    "rollback": false,
+    "code": "ERR_MISSING_ASSIGNMENTS",
+    "before": "sha256:5ecd66a4efc7de52b432fff4ed1a09847bbe76c3bf1eda77bade439e9bbf0bf4",
+    "after": "sha256:9e9da262c22820773971f9bf19868d7f1504e2c70b7568c0c0d3ce88d260f577"
+  },
+  {
+    "mode": "differential",
+    "rollback": true,
+    "code": "ERR_MISSING_ASSIGNMENTS",
+    "before": "sha256:5ecd66a4efc7de52b432fff4ed1a09847bbe76c3bf1eda77bade439e9bbf0bf4",
+    "after": "sha256:5ecd66a4efc7de52b432fff4ed1a09847bbe76c3bf1eda77bade439e9bbf0bf4"
+  }
+]

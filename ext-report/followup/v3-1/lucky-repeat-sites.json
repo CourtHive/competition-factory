@@ -1,0 +1,146 @@
+[
+  {
+    "scenarioId": "recorded/src/tests/mutations/outcome/luckydoubleexit/lucky-draw-5-a-first-round-double-exit-asked-again-it-changes-nothing-cleared-the-matchup-is-to-be-played-again-and-nothing-else-moved/part-2",
+    "source": "src/tests/mutations/outcome/luckyDoubleExit.test.ts::LUCKY_DRAW 5: a first-round double exit > asked again, it changes nothing; cleared, the matchUp is to be played again and nothing else moved",
+    "directive": {
+      "method": "setMatchUpStatus",
+      "params": {
+        "drawId": "d",
+        "matchUpId": "63fb79e2-e416-418a-8145-a5296f3ca105",
+        "outcome": {
+          "matchUpStatus": "DOUBLE_WALKOVER"
+        }
+      }
+    },
+    "before": "sha256:4644ca1cd526e4d60da57728574c6842a6310591d15f67c6f61f9abad0780149",
+    "after": "sha256:4644ca1cd526e4d60da57728574c6842a6310591d15f67c6f61f9abad0780149"
+  },
+  {
+    "scenarioId": "recorded/src/tests/mutations/outcome/luckydoubleexit/lucky-draw-7-a-first-round-double-exit-asked-again-it-changes-nothing-cleared-the-matchup-is-to-be-played-again-and-nothing-else-moved/part-2",
+    "source": "src/tests/mutations/outcome/luckyDoubleExit.test.ts::LUCKY_DRAW 7: a first-round double exit > asked again, it changes nothing; cleared, the matchUp is to be played again and nothing else moved",
+    "directive": {
+      "method": "setMatchUpStatus",
+      "params": {
+        "drawId": "d",
+        "matchUpId": "71659a2c-9894-4090-9e44-b9172269fca7",
+        "outcome": {
+          "matchUpStatus": "DOUBLE_WALKOVER"
+        }
+      }
+    },
+    "before": "sha256:bcff29312b32e840a18d4b47791d005e7fde0926f097782ce3cf93e156e85957",
+    "after": "sha256:bcff29312b32e840a18d4b47791d005e7fde0926f097782ce3cf93e156e85957"
+  },
+  {
+    "scenarioId": "recorded/src/tests/mutations/outcome/luckydoubleexit/lucky-draw-8-a-first-round-double-exit-asked-again-it-changes-nothing-cleared-the-matchup-is-to-be-played-again-and-nothing-else-moved/part-2",
+    "source": "src/tests/mutations/outcome/luckyDoubleExit.test.ts::LUCKY_DRAW 8: a first-round double exit > asked again, it changes nothing; cleared, the matchUp is to be played again and nothing else moved",
+    "directive": {
+      "method": "setMatchUpStatus",
+      "params": {
+        "drawId": "d",
+        "matchUpId": "98943090-1e44-4917-a269-fca782627c12",
+        "outcome": {
+          "matchUpStatus": "DOUBLE_WALKOVER"
+        }
+      }
+    },
+    "before": "sha256:be99801b106d5026a209136c5183cc59ad82ddf840011243b48d0a4aac3f299b",
+    "after": "sha256:be99801b106d5026a209136c5183cc59ad82ddf840011243b48d0a4aac3f299b"
+  },
+  {
+    "scenarioId": "recorded/src/tests/mutations/outcome/luckydoubleexit/lucky-draw-11-a-first-round-double-exit-asked-again-it-changes-nothing-cleared-the-matchup-is-to-be-played-again-and-nothing-else-moved/part-2",
+    "source": "src/tests/mutations/outcome/luckyDoubleExit.test.ts::LUCKY_DRAW 11: a first-round double exit > asked again, it changes nothing; cleared, the matchUp is to be played again and nothing else moved",
+    "directive": {
+      "method": "setMatchUpStatus",
+      "params": {
+        "drawId": "d",
+        "matchUpId": "32adbbe2-13bd-498b-a850-cbe5c6532dff",
+        "outcome": {
+          "matchUpStatus": "DOUBLE_WALKOVER"
+        }
+      }
+    },
+    "before": "sha256:30e0b5472228e2b92cddfb2a6d1b14176ac29ab11ce7969ff87c10b53ed3b115",
+    "after": "sha256:30e0b5472228e2b92cddfb2a6d1b14176ac29ab11ce7969ff87c10b53ed3b115"
+  },
+  {
+    "scenarioId": "recorded/src/tests/mutations/outcome/luckydoubleexit/lucky-draw-12-a-first-round-double-exit-asked-again-it-changes-nothing-cleared-the-matchup-is-to-be-played-again-and-nothing-else-moved/part-2",
+    "source": "src/tests/mutations/outcome/luckyDoubleExit.test.ts::LUCKY_DRAW 12: a first-round double exit > asked again, it changes nothing; cleared, the matchUp is to be played again and nothing else moved",
+    "directive": {
+      "method": "setMatchUpStatus",
+      "params": {
+        "drawId": "d",
+        "matchUpId": "13bd498b-6850-4be5-8653-2dffcfd817b4",
+        "outcome": {
+          "matchUpStatus": "DOUBLE_WALKOVER"
+        }
+      }
+    },
+    "before": "sha256:f001caf598d8c121f12fe0aa772ec4798f794323869bd4fa4efb69f554bd9e69",
+    "after": "sha256:f001caf598d8c121f12fe0aa772ec4798f794323869bd4fa4efb69f554bd9e69"
+  },
+  {
+    "scenarioId": "recorded/src/tests/mutations/outcome/luckydoubleexit/lucky-draw-7-along-a-seeded-walk-no-call-throws-v2-leaves-what-v1-leaves-and-a-double-exit-produces-nothing/part-17",
+    "source": "src/tests/mutations/outcome/luckyDoubleExit.test.ts::LUCKY_DRAW 7: along a seeded walk > no call throws, v2 leaves what v1 leaves, and a double exit produces nothing",
+    "directive": {
+      "method": "setMatchUpStatus",
+      "params": {
+        "drawId": "d",
+        "matchUpId": "50c83e73-0e92-4614-8ee3-a3b7ba1180f8",
+        "outcome": {
+          "matchUpStatus": "DOUBLE_WALKOVER"
+        }
+      }
+    },
+    "before": "sha256:0c732942ae3430443c05109729b011944f5b8fda010472666ac87b8d49a42405",
+    "after": "sha256:0c732942ae3430443c05109729b011944f5b8fda010472666ac87b8d49a42405"
+  },
+  {
+    "scenarioId": "recorded/src/tests/mutations/outcome/luckydoubleexit/lucky-draw-8-along-a-seeded-walk-no-call-throws-v2-leaves-what-v1-leaves-and-a-double-exit-produces-nothing/part-41",
+    "source": "src/tests/mutations/outcome/luckyDoubleExit.test.ts::LUCKY_DRAW 8: along a seeded walk > no call throws, v2 leaves what v1 leaves, and a double exit produces nothing",
+    "directive": {
+      "method": "setMatchUpStatus",
+      "params": {
+        "drawId": "d",
+        "matchUpId": "f8eca68d-036f-403d-8012-2598c2c44b51",
+        "outcome": {
+          "matchUpStatus": "DOUBLE_WALKOVER"
+        }
+      }
+    },
+    "before": "sha256:f6b96d8c726907a502dbbb2a53e4a69d8c17b8817503f00636f2a15ac29b9418",
+    "after": "sha256:f6b96d8c726907a502dbbb2a53e4a69d8c17b8817503f00636f2a15ac29b9418"
+  },
+  {
+    "scenarioId": "recorded/src/tests/mutations/outcome/luckydoubleexit/lucky-draw-8-along-a-seeded-walk-no-call-throws-v2-leaves-what-v1-leaves-and-a-double-exit-produces-nothing/part-69",
+    "source": "src/tests/mutations/outcome/luckyDoubleExit.test.ts::LUCKY_DRAW 8: along a seeded walk > no call throws, v2 leaves what v1 leaves, and a double exit produces nothing",
+    "directive": {
+      "method": "setMatchUpStatus",
+      "params": {
+        "drawId": "d",
+        "matchUpId": "77e1c517-d049-4265-86c0-172c72990439",
+        "outcome": {
+          "matchUpStatus": "DOUBLE_WALKOVER"
+        }
+      }
+    },
+    "before": "sha256:6e76ae45e5d7d7deb88182de663386ec7f12af0b1e6689ab19c3361777507267",
+    "after": "sha256:6e76ae45e5d7d7deb88182de663386ec7f12af0b1e6689ab19c3361777507267"
+  },
+  {
+    "scenarioId": "recorded/src/tests/mutations/outcome/luckydoubleexit/lucky-draw-12-along-a-seeded-walk-no-call-throws-v2-leaves-what-v1-leaves-and-a-double-exit-produces-nothing/part-157",
+    "source": "src/tests/mutations/outcome/luckyDoubleExit.test.ts::LUCKY_DRAW 12: along a seeded walk > no call throws, v2 leaves what v1 leaves, and a double exit produces nothing",
+    "directive": {
+      "method": "setMatchUpStatus",
+      "params": {
+        "drawId": "d",
+        "matchUpId": "b211b40b-b3c5-4fab-bcf9-6695f0466b5b",
+        "outcome": {
+          "matchUpStatus": "DOUBLE_WALKOVER"
+        }
+      }
+    },
+    "before": "sha256:4996ebe887aa18fc76dd634f1aaf180ace84ff2fce0131cec71895633781bb93",
+    "after": "sha256:4996ebe887aa18fc76dd634f1aaf180ace84ff2fce0131cec71895633781bb93"
+  }
+]

@@ -1,0 +1,33 @@
+{
+  "referenceCommit": "0408a871198506e7a202e57386eb1e5b42ab8c39",
+  "candidateCommit": "c30a26ef04",
+  "referenceCalls": 9399,
+  "candidateCalls": 9390,
+  "observedCells": 338,
+  "changedCells": [
+    {
+      "reason": "exit",
+      "drawType": "LUCKY_DRAW",
+      "route": "noop",
+      "before": 10,
+      "after": 1
+    }
+  ],
+  "fullSuites": {
+    "v1": {
+      "passed": 33627,
+      "skipped": 1565,
+      "failed": 0
+    },
+    "v2": {
+      "passed": 33627,
+      "skipped": 1565,
+      "failed": 0
+    },
+    "differential": {
+      "passed": 33627,
+      "skipped": 1565,
+      "failed": 0
+    }
+  }
+}
