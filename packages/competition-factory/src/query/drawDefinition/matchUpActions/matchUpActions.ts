@@ -1,3 +1,4 @@
+import { operatorMatchDto } from '@Query/readModel/operatorMatchDto';
 import { getPositionAssignments, structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { getDisabledMatchUpStatuses } from '@Query/matchUps/getDisabledMatchUpStatuses';
@@ -64,6 +65,7 @@ import {
 } from '@Constants/matchUpActionConstants';
 
 type MatchUpActionsArgs = {
+  operatorAudience?: 'recorder' | 'director';
   inContextDrawMatchUps?: HydratedMatchUp[];
   /**
    * @deprecated no effect. A participant already in an AD_HOC round is never offered for that round,
@@ -86,6 +88,7 @@ type MatchUpActionsArgs = {
   event?: Event;
 };
 export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
+  operatorMatch?: ReturnType<typeof operatorMatchDto>['operatorMatch'];
   structureIsComplete?: boolean;
   isDoubleExit?: boolean;
   isByeMatchUp?: boolean;
@@ -115,6 +118,12 @@ export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
   }
 
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
+
+  if (
+    params.operatorAudience !== undefined &&
+    (params.drawId !== drawDefinition.drawId || params.eventId !== event?.eventId)
+  )
+    return { error: MATCHUP_NOT_FOUND };
 
   // every sub-action offers participants from this event (entries, other flights, lucky losers, lineUps), so only the
   // participants the event references are built: building the whole pool made one click linear in the tournament
@@ -159,7 +168,7 @@ export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
   const { structureId } = structure ?? {};
 
   const validActions: MatchUpAction[] = [];
-  if (!structureId) return { validActions };
+  if (!structureId) return params.operatorAudience !== undefined ? { error: INVALID_VALUES } : { validActions };
 
   const isCollectionMatchUp = Boolean(matchUp.collectionId);
 
@@ -184,7 +193,10 @@ export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
   const structureIsComplete = isCompletedStructure({ drawDefinition, structure });
 
   const isByeMatchUp = checkIsByeMatchUp({ matchUp, isCollectionMatchUp, assignedPositions });
-  if (isByeMatchUp) return { validActions, isByeMatchUp };
+  if (isByeMatchUp)
+    return params.operatorAudience !== undefined
+      ? operatorMatchDto(params.operatorAudience, inContextMatchUp, [], inContextDrawMatchUps ?? [])
+      : { validActions, isByeMatchUp };
 
   const isDoubleExit = matchUp.matchUpStatus && [DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUp.matchUpStatus);
 
@@ -228,6 +240,8 @@ export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
     }),
   );
 
+  if (params.operatorAudience !== undefined)
+    return operatorMatchDto(params.operatorAudience, inContextMatchUp, validActions, inContextDrawMatchUps ?? []);
   return { structureIsComplete, validActions, isDoubleExit, ...SUCCESS };
 }
 

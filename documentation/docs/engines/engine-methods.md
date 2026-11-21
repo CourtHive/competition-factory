@@ -1017,3 +1017,14 @@ const footprint = engine.getLoadedFootprint(); // undefined unless marked
 ```
 
 ---
+
+### Experimental operator match detail
+
+The unpublished CMX candidate accepts an explicit `operatorAudience` of `recorder` or `director` on
+`matchUpActions`. A server verifies the caller's live grant and supplies tournament, event, draw and match IDs.
+The guarded query returns one `operatorMatch` for singles or doubles. The result includes display names, the
+scoring format, the reviewed score, first-entry or correction intent when scoring is offered, clear permission,
+disabled statuses and the observed round of advancement when the winner occupies the target match.
+Both audiences use the same field list in this slice. TEAM and collection lines are outside its supported scope.
+Omitting the option preserves the usual factory action response. The factory adapter supplies no authorization or
+storage revision. CFS owns both.
