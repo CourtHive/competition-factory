@@ -48,7 +48,7 @@ export function setParticipantScaleItem(params: SetParticipantScaleItemArgs) {
     participant = tournamentRecord.participants.find((participant) => participant.participantId === participantId);
 
     if (participant) {
-      if (participant.participantType === TEAM_PARTICIPANT && scaleItem?.eventType !== TEAM_EVENT) {
+      if (ineligibleTeamScale(participant, scaleItem)) {
         return { error: INVALID_SCALE_ITEM };
       }
 
@@ -148,6 +148,18 @@ type ScaleItemWriteArgs = {
   removePriorValues?: boolean;
 };
 
+function ineligibleTeamScale(participant: Participant, scaleItem: ScaleItem) {
+  return participant.participantType === TEAM_PARTICIPANT && scaleItem.eventType !== TEAM_EVENT;
+}
+
+// Public single-item eligibility also applies to each destination of a ratings run.
+export function planEligibleScaleItem(params: ScaleItemWriteArgs, appends?: PlannedAppends) {
+  if (ineligibleTeamScale(params.participant, params.scaleItem)) {
+    return { error: INVALID_SCALE_ITEM };
+  }
+  return planParticipantScaleItem(params, appends);
+}
+
 export function addParticipantScaleItem(params: ScaleItemWriteArgs): ResultType & {
   valueChanged?: boolean;
   newValue?: ScaleItem['scaleValue'];
@@ -159,7 +171,13 @@ export function addParticipantScaleItem(params: ScaleItemWriteArgs): ResultType 
   return { ...SUCCESS, valueChanged: plan.valueChanged, newValue };
 }
 
-function planParticipantScaleItem({ removePriorValues, participant, scaleItem }: ScaleItemWriteArgs) {
+type TimeItems = NonNullable<Participant['timeItems']>;
+type PlannedAppends = Map<TimeItems, TimeItems>;
+
+function planParticipantScaleItem(
+  { removePriorValues, participant, scaleItem }: ScaleItemWriteArgs,
+  appends?: PlannedAppends,
+) {
   if (!participant) {
     return { error: MISSING_PARTICIPANT };
   }
@@ -182,9 +200,16 @@ function planParticipantScaleItem({ removePriorValues, participant, scaleItem }:
   // to; `createdAt` is when it was recorded.
   const createdAt = scaleItem.createdAt ?? nowIso();
 
+  const existing = participant.timeItems;
+  // Borrowed participants can share a time-item array. A later plan must see
+  // preceding proposed values when deciding whether a second append is needed.
+  const pending = existing && appends?.get(existing);
   const { scaleItem: existingScaleItem } = participantScaleItem({
     scaleAttributes: scaleItem,
-    participant,
+    participant:
+      existing && pending
+        ? { participantId: participant.participantId, timeItems: existing.concat(pending) }
+        : participant,
   });
 
   const isUndefined = (value: unknown) => value == null || value === '';
@@ -193,7 +218,6 @@ function planParticipantScaleItem({ removePriorValues, participant, scaleItem }:
     !(isUndefined(existingScaleItem?.scaleValue) && isUndefined(scaleItem.scaleValue)) &&
     JSON.stringify(existingScaleItem?.scaleValue) !== JSON.stringify(scaleItem.scaleValue);
 
-  const existing = participant.timeItems;
   if (!valueChanged) {
     // A successful empty-on-empty call historically initialized the list, without a notice.
     return { valueChanged, commit: existing == null ? planFieldWrite(participant, 'timeItems', []) : undefined };
@@ -212,7 +236,11 @@ function planParticipantScaleItem({ removePriorValues, participant, scaleItem }:
   if (scaleItem.scaleId) timeItem.itemSubTypes = [scaleItem.scaleId];
 
   const append = planAppend(() => participant.timeItems!, timeItem);
-  if (existing && !removePriorValues) return { valueChanged, commit: append };
+  if (existing && !removePriorValues) {
+    if (pending) pending.push(timeItem);
+    else appends?.set(existing, [timeItem]);
+    return { valueChanged, commit: append };
+  }
 
   const retained = existing && removePriorValues ? existing.filter((item) => item.itemType !== itemType) : undefined;
   return {
