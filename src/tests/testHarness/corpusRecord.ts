@@ -1,11 +1,15 @@
-import { currentTestSeed } from './seedMathRandom';
+import { assertRefusalsUnchanged } from './corpus/refusalInvariant';
 import { afterAll, afterEach, beforeEach } from 'vitest';
+import { currentTestSeed } from './seedMathRandom';
 import { relative } from 'node:path';
+
+// Registered for each suite file, including shared-worker and harvest runs.
+afterEach(assertRefusalsUnchanged);
 
 /**
  * Opt-in: `CORPUS_RECORD=1 pnpm vitest run` (or `pnpm corpus:record`) harvests every test into
- * corpus scenarios under `CORPUS_OUT` (default `.corpus-out/`, ignored by git). Without the
- * variable this file does nothing, so the ordinary suite is unaffected. Listed AFTER
+ * corpus scenarios under `CORPUS_OUT` (default `.corpus-out/`, ignored by git). The refusal invariant above also runs when
+ * harvesting is off. Listed AFTER
  * seedMathRandom in setupFiles so the test's seed exists when a test begins.
  */
 const enabled = process.env.CORPUS_RECORD === '1';
