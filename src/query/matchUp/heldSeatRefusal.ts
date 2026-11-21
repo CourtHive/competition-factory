@@ -95,7 +95,9 @@ export function heldSeatRefusal({
   if (!drawDefinition || !structure || !targetData?.targetMatchUps) return undefined;
   if (winningSide !== 1 && winningSide !== 2) return undefined;
   if (!matchUp.drawPositions || matchUp.collectionId || isAdHoc({ structure })) return undefined;
-  if (matchUp.tieMatchUps || isMatchUpEventType(TEAM)(matchUp.matchUpType)) return undefined;
+  const dual = !!matchUp.tieMatchUps || isMatchUpEventType(TEAM)(matchUp.matchUpType);
+  // An undecided dual awarded by retirement directs its winner into the next round.
+  if (dual && (matchUp.winningSide || params.matchUpStatus !== RETIRED)) return undefined;
   if (isLuckyBasedDraw(drawDefinition.drawType)) return undefined;
   // a stored double exit is unwound first: what it produced in the next matchUp is taken back, so the winner's question
   // cannot be asked of the draw as it stands. The loser's can: the BYE it placed on their seat is a propagated one
@@ -120,16 +122,18 @@ export function heldSeatRefusal({
     (winnerPlaced && !unwound
       ? heldWinnerSeat({ targetData, structure, drawDefinition, replaced, sidePosition, winningSide })
       : undefined) ??
-    heldLoserSeat({
-      winnerParticipantId: replaced ? sideParticipantId(winningSide) : undefined,
-      loserDrawPosition: sidePosition(3 - winningSide),
-      inContextDrawMatchUps: carriesExit(params) ? params.inContextDrawMatchUps : undefined,
-      tournamentRecord: params.tournamentRecord,
-      event: params.event,
-      drawDefinition,
-      targetData,
-      structure,
-    })
+    (dual
+      ? undefined
+      : heldLoserSeat({
+          winnerParticipantId: replaced ? sideParticipantId(winningSide) : undefined,
+          loserDrawPosition: sidePosition(3 - winningSide),
+          inContextDrawMatchUps: carriesExit(params) ? params.inContextDrawMatchUps : undefined,
+          tournamentRecord: params.tournamentRecord,
+          event: params.event,
+          drawDefinition,
+          targetData,
+          structure,
+        }))
   );
 }
 
