@@ -1,10 +1,15 @@
-import { playCall, prepareCall, type RecordedCall } from '@Tests/testHarness/outcome/recordedCallHarness';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { afterEach, describe, expect, it } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { setClock } from '@Tools/clock';
+import {
+  expectPlayedParity,
+  playCall,
+  prepareCall,
+  type RecordedCall,
+} from '@Tests/testHarness/outcome/recordedCallHarness';
 
 // constants and types
 import { FEED_IN_CHAMPIONSHIP, FIRST_MATCH_LOSER_CONSOLATION, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
@@ -93,10 +98,7 @@ function alike(call: RecordedCall) {
   const v1 = playCall(OUTCOME_PIPELINE_V1, call);
   for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
     const actual = playCall(mode, call);
-    expect([mode, actual.result]).toEqual([mode, v1.result]);
-    expect(actual.record === v1.record, `${mode}: the stored record`).toEqual(true);
-    expect(actual.notices).toEqual(v1.notices);
-    expect(actual.graph).toEqual(v1.graph);
+    expectPlayedParity(actual, v1);
   }
   return v1;
 }

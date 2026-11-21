@@ -1,5 +1,5 @@
-import { captureReturn, expectReturnParity } from '@Tests/testHarness/outcome/returnParity';
 import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { captureReturn, expectReturnParity } from '@Tests/testHarness/outcome/returnParity';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import * as stateWriter from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import * as recording from '@Mutate/matchUps/outcome/plan/recordedCall';

@@ -1,9 +1,9 @@
-import { captureReturn, expectReturnParity } from './returnParity';
 import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
-import { storedGraph } from '@Tests/testHarness/outcome/objectGraph';
 import { v1Writes } from '@Tests/testHarness/outcome/directionCounter';
 import { TOPICS } from '@Tests/testHarness/outcome/directionFixtures';
+import { storedGraph } from '@Tests/testHarness/outcome/objectGraph';
+import { captureReturn, expectReturnParity } from './returnParity';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
 import { setClock } from '@Tools/clock';
