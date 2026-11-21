@@ -1,3 +1,4 @@
+import { resolveOperatorMatchContext } from './resolveOperatorMatchContext';
 import { entityIdMismatch, EntityParams } from '@Helpers/parameters/entityIdMismatch';
 import { getTournamentId } from '@Global/state/globalState';
 import { findEvent } from '@Acquire/findEvent';
@@ -31,6 +32,8 @@ export function paramsMiddleware(
   params: { [key: string]: any },
   methodName?: string,
 ) {
+  if (methodName === 'matchUpActions' && params.operatorAudience !== undefined)
+    return resolveOperatorMatchContext(tournamentRecords, params);
   if (params._middleware === false) return params;
 
   const payload = methodName ? PAYLOADS[methodName] : undefined;

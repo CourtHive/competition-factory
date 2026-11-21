@@ -195,7 +195,13 @@ export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
   const isByeMatchUp = checkIsByeMatchUp({ matchUp, isCollectionMatchUp, assignedPositions });
   if (isByeMatchUp)
     return params.operatorAudience !== undefined
-      ? operatorMatchDto(params.operatorAudience, inContextMatchUp, [], inContextDrawMatchUps ?? [])
+      ? operatorMatchDto(
+          params.operatorAudience,
+          inContextMatchUp,
+          validActions,
+          inContextDrawMatchUps ?? [],
+          tournamentRecord.venues,
+        )
       : { validActions, isByeMatchUp };
 
   const isDoubleExit = matchUp.matchUpStatus && [DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUp.matchUpStatus);
@@ -241,7 +247,13 @@ export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
   );
 
   if (params.operatorAudience !== undefined)
-    return operatorMatchDto(params.operatorAudience, inContextMatchUp, validActions, inContextDrawMatchUps ?? []);
+    return operatorMatchDto(
+      params.operatorAudience,
+      inContextMatchUp,
+      validActions,
+      inContextDrawMatchUps ?? [],
+      tournamentRecord.venues,
+    );
   return { structureIsComplete, validActions, isDoubleExit, ...SUCCESS };
 }
 

@@ -1,3 +1,5 @@
+import { timeZoneFromVenues } from '@Query/tournaments/getTournamentTimeZone';
+import type { Venue } from '@Types/tournamentTypes';
 import { recordedStatusCode } from '../../scoreEntryState/statusCodes';
 import { resultEntryContext } from '@Query/matchUp/resultEntryContext';
 
@@ -15,6 +17,7 @@ export function operatorMatchDto(
   match: HydratedMatchUp | undefined,
   actions: MatchUpAction[],
   drawMatches: HydratedMatchUp[],
+  venues: Venue[] | undefined,
 ) {
   if (audience !== 'recorder' && audience !== 'director') return { error: INVALID_VALUES };
   if (
@@ -24,6 +27,8 @@ export function operatorMatchDto(
     !['SINGLES', 'DOUBLES'].includes(match.matchUpType ?? '')
   )
     return { error: NOT_IMPLEMENTED };
+  const venueId = match.schedule?.venueId;
+  const venue = venueId && venues?.find((item) => item.venueId === venueId);
   const scoreAction = actions.find((action) => action.type === SCORE);
   let resultIntent: 'correct-result' | 'record-initial-result' | undefined;
   if (scoreAction) resultIntent = resultEntryContext(match).requiresReview ? 'correct-result' : 'record-initial-result';
@@ -32,6 +37,7 @@ export function operatorMatchDto(
   return {
     operatorMatch: {
       audience,
+      venueTimeZone: venue ? timeZoneFromVenues([venue]).timeZone : undefined,
       matchUpId: text(match.matchUpId),
       matchUpFormat: text(match.matchUpFormat),
       matchUpStatus: text(match.matchUpStatus),
