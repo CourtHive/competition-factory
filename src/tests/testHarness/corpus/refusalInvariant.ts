@@ -1,8 +1,8 @@
 import { getTournamentRecords } from '@Global/state/globalState';
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { vi } from 'vitest';
-import { isDeepStrictEqual } from 'node:util';
 import { generatePatch } from '@Tools/jsonPatch';
+import { isDeepStrictEqual } from 'node:util';
+import { vi } from 'vitest';
 
 // Inspect the public JSON record, including factory stamps. Objects can be edited in place during
 // dispatch, so a reference to the old record cannot serve as the baseline.

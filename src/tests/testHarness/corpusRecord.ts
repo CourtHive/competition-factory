@@ -1,6 +1,6 @@
 import { assertRefusalsUnchanged } from './corpus/refusalInvariant';
-import { currentTestSeed } from './seedMathRandom';
 import { afterAll, afterEach, beforeEach } from 'vitest';
+import { currentTestSeed } from './seedMathRandom';
 import { relative } from 'node:path';
 
 // Registered for each suite file, including shared-worker and harvest runs.
