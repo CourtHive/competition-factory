@@ -78,6 +78,10 @@ winner or terminal outcome requires reviewed correction. The existing `CLEAR_SCO
 is shared without broadening its behavior. Candidate availability comes from canonical offers, not a second
 set of eligibility branches. Unknown audiences/scopes, TEAM/collection models and unusable formats are refused.
 
+Legacy matchUp-action policies do not govern SCORE (the policy documentation explicitly states this). The
+projection preserves that behavior; it must not treat a policy string as live authorization or add a private
+policy filter. A complete operator builder still needs verified capability context from CFS.
+
 These preparation objects say `wireReady: false` and `state: 'candidate'`, never the wire contract's `offered`.
 Reviewed dependency construction/checking, time-validity horizons and live verified capabilities remain required
 before an operator document can expose them as executable offers. No source-revision envelope, CFS command
@@ -86,7 +90,7 @@ input-isolation cost, not an optimized per-day build; measure a shared captured 
 
 Tests generate competition scenarios with mocksEngine, drive score drafts through the pure scoring model,
 and execute canonical mutations to assert actual advancement, correction and removal. Additional cases cover
-BYEs/unfilled sides, policy denial, doubles, inherited/invalid format, stale global state and immutable/protected
+BYEs/unfilled sides, the documented legacy SCORE policy exception, doubles, inherited/invalid format, stale global state and immutable/protected
 input. Schema-only or mocked authorization tests do not substitute for those engine checks or future service tests.
 
 Focused tests cover immutable input, canonical score/upset behavior, ordering, TEAM filtering, explicit selected

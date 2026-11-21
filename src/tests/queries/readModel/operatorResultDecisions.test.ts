@@ -183,7 +183,7 @@ describe('internal operator result decisions — canonical actions, not v1 wire 
     expect(project(match).clearResult.state).toBe('unavailable');
   });
 
-  it('respects a stored draw policy disabling SCORE', () => {
+  it('preserves the documented SCORE policy exception instead of inventing a new restriction', () => {
     const match = fixture()[0];
     let result: any = tournamentEngine.attachPolicies({
       drawId: match.drawId,
@@ -194,7 +194,9 @@ describe('internal operator result decisions — canonical actions, not v1 wire 
       },
     });
     expect(result.error).toBeUndefined();
-    expect(project(match).resultEntry.state).toBe('unavailable');
+    const canonical = tournamentEngine.matchUpActions({ drawId: match.drawId, matchUpId: match.matchUpId });
+    expect(canonical.validActions?.some((action) => action.type === SCORE)).toBe(true);
+    expect(project(match).resultEntry.state).toBe('candidate');
   });
 
   it('qualifies a doubles first-result candidate through canonical scoring', () => {
