@@ -22,6 +22,7 @@ import { checkPlayedOrder, PendingPlacements } from './playedOrder';
 import { eventDateWarning } from '@Query/events/eventDateWarning';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { withDraftWrites } from '@Global/state/withDraftWrites';
+import { replayedInstants } from '@Tools/replayedInstants';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { findParticipant } from '@Acquire/findParticipant';
 import { validTimeString } from '@Tools/dateTimePatterns';
@@ -556,11 +557,12 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): Sc
     drawDefinition: params?.drawDefinition,
     drawMatchUps: params?.drawMatchUps,
   });
-  const checked = withDraftWrites(() =>
-    writeScheduleItems({ ...params, drawMatchUps, drawDefinition, disableNotice: true }),
+  const clock = replayedInstants();
+  const checked = clock.record(() =>
+    withDraftWrites(() => writeScheduleItems({ ...params, drawMatchUps, drawDefinition, disableNotice: true })),
   );
   if (checked.error || params.validateOnly) return checked;
-  return writeScheduleItems(params);
+  return clock.replay(() => writeScheduleItems(params));
 }
 
 function writeScheduleItems(params: AddMatchUpScheduleItemsArgs): ScheduleResult {

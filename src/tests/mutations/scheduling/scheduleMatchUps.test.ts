@@ -393,6 +393,7 @@ writeModeMatrix(
           resumeTime: '08:35',
           endTime: '10:15',
         },
+        rollbackOnError: false,
       });
       expect(result.success).toEqual(true);
       expect(matchUpModifyNotices.length).toEqual(1);
@@ -402,6 +403,15 @@ writeModeMatrix(
       const modifiedMatchUp = tournamentEngine.allCompetitionMatchUps({
         matchUpFilters: { matchUpIds: [modifiedMatchUpId] },
       }).matchUps[0];
+      expect(modifiedMatchUp.schedule.scheduledTime).toBe('08:00');
+      for (const [type, time] of [
+        [START_TIME, '08:15'],
+        [STOP_TIME, '08:20'],
+        [RESUME_TIME, '08:35'],
+        [END_TIME, '10:15'],
+      ]) {
+        expect(modifiedMatchUp.timeItems.find((item) => item.itemType === type)?.itemValue).toBe(time);
+      }
       if (legacy) expect(modifiedMatchUp.timeItems.length).toEqual(5);
 
       ({ tournamentId, drawId, matchUpId } = matchUps[1]);
