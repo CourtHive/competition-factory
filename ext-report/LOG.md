@@ -15,3 +15,7 @@
 - Corrected a corpus reader string-size failure with line-by-line streaming.
 - Tested a schedule-only native prototype on `ext/v3-schedule`. Corrected its notice prediction.
 - Recorded a remaining assertion that requires the existing ownership boundary.
+- Completed the 2,727-scenario fixed-point oracle arm with no state drift or cycles.
+- Measured the retained-index candidate across the E2 workloads and on a public TEAM line correction.
+- Reduced the bare-winner re-entry difference to three calls in a two-position draw.
+- Reproduced the official coverage reader exception on a 1.08 GB harvested file.

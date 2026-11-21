@@ -88,8 +88,11 @@ it.skipIf(!process.env.OUTCOME_EXTERNAL_COST_JSON)(
   'measures completion with scores, exits, and immediate exit corrections',
   () => {
     const samples: ReturnType<typeof measure>[] = [];
-    for (const eventType of [SINGLES, TEAM] as const) {
-      const sizes = eventType === SINGLES ? [16, 32, 64, 128, 256] : [8, 16, 32, 64];
+    const largeTeam = !!process.env.OUTCOME_EXTERNAL_LARGE_TEAM;
+    const eventTypes = largeTeam ? ([TEAM] as const) : ([SINGLES, TEAM] as const);
+    const standardSizes = { [SINGLES]: [16, 32, 64, 128, 256], [TEAM]: [8, 16, 32, 64] };
+    for (const eventType of eventTypes) {
+      const sizes = largeTeam ? [128, 256] : standardSizes[eventType];
       for (const size of sizes) {
         for (const workload of ['score', 'exit', 'unwind'] as const) {
           for (const seed of [41, 42, 43]) samples.push(measure(size, eventType, workload, seed));

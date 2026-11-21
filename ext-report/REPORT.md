@@ -5,8 +5,8 @@
 - **VERIFIED** Clean `dev` at `7963e36968` passed 33,517 tests each under v1, v2 and differential.
 - **VERIFIED** The public fixed sources replayed 2,855 tournament scenarios and 67,918 steps with identical result codes
   and state hashes in all three modes. Dedicated grammar and scoring replayers passed in all modes.
-- **VERIFIED** `corpus:verify` stopped at 68 suite-harvest failures. The clean suite passed. The published sources were
-  run separately and the harvested-suite replay is tracked independently.
+- **VERIFIED** `corpus:verify` stopped at 68 suite-harvest failures. The clean suite passed. The deterministic sources ran separately.
+  The official coverage reader also throws on a 1.08 GB JSONL file.
 - **VERIFIED** Two TEAM presets reached a shared `STALLED_POSITION` report on generated odd fields. The four-position
   controls passed. Whether to change the audit or setup needs a ruling.
 - **VERIFIED** The suite census counted 9,397 successful recordings. Exit, cascade and TEAM account for 77%.
@@ -50,7 +50,9 @@ comparison.
 **VERIFIED** The dedicated grammar and scoring tests gave 377 passing cases per mode. The first harvested replay
 attempt failed to read a JSONL file larger than the runtime's string limit. The replay now streams line by line.
 The harvested scenarios can drift in all three modes. A difference shared by all three is separate from v1/v2
-outcome parity.
+outcome parity. The standalone official coverage gate fails on the same oversized file because it also
+reads each complete JSONL as one string. The deterministic-source coverage comparison below is independent
+of that exception.
 
 ## 3. Findings
 
@@ -59,6 +61,7 @@ outcome parity.
 | F-001 | G, harness | Recording changes the observed ad hoc stamp                             | Medium for corpus qualification | `src/tests/mutations/outcome/ownedDirectionWrites.graph.test.ts`       | § 4, § 8                | Yes               |
 | F-002 | G          | Odd TEAM fields can end a generated walk with a stalled downstream seat | Low pending adjudication        | `src/tests/mutations/exitPropagation/outcomeExternalTeamStall.test.ts` | §§ 5–6, TEAM completion | Yes, audit result |
 | F-003 | G          | Bare winner re-entry retains a blank score                              | Low                             | `src/tests/mutations/exitPropagation/outcomeExternalLaws.test.ts`      | §§ 3–4                  | Yes               |
+| F-004 | T, harness | Harvested corpus exceeds coverage reader string limit                   | Medium for corpus qualification | `src/tests/corpus/coverage.test.ts`                                    | § 8, corpus README      | Yes               |
 
 ## 4. Corpus extension
 
@@ -115,7 +118,7 @@ run had four more passing tests. Counts are call occurrences, so the suite and c
 | no-record    |                   0 | direct low-level v1 entry                                         | Keep an explicit direct-call effect scope or define a separate supported low-level API. Ruling required if removing acceptance.                                                  | § 7.2                    | 2–5 days after ruling |
 
 **VERIFIED** `writer-reach.json` lists files and executed functions from precise coverage around accepted copy
-writes in 15 focused recording test files. The instrument takes the first accepted copy for each reason per test
+writes in 15 focused recording test files and two direction-write files. The instrument takes the first accepted copy for each reason per test
 file. Counts are lower bounds. The focus run covered 16 reasons and did not sample `loser`. No successful
 `no-record` recording appeared. See the reproduction commands.
 
@@ -138,11 +141,12 @@ did not qualify the prototype.
 
 ### E1–E4
 
-**VERIFIED E1 pilot.** In the 16 original authored cases, v1 with fresh settlement inputs after each accepted call
+**VERIFIED E1.** In the 16 original authored cases, v1 with fresh settlement inputs after each accepted call
 ran 74 extra settlement passes for 74 calls. Zero record changes, cycles, cap hits, errors or increases in buffered
-notice count. All 85 step hashes matched. The notice counter observes length, so it does not establish whether a
-same-key notice was replaced. The experiment caps extra sweeps at eight and records repeat hashes separately from
-cap hits.
+notice count. All 85 step hashes matched. The 2,727 oracle scenarios contributed
+63,433 further calls and extra sweeps, with zero record changes, cycles, cap hits, errors or notice-count increases.
+All 66,771 step hashes matched. The notice counter observes length, so it cannot establish whether a same-key
+notice was replaced. The experiment caps extra sweeps at eight and records repeat hashes separately from cap hits.
 
 **VERIFIED E2.** Median mutation milliseconds per full draw on v2 over three seeds. Samples include traversal time
 separately. Scores use side 1, exits use a WALKOVER every fourth result, and unwind immediately corrects that exit to
@@ -220,6 +224,12 @@ normalization each need independent consumer validation.
 3. Should v3 retirement preserve tests that pin recording ownership? Recommend keeping each assertion until a
    candidate earns CA's explicit transition from an ownership assertion to a contract assertion.
 
+4. Should a bare winner with no score and one with blank score strings be stored identically? Options are
+   to treat them as equivalent in outcome laws or pin a canonical shape in 8.x. Recommend semantic equivalence
+   for v2 and a canonical rule only as part of storage normalization.
+5. Should coverage read the public JSONL incrementally? Options are bounded file generation or a streaming
+   coverage reader. Recommend streaming so source identity and manifest semantics stay intact.
+
 ## 7. What I did not do, and why
 
 - **VERIFIED scope** The private fixed corpus, production soak, remote test machines and private TEAM fuzz harness
@@ -288,4 +298,11 @@ expected to fail until CA rules on the ownership contract.
 OUTCOME_PIPELINE=differential TZ=UTC pnpm exec vitest run src/tests/mutations/outcome/recordedScheduleCall.test.ts src/tests/mutations/outcome/ownedLocalWrites.test.ts
 OUTCOME_PIPELINE=differential TZ=UTC pnpm exec vitest run --maxWorkers=6 --reporter=dot
 OUTCOME_PIPELINE=v2 pnpm run verify:corpus-manifest
+```
+
+The full oracle E1 arm uses oracle JSONL generated by `pnpm run corpus:oracles`.
+
+```sh
+TZ=UTC OUTCOME_EXTERNAL_CORPUS="$PWD/.corpus-out" OUTCOME_EXTERNAL_CORPUS_GLOB='oracles/*.jsonl' OUTCOME_EXTERNAL_FIXPOINT_JSON=/tmp/outcome-oracle-fixpoint.json OUTCOME_EXTERNAL_REPLAY_JSON=/tmp/outcome-oracle-replay.json pnpm exec vitest run --config scripts/ext/outcomeFixpoint.config.mts src/tests/corpus/outcomeExternalReplay.test.ts
+OUTCOME_PIPELINE=v2 TZ=UTC OUTCOME_EXTERNAL_CORPUS="$PWD/.corpus-out" OUTCOME_EXTERNAL_CORPUS_GLOB='src-*.jsonl' OUTCOME_EXTERNAL_REPLAY_JSON=/tmp/outcome-harvest-replay.json OUTCOME_EXTERNAL_REPLAY_DETAILS=/tmp/outcome-harvest-details.jsonl OUTCOME_EXTERNAL_CENSUS_JSONL=/tmp/outcome-harvest-census.jsonl pnpm exec vitest run --config scripts/ext/outcomeCensus.config.mts src/tests/corpus/outcomeExternalReplay.test.ts
 ```

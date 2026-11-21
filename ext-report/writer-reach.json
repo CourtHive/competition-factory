@@ -1,10 +1,19 @@
 [
   {
     "reason": "cascade",
-    "samples": 1,
-    "fileCount": 44,
-    "functionCount": 312,
+    "samples": 3,
+    "fileCount": 52,
+    "functionCount": 414,
     "files": {
+      "src/mutate/drawDefinitions/matchUpGovernor/attemptToModifyScore.ts": [
+        "anonymous@2091",
+        "anonymous@2176",
+        "anonymous@257",
+        "anonymous@3773",
+        "anonymous@3940",
+        "attemptToModifyScore",
+        "drawPositionsAssignedParticipantIds"
+      ],
       "src/mutate/drawDefinitions/matchUpGovernor/attemptToSetMatchUpStatus.ts": [
         "anonymous@255",
         "anonymous@363",
@@ -12,6 +21,13 @@
         "isTeamRoundRobinContext",
         "removeWinningSideAndSetDoubleExit",
         "statusFallsThrough"
+      ],
+      "src/mutate/drawDefinitions/matchUpGovernor/attemptToSetWinningSide.ts": [
+        "anonymous@260",
+        "anonymous@8486",
+        "attemptToSetWinningSide",
+        "redirectsUndecidedDual",
+        "refreshArrivals"
       ],
       "src/mutate/drawDefinitions/matchUpGovernor/getExitWinningSide.ts": [
         "anonymous@1234",
@@ -36,6 +52,11 @@
         "removesDirected",
         "scoresWithNoWinningSide"
       ],
+      "src/mutate/drawDefinitions/matchUpGovernor/recordSourceSideProvenance.ts": [
+        "anonymous@1727",
+        "anonymous@263",
+        "recordSourceSideProvenance"
+      ],
       "src/mutate/drawDefinitions/matchUpGovernor/rereadTargets.ts": [
         "anonymous@1159",
         "anonymous@250",
@@ -49,6 +70,7 @@
         "anonymous@186755",
         "anonymous@187344",
         "anonymous@191584",
+        "anonymous@191778",
         "anonymous@258",
         "anonymous@359",
         "anonymous@44252",
@@ -79,8 +101,27 @@
         "withdrawStaleAdvances"
       ],
       "src/mutate/matchUps/drawPositions/assignMatchUpDrawPosition.ts": ["anonymous@262"],
+      "src/mutate/matchUps/drawPositions/directLoser.ts": [
+        "anonymous@248",
+        "anonymous@5741",
+        "anonymous@6223",
+        "anonymous@6366",
+        "directLoser",
+        "targetSide"
+      ],
+      "src/mutate/matchUps/drawPositions/directParticipants.ts": [
+        "anonymous@255",
+        "anonymous@8330",
+        "anonymous@8429",
+        "checkIsPreFeedRound",
+        "directParticipants",
+        "processDrawPositionDirecting",
+        "sidePosition"
+      ],
+      "src/mutate/matchUps/drawPositions/directWinner.ts": ["anonymous@249"],
       "src/mutate/matchUps/drawPositions/drawPositionPlacement.ts": [
         "advanceDrawPosition",
+        "advanceIntoWinnerMatchUp",
         "anonymous@10074",
         "anonymous@13274",
         "anonymous@13394",
@@ -91,25 +132,57 @@
         "anonymous@46250",
         "anonymous@46399",
         "anonymous@46532",
+        "anonymous@580",
+        "anonymous@59740",
+        "anonymous@60175",
+        "anonymous@60390",
         "anonymous@9752",
         "anonymous@9891",
         "applyPositionToMatchUp",
         "assignMatchUpDrawPosition",
         "assignTeamLineUp",
+        "directWinner",
+        "directWinnerViaLink",
         "propagateConsolationBye",
+        "refreshedMatchUps",
         "resolveMatchUpStatus"
       ],
       "src/mutate/matchUps/drawPositions/normalizeDrawPositions.ts": [
         "anonymous@2000",
+        "anonymous@2039",
         "anonymous@259",
         "normalizeDrawPositions"
       ],
       "src/mutate/matchUps/drawPositions/positionClear.ts": ["anonymous@254"],
       "src/mutate/matchUps/drawPositions/propagatesByeOnDoubleExit.ts": ["anonymous@262", "propagatesByeOnDoubleExit"],
       "src/mutate/matchUps/drawPositions/propagateUnfillableLoserBye.ts": [
+        "anonymous@10733",
+        "anonymous@14835",
+        "anonymous@14911",
+        "anonymous@15179",
+        "anonymous@15223",
         "anonymous@264",
         "anonymous@8051",
+        "holdsPropagatedBye",
         "propagateUnfillableLoserBye"
+      ],
+      "src/mutate/matchUps/drawPositions/relabelLoserExit.ts": [
+        "anonymous@16203",
+        "anonymous@16503",
+        "anonymous@16634",
+        "anonymous@16736",
+        "anonymous@17110",
+        "anonymous@17238",
+        "anonymous@17293",
+        "anonymous@18855",
+        "anonymous@253",
+        "anonymous@5590",
+        "byeHeldCarries",
+        "carriedPastStanding",
+        "clearByeHeldCarries",
+        "relabelLoserExit",
+        "standingMatchUp",
+        "withdrawable"
       ],
       "src/mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement.ts": [
         "anonymous@267",
@@ -145,7 +218,8 @@
         "held",
         "occupantChangesSide",
         "rekeySideFacts",
-        "sideAt"
+        "sideAt",
+        "swapSideFacts"
       ],
       "src/mutate/matchUps/lineUps/ensureSideLineUps.ts": [
         "anonymous@2055",
@@ -154,11 +228,18 @@
         "ensureSideLineUps",
         "ensuredDualSides"
       ],
+      "src/mutate/matchUps/lineUps/updateSideLineUp.ts": [
+        "anonymous@1786",
+        "anonymous@1997",
+        "anonymous@253",
+        "updateSideLineUp"
+      ],
       "src/mutate/matchUps/matchUpStatus/applyWithdrawnExits.ts": ["anonymous@256", "applyWithdrawnExits"],
-      "src/mutate/matchUps/matchUpStatus/correctionKindGuard.ts": ["anonymous@257", "correctionKindChange"],
+      "src/mutate/matchUps/matchUpStatus/correctionKindGuard.ts": ["anonymous@257", "carries", "correctionKindChange"],
       "src/mutate/matchUps/matchUpStatus/feedEligibilityGuard.ts": [
         "anonymous@258",
         "anonymous@369",
+        "anonymous@5009",
         "feedEligibilityChange",
         "lineFeedEligibilityChange"
       ],
@@ -178,7 +259,9 @@
         "anonymous@4045",
         "anonymous@4456",
         "anonymous@4517",
+        "anonymous@4864",
         "anonymous@6614",
+        "anonymous@6692",
         "findOwedByeAdvance",
         "owedAdvance",
         "owedSeatAdvance",
@@ -187,23 +270,38 @@
       "src/mutate/matchUps/matchUpStatus/reconcileCarriesPastByes.ts": [
         "anonymous@261",
         "anonymous@5603",
+        "anonymous@6399",
+        "carriedSides",
         "carryCandidates",
         "reconcileCarriesPastByes"
       ],
       "src/mutate/matchUps/matchUpStatus/reconcileConsolationReservations.ts": [
         "anonymous@269",
+        "anonymous@3695",
         "reconcileConsolationReservations"
       ],
       "src/mutate/matchUps/matchUpStatus/reconcileDecider.ts": [
+        "anonymous@10354",
         "anonymous@444",
         "anonymous@645",
+        "anonymous@8570",
+        "deciderChangedByCascade",
         "getDeciderSnapshot",
         "getDeciderTriggers",
         "reconcileDeciders"
       ],
-      "src/mutate/matchUps/matchUpStatus/reconcileLinkAdvancements.ts": ["anonymous@262", "reconcileLinkAdvancements"],
+      "src/mutate/matchUps/matchUpStatus/reconcileLinkAdvancements.ts": [
+        "anonymous@262",
+        "detect",
+        "reconcileLinkAdvancements"
+      ],
       "src/mutate/matchUps/matchUpStatus/reconcileMissedLinkAdvancements.ts": [
         "anonymous@268",
+        "anonymous@3104",
+        "anonymous@5563",
+        "anonymous@6292",
+        "detect",
+        "findMissedLinkAdvancements",
         "reconcileMissedLinkAdvancements"
       ],
       "src/mutate/matchUps/matchUpStatus/reconcileProvenanceSides.ts": [
@@ -225,6 +323,8 @@
         "anonymous@13269",
         "anonymous@13480",
         "anonymous@15004",
+        "anonymous@15762",
+        "anonymous@15942",
         "anonymous@262",
         "detect",
         "getStaleOrigins",
@@ -295,11 +395,24 @@
         "settleExitOrigins"
       ],
       "src/mutate/matchUps/matchUpStatus/settleForwardConsequences.ts": [
+        "anonymous@10015",
+        "anonymous@10077",
+        "anonymous@10578",
+        "anonymous@10615",
+        "anonymous@11096",
+        "anonymous@15873",
+        "anonymous@16661",
         "anonymous@375",
         "anonymous@9636",
+        "assignmentsOf",
         "detect",
         "findOwed",
         "hasForwardWork",
+        "openNextMatchUp",
+        "owedLoser",
+        "owedReservation",
+        "owedWinnerAdvance",
+        "positionsOf",
         "settleForwardConsequences"
       ],
       "src/mutate/matchUps/matchUpStatus/settleRederivedDoubleExits.ts": [
@@ -314,6 +427,7 @@
       ],
       "src/mutate/matchUps/matchUpStatus/sideExitProvenance.ts": [
         "admissibleOn",
+        "anonymous@1118",
         "anonymous@1536",
         "anonymous@1980",
         "anonymous@2281",
@@ -327,6 +441,7 @@
         "anonymous@908",
         "buildSideExitProvenance",
         "clearResolvedSideExitProvenance",
+        "clearSideExitProvenance",
         "collapseDoubleExitStatus",
         "decidedStatus",
         "decidesForTheSide",
@@ -335,6 +450,7 @@
         "mergeSideExitProvenance",
         "participatesInExitCascade",
         "producedExitStatus",
+        "refreshArrivalsFrom",
         "retainPolicyCodes",
         "rewritesCarriedExit",
         "withdrawArrivalFrom",
@@ -342,9 +458,11 @@
         "withdrawProducedExits"
       ],
       "src/mutate/matchUps/matchUpStatus/sideStatusCodes.ts": [
+        "anonymous@362",
         "anonymous@470",
         "attributeDerivedStatusCodes",
-        "reasonAttributesToSide"
+        "reasonAttributesToSide",
+        "splitStatusCodes"
       ],
       "src/mutate/matchUps/schedule/byeScheduling.ts": ["anonymous@344", "matchUpHoldsScheduling"],
       "src/mutate/matchUps/score/modifyMatchUpScore.ts": [
@@ -1174,9 +1292,9 @@
   },
   {
     "reason": "exit",
-    "samples": 2,
-    "fileCount": 31,
-    "functionCount": 248,
+    "samples": 3,
+    "fileCount": 42,
+    "functionCount": 392,
     "files": {
       "src/mutate/drawDefinitions/matchUpGovernor/attemptToSetMatchUpStatus.ts": [
         "anonymous@255",
@@ -1194,7 +1312,34 @@
         "noDownstreamDependencies",
         "refusesStatusRoute",
         "removesDirected",
+        "scoreModification",
         "scoresWithNoWinningSide"
+      ],
+      "src/mutate/drawDefinitions/matchUpGovernor/recordSourceSideProvenance.ts": [
+        "anonymous@1727",
+        "anonymous@263",
+        "recordSourceSideProvenance"
+      ],
+      "src/mutate/drawDefinitions/matchUpGovernor/removeDoubleExit.ts": [
+        "anonymous@11038",
+        "anonymous@12801",
+        "anonymous@16129",
+        "anonymous@253",
+        "anonymous@27493",
+        "anonymous@29105",
+        "anonymous@38955",
+        "anonymous@5017",
+        "anonymous@5130",
+        "anonymous@55798",
+        "carriesWithdrawnOrigin",
+        "codesForUnwound",
+        "conditionallyRemoveDrawPosition",
+        "findPropagatedBye",
+        "getUnwoundState",
+        "removeDoubleExit",
+        "reservationStands",
+        "retainByeOriginsBesideExits",
+        "targetDrawPositionIsBye"
       ],
       "src/mutate/drawDefinitions/matchUpGovernor/unwindDualDoubleExit.ts": ["anonymous@257", "unwindDualDoubleExit"],
       "src/mutate/drawDefinitions/positionGovernor/doubleExitAdvancement.ts": [
@@ -1203,6 +1348,7 @@
         "anonymous@186755",
         "anonymous@187344",
         "anonymous@191584",
+        "anonymous@191778",
         "anonymous@258",
         "anonymous@359",
         "anonymous@45885",
@@ -1228,7 +1374,106 @@
         "strandsItsExit",
         "withdrawStaleAdvances"
       ],
+      "src/mutate/matchUps/drawPositions/carryHome.ts": ["anonymous@439", "anonymous@7268", "carryLeavingWith"],
+      "src/mutate/matchUps/drawPositions/normalizeDrawPositions.ts": [
+        "anonymous@2000",
+        "anonymous@259",
+        "normalizeDrawPositions"
+      ],
+      "src/mutate/matchUps/drawPositions/positionClear.ts": [
+        "advancedByOpponentsBye",
+        "anonymous@10797",
+        "anonymous@11983",
+        "anonymous@15107",
+        "anonymous@20357",
+        "anonymous@24137",
+        "anonymous@24335",
+        "anonymous@24518",
+        "anonymous@24705",
+        "anonymous@254",
+        "anonymous@25687",
+        "anonymous@26517",
+        "anonymous@26626",
+        "anonymous@30825",
+        "anonymous@30955",
+        "anonymous@33235",
+        "anonymous@44845",
+        "anonymous@54205",
+        "anonymous@54546",
+        "anonymous@54614",
+        "anonymous@5808",
+        "anonymous@9190",
+        "anonymous@9413",
+        "buildPairingDetails",
+        "buildRemovalTasks",
+        "clearDrawPosition",
+        "drawPositionRemovals",
+        "handleTeamPositionRemoval",
+        "holeCarriedOnto",
+        "isPosition",
+        "readSidesBefore",
+        "releaseUndecidedAdvancements",
+        "removeDrawPosition",
+        "removeSubsequentRoundsParticipant",
+        "retainProvenanceBesideRemoval",
+        "sideBesideHeldPosition",
+        "updateMatchUpStatusAfterRemoval"
+      ],
       "src/mutate/matchUps/drawPositions/propagatesByeOnDoubleExit.ts": ["anonymous@262", "propagatesByeOnDoubleExit"],
+      "src/mutate/matchUps/drawPositions/releaseAdvancedDrawPosition.ts": [
+        "advancedByBye",
+        "anonymous@12896",
+        "anonymous@20581",
+        "anonymous@20795",
+        "anonymous@21922",
+        "anonymous@264",
+        "anonymous@5996",
+        "anonymous@6018",
+        "anonymous@7292",
+        "anonymous@7736",
+        "anonymous@8101",
+        "awaitsArrivalOnSide",
+        "latestFeeder",
+        "releasable",
+        "releaseAdvancedDrawPosition"
+      ],
+      "src/mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement.ts": [
+        "anonymous@267",
+        "anonymous@400",
+        "anonymous@5703",
+        "releaseAdvancedDrawPositionAcrossLinks",
+        "releaseLinkedWinnerAdvancement"
+      ],
+      "src/mutate/matchUps/drawPositions/removeDirectedParticipants.ts": [
+        "anonymous@493",
+        "anonymous@595",
+        "removeDirectedBye",
+        "removeDirectedWinner"
+      ],
+      "src/mutate/matchUps/drawPositions/removeSubsequentRoundsParticipant.ts": [
+        "anonymous@270",
+        "anonymous@3834",
+        "anonymous@4259",
+        "anonymous@4307",
+        "anonymous@6238",
+        "anonymous@6327",
+        "anonymous@6895",
+        "anonymous@7019",
+        "carriedAwardToEmptySeat",
+        "removeDrawPosition",
+        "removeSubsequentRoundsParticipant"
+      ],
+      "src/mutate/matchUps/drawPositions/setMatchUpDrawPositions.ts": [
+        "anonymous@260",
+        "anonymous@362",
+        "anonymous@4003",
+        "anonymous@4105",
+        "held",
+        "occupantChangesSide",
+        "rekeySideFacts",
+        "setMatchUpDrawPositions",
+        "sideAt"
+      ],
       "src/mutate/matchUps/lineUps/ensureSideLineUps.ts": [
         "anonymous@2055",
         "anonymous@2298",
@@ -1243,6 +1488,16 @@
         "anonymous@369",
         "feedEligibilityChange",
         "lineFeedEligibilityChange"
+      ],
+      "src/mutate/matchUps/matchUpStatus/feederSendsNobody.ts": [
+        "anonymous@10389",
+        "anonymous@5578",
+        "anonymous@640",
+        "byeSeatStands",
+        "feederSendsNobody",
+        "originWithdrawn",
+        "pendingProducedExit",
+        "seatShowsBye"
       ],
       "src/mutate/matchUps/matchUpStatus/indexPrecheck.ts": ["anonymous@253", "hasWork", "settleUnlessIdle"],
       "src/mutate/matchUps/matchUpStatus/lineTakesPlayedOnDualWinner.ts": [
@@ -1261,6 +1516,7 @@
         "anonymous@4456",
         "anonymous@4517",
         "anonymous@6614",
+        "anonymous@6692",
         "findOwedByeAdvance",
         "owedAdvance",
         "owedSeatAdvance",
@@ -1269,11 +1525,14 @@
       "src/mutate/matchUps/matchUpStatus/reconcileCarriesPastByes.ts": [
         "anonymous@261",
         "anonymous@5603",
+        "anonymous@6399",
+        "carriedSides",
         "carryCandidates",
         "reconcileCarriesPastByes"
       ],
       "src/mutate/matchUps/matchUpStatus/reconcileConsolationReservations.ts": [
         "anonymous@269",
+        "anonymous@3695",
         "reconcileConsolationReservations"
       ],
       "src/mutate/matchUps/matchUpStatus/reconcileDecider.ts": [
@@ -1283,9 +1542,14 @@
         "getDeciderTriggers",
         "reconcileDeciders"
       ],
-      "src/mutate/matchUps/matchUpStatus/reconcileLinkAdvancements.ts": ["anonymous@262", "reconcileLinkAdvancements"],
+      "src/mutate/matchUps/matchUpStatus/reconcileLinkAdvancements.ts": [
+        "anonymous@262",
+        "detect",
+        "reconcileLinkAdvancements"
+      ],
       "src/mutate/matchUps/matchUpStatus/reconcileMissedLinkAdvancements.ts": [
         "anonymous@268",
+        "anonymous@3104",
         "reconcileMissedLinkAdvancements"
       ],
       "src/mutate/matchUps/matchUpStatus/reconcileProvenanceSides.ts": [
@@ -1314,6 +1578,7 @@
         "scoredTimeAction"
       ],
       "src/mutate/matchUps/matchUpStatus/reconcileStaleExitOrigins.ts": [
+        "anonymous@13173",
         "anonymous@13269",
         "anonymous@13480",
         "anonymous@15004",
@@ -1322,6 +1587,7 @@
         "getStaleOrigins",
         "getStaleRelays",
         "hasStaleExitOrigins",
+        "holdsBye",
         "reconcileStaleExitOrigins",
         "strandedCarries",
         "targetsOf"
@@ -1387,6 +1653,8 @@
         "settleExitOrigins"
       ],
       "src/mutate/matchUps/matchUpStatus/settleForwardConsequences.ts": [
+        "anonymous@10015",
+        "anonymous@10077",
         "anonymous@10578",
         "anonymous@10615",
         "anonymous@375",
@@ -1394,6 +1662,7 @@
         "detect",
         "findOwed",
         "hasForwardWork",
+        "openNextMatchUp",
         "owedLoser",
         "owedReservation",
         "owedWinnerAdvance",
@@ -1412,24 +1681,36 @@
       ],
       "src/mutate/matchUps/matchUpStatus/sideExitProvenance.ts": [
         "admissibleOn",
+        "anonymous@1225",
         "anonymous@1536",
+        "anonymous@1644",
+        "anonymous@1750",
+        "anonymous@1867",
+        "anonymous@1980",
         "anonymous@2281",
         "anonymous@255",
         "anonymous@2582",
         "anonymous@461",
         "anonymous@573",
         "anonymous@801",
+        "anonymous@908",
         "buildSideExitProvenance",
         "clearResolvedSideExitProvenance",
+        "clearSideExitProvenance",
         "collapseDoubleExitStatus",
         "decidedStatus",
         "decidesForTheSide",
+        "deriveExitStateFromProvenance",
         "isDecided",
         "isDefaultFlavoured",
         "mergeSideExitProvenance",
+        "participatesInExitCascade",
         "producedExitStatus",
+        "retainForeignProvenance",
         "retainPolicyCodes",
-        "rewritesCarriedExit"
+        "rewritesCarriedExit",
+        "sideRecordOf",
+        "withdrawArrivalFrom"
       ],
       "src/mutate/matchUps/matchUpStatus/sideStatusCodes.ts": [
         "anonymous@470",
@@ -1449,6 +1730,7 @@
       ],
       "src/mutate/notifications/drawNotifications.ts": [
         "anonymous@1169",
+        "anonymous@1799",
         "anonymous@5558",
         "anonymous@759",
         "anonymous@856",
@@ -1463,6 +1745,7 @@
         "holds",
         "modifyDrawNotice",
         "modifyMatchUpNotice",
+        "modifyPositionAssignmentsNotice",
         "resolveStructureId",
         "search",
         "stampMatchUpUpdatedAt",
@@ -1875,16 +2158,18 @@
   },
   {
     "reason": "notes",
-    "samples": 1,
-    "fileCount": 28,
-    "functionCount": 173,
+    "samples": 2,
+    "fileCount": 31,
+    "functionCount": 235,
     "files": {
       "src/mutate/base/addRemoveNotes.ts": ["addNotes", "anonymous@245"],
       "src/mutate/drawDefinitions/matchUpGovernor/attemptToSetMatchUpStatus.ts": [
         "anonymous@363",
         "attemptToSetMatchUpStatus",
         "clearScore",
-        "isTeamRoundRobinContext"
+        "isTeamRoundRobinContext",
+        "modifyScoreAndAdvanceDoubleExit",
+        "scoreModification"
       ],
       "src/mutate/drawDefinitions/matchUpGovernor/noDownstreamDependencies.ts": [
         "anonymous@261",
@@ -1895,16 +2180,37 @@
       ],
       "src/mutate/drawDefinitions/matchUpGovernor/unwindDualDoubleExit.ts": ["anonymous@257", "unwindDualDoubleExit"],
       "src/mutate/drawDefinitions/positionGovernor/doubleExitAdvancement.ts": [
+        "advanceFromTarget",
+        "anonymous@173382",
+        "anonymous@186755",
         "anonymous@187344",
         "anonymous@191584",
+        "anonymous@258",
         "anonymous@359",
+        "anonymous@45885",
+        "anonymous@46806",
+        "anonymous@59137",
+        "anonymous@61428",
+        "anonymous@69696",
+        "anonymous@82863",
+        "anonymous@82979",
+        "conditionallyAdvanceDrawPosition",
+        "deliveredStatus",
         "detect",
+        "doubleExitAdvancement",
+        "exitStandsOnlyOnSide",
         "getHeldExit",
         "hasHeldExitWork",
+        "inferSourceSideNumber",
         "isHolderBesideBye",
+        "keepCarriedExitOnPairedSide",
+        "logAdvancement",
+        "producesNothing",
         "settleHeldExits",
-        "strandsItsExit"
+        "strandsItsExit",
+        "withdrawStaleAdvances"
       ],
+      "src/mutate/matchUps/drawPositions/propagatesByeOnDoubleExit.ts": ["anonymous@262", "propagatesByeOnDoubleExit"],
       "src/mutate/matchUps/matchUpStatus/correctionKindGuard.ts": ["anonymous@257", "correctionKindChange"],
       "src/mutate/matchUps/matchUpStatus/feedEligibilityGuard.ts": [
         "anonymous@258",
@@ -1958,8 +2264,18 @@
       "src/mutate/matchUps/matchUpStatus/reconcileProvenanceSides.ts": [
         "anonymous@261",
         "anonymous@4756",
+        "anonymous@5495",
+        "anonymous@5848",
+        "anonymous@5958",
+        "anonymous@6186",
+        "anonymous@7243",
+        "detect",
+        "feederReached",
+        "feederSide",
+        "findMisplacedProvenance",
         "provenanceCandidates",
-        "reconcileProvenanceSides"
+        "reconcileProvenanceSides",
+        "seatedFrom"
       ],
       "src/mutate/matchUps/matchUpStatus/reconcileScoredTimes.ts": [
         "anonymous@350",
@@ -1971,12 +2287,17 @@
         "scoredTimeAction"
       ],
       "src/mutate/matchUps/matchUpStatus/reconcileStaleExitOrigins.ts": [
+        "anonymous@13269",
+        "anonymous@13480",
+        "anonymous@15004",
         "anonymous@262",
         "detect",
         "getStaleOrigins",
         "getStaleRelays",
         "hasStaleExitOrigins",
-        "reconcileStaleExitOrigins"
+        "reconcileStaleExitOrigins",
+        "strandedCarries",
+        "targetsOf"
       ],
       "src/mutate/matchUps/matchUpStatus/setMatchUpState.ts": [
         "announceGoesTo",
@@ -2034,6 +2355,8 @@
         "settleExitOrigins"
       ],
       "src/mutate/matchUps/matchUpStatus/settleForwardConsequences.ts": [
+        "anonymous@10578",
+        "anonymous@10615",
         "anonymous@375",
         "anonymous@9636",
         "detect",
@@ -2042,6 +2365,7 @@
         "owedLoser",
         "owedReservation",
         "owedWinnerAdvance",
+        "positionsOf",
         "settleForwardConsequences"
       ],
       "src/mutate/matchUps/matchUpStatus/settleRederivedDoubleExits.ts": [
@@ -2055,12 +2379,33 @@
         "withoutSettleTelemetry"
       ],
       "src/mutate/matchUps/matchUpStatus/sideExitProvenance.ts": [
+        "admissibleOn",
         "anonymous@1536",
+        "anonymous@2281",
+        "anonymous@255",
         "anonymous@2582",
+        "anonymous@461",
+        "anonymous@573",
+        "anonymous@801",
+        "buildSideExitProvenance",
         "clearResolvedSideExitProvenance",
         "clearSideExitProvenance",
+        "collapseDoubleExitStatus",
+        "decidedStatus",
+        "decidesForTheSide",
+        "isDecided",
+        "isDefaultFlavoured",
+        "mergeSideExitProvenance",
+        "producedExitStatus",
+        "retainPolicyCodes",
         "rewritesCarriedExit"
       ],
+      "src/mutate/matchUps/matchUpStatus/sideStatusCodes.ts": [
+        "anonymous@470",
+        "attributeDerivedStatusCodes",
+        "reasonAttributesToSide"
+      ],
+      "src/mutate/matchUps/schedule/byeScheduling.ts": ["anonymous@344", "matchUpHoldsScheduling"],
       "src/mutate/matchUps/score/modifyMatchUpScore.ts": [
         "anonymous@255",
         "applyDefaultedProcessCodes",
@@ -3067,9 +3412,9 @@
   },
   {
     "reason": "settle",
-    "samples": 3,
-    "fileCount": 44,
-    "functionCount": 305,
+    "samples": 4,
+    "fileCount": 54,
+    "functionCount": 459,
     "files": {
       "src/mutate/drawDefinitions/matchUpGovernor/attemptToModifyScore.ts": [
         "anonymous@2176",
@@ -3100,10 +3445,25 @@
         "scoresWithNoWinningSide"
       ],
       "src/mutate/drawDefinitions/matchUpGovernor/removeDoubleExit.ts": [
+        "anonymous@11038",
+        "anonymous@12801",
+        "anonymous@16129",
         "anonymous@253",
+        "anonymous@27493",
+        "anonymous@30567",
+        "anonymous@38955",
         "anonymous@5017",
+        "anonymous@5130",
+        "anonymous@54760",
+        "anonymous@55798",
+        "carriesWithdrawnOrigin",
+        "codesForUnwound",
+        "conditionallyRemoveDrawPosition",
         "findPropagatedBye",
-        "removeDoubleExit"
+        "getUnwoundState",
+        "removeDoubleExit",
+        "reservationStands",
+        "targetDrawPositionIsBye"
       ],
       "src/mutate/drawDefinitions/matchUpGovernor/unwindDualDoubleExit.ts": [
         "anonymous@257",
@@ -3131,10 +3491,31 @@
       ],
       "src/mutate/extensions/setFirstClassOrExtension.ts": ["anonymous@261", "setFirstClassOrExtension"],
       "src/mutate/matchUps/drawPositions/assignDrawPositionBye.ts": [
+        "anonymous@11421",
+        "anonymous@14361",
+        "anonymous@17336",
+        "anonymous@17434",
+        "anonymous@17648",
+        "anonymous@18162",
+        "anonymous@18249",
+        "anonymous@19049",
+        "anonymous@24427",
+        "anonymous@24621",
+        "anonymous@24791",
         "anonymous@258",
+        "anonymous@29914",
         "anonymous@7025",
-        "assignDrawPositionBye"
+        "assignDrawPositionBye",
+        "byeTargetMatchUps",
+        "correctResultsAwardedToTheBye",
+        "goesToForPropagation",
+        "removeDisplacedLineUps",
+        "setMatchUpStatusBYE",
+        "successNotice",
+        "withdrawArrivalsByResult",
+        "withdrawDisplacedCarry"
       ],
+      "src/mutate/matchUps/drawPositions/carryHome.ts": ["anonymous@439", "anonymous@7268", "carryLeavingWith"],
       "src/mutate/matchUps/drawPositions/directLoser.ts": [
         "anonymous@10485",
         "anonymous@10819",
@@ -3142,9 +3523,13 @@
         "anonymous@5741",
         "anonymous@6223",
         "anonymous@6366",
+        "assignLoserToTarget",
         "directLoser",
         "loserDrawPositionWins",
-        "placeLoser"
+        "placeLoser",
+        "propagateLoserLineUp",
+        "propagateLoserSeed",
+        "targetSide"
       ],
       "src/mutate/matchUps/drawPositions/directParticipants.ts": [
         "anonymous@255",
@@ -3156,7 +3541,9 @@
         "sidePosition"
       ],
       "src/mutate/matchUps/drawPositions/directWinner.ts": ["anonymous@249"],
+      "src/mutate/matchUps/drawPositions/drawPositionFilled.ts": ["anonymous@255", "drawPositionFilled"],
       "src/mutate/matchUps/drawPositions/drawPositionPlacement.ts": [
+        "addDrawPositionToMatchUps",
         "advanceDrawPosition",
         "anonymous@10074",
         "anonymous@13274",
@@ -3166,13 +3553,23 @@
         "anonymous@17486",
         "anonymous@372",
         "anonymous@580",
+        "anonymous@675",
+        "anonymous@67873",
+        "anonymous@71025",
+        "anonymous@71117",
+        "anonymous@72266",
+        "anonymous@74750",
         "anonymous@9752",
         "anonymous@9891",
         "applyPositionToMatchUp",
+        "assignDrawPosition",
         "assignMatchUpDrawPosition",
         "directWinner",
         "firstRoundFeedersWon",
+        "initialMatchUpId",
+        "placementMatchUps",
         "propagateConsolationBye",
+        "propagateSeedAssignment",
         "resolveMatchUpStatus"
       ],
       "src/mutate/matchUps/drawPositions/normalizeDrawPositions.ts": [
@@ -3181,18 +3578,103 @@
         "anonymous@259",
         "normalizeDrawPositions"
       ],
+      "src/mutate/matchUps/drawPositions/positionAssignment.ts": ["anonymous@255"],
+      "src/mutate/matchUps/drawPositions/positionClear.ts": [
+        "advancedByOpponentsBye",
+        "anonymous@10797",
+        "anonymous@11983",
+        "anonymous@15107",
+        "anonymous@20357",
+        "anonymous@24137",
+        "anonymous@24335",
+        "anonymous@24518",
+        "anonymous@24705",
+        "anonymous@254",
+        "anonymous@25687",
+        "anonymous@26517",
+        "anonymous@26626",
+        "anonymous@30825",
+        "anonymous@30955",
+        "anonymous@33235",
+        "anonymous@44845",
+        "anonymous@54205",
+        "anonymous@54546",
+        "anonymous@54614",
+        "anonymous@5808",
+        "anonymous@9190",
+        "anonymous@9413",
+        "buildPairingDetails",
+        "buildRemovalTasks",
+        "clearDrawPosition",
+        "drawPositionRemovals",
+        "handleTeamPositionRemoval",
+        "holeCarriedOnto",
+        "isPosition",
+        "readSidesBefore",
+        "releaseUndecidedAdvancements",
+        "removeDrawPosition",
+        "removeSubsequentRoundsParticipant",
+        "retainProvenanceBesideRemoval",
+        "sideBesideHeldPosition",
+        "updateMatchUpStatusAfterRemoval"
+      ],
+      "src/mutate/matchUps/drawPositions/propagatesByeOnDoubleExit.ts": ["anonymous@262", "propagatesByeOnDoubleExit"],
       "src/mutate/matchUps/drawPositions/propagateUnfillableLoserBye.ts": [
         "anonymous@264",
         "anonymous@8051",
         "propagateUnfillableLoserBye"
       ],
+      "src/mutate/matchUps/drawPositions/releaseAdvancedDrawPosition.ts": [
+        "advancedByBye",
+        "anonymous@12896",
+        "anonymous@20581",
+        "anonymous@20795",
+        "anonymous@21922",
+        "anonymous@264",
+        "anonymous@5996",
+        "anonymous@6018",
+        "anonymous@7292",
+        "anonymous@7736",
+        "anonymous@8101",
+        "awaitsArrivalOnSide",
+        "latestFeeder",
+        "releasable",
+        "releaseAdvancedDrawPosition"
+      ],
+      "src/mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement.ts": [
+        "anonymous@267",
+        "anonymous@400",
+        "anonymous@5703",
+        "releaseAdvancedDrawPositionAcrossLinks",
+        "releaseLinkedWinnerAdvancement"
+      ],
+      "src/mutate/matchUps/drawPositions/removeDirectedParticipants.ts": [
+        "anonymous@493",
+        "anonymous@595",
+        "removeDirectedBye",
+        "removeDirectedWinner"
+      ],
+      "src/mutate/matchUps/drawPositions/removeSubsequentRoundsParticipant.ts": [
+        "anonymous@270",
+        "anonymous@3834",
+        "anonymous@4259",
+        "anonymous@4307",
+        "anonymous@6238",
+        "anonymous@6327",
+        "anonymous@6895",
+        "carriedAwardToEmptySeat",
+        "removeDrawPosition",
+        "removeSubsequentRoundsParticipant"
+      ],
       "src/mutate/matchUps/drawPositions/setMatchUpDrawPositions.ts": [
+        "anonymous@260",
         "anonymous@362",
         "anonymous@4003",
         "anonymous@4105",
         "held",
         "occupantChangesSide",
         "rekeySideFacts",
+        "setMatchUpDrawPositions",
         "sideAt"
       ],
       "src/mutate/matchUps/lineUps/ensureSideLineUps.ts": [
@@ -3209,6 +3691,19 @@
         "anonymous@369",
         "feedEligibilityChange",
         "lineFeedEligibilityChange"
+      ],
+      "src/mutate/matchUps/matchUpStatus/feederSendsNobody.ts": [
+        "anonymous@10389",
+        "anonymous@5578",
+        "anonymous@5800",
+        "anonymous@5970",
+        "anonymous@6106",
+        "anonymous@640",
+        "byeSeatStands",
+        "feederSendsNobody",
+        "originWithdrawn",
+        "pendingProducedExit",
+        "seatShowsBye"
       ],
       "src/mutate/matchUps/matchUpStatus/indexPrecheck.ts": ["anonymous@253", "hasWork", "settleUnlessIdle"],
       "src/mutate/matchUps/matchUpStatus/lineTakesPlayedOnDualWinner.ts": [
@@ -3393,16 +3888,29 @@
       ],
       "src/mutate/matchUps/matchUpStatus/sideExitProvenance.ts": [
         "anonymous@1118",
+        "anonymous@1225",
         "anonymous@1536",
+        "anonymous@1644",
+        "anonymous@1867",
         "anonymous@1980",
         "anonymous@2582",
+        "anonymous@908",
         "clearResolvedSideExitProvenance",
         "clearSideExitProvenance",
         "participatesInExitCascade",
         "refreshArrivalsFrom",
-        "rewritesCarriedExit"
+        "retainForeignProvenance",
+        "rewritesCarriedExit",
+        "sideRecordOf",
+        "withdrawArrivalFrom"
       ],
-      "src/mutate/matchUps/matchUpStatus/sideStatusCodes.ts": ["anonymous@362", "splitStatusCodes"],
+      "src/mutate/matchUps/matchUpStatus/sideStatusCodes.ts": [
+        "anonymous@362",
+        "anonymous@470",
+        "attributeDerivedStatusCodes",
+        "reasonAttributesToSide",
+        "splitStatusCodes"
+      ],
       "src/mutate/matchUps/score/modifyMatchUpScore.ts": [
         "anonymous@19212",
         "anonymous@19271",
@@ -3426,6 +3934,7 @@
       "src/mutate/notifications/drawNotifications.ts": [
         "anonymous@1169",
         "anonymous@1568",
+        "anonymous@1799",
         "anonymous@5558",
         "anonymous@759",
         "anonymous@856",
@@ -3440,6 +3949,7 @@
         "holds",
         "modifyDrawNotice",
         "modifyMatchUpNotice",
+        "modifyPositionAssignmentsNotice",
         "resolveStructureId",
         "search",
         "stampMatchUpUpdatedAt",
@@ -3744,7 +4254,7 @@
   },
   {
     "reason": "tallied",
-    "samples": 2,
+    "samples": 3,
     "fileCount": 34,
     "functionCount": 212,
     "files": {
@@ -4010,9 +4520,9 @@
   },
   {
     "reason": "team",
-    "samples": 2,
-    "fileCount": 37,
-    "functionCount": 229,
+    "samples": 3,
+    "fileCount": 38,
+    "functionCount": 241,
     "files": {
       "src/mutate/drawDefinitions/matchUpGovernor/attemptToModifyScore.ts": [
         "anonymous@2091",
@@ -4025,6 +4535,7 @@
       ],
       "src/mutate/drawDefinitions/matchUpGovernor/attemptToSetWinningSide.ts": [
         "anonymous@260",
+        "anonymous@363",
         "anonymous@8048",
         "anonymous@8486",
         "attemptToSetWinningSide",
@@ -4063,6 +4574,7 @@
       ],
       "src/mutate/matchUps/drawPositions/drawPositionPlacement.ts": ["anonymous@372", "firstRoundFeedersWon"],
       "src/mutate/matchUps/drawPositions/relabelDualExitByTally.ts": ["anonymous@259", "relabelDualExitByTally"],
+      "src/mutate/matchUps/drawPositions/relabelLoserExit.ts": ["anonymous@822", "relabelWithoutDirection"],
       "src/mutate/matchUps/drawPositions/removeDirectedParticipants.ts": [
         "anonymous@264",
         "anonymous@382",
@@ -4081,6 +4593,7 @@
       "src/mutate/matchUps/matchUpStatus/feedEligibilityGuard.ts": [
         "anonymous@258",
         "anonymous@369",
+        "anonymous@5009",
         "feedEligibilityChange",
         "lineFeedEligibilityChange"
       ],
@@ -4099,6 +4612,7 @@
         "anonymous@4045",
         "anonymous@4456",
         "anonymous@4517",
+        "anonymous@4864",
         "anonymous@6614",
         "anonymous@6692",
         "findOwedByeAdvance",
@@ -4172,25 +4686,32 @@
         "anonymous@28287",
         "anonymous@28388",
         "anonymous@57002",
+        "apply",
+        "applyMatchUpValues",
         "applyScoredTime",
+        "changedWinnerRefusal",
         "checkCompletedRevertGuard",
         "checkDownstreamCompatibility",
         "checkImpliedCompletionGuard",
         "checkParticipants",
         "correctionKindRefusal",
         "downstreamOf",
+        "downstreamRefusal",
         "feedEligibilityRefusal",
+        "handleTeamAutoCalc",
         "isWalkoverStatus",
         "lineDualRefusal",
         "lineFeedEligibilityRefusal",
         "lineTakesDualWinnerRefusal",
         "outcomePolicies",
+        "refusedAtTheStatusRoute",
         "resolveAndApplyOutcome",
         "resolveMatchUpAndContext",
         "resolveQualifyingContext",
         "resolveTieMatchUpContext",
         "setMatchUpState",
         "validateMatchUpStateInputs",
+        "winningSideWithDownstreamDependencies",
         "writeMatchUpState"
       ],
       "src/mutate/matchUps/matchUpStatus/setMatchUpStatus.ts": [
