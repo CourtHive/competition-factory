@@ -1,0 +1,2676 @@
+{
+  "corpusVersion": 1,
+  "factoryVersion": "7.43.0",
+  "schemaWriteMode": "native",
+  "canonicalization": "RFC8785",
+  "scenarioId": "recorded/src/tests/mutations/outcome/recordedteamcall/along-a-seeded-walk-of-a-team-draw-a-call-a-recording-is-asked-for-leaves-what-v1-s-write-leaves-feed-in-championship-8/part-294",
+  "source": {
+    "kind": "recorded-test",
+    "ref": "src/tests/mutations/outcome/recordedTeamCall.test.ts::along a seeded walk of a TEAM draw, a call a recording is asked for leaves what v1's write leaves > FEED_IN_CHAMPIONSHIP 8"
+  },
+  "seed": 1246483272,
+  "clock": "2026-10-25T00:01:00.000Z",
+  "clockTickMs": 1,
+  "tags": ["recorded"],
+  "initial": {
+    "record": {
+      "endDate": "2026-11-01",
+      "events": [
+        {
+          "drawDefinitions": [
+            {
+              "appliedPolicies": {
+                "seeding": {
+                  "drawSizeProgression": true,
+                  "duplicateSeedNumbers": true,
+                  "policyName": "USTA SEEDING",
+                  "seedingProfile": {
+                    "drawTypes": {
+                      "ROUND_ROBIN": { "positioning": "WATERFALL" },
+                      "ROUND_ROBIN_WITH_PLAYOFF": { "positioning": "WATERFALL" }
+                    },
+                    "positioning": "SEPARATE"
+                  },
+                  "seedsCountThresholds": [
+                    { "drawSize": 4, "minimumParticipantCount": 3, "seedsCount": 2 },
+                    { "drawSize": 16, "minimumParticipantCount": 12, "seedsCount": 4 },
+                    { "drawSize": 32, "minimumParticipantCount": 24, "seedsCount": 8 },
+                    { "drawSize": 64, "minimumParticipantCount": 48, "seedsCount": 16 },
+                    { "drawSize": 128, "minimumParticipantCount": 96, "seedsCount": 32 },
+                    { "drawSize": 256, "minimumParticipantCount": 192, "seedsCount": 64 }
+                  ],
+                  "validSeedPositions": { "ignore": true }
+                }
+              },
+              "drawId": "d",
+              "drawName": "Feed In Championship",
+              "drawOrder": 1,
+              "drawType": "FEED_IN_CHAMPIONSHIP",
+              "entries": [
+                {
+                  "entryPosition": 1,
+                  "entryStage": "MAIN",
+                  "entryStatus": "DIRECT_ACCEPTANCE",
+                  "participantId": "cf17421f-31c9-456c-8d0b-131ef24d941b"
+                },
+                {
+                  "entryPosition": 2,
+                  "entryStage": "MAIN",
+                  "entryStatus": "DIRECT_ACCEPTANCE",
+                  "participantId": "e587e7b3-b79f-475d-acfa-c57709bb93bc"
+                },
+                {
+                  "entryPosition": 3,
+                  "entryStage": "MAIN",
+                  "entryStatus": "DIRECT_ACCEPTANCE",
+                  "participantId": "321b6fea-46da-42cc-a766-30bb0d4173e5"
+                },
+                {
+                  "entryPosition": 4,
+                  "entryStage": "MAIN",
+                  "entryStatus": "DIRECT_ACCEPTANCE",
+                  "participantId": "66738af1-ee9b-4821-8a37-7f423e0935fe"
+                },
+                {
+                  "entryPosition": 5,
+                  "entryStage": "MAIN",
+                  "entryStatus": "DIRECT_ACCEPTANCE",
+                  "participantId": "724643ba-16cd-4cc0-a8bc-8d95d79f35bc"
+                },
+                {
+                  "entryPosition": 6,
+                  "entryStage": "MAIN",
+                  "entryStatus": "DIRECT_ACCEPTANCE",
+                  "participantId": "d113cfad-787f-4731-a859-7e66e4dbd740"
+                },
+                {
+                  "entryPosition": 7,
+                  "entryStage": "MAIN",
+                  "entryStatus": "DIRECT_ACCEPTANCE",
+                  "participantId": "7cb244f6-7205-478d-9b71-eecf2256d387"
+                },
+                {
+                  "entryPosition": 8,
+                  "entryStage": "MAIN",
+                  "entryStatus": "DIRECT_ACCEPTANCE",
+                  "participantId": "6732bff0-5982-470c-babd-d4f2cb456e3e"
+                }
+              ],
+              "extensions": [],
+              "lineUps": {
+                "321b6fea-46da-42cc-a766-30bb0d4173e5": [
+                  {
+                    "collectionAssignments": [
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1", "collectionPosition": 1 },
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2", "collectionPosition": 1 }
+                    ],
+                    "participantId": "94a3ea48-5d16-4c8b-96ad-384bbc3c3aa0"
+                  },
+                  {
+                    "collectionAssignments": [
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1", "collectionPosition": 1 },
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2", "collectionPosition": 2 }
+                    ],
+                    "participantId": "c07dbf25-e4bd-4362-985d-15c81dee0742"
+                  }
+                ],
+                "66738af1-ee9b-4821-8a37-7f423e0935fe": [
+                  {
+                    "collectionAssignments": [
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1", "collectionPosition": 1 },
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2", "collectionPosition": 1 }
+                    ],
+                    "participantId": "bfabe088-9da2-4a4b-9680-10fd52a394a3"
+                  },
+                  {
+                    "collectionAssignments": [
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1", "collectionPosition": 1 },
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2", "collectionPosition": 2 }
+                    ],
+                    "participantId": "67c3b2fa-2bcc-4fdf-a394-26769a4a18c8"
+                  }
+                ],
+                "6732bff0-5982-470c-babd-d4f2cb456e3e": [
+                  {
+                    "collectionAssignments": [
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1", "collectionPosition": 1 },
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2", "collectionPosition": 1 }
+                    ],
+                    "participantId": "6a35dd0e-2888-4ec5-85a5-ee6ebd6ae30f"
+                  },
+                  {
+                    "collectionAssignments": [
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1", "collectionPosition": 1 },
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2", "collectionPosition": 2 }
+                    ],
+                    "participantId": "02a2ad59-875a-48f2-8390-327c780ff5fd"
+                  }
+                ],
+                "724643ba-16cd-4cc0-a8bc-8d95d79f35bc": [
+                  {
+                    "collectionAssignments": [
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1", "collectionPosition": 1 },
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2", "collectionPosition": 1 }
+                    ],
+                    "participantId": "f91c6ba8-e695-407f-b617-14cff06bbb8e"
+                  },
+                  {
+                    "collectionAssignments": [
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1", "collectionPosition": 1 },
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2", "collectionPosition": 2 }
+                    ],
+                    "participantId": "74afffe9-a133-46e3-9c1d-4968a430ed2d"
+                  }
+                ],
+                "7cb244f6-7205-478d-9b71-eecf2256d387": [
+                  {
+                    "collectionAssignments": [
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1", "collectionPosition": 1 },
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2", "collectionPosition": 1 }
+                    ],
+                    "participantId": "50a8b6ac-c7e7-4b96-946b-ea4af5e439d7"
+                  },
+                  {
+                    "collectionAssignments": [
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1", "collectionPosition": 1 },
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2", "collectionPosition": 2 }
+                    ],
+                    "participantId": "a884fcfe-c5f3-4ce7-906f-e449ffa207d9"
+                  }
+                ],
+                "cf17421f-31c9-456c-8d0b-131ef24d941b": [
+                  {
+                    "collectionAssignments": [
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1", "collectionPosition": 1 },
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2", "collectionPosition": 1 }
+                    ],
+                    "participantId": "ea07e3b8-f583-4551-9c73-a068ee285dbc"
+                  },
+                  {
+                    "collectionAssignments": [
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1", "collectionPosition": 1 },
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2", "collectionPosition": 2 }
+                    ],
+                    "participantId": "bb8e75da-5717-434b-89f7-5779b37d036a"
+                  }
+                ],
+                "d113cfad-787f-4731-a859-7e66e4dbd740": [
+                  {
+                    "collectionAssignments": [
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1", "collectionPosition": 1 },
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2", "collectionPosition": 1 }
+                    ],
+                    "participantId": "c0c06413-2780-4229-a2bb-b1153c234d95"
+                  },
+                  {
+                    "collectionAssignments": [
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1", "collectionPosition": 1 },
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2", "collectionPosition": 2 }
+                    ],
+                    "participantId": "74682e32-77e2-4ad4-bc1d-b3c029ca4fe1"
+                  }
+                ],
+                "e587e7b3-b79f-475d-acfa-c57709bb93bc": [
+                  {
+                    "collectionAssignments": [
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1", "collectionPosition": 1 },
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2", "collectionPosition": 1 }
+                    ],
+                    "participantId": "7fd5b734-7ec7-4ceb-b414-5ff890ec14e7"
+                  },
+                  {
+                    "collectionAssignments": [
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1", "collectionPosition": 1 },
+                      { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2", "collectionPosition": 2 }
+                    ],
+                    "participantId": "95337023-c67f-4c27-8e7f-d51c9650b94c"
+                  }
+                ]
+              },
+              "links": [
+                {
+                  "linkType": "LOSER",
+                  "source": { "roundNumber": 1, "structureId": "7750b5a2-8ebf-4609-9370-6cdecb67d827" },
+                  "target": {
+                    "feedProfile": "TOP_DOWN",
+                    "roundNumber": 1,
+                    "structureId": "5739fba2-fd08-4079-bbdf-bdc4df1c4b35"
+                  }
+                },
+                {
+                  "linkType": "LOSER",
+                  "source": { "roundNumber": 2, "structureId": "7750b5a2-8ebf-4609-9370-6cdecb67d827" },
+                  "target": {
+                    "feedProfile": "BOTTOM_UP",
+                    "roundNumber": 2,
+                    "structureId": "5739fba2-fd08-4079-bbdf-bdc4df1c4b35"
+                  }
+                },
+                {
+                  "linkType": "LOSER",
+                  "source": { "roundNumber": 3, "structureId": "7750b5a2-8ebf-4609-9370-6cdecb67d827" },
+                  "target": {
+                    "feedProfile": "TOP_DOWN",
+                    "roundNumber": 4,
+                    "structureId": "5739fba2-fd08-4079-bbdf-bdc4df1c4b35"
+                  }
+                }
+              ],
+              "structures": [
+                {
+                  "finishingPosition": "ROUND_OUTCOME",
+                  "matchUpType": "TEAM",
+                  "matchUps": [
+                    {
+                      "drawPositions": [1, 2],
+                      "finishingPositionRange": { "loser": [5, 8], "winner": [1, 4] },
+                      "finishingRound": 3,
+                      "isMock": true,
+                      "loserMatchUpId": "27542fb5-b4bc-4847-8585-ea2504e24c26",
+                      "matchUpId": "7ab468a1-2637-49f6-ab53-b1901dce4e4e",
+                      "matchUpStatus": "COMPLETED",
+                      "matchUpStatusCodes": [],
+                      "matchUpType": "TEAM",
+                      "roundNumber": 1,
+                      "roundPosition": 1,
+                      "score": {
+                        "scoreStringSide1": "0-2",
+                        "scoreStringSide2": "2-0",
+                        "sets": [{ "side1Score": 0, "side2Score": 2, "winningSide": 2 }]
+                      },
+                      "sides": [
+                        {
+                          "displaySideNumber": 1,
+                          "drawPosition": 1,
+                          "lineUp": [
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 1
+                                }
+                              ],
+                              "participantId": "94a3ea48-5d16-4c8b-96ad-384bbc3c3aa0"
+                            },
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 2
+                                }
+                              ],
+                              "participantId": "c07dbf25-e4bd-4362-985d-15c81dee0742"
+                            }
+                          ],
+                          "sideNumber": 1
+                        },
+                        {
+                          "displaySideNumber": 2,
+                          "drawPosition": 2,
+                          "lineUp": [
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 1
+                                }
+                              ],
+                              "participantId": "f91c6ba8-e695-407f-b617-14cff06bbb8e"
+                            },
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 2
+                                }
+                              ],
+                              "participantId": "74afffe9-a133-46e3-9c1d-4968a430ed2d"
+                            }
+                          ],
+                          "sideNumber": 2
+                        }
+                      ],
+                      "tieFormat": {
+                        "collectionDefinitions": [
+                          {
+                            "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                            "collectionName": "Doubles",
+                            "matchUpCount": 1,
+                            "matchUpFormat": "SET1-S:8/TB7",
+                            "matchUpType": "DOUBLES",
+                            "matchUpValue": 1
+                          },
+                          {
+                            "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                            "collectionName": "Singles",
+                            "matchUpCount": 2,
+                            "matchUpFormat": "SET3-S:6/TB7-F:TB10",
+                            "matchUpType": "SINGLES",
+                            "matchUpValue": 1
+                          }
+                        ],
+                        "tieFormatName": "Dominant Duo",
+                        "winCriteria": { "valueGoal": 2 }
+                      },
+                      "tieMatchUps": [
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "7ab468a1-2637-49f6-ab53-b1901dce4e4e-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1-TMU-1",
+                          "matchUpStatus": "DEFAULTED",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "DOUBLES",
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.000Z",
+                          "winningSide": 2
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "7ab468a1-2637-49f6-ab53-b1901dce4e4e-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-1",
+                          "matchUpStatus": "DEFAULTED",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "SINGLES",
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.000Z",
+                          "winningSide": 2
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 2,
+                          "isMock": true,
+                          "matchUpId": "7ab468a1-2637-49f6-ab53-b1901dce4e4e-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-2",
+                          "matchUpStatus": "DOUBLE_WALKOVER",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "SINGLES",
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "score": { "scoreStringSide1": "", "scoreStringSide2": "" },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.003Z"
+                        }
+                      ],
+                      "updatedAt": "2026-10-25T00:01:00.006Z",
+                      "winnerMatchUpId": "5bf2c377-b764-4db4-898f-295224396c0a",
+                      "winningSide": 2
+                    },
+                    {
+                      "drawPositions": [3, 4],
+                      "finishingPositionRange": { "loser": [5, 8], "winner": [1, 4] },
+                      "finishingRound": 3,
+                      "isMock": true,
+                      "loserMatchUpId": "27542fb5-b4bc-4847-8585-ea2504e24c26",
+                      "matchUpId": "09e9f6de-3dc7-482e-b534-67135fab757c",
+                      "matchUpStatus": "RETIRED",
+                      "matchUpStatusCodes": [],
+                      "matchUpType": "TEAM",
+                      "roundNumber": 1,
+                      "roundPosition": 2,
+                      "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                      "score": {
+                        "scoreStringSide1": "1-6 1-2",
+                        "scoreStringSide2": "6-1 2-1",
+                        "sets": [
+                          { "setNumber": 1, "side1Score": 1, "side2Score": 6, "winningSide": 2 },
+                          { "setNumber": 2, "side1Score": 1, "side2Score": 2, "winningSide": 2 }
+                        ]
+                      },
+                      "sides": [
+                        {
+                          "displaySideNumber": 1,
+                          "drawPosition": 3,
+                          "lineUp": [
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 1
+                                }
+                              ],
+                              "participantId": "7fd5b734-7ec7-4ceb-b414-5ff890ec14e7"
+                            },
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 2
+                                }
+                              ],
+                              "participantId": "95337023-c67f-4c27-8e7f-d51c9650b94c"
+                            }
+                          ],
+                          "sideNumber": 1
+                        },
+                        {
+                          "displaySideNumber": 2,
+                          "drawPosition": 4,
+                          "lineUp": [
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 1
+                                }
+                              ],
+                              "participantId": "ea07e3b8-f583-4551-9c73-a068ee285dbc"
+                            },
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 2
+                                }
+                              ],
+                              "participantId": "bb8e75da-5717-434b-89f7-5779b37d036a"
+                            }
+                          ],
+                          "sideNumber": 2
+                        }
+                      ],
+                      "tieMatchUps": [
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "09e9f6de-3dc7-482e-b534-67135fab757c-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1-TMU-1",
+                          "matchUpStatus": "DOUBLE_WALKOVER",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "DOUBLES",
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "score": { "scoreStringSide1": "", "scoreStringSide2": "" },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.000Z"
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "09e9f6de-3dc7-482e-b534-67135fab757c-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-1",
+                          "matchUpStatus": "COMPLETED",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "SINGLES",
+                          "orderOfFinish": 1,
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "score": {
+                            "scoreStringSide1": "1-6 1-6",
+                            "scoreStringSide2": "6-1 6-1",
+                            "sets": [
+                              { "setNumber": 1, "side1Score": 1, "side2Score": 6, "winningSide": 2 },
+                              { "setNumber": 2, "side1Score": 1, "side2Score": 6, "winningSide": 2 }
+                            ]
+                          },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.003Z",
+                          "winningSide": 2
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 2,
+                          "isMock": true,
+                          "matchUpId": "09e9f6de-3dc7-482e-b534-67135fab757c-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-2",
+                          "matchUpStatus": "TO_BE_PLAYED",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "SINGLES",
+                          "score": { "scoreStringSide1": "", "scoreStringSide2": "" },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.000Z"
+                        }
+                      ],
+                      "updatedAt": "2026-10-25T00:01:00.007Z",
+                      "winnerMatchUpId": "5bf2c377-b764-4db4-898f-295224396c0a",
+                      "winningSide": 2
+                    },
+                    {
+                      "drawPositions": [5, 6],
+                      "finishingPositionRange": { "loser": [5, 8], "winner": [1, 4] },
+                      "finishingRound": 3,
+                      "isMock": true,
+                      "loserMatchUpId": "28487c78-ef80-4e1a-a454-2ac730ac451f",
+                      "matchUpId": "5f6a9028-54a2-4cd8-8834-666d0ddc6bbd",
+                      "matchUpStatus": "COMPLETED",
+                      "matchUpStatusCodes": [],
+                      "matchUpType": "TEAM",
+                      "roundNumber": 1,
+                      "roundPosition": 3,
+                      "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                      "score": {
+                        "scoreStringSide1": "2-0",
+                        "scoreStringSide2": "0-2",
+                        "sets": [{ "side1Score": 2, "side2Score": 0, "winningSide": 1 }]
+                      },
+                      "sides": [
+                        {
+                          "displaySideNumber": 1,
+                          "drawPosition": 5,
+                          "lineUp": [
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 1
+                                }
+                              ],
+                              "participantId": "bfabe088-9da2-4a4b-9680-10fd52a394a3"
+                            },
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 2
+                                }
+                              ],
+                              "participantId": "67c3b2fa-2bcc-4fdf-a394-26769a4a18c8"
+                            }
+                          ],
+                          "sideNumber": 1
+                        },
+                        {
+                          "displaySideNumber": 2,
+                          "drawPosition": 6,
+                          "lineUp": [
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 1
+                                }
+                              ],
+                              "participantId": "c0c06413-2780-4229-a2bb-b1153c234d95"
+                            },
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 2
+                                }
+                              ],
+                              "participantId": "74682e32-77e2-4ad4-bc1d-b3c029ca4fe1"
+                            }
+                          ],
+                          "sideNumber": 2
+                        }
+                      ],
+                      "tieFormat": {
+                        "collectionDefinitions": [
+                          {
+                            "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                            "collectionName": "Doubles",
+                            "matchUpCount": 1,
+                            "matchUpFormat": "SET1-S:8/TB7",
+                            "matchUpType": "DOUBLES",
+                            "matchUpValue": 1
+                          },
+                          {
+                            "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                            "collectionName": "Singles",
+                            "matchUpCount": 2,
+                            "matchUpFormat": "SET3-S:6/TB7-F:TB10",
+                            "matchUpType": "SINGLES",
+                            "matchUpValue": 1
+                          }
+                        ],
+                        "tieFormatName": "Dominant Duo",
+                        "winCriteria": { "valueGoal": 2 }
+                      },
+                      "tieMatchUps": [
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "5f6a9028-54a2-4cd8-8834-666d0ddc6bbd-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1-TMU-1",
+                          "matchUpStatus": "DOUBLE_WALKOVER",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "DOUBLES",
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "score": { "scoreStringSide1": "", "scoreStringSide2": "" },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.000Z"
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "5f6a9028-54a2-4cd8-8834-666d0ddc6bbd-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-1",
+                          "matchUpStatus": "COMPLETED",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "SINGLES",
+                          "orderOfFinish": 1,
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "score": {
+                            "scoreStringSide1": "6-1 6-1",
+                            "scoreStringSide2": "1-6 1-6",
+                            "sets": [
+                              { "setNumber": 1, "side1Score": 6, "side2Score": 1, "winningSide": 1 },
+                              { "setNumber": 2, "side1Score": 6, "side2Score": 1, "winningSide": 1 }
+                            ]
+                          },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.003Z",
+                          "winningSide": 1
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 2,
+                          "isMock": true,
+                          "matchUpId": "5f6a9028-54a2-4cd8-8834-666d0ddc6bbd-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-2",
+                          "matchUpStatus": "WALKOVER",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "SINGLES",
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "score": { "scoreStringSide1": "", "scoreStringSide2": "" },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.003Z",
+                          "winningSide": 1
+                        }
+                      ],
+                      "updatedAt": "2026-10-25T00:01:00.009Z",
+                      "winnerMatchUpId": "17754417-4f91-45c1-b3cc-f92f1b738df5",
+                      "winningSide": 1
+                    },
+                    {
+                      "drawPositions": [7, 8],
+                      "finishingPositionRange": { "loser": [5, 8], "winner": [1, 4] },
+                      "finishingRound": 3,
+                      "isMock": true,
+                      "loserMatchUpId": "28487c78-ef80-4e1a-a454-2ac730ac451f",
+                      "matchUpId": "a3b3f6d0-faac-495a-9197-674251893fee",
+                      "matchUpStatus": "COMPLETED",
+                      "matchUpType": "TEAM",
+                      "roundNumber": 1,
+                      "roundPosition": 4,
+                      "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                      "score": {
+                        "scoreStringSide1": "1-2",
+                        "scoreStringSide2": "2-1",
+                        "sets": [{ "side1Score": 1, "side2Score": 2, "winningSide": 2 }]
+                      },
+                      "sides": [
+                        {
+                          "displaySideNumber": 1,
+                          "drawPosition": 7,
+                          "lineUp": [
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 1
+                                }
+                              ],
+                              "participantId": "50a8b6ac-c7e7-4b96-946b-ea4af5e439d7"
+                            },
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 2
+                                }
+                              ],
+                              "participantId": "a884fcfe-c5f3-4ce7-906f-e449ffa207d9"
+                            }
+                          ],
+                          "sideNumber": 1
+                        },
+                        {
+                          "displaySideNumber": 2,
+                          "drawPosition": 8,
+                          "lineUp": [
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 1
+                                }
+                              ],
+                              "participantId": "6a35dd0e-2888-4ec5-85a5-ee6ebd6ae30f"
+                            },
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 2
+                                }
+                              ],
+                              "participantId": "02a2ad59-875a-48f2-8390-327c780ff5fd"
+                            }
+                          ],
+                          "sideNumber": 2
+                        }
+                      ],
+                      "tieFormat": {
+                        "collectionDefinitions": [
+                          {
+                            "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                            "collectionName": "Doubles",
+                            "matchUpCount": 1,
+                            "matchUpFormat": "SET1-S:8/TB7",
+                            "matchUpType": "DOUBLES",
+                            "matchUpValue": 1
+                          },
+                          {
+                            "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                            "collectionName": "Singles",
+                            "matchUpCount": 2,
+                            "matchUpFormat": "SET3-S:6/TB7-F:TB10",
+                            "matchUpType": "SINGLES",
+                            "matchUpValue": 1
+                          }
+                        ],
+                        "tieFormatName": "Dominant Duo",
+                        "winCriteria": { "valueGoal": 2 }
+                      },
+                      "tieMatchUps": [
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "a3b3f6d0-faac-495a-9197-674251893fee-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1-TMU-1",
+                          "matchUpStatus": "WALKOVER",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "DOUBLES",
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "score": { "scoreStringSide1": "", "scoreStringSide2": "" },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.000Z",
+                          "winningSide": 2
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "a3b3f6d0-faac-495a-9197-674251893fee-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-1",
+                          "matchUpStatus": "RETIRED",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "SINGLES",
+                          "orderOfFinish": 2,
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "score": {
+                            "scoreStringSide1": "6-1 2-1",
+                            "scoreStringSide2": "1-6 1-2",
+                            "sets": [
+                              { "setNumber": 1, "side1Score": 6, "side2Score": 1, "winningSide": 1 },
+                              { "setNumber": 2, "side1Score": 2, "side2Score": 1, "winningSide": 1 }
+                            ]
+                          },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.001Z",
+                          "winningSide": 1
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 2,
+                          "isMock": true,
+                          "matchUpId": "a3b3f6d0-faac-495a-9197-674251893fee-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-2",
+                          "matchUpStatus": "COMPLETED",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "SINGLES",
+                          "orderOfFinish": 1,
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "score": {
+                            "scoreStringSide1": "1-6 1-6",
+                            "scoreStringSide2": "6-1 6-1",
+                            "sets": [
+                              { "setNumber": 1, "side1Score": 1, "side2Score": 6, "winningSide": 2 },
+                              { "setNumber": 2, "side1Score": 1, "side2Score": 6, "winningSide": 2 }
+                            ]
+                          },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.000Z",
+                          "winningSide": 2
+                        }
+                      ],
+                      "updatedAt": "2026-10-25T00:01:00.005Z",
+                      "winnerMatchUpId": "17754417-4f91-45c1-b3cc-f92f1b738df5",
+                      "winningSide": 2
+                    },
+                    {
+                      "drawPositions": [2, 4],
+                      "finishingPositionRange": { "loser": [3, 6], "winner": [1, 2] },
+                      "finishingRound": 2,
+                      "isMock": true,
+                      "loserMatchUpId": "5ce12016-ac81-45fc-9d65-21b4f0eac231",
+                      "matchUpId": "5bf2c377-b764-4db4-898f-295224396c0a",
+                      "matchUpStatus": "WALKOVER",
+                      "matchUpStatusCodes": [],
+                      "matchUpType": "TEAM",
+                      "roundNumber": 2,
+                      "roundPosition": 1,
+                      "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                      "score": { "scoreStringSide1": "", "scoreStringSide2": "" },
+                      "sides": [
+                        {
+                          "displaySideNumber": 1,
+                          "drawPosition": 2,
+                          "lineUp": [
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                }
+                              ],
+                              "participantId": "f91c6ba8-e695-407f-b617-14cff06bbb8e"
+                            },
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 2
+                                }
+                              ],
+                              "participantId": "74afffe9-a133-46e3-9c1d-4968a430ed2d"
+                            }
+                          ],
+                          "sideNumber": 1
+                        },
+                        {
+                          "displaySideNumber": 2,
+                          "drawPosition": 4,
+                          "lineUp": [
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 1
+                                }
+                              ],
+                              "participantId": "ea07e3b8-f583-4551-9c73-a068ee285dbc"
+                            },
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 2
+                                }
+                              ],
+                              "participantId": "bb8e75da-5717-434b-89f7-5779b37d036a"
+                            }
+                          ],
+                          "sideNumber": 2
+                        }
+                      ],
+                      "tieMatchUps": [
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "5bf2c377-b764-4db4-898f-295224396c0a-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1-TMU-1",
+                          "matchUpStatus": "TO_BE_PLAYED",
+                          "matchUpType": "DOUBLES",
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:00:00.000Z"
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "5bf2c377-b764-4db4-898f-295224396c0a-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-1",
+                          "matchUpStatus": "TO_BE_PLAYED",
+                          "matchUpType": "SINGLES",
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:00:00.000Z"
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 2,
+                          "isMock": true,
+                          "matchUpId": "5bf2c377-b764-4db4-898f-295224396c0a-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-2",
+                          "matchUpStatus": "COMPLETED",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "SINGLES",
+                          "orderOfFinish": 1,
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "score": {
+                            "scoreStringSide1": "6-1 6-1",
+                            "scoreStringSide2": "1-6 1-6",
+                            "sets": [
+                              { "setNumber": 1, "side1Score": 6, "side2Score": 1, "winningSide": 1 },
+                              { "setNumber": 2, "side1Score": 6, "side2Score": 1, "winningSide": 1 }
+                            ]
+                          },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.000Z",
+                          "winningSide": 1
+                        }
+                      ],
+                      "updatedAt": "2026-10-25T00:01:00.005Z",
+                      "winnerMatchUpId": "79f685b5-78fc-42e0-b807-cc95f689f86b",
+                      "winningSide": 1
+                    },
+                    {
+                      "drawPositions": [5, 8],
+                      "finishingPositionRange": { "loser": [3, 6], "winner": [1, 2] },
+                      "finishingRound": 2,
+                      "isMock": true,
+                      "loserMatchUpId": "912b1e12-cd18-4f88-8851-2fcf8928ede2",
+                      "matchUpId": "17754417-4f91-45c1-b3cc-f92f1b738df5",
+                      "matchUpStatus": "WALKOVER",
+                      "matchUpStatusCodes": [],
+                      "matchUpType": "TEAM",
+                      "roundNumber": 2,
+                      "roundPosition": 2,
+                      "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                      "score": { "scoreStringSide1": "", "scoreStringSide2": "" },
+                      "sides": [
+                        {
+                          "displaySideNumber": 1,
+                          "drawPosition": 5,
+                          "lineUp": [
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 1
+                                }
+                              ],
+                              "participantId": "bfabe088-9da2-4a4b-9680-10fd52a394a3"
+                            },
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 2
+                                }
+                              ],
+                              "participantId": "67c3b2fa-2bcc-4fdf-a394-26769a4a18c8"
+                            }
+                          ],
+                          "sideNumber": 1
+                        },
+                        {
+                          "displaySideNumber": 2,
+                          "drawPosition": 8,
+                          "lineUp": [
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                }
+                              ],
+                              "participantId": "6a35dd0e-2888-4ec5-85a5-ee6ebd6ae30f"
+                            },
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 2
+                                }
+                              ],
+                              "participantId": "02a2ad59-875a-48f2-8390-327c780ff5fd"
+                            }
+                          ],
+                          "sideNumber": 2
+                        }
+                      ],
+                      "tieMatchUps": [
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "17754417-4f91-45c1-b3cc-f92f1b738df5-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1-TMU-1",
+                          "matchUpStatus": "DOUBLE_DEFAULT",
+                          "matchUpType": "DOUBLES",
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.000Z"
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "17754417-4f91-45c1-b3cc-f92f1b738df5-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-1",
+                          "matchUpStatus": "COMPLETED",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "SINGLES",
+                          "orderOfFinish": 1,
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "score": {
+                            "scoreStringSide1": "6-1 6-1",
+                            "scoreStringSide2": "1-6 1-6",
+                            "sets": [
+                              { "setNumber": 1, "side1Score": 6, "side2Score": 1, "winningSide": 1 },
+                              { "setNumber": 2, "side1Score": 6, "side2Score": 1, "winningSide": 1 }
+                            ]
+                          },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.003Z",
+                          "winningSide": 1
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 2,
+                          "isMock": true,
+                          "matchUpId": "17754417-4f91-45c1-b3cc-f92f1b738df5-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-2",
+                          "matchUpStatus": "TO_BE_PLAYED",
+                          "matchUpType": "SINGLES",
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:00:00.000Z"
+                        }
+                      ],
+                      "updatedAt": "2026-10-25T00:01:00.007Z",
+                      "winnerMatchUpId": "79f685b5-78fc-42e0-b807-cc95f689f86b",
+                      "winningSide": 1
+                    },
+                    {
+                      "drawPositions": [2, 5],
+                      "finishingPositionRange": { "loser": [2, 3], "winner": [1, 1] },
+                      "finishingRound": 1,
+                      "isMock": true,
+                      "loserMatchUpId": "a62945ce-d2ad-48d9-bff2-5fbf13f2dac7",
+                      "matchUpId": "79f685b5-78fc-42e0-b807-cc95f689f86b",
+                      "matchUpStatus": "IN_PROGRESS",
+                      "matchUpStatusCodes": [],
+                      "matchUpType": "TEAM",
+                      "roundNumber": 3,
+                      "roundPosition": 1,
+                      "score": {
+                        "scoreStringSide1": "1-0",
+                        "scoreStringSide2": "0-1",
+                        "sets": [{ "side1Score": 1, "side2Score": 0 }]
+                      },
+                      "sides": [
+                        {
+                          "displaySideNumber": 1,
+                          "drawPosition": 2,
+                          "lineUp": [
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 1
+                                }
+                              ],
+                              "participantId": "f91c6ba8-e695-407f-b617-14cff06bbb8e"
+                            },
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 2
+                                }
+                              ],
+                              "participantId": "74afffe9-a133-46e3-9c1d-4968a430ed2d"
+                            }
+                          ],
+                          "sideNumber": 1
+                        },
+                        {
+                          "displaySideNumber": 2,
+                          "drawPosition": 5,
+                          "lineUp": [
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 1
+                                }
+                              ],
+                              "participantId": "bfabe088-9da2-4a4b-9680-10fd52a394a3"
+                            },
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 2
+                                }
+                              ],
+                              "participantId": "67c3b2fa-2bcc-4fdf-a394-26769a4a18c8"
+                            }
+                          ],
+                          "sideNumber": 2
+                        }
+                      ],
+                      "tieFormat": {
+                        "collectionDefinitions": [
+                          {
+                            "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                            "collectionName": "Doubles",
+                            "matchUpCount": 1,
+                            "matchUpFormat": "SET1-S:8/TB7",
+                            "matchUpType": "DOUBLES",
+                            "matchUpValue": 1
+                          },
+                          {
+                            "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                            "collectionName": "Singles",
+                            "matchUpCount": 2,
+                            "matchUpFormat": "SET3-S:6/TB7-F:TB10",
+                            "matchUpType": "SINGLES",
+                            "matchUpValue": 1
+                          }
+                        ],
+                        "tieFormatName": "Dominant Duo",
+                        "winCriteria": { "valueGoal": 2 }
+                      },
+                      "tieMatchUps": [
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "79f685b5-78fc-42e0-b807-cc95f689f86b-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1-TMU-1",
+                          "matchUpStatus": "TO_BE_PLAYED",
+                          "matchUpType": "DOUBLES",
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:00:00.000Z"
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "79f685b5-78fc-42e0-b807-cc95f689f86b-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-1",
+                          "matchUpStatus": "COMPLETED",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "SINGLES",
+                          "orderOfFinish": 1,
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "score": {
+                            "scoreStringSide1": "6-1 6-1",
+                            "scoreStringSide2": "1-6 1-6",
+                            "sets": [
+                              { "setNumber": 1, "side1Score": 6, "side2Score": 1, "winningSide": 1 },
+                              { "setNumber": 2, "side1Score": 6, "side2Score": 1, "winningSide": 1 }
+                            ]
+                          },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.002Z",
+                          "winningSide": 1
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 2,
+                          "isMock": true,
+                          "matchUpId": "79f685b5-78fc-42e0-b807-cc95f689f86b-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-2",
+                          "matchUpStatus": "TO_BE_PLAYED",
+                          "matchUpType": "SINGLES",
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:00:00.000Z"
+                        }
+                      ],
+                      "updatedAt": "2026-10-25T00:01:00.005Z"
+                    }
+                  ],
+                  "positionAssignments": [
+                    { "drawPosition": 1, "participantId": "321b6fea-46da-42cc-a766-30bb0d4173e5" },
+                    { "drawPosition": 2, "participantId": "724643ba-16cd-4cc0-a8bc-8d95d79f35bc" },
+                    { "drawPosition": 3, "participantId": "e587e7b3-b79f-475d-acfa-c57709bb93bc" },
+                    { "drawPosition": 4, "participantId": "cf17421f-31c9-456c-8d0b-131ef24d941b" },
+                    { "drawPosition": 5, "participantId": "66738af1-ee9b-4821-8a37-7f423e0935fe" },
+                    { "drawPosition": 6, "participantId": "d113cfad-787f-4731-a859-7e66e4dbd740" },
+                    { "drawPosition": 7, "participantId": "7cb244f6-7205-478d-9b71-eecf2256d387" },
+                    { "drawPosition": 8, "participantId": "6732bff0-5982-470c-babd-d4f2cb456e3e" }
+                  ],
+                  "seedAssignments": [],
+                  "seedLimit": 0,
+                  "stage": "MAIN",
+                  "stageSequence": 1,
+                  "structureId": "7750b5a2-8ebf-4609-9370-6cdecb67d827",
+                  "structureName": "Main",
+                  "updatedAt": "2026-10-25T00:01:00.044Z"
+                },
+                {
+                  "finishingPosition": "ROUND_OUTCOME",
+                  "matchUpType": "TEAM",
+                  "matchUps": [
+                    {
+                      "drawPositions": [4, 5],
+                      "finishingPositionRange": { "loser": [7, 8], "winner": [2, 6] },
+                      "finishingRound": 4,
+                      "isMock": true,
+                      "matchUpId": "27542fb5-b4bc-4847-8585-ea2504e24c26",
+                      "matchUpStatus": "WALKOVER",
+                      "matchUpStatusCodes": [],
+                      "matchUpType": "TEAM",
+                      "roundNumber": 1,
+                      "roundPosition": 1,
+                      "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                      "score": { "scoreStringSide1": "", "scoreStringSide2": "" },
+                      "sideExitProvenance": {
+                        "2": {
+                          "matchUpStatus": "WALKOVER",
+                          "previousMatchUpStatus": "WALKOVER",
+                          "sourceMatchUpId": "09e9f6de-3dc7-482e-b534-67135fab757c"
+                        }
+                      },
+                      "sides": [
+                        {
+                          "displaySideNumber": 1,
+                          "drawPosition": 4,
+                          "lineUp": [
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                }
+                              ],
+                              "participantId": "94a3ea48-5d16-4c8b-96ad-384bbc3c3aa0"
+                            },
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 2
+                                }
+                              ],
+                              "participantId": "c07dbf25-e4bd-4362-985d-15c81dee0742"
+                            }
+                          ],
+                          "sideNumber": 1
+                        },
+                        {
+                          "displaySideNumber": 2,
+                          "drawPosition": 5,
+                          "lineUp": [
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 1
+                                }
+                              ],
+                              "participantId": "7fd5b734-7ec7-4ceb-b414-5ff890ec14e7"
+                            },
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 2
+                                }
+                              ],
+                              "participantId": "95337023-c67f-4c27-8e7f-d51c9650b94c"
+                            }
+                          ],
+                          "sideNumber": 2
+                        }
+                      ],
+                      "tieMatchUps": [
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "27542fb5-b4bc-4847-8585-ea2504e24c26-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1-TMU-1",
+                          "matchUpStatus": "TO_BE_PLAYED",
+                          "matchUpType": "DOUBLES",
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:00:00.000Z"
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "27542fb5-b4bc-4847-8585-ea2504e24c26-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-1",
+                          "matchUpStatus": "TO_BE_PLAYED",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "SINGLES",
+                          "schedule": {},
+                          "score": { "scoreStringSide1": "", "scoreStringSide2": "" },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.002Z"
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 2,
+                          "isMock": true,
+                          "matchUpId": "27542fb5-b4bc-4847-8585-ea2504e24c26-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-2",
+                          "matchUpStatus": "DEFAULTED",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "SINGLES",
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "score": { "scoreStringSide1": "", "scoreStringSide2": "" },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.001Z",
+                          "winningSide": 1
+                        }
+                      ],
+                      "updatedAt": "2026-10-25T00:01:00.007Z",
+                      "winnerMatchUpId": "912b1e12-cd18-4f88-8851-2fcf8928ede2",
+                      "winningSide": 1
+                    },
+                    {
+                      "disableAutoCalc": true,
+                      "drawPositions": [6, 7],
+                      "finishingPositionRange": { "loser": [7, 8], "winner": [2, 6] },
+                      "finishingRound": 4,
+                      "isMock": true,
+                      "matchUpId": "28487c78-ef80-4e1a-a454-2ac730ac451f",
+                      "matchUpStatus": "DEFAULTED",
+                      "matchUpStatusCodes": [],
+                      "matchUpType": "TEAM",
+                      "roundNumber": 1,
+                      "roundPosition": 2,
+                      "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                      "score": { "scoreStringSide1": "", "scoreStringSide2": "" },
+                      "sides": [
+                        {
+                          "displaySideNumber": 1,
+                          "drawPosition": 6,
+                          "lineUp": [
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 1
+                                }
+                              ],
+                              "participantId": "c0c06413-2780-4229-a2bb-b1153c234d95"
+                            },
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 2
+                                }
+                              ],
+                              "participantId": "74682e32-77e2-4ad4-bc1d-b3c029ca4fe1"
+                            }
+                          ],
+                          "sideNumber": 1
+                        },
+                        {
+                          "displaySideNumber": 2,
+                          "drawPosition": 7,
+                          "lineUp": [
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                }
+                              ],
+                              "participantId": "50a8b6ac-c7e7-4b96-946b-ea4af5e439d7"
+                            },
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 2
+                                }
+                              ],
+                              "participantId": "a884fcfe-c5f3-4ce7-906f-e449ffa207d9"
+                            }
+                          ],
+                          "sideNumber": 2
+                        }
+                      ],
+                      "tieFormat": {
+                        "collectionDefinitions": [
+                          {
+                            "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                            "collectionName": "Doubles",
+                            "matchUpCount": 1,
+                            "matchUpFormat": "SET1-S:8/TB7",
+                            "matchUpType": "DOUBLES",
+                            "matchUpValue": 1
+                          },
+                          {
+                            "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                            "collectionName": "Singles",
+                            "matchUpCount": 2,
+                            "matchUpFormat": "SET3-S:6/TB7-F:TB10",
+                            "matchUpType": "SINGLES",
+                            "matchUpValue": 1
+                          }
+                        ],
+                        "tieFormatName": "Dominant Duo",
+                        "winCriteria": { "valueGoal": 2 }
+                      },
+                      "tieMatchUps": [
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "28487c78-ef80-4e1a-a454-2ac730ac451f-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1-TMU-1",
+                          "matchUpStatus": "DOUBLE_WALKOVER",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "DOUBLES",
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "score": { "scoreStringSide1": "", "scoreStringSide2": "" },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.001Z"
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "28487c78-ef80-4e1a-a454-2ac730ac451f-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-1",
+                          "matchUpStatus": "COMPLETED",
+                          "matchUpType": "SINGLES",
+                          "orderOfFinish": 2,
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "score": {
+                            "scoreStringSide1": "6-1 6-1",
+                            "scoreStringSide2": "1-6 1-6",
+                            "sets": [
+                              { "setNumber": 1, "side1Score": 6, "side2Score": 1, "winningSide": 1 },
+                              { "setNumber": 2, "side1Score": 6, "side2Score": 1, "winningSide": 1 }
+                            ]
+                          },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.000Z",
+                          "winningSide": 1
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 2,
+                          "isMock": true,
+                          "matchUpId": "28487c78-ef80-4e1a-a454-2ac730ac451f-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-2",
+                          "matchUpStatus": "DEFAULTED",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "SINGLES",
+                          "orderOfFinish": 1,
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "score": {
+                            "scoreStringSide1": "1-6 1-6",
+                            "scoreStringSide2": "6-1 6-1",
+                            "sets": [
+                              { "setNumber": 1, "side1Score": 1, "side2Score": 6, "winningSide": 2 },
+                              { "setNumber": 2, "side1Score": 1, "side2Score": 6, "winningSide": 2 }
+                            ]
+                          },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.002Z",
+                          "winningSide": 2
+                        }
+                      ],
+                      "updatedAt": "2026-10-25T00:01:00.011Z",
+                      "winnerMatchUpId": "5ce12016-ac81-45fc-9d65-21b4f0eac231",
+                      "winningSide": 2
+                    },
+                    {
+                      "drawPositions": [2, 4],
+                      "finishingPositionRange": { "loser": [5, 6], "winner": [2, 4] },
+                      "finishingRound": 3,
+                      "isMock": true,
+                      "matchUpId": "912b1e12-cd18-4f88-8851-2fcf8928ede2",
+                      "matchUpStatus": "COMPLETED",
+                      "matchUpStatusCodes": [],
+                      "matchUpType": "TEAM",
+                      "roundNumber": 2,
+                      "roundPosition": 1,
+                      "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                      "score": {
+                        "scoreStringSide1": "0-2",
+                        "scoreStringSide2": "2-0",
+                        "sets": [{ "side1Score": 0, "side2Score": 2, "winningSide": 2 }]
+                      },
+                      "sides": [
+                        {
+                          "displaySideNumber": 1,
+                          "drawPosition": 2,
+                          "lineUp": [
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 1
+                                }
+                              ],
+                              "participantId": "6a35dd0e-2888-4ec5-85a5-ee6ebd6ae30f"
+                            },
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 2
+                                }
+                              ],
+                              "participantId": "02a2ad59-875a-48f2-8390-327c780ff5fd"
+                            }
+                          ],
+                          "sideNumber": 1
+                        },
+                        {
+                          "displaySideNumber": 2,
+                          "drawPosition": 4,
+                          "lineUp": [
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 1
+                                }
+                              ],
+                              "participantId": "94a3ea48-5d16-4c8b-96ad-384bbc3c3aa0"
+                            },
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 2
+                                }
+                              ],
+                              "participantId": "c07dbf25-e4bd-4362-985d-15c81dee0742"
+                            }
+                          ],
+                          "sideNumber": 2
+                        }
+                      ],
+                      "tieFormat": {
+                        "collectionDefinitions": [
+                          {
+                            "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                            "collectionName": "Doubles",
+                            "matchUpCount": 1,
+                            "matchUpFormat": "SET1-S:8/TB7",
+                            "matchUpType": "DOUBLES",
+                            "matchUpValue": 1
+                          },
+                          {
+                            "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                            "collectionName": "Singles",
+                            "matchUpCount": 2,
+                            "matchUpFormat": "SET3-S:6/TB7-F:TB10",
+                            "matchUpType": "SINGLES",
+                            "matchUpValue": 1
+                          }
+                        ],
+                        "tieFormatName": "Dominant Duo",
+                        "winCriteria": { "valueGoal": 2 }
+                      },
+                      "tieMatchUps": [
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "912b1e12-cd18-4f88-8851-2fcf8928ede2-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1-TMU-1",
+                          "matchUpStatus": "DEFAULTED",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "DOUBLES",
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.001Z",
+                          "winningSide": 2
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "912b1e12-cd18-4f88-8851-2fcf8928ede2-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-1",
+                          "matchUpStatus": "DEFAULTED",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "SINGLES",
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.000Z",
+                          "winningSide": 2
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 2,
+                          "isMock": true,
+                          "matchUpId": "912b1e12-cd18-4f88-8851-2fcf8928ede2-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-2",
+                          "matchUpStatus": "DOUBLE_DEFAULT",
+                          "matchUpType": "SINGLES",
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.000Z"
+                        }
+                      ],
+                      "updatedAt": "2026-10-25T00:01:00.007Z",
+                      "winnerMatchUpId": "8fab0580-bcf9-4eda-b5ba-46273d01850e",
+                      "winningSide": 2
+                    },
+                    {
+                      "drawPositions": [3, 7],
+                      "finishingPositionRange": { "loser": [5, 6], "winner": [2, 4] },
+                      "finishingRound": 3,
+                      "isMock": true,
+                      "matchUpId": "5ce12016-ac81-45fc-9d65-21b4f0eac231",
+                      "matchUpStatus": "TO_BE_PLAYED",
+                      "matchUpStatusCodes": [],
+                      "matchUpType": "TEAM",
+                      "roundNumber": 2,
+                      "roundPosition": 2,
+                      "schedule": {},
+                      "sides": [
+                        {
+                          "displaySideNumber": 1,
+                          "drawPosition": 3,
+                          "lineUp": [
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 1
+                                }
+                              ],
+                              "participantId": "ea07e3b8-f583-4551-9c73-a068ee285dbc"
+                            },
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 2
+                                }
+                              ],
+                              "participantId": "bb8e75da-5717-434b-89f7-5779b37d036a"
+                            }
+                          ],
+                          "sideNumber": 1
+                        },
+                        { "displaySideNumber": 2, "drawPosition": 6, "sideNumber": 2 }
+                      ],
+                      "tieMatchUps": [
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "5ce12016-ac81-45fc-9d65-21b4f0eac231-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1-TMU-1",
+                          "matchUpStatus": "TO_BE_PLAYED",
+                          "matchUpType": "DOUBLES",
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:00:00.000Z"
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "5ce12016-ac81-45fc-9d65-21b4f0eac231-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-1",
+                          "matchUpStatus": "TO_BE_PLAYED",
+                          "matchUpType": "SINGLES",
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:00:00.000Z"
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 2,
+                          "isMock": true,
+                          "matchUpId": "5ce12016-ac81-45fc-9d65-21b4f0eac231-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-2",
+                          "matchUpStatus": "WALKOVER",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "SINGLES",
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "score": { "scoreStringSide1": "", "scoreStringSide2": "" },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.000Z",
+                          "winningSide": 1
+                        }
+                      ],
+                      "updatedAt": "2026-10-25T00:01:00.007Z",
+                      "winnerMatchUpId": "8fab0580-bcf9-4eda-b5ba-46273d01850e"
+                    },
+                    {
+                      "drawPositions": [3, 4],
+                      "finishingPositionRange": { "loser": [4, 4], "winner": [2, 3] },
+                      "finishingRound": 2,
+                      "isMock": true,
+                      "matchUpId": "8fab0580-bcf9-4eda-b5ba-46273d01850e",
+                      "matchUpStatus": "IN_PROGRESS",
+                      "matchUpStatusCodes": [],
+                      "matchUpType": "TEAM",
+                      "roundNumber": 3,
+                      "roundPosition": 1,
+                      "score": {
+                        "scoreStringSide1": "1-0",
+                        "scoreStringSide2": "0-1",
+                        "sets": [{ "side1Score": 1, "side2Score": 0 }]
+                      },
+                      "sides": [
+                        {
+                          "displaySideNumber": 2,
+                          "drawPosition": 3,
+                          "lineUp": [
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 1
+                                }
+                              ],
+                              "participantId": "ea07e3b8-f583-4551-9c73-a068ee285dbc"
+                            },
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 2
+                                }
+                              ],
+                              "participantId": "bb8e75da-5717-434b-89f7-5779b37d036a"
+                            }
+                          ],
+                          "sideNumber": 1
+                        },
+                        {
+                          "displaySideNumber": 1,
+                          "drawPosition": 4,
+                          "lineUp": [
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 1
+                                }
+                              ],
+                              "participantId": "ea07e3b8-f583-4551-9c73-a068ee285dbc"
+                            },
+                            {
+                              "collectionAssignments": [
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                                  "collectionPosition": 1
+                                },
+                                {
+                                  "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                                  "collectionPosition": 2
+                                }
+                              ],
+                              "participantId": "bb8e75da-5717-434b-89f7-5779b37d036a"
+                            }
+                          ],
+                          "sideNumber": 2
+                        }
+                      ],
+                      "tieFormat": {
+                        "collectionDefinitions": [
+                          {
+                            "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                            "collectionName": "Doubles",
+                            "matchUpCount": 1,
+                            "matchUpFormat": "SET1-S:8/TB7",
+                            "matchUpType": "DOUBLES",
+                            "matchUpValue": 1
+                          },
+                          {
+                            "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                            "collectionName": "Singles",
+                            "matchUpCount": 2,
+                            "matchUpFormat": "SET3-S:6/TB7-F:TB10",
+                            "matchUpType": "SINGLES",
+                            "matchUpValue": 1
+                          }
+                        ],
+                        "tieFormatName": "Dominant Duo",
+                        "winCriteria": { "valueGoal": 2 }
+                      },
+                      "tieMatchUps": [
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "8fab0580-bcf9-4eda-b5ba-46273d01850e-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1-TMU-1",
+                          "matchUpStatus": "DOUBLE_WALKOVER",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "DOUBLES",
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "score": { "scoreStringSide1": "", "scoreStringSide2": "" },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.000Z"
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "8fab0580-bcf9-4eda-b5ba-46273d01850e-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-1",
+                          "matchUpStatus": "COMPLETED",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "SINGLES",
+                          "orderOfFinish": 1,
+                          "schedule": { "scoredTime": "2026-10-25T00:01:00.000Z" },
+                          "score": { "scoreStringSide1": "", "scoreStringSide2": "" },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.001Z",
+                          "winningSide": 1
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 2,
+                          "isMock": true,
+                          "matchUpId": "8fab0580-bcf9-4eda-b5ba-46273d01850e-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-2",
+                          "matchUpStatus": "TO_BE_PLAYED",
+                          "matchUpType": "SINGLES",
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:00:00.000Z"
+                        }
+                      ],
+                      "updatedAt": "2026-10-25T00:01:00.009Z",
+                      "winnerMatchUpId": "a62945ce-d2ad-48d9-bff2-5fbf13f2dac7"
+                    },
+                    {
+                      "drawPositions": [1],
+                      "finishingPositionRange": { "loser": [3, 3], "winner": [2, 2] },
+                      "finishingRound": 1,
+                      "isMock": true,
+                      "matchUpId": "a62945ce-d2ad-48d9-bff2-5fbf13f2dac7",
+                      "matchUpStatus": "TO_BE_PLAYED",
+                      "matchUpType": "TEAM",
+                      "roundNumber": 4,
+                      "roundPosition": 1,
+                      "sides": [{ "displaySideNumber": 1, "drawPosition": 1, "sideNumber": 1 }, {}],
+                      "tieMatchUps": [
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "a62945ce-d2ad-48d9-bff2-5fbf13f2dac7-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1-TMU-1",
+                          "matchUpStatus": "TO_BE_PLAYED",
+                          "matchUpStatusCodes": [],
+                          "matchUpType": "DOUBLES",
+                          "score": { "scoreStringSide1": "", "scoreStringSide2": "" },
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:01:00.000Z"
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 1,
+                          "isMock": true,
+                          "matchUpId": "a62945ce-d2ad-48d9-bff2-5fbf13f2dac7-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-1",
+                          "matchUpStatus": "TO_BE_PLAYED",
+                          "matchUpType": "SINGLES",
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:00:00.000Z"
+                        },
+                        {
+                          "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                          "collectionPosition": 2,
+                          "isMock": true,
+                          "matchUpId": "a62945ce-d2ad-48d9-bff2-5fbf13f2dac7-a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2-TMU-2",
+                          "matchUpStatus": "TO_BE_PLAYED",
+                          "matchUpType": "SINGLES",
+                          "sides": [{ "sideNumber": 1 }, { "sideNumber": 2 }],
+                          "updatedAt": "2026-10-25T00:00:00.000Z"
+                        }
+                      ],
+                      "updatedAt": "2026-10-25T00:01:00.000Z"
+                    }
+                  ],
+                  "positionAssignments": [
+                    { "drawPosition": 1 },
+                    { "drawPosition": 2, "participantId": "6732bff0-5982-470c-babd-d4f2cb456e3e" },
+                    { "drawPosition": 3, "participantId": "cf17421f-31c9-456c-8d0b-131ef24d941b" },
+                    { "drawPosition": 4, "participantId": "321b6fea-46da-42cc-a766-30bb0d4173e5" },
+                    { "drawPosition": 5, "participantId": "e587e7b3-b79f-475d-acfa-c57709bb93bc" },
+                    { "drawPosition": 6, "participantId": "d113cfad-787f-4731-a859-7e66e4dbd740" },
+                    { "drawPosition": 7, "participantId": "7cb244f6-7205-478d-9b71-eecf2256d387" }
+                  ],
+                  "seedAssignments": [],
+                  "stage": "CONSOLATION",
+                  "stageSequence": 1,
+                  "structureId": "5739fba2-fd08-4079-bbdf-bdc4df1c4b35",
+                  "structureName": "Consolation",
+                  "updatedAt": "2026-10-25T00:01:00.038Z"
+                }
+              ],
+              "updatedAt": "2026-10-25T00:01:00.076Z"
+            }
+          ],
+          "endDate": "2026-11-01",
+          "entries": [
+            {
+              "entryPosition": 1,
+              "entryStage": "MAIN",
+              "entryStatus": "DIRECT_ACCEPTANCE",
+              "participantId": "cf17421f-31c9-456c-8d0b-131ef24d941b"
+            },
+            {
+              "entryPosition": 2,
+              "entryStage": "MAIN",
+              "entryStatus": "DIRECT_ACCEPTANCE",
+              "participantId": "e587e7b3-b79f-475d-acfa-c57709bb93bc"
+            },
+            {
+              "entryPosition": 3,
+              "entryStage": "MAIN",
+              "entryStatus": "DIRECT_ACCEPTANCE",
+              "participantId": "321b6fea-46da-42cc-a766-30bb0d4173e5"
+            },
+            {
+              "entryPosition": 4,
+              "entryStage": "MAIN",
+              "entryStatus": "DIRECT_ACCEPTANCE",
+              "participantId": "66738af1-ee9b-4821-8a37-7f423e0935fe"
+            },
+            {
+              "entryPosition": 5,
+              "entryStage": "MAIN",
+              "entryStatus": "DIRECT_ACCEPTANCE",
+              "participantId": "724643ba-16cd-4cc0-a8bc-8d95d79f35bc"
+            },
+            {
+              "entryPosition": 6,
+              "entryStage": "MAIN",
+              "entryStatus": "DIRECT_ACCEPTANCE",
+              "participantId": "d113cfad-787f-4731-a859-7e66e4dbd740"
+            },
+            {
+              "entryPosition": 7,
+              "entryStage": "MAIN",
+              "entryStatus": "DIRECT_ACCEPTANCE",
+              "participantId": "7cb244f6-7205-478d-9b71-eecf2256d387"
+            },
+            {
+              "entryPosition": 8,
+              "entryStage": "MAIN",
+              "entryStatus": "DIRECT_ACCEPTANCE",
+              "participantId": "6732bff0-5982-470c-babd-d4f2cb456e3e"
+            }
+          ],
+          "eventId": "a62deff7-e673-4ada-b3fc-202661fa9e96",
+          "eventName": "Generated TEAM",
+          "eventType": "TEAM",
+          "flightProfile": {
+            "flights": [
+              {
+                "drawEntries": [
+                  {
+                    "entryPosition": 1,
+                    "entryStage": "MAIN",
+                    "entryStatus": "DIRECT_ACCEPTANCE",
+                    "participantId": "cf17421f-31c9-456c-8d0b-131ef24d941b"
+                  },
+                  {
+                    "entryPosition": 2,
+                    "entryStage": "MAIN",
+                    "entryStatus": "DIRECT_ACCEPTANCE",
+                    "participantId": "e587e7b3-b79f-475d-acfa-c57709bb93bc"
+                  },
+                  {
+                    "entryPosition": 3,
+                    "entryStage": "MAIN",
+                    "entryStatus": "DIRECT_ACCEPTANCE",
+                    "participantId": "321b6fea-46da-42cc-a766-30bb0d4173e5"
+                  },
+                  {
+                    "entryPosition": 4,
+                    "entryStage": "MAIN",
+                    "entryStatus": "DIRECT_ACCEPTANCE",
+                    "participantId": "66738af1-ee9b-4821-8a37-7f423e0935fe"
+                  },
+                  {
+                    "entryPosition": 5,
+                    "entryStage": "MAIN",
+                    "entryStatus": "DIRECT_ACCEPTANCE",
+                    "participantId": "724643ba-16cd-4cc0-a8bc-8d95d79f35bc"
+                  },
+                  {
+                    "entryPosition": 6,
+                    "entryStage": "MAIN",
+                    "entryStatus": "DIRECT_ACCEPTANCE",
+                    "participantId": "d113cfad-787f-4731-a859-7e66e4dbd740"
+                  },
+                  {
+                    "entryPosition": 7,
+                    "entryStage": "MAIN",
+                    "entryStatus": "DIRECT_ACCEPTANCE",
+                    "participantId": "7cb244f6-7205-478d-9b71-eecf2256d387"
+                  },
+                  {
+                    "entryPosition": 8,
+                    "entryStage": "MAIN",
+                    "entryStatus": "DIRECT_ACCEPTANCE",
+                    "participantId": "6732bff0-5982-470c-babd-d4f2cb456e3e"
+                  }
+                ],
+                "drawId": "d",
+                "drawName": "Feed In Championship",
+                "flightNumber": 1,
+                "manuallyAdded": true
+              }
+            ]
+          },
+          "startDate": "2026-10-25",
+          "tieFormat": {
+            "collectionDefinitions": [
+              {
+                "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1",
+                "collectionName": "Doubles",
+                "matchUpCount": 1,
+                "matchUpFormat": "SET1-S:8/TB7",
+                "matchUpType": "DOUBLES",
+                "matchUpValue": 1
+              },
+              {
+                "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2",
+                "collectionName": "Singles",
+                "matchUpCount": 2,
+                "matchUpFormat": "SET3-S:6/TB7-F:TB10",
+                "matchUpType": "SINGLES",
+                "matchUpValue": 1
+              }
+            ],
+            "tieFormatName": "Dominant Duo",
+            "winCriteria": { "valueGoal": 2 }
+          }
+        }
+      ],
+      "factory": { "createdVersion": "7.43.0", "timeStamp": 1792886460000, "version": "7.43.0" },
+      "isMock": true,
+      "participants": [
+        {
+          "participantId": "ea07e3b8-f583-4551-9c73-a068ee285dbc",
+          "participantName": "Titania Andelic",
+          "participantRole": "COMPETITOR",
+          "participantType": "INDIVIDUAL",
+          "person": {
+            "addresses": [{ "city": "Lys", "countryCode": "CZE", "postalCode": "62639", "state": "PG" }],
+            "extensions": [{ "name": "regionCode", "value": 1 }],
+            "nationalityCode": "CZE",
+            "personId": "85f9e609-06fd-4318-89d9-b75ea09550f6",
+            "sex": "FEMALE",
+            "standardFamilyName": "Andelic",
+            "standardGivenName": "Titania"
+          }
+        },
+        {
+          "participantId": "bb8e75da-5717-434b-89f7-5779b37d036a",
+          "participantName": "Rincewind Veblen",
+          "participantRole": "COMPETITOR",
+          "participantType": "INDIVIDUAL",
+          "person": {
+            "addresses": [{ "city": "Trantor", "countryCode": "GNB", "postalCode": "84799", "state": "GD" }],
+            "extensions": [{ "name": "regionCode", "value": 2 }],
+            "nationalityCode": "GNB",
+            "personId": "2f3494df-4fa3-476a-b8d0-be5eddb751c0",
+            "sex": "MALE",
+            "standardFamilyName": "Veblen",
+            "standardGivenName": "Rincewind"
+          }
+        },
+        {
+          "participantId": "7fd5b734-7ec7-4ceb-b414-5ff890ec14e7",
+          "participantName": "Leeloo Kingsnorth",
+          "participantRole": "COMPETITOR",
+          "participantType": "INDIVIDUAL",
+          "person": {
+            "addresses": [{ "city": "Atlantis", "countryCode": "GRC", "postalCode": "69625", "state": "WA" }],
+            "extensions": [{ "name": "regionCode", "value": 3 }],
+            "nationalityCode": "GRC",
+            "personId": "df19ee9a-f8fd-447b-ab75-31673a94cbce",
+            "sex": "FEMALE",
+            "standardFamilyName": "Kingsnorth",
+            "standardGivenName": "Leeloo"
+          }
+        },
+        {
+          "participantId": "95337023-c67f-4c27-8e7f-d51c9650b94c",
+          "participantName": "Jared Jensen",
+          "participantRole": "COMPETITOR",
+          "participantType": "INDIVIDUAL",
+          "person": {
+            "addresses": [{ "city": "Metropolis", "countryCode": "TWN", "postalCode": "84277", "state": "LU" }],
+            "extensions": [{ "name": "regionCode", "value": 4 }],
+            "nationalityCode": "TWN",
+            "personId": "a539cb1e-cc93-4246-8798-9e75abcc4a16",
+            "sex": "MALE",
+            "standardFamilyName": "Jensen",
+            "standardGivenName": "Jared"
+          }
+        },
+        {
+          "participantId": "94a3ea48-5d16-4c8b-96ad-384bbc3c3aa0",
+          "participantName": "Scout Yates",
+          "participantRole": "COMPETITOR",
+          "participantType": "INDIVIDUAL",
+          "person": {
+            "addresses": [{ "city": "Navarre", "countryCode": "PRI", "postalCode": "29672", "state": "KG" }],
+            "extensions": [{ "name": "regionCode", "value": 5 }],
+            "nationalityCode": "PRI",
+            "personId": "1075414d-5f78-4ba3-88d1-fd1709771327",
+            "sex": "FEMALE",
+            "standardFamilyName": "Yates",
+            "standardGivenName": "Scout"
+          }
+        },
+        {
+          "participantId": "c07dbf25-e4bd-4362-985d-15c81dee0742",
+          "participantName": "Astrid Huxley",
+          "participantRole": "COMPETITOR",
+          "participantType": "INDIVIDUAL",
+          "person": {
+            "addresses": [{ "city": "Hierusalem", "countryCode": "GRC", "postalCode": "68791", "state": "LV" }],
+            "extensions": [{ "name": "regionCode", "value": 6 }],
+            "nationalityCode": "GRC",
+            "personId": "f8cc2272-60df-4a98-9f77-6cdc087aafe9",
+            "sex": "FEMALE",
+            "standardFamilyName": "Huxley",
+            "standardGivenName": "Astrid"
+          }
+        },
+        {
+          "participantId": "bfabe088-9da2-4a4b-9680-10fd52a394a3",
+          "participantName": "Walker Bukowski",
+          "participantRole": "COMPETITOR",
+          "participantType": "INDIVIDUAL",
+          "person": {
+            "addresses": [{ "city": "Zion", "countryCode": "ABW", "postalCode": "57299", "state": "IL" }],
+            "extensions": [{ "name": "regionCode", "value": 7 }],
+            "nationalityCode": "ABW",
+            "personId": "87fe5162-5dbf-4213-a92a-83ba6d14bdde",
+            "sex": "MALE",
+            "standardFamilyName": "Bukowski",
+            "standardGivenName": "Walker"
+          }
+        },
+        {
+          "participantId": "67c3b2fa-2bcc-4fdf-a394-26769a4a18c8",
+          "participantName": "Glen Brockovich",
+          "participantRole": "COMPETITOR",
+          "participantType": "INDIVIDUAL",
+          "person": {
+            "addresses": [{ "city": "El Dorado", "countryCode": "PCN", "postalCode": "61639", "state": "FN" }],
+            "extensions": [{ "name": "regionCode", "value": 8 }],
+            "nationalityCode": "PCN",
+            "personId": "0fb11455-e932-4061-99b4-cee570aeb4b6",
+            "sex": "MALE",
+            "standardFamilyName": "Brockovich",
+            "standardGivenName": "Glen"
+          }
+        },
+        {
+          "participantId": "f91c6ba8-e695-407f-b617-14cff06bbb8e",
+          "participantName": "Syme Eyre",
+          "participantRole": "COMPETITOR",
+          "participantType": "INDIVIDUAL",
+          "person": {
+            "addresses": [{ "city": "Nagoro", "countryCode": "CIV", "postalCode": "23612", "state": "TF" }],
+            "extensions": [{ "name": "regionCode", "value": 9 }],
+            "nationalityCode": "CIV",
+            "personId": "8c07f32e-38e0-4f54-aeea-b00bf6bb238c",
+            "sex": "MALE",
+            "standardFamilyName": "Eyre",
+            "standardGivenName": "Syme"
+          }
+        },
+        {
+          "participantId": "74afffe9-a133-46e3-9c1d-4968a430ed2d",
+          "participantName": "Valentina Tyrell",
+          "participantRole": "COMPETITOR",
+          "participantType": "INDIVIDUAL",
+          "person": {
+            "addresses": [{ "city": "Xylar", "countryCode": "TWN", "postalCode": "08145", "state": "GL" }],
+            "extensions": [{ "name": "regionCode", "value": 10 }],
+            "nationalityCode": "TWN",
+            "personId": "161b7ea6-486e-4c9c-9c87-8b65563b6d51",
+            "sex": "FEMALE",
+            "standardFamilyName": "Tyrell",
+            "standardGivenName": "Valentina"
+          }
+        },
+        {
+          "participantId": "c0c06413-2780-4229-a2bb-b1153c234d95",
+          "participantName": "Edward Le Guin",
+          "participantRole": "COMPETITOR",
+          "participantType": "INDIVIDUAL",
+          "person": {
+            "addresses": [{ "city": "Supilinn", "countryCode": "MDA", "postalCode": "57303", "state": "GU" }],
+            "extensions": [{ "name": "regionCode", "value": 11 }],
+            "nationalityCode": "MDA",
+            "personId": "6d73cbbf-75d4-4c14-aba1-af24d94819ed",
+            "sex": "MALE",
+            "standardFamilyName": "Le Guin",
+            "standardGivenName": "Edward"
+          }
+        },
+        {
+          "participantId": "74682e32-77e2-4ad4-bc1d-b3c029ca4fe1",
+          "participantName": "Shannon Fuller",
+          "participantRole": "COMPETITOR",
+          "participantType": "INDIVIDUAL",
+          "person": {
+            "addresses": [{ "city": "Longyearbyen", "countryCode": "BOL", "postalCode": "11243", "state": "VA" }],
+            "extensions": [{ "name": "regionCode", "value": 12 }],
+            "nationalityCode": "BOL",
+            "personId": "2f810028-7a7e-46e7-b669-e45c76b7e6a8",
+            "sex": "MALE",
+            "standardFamilyName": "Fuller",
+            "standardGivenName": "Shannon"
+          }
+        },
+        {
+          "participantId": "50a8b6ac-c7e7-4b96-946b-ea4af5e439d7",
+          "participantName": "Virginia Nagle",
+          "participantRole": "COMPETITOR",
+          "participantType": "INDIVIDUAL",
+          "person": {
+            "addresses": [{ "city": "Elista", "countryCode": "ABW", "postalCode": "45906", "state": "CH" }],
+            "extensions": [{ "name": "regionCode", "value": 13 }],
+            "nationalityCode": "ABW",
+            "personId": "402cd06b-974e-4aeb-8561-2388d1a93faa",
+            "sex": "FEMALE",
+            "standardFamilyName": "Nagle",
+            "standardGivenName": "Virginia"
+          }
+        },
+        {
+          "participantId": "a884fcfe-c5f3-4ce7-906f-e449ffa207d9",
+          "participantName": "Caitlin Cassidy",
+          "participantRole": "COMPETITOR",
+          "participantType": "INDIVIDUAL",
+          "person": {
+            "addresses": [{ "city": "Busytown", "countryCode": "ATA", "postalCode": "35698", "state": "CA" }],
+            "extensions": [{ "name": "regionCode", "value": 14 }],
+            "nationalityCode": "ATA",
+            "personId": "e316b39d-f146-4da3-bf8c-b8af26091c9d",
+            "sex": "FEMALE",
+            "standardFamilyName": "Cassidy",
+            "standardGivenName": "Caitlin"
+          }
+        },
+        {
+          "participantId": "6a35dd0e-2888-4ec5-85a5-ee6ebd6ae30f",
+          "participantName": "Constantine Hedges",
+          "participantRole": "COMPETITOR",
+          "participantType": "INDIVIDUAL",
+          "person": {
+            "addresses": [{ "city": "Hallstatt", "countryCode": "SYR", "postalCode": "04829", "state": "SD" }],
+            "extensions": [{ "name": "regionCode", "value": 15 }],
+            "nationalityCode": "SYR",
+            "personId": "cef0a810-56e7-4a76-a937-a7f01fa64682",
+            "sex": "MALE",
+            "standardFamilyName": "Hedges",
+            "standardGivenName": "Constantine"
+          }
+        },
+        {
+          "participantId": "02a2ad59-875a-48f2-8390-327c780ff5fd",
+          "participantName": "Jasmine Nearing",
+          "participantRole": "COMPETITOR",
+          "participantType": "INDIVIDUAL",
+          "person": {
+            "addresses": [{ "city": "Matmata", "countryCode": "CHE", "postalCode": "61660", "state": "ZA" }],
+            "extensions": [{ "name": "regionCode", "value": 16 }],
+            "nationalityCode": "CHE",
+            "personId": "deac5d07-b0bd-457f-94c4-4c2c0ac5533d",
+            "sex": "FEMALE",
+            "standardFamilyName": "Nearing",
+            "standardGivenName": "Jasmine"
+          }
+        },
+        {
+          "individualParticipantIds": ["ea07e3b8-f583-4551-9c73-a068ee285dbc", "bb8e75da-5717-434b-89f7-5779b37d036a"],
+          "participantId": "655b7216-ab8c-4e84-bcc4-36101a049360",
+          "participantName": "Andelic/Veblen",
+          "participantRole": "COMPETITOR",
+          "participantType": "PAIR"
+        },
+        {
+          "individualParticipantIds": ["7fd5b734-7ec7-4ceb-b414-5ff890ec14e7", "95337023-c67f-4c27-8e7f-d51c9650b94c"],
+          "participantId": "e3e39ed0-99b6-42b4-883b-945d0e233bd4",
+          "participantName": "Kingsnorth/Jensen",
+          "participantRole": "COMPETITOR",
+          "participantType": "PAIR"
+        },
+        {
+          "individualParticipantIds": ["94a3ea48-5d16-4c8b-96ad-384bbc3c3aa0", "c07dbf25-e4bd-4362-985d-15c81dee0742"],
+          "participantId": "5b9f8fc4-7e19-4916-bd22-d01db5d8dba0",
+          "participantName": "Yates/Huxley",
+          "participantRole": "COMPETITOR",
+          "participantType": "PAIR"
+        },
+        {
+          "individualParticipantIds": ["bfabe088-9da2-4a4b-9680-10fd52a394a3", "67c3b2fa-2bcc-4fdf-a394-26769a4a18c8"],
+          "participantId": "a912d775-a3b3-4177-a418-000d67029740",
+          "participantName": "Bukowski/Brockovich",
+          "participantRole": "COMPETITOR",
+          "participantType": "PAIR"
+        },
+        {
+          "individualParticipantIds": ["f91c6ba8-e695-407f-b617-14cff06bbb8e", "74afffe9-a133-46e3-9c1d-4968a430ed2d"],
+          "participantId": "980bf1fe-ef46-4ae9-9241-9cd147d5e322",
+          "participantName": "Eyre/Tyrell",
+          "participantRole": "COMPETITOR",
+          "participantType": "PAIR"
+        },
+        {
+          "individualParticipantIds": ["c0c06413-2780-4229-a2bb-b1153c234d95", "74682e32-77e2-4ad4-bc1d-b3c029ca4fe1"],
+          "participantId": "cd12be48-809a-45be-bf64-d8a64e8522e6",
+          "participantName": "Le Guin/Fuller",
+          "participantRole": "COMPETITOR",
+          "participantType": "PAIR"
+        },
+        {
+          "individualParticipantIds": ["50a8b6ac-c7e7-4b96-946b-ea4af5e439d7", "a884fcfe-c5f3-4ce7-906f-e449ffa207d9"],
+          "participantId": "b075ff60-10cb-488f-8594-7bd1cf620d5c",
+          "participantName": "Nagle/Cassidy",
+          "participantRole": "COMPETITOR",
+          "participantType": "PAIR"
+        },
+        {
+          "individualParticipantIds": ["6a35dd0e-2888-4ec5-85a5-ee6ebd6ae30f", "02a2ad59-875a-48f2-8390-327c780ff5fd"],
+          "participantId": "bdd28ebc-ff70-4246-a056-52c4d95829a8",
+          "participantName": "Hedges/Nearing",
+          "participantRole": "COMPETITOR",
+          "participantType": "PAIR"
+        },
+        {
+          "individualParticipantIds": ["ea07e3b8-f583-4551-9c73-a068ee285dbc", "bb8e75da-5717-434b-89f7-5779b37d036a"],
+          "participantId": "cf17421f-31c9-456c-8d0b-131ef24d941b",
+          "participantName": "Team 1",
+          "participantRole": "COMPETITOR",
+          "participantType": "TEAM"
+        },
+        {
+          "individualParticipantIds": ["7fd5b734-7ec7-4ceb-b414-5ff890ec14e7", "95337023-c67f-4c27-8e7f-d51c9650b94c"],
+          "participantId": "e587e7b3-b79f-475d-acfa-c57709bb93bc",
+          "participantName": "Team 2",
+          "participantRole": "COMPETITOR",
+          "participantType": "TEAM"
+        },
+        {
+          "individualParticipantIds": ["94a3ea48-5d16-4c8b-96ad-384bbc3c3aa0", "c07dbf25-e4bd-4362-985d-15c81dee0742"],
+          "participantId": "321b6fea-46da-42cc-a766-30bb0d4173e5",
+          "participantName": "Team 3",
+          "participantRole": "COMPETITOR",
+          "participantType": "TEAM"
+        },
+        {
+          "individualParticipantIds": ["bfabe088-9da2-4a4b-9680-10fd52a394a3", "67c3b2fa-2bcc-4fdf-a394-26769a4a18c8"],
+          "participantId": "66738af1-ee9b-4821-8a37-7f423e0935fe",
+          "participantName": "Team 4",
+          "participantRole": "COMPETITOR",
+          "participantType": "TEAM"
+        },
+        {
+          "individualParticipantIds": ["f91c6ba8-e695-407f-b617-14cff06bbb8e", "74afffe9-a133-46e3-9c1d-4968a430ed2d"],
+          "participantId": "724643ba-16cd-4cc0-a8bc-8d95d79f35bc",
+          "participantName": "Team 5",
+          "participantRole": "COMPETITOR",
+          "participantType": "TEAM"
+        },
+        {
+          "individualParticipantIds": ["c0c06413-2780-4229-a2bb-b1153c234d95", "74682e32-77e2-4ad4-bc1d-b3c029ca4fe1"],
+          "participantId": "d113cfad-787f-4731-a859-7e66e4dbd740",
+          "participantName": "Team 6",
+          "participantRole": "COMPETITOR",
+          "participantType": "TEAM"
+        },
+        {
+          "individualParticipantIds": ["50a8b6ac-c7e7-4b96-946b-ea4af5e439d7", "a884fcfe-c5f3-4ce7-906f-e449ffa207d9"],
+          "participantId": "7cb244f6-7205-478d-9b71-eecf2256d387",
+          "participantName": "Team 7",
+          "participantRole": "COMPETITOR",
+          "participantType": "TEAM"
+        },
+        {
+          "individualParticipantIds": ["6a35dd0e-2888-4ec5-85a5-ee6ebd6ae30f", "02a2ad59-875a-48f2-8390-327c780ff5fd"],
+          "participantId": "6732bff0-5982-470c-babd-d4f2cb456e3e",
+          "participantName": "Team 8",
+          "participantRole": "COMPETITOR",
+          "participantType": "TEAM"
+        }
+      ],
+      "startDate": "2026-10-25",
+      "tournamentId": "4c26e656-9692-45a7-bf62-401dfc88b30b",
+      "tournamentName": "Atomic Culture"
+    },
+    "hash": "sha256:4fdf7b77fe75df704e6516ed0f4e606c7f882c1af908dd8bcb7608270ed5ebe2"
+  },
+  "steps": [
+    {
+      "directive": {
+        "method": "setMatchUpStatus",
+        "params": {
+          "disableAutoCalc": true,
+          "drawId": "d",
+          "matchUpId": "5ce12016-ac81-45fc-9d65-21b4f0eac231",
+          "outcome": {
+            "matchUpStatus": "RETIRED",
+            "score": {
+              "scoreStringSide1": "1-6 1-2",
+              "scoreStringSide2": "6-1 2-1",
+              "sets": [
+                { "setNumber": 1, "side1Score": 1, "side2Score": 6, "winningSide": 2 },
+                { "setNumber": 2, "side1Score": 1, "side2Score": 2, "winningSide": 2 }
+              ]
+            },
+            "winningSide": 2
+          },
+          "propagateExitStatus": true
+        }
+      },
+      "coordinates": {
+        "eventIndex": 0,
+        "drawIndex": 0,
+        "structureName": "Consolation",
+        "roundNumber": 2,
+        "roundPosition": 2
+      },
+      "clockAt": "2026-10-25T00:01:00.000Z",
+      "seed": 1246483272,
+      "result": { "error": "ERR_EXISTING_POSITION_ASSIGNMENT" },
+      "patch": [
+        { "op": "add", "path": "/events/0/drawDefinitions/0/structures/1/matchUps/3/disableAutoCalc", "value": true },
+        {
+          "op": "replace",
+          "path": "/events/0/drawDefinitions/0/structures/1/matchUps/3/matchUpStatus",
+          "value": "RETIRED"
+        },
+        {
+          "op": "add",
+          "path": "/events/0/drawDefinitions/0/structures/1/matchUps/3/score",
+          "value": {
+            "scoreStringSide1": "1-6 1-2",
+            "scoreStringSide2": "6-1 2-1",
+            "sets": [
+              { "setNumber": 1, "side1Score": 1, "side2Score": 6, "winningSide": 2 },
+              { "setNumber": 2, "side1Score": 1, "side2Score": 2, "winningSide": 2 }
+            ]
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/events/0/drawDefinitions/0/structures/1/matchUps/3/sides/1/drawPosition",
+          "value": 7
+        },
+        {
+          "op": "add",
+          "path": "/events/0/drawDefinitions/0/structures/1/matchUps/3/sides/1/lineUp",
+          "value": [
+            {
+              "collectionAssignments": [
+                { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1", "collectionPosition": 1 },
+                { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2", "collectionPosition": 1 }
+              ],
+              "participantId": "50a8b6ac-c7e7-4b96-946b-ea4af5e439d7"
+            },
+            {
+              "collectionAssignments": [
+                { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-1", "collectionPosition": 1 },
+                { "collectionId": "a62deff7-e673-4ada-b3fc-202661fa9e96-COL-2", "collectionPosition": 2 }
+              ],
+              "participantId": "a884fcfe-c5f3-4ce7-906f-e449ffa207d9"
+            }
+          ]
+        },
+        {
+          "op": "replace",
+          "path": "/events/0/drawDefinitions/0/structures/1/matchUps/3/updatedAt",
+          "value": "2026-10-25T00:01:00.008Z"
+        },
+        { "op": "add", "path": "/events/0/drawDefinitions/0/structures/1/matchUps/3/winningSide", "value": 2 },
+        {
+          "op": "replace",
+          "path": "/events/0/drawDefinitions/0/structures/1/updatedAt",
+          "value": "2026-10-25T00:01:00.039Z"
+        },
+        { "op": "replace", "path": "/events/0/drawDefinitions/0/updatedAt", "value": "2026-10-25T00:01:00.077Z" }
+      ],
+      "hash": "sha256:02a64d8d7045f7ec04127cd61f7055fd1750c0fde580a5c0ebc7dcd139a6b660"
+    }
+  ],
+  "invariants": ["PARTICIPANT_DUPLICATED_IN_STRUCTURE", "BYE_POSITION_WITH_PARTICIPANT"],
+  "properties": []
+}
