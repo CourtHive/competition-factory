@@ -1,0 +1,998 @@
+{
+  "reasons": {
+    "F-008": "https://github.com/CourtHive/competition-factory/pull/6504",
+    "F-009": "https://github.com/CourtHive/competition-factory/pull/6505",
+    "F-010": "https://github.com/CourtHive/competition-factory/pull/6506",
+    "F-011": "https://github.com/CourtHive/competition-factory/pull/6507",
+    "F-012": "https://github.com/CourtHive/competition-factory/pull/6508",
+    "F-013": "https://github.com/CourtHive/competition-factory/pull/6509",
+    "F-014": "https://github.com/CourtHive/competition-factory/pull/6510",
+    "F-015": "https://github.com/CourtHive/competition-factory/pull/6511",
+    "F-016": "https://github.com/CourtHive/competition-factory/pull/6512",
+    "F-017": "https://github.com/CourtHive/competition-factory/pull/6513",
+    "F-018": "https://github.com/CourtHive/competition-factory/pull/6514",
+    "F-007": "https://github.com/CourtHive/competition-factory/pull/6503",
+    "cascadeWriteErrorsReachTheCaller": "Forced downstream write error",
+    "reconcileDeciderReturnsItsError": "Injected reconciliation failure",
+    "aSettleLoopAtItsBoundRefuses": "Artificially lowered settle limit",
+    "aSettlePassReportsWhatItCannotDo": "Planted reconciliation failure or forced settle bound",
+    "ownedDirectionWrites": "Artificial settle bound",
+    "aLateRefusalIsCompared": "Injected legacy writer refusal",
+    "inContextNoticeAfterSuccess": "Injected failure after notice-producing operations",
+    "resetAdHocMatchUps": "Mock resetMatchUpLineUps refusal",
+    "setStateProvider": "Synthetic throwing state provider",
+    "asyncWrapperContract": "Synthetic asynchronous boom method",
+    "fixtureStamp": "A raw fixture mutation left the mutation flag pending before this call. Only its inherited factory stamp changed.",
+    "oldBoundary": "Capture predates #6489. The six clean-state replays do not reproduce a refused write. The historical before/after hashes identify this observation."
+  },
+  "tests": {
+    "src/tests/engines/asyncWrapperContract.test.ts::async wrapper contract > 4. a thrown method or an unknown method leaves every other context untouched": [
+      {
+        "method": "boom",
+        "error": "boom",
+        "reason": "asyncWrapperContract",
+        "paths": ["/tournamentName"]
+      }
+    ],
+    "src/tests/mutations/drawDefinitions/positionGovernor/nonForwardAdvanceRefused.test.ts::a BYE in a record whose round-2 matchUp repeats a round-1 matchUpId is refused, not recursed": [
+      {
+        "method": "assignDrawPosition",
+        "error": "ERR_INVALID_MATCHUP: advancing from f621a7ae-3a51-4576-adbc-25af3cb3f298 (round 1) resolves to round 1 of the same structure; the record's matchUpIds are not unique",
+        "reason": "F-016",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/0/bye",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/drawDefinitions/rotatingPartnerEntries.test.ts::refuses rotating individuals in an ordinary draw in the same doubles event": [
+      {
+        "method": "addDrawEntries",
+        "error": "ERR_INVALID_ENTRIES",
+        "reason": "fixtureStamp",
+        "paths": ["/factory"],
+        "pending": true
+      }
+    ],
+    "src/tests/mutations/drawDefinitions/rotatingPartnerRound.test.ts::locks applied round formats at draw scope": [
+      {
+        "method": "setMatchUpFormat",
+        "error": "ERR_INVALID_VALUES",
+        "reason": "fixtureStamp",
+        "paths": ["/factory"],
+        "pending": true
+      }
+    ],
+    "src/tests/mutations/drawDefinitions/rotatingPartnerRound.test.ts::locks applied round formats at event scope": [
+      {
+        "method": "setMatchUpFormat",
+        "error": "ERR_INVALID_VALUES",
+        "reason": "fixtureStamp",
+        "paths": ["/factory"],
+        "pending": true
+      }
+    ],
+    "src/tests/mutations/drawDefinitions/rotatingPartnerRound.test.ts::locks applied round formats at matchUp scope": [
+      {
+        "method": "setMatchUpFormat",
+        "error": "ERR_INVALID_VALUES",
+        "reason": "fixtureStamp",
+        "paths": ["/factory"],
+        "pending": true
+      }
+    ],
+    "src/tests/mutations/drawDefinitions/rotatingPartnerRound.test.ts::locks applied round formats at structure scope": [
+      {
+        "method": "setMatchUpFormat",
+        "error": "ERR_INVALID_VALUES",
+        "reason": "fixtureStamp",
+        "paths": ["/factory"],
+        "pending": true
+      }
+    ],
+    "src/tests/mutations/drawDefinitions/rotatingPartnerRound.test.ts::retry identity includes pairings and score rules, and force cannot strip an applied format": [
+      {
+        "method": "setMatchUpFormat",
+        "error": "ERR_INVALID_VALUES",
+        "reason": "fixtureStamp",
+        "paths": ["/factory"],
+        "pending": true
+      }
+    ],
+    "src/tests/mutations/engine/setStateProvider.test.ts::state provider implementation of handleCaughtError": [
+      {
+        "method": "deleteDrawDefinitions",
+        "error": "Global state provider error",
+        "reason": "setStateProvider",
+        "paths": ["/events/0/drawDefinitions/0", "/events/0/extensions"]
+      }
+    ],
+    "src/tests/mutations/errorPaths/cascadeWriteErrorsReachTheCaller.test.ts::a failed write at conditionallyAdvanceDrawPosition fails the call and is returned (v1 residual) (matrix seed 7)": [
+      {
+        "method": "setMatchUpStatus",
+        "error": "ERR_FORCED",
+        "reason": "cascadeWriteErrorsReachTheCaller",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/errorPaths/cascadeWriteErrorsReachTheCaller.test.ts::a failed write at conditionallyRemoveDrawPosition fails the correction and is returned (v1 residual) (deep seed 7000009)": [
+      {
+        "method": "setMatchUpStatus",
+        "error": "ERR_FORCED",
+        "reason": "cascadeWriteErrorsReachTheCaller",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/6/drawPositions/1",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/6/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/errorPaths/cascadeWriteErrorsReachTheCaller.test.ts::a failed write at doubleExitAdvancement fails the call and is returned (v1 residual) (matrix seed 77)": [
+      {
+        "method": "setMatchUpStatus",
+        "error": "ERR_FORCED",
+        "reason": "cascadeWriteErrorsReachTheCaller",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/1/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/1/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/1/score",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/1/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/errorPaths/cascadeWriteErrorsReachTheCaller.test.ts::a failed write at settleHeldExits fails the call and is returned (v1 residual) (matrix seed 77)": [
+      {
+        "method": "setMatchUpStatus",
+        "error": "ERR_FORCED",
+        "reason": "cascadeWriteErrorsReachTheCaller",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/3/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/3/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/3/schedule",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/3/score",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/3/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/5/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/5/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/5/score",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/5/sideExitProvenance",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/5/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/5/winningSide",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/6/drawPositions/1",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/6/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/0/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/0/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/0/score",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/0/sideExitProvenance",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/0/winningSide",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/2/drawPositions/1",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/2/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/3/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/3/score",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/3/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/4/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/4/drawPositions/1",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/4/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/positionAssignments/2/bye",
+          "/events/0/drawDefinitions/0/structures/1/positionAssignments/2/byeFromPropagation",
+          "/events/0/drawDefinitions/0/structures/1/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/errorPaths/cascadeWriteErrorsReachTheCaller.test.ts::a failed write at withdrawExitFromByeChain fails the correction and is returned (v1 residual) (deep seed 7000545)": [
+      {
+        "method": "setMatchUpStatus",
+        "error": "ERR_FORCED",
+        "reason": "cascadeWriteErrorsReachTheCaller",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/6/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/6/sideExitProvenance",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/6/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/6/winningSide",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/7/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/7/drawPositions/1",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/7/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/7/score",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/7/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/5/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/5/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/positionAssignments/0/bye",
+          "/events/0/drawDefinitions/0/structures/1/positionAssignments/0/byeFromPropagation",
+          "/events/0/drawDefinitions/0/structures/1/updatedAt",
+          "/events/0/drawDefinitions/0/structures/2/matchUps/0/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/2/matchUps/0/score",
+          "/events/0/drawDefinitions/0/structures/2/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/2/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/errorPaths/cascadeWriteErrorsReachTheCaller.test.ts::a failed write of a TEAM dual's status fails the line score that caused it (v1 residual)": [
+      {
+        "method": "setMatchUpStatus",
+        "error": "ERR_FORCED",
+        "reason": "cascadeWriteErrorsReachTheCaller",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/displaySideNumber",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/drawPosition",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/lineUp",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/1/displaySideNumber",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/1/drawPosition",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/1/lineUp",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieFormat",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/orderOfFinish",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/winningSide",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/errorPaths/reconcileDeciderReturnsItsError.test.ts::returns the error when the write to the decider fails (v1 residual: the final stays scored)": [
+      {
+        "method": "setMatchUpStatus",
+        "error": "ERR_FORCED",
+        "reason": "reconcileDeciderReturnsItsError",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/7/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/7/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/7/schedule",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/7/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/7/winningSide",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/2/positionAssignments/0/participantId",
+          "/events/0/drawDefinitions/0/structures/2/positionAssignments/1/participantId",
+          "/events/0/drawDefinitions/0/structures/2/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/events/bulkMatchUpStatusUpdateRefusals.test.ts::bulkMatchUpStatusUpdate locates every outcome before applying any > a later outcome refused by setMatchUpStatus, rollbackOnError false": [
+      {
+        "method": "bulkMatchUpStatusUpdate",
+        "error": "ERR_INVALID_MATCHUP_STATUS",
+        "reason": "F-008",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/exitPropagation/aSettleLoopAtItsBoundRefuses.test.ts::crossLinksThroughByes > refuses with SETTLE_BOUND_REACHED, naming itself, when its bound is reached with work left": [
+      {
+        "method": "setMatchUpStatus",
+        "error": "ERR_SETTLE_BOUND_REACHED",
+        "reason": "aSettleLoopAtItsBoundRefuses",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/12/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/12/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/12/score",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/12/sideExitProvenance",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/12/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/12/winningSide",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/14/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/14/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/14/winningSide",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/15/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/15/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/9/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/9/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/9/schedule",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/9/score",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/9/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/10/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/10/sideExitProvenance",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/10/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/11/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/11/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/12/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/12/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/12/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/12/score",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/12/sideExitProvenance",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/12/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/12/winningSide",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/13/drawPositions/1",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/13/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/5/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/5/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/5/winningSide",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/8/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/8/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/8/score",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/8/sideExitProvenance/2",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/8/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/positionAssignments/2/bye",
+          "/events/0/drawDefinitions/0/structures/1/positionAssignments/2/byeFromPropagation",
+          "/events/0/drawDefinitions/0/structures/1/positionAssignments/4/bye",
+          "/events/0/drawDefinitions/0/structures/1/positionAssignments/4/byeFromPropagation",
+          "/events/0/drawDefinitions/0/structures/1/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/exitPropagation/aSettleLoopAtItsBoundRefuses.test.ts::produceStrandedConvergences > refuses with SETTLE_BOUND_REACHED, naming itself, when its bound is reached with work left": [
+      {
+        "method": "setMatchUpStatus",
+        "error": "ERR_SETTLE_BOUND_REACHED",
+        "reason": "aSettleLoopAtItsBoundRefuses",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/12/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/12/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/12/score",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/12/sideExitProvenance",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/12/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/12/winningSide",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/14/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/14/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/14/winningSide",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/15/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/15/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/9/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/9/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/9/schedule",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/9/score",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/9/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/11/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/11/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/12/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/12/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/5/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/5/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/5/winningSide",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/8/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/8/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/8/score",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/8/sideExitProvenance/2",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/8/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/positionAssignments/2/bye",
+          "/events/0/drawDefinitions/0/structures/1/positionAssignments/2/byeFromPropagation",
+          "/events/0/drawDefinitions/0/structures/1/positionAssignments/4/bye",
+          "/events/0/drawDefinitions/0/structures/1/positionAssignments/4/byeFromPropagation",
+          "/events/0/drawDefinitions/0/structures/1/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/exitPropagation/aSettleLoopAtItsBoundRefuses.test.ts::propagateExitFrom > refuses with SETTLE_BOUND_REACHED, naming itself, when its bound is reached with work left": [
+      {
+        "method": "setMatchUpStatus",
+        "error": "ERR_SETTLE_BOUND_REACHED",
+        "reason": "aSettleLoopAtItsBoundRefuses",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/positionAssignments/2/participantId",
+          "/events/0/drawDefinitions/0/structures/1/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/exitPropagation/aSettleLoopAtItsBoundRefuses.test.ts::sendHeldExitsOn > refuses with SETTLE_BOUND_REACHED, naming itself, when its bound is reached with work left": [
+      {
+        "method": "setMatchUpStatus",
+        "error": "ERR_SETTLE_BOUND_REACHED",
+        "reason": "aSettleLoopAtItsBoundRefuses",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/1/matchUps/1/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/1/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/1/schedule",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/1/score",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/1/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/3/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/3/sideExitProvenance",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/3/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/4/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/4/score",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/4/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/exitPropagation/aSettlePassReportsWhatItCannotDo.test.ts::setMatchUpStatus refuses when reconcileLinkAdvancements reports > under v1, with the error": [
+      {
+        "method": "setMatchUpStatus",
+        "error": "ERR_SETTLE_BOUND_REACHED",
+        "reason": "aSettlePassReportsWhatItCannotDo",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/positionAssignments/5/participantId",
+          "/events/0/drawDefinitions/0/structures/1/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/exitPropagation/aSettlePassReportsWhatItCannotDo.test.ts::setMatchUpStatus refuses when reconcileMissedLinkAdvancements reports > under v1, with the error": [
+      {
+        "method": "setMatchUpStatus",
+        "error": "ERR_PLANTED",
+        "reason": "aSettlePassReportsWhatItCannotDo",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/positionAssignments/5/participantId",
+          "/events/0/drawDefinitions/0/structures/1/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/matchUps/resetAdHocMatchUps.test.ts::returns error when resetMatchUpLineUps fails for TEAM matchUps with removeAssignments": [
+      {
+        "method": "resetAdHocMatchUps",
+        "error": "ERR_INVALID_MATCHUP",
+        "reason": "resetAdHocMatchUps",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/score",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/1/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/1/score",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/1/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/2/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/2/score",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/2/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/0",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/3",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/matchUps/tieMatchUpLineUpEdges.test.ts::a substitution reads a line-up entry with no collection assignments as empty": [
+      {
+        "method": "replaceTieMatchUpParticipantId",
+        "error": "ERR_INVALID_VALUES",
+        "reason": "F-010",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/displaySideNumber",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/drawPosition",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/lineUp",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/1/displaySideNumber",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/1/drawPosition",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/matchUps/tieMatchUpLineUpEdges.test.ts::replacing a doubles pair with a pair participant returns the pair creation error": [
+      {
+        "method": "replaceTieMatchUpParticipantId",
+        "error": "ERR_INVALID_PARTICIPANT_IDS",
+        "reason": "F-010",
+        "paths": [
+          "/events/0/drawDefinitions/0/lineUps/9b577638-b20c-4f12-85ad-8e4fe03e0fb3/2",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/lineUp/2",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/notifications/noticeBatchB.test.ts::event attribute writers announce the event with MODIFY_EVENT > modifyEventMatchUpFormatTiming and removeEventMatchUpFormatTiming": [
+      {
+        "method": "modifyEventMatchUpFormatTiming",
+        "error": "ERR_INVALID_VALUES",
+        "reason": "F-012",
+        "paths": ["/events/0/extensions/0/value/matchUpAverageTimes/0/averageTimes/0/categoryNames/0"]
+      }
+    ],
+    "src/tests/mutations/outcome/aLateRefusalIsCompared.test.ts::a refusal planted at carryAfterForward > is a deferred refusal under differential when its code is an apply-stage code": [
+      {
+        "method": "setMatchUpStatus",
+        "error": "ERR_FORCED",
+        "reason": "aLateRefusalIsCompared",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpFormat",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/outcome/aLateRefusalIsCompared.test.ts::a refusal planted at carryAfterForward > is refused under v1, over the write it came after": [
+      {
+        "method": "setMatchUpStatus",
+        "error": "ERR_PLANTED",
+        "reason": "aLateRefusalIsCompared",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpFormat",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/outcome/aLateRefusalIsCompared.test.ts::a refusal planted at forward > is a deferred refusal under differential when its code is an apply-stage code": [
+      {
+        "method": "setMatchUpStatus",
+        "error": "ERR_FORCED",
+        "reason": "aLateRefusalIsCompared",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpFormat",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/outcome/aLateRefusalIsCompared.test.ts::a refusal planted at forward > is refused under v1, over the write it came after": [
+      {
+        "method": "setMatchUpStatus",
+        "error": "ERR_PLANTED",
+        "reason": "aLateRefusalIsCompared",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpFormat",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/outcome/aLateRefusalIsCompared.test.ts::a refusal planted at settleDraw > is a deferred refusal under differential when its code is an apply-stage code": [
+      {
+        "method": "setMatchUpStatus",
+        "error": "ERR_FORCED",
+        "reason": "aLateRefusalIsCompared",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpFormat",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/outcome/aLateRefusalIsCompared.test.ts::a refusal planted at settleDraw > is refused under v1, over the write it came after": [
+      {
+        "method": "setMatchUpStatus",
+        "error": "ERR_PLANTED",
+        "reason": "aLateRefusalIsCompared",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpFormat",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/outcome/ownedDirectionWrites.boundaries.test.ts::under v2, an exit v2 does not plan is v1s, whole > F9 (S6 tail): a BYE passage costs v1 one iteration per BYE passed, so a carry within the levels can still reach the bound": [
+      {
+        "method": "setMatchUpStatus",
+        "error": "ERR_SETTLE_BOUND_REACHED",
+        "reason": "ownedDirectionWrites",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/10/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/10/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/schedule",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/score",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/winningSide",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/2/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/2/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/2/schedule",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/2/score",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/2/sideExitProvenance",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/2/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/2/winningSide",
+          "/events/0/drawDefinitions/0/structures/1/positionAssignments/4/participantId",
+          "/events/0/drawDefinitions/0/structures/1/updatedAt",
+          "/events/0/drawDefinitions/0/structures/3/matchUps/1/sideExitProvenance",
+          "/events/0/drawDefinitions/0/structures/3/matchUps/1/updatedAt",
+          "/events/0/drawDefinitions/0/structures/3/matchUps/2/updatedAt",
+          "/events/0/drawDefinitions/0/structures/3/positionAssignments/2/participantId",
+          "/events/0/drawDefinitions/0/structures/3/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/outcome/ownedDirectionWrites.boundaries.test.ts::under v2, an exit v2 does not plan is v1s, whole > F9: a carry that would reach v1s bound is v1s, which refuses there; v2 never plans the bound": [
+      {
+        "method": "setMatchUpStatus",
+        "error": "ERR_SETTLE_BOUND_REACHED",
+        "reason": "ownedDirectionWrites",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/0/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/0/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/0/schedule",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/0/score",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/0/sideExitProvenance",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/1/matchUps/0/winningSide",
+          "/events/0/drawDefinitions/0/structures/1/positionAssignments/0/participantId",
+          "/events/0/drawDefinitions/0/structures/1/updatedAt",
+          "/events/0/drawDefinitions/0/structures/3/positionAssignments/0/participantId",
+          "/events/0/drawDefinitions/0/structures/3/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/outcome/resetAdHocSelectorEntry.test.ts::routes the outer reset through the selector with the existing public contract: valid then unknown": [
+      {
+        "method": "resetAdHocMatchUps",
+        "error": "ERR_NOT_FOUND_MATCHUP",
+        "reason": "F-009",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule/scoredTime",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/score/scoreStringSide1",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/score/scoreStringSide2",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/score/sets",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/0/tally/groupOrder",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/0/tally/provisionalOrder",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/0/tally/rankOrder",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/GEMscore",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/defeats/0",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/defeats/1",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/gamesDiff",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/gamesLost",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/gamesPct",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/gamesWon",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/groupOrder",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/matchUpsLost",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/provisionalOrder",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/rankOrder",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/result",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/setsDiff",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/setsLost",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/GEMscore",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/gamesDiff",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/gamesLost",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/gamesPct",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/gamesWon",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/groupOrder",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/matchUpsWon",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/provisionalOrder",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/rankOrder",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/result",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/setsDiff",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/setsWon",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/victories/0",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/victories/1",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/3/tally/groupOrder",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/3/tally/provisionalOrder",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/3/tally/rankOrder",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/4/tally/groupOrder",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/4/tally/provisionalOrder",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/4/tally/rankOrder",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/5/tally/groupOrder",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/5/tally/provisionalOrder",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/5/tally/rankOrder",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/6/tally/groupOrder",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/6/tally/provisionalOrder",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/6/tally/rankOrder",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/7/tally/groupOrder",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/7/tally/provisionalOrder",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/7/tally/rankOrder",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/participants/addParticipant.test.ts::will not add invalid individual participants": [
+      {
+        "method": "addParticipant",
+        "error": "ERR_INVALID_PARTICIPANT_TYPE",
+        "reason": "F-018",
+        "paths": ["/participants"]
+      }
+    ],
+    "src/tests/mutations/participants/dateValidation.test.ts::scaleDate validation > rejects invalid scaleDate format": [
+      {
+        "method": "setParticipantScaleItem",
+        "error": "ERR_INVALID_DATE",
+        "reason": "F-015",
+        "paths": ["/participants/0/timeItems"]
+      }
+    ],
+    "src/tests/mutations/participants/dateValidation.test.ts::scaleDate validation > rejects malformed date strings as scaleDate": [
+      {
+        "method": "setParticipantScaleItem",
+        "error": "ERR_INVALID_DATE",
+        "reason": "F-015",
+        "paths": ["/participants/0/timeItems"]
+      }
+    ],
+    "src/tests/mutations/participants/individualParticipantMerge.test.ts::individual participant merge > preview is pure; transfers data and references, records an alias and refuses resurrection": [
+      {
+        "method": "addParticipant",
+        "error": "PARTICIPANT_ID_RETIRED",
+        "reason": "fixtureStamp",
+        "paths": ["/factory/timeStamp"],
+        "pending": true
+      }
+    ],
+    "src/tests/mutations/participants/penaltyCoverage.test.ts::penalty edge cases > modifyPenalty returns error for invalid modifications": [
+      {
+        "method": "modifyPenalty",
+        "error": "ERR_NOT_FOUND_PENALTY",
+        "reason": "F-017",
+        "paths": [
+          "/participants/1/penalties",
+          "/participants/2/penalties",
+          "/participants/3/penalties",
+          "/participants/4/penalties",
+          "/participants/5/penalties",
+          "/participants/6/penalties",
+          "/participants/7/penalties",
+          "/participants/8/penalties",
+          "/participants/9/penalties"
+        ]
+      }
+    ],
+    "src/tests/mutations/participants/team/onePlayerOneTeam.test.ts::one player, one team, per event > replaceTieMatchUpParticipantId refuses another team’s player": [
+      {
+        "method": "replaceTieMatchUpParticipantId",
+        "error": "ERR_SHARED_INDIVIDUAL_PARTICIPANT",
+        "reason": "F-010",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/scheduling/proConflicts.test.ts::proConflicts - Comprehensive Conflict Detection > prevents double booking of same court slot (courtId, courtOrder, scheduledDate)": [
+      {
+        "method": "addMatchUpScheduleItems",
+        "error": "ERR_SCHEDULE_CONFLICT_DOUBLE_BOOKING",
+        "reason": "F-007",
+        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/1/schedule"]
+      }
+    ],
+    "src/tests/mutations/scheduling/scheduleMatchUps.test.ts::[writeMode: legacy] > can schedule many attributes at once": [
+      {
+        "method": "addMatchUpScheduleItems",
+        "error": "ERR_INVALID_RESUME_TIME",
+        "reason": "F-007",
+        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"]
+      },
+      {
+        "method": "addMatchUpScheduleItems",
+        "error": "ERR_INVALID_STOP_TIME",
+        "reason": "F-007",
+        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"]
+      },
+      {
+        "method": "addMatchUpScheduleItems",
+        "error": "ERR_INVALID_END_TIME",
+        "reason": "F-007",
+        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"]
+      }
+    ],
+    "src/tests/mutations/scheduling/scheduleMatchUps.test.ts::[writeMode: native] > can schedule many attributes at once": [
+      {
+        "method": "addMatchUpScheduleItems",
+        "error": "ERR_INVALID_RESUME_TIME",
+        "reason": "F-007",
+        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"]
+      },
+      {
+        "method": "addMatchUpScheduleItems",
+        "error": "ERR_INVALID_STOP_TIME",
+        "reason": "F-007",
+        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"]
+      },
+      {
+        "method": "addMatchUpScheduleItems",
+        "error": "ERR_INVALID_END_TIME",
+        "reason": "F-007",
+        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"]
+      }
+    ],
+    "src/tests/mutations/scheduling/updatedSchedulingProfile.test.ts::can update a schedulingProfile when venues change": [
+      {
+        "method": "addSchedulingProfileRound",
+        "error": "ERR_INVALID_VALUES",
+        "reason": "F-011",
+        "paths": ["/scheduling/profile/0/venues/0/rounds/1"]
+      }
+    ],
+    "src/tests/mutations/subscriptions/inContextNoticeAfterSuccess.test.ts::updateInContextMatchUp > is never built, nor sent, for a call refused after its write": [
+      {
+        "method": "setMatchUpStatus",
+        "error": "ERR_PLANTED",
+        "reason": "inContextNoticeAfterSuccess",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/venues/courtDeletion.test.ts::can add events, venues, and schedule matchUps": [
+      {
+        "method": "modifyVenue",
+        "error": "ERR_SCHEDULED_MATCHUPS",
+        "reason": "F-014",
+        "paths": ["/venues/0/venueAbbreviation", "/venues/0/venueName"]
+      }
+    ],
+    "src/tests/mutations/venues/deleteCourts.test.ts::deleteCourts > stops on first error and preserves remaining courts": [
+      {
+        "method": "deleteCourts",
+        "error": "ERR_NOT_FOUND_COURT",
+        "reason": "F-013",
+        "paths": [
+          "/factory/timeStamp",
+          "/venues/0/courts/0/courtId",
+          "/venues/0/courts/0/courtName",
+          "/venues/0/courts/1/courtId",
+          "/venues/0/courts/1/courtName",
+          "/venues/0/courts/2/courtId",
+          "/venues/0/courts/2/courtName",
+          "/venues/0/courts/3"
+        ]
+      }
+    ],
+    "src/tests/mutations/venues/modifyVenue.test.ts::can define and modify a venue": [
+      {
+        "method": "modifyVenue",
+        "error": "ERR_INVALID_TIME",
+        "reason": "F-014",
+        "paths": ["/venues/0/courts", "/venues/0/venueAbbreviation", "/venues/0/venueName"]
+      }
+    ],
+    "src/tests/refactoring/scheduleCoverage.test.ts::addMatchUpTimeModifiers coverage > returns error for non-array timeModifiers": [
+      {
+        "method": "addMatchUpScheduleItems",
+        "error": "ERR_INVALID_VALUES",
+        "reason": "F-007",
+        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule"]
+      }
+    ],
+    "src/tests/refactoring/scheduleCoverage.test.ts::proConflictDetection in addMatchUpScheduleItems > detects double-booking when proConflictDetection is true": [
+      {
+        "method": "addMatchUpScheduleItems",
+        "error": "ERR_SCHEDULE_CONFLICT_DOUBLE_BOOKING",
+        "reason": "F-007",
+        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/1/schedule"]
+      }
+    ]
+  }
+}

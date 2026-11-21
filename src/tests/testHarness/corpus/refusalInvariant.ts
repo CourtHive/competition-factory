@@ -1,36 +1,52 @@
-import { getTournamentRecords } from '@Global/state/globalState';
+import allowlist from './refusalAllowlist.json';
+import { relative } from 'node:path';
+import { getTournamentRecords, readMutationStatus } from '@Global/state/globalState';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { generatePatch } from '@Tools/jsonPatch';
 import { isDeepStrictEqual } from 'node:util';
-import { vi } from 'vitest';
+import { expect, vi } from 'vitest';
 
 // Inspect the public JSON record, including factory stamps. Objects can be edited in place during
 // dispatch, so a reference to the old record cannot serve as the baseline.
 const snapshot = () => JSON.stringify(getTournamentRecords() ?? {});
 const violations = new Set<string>();
-type DirectiveBoundary = { method: string; before: string; after: string };
+type DirectiveBoundary = { method: string; before: string; after: string; pending: boolean };
 type QueueTrace = { last?: DirectiveBoundary };
 const multiDirective = new AsyncLocalStorage<QueueTrace | undefined>();
 
-function compare(method: string, before: string, after: string, error: any) {
+function compare(method: string, before: string, after: string, error: any, pending: boolean) {
   if (after === before) return;
   const [oldRecord, newRecord] = [before, after].map((value) => JSON.parse(value));
   if (isDeepStrictEqual(oldRecord, newRecord)) return;
-  const first = generatePatch(oldRecord, newRecord)[0];
-  violations.add(`${method} returned ${error.code ?? error} and changed ${first?.path}`);
+  const paths = generatePatch(oldRecord, newRecord).map(({ path }) => path);
+  const { testPath, currentTestName } = expect.getState();
+  const key = relative(process.cwd(), testPath ?? '') + '::' + currentTestName;
+  const code = error.code ?? error;
+  const rules: Record<string, { method: string; error: string; pending?: boolean; paths: string[] }[]> =
+    allowlist.tests;
+  const allowed = rules[key]?.some(
+    (rule) =>
+      rule.method === method &&
+      rule.error === code &&
+      (!rule.pending || pending) &&
+      paths.length > 0 &&
+      paths.every((path) => rule.paths.includes(path.replace(/^\/[^/]+/, ''))),
+  );
+  if (!allowed) violations.add(`${method} returned ${code} and changed ${paths.join(', ')}`);
 }
 
 // Keep sync results synchronous and wait for async results. Report at the test boundary so the
 // engine cannot translate an assertion failure into an ordinary refusal.
 function checked<T>(method: string, run: () => T, queueTrace?: QueueTrace): T {
+  const pending = readMutationStatus() === true;
   const before = snapshot();
   const finish = (result: any) => {
     if (result?.error) {
       if (queueTrace && result.results?.length) {
         const last = queueTrace.last;
-        if (last) compare(last.method, last.before, last.after, result.error);
+        if (last) compare(last.method, last.before, last.after, result.error, last.pending);
         else violations.add('missing final directive boundary for a refused queue');
-      } else compare(method, before, snapshot(), result.error);
+      } else compare(method, before, snapshot(), result.error, pending);
     }
     return result;
   };
@@ -59,9 +75,10 @@ function queue<T>(directives: any, rollback: boolean | undefined, run: () => T):
 function traceDirective<T>(method: string, run: () => T): T {
   const trace = multiDirective.getStore();
   if (!trace) return run();
+  const pending = readMutationStatus() === true;
   const before = snapshot();
   const close = () => {
-    trace.last = { method, before, after: snapshot() };
+    trace.last = { method, before, after: snapshot(), pending };
   };
   try {
     const result = run();
