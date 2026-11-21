@@ -74,43 +74,40 @@ function planEventTiming(
 
   // Prepare only the format rows used to construct the new event value. In particular, the
   // effective rows may come from tournament defaults via either the first-class or legacy field.
-  const ownRow = (row: SchedulingCategoryTimes) => ({ ...row, minutes: { ...row.minutes } });
-  const averageRows = averageTimes.map(ownRow);
-  const recoveryRows = recoveryTimes.map(ownRow);
-  let previousMinutes: SchedulingMinutes = {};
-  const splitCategory = (row: SchedulingCategoryTimes) => {
-    if (categoryType && row.categoryTypes?.includes(categoryType))
-      pushGlobalLog({ method: 'modifyEventMatchUpFormatTiming', categoryType });
-    if (row.categoryNames?.includes(categoryName)) {
-      row.categoryNames = row.categoryNames.filter((name) => name !== categoryName);
+  function prepareTable(source: SchedulingCategoryTimes[], minutes: number | undefined, supplied: boolean) {
+    if (!supplied) return { rows: source, updated: undefined };
+    let previousMinutes: SchedulingMinutes = {};
+    const rows = source.map((row) => {
+      if (categoryType && row.categoryTypes?.includes(categoryType))
+        pushGlobalLog({ method: 'modifyEventMatchUpFormatTiming', categoryType });
+      if (!row.categoryNames?.includes(categoryName)) return { ...row, minutes: { ...row.minutes } };
       previousMinutes = row.minutes;
-    }
-    return row.categoryNames?.length;
-  };
-  const newAverageTimes = averageRows.filter(splitCategory);
-  const newRecoveryTimes = recoveryRows.filter(splitCategory);
-  if (validAverageMinutes) {
-    newAverageTimes.push({
-      categoryNames: [categoryName],
-      minutes: { ...previousMinutes, [minutesKey]: averageMinutes },
+      return {
+        ...row,
+        minutes: { ...row.minutes },
+        categoryNames: row.categoryNames.filter((name) => name !== categoryName),
+      };
     });
+    const updated = rows.filter((row) => row.categoryNames?.length);
+    updated.push({ categoryNames: [categoryName], minutes: { ...previousMinutes, [minutesKey]: minutes } });
+    return { rows, updated };
   }
-  if (validRecoveryMinutes) {
-    newRecoveryTimes.push({ categoryNames: [categoryName], minutes: { [minutesKey]: recoveryMinutes } });
-  }
+
+  const average = prepareTable(averageTimes, averageMinutes, validAverageMinutes);
+  const recovery = prepareTable(recoveryTimes, recoveryMinutes, validRecoveryMinutes);
 
   // A stored definition may cover several formats. Keep its existing category split on the
   // other formats while installing the override, without ever editing its input rows.
   const scheduling = extension?.value;
   const value = modifyScheduling({
     matchUpAverageTimes: scheduling?.matchUpAverageTimes?.map((group: SchedulingFormatAverageTimes) =>
-      group.averageTimes === averageTimes ? { ...group, averageTimes: averageRows } : group,
+      group.averageTimes === averageTimes ? { ...group, averageTimes: average.rows } : group,
     ),
     matchUpRecoveryTimes: scheduling?.matchUpRecoveryTimes?.map((group: SchedulingFormatRecoveryTimes) =>
-      group.recoveryTimes === recoveryTimes ? { ...group, recoveryTimes: recoveryRows } : group,
+      group.recoveryTimes === recoveryTimes ? { ...group, recoveryTimes: recovery.rows } : group,
     ),
-    recoveryTimes: validRecoveryMinutes ? newRecoveryTimes : undefined,
-    averageTimes: validAverageMinutes ? newAverageTimes : undefined,
+    recoveryTimes: recovery.updated,
+    averageTimes: average.updated,
     matchUpFormat,
   });
 

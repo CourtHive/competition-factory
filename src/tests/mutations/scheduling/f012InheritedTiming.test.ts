@@ -76,6 +76,42 @@ describe.each([true, false])('event-local timing, setState deepCopy=%s', (deepCo
     expect(refused).toEqual([]);
   });
 
+  it('preserves doubles minutes from the same table when overriding singles minutes', () => {
+    const inherited = {
+      matchUpAverageTimes: [
+        {
+          matchUpFormatCodes: [matchUpFormat],
+          averageTimes: [{ categoryNames: ['U16', 'U18'], minutes: { SINGLES: 90, DOUBLES: 100 } }],
+        },
+      ],
+      matchUpRecoveryTimes: [
+        {
+          matchUpFormatCodes: [matchUpFormat],
+          recoveryTimes: [{ categoryNames: ['U16'], minutes: { SINGLES: 30, DOUBLES: 45 } }],
+        },
+      ],
+    };
+    expect(tournamentEngine.setState({ ...record(), scheduling: { timing: inherited } }, deepCopy).success).toBe(true);
+    const defaults = JSON.stringify(state().scheduling);
+    override('U16', 75);
+    const local = () => event('U16').extensions.find(({ name }) => name === SCHEDULE_TIMING).value;
+    const average = () => local().matchUpAverageTimes[0].averageTimes.find((row) => row.categoryNames.includes('U16'));
+    const recovery = () =>
+      local().matchUpRecoveryTimes[0].recoveryTimes.find((row) => row.categoryNames.includes('U16'));
+    expect(average().minutes).toEqual({ SINGLES: 75, DOUBLES: 100 });
+    expect(read('U16').recoveryMinutes).toBe(30);
+    const setBoth = tournamentEngine.modifyEventMatchUpFormatTiming({
+      eventId: 'U16',
+      matchUpFormat,
+      averageMinutes: 70,
+      recoveryMinutes: 25,
+    });
+    expect(setBoth.success).toBe(true);
+    expect(average().minutes).toEqual({ SINGLES: 70, DOUBLES: 100 });
+    expect(recovery().minutes).toEqual({ SINGLES: 25, DOUBLES: 45 });
+    expect(JSON.stringify(state().scheduling)).toBe(defaults);
+  });
+
   it('creates only the event override when no tournament rule exists', () => {
     expect(tournamentEngine.setState(record(), deepCopy).success).toBe(true);
     const sibling = JSON.stringify(event('U18'));
