@@ -22,6 +22,7 @@ import {
   REMOVE_DIRECTED,
   RESULT_TO_DOUBLE_EXIT,
   SINGLE_EXITS,
+  bareResultRequest,
   changesWinner,
   deciderSeats,
   directsElsewhere,
@@ -186,15 +187,7 @@ function exitReason(args: ExitReasonArgs): AbstainReason | SeatObligation | unde
 function plannedExitReason(args: PlanArgs): ReturnType<typeof exitReason> {
   if (!luckyDoubleExit(args)) return exitReason(args);
   const { view, request, route } = args;
-  const bareLuckyCall =
-    view.drawType === LUCKY_DRAW &&
-    !view.isTeam &&
-    request.score === undefined &&
-    request.matchUpFormat === undefined &&
-    request.matchUpStatusCodes === undefined &&
-    request.carries?.notes === undefined &&
-    request.carries?.schedule === undefined;
-  if (!bareLuckyCall) return 'exit';
+  if (view.drawType !== LUCKY_DRAW || view.isTeam || !bareResultRequest(request)) return 'exit';
   if (satisfiedDoubleExit(view, request, route)) return undefined;
   // The writer scores a fresh double exit before doubleExitAdvancement returns. A correction
   // can reach this builder on a projected open match after removal, with removesWinningSide set.

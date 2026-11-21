@@ -34,6 +34,14 @@ export const CLEAR_SCORE: Route = 'clear-score';
 export const APPLY_VALUES: Route = 'apply-values';
 export const RESULT_TO_DOUBLE_EXIT: Route = 'completed-to-double-exit';
 
+/** Only the requested result and its propagation flags are present. */
+export const bareResultRequest = (request: OutcomeRequest): boolean =>
+  request.score === undefined &&
+  request.matchUpFormat === undefined &&
+  request.matchUpStatusCodes === undefined &&
+  request.carries?.notes === undefined &&
+  request.carries?.schedule === undefined;
+
 export const LOCAL_ROUTES = new Set<Route>(['clear', CLEAR_SCORE, REMOVE_DIRECTED, 'only-score']);
 export const LOCAL_STATUSES = new Set<string | undefined>([
   IN_PROGRESS,

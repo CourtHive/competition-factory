@@ -211,7 +211,11 @@ export function reenteredReason(
     if (loser.withdrawn) {
       const withdrawn = withdrawnReason(view, loser.withdrawn);
       if (withdrawn) return withdrawn;
-    } else if ((targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit) && !targets.loserMatchUpCarryHeld)
+    } else if (
+      (targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit) &&
+      !targets.loserMatchUpCarryHeld &&
+      !loser.retainedCarry
+    )
       return 'cascade'; // but this matchUp's own carry, standing alone, which `relabelCarryReason` vets (S6 tail)
     const carry = loser.exit && write ? relabelCarryReason(view, write) : undefined;
     if (carry) return carry;
