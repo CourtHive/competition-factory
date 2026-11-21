@@ -47,10 +47,10 @@ const COMPLETED_OR_BYE = new Set<string>([COMPLETED, BYE]);
  *    the loser link's matchUp, the link is not a first-match feed (which places the loser or a BYE), and none of that
  *    matchUp's seats is free or a propagated BYE.
  *
- * The factory's own draws do not reach either: the next matchUp cannot be full before this one is decided. A record
- * converted from elsewhere can hold them (a stored winner who is not the side that advanced, a consolation seated in
- * another order). The same questions are asked here of the same values, on the route that reaches the placement: a
- * winner named, on a matchUp with drawPositions that is not a line, a dual, ad hoc or in a lucky draw; not beneath an
+ * Converted records can hold either shape (a stored winner who is not the side that advanced, a consolation seated
+ * in another order). On a generated TEAM draw a line can already have fed a seat before its undecided dual is awarded
+ * by retirement. That award directs the winner and must check the winner's seat as well. The same questions are asked here of the same values, on the route that reaches the placement: a
+ * winner named, on a matchUp with drawPositions outside lines, ad hoc and lucky draws; not beneath an
  * active downstream (nothing is directed there), not a swap, and not over a stored double exit (its unwind runs first).
  * A stored winner that the call replaces is taken back first, so the seat they hold counts as free, as does the seat the
  * new winner holds in the loser's matchUp.
