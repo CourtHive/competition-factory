@@ -1,4 +1,4 @@
-import { APPLY_VALUES, bareResultRequest, indexed } from './planShared';
+import { APPLY_VALUES, bareResultRequest, indexed, sideDrawPosition } from './planShared';
 
 // constants and types
 import { COMPLETED, RETIRED } from '@Constants/matchUpStatusConstants';
@@ -52,7 +52,7 @@ export function retirementClaimsStand({ request, route, view }: ExitReasonArgs):
     linked.sideExitProvenance ||
     !targets.loserTargetSeat?.opponentHeld ||
     targets.loserTargetSeat.participantId !== loserId ||
-    !holdsPosition(onward, winnerId, targets.sideDrawPositions[winner]) ||
+    !holdsPosition(onward, winnerId, sideDrawPosition(view, winner)) ||
     !holdsPosition(linked, loserId, targets.loserTargetDrawPosition)
   )
     return false;
