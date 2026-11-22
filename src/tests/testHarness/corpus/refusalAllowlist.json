@@ -1,6 +1,5 @@
 {
   "reasons": {
-    "F-019": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-e0caca8e2808f3acc519637aeb714699fcf9decc55a0e4e0e8524740e08f8bbe",
     "F-008": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-0b8ef85b5d4aa8db9b085f1d1e019de0a73c30248cc29089e82caaf0ac55bdc1",
     "F-009": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-b467984b227aa55a3dcdfec53ffc92b110b657eb1253862d74c58bf7c918dadb",
     "F-011": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-7f2e8e6148d52b207556e9958aac3126409874b2326a4942c6a1d0df7b502b91",
@@ -23,14 +22,6 @@
     "oldBoundary": "Capture predates #6489. The six clean-state replays do not reproduce a refused write. The historical before/after hashes identify this observation."
   },
   "tests": {
-    "src/tests/mutations/scales/ratingsWriteContract.test.ts::a write that fails part way restores the participants already written": [
-      {
-        "method": "generateDynamicRatings",
-        "error": "ERR_INVALID_SCALE_ITEM",
-        "reason": "F-019",
-        "paths": ["/factory/timeStamp"]
-      }
-    ],
     "src/tests/engines/asyncWrapperContract.test.ts::async wrapper contract > 4. a thrown method or an unknown method leaves every other context untouched": [
       {
         "method": "boom",
