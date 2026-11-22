@@ -751,7 +751,7 @@ function certifiedSeatProgram(args: PlanArgs, prefix: OutcomeOp[], obligation?: 
   // a convergence certifies its own seats (`doubleExitSeatOps` asks no seat of it): nothing follows them
   const following = args.direction?.converged
     ? []
-    : producedExitOps(args.view, args.request, args.write!, args.direction);
+    : producedExitOps(args.view, args.request, args.write!, args.direction, { drawDefinition: args.drawDefinition });
   if (!following) return undefined;
   const seats = doubleExitSeatOps(args.view, args.request, args.direction, args.project, prefix, following);
   if (!seats) return undefined;

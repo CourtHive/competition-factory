@@ -625,6 +625,24 @@ export function conditionallyRemoveDrawPosition(params) {
       drawPositionToRemove = possibleBranchDrawPositions.find((drawPosition) =>
         targetDrawPositions?.includes(drawPosition),
       );
+    } else if (targetMatchUp.winningSide && pairedPreviousMatchUp && nextWinnerMatchUp) {
+      // A played line can leave the paired BYE feeder in progress. The produced award still
+      // sent its recorded winner on. Recover that seat from the award we are withdrawing.
+      const origins = getSideExitProvenance({ matchUp: noContextTargetMatchUp });
+      const pairedOrigin = origins?.[targetMatchUp.winningSide];
+      const exitOrigin = origins?.[3 - targetMatchUp.winningSide];
+      if (
+        pairedOrigin?.sourceMatchUpId === pairedPreviousMatchUp.matchUpId &&
+        exitOrigin &&
+        withdrawnSourceIds.has(exitOrigin.sourceMatchUpId)
+      ) {
+        const winner = getWinningSideDrawPosition({
+          drawDefinition,
+          structureId: targetMatchUp.structureId,
+          matchUp: targetMatchUp,
+        });
+        if (winner && nextWinnerMatchUp.drawPositions?.includes(winner)) drawPositionToRemove = winner;
+      }
     }
   }
 
