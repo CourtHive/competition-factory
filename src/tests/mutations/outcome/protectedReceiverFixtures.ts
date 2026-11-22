@@ -8,15 +8,22 @@ import engine from '@Engines/syncEngine';
 import { expect } from 'vitest';
 
 // constants and types
-import { COMPASS, DOUBLE_ELIMINATION, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
-import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
-import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
+import {
+  COMPASS,
+  CURTIS_CONSOLATION,
+  DOUBLE_ELIMINATION,
+  SINGLE_ELIMINATION,
+} from '@Constants/drawDefinitionConstants';
+import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
+import type { PolicyDefinitions } from '@Types/factoryTypes';
+import type { MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
 
-type Step = [at: string, outcome: { winningSide?: number; matchUpStatus?: MatchUpStatusUnion }];
+type Step = [at: string, outcome: { winningSide?: number; matchUpStatus?: MatchUpStatusUnion; score?: Score }];
 
-function beforeLast(config: ScenarioConfig, drawId: string, steps: Step[]) {
+function beforeLast(config: ScenarioConfig, drawId: string, steps: Step[], policyDefinitions?: PolicyDefinitions) {
   return prepareCall(() => {
-    expect(prepareDraw(config, drawId)).toBe(true);
+    expect(prepareDraw(config, drawId, policyDefinitions)).toBe(true);
     const params = ([at, outcome]: Step) => {
       const match = getDrawMatchUps(drawId).find(
         (m) => [m.structureName, m.roundNumber, m.roundPosition].join('|') === at,
@@ -142,4 +149,33 @@ export function terminalWithoutLanding() {
     ['Main|1|4', { matchUpStatus: DEFAULTED, winningSide: 2 }],
     ['Main|2|1', { winningSide: 2 }],
   ]);
+}
+
+// 50f39b21, aWithdrawnArrivalLeavesTheAwardItsExitMade: replay the public prefix through the first Main 2/1 result.
+export function curtisAward() {
+  const retirement: Step[1] = {
+    matchUpStatus: RETIRED,
+    winningSide: 1,
+    score: { sets: [{ side1Score: 6, side2Score: 3 }] },
+  };
+  return beforeLast(
+    { drawType: CURTIS_CONSOLATION, propagateExitStatus: true, participantsCount: 13, drawSize: 16, seed: 20669990 },
+    'withdrawn-arrival',
+    [
+      ['Main|1|5', { winningSide: 1 }],
+      ['Main|1|6', retirement],
+      ['Main|1|4', { winningSide: 2 }],
+      ['Main|2|3', retirement],
+      ['Main|1|5', { matchUpStatus: WALKOVER, winningSide: 1 }],
+      ['Main|2|2', { winningSide: 2 }],
+      ['Main|1|2', { matchUpStatus: DOUBLE_WALKOVER }],
+      ['Consolation 1|2|2', { matchUpStatus: WALKOVER, winningSide: 1 }],
+      ['Main|1|7', { matchUpStatus: WALKOVER, winningSide: 2 }],
+      ['Main|2|4', { matchUpStatus: WALKOVER, winningSide: 1 }],
+      ['Consolation 1|2|3', { matchUpStatus: DOUBLE_WALKOVER }],
+      ['Main|1|2', { winningSide: 2 }],
+      ['Main|2|1', { winningSide: 1 }],
+    ],
+    { [POLICY_TYPE_PROGRESSION]: { doubleExitPropagateBye: false } },
+  );
 }

@@ -6,6 +6,7 @@ import * as recording from '@Mutate/matchUps/outcome/plan/recordedCall';
 import * as cascade from '@Mutate/matchUps/outcome/plan/recordedCascade';
 import {
   compassArrival,
+  curtisAward,
   incomingCarry,
   oneReceiver,
   scoredArrival,
@@ -18,7 +19,7 @@ import engine from '@Engines/syncEngine';
 import { afterEach, expect, it, vi } from 'vitest';
 import { createHash } from 'node:crypto';
 
-import { COMPLETED, DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
+import { COMPLETED, DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { TIEBREAK_POINTS_NOT_RECORDED } from '@Constants/scoreWarningConstants';
 import type { Tournament } from '@Types/tournamentTypes';
 import type { RecordedCall } from '@Tests/testHarness/outcome/recordedCallHarness';
@@ -233,4 +234,24 @@ it('keeps a terminal awarded exit recorded when neither stored sides nor an onwa
   expect(terminal.winnerMatchUpId).toBeUndefined();
   const { record } = compare(call, false);
   expect(at(record, 'Consolation', 3, 1)).toMatchObject({ winningSide: 2, drawPositions: terminal.drawPositions });
+});
+
+it('records a CURTIS arrival that creates the codes key on its protected receiver', () => {
+  const call = curtisAward();
+  const source = at(call.prepared, 'Main', 2, 1);
+  const receiver = at(call.prepared, 'Consolation 1', 2, 4);
+  expect(source.matchUpId).toBe(call.params.matchUpId);
+  expect(source.loserMatchUpId).toBe(receiver.matchUpId);
+  expect(source.matchUpStatusCodes).toStrictEqual([]);
+  expect(receiver).toMatchObject({ matchUpStatus: WALKOVER, winningSide: 1, drawPositions: [4, 11] });
+  expect(Object.hasOwn(receiver, 'matchUpStatusCodes')).toBe(false);
+  const { record } = compare(call, false);
+  const after = at(record, 'Consolation 1', 2, 4);
+  expect(Object.hasOwn(after, 'matchUpStatusCodes')).toBe(true);
+  expect(after.matchUpStatusCodes).toStrictEqual([]);
+  expect(after.sideExitProvenance).toStrictEqual(receiver.sideExitProvenance);
+
+  const recovered = structuredClone(call);
+  at(recovered.prepared, 'Consolation 1', 2, 4).matchUpStatusCodes = [];
+  compare(recovered, true);
 });
