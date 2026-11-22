@@ -1,6 +1,11 @@
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { hasSourceOrigin, holdsPosition } from './placementClaims';
-import { claimEdges as edges, consecutiveByeClaims, type ClaimDraw as Draw } from './byeAwardClaims';
+import {
+  awardProtectedByPlay,
+  claimEdges as edges,
+  consecutiveByeClaims,
+  type ClaimDraw as Draw,
+} from './byeAwardClaims';
 import { APPLY_VALUES, bareResultRequest, indexed, sideDrawPosition, storedLoserId } from './planShared';
 
 // constants and types
@@ -79,7 +84,10 @@ export function heldLoserByeClaims({ request, route, view, drawDefinition, direc
   if (
     route !== APPLY_VALUES ||
     existing.matchUpStatus !== COMPLETED ||
-    !((request.matchUpStatus === WALKOVER && bareResultRequest(request)) || scoredRetirement) ||
+    !(
+      ((request.matchUpStatus === WALKOVER || request.matchUpStatus === DEFAULTED) && bareResultRequest(request)) ||
+      scoredRetirement
+    ) ||
     !request.flags.propagateExitStatus ||
     !drawDefinition ||
     !inContextDrawMatchUps ||
@@ -115,7 +123,10 @@ export function heldLoserByeClaims({ request, route, view, drawDefinition, direc
     return false;
   if (hasSourceOrigin(inContextDrawMatchUps, source.matchUpId)) return false;
   const draw = { drawDefinition, inContextDrawMatchUps };
-  return scoredRetirement
-    ? !!targets.loserTargetDrawPosition && consecutiveByeClaims(draw, held, loserId, targets.loserTargetDrawPosition)
-    : terminalReservationStands(draw, held, source);
+  if (!targets.loserTargetDrawPosition) return false;
+  if (scoredRetirement) return consecutiveByeClaims(draw, held, loserId, targets.loserTargetDrawPosition);
+  return (
+    (request.matchUpStatus === WALKOVER && terminalReservationStands(draw, held, source)) ||
+    awardProtectedByPlay(draw, held, loserId, targets.loserTargetDrawPosition)
+  );
 }
