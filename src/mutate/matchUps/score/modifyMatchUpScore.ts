@@ -33,6 +33,7 @@ import { TEAM } from '@Constants/matchUpTypes';
 import {
   AWAITING_RESULT,
   completedMatchUpStatuses,
+  DOUBLE_DEFAULT,
   DOUBLE_WALKOVER,
   SUSPENDED,
   DEFAULTED,
@@ -120,7 +121,8 @@ export function modifyMatchUpScore(params: ModifyMatchUpScoreArgs) {
     // it describes ONE matchUp: a params spread that carried it into a write elsewhere does not apply it
     derived: params.derivedStatusCodes?.matchUpId === matchUp.matchUpId ? params.derivedStatusCodes : undefined,
     matchUpStatusCodes,
-    removeWinningSide: params.removeWinningSide,
+    removeWinningSide:
+      params.removeWinningSide || (!!matchUp.collectionId && matchUpStatus === DOUBLE_DEFAULT && !!matchUp.winningSide),
     keepsFinishingOrder: params.keepsFinishingOrder,
     matchUpStatus,
     matchUpFormat,
