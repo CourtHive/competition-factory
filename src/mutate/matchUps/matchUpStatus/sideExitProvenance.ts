@@ -672,6 +672,25 @@ export function retainPolicyCodes(matchUp?: MatchUp): any[] {
   return ((matchUp?.matchUpStatusCodes as any[]) ?? []).filter((code: any) => !isProjectedExitCode(code));
 }
 
+/** A first arrival claims the award opposite the carried exit. Its policy reason belongs to the exiting side. */
+export function exitArrivalCodes(matchUp: MatchUp, exitSide: number): string[] {
+  const codes: string[] = [];
+  const policy = retainPolicyCodes(matchUp).map(policyCodeString).find(Boolean);
+  if (policy) placeCodeAtSide(codes, exitSide, policy);
+  return codes;
+}
+
+/** An additive placement may reallocate the same positional codes. Creating the key or changing even
+ * one stored slot is a separate obligation. Compare the actual record before folding the placement. */
+export function unchangedExitArrivalCodes(matchUp: MatchUp, exitSide: number): string[] | undefined {
+  const stored = matchUp.matchUpStatusCodes;
+  if (!Object.hasOwn(matchUp, 'matchUpStatusCodes') || !Array.isArray(stored)) return undefined;
+  const codes = exitArrivalCodes(matchUp, exitSide);
+  return codes.length === stored.length && codes.every((code, i) => Object.hasOwn(stored, i) && stored[i] === code)
+    ? codes
+    : undefined;
+}
+
 /**
  * The string value of a POLICY `matchUpStatusCodes` element.
  *

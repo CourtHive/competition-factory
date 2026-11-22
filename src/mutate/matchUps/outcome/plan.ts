@@ -1,3 +1,5 @@
+import { relabelKeepsReservation } from './plan/standingReservation';
+import { heldLoserByeClaims } from './plan/heldLoserBye';
 import { clearedSingleExit, correctedSingleExit, refreshedArrivalOps, relabelledExit } from './plan/exitCorrections';
 import { getCapturedClock, getCapturedStamps, writeLegacyEnabled } from '@Global/state/globalState';
 import { producedRelayAfterOps, unwoundOps, unwoundPath, unwoundView } from './plan/unwindPath';
@@ -55,6 +57,7 @@ import {
   dualTallyOps,
   lineExitReason,
   lineUpCarry,
+  winnerAssignmentLineUps,
   deciderLineUpOps,
   loserLineUpBeyond,
   removedByeLineUpOps,
@@ -80,6 +83,7 @@ import {
   producedLoserArrivalOps,
   awardedProducedArrivalOps,
   arrivalReturnOps,
+  planWinnerArrivals,
   placedDirection,
   removalOps,
   removedOps,
@@ -224,13 +228,14 @@ function convertedShapeReason({ request, view, write, route }: PlanArgs): Abstai
  * keeps that reason: only a call the planners would otherwise plan is handed to v1's whole write (`team`). So is a line
  * whose tally relabels the dual's own exit a played result, which settles the exit's carry (`relabelDualExitByTally`).
  */
-function abstainReason(args: PlanArgs): AbstainReason | SeatObligation | undefined {
+type ArrivalProgram = { kind: 'winner-arrivals'; ops: OutcomeOp[] };
+function abstainReason(args: PlanArgs): AbstainReason | ArrivalProgram | SeatObligation | undefined {
   const reason = abstainReasonOf(args);
   if (reason || !(args.view.line?.keepsDualDecision || args.view.line?.relabelsDualExit)) return reason;
   return 'team';
 }
 
-function abstainReasonOf(args: PlanArgs): AbstainReason | SeatObligation | undefined {
+function abstainReasonOf(args: PlanArgs): AbstainReason | ArrivalProgram | SeatObligation | undefined {
   const { request, view, write, direction } = args;
   const team = teamReason(args);
   if (team) return team;
@@ -273,12 +278,18 @@ function abstainReasonOf(args: PlanArgs): AbstainReason | SeatObligation | undef
   } else if (view.existing.winningSide && !view.line && !sameWinner && !reentered && !changing && !swapping)
     return 'winner';
   const shape = shapeReason(args, { sameWinner, reentered, changing, swapping });
-  if (shape) return shape;
+  if (shape) return arrivalDecision(args, shape);
   if (view.existing.hasSideExitProvenance || view.existing.carriedExit) return 'provenance';
   // a round robin group's tally is planned (`setParticipantResults`, S3; a TEAM group's, S7); an ad hoc or lucky tally
   // that `view.group` does not hold is not yet
   if (view.draw.tallied && !view.group) return 'tallied';
   return exit;
+}
+
+function arrivalDecision(args: PlanArgs, shape: AbstainReason): AbstainReason | ArrivalProgram {
+  if (shape !== 'cascade' || args.route !== 'winner') return shape;
+  const ops = planWinnerArrivals(args);
+  return ops ? { kind: 'winner-arrivals', ops } : shape;
 }
 
 /** the reason the call's own shape is not planned, by the shape `abstainReason` found it to be */
@@ -645,9 +656,12 @@ function decidingLineOps(args: PlanArgs & { dual: DualCall; drawDefinition: Draw
   const placement = ops.findIndex(
     (op) => op.op === 'setMatchUpDrawPositions' && op.matchUpId === dual.direction?.winner?.matchUpId,
   );
-  if (carry) {
-    const at = placement < 0 ? ops.length : Math.max(carriedAfter(ops, placement, dual), reservedAfter(ops, dual));
-    ops.splice(at, 0, carry);
+  const assignments = winnerAssignmentLineUps(dual, drawDefinition, winningSide);
+  if (carry || assignments.length) {
+    const afterPlacement = placement < 0 ? ops.length : carriedAfter(ops, placement, dual);
+    // The carry follows the assignment and any reservation it made.
+    if (carry) ops.splice(Math.max(afterPlacement, reservedAfter(ops, dual)), 0, carry);
+    ops.splice(afterPlacement, 0, ...assignments);
   }
   // the dual the loser lands in, otherwise untouched (the arrival is written on its structure's assignments), is stamped
   // by the carry's notice
@@ -727,6 +741,21 @@ function planOps(args: PlanArgs): OutcomePlan {
   // a refused call has no route and no write (the differential plans it beside its refusal): nothing to state as ops,
   // as `recordedWhole` records nothing for it. A line's double exit is the one shape no reason above stops without one
   if (!args.route || !args.write) return { abstain: 'route' };
+  if (reason?.kind === 'winner-arrivals') {
+    const id = request.matchUpId!;
+    const structureId = view.targets.source.structureId!;
+    const ops: OutcomeOp[] = [
+      ...ownResultOps(args, args.write, id),
+      ...reason.ops,
+      ...structureStamps(reason.ops, structureId, drawDefinition),
+      { op: 'stampUpdatedAt', entity: 'structure', id: structureId },
+      { op: 'stampUpdatedAt', entity: 'drawDefinition', id: drawDefinition.drawId },
+    ];
+    // A standing result can still owe independent settlement or an uncertified clock sequence.
+    // Keep the original cascade abstention when this placement cannot answer the whole call.
+    const unsettled = args.clockFree ? !args.certifiesPhases?.(ops) : args.settles?.(ops);
+    return unsettled ? { abstain: 'cascade' } : { ops, shape: 'direction' };
+  }
   const planned = recordedPlanOps(args, drawDefinition, reason);
   // a team an award sends on into a dual that already sides its position takes its line-up there (`quietOnwardLineUps`)
   return view.isTeam && planned.ops
@@ -751,7 +780,7 @@ function certifiedSeatProgram(args: PlanArgs, prefix: OutcomeOp[], obligation?: 
   // a convergence certifies its own seats (`doubleExitSeatOps` asks no seat of it): nothing follows them
   const following = args.direction?.converged
     ? []
-    : producedExitOps(args.view, args.request, args.write!, args.direction);
+    : producedExitOps(args.view, args.request, args.write!, args.direction, { drawDefinition: args.drawDefinition });
   if (!following) return undefined;
   const seats = doubleExitSeatOps(args.view, args.request, args.direction, args.project, prefix, following);
   if (!seats) return undefined;
@@ -834,6 +863,26 @@ function quietUnderReconcile(
   );
 }
 
+function ownResultOps(args: PlanArgs, write: MatchUpWrite, matchUpId: string) {
+  const { request, view } = args;
+  const ops = resultOps(
+    request,
+    write,
+    matchUpId,
+    view.dualSides,
+    autoCalcWrite(request, view),
+    returnsQualifierRemoved(args),
+  );
+  const result = ops[0];
+  if (
+    result.op === 'setMatchUpResult' &&
+    propagatesSingleExit(request) &&
+    (heldLoserByeClaims(args) || relabelKeepsReservation(args))
+  )
+    result.keepsLoserClaim = true;
+  return ops;
+}
+
 /** A recorded single-call plan after the shared refusal, dual and no-op gates. */
 function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObligation?: SeatObligation): OutcomePlan {
   const { request, view } = args;
@@ -859,14 +908,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
     // same rule (`ensuredDualSides`)
     // a schedule the call carries, written before the result as v1 writes it before `applyScoredTime` (S7)
     ...scheduleOps(args, matchUpId),
-    ...resultOps(
-      request,
-      write,
-      matchUpId,
-      view.dualSides,
-      autoCalcWrite(request, view),
-      returnsQualifierRemoved(args),
-    ),
+    ...ownResultOps(args, write, matchUpId),
     ...(refreshedArrivalOps(args) ?? []),
     // a convergence the unwind dissolved, re-announced by v1's settle pass after the call's own write (S6 tail)
     ...reannounced,

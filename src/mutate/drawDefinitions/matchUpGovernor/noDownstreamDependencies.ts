@@ -1,3 +1,4 @@
+import { placeRetalliedWinner } from '@Mutate/matchUps/drawPositions/placeRetalliedWinner';
 import { attemptToSetMatchUpStatus, statusFallsThrough, type StatusRouteParams } from './attemptToSetMatchUpStatus';
 import { removeDirectedParticipants } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
@@ -121,6 +122,11 @@ export function noDownstreamDependencies(params) {
     const result = removeDirectedParticipants(params);
     if (result.error) return result;
 
+    // Removing a previously decided line already withdrew the old direction. Its other lines
+    // can still decide the dual for the opposite side.
+    const placement = placeRetalliedWinner(params, result.tieMatchUpResult?.winningSide, true);
+    if (placement.error) return placement;
+
     if (params.removingQualifier && params.appliedPolicies?.[POLICY_TYPE_PROGRESSION]?.autoRemoveQualifiers) {
       const result = removeQualifier(params);
       if (result.error) return result;
@@ -236,6 +242,8 @@ function scoreModification(params) {
     // the dual's write can fail; the line's result is then that failure, not success
     if (tieResult.error) return decorateResult({ result: tieResult, stack });
 
+    const placement = placeRetalliedWinner(params, tieResult.winningSide);
+    if (placement.error) return decorateResult({ result: placement, stack });
     if (tieResult.removeWinningSide)
       pushGlobalLog({ method: 'noDownstreamDependencies', action: 'remove winningSide' });
   }

@@ -1,3 +1,4 @@
+import { planWinnerLineUp } from '@Mutate/matchUps/lineUps/planWinnerLineUp';
 /**
 import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
  * Placing a drawPosition, and what follows from it.
@@ -37,7 +38,6 @@ import { isPropagatedExit as sharedIsPropagatedExit } from '@Helpers/drawTopolog
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { drawPositionAssignmentRefusal } from '@Query/drawDefinition/drawPositionAssignmentRefusal';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
-import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
 import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { addDrawEntry } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
 import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';
@@ -80,8 +80,7 @@ import {
 import {
   clearResolvedSideExitProvenance,
   participatesInExitCascade,
-  isProjectedExitCode,
-  policyCodeString,
+  exitArrivalCodes,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 import { CONSOLATION, CONTAINER, MAIN, PLAY_OFF, QUALIFYING, FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
@@ -339,7 +338,16 @@ export function assignMatchUpDrawPosition({
    * `verify:stall-budget`: **89 -> 68 cells, 176 -> 141 findings.** The 35 that closed are every
    * stall in the matrix that carried a single exit status.
    */
-  const resolvesPendingExit = !positionAdded && participantArrivesAtExit && slotFilledByParticipant;
+  // A correction can replace the team at a seat that has already played this dual. A director's
+  // recorded award stays with its seat (P52). Only an actual pending exit is resolved on arrival.
+  const replacesTeamAtRecordedExit =
+    matchUp?.matchUpType === TEAM &&
+    !!matchUp.winningSide &&
+    !!previousSideParticipantId &&
+    inContextMatchUp?.sides?.filter((side) => side.participantId).length === 2 &&
+    !sharedIsPropagatedExit({ matchUp });
+  const resolvesPendingExit =
+    !positionAdded && participantArrivesAtExit && slotFilledByParticipant && !replacesTeamAtRecordedExit;
 
   if (matchUp && (positionAdded || resolvesPendingExit)) {
     applyPositionToMatchUp({
@@ -578,16 +586,7 @@ function applyPositionToMatchUp({
     // The exit tenant is therefore dropped rather than re-sided. Policy codes are the array's OTHER
     // tenant and survive: see `isProjectedExitCode`.
     const exitSideNumber = advancedExitWinningSide === 1 ? 2 : 1;
-    const carriedCode = (matchUp.matchUpStatusCodes ?? [])
-      .filter((code: any) => !isProjectedExitCode(code))
-      .map(policyCodeString)
-      .find(Boolean);
-    const matchUpStatusCodes: string[] = [];
-    if (carriedCode) {
-      for (let i = 0; i < exitSideNumber - 1; i++) matchUpStatusCodes[i] = '';
-      matchUpStatusCodes[exitSideNumber - 1] = carriedCode;
-    }
-    matchUp.matchUpStatusCodes = matchUpStatusCodes;
+    matchUp.matchUpStatusCodes = exitArrivalCodes(matchUp, exitSideNumber);
     clearResolvedSideExitProvenance(matchUp);
   } else if (participatesInExitCascade({ matchUp })) {
     /**
@@ -1393,19 +1392,11 @@ function propagateLineUp({
   const side = dualMatchUp.sides?.find((s) => s.sideNumber === projectedWinningSide);
   if (!side?.lineUp) return;
 
-  const source = dualMatchUp.roundPosition;
-  const target = winnerMatchUp.roundPosition;
-  /**
-   * ON A FEED ROUND THE ADVANCING TEAM IS SIDE 2 — `draw-positions.md` rule 4: a fed position is side
-   * 1, one that advanced from the prior round of this structure is side 2 — and roundPosition
-   * arithmetic cannot know that. `Consolation|1|1` → `Consolation|2|1` of a FIRST_MATCH_LOSER_CONSOLATION
-   * is rp 1 → rp 1, which the formula below reads as side 1; the fed seat then arrived on side 1
-   * holding the advancing team's lineUp, and every line of that dual hydrated with one player on both
-   * sides (measured 2026-10-01, TEAM matrix line arm: BYE_WON on 56 of 60 FMLC cells). DOUBLE_ELIMINATION's
-   * Main final is a feed round for side ordering too (rule 4a), and takes the same answer.
-   */
-  const advancedByPosition = (source === target && source !== 1) || Math.floor(source / 2) === target;
-  const targetSideNumber = winnerMatchUp.feedRound || advancedByPosition ? 2 : 1;
+  const { sideNumber: targetSideNumber, lineUp } = planWinnerLineUp(
+    side.lineUp,
+    dualMatchUp.roundPosition,
+    winnerMatchUp,
+  );
 
   const targetMatchUp = matchUpsMap?.drawMatchUps?.find(({ matchUpId }) => matchUpId === winnerMatchUp.matchUpId);
 
@@ -1418,9 +1409,7 @@ function propagateLineUp({
   const targetSide = targetMatchUp.sides.find((s) => s.sideNumber === targetSideNumber);
 
   if (targetSide) {
-    const filteredLineUp = side.lineUp?.filter((assignment) => assignment?.participantId);
-
-    targetSide.lineUp = removeLineUpSubstitutions({ lineUp: filteredLineUp });
+    targetSide.lineUp = lineUp;
 
     modifyMatchUpNotice({
       tournamentId: tournamentRecord?.tournamentId,

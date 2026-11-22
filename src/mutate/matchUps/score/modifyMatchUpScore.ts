@@ -17,6 +17,7 @@ import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { isLucky } from '@Query/drawDefinition/isLucky';
 import { addNotes } from '@Mutate/base/addRemoveNotes';
 import { getTopics } from '@Global/state/globalState';
+import { clearsCollectionWinner } from '@Query/matchUp/checkStatusType';
 import { isAnyExit } from '@Validators/isExit';
 import { unique } from '@Tools/arrays';
 
@@ -120,7 +121,7 @@ export function modifyMatchUpScore(params: ModifyMatchUpScoreArgs) {
     // it describes ONE matchUp: a params spread that carried it into a write elsewhere does not apply it
     derived: params.derivedStatusCodes?.matchUpId === matchUp.matchUpId ? params.derivedStatusCodes : undefined,
     matchUpStatusCodes,
-    removeWinningSide: params.removeWinningSide,
+    removeWinningSide: params.removeWinningSide || clearsCollectionWinner(matchUp, params),
     keepsFinishingOrder: params.keepsFinishingOrder,
     matchUpStatus,
     matchUpFormat,

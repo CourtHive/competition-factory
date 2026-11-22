@@ -1,3 +1,4 @@
+import { commitAssignedLineUp } from './commitAssignedLineUp';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
@@ -32,27 +33,10 @@ export function updateSideLineUp({
       ? undefined
       : inContextTargetMatchUp?.sides?.[drawPositionSideIndex]?.sideNumber;
 
-  const sideExists =
-    drawPositionSideNumber && matchUp.sides?.find((side) => side.sideNumber === drawPositionSideNumber);
-
   const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }) ?? {};
   const lineUp = makeDeepCopy(lineUps[String(teamParticipantId)], false, true);
 
-  if (sideExists) {
-    matchUp?.sides?.forEach((side) => {
-      if (side.sideNumber === drawPositionSideNumber) {
-        side.lineUp = lineUp;
-      }
-    });
-  } else {
-    matchUp.sides = [1, 2].map((sideNumber) => {
-      const existingSide = matchUp.sides?.find((side) => side.sideNumber === sideNumber) ?? {};
-      return { ...existingSide, sideNumber };
-    });
-
-    const targetSide = matchUp.sides.find((side) => side.sideNumber === drawPositionSideNumber);
-    if (targetSide) targetSide.lineUp = lineUp;
-  }
+  commitAssignedLineUp(matchUp, drawPositionSideNumber, lineUp);
 
   modifyMatchUpNotice({
     tournamentId: tournamentRecord?.tournamentId,

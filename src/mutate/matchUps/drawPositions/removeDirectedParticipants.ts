@@ -56,33 +56,10 @@ export function removeDirectedParticipants(params): {
   error?: ErrorType;
   success?: boolean;
 } {
-  const {
-    dualWinningSideChange,
-    inContextDrawMatchUps,
-    tournamentRecord,
-    drawDefinition,
-    matchUpStatus,
-    matchUpsMap,
-    dualMatchUp,
-    targetData,
-    matchUpId,
-    structure,
-    event,
-  } = params;
-
+  const { dualWinningSideChange, tournamentRecord, drawDefinition, matchUpStatus, targetData, structure, event } =
+    params;
   const isCollectionMatchUp = Boolean(params.matchUp.collectionId);
-  const isAdHocMatchUp = isAdHoc({ structure });
-
-  // targetData will have team matchUp when params.matchUp is a collectionMatchUp
-  const { winningSide } = targetData.matchUp ?? {};
-  if (removalMissingDrawPositions({ structure, targetData })) {
-    return { error: MISSING_DRAW_POSITIONS };
-  }
-
-  const {
-    targetLinks: { loserTargetLink, winnerTargetLink, byeTargetLink },
-    targetMatchUps: { loserMatchUp, winnerMatchUp, byeMatchUp },
-  } = targetData;
+  if (removalMissingDrawPositions({ structure, targetData })) return { error: MISSING_DRAW_POSITIONS };
 
   const result = modifyMatchUpScore({
     ...params,
@@ -109,7 +86,32 @@ export function removeDirectedParticipants(params): {
     if (!dualWinningSideChange && !tieMatchUpResult.removeWinningSide) return { ...SUCCESS };
   }
 
-  if (isAdHocMatchUp) return { ...SUCCESS };
+  if (isAdHoc({ structure })) return { ...SUCCESS };
+  const withdrawn = withdrawDirectedPositions(params);
+  if (withdrawn.error) return withdrawn;
+  const annotate = tieMatchUpResult && { tieMatchUpResult };
+  return { ...SUCCESS, ...annotate };
+}
+
+/** Release the placements of the winner held on the hydrated source before its score changed. */
+export function withdrawDirectedPositions(params) {
+  const {
+    inContextDrawMatchUps,
+    tournamentRecord,
+    drawDefinition,
+    matchUpStatus,
+    matchUpsMap,
+    dualMatchUp,
+    targetData,
+    matchUpId,
+    structure,
+    event,
+  } = params;
+  const { winningSide } = targetData.matchUp ?? {};
+  const {
+    targetLinks: { loserTargetLink, winnerTargetLink, byeTargetLink },
+    targetMatchUps: { loserMatchUp, winnerMatchUp, byeMatchUp },
+  } = targetData;
 
   const { matchUps: sourceMatchUps } = getAllStructureMatchUps({
     afterRecoveryTimes: false,
@@ -237,8 +239,7 @@ export function removeDirectedParticipants(params): {
     });
   }
 
-  const annotate = tieMatchUpResult && { tieMatchUpResult };
-  return { ...SUCCESS, ...annotate };
+  return { ...SUCCESS };
 }
 type RemvoveDirectedWinnerArgs = {
   inContextDrawMatchUps?: HydratedMatchUp[];

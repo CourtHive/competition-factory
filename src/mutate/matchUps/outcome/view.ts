@@ -1,3 +1,4 @@
+import { declaredWinnerPlayedOn } from '@Mutate/matchUps/matchUpStatus/lineTakesPlayedOnDualWinner';
 import { feedEligibilityChange, lineFeedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { scheduleRefusal as scheduleWriteRefusal } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
@@ -6,7 +7,7 @@ import { fedLoserPlacementRefusal } from '@Mutate/matchUps/drawPositions/reconci
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { isValidMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
-import { generateTieMatchUpScore } from '@Query/matchUp/tieMatchUpScore/generateTieMatchUpScore';
+import { projectTeamOutcome } from '@Query/matchUp/tieMatchUpScore/projectTeamOutcome';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
 import { resolveTieScoreSource } from '@Query/hierarchical/tieFormats/resolveTieScoreSource';
@@ -1878,19 +1879,10 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
 
   let dualProjection: OutcomeView['dualProjection'];
   if (isTeam && request.flags.enableAutoCalc) {
-    // v1 hands the generator the raw matchUp; the same input keeps the projection identical
-    const { winningSide, scoreStringSide1, scoreStringSide2, set } = generateTieMatchUpScore({
-      matchUp: matchUp as HydratedMatchUp,
-      drawDefinition,
-      matchUpsMap,
-      structure,
-      event,
-    });
-    dualProjection = {
-      projectedWinningSide: winningSide,
-      // the score v1 writes in place of the call's: `handleTeamAutoCalc` builds it from the same projection
-      score: { scoreStringSide1, scoreStringSide2, sets: set ? [set] : [] },
-    };
+    dualProjection = projectTeamOutcome(
+      { matchUp: matchUp as HydratedMatchUp, drawDefinition, matchUpsMap, structure, event },
+      request,
+    );
   }
 
   return {
@@ -1972,6 +1964,8 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         propagateExitStatus: request.flags.propagateExitStatus,
         matchUpStatus: request.matchUpStatus,
         winningSide: dualProjection ? dualProjection.projectedWinningSide : request.winningSide,
+        projectedWinningSide: line?.projectedWinningSide,
+        autoCalcDisabled: line?.autoCalcDisabled,
         inContextDrawMatchUps,
         tournamentRecord,
         inContextMatchUp,
@@ -1983,6 +1977,17 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       },
       activeDownstream,
     }),
+    declaredWinnerPlayedOn:
+      line &&
+      !line.dualLineDecided &&
+      declaredWinnerPlayedOn(
+        line.dualWinningSide,
+        line.projectedWinningSide,
+        activeDownstream,
+        targetData,
+        drawDefinition,
+        inContextDrawMatchUps,
+      ),
     line,
     dualProjection,
     targets: {
@@ -2165,18 +2170,19 @@ function lineViewOf({
     const dualMatchUp = inContextDrawMatchUps?.find((candidate) => candidate.matchUpId === matchUpTieId);
     if (dualMatchUp) {
       const tieFormat = resolveTieFormat({ matchUp: dualMatchUp, drawDefinition, structure, event })?.tieFormat;
-      const { projectedWinningSide, projectedScore, projectedTieMatchUps } = getProjectedDualWinningSide({
-        matchUpStatus: request.matchUpStatus,
-        winningSide: request.winningSide,
-        score: request.score,
-        drawDefinition,
-        dualMatchUp,
-        matchUpsMap,
-        tieFormat,
-        structure,
-        matchUp,
-        event,
-      });
+      const { projectedWinningSide, projectedScore, projectedTieMatchUps, projectsByeWinner } =
+        getProjectedDualWinningSide({
+          matchUpStatus: request.matchUpStatus,
+          winningSide: request.winningSide,
+          score: request.score,
+          drawDefinition,
+          dualMatchUp,
+          matchUpsMap,
+          tieFormat,
+          structure,
+          matchUp,
+          event,
+        });
       const autoCalcDisabled = !!(dualMatchUp.disableAutoCalc ?? dualMatchUp._disableAutoCalc);
       // v1's own read (`resolveTieMatchUpContext`): a dual decided by its own exit or call keeps its winner while its
       // lines project none, and that winner is the projected one (CA, 2026-11-20, class 4)
@@ -2190,7 +2196,7 @@ function lineViewOf({
         structure,
         event,
       });
-      // row 12, v1's own read (`lineFeedEligibilityRefusal`): the tally relabels the dual, its loser already directed
+      // row 12, v1's own read (`lineProjectionRefusal`): the tally relabels the dual, its loser already directed
       lineFeed = lineFeedEligibilityChange({
         inContextDrawMatchUps,
         projectedWinningSide,
@@ -2201,6 +2207,7 @@ function lineViewOf({
         structure,
       });
       line = {
+        projectsByeWinner: !autoCalcDisabled && projectsByeWinner,
         projectedWinningSide: keepsDualDecision ? dualMatchUp.winningSide : projectedWinningSide,
         dualMatchUpId: matchUpTieId,
         dualMatchUpStatus: dualMatchUp.matchUpStatus,
@@ -2315,7 +2322,6 @@ function dualRewrite({
     // ensureSideLineUps writes even value-equal sides: own undefined keys and its notice remain observable.
     ...(sides ? { sides } : {}),
     ...(same(tieFormat, stored.tieFormat) ? {} : { tieFormat }),
-    sidesAsHeld: sides ?? stored.sides,
     sidesInContext: dualMatchUp.sides,
     scoreReported,
   };

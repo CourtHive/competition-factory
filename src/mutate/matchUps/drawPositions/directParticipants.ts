@@ -22,33 +22,9 @@ export function directParticipants(params): ResultType {
   const result = attemptToModifyScore(params);
 
   if (result.error) return decorateResult({ result, stack });
-  const matchUpStatusIsValid = isDirectingMatchUpStatus({
-    matchUpStatus: params.matchUpStatus,
-  });
-
-  const {
-    dualWinningSideChange,
-    inContextDrawMatchUps,
-    projectedWinningSide,
-    propagateExitStatus,
-    matchUpStatusCodes,
-    tournamentRecord,
-    drawDefinition,
-    matchUpStatus,
-    dualMatchUp,
-    matchUpsMap,
-    winningSide,
-    targetData,
-    matchUpId,
-    structure,
-    matchUp,
-    event,
-  } = params;
-
+  const { inContextDrawMatchUps, tournamentRecord, drawDefinition, dualWinningSideChange, matchUp, event } = params;
   const isCollectionMatchUp = Boolean(matchUp.collectionId);
-  const isAdHocMatchUp = isAdHoc({ structure });
   let drawPositions = matchUp.drawPositions;
-
   let annotate;
   if (isCollectionMatchUp) {
     const { matchUpTieId, matchUpsMap } = params;
@@ -73,6 +49,35 @@ export function directParticipants(params): ResultType {
       return decorateResult({ result: { ...SUCCESS, ...annotate }, stack });
     }
   }
+
+  return directScoredParticipants(params, drawPositions, annotate, stack);
+}
+
+export function directScoredParticipants(params, drawPositions, annotate, stack: string): ResultType {
+  const matchUpStatusIsValid = isDirectingMatchUpStatus({
+    matchUpStatus: params.matchUpStatus,
+  });
+
+  const {
+    inContextDrawMatchUps,
+    projectedWinningSide,
+    propagateExitStatus,
+    matchUpStatusCodes,
+    tournamentRecord,
+    drawDefinition,
+    matchUpStatus,
+    dualMatchUp,
+    matchUpsMap,
+    winningSide,
+    targetData,
+    matchUpId,
+    structure,
+    matchUp,
+    event,
+  } = params;
+
+  const isCollectionMatchUp = Boolean(matchUp.collectionId);
+  const isAdHocMatchUp = isAdHoc({ structure });
 
   if (isAdHocMatchUp) {
     return decorateResult({ result: { ...SUCCESS, ...annotate }, stack });

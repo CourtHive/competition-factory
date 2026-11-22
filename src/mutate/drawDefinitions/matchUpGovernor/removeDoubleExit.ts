@@ -530,6 +530,42 @@ function withdrawExitFromByeChain({
   });
 }
 
+// A played line can leave the paired BYE feeder in progress. Use the produced award's
+// recorded origins to identify the winner it advanced before that award is withdrawn.
+function withdrawnAwardPosition({
+  drawDefinition,
+  targetMatchUp,
+  noContextTargetMatchUp,
+  pairedPreviousMatchUp,
+  nextWinnerMatchUp,
+  withdrawnSourceIds,
+}: {
+  drawDefinition: DrawDefinition;
+  targetMatchUp: HydratedMatchUp;
+  noContextTargetMatchUp?: MatchUp;
+  pairedPreviousMatchUp?: MatchUp;
+  nextWinnerMatchUp?: MatchUp;
+  withdrawnSourceIds: Set<string>;
+}): number | undefined {
+  const { winningSide } = targetMatchUp;
+  if (!winningSide || !pairedPreviousMatchUp || !nextWinnerMatchUp) return undefined;
+  const origins = getSideExitProvenance({ matchUp: noContextTargetMatchUp });
+  const pairedOrigin = origins?.[winningSide];
+  const exitOrigin = origins?.[3 - winningSide];
+  if (
+    pairedOrigin?.sourceMatchUpId !== pairedPreviousMatchUp.matchUpId ||
+    exitOrigin?.sourceMatchUpId === undefined ||
+    !withdrawnSourceIds.has(exitOrigin.sourceMatchUpId)
+  )
+    return undefined;
+  const winner = getWinningSideDrawPosition({
+    drawDefinition,
+    structureId: targetMatchUp.structureId,
+    matchUp: targetMatchUp,
+  });
+  return winner && nextWinnerMatchUp.drawPositions?.includes(winner) ? winner : undefined;
+}
+
 export function conditionallyRemoveDrawPosition(params) {
   const {
     withdrawnSourceIds = new Set<string>(),
@@ -625,6 +661,15 @@ export function conditionallyRemoveDrawPosition(params) {
       drawPositionToRemove = possibleBranchDrawPositions.find((drawPosition) =>
         targetDrawPositions?.includes(drawPosition),
       );
+    } else {
+      drawPositionToRemove = withdrawnAwardPosition({
+        drawDefinition,
+        targetMatchUp,
+        noContextTargetMatchUp,
+        pairedPreviousMatchUp,
+        nextWinnerMatchUp,
+        withdrawnSourceIds,
+      });
     }
   }
 
