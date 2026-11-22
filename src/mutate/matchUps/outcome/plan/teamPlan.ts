@@ -1,3 +1,4 @@
+import { planWinnerLineUp } from '@Mutate/matchUps/lineUps/planWinnerLineUp';
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
 import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
@@ -258,10 +259,7 @@ export function lineUpCarry({
   const source = inContext?.find((matchUp) => matchUp.matchUpId === line.dualMatchUpId)?.roundPosition;
   const target = inContext?.find((matchUp) => matchUp.matchUpId === next);
   if (!source || !target?.roundPosition) return false;
-  const advancedByPosition =
-    (source === target.roundPosition && source !== 1) || Math.floor(source / 2) === target.roundPosition;
-  const sideNumber = target.feedRound || advancedByPosition ? 2 : 1;
-  const lineUp = removeLineUpSubstitutions({ lineUp: held.filter((assignment) => assignment?.participantId) });
+  const { sideNumber, lineUp } = planWinnerLineUp(held, source, target);
   return { op: 'setSideLineUp' as const, matchUpId: next, sideNumber, lineUp, announcedAs: 'directWinner' as const };
 }
 
