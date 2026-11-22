@@ -80,8 +80,7 @@ import {
 import {
   clearResolvedSideExitProvenance,
   participatesInExitCascade,
-  isProjectedExitCode,
-  policyCodeString,
+  exitArrivalCodes,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 import { CONSOLATION, CONTAINER, MAIN, PLAY_OFF, QUALIFYING, FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
@@ -587,16 +586,7 @@ function applyPositionToMatchUp({
     // The exit tenant is therefore dropped rather than re-sided. Policy codes are the array's OTHER
     // tenant and survive: see `isProjectedExitCode`.
     const exitSideNumber = advancedExitWinningSide === 1 ? 2 : 1;
-    const carriedCode = (matchUp.matchUpStatusCodes ?? [])
-      .filter((code: any) => !isProjectedExitCode(code))
-      .map(policyCodeString)
-      .find(Boolean);
-    const matchUpStatusCodes: string[] = [];
-    if (carriedCode) {
-      for (let i = 0; i < exitSideNumber - 1; i++) matchUpStatusCodes[i] = '';
-      matchUpStatusCodes[exitSideNumber - 1] = carriedCode;
-    }
-    matchUp.matchUpStatusCodes = matchUpStatusCodes;
+    matchUp.matchUpStatusCodes = exitArrivalCodes(matchUp, exitSideNumber);
     clearResolvedSideExitProvenance(matchUp);
   } else if (participatesInExitCascade({ matchUp })) {
     /**

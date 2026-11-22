@@ -1,7 +1,7 @@
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
-import { retainPolicyCodes, policyCodeString } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { unchangedExitArrivalCodes } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
 import {
   BYE,
@@ -101,7 +101,7 @@ function supportedExit(draw: ClaimDraw, receiver: HydratedMatchUp, side: number,
   const origin = exitOriginLanding(draw, receiver, side, double ? 'winner' : 'loser');
   if (!origin) return false;
   const carrier = receiver.sides?.find((s) => s.sideNumber === side);
-  const { donor, landing } = origin;
+  const { donor } = origin;
   if (
     double
       ? donor.winningSide || carrier?.participantId
@@ -111,23 +111,42 @@ function supportedExit(draw: ClaimDraw, receiver: HydratedMatchUp, side: number,
         origin.targetPosition !== carrier.drawPosition
   )
     return false;
-  let current: HydratedMatchUp | undefined = landing;
-  const visited = new Set<string>();
-  while (current && current.matchUpId !== receiver.matchUpId) {
-    if (visited.has(current.matchUpId) || current.matchUpStatus !== BYE || current.winningSide) return false;
-    visited.add(current.matchUpId);
-    const relay = current;
-    const marked = Object.entries(relay.sideExitProvenance ?? {}).some(
+  return !!exitOriginRelays(draw, origin, receiver, carrier?.participantId);
+}
+
+type ExitOrigin = NonNullable<ReturnType<typeof exitOriginLanding>>;
+type OriginRelay = {
+  match: HydratedMatchUp;
+  markedSide: number;
+  edge: NonNullable<ReturnType<typeof winnerClaimEdge>>;
+};
+
+/** Trace an existing claim from its actual landing to the receiver. A topology edge alone carries no
+ * exit. Each intervening BYE must still name the donor, status and carrier on the marked side. */
+export function exitOriginRelays(draw: ClaimDraw, origin: ExitOrigin, receiver: HydratedMatchUp, carrierId?: string) {
+  const relays: OriginRelay[] = [];
+  let match: HydratedMatchUp | undefined = origin.landing;
+  while (match && match.matchUpId !== receiver.matchUpId) {
+    const relay = match;
+    if (
+      relays.some((step) => step.match.matchUpId === relay.matchUpId) ||
+      relay.matchUpStatus !== BYE ||
+      relay.winningSide
+    )
+      return undefined;
+    const marked = Object.entries(relay.sideExitProvenance ?? {}).find(
       ([key, entry]) =>
-        entry?.sourceMatchUpId === donor.matchUpId &&
-        entry.matchUpStatus === mark.matchUpStatus &&
-        entry.previousMatchUpStatus === prior &&
-        relay.sides?.find((s) => s.sideNumber === Number(key))?.participantId === carrier?.participantId,
+        entry?.sourceMatchUpId === origin.donor.matchUpId &&
+        entry.matchUpStatus === origin.mark.matchUpStatus &&
+        entry.previousMatchUpStatus === origin.mark.previousMatchUpStatus &&
+        relay.sides?.find((s) => s.sideNumber === Number(key))?.participantId === carrierId,
     );
-    if (!marked) return false;
-    current = winnerClaimEdge(draw, current)?.targetMatchUps.winnerMatchUp;
+    const edge = winnerClaimEdge(draw, relay);
+    if (!marked || !edge) return undefined;
+    relays.push({ match: relay, markedSide: Number(marked[0]), edge });
+    match = edge.targetMatchUps.winnerMatchUp;
   }
-  return !!current;
+  return match ? relays : undefined;
 }
 
 export type PlacementClaim = {
@@ -175,7 +194,7 @@ function awardOnArrival(draw: ClaimDraw, path: PlacementClaim[], claim: Placemen
     return false;
   const stored = matchUpsOf(
     findStructure({ drawDefinition: draw.drawDefinition, structureId: match.structureId }).structure,
-  )?.find((m) => m.matchUpId === match!.matchUpId);
+  )?.find((m) => m.matchUpId === match.matchUpId);
   if (!stored) return false;
   if (
     positions.length === 1 &&
@@ -184,9 +203,8 @@ function awardOnArrival(draw: ClaimDraw, path: PlacementClaim[], claim: Placemen
   )
     return false;
   if (positions.length === 2) {
-    const policy = retainPolicyCodes(stored).map(policyCodeString).find(Boolean);
-    claim.codes = policy ? [policy] : [];
-    if (policy && side === 1) claim.codes.unshift('');
+    claim.codes = unchangedExitArrivalCodes(stored, 3 - side);
+    if (!claim.codes) return false;
   }
   claim.awardedSide = side;
   claim.announce = true;

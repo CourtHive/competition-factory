@@ -4,6 +4,7 @@ import {
   claimAssignment,
   claimEdges,
   exitOriginLanding,
+  exitOriginRelays,
   holdsPosition,
   winnerClaimEdge,
   type ClaimDraw,
@@ -84,28 +85,19 @@ type AwardOrigin = NonNullable<ReturnType<typeof awardOrigin>>;
 
 /** Every intervening BYE must carry the same owner's mark on the same position. */
 function carriesToAward(draw: ClaimDraw, origin: AwardOrigin, award: HydratedMatchUp, reservations: boolean[]) {
-  let current: HydratedMatchUp | undefined = origin.landing;
-  for (const reserved of reservations) {
-    const carried = current?.sides?.find((s) => s.drawPosition === origin.position);
-    if (
-      !current ||
-      !carried?.sideNumber ||
-      carried.participantId !== origin.loserId ||
-      !byeStands(draw, current, origin.position, reserved)
+  const relays = exitOriginRelays(draw, origin, award, origin.loserId);
+  return (
+    relays?.length === reservations.length &&
+    relays.every(
+      ({ match, markedSide, edge }, index) =>
+        match.sides?.find((s) => s.drawPosition === origin.position)?.sideNumber === markedSide &&
+        Object.keys(match.sideExitProvenance ?? {}).length === 1 &&
+        !edge.targetLinks.byeTargetLink &&
+        !edge.targetLinks.loserTargetLink &&
+        !match.loserMatchUpId &&
+        byeStands(draw, match, origin.position, reservations[index]),
     )
-      return false;
-    const mark = current.sideExitProvenance?.[carried.sideNumber];
-    if (
-      !mark ||
-      mark.sourceMatchUpId !== origin.donor.matchUpId ||
-      mark.matchUpStatus !== origin.mark.matchUpStatus ||
-      mark.previousMatchUpStatus !== origin.mark.previousMatchUpStatus ||
-      Object.keys(current.sideExitProvenance ?? {}).length !== 1
-    )
-      return false;
-    current = winnerEdge(draw, current)?.targetMatchUps?.winnerMatchUp;
-  }
-  return current?.matchUpId === award.matchUpId;
+  );
 }
 
 function supportedDoubleExit(draw: ClaimDraw, award: HydratedMatchUp, id: string, position: number) {
