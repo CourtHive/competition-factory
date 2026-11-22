@@ -1,3 +1,4 @@
+import { hasSourceOrigin, holdsPosition } from './placementClaims';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { APPLY_VALUES, bareResultRequest, indexed, sideDrawPosition } from './planShared';
@@ -6,14 +7,6 @@ import { APPLY_VALUES, bareResultRequest, indexed, sideDrawPosition } from './pl
 import { BYE, COMPLETED, RETIRED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { ExitReasonArgs } from '../types';
 import type { HydratedMatchUp } from '@Types/hydrated';
-
-function holdsPosition(matchUp: HydratedMatchUp | undefined, participantId?: string, position?: number): boolean {
-  return (
-    !!participantId &&
-    !!position &&
-    !!matchUp?.sides?.some((side) => side.participantId === participantId && side.drawPosition === position)
-  );
-}
 
 // A BYE carries the occupied side's claim to the next round of its own structure.
 function nextWinnerSeat(args: ExitReasonArgs, source: HydratedMatchUp) {
@@ -116,7 +109,5 @@ export function retirementClaimsStand(args: ExitReasonArgs): boolean {
     return false;
   const played = linked.matchUpStatus === COMPLETED && !!linked.winningSide;
   if (!played && !lostAfterStructuralBye(args, linked, loserId)) return false;
-  return !inContextDrawMatchUps.some((matchUp) =>
-    Object.values(matchUp.sideExitProvenance ?? {}).some((entry) => entry?.sourceMatchUpId === request.matchUpId),
-  );
+  return !hasSourceOrigin(inContextDrawMatchUps, request.matchUpId);
 }
