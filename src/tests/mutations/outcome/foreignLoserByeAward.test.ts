@@ -1,3 +1,4 @@
+import { checkHeldByeClaims } from '@Tests/testHarness/outcome/heldByeClaimControls';
 import { compareHeldClaims } from '@Tests/testHarness/outcome/compareHeldClaims';
 import { prepareCall } from '@Tests/testHarness/outcome/recordedCallHarness';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
@@ -119,3 +120,25 @@ it.each([false, true])(
     expect(restored.matchUpStatus).toBe(returnsToMain ? WALKOVER : TO_BE_PLAYED);
   },
 );
+
+it('requires both foreign winners to hold their award and the returning winner to own exactly one Main position', () => {
+  checkHeldByeClaims(relabel(true), {
+    'the arrival faces an opponent at the first BYE': ({ at }) => {
+      delete at('Backdraw', 2).sides!.find((s) => s.bye)!.bye;
+    },
+    'the donor is undecided': ({ at }) => {
+      delete at('Main', 2, 2).winningSide;
+    },
+    'the award has no stored winner edge to its next match': ({ at }) => {
+      delete at('Backdraw', 3).winnerMatchUpId;
+    },
+    'the intervening walkover has lost its carry': ({ at }) => {
+      delete at('Backdraw', 4).sideExitProvenance;
+    },
+    'two Main assignments claim the returning participant': ({ at, structure }) => {
+      const assignments = structure('Main').positionAssignments!;
+      const id = at('Backdraw', 4).sides!.find((s) => s.sideNumber === 2)!.participantId;
+      assignments.find((s) => s.participantId && s.participantId !== id)!.participantId = id;
+    },
+  });
+});

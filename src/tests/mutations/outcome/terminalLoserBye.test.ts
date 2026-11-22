@@ -1,3 +1,4 @@
+import { checkHeldByeClaims } from '@Tests/testHarness/outcome/heldByeClaimControls';
 import { compareHeldClaims } from '@Tests/testHarness/outcome/compareHeldClaims';
 import { prepareCall } from '@Tests/testHarness/outcome/recordedCallHarness';
 import { replayStalls } from '@Tests/testHarness/exitPropagation/stallCount';
@@ -100,4 +101,39 @@ it('awards the terminal match when the paired seat holds an opponent', () => {
   delete target.byeFromPropagation;
   terminal.matchUpStatus = 'TO_BE_PLAYED';
   expect(seats(compareHeldClaims(call, false)).terminal.matchUpStatus).toBe(WALKOVER);
+});
+
+it('requires a terminal reservation, its paired feeder and the original double exit', () => {
+  checkHeldByeClaims(terminalRelabel(), {
+    'the paired semifinal has an independently completed result': ({ at }) => {
+      at('East', 2, 1).matchUpStatus = COMPLETED;
+    },
+    'the empty side carries a default from a single exit': ({ at }) => {
+      at('East', 2, 1).sideExitProvenance![2].previousMatchUpStatus = DEFAULTED;
+    },
+    'the producer of the paired default has since been played': ({ at }) => {
+      at('East', 1, 2).matchUpStatus = COMPLETED;
+    },
+    'a configured winner link leads out of the terminal despite the missing stored edge': ({
+      structure,
+      drawDefinition,
+    }) => {
+      drawDefinition.links!.push({
+        linkType: 'WINNER',
+        source: { structureId: structure('North').structureId, roundNumber: 1 },
+        target: { structureId: structure('West').structureId, roundNumber: 2, feedProfile: 'TOP_DOWN' },
+      });
+    },
+    'the opposite side of the terminal match no longer holds a BYE': ({ at }) => {
+      delete at('North', 1).sides!.find((s) => s.bye)!.bye;
+    },
+    'the opposite position is a structural BYE instead of the paired reservation': ({ structure }) => {
+      delete structure('North').positionAssignments!.find((seat) => seat.drawPosition === 1)!.byeFromPropagation;
+    },
+    'another match still records a carry from this source': ({ at }) => {
+      at('West', 1).sideExitProvenance = {
+        1: { sourceMatchUpId: at('East', 2, 2).matchUpId, matchUpStatus: WALKOVER },
+      };
+    },
+  });
 });

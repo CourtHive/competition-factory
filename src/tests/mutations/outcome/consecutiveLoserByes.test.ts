@@ -1,3 +1,4 @@
+import { checkHeldByeClaims } from '@Tests/testHarness/outcome/heldByeClaimControls';
 import { compareHeldClaims } from '@Tests/testHarness/outcome/compareHeldClaims';
 import { prepareCall } from '@Tests/testHarness/outcome/recordedCallHarness';
 import { replayStalls } from '@Tests/testHarness/exitPropagation/stallCount';
@@ -95,4 +96,42 @@ it('restores the missing earned position after the second BYE and walkover', () 
   const call = retirement(e);
   seats(call.prepared, e).next!.drawPositions = [];
   expect(seats(compareHeldClaims(call, false), e).next!.drawPositions).toEqual([e.position]);
+});
+
+it('requires both passages, their actual feeder edges and one continuous opposing carry', () => {
+  const e = examples[0];
+  checkHeldByeClaims(retirement(e), {
+    'the first passage is already decided': ({ at }) => {
+      at(e.structure, 1).matchUpStatus = WALKOVER;
+    },
+    'the stored winner edge skips the second BYE': ({ at }) => {
+      at(e.structure, 1).winnerMatchUpId = at(e.structure, 3).matchUpId;
+    },
+    'the second passage has lost its opposite BYE': ({ at }) => {
+      delete at(e.structure, 2).sides!.find((s) => s.bye)!.bye;
+    },
+    'the recorded reservation feeder actually lands at another position': ({ at }) => {
+      const second = at(e.structure, 2);
+      delete at('Main', 2).loserMatchUpId;
+      at('Main', 1, 1).loserMatchUpId = second.matchUpId;
+    },
+    'the award belongs to the other side': ({ at }) => {
+      at(e.structure, 3).winningSide = 2;
+    },
+    'the award has no foreign origin': ({ at }) => {
+      delete at(e.structure, 3).sideExitProvenance;
+    },
+    'the donor stored a different losing edge': ({ at }) => {
+      at('Main', 1, e.donor).loserMatchUpId = at(e.structure, 1, 1).matchUpId;
+    },
+    'a participant occupies the empty carry position on the other arm': ({ at }) => {
+      at(e.structure, 1, 2).sides!.find((s) => !s.bye)!.participantId = at(e.structure, 3).sides![0].participantId;
+    },
+    'the other arm carries a different feeder through the second BYE': ({ at }) => {
+      at(e.structure, 2, 2).sideExitProvenance![2].sourceMatchUpId = at('Main', 1, 1).matchUpId;
+    },
+    'the terminal award still names an onward winner edge': ({ at }) => {
+      at(e.structure, 3).winnerMatchUpId = at('Main', 3).matchUpId;
+    },
+  });
 });
