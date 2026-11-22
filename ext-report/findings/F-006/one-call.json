@@ -1,0 +1,444 @@
+{
+  "initial": {
+    "tournamentName": "Mock Tournament",
+    "startDate": "2026-10-25",
+    "endDate": "2026-11-01",
+    "isMock": true,
+    "tournamentId": "806d5859-4dcb-46a0-9ef2-f31b229436cd",
+    "factory": {
+      "createdVersion": "7.44.0",
+      "version": "7.44.0",
+      "timeStamp": 1792886460000
+    },
+    "participants": [
+      {
+        "participantId": "14ec0aa7-5dc7-4346-aee2-5da8cc257e9c",
+        "participantRole": "COMPETITOR",
+        "participantType": "INDIVIDUAL",
+        "participantName": "John Michael Nearing",
+        "person": {
+          "personId": "ad44464e-b475-4743-937d-886fc1eb90de",
+          "addresses": [
+            {
+              "postalCode": "29052",
+              "state": "ZK",
+              "city": "New New York",
+              "countryCode": "LCA"
+            }
+          ],
+          "standardFamilyName": "Nearing",
+          "standardGivenName": "John Michael",
+          "nationalityCode": "LCA",
+          "extensions": [
+            {
+              "name": "regionCode",
+              "value": 1
+            }
+          ],
+          "sex": "MALE"
+        }
+      },
+      {
+        "participantId": "ef4d740f-06f0-48fc-8a2e-90da8eb9b034",
+        "participantRole": "COMPETITOR",
+        "participantType": "INDIVIDUAL",
+        "participantName": "Linda Fernwright",
+        "person": {
+          "personId": "465d6168-5d9d-4375-b161-26a4962649df",
+          "addresses": [
+            {
+              "postalCode": "60125",
+              "state": "BV",
+              "city": "Nagoro",
+              "countryCode": "TTO"
+            }
+          ],
+          "standardFamilyName": "Fernwright",
+          "standardGivenName": "Linda",
+          "nationalityCode": "TTO",
+          "extensions": [
+            {
+              "name": "regionCode",
+              "value": 2
+            }
+          ],
+          "sex": "FEMALE"
+        }
+      },
+      {
+        "participantId": "943a716f-fad0-45b5-b1a8-c7d1a4eaf651",
+        "participantRole": "COMPETITOR",
+        "participantType": "INDIVIDUAL",
+        "participantName": "Korben Schumacher",
+        "person": {
+          "personId": "3c6abacf-8565-40c9-83c5-2a2af03a36e8",
+          "addresses": [
+            {
+              "postalCode": "81708",
+              "state": "PM",
+              "city": "Elista",
+              "countryCode": "AFG"
+            }
+          ],
+          "standardFamilyName": "Schumacher",
+          "standardGivenName": "Korben",
+          "nationalityCode": "AFG",
+          "extensions": [
+            {
+              "name": "regionCode",
+              "value": 3
+            }
+          ],
+          "sex": "MALE"
+        }
+      },
+      {
+        "participantId": "eced6743-0842-46bb-944f-585d53296a4b",
+        "participantRole": "COMPETITOR",
+        "participantType": "INDIVIDUAL",
+        "participantName": "Ivan Johnson",
+        "person": {
+          "personId": "7c0e62f4-d7ed-4bce-a797-4639ce8da349",
+          "addresses": [
+            {
+              "postalCode": "97841",
+              "state": "ER",
+              "city": "Zion",
+              "countryCode": "SVK"
+            }
+          ],
+          "standardFamilyName": "Johnson",
+          "standardGivenName": "Ivan",
+          "nationalityCode": "SVK",
+          "extensions": [
+            {
+              "name": "regionCode",
+              "value": 4
+            }
+          ],
+          "sex": "MALE"
+        }
+      },
+      {
+        "participantId": "8927837b-4b75-4c3a-befe-f77d79ee24b2",
+        "participantName": "Nearing/Fernwright",
+        "participantRole": "COMPETITOR",
+        "individualParticipantIds": ["14ec0aa7-5dc7-4346-aee2-5da8cc257e9c", "ef4d740f-06f0-48fc-8a2e-90da8eb9b034"],
+        "participantType": "PAIR"
+      },
+      {
+        "participantId": "9a27bc90-c294-4f51-94e7-e169e68b1e18",
+        "participantName": "Schumacher/Johnson",
+        "participantRole": "COMPETITOR",
+        "individualParticipantIds": ["943a716f-fad0-45b5-b1a8-c7d1a4eaf651", "eced6743-0842-46bb-944f-585d53296a4b"],
+        "participantType": "PAIR"
+      },
+      {
+        "participantName": "Team 1",
+        "participantRole": "COMPETITOR",
+        "individualParticipantIds": ["14ec0aa7-5dc7-4346-aee2-5da8cc257e9c", "ef4d740f-06f0-48fc-8a2e-90da8eb9b034"],
+        "participantType": "TEAM",
+        "participantId": "5896068a-52c1-4320-8bf2-47144362da1f"
+      },
+      {
+        "participantName": "Team 2",
+        "participantRole": "COMPETITOR",
+        "individualParticipantIds": ["943a716f-fad0-45b5-b1a8-c7d1a4eaf651", "eced6743-0842-46bb-944f-585d53296a4b"],
+        "participantType": "TEAM",
+        "participantId": "2d170241-85e8-4393-bf1c-fbe633689db9"
+      }
+    ],
+    "events": [
+      {
+        "eventType": "TEAM",
+        "drawDefinitions": [
+          {
+            "drawName": "Single Elimination",
+            "drawId": "d",
+            "structures": [
+              {
+                "structureId": "d-s-0",
+                "finishingPosition": "ROUND_OUTCOME",
+                "seedAssignments": [],
+                "stageSequence": 1,
+                "structureName": "Main",
+                "matchUpType": "TEAM",
+                "stage": "MAIN",
+                "matchUps": [
+                  {
+                    "drawPositions": [1, 2],
+                    "matchUpStatus": "IN_PROGRESS",
+                    "matchUpId": "a594423a-63fb-49e2-a416-518ac145a529",
+                    "roundPosition": 1,
+                    "roundNumber": 1,
+                    "isMock": true,
+                    "finishingRound": 1,
+                    "finishingPositionRange": {
+                      "loser": [2, 2],
+                      "winner": [1, 1]
+                    },
+                    "tieMatchUps": [
+                      {
+                        "sides": [
+                          {
+                            "sideNumber": 1
+                          },
+                          {
+                            "sideNumber": 2
+                          }
+                        ],
+                        "matchUpId": "a594423a-63fb-49e2-a416-518ac145a529-a9ee7af0-a476-4b32-acd2-c614f0b63672-COL-1-TMU-1",
+                        "matchUpStatus": "TO_BE_PLAYED",
+                        "collectionPosition": 1,
+                        "collectionId": "a9ee7af0-a476-4b32-acd2-c614f0b63672-COL-1",
+                        "matchUpType": "DOUBLES",
+                        "isMock": true,
+                        "updatedAt": "2026-10-25T00:01:00.000Z"
+                      },
+                      {
+                        "sides": [
+                          {
+                            "sideNumber": 1
+                          },
+                          {
+                            "sideNumber": 2
+                          }
+                        ],
+                        "matchUpId": "a594423a-63fb-49e2-a416-518ac145a529-a9ee7af0-a476-4b32-acd2-c614f0b63672-COL-2-TMU-1",
+                        "matchUpStatus": "TO_BE_PLAYED",
+                        "collectionPosition": 1,
+                        "collectionId": "a9ee7af0-a476-4b32-acd2-c614f0b63672-COL-2",
+                        "matchUpType": "SINGLES",
+                        "isMock": true,
+                        "updatedAt": "2026-10-25T00:01:00.000Z"
+                      },
+                      {
+                        "sides": [
+                          {
+                            "sideNumber": 1
+                          },
+                          {
+                            "sideNumber": 2
+                          }
+                        ],
+                        "matchUpId": "a594423a-63fb-49e2-a416-518ac145a529-a9ee7af0-a476-4b32-acd2-c614f0b63672-COL-2-TMU-2",
+                        "matchUpStatus": "DEFAULTED",
+                        "collectionPosition": 2,
+                        "collectionId": "a9ee7af0-a476-4b32-acd2-c614f0b63672-COL-2",
+                        "matchUpType": "SINGLES",
+                        "isMock": true,
+                        "updatedAt": "2026-10-25T00:01:00.000Z",
+                        "winningSide": 2,
+                        "schedule": {
+                          "scoredTime": "2026-10-25T00:01:00.000Z"
+                        }
+                      }
+                    ],
+                    "matchUpType": "TEAM",
+                    "sides": [
+                      {
+                        "sideNumber": 1
+                      },
+                      {
+                        "sideNumber": 2
+                      }
+                    ],
+                    "updatedAt": "2026-10-25T00:01:00.000Z",
+                    "score": {
+                      "scoreStringSide1": "0-1",
+                      "scoreStringSide2": "1-0",
+                      "sets": [
+                        {
+                          "side1Score": 0,
+                          "side2Score": 1
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "positionAssignments": [
+                  {
+                    "drawPosition": 1,
+                    "participantId": "5896068a-52c1-4320-8bf2-47144362da1f"
+                  },
+                  {
+                    "drawPosition": 2,
+                    "participantId": "2d170241-85e8-4393-bf1c-fbe633689db9"
+                  }
+                ],
+                "updatedAt": "2026-10-25T00:01:00.000Z",
+                "seedLimit": 0
+              }
+            ],
+            "entries": [
+              {
+                "participantId": "5896068a-52c1-4320-8bf2-47144362da1f",
+                "entryPosition": 1,
+                "entryStatus": "DIRECT_ACCEPTANCE",
+                "entryStage": "MAIN"
+              },
+              {
+                "participantId": "2d170241-85e8-4393-bf1c-fbe633689db9",
+                "entryPosition": 2,
+                "entryStatus": "DIRECT_ACCEPTANCE",
+                "entryStage": "MAIN"
+              }
+            ],
+            "links": [],
+            "drawType": "SINGLE_ELIMINATION",
+            "extensions": [],
+            "appliedPolicies": {
+              "seeding": {
+                "validSeedPositions": {
+                  "ignore": true
+                },
+                "duplicateSeedNumbers": true,
+                "drawSizeProgression": true,
+                "seedingProfile": {
+                  "drawTypes": {
+                    "ROUND_ROBIN_WITH_PLAYOFF": {
+                      "positioning": "WATERFALL"
+                    },
+                    "ROUND_ROBIN": {
+                      "positioning": "WATERFALL"
+                    }
+                  },
+                  "positioning": "SEPARATE"
+                },
+                "policyName": "USTA SEEDING",
+                "seedsCountThresholds": [
+                  {
+                    "drawSize": 4,
+                    "minimumParticipantCount": 3,
+                    "seedsCount": 2
+                  },
+                  {
+                    "drawSize": 16,
+                    "minimumParticipantCount": 12,
+                    "seedsCount": 4
+                  },
+                  {
+                    "drawSize": 32,
+                    "minimumParticipantCount": 24,
+                    "seedsCount": 8
+                  },
+                  {
+                    "drawSize": 64,
+                    "minimumParticipantCount": 48,
+                    "seedsCount": 16
+                  },
+                  {
+                    "drawSize": 128,
+                    "minimumParticipantCount": 96,
+                    "seedsCount": 32
+                  },
+                  {
+                    "drawSize": 256,
+                    "minimumParticipantCount": 192,
+                    "seedsCount": 64
+                  }
+                ]
+              }
+            },
+            "updatedAt": "2026-10-25T00:01:00.001Z",
+            "drawOrder": 1
+          }
+        ],
+        "entries": [
+          {
+            "participantId": "5896068a-52c1-4320-8bf2-47144362da1f",
+            "entryStatus": "DIRECT_ACCEPTANCE",
+            "entryStage": "MAIN",
+            "entryPosition": 1
+          },
+          {
+            "participantId": "2d170241-85e8-4393-bf1c-fbe633689db9",
+            "entryStatus": "DIRECT_ACCEPTANCE",
+            "entryStage": "MAIN",
+            "entryPosition": 2
+          }
+        ],
+        "startDate": "2026-10-25",
+        "endDate": "2026-11-01",
+        "eventName": "Generated TEAM",
+        "tieFormat": {
+          "collectionDefinitions": [
+            {
+              "collectionName": "Doubles",
+              "matchUpCount": 1,
+              "matchUpFormat": "SET1-S:8/TB7",
+              "matchUpType": "DOUBLES",
+              "matchUpValue": 1,
+              "collectionId": "a9ee7af0-a476-4b32-acd2-c614f0b63672-COL-1"
+            },
+            {
+              "collectionName": "Singles",
+              "matchUpCount": 2,
+              "matchUpFormat": "SET3-S:6/TB7-F:TB10",
+              "matchUpType": "SINGLES",
+              "matchUpValue": 1,
+              "collectionId": "a9ee7af0-a476-4b32-acd2-c614f0b63672-COL-2"
+            }
+          ],
+          "tieFormatName": "Dominant Duo",
+          "winCriteria": {
+            "valueGoal": 2
+          }
+        },
+        "eventId": "a9ee7af0-a476-4b32-acd2-c614f0b63672",
+        "flightProfile": {
+          "flights": [
+            {
+              "manuallyAdded": true,
+              "flightNumber": 1,
+              "drawEntries": [
+                {
+                  "participantId": "5896068a-52c1-4320-8bf2-47144362da1f",
+                  "entryPosition": 1,
+                  "entryStatus": "DIRECT_ACCEPTANCE",
+                  "entryStage": "MAIN"
+                },
+                {
+                  "participantId": "2d170241-85e8-4393-bf1c-fbe633689db9",
+                  "entryPosition": 2,
+                  "entryStatus": "DIRECT_ACCEPTANCE",
+                  "entryStage": "MAIN"
+                }
+              ],
+              "drawName": "Single Elimination",
+              "drawId": "d"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "directive": {
+    "method": "setMatchUpStatus",
+    "params": {
+      "drawId": "d",
+      "matchUpId": "a594423a-63fb-49e2-a416-518ac145a529-a9ee7af0-a476-4b32-acd2-c614f0b63672-COL-2-TMU-2",
+      "outcome": {
+        "score": {
+          "scoreStringSide1": "6-1 6-1",
+          "scoreStringSide2": "1-6 1-6",
+          "sets": [
+            {
+              "setNumber": 1,
+              "side1Score": 6,
+              "side2Score": 1,
+              "winningSide": 1
+            },
+            {
+              "setNumber": 2,
+              "side1Score": 6,
+              "side2Score": 1,
+              "winningSide": 1
+            }
+          ]
+        },
+        "winningSide": 1
+      }
+    }
+  }
+}
