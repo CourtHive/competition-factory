@@ -28,6 +28,7 @@ import {
   MATCHUP_NOT_FOUND,
   MATCHUP_STATUS_OUT_OF_SCOPE,
   MISSING_DRAW_DEFINITION,
+  MISSING_ASSIGNMENTS,
   MISSING_DRAW_POSITIONS,
   MISSING_MATCHUP_ID,
   NO_VALID_ACTIONS,
@@ -170,6 +171,8 @@ function refuseAgainstExisting(request: OutcomeRequest, view: OutcomeView): Refu
 /** the TEAM dual under auto-calc, row 5's TEAM clause, row 11 */
 function refuseScore(request: OutcomeRequest, view: OutcomeView): Refusal | undefined {
   const { matchUpStatus, winningSide, score, flags } = request;
+
+  if (view.dualProjection?.missingTeams) return refuse(32, MISSING_ASSIGNMENTS);
 
   if (view.isTeam && flags.enableAutoCalc && view.activeDownstream) {
     const projected = view.dualProjection?.projectedWinningSide;

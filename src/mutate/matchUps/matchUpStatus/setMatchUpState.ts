@@ -75,6 +75,7 @@ import {
   MATCHUP_NOT_FOUND,
   MATCHUP_STATUS_OUT_OF_SCOPE,
   MISSING_DRAW_DEFINITION,
+  MISSING_ASSIGNMENTS,
   MISSING_DRAW_POSITIONS,
   NO_VALID_ACTIONS,
   PROPAGATED_EXITS_DOWNSTREAM,
@@ -1049,11 +1050,12 @@ function handleTeamAutoCalc({
   } else if (enableAutoCalc) {
     const existingDualMatchUpWinningSide = matchUp.winningSide;
 
-    const { projectedWinningSide, score } = projectTeamOutcome(
+    const { projectedWinningSide, score, missingTeams } = projectTeamOutcome(
       { drawDefinition, matchUpsMap, structure, matchUp, event },
       params,
     );
 
+    if (missingTeams) return decorateResult({ result: { error: MISSING_ASSIGNMENTS }, stack: 'handleTeamAutoCalc' });
     dualWinningSideChange = projectedWinningSide !== existingDualMatchUpWinningSide;
 
     // if activeDownStream and dualWinningSideChange then disallow removal of autoCalc
