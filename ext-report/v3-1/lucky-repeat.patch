@@ -1,0 +1,36 @@
+diff --git a/src/mutate/matchUps/outcome/plan.ts b/src/mutate/matchUps/outcome/plan.ts
+index 5210ba3f55..b01b73c141 100644
+--- a/src/mutate/matchUps/outcome/plan.ts
++++ b/src/mutate/matchUps/outcome/plan.ts
+@@ -224,7 +224,16 @@ function abstainReasonOf(args: PlanArgs): AbstainReason | SeatObligation | undef
+   // scoring policy's `incompleteAssignmentsOnDefault` writes `processCodes`, v1's)
+   if (view.line && isDoubleExit(request.matchUpStatus)) return undefined;
+   if (unstampedDoubleExit(args)) return 'exit';
+-  const exit = luckyDoubleExit(args) ? 'exit' : exitReason(args);
++  // A bare repeat on a stamped lucky matchUp directs nobody and the existing noop plan writes nothing.
++  // Keep the recording for unstamped repeats, entries, corrections and any additional request fields.
++  const bareRepeat =
++    satisfiedDoubleExit(view, request, args.route) &&
++    !request.score &&
++    !request.matchUpFormat &&
++    !request.matchUpStatusCodes &&
++    !request.carries?.notes &&
++    !request.carries?.schedule;
++  const exit = luckyDoubleExit(args) && !bareRepeat ? 'exit' : exitReason(args);
+   if (typeof exit === 'string') return exit;
+   if (satisfiedDoubleExit(view, request, args.route)) return undefined;
+   // S4: a score changed beneath an active downstream keeps its winner and re-directs nothing (`apply-values`)
+diff --git a/src/tests/mutations/outcome/luckyDoubleExit.test.ts b/src/tests/mutations/outcome/luckyDoubleExit.test.ts
+index 9aa6626f95..f901eb22ee 100644
+--- a/src/tests/mutations/outcome/luckyDoubleExit.test.ts
++++ b/src/tests/mutations/outcome/luckyDoubleExit.test.ts
+@@ -82,6 +82,9 @@ function play(mode: OutcomePipelineMode, prepared: any, { matchUpId, outcome, pa
+     matchUpId,
+     ...params,
+   });
++  if (process.env.LUCKY_RAW && outcome.matchUpStatus === DOUBLE_WALKOVER &&
++      storedMatchUps(canonicalJson(prepared)).find((m) => m.matchUpId === matchUpId)?.matchUpStatus === DOUBLE_WALKOVER)
++    console.log('public-repeat', mode, JSON.stringify({ ...result, stack: _stack }));
+   return {
+     record: canonicalJson(tournamentEngine.getTournament().tournamentRecord),
+     graph: storedGraph(result),
