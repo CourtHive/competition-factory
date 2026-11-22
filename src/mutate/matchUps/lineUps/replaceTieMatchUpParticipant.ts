@@ -171,15 +171,14 @@ export function replaceTieMatchUpParticipantId(params: ReplaceTieMatchUpParticip
     collectionId,
   });
 
-  const sideIndex = sides.indexOf(dualMatchUpSide);
-
   const { writes, notices, effects } = replacementEffects();
   writes.push(planFieldWrite(dualMatchUp, 'sides', sides));
   const noticeContext = { tournamentId: tournamentRecord.tournamentId, drawDefinition, event };
   modifyMatchUpNotice({ ...noticeContext, matchUp: dualMatchUp, context: 'ensureSidLineUps' }, effects);
   // Assign to the side installed by the array setter (it may cast each side to a subdocument).
   writes.push(() => {
-    dualMatchUp.sides![sideIndex].lineUp = modifiedLineUp;
+    const installed = dualMatchUp.sides!.find((s) => s.sideNumber === side.sideNumber)!;
+    installed.lineUp = modifiedLineUp;
   });
   let lineUps;
   if (teamParticipantId && tieFormat) {
@@ -199,7 +198,7 @@ export function replaceTieMatchUpParticipantId(params: ReplaceTieMatchUpParticip
         drawDefinition,
         dualMatchUp,
         event,
-        sides: sides.map((s, i) => (i === sideIndex ? { ...s, lineUp: modifiedLineUp } : s)),
+        sides: sides.map((s) => (s === dualMatchUpSide ? { ...s, lineUp: modifiedLineUp } : s)),
         lineUps,
         stack,
         writes,

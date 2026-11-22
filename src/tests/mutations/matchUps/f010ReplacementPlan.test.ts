@@ -192,9 +192,11 @@ it.each(['native', 'bridge', 'legacy'] as const)('reports the added pair as cast
               },
             ],
             set(values) {
-              return values.map((p) =>
-                p.participantId.startsWith('stored-') ? { ...p, participantId: 'retained-' + p.participantId } : p,
-              );
+              return values
+                .map((p) =>
+                  p.participantId.startsWith('stored-') ? { ...p, participantId: 'retained-' + p.participantId } : p,
+                )
+                .sort((a, b) => b.participantId.localeCompare(a.participantId));
             },
           },
         },
@@ -278,4 +280,73 @@ it.each([
     expect(draw.extensions).toEqual([{ name: 'lineUps', value: template, createdAt: instant }]);
     expect(draw.extensions[0].value).toBe(template);
   }
+});
+
+function acceptedSubstitution() {
+  const { initial, directive } = structuredClone(fixtures[1]);
+  const old = initial.participants.find((p) => p.participantId === directive.params.existingParticipantId);
+  const [first] = old.individualParticipantIds;
+  const team = initial.participants.find(
+    (p) => p.participantType === 'TEAM' && p.individualParticipantIds.includes(first),
+  );
+  Object.assign(directive.params, {
+    existingParticipantId: first,
+    newParticipantId: team.individualParticipantIds[2],
+    substitution: true,
+  });
+  return { initial, directive, old };
+}
+
+it.each(['event', 'structure'])('uses hydrated %s fields to decide whether the old pair can retire', (kind) => {
+  const { initial, directive, old } = acceptedSubstitution();
+  const draw = initial.events[0].drawDefinitions[0];
+  const stillPlaced = kind === 'structure';
+  if (stillPlaced) {
+    for (const player of draw.structures[0].matchUps[0].sides[0].lineUp) {
+      player.collectionAssignments.push({ ...player.collectionAssignments[0], collectionPosition: 2 });
+    }
+  }
+  const collection = stillPlaced ? draw.structures : initial.events;
+  const fields = Object.fromEntries(Object.keys(collection[0]).map((key) => [key, mongoose.Schema.Types.Mixed]));
+  const modelName = 'F010Nested' + kind;
+  const Model =
+    mongoose.models[modelName] ??
+    mongoose.model(
+      modelName,
+      new mongoose.Schema({
+        nested: [new mongoose.Schema(fields, { _id: false, strict: false })],
+      }),
+    );
+  collection[0] = Model.hydrate({ nested: collection }).nested[0];
+  engine.setState(initial, false);
+  const notices = captureNotices(() => {
+    const result = engine[method](directive.params);
+    expect(result.success).toBe(true);
+    expect(result.participantRemoved).toBe(stillPlaced ? undefined : old.participantId);
+  });
+  expect(initial.participants.some((p) => p.participantId === old.participantId)).toBe(stillPlaced);
+  expect(notices.filter((n) => n.topic === 'deleteParticipants').map((n) => n.payload)).toEqual(
+    stillPlaced ? [] : [{ tournamentId: initial.tournamentId, participantIds: [old.participantId] }],
+  );
+  expect(notices.filter((n) => n.topic === 'modifyEventEntries')).toHaveLength(stillPlaced ? 0 : 1);
+});
+
+it('commits the replacement to the selected side when storage reorders the sides', () => {
+  const { initial, directive } = acceptedSubstitution();
+  const dual = initial.events[0].drawDefinitions[0].structures[0].matchUps[0];
+  let sides = dual.sides;
+  const opponentLineUp = structuredClone(sides.find((s) => s.sideNumber === 2)?.lineUp);
+  Object.defineProperty(dual, 'sides', {
+    enumerable: true,
+    get: () => sides,
+    set: (value) => {
+      sides = value.slice().sort((a, b) => b.sideNumber - a.sideNumber);
+    },
+  });
+  engine.setState(initial, false);
+  const result = engine[method](directive.params);
+  expect(result.success).toBe(true);
+  expect(sides.map((s) => s.sideNumber)).toEqual([2, 1]);
+  expect(sides[0].lineUp).toEqual(opponentLineUp);
+  expect(sides[1].lineUp).toEqual(result.modifiedLineUp);
 });

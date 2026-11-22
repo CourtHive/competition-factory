@@ -55,7 +55,6 @@ export function planReplacementPair({
   }): ResultType & { getParticipantAdded?: () => string | undefined; participantRemoved?: string } {
   const current = tournamentRecord.participants ?? [];
   let forLookup = current;
-  let addedPosition: number | undefined;
   let getParticipantAdded: (() => string | undefined) | undefined;
   if (!getPairedParticipant({ participantIds: individualParticipantIds, tournamentRecord }).participant) {
     const participantId = UUID();
@@ -72,15 +71,13 @@ export function planReplacementPair({
     const pair = planPairParticipant({ participant, tournamentParticipants: current, pairOverride: true });
     if (pair && 'error' in pair) return decorateResult({ result: pair, stack });
     if (pair && 'existing' in pair) {
-      getParticipantAdded = () => pair.existing.participantId;
+      getParticipantAdded = () => installedPairId(tournamentRecord, pair.existing);
     } else {
       if (pair && 'participantName' in pair) participant.participantName = pair.participantName;
-      const position = current.length;
-      addedPosition = position;
       writes.push(() => {
         tournamentRecord.participants!.push(participant);
       });
-      getParticipantAdded = () => tournamentRecord.participants![position].participantId;
+      getParticipantAdded = () => installedPairId(tournamentRecord, participant);
       notices.push({
         topic: ADD_PARTICIPANTS,
         payload: { tournamentId: tournamentRecord.tournamentId, participants: [participant] },
@@ -109,15 +106,10 @@ export function planReplacementPair({
   if ('error' in removal) return { getParticipantAdded };
   planRemovedPairEntries({ tournamentRecord, ids: removal.entryParticipantIds, writes, notices });
   const removed = new Set(removal.entryParticipantIds);
-  const retainedPositions = forLookup.flatMap((p, i) => (removed.has(p.participantId) ? [] : [i]));
-  const finalAddedPosition = addedPosition === undefined ? undefined : retainedPositions.indexOf(addedPosition);
-  if (finalAddedPosition !== undefined && finalAddedPosition >= 0)
-    getParticipantAdded = () => tournamentRecord.participants![finalAddedPosition].participantId;
   const pruned: Participant[] = [];
-  const refreshed: number[] = [];
-  retainedPositions.forEach((sourcePosition, retainedPosition) => {
-    const p = current[sourcePosition];
-    if (!p || (p.participantType !== TEAM && p.participantType !== GROUP)) return;
+  current.forEach((p) => {
+    if (removed.has(p.participantId)) return;
+    if (p.participantType !== TEAM && p.participantType !== GROUP) return;
     const members = p.individualParticipantIds;
     const contacts = p.contactParticipantIds;
     const pruneMembers = members?.includes(id);
@@ -139,14 +131,13 @@ export function planReplacementPair({
         ),
       );
     if (pruneMembers || pruneContacts) pruned.push(p);
-    if (!p.participantRole || p.participantRole === COMPETITOR) refreshed.push(retainedPosition);
   });
   // An append or array replacement can install cast subdocuments. Carry those committed objects forward.
   writes.push(() => {
-    const participants = tournamentRecord.participants!;
-    tournamentRecord.participants = retainedPositions.map((i) => participants[i]);
-    for (const position of refreshed) {
-      const grouping = tournamentRecord.participants[position];
+    tournamentRecord.participants = tournamentRecord.participants!.filter((p) => !removed.has(p.participantId));
+    for (const grouping of tournamentRecord.participants) {
+      if (grouping.participantType !== TEAM && grouping.participantType !== GROUP) continue;
+      if (grouping.participantRole && grouping.participantRole !== COMPETITOR) continue;
       grouping.individualParticipantIds = (grouping.individualParticipantIds ?? []).filter((member) => member !== id);
     }
   });
@@ -161,6 +152,17 @@ export function planReplacementPair({
   const modified = planModifyParticipantsNotice({ tournamentId, participants: pruned });
   if (modified) notices.push(modified);
   return { getParticipantAdded, participantRemoved: id };
+}
+
+/** A roster setter may reorder entries and canonicalize IDs. Read the pair from the installed roster. */
+function installedPairId(tournamentRecord: Tournament, pair: Participant) {
+  const pairs = tournamentRecord.participants ?? [];
+  const byId = pairs.find((p) => p.participantType === PAIR && p.participantId === pair.participantId);
+  if (byId) return byId.participantId;
+  const members = JSON.stringify(pair.individualParticipantIds?.slice().sort());
+  return pairs.find(
+    (p) => p.participantType === PAIR && JSON.stringify(p.individualParticipantIds?.slice().sort()) === members,
+  )?.participantId;
 }
 
 function planRemovedPairEntries({
@@ -204,6 +206,15 @@ function planRemovedPairEntries({
   }
 }
 
+/** Hydrated documents expose their schema fields through getters rather than own enumerable properties. */
+function projectFields<T extends object>(entity: T, changes: Partial<T>): T {
+  const fields =
+    'toObject' in entity && typeof entity.toObject === 'function'
+      ? (entity.toObject({ transform: false }) as T)
+      : entity;
+  return { ...fields, ...changes };
+}
+
 function replacementView({
   tournamentRecord,
   drawDefinition,
@@ -215,23 +226,21 @@ function replacementView({
 }: ReplacementView & { participants: Participant[] }) {
   const replaceDual = (structure: Structure): Structure => {
     if ('matchUps' in structure && structure.matchUps?.includes(dualMatchUp))
-      return {
-        ...structure,
-        matchUps: structure.matchUps.map((m) => (m === dualMatchUp ? { ...m, sides } : m)),
-      };
+      return projectFields(structure, {
+        matchUps: structure.matchUps.map((m) => (m === dualMatchUp ? projectFields(m, { sides }) : m)),
+      });
     if ('structures' in structure && structure.structures?.length)
-      return { ...structure, structures: structure.structures.map(replaceDual) };
+      return projectFields(structure, { structures: structure.structures.map(replaceDual) });
     return structure;
   };
-  const draw = { ...drawDefinition, structures: drawDefinition.structures?.map(replaceDual) };
+  const draw = projectFields(drawDefinition, { structures: drawDefinition.structures?.map(replaceDual) });
   if (lineUps !== undefined) draw.lineUps = lineUps;
   const events = tournamentRecord.events?.map((e) =>
     e !== event
       ? e
-      : {
-          ...e,
+      : projectFields(e, {
           drawDefinitions: e.drawDefinitions?.map((d) => (d === drawDefinition ? draw : d)),
-        },
+        }),
   );
-  return { ...tournamentRecord, participants, events };
+  return projectFields(tournamentRecord, { participants, events });
 }
