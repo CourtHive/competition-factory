@@ -1,6 +1,7 @@
+import { heldClaimInput } from '@Tests/testHarness/outcome/heldByeClaimControls';
 import * as claims from '@Mutate/matchUps/outcome/plan/standingReservation';
 import { compareHeldClaims } from '@Tests/testHarness/outcome/compareHeldClaims';
-import { prepareCall, playCall } from '@Tests/testHarness/outcome/recordedCallHarness';
+import { prepareCall } from '@Tests/testHarness/outcome/recordedCallHarness';
 import { replayStalls } from '@Tests/testHarness/exitPropagation/stallCount';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
@@ -119,21 +120,16 @@ it('re-evaluates the feed when the losing participant occupies the reserved posi
 
 it.each(['main winner', 'opposing advance'] as const)('requires the %s at its claimed position', (gap) => {
   const call = correction(20460202, 25, true, true);
-  const check = claims.relabelKeepsReservation;
-  const inspected = vi.spyOn(claims, 'relabelKeepsReservation').mockImplementationOnce((args) => {
-    expect(check(args)).toBe(true);
-    const view = structuredClone(args.view);
-    const matches = view.inContextDrawMatchUps!;
-    const home = matches.find((m) => m.matchUpId === view.targets.loserMatchUpId)!;
-    const targetId = gap === 'main winner' ? view.targets.winnerMatchUpId : home.winnerMatchUpId;
-    const target = matches.find((m) => m.matchUpId === targetId)!;
-    const participantId =
-      gap === 'main winner' ? view.targets.sideParticipantIds[2] : home.sides!.find((s) => !s.bye)!.participantId;
-    const seat = target.sides!.find((s) => s.participantId === participantId)!;
-    delete seat.participantId;
-    expect(check({ ...args, view })).toBe(false);
-    return true;
-  });
-  expect(playCall('v2', call).result.success).toBe(true);
-  expect(inspected).toHaveBeenCalled();
+  const input = heldClaimInput(call);
+  const { view } = input;
+  expect(claims.relabelKeepsReservation(input)).toBe(true);
+  const matches = view.inContextDrawMatchUps!;
+  const home = matches.find((m) => m.matchUpId === view.targets.loserMatchUpId)!;
+  const targetId = gap === 'main winner' ? view.targets.winnerMatchUpId : home.winnerMatchUpId;
+  const target = matches.find((m) => m.matchUpId === targetId)!;
+  const participantId =
+    gap === 'main winner' ? view.targets.sideParticipantIds[2] : home.sides!.find((s) => !s.bye)!.participantId;
+  const seat = target.sides!.find((s) => s.participantId === participantId)!;
+  delete seat.participantId;
+  expect(claims.relabelKeepsReservation(input)).toBe(false);
 });

@@ -8,18 +8,28 @@ import type { OutcomeRequest } from '@Mutate/matchUps/outcome/types';
 import type { RecordedCall } from './recordedCallHarness';
 
 /** Build the actual planner input. Each counterexample changes one claim in its own copy of the draw or its projected seats. */
-function model(call: RecordedCall) {
+export function heldClaimInput(call: RecordedCall) {
   const tournamentRecord = structuredClone(call.prepared);
   const event = tournamentRecord.events![0];
   const drawDefinition = event.drawDefinitions![0];
   const request: OutcomeRequest = {
     ...(call.params.outcome as Pick<OutcomeRequest, 'matchUpStatus' | 'score' | 'winningSide'>),
     matchUpId: call.params.matchUpId as string,
-    flags: { propagateExitStatus: true, propagateRetirementAsExit: false },
+    flags: {
+      allowChangePropagation: call.params.allowChangePropagation === true,
+      propagateExitStatus: call.params.propagateExitStatus === true,
+      propagateRetirementAsExit: false,
+    },
   };
   const view = buildOutcomeView({ tournamentRecord, event, drawDefinition, request });
   const route = chooseRoute(request, view);
   const direction = planDirection(request, view, route);
+  return { drawDefinition, request, view, route, direction };
+}
+
+function model(call: RecordedCall) {
+  const input = heldClaimInput(call);
+  const { drawDefinition, view } = input;
   const structure = (name: string) => drawDefinition.structures!.find((s) => s.structureName === name)!;
   const at = (name: string, round: number, position = 1) =>
     view.inContextDrawMatchUps!.find(
@@ -29,7 +39,7 @@ function model(call: RecordedCall) {
     structure,
     at,
     drawDefinition,
-    accepts: () => heldLoserByeClaims({ drawDefinition, request, view, route, direction }),
+    accepts: () => heldLoserByeClaims(input),
   };
 }
 
