@@ -1,5 +1,5 @@
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
-import { isDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
+import { clearsCollectionWinner, isDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { dualWinningSideChange, noWinnerNeeded } from './route';
@@ -60,9 +60,7 @@ function applyScoreAndStatus(args: WriteArgs, request: OutcomeRequest, view: Out
   const matchUpStatusCodes =
     args.matchUpStatusCodes ?? (blank ? toBePlayed.matchUpStatusCodes : existing.matchUpStatusCodes);
   // a call's `winningSide` is 1, 2 or absent by the time it is written (row 3 refuses anything else)
-  const removeWinningSide =
-    args.removeWinningSide ||
-    (!!existing.collectionId && args.matchUpStatus === DOUBLE_DEFAULT && !!existing.winningSide);
+  const removeWinningSide = args.removeWinningSide || clearsCollectionWinner(existing, args);
   const winningSide = removeWinningSide ? undefined : args.winningSide || (blank ? undefined : existing.winningSide);
   const scoreHasValue = !!checkScoreHasValue({ score });
   if (
