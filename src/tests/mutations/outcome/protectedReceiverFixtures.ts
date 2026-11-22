@@ -132,3 +132,14 @@ export function incomingCarry() {
     throw new Error('The 8/8 matrix schedule did not reach its recorded incoming carry');
   });
 }
+
+// 00515882, exitBeforeArrivalCensus. The last protected award has no stored sides or onward seat.
+export function terminalWithoutLanding() {
+  return beforeLast(randomConfig(9700036), 'early-census-9700036', [
+    ['Main|1|2', { matchUpStatus: DEFAULTED, winningSide: 2 }],
+    ['Main|1|3', { matchUpStatus: DEFAULTED, winningSide: 2 }],
+    ['Main|2|2', { matchUpStatus: DEFAULTED, winningSide: 2 }],
+    ['Main|1|4', { matchUpStatus: DEFAULTED, winningSide: 2 }],
+    ['Main|2|1', { winningSide: 2 }],
+  ]);
+}

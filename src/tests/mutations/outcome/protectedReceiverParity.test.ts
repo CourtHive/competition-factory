@@ -4,9 +4,16 @@ import { objectGraph, storedGraph, storedRecord } from '@Tests/testHarness/outco
 import * as stateWriter from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import * as recording from '@Mutate/matchUps/outcome/plan/recordedCall';
 import * as cascade from '@Mutate/matchUps/outcome/plan/recordedCascade';
-import { compassArrival, incomingCarry, oneReceiver, scoredArrival, twoReceivers } from './protectedReceiverFixtures';
+import {
+  compassArrival,
+  incomingCarry,
+  oneReceiver,
+  scoredArrival,
+  terminalWithoutLanding,
+  twoReceivers,
+} from './protectedReceiverFixtures';
 import { observeClockReads, setClock } from '@Tools/clock';
-import { topicConstants } from '@Constants/topicConstants';
+import { MODIFY_MATCHUP, topicConstants } from '@Constants/topicConstants';
 import engine from '@Engines/syncEngine';
 import { afterEach, expect, it, vi } from 'vitest';
 import { createHash } from 'node:crypto';
@@ -33,13 +40,13 @@ function play(mode: OutcomePipelineMode, call: RecordedCall) {
   expect(engine.setState(structuredClone(call.prepared), false).success).toBe(true);
   const before = digest(storedGraph());
   deleteNotices();
-  const notices: { topic: string; batch: string }[] = [];
+  const notices: { topic: string; count: number; batchDigest: string }[] = [];
   setSubscriptions({
     subscriptions: Object.fromEntries(
       Object.values(topicConstants).map((topic) => [
         topic,
         (batch: unknown[]) => {
-          notices.push({ topic, batch: digest(objectGraph(batch)) });
+          notices.push({ topic, count: batch.length, batchDigest: digest(objectGraph(batch)) });
         },
       ]),
     ),
@@ -151,7 +158,8 @@ it('distinguishes two occurrences of the same COMPASS call by the reservation on
 it.each([DOUBLE_DEFAULT, DOUBLE_WALKOVER] as const)(
   'delivers the scored arrival through two %s results with live subscribers',
   (exit) => {
-    compare(scoredArrival(exit), true);
+    const { notices } = compare(scoredArrival(exit), true);
+    expect(notices.filter(({ topic }) => topic === MODIFY_MATCHUP).map(({ count }) => count)).toEqual([4]);
   },
 );
 
@@ -216,3 +224,13 @@ it.each(['retagged origin', 'wrong feeder outcome', 'occupied loser assignment']
     compare(original, true);
   },
 );
+
+it('keeps a terminal awarded exit recorded when neither stored sides nor an onward placement witnesses its winner', () => {
+  const call = terminalWithoutLanding();
+  const terminal = at(call.prepared, 'Consolation', 3, 1);
+  expect(terminal).toMatchObject({ matchUpStatus: DEFAULTED, drawPositions: [2] });
+  expect(terminal.sides).toBeUndefined();
+  expect(terminal.winnerMatchUpId).toBeUndefined();
+  const { record } = compare(call, false);
+  expect(at(record, 'Consolation', 3, 1)).toMatchObject({ winningSide: 2, drawPositions: terminal.drawPositions });
+});
