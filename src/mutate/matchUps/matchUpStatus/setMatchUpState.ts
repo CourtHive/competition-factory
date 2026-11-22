@@ -205,6 +205,8 @@ export function announceGoesTo({
   modifyDrawNotice({ drawDefinition, tournamentId: tournamentRecord?.tournamentId, eventId: event?.eventId });
 }
 
+type TeamPlan = { apply: () => void; refusal?: { error: typeof MISSING_ASSIGNMENTS } };
+
 function writeMatchUpState(params: SetMatchUpStateArgs) {
   const stack = 'setMatchUpStatus';
 
@@ -333,7 +335,7 @@ function writeMatchUpState(params: SetMatchUpStateArgs) {
   }
 
   let dualWinningSideChange;
-  let applyTeamWrites: (() => void) | undefined;
+  let teamPlan: TeamPlan | undefined;
   let unprojectedExit = false;
   if (isTeam) {
     const teamResult: any = handleTeamAutoCalc({
@@ -352,7 +354,7 @@ function writeMatchUpState(params: SetMatchUpStateArgs) {
     });
     if (teamResult?.error) return teamResult;
     if (teamResult?.dualWinningSideChange !== undefined) dualWinningSideChange = teamResult.dualWinningSideChange;
-    applyTeamWrites = teamResult.apply;
+    teamPlan = teamResult;
     unprojectedExit = !!teamResult.unprojectedExit;
   }
 
@@ -484,7 +486,7 @@ function writeMatchUpState(params: SetMatchUpStateArgs) {
   return resolveAndApplyOutcome({
     dualWinningSideChange,
     activeDownstream,
-    applyTeamWrites,
+    teamPlan,
     unprojectedExit,
     params,
     isTeam,
@@ -790,7 +792,7 @@ function checkDownstreamCompatibility({ matchUpTieId, activeDownstream, matchUpS
 function resolveAndApplyOutcome({
   dualWinningSideChange,
   activeDownstream,
-  applyTeamWrites,
+  teamPlan,
   unprojectedExit,
   params,
   isTeam,
@@ -799,7 +801,7 @@ function resolveAndApplyOutcome({
   /** a TEAM dual's exit entered with a winner by a call that turns auto-calc on, the lines projecting none */
   unprojectedExit?: boolean;
   dualWinningSideChange?: boolean;
-  applyTeamWrites?: () => void;
+  teamPlan?: TeamPlan;
   activeDownstream?: boolean;
   isTeam: boolean;
   stack: string;
@@ -854,7 +856,7 @@ function resolveAndApplyOutcome({
   // exit entered with one becomes when the call turns auto-calc on and the lines project none). It was refused by
   // `attemptToSetMatchUpStatus` after the dual's writes below, which left its sides and line-ups under the error
   // (item 3, CA 2026-11-17). Asked here, with what the dispatch reads, so the error leaves the record unchanged.
-  if (applyTeamWrites && refusedAtTheStatusRoute(params, !!activeDownstream))
+  if (teamPlan && refusedAtTheStatusRoute(params, !!activeDownstream))
     return decorateResult({
       result: { error: INVALID_MATCHUP_STATUS },
       info: 'matchUpStatus: ' + params.matchUpStatus,
@@ -868,7 +870,7 @@ function resolveAndApplyOutcome({
   // dual, no carry). Refused before anything is written. A dual scored by hand is not projected: a call that disables
   // auto-calc, or names neither flag on a dual already so flagged, keeps the winner it names. Lines that project a
   // winner decide it: the exit is written with the projected winner.
-  if (applyTeamWrites && unprojectedExit)
+  if (teamPlan && unprojectedExit)
     return decorateResult({
       result: { error: INVALID_MATCHUP_STATUS },
       info: 'matchUpStatus: ' + params.matchUpStatus,
@@ -880,13 +882,13 @@ function resolveAndApplyOutcome({
   // stamped and announced under the error (measured 2026-11-18, TEAM SINGLE_ELIMINATION 4: a dual decided by its own
   // call, its winner played on, given the other winner). Asked here, as the dispatch asks, so the error leaves the
   // record unchanged.
-  if (applyTeamWrites) {
-    const refusal = downstreamRefusal(params, !!activeDownstream);
+  if (teamPlan) {
+    const refusal = downstreamRefusal(params, !!activeDownstream) ?? teamPlan.refusal;
     if (refusal) return decorateResult({ result: refusal, stack });
   }
 
   // the TEAM dual's auto-calc and lineUps, now that nothing before the outcome's own writes can refuse
-  applyTeamWrites?.();
+  teamPlan?.apply();
 
   const validWinningSideSwap =
     !isTeam && !dualWinningSideChange && winningSide && matchUp.winningSide && matchUp.winningSide !== winningSide;
@@ -1038,6 +1040,7 @@ function handleTeamAutoCalc({
 }) {
   let dualWinningSideChange;
   let unprojectedExit = false;
+  let missingTeams: boolean | undefined;
   let autoCalcValue: true | undefined;
 
   // A score without sets (a record of how a level tie was decided, or the strings alone) keeps the dual's aggregate
@@ -1050,12 +1053,10 @@ function handleTeamAutoCalc({
   } else if (enableAutoCalc) {
     const existingDualMatchUpWinningSide = matchUp.winningSide;
 
-    const { projectedWinningSide, score, missingTeams } = projectTeamOutcome(
-      { drawDefinition, matchUpsMap, structure, matchUp, event },
-      params,
-    );
+    const projection = projectTeamOutcome({ drawDefinition, matchUpsMap, structure, matchUp, event }, params);
 
-    if (missingTeams) return decorateResult({ result: { error: MISSING_ASSIGNMENTS }, stack: 'handleTeamAutoCalc' });
+    const { projectedWinningSide, score } = projection;
+    missingTeams = projection.missingTeams;
     dualWinningSideChange = projectedWinningSide !== existingDualMatchUpWinningSide;
 
     // if activeDownStream and dualWinningSideChange then disallow removal of autoCalc
@@ -1099,7 +1100,8 @@ function handleTeamAutoCalc({
     });
   };
 
-  return { dualWinningSideChange, unprojectedExit, apply };
+  const refusal = missingTeams ? { error: MISSING_ASSIGNMENTS } : undefined;
+  return { dualWinningSideChange, unprojectedExit, refusal, apply };
 }
 
 function resolveQualifyingContext({ inContextMatchUp, winningSide, matchUp, params }) {

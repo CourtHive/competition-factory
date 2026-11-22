@@ -9,9 +9,10 @@ export function projectTeamOutcome(
   args: Parameters<typeof generateTieMatchUpScore>[0],
   request: { matchUpStatus?: MatchUpStatusUnion; score?: Score },
 ) {
-  if (isDoubleExit(request.matchUpStatus)) return { projectedWinningSide: undefined, score: request.score };
+  const missingTeams = !bothTeamsAssigned(args);
+  if (isDoubleExit(request.matchUpStatus))
+    return { missingTeams, projectedWinningSide: undefined, score: request.score };
   const { winningSide, scoreStringSide1, scoreStringSide2, set } = generateTieMatchUpScore(args);
-  const missingTeams = !!winningSide && !bothTeamsAssigned(args);
   return {
     missingTeams,
     projectedWinningSide: winningSide,
@@ -21,15 +22,21 @@ export function projectTeamOutcome(
 
 /** A line-up can exist before the participant arrives. Read bracket seats from their draw assignments. */
 function bothTeamsAssigned({ matchUp, structure, drawDefinition }: Parameters<typeof generateTieMatchUpScore>[0]) {
-  if (isAdHoc({ structure }))
-    return [1, 2].every((number) =>
-      matchUp.sides?.some((side) => side.sideNumber === number && side.participantId && !side.bye),
-    );
-  const positions = matchUp.drawPositions;
-  if (positions?.length !== 2 || positions[0] === positions[1]) return false;
-  const { positionAssignments } = getPositionAssignments({ drawDefinition, structure });
-  return positions.every(
-    (position) =>
-      !!position && positionAssignments.some((a) => a.drawPosition === position && a.participantId && !a.bye),
+  const seats = isAdHoc({ structure })
+    ? [1, 2].map((number) => matchUp.sides?.find((side) => side.sideNumber === number))
+    : bracketSeats({ matchUp, structure, drawDefinition });
+  const [first, second] = seats;
+  return (
+    !!first?.participantId &&
+    !!second?.participantId &&
+    !first.bye &&
+    !second.bye &&
+    first.participantId !== second.participantId
   );
+}
+
+function bracketSeats({ matchUp, structure, drawDefinition }: Parameters<typeof generateTieMatchUpScore>[0]) {
+  if (matchUp.drawPositions?.length !== 2) return [];
+  const { positionAssignments } = getPositionAssignments({ drawDefinition, structure });
+  return matchUp.drawPositions.map((position) => positionAssignments.find((seat) => seat.drawPosition === position));
 }

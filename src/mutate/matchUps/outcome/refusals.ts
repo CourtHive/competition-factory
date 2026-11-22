@@ -172,8 +172,6 @@ function refuseAgainstExisting(request: OutcomeRequest, view: OutcomeView): Refu
 function refuseScore(request: OutcomeRequest, view: OutcomeView): Refusal | undefined {
   const { matchUpStatus, winningSide, score, flags } = request;
 
-  if (view.dualProjection?.missingTeams) return refuse(32, MISSING_ASSIGNMENTS);
-
   if (view.isTeam && flags.enableAutoCalc && view.activeDownstream) {
     const projected = view.dualProjection?.projectedWinningSide;
     if (projected !== view.existing.winningSide)
@@ -408,6 +406,7 @@ export function refuseOutcome(request: OutcomeRequest, view: OutcomeView): Refus
     (view.missingDrawPositions ? refuse(24, MISSING_DRAW_POSITIONS) : undefined) ??
     (view.heldSeat ? refuse(31, view.heldSeat.error, { context: view.heldSeat.context }) : undefined) ??
     refuseDispatch(request, view) ??
-    refuseRoute(request, view)
+    refuseRoute(request, view) ??
+    (view.dualProjection?.missingTeams ? refuse(32, MISSING_ASSIGNMENTS) : undefined)
   );
 }
