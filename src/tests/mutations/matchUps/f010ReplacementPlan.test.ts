@@ -233,3 +233,49 @@ it.each(['native', 'bridge', 'legacy'] as const)('reports the added pair as cast
     expect(doc.$getChanges().$inc).toEqual({ __v: 1 });
   }
 });
+
+it.each([
+  { mode: 'native', prior: true },
+  { mode: 'bridge', prior: true },
+  { mode: 'legacy', prior: true },
+  { mode: 'bridge', prior: false },
+  { mode: 'legacy', prior: false },
+] as const)('commits the template with schema=$mode and prior extension=$prior', ({ mode, prior }) => {
+  const { initial, directive } = structuredClone(fixtures[1]);
+  const draw = initial.events[0].drawDefinitions[0];
+  const template = draw.lineUps;
+  const unrelated = { name: 'unrelated', value: { keep: true } };
+  const existing = { name: 'lineUps', value: template };
+  if (prior) draw.extensions = [unrelated, existing];
+  else delete draw.extensions;
+  if (mode === 'legacy' && prior) delete draw.lineUps;
+  const old = initial.participants.find((p) => p.participantId === directive.params.existingParticipantId);
+  const [first] = old.individualParticipantIds;
+  const team = initial.participants.find(
+    (p) => p.participantType === 'TEAM' && p.individualParticipantIds.includes(first),
+  );
+  const replacement = team.individualParticipantIds[2];
+  setClock(instant);
+  engine.setState(initial, false);
+  setSchemaWriteMode(mode);
+  const result = engine[method]({
+    ...directive.params,
+    existingParticipantId: first,
+    newParticipantId: replacement,
+    substitution: true,
+  });
+  expect(result.success).toBe(true);
+  expect(template[team.participantId]).toContainEqual(expect.objectContaining({ participantId: replacement }));
+  if (mode === 'legacy' && prior) expect(draw.lineUps).toBeUndefined();
+  else expect(draw.lineUps).toBe(template);
+  if (prior) expect(draw.extensions[0]).toBe(unrelated);
+  if (mode === 'native') {
+    expect(draw.extensions).toEqual([unrelated]);
+  } else if (prior) {
+    expect(draw.extensions[1]).toBe(existing);
+    expect(existing.value).toBe(template);
+  } else {
+    expect(draw.extensions).toEqual([{ name: 'lineUps', value: template, createdAt: instant }]);
+    expect(draw.extensions[0].value).toBe(template);
+  }
+});
