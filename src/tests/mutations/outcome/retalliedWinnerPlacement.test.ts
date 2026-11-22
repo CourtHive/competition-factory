@@ -2,6 +2,7 @@ import { afterEach, expect, it } from 'vitest';
 import engine from '@Engines/syncEngine';
 import mocks from '@Assemblies/engines/mock';
 import { setOutcomePipeline, getTournamentRecords } from '@Global/state/globalState';
+import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import type { Tournament, MatchUpStatusUnion } from '@Types/tournamentTypes';
 
@@ -16,9 +17,11 @@ for (const prior of [
   'decided line',
   'occupied destination',
   'missing source positions',
+  'repeated double default',
+  'reported dual',
 ] as const) {
   it.each(['v1', 'v2', 'differential'] as const)(
-    '%s seats the retallied dual winner after a line update over ' + prior,
+    '%s resolves the dual winner and finalist seats after a line update over ' + prior,
     (mode) => {
       setOutcomePipeline('v1');
       mocks.generateTournamentRecord({
@@ -41,7 +44,20 @@ for (const prior of [
       if (prior !== 'double exit') expect(award(other.matchUpId, 'COMPLETED', 2).success).toBe(true);
       expect(award(semi.matchUpId, 'DOUBLE_WALKOVER').success).toBe(true);
       if (prior !== 'double exit') expect(award(semi.matchUpId, 'COMPLETED', 2).success).toBe(true);
-      if (prior === 'occupied destination') matches()[2].drawPositions = [3, 4];
+      if (prior === 'repeated double default') fresh.matchUpStatus = 'DOUBLE_DEFAULT';
+      if (prior === 'reported dual') {
+        const event = (Object.values(getTournamentRecords())[0] as Tournament).events![0];
+        const { tieFormat } = resolveTieFormat({
+          event,
+          drawDefinition: draw(),
+          structure: draw().structures![0],
+          matchUp: semi,
+        });
+        semi.tieFormat = { ...tieFormat!, scoreSource: 'REPORTED' };
+      }
+      const keepsDeclaredWinner = prior === 'repeated double default' || prior === 'reported dual';
+      // These held seats refuse a real reversal. A replay or reported score keeps the declared winner.
+      if (prior === 'occupied destination' || keepsDeclaredWinner) matches()[2].drawPositions = [3, 4];
       if (prior === 'missing source positions') delete semi.drawPositions;
       const initial = structuredClone(Object.values(getTournamentRecords())[0] as Tournament);
       for (const route of ['direct', 'queueOff', 'queueOn']) {
@@ -57,6 +73,7 @@ for (const prior of [
                 : ('TO_BE_PLAYED' as const),
           },
         };
+        if (keepsDeclaredWinner) expect(matches()[2].drawPositions).toEqual([3, 4]);
         const before = JSON.stringify(getTournamentRecords());
         const result =
           route === 'direct'
@@ -71,6 +88,13 @@ for (const prior of [
         }
         expect(result.success).toBe(true);
         const [updated, , final] = matches();
+        if (keepsDeclaredWinner) {
+          expect(updated.tieMatchUps![0].matchUpStatus).toBe('DOUBLE_DEFAULT');
+          expect(updated.tieMatchUps![0].winningSide).toBeUndefined();
+          expect(updated.winningSide).toBe(2);
+          expect(final.drawPositions).toEqual([3, 4]);
+          continue;
+        }
         expect(updated.winningSide).toBe(1);
         expect(final.drawPositions).toEqual(prior !== 'double exit' ? [1, 4] : [1]);
         expect(engine.getDrawInconsistencies({ drawId }).inconsistencies).toEqual([]);
