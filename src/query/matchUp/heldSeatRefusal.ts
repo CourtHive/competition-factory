@@ -117,8 +117,8 @@ export function heldSeatRefusal({
   // the loser stands (`relabelWithoutDirection`), and only the carry's levels are asked
   if (stored && activeDownstream)
     return stored === winningSide ? relabelledCarrySeat(params, sideParticipantId(3 - winningSide)) : undefined;
-  const replaced = !!stored && stored !== winningSide;
-  if (replaced && params.allowChangePropagation && matchUp.roundPosition) return undefined;
+  const replacesPriorWinner = !!stored && stored !== winningSide;
+  if (replacesPriorWinner && params.allowChangePropagation && matchUp.roundPosition) return undefined;
   // an exit awarded to an empty side advances nobody (`winnerSlotEmpty`)
   const winnerPlaced = !(isExit(params.matchUpStatus) && !sideParticipantId(winningSide));
   // bound by side, as `directParticipants` binds them
@@ -128,10 +128,10 @@ export function heldSeatRefusal({
 
   return (
     (winnerPlaced && !unwound
-      ? heldWinnerSeat({ targetData, structure, drawDefinition, replaced, sidePosition, winningSide })
+      ? heldWinnerSeat({ targetData, structure, drawDefinition, replacesPriorWinner, sidePosition, winningSide })
       : undefined) ??
     heldLoserSeat({
-      winnerParticipantId: replaced ? sideParticipantId(winningSide) : undefined,
+      winnerParticipantId: replacesPriorWinner ? sideParticipantId(winningSide) : undefined,
       loserDrawPosition: sidePosition(3 - winningSide),
       inContextDrawMatchUps: carriesExit(params) ? params.inContextDrawMatchUps : undefined,
       tournamentRecord: params.tournamentRecord,
@@ -165,7 +165,7 @@ function lineSeatRefusal(params: HeldSeatParams, activeDownstream: boolean): Hel
       targetData,
       structure,
       drawDefinition,
-      replaced: !!dual.winningSide,
+      replacesPriorWinner: !!dual.winningSide,
       sidePosition,
       winningSide: projected,
     }) ??
@@ -237,21 +237,21 @@ function heldWinnerSeat({
   winningSide,
   targetData,
   structure,
-  replaced,
+  replacesPriorWinner,
 }: {
   targetData: PositionTargetsResult;
   sidePosition: (sideNumber: number) => number | undefined;
   drawDefinition: Readonly<DrawDefinition>;
   structure: Readonly<Structure>;
   winningSide: number;
-  replaced: boolean;
+  replacesPriorWinner: boolean;
 }): HeldSeat | undefined {
   const winnerMatchUp = targetData.targetMatchUps?.winnerMatchUp;
   // across a link the placement's refusals are logged, not returned (`directWinnerViaLink`)
   if (!winnerMatchUp || targetData.targetLinks?.winnerTargetLink) return undefined;
   const drawPosition = sidePosition(winningSide);
   if (!drawPosition) return undefined;
-  const previous = replaced ? sidePosition(3 - winningSide) : undefined;
+  const previous = replacesPriorWinner ? sidePosition(3 - winningSide) : undefined;
   const held = (winnerMatchUp.drawPositions ?? []).filter((position) => !!position && position !== previous);
   if (held.length < 2 || new Set(held).has(drawPosition)) return undefined;
 
