@@ -1,5 +1,6 @@
 import { standingMatchUp } from '../drawPositions/relabelLoserExit';
 import { bareResultRequest, cleanWinnerTarget, indexed, sideDrawPosition } from './plan/planShared';
+import { objShallowEqual } from '@Tools/objects';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 
 // constants and types
@@ -204,8 +205,71 @@ function planRelabelled(request: OutcomeRequest, view: OutcomeView): DirectionPl
   const winningSide = request.winningSide;
   if (winningSide !== 1 && winningSide !== 2) return undefined;
   if (relabelledLoserElsewhere(request, view)) return undefined;
-  const loser = planLoser(request, view, winningSide === 1 ? 2 : 1, true);
+  const loserSide = winningSide === 1 ? 2 : 1;
+  if (repeatedRelabelStands(request, view, loserSide)) return undefined;
+  const loser = planLoser(request, view, loserSide, true);
   return loser ? { loser } : undefined;
+}
+
+/** applyMatchUpValues writes the source. refreshArrivals and relabelWithoutDirection leave these origins alone. */
+function repeatedRelabelStands(request: OutcomeRequest, view: OutcomeView, loserSide: 1 | 2): boolean {
+  const status = request.matchUpStatus;
+  const { existing, targets, inContextDrawMatchUps } = view;
+  if (status !== WALKOVER && status !== DEFAULTED && status !== RETIRED) return false;
+  if (
+    status !== existing.matchUpStatus ||
+    !request.flags.propagateExitStatus ||
+    existing.hasSideExitProvenance ||
+    existing.carriedExit
+  )
+    return false;
+  const participantId = targets.sideParticipantIds[loserSide];
+  if (
+    !participantId ||
+    !targets.loserStructureId ||
+    !inContextDrawMatchUps ||
+    targets.loserTargetSeat?.participantId !== participantId
+  )
+    return false;
+  const standing = standingMatchUp(inContextDrawMatchUps, targets.loserStructureId, participantId);
+  if (!standing) return false;
+  if (status === RETIRED) {
+    // With retirement propagation off, V1 can only withdraw an earlier carry or refresh an arrival.
+    if (
+      request.flags.propagateRetirementAsExit ||
+      standing.matchUpStatus !== COMPLETED ||
+      !bareResultRequest({ ...request, score: undefined }) ||
+      !sameRetirementScore(request.score, existing.score)
+    )
+      return false;
+  } else {
+    if (!bareResultRequest(request)) return false;
+    const side = standing.sides?.find((s) => s.participantId === participantId)?.sideNumber;
+    const origin = side && standing.sideExitProvenance?.[side];
+    // The standing match already names the source, so carriedPastStanding does not look beyond it.
+    if (!origin || origin.sourceMatchUpId !== request.matchUpId || origin.matchUpStatus !== status) return false;
+  }
+  // A stale arrival can be refreshed even when the labels on the source agree. V1 also checks every BYE-held carry.
+  return !inContextDrawMatchUps.some((m) =>
+    Object.values(m.sideExitProvenance ?? {}).some(
+      (e) =>
+        e.sourceMatchUpId === request.matchUpId &&
+        (status === RETIRED ||
+          e.previousMatchUpStatus !== status ||
+          (e.matchUpStatus !== undefined && e.matchUpStatus !== status)),
+    ),
+  );
+}
+
+function sameRetirementScore(incoming: OutcomeRequest['score'], stored: OutcomeRequest['score']): boolean {
+  if (!incoming?.sets?.length || !stored?.sets?.length) return false;
+  const { sets, ...score } = incoming;
+  const { sets: previous, ...previousScore } = stored;
+  return (
+    sets.length === previous.length &&
+    objShallowEqual(score, previousScore) &&
+    sets.every((set, index) => objShallowEqual(set, previous[index]))
+  );
 }
 
 /**
