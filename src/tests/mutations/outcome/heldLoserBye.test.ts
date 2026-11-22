@@ -1,5 +1,6 @@
+import * as claims from '@Mutate/matchUps/outcome/plan/unchangedExitClaims';
 import { compareHeldClaims } from '@Tests/testHarness/outcome/compareHeldClaims';
-import { prepareCall } from '@Tests/testHarness/outcome/recordedCallHarness';
+import { prepareCall, playCall } from '@Tests/testHarness/outcome/recordedCallHarness';
 import { replayStalls } from '@Tests/testHarness/exitPropagation/stallCount';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
@@ -94,4 +95,51 @@ it('retracts the walkover and its advancement when the standing loss came from t
   expect(after.award.sideExitProvenance?.[2]).toBeUndefined();
   expect(after.award.winningSide).toBeUndefined();
   expect(after.receiver.drawPositions).toEqual([]);
+});
+
+it.each([
+  'missing feeder round',
+  'unresolved winner edge',
+  'missing BYE position',
+  'propagated BYE',
+  'different earned winner',
+  'missing main winner',
+] as const)('requires independent support for the structural BYE path (%s)', (gap) => {
+  const call = scoredRetirement();
+  const check = claims.retirementClaimsStand;
+  const inspected = vi.spyOn(claims, 'retirementClaimsStand').mockImplementationOnce((args) => {
+    expect(check(args)).toBe(true);
+    const view = structuredClone(args.view);
+    const drawDefinition = structuredClone(args.drawDefinition!);
+    const matches = view.inContextDrawMatchUps!;
+    const linked = matches.find((m) => m.matchUpId === view.targets.loserMatchUpId)!;
+    const award = matches.find((m) => m.matchUpId === linked.winnerMatchUpId)!;
+    const bye = linked.sides!.find((s) => s.bye)!;
+    const loser = linked.sides!.find((s) => s.participantId)!;
+    const backdraw = drawDefinition.structures!.find((s) => s.structureId === linked.structureId)!;
+    switch (gap) {
+      case 'missing feeder round':
+        delete linked.roundNumber;
+        break;
+      case 'unresolved winner edge':
+        view.inContextDrawMatchUps = matches.filter((m) => m.matchUpId !== award.matchUpId);
+        break;
+      case 'missing BYE position':
+        delete bye.drawPosition;
+        break;
+      case 'propagated BYE':
+        backdraw.positionAssignments!.find((a) => a.drawPosition === bye.drawPosition)!.byeFromPropagation = true;
+        break;
+      case 'different earned winner':
+        award.winningSide = award.sides!.find((s) => s.participantId === loser.participantId)!.sideNumber;
+        break;
+      case 'missing main winner':
+        view.inContextDrawMatchUps = matches.filter((m) => m.matchUpId !== view.targets.winnerMatchUpId);
+        break;
+    }
+    expect(check({ ...args, view, drawDefinition })).toBe(false);
+    return true;
+  });
+  expect(playCall('v2', call).result.success).toBe(true);
+  expect(inspected).toHaveBeenCalled();
 });
