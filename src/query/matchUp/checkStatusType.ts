@@ -1,3 +1,4 @@
+import { isDoubleExit } from '@Validators/isExit';
 import { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import {
   nonDirectingMatchUpStatuses,
@@ -18,4 +19,16 @@ type IsNonDirectingArgs = {
 };
 export function isNonDirectingMatchUpStatus({ matchUpStatus }: IsNonDirectingArgs) {
   return nonDirectingMatchUpStatuses.includes(matchUpStatus);
+}
+
+/** A collection line reopened for play or withdrawn cannot keep credit for its former winner. */
+export function clearsCollectionWinner(
+  existing: { collectionId?: string; winningSide?: number },
+  update: { matchUpStatus?: MatchUpStatusUnion; winningSide?: number },
+): boolean {
+  if (!existing.collectionId || !existing.winningSide || !update.matchUpStatus) return false;
+  return (
+    isDoubleExit(update.matchUpStatus) ||
+    (!update.winningSide && isNonDirectingMatchUpStatus({ matchUpStatus: update.matchUpStatus }))
+  );
 }
