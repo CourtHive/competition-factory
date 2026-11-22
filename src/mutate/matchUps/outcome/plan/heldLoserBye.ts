@@ -1,19 +1,12 @@
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { hasSourceOrigin, holdsPosition } from './placementClaims';
-import { positionTargets } from '@Query/matchUp/positionTargets';
+import { claimEdges as edges, consecutiveByeClaims, type ClaimDraw as Draw } from './byeAwardClaims';
 import { APPLY_VALUES, bareResultRequest, indexed, sideDrawPosition, storedLoserId } from './planShared';
 
 // constants and types
-import { BYE, COMPLETED, DEFAULTED, DOUBLE_DEFAULT, WALKOVER } from '@Constants/matchUpStatusConstants';
-import type { DrawDefinition } from '@Types/tournamentTypes';
+import { BYE, COMPLETED, DEFAULTED, DOUBLE_DEFAULT, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { ExitReasonArgs } from '../types';
 import type { HydratedMatchUp } from '@Types/hydrated';
-
-type Draw = { drawDefinition: DrawDefinition; inContextDrawMatchUps: HydratedMatchUp[] };
-
-function edges(draw: Draw, matchUp: HydratedMatchUp) {
-  return positionTargets({ ...draw, matchUpId: matchUp.matchUpId, inContextMatchUp: matchUp, asReferences: true });
-}
 
 /** The other semifinal has nobody to send: its missing loser's side holds a default produced by its own feeder.
  * Check the losing link's actual landing and the stored assignment for the reservation there. */
@@ -76,13 +69,18 @@ export function heldLoserByeClaims({ request, route, view, drawDefinition, direc
   const arrival = direction?.loser;
   if (!arrival?.arrives || arrival.bye || arrival.carriedPast || arrival.converged || arrival.exit || arrival.withdrawn)
     return false;
+  const scoredRetirement =
+    request.matchUpStatus === RETIRED &&
+    !request.flags.propagateRetirementAsExit &&
+    !view.draw.propagatesByeOnDoubleExit &&
+    !!request.score?.sets?.length &&
+    bareResultRequest({ ...request, score: undefined });
   const side = request.winningSide;
   if (
     route !== APPLY_VALUES ||
     existing.matchUpStatus !== COMPLETED ||
-    request.matchUpStatus !== WALKOVER ||
+    !((request.matchUpStatus === WALKOVER && bareResultRequest(request)) || scoredRetirement) ||
     !request.flags.propagateExitStatus ||
-    !bareResultRequest(request) ||
     !drawDefinition ||
     !inContextDrawMatchUps ||
     (side !== 1 && side !== 2) ||
@@ -115,8 +113,9 @@ export function heldLoserByeClaims({ request, route, view, drawDefinition, direc
     !holdsPosition(held, loserId, targets.loserTargetDrawPosition)
   )
     return false;
-  return (
-    terminalReservationStands({ drawDefinition, inContextDrawMatchUps }, held, source) &&
-    !hasSourceOrigin(inContextDrawMatchUps, source.matchUpId)
-  );
+  if (hasSourceOrigin(inContextDrawMatchUps, source.matchUpId)) return false;
+  const draw = { drawDefinition, inContextDrawMatchUps };
+  return scoredRetirement
+    ? !!targets.loserTargetDrawPosition && consecutiveByeClaims(draw, held, loserId, targets.loserTargetDrawPosition)
+    : terminalReservationStands(draw, held, source);
 }
