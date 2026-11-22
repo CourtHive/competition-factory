@@ -40,6 +40,7 @@ type SetParticipantScaleItemArgs = {
 export function setParticipantScaleItem(params: SetParticipantScaleItemArgs) {
   const { removePriorValues, tournamentRecord, participantId, scaleItem } = params;
   let equivalentValue, participant;
+  let committedValue: ScaleItem['scaleValue'];
 
   if (!scaleItem || !isValidScaleItem({ scaleItem })) return { error: INVALID_SCALE_ITEM };
 
@@ -59,6 +60,7 @@ export function setParticipantScaleItem(params: SetParticipantScaleItemArgs) {
       if (result.error) return result;
 
       equivalentValue = !result.valueChanged;
+      committedValue = result.newValue;
 
       // announced (and so factory-stamped) whether or not anything subscribes, and only when the value changed:
       // gated on the subscription, the stored record depended on who was listening
@@ -77,7 +79,7 @@ export function setParticipantScaleItem(params: SetParticipantScaleItemArgs) {
       info: VALUE_UNCHANGED,
       existingValue: scaleItem?.scaleValue,
     }) ||
-    (participant && { ...SUCCESS, newValue: scaleItem?.scaleValue }) || {
+    (participant && { ...SUCCESS, newValue: committedValue }) || {
       error: PARTICIPANT_NOT_FOUND,
     }
   );
@@ -153,7 +155,8 @@ export function addParticipantScaleItem(params: ScaleItemWriteArgs): ResultType 
   const plan = planParticipantScaleItem(params);
   if ('error' in plan) return plan;
   plan.commit?.();
-  return { ...SUCCESS, valueChanged: plan.valueChanged, newValue: params.scaleItem.scaleValue };
+  const newValue = plan.valueChanged ? params.participant.timeItems?.at(-1)?.itemValue : params.scaleItem.scaleValue;
+  return { ...SUCCESS, valueChanged: plan.valueChanged, newValue };
 }
 
 function planParticipantScaleItem({ removePriorValues, participant, scaleItem }: ScaleItemWriteArgs) {

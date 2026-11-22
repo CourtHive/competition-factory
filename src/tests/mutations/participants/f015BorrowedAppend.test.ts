@@ -92,3 +92,21 @@ it.each([
     expect(items).toEqual([...(existing ? [] : [supplied]), { ...storedItem, itemValue: 2 }]);
   },
 );
+
+it('returns the scale value committed by a borrowed time-item setter', () => {
+  const canonicalItem = itemSchema.clone();
+  canonicalItem.path('itemValue').set((value: number) => Math.round(value));
+  const player = new mongoose.Schema({ participantId: String, timeItems: [canonicalItem] }, { _id: false });
+  const Canonical = mongoose.model(
+    'F015CanonicalScale',
+    new mongoose.Schema({ tournamentId: String, participants: [player] }),
+  );
+  const doc = Canonical.hydrate({ tournamentId: 'T', participants: [{ participantId: 'p', timeItems: [] }] });
+  tournamentEngine.setState(doc, false);
+  const result = tournamentEngine.setParticipantScaleItem({
+    ...params,
+    scaleItem: { ...params.scaleItem, scaleValue: 1.4 },
+  });
+  expect(doc.participants[0].timeItems[0].itemValue).toBe(1);
+  expect(result).toEqual({ success: true, newValue: 1 });
+});
