@@ -1,7 +1,20 @@
+import { tiebreakPointsWarnings } from '@Scoring/analysis/validateScore';
+import {
+  accountsForAssignment,
+  claimAssignment,
+  holdsPosition,
+  winnerClaimEdge,
+  placementPath,
+  type PlacementClaim,
+} from './placementClaims';
+import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { withPendingCarry, type CarrySource } from './pendingCarry';
 import { buildSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import {
   APPLY_VALUES,
+  bareResultRequest,
+  sideDrawPosition,
+  indexed,
   changesWinner,
   linkedWinnerPosition,
   deciderSeats,
@@ -17,8 +30,8 @@ import {
 } from './planShared';
 
 // constants and types
-import type { DirectionPlan, MatchUpWrite, OutcomeView, Route } from '../types';
-import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
+import type { PlanArgs, DirectionPlan, MatchUpWrite, OutcomeView, Route } from '../types';
+import type { MatchUpStatusUnion, SideExitProvenance } from '@Types/tournamentTypes';
 import type { OutcomeOp } from '../ops';
 
 /**
@@ -449,4 +462,132 @@ export function linkedWinnerStamp(view: OutcomeView, placed: OutcomeOp[]): Outco
   return placed.length && id && id !== view.targets.source.structureId
     ? [{ op: 'stampUpdatedAt', entity: 'structure', id }]
     : [];
+}
+
+function placementWrites(path: PlacementClaim[], sourceId?: string): OutcomeOp[] {
+  const ops: OutcomeOp[] = [];
+  for (const step of path) {
+    if (!step.announce) continue;
+    const { match, position, positions, awardedSide } = step;
+    const origin: SideExitProvenance | undefined =
+      awardedSide && positions.length === 1 && sourceId && step === path[0]
+        ? { [awardedSide]: { previousMatchUpStatus: COMPLETED, sourceMatchUpId: sourceId } }
+        : undefined;
+    ops.push(
+      {
+        op: 'setMatchUpDrawPositions',
+        matchUpId: match.matchUpId,
+        drawPositions: positions,
+        placedDrawPosition: position,
+        ...(awardedSide && { awardedSide }),
+        ...(step.codes && { awardedCodes: step.codes }),
+        ...(origin && { placementOrigin: origin }),
+        ...(!awardedSide && !step.added && { preservesWinningSide: true }),
+      },
+      { op: 'stampUpdatedAt', entity: 'matchUp', id: match.matchUpId },
+    );
+  }
+  return ops;
+}
+
+/** The two directed seats and their supported onward placements are one obligation. */
+export function planWinnerArrivals(args: PlanArgs): OutcomeOp[] | undefined {
+  const { request, view, drawDefinition, direction, write } = args;
+  const { targets, inContextDrawMatchUps, existing } = view;
+  const side = request.winningSide;
+  if (
+    args.route !== 'winner' ||
+    !drawDefinition ||
+    !inContextDrawMatchUps ||
+    (side !== 1 && side !== 2) ||
+    write?.matchUpStatus !== COMPLETED ||
+    (request.matchUpStatus && request.matchUpStatus !== COMPLETED) ||
+    !bareResultRequest({ ...request, score: undefined }) ||
+    request.flags.propagatingExit ||
+    tiebreakPointsWarnings(request.score?.sets, existing.matchUpFormat).length ||
+    targets.carryLevels?.bounded ||
+    existing.matchUpStatus !== TO_BE_PLAYED ||
+    existing.winningSide ||
+    existing.scoreHasValue ||
+    existing.hasSideExitProvenance ||
+    existing.carriedExit ||
+    view.draw.tallied ||
+    view.activeDownstream ||
+    view.isTeam ||
+    view.line ||
+    view.group ||
+    view.isDeciderMatchUp ||
+    direction?.decider ||
+    targets.winnerLink ||
+    !direction?.winner ||
+    direction.winner.participantId !== targets.sideParticipantIds[side] ||
+    (targets.reservations?.[side] && targets.reservations[side].kind !== 'none') ||
+    targets.byeTarget
+  )
+    return undefined;
+  const draw = { drawDefinition, inContextDrawMatchUps };
+  const source = indexed(view, request.matchUpId);
+  const w = sideDrawPosition(view, side),
+    l = sideDrawPosition(view, (3 - side) as 1 | 2);
+  const winner = targets.sideParticipantIds[side],
+    loser = targets.sideParticipantIds[(3 - side) as 1 | 2];
+  if (
+    !source ||
+    source.matchUpType !== 'SINGLES' ||
+    !winner ||
+    !loser ||
+    winner === loser ||
+    !w ||
+    !l ||
+    !holdsPosition(source, winner, w) ||
+    !holdsPosition(source, loser, l) ||
+    claimAssignment(draw, source, w)?.participantId !== winner ||
+    claimAssignment(draw, source, l)?.participantId !== loser
+  )
+    return undefined;
+  const edges = winnerClaimEdge(draw, source)?.targetMatchUps;
+  const next = edges?.winnerMatchUp;
+  if (!next || next.matchUpId !== direction.winner.matchUpId || next.structureId !== source.structureId)
+    return undefined;
+  const win = placementPath(draw, next, winner, w, false, source.matchUpId);
+  if (!win) return undefined;
+  const entrant = direction.loser;
+  let loss: PlacementClaim[] = [];
+  if (edges.loserMatchUp || entrant || targets.loserMatchUpId) {
+    const dest = edges.loserMatchUp,
+      pos = edges.loserTargetDrawPosition;
+    if (
+      !dest ||
+      dest.matchUpId !== entrant?.matchUpId ||
+      dest.matchUpId !== source.loserMatchUpId ||
+      dest.structureId === source.structureId ||
+      pos !== targets.loserTargetDrawPosition ||
+      !pos ||
+      !entrant.arrives ||
+      entrant.exit ||
+      entrant.bye ||
+      entrant.converged ||
+      entrant.carriedPast ||
+      entrant.withdrawn ||
+      entrant.retainedCarry ||
+      entrant.participantId !== loser ||
+      !targets.loserTargetSeat?.free ||
+      targets.seededParticipantIds?.includes(loser)
+    )
+      return undefined;
+    const seat = claimAssignment(draw, dest, pos);
+    if (!seat || seat.bye || seat.qualifier || seat.participantId) return undefined;
+    const path = placementPath(draw, dest, loser, pos, true, source.matchUpId, win);
+    if (!path || !accountsForAssignment(draw, path, dest, pos, loser)) return undefined;
+    loss = path;
+  }
+  const protectedCount = [...win, ...loss].filter((step) => step.awardedSide).length;
+  if (!protectedCount || protectedCount > 2) return undefined;
+  const assignment = arrivalOps(view, entrant);
+  return [
+    ...placementWrites(win, source.matchUpId),
+    ...assignment,
+    ...placementWrites(loss),
+    ...arrivalReturnOps(assignment),
+  ];
 }

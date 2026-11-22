@@ -219,6 +219,10 @@ export type OutcomeOp =
        * assignment (`progressExitStatus`: `[]`, nothing carried on this side) and announces the matchUp as the assignment
        */
       rederivesCodes?: true;
+      /** The entrant takes a receiver's supported exit as part of this placement. */
+      awardedSide?: 1 | 2;
+      awardedCodes?: string[];
+      placementOrigin?: SideExitProvenance;
     }
   | {
       op: 'assignPosition';
@@ -784,6 +788,9 @@ function foldMatchUpWrite(
     }
     // the arrival that decides the matchUp by the carried exit beside it: its codes re-derived (`progressExitStatus`)
     if (op.rederivesCodes) matchUp.matchUpStatusCodes = [];
+    if (op.awardedCodes) matchUp.matchUpStatusCodes = [...op.awardedCodes];
+    if (op.placementOrigin) mergeSideExitProvenance({ matchUp, provenance: structuredClone(op.placementOrigin) });
+    if (op.awardedSide) matchUp.winningSide = op.awardedSide;
     // The ordinary arrival writes this own key, observable before its notice reads the caller's clock.
     if (op.advancesThroughBye) matchUp.score = undefined;
     // A plain onward release leaves the result keys alone; its later reset inserts its own undefined winner.
