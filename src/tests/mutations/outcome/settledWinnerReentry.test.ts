@@ -3,13 +3,20 @@ import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState'
 import * as stateWriter from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { expectReturnParity } from '@Tests/testHarness/outcome/returnParity';
 import * as recording from '@Mutate/matchUps/outcome/plan/recordedCall';
+import { positionTargets } from '@Query/matchUp/positionTargets';
+import * as reentry from '@Mutate/matchUps/outcome/plan/settledWinnerReentry';
 import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, expect, it, vi } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import { setClock } from '@Tools/clock';
 
 // constants and types
-import { DOUBLE_ELIMINATION, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import {
+  DOUBLE_ELIMINATION,
+  SINGLE_ELIMINATION,
+  FIRST_MATCH_LOSER_CONSOLATION,
+  FIRST_MATCHUP,
+} from '@Constants/drawDefinitionConstants';
 import { COMPLETED, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
@@ -78,11 +85,13 @@ function compare(call: RecordedCall, native: boolean) {
     const actual = playCall(mode, call);
     if (native && mode === OUTCOME_PIPELINE_V2) expect(writer).not.toHaveBeenCalled();
     expectReturnParity(actual, reference);
+    expect(actual.arrayStack).toBe(reference.arrayStack);
     expect(actual.record).toEqual(reference.record);
     expect(actual.graph).toEqual(reference.graph);
     expect(actual.notices).toEqual(reference.notices);
   }
   expect(recorder.mock.calls.length === 0).toBe(native);
+  return reference;
 }
 
 it.each([DOUBLE_ELIMINATION, SINGLE_ELIMINATION] as const)(
@@ -102,3 +111,61 @@ it('records the re-entry when a stored arrival label needs refreshing', () => {
   entry!.previousMatchUpStatus = WALKOVER;
   compare(call, false);
 });
+
+it.each(['place', 'withdraw'] as const)(
+  'records a landed FIRST_MATCHUP winner when V1 must %s its reservation',
+  (action) => {
+    const drawId = 'reservation';
+    let structureId: string, position: number, pairedId: string;
+    const call = prepareCall(() => {
+      mocksEngine.generateTournamentRecord({
+        drawProfiles: [{ drawId, drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 8 }],
+        setState: true,
+        nonRandom: 1,
+      });
+      const matches = (): HydratedMatchUp[] => tournamentEngine.allDrawMatchUps({ drawId, inContext: true }).matchUps;
+      const main = matches().filter((m) => m.structureName === 'Main' && m.roundNumber === 1);
+      const source = main.find((m) => m.roundPosition === 2)!;
+      pairedId = main.find((m) => m.roundPosition === 1)!.matchUpId;
+      const params = { drawId, matchUpId: source.matchUpId, outcome: { winningSide: 2 }, propagateExitStatus: true };
+      expect(
+        tournamentEngine.setMatchUpStatus({
+          ...params,
+          matchUpId: pairedId,
+          outcome: { matchUpStatus: WALKOVER, winningSide: 1 },
+        }).success,
+      ).toBe(true);
+      expect(tournamentEngine.setMatchUpStatus(params).success).toBe(true);
+      const inContextDrawMatchUps = matches();
+      const holder = inContextDrawMatchUps.find((m) => m.matchUpId === source.winnerMatchUpId)!;
+      expect(holder.drawPositions?.filter(Boolean)).toHaveLength(2);
+      const drawDefinition = tournamentEngine.getTournament().tournamentRecord.events![0].drawDefinitions![0];
+      const next = positionTargets({ drawDefinition, inContextDrawMatchUps, matchUpId: holder.matchUpId });
+      expect(next.targetLinks?.loserTargetLink?.linkCondition).toBe(FIRST_MATCHUP);
+      structureId = next.targetMatchUps!.loserMatchUp!.structureId!;
+      position = next.targetMatchUps!.loserTargetDrawPosition!;
+      return params;
+    });
+    const structures = call.prepared.events![0].drawDefinitions![0].structures!;
+    const seat = structures
+      .find((s) => s.structureId === structureId)!
+      .positionAssignments!.find((a) => a.drawPosition === position)!;
+    expect(seat.bye).toBeFalsy();
+    if (action === 'place') {
+      // A stored scored feeder beside the source now earns the reservation, but its seat is still empty.
+      structures.flatMap((s) => s.matchUps ?? []).find((m) => m.matchUpId === pairedId)!.matchUpStatus = COMPLETED;
+    } else {
+      seat.bye = true;
+      seat.byeFromPropagation = true;
+    }
+    const admission = vi.spyOn(reentry, 'settledWinnerReentry');
+    const reference = compare(call, false);
+    expect(admission).toHaveReturnedWith(false);
+    const after = JSON.parse(reference.record).events[0].drawDefinitions[0].structures.find(
+      (s) => s.structureId === structureId,
+    );
+    const resultingSeat = after.positionAssignments.find((a) => a.drawPosition === position);
+    expect(!!resultingSeat?.bye).toBe(action === 'place');
+    expect(!!resultingSeat?.byeFromPropagation).toBe(action === 'place');
+  },
+);

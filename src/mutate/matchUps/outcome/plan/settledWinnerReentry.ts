@@ -1,6 +1,7 @@
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { bareResultRequest, indexed, sideDrawPosition } from './planShared';
 import { positionTargets, type PositionTargets } from '@Query/matchUp/positionTargets';
+import { firstRoundFeedersWon } from '@Query/matchUp/firstRoundFeedersWon';
 import { isDoubleExit } from '@Validators/isExit';
 
 // constants and types
@@ -9,7 +10,7 @@ import { FIRST_MATCHUP, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { TEAM } from '@Constants/matchUpTypes';
 import type { PlanArgs } from '../types';
 import type { HydratedMatchUp } from '@Types/hydrated';
-import type { DrawDefinition } from '@Types/tournamentTypes';
+import type { DrawDefinition, Structure } from '@Types/tournamentTypes';
 
 /** On a completed re-entry directLoser leaves a seated loser alone unless this source has a carry to withdraw. */
 function loserStands({ view, direction }: PlanArgs): boolean {
@@ -29,14 +30,13 @@ function loserStands({ view, direction }: PlanArgs): boolean {
 }
 
 /** An awarded exit or propagated BYE can still owe its connected loser seat a BYE (propagateUnfillableLoserBye). */
-function loserSeatSettled(drawDefinition: DrawDefinition, next: PositionTargets): boolean {
+function landedLoserSeat(drawDefinition: DrawDefinition, next: PositionTargets) {
   const { loserMatchUp, loserTargetDrawPosition } = next.targetMatchUps;
-  if (!loserMatchUp || !next.targetLinks.loserTargetLink) return true;
-  const seat = getPositionAssignments({
+  if (!loserMatchUp || !loserTargetDrawPosition) return undefined;
+  return getPositionAssignments({
     drawDefinition,
     structureId: loserMatchUp.structureId,
   }).positionAssignments?.find((assignment) => assignment.drawPosition === loserTargetDrawPosition);
-  return !!(seat?.participantId || seat?.bye);
 }
 
 type WinnerPath = {
@@ -44,8 +44,19 @@ type WinnerPath = {
   matches: HydratedMatchUp[];
   participantId: string;
   position: number;
-  firstReservationSettled: boolean;
+  structure: Structure;
 };
+
+/** On a landed position V1 re-asks propagateConsolationBye on the stored feeder results and actual fed seat. */
+function reservationStands(path: WinnerPath, positions: number[], next: PositionTargets): boolean {
+  if (next.targetLinks.loserTargetLink?.linkCondition !== FIRST_MATCHUP) return true;
+  if (positions.filter(Boolean).length !== 2) return true;
+  const seat = landedLoserSeat(path.drawDefinition, next);
+  if (!seat || !path.structure.matchUps || new Set(positions.filter(Boolean)).size !== 2) return false;
+  const won = firstRoundFeedersWon({ matchUps: path.structure.matchUps, drawPositions: positions });
+  // assignDrawPositionBye returns immediately on a BYE; the withdrawal clears only a marked BYE.
+  return won ? !!seat.bye : !(seat.bye && seat.byeFromPropagation);
+}
 
 /** Follow only an already occupied same-structure winner position, strictly forward in round order. */
 function winnerPathSettled(path: WinnerPath, first: HydratedMatchUp, source: HydratedMatchUp): boolean {
@@ -64,7 +75,10 @@ function winnerPathSettled(path: WinnerPath, first: HydratedMatchUp, source: Hyd
     const side = holder.sides?.find(
       (candidate) => candidate.participantId === participantId && candidate.drawPosition === position,
     );
-    if (!side || !holder.drawPositions?.includes(position)) return false;
+    const holderId = holder.matchUpId;
+    const stored = path.structure.matchUps?.find((m) => m.matchUpId === holderId);
+    if (!side || !stored?.drawPositions?.includes(position) || stored.matchUpStatus !== holder.matchUpStatus)
+      return false;
     const next = positionTargets({
       drawDefinition,
       inContextDrawMatchUps: matches,
@@ -75,14 +89,8 @@ function winnerPathSettled(path: WinnerPath, first: HydratedMatchUp, source: Hyd
     if (next.error) return false;
     if (holder.matchUpStatus === TO_BE_PLAYED) {
       // Only an open target can reserve a FIRST_MATCHUP seat; a paired double exit can advance it again.
-      const holderId = holder.matchUpId;
-      if (
-        next.targetLinks.loserTargetLink?.linkCondition === FIRST_MATCHUP &&
-        holder.drawPositions.filter(Boolean).length === 2 &&
-        !(holder === first && path.firstReservationSettled)
-      )
-        return false;
       return (
+        reservationStands(path, stored.drawPositions, next) &&
         !holder.winningSide &&
         !holder.sideExitProvenance &&
         !holder.sides?.some((s) => s.bye) &&
@@ -98,7 +106,11 @@ function winnerPathSettled(path: WinnerPath, first: HydratedMatchUp, source: Hyd
     const award =
       (holder.matchUpStatus === WALKOVER || holder.matchUpStatus === DEFAULTED) &&
       holder.winningSide === side.sideNumber;
-    if ((!bye && !award) || !loserSeatSettled(drawDefinition, next)) return false;
+    if (!bye && !award) return false;
+    if (next.targetMatchUps.loserMatchUp && next.targetLinks.loserTargetLink) {
+      const seat = landedLoserSeat(drawDefinition, next);
+      if (!seat?.participantId && !seat?.bye) return false;
+    }
     // The qualified repeats cross at most one relay. A second onward placement needs its own proof.
     if (next.targetMatchUps.winnerMatchUp && (holder !== first || next.targetLinks.winnerTargetLink)) return false;
     previousRound = holder.roundNumber;
@@ -156,12 +168,11 @@ export function settledWinnerReentry(args: PlanArgs): boolean {
   const participantId = targets.sideParticipantIds[side];
   const position = sideDrawPosition(view, side);
   if (!participantId || !position || !source.drawPositions?.includes(position)) return false;
+  const assignment = getPositionAssignments({ structure }).positionAssignments?.find(
+    (a) => a.drawPosition === position,
+  );
+  if (assignment?.participantId !== participantId || assignment.bye) return false;
   const first = indexed(view, targets.winnerMatchUpId);
   if (!first) return !targets.winnerMatchUpId && !args.direction?.winner;
-  const firstReservationSettled = targets.reservations?.[side]?.kind === 'none';
-  return winnerPathSettled(
-    { drawDefinition, matches, participantId, position, firstReservationSettled },
-    first,
-    source,
-  );
+  return winnerPathSettled({ drawDefinition, matches, participantId, position, structure }, first, source);
 }
