@@ -339,7 +339,16 @@ export function assignMatchUpDrawPosition({
    * `verify:stall-budget`: **89 -> 68 cells, 176 -> 141 findings.** The 35 that closed are every
    * stall in the matrix that carried a single exit status.
    */
-  const resolvesPendingExit = !positionAdded && participantArrivesAtExit && slotFilledByParticipant;
+  // A correction can replace the team at a seat that has already played this dual. A director's
+  // recorded award stays with its seat (P52). Only an actual pending exit is resolved on arrival.
+  const replacesTeamAtRecordedExit =
+    matchUp?.matchUpType === TEAM &&
+    !!matchUp.winningSide &&
+    !!previousSideParticipantId &&
+    inContextMatchUp?.sides?.filter((side) => side.participantId).length === 2 &&
+    !sharedIsPropagatedExit({ matchUp });
+  const resolvesPendingExit =
+    !positionAdded && participantArrivesAtExit && slotFilledByParticipant && !replacesTeamAtRecordedExit;
 
   if (matchUp && (positionAdded || resolvesPendingExit)) {
     applyPositionToMatchUp({
