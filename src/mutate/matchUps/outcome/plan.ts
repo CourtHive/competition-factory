@@ -1,3 +1,4 @@
+import { relabelKeepsReservation } from './plan/standingReservation';
 import { heldLoserByeClaims } from './plan/heldLoserBye';
 import { clearedSingleExit, correctedSingleExit, refreshedArrivalOps, relabelledExit } from './plan/exitCorrections';
 import { getCapturedClock, getCapturedStamps, writeLegacyEnabled } from '@Global/state/globalState';
@@ -850,7 +851,8 @@ function ownResultOps(args: PlanArgs, write: MatchUpWrite, matchUpId: string) {
     returnsQualifierRemoved(args),
   );
   const result = ops[0];
-  if (result.op === 'setMatchUpResult' && heldLoserByeClaims(args)) result.keepsLoserClaim = true;
+  if (result.op === 'setMatchUpResult' && (heldLoserByeClaims(args) || relabelKeepsReservation(args)))
+    result.keepsLoserClaim = true;
   return ops;
 }
 

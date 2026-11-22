@@ -1,13 +1,7 @@
-import {
-  expectPlayedParity,
-  playCall,
-  prepareCall,
-  type RecordedCall,
-} from '@Tests/testHarness/outcome/recordedCallHarness';
+import { compareHeldClaims } from '@Tests/testHarness/outcome/compareHeldClaims';
+import { prepareCall } from '@Tests/testHarness/outcome/recordedCallHarness';
 import { replayStalls } from '@Tests/testHarness/exitPropagation/stallCount';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
-import * as stateWriter from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
-import * as recording from '@Mutate/matchUps/outcome/plan/recordedCall';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { afterEach, expect, it, vi } from 'vitest';
 import engine from '@Engines/syncEngine';
@@ -61,22 +55,6 @@ function consolationOf(record: Tournament) {
   return record.events![0].drawDefinitions![0].structures!.find((s) => s.structureName === 'Consolation')!;
 }
 
-function compare(call: RecordedCall, native: boolean) {
-  const reference = playCall('v1', call);
-  expect(reference.result.success).toBe(true);
-  const recorder = vi.spyOn(recording, 'recordWholeCall');
-  if (native) recorder.mockReturnValue(undefined);
-  const writer = vi.spyOn(stateWriter, 'setMatchUpState');
-  for (const mode of ['v2', 'differential'] as const) {
-    recorder.mockClear();
-    const actual = playCall(mode, call);
-    expectPlayedParity(actual, reference);
-    if (native && mode === 'v2') expect(writer).not.toHaveBeenCalled();
-    expect(recorder.mock.calls.length === 0).toBe(native);
-  }
-  return JSON.parse(reference.record) as Tournament;
-}
-
 it.each([
   [20460202, 25, true, true],
   [20486698, 26, true, false],
@@ -85,7 +63,7 @@ it.each([
   'keeps the marked first-match reservation and the opposing seat for %i',
   (seed, step, allowChangePropagation, propagateExitStatus) => {
     const call = correction(seed, step, allowChangePropagation, propagateExitStatus);
-    const after = compare(call, true);
+    const after = compareHeldClaims(call, true);
     expect(consolationOf(after)).toEqual(consolationOf(call.prepared));
     const main = after.events![0].drawDefinitions![0].structures!.find((s) => s.structureName === 'Main')!;
     expect(matchUpsOf(main)!.find((m) => m.matchUpId === call.params.matchUpId)?.matchUpStatus).toBe(WALKOVER);
@@ -97,7 +75,7 @@ it('refreshes a source-owned arrival beyond the marked reservation', () => {
   const next = matchUpsOf(consolationOf(call.prepared))!.find((m) => m.roundNumber === 3)!;
   const sourceId = call.params.matchUpId as string;
   next.sideExitProvenance = { 1: { sourceMatchUpId: sourceId, previousMatchUpStatus: COMPLETED } };
-  const after = compare(call, false);
+  const after = compareHeldClaims(call, false);
   const receiver = matchUpsOf(consolationOf(after))!.find((m) => m.matchUpId === next.matchUpId)!;
   expect(receiver.sideExitProvenance?.[1]).toEqual({ sourceMatchUpId: sourceId, previousMatchUpStatus: WALKOVER });
 });
@@ -107,7 +85,7 @@ it('leaves a pre-existing unmarked consolation BYE in its original form', () => 
   const seat = consolationOf(call.prepared).positionAssignments!.find((a) => a.drawPosition === 1)!;
   expect(seat.byeFromPropagation).toBe(true);
   delete seat.byeFromPropagation;
-  const after = compare(call, false);
+  const after = compareHeldClaims(call, false);
   expect(consolationOf(after)).toEqual(consolationOf(call.prepared));
 });
 
@@ -126,7 +104,7 @@ it('re-evaluates the feed when the losing participant occupies the reserved posi
   delete seat.byeFromPropagation;
   seat.participantId = loser.participantId;
   home.matchUpStatus = TO_BE_PLAYED;
-  const after = consolationOf(compare(call, false));
+  const after = consolationOf(compareHeldClaims(call, false));
   const linked = matchUpsOf(after)!.find((m) => m.matchUpId === home.matchUpId)!;
   expect(linked).toMatchObject({
     matchUpStatus: WALKOVER,
