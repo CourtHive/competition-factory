@@ -1,3 +1,4 @@
+import { declaredWinnerPlayedOn } from '@Mutate/matchUps/matchUpStatus/lineTakesPlayedOnDualWinner';
 import { feedEligibilityChange, lineFeedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { scheduleRefusal as scheduleWriteRefusal } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
@@ -1972,6 +1973,8 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         propagateExitStatus: request.flags.propagateExitStatus,
         matchUpStatus: request.matchUpStatus,
         winningSide: dualProjection ? dualProjection.projectedWinningSide : request.winningSide,
+        projectedWinningSide: line?.projectedWinningSide,
+        autoCalcDisabled: line?.autoCalcDisabled,
         inContextDrawMatchUps,
         tournamentRecord,
         inContextMatchUp,
@@ -1983,6 +1986,17 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       },
       activeDownstream,
     }),
+    declaredWinnerPlayedOn:
+      line &&
+      !line.dualLineDecided &&
+      declaredWinnerPlayedOn(
+        line.dualWinningSide,
+        line.projectedWinningSide,
+        activeDownstream,
+        targetData,
+        drawDefinition,
+        inContextDrawMatchUps,
+      ),
     line,
     dualProjection,
     targets: {

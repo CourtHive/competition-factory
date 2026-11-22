@@ -78,6 +78,8 @@ export type HeldSeatParams = {
   readonly propagateExitStatus?: boolean;
   readonly matchUpStatus?: MatchUpStatusUnion;
   readonly tournamentRecord?: Tournament;
+  readonly projectedWinningSide?: number;
+  readonly autoCalcDisabled?: boolean;
   readonly winningSide?: number;
   readonly event?: Event;
 };
@@ -94,7 +96,8 @@ export function heldSeatRefusal({
   const { matchUp, structure, drawDefinition, targetData, winningSide, inContextMatchUp } = params;
   if (!drawDefinition || !structure || !targetData?.targetMatchUps) return undefined;
   if (winningSide !== 1 && winningSide !== 2) return undefined;
-  if (!matchUp.drawPositions || matchUp.collectionId || isAdHoc({ structure })) return undefined;
+  if (matchUp.collectionId) return activeDownstream ? undefined : handoverLoserAssignment(params);
+  if (!matchUp.drawPositions || isAdHoc({ structure })) return undefined;
   // An undecided dual awarded a winner directs both sides, through the same placements as singles.
   if (matchUp.winningSide && (matchUp.tieMatchUps || isMatchUpEventType(TEAM)(matchUp.matchUpType))) return undefined;
   if (isLuckyBasedDraw(drawDefinition.drawType)) return undefined;
@@ -132,6 +135,53 @@ export function heldSeatRefusal({
       structure,
     })
   );
+}
+
+/** A line can reverse its dual's declared winner. Removing the previous direction frees
+ * the old loser's assignment. It does not free the new loser's seat elsewhere in the backdraw. */
+function handoverLoserAssignment(params: HeldSeatParams): HeldSeat | undefined {
+  const { projectedWinningSide, autoCalcDisabled, targetData, drawDefinition, event, tournamentRecord } = params;
+  const dual = targetData?.matchUp;
+  if (autoCalcDisabled || !dual?.winningSide || !projectedWinningSide || projectedWinningSide === dual.winningSide)
+    return undefined;
+
+  const target = targetData?.targetMatchUps?.loserMatchUp;
+  const link = targetData?.targetLinks?.loserTargetLink;
+  if (!drawDefinition || !target || !link || target.structureId === dual.structureId) return undefined;
+  if (link.linkCondition === FIRST_MATCHUP && target.roundNumber === 2) return undefined;
+  if (target.matchUpId === targetData?.targetMatchUps?.winnerMatchUp?.matchUpId) return undefined;
+  const participant = (side: number) => dual.sides?.find((s) => s.sideNumber === side)?.participantId;
+  const loserId = participant(dual.winningSide);
+  if (!loserId) return undefined;
+  const assignments =
+    structureAssignedDrawPositions({ drawDefinition, structureId: target.structureId }).positionAssignments ?? [];
+  const standing = assignments.find((seat) => seat.participantId === loserId);
+  const positions = target.drawPositions ?? [];
+  if (!standing || positions.includes(standing.drawPosition)) return undefined;
+
+  const removed = participant(projectedWinningSide);
+  const available = assignments
+    .filter(
+      (seat) =>
+        positions.includes(seat.drawPosition) &&
+        ((!!removed && seat.participantId === removed) ||
+          (!seat.participantId && !seat.bye && !seat.qualifier) ||
+          (seat.bye && seat.byeFromPropagation)),
+    )
+    .map((seat) => seat.drawPosition);
+  const directed = targetData?.targetMatchUps?.loserTargetDrawPosition;
+  const destination =
+    target.roundNumber === 1 && directed && available.includes(directed) ? directed : Math.min(...available);
+  if (!Number.isFinite(destination)) return undefined;
+  const refusal = drawPositionAssignmentRefusal({
+    drawDefinition,
+    tournamentRecord,
+    event,
+    structureId: target.structureId,
+    participantId: loserId,
+    drawPosition: destination,
+  });
+  return refusal?.error ? { error: refusal.error as ErrorType, context: { drawPosition: destination } } : undefined;
 }
 
 function heldWinnerSeat({

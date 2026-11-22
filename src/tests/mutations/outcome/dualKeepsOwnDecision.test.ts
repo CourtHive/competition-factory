@@ -92,6 +92,19 @@ describe('a dual decided by its own exit or call keeps its winner while its line
     expectKept(A, final, WALKOVER);
   });
 
+  it.each(MODES)('%s: preserves a one-seat default recorded against the declared winner', (mode) => {
+    const { A, final, lines, begin } = setup(mode);
+    expect(set(A.matchUpId, { winningSide: 1 }).success).toBe(true);
+    expect(set(final.matchUpId, { matchUpStatus: DEFAULTED, winningSide: 2 }).success).toBe(true);
+    expect(set(lines[1].matchUpId, lineOutcome(lines[1], 2)).success).toBe(true);
+    begin();
+    const before = JSON.stringify(tournamentEngine.getTournament());
+    expect(set(lines[2].matchUpId, { matchUpStatus: WALKOVER, winningSide: 2 }).error).toEqual(
+      CANNOT_CHANGE_WINNING_SIDE,
+    );
+    expect(JSON.stringify(tournamentEngine.getTournament())).toBe(before);
+  });
+
   it.each(MODES)('%s: a line of a dual decided by its own call, its winner played on', (mode) => {
     const { A, final, lines, decideRest, begin } = setup(mode);
     expect(set(lines[0].matchUpId, lineOutcome(lines[0], 1)).success).toEqual(true);
