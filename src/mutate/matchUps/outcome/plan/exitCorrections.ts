@@ -1,3 +1,4 @@
+import { relabelKeepsReservation } from './standingReservation';
 import { heldByeCarryCorrectionOps, relabelCarryReason, withdrawnReason } from './carriedExit';
 import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
@@ -116,7 +117,8 @@ export function relabelledExit(args: ExitReasonArgs): boolean {
   const loser = direction?.loser;
   // no link: the write alone
   if (!loser) return true;
-  if (loser.carriedPast || loser.converged || loser.bye || !loser.arrives) return false;
+  if (loser.bye) return relabelKeepsReservation(args);
+  if (loser.carriedPast || loser.converged || !loser.arrives) return false;
   if (loser.exit) return !relabelCarryReason(view, write);
   if (loser.withdrawn)
     return (
