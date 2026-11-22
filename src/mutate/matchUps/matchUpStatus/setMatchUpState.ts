@@ -1050,7 +1050,7 @@ function handleTeamAutoCalc({
     const existingDualMatchUpWinningSide = matchUp.winningSide;
 
     const {
-      winningSide: projectedWinningSide,
+      winningSide: lineWinner,
       scoreStringSide1,
       scoreStringSide2,
       set,
@@ -1062,11 +1062,16 @@ function handleTeamAutoCalc({
       event,
     });
 
-    const score = {
-      scoreStringSide1,
-      scoreStringSide2,
-      sets: set ? [set] : [],
-    };
+    // An explicit double exit withdraws both teams regardless of the line tally.
+    const doubleExit = isDoubleExit(params.matchUpStatus);
+    const projectedWinningSide = doubleExit ? undefined : lineWinner;
+    const score = doubleExit
+      ? params.score
+      : {
+          scoreStringSide1,
+          scoreStringSide2,
+          sets: set ? [set] : [],
+        };
 
     dualWinningSideChange = projectedWinningSide !== existingDualMatchUpWinningSide;
 

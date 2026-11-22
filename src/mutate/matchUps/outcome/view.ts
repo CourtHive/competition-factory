@@ -1886,10 +1886,11 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       structure,
       event,
     });
+    const doubleExit = isDoubleExit(request.matchUpStatus);
     dualProjection = {
-      projectedWinningSide: winningSide,
+      projectedWinningSide: doubleExit ? undefined : winningSide,
       // the score v1 writes in place of the call's: `handleTeamAutoCalc` builds it from the same projection
-      score: { scoreStringSide1, scoreStringSide2, sets: set ? [set] : [] },
+      score: doubleExit ? request.score : { scoreStringSide1, scoreStringSide2, sets: set ? [set] : [] },
     };
   }
 
