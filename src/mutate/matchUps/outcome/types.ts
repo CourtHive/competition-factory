@@ -165,6 +165,7 @@ export type OutcomeView = {
   heldSeat?: { error: ErrorType; context: Record<string, unknown> };
   /** a line of a dual: what the dual projects once this line is written */
   line?: {
+    projectsByeWinner?: boolean;
     dualMatchUpId: string;
     dualMatchUpStatus?: MatchUpStatusUnion;
     dualWinningSide?: number;
