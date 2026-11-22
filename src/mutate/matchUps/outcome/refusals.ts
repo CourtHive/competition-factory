@@ -28,6 +28,7 @@ import {
   MATCHUP_NOT_FOUND,
   MATCHUP_STATUS_OUT_OF_SCOPE,
   MISSING_DRAW_DEFINITION,
+  MISSING_ASSIGNMENTS,
   MISSING_DRAW_POSITIONS,
   MISSING_MATCHUP_ID,
   NO_VALID_ACTIONS,
@@ -408,6 +409,7 @@ export function refuseOutcome(request: OutcomeRequest, view: OutcomeView): Refus
     (view.missingDrawPositions ? refuse(24, MISSING_DRAW_POSITIONS) : undefined) ??
     (view.heldSeat ? refuse(31, view.heldSeat.error, { context: view.heldSeat.context }) : undefined) ??
     refuseDispatch(request, view) ??
-    refuseRoute(request, view)
+    refuseRoute(request, view) ??
+    (view.dualProjection?.missingTeams ? refuse(32, MISSING_ASSIGNMENTS) : undefined)
   );
 }
