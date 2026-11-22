@@ -851,7 +851,11 @@ function ownResultOps(args: PlanArgs, write: MatchUpWrite, matchUpId: string) {
     returnsQualifierRemoved(args),
   );
   const result = ops[0];
-  if (result.op === 'setMatchUpResult' && (heldLoserByeClaims(args) || relabelKeepsReservation(args)))
+  if (
+    result.op === 'setMatchUpResult' &&
+    propagatesSingleExit(request) &&
+    (heldLoserByeClaims(args) || relabelKeepsReservation(args))
+  )
     result.keepsLoserClaim = true;
   return ops;
 }

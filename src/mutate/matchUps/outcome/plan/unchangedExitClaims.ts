@@ -1,7 +1,6 @@
-import { hasSourceOrigin, holdsPosition } from './placementClaims';
+import { claimEdges, hasSourceOrigin, holdsPosition } from './placementClaims';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { heldLinkedWalkover } from './heldLinkedWalkovers';
-import { positionTargets } from '@Query/matchUp/positionTargets';
 import { APPLY_VALUES, bareResultRequest, indexed, sideDrawPosition } from './planShared';
 
 // constants and types
@@ -11,14 +10,11 @@ import type { HydratedMatchUp } from '@Types/hydrated';
 
 // A BYE carries the occupied side's claim to the next round of its own structure.
 function nextWinnerSeat(args: ExitReasonArgs, source: HydratedMatchUp) {
-  if (!args.drawDefinition || !source.roundNumber) return undefined;
-  const next = positionTargets({
-    drawDefinition: args.drawDefinition,
-    inContextDrawMatchUps: args.view.inContextDrawMatchUps,
-    matchUpId: source.matchUpId,
-    inContextMatchUp: source,
-    asReferences: true,
-  });
+  if (!args.drawDefinition || !args.view.inContextDrawMatchUps || !source.roundNumber) return undefined;
+  const next = claimEdges(
+    { drawDefinition: args.drawDefinition, inContextDrawMatchUps: args.view.inContextDrawMatchUps },
+    source,
+  );
   const target = next.targetMatchUps?.winnerMatchUp;
   if (
     !target ||

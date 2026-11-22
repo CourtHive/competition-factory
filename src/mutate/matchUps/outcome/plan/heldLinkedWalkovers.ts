@@ -1,7 +1,6 @@
 import { feederSendsNobody } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { positionTargets } from '@Query/matchUp/positionTargets';
-import { hasSourceOrigin, holdsPosition } from './placementClaims';
+import { claimEdges, hasSourceOrigin, holdsPosition } from './placementClaims';
 import { producedTarget } from './producedTarget';
 import { indexed } from './planShared';
 
@@ -22,14 +21,11 @@ const pending = (match?: HydratedMatchUp) =>
   match?.matchUpStatus === TO_BE_PLAYED && !match.winningSide && !match.sideExitProvenance;
 
 function targetsOf(args: ExitReasonArgs, match: HydratedMatchUp) {
-  if (!args.drawDefinition) return undefined;
-  return positionTargets({
-    drawDefinition: args.drawDefinition,
-    inContextDrawMatchUps: args.view.inContextDrawMatchUps,
-    matchUpId: match.matchUpId,
-    inContextMatchUp: match,
-    asReferences: true,
-  });
+  if (!args.drawDefinition || !args.view.inContextDrawMatchUps) return undefined;
+  return claimEdges(
+    { drawDefinition: args.drawDefinition, inContextDrawMatchUps: args.view.inContextDrawMatchUps },
+    match,
+  );
 }
 
 function standingFedBye(args: ExitReasonArgs, match: HydratedMatchUp, seat?: HydratedSide) {

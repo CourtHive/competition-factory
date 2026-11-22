@@ -1,18 +1,10 @@
 import { feederSendsNobody } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { positionTargets } from '@Query/matchUp/positionTargets';
-import { holdsPosition } from './placementClaims';
+import { claimEdges, holdsPosition, type ClaimDraw } from './placementClaims';
 
 // constants and types
 import { BYE, COMPLETED, DEFAULTED, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import type { DrawDefinition } from '@Types/tournamentTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
-
-export type ClaimDraw = { drawDefinition: DrawDefinition; inContextDrawMatchUps: HydratedMatchUp[] };
-
-export function claimEdges(draw: ClaimDraw, matchUp: HydratedMatchUp) {
-  return positionTargets({ ...draw, matchUpId: matchUp.matchUpId, inContextMatchUp: matchUp, asReferences: true });
-}
 
 /** Only advance on the stored and derived winner edge. A separate loser or BYE feed is another obligation. */
 function winnerEdge(draw: ClaimDraw, matchUp: HydratedMatchUp) {

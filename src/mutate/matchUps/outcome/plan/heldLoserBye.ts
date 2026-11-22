@@ -1,11 +1,6 @@
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { hasSourceOrigin, holdsPosition } from './placementClaims';
-import {
-  awardProtectedByPlay,
-  claimEdges as edges,
-  consecutiveByeClaims,
-  type ClaimDraw as Draw,
-} from './byeAwardClaims';
+import { claimEdges as edges, hasSourceOrigin, holdsPosition, type ClaimDraw as Draw } from './placementClaims';
+import { awardProtectedByPlay, consecutiveByeClaims } from './byeAwardClaims';
 import { APPLY_VALUES, bareResultRequest, indexed, sideDrawPosition, storedLoserId } from './planShared';
 
 // constants and types
