@@ -2315,7 +2315,6 @@ function dualRewrite({
     // ensureSideLineUps writes even value-equal sides: own undefined keys and its notice remain observable.
     ...(sides ? { sides } : {}),
     ...(same(tieFormat, stored.tieFormat) ? {} : { tieFormat }),
-    sidesAsHeld: sides ?? stored.sides,
     sidesInContext: dualMatchUp.sides,
     scoreReported,
   };

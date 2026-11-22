@@ -235,7 +235,7 @@ export const dualTallyOps = (line?: OutcomeView['line'], route?: Route): Outcome
 
 /**
  * The winning team's line-up on its side of the next dual, as v1's `propagateLineUp` carries it: the line-up the decided
- * dual's winning side holds (once its line has been written and its sides ensured), without substitutions
+ * dual's winning side holds (before the tally ensures the source sides), without substitutions
  * (`removeLineUpSubstitutions`, which regroups each player's assignments), on the side v1 reckons by roundPosition
  * (draw-positions.md rule 4: a feed round's advancing team, or one advanced by position, is side 2). No next dual (a
  * final) or no line-up held, nothing.
@@ -251,7 +251,7 @@ export function lineUpCarry({
 }) {
   const next = dual.direction?.winner?.matchUpId;
   if (!next) return undefined;
-  const sides = line.dualRewrite.sidesAsHeld as { sideNumber?: number; lineUp?: LineUp }[] | undefined;
+  const sides = line.dualRewrite.sidesInContext as { sideNumber?: number; lineUp?: LineUp }[] | undefined;
   const held = sides?.find((side) => side.sideNumber === winningSide)?.lineUp;
   if (!held) return undefined;
   const inContext = dual.view.inContextDrawMatchUps;
@@ -263,6 +263,48 @@ export function lineUpCarry({
   const sideNumber = target.feedRound || advancedByPosition ? 2 : 1;
   const lineUp = removeLineUpSubstitutions({ lineUp: held.filter((assignment) => assignment?.participantId) });
   return { op: 'setSideLineUp' as const, matchUpId: next, sideNumber, lineUp, announcedAs: 'directWinner' as const };
+}
+
+/** Assignment unwinds from a BYE to the immediate recipient. Only a seat identified on entry gets the draw's line-up. */
+export function winnerAssignmentLineUps(
+  dual: DualCall,
+  drawDefinition: DrawDefinition,
+  winningSide: 1 | 2,
+): OutcomeOp[] {
+  const winner = dual.direction?.winner;
+  if (!winner?.participantId) return [];
+  const matches = dual.view.inContextDrawMatchUps;
+  const source = matches?.find((matchUp) => matchUp.matchUpId === dual.request.matchUpId);
+  const position = source?.sides?.find((side) => side.sideNumber === winningSide)?.drawPosition;
+  if (!position) return [];
+  const through = dual.view.targets.winner?.hasBye && dual.view.targets.winnerThroughBye?.[winningSide];
+  const targets = through ? [through.matchUpId, winner.matchUpId] : [winner.matchUpId];
+  return targets.flatMap((matchUpId) => {
+    const target = matches?.find((matchUp) => matchUp.matchUpId === matchUpId);
+    return target?.structureId === source?.structureId
+      ? seatedLineUp(drawDefinition, target, position, winner.participantId)
+      : [];
+  });
+}
+
+function seatedLineUp(
+  drawDefinition: DrawDefinition,
+  target: HydratedMatchUp | undefined,
+  position: number,
+  participantId: string,
+): OutcomeOp[] {
+  const sideNumber = target?.sides?.find((side) => side.drawPosition === position)?.sideNumber;
+  if (!target || !sideNumber) return [];
+  const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }) ?? {};
+  return [
+    {
+      op: 'setSideLineUp',
+      matchUpId: target.matchUpId,
+      sideNumber,
+      lineUp: lineUps[participantId],
+      announcedAs: 'updateSidLineUp',
+    },
+  ];
 }
 
 /**
@@ -374,7 +416,12 @@ function assignedLineUpOps(
   )
     return false;
   const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }) ?? {};
-  const ops: OutcomeOp[] = [];
+  // A standing award can send the loser onward before the initial assignment returns.
+  const onward = awarded?.onward && indexed(view, awarded.onward.matchUpId);
+  const ops =
+    onward && loserTargetDrawPosition
+      ? seatedLineUp(drawDefinition, onward, loserTargetDrawPosition, participantId)
+      : [];
   // Carried passages keep their established order; a plain arrival returns from the furthest dual first (C20).
   const passed = loserByePassage?.byes ?? [];
   const reached = plainPassage

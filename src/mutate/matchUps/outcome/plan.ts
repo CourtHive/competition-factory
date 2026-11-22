@@ -55,6 +55,7 @@ import {
   dualTallyOps,
   lineExitReason,
   lineUpCarry,
+  winnerAssignmentLineUps,
   deciderLineUpOps,
   loserLineUpBeyond,
   removedByeLineUpOps,
@@ -645,9 +646,12 @@ function decidingLineOps(args: PlanArgs & { dual: DualCall; drawDefinition: Draw
   const placement = ops.findIndex(
     (op) => op.op === 'setMatchUpDrawPositions' && op.matchUpId === dual.direction?.winner?.matchUpId,
   );
-  if (carry) {
-    const at = placement < 0 ? ops.length : Math.max(carriedAfter(ops, placement, dual), reservedAfter(ops, dual));
-    ops.splice(at, 0, carry);
+  const assignments = winnerAssignmentLineUps(dual, drawDefinition, winningSide);
+  if (carry || assignments.length) {
+    const afterPlacement = placement < 0 ? ops.length : carriedAfter(ops, placement, dual);
+    // The carry follows the assignment and any reservation it made.
+    if (carry) ops.splice(Math.max(afterPlacement, reservedAfter(ops, dual)), 0, carry);
+    ops.splice(afterPlacement, 0, ...assignments);
   }
   // the dual the loser lands in, otherwise untouched (the arrival is written on its structure's assignments), is stamped
   // by the carry's notice
