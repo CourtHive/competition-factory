@@ -204,29 +204,25 @@ function planParticipantScaleItem(
   // Borrowed participants can share a time-item array. A later plan must see
   // preceding proposed values when deciding whether a second append is needed.
   const pending = existing && appends?.get(existing);
-  const { scaleItem: existingScaleItem } = participantScaleItem({
-    scaleAttributes: scaleItem,
-    participant:
-      existing && pending
-        ? { participantId: participant.participantId, timeItems: existing.concat(pending) }
-        : participant,
-  });
+  const view =
+    existing && pending
+      ? { participantId: participant.participantId, timeItems: existing.concat(pending) }
+      : participant;
+  const valueChanged = scaleValueDiffers(view, scaleItem);
+  const itemType = [SCALE, scaleItem.scaleType, scaleItem.eventType, scaleItem.scaleName].join('.');
+  const sharedScale = pending?.some((item) => item.itemType === itemType);
+  const invalidDate =
+    (valueChanged || sharedScale) &&
+    typeof scaleItem.scaleDate === 'string' &&
+    scaleItem.scaleDate !== '' &&
+    !isValidDateString(scaleItem.scaleDate);
 
-  const isUndefined = (value: unknown) => value == null || value === '';
-
-  const valueChanged =
-    !(isUndefined(existingScaleItem?.scaleValue) && isUndefined(scaleItem.scaleValue)) &&
-    JSON.stringify(existingScaleItem?.scaleValue) !== JSON.stringify(scaleItem.scaleValue);
-
-  if (!valueChanged) {
-    // A successful empty-on-empty call historically initialized the list, without a notice.
+  if (valueChanged && invalidDate) return { error: INVALID_DATE };
+  // For an invalid date the legacy refusal itself depends on equivalence. Make
+  // the domain decision before any store, against the proposed history.
+  if (!valueChanged && (!sharedScale || invalidDate)) {
     return { valueChanged, commit: existing == null ? planFieldWrite(participant, 'timeItems', []) : undefined };
   }
-  if (scaleItem.scaleDate && typeof scaleItem.scaleDate === 'string' && !isValidDateString(scaleItem.scaleDate)) {
-    return { error: INVALID_DATE };
-  }
-
-  const itemType = [SCALE, scaleItem.scaleType, scaleItem.eventType, scaleItem.scaleName].join('.');
   const timeItem = definedAttributes({
     itemValue: scaleItem.scaleValue,
     itemDate: scaleItem.scaleDate,
@@ -237,9 +233,21 @@ function planParticipantScaleItem(
 
   const append = planAppend(() => participant.timeItems!, timeItem);
   if (existing && !removePriorValues) {
-    if (pending) pending.push(timeItem);
-    else appends?.set(existing, [timeItem]);
-    return { valueChanged, commit: append };
+    if (valueChanged) {
+      if (pending) pending.push(timeItem);
+      else appends?.set(existing, [timeItem]);
+    }
+    if (!sharedScale) return { valueChanged, commit: append };
+    // Both outcomes have passed domain validation. The prior push can cast the
+    // value, so only the installed history can decide if this push is needed.
+    return {
+      valueChanged,
+      commit() {
+        if (!scaleValueDiffers(participant, scaleItem)) return false;
+        append();
+        return true;
+      },
+    };
   }
 
   const retained = existing && removePriorValues ? existing.filter((item) => item.itemType !== itemType) : undefined;
@@ -255,6 +263,15 @@ function planParticipantScaleItem(
       append();
     },
   };
+}
+
+function scaleValueDiffers(participant: Participant, scaleItem: ScaleItem) {
+  const { scaleItem: current } = participantScaleItem({ participant, scaleAttributes: scaleItem });
+  const empty = (value: unknown) => value == null || value === '';
+  return (
+    !(empty(current?.scaleValue) && empty(scaleItem.scaleValue)) &&
+    JSON.stringify(current?.scaleValue) !== JSON.stringify(scaleItem.scaleValue)
+  );
 }
 
 function buildScaleItemsMap(scaleItemsWithParticipantIds) {

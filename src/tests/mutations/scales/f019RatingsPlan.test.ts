@@ -282,3 +282,62 @@ it('sees a preceding equivalent rating on an ordinary shared array before valida
   expect(shared).toEqual([item(1513)]);
   expect(notices[0].payload.participants.map((p) => p.participantId)).toEqual(['a', 'b', 'd']);
 });
+
+const sharedCastCases = [
+  { name: 'identity', cast: (v: number) => v, winningSide: 1, expected: [1513], changed: ['a', 'b', 'd'] },
+  {
+    name: 'round',
+    cast: (v: number) => Math.round(v / 10) * 10,
+    winningSide: 1,
+    expected: [1510, 1510],
+    changed: ['a', 'b', 'c', 'd'],
+  },
+  { name: 'cap', cast: (v: number) => Math.min(v, 1488), winningSide: 2, expected: [1488], changed: ['a', 'b', 'd'] },
+];
+
+it.each(sharedCastCases)(
+  'decides the second valid append from the $name setter’s committed value',
+  ({ name, cast, winningSide, expected, changed }) => {
+    const row = new mongoose.Schema(
+      { itemType: String, createdAt: String, itemDate: String, itemValue: { type: Number, set: cast } },
+      { _id: false },
+    );
+    const Owner = mongoose.model('F019Alias' + name, new mongoose.Schema({ list: [row] }));
+    setClock(clock);
+    const extra = ['c', 'd'].map((participantId) => ({ participantId, participantType: 'INDIVIDUAL' }));
+    for (const queue of [false, true]) {
+      const owner = Owner.hydrate({ list: [] });
+      const shared = owner.list;
+      const histories = [shared, [], shared, [item(1500)]];
+      const players = [...participants(), ...extra].map((p, i) => ({ ...p, timeItems: histories[i] }));
+      engine.setState({ tournamentId, participants: players }, false);
+      const first = runParams().matchUps[0];
+      const second = {
+        ...first,
+        matchUpId: 'm2',
+        endDate: '2026-11-20',
+        winningSide,
+        sides: extra.map((participant, i) => ({ participant, sideNumber: i + 1 })),
+      };
+      const params = {
+        matchUps: [first, second],
+        matchUpIds: ['m', 'm2'],
+        updateParticipantRatings: true,
+        removePriorValues: false,
+      };
+      const notices = captureNotices(() => {
+        const result = queue
+          ? engine.executionQueue([{ method, params }], false).results[0]
+          : engine.generateDynamicRatings(params);
+        expect(result.success).toBe(true);
+        expect(result.modifiedScaleValues.a.scaleValue).toBe(expected[0]);
+        expect(result.modifiedScaleValues.c.scaleValue).toBe(expected.at(-1));
+      });
+      const entries = expected.map((v, i) => ({ ...item(v), ...(i ? { itemDate: second.endDate } : {}) }));
+      expect(shared.toObject()).toEqual(entries);
+      expect(owner.$getChanges()).toEqual({ $push: { list: { $each: entries } }, $inc: { __v: 1 } });
+      expect(notices.map((n) => n.topic)).toEqual([MODIFY_PARTICIPANTS, MUTATIONS]);
+      expect(notices[0].payload.participants.map((p) => p.participantId)).toEqual(changed);
+    }
+  },
+);

@@ -299,18 +299,19 @@ function writeRatings({ tournamentRecord, modifiedScaleValues, removePriorValues
     if ('error' in plan) return plan;
     const { commit, valueChanged } = plan;
     if (commit) {
+      const payload = { tournamentId: tournamentRecord.tournamentId, participants: [participant] };
       writes.push(() => {
-        commit();
-        if (valueChanged) {
+        const changed = commit() ?? valueChanged;
+        if (changed) {
           // Capture this append before another participant appends to the same
           // borrowed array. The installed subdocument may have cast the value.
           const entry = participant.timeItems?.at(-1);
           scaleItem.scaleValue = entry?.itemValue;
           if (scaleItem.scaleDate !== entry?.itemDate) scaleItem.scaleDate = entry?.itemDate;
+          notices.push(payload);
         }
       });
     }
-    if (valueChanged) notices.push({ tournamentId: tournamentRecord.tournamentId, participants: [participant] });
   }
   for (const write of writes) write();
   for (const notice of notices) modifyParticipantsNotice(notice);
