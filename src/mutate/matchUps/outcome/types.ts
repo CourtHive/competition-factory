@@ -200,9 +200,7 @@ export type OutcomeView = {
       /** The initial tally with the line cleared removes its old aggregate score before the final tally. */
       clearsInitialScore?: true;
       scoreReported: boolean;
-      /** the sides once the line's write has ensured them (the winner's carry reads these) */
-      sidesAsHeld?: unknown[];
-      /** the sides in context before the line's write (the loser's carry reads these, as v1's `directLoser` does) */
+      /** Source sides held when directWinner and directLoser plan the team's line-up carry. */
       sidesInContext?: unknown[];
     };
   };
