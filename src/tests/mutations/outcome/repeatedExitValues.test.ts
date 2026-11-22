@@ -185,7 +185,7 @@ it.each(['JSON null', 'own undefined', 'absent'] as const)(
   (slot) => {
     const call = repeatFromSchedule('stallScaleSchedules20261011h.jsonl', 20318646, 28);
     const west = call.prepared.events![0].drawDefinitions![0].structures!.find((s) => s.structureName === 'West');
-    const farther = matchUpsOf(west)?.find((m) => m.roundNumber === 2 && m.roundPosition === 1)!;
+    const farther = (matchUpsOf(west) ?? []).find((m) => m.roundNumber === 2 && m.roundPosition === 1)!;
     const provenance = farther.sideExitProvenance!;
     expect(provenance[1]?.matchUpStatus).toBe(DEFAULTED);
     expect(provenance[2]?.previousMatchUpStatus).toBe(WALKOVER);
