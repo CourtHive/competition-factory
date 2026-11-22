@@ -1,5 +1,37 @@
 # Changelog
 
+## [7.45.0](https://github.com/CourtHive/competition-factory/compare/v7.44.0...v7.45.0) (2026-11-22)
+
+
+### Features
+
+* expose pure format helpers for score-entry clients ([#6484](https://github.com/CourtHive/competition-factory/issues/6484)) ([83ae2be](https://github.com/CourtHive/competition-factory/commit/83ae2be47cf8078a40d5df5e738821adeadf9a6c))
+* plan and enforce operator query footprints ([#6490](https://github.com/CourtHive/competition-factory/issues/6490)) ([ae6f3ba](https://github.com/CourtHive/competition-factory/commit/ae6f3ba9aa0eae1c7086848c28b7ce2b6206d39a))
+
+
+### Bug Fixes
+
+* apply readyToScore to hydrated match-ups ([#6502](https://github.com/CourtHive/competition-factory/issues/6502)) ([a3b4ffd](https://github.com/CourtHive/competition-factory/commit/a3b4ffd15764f7b929e70e25ff0f2478fafde0ec))
+* **corpus:** split harvested scenarios after uncaptured writes ([#6489](https://github.com/CourtHive/competition-factory/issues/6489)) ([9986e61](https://github.com/CourtHive/competition-factory/commit/9986e6133b18eaa4d5947672bf6554c2dd1c8665))
+* **declaration:** refuse a malformed queue before any directive writes ([fcfe292](https://github.com/CourtHive/competition-factory/commit/fcfe2923dda88ae224feca75dcf8fcb60fa921cf))
+* **deps:** update tods-competition-factory to 7.44.0 ([#6483](https://github.com/CourtHive/competition-factory/issues/6483)) ([bf9ca38](https://github.com/CourtHive/competition-factory/commit/bf9ca383b47fb7f7bf81c489a169dc02af9f8f92))
+* **mocks:** rate every participant generated for a rating band ([#6485](https://github.com/CourtHive/competition-factory/issues/6485)) ([1b0e927](https://github.com/CourtHive/competition-factory/commit/1b0e927bf88d0f6ddb843fcda63dc1be826977a0))
+* **outcome:** check both placements on undecided dual awards ([0408a87](https://github.com/CourtHive/competition-factory/commit/0408a871198506e7a202e57386eb1e5b42ab8c39))
+* **outcome:** check winner and loser seats before awarding an undecided dual ([#6487](https://github.com/CourtHive/competition-factory/issues/6487)) ([0408a87](https://github.com/CourtHive/competition-factory/commit/0408a871198506e7a202e57386eb1e5b42ab8c39))
+* **participants:** validate scale items before writing time items ([#6518](https://github.com/CourtHive/competition-factory/issues/6518)) ([672ce9d](https://github.com/CourtHive/competition-factory/commit/672ce9d15d10aa2a22e60caca8800a83f73b9404))
+* practice capacity is peak occupancy; declaration queue refuses before the first write ([#6480](https://github.com/CourtHive/competition-factory/issues/6480)) ([fcfe292](https://github.com/CourtHive/competition-factory/commit/fcfe2923dda88ae224feca75dcf8fcb60fa921cf))
+* **ratings:** generateDynamicRatings validates, writes all or nothing, reports rated matchUps ([#6481](https://github.com/CourtHive/competition-factory/issues/6481)) ([ba2bf1f](https://github.com/CourtHive/competition-factory/commit/ba2bf1fee96c0d34b8e084ff2ed32fb6828fda5d))
+* **schedule:** keep event timing overrides local and preserve minutes per table ([#6517](https://github.com/CourtHive/competition-factory/issues/6517)) ([f7bedea](https://github.com/CourtHive/competition-factory/commit/f7bedeaf294e89235aad776c64c6b8f39e1f2f54))
+* **schedule:** refuse the whole schedule request when any attribute is invalid ([#6503](https://github.com/CourtHive/competition-factory/issues/6503)) ([21a2da6](https://github.com/CourtHive/competition-factory/commit/21a2da67adeb590cbe10c65c05ae475a82a4964d))
+* **scheduling:** book each line by its own type and each draw by its own policy ([#6478](https://github.com/CourtHive/competition-factory/issues/6478)) ([d6b2ee0](https://github.com/CourtHive/competition-factory/commit/d6b2ee07c7360b620c08544bc5f64655a702d1aa))
+* **standings:** precision 0, season proposals, ladder history, Swiss ties ([#6482](https://github.com/CourtHive/competition-factory/issues/6482)) ([e9e33ae](https://github.com/CourtHive/competition-factory/commit/e9e33ae4a140ebbffbad2e46841ee90537d9379d))
+
+
+### Documentation
+
+* **outcome:** define the diagnostic stack contract ([#6494](https://github.com/CourtHive/competition-factory/issues/6494)) ([d6ab459](https://github.com/CourtHive/competition-factory/commit/d6ab4592002e31d44bf105a24f102fec54f2d553))
+* **outcome:** describe held winners on generated duals ([0408a87](https://github.com/CourtHive/competition-factory/commit/0408a871198506e7a202e57386eb1e5b42ab8c39))
+
 ## [7.44.0](https://github.com/CourtHive/competition-factory/compare/v7.43.0...v7.44.0) (2026-11-20)
 
 
