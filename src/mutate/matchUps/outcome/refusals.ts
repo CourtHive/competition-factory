@@ -236,6 +236,8 @@ function refuseAgainstDraw(request: OutcomeRequest, view: OutcomeView): Refusal 
       },
     });
 
+  if (view.line?.projectsByeWinner) return refuse(6, INVALID_MATCHUP_STATUS, { info: 'a BYE cannot win a TEAM dual' });
+
   if (!view.matchUpTieId) {
     const nonDirecting = !!matchUpStatus && isNonDirectingMatchUpStatus({ matchUpStatus });
     // v1 (`checkDownstreamCompatibility`) returns `activeDownstream` and `winningSide` beside `error`, not in a context

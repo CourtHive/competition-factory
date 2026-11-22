@@ -129,6 +129,7 @@ type SetMatchUpStateArgs = {
   projectedWinningSide?: number;
   /** set from the tie context (`resolveTieMatchUpContext`) for a line: the tally's own projection, its score, the dual */
   talliedWinningSide?: number;
+  projectsByeWinner?: boolean;
   projectedDualScore?: Score;
   dualMatchUp?: HydratedMatchUp;
   keepsDualDecision?: boolean;
@@ -460,7 +461,8 @@ function writeMatchUpState(params: SetMatchUpStateArgs) {
       matchUp,
       score,
     }) ??
-    lineFeedEligibilityRefusal({
+    lineProjectionRefusal({
+      projectsByeWinner: params.projectsByeWinner,
       projectedWinningSide: params.talliedWinningSide,
       autoCalcDisabled: params.autoCalcDisabled,
       projectedScore: params.projectedDualScore,
@@ -1148,7 +1150,7 @@ function resolveTieMatchUpContext({
     event,
   })?.tieFormat;
 
-  const { projectedWinningSide, projectedScore } = getProjectedDualWinningSide({
+  const { projectedWinningSide, projectedScore, projectsByeWinner } = getProjectedDualWinningSide({
     drawDefinition,
     matchUpStatus,
     dualMatchUp,
@@ -1183,6 +1185,7 @@ function resolveTieMatchUpContext({
   return {
     projectedWinningSide: keptWinningSide,
     // the tally's own projection, as the line's feed-eligibility question reads it (row 12)
+    projectsByeWinner: !autoCalcDisabled && projectsByeWinner,
     talliedWinningSide: projectedWinningSide,
     projectedDualScore: projectedScore,
     isCollectionMatchUp: true,
@@ -1504,10 +1507,20 @@ function feedEligibilityRefusal(args: Parameters<typeof feedEligibilityChange>[0
   });
 }
 
-/** a line whose tally relabels its dual, the dual's loser already directed under the previous outcome (row 12) */
-function lineFeedEligibilityRefusal(args: Parameters<typeof lineFeedEligibilityChange>[0]) {
+/** Check the line tally before it can change its dual or direct either team. */
+function lineProjectionRefusal(
+  args: Parameters<typeof lineFeedEligibilityChange>[0] & { projectsByeWinner?: boolean },
+) {
   const eligibilityChange = lineFeedEligibilityChange(args);
-  if (!eligibilityChange) return undefined;
+  if (!eligibilityChange) {
+    if (args.projectsByeWinner)
+      return decorateResult({
+        result: { error: INVALID_MATCHUP_STATUS },
+        info: 'a BYE cannot win a TEAM dual',
+        stack: 'lineProjection',
+      });
+    return undefined;
+  }
   return decorateResult({
     result: { error: CANNOT_CHANGE_FEED_ELIGIBILITY },
     info: 'the line relabels its dual, whose loser has already been directed under the previous outcome',

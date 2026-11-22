@@ -2170,18 +2170,19 @@ function lineViewOf({
     const dualMatchUp = inContextDrawMatchUps?.find((candidate) => candidate.matchUpId === matchUpTieId);
     if (dualMatchUp) {
       const tieFormat = resolveTieFormat({ matchUp: dualMatchUp, drawDefinition, structure, event })?.tieFormat;
-      const { projectedWinningSide, projectedScore, projectedTieMatchUps } = getProjectedDualWinningSide({
-        matchUpStatus: request.matchUpStatus,
-        winningSide: request.winningSide,
-        score: request.score,
-        drawDefinition,
-        dualMatchUp,
-        matchUpsMap,
-        tieFormat,
-        structure,
-        matchUp,
-        event,
-      });
+      const { projectedWinningSide, projectedScore, projectedTieMatchUps, projectsByeWinner } =
+        getProjectedDualWinningSide({
+          matchUpStatus: request.matchUpStatus,
+          winningSide: request.winningSide,
+          score: request.score,
+          drawDefinition,
+          dualMatchUp,
+          matchUpsMap,
+          tieFormat,
+          structure,
+          matchUp,
+          event,
+        });
       const autoCalcDisabled = !!(dualMatchUp.disableAutoCalc ?? dualMatchUp._disableAutoCalc);
       // v1's own read (`resolveTieMatchUpContext`): a dual decided by its own exit or call keeps its winner while its
       // lines project none, and that winner is the projected one (CA, 2026-11-20, class 4)
@@ -2195,7 +2196,7 @@ function lineViewOf({
         structure,
         event,
       });
-      // row 12, v1's own read (`lineFeedEligibilityRefusal`): the tally relabels the dual, its loser already directed
+      // row 12, v1's own read (`lineProjectionRefusal`): the tally relabels the dual, its loser already directed
       lineFeed = lineFeedEligibilityChange({
         inContextDrawMatchUps,
         projectedWinningSide,
@@ -2206,6 +2207,7 @@ function lineViewOf({
         structure,
       });
       line = {
+        projectsByeWinner: !autoCalcDisabled && projectsByeWinner,
         projectedWinningSide: keepsDualDecision ? dualMatchUp.winningSide : projectedWinningSide,
         dualMatchUpId: matchUpTieId,
         dualMatchUpStatus: dualMatchUp.matchUpStatus,
