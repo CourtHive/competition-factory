@@ -100,46 +100,8 @@ export function heldSeatRefusal({
   activeDownstream: boolean;
 }): HeldSeat | undefined {
   const { matchUp, structure, drawDefinition, targetData, winningSide, inContextMatchUp } = params;
+  if (matchUp.collectionId) return lineSeatRefusal(params, activeDownstream);
   if (!drawDefinition || !structure || !targetData?.targetMatchUps) return undefined;
-  if (matchUp.collectionId) {
-    if (activeDownstream) return undefined;
-    if (winningSide) return handoverLoserAssignment(params);
-    const projected = params.projectedWinningSide;
-    const dual = targetData.matchUp;
-    if (!dual || !projected || projected === dual.winningSide || params.autoCalcDisabled || isAdHoc({ structure }))
-      return undefined;
-    if (isDoubleExit(matchUp.matchUpStatus) && matchUp.matchUpStatus === params.matchUpStatus && !matchUp.winningSide)
-      return undefined;
-    if (resolveTieScoreSource({ drawDefinition, structure, matchUp: dual, event: params.event }) === 'REPORTED')
-      return undefined;
-    const { winnerMatchUp, loserMatchUp, byeMatchUp } = targetData.targetMatchUps;
-    if (!winnerMatchUp && !loserMatchUp && !byeMatchUp) return undefined;
-    if (!dual.drawPositions) return { error: MISSING_DRAW_POSITIONS, context: { matchUpId: dual.matchUpId } };
-    const sidePosition = (sideNumber: number) =>
-      getSideDrawPosition({ drawDefinition, structureId: structure.structureId, matchUp: dual, sideNumber });
-    return (
-      heldWinnerSeat({
-        targetData,
-        structure,
-        drawDefinition,
-        replaced: !!dual.winningSide,
-        sidePosition,
-        winningSide: projected,
-      }) ??
-      handoverLoserAssignment(params) ??
-      heldLoserSeat({
-        targetData,
-        structure,
-        drawDefinition,
-        tournamentRecord: params.tournamentRecord,
-        event: params.event,
-        winnerParticipantId: dual.winningSide
-          ? dual.sides?.find((side) => side.sideNumber === projected)?.participantId
-          : undefined,
-        loserDrawPosition: sidePosition(3 - projected),
-      })
-    );
-  }
   if (winningSide !== 1 && winningSide !== 2) return undefined;
   if (!matchUp.drawPositions || isAdHoc({ structure })) return undefined;
   // An undecided dual awarded a winner directs both sides, through the same placements as singles.
@@ -177,6 +139,47 @@ export function heldSeatRefusal({
       drawDefinition,
       targetData,
       structure,
+    })
+  );
+}
+
+function lineSeatRefusal(params: HeldSeatParams, activeDownstream: boolean): HeldSeat | undefined {
+  const { matchUp, drawDefinition, structure, targetData, winningSide } = params;
+  if (!drawDefinition || !structure || !targetData?.targetMatchUps || activeDownstream) return undefined;
+  if (winningSide) return handoverLoserAssignment(params);
+  const projected = params.projectedWinningSide;
+  const dual = targetData.matchUp;
+  if (!dual || !projected || projected === dual.winningSide || params.autoCalcDisabled || isAdHoc({ structure }))
+    return undefined;
+  if (isDoubleExit(matchUp.matchUpStatus) && matchUp.matchUpStatus === params.matchUpStatus && !matchUp.winningSide)
+    return undefined;
+  if (resolveTieScoreSource({ drawDefinition, structure, matchUp: dual, event: params.event }) === 'REPORTED')
+    return undefined;
+  const { winnerMatchUp, loserMatchUp, byeMatchUp } = targetData.targetMatchUps;
+  if (!winnerMatchUp && !loserMatchUp && !byeMatchUp) return undefined;
+  if (!dual.drawPositions) return { error: MISSING_DRAW_POSITIONS, context: { matchUpId: dual.matchUpId } };
+  const sidePosition = (sideNumber: number) =>
+    getSideDrawPosition({ drawDefinition, structureId: structure.structureId, matchUp: dual, sideNumber });
+  return (
+    heldWinnerSeat({
+      targetData,
+      structure,
+      drawDefinition,
+      replaced: !!dual.winningSide,
+      sidePosition,
+      winningSide: projected,
+    }) ??
+    handoverLoserAssignment(params) ??
+    heldLoserSeat({
+      targetData,
+      structure,
+      drawDefinition,
+      tournamentRecord: params.tournamentRecord,
+      event: params.event,
+      winnerParticipantId: dual.winningSide
+        ? dual.sides?.find((side) => side.sideNumber === projected)?.participantId
+        : undefined,
+      loserDrawPosition: sidePosition(3 - projected),
     })
   );
 }
