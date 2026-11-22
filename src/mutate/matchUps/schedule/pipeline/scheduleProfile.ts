@@ -35,6 +35,8 @@ type ScheduleProfileVNextArgs = {
   scheduleDates?: string[];
   periodLength?: number;
   courtIds?: string[];
+  /** this run's daily limits in place of the records' (a what-if, never stored); `{}` enforces none */
+  matchUpDailyLimits?: { [matchUpType: string]: number };
   dryRun?: boolean;
 };
 
@@ -88,19 +90,21 @@ export function scheduleProfileVNext(params: ScheduleProfileVNextArgs) {
   const profileDates = view.dates.map(({ scheduleDate }) => scheduleDate);
   // present when any matchUp was skipped for its event's dates, keyed by the dates that skipped one
   const eventDateSkips = skipsByDate(view.eventDateSkippedMatchUpIds);
-  auditAutoScheduling({
-    tournamentRecords,
-    autoSchedulingAudit: {
-      overLimitMatchUpIds: plan.overLimitMatchUpIds,
-      schedulingProfile: view.schedulingProfile,
-      requestConflicts: plan.requestConflicts,
-      timeStamp: nowMs(),
-      scheduledMatchUpIds,
-      scheduledDates: profileDates,
-      noTimeMatchUpIds,
-      ...eventDateSkips,
-    },
-  });
+  // a dry run writes nothing, its audit included: with no AUDIT subscriber the audit is a time item on the record
+  if (!dryRun)
+    auditAutoScheduling({
+      tournamentRecords,
+      autoSchedulingAudit: {
+        overLimitMatchUpIds: plan.overLimitMatchUpIds,
+        schedulingProfile: view.schedulingProfile,
+        requestConflicts: plan.requestConflicts,
+        timeStamp: nowMs(),
+        scheduledMatchUpIds,
+        scheduledDates: profileDates,
+        noTimeMatchUpIds,
+        ...eventDateSkips,
+      },
+    });
 
   // with allowInactiveEventDates, a placement on a day its event does not play is made, and warned about
   const warnings = eventDateWarnings(view.eventDateInactiveMatchUpIds, scheduledMatchUpIds);
@@ -138,6 +142,8 @@ export function scheduleProfileVNext(params: ScheduleProfileVNextArgs) {
     noTimeMatchUpIds,
     proConflicts,
     ...(warnings.length ? { warnings } : {}),
+    // a dry run returns where it would place each matchUp, by date and venue: what a caller stores as a plan
+    ...(dryRun ? { placements: plan.placements } : {}),
   };
 }
 
