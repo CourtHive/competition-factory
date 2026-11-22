@@ -1,3 +1,4 @@
+import { placeRetalliedWinner } from '@Mutate/matchUps/drawPositions/placeRetalliedWinner';
 import { attemptToSetMatchUpStatusBYE } from '@Mutate/matchUps/matchUpStatus/attemptToSetMatchUpStatusBYE';
 import { doubleExitAdvancement } from '@Mutate/drawDefinitions/positionGovernor/doubleExitAdvancement';
 import { removeDirectedParticipants } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
@@ -216,6 +217,8 @@ function scoreModification(params) {
     if (tieMatchUpResult.error) {
       return decorateResult({ result: tieMatchUpResult, stack });
     }
+    const placement = placeRetalliedWinner(params, tieMatchUpResult.winningSide);
+    if (placement.error) return decorateResult({ result: placement, stack });
     Object.assign(result, { tieMatchUpResult });
   }
 

@@ -1,3 +1,4 @@
+import { resolveTieScoreSource } from '@Query/hierarchical/tieFormats/resolveTieScoreSource';
 import { drawPositionAssignmentRefusal } from '@Query/drawDefinition/drawPositionAssignmentRefusal';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
@@ -13,7 +14,12 @@ import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
-import { DRAW_POSITION_ASSIGNED, DRAW_POSITION_OCCUPIED, type ErrorType } from '@Constants/errorConditionConstants';
+import {
+  DRAW_POSITION_ASSIGNED,
+  DRAW_POSITION_OCCUPIED,
+  MISSING_DRAW_POSITIONS,
+  type ErrorType,
+} from '@Constants/errorConditionConstants';
 import { BYE, COMPLETED, DEFAULTED, RETIRED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { positionTargets, type PositionTargetsResult } from '@Query/matchUp/positionTargets';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
@@ -94,9 +100,9 @@ export function heldSeatRefusal({
   activeDownstream: boolean;
 }): HeldSeat | undefined {
   const { matchUp, structure, drawDefinition, targetData, winningSide, inContextMatchUp } = params;
+  if (matchUp.collectionId) return lineSeatRefusal(params, activeDownstream);
   if (!drawDefinition || !structure || !targetData?.targetMatchUps) return undefined;
   if (winningSide !== 1 && winningSide !== 2) return undefined;
-  if (matchUp.collectionId) return activeDownstream ? undefined : handoverLoserAssignment(params);
   if (!matchUp.drawPositions || isAdHoc({ structure })) return undefined;
   // An undecided dual awarded a winner directs both sides, through the same placements as singles.
   if (matchUp.winningSide && (matchUp.tieMatchUps || isMatchUpEventType(TEAM)(matchUp.matchUpType))) return undefined;
@@ -111,8 +117,8 @@ export function heldSeatRefusal({
   // the loser stands (`relabelWithoutDirection`), and only the carry's levels are asked
   if (stored && activeDownstream)
     return stored === winningSide ? relabelledCarrySeat(params, sideParticipantId(3 - winningSide)) : undefined;
-  const replaced = !!stored && stored !== winningSide;
-  if (replaced && params.allowChangePropagation && matchUp.roundPosition) return undefined;
+  const replacesPriorWinner = !!stored && stored !== winningSide;
+  if (replacesPriorWinner && params.allowChangePropagation && matchUp.roundPosition) return undefined;
   // an exit awarded to an empty side advances nobody (`winnerSlotEmpty`)
   const winnerPlaced = !(isExit(params.matchUpStatus) && !sideParticipantId(winningSide));
   // bound by side, as `directParticipants` binds them
@@ -122,10 +128,10 @@ export function heldSeatRefusal({
 
   return (
     (winnerPlaced && !unwound
-      ? heldWinnerSeat({ targetData, structure, drawDefinition, replaced, sidePosition, winningSide })
+      ? heldWinnerSeat({ targetData, structure, drawDefinition, replacesPriorWinner, sidePosition, winningSide })
       : undefined) ??
     heldLoserSeat({
-      winnerParticipantId: replaced ? sideParticipantId(winningSide) : undefined,
+      winnerParticipantId: replacesPriorWinner ? sideParticipantId(winningSide) : undefined,
       loserDrawPosition: sidePosition(3 - winningSide),
       inContextDrawMatchUps: carriesExit(params) ? params.inContextDrawMatchUps : undefined,
       tournamentRecord: params.tournamentRecord,
@@ -133,6 +139,47 @@ export function heldSeatRefusal({
       drawDefinition,
       targetData,
       structure,
+    })
+  );
+}
+
+function lineSeatRefusal(params: HeldSeatParams, activeDownstream: boolean): HeldSeat | undefined {
+  const { matchUp, drawDefinition, structure, targetData, winningSide } = params;
+  if (!drawDefinition || !structure || !targetData?.targetMatchUps || activeDownstream) return undefined;
+  if (winningSide) return handoverLoserAssignment(params);
+  const projected = params.projectedWinningSide;
+  const dual = targetData.matchUp;
+  if (!dual || !projected || projected === dual.winningSide || params.autoCalcDisabled || isAdHoc({ structure }))
+    return undefined;
+  if (isDoubleExit(matchUp.matchUpStatus) && matchUp.matchUpStatus === params.matchUpStatus && !matchUp.winningSide)
+    return undefined;
+  if (resolveTieScoreSource({ drawDefinition, structure, matchUp: dual, event: params.event }) === 'REPORTED')
+    return undefined;
+  const { winnerMatchUp, loserMatchUp, byeMatchUp } = targetData.targetMatchUps;
+  if (!winnerMatchUp && !loserMatchUp && !byeMatchUp) return undefined;
+  if (!dual.drawPositions) return { error: MISSING_DRAW_POSITIONS, context: { matchUpId: dual.matchUpId } };
+  const sidePosition = (sideNumber: number) =>
+    getSideDrawPosition({ drawDefinition, structureId: structure.structureId, matchUp: dual, sideNumber });
+  return (
+    heldWinnerSeat({
+      targetData,
+      structure,
+      drawDefinition,
+      replacesPriorWinner: !!dual.winningSide,
+      sidePosition,
+      winningSide: projected,
+    }) ??
+    handoverLoserAssignment(params) ??
+    heldLoserSeat({
+      targetData,
+      structure,
+      drawDefinition,
+      tournamentRecord: params.tournamentRecord,
+      event: params.event,
+      winnerParticipantId: dual.winningSide
+        ? dual.sides?.find((side) => side.sideNumber === projected)?.participantId
+        : undefined,
+      loserDrawPosition: sidePosition(3 - projected),
     })
   );
 }
@@ -190,21 +237,21 @@ function heldWinnerSeat({
   winningSide,
   targetData,
   structure,
-  replaced,
+  replacesPriorWinner,
 }: {
   targetData: PositionTargetsResult;
   sidePosition: (sideNumber: number) => number | undefined;
   drawDefinition: Readonly<DrawDefinition>;
   structure: Readonly<Structure>;
   winningSide: number;
-  replaced: boolean;
+  replacesPriorWinner: boolean;
 }): HeldSeat | undefined {
   const winnerMatchUp = targetData.targetMatchUps?.winnerMatchUp;
   // across a link the placement's refusals are logged, not returned (`directWinnerViaLink`)
   if (!winnerMatchUp || targetData.targetLinks?.winnerTargetLink) return undefined;
   const drawPosition = sidePosition(winningSide);
   if (!drawPosition) return undefined;
-  const previous = replaced ? sidePosition(3 - winningSide) : undefined;
+  const previous = replacesPriorWinner ? sidePosition(3 - winningSide) : undefined;
   const held = (winnerMatchUp.drawPositions ?? []).filter((position) => !!position && position !== previous);
   if (held.length < 2 || new Set(held).has(drawPosition)) return undefined;
 
