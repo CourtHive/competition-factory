@@ -1,8 +1,9 @@
 import { replaceTieMatchUpParticipantId } from '@Mutate/matchUps/lineUps/replaceTieMatchUpParticipant';
+import * as participantRemoval from '@Mutate/participants/deleteParticipants';
 import { getPairedParticipant } from '@Query/participant/getPairedParticipant';
 import { captureNotices } from '../notifications/noticeConformance/harness';
 import { setSchemaWriteMode } from '@Global/state/globalState';
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import engine from '@Engines/syncEngine';
 import { setClock } from '@Tools/clock';
 import { readFileSync } from 'node:fs';
@@ -147,6 +148,7 @@ it.each(['native', 'bridge', 'legacy'] as const)('preserves hydrated records and
       newParticipantId: team.individualParticipantIds[2],
       substitution: true,
     });
+    const materialize = vi.spyOn(doc, 'toObject');
     let added;
     const notices = captureNotices(() => {
       const result = call();
@@ -155,6 +157,8 @@ it.each(['native', 'bridge', 'legacy'] as const)('preserves hydrated records and
       expect(material.participantRemoved).toBe(old.participantId);
       added = material.participantAdded;
     });
+    expect(materialize).not.toHaveBeenCalled();
+    materialize.mockRestore();
     expect(engine.getTournament().tournamentRecord).toBe(doc);
     expect(doc.$getChanges().$set.participants).toEqual(doc.toObject().participants);
     expect(doc.$getChanges().$inc).toEqual({ __v: 1 });
@@ -318,12 +322,24 @@ it.each(['event', 'structure'])('uses hydrated %s fields to decide whether the o
       }),
     );
   collection[0] = Model.hydrate({ nested: collection }).nested[0];
+  const retirement = vi.spyOn(participantRemoval, 'resolveParticipantRemoval');
+  const serialize = vi.spyOn(collection[0], 'toObject');
   engine.setState(initial, false);
   const notices = captureNotices(() => {
     const result = engine[method](directive.params);
     expect(result.success).toBe(true);
     expect(result.participantRemoved).toBe(stillPlaced ? undefined : old.participantId);
   });
+  expect(serialize).not.toHaveBeenCalled();
+  const { tournamentRecord: view } = retirement.mock.calls[0][0];
+  const event = initial.events[0];
+  const sourceStructure = event.drawDefinitions[0].structures[0];
+  const projectedEvent = view.events![0];
+  const projectedStructure = projectedEvent.drawDefinitions![0].structures![0];
+  expect(projectedEvent.tieFormat).toBe(event.tieFormat);
+  expect(projectedStructure.positionAssignments).toBe(sourceStructure.positionAssignments);
+  retirement.mockRestore();
+  serialize.mockRestore();
   expect(initial.participants.some((p) => p.participantId === old.participantId)).toBe(stillPlaced);
   expect(notices.filter((n) => n.topic === 'deleteParticipants').map((n) => n.payload)).toEqual(
     stillPlaced ? [] : [{ tournamentId: initial.tournamentId, participantIds: [old.participantId] }],

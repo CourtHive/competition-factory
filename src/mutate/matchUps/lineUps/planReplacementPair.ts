@@ -206,13 +206,20 @@ function planRemovedPairEntries({
   }
 }
 
-/** Hydrated documents expose their schema fields through getters rather than own enumerable properties. */
+/** Expose schema fields to queries that spread the view, without serializing borrowed documents. */
 function projectFields<T extends object>(entity: T, changes: Partial<T>): T {
-  const fields =
-    'toObject' in entity && typeof entity.toObject === 'function'
-      ? (entity.toObject({ transform: false }) as T)
-      : entity;
-  return { ...fields, ...changes };
+  if (!('$__' in entity && '_doc' in entity && entity._doc && typeof entity._doc === 'object')) {
+    return { ...entity, ...changes };
+  }
+
+  // Mongoose stores the enumerable field names in _doc. Read values through the document's getters.
+  const view = Object.create(entity, Object.getOwnPropertyDescriptors(changes));
+  for (const key of Object.keys(entity._doc)) {
+    if (!Object.hasOwn(view, key)) {
+      Object.defineProperty(view, key, { enumerable: true, get: () => Reflect.get(entity, key) });
+    }
+  }
+  return view;
 }
 
 function replacementView({
@@ -229,12 +236,17 @@ function replacementView({
       return projectFields(structure, {
         matchUps: structure.matchUps.map((m) => (m === dualMatchUp ? projectFields(m, { sides }) : m)),
       });
-    if ('structures' in structure && structure.structures?.length)
-      return projectFields(structure, { structures: structure.structures.map(replaceDual) });
+    if ('structures' in structure && structure.structures?.length) {
+      const children = structure.structures;
+      const structures = children.map(replaceDual);
+      if (structures.some((child, i) => child !== children[i])) return projectFields(structure, { structures });
+    }
     return structure;
   };
-  const draw = projectFields(drawDefinition, { structures: drawDefinition.structures?.map(replaceDual) });
-  if (lineUps !== undefined) draw.lineUps = lineUps;
+  const draw = projectFields(drawDefinition, {
+    structures: drawDefinition.structures?.map(replaceDual),
+    ...(lineUps !== undefined && { lineUps }),
+  });
   const events = tournamentRecord.events?.map((e) =>
     e !== event
       ? e
