@@ -5,6 +5,7 @@ import * as stateWriter from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import * as recording from '@Mutate/matchUps/outcome/plan/recordedCall';
 import * as cascade from '@Mutate/matchUps/outcome/plan/recordedCascade';
 import {
+  backdrawWinner,
   compassArrival,
   curtisAward,
   incomingCarry,
@@ -254,4 +255,20 @@ it('records a CURTIS arrival that creates the codes key on its protected receive
   const recovered = structuredClone(call);
   at(recovered.prepared, 'Consolation 1', 2, 4).matchUpStatusCodes = [];
   compare(recovered, true);
+});
+
+it('stamps the Main structure when a Backdraw winner reaches the linked decider', () => {
+  const call = backdrawWinner();
+  const decider = at(call.prepared, 'Main', 4, 1);
+  expect(at(call.prepared, 'Backdraw', 4, 1).winnerMatchUpId).toBe(decider.matchUpId);
+  expect(decider.drawPositions).toEqual([8]);
+  const { record, sourceReads } = compare(call, true);
+  expect(at(record, 'Main', 4, 1).drawPositions).toEqual([5, 8]);
+  const stampedAt = new Date(sourceReads[0]).toISOString();
+  for (const name of ['Backdraw', 'Main']) {
+    const before = call.prepared.events![0].drawDefinitions![0].structures!.find((s) => s.structureName === name)!;
+    const after = record.events![0].drawDefinitions![0].structures!.find((s) => s.structureId === before.structureId)!;
+    expect(before.updatedAt).not.toBe(stampedAt);
+    expect(after.updatedAt).toBe(stampedAt);
+  }
 });

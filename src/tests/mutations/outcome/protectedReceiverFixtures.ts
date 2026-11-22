@@ -179,3 +179,32 @@ export function curtisAward() {
     { [POLICY_TYPE_PROGRESSION]: { doubleExitPropagateBye: false } },
   );
 }
+
+// Public seed 20012942, aCascadeAwardIsNotPlayingOn: the Backdraw winner traverses a produced award into Main.
+export function backdrawWinner() {
+  return beforeLast(
+    { drawType: DOUBLE_ELIMINATION, propagateExitStatus: true, participantsCount: 6, seed: 20012942, drawSize: 8 },
+    'cascade-award-is-not-playing-on',
+    [
+      ['Main|1|2', { matchUpStatus: DEFAULTED, winningSide: 1 }],
+      ['Main|1|3', { matchUpStatus: DEFAULTED, winningSide: 1 }],
+      ['Main|2|1', { matchUpStatus: WALKOVER, winningSide: 2 }],
+      ['Main|2|2', { matchUpStatus: DEFAULTED, winningSide: 1 }],
+      [
+        'Main|1|2',
+        {
+          matchUpStatus: RETIRED,
+          winningSide: 1,
+          score: {
+            sets: [{ side1Score: 6, side2Score: 3 }],
+            scoreStringSide1: '6-3',
+            scoreStringSide2: '3-6',
+          },
+        },
+      ],
+      ['Main|2|2', { winningSide: 2 }],
+      ['Main|3|1', { matchUpStatus: WALKOVER, winningSide: 2 }],
+      ['Backdraw|2|2', { winningSide: 1 }],
+    ],
+  );
+}
