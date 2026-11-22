@@ -1,5 +1,6 @@
+import { claimEdges, hasSourceOrigin, holdsPosition } from './placementClaims';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { positionTargets } from '@Query/matchUp/positionTargets';
+import { heldLinkedWalkover } from './heldLinkedWalkovers';
 import { APPLY_VALUES, bareResultRequest, indexed, sideDrawPosition } from './planShared';
 
 // constants and types
@@ -7,24 +8,13 @@ import { BYE, COMPLETED, RETIRED, TO_BE_PLAYED, WALKOVER } from '@Constants/matc
 import type { ExitReasonArgs } from '../types';
 import type { HydratedMatchUp } from '@Types/hydrated';
 
-function holdsPosition(matchUp: HydratedMatchUp | undefined, participantId?: string, position?: number): boolean {
-  return (
-    !!participantId &&
-    !!position &&
-    !!matchUp?.sides?.some((side) => side.participantId === participantId && side.drawPosition === position)
-  );
-}
-
 // A BYE carries the occupied side's claim to the next round of its own structure.
 function nextWinnerSeat(args: ExitReasonArgs, source: HydratedMatchUp) {
-  if (!args.drawDefinition || !source.roundNumber) return undefined;
-  const next = positionTargets({
-    drawDefinition: args.drawDefinition,
-    inContextDrawMatchUps: args.view.inContextDrawMatchUps,
-    matchUpId: source.matchUpId,
-    inContextMatchUp: source,
-    asReferences: true,
-  });
+  if (!args.drawDefinition || !args.view.inContextDrawMatchUps || !source.roundNumber) return undefined;
+  const next = claimEdges(
+    { drawDefinition: args.drawDefinition, inContextDrawMatchUps: args.view.inContextDrawMatchUps },
+    source,
+  );
   const target = next.targetMatchUps?.winnerMatchUp;
   if (
     !target ||
@@ -74,7 +64,7 @@ function lostAfterStructuralBye(args: ExitReasonArgs, linked: HydratedMatchUp, l
 
 /** A non-carrying retirement changes only the source result when both outgoing claims still stand.
  * The winner holds their own position. The loser holds the linked position in an independently completed
- * match or has lost after a structural BYE. Any origin of this source, even beyond the two targets, can owe a withdrawal or a label refresh. */
+ * match, a standing walkover path, or a loss after a structural BYE. Any origin of this source, even beyond the two targets, can owe a withdrawal or a label refresh. */
 export function retirementClaimsStand(args: ExitReasonArgs): boolean {
   const { request, route, view } = args;
   const { existing, targets, inContextDrawMatchUps } = view;
@@ -107,7 +97,6 @@ export function retirementClaimsStand(args: ExitReasonArgs): boolean {
     targets.winnerLink ||
     onward.structureId !== targets.source.structureId ||
     linked.structureId === onward.structureId ||
-    linked.sideExitProvenance ||
     !targets.loserTargetSeat?.opponentHeld ||
     targets.loserTargetSeat.participantId !== loserId ||
     !holdsPosition(onward, winnerId, sideDrawPosition(view, winner)) ||
@@ -115,8 +104,7 @@ export function retirementClaimsStand(args: ExitReasonArgs): boolean {
   )
     return false;
   const played = linked.matchUpStatus === COMPLETED && !!linked.winningSide;
-  if (!played && !lostAfterStructuralBye(args, linked, loserId)) return false;
-  return !inContextDrawMatchUps.some((matchUp) =>
-    Object.values(matchUp.sideExitProvenance ?? {}).some((entry) => entry?.sourceMatchUpId === request.matchUpId),
-  );
+  const held = !linked.sideExitProvenance && (played || lostAfterStructuralBye(args, linked, loserId));
+  if (!held && !heldLinkedWalkover(args, linked)) return false;
+  return !hasSourceOrigin(inContextDrawMatchUps, request.matchUpId);
 }

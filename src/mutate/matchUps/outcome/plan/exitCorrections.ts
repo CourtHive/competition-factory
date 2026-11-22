@@ -1,6 +1,8 @@
+import { relabelKeepsReservation } from './standingReservation';
 import { heldByeCarryCorrectionOps, relabelCarryReason, withdrawnReason } from './carriedExit';
 import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
+import { heldLoserByeClaims } from './heldLoserBye';
 import { retirementClaimsStand } from './unchangedExitClaims';
 import { freshByeCarry } from '../direction';
 import {
@@ -116,7 +118,8 @@ export function relabelledExit(args: ExitReasonArgs): boolean {
   const loser = direction?.loser;
   // no link: the write alone
   if (!loser) return true;
-  if (loser.carriedPast || loser.converged || loser.bye || !loser.arrives) return false;
+  if (loser.bye) return relabelKeepsReservation(args);
+  if (loser.carriedPast || loser.converged || !loser.arrives) return false;
   if (loser.exit) return !relabelCarryReason(view, write);
   if (loser.withdrawn)
     return (
@@ -134,7 +137,7 @@ export function relabelledExit(args: ExitReasonArgs): boolean {
     freshByeCarry(view)
   )
     return true;
-  if (retirementClaimsStand(args)) return true;
+  if (retirementClaimsStand(args) || heldLoserByeClaims(args)) return true;
   return (
     targets.loserMatchUpStatus === TO_BE_PLAYED &&
     !targets.loserMatchUpHasResult &&
