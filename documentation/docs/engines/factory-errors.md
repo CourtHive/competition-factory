@@ -21,6 +21,14 @@ try {
 }
 ```
 
+## Outcome result diagnostics
+
+A successful outcome or a refused outcome can return a top-level `result.stack` array. Its entries
+trace the internal calls that produced the result. Their names, order and number can change between
+factory releases or outcome pipeline modes. Where v1 supplies an array, v2 supplies an array as well.
+Use the other returned fields, including `result.error.code`, warnings and context, for application
+logic. The trace on the returned object is separate from a thrown JavaScript exception’s `Error.stack`.
+
 ## Why it exists
 
 The legacy POJO shape was OK at the boundary (serializes cleanly across IPC, easy to spread, never throws) but lost everything once it crossed back into JavaScript:

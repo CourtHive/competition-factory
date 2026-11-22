@@ -1,5 +1,5 @@
+import { getOperationFootprint } from '@Query/footprint/getOperationFootprint';
 import { FOOTPRINT_NOT_LOADED } from '@Constants/errorConditionConstants';
-import { getMethodFootprint } from '@Query/footprint/mutationFootprints';
 import { footprintCovers } from '@Query/footprint/footprintCovers';
 import { getLoadedFootprint } from '@Global/state/loadedFootprint';
 import { getOutcomePipeline } from '@Global/state/globalState';
@@ -30,7 +30,7 @@ export function checkLoadedFootprint({
     const loaded = getLoadedFootprint(tournamentRecord);
     if (!loaded) continue;
 
-    const required = getMethodFootprint(methodName, params, {
+    const required = getOperationFootprint(methodName, params, {
       outcomePipeline: getOutcomePipeline(),
       activeTournamentId: tournamentId,
       tournamentId: recordId,

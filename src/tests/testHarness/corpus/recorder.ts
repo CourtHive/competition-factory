@@ -266,8 +266,14 @@ export class CorpusRecorder {
       // even when its tournamentId is the same: a seeded mocksEngine call gives the same id every
       // time, so the id alone cannot tell (route-differential regenerates per route). A record
       // replaced DURING a core call (a rollback) is that step's own effect: `after` adopts it.
-      if (ids.length !== 1 || ids[0] !== this.open.tournamentId || records[ids[0]] !== this.open.live) {
-        // the test moved on to another record set: close this scenario, start another
+      const previous = this.open.steps.at(-1);
+      if (
+        ids.length !== 1 ||
+        ids[0] !== this.open.tournamentId ||
+        records[ids[0]] !== this.open.live ||
+        (previous && canonicalHash(this.open.live) !== previous.hash)
+      ) {
+        // A non-core mutation can also change the same record between observed calls. Start from its new state.
         if (this.open.steps.length) this.closed.push(this.open);
         this.open = undefined;
       }

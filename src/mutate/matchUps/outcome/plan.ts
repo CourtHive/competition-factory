@@ -22,6 +22,7 @@ import {
   REMOVE_DIRECTED,
   RESULT_TO_DOUBLE_EXIT,
   SINGLE_EXITS,
+  bareResultRequest,
   changesWinner,
   deciderSeats,
   directsElsewhere,
@@ -89,6 +90,7 @@ import {
 // constants and types
 import { DEFAULTED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { DrawDefinition, Score } from '@Types/tournamentTypes';
+import { LUCKY_DRAW } from '@Constants/drawDefinitionConstants';
 import type { OutcomeOp } from './ops';
 import type {
   AbstainReason,
@@ -118,8 +120,7 @@ import type {
  */
 
 /**
- * A lucky draw's double exit produces nothing (`doubleExitAdvancement`, CA 2026-11-17): entered, cleared or replaced, it
- * is read off v1's whole write, the planners' produced exit and its unwind having nothing to state there.
+ * A lucky draw's double exit produces no downstream entrant (`doubleExitAdvancement`, CA 2026-11-17).
  */
 const luckyDoubleExit = ({ view, request }: Pick<PlanArgs, 'view' | 'request'>): boolean =>
   !!view.draw.luckyBased && (isDoubleExit(request.matchUpStatus) || isDoubleExit(view.existing.matchUpStatus));
@@ -183,6 +184,27 @@ function exitReason(args: ExitReasonArgs): AbstainReason | SeatObligation | unde
   return undefined;
 }
 
+function plannedExitReason(args: PlanArgs): ReturnType<typeof exitReason> {
+  if (!luckyDoubleExit(args)) return exitReason(args);
+  const { view, request, route } = args;
+  if (view.drawType !== LUCKY_DRAW || view.isTeam || !bareResultRequest(request)) return 'exit';
+  if (satisfiedDoubleExit(view, request, route)) return undefined;
+  // The writer scores a fresh double exit before doubleExitAdvancement returns. A correction
+  // can reach this builder on a projected open match after removal, with removesWinningSide set.
+  const first =
+    route === DOUBLE_EXIT &&
+    view.existing.matchUpStatus === TO_BE_PLAYED &&
+    !args.write?.removesWinningSide &&
+    !view.existing.winningSide &&
+    !request.winningSide &&
+    isDoubleExit(request.matchUpStatus) &&
+    !args.direction &&
+    !view.targets.loserMatchUpId &&
+    !view.targets.loserLink &&
+    !view.targets.byeTarget;
+  return first ? undefined : 'exit';
+}
+
 /**
  * Shapes the factory never makes, which a record converted from elsewhere may hold (record soak 2026-11-18): the call is
  * v1's whole there, read off its write on a copy.
@@ -224,7 +246,7 @@ function abstainReasonOf(args: PlanArgs): AbstainReason | SeatObligation | undef
   // scoring policy's `incompleteAssignmentsOnDefault` writes `processCodes`, v1's)
   if (view.line && isDoubleExit(request.matchUpStatus)) return undefined;
   if (unstampedDoubleExit(args)) return 'exit';
-  const exit = luckyDoubleExit(args) ? 'exit' : exitReason(args);
+  const exit = plannedExitReason(args);
   if (typeof exit === 'string') return exit;
   if (satisfiedDoubleExit(view, request, args.route)) return undefined;
   // S4: a score changed beneath an active downstream keeps its winner and re-directs nothing (`apply-values`)
@@ -696,7 +718,8 @@ function planOps(args: PlanArgs): OutcomePlan {
   if (unrecorded || !drawDefinition) return { abstain: unrecorded ?? 'no-record' };
   if (args.dual) return lineDualOps({ ...args, dual: args.dual, drawDefinition });
   // a double exit asked for again: v1 writes nothing (`satisfiedDoubleExit`)
-  if (satisfiedDoubleExit(view, request, args.route)) return { ops: [], shape: 'local' };
+  if (satisfiedDoubleExit(view, request, args.route))
+    return { ops: request.matchUpId ? scheduleOps(args, request.matchUpId) : [], shape: 'local' };
   // a refused call has no route and no write (the differential plans it beside its refusal): nothing to state as ops,
   // as `recordedWhole` records nothing for it. A line's double exit is the one shape no reason above stops without one
   if (!args.route || !args.write) return { abstain: 'route' };

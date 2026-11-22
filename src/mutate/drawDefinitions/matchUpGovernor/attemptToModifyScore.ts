@@ -11,8 +11,7 @@ import { MISSING_ASSIGNMENTS } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 
 export function attemptToModifyScore(params) {
-  const { matchUpStatusCodes, autoCalcDisabled, inContextMatchUp, matchUpStatus, dualMatchUp, structure, matchUp } =
-    params;
+  const { matchUpStatusCodes, autoCalcDisabled, matchUpStatus, dualMatchUp } = params;
 
   const matchUpStatusIsValid =
     isDirectingMatchUpStatus({ matchUpStatus }) ||
@@ -20,22 +19,9 @@ export function attemptToModifyScore(params) {
     ([CANCELLED, ABANDONED].includes(matchUpStatus) && dualMatchUp) ||
     autoCalcDisabled;
 
-  const participantsCount =
-    matchUp?.sides?.map((side) => side.participantId).filter(Boolean).length ||
-    inContextMatchUp?.sides?.map((side) => side.participantId).filter(Boolean).length;
-
   const stack = 'attemptToModifyScore';
-  const hasAdHocSides =
-    (isAdHoc({ structure }) && participantsCount === 1) || (matchUpStatus === DEFAULTED && participantsCount);
-  const validToScore =
-    hasAdHocSides ||
-    drawPositionsAssignedParticipantIds({ structure, matchUp, inContextMatchUp }) ||
-    params.appliedPolicies?.[POLICY_TYPE_SCORING]?.requireParticipantsForScoring === false ||
-    // a single exit before the second opponent arrives, whether recorded or carried; checkParticipants has
-    // already decided whose side may be awarded it (CA, 2026-10-04: not a propagateExitStatus question)
-    (isExit(matchUpStatus) && participantsCount === 1);
-
-  if (!validToScore) return decorateResult({ result: { error: MISSING_ASSIGNMENTS }, stack });
+  const refusal = scoreAssignmentRefusal(params);
+  if (refusal) return refusal;
 
   const removeScore = [WALKOVER].includes(matchUpStatus);
 
@@ -49,6 +35,25 @@ export function attemptToModifyScore(params) {
     removeScore,
   });
   return decorateResult({ result, stack });
+}
+
+export function scoreAssignmentRefusal(params) {
+  const { matchUp, inContextMatchUp, structure, matchUpStatus } = params;
+  const participantsCount =
+    matchUp?.sides?.map((side) => side.participantId).filter(Boolean).length ||
+    inContextMatchUp?.sides?.map((side) => side.participantId).filter(Boolean).length;
+
+  const hasAdHocSides =
+    (isAdHoc({ structure }) && participantsCount === 1) || (matchUpStatus === DEFAULTED && participantsCount);
+  const validToScore =
+    hasAdHocSides ||
+    drawPositionsAssignedParticipantIds({ structure, matchUp, inContextMatchUp }) ||
+    params.appliedPolicies?.[POLICY_TYPE_SCORING]?.requireParticipantsForScoring === false ||
+    // a single exit before the second opponent arrives, whether recorded or carried; checkParticipants has
+    // already decided whose side may be awarded it (CA, 2026-10-04: not a propagateExitStatus question)
+    (isExit(matchUpStatus) && participantsCount === 1);
+  if (!validToScore) return decorateResult({ result: { error: MISSING_ASSIGNMENTS }, stack: 'attemptToModifyScore' });
+  return undefined;
 }
 
 function drawPositionsAssignedParticipantIds({ structure, matchUp, inContextMatchUp }) {

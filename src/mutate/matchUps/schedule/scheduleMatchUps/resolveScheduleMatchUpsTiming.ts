@@ -5,7 +5,7 @@ import { timingCategoryName } from '@Query/event/timingCategoryName';
 import { findEvent } from '@Acquire/findEvent';
 
 // constants and types
-import { Event, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 const LEGACY_AVERAGE_MINUTES = 90;
@@ -20,9 +20,9 @@ type ResolveScheduleMatchUpsTimingArgs = {
 };
 
 /** the tournament or the event states timing: an attached scheduling policy, `scheduling.timing`, or SCHEDULE_TIMING */
-function statesTiming(tournamentRecord?: Tournament, event?: Event): boolean {
+function statesTiming(tournamentRecord?: Tournament, event?: Event, drawDefinition?: DrawDefinition): boolean {
   if (!tournamentRecord) return false;
-  const { scheduleTiming } = getScheduleTiming({ tournamentRecord, event });
+  const { scheduleTiming } = getScheduleTiming({ tournamentRecord, drawDefinition, event });
   return !!(scheduleTiming.policy || scheduleTiming.tournamentScheduling || scheduleTiming.eventScheduling);
 }
 
@@ -51,19 +51,23 @@ export function resolveScheduleMatchUpsTiming({
   const resolvedRecoveryMinutes: { [matchUpId: string]: number } = {};
   let greatestAverageMinutes = 0;
   for (const matchUp of matchUps) {
-    const { tournamentId, eventId, matchUpFormat, matchUpId } = matchUp;
+    const { tournamentId, eventId, drawId, matchUpFormat, matchUpId } = matchUp;
     const tournamentRecord = tournamentId ? tournamentRecords[tournamentId] : undefined;
-    const event = tournamentRecord && eventId ? findEvent({ tournamentRecord, eventId }).event : undefined;
-    if (!matchUpFormat || !tournamentId || !statesTiming(tournamentRecord, event)) continue;
+    const found =
+      tournamentRecord && (eventId || drawId) ? findEvent({ tournamentRecord, eventId, drawId }) : undefined;
+    const event = found?.event;
+    if (!matchUpFormat || !tournamentId || !statesTiming(tournamentRecord, event, found?.drawDefinition)) continue;
     const category = event?.category;
     const timing = findMatchUpFormatTiming({
       categoryName: timingCategoryName(event),
       categoryType: timingCategoryType(category),
-      eventType: event?.eventType,
+      // a line is timed by its own type, never by its TEAM event's
+      eventType: matchUp.matchUpType ?? event?.eventType,
       tournamentRecords,
       matchUpFormat,
       tournamentId,
       eventId,
+      drawId,
     });
     if ('error' in timing) continue;
     resolvedRecoveryMinutes[matchUpId] = timing.recoveryMinutes ?? LEGACY_RECOVERY_MINUTES;

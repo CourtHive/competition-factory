@@ -11,10 +11,10 @@ import { getScheduleTiming } from './getScheduleTiming';
 import { POLICY_SCHEDULING_DEFAULT } from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
 import { DOUBLES_SINGLES, SINGLES_DOUBLES } from '@Constants/scheduleConstants';
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
-import { Event, Tournament, EventTypeUnion } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, Tournament, EventTypeUnion } from '@Types/tournamentTypes';
 import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
 import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
-import { SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 type GetMatchUpFormatTimingArgs = {
   policyDefinitions?: PolicyDefinitions;
@@ -26,6 +26,8 @@ type GetMatchUpFormatTimingArgs = {
   categoryName?: string;
   categoryType?: string;
   eventType?: EventTypeUnion;
+  /** the matchUp's draw: a draw-level scheduling policy wins over the event's and the tournament's */
+  drawDefinition?: DrawDefinition;
   event?: Event;
 };
 
@@ -38,19 +40,20 @@ export function getMatchUpFormatTiming({
   matchUpFormat,
   categoryName,
   categoryType,
+  drawDefinition,
   eventType,
   event,
 }: GetMatchUpFormatTimingArgs) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
 
-  // event is optional, so eventType can also be passed in directly
+  // event is optional, so eventType can also be passed in directly. A line of a TEAM event is timed by its own
+  // type (SINGLES/DOUBLES), never by a TEAM figure: a team matchUp holds no court of its own (CA 2026-11-20)
   eventType = eventType ?? event?.eventType ?? SINGLES_EVENT;
-  // a line (SINGLES/DOUBLES) of a TEAM event also reads the minutes the event's own timing is keyed by (TEAM)
-  const teamLine = event?.eventType === TEAM_EVENT && eventType !== TEAM_EVENT;
 
   const { scheduleTiming } = getScheduleTiming({
     policyDefinitions,
     tournamentRecord,
+    drawDefinition,
     categoryName,
     categoryType,
     event,
@@ -64,7 +67,7 @@ export function getMatchUpFormatTiming({
     categoryType,
   });
 
-  return matchUpFormatTimes({ eventType, timingDetails, playedMinutes, teamLine });
+  return matchUpFormatTimes({ eventType, timingDetails, playedMinutes });
 }
 
 type ResolveTimingDetailsArgs = {
@@ -223,8 +226,6 @@ function deciderMinutesOf(final: NonNullable<ReturnType<typeof parseMatchUpForma
 type MatchUpFormatTimesArgs = {
   eventType: EventTypeUnion;
   playedMinutes?: number;
-  /** the matchUp is a collection line (SINGLES/DOUBLES) of a TEAM event */
-  teamLine?: boolean;
   timingDetails: any;
 };
 
@@ -234,17 +235,13 @@ type MatchUpFormatTimesArgs = {
  * collection matchUps it times are SINGLES or DOUBLES: a reader asking for the line's type found no minutes and fell
  * back to defaults, so the override was shown and saved but never used. A key for the line's own type still wins.
  */
-function minutesFor(minutes: Record<string, any> | undefined, eventType: string, teamLine?: boolean) {
+/** the minutes for the matchUp's own type, else the default; a line never reads a TEAM figure */
+function minutesFor(minutes: Record<string, any> | undefined, eventType: string) {
   if (!minutes) return minutes;
-  return minutes[eventType] || (teamLine && minutes[TEAM_EVENT]) || minutes.default;
+  return minutes[eventType] || minutes.default;
 }
 
-export function matchUpFormatTimes({
-  timingDetails,
-  playedMinutes,
-  eventType,
-  teamLine,
-}: MatchUpFormatTimesArgs): ResultType & {
+export function matchUpFormatTimes({ timingDetails, playedMinutes, eventType }: MatchUpFormatTimesArgs): ResultType & {
   typeChangeRecoveryMinutes?: number;
   recoveryMinutes?: number;
   overnightMinutes?: number;
@@ -253,7 +250,7 @@ export function matchUpFormatTimes({
   recoveryFromPlayedMinutes?: boolean;
 } {
   const averageTimes = getMatchUpFormatAverageTimes(timingDetails);
-  const averageMinutes = minutesFor(averageTimes?.minutes, eventType, teamLine);
+  const averageMinutes = minutesFor(averageTimes?.minutes, eventType);
 
   const recoveryTimes = getMatchUpFormatRecoveryTimes({
     ...timingDetails,
@@ -261,7 +258,7 @@ export function matchUpFormatTimes({
   });
 
   const recoveryKeys = Object.keys(recoveryTimes?.minutes ?? {});
-  const flatRecoveryMinutes = minutesFor(recoveryTimes?.minutes, eventType, teamLine);
+  const flatRecoveryMinutes = minutesFor(recoveryTimes?.minutes, eventType);
 
   // A duration band wins over the flat figure, but only when the policy authors
   // one AND the caller measured a duration to key it on. Absent either, this is
@@ -282,7 +279,7 @@ export function matchUpFormatTimes({
   // is resolved independently of averageMinutes. Stays undefined when no policy
   // configures it — callers must read that as "no rule", not as zero.
   const overnightTimes = getOvernightRecoveryTimes(timingDetails);
-  const overnightMinutes = minutesFor(overnightTimes?.minutes, eventType, teamLine);
+  const overnightMinutes = minutesFor(overnightTimes?.minutes, eventType);
 
   return {
     recoveryFromPlayedMinutes: bandedMinutes !== undefined,

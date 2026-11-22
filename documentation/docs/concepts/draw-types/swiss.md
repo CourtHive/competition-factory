@@ -195,9 +195,13 @@ Each standing entry contains:
   sonnebornBerger?: number;
   progressiveScore?: number;
   opponentIds: string[];
-  rank: number;
+  rank: number; // competitive: records no tiebreaker separates share a rank (1, 1, 3)
+  tied?: boolean; // true when another record shares this rank
 }
 ```
+
+The array is in display order: among tied records it falls back to `participantId`, so the same results list the
+same way whatever order they were read in. Only `rank` says who finished ahead.
 
 ## Swiss Chart
 

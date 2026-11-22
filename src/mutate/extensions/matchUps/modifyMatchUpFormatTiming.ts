@@ -107,7 +107,7 @@ function modifyTiming({ tournamentRecord, recoveryTimes, matchUpFormat, averageT
   return { ...SUCCESS };
 }
 
-function modifyScheduling(params) {
+export function modifyScheduling(params) {
   const { matchUpRecoveryTimes = [], matchUpAverageTimes = [], matchUpFormat } = params;
 
   let { averageTimes: formatAverageTimes, recoveryTimes: formatRecoveryTimes } = params;

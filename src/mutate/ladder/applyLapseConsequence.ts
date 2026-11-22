@@ -1,6 +1,6 @@
+import { mirrorFailure, mirrorStandingToScale, snapshotStanding } from '@Mutate/ladder/mirrorStandingToScale';
 import { removeLadderParticipant } from '@Mutate/ladder/removeLadderParticipant';
 import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
-import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
 import { applyLadderMovement } from '@Mutate/ladder/applyLadderMovement';
 import { ladderStandingNotice } from '@Mutate/ladder/ladderNotices';
 import { getLadderOrdering } from '@Query/ladder/getLadderPolicy';
@@ -104,6 +104,7 @@ function dropPositions(params: ConsequenceArgs & { dropBy: number }): ResultType
   if (to === from) return { ...SUCCESS };
 
   const touched: PositionAssignment[] = [];
+  const restore = snapshotStanding(structure);
   for (const assignment of assignments) {
     if (assignment.drawPosition > from && assignment.drawPosition <= to) {
       assignment.drawPosition -= 1;
@@ -113,7 +114,11 @@ function dropPositions(params: ConsequenceArgs & { dropBy: number }): ResultType
   target.drawPosition = to;
   touched.push(target);
 
-  mirrorStandingToScale({ ...params, touched });
+  const mirrored = mirrorStandingToScale({ ...params, touched });
+  if (mirrored.error) {
+    restore();
+    return mirrorFailure(mirrored);
+  }
   ladderStandingNotice(params);
   return { ...SUCCESS };
 }

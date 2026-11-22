@@ -196,19 +196,19 @@ describe('addMatchUpScheduleItems coverage', () => {
     expect(result.warnings).toContain(ANACHRONISM);
   });
 
-  it('handles homeParticipantId in schedule', () => {
+  it('stores the date and home participant supplied together', () => {
     const { startDate, matchUps } = setupTournament();
-    const matchUpId = matchUps[0].matchUpId;
-    const drawId = matchUps[0].drawId;
+    const { matchUpId, drawId, sides } = matchUps[0];
+    const homeParticipantId = sides[0].participantId;
+    expect(homeParticipantId).toBeTruthy();
 
     const result = tournamentEngine.addMatchUpScheduleItems({
       matchUpId,
       drawId,
-      schedule: {
-        scheduledDate: startDate,
-        homeParticipantId: 'some-participant-id',
-      },
+      schedule: { scheduledDate: startDate, homeParticipantId },
     });
     expect(result.success).toBe(true);
+    const { matchUp } = tournamentEngine.findMatchUp({ matchUpId, drawId, inContext: true });
+    expect(matchUp.schedule).toMatchObject({ scheduledDate: startDate, homeParticipantId });
   });
 });

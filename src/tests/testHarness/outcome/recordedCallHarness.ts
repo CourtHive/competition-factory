@@ -1,8 +1,9 @@
 import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
-import { storedGraph } from '@Tests/testHarness/outcome/objectGraph';
 import { v1Writes } from '@Tests/testHarness/outcome/directionCounter';
 import { TOPICS } from '@Tests/testHarness/outcome/directionFixtures';
+import { storedGraph } from '@Tests/testHarness/outcome/objectGraph';
+import { captureReturn, expectReturnParity } from './returnParity';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
 import { setClock } from '@Tools/clock';
@@ -56,12 +57,13 @@ export function playCall(
   setClock('2026-10-25T00:01:00.000Z');
   setOutcomePipeline(mode);
   v1Writes.count = 0;
-  const { stack: _stack, ...result }: any = tournamentEngine.setMatchUpStatus(
-    asGiven ? params : structuredClone(params),
+  const { result, arrayStack } = captureReturn(
+    tournamentEngine.setMatchUpStatus(asGiven ? params : structuredClone(params)),
   );
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
   return {
     result,
+    arrayStack,
     notices,
     v1Writes: v1Writes.count,
     record: canonicalJson(tournamentEngine.getTournament().tournamentRecord),
@@ -107,6 +109,13 @@ export function expectRecordedWhole(
   expect(read()).toEqual({ abstained: before.abstained + 1, applied: before.applied + 1 });
   const v2 = playCall(OUTCOME_PIPELINE_V2, call);
   expect(v2.v1Writes).toEqual(0);
-  for (const actual of [compared, v2]) expect({ ...actual, v1Writes: 0 }).toEqual({ ...v1, v1Writes: 0 });
+  for (const actual of [compared, v2]) expectPlayedParity(actual, v1);
   return v1;
+}
+
+export function expectPlayedParity(actual: ReturnType<typeof playCall>, v1: ReturnType<typeof playCall>) {
+  expectReturnParity(actual, v1);
+  expect(actual.record).toEqual(v1.record);
+  expect(actual.notices).toStrictEqual(v1.notices);
+  expect(actual.graph).toStrictEqual(v1.graph);
 }

@@ -53,11 +53,22 @@ export function computeTiebreakers({
     standings.push(standing);
   }
 
-  sortStandings(standings, tiebreakMethods);
+  const compare = compareStandings(tiebreakMethods);
+  // display order: the competitive comparison, then participantId, so a tie lists the same way whatever the input order
+  standings.sort((a, b) => compare(a, b) || a.participantId.localeCompare(b.participantId, 'en'));
 
-  for (let i = 0; i < standings.length; i++) {
-    standings[i].rank = i + 1;
-  }
+  // rank is competitive, not positional (STANDINGS-102): records the comparison cannot separate share a rank (1, 1, 3)
+  // and are flagged `tied`, rather than taking ranks from the order they happened to arrive in
+  standings.forEach((standing, i) => {
+    const previous = standings[i - 1];
+    if (previous && compare(previous, standing) === 0) {
+      standing.rank = previous.rank;
+      standing.tied = true;
+      previous.tied = true;
+    } else {
+      standing.rank = i + 1;
+    }
+  });
 
   return standings;
 }
@@ -136,20 +147,17 @@ function computeProgressiveScore(record: SwissParticipantRecord): number {
   return progressive;
 }
 
-function sortStandings(standings: SwissStanding[], tiebreakMethods: string[]): void {
-  standings.sort((a, b) => {
-    // primary: points descending
+/** points descending, then each tiebreak in order; 0 when nothing separates the two */
+function compareStandings(tiebreakMethods: string[]) {
+  return (a: SwissStanding, b: SwissStanding): number => {
     if (b.points !== a.points) return b.points - a.points;
-
-    // apply tiebreakers in order
     for (const method of tiebreakMethods) {
       const valA = getTiebreakValue(a, method);
       const valB = getTiebreakValue(b, method);
       if (valB !== valA) return valB - valA;
     }
-
     return 0;
-  });
+  };
 }
 
 function getTiebreakValue(standing: SwissStanding, method: string): number {

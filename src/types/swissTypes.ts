@@ -27,7 +27,10 @@ export type SwissStanding = {
   sonnebornBerger?: number;
   progressiveScore?: number;
   opponentIds: string[];
+  /** competitive rank: records nothing separates share one (1, 1, 3) */
   rank: number;
+  /** true when another record shares this rank; the array order among them is display order only */
+  tied?: boolean;
 };
 
 export type SwissState = {

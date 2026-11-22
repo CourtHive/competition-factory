@@ -16,6 +16,8 @@ type FindMatchUpFormatTiming = {
   tournamentId: string;
   eventType?: EventTypeUnion;
   eventId?: string;
+  /** the matchUp's draw: its scheduling policy wins over the event's and the tournament's */
+  drawId?: string;
 };
 export function findMatchUpFormatTiming({
   defaultRecoveryMinutes = 0,
@@ -27,6 +29,7 @@ export function findMatchUpFormatTiming({
   tournamentId,
   eventType,
   eventId,
+  drawId,
 }: FindMatchUpFormatTiming) {
   if (!isWellFormedMatchUpFormat({ matchUpFormat })) return { error: UNRECOGNIZED_MATCHUP_FORMAT };
 
@@ -38,8 +41,10 @@ export function findMatchUpFormatTiming({
   tournamentIds.forEach((currentTournamentId) => {
     if (timing) return;
     const tournamentRecord = tournamentRecords[currentTournamentId];
-    const event = eventId ? findEvent({ tournamentRecord, eventId })?.event : undefined;
+    const found = eventId || drawId ? findEvent({ tournamentRecord, eventId, drawId }) : undefined;
+    const event = found?.event;
     timing = getMatchUpFormatTiming({
+      drawDefinition: drawId ? found?.drawDefinition : undefined,
       tournamentRecord,
       matchUpFormat,
       categoryName,

@@ -107,7 +107,7 @@ carry their own per-block `booking.capacity`. The setting lives at
 - `tournamentRecord` _required_
 - `defaultCapacity` _required_ — `number | null`. `null` clears the field
   (unlimited); `0` closes the slot to new registrations; positive integers
-  cap the simultaneous CONFIRMED registrations whose sub-windows overlap.
+  cap the peak number of CONFIRMED registrations present at any one instant.
 
 **Returns:** standard `{ success }` envelope.
 
@@ -159,8 +159,12 @@ The values are uniform:
 
 - `null` or omitted — **unlimited**
 - `0` — **closed** (every add returns `ERR_CAPACITY_EXCEEDED`)
-- positive integer — cap on simultaneous CONFIRMED registrations whose
-  sub-windows overlap
+- positive integer — cap on **peak occupancy**: the most CONFIRMED
+  registrations present at any single instant of the requested sub-window.
+  Registrations that overlap the window but not each other do not stack, so
+  with capacity `2` and `14:00–15:00` plus `15:00–16:00` booked, a
+  `14:00–16:00` request fits (no instant holds more than two). A registration
+  ending at `15:00` and one starting at `15:00` never coexist.
 
 Cancelled registrations never count toward the cap.
 

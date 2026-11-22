@@ -22,7 +22,8 @@ type SetPracticeDefaultCapacityArgs = {
  * Conventions:
  *   `null` — unlimited (also clears the field outright)
  *   `0`    — closed (no participant can claim a slot)
- *   positive integer — cap on simultaneous CONFIRMED registrations
+ *   positive integer — cap on peak occupancy: the most CONFIRMED registrations
+ *                      present at any one instant of a requested sub-window
  *
  * The setting lives at `Tournament.scheduling.practice.defaultCapacity`
  * (nested under the existing CODES first-class scheduling group leaf).

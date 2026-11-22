@@ -1,8 +1,11 @@
 import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { captureReturn, expectReturnParity } from '@Tests/testHarness/outcome/returnParity';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
+import * as stateWriter from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
+import * as recording from '@Mutate/matchUps/outcome/plan/recordedCall';
 import { TOPICS } from '@Tests/testHarness/outcome/directionFixtures';
 import { storedGraph } from '@Tests/testHarness/outcome/objectGraph';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -34,6 +37,7 @@ import {
  * somebody reaches them, and nothing reads them as though they did.
  */
 afterEach(() => {
+  vi.restoreAllMocks();
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
   setSubscriptions({ subscriptions: {} });
   setClock();
@@ -76,30 +80,38 @@ function play(mode: OutcomePipelineMode, prepared: any, { matchUpId, outcome, pa
   });
   setOutcomePipeline(mode);
   setClock('2026-10-25T00:01:00.000Z');
-  const { stack: _stack, ...result }: any = tournamentEngine.setMatchUpStatus({
-    outcome: structuredClone(outcome),
-    drawId: 'd',
-    matchUpId,
-    ...params,
-  });
+  const returned = captureReturn(
+    tournamentEngine.setMatchUpStatus({
+      outcome: structuredClone(outcome),
+      drawId: 'd',
+      matchUpId,
+      ...params,
+    }),
+  );
   return {
     record: canonicalJson(tournamentEngine.getTournament().tournamentRecord),
-    graph: storedGraph(result),
-    result: canonicalJson(result),
+    graph: storedGraph(returned.result),
+    returned,
+    result: canonicalJson(returned.result),
     notices,
   };
 }
 
 /** v2 and the differential leave what v1 leaves */
-function alike(prepared: any, call: Call, context?: string) {
+function alike(prepared: any, call: Call, context?: string, assertNative = false) {
+  const writer = assertNative ? vi.spyOn(stateWriter, 'setMatchUpState') : undefined;
   const v1 = play(OUTCOME_PIPELINE_V1, prepared, call);
+  if (writer) expect(writer).toHaveBeenCalled();
   for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+    writer?.mockClear();
     const actual = play(mode, prepared, call);
-    expect(actual.result, context).toEqual(v1.result);
+    if (writer && mode === OUTCOME_PIPELINE_V2) expect(writer).not.toHaveBeenCalled();
+    expectReturnParity(actual.returned, v1.returned, context);
     expect(actual.record, context).toEqual(v1.record);
     expect(actual.notices, context).toEqual(v1.notices);
     expect(actual.graph, context).toEqual(v1.graph);
   }
+  writer?.mockRestore();
   return v1;
 }
 
@@ -116,8 +128,10 @@ describe.each([5, 7, 8, 11, 12])('LUCKY_DRAW %i: a first-round double exit', (dr
         (matchUp) => matchUp.roundNumber === 1 && matchUp.matchUpStatus === TO_BE_PLAYED,
       );
       expect(open.length).toBeGreaterThan(1);
+      const recorder = vi.spyOn(recording, 'recordWholeCall').mockReturnValue(undefined);
       for (const { matchUpId } of open) {
-        const v1 = alike(prepared, { matchUpId, outcome: { matchUpStatus } }, `R1 ${matchUpId}`);
+        const v1 = alike(prepared, { matchUpId, outcome: { matchUpStatus } }, `R1 ${matchUpId}`, true);
+        expect(recorder).not.toHaveBeenCalled();
         expect(JSON.parse(v1.result)).toEqual({ success: true });
         const after = storedMatchUps(v1.record);
         expect(after.find((matchUp) => matchUp.matchUpId === matchUpId)?.matchUpStatus).toEqual(matchUpStatus);
@@ -138,7 +152,10 @@ describe.each([5, 7, 8, 11, 12])('LUCKY_DRAW %i: a first-round double exit', (dr
     const doubleExit = { matchUpId, outcome: { matchUpStatus: DOUBLE_WALKOVER } };
     expect(tournamentEngine.setMatchUpStatus({ drawId: 'd', ...doubleExit }).success).toEqual(true);
     const entered = stored();
-    const again = alike(entered, doubleExit);
+    const recorder = vi.spyOn(recording, 'recordWholeCall').mockReturnValue(undefined);
+    const again = alike(entered, doubleExit, undefined, true);
+    expect(recorder).not.toHaveBeenCalled();
+    recorder.mockRestore();
     expect(JSON.parse(again.result)).toEqual({ success: true });
     expect(storedMatchUps(again.record)).toEqual(storedMatchUps(canonicalJson(entered)));
     const cleared = alike(entered, { matchUpId, outcome: { matchUpStatus: TO_BE_PLAYED } });
@@ -149,6 +166,24 @@ describe.each([5, 7, 8, 11, 12])('LUCKY_DRAW %i: a first-round double exit', (dr
       before.filter((matchUp) => matchUp.matchUpId !== matchUpId),
     );
   });
+});
+
+it('records a first lucky double exit carrying notes and a correction from a played result', () => {
+  generate(8);
+  const { matchUpId } = drawMatchUps().find((matchUp) => matchUp.roundNumber === 1);
+  const before = stored();
+  expect(tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId, outcome: won(1) }).success).toBe(true);
+  const decided = stored();
+  const recorder = vi.spyOn(recording, 'recordWholeCall');
+  for (const [prepared, params] of [
+    [before, { notes: 'director entry' }],
+    [decided, {}],
+  ] as const) {
+    recorder.mockClear();
+    const v1 = alike(prepared, { matchUpId, outcome: { matchUpStatus: DOUBLE_DEFAULT }, params });
+    expect(v1.returned.result.success).toBe(true);
+    expect(recorder).toHaveBeenCalled();
+  }
 });
 
 // a double exit stored with no `scoredTime` (an older record's, or one a failed write left): v1 stamps it when the same
@@ -225,4 +260,12 @@ describe.each([7, 8, 11, 12])('LUCKY_DRAW %i: along a seeded walk', (drawSize) =
     }
     expect(doubleExits).toBeGreaterThan(5);
   });
+});
+
+it('preserves the public error fields and diagnostic array on a refused lucky outcome', () => {
+  generate(8);
+  const { matchUpId } = drawMatchUps().find((matchUp) => matchUp.roundNumber === 1);
+  const refused = alike(stored(), { matchUpId, outcome: { matchUpStatus: 'INVALID_STATUS' } });
+  expect(refused.returned.result.error).toBeDefined();
+  expect(refused.returned.arrayStack).toBe(true);
 });

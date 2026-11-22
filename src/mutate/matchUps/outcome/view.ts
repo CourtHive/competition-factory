@@ -1971,7 +1971,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         allowChangePropagation: request.flags.allowChangePropagation,
         propagateExitStatus: request.flags.propagateExitStatus,
         matchUpStatus: request.matchUpStatus,
-        winningSide: request.winningSide,
+        winningSide: dualProjection ? dualProjection.projectedWinningSide : request.winningSide,
         inContextDrawMatchUps,
         tournamentRecord,
         inContextMatchUp,
