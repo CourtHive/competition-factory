@@ -5,7 +5,7 @@ import { removalMissingDrawPositions } from '@Mutate/matchUps/drawPositions/remo
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { resolveRotatingPartnerOutcome } from '@Query/drawDefinition/resolveRotatingPartnerOutcome';
 import { refreshArrivals } from '@Mutate/drawDefinitions/matchUpGovernor/attemptToSetWinningSide';
-import { generateTieMatchUpScore } from '@Query/matchUp/tieMatchUpScore/generateTieMatchUpScore';
+import { projectTeamOutcome } from '@Query/matchUp/tieMatchUpScore/projectTeamOutcome';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
 import { correctionKindChange } from '@Mutate/matchUps/matchUpStatus/correctionKindGuard';
@@ -1049,29 +1049,10 @@ function handleTeamAutoCalc({
   } else if (enableAutoCalc) {
     const existingDualMatchUpWinningSide = matchUp.winningSide;
 
-    const {
-      winningSide: lineWinner,
-      scoreStringSide1,
-      scoreStringSide2,
-      set,
-    } = generateTieMatchUpScore({
-      drawDefinition,
-      matchUpsMap,
-      structure,
-      matchUp,
-      event,
-    });
-
-    // An explicit double exit withdraws both teams regardless of the line tally.
-    const doubleExit = isDoubleExit(params.matchUpStatus);
-    const projectedWinningSide = doubleExit ? undefined : lineWinner;
-    const score = doubleExit
-      ? params.score
-      : {
-          scoreStringSide1,
-          scoreStringSide2,
-          sets: set ? [set] : [],
-        };
+    const { projectedWinningSide, score } = projectTeamOutcome(
+      { drawDefinition, matchUpsMap, structure, matchUp, event },
+      params,
+    );
 
     dualWinningSideChange = projectedWinningSide !== existingDualMatchUpWinningSide;
 
