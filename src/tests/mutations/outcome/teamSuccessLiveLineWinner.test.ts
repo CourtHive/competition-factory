@@ -1,10 +1,13 @@
-import { setOutcomePipeline } from '@Global/state/globalState';
-import tieFormat from '@Fixtures/scoring/tieFormats/INTENNSE_2026.json';
 import { generateTieMatchUpScore } from '@Query/matchUp/tieMatchUpScore/generateTieMatchUpScore';
-import type { MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
-import engine from '@Engines/syncEngine';
-import mocks from '@Assemblies/engines/mock';
+import tieFormat from '@Fixtures/scoring/tieFormats/INTENNSE_2026.json';
+import { drawTypes, setupTimedPlayoff } from './timedTeamPlayoff';
+import { setOutcomePipeline } from '@Global/state/globalState';
 import { afterEach, describe, expect, it } from 'vitest';
+import mocks from '@Assemblies/engines/mock';
+import engine from '@Engines/syncEngine';
+
+// constants and types
+import type { MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
 
 const drawId = 'bolts';
 const modes = ['v1', 'v2', 'differential'] as const;
@@ -117,35 +120,37 @@ describe.each(modes)('%s timed TEAM line correction', (mode) => {
   });
 });
 
-it.each(modes)('keeps the finalist seat empty after the other six BOLTs finish in %s', (mode) => {
-  for (const prior of ['fresh', 'score only on fresh', 'completed', 'completed then cleared']) {
-    setup();
-    const matches = () =>
-      engine.getTournament().tournamentRecord!.events![0].drawDefinitions![0].structures[0].matchUps!;
-    const [parent] = matches();
-    const [line, ...others] = parent.tieMatchUps!;
-    expect(line.matchUpType).toBe('SINGLES');
-    const write = (matchUpId: string, outcome: Correction['outcome']) =>
-      engine.setMatchUpStatus({ drawId, matchUpId, outcome });
-    if (prior.startsWith('completed')) expect(write(line.matchUpId, completed(2)).success).toBe(true);
-    if (prior === 'completed then cleared')
-      expect(write(line.matchUpId, { matchUpStatus: 'TO_BE_PLAYED' }).success).toBe(true);
-    setOutcomePipeline(mode);
-    const outcome =
-      prior === 'score only on fresh'
-        ? { score: liveScore }
-        : { matchUpStatus: 'IN_PROGRESS' as const, score: liveScore };
-    expect(write(line.matchUpId, outcome).success).toBe(true);
-    for (const other of others)
-      expect(write(other.matchUpId, completed(2, other.matchUpType === 'SINGLES' ? 2 : 1)).success).toBe(true);
-    const [semifinal, , final] = matches();
-    expect(semifinal).toMatchObject({ matchUpStatus: 'IN_PROGRESS', score: { scoreStringSide1: '99-135' } });
-    expect(semifinal.winningSide).toBeUndefined();
-    expect(final.drawPositions).toEqual([]);
-    const hydrated = engine.allTournamentMatchUps().matchUps.find((m) => m.matchUpId === line.matchUpId)!;
-    expect(hydrated.matchUpStatus).toBe('IN_PROGRESS');
-    expect(hydrated.winningSide).toBeUndefined();
-  }
+describe.each(drawTypes)('%s', (drawType) => {
+  it.each(modes)('keeps the finalist seat empty after the other six BOLTs finish in %s', (mode) => {
+    for (const prior of ['fresh', 'score only on fresh', 'completed', 'completed then cleared']) {
+      const { drawId, matches } = setupTimedPlayoff(drawType);
+      const [parent] = matches();
+      const [line, ...others] = parent.tieMatchUps!;
+      expect(line.matchUpType).toBe('SINGLES');
+      const write = (matchUpId: string, outcome: Correction['outcome']) =>
+        engine.setMatchUpStatus({ drawId, matchUpId, outcome });
+      if (prior.startsWith('completed')) expect(write(line.matchUpId, completed(2)).success).toBe(true);
+      if (prior === 'completed then cleared')
+        expect(write(line.matchUpId, { matchUpStatus: 'TO_BE_PLAYED' }).success).toBe(true);
+      setOutcomePipeline(mode);
+      const outcome =
+        prior === 'score only on fresh'
+          ? { score: liveScore }
+          : { matchUpStatus: 'IN_PROGRESS' as const, score: liveScore };
+      expect(write(line.matchUpId, outcome).success).toBe(true);
+      expect(line).toMatchObject({ matchUpStatus: 'IN_PROGRESS', score: { scoreStringSide1: '7-6' } });
+      expect(line.winningSide).toBeUndefined();
+      for (const other of others)
+        expect(write(other.matchUpId, completed(2, other.matchUpType === 'SINGLES' ? 2 : 1)).success).toBe(true);
+      const [semifinal, , final] = matches();
+      expect(semifinal).toMatchObject({ matchUpStatus: 'IN_PROGRESS', score: { scoreStringSide1: '99-135' } });
+      expect(semifinal.winningSide).toBeUndefined();
+      expect(final.drawPositions).toEqual([]);
+      const hydrated = engine.allTournamentMatchUps().matchUps.find((m) => m.matchUpId === line.matchUpId)!;
+      expect(hydrated.matchUpStatus).toBe('IN_PROGRESS');
+      expect(hydrated.winningSide).toBeUndefined();
+    }
+  });
 });
 
 it.each(modes)('refuses an implied completed score on a one-period doubles BOLT in %s', (mode) => {
