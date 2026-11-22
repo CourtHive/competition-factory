@@ -1,0 +1,452 @@
+[
+  {
+    "finding": "F-008",
+    "test": "ERR_INVALID_MATCHUP_STATUS under v1 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-008",
+    "test": "ERR_INVALID_MATCHUP_STATUS under v1 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-008",
+    "test": "ERR_INVALID_MATCHUP_STATUS under v2 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-008",
+    "test": "ERR_INVALID_MATCHUP_STATUS under v2 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-008",
+    "test": "ERR_INVALID_MATCHUP_STATUS under differential preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-008",
+    "test": "ERR_INVALID_MATCHUP_STATUS under differential preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-009",
+    "test": "ERR_NOT_FOUND_MATCHUP under v1 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-009",
+    "test": "ERR_NOT_FOUND_MATCHUP under v1 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-009",
+    "test": "ERR_NOT_FOUND_MATCHUP under v2 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-009",
+    "test": "ERR_NOT_FOUND_MATCHUP under v2 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-009",
+    "test": "ERR_NOT_FOUND_MATCHUP under differential preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-009",
+    "test": "ERR_NOT_FOUND_MATCHUP under differential preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-010",
+    "test": "ERR_SHARED_INDIVIDUAL_PARTICIPANT under v1 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-010",
+    "test": "ERR_SHARED_INDIVIDUAL_PARTICIPANT under v1 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-010",
+    "test": "ERR_SHARED_INDIVIDUAL_PARTICIPANT under v2 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-010",
+    "test": "ERR_SHARED_INDIVIDUAL_PARTICIPANT under v2 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-010",
+    "test": "ERR_SHARED_INDIVIDUAL_PARTICIPANT under differential preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-010",
+    "test": "ERR_SHARED_INDIVIDUAL_PARTICIPANT under differential preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-010",
+    "test": "ERR_INVALID_PARTICIPANT_IDS under v1 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-010",
+    "test": "ERR_INVALID_PARTICIPANT_IDS under v1 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-010",
+    "test": "ERR_INVALID_PARTICIPANT_IDS under v2 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-010",
+    "test": "ERR_INVALID_PARTICIPANT_IDS under v2 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-010",
+    "test": "ERR_INVALID_PARTICIPANT_IDS under differential preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-010",
+    "test": "ERR_INVALID_PARTICIPANT_IDS under differential preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-010",
+    "test": "ERR_INVALID_VALUES under v1 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-010",
+    "test": "ERR_INVALID_VALUES under v1 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-010",
+    "test": "ERR_INVALID_VALUES under v2 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-010",
+    "test": "ERR_INVALID_VALUES under v2 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-010",
+    "test": "ERR_INVALID_VALUES under differential preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-010",
+    "test": "ERR_INVALID_VALUES under differential preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-011",
+    "test": "ERR_INVALID_VALUES under v1 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-011",
+    "test": "ERR_INVALID_VALUES under v1 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-011",
+    "test": "ERR_INVALID_VALUES under v2 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-011",
+    "test": "ERR_INVALID_VALUES under v2 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-011",
+    "test": "ERR_INVALID_VALUES under differential preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-011",
+    "test": "ERR_INVALID_VALUES under differential preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-013",
+    "test": "ERR_NOT_FOUND_COURT under v1 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-013",
+    "test": "ERR_NOT_FOUND_COURT under v1 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-013",
+    "test": "ERR_NOT_FOUND_COURT under v2 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-013",
+    "test": "ERR_NOT_FOUND_COURT under v2 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-013",
+    "test": "ERR_NOT_FOUND_COURT under differential preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-013",
+    "test": "ERR_NOT_FOUND_COURT under differential preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-012",
+    "test": "ERR_INVALID_VALUES under v1 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-012",
+    "test": "ERR_INVALID_VALUES under v1 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-012",
+    "test": "ERR_INVALID_VALUES under v2 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-012",
+    "test": "ERR_INVALID_VALUES under v2 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-012",
+    "test": "ERR_INVALID_VALUES under differential preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-012",
+    "test": "ERR_INVALID_VALUES under differential preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-014",
+    "test": "ERR_SCHEDULED_MATCHUPS under v1 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-014",
+    "test": "ERR_SCHEDULED_MATCHUPS under v1 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-014",
+    "test": "ERR_SCHEDULED_MATCHUPS under v2 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-014",
+    "test": "ERR_SCHEDULED_MATCHUPS under v2 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-014",
+    "test": "ERR_SCHEDULED_MATCHUPS under differential preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-014",
+    "test": "ERR_SCHEDULED_MATCHUPS under differential preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-014",
+    "test": "ERR_INVALID_TIME under v1 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-014",
+    "test": "ERR_INVALID_TIME under v1 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-014",
+    "test": "ERR_INVALID_TIME under v2 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-014",
+    "test": "ERR_INVALID_TIME under v2 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-014",
+    "test": "ERR_INVALID_TIME under differential preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-014",
+    "test": "ERR_INVALID_TIME under differential preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-016",
+    "test": "ERR_INVALID_MATCHUP: advancing from f621a7ae-3a51-4576-adbc-25af3cb3f298 (round 1) resolves to round 1 of the same structure; the record's matchUpIds are not unique under v1 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-016",
+    "test": "ERR_INVALID_MATCHUP: advancing from f621a7ae-3a51-4576-adbc-25af3cb3f298 (round 1) resolves to round 1 of the same structure; the record's matchUpIds are not unique under v1 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-016",
+    "test": "ERR_INVALID_MATCHUP: advancing from f621a7ae-3a51-4576-adbc-25af3cb3f298 (round 1) resolves to round 1 of the same structure; the record's matchUpIds are not unique under v2 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-016",
+    "test": "ERR_INVALID_MATCHUP: advancing from f621a7ae-3a51-4576-adbc-25af3cb3f298 (round 1) resolves to round 1 of the same structure; the record's matchUpIds are not unique under v2 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-016",
+    "test": "ERR_INVALID_MATCHUP: advancing from f621a7ae-3a51-4576-adbc-25af3cb3f298 (round 1) resolves to round 1 of the same structure; the record's matchUpIds are not unique under differential preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-016",
+    "test": "ERR_INVALID_MATCHUP: advancing from f621a7ae-3a51-4576-adbc-25af3cb3f298 (round 1) resolves to round 1 of the same structure; the record's matchUpIds are not unique under differential preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-015",
+    "test": "ERR_INVALID_DATE under v1 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-015",
+    "test": "ERR_INVALID_DATE under v1 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-015",
+    "test": "ERR_INVALID_DATE under v2 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-015",
+    "test": "ERR_INVALID_DATE under v2 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-015",
+    "test": "ERR_INVALID_DATE under differential preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-015",
+    "test": "ERR_INVALID_DATE under differential preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-019",
+    "test": "ERR_INVALID_SCALE_ITEM under v1 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-019",
+    "test": "ERR_INVALID_SCALE_ITEM under v1 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-019",
+    "test": "ERR_INVALID_SCALE_ITEM under v2 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-019",
+    "test": "ERR_INVALID_SCALE_ITEM under v2 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-019",
+    "test": "ERR_INVALID_SCALE_ITEM under differential preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-019",
+    "test": "ERR_INVALID_SCALE_ITEM under differential preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-017",
+    "test": "ERR_NOT_FOUND_PENALTY under v1 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-017",
+    "test": "ERR_NOT_FOUND_PENALTY under v1 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-017",
+    "test": "ERR_NOT_FOUND_PENALTY under v2 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-017",
+    "test": "ERR_NOT_FOUND_PENALTY under v2 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-017",
+    "test": "ERR_NOT_FOUND_PENALTY under differential preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-017",
+    "test": "ERR_NOT_FOUND_PENALTY under differential preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-018",
+    "test": "ERR_INVALID_PARTICIPANT_TYPE under v1 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-018",
+    "test": "ERR_INVALID_PARTICIPANT_TYPE under v1 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-018",
+    "test": "ERR_INVALID_PARTICIPANT_TYPE under v2 preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-018",
+    "test": "ERR_INVALID_PARTICIPANT_TYPE under v2 preserves the record, rollback=true",
+    "result": "passed"
+  },
+  {
+    "finding": "F-018",
+    "test": "ERR_INVALID_PARTICIPANT_TYPE under differential preserves the record, rollback=false",
+    "result": "failed"
+  },
+  {
+    "finding": "F-018",
+    "test": "ERR_INVALID_PARTICIPANT_TYPE under differential preserves the record, rollback=true",
+    "result": "passed"
+  }
+]

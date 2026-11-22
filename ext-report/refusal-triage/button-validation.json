@@ -1,0 +1,280 @@
+{
+  "host": "Button.local",
+  "node": "v26.8.1",
+  "timezone": "UTC",
+  "factoryBaseline": "c4a629c135",
+  "f007": {
+    "head": "f1217f57ea068fd2cc6403d73593a3323f2971ca",
+    "pr": "https://github.com/CourtHive/competition-factory/pull/6503",
+    "githubChecks": [
+      {
+        "name": "Analyze (actions)",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939346585/job/136952902994"
+      },
+      {
+        "name": "scope",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136952912068"
+      },
+      {
+        "name": "Analyze (javascript)",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939346585/job/136952902807"
+      },
+      {
+        "name": "gates (node 26)",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245143"
+      },
+      {
+        "name": "coverage shard 1/4 (node 26)",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245265"
+      },
+      {
+        "name": "coverage shard 2/4 (node 26)",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245232"
+      },
+      {
+        "name": "coverage shard 3/4 (node 26)",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245205"
+      },
+      {
+        "name": "coverage shard 4/4 (node 26)",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245349"
+      },
+      {
+        "name": "route-differential (node 26)",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245158"
+      },
+      {
+        "name": "double-exit-sweep (node 26)",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245184"
+      },
+      {
+        "name": "deep-corrections (node 26)",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245201"
+      },
+      {
+        "name": "hydrations (node 26)",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245192"
+      },
+      {
+        "name": "pipeline-arm 1/4",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245190"
+      },
+      {
+        "name": "pipeline-arm 2/4",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245256"
+      },
+      {
+        "name": "pipeline-arm 3/4",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245220"
+      },
+      {
+        "name": "pipeline-arm 4/4",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245202"
+      },
+      {
+        "name": "differential-arm 1/4",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245114"
+      },
+      {
+        "name": "differential-arm 2/4",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245216"
+      },
+      {
+        "name": "differential-arm 3/4",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245144"
+      },
+      {
+        "name": "differential-arm 4/4",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245147"
+      },
+      {
+        "name": "team-arms 1/5 v1 (node 26)",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245297"
+      },
+      {
+        "name": "team-arms 1/5 v2 (node 26)",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245336"
+      },
+      {
+        "name": "team-arms 2/5 v1 (node 26)",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245280"
+      },
+      {
+        "name": "team-arms 2/5 v2 (node 26)",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245266"
+      },
+      {
+        "name": "team-arms 3/5 v1 (node 26)",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245326"
+      },
+      {
+        "name": "team-arms 3/5 v2 (node 26)",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245253"
+      },
+      {
+        "name": "team-arms 4/5 v1 (node 26)",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245294"
+      },
+      {
+        "name": "team-arms 4/5 v2 (node 26)",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245315"
+      },
+      {
+        "name": "team-arms 5/5 v1 (node 26)",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245303"
+      },
+      {
+        "name": "team-arms 5/5 v2 (node 26)",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136953245361"
+      },
+      {
+        "name": "coverage (node 26)",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136957912188"
+      },
+      {
+        "name": "verify (node 26)",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/actions/runs/44939350900/job/136959242337"
+      },
+      {
+        "name": "CodeQL",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/CourtHive/competition-factory/runs/136953240852"
+      }
+    ],
+    "suites": {
+      "v1": {
+        "passed": 33682,
+        "skipped": 1565,
+        "failed": 0,
+        "total": 35247,
+        "seconds": 896.42
+      },
+      "v2": {
+        "passed": 33682,
+        "skipped": 1565,
+        "failed": 0,
+        "total": 35247,
+        "seconds": 861.39
+      },
+      "differential": {
+        "passed": 33682,
+        "skipped": 1565,
+        "failed": 0,
+        "total": 35247,
+        "seconds": 1095.66
+      }
+    }
+  },
+  "invariant": {
+    "head": "2c390bc489207d56242628f0094d5a475bce48d3",
+    "pr": "https://github.com/CourtHive/competition-factory/pull/6500",
+    "fullV2": {
+      "passed": 33678,
+      "skipped": 1565,
+      "failed": 0,
+      "total": 35243,
+      "seconds": 373.25
+    },
+    "scoped": {
+      "v1": {
+        "passed": 499,
+        "skipped": 0,
+        "failed": 0,
+        "total": 499,
+        "seconds": 24.79
+      },
+      "differential": {
+        "passed": 499,
+        "skipped": 0,
+        "failed": 0,
+        "total": 499,
+        "seconds": 25.05
+      }
+    },
+    "freshCapture": {
+      "scenarios": 6496,
+      "steps": 18592,
+      "refused": 1845,
+      "aggregateQueues": 0,
+      "changed": 44,
+      "allowed": 44,
+      "unexpected": 0
+    }
+  },
+  "planner": {
+    "head": "72311c315fb12ca414c2976788ee9ed86e201faa",
+    "pr": "https://github.com/CourtHive/competition-factory/pull/6516",
+    "test": {
+      "passed": 1,
+      "skipped": 1,
+      "failed": 0,
+      "total": 2,
+      "seconds": 1784.68
+    }
+  }
+}
