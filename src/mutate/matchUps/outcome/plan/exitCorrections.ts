@@ -1,6 +1,7 @@
 import { heldByeCarryCorrectionOps, relabelCarryReason, withdrawnReason } from './carriedExit';
 import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
+import { retirementClaimsStand } from './unchangedExitClaims';
 import { freshByeCarry } from '../direction';
 import {
   APPLY_VALUES,
@@ -133,6 +134,7 @@ export function relabelledExit(args: ExitReasonArgs): boolean {
     freshByeCarry(view)
   )
     return true;
+  if (retirementClaimsStand(args)) return true;
   return (
     targets.loserMatchUpStatus === TO_BE_PLAYED &&
     !targets.loserMatchUpHasResult &&
