@@ -1,5 +1,4 @@
-import { claimEdges, hasSourceOrigin, holdsPosition } from './placementClaims';
-import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { claimAssignment, hasSourceOrigin, holdsPosition, winnerClaimEdge } from './placementClaims';
 import { heldLinkedWalkover } from './heldLinkedWalkovers';
 import { APPLY_VALUES, bareResultRequest, indexed, sideDrawPosition } from './planShared';
 
@@ -11,23 +10,16 @@ import type { HydratedMatchUp } from '@Types/hydrated';
 // A BYE carries the occupied side's claim to the next round of its own structure.
 function nextWinnerSeat(args: ExitReasonArgs, source: HydratedMatchUp) {
   if (!args.drawDefinition || !args.view.inContextDrawMatchUps || !source.roundNumber) return undefined;
-  const next = claimEdges(
+  const next = winnerClaimEdge(
     { drawDefinition: args.drawDefinition, inContextDrawMatchUps: args.view.inContextDrawMatchUps },
     source,
   );
-  const target = next.targetMatchUps?.winnerMatchUp;
-  if (
-    !target ||
-    next.targetLinks?.winnerTargetLink ||
-    next.targetMatchUps?.loserMatchUp ||
-    next.targetMatchUps?.byeMatchUp
-  )
-    return undefined;
-  return target.structureId === source.structureId &&
-    target.roundNumber === source.roundNumber + 1 &&
-    target.matchUpId === source.winnerMatchUpId
-    ? target
-    : undefined;
+  return !next ||
+    next.targetLinks.winnerTargetLink ||
+    next.targetMatchUps.loserMatchUp ||
+    next.targetMatchUps.byeMatchUp
+    ? undefined
+    : next.targetMatchUps.winnerMatchUp;
 }
 
 /** The linked loser passed a structural BYE and lost a standing walkover. The award's winner still
@@ -37,10 +29,12 @@ function lostAfterStructuralBye(args: ExitReasonArgs, linked: HydratedMatchUp, l
     return false;
   const other = linked.sides?.find((side) => side.bye && !side.participantId);
   if (!other?.drawPosition) return false;
-  const assignment = getPositionAssignments({
-    drawDefinition: args.drawDefinition,
-    structureId: linked.structureId,
-  }).positionAssignments.find((seat) => seat.drawPosition === other.drawPosition);
+  if (!args.drawDefinition || !args.view.inContextDrawMatchUps) return false;
+  const assignment = claimAssignment(
+    { drawDefinition: args.drawDefinition, inContextDrawMatchUps: args.view.inContextDrawMatchUps },
+    linked,
+    other.drawPosition,
+  );
   if (!assignment?.bye || assignment.byeFromPropagation || assignment.participantId || assignment.qualifier)
     return false;
   const award = nextWinnerSeat(args, linked);

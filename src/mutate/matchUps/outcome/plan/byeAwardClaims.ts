@@ -1,6 +1,13 @@
 import { feederSendsNobody } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { claimEdges, holdsPosition, type ClaimDraw } from './placementClaims';
+import {
+  claimAssignment,
+  claimEdges,
+  exitOriginLanding,
+  holdsPosition,
+  winnerClaimEdge,
+  type ClaimDraw,
+} from './placementClaims';
 
 // constants and types
 import { BYE, COMPLETED, DEFAULTED, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
@@ -8,30 +15,10 @@ import type { HydratedMatchUp } from '@Types/hydrated';
 
 /** Only advance on the stored and derived winner edge. A separate loser or BYE feed is another obligation. */
 function winnerEdge(draw: ClaimDraw, matchUp: HydratedMatchUp) {
-  const edges = claimEdges(draw, matchUp);
-  if (
-    !edges.targetMatchUps ||
-    edges.targetLinks.byeTargetLink ||
-    edges.targetLinks.loserTargetLink ||
-    matchUp.loserMatchUpId
-  )
-    return undefined;
-  const next = edges.targetMatchUps.winnerMatchUp;
-  if (next?.matchUpId !== matchUp.winnerMatchUpId) return undefined;
-  if (
-    next &&
-    !edges.targetLinks.winnerTargetLink &&
-    (next.structureId !== matchUp.structureId || next.roundNumber !== (matchUp.roundNumber ?? 0) + 1)
-  )
-    return undefined;
-  return edges;
-}
-
-function assignment(draw: ClaimDraw, m: HydratedMatchUp, pos: number) {
-  return getPositionAssignments({
-    drawDefinition: draw.drawDefinition,
-    structureId: m.structureId,
-  }).positionAssignments.find((seat) => seat.drawPosition === pos);
+  const edges = winnerClaimEdge(draw, matchUp);
+  return !edges || edges.targetLinks.byeTargetLink || edges.targetLinks.loserTargetLink || matchUp.loserMatchUpId
+    ? undefined
+    : edges;
 }
 
 /** The reserved position has a specific feeder, whose actual losing link still lands at this seat. */
@@ -57,7 +44,7 @@ function byeStands(draw: ClaimDraw, m: HydratedMatchUp, position: number, reserv
   if (m.matchUpStatus !== BYE || m.winningSide) return false;
   const opposite = m.sides?.find((s) => s.drawPosition !== position && s.bye && !s.participantId)?.drawPosition;
   if (!opposite) return false;
-  const seat = assignment(draw, m, opposite);
+  const seat = claimAssignment(draw, m, opposite);
   return (
     !!seat?.bye &&
     !seat.participantId &&
@@ -80,31 +67,17 @@ function awardOrigin(draw: ClaimDraw, award: HydratedMatchUp, id: string, positi
     !loser.drawPosition
   )
     return undefined;
-  const mark = award.sideExitProvenance?.[loser.sideNumber];
+  if (Object.keys(award.sideExitProvenance ?? {}).length !== 1) return undefined;
+  const origin = exitOriginLanding(draw, award, loser.sideNumber, 'loser');
   if (
-    !mark?.sourceMatchUpId ||
-    mark.matchUpStatus !== award.matchUpStatus ||
-    Object.keys(award.sideExitProvenance ?? {}).length !== 1
+    !origin ||
+    origin.donor.structureId === award.structureId ||
+    origin.donor.sideExitProvenance ||
+    origin.landing.structureId !== award.structureId ||
+    origin.targetPosition !== loser.drawPosition
   )
     return undefined;
-  const donor = draw.inContextDrawMatchUps.find((m) => m.matchUpId === mark.sourceMatchUpId);
-  if (
-    !donor ||
-    donor.structureId === award.structureId ||
-    donor.sideExitProvenance ||
-    donor.matchUpStatus !== mark.previousMatchUpStatus
-  )
-    return undefined;
-  const target = claimEdges(draw, donor).targetMatchUps;
-  const landing = target?.loserMatchUp;
-  if (
-    !landing ||
-    landing.matchUpId !== donor.loserMatchUpId ||
-    landing.structureId !== award.structureId ||
-    target?.loserTargetDrawPosition !== loser.drawPosition
-  )
-    return undefined;
-  return { donor, landing, mark, loserId: loser.participantId, position: loser.drawPosition };
+  return { ...origin, loserId: loser.participantId, position: loser.drawPosition };
 }
 
 type AwardOrigin = NonNullable<ReturnType<typeof awardOrigin>>;

@@ -1,6 +1,6 @@
 import { feederSendsNobody } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { claimEdges, hasSourceOrigin, holdsPosition } from './placementClaims';
+import { claimEdges, exitOriginLanding, hasSourceOrigin, holdsPosition } from './placementClaims';
 import { producedTarget } from './producedTarget';
 import { indexed } from './planShared';
 
@@ -78,16 +78,20 @@ function standingAward(args: ExitReasonArgs, match: HydratedMatchUp) {
     origin.sourceMatchUpId === args.request.matchUpId
   )
     return undefined;
-  const donor = indexed(args.view, origin.sourceMatchUpId);
+  if (!args.drawDefinition || !args.view.inContextDrawMatchUps) return undefined;
+  const support = exitOriginLanding(
+    { drawDefinition: args.drawDefinition, inContextDrawMatchUps: args.view.inContextDrawMatchUps },
+    match,
+    loser.sideNumber,
+    'loser',
+  );
   if (
-    donor?.matchUpStatus !== WALKOVER ||
-    !donor.winningSide ||
-    donor.loserMatchUpId !== match.matchUpId ||
-    sideOf(donor, 3 - donor.winningSide)?.participantId !== loser.participantId
+    !support?.donor.winningSide ||
+    support.landing.matchUpId !== match.matchUpId ||
+    support.targetPosition !== loser.drawPosition
   )
     return undefined;
-  const targets = targetsOf(args, donor)?.targetMatchUps;
-  return targets?.loserMatchUp?.matchUpId === match.matchUpId && targets.loserTargetDrawPosition === loser.drawPosition
+  return sideOf(support.donor, 3 - support.donor.winningSide)?.participantId === loser.participantId
     ? winner
     : undefined;
 }
