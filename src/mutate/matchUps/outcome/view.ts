@@ -7,7 +7,7 @@ import { fedLoserPlacementRefusal } from '@Mutate/matchUps/drawPositions/reconci
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { isValidMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
-import { generateTieMatchUpScore } from '@Query/matchUp/tieMatchUpScore/generateTieMatchUpScore';
+import { projectTeamOutcome } from '@Query/matchUp/tieMatchUpScore/projectTeamOutcome';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
 import { resolveTieScoreSource } from '@Query/hierarchical/tieFormats/resolveTieScoreSource';
@@ -1879,19 +1879,10 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
 
   let dualProjection: OutcomeView['dualProjection'];
   if (isTeam && request.flags.enableAutoCalc) {
-    // v1 hands the generator the raw matchUp; the same input keeps the projection identical
-    const { winningSide, scoreStringSide1, scoreStringSide2, set } = generateTieMatchUpScore({
-      matchUp: matchUp as HydratedMatchUp,
-      drawDefinition,
-      matchUpsMap,
-      structure,
-      event,
-    });
-    dualProjection = {
-      projectedWinningSide: winningSide,
-      // the score v1 writes in place of the call's: `handleTeamAutoCalc` builds it from the same projection
-      score: { scoreStringSide1, scoreStringSide2, sets: set ? [set] : [] },
-    };
+    dualProjection = projectTeamOutcome(
+      { matchUp: matchUp as HydratedMatchUp, drawDefinition, matchUpsMap, structure, event },
+      request,
+    );
   }
 
   return {
