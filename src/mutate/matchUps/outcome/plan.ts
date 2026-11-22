@@ -747,7 +747,7 @@ function planOps(args: PlanArgs): OutcomePlan {
     const ops: OutcomeOp[] = [
       ...ownResultOps(args, args.write, id),
       ...reason.ops,
-      ...structureStamps(reason.ops, structureId),
+      ...structureStamps(reason.ops, structureId, drawDefinition),
       { op: 'stampUpdatedAt', entity: 'structure', id: structureId },
       { op: 'stampUpdatedAt', entity: 'drawDefinition', id: drawDefinition.drawId },
     ];

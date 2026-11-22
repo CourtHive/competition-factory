@@ -50,10 +50,8 @@ import type {
  * Ops grow by slice. S1 holds the result of the matchUp and the stamps: what a call that touches only its own
  * matchUp writes (measured 2026-10-24: status, score, winner, codes, `schedule.scoredTime`, and `updatedAt`).
  *
- * STAMPS ARE F2 (i): one per TOUCHED entity per call, the matchUp, its own structure and the draw. v1 keeps the same
- * rule for the draw and its matchUps (`drawNotifications.ts` `stampUpdatedAt`), and `differential` compares those by
- * value. v1's matchUp notice still stamps every top-level structure, so structure stamps are left out of that comparison
- * (CA, 2026-10-24, a temporary blind spot; see `shadow.ts`) and held to F2 (i) by v2's own tests.
+ * A match notice stamps the match, the draw and the top-level structure that owns the match. Each
+ * entity is stamped once per captured call. The shadow compares all of these stamps by value.
  */
 export type OutcomeOp =
   | {
