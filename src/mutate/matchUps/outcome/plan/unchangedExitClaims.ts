@@ -1,5 +1,6 @@
 import { hasSourceOrigin, holdsPosition } from './placementClaims';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { heldLinkedWalkover } from './heldLinkedWalkovers';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { APPLY_VALUES, bareResultRequest, indexed, sideDrawPosition } from './planShared';
 
@@ -67,7 +68,7 @@ function lostAfterStructuralBye(args: ExitReasonArgs, linked: HydratedMatchUp, l
 
 /** A non-carrying retirement changes only the source result when both outgoing claims still stand.
  * The winner holds their own position. The loser holds the linked position in an independently completed
- * match or has lost after a structural BYE. Any origin of this source, even beyond the two targets, can owe a withdrawal or a label refresh. */
+ * match, a standing walkover path, or a loss after a structural BYE. Any origin of this source, even beyond the two targets, can owe a withdrawal or a label refresh. */
 export function retirementClaimsStand(args: ExitReasonArgs): boolean {
   const { request, route, view } = args;
   const { existing, targets, inContextDrawMatchUps } = view;
@@ -100,7 +101,6 @@ export function retirementClaimsStand(args: ExitReasonArgs): boolean {
     targets.winnerLink ||
     onward.structureId !== targets.source.structureId ||
     linked.structureId === onward.structureId ||
-    linked.sideExitProvenance ||
     !targets.loserTargetSeat?.opponentHeld ||
     targets.loserTargetSeat.participantId !== loserId ||
     !holdsPosition(onward, winnerId, sideDrawPosition(view, winner)) ||
@@ -108,6 +108,7 @@ export function retirementClaimsStand(args: ExitReasonArgs): boolean {
   )
     return false;
   const played = linked.matchUpStatus === COMPLETED && !!linked.winningSide;
-  if (!played && !lostAfterStructuralBye(args, linked, loserId)) return false;
+  const held = !linked.sideExitProvenance && (played || lostAfterStructuralBye(args, linked, loserId));
+  if (!held && !heldLinkedWalkover(args, linked)) return false;
   return !hasSourceOrigin(inContextDrawMatchUps, request.matchUpId);
 }
