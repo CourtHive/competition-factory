@@ -176,6 +176,13 @@ including its timestamps, unchanged on a direct call or a queue directive. This 
 to documents supplied with `setState(record, false)`. Writer migrations are in progress. Known violations are
 tracked and tested with rollback disabled.
 
+With the default `setState(record)`, the factory works on a deep copy of the tournament record.
+The copy contains plain data and does not retain the document's setters. With `setState(doc, false)`,
+the factory holds the caller's live document. In either mode the factory decides eligibility from the
+values it holds during validation. A setter on a borrowed document can change the value stored after
+validation. Callers cannot rely on that setter to make an invalid input valid. Normalize inputs before
+calling a mutation on a live document, or use the default copy with plain inputs.
+
 A borrowed document can execute its own setters and casts when the factory applies a validated change. If that
 storage code throws, earlier assignments can remain visible. For example, a strict Mongoose schema can reject a
 later time item after an earlier rating was appended. Similar cases include an immutable penalty field, a strict
