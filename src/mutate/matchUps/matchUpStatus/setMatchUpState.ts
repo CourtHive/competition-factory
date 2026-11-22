@@ -28,7 +28,7 @@ import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { isDeciderStructure } from '@Query/drawDefinition/deciderStructures';
 import { isPropagatedExit } from '@Helpers/drawTopology/sideExitProvenance';
-import { lineTakesPlayedOnDualWinner } from './lineTakesPlayedOnDualWinner';
+import { declaredWinnerPlayedOn, lineTakesPlayedOnDualWinner } from './lineTakesPlayedOnDualWinner';
 import { validateDrawTallyOptions } from '@Validators/validateTallyPolicy';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -1245,6 +1245,16 @@ function lineTakesDualWinnerRefusal(params, activeDownstream: boolean, winningSi
     autoCalcDisabled: params.autoCalcDisabled && params.disableAutoCalc !== false,
     projectedWinningSide: params.projectedWinningSide,
     isLine: params.isCollectionMatchUp,
+    declaredWinnerPlayedOn:
+      !params.dualLineDecided &&
+      declaredWinnerPlayedOn(
+        params.dualMatchUp?.winningSide,
+        params.projectedWinningSide,
+        activeDownstream,
+        params.targetData,
+        params.drawDefinition,
+        params.inContextDrawMatchUps,
+      ),
     lineDecided: params.dualLineDecided,
     activeDownstream,
   });

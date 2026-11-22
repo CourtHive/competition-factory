@@ -120,6 +120,7 @@ export type OutcomeView = {
   propagatedExitStands: boolean;
   /** something later depends on this result (§ 3) */
   activeDownstream: boolean;
+  declaredWinnerPlayedOn?: boolean;
   /**
    * a WINNER/LOSER link with no source roundNumber, met reading this matchUp's targets or what depends on
    * it (§ 2 row 21; CA, 2026-10-06: a malformed round link is an error)

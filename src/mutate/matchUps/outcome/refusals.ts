@@ -302,6 +302,7 @@ function refuseDispatch(request: OutcomeRequest, view: OutcomeView): Refusal | u
       autoCalcDisabled: line?.autoCalcDisabled,
       dualWinningSide: line?.dualWinningSide,
       lineDecided: line?.dualLineDecided,
+      declaredWinnerPlayedOn: view.declaredWinnerPlayedOn,
       activeDownstream: view.activeDownstream,
       isLine: !!line,
     })
