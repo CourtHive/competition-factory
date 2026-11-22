@@ -116,31 +116,44 @@ it('records a scored retirement with a changed score under the played-on winner'
   compare(call, false);
 });
 
-// The walkover from Main 1|5 passes a BYE and stands in a later convergence (the published policy-off schedule).
-function byeHeldRepeat() {
+/** Rebuild the public pre-step record using the same seed, policy and schedule as the census. */
+function repeatFromSchedule(file: string, seed: number, index: number) {
   return prepareCall(() => {
-    const drawId = 'd';
-    const fixture = new URL('../../fixtures/exitPropagation/stallScaleSchedules20261009cd.jsonl', import.meta.url);
+    const fixture = new URL(`../../fixtures/exitPropagation/${file}`, import.meta.url);
     const scenario = readFileSync(fixture, 'utf8')
       .trim()
       .split('\n')
       .map((line) => JSON.parse(line))
-      .find((s) => s.seed === 20117658);
-    const { replay } = replayStalls({ drawId, scenario: { ...scenario, steps: scenario.steps.slice(0, 8) } });
-    expect(replay.counts.scheduleAttempted).toBe(8);
+      .find((s) => s.seed === seed);
+    const drawId = 'd';
+    const { replay } = replayStalls({ drawId, scenario: { ...scenario, steps: scenario.steps.slice(0, index) } });
+    expect(replay.counts.scheduleAttempted).toBe(index);
+    const next = scenario.steps[index];
     const matches: HydratedMatchUp[] = tournamentEngine.allDrawMatchUps({ drawId, inContext: true }).matchUps;
-    const source = matches.find((m) => m.structureName === 'Main' && m.roundNumber === 1 && m.roundPosition === 5)!;
-    const origins = matches.filter((m) =>
-      Object.values(m.sideExitProvenance ?? {}).some((e) => e.sourceMatchUpId === source.matchUpId),
-    );
-    expect(origins.map((m) => m.matchUpStatus).sort()).toEqual([BYE, DOUBLE_WALKOVER]);
+    const source = matches.find(
+      (m) =>
+        m.structureName === next.structureName &&
+        m.roundNumber === next.roundNumber &&
+        m.roundPosition === next.roundPosition,
+    )!;
     return {
       drawId,
       matchUpId: source.matchUpId,
-      outcome: { winningSide: 1, matchUpStatus: WALKOVER },
+      outcome: next.outcome,
       propagateExitStatus: true,
+      allowChangePropagation: false,
     };
   });
+}
+
+// Main 1|5's walkover passes a BYE and stands in a later convergence.
+function byeHeldRepeat() {
+  const call = repeatFromSchedule('stallScaleSchedules20261009cd.jsonl', 20117658, 8);
+  const origins = call.prepared
+    .events![0].drawDefinitions![0].structures!.flatMap((s) => matchUpsOf(s) ?? [])
+    .filter((m) => Object.values(m.sideExitProvenance ?? {}).some((e) => e?.sourceMatchUpId === call.params.matchUpId));
+  expect(origins.map((m) => m.matchUpStatus).sort()).toEqual([BYE, DOUBLE_WALKOVER]);
+  return call;
 }
 
 it('repeats the carry through a BYE into the later convergence', () => {
@@ -166,3 +179,25 @@ it('records a stale carry on the intervening BYE even when the standing label ma
     .find((e) => e.sourceMatchUpId === call.params.matchUpId);
   expect(repaired).toMatchObject({ matchUpStatus: WALKOVER, previousMatchUpStatus: WALKOVER });
 });
+
+it.each(['JSON null', 'own undefined', 'absent'] as const)(
+  'preserves side 2 and the public call when side 1 of a further COMPASS origin is %s',
+  (slot) => {
+    const call = repeatFromSchedule('stallScaleSchedules20261011h.jsonl', 20318646, 28);
+    const west = call.prepared.events![0].drawDefinitions![0].structures!.find((s) => s.structureName === 'West');
+    const farther = matchUpsOf(west)?.find((m) => m.roundNumber === 2 && m.roundPosition === 1)!;
+    const provenance = farther.sideExitProvenance!;
+    expect(provenance[1]?.matchUpStatus).toBe(DEFAULTED);
+    expect(provenance[2]?.previousMatchUpStatus).toBe(WALKOVER);
+    const kept = structuredClone(provenance[2]);
+    if (slot === 'absent') delete provenance[1];
+    else Object.assign(provenance, { 1: slot === 'JSON null' ? null : undefined });
+    const reference = compare(call, true);
+    expect(reference.notices).toHaveLength(3);
+    const after = JSON.parse(reference.record) as typeof call.prepared;
+    const stored = after
+      .events![0].drawDefinitions![0].structures!.flatMap((s) => matchUpsOf(s) ?? [])
+      .find((m) => m.matchUpId === farther.matchUpId);
+    expect(stored?.sideExitProvenance?.[2]).toEqual(kept);
+  },
+);

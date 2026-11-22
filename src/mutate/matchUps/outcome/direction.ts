@@ -126,7 +126,7 @@ function sourceLabelsStand(view: OutcomeView, sourceId: string | undefined, stat
     !view.inContextDrawMatchUps?.some((matchUp) =>
       Object.values(matchUp.sideExitProvenance ?? {}).some(
         (entry) =>
-          entry.sourceMatchUpId === sourceId &&
+          entry?.sourceMatchUpId === sourceId &&
           (!status ||
             entry.previousMatchUpStatus !== status ||
             (entry.matchUpStatus && entry.matchUpStatus !== status)),
