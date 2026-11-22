@@ -1,3 +1,4 @@
+import { heldLoserByeClaims } from './plan/heldLoserBye';
 import { clearedSingleExit, correctedSingleExit, refreshedArrivalOps, relabelledExit } from './plan/exitCorrections';
 import { getCapturedClock, getCapturedStamps, writeLegacyEnabled } from '@Global/state/globalState';
 import { producedRelayAfterOps, unwoundOps, unwoundPath, unwoundView } from './plan/unwindPath';
@@ -838,6 +839,21 @@ function quietUnderReconcile(
   );
 }
 
+function ownResultOps(args: PlanArgs, write: MatchUpWrite, matchUpId: string) {
+  const { request, view } = args;
+  const ops = resultOps(
+    request,
+    write,
+    matchUpId,
+    view.dualSides,
+    autoCalcWrite(request, view),
+    returnsQualifierRemoved(args),
+  );
+  const result = ops[0];
+  if (result.op === 'setMatchUpResult' && heldLoserByeClaims(args)) result.keepsLoserClaim = true;
+  return ops;
+}
+
 /** A recorded single-call plan after the shared refusal, dual and no-op gates. */
 function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObligation?: SeatObligation): OutcomePlan {
   const { request, view } = args;
@@ -863,14 +879,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
     // same rule (`ensuredDualSides`)
     // a schedule the call carries, written before the result as v1 writes it before `applyScoredTime` (S7)
     ...scheduleOps(args, matchUpId),
-    ...resultOps(
-      request,
-      write,
-      matchUpId,
-      view.dualSides,
-      autoCalcWrite(request, view),
-      returnsQualifierRemoved(args),
-    ),
+    ...ownResultOps(args, write, matchUpId),
     ...(refreshedArrivalOps(args) ?? []),
     // a convergence the unwind dissolved, re-announced by v1's settle pass after the call's own write (S6 tail)
     ...reannounced,

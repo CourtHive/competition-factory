@@ -1,9 +1,7 @@
-import { playCall, prepareCall, type RecordedCall } from '@Tests/testHarness/outcome/recordedCallHarness';
-import { expectReturnParity } from '@Tests/testHarness/outcome/returnParity';
+import { compareHeldClaims } from '@Tests/testHarness/outcome/compareHeldClaims';
+import { prepareCall } from '@Tests/testHarness/outcome/recordedCallHarness';
 import { replayStalls } from '@Tests/testHarness/exitPropagation/stallCount';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
-import * as stateWriter from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
-import * as recording from '@Mutate/matchUps/outcome/plan/recordedCall';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { afterEach, expect, it, vi } from 'vitest';
 import engine from '@Engines/syncEngine';
@@ -54,33 +52,13 @@ function seats(record: Tournament) {
   };
 }
 
-function compare(call: RecordedCall, native: boolean) {
-  const reference = playCall('v1', call);
-  expect(reference.result.success).toBe(true);
-  const recorder = vi.spyOn(recording, 'recordWholeCall');
-  if (native) recorder.mockReturnValue(undefined);
-  const writer = vi.spyOn(stateWriter, 'setMatchUpState');
-  for (const mode of ['v2', 'differential'] as const) {
-    recorder.mockClear();
-    const actual = playCall(mode, call);
-    expect(recorder.mock.calls.length === 0).toBe(native);
-    if (native && mode === 'v2') expect(writer).not.toHaveBeenCalled();
-    expectReturnParity(actual, reference);
-    expect(actual.arrayStack).toBe(reference.arrayStack);
-    expect(actual.graph).toStrictEqual(reference.graph);
-    expect(actual.record).toBe(reference.record);
-    expect(actual.notices).toStrictEqual(reference.notices);
-  }
-  return seats(JSON.parse(reference.record));
-}
-
 it.each(['off', 'policyoff'])('preserves both advances and the played walkover after a retirement (%s)', (arm) => {
   const call = scoredRetirement(arm);
   const before = seats(call.prepared);
   expect(before.bye).toMatchObject({ matchUpStatus: BYE, drawPositions: [6, 7] });
   expect(before.award).toMatchObject({ matchUpStatus: WALKOVER, winningSide: 1, drawPositions: [3, 7] });
   expect(before.receiver.drawPositions).toEqual([3]);
-  const { source, ...claims } = compare(call, true);
+  const { source, ...claims } = seats(compareHeldClaims(call, true));
   expect(source).toMatchObject({ matchUpStatus: RETIRED, winningSide: 1, score: { scoreStringSide1: '6-3' } });
   expect(claims).toEqual({ winner: before.winner, bye: before.bye, award: before.award, receiver: before.receiver });
 });
@@ -91,7 +69,7 @@ it('withdraws the source carry on the intervening BYE while the independent walk
   bye.sideExitProvenance = {
     2: { sourceMatchUpId: source.matchUpId, previousMatchUpStatus: WALKOVER, matchUpStatus: WALKOVER },
   };
-  const after = compare(call, false);
+  const after = seats(compareHeldClaims(call, false));
   expect(after.bye.sideExitProvenance?.[2]).toBeUndefined();
   expect(after.award).toEqual(award);
   expect(after.receiver.drawPositions).toEqual([3]);
@@ -101,7 +79,7 @@ it('repairs the missing earned position on the compatibility route', () => {
   const call = scoredRetirement();
   const { receiver } = seats(call.prepared);
   receiver.drawPositions = [];
-  const after = compare(call, false);
+  const after = seats(compareHeldClaims(call, false));
   expect(after.award.winningSide).toBe(1);
   expect(after.receiver.drawPositions).toEqual([3]);
 });
@@ -112,7 +90,7 @@ it('retracts the walkover and its advancement when the standing loss came from t
   award.sideExitProvenance = {
     2: { sourceMatchUpId: source.matchUpId, previousMatchUpStatus: WALKOVER, matchUpStatus: WALKOVER },
   };
-  const after = compare(call, false);
+  const after = seats(compareHeldClaims(call, false));
   expect(after.award.sideExitProvenance?.[2]).toBeUndefined();
   expect(after.award.winningSide).toBeUndefined();
   expect(after.receiver.drawPositions).toEqual([]);

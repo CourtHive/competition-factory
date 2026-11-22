@@ -88,6 +88,8 @@ export type OutcomeOp =
       stampsScoredTime?: false;
       /** the retained origin and all its onward consequences are explicitly planned (S7) */
       retainedExitPlanned?: true;
+      /** The source relabel preserves the loser's supported claim. No new carry enters settlement. */
+      keepsLoserClaim?: true;
       /**
        * the exit standing in the matchUp awarded to an arriving loser inside v1's `assignDrawPosition` (C29): written with no
        * direction, so nothing propagates from it
