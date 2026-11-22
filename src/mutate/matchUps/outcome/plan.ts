@@ -5,6 +5,7 @@ import { standaloneBareWinnerOps, standaloneCarriedWinnerOps } from './plan/stan
 import { carriedReason, heldByeCarryWithdrawal, retainedByeCarry } from './plan/carriedExit';
 import { takeAdmittedCarry, withPendingCarry, type CarrySource } from './plan/pendingCarry';
 import { retainedCarriedAwardOps, terminalOccupiedWinnerOps } from './plan/terminalAward';
+import { settledWinnerReentry } from './plan/settledWinnerReentry';
 import { notesReason, scheduleOps, scheduleReason } from './plan/schedulePlan';
 import { autoCalcWrite, resultOps, writtenScore } from './plan/resultOps';
 import { producedExitOps, producedReason } from './plan/producedExit';
@@ -287,7 +288,10 @@ function shapeReason(
 ): AbstainReason | undefined {
   const { request, view, write, direction } = args;
   if (shape.sameWinner) return applyValuesReason(args);
-  if (shape.reentered) return reenteredReason(view, write, direction);
+  if (shape.reentered) {
+    const reason = reenteredReason(view, write, direction);
+    return reason === 'cascade' && settledWinnerReentry(args) ? undefined : reason;
+  }
   if (shape.changing) return changedWinnerReason(view, write, direction, carryOf(args));
   if (shape.swapping) return swapReason(view, write);
   // S5: a double exit's produced exit, vetted by `producedReason`
