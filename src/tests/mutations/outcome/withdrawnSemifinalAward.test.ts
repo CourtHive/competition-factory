@@ -91,3 +91,17 @@ for (const shape of ['scored line', 'original BYE', 'persisted stale finalist', 
     }
   });
 }
+
+it.each(['v1', 'v2', 'differential'] as const)(
+  '%s preserves a finalist when the stored award has a different feeder',
+  (mode) => {
+    const { source, semi, other } = setup(true);
+    const origins = semi.sideExitProvenance!;
+    expect(origins[1].sourceMatchUpId).toBe(matches()[0].matchUpId);
+    origins[1].sourceMatchUpId = other.matchUpId;
+    setOutcomePipeline(mode);
+    const result = engine.setMatchUpStatus(outcome(source.matchUpId, WALKOVER, 2));
+    expect(result.success).toBe(true);
+    expect(matches()[6].drawPositions).toEqual([1, 5]);
+  },
+);
