@@ -2,7 +2,7 @@ import { firstClassGroupLeafOrExtension } from '@Helpers/extensions/firstClassGr
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 
 // constants and types
-import type { DailyLimitOverrides, DailyLimits } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkDailyLimits';
+import type { DailyLimitOverrides, DailyLimits } from '@Types/dailyLimitTypes';
 import { MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';

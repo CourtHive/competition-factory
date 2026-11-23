@@ -1,5 +1,5 @@
 // types
-import type { FootprintShard } from '@Query/footprint/mutationFootprints';
+import type { FootprintShard } from '@Types/footprintTypes';
 
 export type LoadedFootprint = {
   tournament?: boolean;

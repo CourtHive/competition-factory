@@ -1,11 +1,10 @@
-import type { AvoidancePolicy } from '@Mutate/drawDefinitions/positionGovernor/randomUnseededSeparation';
-import type { MatchUpActionsPolicy } from '@Query/drawDefinition/positionActions/actionPolicyUtils';
+import type { AvoidancePolicy, MatchUpActionsPolicy } from './policyShapes';
 import { DOUBLES_EVENT, SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import type { RotatingPartnerScoringPolicies } from './rotatingPartnerScoring';
 import type { RotatingPartnerTallyPolicy } from './rotatingPartnerTally';
 import { SignedInStatusUnion } from '@Constants/participantConstants';
 import type { RoundRobinTallyPolicy } from './roundRobinTallyPolicy';
-import type { HydrationCache } from '@Query/matchUps/hydrationCache';
+import type { HydrationCache } from './hydrationCacheTypes';
 import type { FactoryEngineMethod } from './factoryEngineMethods';
 import { HydratedMatchUp, HydratedParticipant } from './hydrated';
 import { ErrorType } from '@Constants/errorConditionConstants';
