@@ -1,5 +1,57 @@
 # Changelog
 
+## [7.46.0](https://github.com/CourtHive/competition-factory/compare/v7.45.0...v7.46.0) (2026-11-23)
+
+
+### Features
+
+* **outcome:** certify standing first-match loser reservations ([c8e6a82](https://github.com/CourtHive/competition-factory/commit/c8e6a8215399ab240d4b0c40fb20131ba767baca))
+* **outcome:** plan scored retirements over unchanged placements ([0d3cd1b](https://github.com/CourtHive/competition-factory/commit/0d3cd1bd2165ebf0286034bf699e1563f5716498))
+* **outcome:** preserve a supported terminal loser seat ([13b3801](https://github.com/CourtHive/competition-factory/commit/13b3801cfe5668470b7e0212d35c4ffed02d425f))
+* **outcome:** preserve earned placements past a structural bye ([fc6491c](https://github.com/CourtHive/competition-factory/commit/fc6491c454d75491d25bddd33c99b323809fa9f0))
+* **outcome:** preserve standing linked walkovers on scored retirement ([6989ed7](https://github.com/CourtHive/competition-factory/commit/6989ed7c5bab13827ec04eef6b05010e0aa4745a))
+* **outcome:** settle denied feeds against the held reservation ([5cf2322](https://github.com/CourtHive/competition-factory/commit/5cf23224292557cd91fea2073e877b3b11be80b0))
+* **outcome:** trace both arms of a consecutive bye award ([c33241a](https://github.com/CourtHive/competition-factory/commit/c33241adc4c9cf41f389decff11083905bdd2d3b))
+* **outcome:** trace foreign awards to an independent result ([306d470](https://github.com/CourtHive/competition-factory/commit/306d4701d69bce7d3a265452c2c5fdffbc7341fe))
+* plan first-winner arrivals against supported exit claims ([25c55f1](https://github.com/CourtHive/competition-factory/commit/25c55f1f1470a8b759c0daffb34f2b38428506b2))
+* **scheduling:** a profile dry run previews without writing, under limits it is given ([#6550](https://github.com/CourtHive/competition-factory/issues/6550)) ([1e0c482](https://github.com/CourtHive/competition-factory/commit/1e0c48243b2f3cfaf6f0019720abe445e2259304))
+
+
+### Bug Fixes
+
+* clear a double-defaulted TEAM line winner before the parent tally ([1bfce17](https://github.com/CourtHive/competition-factory/commit/1bfce177e208da7adff6104dcfcc73be60566ffa))
+* clear ineligible collection winners before scoring live corrections ([bba16f8](https://github.com/CourtHive/competition-factory/commit/bba16f88e8813c096ee3aa5a6692123f9853c465))
+* **deps:** update tods-competition-factory to 7.45.0 ([#6533](https://github.com/CourtHive/competition-factory/issues/6533)) ([53045ce](https://github.com/CourtHive/competition-factory/commit/53045ce30b44bea9b19c00adec5d56747476a795))
+* keep explicit TEAM double exits winnerless under auto-calculation ([14fe283](https://github.com/CourtHive/competition-factory/commit/14fe2833a374db7c0b3e37d5218882955bc02a2f))
+* **outcome:** place the TEAM winner after a score-only retally (F027) ([a276f2a](https://github.com/CourtHive/competition-factory/commit/a276f2ad9c51999b8c922c3bd9dbad52a4c84f59))
+* **outcome:** skip empty provenance slots on a standing repeat ([3c92079](https://github.com/CourtHive/competition-factory/commit/3c920791ddc9dc92b9019ff6517154c979183f68))
+* **outcome:** withdraw the produced semifinal award's advancement (F039) ([e38e0d5](https://github.com/CourtHive/competition-factory/commit/e38e0d588e558dca0039f3e5bba150ecb62a1e3e))
+* **participants:** commit penalty edits only after finding a match ([#6521](https://github.com/CourtHive/competition-factory/issues/6521)) ([2c347d5](https://github.com/CourtHive/competition-factory/commit/2c347d570e60deda4c249e64924ff1825fd1879a))
+* **participants:** plan a single participant addition before storage ([#6527](https://github.com/CourtHive/competition-factory/issues/6527)) ([fd5f5ce](https://github.com/CourtHive/competition-factory/commit/fd5f5ce2b7c08990a0ab233d1e5947e49b9eb21a))
+* plan TEAM line-up assignments from the seated team and held source ([e36f9c7](https://github.com/CourtHive/competition-factory/commit/e36f9c7b4849beb54cd5411526eb1efeda4154d0))
+* preflight every explicit team tally against distinct occupied seats ([bb1febe](https://github.com/CourtHive/competition-factory/commit/bb1febe3f89ddaf919bb4c2a7801e30faecdfe4c))
+* preserve a partial collection-line score under a standing dual award (F-042) ([#6544](https://github.com/CourtHive/competition-factory/issues/6544)) ([91752d1](https://github.com/CourtHive/competition-factory/commit/91752d18acb89aa7b4ad18aa42d1d415029137de))
+* preserve the independently scored TEAM consolation seat on replacement ([171b69e](https://github.com/CourtHive/competition-factory/commit/171b69e8b3705bb4e995007a91a4264c97b45c8f))
+* protect played-on TEAM winners before a line handover ([10c6f4a](https://github.com/CourtHive/competition-factory/commit/10c6f4a926ca236d0ce996f3441972ebda06483b))
+* **ratings:** plan the full participant writeback before committing ([#6522](https://github.com/CourtHive/competition-factory/issues/6522)) ([96e4c48](https://github.com/CourtHive/competition-factory/commit/96e4c483745d95c83a2a62e59192dc2387077ab7))
+* refuse a TEAM line tally that awards a BYE before advancing it ([b1757a2](https://github.com/CourtHive/competition-factory/commit/b1757a22db3de5bb0461e2438449b087ae3c7047))
+* require occupied team seats before committing a calculated dual winner ([279cb2b](https://github.com/CourtHive/competition-factory/commit/279cb2be88ea28be7650e1ac0c3fe129ee47b5e3))
+* stamp the owner of every directed match placement ([ef3101b](https://github.com/CourtHive/competition-factory/commit/ef3101b8985b4338278973a73f7b5f42c06e0ffb))
+* **team:** clear a collection line’s stale winner before recalculating the TEAM tally when the line becomes winnerless or reopens ([#6535](https://github.com/CourtHive/competition-factory/issues/6535)) ([d1da15e](https://github.com/CourtHive/competition-factory/commit/d1da15eb8b1685b39c6ffb9c084a000009ac5877))
+* **team:** keep an explicitly double-defaulted or double-walked-over TEAM dual winnerless when auto-calculation runs ([#6534](https://github.com/CourtHive/competition-factory/issues/6534)) ([8b4fcfb](https://github.com/CourtHive/competition-factory/commit/8b4fcfb90a43471ec9b49578913b515e0d438069))
+* **team:** place the recovered TEAM winner in the next round when clearing or correcting a line restores the dual award ([#6541](https://github.com/CourtHive/competition-factory/issues/6541)) ([1705153](https://github.com/CourtHive/competition-factory/commit/1705153d9669382869b5cf24e30dec96580c3bfc))
+* **team:** preserve the clinching team’s line-up and restore its draw line-up when it reaches a seated recipient through a BYE or produced default ([#6540](https://github.com/CourtHive/competition-factory/issues/6540)) ([83897e8](https://github.com/CourtHive/competition-factory/commit/83897e8732d2118a8e74883f05f2727e0abdbf26))
+* **team:** preserve the independently recorded TEAM consolation award on its original seat when an upstream correction replaces the arriving loser ([#6539](https://github.com/CourtHive/competition-factory/issues/6539)) ([477e43a](https://github.com/CourtHive/competition-factory/commit/477e43a720b98a3df3598b44bd377b7bb3ef8b18))
+* **team:** refuse a TEAM line correction that would reverse a dual winner who has already played on, preserving the downstream result ([#6536](https://github.com/CourtHive/competition-factory/issues/6536)) ([331c8b3](https://github.com/CourtHive/competition-factory/commit/331c8b3c75475c441b5438bb1b870f0548bfe14a))
+* **team:** refuse a TEAM line result that would award the dual to a BYE before any placement or tally is written ([#6537](https://github.com/CourtHive/competition-factory/issues/6537)) ([433f943](https://github.com/CourtHive/competition-factory/commit/433f943d8e321979d6999e57ed0ce4fe85a10796))
+* **team:** require two distinct teams in occupied seats for explicit TEAM auto-calculation while retaining structural BYE advancement ([#6538](https://github.com/CourtHive/competition-factory/issues/6538)) ([dd08076](https://github.com/CourtHive/competition-factory/commit/dd08076e47efea5d5a6161354d43bea131aae75d))
+* **team:** withdraw a stale finalist when a correction removes the produced TEAM semifinal award that advanced it ([#6542](https://github.com/CourtHive/competition-factory/issues/6542)) ([52bb882](https://github.com/CourtHive/competition-factory/commit/52bb882d8af8166a3afd424d909079c99d743841))
+
+
+### Documentation
+
+* **engines:** explain the borrowed storage validation boundary ([#6524](https://github.com/CourtHive/competition-factory/issues/6524)) ([b415c84](https://github.com/CourtHive/competition-factory/commit/b415c848b1a5abb2582da23be09a7e180b67d24a))
+
 ## [7.45.0](https://github.com/CourtHive/competition-factory/compare/v7.44.0...v7.45.0) (2026-11-22)
 
 
