@@ -99,6 +99,8 @@ import { BYE, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/m
 // ============================================================================
 
 type AssignMatchUpDrawPositionArgs = {
+  /** Event of the BYE whose winner is being assigned onward within this structure. */
+  throughByeEvent?: Event;
   inContextDrawMatchUps: HydratedMatchUp[];
   arrivesWithExit?: boolean;
   tournamentRecord?: Tournament;
@@ -112,6 +114,7 @@ type AssignMatchUpDrawPositionArgs = {
   event?: Event;
 };
 export function assignMatchUpDrawPosition({
+  throughByeEvent,
   inContextDrawMatchUps,
   arrivesWithExit,
   sourceMatchUpStatus,
@@ -420,6 +423,7 @@ export function assignMatchUpDrawPosition({
   // if { matchUpType: TEAM } then also assign the default lineUp to the appopriate side
   if (matchUp?.matchUpType === TEAM) {
     assignTeamLineUp({
+      event: throughByeEvent,
       inContextDrawMatchUps: resolvedInContextDrawMatchUps,
       positionAssignments,
       tournamentRecord,
@@ -735,6 +739,7 @@ function arrivesOnExitingSide({
  * or a pending exit is the same crossing, so it goes the same way.
  */
 function advanceIntoWinnerMatchUp({
+  isByeMatchUp,
   winnerMatchUpDrawPositionIndex,
   arrivesWithExit,
   inContextDrawMatchUps,
@@ -780,6 +785,7 @@ function advanceIntoWinnerMatchUp({
     event,
   });
   const result = assignMatchUpDrawPosition({
+    throughByeEvent: isByeMatchUp ? event : undefined,
     matchUpId: winnerMatchUp.matchUpId,
     inContextDrawMatchUps,
     arrivesWithExit,
@@ -913,6 +919,7 @@ function advanceDrawPosition(params) {
 }
 
 function assignTeamLineUp({
+  event,
   inContextDrawMatchUps,
   positionAssignments,
   tournamentRecord,
@@ -932,6 +939,7 @@ function assignTeamLineUp({
 
   if (teamParticipantId && drawPositionSideIndex !== undefined) {
     updateSideLineUp({
+      event,
       inContextTargetMatchUp,
       drawPositionSideIndex,
       teamParticipantId,
