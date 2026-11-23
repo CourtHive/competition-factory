@@ -5,14 +5,36 @@ title: migrateTournamentRecord
 An idempotent ingest/upgrade helper that walks a `tournamentRecord`, promotes the legacy envelopes listed below, and applies versioned repairs. The set of repairs evolves across releases, including 7.x native-record repairs. It mutates the supplied record; inspect `promoted` and `totalPromoted` before persisting the upgrade.
 
 ```ts
-import { tournamentEngine } from 'tods-competition-factory';
-const { migrateTournamentRecord } = tournamentEngine;
+import { tournamentGovernor } from 'tods-competition-factory';
+const { migrateTournamentRecord } = tournamentGovernor;
 
 const { tournamentRecord: legacy } = await loadLegacyRecord();
 const { promoted, totalPromoted } = migrateTournamentRecord({ tournamentRecord: legacy });
 // legacy is mutated in place — same reference, post-migration shape
 // promoted: { events: 4, matchUpScheduleTimeItems: 124, ... }
 ```
+
+## Inspect a record before migration
+
+Call the standalone query on a stored tournament record at an import or upgrade boundary. It reads the supplied object directly, including frozen records. It works before initializing an engine.
+
+```ts
+import { detectLegacyShape } from 'tods-competition-factory';
+
+const inspection = detectLegacyShape(record);
+if (inspection.success) {
+  const { total, legacyShapes } = inspection;
+  console.log(total, legacyShapes.matchUpScheduleTimeItems, legacyShapes.goesTo);
+}
+```
+
+`legacyShapes` has the same category names as the migration counts below. `total` is their sum. A recognized extension counts once per name and owner when its native destination is undefined. A BRIDGE record can keep the extension alongside a native value such as `false`, `0`, `null` or an empty collection. That pair contributes zero. An authorless sanction extension can be detected even though promotion requires a named authority.
+
+Each schedule attribute counts once per match, including a legacy clear sentinel when the native value is undefined. Participant presence and match check-ins count each history entry when their native arrays are absent. The inspection follows the migration's event, draw, nested structure and owner scopes. Match-level promotions cover matches stored directly on structures. Embedded TEAM tie lines and arbitrary extension payloads are outside that walk.
+
+`drawPositions` counts stored match arrays the migration would compact or reorder. `goesTo` counts draws whose stored progression edges or finishing ranges warrant inspection. This check uses the migration's inexpensive structure-level predicates and skips ad hoc draws. Some matches legitimately have no outgoing edge. One stored edge can satisfy its structure's predicate, even if a sibling's edge is missing. The query neither follows targets nor validates individual links. Migration can consequently write fewer changes than the detector reports.
+
+A missing or invalid record argument returns `MISSING_TOURNAMENT_RECORD`. Ordinary `setState(record)` performs no inspection. A zero count means the detector found no supported signal in its scopes.
 
 ## When to call it
 

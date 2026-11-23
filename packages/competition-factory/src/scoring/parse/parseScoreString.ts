@@ -1,6 +1,7 @@
 import { getTiebreakComplement } from '@Helpers/matchUpFormatCode/setRules/setComplement';
 import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { firstEnclosed } from './firstEnclosed';
 
 type ParseScoreArgs = {
   scoreString: string;
@@ -85,7 +86,7 @@ export function parseScoreString({ tiebreakTo = 7, scoreString = '', matchUpForm
   }
 
   function parseTiebreakGame(
-    tiebreakMatch: RegExpExecArray,
+    tiebreakMatch: [string, string],
     winningSide: number | undefined,
     setNumber: number,
   ): [number | undefined, number | undefined] {
@@ -107,8 +108,8 @@ export function parseScoreString({ tiebreakTo = 7, scoreString = '', matchUpForm
 
   function parseRegularSet(
     set: string,
-    tiebreak: RegExpExecArray | null,
-    bracketed: RegExpExecArray | null,
+    tiebreak: [string, string] | null,
+    bracketed: [string, string] | null,
     setNumber: number,
   ): Partial<ParsedSetString> {
     const setString = (tiebreak && set.replace(tiebreak[0], '')) || (bracketed && set.replace(bracketed[0], '')) || set;
@@ -140,11 +141,9 @@ export function parseScoreString({ tiebreakTo = 7, scoreString = '', matchUpForm
   }
 
   function parseSet({ set, setNumber }: ParseSetArgs): ParsedSetString {
-    const inParentheses = /\(([^)]+)\)/;
-
-    const inBrackets = /\[([^\]]+)\]/;
-    const tiebreak = inParentheses.exec(set);
-    const bracketed = inBrackets.exec(set);
+    // linear scans with the semantics of /\(([^)]+)\)/ and /\[([^\]]+)\]/ (CodeQL #245, #246)
+    const tiebreak = firstEnclosed(set, '(', ')');
+    const bracketed = firstEnclosed(set, '[', ']');
 
     const isTiebreakOnlySet = set?.startsWith('[') && bracketed;
     const isTiebreakOnlyFormat = checkIsTiebreakOnlyFormat(setNumber, !!isTiebreakOnlySet);

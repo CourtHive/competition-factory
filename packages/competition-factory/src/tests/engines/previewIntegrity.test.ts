@@ -1,3 +1,4 @@
+import { registerPreviewMethod } from '@Forge/previewMethods';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { randomSource, setRandomSource } from '@Tools/prng';
 import syncGlobalState from '@Global/state/syncGlobalState';
@@ -48,6 +49,12 @@ const methods = {
   },
 };
 syncEngine.importMethods(methods);
+registerPreviewMethod(syncEngine, methods.write, methods.write);
+registerPreviewMethod(syncEngine, methods.refuse, methods.refuse);
+registerPreviewMethod(syncEngine, methods.boom, methods.boom);
+registerPreviewMethod(syncEngine, methods.addObject, methods.addObject);
+registerPreviewMethod(syncEngine, methods.inputs, methods.inputs);
+registerPreviewMethod(syncEngine, methods.mint, methods.mint);
 
 /** Everything a preview could leave behind. */
 const observable = () => ({

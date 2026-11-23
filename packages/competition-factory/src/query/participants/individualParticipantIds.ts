@@ -75,17 +75,34 @@ export function getSharedIndividualConflicts({
   individualIdsMap: Record<string, string[]>;
   participantIds: string[];
 }): string[][] {
-  const conflicting: string[][] = [];
-  for (let i = 0; i < participantIds.length; i++) {
-    for (let j = i + 1; j < participantIds.length; j++) {
-      // the same id twice is one entrant listed twice -- a DUPLICATE_ENTRY question, with its own
-      // suppression semantics -- not two entrants who overlap. Answering it here would pre-empt
-      // that handling with the wrong error.
-      if (participantIds[i] === participantIds[j]) continue;
-      if (idsShareIndividual(individualIdsMap, participantIds[i], participantIds[j])) {
-        conflicting.push([participantIds[i], participantIds[j]]);
+  const entrantsByIndividual = new Map<string, Set<string>>();
+  const priorPositions = new Map<string, number[]>();
+  const conflictsByFirstPosition: string[][][] = [];
+
+  for (const [position, entrant] of participantIds.entries()) {
+    const otherEntrants = new Set<string>();
+    const roster = Object.hasOwn(individualIdsMap, entrant) ? individualIdsMap[entrant] : [];
+    for (const individual of new Set(roster ?? [])) {
+      const entrants = entrantsByIndividual.get(individual);
+      if (entrants) {
+        for (const other of entrants) {
+          if (other !== entrant) otherEntrants.add(other);
+        }
+        entrants.add(entrant);
+      } else {
+        entrantsByIndividual.set(individual, new Set([entrant]));
       }
     }
+
+    // Right positions arrive in order. Collect by left position to preserve the original pair order.
+    for (const other of otherEntrants) {
+      for (const first of priorPositions.get(other)!) {
+        (conflictsByFirstPosition[first] ??= []).push([other, entrant]);
+      }
+    }
+    const positions = priorPositions.get(entrant);
+    if (positions) positions.push(position);
+    else priorPositions.set(entrant, [position]);
   }
-  return conflicting;
+  return conflictsByFirstPosition.flat();
 }

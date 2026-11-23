@@ -26,6 +26,8 @@ export { unwrap, unwrapOr } from './unwrap';
 export type { Unwrap } from './unwrap';
 export { generatePatch } from '@Tools/jsonPatch';
 export type { JsonPatch, JsonPatchOp } from '@Tools/jsonPatch';
+export { registerPreviewMethod } from './previewMethods';
+export type { PrivatePreviewEngine, PreviewImplementation, PreviewParams } from './previewMethods';
 export { dryRun } from './dryRun';
 export type { DryRunResult, EmittedNotice } from './dryRun';
 export { explain } from './explain';

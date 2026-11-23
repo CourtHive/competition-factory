@@ -1,4 +1,5 @@
 import { checkLoadedFootprint } from '@Assemblies/engines/parts/loadedFootprintGuard';
+import { ownMethod } from '@Tools/ownMethod';
 import { getTournamentId, getTournamentRecords } from '@Global/state/globalState';
 import { logMethodNotFound } from '@Assemblies/engines/parts/logMethodNotFound';
 import { seedCall } from '@Assemblies/engines/parts/seedRandomParam';
@@ -34,7 +35,7 @@ export function validateDirectives(
       // a pipe reads the PREVIOUS directive's result; the first directive has none
       if (index === 0) return { error: INVALID_VALUES, message: 'pipe requires a preceding directive' };
     }
-    if (typeof methodName !== 'string' || !methods[methodName]) return logMethodNotFound({ methodName, start, params });
+    if (!ownMethod(methods, methodName)) return logMethodNotFound({ methodName, start, params });
     // partial-record mode: a queue that needs more than was loaded is refused whole, before its first directive runs
     const footprintError = checkLoadedFootprint({
       tournamentRecords: getTournamentRecords(),

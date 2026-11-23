@@ -5,7 +5,7 @@ export * as governors from './assemblies/governors';
 export * from './assemblies/governors';
 
 // UTILITIES ------------------------------------------------------------
-export * as matchUpFormatCode from './assemblies/governors/matchUpFormatGovernor';
+export { matchUpFormatGovernor as matchUpFormatCode } from './assemblies/governors';
 export * as utilities from './assemblies/tools'; // deprecate
 export * as tools from './assemblies/tools';
 
@@ -41,8 +41,18 @@ export {
 } from './errors';
 export type { FactoryErrorOptions } from './errors';
 
-export { forge, unwrap, unwrapOr, generatePatch, dryRun, explain } from './forge';
-export type { Unwrap, JsonPatch, JsonPatchOp, DryRunResult, EmittedNotice, ExplainResult } from './forge';
+export { forge, unwrap, unwrapOr, generatePatch, dryRun, explain, registerPreviewMethod } from './forge';
+export type {
+  Unwrap,
+  JsonPatch,
+  JsonPatchOp,
+  DryRunResult,
+  EmittedNotice,
+  ExplainResult,
+  PrivatePreviewEngine,
+  PreviewImplementation,
+  PreviewParams,
+} from './forge';
 export type {
   BuildFacade,
   BuildResult,
@@ -110,6 +120,7 @@ export { fixtures } from './fixtures';
 export type { DisciplineProfile } from './fixtures/disciplines/disciplineProfiles';
 
 // PURE STATS — usable without an engine instance.
+export { detectLegacyShape, type LegacyShapeCounts } from './query/tournaments/detectLegacyShape';
 export { computeRatingDistributionStats } from './query/formatWizard/distributionStats';
 
 // SCALE VALUES — the single implementation of "turn a scaleValue into a number".

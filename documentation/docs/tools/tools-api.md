@@ -923,17 +923,28 @@ tools.visualizeScheduledMatchUps({
 
 ### parseScoreString
 
-Parse a score string into set objects. Exported by `scoreGovernor`, not `tools`.
+Use `tools.scoring.parseScoreString(scoreString, options)` to read a score in side order. The default returns the same set array as `scoreGovernor.parseScoreString({ scoreString, matchUpFormat })`. Pass `strict: true` to require a format, consume every token and check each set as a finished set under that format. A score may contain only the sets finished so far.
 
 ```js
-import { scoreGovernor } from 'tods-competition-factory';
+import { tools } from 'tods-competition-factory';
 
-const sets = scoreGovernor.parseScoreString({
-  scoreString: '6-4 3-6 7-6(3)',
-  matchUpFormat: 'SET3-S:6/TB7',
-});
-// Result: [{ side1Score: 6, side2Score: 4, winningSide: 1, setNumber: 1 }, ...]
+const options = { matchUpFormat: 'SET3-S:6/TB7-F:TB10', strict: true };
+const sets = tools.scoring.parseScoreString('6-4 6(5)-7 [10-8]', options);
+const refusal = tools.scoring.parseScoreString('7-3', options);
+// refusal.reason === 'INVALID_SET_SCORE', refusal.setNumber === 1
 ```
+
+Separate sets with whitespace. Write games as `6-4`, a set tiebreak as `7-6(5)`, `6(5)-7` or `7-6[7-5]`, and a tiebreak-only set as `[10-8]`. A format that permits an implicit tiebreak also accepts `7-6`. Match-status words belong outside the score string.
+
+On refusal, `error.code` is the factory error code, `reason` identifies the category, and `info` explains the rule. A token or set refusal includes its one-based `setNumber`.
+
+| Reason                 | Error code                   | Meaning                                                                                  |
+| ---------------------- | ---------------------------- | ---------------------------------------------------------------------------------------- |
+| `FORMAT_REQUIRED`      | `ERR_MISSING_MATCHUP_FORMAT` | Strict mode requires an explicit format.                                                 |
+| `INVALID_FORMAT`       | `ERR_INVALID_MATCHUP_FORMAT` | The format code cannot be read.                                                          |
+| `INVALID_SYNTAX`       | `ERR_INVALID_SCORE`          | A token is missing, malformed, ambiguous or outside the safe integer range.              |
+| `INVALID_SET_SCORE`    | `ERR_INVALID_SCORE`          | The set failed `validateSetScore`. The validator's message is in `info`.                 |
+| `INVALID_SET_SEQUENCE` | `ERR_INVALID_SCORE`          | The format disallows this many sets, a set after the decision or this aggregate decider. |
 
 ---
 

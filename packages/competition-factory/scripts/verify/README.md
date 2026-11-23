@@ -11,7 +11,7 @@ A further check, `verify:ecosystem`, runs downstream consumer tests against the 
 | `verify:generated`         | a generated module (enum exports/constants, engine methods, method signatures) is stale; and `check:request-shapes` — a request shape reaching for bare `any` or bare `string` where a closed union exists; and `verify:any-count` — a directory gaining `any`; and `verify:constant-names` — a test using a constant's NAME as its value                                                                                                                                                                                        | ~2 s   |
 | `verify:types`             | type errors anywhere in `src`, test files included (`tsconfig.tests.json`); and `verify:implicit-any` — a directory gaining implicit `any`                                                                                                                                                                                                                                                                                                                                                                                       | ~25 s  |
 | `verify:lint`              | style + cognitive-complexity violations; zero-warnings rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | ~5 s   |
-| `verify:layers`            | a runtime import into a higher layer that `baseline/layers.json` does not hold, or a baseline entry the source no longer has (lower it in the same PR); a production file outside every layer; an internal import that resolves to nothing                                                                                                                                                                                                                                                                                       | ~1 s   |
+| `verify:layers`            | a runtime import into a higher layer that `baseline/layers.json` does not hold (a type-only one that `baseline/layers-types.json` does not hold), or a baseline entry the source no longer has (lower it in the same PR); a production file outside every layer; an internal import that resolves to nothing                                                                                                                                                                                                                     | ~1 s   |
 | `verify:exit-tenant`       | a NEW file in `src/` reaching for `matchUpStatusCodes` — the LEGACY array whose per-side exit tenant was evicted (P37); reads `sideExitProvenance` instead. Allowlisted by FILE, with a reason each, and a stale entry fails so the list ratchets down                                                                                                                                                                                                                                                                           | ~0 s   |
 | `verify:outcome-spec`      | outcome v2 deciding by a name its spec does not state: every `Route` id named in `outcome-pipeline.md` § 3, every refusal row `refusals.ts` raises a row of § 2 (outcome v2 executor plan G5); `--self-test` first                                                                                                                                                                                                                                                                                                               | ~0 s   |
 | `verify:coverage`          | regressions below `95/97/87/97.5` statements/functions/branches/lines                                                                                                                                                                                                                                                                                                                                                                                                                                                            | ~100 s |
@@ -96,6 +96,35 @@ node scripts/verify/ecosystem.mjs --skip=tidyScore
 node scripts/verify/ecosystem.mjs --build-factory        # rebuild dist before sweeping
 ```
 
+### `verify:declarations`
+
+The declaration-diff gate of the type-graph split (`Mentat/planning/FACTORY_TYPE_GRAPH_SPLIT_PLAN.md`).
+`scripts/verify/declarations.mjs` builds the three declaration bundles rollup ships (root, `constants`,
+`score-entry-state`) for the working tree and for `git merge-base HEAD origin/dev`, fingerprints every export
+(its declaration plus every top-level declaration it reaches, printed canonically) and reports exports added,
+removed and changed, with the declarations behind the changes.
+
+- **Base build.** The merge base is checked out with `git worktree add --detach` into a temporary directory that
+  borrows this checkout's `node_modules` by symlink (nothing is installed), built in parallel with HEAD, and
+  removed afterwards, on failure and on Ctrl-C too. About 9 s for both builds on an M-series Mac.
+- **Normalizations.** rollup's `$n` collision suffixes are stripped; names that still collide get a hash of their
+  own text; union and intersection members are sorted; synthesized namespace aliases (`type ns_X = X`) are
+  transparent; comments, and the public name of an `x as Y` export specifier, are ignored. Function overloads keep
+  source order. A byte diff cannot do this job: an import-graph change with no semantic change rewrites tens of
+  thousands of lines.
+- **`--self-test`** runs on synthetic bundles in about 0.1 s. It pins each normalization (reorder, renumber, swapped
+  collisions, alias, comments, specifier name: 0 changed) and the controls that must fire (a field made required,
+  an export added and removed, an overload reorder, a reference moved between colliding names).
+- **Modes.** `--mode required` (the default) exits 1 on any change; `--mode informational` always exits 0 and
+  appends the report to `$GITHUB_STEP_SUMMARY`. CI runs it after `verify:surface` on every PR: required when the
+  head branch starts with `type-split/`, informational otherwise.
+- **Other bases.** `--base <ref>` picks another ref to take the merge base with; `--base-dts <dir>` / `--head-dts
+  <dir>` compare already-built bundles instead (for example an unpacked npm tarball's `dist` before a release).
+  `--out <dir> --dump <Export>` keeps the bundles and writes that export's canonical closure, base and head.
+
+It is not in the `verify` chain: that chain is `prepublishOnly`, which runs on `master`, where a merge base
+with `dev` says nothing about the release.
+
 ## CI
 
 `.github/workflows/verify.yml` runs the `verify` chain on every PR + push to master, across the Node version matrix declared in `package.json#engines.node`. The job is skipped on release-please merge commits (CHANGELOG/version-only changes that don't need re-verification). The surface and bundle-size baselines participate in the same diff so updates are reviewable.
@@ -162,14 +191,22 @@ formats 2.1, scoring 2.2, domain helpers 2.3, queries 3, mutations 4, generators
 Production code importing a test harness or the dev server (`src/tests/`, `src/server/`) is one too: shipped
 code must not live there.
 
-`scripts/verify/baseline/layers.json` holds every violating import as `from -> to` with its count.
+The same walk counts type-only edges into a higher layer as a second ratchet: `import type`, `export type`
+(`export type *` too), a statement whose every named binding is `type`-qualified, and every `import('...')` type
+node, `typeof import('...')` included. A type edge upward pulls the higher layer into every type-check program
+that loads the file, which is what the type-graph split removes (`Mentat/planning/FACTORY_TYPE_GRAPH_SPLIT_PLAN.md`,
+decision 6). It holds everywhere, not only from contracts.
+
+`scripts/verify/baseline/layers.json` holds every violating runtime import as `from -> to` with its count, and
+`scripts/verify/baseline/layers-types.json` every violating type-only one; both ratchet by the rules below.
 
 - A key above its baseline fails, so a new violation fails even when another was removed and the total holds.
 - A baseline key the source no longer has fails: run `node scripts/verify/layers.mjs --update-baseline` in the PR
   that removes it. It refuses to write a rise unless `--accept-rise` is given.
 - A file outside every layer fails (give its directory a layer in `LAYERS`), and so does an internal import that
   resolves to nothing, since an edge the check cannot see is a violation it cannot count.
-- `--list` prints every violation grouped by layer pair; `--self-test` plants violations and asserts each fires.
+- `--list` prints every violation of each pass grouped by layer pair; `--self-test` plants violations (each
+  type-only form among them) and asserts each fires, and that type edges down and sideways stay quiet.
 
 ## `verify:constant-names` — a test must use a constant's value, not its name
 

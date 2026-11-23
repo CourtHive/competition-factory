@@ -1,3 +1,4 @@
+import { registerPreviewMethod } from '@Forge/previewMethods';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import syncGlobalState from '@Global/state/syncGlobalState';
 import { Decimal128, ObjectId } from 'bson';
@@ -39,6 +40,8 @@ const methods = {
   refuse: () => ({ error: { message: 'refused', code: 'ERR_REFUSED' } }),
 };
 syncEngine.importMethods(methods);
+registerPreviewMethod(syncEngine, methods.rename, methods.rename);
+registerPreviewMethod(syncEngine, methods.rework, methods.rework);
 
 const plainRecord = () => ({
   tournamentId: 'T',

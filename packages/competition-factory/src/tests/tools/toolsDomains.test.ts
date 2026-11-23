@@ -5,12 +5,12 @@ import * as tools from '@Assemblies/tools';
 /**
  * Stateless positional functions have a home in `tools`, by domain (CA 2026-11-07), rather than in a governor that
  * mounts them on engines which call every method with one params object. `tools.formats` and `tools.scoring` match the
- * planned `formats` and `scoring` packages. In 7.x the governors still export the same functions; each `tools` entry is
+ * planned `formats` and `scoring` packages. In 7.x the governors still export the shared functions; each shared entry is
  * the governor's own function, so the two homes cannot drift before 8.0.0 removes the governor placements.
  */
 
 const FORMATS = ['aggregateDeciderSetNumber', 'finalSetGoverns', 'isAggregateFormat', 'parse', 'stringify'];
-const SCORING = [
+const GOVERNOR_SCORING = [
   'addPoint',
   'analyzeSequence',
   'calculateMatchStatistics',
@@ -59,10 +59,10 @@ describe('tools.formats', () => {
 
 describe('tools.scoring', () => {
   it('holds exactly the scoring functions', () => {
-    expect(Object.keys(tools.scoring).sort()).toEqual([...SCORING].sort());
+    expect(Object.keys(tools.scoring).sort()).toEqual([...GOVERNOR_SCORING, 'parseScoreString'].sort());
   });
 
-  it.each(SCORING)('%s is the score governor function', (name) => {
+  it.each(GOVERNOR_SCORING)('%s is the score governor function', (name) => {
     expect(tools.scoring[name]).toBe(governors.scoreGovernor[name]);
   });
 

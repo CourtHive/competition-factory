@@ -5,12 +5,9 @@ import { getParticipantDayLoads } from './participantDayLoad';
 
 // constants
 import { TOTAL } from '@Constants/scheduleConstants';
+import type { DailyLimitOverrides, DailyLimits } from '@Types/dailyLimitTypes';
 
-export type DailyLimits = { [counterName: string]: number };
-export type DailyLimitOverrides = {
-  participants?: { [participantId: string]: DailyLimits }; // a policy's per-participant matchUpDailyLimits
-  tournaments?: { [tournamentId: string]: DailyLimits }; // each tournament's own defaults
-};
+export type { DailyLimitOverrides, DailyLimits } from '@Types/dailyLimitTypes';
 
 /**
  * The limits that apply to one participant in one matchUp: the defaults of the matchUp's own tournament (or

@@ -18,6 +18,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { HEADER_RE } from './importHeaderPattern.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = process.env.AUDIT_SRC || path.join(ROOT, 'src');
@@ -64,10 +65,7 @@ const GENERATED = new Set([
 const isJson = (spec) => spec.endsWith('.json');
 
 const CANONICAL_HEADERS = new Set(['// constants', '// types', '// constants and types', '// Fixtures']);
-// Header spellings this codemod is allowed to rewrite. Anything else is prose
-// and is left alone (and blocks reordering of its section).
-const HEADER_RE =
-  /^\/\/\/?\s*(import\s+(all\s+)?relevant\s+)?(constants?|contants|contstants|types?|fixtures)(\s*,?\s*(and\s+)?(constants?|contants|types?|fixtures))*\s*$/i;
+// Header spellings this codemod is allowed to rewrite: HEADER_RE, in importHeaderPattern.mjs.
 
 function walk(dir, out = []) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {

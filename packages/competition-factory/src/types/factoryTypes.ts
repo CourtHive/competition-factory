@@ -1,11 +1,10 @@
-import type { AvoidancePolicy } from '@Mutate/drawDefinitions/positionGovernor/randomUnseededSeparation';
-import type { MatchUpActionsPolicy } from '@Query/drawDefinition/positionActions/actionPolicyUtils';
+import type { AvoidancePolicy, MatchUpActionsPolicy } from './policyShapes';
 import { DOUBLES_EVENT, SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import type { RotatingPartnerScoringPolicies } from './rotatingPartnerScoring';
 import type { RotatingPartnerTallyPolicy } from './rotatingPartnerTally';
 import { SignedInStatusUnion } from '@Constants/participantConstants';
 import type { RoundRobinTallyPolicy } from './roundRobinTallyPolicy';
-import type { HydrationCache } from '@Query/matchUps/hydrationCache';
+import type { HydrationCache } from './hydrationCacheTypes';
 import type { FactoryEngineMethod } from './factoryEngineMethods';
 import { HydratedMatchUp, HydratedParticipant } from './hydrated';
 import { ErrorType } from '@Constants/errorConditionConstants';
@@ -211,11 +210,8 @@ export type FactoryEngineTyped = MethodSignatures &
     /**
      * Developer-JOY mutation preview — see `src/forge/dryRun.ts` (#3).
      *
-     * Run an `executionQueue` against the loaded state, capture the
-     * would-be diff (RFC 6902 JSON patch) and the topic/payload notices
-     * the real call would emit, then restore the engine's state (records,
-     * selected tournament, notice buffer, modification flag) in every case,
-     * including a method that throws under a truthy `devContext`.
+     * Run the directives in a child provider scope on private copies of the loaded records.
+     * Return the RFC 6902 patch, per-method results and notice payloads.
      * Subscribers are never notified. See `src/forge/dryRun.ts`.
      *
      *   const { wouldSucceed, patch, willEmitNotices } = engine.dryRun([

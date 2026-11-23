@@ -1,6 +1,21 @@
 // Ratings policy — how a dynamic rating moves on a result, attached via POLICY_TYPE_RATINGS.
 // Every rule encodes a published method; the policy's `source` names it (Mentat planning/RATINGS_POLICY_PLAN.md).
-import type { ExpectationRule } from '@Helpers/ratings/ratingUpdate';
+
+export type ExpectationRule =
+  | {
+      rule: 'LOGISTIC';
+      /** 10 in every published Elo-family method surveyed */
+      base: number;
+      /** 400 in most published methods; 600 in FIFA's men's ranking */
+      spread: number;
+    }
+  /** World Rugby: 0.5 + the rating gap × slope, the gap clamped to ±cap (slope 0.05, cap 10) */
+  | { rule: 'LINEAR'; slope: number; cap: number }
+  /**
+   * FIVB: the expected result value Σ P(i) × resultValues(i), the result probabilities from the standard normal Φ at
+   * the cut-points shifted by scale × the rating gap (scale 0.008).
+   */
+  | { rule: 'ORDERED_PROBIT'; scale: number; cutPoints: number[]; resultValues: number[] };
 
 export type RatingsKRule =
   /** one K for both sides: the update is zero-sum */

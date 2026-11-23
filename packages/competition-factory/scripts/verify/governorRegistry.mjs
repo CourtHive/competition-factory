@@ -25,7 +25,7 @@ import fs from 'node:fs';
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const GOVERNORS = path.join(ROOT, 'src', 'assemblies', 'governors');
-const INDEX = path.join(GOVERNORS, 'index.ts');
+const NAMESPACES = path.join(GOVERNORS, 'namespaces.ts');
 
 const directories = fs
   .readdirSync(GOVERNORS, { withFileTypes: true })
@@ -34,7 +34,7 @@ const directories = fs
   .filter((name) => fs.existsSync(path.join(GOVERNORS, name, 'index.ts')))
   .sort((a, b) => a.localeCompare(b));
 
-const source = fs.readFileSync(INDEX, 'utf8');
+const source = fs.readFileSync(NAMESPACES, 'utf8');
 const exported = new Set();
 const re = /export \* as (\w+) from '\.\/(\w+)'/g;
 let match;
@@ -45,6 +45,19 @@ while ((match = re.exec(source)) !== null) {
     console.error(`[governors] '${directory}' is exported as '${alias}' — the alias should match the directory`);
     process.exit(1);
   }
+}
+
+// The public bindings return those same namespaces after registering their raw methods.
+const bindings = fs.readFileSync(path.join(GOVERNORS, 'registered.mjs'), 'utf8');
+const registered = new Set();
+const registration =
+  /export const (\w+) =\s*(?:\/\*[^*]*\*\/\s*)?registerBuiltinPreviewMethods\(\s*namespaces\.(\w+),?\s*\)/g;
+for (const [, name, namespace] of bindings.matchAll(registration)) {
+  if (name !== namespace) throw new Error(`[governors] ${name} registers ${namespace}`);
+  registered.add(name);
+}
+if (registered.size !== exported.size || [...exported].some((name) => !registered.has(name))) {
+  throw new Error('[governors] registered.mjs must export each governor from namespaces.ts');
 }
 
 const unregistered = directories.filter((name) => !exported.has(name));

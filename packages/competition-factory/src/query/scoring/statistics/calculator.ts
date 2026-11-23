@@ -327,7 +327,8 @@ function sumComponents(components: string[], teams: Record<number, Record<string
     const isOptional = component.includes('*');
 
     // Clean component name
-    let cleanComponent = component.replace('-', '').replace('*', '');
+    // a leading '-' (opposing team) and any '*' (optional) mark the name; strip exactly those (CodeQL #166)
+    let cleanComponent = component.replace(/^-/, '').replaceAll('*', '');
 
     // Get the right team
     const targetTeam = isOpposingTeam ? 1 - team : team;

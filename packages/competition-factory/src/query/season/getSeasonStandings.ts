@@ -1,4 +1,4 @@
-import { getParticipantResults } from '@Query/matchUps/roundRobinTally/getParticipantResults';
+import { buildParticipantResults } from '@Query/matchUps/roundRobinTally/getParticipantResults';
 import { orderParticipants, type GroupingInputs } from '@Query/standings/orderParticipants';
 import { matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -270,7 +270,7 @@ function tierLedger(
   participantIds?: string[],
   groupingTotal?: string,
 ): { participantResults?: ParticipantResults; error?: ErrorType; info?: string } {
-  const tally = getParticipantResults({ matchUps: bucket.matchUps, tallyPolicy, participantIds, groupingTotal });
+  const tally = buildParticipantResults({ matchUps: bucket.matchUps, tallyPolicy, participantIds, groupingTotal });
   if (tally.error) return tally;
   const participantResults = (tally.participantResults ?? {}) as ParticipantResults;
   const scoped = participantIds ? new Set(participantIds) : undefined;

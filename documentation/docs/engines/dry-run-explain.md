@@ -9,7 +9,9 @@ Two preview facades let callers see what a mutation _would_ do before committing
 | `engine.dryRun(directives)`      | Full per-method results, the RFC 6902 patch, and what topics would have fired             | Preview a multi-method `executionQueue` |
 | `engine.explain(method, params)` | `{ wouldSucceed, reason?, willEmitTopics, touchesPaths }` projection over a single method | UI gates and tooltips                   |
 
-Both run the real engine machinery against a snapshot and then **always** restore state at the end. Subscribers are NOT notified — the notice buffer is captured into the result and drained.
+Both dispatch the same methods as a queue on private copies of the loaded records. With the async provider, the copy belongs to a child of the calling request. Other requests and the caller keep their own records, selection, pending notices and mutation flags throughout dispatch. The preview returns the notices a commit would deliver.
+
+The async engine supports both helpers within its request scope. With the synchronous state provider installed, the async engine returns `ERR_MISSING_ASYNC_STATE_PROVIDER` before dispatch. Use `await` when a registered method may return a Promise. The queue waits before piping the result to the next directive, computing the patch or projecting an explanation. Synchronous directives keep their immediate result.
 
 ## `engine.dryRun(directives)`
 
@@ -58,9 +60,29 @@ tournamentEngine.dryRun([
 ]);
 ```
 
+### Custom methods
+
+`registerPreviewMethod(engine, liveMethod, privateImplementation)` associates a method supplied to `importMethods` with the code that models it in preview. Register the raw function you import. Both its identity and the engine matter. Replacing a function under the same method name requires a new registration.
+
+```ts
+import { registerPreviewMethod, tournamentEngine } from 'tods-competition-factory';
+
+const rename = (name: string) => [{ method: 'setTournamentName', params: { tournamentName: name } }];
+const renameForLeague = ({ name }: { name: string }) => tournamentEngine.executionQueue(rename(name));
+
+tournamentEngine.importMethods({ renameForLeague });
+registerPreviewMethod(tournamentEngine, renameForLeague, ({ name }: { name: string }, privateEngine) =>
+  privateEngine.executionQueue(rename(name)),
+);
+```
+
+Match the material result and notices of your live method. Use the supplied records and the second argument, a private receiver with `getState`, `getTournament` and `executionQueue`, for nested factory calls. A preview implementation must keep all writes in that scope. Code that closes over the live engine or an external document can still update it. Keep I/O in the live method. In an async implementation, await nested work before returning.
+
+The factory checks the entire directive list before dispatch. If a known engine method lacks a private implementation, preview returns `ERR_UNREGISTERED_PREVIEW_METHOD` and its `methodName`, with empty results, patch and notices. Ordinary queues continue to use the live method. Factory governor methods support previews directly.
+
 ### Errors
 
-Three guard paths return `{ wouldSucceed: false, error }` without dispatching:
+Queue validation returns `{ wouldSucceed: false, error }` for each of these inputs.
 
 | Trigger                                                      | `error.message`                 |
 | ------------------------------------------------------------ | ------------------------------- |
@@ -68,7 +90,7 @@ Three guard paths return `{ wouldSucceed: false, error }` without dispatching:
 | Any directive's `params` is not an object                    | `'params must be an object'`    |
 | A directive references a method not registered on the engine | `'method '<name>' not found'`   |
 
-Method-level errors (the dispatched method returned `{ error }`) populate the top-level `error` _and_ stop the loop — subsequent directives don't run. The post-state still reflects whatever earlier directives modified before the error, and the snapshot still restores everything.
+Method-level errors (the dispatched method returned `{ error }`) populate the top-level `error` _and_ stop the loop — subsequent directives don't run. The patch includes the changes earlier directives made to the private copy.
 
 ## `engine.explain(method, params)`
 
@@ -106,6 +128,14 @@ type ExplainResult = {
 
 ## Performance
 
-One `makeDeepCopy` of `tournamentRecords` up front (the same cost `rollbackOnError` already pays) and one O(n) tree-walk diff at the end. For typical state sizes — single tournament with a few draws — both facades return in well under 10 ms. For very large state (50+ events, full draws) it's 50–200 ms.
+The preview reads the loaded records to build a private working copy and a stable patch baseline. The baseline keeps a concurrent real write out of the patch, including when two requests share a borrowed record. Copy and diff costs scale with the size of the loaded records.
 
-Safe for dev/preflight callers; **not** for hot scoring paths. The planned "no-rollback explain" optimization (run validators only, skip mutation + diff) is future work; ships when the engine exposes per-method validator metadata.
+## Custom state providers
+
+Implement `runWithInstanceState(fn)` to invoke the callback with fresh record storage, selection, notice buffer and mutation flags. For Node servers, bind the child store using `AsyncLocalStorage.run` so continuations inherit it. Both built-in providers implement the hook. A provider without it receives `ERR_ROLLBACK_UNAVAILABLE` before dispatch. A provider-backed document can supply a plain projection with its existing `makeDeepCopy(..., { purpose: 'snapshot' })` hook. Keep external I/O out of previewed directives.
+
+Each child needs its own records map and captured clock. An async provider must retain that child across awaits. A provider can also expose its active store through `getDeliveryScope()`. The factory checks the new scope before installing private state and returns `ERR_ROLLBACK_UNAVAILABLE` if the provider reuses the calling scope.
+
+The private receiver permits reads and nested queues during the preview. Await asynchronous work before returning. Configure engine options, providers and subscriptions in the host.
+
+Preview reads the active subscription topics and inherits buffered notices through `getNoticeBuffer()` and `setNoticeBuffer()`. Hosts that disable notifications must expose the current request’s flag via `notificationsDisabled()` or `getNoticeState().disableNotifications` so the preview can predict notice delivery. A provider without either getter uses the default enabled setting. Seeded randomness forks into the child. An opaque caller-supplied random source advances when the preview draws from it.

@@ -1,4 +1,5 @@
 import { captureOperation, restoreOperation } from '@Assemblies/engines/parts/operationState';
+import { ownMethod } from '@Tools/ownMethod';
 import { prepareDirective, validateDirectives } from '@Assemblies/engines/parts/directives';
 import { getQueueMethods } from '@Assemblies/engines/parts/engineMethodRegistry';
 import { deleteNotices, getInvokeObserver } from '@Global/state/globalState';
@@ -34,7 +35,7 @@ export function executionQueue(engine: FactoryEngine, directives: Directives, ro
         const { params, unthreadedSource } = prepareDirective(directive, results);
 
         const result = withCallRandomSource(unthreadedSource, () =>
-          executeFunction(engine, methods[methodName], params, methodName, 'sync'),
+          executeFunction(engine, ownMethod(methods, methodName), params, methodName, 'sync'),
         );
         getInvokeObserver()?.({ phase: 'after', methodName, engineType: 'sync', params, result });
 

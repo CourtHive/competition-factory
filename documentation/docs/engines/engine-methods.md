@@ -51,10 +51,7 @@ Register custom methods as before; dispatch names without generated signatures t
 The internal dynamic assemblies keep their implementation types; applications should use the root
 package exports to receive the public async contract.
 
-The synchronous convenience facades `q`, `build`, `dryRun` and `explain` are intentionally absent from
-the strict async surface: their current implementations do not await async governor calls. Use the
-direct awaited query/mutation or `executionQueue` instead. Their runtime implementations are unchanged;
-this type change does not claim to make those helpers async-safe.
+Use `await engine.dryRun(directives)` or `await engine.explain(method, params)` within the async provider's request scope. Previews return immediately for synchronous directives and settle after the last awaited directive when an imported method returns a Promise. For async queries and builders, use the awaited governor methods and `executionQueue`. [Preview behavior](./dry-run-explain.md)
 
 ## importMethods
 

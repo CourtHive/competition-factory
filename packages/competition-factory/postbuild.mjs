@@ -34,7 +34,7 @@ if (fs.existsSync(schemaSource)) {
 // imported by name becomes an object with a getter for every member.) The CJS shim and the type
 // files re-export the root's named governors, read from the barrel's source so a new governor
 // joins the subpath without an edit here.
-const governorsBarrel = './src/assemblies/governors/index.ts';
+const governorsBarrel = './src/assemblies/governors/namespaces.ts';
 const governorsEsm = './dist/esm/assemblies/governors/index.mjs';
 if (fs.existsSync(governorsBarrel) && fs.existsSync(governorsEsm)) {
   const names = [...fs.readFileSync(governorsBarrel, 'utf8').matchAll(/^export \* as (\w+) from /gm)].map((m) => m[1]);

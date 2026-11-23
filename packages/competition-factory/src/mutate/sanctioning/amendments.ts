@@ -45,6 +45,13 @@ export function proposeAmendment({
   if (!Array.isArray(changes) || changes.length === 0) {
     return { error: INVALID_VALUES, context: { message: 'At least one change is required' } };
   }
+  const prototypeField = changes.find((change) => typeof change?.field !== 'string' || namesPrototype(change.field));
+  if (prototypeField) {
+    return {
+      error: INVALID_VALUES,
+      context: { message: 'A change field may not name a prototype', field: prototypeField?.field },
+    };
+  }
   if (!AMENDABLE_STATUSES.includes(sanctioningRecord.status)) {
     return { error: AMENDMENT_NOT_ALLOWED, context: { status: sanctioningRecord.status } };
   }
@@ -213,8 +220,16 @@ function fieldRoot(field: string): string {
   return field.replaceAll(/\[\d+\]/g, '.*').split('.')[0];
 }
 
+// A path segment that resolves to a prototype rather than a value: writing through it pollutes every object in the
+// process (CodeQL #218: `events.__proto__.x` wrote Array.prototype.x on approval).
+const PROTOTYPE_SEGMENTS = new Set(['__proto__', 'constructor', 'prototype']);
+
+function namesPrototype(field: string): boolean {
+  return field.split('.').some((segment) => PROTOTYPE_SEGMENTS.has(segment.replace(/\[\d+\]$/, '')));
+}
+
 function isAmendableField(field: string): boolean {
-  return AMENDABLE_FIELD_PREFIXES.has(fieldRoot(field));
+  return AMENDABLE_FIELD_PREFIXES.has(fieldRoot(field)) && !namesPrototype(field);
 }
 
 /** `name[index]` notation in an amendment path, e.g. `events[0].drawSize`. */

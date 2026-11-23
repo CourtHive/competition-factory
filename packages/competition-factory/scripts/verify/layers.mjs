@@ -31,8 +31,15 @@
  * source into a test harness or the dev server counts as a violation too (layer "outside production source"):
  * shipped code must not live there.
  *
+ * TYPE EDGES (a second ratchet, same walk)
+ * The type-only forms excluded above are counted separately: `import type`, `export type`, a statement whose
+ * every named binding is `type`-qualified, and every `import('...')` type node (`typeof import('...')` included).
+ * A type edge into a higher layer drags that layer into every type-check program that loads the file, so it
+ * breaks the type-graph split (Mentat/planning/FACTORY_TYPE_GRAPH_SPLIT_PLAN.md, decision 6: ratchet type edges
+ * everywhere). They have their own baseline, `baseline/layers-types.json`, keyed and ratcheted the same way.
+ *
  * THE RULE
- * The baseline holds every violating edge as `from -> to` with its multiplicity. A key whose count RISES above
+ * Each baseline holds every violating edge as `from -> to` with its multiplicity. A key whose count RISES above
  * the baseline fails, so a new violation fails even when another was removed and the total holds. A baseline
  * key the source no longer has also fails: lower the baseline in the PR that removes the violation
  * (`--update-baseline`), or the removed import could come back unseen. `--update-baseline` refuses to write a
@@ -54,6 +61,7 @@ import { tmpdir } from 'node:os';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BASELINE = join(ROOT, 'scripts', 'verify', 'baseline', 'layers.json');
+const TYPE_BASELINE = join(ROOT, 'scripts', 'verify', 'baseline', 'layers-types.json');
 const ts = createRequire(import.meta.url)(join(ROOT, 'node_modules', 'typescript'));
 
 /** `[layer, name, prefixes]`: a prefix is a path under `src/`, matched on whole segments. */
@@ -167,7 +175,10 @@ function isTypeOnly(node) {
   return !!elements?.length && elements.every((element) => element.isTypeOnly);
 }
 
-/** `{ files, edges: [{ from, to }], unresolved: [{ from, specifier }] }`, paths relative to `src/` (posix). */
+/**
+ * `{ files, edges: [{ from, to }], typeEdges: [{ from, to }], unresolved: [{ from, specifier }] }`, paths relative
+ * to `src/` (posix). `edges` are runtime edges; `typeEdges` are the type-only forms and `import('...')` type nodes.
+ */
 export function collectEdges(rootDir) {
   const srcDir = join(rootDir, 'src');
   const files = productionFiles(rootDir);
@@ -194,14 +205,15 @@ export function collectEdges(rootDir) {
   };
 
   const edges = [];
+  const typeEdges = [];
   const unresolved = [];
   for (const file of files) {
     const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);
-    const add = (specifier) => {
+    const add = (specifier, into = edges) => {
       if (!internal(specifier)) return;
       const target = resolveSpecifier(file, specifier);
       if (target === undefined) unresolved.push({ from: srcRel(file), specifier });
-      else if (target) edges.push({ from: srcRel(file), to: srcRel(target) });
+      else if (target) into.push({ from: srcRel(file), to: srcRel(target) });
     };
     const visit = (node) => {
       if (
@@ -209,7 +221,14 @@ export function collectEdges(rootDir) {
         node.moduleSpecifier &&
         ts.isStringLiteral(node.moduleSpecifier)
       ) {
-        if (!isTypeOnly(node)) add(node.moduleSpecifier.text);
+        add(node.moduleSpecifier.text, isTypeOnly(node) ? typeEdges : edges);
+      } else if (
+        // `import('...').X` and `typeof import('...')` in a type position
+        ts.isImportTypeNode(node) &&
+        ts.isLiteralTypeNode(node.argument) &&
+        ts.isStringLiteral(node.argument.literal)
+      ) {
+        add(node.argument.literal.text, typeEdges);
       } else if (
         ts.isCallExpression(node) &&
         (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
@@ -223,13 +242,11 @@ export function collectEdges(rootDir) {
     };
     visit(source);
   }
-  return { files: files.map(srcRel), edges, unresolved };
+  return { files: files.map(srcRel), edges, typeEdges, unresolved };
 }
 
-/** `{ violations: { 'from -> to': n }, unlayered: [file] }` */
-export function measure(rootDir) {
-  const { files, edges, unresolved } = collectEdges(rootDir);
-  const unlayered = files.filter((file) => !layerOf(file)).sort((a, b) => a.localeCompare(b));
+/** `{ 'from -> to': n }` for every edge into a higher layer. */
+function upward(edges) {
   const violations = {};
   for (const { from, to } of edges) {
     const a = layerOf(from);
@@ -239,7 +256,22 @@ export function measure(rootDir) {
       violations[key] = (violations[key] ?? 0) + 1;
     }
   }
-  return { files: files.length, edges: edges.length, violations, unlayered, unresolved };
+  return violations;
+}
+
+/** `{ violations: { 'from -> to': n }, typeViolations: { 'from -> to': n }, unlayered: [file], ... }` */
+export function measure(rootDir) {
+  const { files, edges, typeEdges, unresolved } = collectEdges(rootDir);
+  const unlayered = files.filter((file) => !layerOf(file)).sort((a, b) => a.localeCompare(b));
+  return {
+    files: files.length,
+    edges: edges.length,
+    typeEdges: typeEdges.length,
+    violations: upward(edges),
+    typeViolations: upward(typeEdges),
+    unlayered,
+    unresolved,
+  };
 }
 
 const total = (counts) => Object.values(counts).reduce((sum, n) => sum + n, 0);
@@ -285,7 +317,7 @@ function list(violations) {
 }
 
 function run({ update, acceptRise, showList }) {
-  const { files, edges, violations, unlayered, unresolved } = measure(ROOT);
+  const { files, edges, typeEdges, violations, typeViolations, unlayered, unresolved } = measure(ROOT);
   const tag = '[verify:layers]';
   if (!files || !edges) {
     console.error(`${tag} FAIL — read ${files} files and ${edges} edges; the walk found nothing to check`);
@@ -300,38 +332,58 @@ function run({ update, acceptRise, showList }) {
     );
     return 1;
   }
-  if (showList) list(violations);
 
-  if (!existsSync(BASELINE) && !update) {
-    console.error(`${tag} FAIL — no baseline at ${relative(ROOT, BASELINE)}; run with --update-baseline`);
+  const passes = [
+    { kind: 'runtime', baselinePath: BASELINE, counts: violations, flag: '' },
+    { kind: 'type-only', baselinePath: TYPE_BASELINE, counts: typeViolations, flag: ' (type-only)' },
+  ];
+  if (showList)
+    for (const { kind, counts } of passes) {
+      console.log(`\n=== ${kind} imports into a higher layer: ${total(counts)}`);
+      list(counts);
+    }
+
+  const missing = passes.filter(({ baselinePath }) => !existsSync(baselinePath));
+  if (missing.length && !update) {
+    for (const { baselinePath } of missing)
+      console.error(`${tag} FAIL — no baseline at ${relative(ROOT, baselinePath)}; run with --update-baseline`);
     return 1;
   }
-  const baseline = existsSync(BASELINE) ? JSON.parse(readFileSync(BASELINE, 'utf8')) : {};
-  const { risen, stale } = compare(violations, baseline);
+  for (const pass of passes) {
+    pass.baseline = existsSync(pass.baselinePath) ? JSON.parse(readFileSync(pass.baselinePath, 'utf8')) : {};
+    Object.assign(pass, compare(pass.counts, pass.baseline));
+  }
 
   if (update) {
-    if (existsSync(BASELINE) && risen.length && !acceptRise) {
-      for (const { key, was, now } of risen) console.error(`  ${key}: ${was} -> ${now}`);
+    const refused = passes.filter((pass) => existsSync(pass.baselinePath) && pass.risen.length && !acceptRise);
+    if (refused.length) {
+      for (const { risen, flag } of refused)
+        for (const { key, was, now } of risen) console.error(`  ${key}${flag}: ${was} -> ${now}`);
       console.error(`${tag} refusing to raise the baseline; move the code to its layer, or pass --accept-rise`);
       return 1;
     }
-    writeFileSync(BASELINE, sortedJson(violations));
-    console.log(`${tag} baseline written: ${total(violations)} violating import(s)`);
+    for (const { baselinePath, counts, kind } of passes) {
+      writeFileSync(baselinePath, sortedJson(counts));
+      console.log(`${tag} ${relative(ROOT, baselinePath)} written: ${total(counts)} ${kind} import(s)`);
+    }
     return 0;
   }
 
+  const risen = passes.flatMap(({ risen, flag }) => risen.map((entry) => ({ ...entry, flag })));
   if (risen.length) {
     console.error(`${tag} FAIL — ${risen.length} import(s) into a higher layer that the baseline does not hold:`);
-    for (const { key, was, now } of risen)
-      console.error(`  ${key}  [${layerPair(key)}]${was ? `  ${was} -> ${now}` : ''}`);
+    for (const { key, was, now, flag } of risen)
+      console.error(`  ${key}${flag}  [${layerPair(key)}]${was ? `  ${was} -> ${now}` : ''}`);
     console.error(
-      'An import may point only to its own layer or a lower one (Mentat/planning/FACTORY_LAYERING_PLAN.md). ' +
-        'Put the code where it belongs by responsibility rather than importing upward.',
+      'An import may point only to its own layer or a lower one (Mentat/planning/FACTORY_LAYERING_PLAN.md); a ' +
+        'type-only import too (FACTORY_TYPE_GRAPH_SPLIT_PLAN.md). Put the code, or the shared type, where it ' +
+        'belongs by responsibility rather than importing upward.',
     );
     return 1;
   }
+  const stale = passes.flatMap(({ stale, flag }) => stale.map((entry) => ({ ...entry, flag })));
   if (stale.length) {
-    for (const { key, was, now } of stale) console.error(`  ${key}: ${was} -> ${now}`);
+    for (const { key, was, now, flag } of stale) console.error(`  ${key}${flag}: ${was} -> ${now}`);
     console.error(
       `${tag} FAIL — ${stale.length} baseline entr${stale.length === 1 ? 'y is' : 'ies are'} gone from the source. ` +
         'Lower the baseline in this PR: node scripts/verify/layers.mjs --update-baseline',
@@ -339,7 +391,8 @@ function run({ update, acceptRise, showList }) {
     return 1;
   }
   console.log(
-    `${tag} OK — ${total(violations)} import(s) into a higher layer, none new (${files} files, ${edges} edges)`,
+    `${tag} OK — ${total(violations)} runtime and ${total(typeViolations)} type-only import(s) into a higher ` +
+      `layer, none new (${files} files, ${edges} runtime and ${typeEdges} type-only edges)`,
   );
   return 0;
 }
@@ -370,9 +423,28 @@ function selfTest() {
     );
     write('src/query/read.ts', 'export const read = 1;\nexport type Read = number;\n');
     write('src/tools/up.ts', "import { read } from '@Query/read';\nexport const up = read;\n");
+    // every type-only form, each planted upward from its own file: none is a runtime edge, each is a type edge
+    write('src/tools/typeImport.ts', "import type { Read } from '@Query/read';\nexport type T = Read;\n");
+    write('src/tools/typeNamed.ts', "import { type Read as R } from '../query/read';\nexport type T = R;\n");
+    write('src/tools/typeExport.ts', "export type { Read } from '../query/read';\n");
+    write('src/tools/typeExportStar.ts', "export type * from '@Query/read';\n");
+    write('src/tools/typeofImport.ts', "export type Q = typeof import('../query/read');\n");
     write(
-      'src/tools/typeOnly.ts',
-      "import type { Read } from '@Query/read';\nimport { type Read as R } from '../query/read';\nexport type T = Read | R;\n",
+      'src/tools/importType.ts',
+      "export type R = import('@Query/read').Read;\nexport type Rs = Array<import('../query/read').Read>;\n",
+    );
+    // a mixed statement is one runtime edge, not a type edge as well
+    write('src/tools/mixed.ts', "import { read, type Read } from '../query/read';\nexport const m: Read = read;\n");
+    // type edges down and sideways are quiet
+    write('src/types/shape.ts', 'export type Shape = { n: number };\n');
+    write(
+      'src/tools/typeDown.ts',
+      "import type { Shape } from '../types/shape';\nimport { type up } from './up';\n" +
+        "export type D = Shape | typeof up | import('./up').Up | typeof import('../types/shape');\n",
+    );
+    write(
+      'src/query/typeDown.ts',
+      "export type U = typeof import('@Tools/up');\nexport type { Shape } from '../types/shape';\n",
     );
     write('src/tools/reexport.ts', "export { read } from '../query/read';\n");
     write('src/tools/dynamic.ts', "export const later = () => import('../query/read');\n");
@@ -393,17 +465,35 @@ function selfTest() {
       'helpers/matchUpFormatCode/format.ts -> scoring/score.ts': 1,
       'tools/dynamic.ts -> query/read.ts': 1,
       'tools/fromTests.ts -> tests/shipped.ts': 1,
+      'tools/mixed.ts -> query/read.ts': 1,
       'tools/reexport.ts -> query/read.ts': 1,
       'tools/up.ts -> query/read.ts': 1,
     });
-    expect('tests, server and test files are not walked', result.files, 9);
+    expect('type-only violations found', result.typeViolations, {
+      'tools/importType.ts -> query/read.ts': 2,
+      'tools/typeExport.ts -> query/read.ts': 1,
+      'tools/typeExportStar.ts -> query/read.ts': 1,
+      'tools/typeImport.ts -> query/read.ts': 1,
+      'tools/typeNamed.ts -> query/read.ts': 1,
+      'tools/typeofImport.ts -> query/read.ts': 1,
+    });
+    expect('type edges down and sideways are walked', result.typeEdges, 13);
+    expect('tests, server and test files are not walked', result.files, 18);
     expect('nothing unlayered', result.unlayered, []);
 
     write('src/assemblies/other/x.ts', 'export const x = 1;\n');
     write('src/tools/dead.ts', "import { gone } from '@Query/gone';\nexport const dead = gone;\n");
+    write(
+      'src/tools/deadType.ts',
+      "import type { Gone } from '@Query/gone';\nexport type G = import('./gone').G | Gone;\n",
+    );
     result = measure(dir);
     expect('an unmapped directory is reported', result.unlayered, ['assemblies/other/x.ts']);
-    expect('a dead import is reported', result.unresolved, [{ from: 'tools/dead.ts', specifier: '@Query/gone' }]);
+    expect('a dead import is reported, type-only forms too', result.unresolved, [
+      { from: 'tools/dead.ts', specifier: '@Query/gone' },
+      { from: 'tools/deadType.ts', specifier: '@Query/gone' },
+      { from: 'tools/deadType.ts', specifier: './gone' },
+    ]);
 
     const base = { 'a -> b': 1, 'c -> d': 1 };
     expect('a rise FIRES', compare({ 'a -> b': 2, 'c -> d': 1 }, base).risen.length, 1);
@@ -425,7 +515,10 @@ function selfTest() {
   }
   console.log(
     '[verify:layers] self-test OK — fires on a planted upward import (static, re-export, dynamic, sub-layer), on a new ' +
-      'violation at an equal total, on shipped code importing a test harness, on an unmapped directory and a dead import; quiet on type-only imports and tests',
+      'violation at an equal total, on shipped code importing a test harness, on an unmapped directory and a dead import ' +
+      '(type-only too); the type pass fires on each type-only form planted upward (import type, inline type binding, ' +
+      'export type, export type *, typeof import(), import() type) and is quiet on type edges down and sideways; ' +
+      'neither pass reads tests',
   );
   return 0;
 }

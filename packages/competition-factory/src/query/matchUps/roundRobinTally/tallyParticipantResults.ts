@@ -1,6 +1,7 @@
 import { matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
+import { plainRecord } from '@Tools/plainRecord';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { getParticipantResults } from './getParticipantResults';
+import { buildParticipantResults } from './getParticipantResults';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { getDevContext } from '@Global/state/globalState';
 import { validMatchUps } from '@Validators/validMatchUp';
@@ -92,7 +93,7 @@ export function tallyParticipantResults({
   const consideredMatchUps = matchUps.filter(
     (matchUp) => matchUp && (matchUpCompletion(matchUp) ?? matchUp.matchUpType === TEAM),
   );
-  const participantResultsOutcome = getParticipantResults({
+  const participantResultsOutcome = buildParticipantResults({
     matchUps: consideredMatchUps,
     pressureRating,
     matchUpFormat,
@@ -176,7 +177,7 @@ export function tallyParticipantResults({
   const result = {
     completedTieMatchUps,
     readableReport: '',
-    participantResults,
+    participantResults: plainRecord(participantResults),
     bracketComplete,
     order: [],
     report,
