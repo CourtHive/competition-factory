@@ -1,4 +1,5 @@
 import { kOf, resolveRatingsPolicy, tierK } from '@Helpers/ratings/ratingsPolicyRules';
+import { plainRecord } from '@Tools/plainRecord';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { planEligibleScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
@@ -87,7 +88,8 @@ export function generateDynamicRatings(params): ResultType & {
   const sourceAccessor = sourceRatingParameter.accessor;
   const accessor = computeParameter.accessor; // undefined for ELO (plain numbers)
 
-  const modifiedScaleValues = {};
+  // keyed by participantId from records: "__proto__" must be an ordinary key (CodeQL #249, #251)
+  const modifiedScaleValues: Record<string, any> = Object.create(null);
 
   // a copy: the run sorts into draw order, and the caller's array is theirs
   const matchUps: HydratedMatchUp[] = [
@@ -139,7 +141,7 @@ export function generateDynamicRatings(params): ResultType & {
   if (invalidCounts) {
     return { error: INVALID_VALUES, info: `matchesPlayed: not a non-negative integer count for ${invalidCounts}` };
   }
-  const careerCounts: Record<string, number> = { ...matchesPlayed };
+  const careerCounts: Record<string, number> = Object.assign(Object.create(null), matchesPlayed);
   const uncounted = rated
     .filter(({ policy }) => policy.k.rule === 'MATCHES_PLAYED')
     .flatMap(({ matchUp }) => (matchUp.sides ?? []).flatMap(ratedParticipantIds))
@@ -176,8 +178,9 @@ export function generateDynamicRatings(params): ResultType & {
       ...(sides ?? []).map((side: HydratedSide) => side.sideNumber && { [side.sideNumber]: ratedParticipantIds(side) }),
     );
 
+    // Object.assign into a plain object routes a "__proto__" participantId through the prototype setter and drops it
     const scaleItemMap = Object.assign(
-      {},
+      Object.create(null),
       ...Object.values(sideParticipantIds)
         .flat()
         .map(
@@ -238,7 +241,7 @@ export function generateDynamicRatings(params): ResultType & {
 
   const result = {
     ...SUCCESS,
-    modifiedScaleValues,
+    modifiedScaleValues: plainRecord(modifiedScaleValues),
     outputScaleName,
     processedMatchUpIds,
     ratedMatchUpIds,

@@ -1,5 +1,5 @@
 import { orderParticipants } from '@Query/standings/orderParticipants';
-import { getParticipantResults } from './getParticipantResults';
+import { buildParticipantResults } from './getParticipantResults';
 import { fromV1 } from '@Query/standings/fromV1';
 import { getResultsArray } from './getGroups';
 
@@ -57,7 +57,7 @@ export function getGroupOrder(params) {
 
   const { groupOrder, report } = orderParticipants({
     recalculate: ({ participantIds, groupingTotal }) =>
-      getParticipantResults({ participantIds, groupingTotal, matchUpFormat, tallyPolicy, matchUps }),
+      buildParticipantResults({ participantIds, groupingTotal, matchUpFormat, tallyPolicy, matchUps }),
     policy: fromV1(tallyPolicy),
     // the first call orders a complete group; the provisional rerun passes requireCompletion: false
     phase: requireCompletion ? 'FINAL' : 'PROVISIONAL',

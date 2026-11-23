@@ -1,4 +1,5 @@
 import { pushGlobalLog } from '@Functions/global/globalLog';
+import { plainRecord } from '@Tools/plainRecord';
 /**
  * Statistics Counter Builder
  *
@@ -25,6 +26,13 @@ import { categorizePoint } from './pointParser';
  * @param options - Statistics options (set filter, etc.)
  * @returns Counters grouped by team and category
  */
+/** Per-side category maps are built with a null prototype (categories include point.hand); callers get plain ones. */
+function plainCounters(counters: StatCounters): StatCounters {
+  for (const group of [counters.players, counters.teams])
+    for (const side of [0, 1] as const) if (group[side]) group[side] = plainRecord(group[side]);
+  return counters;
+}
+
 export function buildCounters(points: PointWithMetadata[], options?: StatisticsOptions): StatCounters {
   const counters: StatCounters = {
     players: {},
@@ -33,8 +41,9 @@ export function buildCounters(points: PointWithMetadata[], options?: StatisticsO
 
   // Initialize structures
   for (let i = 0; i < 2; i++) {
-    counters.players[i] = {};
-    counters.teams[i] = {};
+    // categories include caller-supplied values such as point.hand, so no prototype to write through to
+    counters.players[i] = Object.create(null);
+    counters.teams[i] = Object.create(null);
   }
 
   // Filter by set if specified
@@ -47,7 +56,8 @@ export function buildCounters(points: PointWithMetadata[], options?: StatisticsO
   let lastPoint: PointWithMetadata | undefined;
 
   filteredPoints.forEach((point, index) => {
-    if (point.winner === undefined) {
+    // side 0 or 1 only: the winner indexes the counters, and points arrive from callers (CodeQL #197)
+    if (point.winner !== 0 && point.winner !== 1) {
       pushGlobalLog({ method: 'counters', issue: 'point missing winner', point });
       return;
     }
@@ -66,7 +76,7 @@ export function buildCounters(points: PointWithMetadata[], options?: StatisticsO
     lastPoint = point;
   });
 
-  return counters;
+  return plainCounters(counters);
 }
 
 function pushToCategory(container, side: number, category: string, item) {
@@ -189,8 +199,8 @@ export function filterCountersBySet(counters: StatCounters, setNumber: number): 
   };
 
   for (let i = 0; i < 2; i++) {
-    filtered.players[i] = {};
-    filtered.teams[i] = {};
+    filtered.players[i] = Object.create(null);
+    filtered.teams[i] = Object.create(null);
   }
 
   // Filter each category
@@ -206,5 +216,5 @@ export function filterCountersBySet(counters: StatCounters, setNumber: number): 
     });
   }
 
-  return filtered;
+  return plainCounters(filtered);
 }
