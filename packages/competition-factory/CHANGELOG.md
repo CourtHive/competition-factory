@@ -9,11 +9,14 @@
 
 ### Features
 
+* **engines:** export a StateProvider type for setStateProvider ([#6561](https://github.com/CourtHive/competition-factory/issues/6561)) ([c07a51c](https://github.com/CourtHive/competition-factory/commit/c07a51cf1c803de3db51809ead4c1053a5b19503))
 * **scheduling:** place no matchUp before its profile round's notBeforeTime ([#6570](https://github.com/CourtHive/competition-factory/issues/6570)) ([7f1bfe2](https://github.com/CourtHive/competition-factory/commit/7f1bfe2392437418bfeb8a6e84c0e4e61dc07e3e))
 
 
 ### Bug Fixes
 
+* **engines:** resolve queued directives from the engine’s own imported methods ([#6564](https://github.com/CourtHive/competition-factory/issues/6564)) ([fe18a3e](https://github.com/CourtHive/competition-factory/commit/fe18a3e06a38b345511799ebe0635ac33938d092))
+* **outcome:** include the event when a TEAM winner advances through a bye ([#6566](https://github.com/CourtHive/competition-factory/issues/6566)) ([8eb1e4f](https://github.com/CourtHive/competition-factory/commit/8eb1e4fa56a3bbef4535bac1701b4c639a5a1422))
 * **outcome:** keep the advancing team seated after a collection line correction ([#6569](https://github.com/CourtHive/competition-factory/issues/6569)) ([71046a6](https://github.com/CourtHive/competition-factory/commit/71046a66048aaa501b97f5cb2302c0922dacd494))
 
 ## [7.46.0](https://github.com/CourtHive/competition-factory/compare/v7.45.0...v7.46.0) (2026-11-23)
