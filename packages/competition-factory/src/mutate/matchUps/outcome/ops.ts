@@ -253,7 +253,8 @@ export type OutcomeOp =
        */
       structureId: string;
       drawPosition: number;
-      participantId: string;
+      /** A quiet deletion of this own field, preserving the structure's seeds and position. */
+      participantId: string | undefined;
     }
   | {
       op: 'clearPosition';
@@ -803,7 +804,8 @@ function foldAssignPosition(op: OpOf<'assignPosition'> | OpOf<'relabelPosition'>
     (candidate) => candidate.drawPosition === op.drawPosition,
   );
   if (!assignment) return { error: `assignPosition: no drawPosition ${op.drawPosition} in ${op.structureId}` };
-  assignment.participantId = op.participantId;
+  if (op.op === 'relabelPosition' && op.participantId === undefined) delete assignment.participantId;
+  else assignment.participantId = op.participantId;
   return {};
 }
 

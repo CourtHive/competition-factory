@@ -56,6 +56,11 @@ function namedBy(op: OutcomeOp): { matchUpId?: string; structureId?: string } {
   };
 }
 
+function matchIdsOf(op: OutcomeOp, id?: string) {
+  if (op.op === 'withdrawBye') return op.clearedWinnerIds ?? [];
+  return id ? [id] : [];
+}
+
 type CreateWorkingViewArgs = {
   /** Diagnostic/planning cursor only; a complete ordered executor must still certify these effects. */
   clockFree?: boolean;
@@ -193,14 +198,14 @@ export function createWorkingView({
       // later cannot slip past it (a seat cleared with no stamp beside it did, before this read the op's own ids)
       const affected = new Set<string>();
       for (const op of ops) {
-        const { matchUpId, structureId } = namedBy(op);
-        if (matchUpId) {
+        const named = namedBy(op);
+        for (const matchUpId of matchIdsOf(op, named.matchUpId)) {
           ensureMatchUp(matchUpId);
           if (!copiedMatchUps.has(matchUpId)) return { error: `working view cannot copy ${matchUpId}` };
           affected.add(parentOf.get(matchUpId) ?? matchUpId);
           affected.add(matchUpId);
         }
-        if (structureId) ensureStructure(structureId);
+        if (named.structureId) ensureStructure(named.structureId);
       }
 
       const applied = applyOutcomeOps(workingDraw, ops, undefined, { temporal });

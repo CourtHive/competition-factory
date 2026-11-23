@@ -92,7 +92,7 @@ type DeciderReading = { inContextDrawMatchUps?: HydratedMatchUp[]; matchUpsMap?:
  * Undefined where the final has no decider to settle. Shared by the pass and by its has-work predicate, so the two
  * cannot drift.
  */
-function resolveDecider(
+export function resolveDecider(
   { winningSideBefore, deciderChanged, drawDefinition, matchUpId }: DeciderArgs,
   reading?: DeciderReading,
 ) {
@@ -165,7 +165,13 @@ export function reconcileDecider(args: DeciderArgs): ResultType {
   const resolved = resolveDecider(args);
   if (!resolved || !drawDefinition) return { ...SUCCESS };
   if (resolved.error) return resolved.error;
-  resolved.seats?.();
+  if (resolved.seats) {
+    const { assignments, winnerId, loserId } = resolved.seats;
+    if (winnerId) assignments[0].participantId = winnerId;
+    else delete assignments[0].participantId;
+    if (winnerId && loserId) assignments[1].participantId = loserId;
+    else delete assignments[1].participantId;
+  }
   if (!resolved.matchUpStatus || !resolved.decider) return { ...SUCCESS };
 
   // RETURNED, not dropped. This was a bare call and the function returned nothing, so a write that
@@ -317,7 +323,7 @@ function unseatedFinalists({
   structureId: string;
   winnerId?: string;
   loserId?: string;
-}): (() => void) | undefined {
+}) {
   const { structure } = findStructure({ drawDefinition, structureId });
   const assignments = [...(getPositionAssignments({ structure }).positionAssignments ?? [])].sort(
     (a, b) => a.drawPosition - b.drawPosition,
@@ -326,10 +332,5 @@ function unseatedFinalists({
   if (assignments.length !== 2 || assignments.some((assignment) => assignment.bye)) return undefined;
   if (assignments[0].participantId === winnerId && assignments[1].participantId === loserId) return undefined;
 
-  return () => {
-    if (winnerId) assignments[0].participantId = winnerId;
-    else delete assignments[0].participantId;
-    if (winnerId && loserId) assignments[1].participantId = loserId;
-    else delete assignments[1].participantId;
-  };
+  return { structureId, assignments, winnerId, loserId };
 }

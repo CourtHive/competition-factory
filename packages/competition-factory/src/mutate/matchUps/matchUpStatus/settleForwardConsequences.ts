@@ -24,7 +24,7 @@ import { TEAM } from '@Constants/matchUpTypes';
 export const FORWARD_SETTLE_EXHAUSTED = 'FORWARD_SETTLE_EXHAUSTED';
 
 // each action seats, directs or reserves one position; a draw owes far fewer than this
-const PASS_LIMIT = 64;
+export const FORWARD_PASS_LIMIT = 64;
 
 type SettleArgs = {
   tournamentRecord?: Tournament;
@@ -33,7 +33,13 @@ type SettleArgs = {
   event?: Event;
 };
 
-type Owed = { key: string; matchUpId: string; act: () => ResultType | undefined };
+type ForwardDebt = {
+  kind: 'winner' | 'emptyWinner' | 'reservation' | 'loser';
+  drawPosition: number;
+  matchUpId: string;
+  key: string;
+};
+type Owed = ForwardDebt & { act: () => ResultType | undefined };
 
 type Reading = {
   assignmentsOf: (structureId: string) => PositionAssignment[];
@@ -113,7 +119,7 @@ function settleForward(
 ): (ResultType & { exhausted?: string; settled?: number }) | undefined {
   const { drawDefinition } = params;
   const done = new Set<string>();
-  for (let pass = 0; pass < PASS_LIMIT; pass += 1) {
+  for (let pass = 0; pass < FORWARD_PASS_LIMIT; pass += 1) {
     const owed = findOwed({ ...params, drawDefinition, done });
     if (!owed) return pass ? { settled: pass } : undefined;
     done.add(owed.key);
@@ -121,10 +127,10 @@ function settleForward(
     if (result?.error) return result;
   }
   const owed = findOwed({ ...params, drawDefinition, done });
-  if (!owed) return { settled: PASS_LIMIT };
+  if (!owed) return { settled: FORWARD_PASS_LIMIT };
   pushGlobalLog({ method: 'settleForwardConsequences', color: 'brightred', exhausted: owed.key });
   recordSettleEvent({ kind: 'bound', site: 'settleForwardConsequences', detail: owed.matchUpId });
-  return { exhausted: owed.matchUpId, settled: PASS_LIMIT };
+  return { exhausted: owed.matchUpId, settled: FORWARD_PASS_LIMIT };
 }
 
 /**
@@ -139,6 +145,16 @@ export function hasForwardWork(params: SettleArgs & Hydrated): boolean {
 
 /** a map and hydration of this draw already taken (the working view's), so none is taken here */
 type Hydrated = { matchUpsMap?: MatchUpsMap; inContextDrawMatchUps?: HydratedMatchUp[] };
+
+/** The first outstanding question in pass order. Only the mutating pass can call its answer. */
+export function firstForwardDebt(params: SettleArgs & Hydrated & { done: Set<string> }): ForwardDebt | undefined {
+  const { drawDefinition } = params;
+  if (!drawDefinition || isLuckyBasedDraw(drawDefinition.drawType)) return undefined;
+  const owed = findOwed({ ...params, drawDefinition });
+  if (!owed) return undefined;
+  const { kind, drawPosition, matchUpId, key } = owed;
+  return { kind, drawPosition, matchUpId, key };
+}
 
 function findOwed(
   params: SettleArgs & Hydrated & { drawDefinition: DrawDefinition; done: Set<string> },
@@ -233,7 +249,13 @@ function owedWinnerAdvance(reading: Reading, matchUp: HydratedMatchUp): Owed | u
   if (seat?.bye) return undefined;
 
   if (winner.participantId) {
-    return { key, matchUpId: matchUp.matchUpId, act: () => directStandingWinner(reading, matchUp, drawPosition) };
+    return {
+      kind: 'winner',
+      drawPosition,
+      key,
+      matchUpId: matchUp.matchUpId,
+      act: () => directStandingWinner(reading, matchUp, drawPosition),
+    };
   }
 
   const loser = matchUp.sides?.find((side) => side.sideNumber !== matchUp.winningSide);
@@ -245,7 +267,13 @@ function owedWinnerAdvance(reading: Reading, matchUp: HydratedMatchUp): Owed | u
     arrivedDirectly(reading, matchUp, loser?.sideNumber) &&
     isStructuralSeat(reading, matchUp, drawPosition);
   return emptySeatAdvances
-    ? { key, matchUpId: matchUp.matchUpId, act: advanceSeat(reading, matchUp, drawPosition) }
+    ? {
+        kind: 'emptyWinner',
+        drawPosition,
+        key,
+        matchUpId: matchUp.matchUpId,
+        act: advanceSeat(reading, matchUp, drawPosition),
+      }
     : undefined;
 }
 
@@ -286,7 +314,15 @@ function owedReservation(reading: Reading, matchUp: HydratedMatchUp): Owed | und
     (sideNumber) =>
       matchUp.sideExitProvenance?.[sideNumber]?.matchUpStatus && arrivedDirectly(reading, matchUp, sideNumber),
   );
-  return direct ? { key, matchUpId: matchUp.matchUpId, act: advanceSeat(reading, matchUp, drawPosition) } : undefined;
+  return direct
+    ? {
+        kind: 'reservation',
+        drawPosition,
+        key,
+        matchUpId: matchUp.matchUpId,
+        act: advanceSeat(reading, matchUp, drawPosition),
+      }
+    : undefined;
 }
 
 /** question 2: a decided matchUp's losing participant stands in the structure its loser link targets */
@@ -357,5 +393,5 @@ function owedLoser(reading: Reading, matchUp: HydratedMatchUp): Owed | undefined
       event: reading.event,
     });
   };
-  return { key, matchUpId: matchUp.matchUpId, act };
+  return { kind: 'loser', drawPosition: loser.drawPosition, key, matchUpId: matchUp.matchUpId, act };
 }

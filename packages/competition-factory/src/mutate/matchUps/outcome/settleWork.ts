@@ -65,6 +65,8 @@ type SettleWorkArgs = {
   propagateExitStatus?: boolean;
   /** the call's matchUp has a loser link: the only way v1 propagates a single exit (`directLoser`) */
   loserLinked?: boolean;
+  /** Independent read-only settlement can supply its conservative terminal-BYE obligation. */
+  heldExitWork?: boolean;
   /**
    * the call's matchUp is in a round robin group, is a TEAM line, or is a final with no winner link out: a double exit
    * there produces nothing (`doubleExitAdvancement`)
@@ -120,6 +122,7 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
     reconcileCarriesPastByes: () =>
       !!findOwedCarry({ inContextDrawMatchUps: view, drawDefinition: draw, matchUpsMap: map }),
     settleHeldExits: () =>
+      args.heldExitWork ??
       hasHeldExitWork({
         // what the pass's own detector is handed (`settleAfterWrite`): a production it asks about is made with these
         context: {

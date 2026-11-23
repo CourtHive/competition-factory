@@ -2302,7 +2302,7 @@ function advanceByeAdvancedDrawPosition({
  * Deliberately NOT derived from the target's `drawPositions` array, which rule 5 forbids reading
  * the shape of — and which is empty on this path in any case.
  */
-function getExitArrivalSideNumber({ inContextDrawMatchUps, nextWinnerMatchUp, sourceMatchUp }) {
+export function getExitArrivalSideNumber({ inContextDrawMatchUps, nextWinnerMatchUp, sourceMatchUp }) {
   if (!sourceMatchUp?.matchUpId || !nextWinnerMatchUp?.matchUpId) return undefined;
 
   if (nextWinnerMatchUp.feedRound) {
@@ -3608,18 +3608,20 @@ function productionMoves({
   });
 }
 
-function strandsItsExit({
+export function strandsItsExit({
   inContextDrawMatchUps,
   drawDefinition,
   matchUpsMap,
   matchUp,
   context,
+  terminalMoves = productionMoves,
 }: {
   inContextDrawMatchUps: HydratedMatchUp[];
   drawDefinition: DrawDefinition;
   matchUpsMap: MatchUpsMap;
   matchUp: HydratedMatchUp;
   context?: StrandContext;
+  terminalMoves?: typeof productionMoves;
 }): boolean {
   if (matchUp.collectionId || !isDoubleExit(matchUp.matchUpStatus) || !matchUp.winnerMatchUpId) return false;
   const stored = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === matchUp.matchUpId);
@@ -3634,7 +3636,7 @@ function strandsItsExit({
   // anywhere in the draw (measured 2026-11-18; `aSettledByeTargetIsNotProducedAgain.test.ts`). Where the BYE does record
   // it (FEED_IN_CHAMPIONSHIP's consolation final, `aCarryArrivingBesideALoneSeatTakesItsOwnSide`) the first production
   // moves the record and the second does not. So the production is asked, on a copy: what moves nothing is not owed.
-  if (settledByeEnd(target, matchUpsMap) && !productionMoves({ ...context, drawDefinition, matchUp })) return false;
+  if (settledByeEnd(target, matchUpsMap) && !terminalMoves({ ...context, drawDefinition, matchUp })) return false;
   // a target decided only by an exit awarded to the seat this convergence feeds is still owed its produced exit: the
   // two meet there (RULE 4), as when the convergence came first (census s16 DOUBLE_ELIMINATION 16/11, 20605236:
   // `Backdraw|4|2` held `Main|3|1`'s carried walkover, awarded to the seat `Backdraw|3|2` feeds, and stalled)
@@ -3911,7 +3913,13 @@ function settleHoldersToBye({
 }
 
 /** an exit label left beside a BYE with nobody in it: the BYE it holds (`settleHoldersToBye`) */
-function isHolderBesideBye({ drawDefinition, matchUp }: { drawDefinition: DrawDefinition; matchUp: HydratedMatchUp }) {
+export function isHolderBesideBye({
+  drawDefinition,
+  matchUp,
+}: {
+  drawDefinition: DrawDefinition;
+  matchUp: HydratedMatchUp;
+}) {
   return (
     isExit(matchUp.matchUpStatus) &&
     !matchUp.collectionId &&
@@ -4041,7 +4049,7 @@ function passedCarryingNothing({
   return !carriedExitStatus(getSideExitProvenance({ matchUp: storedTarget })?.[arrivalSideNumber]);
 }
 
-function getHeldExit({
+export function getHeldExit({
   inContextDrawMatchUps,
   drawDefinition,
   matchUpsMap,
