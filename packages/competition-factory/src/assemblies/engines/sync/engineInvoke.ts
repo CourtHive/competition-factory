@@ -1,4 +1,5 @@
 import { captureOperation, restoreOperation } from '@Assemblies/engines/parts/operationState';
+import { ownMethod } from '@Tools/ownMethod';
 import { deleteNotices, getFactoryBackend, getInvokeObserver, getMethods } from '@Global/state/globalState';
 import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
 import { logMethodNotFound } from '@Assemblies/engines/parts/logMethodNotFound';
@@ -26,7 +27,7 @@ export function engineInvoke(engine: { [key: string]: any }, args: any) {
     : isString(args.method) && args.method;
   if (!methodName) return { error: METHOD_NOT_FOUND };
 
-  const { [methodName]: passedMethod, ...remainingArgs } = args;
+  const { [methodName]: _passedMethod, ...remainingArgs } = args; // kept out of params; resolved below
   const params = args?.params ? { ...args.params } : { ...remainingArgs };
 
   // nonRandom: <seed> middleware, applied to `params` (not `args`) so it stays clear of the
@@ -34,7 +35,8 @@ export function engineInvoke(engine: { [key: string]: any }, args: any) {
   // draws it does not reach through `random`: see seedCall and tools/prng.ts withCallRandomSource
   const unthreadedSource = seedCall(params);
 
-  const method = passedMethod || engine[methodName] || getMethods()[methodName];
+  // a destructured passedMethod also reads inherited names (args.constructor is Object), so only an own one counts
+  const method = ownMethod(args, methodName) ?? ownMethod(engine, methodName) ?? ownMethod(getMethods(), methodName);
   if (!method) return logMethodNotFound({ methodName, params });
 
   // one instant for the whole call, captured before anything is written; see tools/clock.ts

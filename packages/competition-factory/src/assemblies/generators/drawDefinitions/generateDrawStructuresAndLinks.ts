@@ -1,4 +1,5 @@
 import { generateQualifyingStructures } from './drawTypes/generateQualifyingStructures';
+import { ownMethod } from '@Tools/ownMethod';
 import { traversesByFinishingPosition } from '@Helpers/drawTopology/linkTraversal';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { generateQualifyingLink } from './links/generateQualifyingLink';
@@ -155,7 +156,7 @@ export function generateDrawStructuresAndLinks(params: GenerateDrawStructuresAnd
   const { generators, error } = getGenerators(params);
   if (error) return { error };
 
-  const generator = generators[drawType];
+  const generator = ownMethod<NonNullable<typeof generators>[string]>(generators, drawType);
   if (!generator) return { error: UNRECOGNIZED_DRAW_TYPE };
 
   const generatorResult = generator?.();
