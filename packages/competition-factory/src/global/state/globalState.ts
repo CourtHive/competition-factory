@@ -699,11 +699,14 @@ export function setNoticeBuffer(notices?: Notice[]) {
  * notices that `notifySubscribers` then never delivered.
  */
 export function getTopics(): { topics: string[] } {
-  const topics: string[] = _globalStateProvider.getTopics()?.topics ?? [];
-  const globalTopics = Object.keys(globalState.globalSubscriptions).filter(
-    (topic) => isFunction(globalState.globalSubscriptions[topic]) && !topics.includes(topic),
-  );
-  return { topics: [...topics, ...globalTopics] };
+  const topics: string[] = [...(_globalStateProvider.getTopics()?.topics ?? [])];
+  const subscriptions = globalState.globalSubscriptions;
+  for (const topic in subscriptions) {
+    if (Object.hasOwn(subscriptions, topic) && typeof subscriptions[topic] === 'function' && !topics.includes(topic)) {
+      topics.push(topic);
+    }
+  }
+  return { topics };
 }
 
 export function hasTopic(topic) {

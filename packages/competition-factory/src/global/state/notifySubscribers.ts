@@ -39,7 +39,9 @@ export function notifySubscribers(params?: NotifySubscribersArgs) {
 
   const { topics } = getTopics();
 
-  for (const topic of [...topics].sort(topicSort)) {
+  // getTopics returns an owned list. Keep subscription priority without allocating a second list.
+  if (topics.length > 1) topics.sort(topicSort);
+  for (const topic of topics) {
     const payloads = getNotices({ topic });
     // Pass both `payloads` (canonical) and `notices` (deprecated alias) so that
     // legacy providers destructuring `notices` continue to work pre-removal.
@@ -60,7 +62,9 @@ export async function notifySubscribersAsync(params?: NotifySubscribersArgs) {
   const { mutationStatus, tournamentId, directives, timeStamp } = params ?? {};
   const { topics } = getTopics();
 
-  for (const topic of [...topics].sort(topicSort)) {
+  // getTopics returns an owned list. Keep subscription priority without allocating a second list.
+  if (topics.length > 1) topics.sort(topicSort);
+  for (const topic of topics) {
     // only tested with packaged version of factory
     // won't show up in test coverage
     const payloads = getNotices({ topic });
