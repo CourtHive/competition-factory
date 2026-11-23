@@ -228,7 +228,7 @@ try {
       )
     )
       throw new Error('Bare preview pulled in the governor catalog or private method dispatcher');
-    execFileSync(process.execPath, [file], { stdio: 'inherit' });
+    execFileSync(process.execPath, [file], { stdio: 'inherit', timeout: 120_000, killSignal: 'SIGKILL' });
   }
 } finally {
   rmSync(bundleDir, { recursive: true, force: true });
