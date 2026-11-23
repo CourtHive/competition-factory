@@ -56,7 +56,48 @@ Use [the supported storage, ingest, draw-addition and read-projection routes](/d
 
 ## Other 8.0.0 changes
 
-This page covers the governor transition; it is not yet a complete release migration checklist. Consolidate the other approved breaking changes here before cutting 8.0.0.
+Each change below is planned for 8.0.0 and announced in 7.x; one marked _proposed_ still awaits its final decision. Where a 7.x symbol is affected, it carries a
+`@deprecated` note naming its replacement. The 8.0.0 release notes repeat this list with links.
+
+### Engine and governor routes
+
+- **119 methods leave the production governors and engines.** See the [engine API transition](/docs/implementation/engine-api-transition-8) for the list, the replacement where one exists, and the standalone-export decision for each.
+- **`matchUpFormatCode` and `matchUpFormatGovernor` are retired.** `tools.formats` is the single format surface, including the format validators.
+- **`addFinishingRounds`** leaves its governor, and **`applyDerivedRankings`** is available only as `tools.rankings.deriveRankingList`.
+- **`setMatchUpState`** is removed from the engine surface. Use `setMatchUpStatus`.
+- **`tournamentGovernor.query.cleanExpiredMutationLocks`** is removed; the function stays on `tournamentGovernor.mutate`, because it writes.
+- **The mocks-governor simulation aliases** (`generateOutcome`, `generateOutcomeFromScoreString`, `completeDrawMatchUps`) are removed. Use `simulationGovernor`.
+
+### Behaviour changes
+
+- _Proposed:_ **the default `stampScope` becomes `'modified'`.** The factory `{ version, timeStamp }` stamp goes on each drawDefinition a call modified, and on the tournament only when something outside its draws changed. A consumer that reads `tournament.factory` as "last write anywhere" must read the draw stamps. Opt in during 7.x with `engine.stampScope('modified')`. A custom state provider uses the optional `cycleModifiedTopics` hook.
+- **`addFlight` refuses a participant already in another flight** with `EXISTING_FLIGHT` (and `context.participantIds`) unless `force: true`. In 7.x it returns a `PARTICIPANT_IN_OTHER_FLIGHT` warning and still adds.
+- **`addPoint` no longer mutates the matchUp it is given.** Use its return value.
+- **Generators no longer attach.** `generateLineUps` (`attach`), `generateFlightProfile` (`attachFlightProfile`), `drawMatic` (`updateParticipantRatings`), `generateDrawTypeAndModifyDrawDefinition` (`modifyOriginal`), `generateEventsFromTieFormat` (attaching unless `addEvents: false`) and `generateTournamentRecord` through an engine return what they generate. Call the matching attach mutation to store it.
+- **Writes are native only.** The `LEGACY` and `BRIDGE` schema write modes are removed. Records written by them are still read.
+- **The positional `matchUpStatusCodes` array is no longer written**, and the `appliedPolicies` extension is no longer written (the first-class `appliedPolicies` attribute replaces it). Both are still read from older records.
+- **Penalties refuse the old label spellings and the two misspelled type values** (the deprecated aliases of `EQUIPMENT_VIOLATION` and `FAILURE_TO_SIGN_IN`). Store `PenaltyTypeEnum` codes.
+- **Date helpers need the instant.** Exported date helpers lose their implicit "now"; pass the instant, or call through an engine.
+- **`asOf` is required** on `tools.publishing` (`isEmbargoed`, `isVisiblyPublished`, `getRoundVisibilityState`).
+
+### Removed options, constants and fields
+
+- `scheduleCompletedMatchUps` on `scheduleProfileRounds`, `scheduleProfileGrid`, `proAutoSchedule` and mocks `generateTournamentRecord`; and the ignored `pro` and `useGarman` params on `scheduleProfileRounds`. The manual schedule-write methods keep their own correction flag.
+- `availabilityConstants` (use `dayStateConstants`), `SCHEDULE_METHOD`, the `restrictAdHocRoundParticipants` option, `getTournamentInfo`'s `eventInfo`, the `EntryFee` alias, and the long-deprecated `getNotices` / `notices`.
+- `POLICY_PRINT_DEFAULT` and its `fixtures.policies` export.
+- `ScoringEngine.markHardBoundary`, `SetScore.hardBoundaries` and `Point.hardBoundary`.
+- The competitionFormat fixtures' `label` fields.
+
+### Types and schema
+
+- **`Structure` and `DrawLink` become hard unions.** Narrow on `structureType` (or use `matchUpsOf`, `positionAssignmentsOf`, `structuresOf`) before reading `matchUps`, `structures` or `positionAssignments`. `tournament.schema.json` gains the matching `oneOf`/`if`.
+- **Declaration corrections:** `TallyResultType.report`, `automatedPositioning`'s `conflicts`, `ApplyLineUps.lineUps` and `matchUpDailyLimits` now describe what they hold.
+- **Stricter types** across the package (the `implicit-any` campaign). Some loosely typed call sites may need annotations.
+
+### Packaging
+
+- **The package is `competition-factory`.** `tods-competition-factory` 7.x stays installable and is not maintained after 8.0.0.
+- **Named catalogue formats and provider policies move to a separate resource package.** Defaults the engine reads stay in the core. The resource package is named in the 8.0.0 release notes.
 
 ### The outcome pipeline selector is removed
 
