@@ -1,3 +1,4 @@
+import { isBracketWinnerSwap } from '@Query/matchUp/isBracketWinnerSwap';
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { isDrawnResult } from '@Query/matchUps/roundRobinTally/drawnResults';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
@@ -103,10 +104,13 @@ export function chooseRoute(request: OutcomeRequest, view: OutcomeView): Route {
     })
   )
     return APPLY_VALUES;
-  const dualChange = dualWinningSideChange(request, view);
-  const validSwap =
-    !view.isTeam && !dualChange && !!winningSide && !!existing.winningSide && existing.winningSide !== winningSide;
-  if (flags.allowChangePropagation && validSwap && existing.roundPosition) return 'swap';
+  if (
+    flags.allowChangePropagation &&
+    !view.isTeam &&
+    isBracketWinnerSwap(existing, winningSide, view.matchUpTieId) &&
+    !dualWinningSideChange(request, view)
+  )
+    return 'swap';
 
   const hasPropagated = !!existing.winningSide || isDoubleExit(existing.matchUpStatus);
   if (!view.activeDownstream || !hasPropagated) return noDownstreamRoute(request, view);

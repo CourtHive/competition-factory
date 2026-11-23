@@ -1,3 +1,4 @@
+import { isBracketWinnerSwap } from '@Query/matchUp/isBracketWinnerSwap';
 import { lineTakesPlayedOnDualWinner } from '@Mutate/matchUps/matchUpStatus/lineTakesPlayedOnDualWinner';
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
@@ -280,8 +281,12 @@ function refuseDispatch(request: OutcomeRequest, view: OutcomeView): Refusal | u
     ? flags.enableAutoCalc && view.dualProjection?.projectedWinningSide !== existing.winningSide
     : !!line && line.projectedWinningSide !== line.dualWinningSide;
 
-  const validSwap = !view.isTeam && !dualWinningSideChange && !!winningSide && !!existing.winningSide;
-  if (flags.allowChangePropagation && validSwap && existing.winningSide !== winningSide && existing.roundPosition) {
+  if (
+    flags.allowChangePropagation &&
+    !view.isTeam &&
+    !dualWinningSideChange &&
+    isBracketWinnerSwap(existing, winningSide, view.matchUpTieId)
+  ) {
     // row 26: the swap would place a loser on, or take one off, a FIRST_MATCHUP-fed seat that has played on; v1 asks it
     // before the swap writes anything (`swapWinnerLoser`)
     if (view.swapMeetsActivePosition)

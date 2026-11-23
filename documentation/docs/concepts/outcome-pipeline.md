@@ -265,7 +265,9 @@ BYE, and its lines stay TO_BE_PLAYED, as they are generated (CA, 2026-10-24).
 a call that reaches `attemptToSetMatchUpStatus`; `refused` is any of its three refusals. The dispatch
 names six more:
 
-- `swap`: `allowChangePropagation` with a different winner on a matchUp that has one (below).
+- `swap`: `allowChangePropagation` with a different winner on a bracket matchUp that has one (below).
+  A collection line with stored round coordinates still belongs to its TEAM dual. Correcting that line
+  retallies the dual and keeps its advancing team in place when the dual winner stays the same.
 - `winner`: the propagating branch with a winner named, an exit under `propagateExitStatus`, or a
   CANCELLED or ABANDONED line that changes its dual's winner: `attemptToSetWinningSide`.
 - `line-score`: a line rescored with a winner while its dual loses the winner it had.
