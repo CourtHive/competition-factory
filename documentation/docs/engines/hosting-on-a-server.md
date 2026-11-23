@@ -58,6 +58,10 @@ import { globalState, governors } from 'tods-competition-factory';
 globalState.setStateMethods(governors, true, 1, true); // traverse, depth 1, global
 ```
 
+From the release that includes [#6564](https://github.com/CourtHive/competition-factory/pull/6564), a queue also
+resolves the methods the engine itself imported, so `tournamentEngineAsync` needs no global registration. Registering
+globally stays correct, and is still needed for an engine assembled with `asyncEngine()` per request.
+
 ## Handle a request
 
 Each mutation request follows the same steps, all inside one `runWithInstanceState` scope:
