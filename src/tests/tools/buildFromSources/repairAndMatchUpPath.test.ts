@@ -1,5 +1,5 @@
 import { getDrawData } from '@Query/drawDefinition/getDrawData';
-import tournamentEngine from '@Tests/engines/syncEngine';
+import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 import {

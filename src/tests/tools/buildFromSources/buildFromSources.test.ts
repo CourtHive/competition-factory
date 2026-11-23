@@ -5,7 +5,7 @@
 //
 // Plus targeted unit tests for `classifySource`, the extractors, graceful
 // degradation (single-source builds), and the cleanup invariants.
-import tournamentEngine from '@Tests/engines/syncEngine';
+import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 

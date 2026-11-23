@@ -1,4 +1,4 @@
-import tournamentEngine from '@Tests/engines/syncEngine';
+import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { JSON2CSV } from '@Tools/json';
 import { expect, it } from 'vitest';

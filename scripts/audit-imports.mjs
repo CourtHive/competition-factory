@@ -24,7 +24,7 @@ const SRC = process.env.AUDIT_SRC || path.join(ROOT, 'src');
 
 const ALIASES = {
   '@Generators': 'assemblies/generators',
-  '@Engines': 'tests/engines',
+  '@Engines': 'assemblies/engines/test-entries',
   '@Assemblies': 'assemblies',
   '@Validators': 'validators',
   '@Constants': 'constants',
