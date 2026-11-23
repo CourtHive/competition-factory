@@ -5,9 +5,10 @@ type GetGroupValueGroupsArgs = {
   collectionGroups: { groupValue?: number; groupNumber?: number }[];
 };
 export function getGroupValueGroups({ collectionGroups = [] }: GetGroupValueGroupsArgs) {
-  // set up to handle groupValue
+  // set up to handle groupValue. Keyed by groupNumber from the tieFormat: a null prototype keeps a non-numeric key
+  // ordinary (the value-group membership check below already only admits integers; CodeQL #247)
   const groupValueGroups = Object.assign(
-    {},
+    Object.create(null),
     ...collectionGroups
       .filter((group: any) => isConvertableInteger(group?.groupValue) && group?.groupNumber)
       .map((group: any) => ({
