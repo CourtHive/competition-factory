@@ -52,7 +52,7 @@ export interface OptionalStateProviderMembers {
   setNoticeBuffer: ProviderMember;
   getNoticeState: ProviderMember;
   notificationsDisabled: ProviderMember;
-  /** Stable per-scope identity for nested notice delivery. Defaults to the provider's loaded records. */
+  /** Stable per-scope identity for nested notice delivery. Legacy preview scopes use their verified captured stamp ledger. */
   getDeliveryScope: ProviderMember;
   getPayloads: ProviderMember;
   handleCaughtError: ProviderMember;

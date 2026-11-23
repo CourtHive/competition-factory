@@ -62,7 +62,7 @@ tournamentEngine.dryRun([
 
 ### Errors
 
-Three guard paths return `{ wouldSucceed: false, error }` without dispatching:
+Queue validation returns `{ wouldSucceed: false, error }` for each of these inputs.
 
 | Trigger                                                      | `error.message`                 |
 | ------------------------------------------------------------ | ------------------------------- |
@@ -113,5 +113,9 @@ The preview reads the loaded records to build a private working copy and a stabl
 ## Custom state providers
 
 Implement `runWithInstanceState(fn)` to invoke the callback with fresh record storage, selection, notice buffer and mutation flags. For Node servers, bind the child store using `AsyncLocalStorage.run` so continuations inherit it. Both built-in providers implement the hook. A provider without it receives `ERR_ROLLBACK_UNAVAILABLE` before dispatch. A provider-backed document can supply a plain projection with its existing `makeDeepCopy(..., { purpose: 'snapshot' })` hook. Keep external I/O out of previewed directives.
+
+Give each child a stable identity for subscriber delivery. A provider can return its active store from `getDeliveryScope()`. Older async providers can use their existing request-scoped clock and stamp ledger. Both must retain the values installed by the preview across awaits and nested record loads. A provider that cannot establish a private child receives `ERR_ROLLBACK_UNAVAILABLE` before its directive runs.
+
+A nested public `setState` or `setTournamentRecord` installs records privately, including when the directive supplies a live borrowed record. The caller keeps its record and copy settings. Async continuations created by the preview keep its delivery scope even if they finish after the preview result. Only work awaited by the directive contributes to that result. Configure process-wide options and install providers outside previewed methods. A provider using its clock and stamp ledger for scope identity must leave those slots under factory control.
 
 Preview inherits request subscriptions. Providers can expose pending notices through `getNoticeBuffer` and `setNoticeBuffer`, and disabled notifications through `notificationsDisabled()` or `getNoticeState()`. Seeded randomness forks into the child. An opaque caller-supplied random function advances when the preview draws from it.

@@ -1,21 +1,24 @@
 import { NoticeIdentity } from '@Types/topicTypes';
-import type { Notice } from './globalState';
+import type { DeepCopySettings, Notice } from './globalState';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// A nested engine call can reach delivery inside a preview. Key its scope independently of the payload.
-type DeliveryProvider = { getDeliveryScope?: () => object; getTournamentRecords: () => object };
-const privateDeliveryScopes = new WeakSet<object>();
+// A records map can be replaced by setState inside an async continuation. The delivery token
+// must belong to the request itself, including descendants that outlive the preview result.
+type DeliveryProvider = { getDeliveryScope?: () => object; getCapturedStamps?: () => WeakSet<object> };
+export type PreviewContext = DeepCopySettings & { copyRecord: (value: any) => any };
+const privateContexts = new WeakMap<object, PreviewContext>();
 
-function deliveryScope(provider: DeliveryProvider): object {
-  return provider.getDeliveryScope?.() ?? provider.getTournamentRecords();
+export function deliveryScope(provider: DeliveryProvider) {
+  return provider.getDeliveryScope?.() ?? provider.getCapturedStamps?.();
 }
 
-export function suppressPreviewDelivery(provider: DeliveryProvider): void {
-  privateDeliveryScopes.add(deliveryScope(provider));
+export function registerPrivateScope(scope: object, context: PreviewContext) {
+  privateContexts.set(scope, context);
 }
 
-export function isPrivateDeliveryScope(provider: DeliveryProvider): boolean {
-  return privateDeliveryScopes.has(deliveryScope(provider));
+export function privateContext(provider: DeliveryProvider) {
+  const scope = deliveryScope(provider);
+  return scope && privateContexts.get(scope);
 }
 
 /** Provider-owned notice state; also usable as an isolated differential snapshot. */

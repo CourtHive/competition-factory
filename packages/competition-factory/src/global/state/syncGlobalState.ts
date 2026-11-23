@@ -1,4 +1,4 @@
-import { appendNotice, UNANNOUNCED_WRITE, UNNAMED_TOURNAMENT } from './noticeIdentity';
+import { type PreviewContext, appendNotice, UNANNOUNCED_WRITE, UNNAMED_TOURNAMENT } from './noticeIdentity';
 import {
   CallListenerArgs,
   DeleteNoticeArgs,
@@ -18,7 +18,9 @@ import {
   NOT_FOUND,
 } from '@Constants/errorConditionConstants';
 
-const newInstanceState = (): ImplemtationGlobalStateTypes => ({
+type SyncState = ImplemtationGlobalStateTypes & { preview?: PreviewContext };
+const newInstanceState = (): SyncState => ({
+  preview: undefined,
   disableNotifications: false,
   tournamentId: undefined,
   tournamentRecords: {},
@@ -31,6 +33,15 @@ const newInstanceState = (): ImplemtationGlobalStateTypes => ({
 });
 
 let syncGlobalState = newInstanceState();
+
+// Only a store created for a preview is silenced. Nested ordinary stores still deliver.
+export function markPrivateSyncDelivery(scope: object, context: PreviewContext) {
+  if (scope === syncGlobalState) syncGlobalState.preview = context;
+}
+
+export function syncPreviewContext() {
+  return syncGlobalState.preview;
+}
 
 // Synchronous dispatch is stack-scoped. Each nested preview owns a fresh state object.
 function runWithInstanceState<T>(run: () => T): T {
@@ -307,6 +318,7 @@ export function getTopics(): { topics: string[] } {
 }
 
 export function callListener({ topic, payloads, notices }: CallListenerArgs, globalSubscriptions?: any) {
+  if (syncGlobalState.preview) return;
   // back-compat: accept either `payloads` (canonical) or `notices` (deprecated alias).
   const data = payloads ?? notices ?? [];
   const method = syncGlobalState.subscriptions[topic];

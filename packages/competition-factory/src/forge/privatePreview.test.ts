@@ -11,6 +11,10 @@ import {
   addNotice,
   cycleMutationStatus,
   getTournamentRecord,
+  getTournamentRecords,
+  getNoticeBuffer,
+  setTournamentRecord,
+  setTournamentRecords,
   markModified,
   setDeepCopy,
   setGlobalSubscriptions,
@@ -192,4 +196,46 @@ it.each([
   });
   expect(syncEngine.dryRun([{ method: 'attempt' }]).error).toEqual(ROLLBACK_UNAVAILABLE);
   expect(calls).toBe(0);
+});
+
+it('isolates public record installs and restores a refused nested queue into its original private graph', () => {
+  const shared = { value: 'entry' };
+  const live = { tournamentId: 'rollback', left: shared, right: shared };
+  syncEngine.setState(live, false);
+  const borrowed = getTournamentRecord('rollback');
+  expect(borrowed).toBe(live);
+  setSubscriptions({ subscriptions: { pending: () => undefined } });
+  syncEngine.importMethods({
+    refuseAfterReplacingMap() {
+      getTournamentRecord('rollback').left.value = 'dirty';
+      setTournamentRecords({ rollback: live });
+      return { error: 'TEST_REFUSAL' };
+    },
+    inspectRollback() {
+      setTournamentRecord(borrowed);
+      const record = getTournamentRecord('rollback');
+      expect(record).not.toBe(live);
+      expect(record.left).not.toBe(shared);
+      expect(record.left).toBe(record.right);
+      setTournamentRecords({ rollback: record });
+      const map = getTournamentRecords();
+      expect(map.rollback).toBe(record);
+      const entity = record.left;
+      addNotice({ topic: 'pending', payload: { entity } });
+      const result = syncEngine.executionQueue([{ method: 'refuseAfterReplacingMap' }], true);
+      expect(result).toMatchObject({ error: 'TEST_REFUSAL', rolledBack: true });
+      expect(getTournamentRecords()).toBe(map);
+      expect(map.rollback).toBe(record);
+      expect(record.left).toBe(entity);
+      expect(record.right).toBe(entity);
+      expect(entity.value).toBe('entry');
+      expect(getNoticeBuffer()?.[0].payload.entity).toBe(entity);
+      return { success: true };
+    },
+  });
+  expect(syncEngine.dryRun([{ method: 'inspectRollback' }])).toMatchObject({ wouldSucceed: true });
+  expect(getTournamentRecord('rollback')).toBe(live);
+  expect(live.left).toBe(shared);
+  expect(live.right).toBe(shared);
+  expect(shared.value).toBe('entry');
 });

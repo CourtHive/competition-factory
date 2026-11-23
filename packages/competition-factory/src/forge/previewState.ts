@@ -2,10 +2,11 @@ import { deferredQuery, deferredQueryBinding } from '@Mutate/notifications/drawN
 import { createSeededRandom, randomSource, SeededRandom } from '@Tools/prng';
 import { MISSING_ASYNC_STATE_PROVIDER, ROLLBACK_UNAVAILABLE } from '@Constants/errorConditionConstants';
 import { Directives, TournamentRecords } from '@Types/factoryTypes';
-import { suppressPreviewDelivery } from '@Global/state/noticeIdentity';
-import syncGlobalState from '@Global/state/syncGlobalState';
+import { deliveryScope, registerPrivateScope, type PreviewContext } from '@Global/state/noticeIdentity';
+import syncGlobalState, { markPrivateSyncDelivery } from '@Global/state/syncGlobalState';
 import { isPlainContainer } from '@Tools/cloneState';
 import {
+  deepCopyEnabled,
   getCapturedStamps,
   getNoticeBuffer,
   getProvider,
@@ -49,6 +50,8 @@ export function withPreviewState<T>(
   const disabled = provider.notificationsDisabled?.() ?? provider.getNoticeState?.()?.disableNotifications;
   const source = randomSource() as SeededRandom;
   const notices = getNoticeBuffer();
+  const parentScope = deliveryScope(provider);
+  const { enabled: deepCopy, ...attributes } = deepCopyEnabled();
   const parentStamps = getCapturedStamps();
   const privateStamps = new WeakSet<object>();
   let before: TournamentRecords;
@@ -68,17 +71,59 @@ export function withPreviewState<T>(
   }
 
   return provider.runWithInstanceState(() => {
+    const declaredScope = provider.getDeliveryScope?.();
+    if (declaredScope && (typeof declaredScope !== 'object' || declaredScope === parentScope)) {
+      return { error: ROLLBACK_UNAVAILABLE };
+    }
+    if (!declaredScope && (!provider.getCapturedStamps || !provider.setCapturedStamps || !provider.getCapturedClock)) {
+      return { error: ROLLBACK_UNAVAILABLE };
+    }
+    setCapturedClock(clocks.record);
+    setCapturedCompetitionClock(clocks.competition);
+    setCapturedStamps(privateStamps);
+    const scope = declaredScope ?? provider.getCapturedStamps?.();
+    // The clock keeps nested operations on the installed ledger. A legacy provider without
+    // an identifiable child must refuse before invoking user code.
+    if (
+      !scope ||
+      typeof scope !== 'object' ||
+      scope === parentScope ||
+      scope !== deliveryScope(provider) ||
+      (!declaredScope && (scope !== privateStamps || provider.getCapturedClock?.() !== clocks.record))
+    ) {
+      return { error: ROLLBACK_UNAVAILABLE };
+    }
+    const context: PreviewContext = {
+      deepCopy,
+      deepCopyAttributes: {
+        ...attributes,
+        ignore: [...attributes.ignore],
+        stringify: [...attributes.stringify],
+        toJSON: [...attributes.toJSON],
+      },
+      copyRecord(value) {
+        const installed = provider.getTournamentRecords();
+        if (value === installed || (value?.tournamentId && value === installed[value.tournamentId])) return value;
+        // A nested setState can supply an outer borrowed record. Only records already installed
+        // in this child retain their identity when the map is replaced.
+        const known = new Map<object, CopyPair>(
+          Object.values(installed).map((record: any) => [record, { working: record }]),
+        );
+        const projected = provider.makeDeepCopy
+          ? provider.makeDeepCopy(value, false, true, false, { purpose: 'snapshot' })
+          : value;
+        return privateCopier(undefined, undefined, known)(projected, true).working;
+      },
+    };
+    registerPrivateScope(scope, context);
+    markPrivateSyncDelivery(scope, context);
     provider.setTournamentRecords(records);
     provider.setTournamentId(tournamentId);
     provider.setMethods?.(methods, { privateRegistry: true });
-    suppressPreviewDelivery(provider);
     if (topics.length)
       provider.setSubscriptions({ subscriptions: Object.fromEntries(topics.map((t) => [t, subscribe])) });
     if (buffer) provider.setNoticeBuffer?.(buffer);
     if (disabled) provider.disableNotifications();
-    setCapturedClock(clocks.record);
-    setCapturedCompetitionClock(clocks.competition);
-    setCapturedStamps(privateStamps);
     setCallRandomSource(typeof source.state === 'function' ? createSeededRandom(source.state()) : source);
     return run(before, privateDirectives);
   }) as T;
@@ -87,8 +132,11 @@ export function withPreviewState<T>(
 type CopyPair = { working: any; before?: any };
 
 // Every object in a record, notice or directive has one working identity. Only records need a baseline.
-function privateCopier(parentStamps?: WeakSet<object>, privateStamps?: WeakSet<object>) {
-  const copies = new Map<object, CopyPair>();
+function privateCopier(
+  parentStamps?: WeakSet<object>,
+  privateStamps?: WeakSet<object>,
+  copies = new Map<object, CopyPair>(),
+) {
   function copy(source: any, record: boolean): CopyPair {
     if (source == null || (typeof source !== 'object' && typeof source !== 'function'))
       return { working: source, before: source };
