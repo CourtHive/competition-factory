@@ -16,7 +16,7 @@ import { claimEdges } from '../plan/placementClaims';
 import type { withdrawnAwardRelease } from './release';
 import { recordedNotice } from '../plan/recordedDiff';
 import { isDoubleExit, isExit } from '@Validators/isExit';
-import { TO_BE_PLAYED, IN_PROGRESS, BYE } from '@Constants/matchUpStatusConstants';
+import { TO_BE_PLAYED, IN_PROGRESS, BYE, COMPLETED, RETIRED } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { MODIFY_POSITION_ASSIGNMENTS, UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
 import {
@@ -596,8 +596,8 @@ function correctsPlayedWinner(args: Args, source: HydratedMatchUp) {
     !isExit(source.matchUpStatus) ||
     request.winningSide !== 3 - source.winningSide ||
     (request.matchUpStatus &&
-      request.matchUpStatus !== 'COMPLETED' &&
-      !(request.matchUpStatus === 'RETIRED' && !request.flags.propagateRetirementAsExit)) ||
+      request.matchUpStatus !== COMPLETED &&
+      !(request.matchUpStatus === RETIRED && !request.flags.propagateRetirementAsExit)) ||
     request.carries?.schedule ||
     request.carries?.notes ||
     request.matchUpFormat

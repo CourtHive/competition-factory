@@ -4,7 +4,7 @@ import { claimAssignment, claimEdges } from '../plan/placementClaims';
 import { releasedAward } from '../plan/carriedExit';
 import { indexed } from '../plan/planShared';
 import { isExit } from '@Validators/isExit';
-import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { TO_BE_PLAYED, COMPLETED } from '@Constants/matchUpStatusConstants';
 
 import type { OutcomeRequest, OutcomeView, Route } from '../types';
 import type { DrawDefinition } from '@Types/tournamentTypes';
@@ -32,7 +32,7 @@ export function withdrawnAwardRelease(
     request.flags.propagateExitStatus &&
     !!request.winningSide &&
     request.winningSide === source?.winningSide &&
-    (!request.matchUpStatus || request.matchUpStatus === 'COMPLETED');
+    (!request.matchUpStatus || request.matchUpStatus === COMPLETED);
   if ((!clears && !reverses && !relabels) || !matches || !source?.winningSide || !isExit(source.matchUpStatus)) return;
   const frame = { inContextDrawMatchUps: matches, drawDefinition };
   const edge = claimEdges(frame, source);
