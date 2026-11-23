@@ -1,3 +1,5 @@
+import type { HydratedMatchUp } from '@Types/hydrated';
+import type { WithdrawnHolder } from './withdrawalChain';
 import { getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
 import { tiebreakPointsWarnings } from '@Scoring/analysis/validateScore';
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
@@ -30,6 +32,21 @@ export function relabelEffects(args: SettlementEffectArgs): SettlementProgram | 
     return;
   const chain = withdrawalChain(view, args.drawDefinition, source);
   if (!chain?.length || chain[0].holder.matchUpId !== source.loserMatchUpId) return;
+  const emissions = relabelWithdrawals(args, source, chain);
+  if (!emissions) return;
+  const warnings =
+    !request.flags.disableScoreValidation && tiebreakPointsWarnings(request.score?.sets, view.existing.matchUpFormat);
+  return {
+    emissions,
+    result: {
+      success: true,
+      stack: ['setMatchUpStatus', 'setMatchUpStatus'],
+      ...(warnings && warnings.length ? { warnings } : {}),
+    },
+  };
+}
+
+function relabelWithdrawals(args: SettlementEffectArgs, source: HydratedMatchUp, chain: WithdrawnHolder[]) {
   const emissions: SettlementProgram['emissions'] = [{ match: source, context: 'modifyMatchUpScore', bound: true }];
   const reset = new Set<string>(),
     cleared = new Set<string>(),
@@ -95,14 +112,5 @@ export function relabelEffects(args: SettlementEffectArgs): SettlementProgram | 
     )
   )
     return;
-  const warnings =
-    !request.flags.disableScoreValidation && tiebreakPointsWarnings(request.score?.sets, view.existing.matchUpFormat);
-  return {
-    emissions,
-    result: {
-      success: true,
-      stack: ['setMatchUpStatus', 'setMatchUpStatus'],
-      ...(warnings && warnings.length ? { warnings } : {}),
-    },
-  };
+  return emissions;
 }

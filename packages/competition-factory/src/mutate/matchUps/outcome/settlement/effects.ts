@@ -604,9 +604,7 @@ function correctsPlayedWinner(args: Args, source: HydratedMatchUp) {
   );
 }
 
-/** A winner reversal removes the directed seats, then scores and directs the replacement.
- * Each subscriber operation must belong to these placements or the causal withdrawal chain. */
-function correctionProgram(args: Args): Program | undefined {
+function reversalPlacements(args: Args) {
   const { request, view } = args;
   const matches = view.inContextDrawMatchUps;
   const source = matches?.find((m) => m.matchUpId === request.matchUpId);
@@ -660,6 +658,16 @@ function correctionProgram(args: Args): Program | undefined {
   if (winner) emissions.push({ match: winner, context: 'assignMatchUpDrawPosition', bound: true });
   emissions.push({ match: loser, context: 'positionAssignments', bound: true });
   const position = edges.targetMatchUps?.loserTargetDrawPosition;
+  return { matches, source, winner, loser, oldWinner, newWinner, emissions, chain, released, position };
+}
+
+/** A winner reversal removes the directed seats, then scores and directs the replacement.
+ * Each subscriber operation must belong to these placements or the causal withdrawal chain. */
+function correctionProgram(args: Args): Program | undefined {
+  const { request, view } = args;
+  const placements = reversalPlacements(args);
+  if (!placements) return;
+  const { matches, source, winner, loser, oldWinner, newWinner, emissions, chain, released, position } = placements;
   let removed = false,
     placed = false,
     redirected = false;
