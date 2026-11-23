@@ -1,5 +1,17 @@
 # Changelog
 
+## [7.47.0](https://github.com/CourtHive/competition-factory/compare/v7.46.0...v7.47.0) (2026-11-23)
+
+
+### Features
+
+* **scheduling:** place no matchUp before its profile round's notBeforeTime ([#6570](https://github.com/CourtHive/competition-factory/issues/6570)) ([7f1bfe2](https://github.com/CourtHive/competition-factory/commit/7f1bfe2392437418bfeb8a6e84c0e4e61dc07e3e))
+
+
+### Bug Fixes
+
+* **outcome:** keep the advancing team seated after a collection line correction ([#6569](https://github.com/CourtHive/competition-factory/issues/6569)) ([71046a6](https://github.com/CourtHive/competition-factory/commit/71046a66048aaa501b97f5cb2302c0922dacd494))
+
 ## [7.46.0](https://github.com/CourtHive/competition-factory/compare/v7.45.0...v7.46.0) (2026-11-23)
 
 
