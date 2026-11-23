@@ -1,0 +1,420 @@
+import { isBracketWinnerSwap } from '@Query/matchUp/isBracketWinnerSwap';
+import { lineTakesPlayedOnDualWinner } from '@Mutate/matchUps/matchUpStatus/lineTakesPlayedOnDualWinner';
+import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
+import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
+import { rewritesCarriedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { lineDirectsUnfedDual } from '@Query/matchUp/lineDirectsUnfedDual';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
+import { validateScore } from '@Scoring/analysis/validateScore';
+import { definedAttributes } from '@Tools/definedAttributes';
+import { chooseRoute, dualWinningSideChange } from './route';
+import { isDoubleExit, isExit } from '@Validators/isExit';
+
+// constants and types
+import type { OutcomeRequest, OutcomeView, Refusal } from './types';
+import type { ErrorType } from '@Constants/errorConditionConstants';
+import {
+  ANACHRONISM,
+  CANNOT_CHANGE_FEED_ELIGIBILITY,
+  CANNOT_CHANGE_OUTCOME,
+  CANNOT_CHANGE_WINNING_SIDE,
+  DRAW_POSITION_ACTIVE,
+  INCOMPATIBLE_MATCHUP_STATUS,
+  INVALID_DATE,
+  INVALID_MATCHUP_STATUS,
+  INVALID_MATCHUP_STATUS_BYE,
+  INVALID_TIME,
+  INVALID_VALUES,
+  INVALID_WINNING_SIDE,
+  MATCHUP_NOT_FOUND,
+  MATCHUP_STATUS_OUT_OF_SCOPE,
+  MISSING_DRAW_DEFINITION,
+  MISSING_ASSIGNMENTS,
+  MISSING_DRAW_POSITIONS,
+  MISSING_MATCHUP_ID,
+  NO_VALID_ACTIONS,
+  PROPAGATED_EXITS_DOWNSTREAM,
+  UNRECOGNIZED_MATCHUP_FORMAT,
+} from '@Constants/errorConditionConstants';
+import {
+  ABANDONED,
+  AWAITING_RESULT,
+  BYE,
+  CANCELLED,
+  DEFAULTED,
+  DOUBLE_DEFAULT,
+  DOUBLE_WALKOVER,
+  IN_PROGRESS,
+  INCOMPLETE,
+  participantsRequiredMatchUpStatuses,
+  SUSPENDED,
+  TO_BE_PLAYED,
+  validMatchUpStatuses,
+  WALKOVER,
+} from '@Constants/matchUpStatusConstants';
+
+/**
+ * The outcome pipeline, v2: the refusals (§ 2 of the spec), as one pure function.
+ *
+ * `refuseOutcome(request, view)` returns the first refusal or `undefined`. It writes nothing and
+ * reads nothing but its two arguments, so a port can run it on the view alone. The ORDER is v1's
+ * measured order, which the spec's table approximates: the TEAM clause of row 5 is asked after row
+ * 10, and the participants clause of row 6 after row 11 (both corrected on the page with this
+ * module). Rows 16 to 18 are raised by the writes and are not decided here.
+ */
+
+const LIVE = new Set<string>([IN_PROGRESS, SUSPENDED]);
+const NON_RESULT = new Set<string>([CANCELLED, INCOMPLETE, ABANDONED, TO_BE_PLAYED]);
+const EXITS = new Set<string>([WALKOVER, DEFAULTED, DOUBLE_WALKOVER, DOUBLE_DEFAULT]);
+
+/**
+ * A refusal's context holds the attributes that are defined, as v1's `decorateResult` leaves it (shallow: a context
+ * carries references): a call naming no status is refused with no `matchUpStatus` key, not an undefined one
+ */
+const refuse = (row: number, error: ErrorType, extra: Omit<Refusal, 'code' | 'error' | 'row'> = {}): Refusal => ({
+  code: error.code,
+  error,
+  row,
+  ...extra,
+  ...(extra.context ? { context: definedAttributes(extra.context, false, false, true) } : {}),
+});
+
+const isClear = (request: OutcomeRequest): boolean =>
+  request.matchUpStatus === TO_BE_PLAYED &&
+  request.score?.scoreStringSide1 === '' &&
+  request.score?.scoreStringSide2 === '' &&
+  !request.winningSide;
+
+/** rows 1 to 4: the call itself */
+function refuseCall(request: OutcomeRequest, view: OutcomeView): Refusal | undefined {
+  if (!request.matchUpId) return refuse(1, MISSING_MATCHUP_ID);
+  if (!view.hasDrawDefinition) return refuse(2, MISSING_DRAW_DEFINITION);
+  // a winningSide is 1 or 2, or absent; 0 is refused (CA, 2026-10-01)
+  if (request.winningSide != null && ![1, 2].includes(request.winningSide)) return refuse(3, INVALID_WINNING_SIDE);
+  if (!view.formatRecognized) return refuse(4, UNRECOGNIZED_MATCHUP_FORMAT);
+  return undefined;
+}
+
+/** rows 5 to 8: the status named, and the matchUp found */
+function refuseStatus(request: OutcomeRequest, view: OutcomeView): Refusal | undefined {
+  const { matchUpStatus, winningSide } = request;
+  if (matchUpStatus && NON_RESULT.has(matchUpStatus) && winningSide)
+    return refuse(5, INVALID_VALUES, { context: { matchUpStatus, winningSide } });
+  if (matchUpStatus !== undefined && !validMatchUpStatuses.includes(matchUpStatus))
+    return refuse(6, INVALID_MATCHUP_STATUS, { info: 'matchUpStatus does not exist' });
+  // the tie scope needs the matchUp: before it is found both flags are undefined and nothing is refused on them
+  const scope = getMatchUpStatusScopeViolation({
+    isDeciderMatchUp: view.found ? !!view.isDeciderMatchUp : undefined,
+    isTieMatchUp: view.found ? !!view.existing.collectionId : undefined,
+    drawType: view.drawType,
+    matchUpStatus,
+  });
+  if (scope) return refuse(7, MATCHUP_STATUS_OUT_OF_SCOPE, { info: scope });
+  if (!view.found) return refuse(8, MATCHUP_NOT_FOUND);
+  return undefined;
+}
+
+/** row 9, the three conditions asked before the draw is consulted, then row 10 */
+function refuseAgainstExisting(request: OutcomeRequest, view: OutcomeView): Refusal | undefined {
+  const { matchUpStatus, winningSide, score } = request;
+  const { existing } = view;
+
+  if ((existing.winningSide || winningSide) && matchUpStatus === BYE)
+    return refuse(9, INCOMPATIBLE_MATCHUP_STATUS, {
+      info: 'Cannot have Bye with winningSide',
+      context: { matchUpStatus },
+    });
+
+  const live = !!matchUpStatus && LIVE.has(matchUpStatus);
+  const carriesResult = !!winningSide || checkScoreHasValue({ score });
+  if (live && !carriesResult && existing.validWinningScore)
+    return refuse(9, INCOMPATIBLE_MATCHUP_STATUS, {
+      info: 'Cannot revert a COMPLETED matchUp with a validated winning score to a live status; submit a corrected outcome or clear the result first',
+      context: { matchUpStatus, currentMatchUpStatus: existing.matchUpStatus },
+    });
+
+  if (live && carriesResult && !view.isTeam) {
+    if (winningSide)
+      return refuse(9, INCOMPATIBLE_MATCHUP_STATUS, {
+        info: 'A winningSide implies completion and cannot be set with a live matchUpStatus (IN_PROGRESS / SUSPENDED)',
+        context: { matchUpStatus, winningSide },
+      });
+    if (view.impliedWinningSide)
+      return refuse(9, INCOMPATIBLE_MATCHUP_STATUS, {
+        info: 'Score implies a completed outcome and cannot be set with a live matchUpStatus (IN_PROGRESS / SUSPENDED)',
+        context: { matchUpStatus, calculatedWinningSide: view.impliedWinningSide },
+      });
+  }
+
+  // row 20, checked here: a carried or produced exit is changed at its ORIGIN (CA, 2026-10-03)
+  const rewrite = rewritesCarriedExit({
+    existingWinningSide: existing.winningSide,
+    existingStatus: existing.matchUpStatus,
+    carriedExit: existing.carriedExit,
+    matchUpStatus,
+    winningSide,
+    score,
+  });
+  if (rewrite)
+    return refuse(20, CANNOT_CHANGE_OUTCOME, {
+      info: 'a carried exit is changed at its origin',
+      context: { matchUpStatus: existing.matchUpStatus },
+    });
+
+  // row 21, checked here: a malformed round link, the matchUp's own or downstream (CA, 2026-10-06)
+  const unreadable = view.unreadableLink;
+  if (unreadable) return refuse(21, unreadable.error, { info: unreadable.info, context: unreadable.context });
+
+  if (view.propagatedExitStands && isClear(request)) return refuse(10, PROPAGATED_EXITS_DOWNSTREAM);
+  return undefined;
+}
+
+/** the TEAM dual under auto-calc, row 5's TEAM clause, row 11 */
+function refuseScore(request: OutcomeRequest, view: OutcomeView): Refusal | undefined {
+  const { matchUpStatus, winningSide, score, flags } = request;
+
+  if (view.isTeam && flags.enableAutoCalc && view.activeDownstream) {
+    const projected = view.dualProjection?.projectedWinningSide;
+    if (projected !== view.existing.winningSide)
+      // v1 (`handleTeamAutoCalc`) names the stored dual beside the call's winningSide (`namesMatchUp`)
+      return refuse(14, CANNOT_CHANGE_WINNING_SIDE, { context: { winningSide }, namesMatchUp: true });
+  }
+
+  if (view.isTeam && matchUpStatus === AWAITING_RESULT)
+    return refuse(5, INVALID_VALUES, { info: 'Not supported for matchUpType: TEAM' });
+
+  if (score && !view.isTeam && !flags.disableScoreValidation) {
+    const result = validateScore({
+      existingMatchUpStatus: view.existing.matchUpStatus,
+      matchUpFormat: request.matchUpFormat ?? view.existing.matchUpFormat,
+      matchUpStatus,
+      winningSide,
+      score,
+    });
+    if (result.error) return refuse(11, result.error, { info: result.info });
+  }
+  return undefined;
+}
+
+/** § 2.1 (row 6's second clause), row 12, and row 9's two downstream conditions */
+function refuseAgainstDraw(request: OutcomeRequest, view: OutcomeView): Refusal | undefined {
+  const { matchUpStatus, winningSide, flags } = request;
+  const { participants } = view;
+
+  if (participants.requireForScoring) {
+    const exitWithOne =
+      !!matchUpStatus &&
+      EXITS.has(matchUpStatus) &&
+      participants.count === 1 &&
+      (!!flags.propagatingExit || !winningSide || participants.exitAwardable) &&
+      // a direct double exit needs both seats reached (CA 2026-10-04); only the cascade's own write is waived
+      (!!flags.propagatingExit || !isDoubleExit(matchUpStatus));
+    const directing = matchUpStatus ? participantsRequiredMatchUpStatuses.includes(matchUpStatus) : !!winningSide;
+    if (!exitWithOne && directing && !participants.required)
+      return refuse(6, INVALID_MATCHUP_STATUS, {
+        info: 'matchUpStatus requires assigned participants',
+        context: { matchUpStatus, requiredParticipants: participants.required },
+      });
+  }
+
+  // row 22, asked where v1 asks it: just before row 12 (P52; CA, 2026-10-11)
+  if (view.correctionKindBlockedBy)
+    return refuse(22, CANNOT_CHANGE_OUTCOME, {
+      info: 'a result recorded downstream fixes whether this outcome is an exit or a played result',
+      context: {
+        currentMatchUpStatus: view.existing.matchUpStatus,
+        blockingMatchUpId: view.correctionKindBlockedBy,
+        matchUpStatus,
+      },
+    });
+
+  if (view.feedEligibilityBlockedBy)
+    return refuse(12, CANNOT_CHANGE_FEED_ELIGIBILITY, {
+      info: 'the loser of the linked round has already been directed under the previous outcome',
+      context: {
+        currentMatchUpStatus: view.existing.matchUpStatus,
+        blockingMatchUpId: view.feedEligibilityBlockedBy,
+        matchUpStatus,
+      },
+    });
+
+  if (view.line?.projectsByeWinner) return refuse(6, INVALID_MATCHUP_STATUS, { info: 'a BYE cannot win a TEAM dual' });
+
+  if (!view.matchUpTieId) {
+    const nonDirecting = !!matchUpStatus && isNonDirectingMatchUpStatus({ matchUpStatus });
+    // v1 (`checkDownstreamCompatibility`) returns `activeDownstream` and `winningSide` beside `error`, not in a context
+    if (view.activeDownstream && !winningSide && (nonDirecting || isDoubleExit(matchUpStatus)))
+      return refuse(9, INCOMPATIBLE_MATCHUP_STATUS, { extra: { activeDownstream: true, winningSide } });
+    const directing = isDirectingMatchUpStatus({ matchUpStatus });
+    if (winningSide && winningSide === view.existing.winningSide && matchUpStatus && !directing)
+      return refuse(9, INCOMPATIBLE_MATCHUP_STATUS, {
+        info: 'winningSide must include directing matchUpStatus',
+        context: { directingMatchUpStatus: directing, matchUpStatus },
+      });
+  }
+  return undefined;
+}
+
+/**
+ * rows 16, 25 and 27: the schedule the call carries, refused by v1's writer before the outcome lands, after the draw's
+ * checks and before the dispatch, where v1 asks it (`setMatchUpState`'s `validateOnly` pass). v1's result is returned
+ * whole. Row 29: any other code that pass raises (a stop, resume or end time out of order, a venue not found, a court
+ * order not a number, ...), which v1 returns as it stands (`if (check.error) return check`), so v2 does too (S7). It
+ * was left to `scheduleReason`'s abstention, but the decision is compared before any abstention: v1 refused, v2
+ * accepted, a divergence
+ */
+function refuseSchedule(view: OutcomeView): Refusal | undefined {
+  const refused = view.scheduleRefusal;
+  if (!refused) return undefined;
+  const { error, ...rest } = refused;
+  if (error.code === INVALID_TIME.code) return refuse(16, INVALID_TIME, rest);
+  if (error.code === INVALID_DATE.code) return refuse(25, INVALID_DATE, rest);
+  if (error.code === ANACHRONISM.code) return refuse(27, ANACHRONISM, rest);
+  return refuse(29, error, rest);
+}
+
+/** § 3's dispatch: rows 13 to 15, and the swap that is accepted instead of refused */
+function refuseDispatch(request: OutcomeRequest, view: OutcomeView): Refusal | undefined {
+  const { winningSide, matchUpStatus, flags } = request;
+  const { existing, line } = view;
+  const dualWinningSideChange = view.isTeam
+    ? flags.enableAutoCalc && view.dualProjection?.projectedWinningSide !== existing.winningSide
+    : !!line && line.projectedWinningSide !== line.dualWinningSide;
+
+  if (
+    flags.allowChangePropagation &&
+    !view.isTeam &&
+    !dualWinningSideChange &&
+    isBracketWinnerSwap(existing, winningSide, view.matchUpTieId)
+  ) {
+    // row 26: the swap would place a loser on, or take one off, a FIRST_MATCHUP-fed seat that has played on; v1 asks it
+    // before the swap writes anything (`swapWinnerLoser`)
+    if (view.swapMeetsActivePosition)
+      return refuse(26, DRAW_POSITION_ACTIVE, {
+        info: 'the swap would change who holds a FIRST_MATCHUP-fed seat that has played on',
+      });
+    return undefined;
+  }
+
+  if (line && isDoubleExit(line.dualMatchUpStatus) && view.activeDownstream)
+    return refuse(13, CANNOT_CHANGE_OUTCOME, {
+      info: 'the dual holds a double exit whose produced result has been played on',
+      context: { dualMatchUpId: line.dualMatchUpId, dualMatchUpStatus: line.dualMatchUpStatus },
+    });
+
+  // row 14 (CA, 2026-11-19; line-decided duals, 2026-11-20): a line whose tally would take away its dual's winner, sent on
+  // to a played-on downstream
+  if (
+    lineTakesPlayedOnDualWinner({
+      projectedWinningSide: line?.projectedWinningSide,
+      autoCalcDisabled: line?.autoCalcDisabled,
+      dualWinningSide: line?.dualWinningSide,
+      lineDecided: line?.dualLineDecided,
+      declaredWinnerPlayedOn: view.declaredWinnerPlayedOn,
+      activeDownstream: view.activeDownstream,
+      isLine: !!line,
+    })
+  )
+    return refuse(14, CANNOT_CHANGE_WINNING_SIDE, {
+      info: "the line would take away its dual's winner, whose downstream has been played on",
+      context: { winningSide },
+      namesMatchUp: true,
+    });
+
+  const hasPropagated = !!existing.winningSide || isDoubleExit(existing.matchUpStatus);
+  if (!view.activeDownstream || !hasPropagated) return undefined;
+
+  // a TEAM dual's call that turns auto-calc on is dispatched with the winner its lines project in place of the call's
+  // (`handleTeamAutoCalc`): where they project none, the call names no winner, whatever it was given
+  const autoCalculated = view.isTeam && !!flags.enableAutoCalc;
+  const projected = autoCalculated ? view.dualProjection?.projectedWinningSide : undefined;
+  const matchUpWinner =
+    (!autoCalculated && winningSide && !view.matchUpTieId) || line?.projectedWinningSide || projected;
+  if (matchUpWinner) {
+    const effectiveWinningSide = view.isTeam && flags.enableAutoCalc ? projected : winningSide;
+    // a line whose own winner stands still changes a dual its lines tally to the other side (`changedWinnerRefusal`)
+    const dualChanges = !!view.matchUpTieId && dualWinningSideChange && !line?.autoCalcDisabled;
+    if (
+      (effectiveWinningSide === existing.winningSide && !dualChanges) ||
+      (view.matchUpTieId && !dualWinningSideChange)
+    )
+      return undefined;
+    // rows 14 and 13, each written as its literal so `verify:outcome-spec` reads both. v1
+    // (`winningSideWithDownstreamDependencies`) names the stored matchUp beside the winningSide (`namesMatchUp`)
+    const extra = { context: { winningSide: effectiveWinningSide }, namesMatchUp: true as const };
+    return existing.winningSide
+      ? refuse(14, CANNOT_CHANGE_WINNING_SIDE, extra)
+      : refuse(13, CANNOT_CHANGE_OUTCOME, extra);
+  }
+  if (isDirectingMatchUpStatus({ matchUpStatus }) || line?.autoCalcDisabled) return undefined;
+  return refuse(15, NO_VALID_ACTIONS);
+}
+
+/**
+ * The refusals v1's two writers raise after the dispatch, before their first write (S7; both were apply-stage codes,
+ * deferred, until then). `removeDirectedParticipants` refuses a score without a winner, or a winner's removal, on a
+ * matchUp (a line's dual) holding no drawPositions and not ad hoc: row 24's removal clause, which v1 asks before the
+ * dual's writes since S7 (`removesDirected`). `attemptToSetMatchUpStatus`
+ * refuses the routes § 3 names `refused`: a BYE on a matchUp none of whose drawPositions holds a bye assignment
+ * (`attemptToSetMatchUpStatusBYE`, row 28), and the fallthrough no route accepts (an exit named with no winner, row 6).
+ * § 3's `unrecognized` and `not directing` rows are not reached: every status row 6 lets through is directing or
+ * non-directing (`applyStageCodesRuled.test.ts`), so a `refused` route here that is not the BYE's is the fallthrough.
+ */
+function refuseRoute(given: OutcomeRequest, view: OutcomeView): Refusal | undefined {
+  // a TEAM dual's call that turns auto-calc on is dispatched with the winner and score its lines project, whatever
+  // the call names (v1's `handleTeamAutoCalc`): an exit entered with a winner the lines do not project has none
+  const projection = view.isTeam && given.flags.enableAutoCalc ? view.dualProjection : undefined;
+  const request = projection
+    ? { ...given, winningSide: projection.projectedWinningSide, score: projection.score }
+    : given;
+  // a TEAM dual's single exit entered with a winner by a call that turns auto-calc on, the lines projecting no winner:
+  // an exit with no winner, or beside a winner it does not name; refused before anything is written (CA, 2026-11-18 and
+  // 2026-11-19), whether the dual is decided or not and whether the exit carries or not. A dual scored by hand (the call
+  // disables auto-calc, or names neither flag) is not projected and keeps the winner it names
+  if (projection && !projection.projectedWinningSide && isExit(given.matchUpStatus) && !!given.winningSide)
+    return refuse(6, INVALID_MATCHUP_STATUS, { info: 'matchUpStatus: ' + given.matchUpStatus });
+  const route = chooseRoute(request, view);
+  // a line under manual scoring (the dual's auto-calc disabled) goes to `attemptToModifyScore`, not the removal
+  if (route === 'remove-directed')
+    return view.removalMissingDrawPositions && !view.line?.autoCalcDisabled
+      ? refuse(24, MISSING_DRAW_POSITIONS)
+      : undefined;
+  // a decided result turned into a double exit takes back what it directed first, through the same removal: on a
+  // matchUp holding no drawPositions v1 refuses there, before it writes (record soak 2026-11-18, class D5's residue)
+  if (route === 'completed-to-double-exit' && !view.line && view.removalMissingDrawPositions)
+    return refuse(24, MISSING_DRAW_POSITIONS);
+  // a line whose dual holds no drawPositions, the line directing it or taking back what it directed (v1's
+  // `attemptToSetWinningSide`, before either path writes)
+  if (route === 'winner' && view.line)
+    return lineDirectsUnfedDual({
+      dualUnfed: !!view.removalMissingDrawPositions,
+      dualWinningSideChange: dualWinningSideChange(request, view),
+      projectedWinningSide: view.line.projectedWinningSide,
+      autoCalcDisabled: view.line.autoCalcDisabled,
+      dualWinningSide: view.line.dualWinningSide,
+      lineWinningSide: view.existing.winningSide,
+      winningSide: request.winningSide,
+    })
+      ? refuse(24, MISSING_DRAW_POSITIONS)
+      : undefined;
+  if (route !== 'refused') return undefined;
+  const { matchUpStatus } = request;
+  if (matchUpStatus === BYE) return refuse(28, INVALID_MATCHUP_STATUS_BYE, { info: 'matchUp does not include BYE' });
+  return refuse(6, INVALID_MATCHUP_STATUS, { info: 'matchUpStatus: ' + matchUpStatus });
+}
+
+export function refuseOutcome(request: OutcomeRequest, view: OutcomeView): Refusal | undefined {
+  return (
+    refuseCall(request, view) ??
+    refuseStatus(request, view) ??
+    refuseAgainstExisting(request, view) ??
+    refuseScore(request, view) ??
+    refuseAgainstDraw(request, view) ??
+    refuseSchedule(view) ??
+    (view.missingDrawPositions ? refuse(24, MISSING_DRAW_POSITIONS) : undefined) ??
+    (view.heldSeat ? refuse(31, view.heldSeat.error, { context: view.heldSeat.context }) : undefined) ??
+    refuseDispatch(request, view) ??
+    refuseRoute(request, view) ??
+    (view.dualProjection?.missingTeams ? refuse(32, MISSING_ASSIGNMENTS) : undefined)
+  );
+}

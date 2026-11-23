@@ -1,0 +1,288 @@
+{
+  "name": "tods-competition-factory",
+  "packageManager": "pnpm@12.21.0",
+  "author": "Charles Allen <charles@CourtHive.com> (CourtHive.com)",
+  "description": "Create and mutate TODS compliant tournament objects",
+  "keywords": [
+    "TODS",
+    "bracket",
+    "tournament",
+    "advanced scheduling",
+    "tournament algorithm",
+    "tournament simulation",
+    "tournament draw generator",
+    "tournament manager",
+    "game set match",
+    "json to csv conversion",
+    "round robin",
+    "tournaments",
+    "competition",
+    "tennis score",
+    "mock data",
+    "matches",
+    "seeding",
+    "tennis"
+  ],
+  "version": "7.46.0",
+  "license": "MIT",
+  "private": false,
+  "homepage": "https://courthive.github.io/competition-factory/",
+  "bugs": {
+    "url": "https://github.com/CourtHive/competition-factory/issues",
+    "email": "support@CourtHive.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CourtHive/competition-factory.git"
+  },
+  "main": "dist/index.js",
+  "module": "dist/esm/index.mjs",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/tods-competition-factory.d.mts",
+        "default": "./dist/esm/index.mjs"
+      },
+      "require": {
+        "types": "./dist/tods-competition-factory.d.cts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./governors": {
+      "import": {
+        "types": "./dist/governors.d.mts",
+        "default": "./dist/esm/assemblies/governors/index.mjs"
+      },
+      "require": {
+        "types": "./dist/governors.d.cts",
+        "default": "./dist/governors.js"
+      }
+    },
+    "./score-entry-state": {
+      "import": {
+        "types": "./dist/score-entry-state.d.mts",
+        "default": "./dist/esm/scoreEntryState/index.mjs"
+      },
+      "require": {
+        "types": "./dist/score-entry-state.d.cts",
+        "default": "./dist/score-entry-state/index.js"
+      }
+    },
+    "./schema/tournament.schema.json": "./dist/schema/tournament.schema.json",
+    "./constants": {
+      "import": {
+        "types": "./dist/constants.d.mts",
+        "default": "./dist/esm/constants/index.mjs"
+      },
+      "require": {
+        "types": "./dist/constants.d.cts",
+        "default": "./dist/constants/index.js"
+      }
+    }
+  },
+  "types": "dist/tods-competition-factory.d.ts",
+  "sideEffects": false,
+  "typesVersions": {
+    "*": {
+      "query": [
+        "./dist/query.d.ts"
+      ],
+      "generate": [
+        "./dist/generate.d.ts"
+      ],
+      "transform": [
+        "./dist/transform.d.ts"
+      ],
+      "governors": [
+        "./dist/governors.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "np": {
+    "contents": "."
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  },
+  "scripts": {
+    "commits": "git log $(git describe --tags --abbrev=0)..HEAD --oneline --no-merges --pretty=format:'%s: %h' | sed '/factory/d'",
+    "deptree": "dep-tree entropy src/index.ts",
+    "release": "npm run release:patch",
+    "release:alpha": "npm run commits && npm version $(semver $npm_package_version -i premajor --preid alpha) && git push && git push --tags",
+    "minor:alpha": "npm run commits && npm version $(semver $npm_package_version -i preminor --preid alpha) && git push && git push --tags",
+    "patch:alpha": "npm run commits && npm version $(semver $npm_package_version -i prerelease --preid alpha) && git push && git push --tags",
+    "release:beta": "npm run commits && npm version $(semver $npm_package_version -i prerelease --preid beta) && git push && git push --tags",
+    "minor:beta": "npm run commits && npm version $(semver $npm_package_version -i preminor --preid beta) && git push && git push --tags",
+    "patch:beta": "npm run commits && npm version $(semver $npm_package_version -i prerelease --preid beta) && git push && git push --tags",
+    "release:major": "npm run commits && npm version $(semver $npm_package_version -i major) && git push && git push --tags",
+    "release:minor": "npm run commits && npm version $(semver $npm_package_version -i minor) && git push && git push --tags",
+    "release:patch": "npm run commits && npm version $(semver $npm_package_version -i patch) && git push && git push --tags",
+    "start": "rollup --config -w",
+    "gen:engine-methods": "node scripts/generateEngineMethods.mjs",
+    "gen:method-kinds": "node scripts/generateMethodKinds.mjs",
+    "check:engine-methods": "node scripts/generateEngineMethods.mjs --check",
+    "check:method-kinds": "node scripts/generateMethodKinds.mjs --check",
+    "gen:method-signatures": "node scripts/generateMethodSignatures.mjs",
+    "check:method-signatures": "node scripts/generateMethodSignatures.mjs --check",
+    "gen:enum-constants": "node scripts/generateEnumConstants.mjs",
+    "gen:enum-exports": "node scripts/generateEnumExports.mjs",
+    "check:enum-exports": "node scripts/generateEnumExports.mjs --check",
+    "check:enum-constants": "node scripts/generateEnumConstants.mjs --check",
+    "prebuild": "node scripts/generateEnumConstants.mjs && node scripts/generateEnumExports.mjs && node scripts/generateEngineMethods.mjs && node scripts/generateMethodSignatures.mjs",
+    "build": "rimraf dist && rollup --config && node postbuild.mjs",
+    "test": "VITE_CJS_IGNORE_WARNING=true vitest",
+    "test:server": "vitest run --config vitest.server.config.mts",
+    "test:server-debug": "vitest --config vitest.server.config.mts --inspect-brk --no-file-parallelism",
+    "tuic": "vitest --ui --coverage.enabled",
+    "tui": "vitest --ui",
+    "coverage": "vitest run --coverage",
+    "corpus:record": "CORPUS_RECORD=1 TZ=UTC vitest run",
+    "corpus:manifest": "pnpm corpus:authored && pnpm corpus:scheduling && pnpm corpus:grammar && pnpm corpus:scoring && pnpm corpus:mocks && pnpm corpus:queue && node scripts/verify/corpus-manifest.mjs --write",
+    "corpus:mocks": "CORPUS_OUT=.corpus-out/mocks TZ=UTC vitest run src/tests/corpus/mocksSource.test.ts",
+    "corpus:queue": "CORPUS_OUT=.corpus-out/queue TZ=UTC vitest run src/tests/corpus/queueSource.test.ts",
+    "corpus:authored": "CORPUS_OUT=.corpus-out/authored TZ=UTC vitest run src/tests/corpus/authoredSources.test.ts",
+    "corpus:scheduling": "CORPUS_OUT=.corpus-out/scheduling TZ=UTC vitest run src/tests/corpus/schedulingSources.test.ts",
+    "kernel:harvest-scheduling": "node -e \"const fs=require('node:fs');fs.rmSync('.kernel-cases',{recursive:true,force:true});fs.mkdirSync('.kernel-cases')\" && SCHEDULING_PLAN_CASES=.kernel-cases/scheduling.jsonl SCHEDULING_SCALE=1 TZ=UTC vitest run src/tests/corpus/schedulingSources.test.ts src/tests/corpus/schedulingScale.test.ts src/tests/mutations/scheduling --testTimeout=3600000",
+    "kernel:harvest-scoring": "node -e \"const fs=require('node:fs');fs.mkdirSync('.kernel-cases',{recursive:true});fs.rmSync('.kernel-cases/scoring-reduce.jsonl',{force:true})\" && SCORING_REDUCE_CASES=.kernel-cases/scoring-reduce.jsonl pnpm corpus:scoring",
+    "kernel:conformance": "KERNEL_CASES=.kernel-cases/scheduling.jsonl TZ=UTC vitest run src/tests/testHarness/kernel",
+    "corpus:scheduling-scale": "SCHEDULING_SCALE=1 CORPUS_OUT=.corpus-out/scheduling-scale TZ=UTC vitest run src/tests/corpus/schedulingScale.test.ts --testTimeout=3600000",
+    "corpus:scoring": "node -e \"require('node:fs').rmSync('.corpus-out/scoring',{recursive:true,force:true})\" && CORPUS_OUT=.corpus-out/scoring CORPUS_CONFORMANCE_OUT=.corpus-out/scoring TZ=UTC vitest run src/tests/corpus/scoringSource.test.ts src/tests/corpus/scoringTimeline.test.ts src/tests/scoring/conformance",
+    "corpus:grammar": "CORPUS_OUT=.corpus-out/grammar TZ=UTC vitest run src/tests/corpus/grammarSource.test.ts",
+    "corpus:grammar:harvest": "CORPUS_GRAMMAR_HARVEST=1 CORPUS_OUT=.corpus-out/grammar TZ=UTC vitest run src/tests/corpus/grammarSource.test.ts",
+    "corpus:coverage": "CORPUS_COVERAGE=1 TZ=UTC vitest run src/tests/corpus/coverage.test.ts",
+    "corpus:verify": "pnpm corpus:fixtures && pnpm corpus:oracles && pnpm corpus:record && pnpm corpus:grammar:harvest && pnpm corpus:scoring && pnpm corpus:authored && pnpm corpus:scheduling && pnpm corpus:mocks && pnpm corpus:queue && pnpm corpus:coverage && node scripts/verify/corpus-coverage.mjs",
+    "corpus:fixtures": "CORPUS_OUT=.corpus-out/fixtures TZ=UTC vitest run src/tests/corpus/fixtureSources.test.ts",
+    "corpus:oracles": "CORPUS_ORACLES=1 TZ=UTC vitest run src/tests/corpus/oracleSources.test.ts",
+    "coverage:badges": "vitest run --coverage --coverage.thresholds.statements=0 --coverage.thresholds.branches=0 --coverage.thresholds.functions=0 --coverage.thresholds.lines=0 && istanbul-badges-readme",
+    "cov": "vitest run --coverage --config ./vitest.noThreshold.config.mts",
+    "lint:tsc": "node_modules/typescript7/bin/tsc --project tsconfig.json",
+    "lint": "eslint src --cache --max-warnings 0",
+    "lint:fix": "eslint src --fix --cache",
+    "lint:report": "eslint src & eslint --cache src -f json > eslint-report.json",
+    "prepublishOnly": "pinst --disable && pnpm verify",
+    "postpublish": "pinst --enable",
+    "docs:publish": "cd ../../documentation && GIT_USER=CourtHive USE_SSH=true pnpm docpub",
+    "shakeable": "node scripts/verify/shakeable.mjs",
+    "check-types": "node_modules/typescript7/bin/tsc --noEmit -p tsconfig.tests.json",
+    "check-types:ts6": "node_modules/typescript/bin/tsc --noEmit -p tsconfig.tests.json",
+    "verify": "pnpm verify:generated && pnpm verify:lockfile && pnpm verify:types && pnpm verify:lint && pnpm verify:format && pnpm verify:layers && pnpm verify:exit-tenant && pnpm verify:outcome-spec && pnpm verify:corpus-manifest && pnpm verify:migration-coverage && pnpm verify:attr-audit && pnpm verify:coverage && pnpm verify:coverage-headroom && pnpm verify:route-differential && pnpm verify:double-exit-sweep && pnpm verify:deep-corrections && pnpm verify:hydrations && pnpm verify:team-arms && pnpm verify:server && pnpm verify:audit && pnpm verify:build && pnpm verify:publint && pnpm verify:runtime && pnpm verify:shakeable && pnpm verify:bundle-size && pnpm verify:consumer-bundle && pnpm verify:score-entry-state && pnpm verify:constants && pnpm verify:surface && pnpm verify:docs-examples && pnpm verify:docs-mock-examples && pnpm verify:docs-imports && pnpm verify:docs-methods && pnpm verify:pack",
+    "verify:all": "pnpm verify && pnpm verify:ecosystem",
+    "check:governors": "node scripts/verify/governorRegistry.mjs",
+    "check:request-shapes": "node scripts/verify/requestShapes.mjs",
+    "verify:any-count": "node scripts/verify/anyCount.mjs",
+    "verify:constant-names": "node scripts/verify/constantNames.mjs --self-test && node scripts/verify/constantNames.mjs",
+    "check:request-shapes:self-test": "node scripts/verify/requestShapes.mjs --self-test",
+    "verify:engine-governors": "node scripts/generateEngineGovernors.mjs --check",
+    "verify:generated": "pnpm check:enum-constants && pnpm check:enum-exports && pnpm check:governors && pnpm check:engine-methods && pnpm check:method-kinds && pnpm check:method-signatures && pnpm check:request-shapes:self-test && pnpm check:request-shapes && pnpm verify:any-count --self-test && pnpm verify:any-count && pnpm verify:constant-names && pnpm verify:docs-model && pnpm verify:engine-api-transition",
+    "verify:lockfile": "node scripts/verify/lockfile.mjs",
+    "verify:types": "node_modules/typescript7/bin/tsc --noEmit -p tsconfig.tests.json && node scripts/verify/tscRatchet.mjs --self-test && pnpm verify:implicit-any && pnpm verify:hard-union && pnpm verify:shadowed-types",
+    "verify:implicit-any": "node scripts/verify/tscRatchet.mjs implicit-any",
+    "verify:hard-union": "node scripts/verify/tscRatchet.mjs hard-union",
+    "verify:shadowed-types": "node scripts/verify/shadowedDomainTypes.mjs --self-test && node scripts/verify/shadowedDomainTypes.mjs",
+    "verify:lint": "eslint src --cache --max-warnings 0",
+    "verify:format": "pnpm -w format:check",
+    "verify:corpus-manifest": "pnpm corpus:authored && pnpm corpus:scheduling && pnpm corpus:grammar && pnpm corpus:scoring && pnpm corpus:mocks && pnpm corpus:queue && node scripts/verify/corpus-manifest.mjs",
+    "verify:exit-tenant": "node scripts/verify/exitTenant.mjs",
+    "verify:layers": "node scripts/verify/layers.mjs --self-test && node scripts/verify/layers.mjs",
+    "verify:outcome-spec": "node scripts/verify/outcomeSpec.mjs --self-test && node scripts/verify/outcomeSpec.mjs",
+    "verify:attr-audit": "node scripts/attr-audit.mjs --ci",
+    "verify:migration-coverage": "node scripts/verify/migration-coverage.mjs",
+    "verify:coverage": "vitest run --coverage",
+    "verify:coverage-headroom": "node scripts/verify/coverage-headroom.mjs",
+    "verify:route-differential": "ROUTE_DIFF=1 OUTCOME_PIPELINE=v2 TZ=UTC vitest run src/tests/mutations/exitPropagation/routeDifferential.test.ts",
+    "verify:double-exit-sweep": "DOUBLE_EXIT_SWEEP=1 TZ=UTC vitest run src/tests/mutations/exitPropagation/doubleExitSweep.test.ts",
+    "verify:deep-corrections": "DEEP_CORRECTIONS=1 OUTCOME_PIPELINE=v2 TZ=UTC vitest run src/tests/mutations/exitPropagation/correctionDivergenceDeep.test.ts",
+    "verify:hydrations": "PIPELINE_HYDRATIONS=1 OUTCOME_PIPELINE=v1 TZ=UTC vitest run src/tests/mutations/exitPropagation/pipelineCost.test.ts && PIPELINE_HYDRATIONS=1 OUTCOME_PIPELINE=v2 TZ=UTC vitest run src/tests/mutations/exitPropagation/pipelineCost.test.ts && PIPELINE_HYDRATIONS=1 OUTCOME_PIPELINE=differential TZ=UTC vitest run src/tests/mutations/exitPropagation/pipelineCost.test.ts",
+    "verify:team-arms": "TEAM_ARMS=1 TZ=UTC vitest run src/tests/mutations/exitPropagation/teamMatrixExtensionDual.test.ts src/tests/mutations/exitPropagation/teamMatrixExtensionLine.test.ts src/tests/mutations/exitPropagation/teamMatrixCollegeDefault.test.ts src/tests/mutations/exitPropagation/teamMatrixLaverCup.test.ts src/tests/mutations/exitPropagation/teamMatrixUnevenDuals.test.ts src/tests/mutations/exitPropagation/teamMatrixExtensionLine.part0.test.ts src/tests/mutations/exitPropagation/teamMatrixExtensionLine.part1.test.ts src/tests/mutations/exitPropagation/teamMatrixExtensionLine.part2.test.ts src/tests/mutations/exitPropagation/teamMatrixExtensionLine.part3.test.ts src/tests/mutations/exitPropagation/teamMatrixCollegeDefault.part0.test.ts src/tests/mutations/exitPropagation/teamMatrixCollegeDefault.part1.test.ts src/tests/mutations/exitPropagation/teamMatrixCollegeDefault.part2.test.ts src/tests/mutations/exitPropagation/teamMatrixCollegeDefault.part3.test.ts src/tests/mutations/exitPropagation/teamMatrixLaverCup.part0.test.ts src/tests/mutations/exitPropagation/teamMatrixLaverCup.part1.test.ts src/tests/mutations/exitPropagation/teamMatrixLaverCup.part2.test.ts src/tests/mutations/exitPropagation/teamMatrixLaverCup.part3.test.ts src/tests/mutations/exitPropagation/teamMatrixLaverCup.part4.test.ts src/tests/mutations/exitPropagation/teamMatrixLaverCup.part5.test.ts",
+    "verify:server": "vitest run --config vitest.server.config.mts",
+    "verify:shakeable": "node scripts/verify/shakeable.mjs",
+    "verify:build": "rimraf dist && rollup --config && node postbuild.mjs",
+    "verify:audit": "node scripts/verify/audit.mjs",
+    "verify:publint": "node scripts/verify/publint.mjs",
+    "verify:pack": "node scripts/verify/pack.mjs",
+    "verify:surface": "node scripts/verify/surface.mjs",
+    "verify:docs-imports": "node scripts/verify/docImports.mjs --ci",
+    "verify:docs-examples": "node scripts/verify/docExamples.mjs",
+    "verify:docs-mock-examples": "node scripts/verify/docMockExamples.mjs",
+    "verify:docs-model": "node scripts/generateModelDocs.mjs --check",
+    "verify:engine-api-transition": "node scripts/verify/engineApiTransition.mjs --self-test --argument-pilot",
+    "verify:docs-methods": "node scripts/verify/docMethods.mjs",
+    "verify:bundle-size": "node scripts/verify/bundle-size.mjs",
+    "verify:consumer-bundle": "node scripts/verify/consumerBundle.mjs",
+    "verify:score-entry-state": "node scripts/verify/scoreEntryState.mjs --self-test && node scripts/verify/scoreEntryState.mjs",
+    "verify:runtime": "node scripts/verify/runtime.mjs",
+    "verify:release": "pnpm verify:generated && pnpm verify:lockfile && pnpm verify:build && pnpm verify:publint && pnpm verify:runtime && pnpm verify:shakeable && pnpm verify:bundle-size && pnpm verify:consumer-bundle && pnpm verify:score-entry-state && pnpm verify:constants && pnpm verify:surface && pnpm verify:pack",
+    "verify:verified-release": "node scripts/verify/verified-release.mjs",
+    "verify:ecosystem": "node scripts/verify/ecosystem.mjs",
+    "attr-audit": "node scripts/attr-audit.mjs",
+    "verify:constants": "node scripts/verify/constants.mjs --self-test && node scripts/verify/constants.mjs"
+  },
+  "devDependencies": {
+    "@babel/core": "8.1.2",
+    "@dep-tree/cli": "0.23.4",
+    "@eslint/js": "10.0.1",
+    "@nestjs/class-transformer": "0.4.0",
+    "@nestjs/class-validator": "0.13.4",
+    "@nestjs/common": "12.5.1",
+    "@nestjs/config": "12.1.1",
+    "@nestjs/core": "12.5.1",
+    "@nestjs/jwt": "12.0.5",
+    "@nestjs/platform-express": "12.5.1",
+    "@nestjs/schematics": "12.0.13",
+    "@nestjs/swagger": "12.1.2",
+    "@nestjs/testing": "12.5.1",
+    "@rollup/plugin-babel": "7.1.0",
+    "@rollup/plugin-commonjs": "29.0.3",
+    "@rollup/plugin-json": "6.1.0",
+    "@rollup/plugin-node-resolve": "16.0.3",
+    "@rollup/plugin-terser": "1.0.2",
+    "@rollup/plugin-typescript": "12.3.1",
+    "@swc/core": "^1.16.1",
+    "@types/node": "26.6.6",
+    "@types/supertest": "7.2.1",
+    "@typescript-eslint/eslint-plugin": "8.73.0",
+    "@typescript-eslint/parser": "8.73.0",
+    "@vitest/coverage-v8": "5.1.1",
+    "@vitest/ui": "5.1.1",
+    "agadoo": "^3.0.0",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "body-parser": "2.4.0",
+    "bson": "7.3.4",
+    "chalk": "6.0.1",
+    "esbuild": "0.28.2",
+    "eslint": "10.15.0",
+    "eslint-plugin-sonarjs": "4.2.2",
+    "fs-extra": "11.4.1",
+    "globals": "17.14.0",
+    "istanbul-badges-readme": "^1.9.0",
+    "mongoose": "9.12.2",
+    "pinst": "3.0.0",
+    "prettier": "3.10.1",
+    "reflect-metadata": "0.2.2",
+    "rimraf": "6.1.4",
+    "rollup": "4.68.7",
+    "rollup-plugin-dts": "6.5.1",
+    "rxjs": "7.8.2",
+    "semver": "7.8.6",
+    "supertest": "7.3.2",
+    "tslib": "2.9.1",
+    "typescript": "^6.0.2",
+    "typescript7": "npm:typescript@7.0.2",
+    "unplugin-swc": "^2.0.0",
+    "variable-diff": "2.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.1"
+  },
+  "browserslist": [
+    "defaults and supports es6-module",
+    "maintained node versions"
+  ]
+}

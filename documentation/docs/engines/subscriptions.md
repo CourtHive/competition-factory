@@ -86,7 +86,7 @@ Subscriptions are defined once for all engines.
 import { globalState } from 'tods-competition-factory';
 const { setSubscriptions } = globalState;
 
-setSubscriptions(subscriptions);
+setSubscriptions({ subscriptions });
 ```
 
 ## Completeness guarantee

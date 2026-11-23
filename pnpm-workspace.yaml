@@ -1,3 +1,9 @@
+# The published package lives in packages/competition-factory; the root is a private workspace that
+# holds the repo-wide tooling (husky, lint-staged, commitlint, prettier, markdownlint).
+# documentation/ is NOT a member: it keeps its own pnpm-workspace.yaml and lockfile, a separate install root.
+packages:
+  - 'packages/*'
+
 allowBuilds:
   '@dep-tree/cli': true
   '@nestjs/core': true

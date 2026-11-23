@@ -1,0 +1,221 @@
+import { auditAutoScheduling } from '@Mutate/matchUps/schedule/schedulers/auditAutoScheduling';
+import { overnightRestWarningsFor } from '@Query/matchUps/scheduling/getOvernightRestWarnings';
+import { clearScheduledMatchUps } from '@Mutate/matchUps/schedule/clearScheduledMatchUps';
+import { onTheGrid, timedGridConflicts } from '../scheduleMatchUps/timedGridConflicts';
+import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { disableNotifications, enableNotifications } from '@Global/state/globalState';
+import { computeRoundSchedulePcts } from './roundSchedulePcts';
+import { planPlayedOrderRefusal } from './playedOrderGate';
+import { buildSchedulingView, PlanningView, SchedulingView } from './view';
+import { isValidDateString } from '@Tools/dateTime';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
+import { planSchedule } from './plan';
+import { nowMs } from '@Tools/clock';
+import { writePlan } from './write';
+
+// constants and types
+import { ARRAY, OF_TYPE, SCHEDULE_DATES, TOURNAMENT_RECORDS, VALIDATE } from '@Constants/attributeConstants';
+import { EVENT_DATE_INACTIVE } from '@Constants/errorConditionConstants';
+import { TournamentRecords } from '@Types/factoryTypes';
+import { SUCCESS } from '@Constants/resultConstants';
+
+/**
+ * The profile scheduler end to end: view → plan → write. `scheduleProfileRounds` routes every call here but the
+ * deprecated `pro` one. It replaced v1's timed scheduler after a differential held its records and its result to v1's,
+ * call for call; the corpus manifest now pins them (SCHEDULING_PIPELINE_VNEXT.md § 7).
+ */
+type ScheduleProfileVNextArgs = {
+  checkPotentialRequestConflicts?: boolean;
+  /** plan rounds on dates their event does not play, and warn, rather than skip them (default false) */
+  allowInactiveEventDates?: boolean;
+  tournamentRecords: TournamentRecords;
+  clearScheduleDates?: boolean | string[];
+  excludeNoDateCompleted?: boolean;
+  excludePriorDates?: boolean;
+  scheduleDates?: string[];
+  periodLength?: number;
+  courtIds?: string[];
+  /** this run's daily limits in place of the records' (a what-if, never stored); `{}` enforces none */
+  matchUpDailyLimits?: { [matchUpType: string]: number };
+  dryRun?: boolean;
+};
+
+export function scheduleProfileVNext(params: ScheduleProfileVNextArgs) {
+  const paramsCheck = checkRequiredParameters(params, [
+    { [TOURNAMENT_RECORDS]: true },
+    {
+      [VALIDATE]: (value: unknown) => !value || (Array.isArray(value) && value.every(isValidDateString)),
+      [SCHEDULE_DATES]: false,
+      [OF_TYPE]: ARRAY,
+    },
+  ]);
+  if (paramsCheck.error) return paramsCheck;
+
+  const { tournamentRecords, clearScheduleDates, dryRun } = params;
+  // the profile is validated once, by the first view (one that needs repair is refused); an empty profile schedules
+  // nothing
+  const firstView = buildSchedulingView(params);
+  if ('error' in firstView) return firstView;
+  if (!firstView.schedulingProfile.length) return { ...SUCCESS };
+
+  // a date to clear is planned on a working copy cleared first (notifications held), so the plan sees the date empty
+  // and a refusal leaves the stored records untouched; a dry run plans the same way, so it previews what a run does
+  const scheduledDates = Array.isArray(clearScheduleDates) ? clearScheduleDates : [];
+  const working = clearScheduleDates ? clearedWorkingCopy(tournamentRecords, scheduledDates) : tournamentRecords;
+  const view = clearScheduleDates ? buildSchedulingView({ ...params, tournamentRecords: working }) : firstView;
+  if ('error' in view) return view;
+
+  // the plan, then the guard over all of it, before anything is written (CA 2026-10-23)
+  const plan = planSchedule({ ...params, view });
+  const refusal = planPlayedOrderRefusal({ plan, view });
+  if (refusal) return refusal;
+
+  if (clearScheduleDates && !dryRun) clearScheduledMatchUps({ tournamentRecords, scheduledDates });
+  const written = dryRun
+    ? { scheduledMatchUpIds: plan.scheduledMatchUpIds, noTimeMatchUpIds: plan.noTimeMatchUpIds }
+    : writePlan({ plan, view, tournamentRecords });
+  const { scheduledMatchUpIds } = written;
+  // a matchUp skipped for its event's dates is left without a time too: listed under its reason and in noTimeMatchUpIds
+  const noTimeMatchUpIds = withEventDateSkips(written.noTimeMatchUpIds, view.eventDateSkippedMatchUpIds);
+
+  view.dateSchedulingProfiles.forEach((dateSchedulingProfile, index) =>
+    computeRoundSchedulePcts({
+      scheduledMatchUpIds,
+      dateSchedulingProfile,
+      scheduleDate: view.dates[index].scheduleDate,
+    }),
+  );
+
+  // the planned dates as calendar days, the keys every other member of the result uses (§ 3.8 rule 7)
+  const profileDates = view.dates.map(({ scheduleDate }) => scheduleDate);
+  // present when any matchUp was skipped for its event's dates, keyed by the dates that skipped one
+  const eventDateSkips = skipsByDate(view.eventDateSkippedMatchUpIds);
+  // a dry run writes nothing, its audit included: with no AUDIT subscriber the audit is a time item on the record
+  if (!dryRun)
+    auditAutoScheduling({
+      tournamentRecords,
+      autoSchedulingAudit: {
+        overLimitMatchUpIds: plan.overLimitMatchUpIds,
+        schedulingProfile: view.schedulingProfile,
+        requestConflicts: plan.requestConflicts,
+        timeStamp: nowMs(),
+        scheduledMatchUpIds,
+        scheduledDates: profileDates,
+        noTimeMatchUpIds,
+        ...eventDateSkips,
+      },
+    });
+
+  // with allowInactiveEventDates, a placement on a day its event does not play is made, and warned about
+  const warnings = eventDateWarnings(view.eventDateInactiveMatchUpIds, scheduledMatchUpIds);
+
+  // a matchUp already on a date's court grid without a time has just been timed: what its time contradicts there is
+  // reported, per date
+  const proConflicts = dryRun ? {} : profileGridConflicts({ tournamentRecords, view, scheduledMatchUpIds });
+
+  // overnight rest is warned, not held (§ 9.8), read with the plan's placements (a dry run writes none)
+  const overnightRestWarnings = overnightRestWarningsFor({
+    scheduleDates: profileDates,
+    tournamentRecords: dryRun ? working : tournamentRecords,
+    scheduleOverrides: planScheduleOverrides(plan.placements),
+  });
+
+  return {
+    ...SUCCESS,
+    schedulingProfileModifications: firstView.schedulingProfileModifications,
+    recoveryTimeDeferredMatchUpIds: plan.recoveryTimeDeferredMatchUpIds,
+    dependencyDeferredMatchUpIds: plan.dependencyDeferredMatchUpIds,
+    schedulingProfileIssues: firstView.schedulingProfileIssues,
+    dateSchedulingProfiles: view.dateSchedulingProfiles,
+    overLimitMatchUpDetails: plan.overLimitMatchUpDetails,
+    scheduleTimesRemaining: plan.scheduleTimesRemaining,
+    matchUpScheduleTimes: plan.matchUpScheduleTimes,
+    skippedScheduleTimes: plan.skippedScheduleTimes,
+    overLimitMatchUpIds: plan.overLimitMatchUpIds,
+    requestConflicts: plan.requestConflicts,
+    scheduledMatchUpIds,
+    playedOrderDeferredMatchUpIds: plan.playedOrderDeferredMatchUpIds,
+    notBeforeDeferredMatchUpIds: plan.notBeforeDeferredMatchUpIds,
+    noFormatMatchUpIds: plan.noFormatMatchUpIds,
+    scheduledDates: profileDates,
+    overnightRestWarnings,
+    ...eventDateSkips,
+    noTimeMatchUpIds,
+    proConflicts,
+    ...(warnings.length ? { warnings } : {}),
+    // a dry run returns where it would place each matchUp, by date and venue: what a caller stores as a plan
+    ...(dryRun ? { placements: plan.placements } : {}),
+  };
+}
+
+function withEventDateSkips(
+  noTimeMatchUpIds: { [scheduleDate: string]: string[] } | undefined,
+  skips: SchedulingView['eventDateSkippedMatchUpIds'],
+) {
+  const merged = { ...noTimeMatchUpIds };
+  for (const [scheduleDate, dateSkips] of Object.entries(skips)) {
+    if (!dateSkips.length) continue;
+    merged[scheduleDate] = [...(merged[scheduleDate] ?? []), ...dateSkips.map(({ matchUpId }) => matchUpId)];
+  }
+  return merged;
+}
+
+function skipsByDate(skips: SchedulingView['eventDateSkippedMatchUpIds']) {
+  const dated = Object.fromEntries(Object.entries(skips).filter(([, dateSkips]) => dateSkips.length));
+  return Object.keys(dated).length ? { eventDateSkippedMatchUpIds: dated } : {};
+}
+
+/** the EVENT_DATE_INACTIVE warning of each placement an opted-out call made on a day its event does not play */
+function eventDateWarnings(
+  inactive: SchedulingView['eventDateInactiveMatchUpIds'],
+  scheduledMatchUpIds?: { [scheduleDate: string]: string[] },
+) {
+  return Object.entries(inactive).flatMap(([scheduledDate, skips]) => {
+    const placed = new Set(scheduledMatchUpIds?.[scheduledDate] ?? []);
+    return skips
+      .filter(({ matchUpId }) => placed.has(matchUpId))
+      .map(({ matchUpId, eventId, reason }) => ({ ...EVENT_DATE_INACTIVE, matchUpId, eventId, scheduledDate, reason }));
+  });
+}
+
+type ProfileGridConflictsArgs = {
+  scheduledMatchUpIds?: { [scheduleDate: string]: string[] };
+  tournamentRecords: TournamentRecords;
+  view: PlanningView;
+};
+
+function profileGridConflicts({ tournamentRecords, view, scheduledMatchUpIds }: ProfileGridConflictsArgs) {
+  const gridded = new Set(
+    view.hydrated.filter(({ schedule }) => onTheGrid(schedule)).map(({ matchUpId }) => matchUpId),
+  );
+  const conflicts: { [scheduleDate: string]: ReturnType<typeof timedGridConflicts> } = {};
+  for (const [scheduleDate, matchUpIds] of Object.entries(scheduledMatchUpIds ?? {})) {
+    const griddedMatchUpIds = matchUpIds.filter((matchUpId) => gridded.has(matchUpId));
+    const issues = timedGridConflicts({ tournamentRecords, griddedMatchUpIds, scheduleDate });
+    if (issues.length) conflicts[scheduleDate] = issues;
+  }
+  return conflicts;
+}
+
+function planScheduleOverrides(placements: ReturnType<typeof planSchedule>['placements']) {
+  const overrides: { [matchUpId: string]: { scheduledDate: string; scheduledTime: string } } = {};
+  for (const [scheduledDate, venues] of Object.entries(placements)) {
+    for (const venuePlacements of Object.values(venues)) {
+      for (const { matchUpId, scheduleTime } of venuePlacements)
+        overrides[matchUpId] = { scheduledDate, scheduledTime: scheduleTime };
+    }
+  }
+  return overrides;
+}
+
+/** the records with the dates cleared, on a copy: what the plan reads when a call clears dates first */
+function clearedWorkingCopy(tournamentRecords: TournamentRecords, scheduledDates: string[]): TournamentRecords {
+  const working: TournamentRecords = makeDeepCopy(tournamentRecords, false, true);
+  disableNotifications();
+  try {
+    clearScheduledMatchUps({ tournamentRecords: working, scheduledDates });
+  } finally {
+    enableNotifications();
+  }
+  return working;
+}

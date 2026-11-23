@@ -6,7 +6,7 @@ title: resolveEntryFee
 
 :::warning 8.0.0 engine API transition
 
-This method is a **candidate for removal from production governors and engine exports at 8.0.0**. Its 7.x route has not been removed. Final removal and standalone package-export decisions require the per-method review and external-integrator confirmation described in the [transition index](/docs/implementation/engine-api-transition-8).
+This method is **scheduled for removal from production governors and engine exports at 8.0.0**. Its 7.x route still works. The removal list was confirmed with external integrators on 2026-10-28 and closed on 2026-11-22. The standalone package-export decision is made per method; see the [transition index](/docs/implementation/engine-api-transition-8).
 
 :::
 
@@ -40,14 +40,14 @@ export function resolveEntryFee(fee?: RegistrationEntryFee | null): ResolvedEntr
 
 ## Consumer evidence
 
-The refreshed source-name scan found no name mentions in the scanned product source files. This does not establish external-integrator non-use. The manifest records repository revisions and scan exclusions. External-integrator confirmation is pending.
+The refreshed source-name scan found no name mentions in the scanned product source files. This does not establish external-integrator non-use. The manifest records repository revisions and scan exclusions. External-integrator review (2026-10-28) found no use, and the removal list was closed on 2026-11-22.
 
 ## Availability and ownership
 
 - **Production governor declarations:** `entriesGovernor`, `queryGovernor`.
 - **Standalone package API after 8.0.0:** decision pending; this page does not establish a supported import.
 - **Implementation:** [`src/query/entries/resolveEntryFee.ts` — `resolveEntryFee`](https://github.com/CourtHive/competition-factory/blob/8c2aaca6801734223ef1e0a8127872344373fbd5/src/query/entries/resolveEntryFee.ts). Source paths and aliases are not package import paths.
-- **Replacement workflow:** not yet established; no supported replacement is promised.
+- **Replacement workflow:** use `tools.entries.resolveEntryFee` (available since 7.33).
 - **Test-only adapters:** may exercise this implementation independently of production engine exports; this is not evidence of product use.
 
 ## Preserved 7.x reference

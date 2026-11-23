@@ -1,0 +1,209 @@
+#!/usr/bin/env node
+/**
+ * Every BREAKING commit since the last release must appear in the migration guide.
+ *
+ * The CHANGELOG cannot do this job. release-please builds it from `BREAKING CHANGE:` footers, and a
+ * PR that carries three breaking changes under one footer yields one entry — which is exactly how
+ * 7.0.0 came to have 8 breaking changes in its guide and 6 in its changelog. #4782 declared one
+ * footer for three, #4783 one for two. The guide is hand-maintained and was right; the generated
+ * file was the lossy view.
+ *
+ * So this gates the guide, not the changelog: a breaking commit whose PR number is absent from
+ * `documentation/docs/migration-<next major>.0.0.md` fails the run.
+ *
+ * THIS CHECK MUST NOT BE ABLE TO PASS QUIETLY. A shallow clone has neither the base tag nor the
+ * history, and a naive implementation would find zero breaking commits and report success — a check
+ * that cannot report dirty. Every precondition below is therefore an error, not a skip.
+ */
+import { PACKAGE_PATH, RELEASE_MANIFEST, REPO_ROOT } from '../lib/repoRoot.mjs';
+import { existsSync, readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { join } from 'node:path';
+
+// The manifest and the migration guides live at the repository root. The manifest keys a release by the
+// package's path from there: `.` while the package is the root, `packages/competition-factory` after the move.
+const ROOT = REPO_ROOT;
+const MANIFEST = join(ROOT, RELEASE_MANIFEST);
+
+const log = (m) => process.stdout.write(`[verify:migration-coverage] ${m}\n`);
+const fail = (m) => {
+  process.stderr.write(`[verify:migration-coverage] FAIL — ${m}\n`);
+  process.exit(1);
+};
+
+const git = (args) =>
+  execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 64e6, timeout: 120_000, killSignal: 'SIGKILL' });
+
+if (!existsSync(MANIFEST)) fail(`no release manifest at ${MANIFEST}`);
+const released = JSON.parse(readFileSync(MANIFEST, 'utf8'))[PACKAGE_PATH];
+if (!/^\d+\.\d+\.\d+$/.test(released ?? '')) fail(`manifest '${PACKAGE_PATH}' is not a version: ${released}`);
+
+const hasTag = (tag) => {
+  try {
+    execFileSync('git', ['rev-parse', '--verify', `${tag}^{commit}`], {
+      cwd: ROOT,
+      stdio: 'ignore',
+      timeout: 60_000,
+      killSignal: 'SIGKILL',
+    });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+let baseTag = `v${released}`;
+
+/**
+ * Which guide documents this diff.
+ *
+ * Normally the manifest names the LAST release, so the guide being written is the NEXT major.
+ * On the release commit the manifest already names the version being released, and the guide is
+ * that major — not one beyond it. Getting this wrong sends the check looking for
+ * `migration-8.0.0.md` while releasing 7.0.0, which is the same off-by-one as the base tag and
+ * hides behind it: fixing only the tag turns one confusing failure into another.
+ */
+const releasedMajor = Number(released.split('.')[0]);
+const isReleaseCommit = !hasTag(baseTag);
+const guideMajor = isReleaseCommit ? releasedMajor : releasedMajor + 1;
+const guidePath = `documentation/docs/migration-${guideMajor}.0.0.md`;
+
+/**
+ * THE RELEASE COMMIT IS THE ONE PLACE THE MANIFEST NAMES THE FUTURE.
+ *
+ * Everywhere else `.release-please-manifest.json` names the LAST released version, so `v${released}`
+ * is a tag that exists and the diff is well defined. On the release-please PR the manifest is bumped
+ * to the version being released — and that tag does not exist yet, because merging that very PR is
+ * what creates it. So the check looked for `v7.0.0` while preparing to release 7.0.0, and failed on
+ * the one PR where its answer matters most.
+ *
+ * When the named tag is absent, fall back to the most recent tag reachable from HEAD. The commit set
+ * is then exactly the set the release contains, which is precisely what this gate is for: every
+ * breaking commit being released must be documented.
+ *
+ * NOT a skip. A shallow clone still fails, because it has no reachable tag either — which is the
+ * condition the precondition was actually defending against.
+ */
+if (!hasTag(baseTag)) {
+  let previous;
+  try {
+    previous = git(['describe', '--tags', '--abbrev=0', 'HEAD']).trim();
+  } catch {
+    previous = '';
+  }
+  if (previous && previous !== baseTag) {
+    log(`manifest names ${baseTag}, which has no tag yet — this is the release commit. Diffing from ${previous}.`);
+    baseTag = previous;
+  }
+}
+
+// Precondition, not a skip: without a base tag there is nothing to diff against.
+if (!hasTag(baseTag)) {
+  fail(
+    `base tag ${baseTag} is not present, and no earlier tag is reachable from HEAD.\n` +
+      `  This is usually a shallow clone — a shallow checkout finds zero breaking commits and would\n` +
+      `  report success, so it errors instead. CI must check out with \`fetch-depth: 0\`.`,
+  );
+}
+
+const RECORD = '\x1e';
+const UNIT = '\x1f';
+const raw = git(['log', `--format=%H${UNIT}%s${UNIT}%b${RECORD}`, `${baseTag}..HEAD`]);
+const commits = raw
+  .split(RECORD)
+  .map((c) => c.trim())
+  .filter(Boolean)
+  .map((c) => {
+    const [sha, subject, body] = c.split(UNIT);
+    return { sha: sha.slice(0, 9), subject: subject ?? '', body: body ?? '' };
+  });
+
+const isBreaking = (c) => /^[a-z]+(\([^)]*\))?!:/.test(c.subject) || /^BREAKING CHANGE:/m.test(c.body);
+const breaking = commits.filter(isBreaking);
+
+log(`base ${baseTag} · ${commits.length} commits · ${breaking.length} breaking`);
+
+if (!breaking.length) {
+  log('OK — no breaking commits since the last release');
+  process.exit(0);
+}
+
+if (!existsSync(join(ROOT, guidePath))) {
+  fail(`${breaking.length} breaking commit(s) since ${baseTag} but no ${guidePath}`);
+}
+const guide = readFileSync(join(ROOT, guidePath), 'utf8');
+
+/**
+ * The PR this run belongs to, when it is a `pull_request` build.
+ *
+ * WHY THIS EXISTS, and it is a defect this gate caused rather than found. A breaking commit on an
+ * OPEN pr carries no `(#NNNN)` — GitHub appends that on squash-merge — so the `unreferenced` check
+ * below could not pass before merge, and the only way to make CI green was to type the number into
+ * the subject by hand. The squash then appended a second one, and release-please emitted BOTH:
+ *
+ *   fix(scoring)!: take back the exits a matchUp produced … (#4855) (#4855)
+ *
+ * shipping a doubled reference into the published 7.0.0 changelog. Measured 2026-09-13: #4827,
+ * #4855 and #4858 all carry it, by three different sessions, which makes it the gate's behaviour
+ * rather than anyone's slip.
+ *
+ * On a `pull_request` build GitHub sets `GITHUB_REF` to `refs/pull/<N>/merge`, so the number is
+ * already available and does not need to be in the subject. An un-numbered breaking commit in such a
+ * build is exactly one the open PR is adding, so attributing it to that PR is not a guess.
+ */
+const prFromEnv = process.env.GITHUB_REF?.match(/^refs\/pull\/(\d+)\/merge$/)?.[1];
+
+const missing = [];
+const unreferenced = [];
+for (const commit of breaking) {
+  // A commit the guide names by SHA is documented, whatever PR the build belongs to.
+  //
+  // A breaking change landed DIRECTLY on `dev` carries no `(#N)` and never will, so `prFromEnv`
+  // attributes it to whichever PR happens to be building — and that PR's number is not in the
+  // guide, so it fails. Not once: EVERY subsequent PR fails, for a commit somebody else wrote.
+  // Measured 2026-09-21 on `1d921a22b`, which §21 documents and cites by SHA; #4942 satisfied the
+  // gate only for its own build, and #4943 failed on the same commit.
+  //
+  // The SHA is the stable identity here. Requiring a PR number for a commit that has none asks for
+  // something that cannot exist, and the guide entry is no less real for citing the commit instead.
+  if (guide.includes(commit.sha)) continue;
+
+  // `?? prFromEnv` and NOT `||` — a subject that already carries the number always wins, so a
+  // merged commit is still checked against its own PR rather than the build's.
+  const pr = commit.subject.match(/\(#(\d+)\)\s*$/)?.[1] ?? prFromEnv;
+  if (!pr) {
+    unreferenced.push(commit);
+    continue;
+  }
+  if (!guide.includes(`#${pr}`)) missing.push({ ...commit, pr });
+}
+
+if (unreferenced.length) {
+  process.stderr.write(`\n[verify:migration-coverage] ${unreferenced.length} breaking commit(s) carry no (#PR):\n`);
+  for (const c of unreferenced) process.stderr.write(`  ${c.sha}  ${c.subject}\n`);
+  process.stderr.write(
+    `\n  On a pull_request build the number is read from GITHUB_REF, so it does NOT belong in the\n` +
+      `  commit subject — the squash-merge appends it and you get "(#1234) (#1234)" in the changelog.\n` +
+      `  Running locally there is no PR yet: reference the number in the guide once the PR is open,\n` +
+      `  and let CI do the matching.\n`,
+  );
+}
+if (missing.length) {
+  process.stderr.write(
+    `\n[verify:migration-coverage] ${missing.length} breaking commit(s) absent from ${guidePath}:\n`,
+  );
+  for (const c of missing) process.stderr.write(`  #${c.pr}  ${c.sha}  ${c.subject}\n`);
+}
+
+if (missing.length || unreferenced.length) {
+  process.stderr.write(
+    `\nA breaking change that is not in the migration guide ships undocumented. The CHANGELOG does not\n` +
+      `cover for it: it is generated from BREAKING CHANGE footers, and a PR carrying several breaking\n` +
+      `changes under one footer produces one entry.\n\n` +
+      `Add a section to ${guidePath} referencing the PR number, e.g. "(#1234)". Do NOT add the\n` +
+      `number to the commit subject — the squash-merge appends it.\n`,
+  );
+  process.exit(1);
+}
+
+log(`OK — all ${breaking.length} breaking commit(s) are represented in ${guidePath}`);

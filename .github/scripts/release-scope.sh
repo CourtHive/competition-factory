@@ -24,9 +24,11 @@ set -euo pipefail
 RELEASE_BRANCH=master
 # Exactly the files release-please writes in this repo; scripts/verify/verified-release.mjs checks the
 # release commit against the same three.
-VERSION_FILES=(package.json CHANGELOG.md .release-please-manifest.json)
+# Paths are repo-root relative (the package lives in packages/competition-factory).
+VERSION_FILES=(packages/competition-factory/package.json packages/competition-factory/CHANGELOG.md
+  .release-please-manifest.json)
 # Of those, the package manifests, in which only the "version" line may change.
-PACKAGE_JSONS=(package.json)
+PACKAGE_JSONS=(packages/competition-factory/package.json)
 
 FROM=${FROM:-HEAD^1}
 TO=${TO:-HEAD}

@@ -115,6 +115,10 @@ jobs:
     # slowest measured: 6 min
     timeout-minutes: 20
     runs-on: ubuntu-latest
+    # The package lives in packages/competition-factory; the repo root is the pnpm workspace root.
+    defaults:
+      run:
+        working-directory: packages/competition-factory
     strategy:
       fail-fast: false
       matrix:
@@ -140,6 +144,8 @@ jobs:
       # The pattern excludes `@pnpm/exe.<platform>` — those are legitimate optional deps of `pnpm`
       # itself and every clean lockfile holds 24 of them, so the obvious grep fails every repo.
       - name: Lockfiles must not carry an @pnpm/exe block
+        # every tracked lockfile in the repo, so this step runs from the root, not the package
+        working-directory: .
         run: |
           locks=$(git ls-files '*pnpm-lock.yaml')
           if [ -z "$locks" ]; then
@@ -173,6 +179,11 @@ jobs:
       # `prebuild` hook (which regenerates rather than checks) never fires.
       - name: verify:generated
         run: pnpm verify:generated
+
+      # CI only, not in verify:generated (which also runs at pre-commit): it bundles each exported engine
+      # with esbuild (~1.2 s) to keep the hosting guide's per-engine governor table true to the code.
+      - name: verify:engine-governors
+        run: pnpm verify:engine-governors
 
       - name: Verify shard timing tooling
         run: |
@@ -325,6 +336,10 @@ jobs:
     # slowest measured: 29 min (a checkpoint, under the differential)
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    # The package lives in packages/competition-factory; the repo root is the pnpm workspace root.
+    defaults:
+      run:
+        working-directory: packages/competition-factory
     strategy:
       fail-fast: false
       matrix:
@@ -356,7 +371,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: coverage-blob-node${{ matrix.node-version }}-${{ matrix.shard }}
-          path: .vitest/blob/
+          path: packages/competition-factory/.vitest/blob/
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 3
@@ -365,7 +380,7 @@ jobs:
         continue-on-error: true
         with:
           name: coverage-timing-node${{ matrix.node-version }}-${{ matrix.shard }}
-          path: .vitest/timing/
+          path: packages/competition-factory/.vitest/timing/
           include-hidden-files: true
           if-no-files-found: warn
           retention-days: 14
@@ -376,6 +391,10 @@ jobs:
     # merges the shard reports; under a minute
     timeout-minutes: 20
     runs-on: ubuntu-latest
+    # The package lives in packages/competition-factory; the repo root is the pnpm workspace root.
+    defaults:
+      run:
+        working-directory: packages/competition-factory
     strategy:
       fail-fast: false
       matrix:
@@ -393,7 +412,7 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           pattern: coverage-blob-node${{ matrix.node-version }}-*
-          path: .vitest/blob
+          path: packages/competition-factory/.vitest/blob
           merge-multiple: true
 
       # The step NAME is load-bearing: scripts/verify/verified-release.mjs accepts a run as proof only
@@ -425,7 +444,7 @@ jobs:
         continue-on-error: true
         with:
           pattern: coverage-timing-node${{ matrix.node-version }}-*
-          path: .vitest/timing
+          path: packages/competition-factory/.vitest/timing
           merge-multiple: true
 
       - name: Report shard duration drift
@@ -439,8 +458,8 @@ jobs:
         with:
           name: coverage-duration-observations-node${{ matrix.node-version }}
           path: |
-            coverage/shard-timing.json
-            coverage/shard-timing.json.md
+            packages/competition-factory/coverage/shard-timing.json
+            packages/competition-factory/coverage/shard-timing.json.md
           if-no-files-found: warn
           retention-days: 14
 
@@ -448,7 +467,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: coverage-summary-node${{ matrix.node-version }}
-          path: coverage/coverage-summary.json
+          path: packages/competition-factory/coverage/coverage-summary.json
           if-no-files-found: error
           retention-days: 14
 
@@ -458,6 +477,10 @@ jobs:
     # slowest measured: 13 min (deep-corrections)
     timeout-minutes: 30
     runs-on: ubuntu-latest
+    # The package lives in packages/competition-factory; the repo root is the pnpm workspace root.
+    defaults:
+      run:
+        working-directory: packages/competition-factory
     strategy:
       fail-fast: false
       matrix:
@@ -491,6 +514,10 @@ jobs:
     # slowest measured as ONE job (the v2 arm): 34 min; a shard is a quarter of that
     timeout-minutes: 30
     runs-on: ubuntu-latest
+    # The package lives in packages/competition-factory; the repo root is the pnpm workspace root.
+    defaults:
+      run:
+        working-directory: packages/competition-factory
     strategy:
       fail-fast: false
       matrix:
@@ -520,6 +547,10 @@ jobs:
     # the differential runs both pipelines: measured as the whole suite on Lenz, about twice the default run
     timeout-minutes: 40
     runs-on: ubuntu-latest
+    # The package lives in packages/competition-factory; the repo root is the pnpm workspace root.
+    defaults:
+      run:
+        working-directory: packages/competition-factory
     strategy:
       fail-fast: false
       matrix:
@@ -532,8 +563,9 @@ jobs:
 
       - name: touches the outcome pipeline
         id: paths
+        # `git diff --name-only` prints repo-root paths wherever it runs, hence the package prefix
         run: |
-          if git diff --name-only HEAD^1 HEAD | grep -qE '^src/(mutate/(matchUps|drawDefinitions/positionGovernor|drawDefinitions/matchUpGovernor)|query/(matchUps|matchUp|drawDefinition))/'; then
+          if git diff --name-only HEAD^1 HEAD | grep -qE '^packages/competition-factory/src/(mutate/(matchUps|drawDefinitions/positionGovernor|drawDefinitions/matchUpGovernor)|query/(matchUps|matchUp|drawDefinition))/'; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
@@ -568,6 +600,10 @@ jobs:
     # slowest measured as ONE job: 30 min; a shard is one file of that
     timeout-minutes: 45
     runs-on: ubuntu-latest
+    # The package lives in packages/competition-factory; the repo root is the pnpm workspace root.
+    defaults:
+      run:
+        working-directory: packages/competition-factory
     strategy:
       fail-fast: false
       matrix:
