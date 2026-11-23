@@ -403,11 +403,12 @@ function releasesAward(args: Args, loser: HydratedMatchUp, matches: HydratedMatc
   );
   if (writes.length !== 1 || !isAwardRelease(writes[0], release)) return false;
   const stored = args.working.matchUpsMap.drawMatchUps.find((m) => m.matchUpId === release.onward.matchUpId);
-  return (
-    !!stored?.drawPositions &&
-    stored.drawPositions.length === release.op.drawPositions.length &&
-    stored.drawPositions.every((pos, i) => pos === release.op.drawPositions[i])
-  );
+  return !!stored?.drawPositions && sameSequence(stored.drawPositions, release.op.drawPositions);
+}
+
+// Compare the complete sequence of positions; an array offset here never identifies a match side.
+function sameSequence<T>(actual: readonly T[], expected: readonly T[]) {
+  return actual.length === expected.length && actual.every((value, index) => value === expected[index]);
 }
 
 function isAwardRelease(op: OutcomeOp, release: AwardRelease) {
@@ -416,8 +417,7 @@ function isAwardRelease(op: OutcomeOp, release: AwardRelease) {
     op.matchUpId === release.onward.matchUpId &&
     op.releasedDrawPosition === release.position &&
     Object.keys(op).length === Object.keys(release.op).length &&
-    op.drawPositions.length === release.op.drawPositions.length &&
-    op.drawPositions.every((pos, i) => pos === release.op.drawPositions[i])
+    sameSequence(op.drawPositions, release.op.drawPositions)
   );
 }
 
