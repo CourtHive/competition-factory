@@ -188,6 +188,7 @@ jobs:
       - name: Verify shard timing tooling
         run: |
           node --test scripts/shardTiming.test.mjs
+          node --test scripts/importHeaderPattern.test.mjs
           pnpm exec vitest run src/tests/global/childProcessDeadline.test.ts --maxWorkers=2
 
       - name: verify:types
