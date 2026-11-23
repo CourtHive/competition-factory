@@ -191,15 +191,30 @@ importers:
 
   .:
     devDependencies:
-      '@babel/core':
-        specifier: 8.1.2
-        version: 8.1.2
       '@commitlint/cli':
         specifier: 21.2.4
         version: 21.2.4(conventional-commits-parser@7.1.4)(typescript@6.0.3)
       '@commitlint/config-conventional':
         specifier: 21.2.4
         version: 21.2.4
+      husky:
+        specifier: 9.1.7
+        version: 9.1.7
+      lint-staged:
+        specifier: 17.6.1
+        version: 17.6.1
+      markdownlint-cli2:
+        specifier: ^0.24.0
+        version: 0.24.1(supports-color@7.2.0)
+      prettier:
+        specifier: 3.10.1
+        version: 3.10.1
+
+  packages/competition-factory:
+    devDependencies:
+      '@babel/core':
+        specifier: 8.1.2
+        version: 8.1.2
       '@dep-tree/cli':
         specifier: 0.23.4
         version: 0.23.4
@@ -308,18 +323,9 @@ importers:
       globals:
         specifier: 17.14.0
         version: 17.14.0
-      husky:
-        specifier: 9.1.7
-        version: 9.1.7
       istanbul-badges-readme:
         specifier: ^1.9.0
         version: 1.9.0
-      lint-staged:
-        specifier: 17.6.1
-        version: 17.6.1
-      markdownlint-cli2:
-        specifier: ^0.24.0
-        version: 0.24.1(supports-color@7.2.0)
       mongoose:
         specifier: 9.12.2
         version: 9.12.2

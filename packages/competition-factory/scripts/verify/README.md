@@ -220,12 +220,17 @@ The anchor moves at a release and only then. After a release is published and it
 merged into `dev`, on a branch from `dev`:
 
 ```bash
-git worktree add --detach ../anchor-vX.Y.Z vX.Y.Z    # the release tag
-(cd ../anchor-vX.Y.Z && pnpm install --frozen-lockfile && pnpm build)
+# from packages/competition-factory; the anchor checkout sits beside the repository, outside packages/
+git worktree add --detach ../../../anchor-vX.Y.Z vX.Y.Z    # the release tag
+(cd ../../../anchor-vX.Y.Z && pnpm install --frozen-lockfile && pnpm build)
 pnpm build
-pnpm verify:consumer-bundle -- --set-anchor=../anchor-vX.Y.Z
-git worktree remove ../anchor-vX.Y.Z
+pnpm verify:consumer-bundle -- --set-anchor=../../../anchor-vX.Y.Z/packages/competition-factory
+git worktree remove ../../../anchor-vX.Y.Z
 ```
+
+`--set-anchor` takes the release checkout's PACKAGE directory, the one holding its `package.json` and
+`dist`: `packages/competition-factory` in a release made after the workspace layout move, the checkout's
+root for a tag from before it (7.46.0 and earlier), where the package sat at the repository root.
 
 `--set-anchor` refuses a checkout whose `HEAD` is not exactly the tag `v<version>` of its own
 `package.json`. It bundles every fixture from that checkout's `dist` with this branch's fixtures and

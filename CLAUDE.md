@@ -37,7 +37,7 @@ then open the PR by hand. `verify.yml` runs the light path on it (`.github/scrip
 **Then re-anchor the consumer bundle on the release** (CA, 2026-11-03): `verify:consumer-bundle` fails a
 fixture more than +15 % past its size at the last release, and that anchor moves only by
 `--set-anchor` on a built checkout of the new tag, in its own PR. Steps:
-`scripts/verify/README.md` § "Resetting the consumer-bundle anchor".
+`packages/competition-factory/scripts/verify/README.md` § "Resetting the consumer-bundle anchor".
 
 Full rationale and the CI/release compatibility table:
 `../Mentat/standards/coding-standards.md` § "Branch off `dev`, not `master`".
@@ -46,10 +46,21 @@ Full rationale and the CI/release compatibility table:
 
 `tods-competition-factory` is the shared business-logic engine for the CourtHive ecosystem. It is published as an npm package with no runtime dependencies and is consumed by TMX (client PWA), competition-factory-server (NestJS backend), courthive-components, scoring-visualizations, and epixodic.
 
+## Repository Layout
+
+The repository is a pnpm workspace. The package, `tods-competition-factory`, lives in
+`packages/competition-factory`: its `src/`, `scripts/`, `corpus/`, configs, `package.json`, `README.md` and
+`CHANGELOG.md`. The root holds the workspace tooling (Husky, lint-staged, commitlint, Prettier, markdownlint), the
+lockfile, the release-please files, `.github/` and `documentation/` (its own install root). The `src/` and `scripts/`
+paths below are relative to the package. The root `package.json` forwards `build`, `test`, `check-types` and the
+pre-commit gates to the package; `format`, `format:check` and `lint:md` run at the root only. Run everything else in
+the package directory.
+
 ## Commands
 
 ```bash
-pnpm install
+pnpm install              # at the root: installs the workspace
+cd packages/competition-factory
 pnpm build                # Rollup + esbuild → dist/
 pnpm start                # Rollup watch mode
 pnpm test                 # Vitest: the default suite, 32,000+ tests (a full verify runs 34,000+; a PR runs 31,000+)

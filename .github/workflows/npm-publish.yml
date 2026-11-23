@@ -57,13 +57,22 @@ jobs:
 
       - run: corepack enable
 
+      # The package lives in packages/competition-factory: every step from the install to the
+      # publish runs there. npm ignores pnpm-workspace.yaml, and the root package.json is a private
+      # workspace root with no `workspaces` field, so this installs the package's own dependencies
+      # (layout move decision 3: keep `npm install`; the pinned pnpm setup is a separate change).
+      # A pre-move tag has no packages/ directory, so a workflow_dispatch backfill of one fails.
       - run: npm install --legacy-peer-deps --ignore-scripts
+        working-directory: packages/competition-factory
 
       - run: npm run lint
+        working-directory: packages/competition-factory
 
       - run: npm run check-types
+        working-directory: packages/competition-factory
 
       - run: npm run build
+        working-directory: packages/competition-factory
 
       # The tag-time gate PROVES the tree was verified instead of re-testing it (CA, 2026-10-04).
       # `prepublishOnly` (= `pinst --disable && pnpm verify`) re-ran the whole chain here, ~45 min on
@@ -76,9 +85,11 @@ jobs:
       - name: The tag's tree was verified
         env:
           GITHUB_TOKEN: ${{ github.token }}
+        working-directory: packages/competition-factory
         run: node scripts/verify/verified-release.mjs --wait 90
 
       - name: verify:release (generated, lockfile, build, publint, runtime, shakeable, bundle-size, consumer-bundle, surface, pack)
+        working-directory: packages/competition-factory
         run: pnpm verify:release
 
       - name: Determine npm dist-tag
@@ -94,5 +105,7 @@ jobs:
           fi
 
       - run: npx pinst --disable
+        working-directory: packages/competition-factory
 
       - run: npm publish --ignore-scripts --provenance --access public --tag ${{ steps.distTag.outputs.tag }}
+        working-directory: packages/competition-factory

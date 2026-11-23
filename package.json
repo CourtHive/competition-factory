@@ -1,0 +1,35 @@
+{
+  "name": "competition-factory-workspace",
+  "private": true,
+  "packageManager": "pnpm@12.21.0",
+  "description": "Workspace root for tods-competition-factory; the package lives in packages/competition-factory",
+  "license": "MIT",
+  "scripts": {
+    "prepare": "husky",
+    "build": "pnpm --dir packages/competition-factory build",
+    "test": "pnpm --dir packages/competition-factory test",
+    "check-types": "pnpm --dir packages/competition-factory check-types",
+    "verify:generated": "pnpm --dir packages/competition-factory verify:generated",
+    "verify:implicit-any": "pnpm --dir packages/competition-factory verify:implicit-any",
+    "verify:hard-union": "pnpm --dir packages/competition-factory verify:hard-union",
+    "verify:exit-tenant": "pnpm --dir packages/competition-factory verify:exit-tenant",
+    "verify:layers": "pnpm --dir packages/competition-factory verify:layers",
+    "format": "prettier --write \"packages/competition-factory/src/**/*.{ts,mts,cts,js,mjs,cjs,json}\" \"documentation/**/*.{md,mdx,ts,tsx,js,jsx,mjs,cjs,css,json}\"",
+    "format:check": "prettier --check \"packages/competition-factory/src/**/*.{ts,mts,cts,js,mjs,cjs,json}\" \"documentation/**/*.{md,mdx,ts,tsx,js,jsx,mjs,cjs,css,json}\"",
+    "lint:md": "markdownlint-cli2 \"**/*.md\"",
+    "lint:md:fix": "markdownlint-cli2 --fix \"**/*.md\"",
+    "lint:staged": "TZ=UTC lint-staged"
+  },
+  "lint-staged": {
+    "packages/competition-factory/**/*.{js,ts}": "pnpm --dir packages/competition-factory exec eslint --cache --fix",
+    "*": "prettier --ignore-unknown --write"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "21.2.4",
+    "@commitlint/config-conventional": "21.2.4",
+    "husky": "9.1.7",
+    "lint-staged": "17.6.1",
+    "markdownlint-cli2": "^0.24.0",
+    "prettier": "3.10.1"
+  }
+}

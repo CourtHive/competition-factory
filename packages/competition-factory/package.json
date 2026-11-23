@@ -162,19 +162,13 @@
     "corpus:oracles": "CORPUS_ORACLES=1 TZ=UTC vitest run src/tests/corpus/oracleSources.test.ts",
     "coverage:badges": "vitest run --coverage --coverage.thresholds.statements=0 --coverage.thresholds.branches=0 --coverage.thresholds.functions=0 --coverage.thresholds.lines=0 && istanbul-badges-readme",
     "cov": "vitest run --coverage --config ./vitest.noThreshold.config.mts",
-    "format": "prettier --write \"src/**/*.{ts,mts,cts,js,mjs,cjs,json}\" \"documentation/**/*.{md,mdx,ts,tsx,js,jsx,mjs,cjs,css,json}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,mts,cts,js,mjs,cjs,json}\" \"documentation/**/*.{md,mdx,ts,tsx,js,jsx,mjs,cjs,css,json}\"",
-    "lint:staged": "TZ=UTC lint-staged",
     "lint:tsc": "node_modules/typescript7/bin/tsc --project tsconfig.json",
     "lint": "eslint src --cache --max-warnings 0",
     "lint:fix": "eslint src --fix --cache",
-    "lint:md": "markdownlint-cli2 \"**/*.md\"",
-    "lint:md:fix": "markdownlint-cli2 --fix \"**/*.md\"",
     "lint:report": "eslint src & eslint --cache src -f json > eslint-report.json",
-    "prepare": "husky",
     "prepublishOnly": "pinst --disable && pnpm verify",
     "postpublish": "pinst --enable",
-    "docs:publish": "cd documentation && GIT_USER=CourtHive USE_SSH=true pnpm docpub",
+    "docs:publish": "cd ../../documentation && GIT_USER=CourtHive USE_SSH=true pnpm docpub",
     "shakeable": "node scripts/verify/shakeable.mjs",
     "check-types": "node_modules/typescript7/bin/tsc --noEmit -p tsconfig.tests.json",
     "check-types:ts6": "node_modules/typescript/bin/tsc --noEmit -p tsconfig.tests.json",
@@ -193,7 +187,7 @@
     "verify:hard-union": "node scripts/verify/tscRatchet.mjs hard-union",
     "verify:shadowed-types": "node scripts/verify/shadowedDomainTypes.mjs --self-test && node scripts/verify/shadowedDomainTypes.mjs",
     "verify:lint": "eslint src --cache --max-warnings 0",
-    "verify:format": "pnpm format:check",
+    "verify:format": "pnpm -w format:check",
     "verify:corpus-manifest": "pnpm corpus:authored && pnpm corpus:scheduling && pnpm corpus:grammar && pnpm corpus:scoring && pnpm corpus:mocks && pnpm corpus:queue && node scripts/verify/corpus-manifest.mjs",
     "verify:exit-tenant": "node scripts/verify/exitTenant.mjs",
     "verify:layers": "node scripts/verify/layers.mjs --self-test && node scripts/verify/layers.mjs",
@@ -230,15 +224,8 @@
     "attr-audit": "node scripts/attr-audit.mjs",
     "verify:constants": "node scripts/verify/constants.mjs --self-test && node scripts/verify/constants.mjs"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "pnpm eslint src"
-    }
-  },
   "devDependencies": {
     "@babel/core": "8.1.2",
-    "@commitlint/cli": "21.2.4",
-    "@commitlint/config-conventional": "21.2.4",
     "@dep-tree/cli": "0.23.4",
     "@eslint/js": "10.0.1",
     "@nestjs/class-transformer": "0.4.0",
@@ -275,10 +262,7 @@
     "eslint-plugin-sonarjs": "4.2.2",
     "fs-extra": "11.4.1",
     "globals": "17.14.0",
-    "husky": "9.1.7",
     "istanbul-badges-readme": "^1.9.0",
-    "lint-staged": "17.6.1",
-    "markdownlint-cli2": "^0.24.0",
     "mongoose": "9.12.2",
     "pinst": "3.0.0",
     "prettier": "3.10.1",
@@ -296,10 +280,6 @@
     "variable-diff": "2.0.2",
     "vite": "8.3.8",
     "vitest": "5.1.1"
-  },
-  "lint-staged": {
-    "*.{js,ts}": "eslint --cache --fix",
-    "*": "prettier --ignore-unknown --write"
   },
   "browserslist": [
     "defaults and supports es6-module",

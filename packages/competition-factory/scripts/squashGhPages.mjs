@@ -2,7 +2,7 @@
 /**
  * Collapse `gh-pages` to a single commit holding exactly the current site.
  *
- *   node scripts/squashGhPages.mjs          # from the factory repo or documentation/
+ *   node scripts/squashGhPages.mjs          # from packages/competition-factory (docpub: from documentation/)
  *   node scripts/squashGhPages.mjs --dry    # show what would be pushed, push nothing
  *
  * `docusaurus deploy` clones gh-pages at depth 1 and commits each build ON TOP of the previous one, so every
