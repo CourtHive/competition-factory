@@ -4,6 +4,41 @@
 
 - Forge previews run on private records. Bare and assembled sync engines keep immediate `dryRun` and `explain`. Previewing a custom method requires `registerPreviewMethod` on that engine. An unregistered custom method refuses the entire preview with `ERR_UNREGISTERED_PREVIEW_METHOD` before dispatch.
 
+## [7.48.0](https://github.com/CourtHive/competition-factory/compare/v7.47.0...v7.48.0) (2026-11-23)
+
+
+### Features
+
+* **forge:** run registered previews on a private request receiver ([#6575](https://github.com/CourtHive/competition-factory/issues/6575)) ([fb8a2e2](https://github.com/CourtHive/competition-factory/commit/fb8a2e2e3eb884c4561e5ed5ee6cb09c7ed79409))
+* **records:** detect legacy tournament shapes on request ([#6573](https://github.com/CourtHive/competition-factory/issues/6573)) ([0bdde17](https://github.com/CourtHive/competition-factory/commit/0bdde172c53e98ce4d82ab41ccf27321b0df9020))
+* **scoring:** parse and validate score strings in strict mode ([#6574](https://github.com/CourtHive/competition-factory/issues/6574)) ([06b0183](https://github.com/CourtHive/competition-factory/commit/06b0183198f8bc9262e39756d3c8f223581667b7))
+* **verify:** add verify:declarations, the declaration-diff gate (type split S1) ([#6582](https://github.com/CourtHive/competition-factory/issues/6582)) ([f9aa634](https://github.com/CourtHive/competition-factory/commit/f9aa6340195fbb4dabbd556d22c9105e0db95242))
+* **verify:** ratchet type-only imports into a higher layer (type split S2) ([#6581](https://github.com/CourtHive/competition-factory/issues/6581)) ([bfb1d6b](https://github.com/CourtHive/competition-factory/commit/bfb1d6b36bd4ed14f8c86147628cf8bb88efa96e))
+
+
+### Bug Fixes
+
+* **engines:** dispatch only to registered methods, never inherited names ([#6585](https://github.com/CourtHive/competition-factory/issues/6585)) ([b5c9fdc](https://github.com/CourtHive/competition-factory/commit/b5c9fdc276aa9e68f10d032a43dfb60ae37cb3c3))
+* **scoring:** parse scores and formats in linear time ([#6578](https://github.com/CourtHive/competition-factory/issues/6578)) ([c30bf82](https://github.com/CourtHive/competition-factory/commit/c30bf82b374e1fe4edf85bdbe49222415e07680d))
+* **scripts:** decide import header comments in linear time ([c73fa43](https://github.com/CourtHive/competition-factory/commit/c73fa4395e9d1b17f043f4c2f8177dca6a9d83a9))
+* **scripts:** decide import header comments in linear time ([f04d459](https://github.com/CourtHive/competition-factory/commit/f04d45946adc1506b264f483c642caa8185af380))
+* **security:** keep record ids and payload keys off Object.prototype ([#6584](https://github.com/CourtHive/competition-factory/issues/6584)) ([d228923](https://github.com/CourtHive/competition-factory/commit/d2289230ca9f67eb30875f55dfd375dbc81cfcd3))
+* **security:** restrict amendment traversal and scoring counter writes ([0f3db5f](https://github.com/CourtHive/competition-factory/commit/0f3db5fd88eec78021c03dcc3f63476ee8c33688))
+* **security:** restrict amendment traversal and scoring counter writes ([37489eb](https://github.com/CourtHive/competition-factory/commit/37489eb2b0c8f452a6fa2d2c840602e22369c5f2))
+* **verify:** give verify:declarations' git calls a deadline ([f9aa634](https://github.com/CourtHive/competition-factory/commit/f9aa6340195fbb4dabbd556d22c9105e0db95242))
+
+
+### Performance
+
+* **participants:** find shared-individual conflicts in linear time ([1cbf5f6](https://github.com/CourtHive/competition-factory/commit/1cbf5f6b7640d95e80d7d24c34f4e2725719402f))
+* **participants:** group prior positions by entrant and preserve pair order ([2512a99](https://github.com/CourtHive/competition-factory/commit/2512a99efb6b4cc0ac7a41faffc823c6b671c65e))
+* **participants:** index entrants when checking for shared individuals ([fa08b2b](https://github.com/CourtHive/competition-factory/commit/fa08b2bae43e18f907b0f6067047a8603a3c4b65))
+
+
+### Documentation
+
+* restore three pre-move entries in the 7.47.0 changelog ([#6589](https://github.com/CourtHive/competition-factory/issues/6589)) ([48ec862](https://github.com/CourtHive/competition-factory/commit/48ec86250f8748af948a5ebe4086a9b9679b1e14))
+
 ## [7.47.0](https://github.com/CourtHive/competition-factory/compare/v7.46.0...v7.47.0) (2026-11-23)
 
 
