@@ -48,6 +48,7 @@
  */
 import { captureOperation, OperationState, restoreOperation } from '@Assemblies/engines/parts/operationState';
 import { prepareDirective, validateDirectives } from '@Assemblies/engines/parts/directives';
+import { getQueueMethods } from '@Assemblies/engines/parts/engineMethodRegistry';
 import { withCallRandomSource, withForkedRandomSource } from '@Tools/prng';
 import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { generatePatch, JsonPatch } from '@Tools/jsonPatch';
@@ -96,7 +97,7 @@ function refused(error: DryRunResult['error']): DryRunResult {
 }
 
 function dryRunAt(engine: FactoryEngine, directives: Directives): DryRunResult {
-  const methods = getMethods();
+  const methods = getQueueMethods(engine, directives);
 
   // the queue's own validation: a preview refuses exactly what the commit would refuse
   const invalid = validateDirectives(directives, methods);

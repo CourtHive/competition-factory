@@ -1,7 +1,8 @@
-import { deleteNotices, getDevContext, getInvokeObserver, getMethods } from '@Global/state/globalState';
+import { deleteNotices, getDevContext, getInvokeObserver } from '@Global/state/globalState';
 import { captureOperation, restoreOperation } from '@Assemblies/engines/parts/operationState';
 import { caughtErrorResult, executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { prepareDirective, validateDirectives } from '@Assemblies/engines/parts/directives';
+import { getQueueMethods } from '@Assemblies/engines/parts/engineMethodRegistry';
 import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
 import { notifySubscribersAsync } from '@Global/state/notifySubscribers';
 import { keepWrites } from '@Assemblies/engines/parts/keepWrites';
@@ -12,7 +13,7 @@ import { withCapturedClockAsync } from '@Tools/clock';
 import { Directives, FactoryEngine } from '@Types/factoryTypes';
 
 export async function asyncExecutionQueue(engine: FactoryEngine, directives: Directives, rollbackOnError?: boolean) {
-  const methods = getMethods();
+  const methods = getQueueMethods(engine, directives);
   const start = Date.now();
 
   // every directive is checked before any runs: a refusal here has written nothing
