@@ -35,8 +35,8 @@ export function asyncEngineConsumerContract(engine: AsyncFactoryEngine): void {
   engine.calculateCapacityStats({}).success;
   // @ts-expect-error The existing query facade is synchronous and not async-safe.
   engine.q.events();
-  // @ts-expect-error Synchronous mutation preview cannot wrap async dispatch safely.
-  engine.dryRun([]);
+  // @ts-expect-error A preview may await an imported method.
+  engine.dryRun([]).patch;
   // @ts-expect-error The synchronous builder terminal does not await async queues.
   engine.build.event().create();
 
@@ -60,6 +60,10 @@ export function asyncEngineConsumerContract(engine: AsyncFactoryEngine): void {
 }
 
 export async function asyncMutationResultContract(engine: AsyncFactoryEngine): Promise<void> {
+  const preview = await engine.dryRun([]);
+  const explanation = await engine.explain('getEvents');
+  const previewReady: boolean = preview.wouldSucceed && explanation.wouldSucceed;
+  void previewReady;
   const result = await engine.addEvent({ event: { eventName: 'Singles' } });
   const success: boolean | undefined = result.success;
   const eventName: string | undefined = result.event?.eventName;

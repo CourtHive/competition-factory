@@ -1,5 +1,5 @@
 import { setClock } from '@Tools/clock';
-import { ROLLBACK_UNAVAILABLE } from '@Constants/errorConditionConstants';
+import { MISSING_ASYNC_STATE_PROVIDER, ROLLBACK_UNAVAILABLE } from '@Constants/errorConditionConstants';
 import syncEngine from '@Engines/syncEngine';
 import { AsyncResource } from 'node:async_hooks';
 import asyncGlobalState from '@Server/providers/factory/engines/asyncGlobalState';
@@ -125,4 +125,17 @@ it('samples the clock in the caller before directive validation', () => {
     message: expect.stringContaining('clock unavailable'),
   });
   expect(observed).toBe(doc);
+});
+
+it('requires an async scope before invoking a directive on the async engine', () => {
+  setStateProvider(syncGlobalState);
+  const engine = asyncEngine(true);
+  let called = false;
+  engine.importMethods({
+    later: async () => {
+      called = true;
+    },
+  });
+  expect(engine.dryRun([{ method: 'later' }]).error).toEqual(MISSING_ASYNC_STATE_PROVIDER);
+  expect(called).toBe(false);
 });

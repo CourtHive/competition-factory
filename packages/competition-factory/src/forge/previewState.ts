@@ -1,8 +1,9 @@
 import { deferredQuery, deferredQueryBinding } from '@Mutate/notifications/drawNotifications';
 import { createSeededRandom, randomSource, SeededRandom } from '@Tools/prng';
-import { ROLLBACK_UNAVAILABLE } from '@Constants/errorConditionConstants';
+import { MISSING_ASYNC_STATE_PROVIDER, ROLLBACK_UNAVAILABLE } from '@Constants/errorConditionConstants';
 import { Directives, TournamentRecords } from '@Types/factoryTypes';
 import { suppressPreviewDelivery } from '@Global/state/noticeIdentity';
+import syncGlobalState from '@Global/state/syncGlobalState';
 import { isPlainContainer } from '@Tools/cloneState';
 import {
   getCapturedStamps,
@@ -21,11 +22,15 @@ const subscribe = () => undefined;
 /** A preview has no live writes to undo. Its provider must be able to bind an independent child state. */
 export function withPreviewState<T>(
   directives: Directives,
+  asyncEngine: boolean,
   clocks: { record: number; competition?: number },
   run: (before: TournamentRecords, directives: Directives) => T,
 ) {
   const provider = getProvider();
   if (typeof provider.runWithInstanceState !== 'function') return { error: ROLLBACK_UNAVAILABLE };
+
+  if (asyncEngine && provider.runWithInstanceState === syncGlobalState.runWithInstanceState)
+    return { error: MISSING_ASYNC_STATE_PROVIDER };
 
   const live = getTournamentRecords();
   const projection = provider.makeDeepCopy

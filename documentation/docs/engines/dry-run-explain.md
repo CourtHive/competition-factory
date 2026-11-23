@@ -11,6 +11,8 @@ Two preview facades let callers see what a mutation _would_ do before committing
 
 Both dispatch the same methods as a queue on private copies of the loaded records. With the async provider, the copy belongs to a child of the calling request. Other requests and the caller keep their own records, selection, pending notices and mutation flags throughout dispatch. The preview returns the notices a commit would deliver.
 
+The async engine supports both helpers within its request scope. With the synchronous state provider installed, the async engine returns `ERR_MISSING_ASYNC_STATE_PROVIDER` before dispatch. Use `await` when a registered method may return a Promise. The queue waits before piping the result to the next directive, computing the patch or projecting an explanation. Synchronous directives keep their immediate result.
+
 ## `engine.dryRun(directives)`
 
 Same shape as `executionQueue` — accepts a directive list — but never persists side effects and never fires subscribers.

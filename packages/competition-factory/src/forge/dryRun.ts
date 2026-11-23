@@ -1,12 +1,13 @@
 import { prepareDirective, validateDirectives } from '@Assemblies/engines/parts/directives';
 import { getQueueMethods } from '@Assemblies/engines/parts/engineMethodRegistry';
-import { withCallRandomSource } from '@Tools/prng';
-import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
+import { caughtErrorResult, executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { generatePatch, JsonPatch } from '@Tools/jsonPatch';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { readPreviewClocks } from '@Tools/clock';
 import { withPreviewState } from './previewState';
 import {
+  getCallRandomSource,
+  setCallRandomSource,
   getDevContext,
   getMethods,
   getNotices,
@@ -16,6 +17,7 @@ import {
 } from '@Global/state/globalState';
 
 // types
+import type { AsyncFactoryEngine } from '@Types/asyncEngineTypes';
 import { Directives, FactoryEngine } from '@Types/factoryTypes';
 
 export type EmittedNotice = {
@@ -41,7 +43,18 @@ function refused(error: DryRunResult['error']): DryRunResult {
   return { wouldSucceed: false, results: [], patch: [], willEmitNotices: [], error, rolledBack: true };
 }
 
-export function dryRun(engine: FactoryEngine, directives: Directives): DryRunResult {
+// The standalone helpers and engine mounts both dispatch according to the supplied engine.
+const asyncPreviewEngines = new WeakSet<object>();
+export function registerAsyncPreviewEngine(engine: FactoryEngine): void {
+  asyncPreviewEngines.add(engine);
+}
+
+export function dryRun(engine: AsyncFactoryEngine, directives: Directives): DryRunResult | Promise<DryRunResult>;
+// eslint-disable-next-line no-redeclare -- a synchronous engine always returns the result immediately
+export function dryRun(engine: FactoryEngine, directives: Directives): DryRunResult;
+// eslint-disable-next-line no-redeclare -- overload implementation
+export function dryRun(engine: FactoryEngine | AsyncFactoryEngine, directives: Directives) {
+  const awaitMethods = asyncPreviewEngines.has(engine);
   const clocks = readPreviewClocks();
   if ('error' in clocks) return refused({ ...clocks.error, message: clocks.message });
   const methods = getQueueMethods(engine, directives);
@@ -54,71 +67,65 @@ export function dryRun(engine: FactoryEngine, directives: Directives): DryRunRes
   }
 
   const snapshotStart = Date.now();
-  const outcome = withPreviewState(directives, clocks, (before, privateDirectives) => {
+  const outcome = withPreviewState(directives, awaitMethods, clocks, (before, privateDirectives) => {
     const snapshotElapsed = Date.now() - snapshotStart;
     // executeFunction clears status on its dispatch receiver. A preview owns that receiver as well.
-    const run = executePreview(Object.create(engine), privateDirectives, methods, before);
-    return { run, snapshotElapsed };
+    return executePreview(Object.create(engine), privateDirectives, methods, before, snapshotElapsed, awaitMethods);
   });
-  if ('error' in outcome) return refused(outcome.error);
-  const { run, snapshotElapsed } = outcome;
-  const { results, error, patch, willEmitNotices, executeElapsed, diffElapsed } = run;
-
-  // Cost summary. The per-method lines carry `dryRun: true` but only account for the method's own
-  // execution. The private copies and patch walk are preview overhead and are invisible
-  // without this. A caller gating a UI action on `explain` pays it on every click.
-  if (typeof getDevContext() === 'object') {
-    globalLog(
-      {
-        dryRun: true,
-        methods: results.length,
-        elapsed: snapshotElapsed + executeElapsed + diffElapsed,
-        overhead: { snapshot: snapshotElapsed, diff: diffElapsed, restore: 0 },
-        execute: executeElapsed,
-        patchOps: patch.length,
-      },
-      'sync',
-    );
-  }
-
-  return {
-    wouldSucceed: !error,
-    results,
-    patch,
-    willEmitNotices,
-    ...(error ? { error } : {}),
-    rolledBack: true,
-  };
+  return 'error' in outcome && !('wouldSucceed' in outcome) ? refused(outcome.error) : outcome;
 }
 
-type PreviewRun = Omit<DryRunResult, 'wouldSucceed' | 'rolledBack'> & { executeElapsed: number; diffElapsed: number };
-
-// Every directive, including nested engine calls, resolves records in the private provider scope.
 function executePreview(
   engine: FactoryEngine,
   directives: Directives,
   methods: ReturnType<typeof getMethods>,
   before: ReturnType<typeof getTournamentRecords>,
-): PreviewRun {
+  snapshotElapsed: number,
+  awaitMethods: boolean,
+): DryRunResult | Promise<DryRunResult> {
   const executeStart = Date.now();
   const results: DryRunResult['results'] = [];
-  let error: DryRunResult['error'];
-  for (const directive of directives) {
-    const methodName = directive.method;
-    const { params, unthreadedSource } = prepareDirective(directive, results);
+  const source = getCallRandomSource();
+  const finish = (error?: DryRunResult['error']) =>
+    finishPreview(before, results, error, snapshotElapsed, Date.now() - executeStart);
 
-    const result = withCallRandomSource(unthreadedSource, () =>
-      executeFunction(engine, methods[methodName], params, methodName, 'sync', { dryRun: true }),
-    );
-    results.push({ ...result, methodName });
-
-    if (result?.error) {
-      error = result.error;
-      break;
+  function dispatch(from: number): DryRunResult | Promise<DryRunResult> {
+    for (let index = from; index < directives.length; index++) {
+      const methodName = directives[index].method;
+      const { params, unthreadedSource } = prepareDirective(directives[index], results);
+      // This scope belongs only to this queue. Keep a seeded directive's stream until its Promise settles.
+      if (unthreadedSource) setCallRandomSource(unthreadedSource);
+      const result = executeFunction(engine, methods[methodName], params, methodName, awaitMethods ? 'async' : 'sync', {
+        dryRun: true,
+      });
+      if (awaitMethods && typeof result?.then === 'function') {
+        return Promise.resolve(result)
+          .catch((err) => {
+            if (getDevContext()) throw err;
+            return caughtErrorResult({ methodName, params, err });
+          })
+          .then((settled) => {
+            if (unthreadedSource) setCallRandomSource(source);
+            results.push({ ...settled, methodName });
+            return settled?.error ? finish(settled.error) : dispatch(index + 1);
+          });
+      }
+      if (unthreadedSource) setCallRandomSource(source);
+      results.push({ ...result, methodName });
+      if (result?.error) return finish(result.error);
     }
+    return finish();
   }
-  const executeElapsed = Date.now() - executeStart;
+  return dispatch(0);
+}
 
+function finishPreview(
+  before: ReturnType<typeof getTournamentRecords>,
+  results: DryRunResult['results'],
+  error: DryRunResult['error'],
+  snapshotElapsed: number,
+  executeElapsed: number,
+): DryRunResult {
   // Keep patch values independent of per-method results and notice payloads.
   const diffStart = Date.now();
   const patch = generatePatch(before, getTournamentRecords()).map((op) =>
@@ -133,5 +140,18 @@ function executePreview(
     if (payloads?.length) willEmitNotices.push({ topic, payloads });
   }
 
-  return { results, error, patch, willEmitNotices, executeElapsed, diffElapsed };
+  if (typeof getDevContext() === 'object') {
+    globalLog(
+      {
+        dryRun: true,
+        methods: results.length,
+        elapsed: snapshotElapsed + executeElapsed + diffElapsed,
+        overhead: { snapshot: snapshotElapsed, diff: diffElapsed, restore: 0 },
+        execute: executeElapsed,
+        patchOps: patch.length,
+      },
+      'sync',
+    );
+  }
+  return { wouldSucceed: !error, results, patch, willEmitNotices, ...(error ? { error } : {}), rolledBack: true };
 }

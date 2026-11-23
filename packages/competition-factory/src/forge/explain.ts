@@ -31,6 +31,7 @@
 import { dryRun, DryRunResult } from './dryRun';
 
 // types
+import type { AsyncFactoryEngine } from '@Types/asyncEngineTypes';
 import { FactoryEngine } from '@Types/factoryTypes';
 
 export type ExplainResult = {
@@ -50,9 +51,20 @@ export type ExplainResult = {
   detail: DryRunResult;
 };
 
-export function explain(engine: FactoryEngine, method: string, params?: Record<string, any>): ExplainResult {
-  const detail = dryRun(engine, [{ method, params }]);
+export function explain(
+  engine: AsyncFactoryEngine,
+  method: string,
+  params?: Record<string, any>,
+): ExplainResult | Promise<ExplainResult>;
+// eslint-disable-next-line no-redeclare -- sync engine overload
+export function explain(engine: FactoryEngine, method: string, params?: Record<string, any>): ExplainResult;
+// eslint-disable-next-line no-redeclare -- overload implementation
+export function explain(engine: FactoryEngine | AsyncFactoryEngine, method: string, params?: Record<string, any>) {
+  const detail: DryRunResult | Promise<DryRunResult> = dryRun(engine, [{ method, params }]);
+  return detail instanceof Promise ? detail.then(explainResult) : explainResult(detail);
+}
 
+function explainResult(detail: DryRunResult): ExplainResult {
   return {
     wouldSucceed: detail.wouldSucceed,
     ...(detail.error ? { reason: detail.error } : {}),
