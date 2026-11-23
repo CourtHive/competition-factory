@@ -1,10 +1,11 @@
+import { holdsRelayedLoser } from './byeRelaySupport';
 import { deriveExitStateFromProvenance, deriveStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { getSideExitProvenance, carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { claimAssignment } from '../plan/placementClaims';
 import { withdrawnExitReset } from '../plan/unwindPath';
 import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { isAnyExit } from '@Validators/isExit';
+import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 
 import type { SideExitProvenance, SideExitProvenanceEntry } from '@Types/tournamentTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
@@ -172,7 +173,7 @@ function supported(d: Draft, key: string, mark: SideExitProvenanceEntry) {
       return false;
     return placedSide(d.frame, d.target, i, d.current) === Number(key);
   });
-  return donors.length === 1;
+  return donors.length === 1 || (!donors.length && holdsRelayedLoser(d.frame, d.target, Number(key), mark));
 }
 function rederive(d: Draft, assignmentChanged: boolean): Rule {
   const { target, marks, ops } = d;
@@ -254,13 +255,31 @@ export function reconcileReceiver(
     )
   )
     draft.ops.push(release.op);
-  else if (draft.removed || draft.added)
-    draft.ops.push({
+  else if (draft.removed || draft.added) {
+    const placement: OutcomeOp = {
       op: 'setMatchUpDrawPositions',
       matchUpId: target.matchUpId,
       drawPositions: [...draft.positions].sort((a, b) => a - b),
       removedDrawPosition: draft.removed,
       placedDrawPosition: draft.added,
-    });
+    };
+    // A re-derived single exit first withdraws its former double-exit award, then
+    // advances its newly awarded participant. The latter owns the final winner-slot shape.
+    if (draft.added && !draft.removed && !Object.keys(draft.marks).length && changes.length === 1) {
+      const { old, next } = changes[0];
+      if (
+        old.edge.role === 'winner' &&
+        isDoubleExit(old.source.matchUpStatus) &&
+        old.grant.mark &&
+        isExit(next.source.matchUpStatus) &&
+        next.grant.sourcePosition === draft.added
+      ) {
+        const reset = rederive(draft, assignmentChanged);
+        if (!reset.reasons.length) reset.ops.push(placement);
+        return reset;
+      }
+    }
+    draft.ops.push(placement);
+  }
   return rederive(draft, assignmentChanged);
 }

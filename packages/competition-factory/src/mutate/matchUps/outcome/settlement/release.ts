@@ -27,7 +27,13 @@ export function withdrawnAwardRelease(
     !!request.winningSide &&
     request.winningSide !== source?.winningSide &&
     !isExit(request.matchUpStatus);
-  if ((!clears && !reverses) || !matches || !source?.winningSide || !isExit(source.matchUpStatus)) return;
+  const relabels =
+    route === 'apply-values' &&
+    request.flags.propagateExitStatus &&
+    !!request.winningSide &&
+    request.winningSide === source?.winningSide &&
+    (!request.matchUpStatus || request.matchUpStatus === 'COMPLETED');
+  if ((!clears && !reverses && !relabels) || !matches || !source?.winningSide || !isExit(source.matchUpStatus)) return;
   const frame = { inContextDrawMatchUps: matches, drawDefinition };
   const edge = claimEdges(frame, source);
   const holder = edge.targetMatchUps?.loserMatchUp;

@@ -1,4 +1,6 @@
+import { relabelEffects } from './relabelEffects';
 import { luckyReplacementEffects } from './luckyReplacementEffects';
+import { withdrawalChain, type WithdrawnHolder } from './withdrawalChain';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
@@ -277,7 +279,8 @@ function plainProducedLoser(args: Args, source: HydratedMatchUp, loser: Hydrated
     Number(side) === loser.winningSide ||
     !loser.sides?.some((s) => s.sideNumber === Number(side) && s.participantId === carrier.participantId) ||
     loser.sides?.some((s) => s.sideNumber === loser.winningSide && (s.participantId || s.bye || s.qualifier)) ||
-    !loser.sides?.some((s) => s.sideNumber === loser.winningSide && !s.participantId)
+    (loser.drawPositions?.filter(Boolean).length !== 1 &&
+      !loser.sides?.some((s) => s.sideNumber === loser.winningSide && s.drawPosition && !s.participantId))
   )
     return false;
   const edge = claimEdges({ drawDefinition: args.drawDefinition, inContextDrawMatchUps: matches }, loser);
@@ -430,6 +433,66 @@ function isAwardRelease(op: OutcomeOp, release: AwardRelease) {
   );
 }
 
+/** The withdrawal accounts only for the losing carrier's assignments, its sourced resets
+ * and the explicitly projected releases. A direct removal clears its winner under a
+ * different notice context. Scored-time cleanup follows in stored match order. */
+function chainRemovalOp(op: OutcomeOp, chain: WithdrawnHolder[]) {
+  return chain.some(({ holder, position, participantId, release }) => {
+    if (op.op === 'clearPosition')
+      return (
+        op.structureId === holder.structureId && op.drawPosition === position && op.participantId === participantId
+      );
+    if (op.op === 'setMatchUpResult')
+      return (
+        op.matchUpId === holder.matchUpId &&
+        op.matchUpStatus === TO_BE_PLAYED &&
+        op.announcedAs === 'withdrawProducedExits'
+      );
+    if (op.op === 'setSideExitProvenance') return op.matchUpId === holder.matchUpId && !op.provenance;
+    return !!release && releasedPlacement(op, release);
+  });
+}
+
+function releasedPlacement(op: OutcomeOp, release: NonNullable<WithdrawnHolder['release']>) {
+  if (
+    op.op !== 'setMatchUpDrawPositions' ||
+    op.matchUpId !== release.onward.matchUpId ||
+    op.releasedDrawPosition !== release.position ||
+    Object.keys(op).some((key) => !['op', 'matchUpId', 'releasedDrawPosition', 'drawPositions'].includes(key))
+  )
+    return false;
+  const rest = (release.onward.drawPositions ?? []).filter((p) => p && p !== release.position);
+  return sameSequence(rest, op.drawPositions);
+}
+
+function orderedWithdrawals(args: Args, chain: WithdrawnHolder[], emissions: Emission[]) {
+  for (const { holder, release } of chain) {
+    const after = args.working.matchUpsMap.drawMatchUps.find((m) => m.matchUpId === holder.matchUpId);
+    if (
+      !after ||
+      after.matchUpStatus !== TO_BE_PLAYED ||
+      after.winningSide ||
+      getSideExitProvenance({ matchUp: after })
+    )
+      return false;
+    const reset = args.ops.some(
+      (op) =>
+        op.op === 'setMatchUpResult' &&
+        op.matchUpId === holder.matchUpId &&
+        op.matchUpStatus === TO_BE_PLAYED &&
+        !op.winningSide &&
+        op.announcedAs === 'withdrawProducedExits',
+    );
+    if (!reset) return false;
+    if (release) {
+      if (args.ops.filter((op) => releasedPlacement(op, release)).length !== 1) return false;
+      emissions.push({ match: release.onward, context: 'releaseAdvancedDrawPosition', bound: true });
+    }
+    emissions.push({ match: holder, context: 'withdrawProducedExits', bound: true });
+  }
+  return true;
+}
+
 /** The source score is announced first. Removing its winner uses the source tournament but
  * drops the event binding. The plain linked loser removal publishes a match notice only when it
  * changes that target's side record; an assignment cleared without such a change is quiet. */
@@ -467,20 +530,27 @@ function removeProgram(args: Args): Program | undefined {
     ),
   );
   const released = loser && releasesAward(args, loser, matches) ? args.release : undefined;
-  const withdrawn =
-    supplied.length === 1 &&
-    loser?.matchUpId === supplied[0].matchUpId &&
+  const direct =
     !!loser &&
+    supplied.length === 1 &&
+    loser.matchUpId === supplied[0].matchUpId &&
     (!!released || plainProducedLoser(args, source, loser, matches));
+  const chain = !direct && supplied.length ? withdrawalChain(view, args.drawDefinition, source) : undefined;
+  const withdrawn = direct || !!chain;
   if (supplied.length && !withdrawn) return undefined;
-  if (released) emissions.push({ match: released.onward, context: 'releaseAdvancedDrawPosition', bound: true });
-  if (withdrawn && loser) emissions.push({ match: loser, context: 'withdrawProducedExits', bound: true });
+  if (chain) {
+    if (chain[0].holder.matchUpId !== loser?.matchUpId || !orderedWithdrawals(args, chain, emissions)) return undefined;
+  } else {
+    if (released) emissions.push({ match: released.onward, context: 'releaseAdvancedDrawPosition', bound: true });
+    if (direct && loser) emissions.push({ match: loser, context: 'withdrawProducedExits', bound: true });
+  }
   if (winner && winnerPosition && !winnerRemoval(matches, source, winner, winnerPosition, emissions)) return undefined;
   if (loser && !loserRemoval(args, source, loser, matches, withdrawn, emissions)) return undefined;
   if (
     !args.ops.every(
       (op) =>
         (released && isAwardRelease(op, released)) ||
+        (chain && chainRemovalOp(op, chain)) ||
         accountsForRemoval(
           op,
           matches,
@@ -512,17 +582,9 @@ function removeProgram(args: Args): Program | undefined {
   };
 }
 
-/** A reversal of an actual first-round exit removes the directed seats, then scores and
- * directs the replacement. The buffered assignment publication follows the winner placement.
- * Both seats and every material operation must belong to these two placements or the named
- * withdrawal. Further carries and qualifier changes require a different effect program. */
-function correctionProgram(args: Args): Program | undefined {
+function correctsPlayedWinner(args: Args, source: HydratedMatchUp) {
   const { request, view } = args;
-  const matches = view.inContextDrawMatchUps;
-  const source = matches?.find((m) => m.matchUpId === request.matchUpId);
-  if (
-    !matches ||
-    !source ||
+  return !(
     args.route !== 'winner' ||
     view.line ||
     view.group ||
@@ -530,28 +592,36 @@ function correctionProgram(args: Args): Program | undefined {
     view.draw.tallied ||
     view.draw.luckyBased ||
     view.draw.unlinkedQualifierRemoval ||
-    source.roundNumber !== 1 ||
     !source.winningSide ||
     !isExit(source.matchUpStatus) ||
     request.winningSide !== 3 - source.winningSide ||
-    (request.matchUpStatus && request.matchUpStatus !== 'COMPLETED') ||
+    (request.matchUpStatus &&
+      request.matchUpStatus !== 'COMPLETED' &&
+      !(request.matchUpStatus === 'RETIRED' && !request.flags.propagateRetirementAsExit)) ||
     request.carries?.schedule ||
     request.carries?.notes ||
     request.matchUpFormat
-  )
-    return;
+  );
+}
+
+/** A winner reversal removes the directed seats, then scores and directs the replacement.
+ * Each subscriber operation must belong to these placements or the causal withdrawal chain. */
+function correctionProgram(args: Args): Program | undefined {
+  const { request, view } = args;
+  const matches = view.inContextDrawMatchUps;
+  const source = matches?.find((m) => m.matchUpId === request.matchUpId);
+  if (!matches || !source || !correctsPlayedWinner(args, source)) return;
   const edges = claimEdges({ drawDefinition: args.drawDefinition, inContextDrawMatchUps: matches }, source);
   const winner = edges.targetMatchUps?.winnerMatchUp;
   const loser = edges.targetMatchUps?.loserMatchUp;
   const oldWinner = source.sides?.find((s) => s.sideNumber === source.winningSide);
   const newWinner = source.sides?.find((s) => s.sideNumber === request.winningSide);
   if (
-    !winner ||
     !loser ||
     edges.targetMatchUps?.byeMatchUp ||
     edges.targetLinks?.winnerTargetLink ||
     !edges.targetLinks?.loserTargetLink ||
-    winner.structureId !== source.structureId ||
+    (winner && winner.structureId !== source.structureId) ||
     loser.structureId === source.structureId ||
     !oldWinner?.participantId ||
     !oldWinner.drawPosition ||
@@ -566,32 +636,36 @@ function correctionProgram(args: Args): Program | undefined {
       (mark) => mark.sourceMatchUpId === source.matchUpId,
     ),
   );
+  const chain = withdrawalChain(view, args.drawDefinition, source);
   const released = releasesAward(args, loser, matches) ? args.release : undefined;
   if (
     supplies.length !== 1 ||
     supplies[0].matchUpId !== loser.matchUpId ||
-    (!released && !plainProducedLoser(args, source, loser, matches))
+    (!chain && !released && !plainProducedLoser(args, source, loser, matches))
   )
     return;
   const emissions = [score(source, true)];
-  if (released) emissions.push({ match: released.onward, context: 'releaseAdvancedDrawPosition', bound: true });
-  emissions.push({ match: loser, context: 'withdrawProducedExits', bound: true });
+  if (chain) {
+    if (chain[0].holder.matchUpId !== loser.matchUpId || !orderedWithdrawals(args, chain, emissions)) return;
+  } else {
+    if (released) emissions.push({ match: released.onward, context: 'releaseAdvancedDrawPosition', bound: true });
+    emissions.push({ match: loser, context: 'withdrawProducedExits', bound: true });
+  }
   if (
-    !winnerRemoval(matches, source, winner, oldWinner.drawPosition, emissions) ||
+    (winner && !winnerRemoval(matches, source, winner, oldWinner.drawPosition, emissions)) ||
     !loserRemoval(args, source, loser, matches, true, emissions)
   )
     return;
-  emissions.push(
-    score(source, true),
-    { match: winner, context: 'assignMatchUpDrawPosition', bound: true },
-    { match: loser, context: 'positionAssignments', bound: true },
-  );
+  emissions.push(score(source, true));
+  if (winner) emissions.push({ match: winner, context: 'assignMatchUpDrawPosition', bound: true });
+  emissions.push({ match: loser, context: 'positionAssignments', bound: true });
   const position = edges.targetMatchUps?.loserTargetDrawPosition;
   let removed = false,
     placed = false,
     redirected = false;
   for (const op of args.ops) {
     if (released && isAwardRelease(op, released)) continue;
+    if (chain && op.op !== 'clearPosition' && chainRemovalOp(op, chain)) continue;
     if (op.op === 'announcePositionAssignments' && op.structureId === loser.structureId) continue;
     if (
       op.op === 'clearPosition' &&
@@ -613,7 +687,7 @@ function correctionProgram(args: Args): Program | undefined {
     }
     if (
       op.op === 'setMatchUpDrawPositions' &&
-      op.matchUpId === winner.matchUpId &&
+      op.matchUpId === winner?.matchUpId &&
       op.removedDrawPosition === oldWinner.drawPosition &&
       op.placedDrawPosition === newWinner.drawPosition
     ) {
@@ -627,7 +701,7 @@ function correctionProgram(args: Args): Program | undefined {
     )
       return;
   }
-  if (!removed || !placed || !redirected) return;
+  if (!removed || !placed || !!winner !== redirected) return;
   const warnings =
     !request.flags.disableScoreValidation && tiebreakPointsWarnings(request.score?.sets, view.existing.matchUpFormat);
   return {
@@ -747,7 +821,7 @@ export function planSettlementEffects(args: Args): Prediction {
   const program =
     args.route === 'remove-directed'
       ? removeProgram(args)
-      : (correctionProgram(args) ?? luckyReplacementEffects(args) ?? clearProgram(args));
+      : (correctionProgram(args) ?? luckyReplacementEffects(args) ?? relabelEffects(args) ?? clearProgram(args));
   if (!program) return { reasons: ['unmodeled settlement emission order'] };
   const before = getMatchUpsMap({ drawDefinition: args.drawDefinition }).drawMatchUps;
   if (

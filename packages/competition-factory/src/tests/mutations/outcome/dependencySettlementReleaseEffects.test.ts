@@ -190,6 +190,21 @@ it.each(['DOUBLE_WALKOVER', 'DOUBLE_DEFAULT'] as const)(
   },
 );
 
+it.each(['OLYMPIC', 'COMPASS'])('relabels a played-on winner and releases the losing carry in %s', (drawType) => {
+  const ctx = occupiedCarry(drawType, 8);
+  const outcome = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-3 6-1', winningSide: 1 }).outcome;
+  const request = {
+    matchUpId: ctx.request.matchUpId,
+    winningSide: 1 as const,
+    score: outcome.score,
+    flags: ctx.request.flags,
+  };
+  expect(chooseRoute(request, buildOutcomeView({ ...ctx, request, matchUpsMap: getMatchUpsMap(ctx) }))).toBe(
+    'apply-values',
+  );
+  compareReplacement(ctx, request, { winningSide: 1, score: outcome.score });
+});
+
 function compareReplacement(
   ctx: ReturnType<typeof occupiedCarry>,
   request: OutcomeRequest,
