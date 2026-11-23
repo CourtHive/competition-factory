@@ -1,34 +1,11 @@
-import { buildParticipantLookup, ParticipantLookup } from '@Query/participants/participantLookup';
+import { buildParticipantLookup } from '@Query/participants/participantLookup';
 import { getVenueData } from '@Query/venues/getVenueData';
 
 // constants and types
 import { Participant, Tournament } from '@Types/tournamentTypes';
+import type { HydrationCache, ParticipantLookup, VenueData } from '@Types/hydrationCacheTypes';
 
-/**
- * Lookups shared by every matchUp hydrated in ONE read. A query creates it (or receives it from the query
- * that called it) and drops it when it returns, so nothing in it outlives the snapshot it was built from:
- * records are mutated in place, and the async engine gives each request its own state.
- *
- * Never hold one across calls, and never put it at module scope.
- *
- * Venue data is keyed by record and then by venueId, so a cache handed on to a query over a different
- * record, or a linked one, cannot answer for it. A miss (unknown venueId) is cached too.
- *
- * A participant lookup is keyed by the participant LIST it indexes (the array itself), for the same reason: a
- * read that hydrates from two lists gets two lookups.
- */
-export type HydrationCache = {
-  venueData: WeakMap<Tournament, Map<string, VenueData | undefined>>;
-  participantLookups?: WeakMap<Participant[], { size: number; lookup?: ParticipantLookup }>;
-};
-
-/** What hydration reads from getVenueData: the names it attaches to a schedule. */
-export type VenueData = {
-  courtsInfo?: { courtId?: string; courtName?: string }[];
-  venueAbbreviation?: string;
-  venueName?: string;
-  venueId?: string;
-};
+export type { HydrationCache, VenueData } from '@Types/hydrationCacheTypes';
 
 export function createHydrationCache(): HydrationCache {
   return { venueData: new WeakMap(), participantLookups: new WeakMap() };

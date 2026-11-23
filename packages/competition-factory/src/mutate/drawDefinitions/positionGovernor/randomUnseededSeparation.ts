@@ -26,27 +26,9 @@ import {
   MISSING_AVOIDANCE_POLICY,
   NO_CANDIDATES,
 } from '@Constants/errorConditionConstants';
+import type { AvoidancePolicy } from '@Types/policyShapes';
 
-/**
- * One participant attribute an avoidance policy separates on: a `key` path into the participant
- * (`'person.nationalityCode'`), a `directive` naming an id collection, or explicit `groupings`.
- */
-export type PolicyAttribute = {
-  groupings?: { [groupName: string]: string[] };
-  directive?: keyof IdCollections;
-  significantCharacters?: number;
-  includeIds?: string[];
-  key?: string;
-};
-
-/** The avoidance policy (`POLICY_TYPE_AVOIDANCE`) as positioning reads it. */
-export type AvoidancePolicy = {
-  policyAttributes?: PolicyAttribute[];
-  roundsToSeparate?: number;
-  targetDivisions?: number;
-  candidatesCount?: number;
-  policyName?: string;
-};
+export type { AvoidancePolicy, PolicyAttribute } from '@Types/policyShapes';
 
 type RandomUnseededDistribution = {
   inContextDrawMatchUps?: HydratedMatchUp[];
