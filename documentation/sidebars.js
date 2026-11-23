@@ -273,6 +273,7 @@ module.exports = {
           label: 'Mutating State',
           items: [
             'engines/mutation-engines',
+            'engines/hosting-on-a-server',
             'engines/fluent-builders',
             'engines/engine-middleware',
             'engines/subscriptions',
