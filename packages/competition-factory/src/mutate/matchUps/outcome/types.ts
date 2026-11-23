@@ -163,7 +163,7 @@ export type OutcomeView = {
    * § 2 row 31: a winner or a loser whose seat is held by somebody else (v1's `heldSeatRefusal`, asked before the first
    * write): the error v1's placement raised, and its context
    */
-  heldSeat?: { error: ErrorType; context: Record<string, unknown> };
+  heldSeat?: { error: ErrorType; context?: Record<string, unknown> };
   /** a line of a dual: what the dual projects once this line is written */
   line?: {
     projectsByeWinner?: boolean;

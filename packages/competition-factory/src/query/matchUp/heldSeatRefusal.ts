@@ -6,9 +6,10 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
+import { doubleExitProducesNothing } from '@Query/drawDefinition/doubleExitProducesNothing';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
-import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
+import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
@@ -90,7 +91,7 @@ export type HeldSeatParams = {
   readonly event?: Event;
 };
 
-export type HeldSeat = { error: ErrorType; context: Record<string, unknown> };
+export type HeldSeat = { error: ErrorType; context?: Record<string, unknown> };
 
 export function heldSeatRefusal({
   activeDownstream,
@@ -102,7 +103,12 @@ export function heldSeatRefusal({
   const { matchUp, structure, drawDefinition, targetData, winningSide, inContextMatchUp } = params;
   if (matchUp.collectionId) return lineSeatRefusal(params, activeDownstream);
   if (!drawDefinition || !structure || !targetData?.targetMatchUps) return undefined;
-  if (winningSide !== 1 && winningSide !== 2) return undefined;
+  if (winningSide !== 1 && winningSide !== 2) {
+    if (matchUp.matchUpType !== TEAM) return undefined;
+    const held = targetData.targetMatchUps.winnerMatchUp?.drawPositions;
+    if (!held || held.length < 2) return undefined;
+    return heldDoubleExitReceiver(params, held);
+  }
   if (!matchUp.drawPositions || isAdHoc({ structure })) return undefined;
   // An undecided dual awarded a winner directs both sides, through the same placements as singles.
   if (matchUp.winningSide && (matchUp.tieMatchUps || isMatchUpEventType(TEAM)(matchUp.matchUpType))) return undefined;
@@ -229,6 +235,44 @@ function handoverLoserAssignment(params: HeldSeatParams): HeldSeat | undefined {
     drawPosition: destination,
   });
   return refusal?.error ? { error: refusal.error as ErrorType, context: { drawPosition: destination } } : undefined;
+}
+
+/**
+ * Older TEAM records can credit a structural BYE as the winner and leave both of that feeder's
+ * positions in the next dual. Relabelling the adjacent double exit releases its own positions
+ * and orphaned advances. Neither release can free a position still supplied by the other feeder.
+ */
+function heldDoubleExitReceiver(params: HeldSeatParams, positions: number[]): HeldSeat | undefined {
+  const { matchUp, matchUpStatus, targetData, structure, inContextDrawMatchUps } = params;
+  if (!isDoubleExit(matchUp.matchUpStatus) || !isDoubleExit(matchUpStatus) || matchUpStatus === matchUp.matchUpStatus)
+    return undefined;
+
+  const target = targetData?.targetMatchUps?.winnerMatchUp;
+  if (
+    !target ||
+    !structure ||
+    doubleExitProducesNothing(structure, params.drawDefinition) ||
+    target.structureId !== structure.structureId ||
+    targetData?.targetLinks?.winnerTargetLink
+  )
+    return undefined;
+  // Bracket receivers have two slots. Older imported arrays may also contain empty entries.
+  const held = positions.length === 2 ? positions : [...new Set(positions.filter(Boolean))];
+  const [first, second] = held;
+  if (held.length !== 2 || !first || !second || first === second) return undefined;
+  if (matchUp.drawPositions?.includes(first) || matchUp.drawPositions?.includes(second)) return undefined;
+
+  const stillFed = inContextDrawMatchUps?.some(
+    (feeder) =>
+      feeder.structureId === structure.structureId &&
+      feeder.winnerMatchUpId === target.matchUpId &&
+      held.every((position) => feeder.drawPositions?.includes(position)),
+  );
+  if (!stillFed) return undefined;
+  const structuralBye = positionAssignmentsOf(structure)?.some(
+    (seat) => seat.bye && !seat.participantId && !seat.byeFromPropagation && held.includes(seat.drawPosition),
+  );
+  return structuralBye ? { error: DRAW_POSITION_ASSIGNED } : undefined;
 }
 
 function heldWinnerSeat({
