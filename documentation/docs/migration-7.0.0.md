@@ -93,12 +93,11 @@ The only interface change is the error _code_ for this case, which moved from
 participant check rather than from the later score-modification guard. Match on behaviour rather
 than on that specific code.
 
-:::note An error leaves the draw unchanged, without rollback
-The rule is per method: a `setMatchUpStatus` that returns an error leaves the record unchanged on a
-direct call, and `rollbackOnError` is not what provides that. Residual cases where a refusal arrives
-after a write are defects, tracked by the census property `ERROR_IMPLIES_NO_MUTATION`. Use
-`executionQueue` with `rollbackOnError: true` when **several** directives must succeed or fail
-together.
+:::note A factory validation refusal leaves the draw unchanged
+A direct `setMatchUpStatus` call must refuse an invalid outcome before writing. The census property
+`ERROR_IMPLIES_NO_MUTATION` tracks residual defects. Queue rollback also lets several directives
+succeed or fail together. Borrowed documents can raise their own errors during assignment.
+[Validation and borrowed storage](./engines/mutation-engines.md#rollback-on-error)
 :::
 
 ## 4. Time-zone conversions refuse rather than throw or guess

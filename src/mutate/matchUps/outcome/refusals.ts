@@ -28,6 +28,7 @@ import {
   MATCHUP_NOT_FOUND,
   MATCHUP_STATUS_OUT_OF_SCOPE,
   MISSING_DRAW_DEFINITION,
+  MISSING_ASSIGNMENTS,
   MISSING_DRAW_POSITIONS,
   MISSING_MATCHUP_ID,
   NO_VALID_ACTIONS,
@@ -236,6 +237,8 @@ function refuseAgainstDraw(request: OutcomeRequest, view: OutcomeView): Refusal 
       },
     });
 
+  if (view.line?.projectsByeWinner) return refuse(6, INVALID_MATCHUP_STATUS, { info: 'a BYE cannot win a TEAM dual' });
+
   if (!view.matchUpTieId) {
     const nonDirecting = !!matchUpStatus && isNonDirectingMatchUpStatus({ matchUpStatus });
     // v1 (`checkDownstreamCompatibility`) returns `activeDownstream` and `winningSide` beside `error`, not in a context
@@ -302,6 +305,7 @@ function refuseDispatch(request: OutcomeRequest, view: OutcomeView): Refusal | u
       autoCalcDisabled: line?.autoCalcDisabled,
       dualWinningSide: line?.dualWinningSide,
       lineDecided: line?.dualLineDecided,
+      declaredWinnerPlayedOn: view.declaredWinnerPlayedOn,
       activeDownstream: view.activeDownstream,
       isLine: !!line,
     })
@@ -405,6 +409,7 @@ export function refuseOutcome(request: OutcomeRequest, view: OutcomeView): Refus
     (view.missingDrawPositions ? refuse(24, MISSING_DRAW_POSITIONS) : undefined) ??
     (view.heldSeat ? refuse(31, view.heldSeat.error, { context: view.heldSeat.context }) : undefined) ??
     refuseDispatch(request, view) ??
-    refuseRoute(request, view)
+    refuseRoute(request, view) ??
+    (view.dualProjection?.missingTeams ? refuse(32, MISSING_ASSIGNMENTS) : undefined)
   );
 }

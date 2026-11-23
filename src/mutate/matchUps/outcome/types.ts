@@ -120,6 +120,7 @@ export type OutcomeView = {
   propagatedExitStands: boolean;
   /** something later depends on this result (§ 3) */
   activeDownstream: boolean;
+  declaredWinnerPlayedOn?: boolean;
   /**
    * a WINNER/LOSER link with no source roundNumber, met reading this matchUp's targets or what depends on
    * it (§ 2 row 21; CA, 2026-10-06: a malformed round link is an error)
@@ -165,6 +166,7 @@ export type OutcomeView = {
   heldSeat?: { error: ErrorType; context: Record<string, unknown> };
   /** a line of a dual: what the dual projects once this line is written */
   line?: {
+    projectsByeWinner?: boolean;
     dualMatchUpId: string;
     dualMatchUpStatus?: MatchUpStatusUnion;
     dualWinningSide?: number;
@@ -198,16 +200,14 @@ export type OutcomeView = {
       /** The initial tally with the line cleared removes its old aggregate score before the final tally. */
       clearsInitialScore?: true;
       scoreReported: boolean;
-      /** the sides once the line's write has ensured them (the winner's carry reads these) */
-      sidesAsHeld?: unknown[];
-      /** the sides in context before the line's write (the loser's carry reads these, as v1's `directLoser` does) */
+      /** Source sides held when directWinner and directLoser plan the team's line-up carry. */
       sidesInContext?: unknown[];
     };
   };
   /** a TEAM dual's own call: the sides `ensureSideLineUps` writes before its result, present where they change (S7) */
   dualSides?: unknown[];
   /** a TEAM dual under `enableAutoCalc`: the winner its lines project */
-  dualProjection?: { projectedWinningSide?: number; score?: OutcomeScore };
+  dualProjection?: { projectedWinningSide?: number; score?: OutcomeScore; missingTeams?: boolean };
   /** § 5 rule 1: where direction sends a winner, and who is on each side now */
   targets: {
     winnerMatchUpId?: string;

@@ -16,6 +16,7 @@ import {
   Score,
   Structure,
   TieFormat,
+  TieScoreSourceEnum,
 } from '@Types/tournamentTypes';
 
 type GetProjectedDualWinningSideArgs = {
@@ -93,5 +94,15 @@ export function getProjectedDualWinningSide({
 
   // the dual's score as `updateTieMatchUpScore` writes it from the same tally: the outcome view plans that write (S7)
   const projectedScore = { scoreStringSide1, scoreStringSide2, sets: set ? [set] : [] };
-  return { projectedWinningSide, projectedScore, projectedTieMatchUps: projectedDualMatchUp?.tieMatchUps };
+  // A BYE can receive line credits but cannot win the derived dual or advance into its next seat.
+  const projectsByeWinner =
+    !!projectedWinningSide &&
+    tieFormat?.scoreSource !== TieScoreSourceEnum.REPORTED &&
+    !!dualMatchUp.sides?.find((side) => side.sideNumber === projectedWinningSide)?.bye;
+  return {
+    projectsByeWinner,
+    projectedWinningSide,
+    projectedScore,
+    projectedTieMatchUps: projectedDualMatchUp?.tieMatchUps,
+  };
 }

@@ -1,11 +1,20 @@
-import { cleanByeHome, indexed, positionsOf, unwoundClean } from './planShared';
+import { hasSourceOrigin, holdsPosition } from './placementClaims';
+import {
+  APPLY_VALUES,
+  bareResultRequest,
+  cleanByeHome,
+  indexed,
+  positionsOf,
+  sideDrawPosition,
+  unwoundClean,
+} from './planShared';
 import { firstRoundFeedersWon } from '@Query/matchUp/firstRoundFeedersWon';
 import { isDoubleExit } from '@Validators/isExit';
 
 // constants and types
 import { FIRST_MATCH_LOSER_CONSOLATION, FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
-import type { OutcomeView, PlanArgs, WinnerLoserSeat } from '../types';
-import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import type { ExitReasonArgs, OutcomeView, PlanArgs, WinnerLoserSeat } from '../types';
+import { COMPLETED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { OutcomeOp } from '../ops';
 
@@ -119,4 +128,87 @@ function standingReservationSeat(view: OutcomeView, source: HydratedMatchUp, sea
     !next.loserMatchUpId &&
     JSON.stringify(positionsOf(next)) === JSON.stringify(opposite)
   );
+}
+
+/** The first-match feed has already denied this loser. The marked reservation and the
+ * other player's advance through it stand when the same main-draw winner is relabelled. */
+export function relabelKeepsReservation({ direction, request, route, view }: ExitReasonArgs): boolean {
+  const loser = direction?.loser;
+  const winner = request.winningSide;
+  const { existing, targets } = view;
+  if (
+    route !== APPLY_VALUES ||
+    view.drawType !== FIRST_MATCH_LOSER_CONSOLATION ||
+    view.isTeam ||
+    view.line ||
+    view.group ||
+    existing.matchUpStatus !== COMPLETED ||
+    request.matchUpStatus !== WALKOVER ||
+    !bareResultRequest(request) ||
+    (winner !== 1 && winner !== 2) ||
+    existing.winningSide !== winner ||
+    !loser?.bye ||
+    loser.arrives ||
+    loser.exit ||
+    loser.carriedPast ||
+    loser.withdrawn ||
+    loser.converged ||
+    targets.loserLink?.linkCondition !== FIRST_MATCHUP ||
+    targets.source.roundNumber !== 2 ||
+    !loser.participantId ||
+    loser.participantId !== targets.sideParticipantIds[winner === 1 ? 2 : 1]
+  )
+    return false;
+
+  const source = indexed(view, request.matchUpId);
+  const main = indexed(view, targets.winnerMatchUpId);
+  const winnerId = targets.sideParticipantIds[winner];
+  const position = sideDrawPosition(view, winner);
+  if (
+    !source ||
+    source.loserMatchUpId !== loser.matchUpId ||
+    targets.winnerLink ||
+    !main ||
+    main.structureId !== source.structureId ||
+    winnerId === loser.participantId ||
+    !holdsPosition(main, winnerId, position)
+  )
+    return false;
+
+  const reservation = loser.bye;
+  const seat = targets.loserTargetSeat;
+  const home = indexed(view, loser.matchUpId);
+  if (
+    !cleanByeHome(home) ||
+    home.roundNumber !== 2 ||
+    home.structureId === source.structureId ||
+    home.structureId !== reservation.structureId ||
+    home.matchUpId !== targets.loserMatchUpId ||
+    reservation.drawPosition !== targets.loserTargetDrawPosition ||
+    !seat?.bye ||
+    !seat.byeFromPropagation ||
+    seat.participantId ||
+    !seat.opponentHeld ||
+    seat.opponentBye ||
+    !home.sides?.some((side) => side.drawPosition === reservation.drawPosition && side.bye && !side.participantId)
+  )
+    return false;
+
+  const opposite = home.sides?.find((side) => side.drawPosition !== reservation.drawPosition);
+  const next = indexed(view, home.winnerMatchUpId);
+  if (
+    !opposite?.participantId ||
+    !opposite.drawPosition ||
+    opposite.bye ||
+    opposite.qualifier ||
+    opposite.participantId === loser.participantId ||
+    !next ||
+    next.structureId !== home.structureId ||
+    next.roundNumber !== 3 ||
+    (next.matchUpStatus !== COMPLETED && next.matchUpStatus !== TO_BE_PLAYED) ||
+    !holdsPosition(next, opposite.participantId, opposite.drawPosition)
+  )
+    return false;
+
+  return !!view.inContextDrawMatchUps && !hasSourceOrigin(view.inContextDrawMatchUps, source.matchUpId);
 }

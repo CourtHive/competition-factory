@@ -231,10 +231,9 @@ exit. The specific defect behind this guarantee is closed: a bare `{ winningSide
 validated _before_ any removal runs, where it used to skip the early participant check and be caught
 only after the existing result had been unwound.
 
-**The guarantee is per method, on a direct call, and it does not depend on `rollbackOnError`.** A
-`setMatchUpStatus` that returns an error leaves the draw unchanged. The cascade delivers that by
-itself: it refuses before it writes, and it builds in no snapshot or restore to hide a refusal that
-comes too late. A refusal returned after a write is a defect, not a design choice.
+**A factory validation refusal must leave the draw unchanged on a direct call.** The cascade checks
+the request before writing. A factory refusal after a write is a defect. A borrowed document can also
+raise a storage error during assignment. [Validation and borrowed storage](../engines/mutation-engines.md#rollback-on-error)
 
 Be precise about where that stands. Refusals that can only arise part-way through a cascade are
 being made impossible one root cause at a time; those that cannot be removed in the current pipeline

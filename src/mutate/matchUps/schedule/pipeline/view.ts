@@ -146,6 +146,11 @@ type BuildSchedulingViewArgs = {
   scheduleDates?: string[];
   periodLength?: number;
   courtIds?: string[];
+  /**
+   * this run's daily limits, in place of those the records resolve (the policy's, the tournament's, each participant's
+   * override): a what-if, never stored. `{}` enforces none. Omitted: the records' limits (CA 2026-11-22)
+   */
+  matchUpDailyLimits?: { [matchUpType: string]: number };
 };
 
 /**
@@ -237,6 +242,7 @@ export function buildSchedulingView({
   scheduleDates = [],
   tournamentRecords,
   periodLength = 30,
+  matchUpDailyLimits: runDailyLimits,
   courtIds,
 }: BuildSchedulingViewArgs): SchedulingView | { error: ErrorType; context?: Record<string, unknown> } {
   // a stored profile that needs repair (a round whose venue, event or draw is gone) is refused, with the repaired profile
@@ -343,7 +349,10 @@ export function buildSchedulingView({
 
   const allCourts: HydratedCourt[] = getVenuesAndCourts({ ignoreDisabled: false, tournamentRecords }).courts ?? [];
   const courts = Array.isArray(courtIds) ? allCourts.filter(({ courtId }) => courtIds.includes(courtId)) : allCourts;
-  const { matchUpDailyLimits, dailyLimitOverrides } = getMatchUpDailyLimits({ tournamentRecords });
+  // the run's own limits replace every resolved one, as the grid's do (scheduleProfileGrid `gridDailyLimits`)
+  const { matchUpDailyLimits, dailyLimitOverrides } = runDailyLimits
+    ? { matchUpDailyLimits: runDailyLimits, dailyLimitOverrides: undefined }
+    : getMatchUpDailyLimits({ tournamentRecords });
   const { personRequests } = getPersonRequests({ requestType: DO_NOT_SCHEDULE, tournamentRecords });
   const dateCourts = Object.fromEntries(
     dates.map(({ scheduleDate }) => [

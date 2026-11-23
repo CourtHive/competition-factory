@@ -1,3 +1,4 @@
+import { commitAssignedLineUp } from '@Mutate/matchUps/lineUps/commitAssignedLineUp';
 import { writeAssignmentResults } from '@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
@@ -49,10 +50,8 @@ import type {
  * Ops grow by slice. S1 holds the result of the matchUp and the stamps: what a call that touches only its own
  * matchUp writes (measured 2026-10-24: status, score, winner, codes, `schedule.scoredTime`, and `updatedAt`).
  *
- * STAMPS ARE F2 (i): one per TOUCHED entity per call, the matchUp, its own structure and the draw. v1 keeps the same
- * rule for the draw and its matchUps (`drawNotifications.ts` `stampUpdatedAt`), and `differential` compares those by
- * value. v1's matchUp notice still stamps every top-level structure, so structure stamps are left out of that comparison
- * (CA, 2026-10-24, a temporary blind spot; see `shadow.ts`) and held to F2 (i) by v2's own tests.
+ * A match notice stamps the match, the draw and the top-level structure that owns the match. Each
+ * entity is stamped once per captured call. The shadow compares all of these stamps by value.
  */
 export type OutcomeOp =
   | {
@@ -87,6 +86,8 @@ export type OutcomeOp =
       stampsScoredTime?: false;
       /** the retained origin and all its onward consequences are explicitly planned (S7) */
       retainedExitPlanned?: true;
+      /** The source relabel preserves the loser's supported claim. No new carry enters settlement. */
+      keepsLoserClaim?: true;
       /**
        * the exit standing in the matchUp awarded to an arriving loser inside v1's `assignDrawPosition` (C29): written with no
        * direction, so nothing propagates from it
@@ -216,6 +217,10 @@ export type OutcomeOp =
        * assignment (`progressExitStatus`: `[]`, nothing carried on this side) and announces the matchUp as the assignment
        */
       rederivesCodes?: true;
+      /** The entrant takes a receiver's supported exit as part of this placement. */
+      awardedSide?: 1 | 2;
+      awardedCodes?: string[];
+      placementOrigin?: SideExitProvenance;
     }
   | {
       op: 'assignPosition';
@@ -781,6 +786,9 @@ function foldMatchUpWrite(
     }
     // the arrival that decides the matchUp by the carried exit beside it: its codes re-derived (`progressExitStatus`)
     if (op.rederivesCodes) matchUp.matchUpStatusCodes = [];
+    if (op.awardedCodes) matchUp.matchUpStatusCodes = [...op.awardedCodes];
+    if (op.placementOrigin) mergeSideExitProvenance({ matchUp, provenance: structuredClone(op.placementOrigin) });
+    if (op.awardedSide) matchUp.winningSide = op.awardedSide;
     // The ordinary arrival writes this own key, observable before its notice reads the caller's clock.
     if (op.advancesThroughBye) matchUp.score = undefined;
     // A plain onward release leaves the result keys alone; its later reset inserts its own undefined winner.
@@ -843,8 +851,8 @@ function foldSideLineUp(op: OpOf<'setSideLineUp'>, { matchUps }: DrawIndex): Fol
   // v1's `updateSideLineUp` writes the line-up on the stored side that holds the number and leaves the other as it is
   // stored (an unnumbered side `ensureSideLineUps` left for a seat nobody holds stays unnumbered); only where no stored
   // side holds the number are both made and numbered, as `propagateLineUp` and `propagateLoserLineUp` always make them
-  if (op.announcedAs === 'updateSidLineUp' && matchUp.sides?.some((side) => side.sideNumber === op.sideNumber)) {
-    for (const side of matchUp.sides) if (side.sideNumber === op.sideNumber) side.lineUp = lineUp;
+  if (op.announcedAs === 'updateSidLineUp') {
+    commitAssignedLineUp(matchUp, op.sideNumber, lineUp);
     return {};
   }
   matchUp.sides = [1, 2].map((sideNumber) => ({

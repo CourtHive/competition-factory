@@ -1,5 +1,6 @@
 import { standingMatchUp } from '../drawPositions/relabelLoserExit';
 import { bareResultRequest, cleanWinnerTarget, indexed, sideDrawPosition } from './plan/planShared';
+import { objShallowEqual } from '@Tools/objects';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 
 // constants and types
@@ -115,12 +116,22 @@ function retainedLoserCarry(request: OutcomeRequest, view: OutcomeView, particip
   const side = standing.sides?.find((candidate) => candidate.participantId === participantId)?.sideNumber;
   const origin = (side === 1 || side === 2) && standing.sideExitProvenance?.[side];
   if (!origin || origin.sourceMatchUpId !== request.matchUpId || origin.matchUpStatus !== status) return false;
-  return !view.inContextDrawMatchUps?.some((matchUp) =>
-    Object.values(matchUp.sideExitProvenance ?? {}).some(
-      (entry) =>
-        entry.sourceMatchUpId === request.matchUpId &&
-        (entry.previousMatchUpStatus !== status || (entry.matchUpStatus && entry.matchUpStatus !== status)),
-    ),
+  return sourceLabelsStand(view, request.matchUpId, status);
+}
+
+/** Every arrival and BYE-held carry already has its label; an unpropagated retirement must own no origin. */
+function sourceLabelsStand(view: OutcomeView, sourceId: string | undefined, status?: MatchUpStatusUnion): boolean {
+  return (
+    !!sourceId &&
+    !view.inContextDrawMatchUps?.some((matchUp) =>
+      Object.values(matchUp.sideExitProvenance ?? {}).some(
+        (entry) =>
+          entry?.sourceMatchUpId === sourceId &&
+          (!status ||
+            entry.previousMatchUpStatus !== status ||
+            (entry.matchUpStatus && entry.matchUpStatus !== status)),
+      ),
+    )
   );
 }
 
@@ -204,8 +215,62 @@ function planRelabelled(request: OutcomeRequest, view: OutcomeView): DirectionPl
   const winningSide = request.winningSide;
   if (winningSide !== 1 && winningSide !== 2) return undefined;
   if (relabelledLoserElsewhere(request, view)) return undefined;
-  const loser = planLoser(request, view, winningSide === 1 ? 2 : 1, true);
+  const loserSide = winningSide === 1 ? 2 : 1;
+  if (repeatedRelabelStands(request, view, loserSide)) return undefined;
+  const loser = planLoser(request, view, loserSide, true);
   return loser ? { loser } : undefined;
+}
+
+/** applyMatchUpValues writes the source. refreshArrivals and relabelWithoutDirection leave these origins alone. */
+function repeatedRelabelStands(request: OutcomeRequest, view: OutcomeView, loserSide: 1 | 2): boolean {
+  const status = request.matchUpStatus;
+  const { existing, targets, inContextDrawMatchUps } = view;
+  if (status !== WALKOVER && status !== DEFAULTED && status !== RETIRED) return false;
+  if (
+    status !== existing.matchUpStatus ||
+    !request.flags.propagateExitStatus ||
+    existing.hasSideExitProvenance ||
+    existing.carriedExit
+  )
+    return false;
+  const participantId = targets.sideParticipantIds[loserSide];
+  if (
+    !participantId ||
+    !targets.loserStructureId ||
+    !inContextDrawMatchUps ||
+    targets.loserTargetSeat?.participantId !== participantId
+  )
+    return false;
+  const standing = standingMatchUp(inContextDrawMatchUps, targets.loserStructureId, participantId);
+  if (!standing) return false;
+  if (status === RETIRED) {
+    // With retirement propagation off, V1 can only withdraw an earlier carry or refresh an arrival.
+    if (
+      request.flags.propagateRetirementAsExit ||
+      standing.matchUpStatus !== COMPLETED ||
+      !bareResultRequest({ ...request, score: undefined }) ||
+      !sameRetirementScore(request.score, existing.score)
+    )
+      return false;
+  } else {
+    if (!bareResultRequest(request)) return false;
+    const side = standing.sides?.find((s) => s.participantId === participantId)?.sideNumber;
+    const origin = side && standing.sideExitProvenance?.[side];
+    // The standing match already names the source, so carriedPastStanding does not look beyond it.
+    if (!origin || origin.sourceMatchUpId !== request.matchUpId || origin.matchUpStatus !== status) return false;
+  }
+  return sourceLabelsStand(view, request.matchUpId, status === RETIRED ? undefined : status);
+}
+
+function sameRetirementScore(incoming: OutcomeRequest['score'], stored: OutcomeRequest['score']): boolean {
+  if (!Array.isArray(incoming?.sets) || !incoming.sets.length || !Array.isArray(stored?.sets)) return false;
+  const { sets, ...score } = incoming;
+  const { sets: previous, ...previousScore } = stored;
+  return (
+    sets.length === previous.length &&
+    objShallowEqual(score, previousScore) &&
+    sets.every((set, index) => objShallowEqual(set, previous[index]))
+  );
 }
 
 /**

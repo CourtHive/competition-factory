@@ -1,16 +1,16 @@
-import { generatePairParticipantName } from '@Functions/participants/generatePairParticipantName';
 import { coercePersonSex, isUnrecognizedSex, UNRECOGNIZED_SEX_INFO } from '@Helpers/coercedSex';
 import { retiredParticipantCheck } from '@Query/participants/individualMerge/aliases';
-import { indexParticipant, pairKey, ParticipantsIndex } from './participantsIndex';
+import { indexParticipant, ParticipantsIndex } from './participantsIndex';
 import { normalizePersonNames } from '@Helpers/normalizedPersonName';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { planPairParticipant } from './planPairParticipant';
 import { normalizeGender } from '@Helpers/coercedGender';
 import { addNotice } from '@Global/state/globalState';
 import { collapseWhitespace } from '@Tools/strings';
+import { planFieldWrite } from '@Mutate/planCommit';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { planTeamColors } from './teamColors';
-import { intersection } from '@Tools/arrays';
 import { UUID } from '@Tools/UUID';
 
 // constants and types
@@ -20,10 +20,8 @@ import { ADD_PARTICIPANTS } from '@Constants/topicConstants';
 import { TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
-  INVALID_PARTICIPANT_IDS,
   INVALID_PARTICIPANT_TYPE,
   MISSING_PARTICIPANT_ROLE,
-  MISSING_PARTICIPANT_IDS,
   MISSING_PERSON_DETAILS,
   MISSING_TOURNAMENT_RECORD,
   PARTICIPANT_ID_EXISTS,
@@ -46,20 +44,11 @@ type AddParticipantType = {
   participantsIndex?: ParticipantsIndex;
 };
 
-function validateBaseParticipant(participant, tournamentRecord, participantsIndex?: ParticipantsIndex) {
+function validateBaseParticipant(participant, participantId, tournamentRecord, participantsIndex?: ParticipantsIndex) {
   if (!participant) return { error: MISSING_PARTICIPANT };
-  const retired = retiredParticipantCheck(
-    tournamentRecord,
-    participant.participantId ? [participant.participantId] : [],
-  );
-  if (retired) return retired;
-  participant.participantId ??= UUID();
-  tournamentRecord.participants ??= [];
-
-  const { participantId } = participant;
   const idExists = participantsIndex
     ? participantsIndex.ids.has(participantId)
-    : tournamentRecord.participants.some((c) => c.participantId === participantId);
+    : tournamentRecord.participants?.some((c) => c.participantId === participantId);
   if (idExists) return { error: PARTICIPANT_ID_EXISTS };
 
   const { participantType, participantRole } = participant;
@@ -77,115 +66,9 @@ function validateBaseParticipant(participant, tournamentRecord, participantsInde
   return undefined;
 }
 
-function validatePairParticipant({
-  participant,
-  tournamentParticipants,
-  participantsIndex,
-  pairOverride,
-  allowDuplicateParticipantIdPairs,
-  returnParticipant,
-}: {
-  participant: AddParticipantType['participant'];
-  tournamentParticipants: Participant[];
-  participantsIndex?: ParticipantsIndex;
-  pairOverride?: boolean;
-  allowDuplicateParticipantIdPairs?: boolean;
-  returnParticipant?: boolean;
-}) {
-  const stack = 'addParticipant';
-
-  if (participant.person) return { error: INVALID_VALUES, person: participant.person };
-  if (!participant.individualParticipantIds) {
-    return decorateResult({
-      result: { error: MISSING_PARTICIPANT_IDS },
-      stack,
-    });
-  }
-  if (participant.individualParticipantIds.length !== 2 && !pairOverride) {
-    return decorateResult({
-      info: 'PAIR must be 2 individualParticipantIds',
-      result: { error: INVALID_PARTICIPANT_IDS },
-      stack,
-    });
-  }
-
-  const individualParticipantIds =
-    participantsIndex?.individualIds ??
-    new Set(tournamentParticipants.filter((p) => p.participantType === INDIVIDUAL).map((p) => p.participantId));
-
-  if (!Array.isArray(participant.individualParticipantIds))
-    return decorateResult({
-      result: { error: INVALID_PARTICIPANT_IDS },
-      stack,
-    });
-
-  const validPairParticipants = participant.individualParticipantIds.reduce(
-    (valid, participantId) => individualParticipantIds.has(participantId) && valid,
-    true,
-  );
-  if (!validPairParticipants)
-    return decorateResult({
-      result: { error: INVALID_PARTICIPANT_IDS },
-      stack,
-    });
-
-  const existingPairParticipant = findExistingPair({ participant, tournamentParticipants, participantsIndex });
-
-  if (existingPairParticipant && !allowDuplicateParticipantIdPairs) {
-    return {
-      earlyReturn: true,
-      ...SUCCESS,
-      existingParticipant: true,
-      participant: returnParticipant && makeDeepCopy(existingPairParticipant.participant),
-    };
-  }
-
-  if (!participant.participantName) {
-    const individualParticipants = participantsIndex
-      ? pairIndividualsInRecordOrder({ participant, tournamentParticipants, participantsIndex })
-      : tournamentParticipants.filter((tp) => participant.individualParticipantIds?.includes(tp.participantId));
-
-    participant.participantName = generatePairParticipantName({ individualParticipants });
-  }
-
-  return undefined;
-}
-
-/**
- * The first PAIR in record order sharing two distinct individualParticipantIds with the participant. The index answers
- * when both pairs hold exactly two distinct ids (a pair with fewer can match nothing); otherwise the record is scanned.
- */
-function findExistingPair({ participant, tournamentParticipants, participantsIndex }) {
-  const distinct = new Set(participant.individualParticipantIds ?? []).size;
-  if (participantsIndex && !participantsIndex.irregularPairs && distinct <= 2) {
-    const key = pairKey(participant.individualParticipantIds);
-    const existing = key ? participantsIndex.pairs.get(key) : undefined;
-    return existing && { individualParticipantIds: existing.individualParticipantIds, participant: existing };
-  }
-  return tournamentParticipants
-    .filter((p) => p.participantType === PAIR)
-    .map((p) => ({ individualParticipantIds: p.individualParticipantIds, participant: p }))
-    .find(
-      (existing) => intersection(existing.individualParticipantIds, participant.individualParticipantIds).length === 2,
-    );
-}
-
-/** the record's participants a pair names, in record order (each once, as a filter of the record gives them) */
-function pairIndividualsInRecordOrder({ participant, tournamentParticipants, participantsIndex }) {
-  const positions = [...new Set<string>(participant.individualParticipantIds ?? [])]
-    .map((id) => participantsIndex.positions.get(id))
-    .filter((position) => position !== undefined)
-    .sort((a, b) => a - b);
-  return positions.map((position) => tournamentParticipants[position]);
-}
-
 function validateTeamGroupParticipant({ participant, tournamentIndividualParticipantIds }) {
   const stack = 'addParticipant';
 
-  // normalize an accepted team gender short code (M/F/X/A) to the canonical extended form
-  if (participant.gender) participant.gender = normalizeGender(participant.gender);
-
-  participant.individualParticipantIds ??= [];
   if (participant.individualParticipantIds?.length) {
     for (const individualParticipantId of participant.individualParticipantIds) {
       if (typeof individualParticipantId !== 'string') {
@@ -220,112 +103,182 @@ function individualIdsOf(tournamentParticipants: Participant[], participantsInde
   );
 }
 
-/** appends the participant to the record, and to the batch's index when there is one */
-function appendParticipant({ tournamentRecord, participant, participantsIndex }) {
-  tournamentRecord.participants?.push(participant);
-  if (participantsIndex && tournamentRecord.participants)
-    indexParticipant(participantsIndex, participant, tournamentRecord.participants.length - 1);
-}
+type ParticipantPlan = {
+  result: ReturnType<typeof definedAttributes>;
+  writes?: (() => void)[];
+  notice?: Parameters<typeof addNotice>[0];
+  committedResult?: () => ReturnType<typeof definedAttributes>;
+};
 
 export function addParticipant(params: AddParticipantType) {
+  const plan = planAddParticipant(params);
+  for (const write of plan.writes ?? []) write();
+  if (plan.notice) addNotice(plan.notice);
+  return plan.committedResult?.() ?? plan.result;
+}
+
+export function planAddParticipant(params: AddParticipantType): ParticipantPlan {
   const stack = 'addParticipant';
 
-  const {
-    allowDuplicateParticipantIdPairs,
-    participantsIndex,
-    returnParticipant,
-    disableNotice,
-    pairOverride,
-    participant,
-  } = params;
+  const { participantsIndex, returnParticipant, disableNotice, participant } = params;
 
   const tournamentRecord = params.tournamentId
     ? params.tournamentRecords?.[params.tournamentId]
     : (params.tournamentRecord ?? (params.activeTournamentId && params.tournamentRecords?.[params.activeTournamentId]));
 
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+  if (!tournamentRecord) return { result: { error: MISSING_TOURNAMENT_RECORD } };
 
   const colors = planTeamColors(participant?.teamColors, participant?.participantType);
-  if (colors.error) return colors;
+  if (colors.error) return { result: colors };
+  const suppliedId = participant?.participantId;
+  const retired = participant && retiredParticipantCheck(tournamentRecord, suppliedId ? [suppliedId] : []);
+  if (retired) return { result: decorateResult({ result: retired, stack }) };
+  const participantId = suppliedId ?? (participant && UUID());
+  const baseError = validateBaseParticipant(participant, participantId, tournamentRecord, participantsIndex);
+  if (baseError) return { result: decorateResult({ result: baseError, stack }) };
 
-  const baseError = validateBaseParticipant(participant, tournamentRecord, participantsIndex);
-  if (baseError) return decorateResult({ result: baseError, stack });
+  const writes: (() => void)[] = [];
+  if (suppliedId == null) writes.push(planFieldWrite(participant, 'participantId', participantId));
+  const list = tournamentRecord.participants;
+  if (list == null) writes.push(planFieldWrite(tournamentRecord, 'participants', []));
+  const name = participant.participantName && collapseWhitespace(participant.participantName);
+  if (participant.participantName) writes.push(planFieldWrite(participant, 'participantName', name));
 
-  // A caller-supplied name gets the same whitespace guarantee as a composed one.
-  // Same reason, one layer up: whatever is stored here is what a search compares
-  // against later, and an interior double space makes that comparison lie.
-  if (participant.participantName) participant.participantName = collapseWhitespace(participant.participantName);
-
-  const { participantType } = participant;
   const tournamentParticipants = tournamentRecord.participants ?? [];
-  const tournamentIndividualParticipantIds = individualIdsOf(tournamentParticipants, participantsIndex);
+  const early = planParticipantDetails({ params, tournamentParticipants, participant, name, writes });
+  if (early) return early;
+
+  if (colors.teamColors) writes.push(planFieldWrite(participant, 'teamColors', colors.teamColors));
+  else
+    writes.push(() => {
+      delete participant.teamColors;
+    });
+
+  // A missing list is initialized in the original order. Append through the list installed by its setter.
+  let stored: Participant;
+  writes.push(() => {
+    const target = list ?? tournamentRecord.participants!;
+    const position = target.length;
+    target.push(participant);
+    stored = target[position];
+    if (participantsIndex) indexParticipant(participantsIndex, stored, position);
+  });
+
+  const result = { ...SUCCESS };
+  const committedResult = () =>
+    definedAttributes({
+      participant: returnParticipant && materialParticipant(participant, stored),
+      ...SUCCESS,
+    });
+  const notice = disableNotice
+    ? undefined
+    : {
+        payload: { tournamentId: tournamentRecord.tournamentId, participants: [participant] },
+        topic: ADD_PARTICIPANTS,
+      };
+  return {
+    writes,
+    result,
+    committedResult,
+    notice,
+  };
+}
+
+// Document arrays may cast a plain submission into a subdocument. Keep the submission's public
+// shape (including application fields and hydrated inputs) while taking stored fields from the cast.
+function materialParticipant(input, stored) {
+  if (input === stored) return makeDeepCopy(input);
+  const options = { transform: false, virtuals: false, getters: false };
+  const hydratedInput = typeof input.toObject === 'function' && typeof input.$clone === 'function';
+  const supplied = hydratedInput ? input.toObject(options) : input;
+  const values = typeof stored.toObject === 'function' ? stored.toObject(options) : stored;
+  let material = supplied;
+  for (const key of Object.keys(supplied)) {
+    if (Object.hasOwn(values, key) && stored[key] !== input[key]) {
+      if (material === supplied) material = { ...supplied };
+      material[key] = values[key];
+    }
+  }
+  if (material === supplied) return makeDeepCopy(input);
+  // A submitted document has a different public shape than the subdocument installed by the roster.
+  // Initialize a detached clone with the committed data, without reapplying the submission's setters.
+  if (hydratedInput) return makeDeepCopy(input.$clone().$init(material));
+  return makeDeepCopy(material);
+}
+
+function planIndividual({ participant, name, writes }) {
+  const { person } = participant;
+  if (isUnrecognizedSex(person?.sex)) {
+    return decorateResult({
+      result: { error: INVALID_VALUES },
+      info: UNRECOGNIZED_SEX_INFO,
+      context: { sex: person.sex },
+      stack: 'addParticipant',
+    });
+  }
+  const fields = {
+    standardGivenName: person?.standardGivenName,
+    standardFamilyName: person?.standardFamilyName,
+  };
+  normalizePersonNames(fields);
+  const composed =
+    fields.standardGivenName && fields.standardFamilyName && `${fields.standardGivenName} ${fields.standardFamilyName}`;
+  const participantName = name || composed || participant.participantOtherName;
+  if (!participantName) return { error: MISSING_PERSON_DETAILS };
+
+  writes.push(() => {
+    coercePersonSex(person);
+    normalizePersonNames(person);
+    // A hydrated setter can canonicalize either name. Compose from what the setters stored.
+    if (!participant.participantName) {
+      participant.participantName =
+        person?.standardGivenName && person?.standardFamilyName
+          ? `${person.standardGivenName} ${person.standardFamilyName}`
+          : (participant.participantOtherName ?? '');
+    }
+  });
+  return undefined;
+}
+
+function planParticipantDetails({ params, tournamentParticipants, participant, name, writes }) {
+  const { participantType, person } = participant;
+  const { allowDuplicateParticipantIdPairs, participantsIndex, pairOverride, returnParticipant } = params;
 
   if (participantType === PAIR) {
-    const pairError: any = validatePairParticipant({
-      participant,
+    const pair = planPairParticipant({
+      participant: { person, individualParticipantIds: participant.individualParticipantIds, participantName: name },
       tournamentParticipants,
       participantsIndex,
       pairOverride,
       allowDuplicateParticipantIdPairs,
-      returnParticipant,
     });
-    if (pairError?.earlyReturn) {
-      const { earlyReturn: _, ...rest } = pairError;
-      return rest;
+    if (pair && 'existing' in pair) {
+      const existing = pair.existing;
+      const result = { ...SUCCESS, existingParticipant: true, participant: existing };
+      return {
+        writes,
+        result,
+        committedResult: () => ({ ...result, participant: returnParticipant && makeDeepCopy(existing) }),
+      };
     }
-    if (pairError) return pairError;
+    if (pair && 'error' in pair) return { result: pair };
+    if (pair && 'participantName' in pair)
+      writes.push(planFieldWrite(participant, 'participantName', pair.participantName));
   } else if (participantType === INDIVIDUAL) {
-    // sex is optional, but one that is present must be FEMALE/MALE/OTHER (or F/M/O)
-    if (isUnrecognizedSex(participant.person?.sex)) {
-      return decorateResult({
-        result: { error: INVALID_VALUES },
-        info: UNRECOGNIZED_SEX_INFO,
-        context: { sex: participant.person.sex },
-        stack,
-      });
-    }
-    // normalize accepted sex short codes (F/M/O) to the canonical extended form at rest
-    coercePersonSex(participant.person);
-    // and collapse whitespace runs in the names participantName is composed from,
-    // so a trailing space in a given name cannot produce 'Michael  Livson'
-    normalizePersonNames(participant.person);
-    const hasPersonName = participant.person?.standardFamilyName && participant.person?.standardGivenName;
-    const hasAlternateName = participant.participantOtherName || participant.participantName;
-    if (!hasPersonName && !hasAlternateName) return { error: MISSING_PERSON_DETAILS };
-
-    if (!participant.participantName) {
-      participant.participantName = hasPersonName
-        ? `${participant.person.standardGivenName} ${participant.person.standardFamilyName}`
-        : (participant.participantOtherName ?? '');
-    }
-  } else if (participantType && [TEAM, GROUP].includes(participantType)) {
-    const teamError = validateTeamGroupParticipant({ participant, tournamentIndividualParticipantIds });
-    if (teamError) return teamError;
-  } else {
-    return { error: INVALID_PARTICIPANT_TYPE };
-  }
-
-  applyNewTeamColors(participant, colors.teamColors);
-  appendParticipant({ tournamentRecord, participant, participantsIndex });
-
-  if (!disableNotice) {
-    addNotice({
-      payload: {
-        tournamentId: tournamentRecord.tournamentId,
-        participants: [participant],
-      },
-      topic: ADD_PARTICIPANTS,
+    const refusal = planIndividual({ participant, name, writes });
+    if (refusal) return { result: refusal };
+  } else if ([TEAM, GROUP].includes(participantType)) {
+    const teamError = validateTeamGroupParticipant({
+      participant,
+      tournamentIndividualParticipantIds: individualIdsOf(tournamentParticipants, participantsIndex),
     });
+    if (teamError) return { result: teamError };
+    if (participant.gender) writes.push(planFieldWrite(participant, 'gender', normalizeGender(participant.gender)));
+    if (participant.individualParticipantIds == null)
+      writes.push(planFieldWrite(participant, 'individualParticipantIds', []));
+  } else {
+    return { result: { error: INVALID_PARTICIPANT_TYPE } };
   }
 
-  const result = {
-    participant: returnParticipant && makeDeepCopy(participant),
-    ...SUCCESS,
-  };
-  return definedAttributes(result);
-}
-
-function applyNewTeamColors(participant: Participant, colors: Participant['teamColors']) {
-  if (colors) participant.teamColors = colors;
-  else delete participant.teamColors;
+  return undefined;
 }

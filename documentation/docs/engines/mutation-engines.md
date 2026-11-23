@@ -171,14 +171,29 @@ See [Subscriptions](/docs/engines/subscriptions) for complete notification docum
 
 ## Rollback on Error
 
-`rollbackOnError` snapshots the records before a call or a queue and restores them if it returns an
-error. Its job is **multi-directive atomicity**: making several directives succeed or fail together.
+The factory validates a mutation before writing to the record. A factory validation error must leave the record,
+including its timestamps, unchanged on a direct call or a queue directive. This rule applies to plain records and
+to documents supplied with `setState(record, false)`. Writer migrations are in progress. Known violations are
+tracked and tested with rollback disabled.
 
-It is **not** what makes a single method's error clean. A method that returns an error leaves the
-record unchanged on a direct call, with or without the flag — each method is responsible for
-refusing before it writes. Where a method still returns an error after writing, that is a defect: the
-known cases are tracked, and the exit-propagation census property `ERROR_IMPLIES_NO_MUTATION`
-(measured on direct calls) polices it. Do not pass `rollbackOnError` as the fix for one.
+With the default `setState(record)`, the factory works on a deep copy of the tournament record.
+The copy contains plain data and does not retain the document's setters. With `setState(doc, false)`,
+the factory holds the caller's live document. In either mode the factory decides eligibility from the
+values it holds during validation. A setter on a borrowed document can change the value stored after
+validation. Callers cannot rely on that setter to make an invalid input valid. Normalize inputs before
+calling a mutation on a live document, or use the default copy with plain inputs.
+
+A borrowed document can execute its own setters and casts when the factory applies a validated change. If that
+storage code throws, earlier assignments can remain visible. For example, a strict Mongoose schema can reject a
+later time item after an earlier rating was appended. Similar cases include an immutable penalty field, a strict
+participant schema and a strict extension schema on a TEAM replacement. A setter can also canonicalize a value on success. Factory
+writers preserve the document's mutation operations and use committed values for results derived from the record.
+
+For callers who need protection from storage-layer exceptions, use plain writable records and persist them after
+success, or submit the operation with `executionQueue([{ method, params }], true)`. Queue rollback restores a
+supported record when a directive returns an error. A borrowed document that cannot be restored faithfully yields
+`ROLLBACK_UNAVAILABLE` before the queue writes. An error raised later when saving to the database is handled by
+the persistence layer. [Borrowed records and rollback support](/docs/engines/global-state#rollback-and-preview-snapshots)
 
 ### Basic Rollback
 

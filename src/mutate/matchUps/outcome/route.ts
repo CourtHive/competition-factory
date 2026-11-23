@@ -61,11 +61,9 @@ function noDownstreamRoute(request: OutcomeRequest, view: OutcomeView): Route {
   const { matchUpStatus, winningSide, score, flags } = request;
   const { existing, line } = view;
   const scoreHasValue = !!checkScoreHasValue({ score });
+  // A standing dual award can supply a projected winner while this line still has only a partial score.
   const scoreWithNoWinner =
-    scoreHasValue &&
-    !isDoubleExit(matchUpStatus) &&
-    !PRESERVE_SCORE.has(matchUpStatus) &&
-    (line ? !line.projectedWinningSide : !winningSide);
+    scoreHasValue && !isDoubleExit(matchUpStatus) && !PRESERVE_SCORE.has(matchUpStatus) && !winningSide;
   const removeWinningSide =
     (!!line && !!line.dualWinningSide && !line.projectedWinningSide) ||
     (!!existing.winningSide && !winningSide && !scoreHasValue);

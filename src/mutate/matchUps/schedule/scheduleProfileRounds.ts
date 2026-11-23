@@ -22,6 +22,8 @@ type ScheduleProfileRoundsArgs = {
    */
   useGarman?: boolean;
   courtIds?: string[];
+  /** this run's daily limits in place of the records' (a what-if, never stored); `{}` enforces none */
+  matchUpDailyLimits?: { [matchUpType: string]: number };
   dryRun?: boolean;
   /**
    * @deprecated ignored: the court-and-time scheduler it selected is removed (CA 2026-10-28); every call takes the

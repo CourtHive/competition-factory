@@ -1,3 +1,4 @@
+import { releaseWalk } from '../unwindWalk';
 import { buildSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { producedConvergedOps, producedConvergedReason } from './producedConvergence';
 import { SINGLE_EXITS, indexed, onwardFrom, pairedFeeder } from './planShared';
@@ -140,7 +141,13 @@ function fedSeatReason(
  * the policy codes it keeps (`[]`), a WALKOVER's score blanked, then the side the double exit feeds given its origin
  * (`buildSideExitProvenance`, v1's own builder). Announced as the score write it is.
  */
-function producedOps(view: OutcomeView, request: OutcomeRequest, write: MatchUpWrite, direction?: DirectionPlan) {
+function producedOps(
+  view: OutcomeView,
+  request: OutcomeRequest,
+  write: MatchUpWrite,
+  direction?: DirectionPlan,
+  context?: ConvergedContext,
+) {
   const produced = direction?.produced;
   if (!produced) return [];
   if (view.targets.winner?.hasBye) return byeHeldProducedOps(view, produced, callOrigin(view, request, write)) ?? [];
@@ -159,13 +166,28 @@ function producedOps(view: OutcomeView, request: OutcomeRequest, write: MatchUpW
     // the opponent standing there arrived from the feeder beside this one: its origin is recorded too
     ...(paired ? { pairedMatchUpStatus: paired.matchUpStatus, pairedMatchUpId: paired.matchUpId } : {}),
   });
-  return producedAwardWriteOps(
+  const award = producedAwardWriteOps(
     produced.matchUpId,
     produced.matchUpStatus,
     paired ? produced.winningSide : undefined,
     provenance,
     onward,
   );
+  const source = indexed(view, request.matchUpId);
+  if (!source || !entry || source.structureId !== entry.structureId) return award;
+  const own = entry.drawPositions?.filter((dp): dp is number => !!dp && !!source.drawPositions?.includes(dp));
+  if (!own?.length) return award;
+  if (!context?.drawDefinition || !entry.roundNumber || (awarded?.drawPosition && own.includes(awarded.drawPosition)))
+    return undefined;
+  const released = releaseWalk({
+    inContextDrawMatchUps: view.inContextDrawMatchUps ?? [],
+    propagatesBye: !!view.draw.propagatesByeOnDoubleExit,
+    fromRoundNumber: entry.roundNumber,
+    drawDefinition: context.drawDefinition,
+    structureId: entry.structureId,
+    drawPositions: own,
+  });
+  return released && [...released, ...award];
 }
 
 /** The real produced score writer and its ordinary award's forward placement. */
@@ -212,5 +234,5 @@ export function producedExitOps(
 ): OutcomeOp[] | undefined {
   return direction?.converged
     ? producedConvergedOps(view, request, write, direction, context)
-    : producedOps(view, request, write, direction);
+    : producedOps(view, request, write, direction, context);
 }

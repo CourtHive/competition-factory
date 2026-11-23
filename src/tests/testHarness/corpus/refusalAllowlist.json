@@ -1,15 +1,11 @@
 {
   "reasons": {
-    "F-019": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-e0caca8e2808f3acc519637aeb714699fcf9decc55a0e4e0e8524740e08f8bbe",
     "F-008": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-0b8ef85b5d4aa8db9b085f1d1e019de0a73c30248cc29089e82caaf0ac55bdc1",
     "F-009": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-b467984b227aa55a3dcdfec53ffc92b110b657eb1253862d74c58bf7c918dadb",
-    "F-010": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-c2b5ac6c64e124f097fa19eb3778db8176dabeb62803c3204eeb77396c52fb49",
     "F-011": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-7f2e8e6148d52b207556e9958aac3126409874b2326a4942c6a1d0df7b502b91",
     "F-013": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-84c889669b97889b919b0db9782aa1f9d582c4002137ea41d036a4bd8e0c21b1",
     "F-014": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-6ca70d9c78e30736cbac87cf97189d8737db673dbcb28b24721f55386a94ce84",
     "F-016": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-96071fd34d3c3845e7eac73e054511994d1a218c3c2c217d724a752edd39a03d",
-    "F-017": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-4326006ee97920d622eeb4e8edddc54d3c9befce1f6ac035d3487deb4d713427",
-    "F-018": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-727b0fd9be5cd539078711e6f4d9d0640d92591cf39c94b18f0e27938253d0af",
     "F-007": "https://github.com/CourtHive/competition-factory/pull/6503",
     "cascadeWriteErrorsReachTheCaller": "Forced downstream write error",
     "reconcileDeciderReturnsItsError": "Injected reconciliation failure",
@@ -25,14 +21,6 @@
     "oldBoundary": "Capture predates #6489. The six clean-state replays do not reproduce a refused write. The historical before/after hashes identify this observation."
   },
   "tests": {
-    "src/tests/mutations/scales/ratingsWriteContract.test.ts::a write that fails part way restores the participants already written": [
-      {
-        "method": "generateDynamicRatings",
-        "error": "ERR_INVALID_SCALE_ITEM",
-        "reason": "F-019",
-        "paths": ["/factory/timeStamp"]
-      }
-    ],
     "src/tests/engines/asyncWrapperContract.test.ts::async wrapper contract > 4. a thrown method or an unknown method leaves every other context untouched": [
       {
         "method": "boom",
@@ -516,39 +504,6 @@
         ]
       }
     ],
-    "src/tests/mutations/matchUps/tieMatchUpLineUpEdges.test.ts::a substitution reads a line-up entry with no collection assignments as empty": [
-      {
-        "method": "replaceTieMatchUpParticipantId",
-        "error": "ERR_INVALID_VALUES",
-        "reason": "F-010",
-        "paths": [
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/displaySideNumber",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/drawPosition",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/lineUp",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/1/displaySideNumber",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/1/drawPosition",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
-          "/events/0/drawDefinitions/0/structures/0/updatedAt",
-          "/events/0/drawDefinitions/0/updatedAt",
-          "/factory/timeStamp"
-        ]
-      }
-    ],
-    "src/tests/mutations/matchUps/tieMatchUpLineUpEdges.test.ts::replacing a doubles pair with a pair participant returns the pair creation error": [
-      {
-        "method": "replaceTieMatchUpParticipantId",
-        "error": "ERR_INVALID_PARTICIPANT_IDS",
-        "reason": "F-010",
-        "paths": [
-          "/events/0/drawDefinitions/0/lineUps/9b577638-b20c-4f12-85ad-8e4fe03e0fb3/2",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/sides/0/lineUp/2",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
-          "/events/0/drawDefinitions/0/structures/0/updatedAt",
-          "/events/0/drawDefinitions/0/updatedAt",
-          "/factory/timeStamp"
-        ]
-      }
-    ],
     "src/tests/mutations/outcome/aLateRefusalIsCompared.test.ts::a refusal planted at carryAfterForward > is a deferred refusal under differential when its code is an apply-stage code": [
       {
         "method": "setMatchUpStatus",
@@ -805,14 +760,6 @@
         ]
       }
     ],
-    "src/tests/mutations/participants/addParticipant.test.ts::will not add invalid individual participants": [
-      {
-        "method": "addParticipant",
-        "error": "ERR_INVALID_PARTICIPANT_TYPE",
-        "reason": "F-018",
-        "paths": ["/participants"]
-      }
-    ],
     "src/tests/mutations/participants/individualParticipantMerge.test.ts::individual participant merge > preview is pure; transfers data and references, records an alias and refuses resurrection": [
       {
         "method": "addParticipant",
@@ -820,37 +767,6 @@
         "reason": "fixtureStamp",
         "paths": ["/factory/timeStamp"],
         "pending": true
-      }
-    ],
-    "src/tests/mutations/participants/penaltyCoverage.test.ts::penalty edge cases > modifyPenalty returns error for invalid modifications": [
-      {
-        "method": "modifyPenalty",
-        "error": "ERR_NOT_FOUND_PENALTY",
-        "reason": "F-017",
-        "paths": [
-          "/participants/1/penalties",
-          "/participants/2/penalties",
-          "/participants/3/penalties",
-          "/participants/4/penalties",
-          "/participants/5/penalties",
-          "/participants/6/penalties",
-          "/participants/7/penalties",
-          "/participants/8/penalties",
-          "/participants/9/penalties"
-        ]
-      }
-    ],
-    "src/tests/mutations/participants/team/onePlayerOneTeam.test.ts::one player, one team, per event > replaceTieMatchUpParticipantId refuses another team’s player": [
-      {
-        "method": "replaceTieMatchUpParticipantId",
-        "error": "ERR_SHARED_INDIVIDUAL_PARTICIPANT",
-        "reason": "F-010",
-        "paths": [
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
-          "/events/0/drawDefinitions/0/structures/0/updatedAt",
-          "/events/0/drawDefinitions/0/updatedAt",
-          "/factory/timeStamp"
-        ]
       }
     ],
     "src/tests/mutations/scheduling/proConflicts.test.ts::proConflicts - Comprehensive Conflict Detection > prevents double booking of same court slot (courtId, courtOrder, scheduledDate)": [

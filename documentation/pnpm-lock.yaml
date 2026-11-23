@@ -207,8 +207,8 @@ importers:
         specifier: 2.1.1
         version: 2.1.1
       courthive-components:
-        specifier: 7.17.0
-        version: 7.17.0(@tiptap/pm@3.34.0)(leaflet@1.9.4)(tods-competition-factory@7.44.0)
+        specifier: 7.19.2
+        version: 7.19.2(@tiptap/pm@3.34.0)(leaflet@1.9.4)(tods-competition-factory@7.45.0)
       leaflet:
         specifier: ^1.9.4
         version: 1.9.4
@@ -219,8 +219,8 @@ importers:
         specifier: ^19.2.6
         version: 19.3.1(react@19.3.1)
       tods-competition-factory:
-        specifier: 7.44.0
-        version: 7.44.0
+        specifier: 7.45.0
+        version: 7.45.0
 
 packages:
 
@@ -2636,8 +2636,8 @@ packages:
       typescript:
         optional: true
 
-  courthive-components@7.17.0:
-    resolution: {integrity: sha512-ZGxb8PSDITeDyZRxULe4+UZFRT/Ptl+pzuXytkxm+Q9Cd0cQqbTrqjJRmsYtAxSTLpSO5UKcuhCu7OI0h+nkow==}
+  courthive-components@7.19.2:
+    resolution: {integrity: sha512-kd6FC1fK2XBVrq/HWx6+0Hs5oWpo/2OsjVD+hRbbg3CCzVWVceyetXEfWb6z042hezFGADyViuB9Bq5am88ruQ==}
     engines: {node: '>=24'}
     peerDependencies:
       leaflet: ^1.9.4
@@ -4145,7 +4145,7 @@ packages:
       lightningcss: '*'
       postcss: '*'
       sharp: '*'
-      svgo: '>=3.3.5'
+      svgo: '*'
       uglify-js: '*'
       webpack: ^5.1.0
     peerDependenciesMeta:
@@ -5481,8 +5481,8 @@ packages:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
     engines: {node: '>=8.0'}
 
-  tods-competition-factory@7.44.0:
-    resolution: {integrity: sha512-ZU+EzjnPnU9McQDr1P9JivavEBUbvzqPKa1AiZcfvn4bkfqg1aQ559vXGmhgMMGDpp03QkJpEVA10sxQC+A7BQ==}
+  tods-competition-factory@7.45.0:
+    resolution: {integrity: sha512-6nW0pU9yAHlHzjQop0A1K9C7ojibiUXgDDAXHbg4w0AU1yyJvjDwywL5OPHS7+JnMV2AX7GC/cPbSsiLjXg1Wg==}
     engines: {node: '>=24'}
 
   toidentifier@1.0.1:
@@ -9553,7 +9553,7 @@ snapshots:
       parse-json: 5.2.0
       path-type: 4.0.0
 
-  courthive-components@7.17.0(@tiptap/pm@3.34.0)(leaflet@1.9.4)(tods-competition-factory@7.44.0):
+  courthive-components@7.19.2(@tiptap/pm@3.34.0)(leaflet@1.9.4)(tods-competition-factory@7.45.0):
     dependencies:
       '@tiptap/core': 3.34.0(@tiptap/pm@3.34.0)
       '@tiptap/extension-color': 3.34.0(@tiptap/extension-text-style@3.34.0(@tiptap/core@3.34.0(@tiptap/pm@3.34.0)))
@@ -9570,7 +9570,7 @@ snapshots:
       focus-trap: 8.2.5
       timepicker-ui: 4.7.0
       tippy.js: 6.3.7
-      tods-competition-factory: 7.44.0
+      tods-competition-factory: 7.45.0
       vanillajs-datepicker: 1.3.4
     optionalDependencies:
       leaflet: 1.9.4
@@ -12924,7 +12924,7 @@ snapshots:
     dependencies:
       is-number: 7.0.0
 
-  tods-competition-factory@7.44.0: {}
+  tods-competition-factory@7.45.0: {}
 
   toidentifier@1.0.1: {}
 

@@ -392,7 +392,10 @@ engine.scheduleProfileRounds({
   courtIds, // optional array - restrict scheduling to only these courts
 
   // Execution control
-  dryRun, // optional boolean - preview without changes
+  dryRun, // optional boolean - preview without changes: nothing is written (not even the audit) and the result
+  // carries `placements` (see "Dry run" below)
+  matchUpDailyLimits, // optional - { SINGLES, DOUBLES, TEAM, total }: this run's daily limits in place of the
+  // records' (policy, tournament and participant overrides); never stored; {} enforces none
   pro, // DEPRECATED - see below
   checkPotentialRequestConflicts, // optional boolean (default: true)
   allowInactiveEventDates, // optional boolean (default: false) - schedule rounds on days their event does not play, and warn
@@ -405,6 +408,12 @@ engine.scheduleProfileRounds({
   // scheduledDate is strictly before the date being scheduled
 });
 ```
+
+**Dry run**: `dryRun: true` plans exactly as a run would and writes nothing to the records: no schedule, no cleared
+date (a `clearScheduleDates` dry run plans on a cleared copy) and no `autoSchedulingAudit` time item. Its result adds
+`placements`, `{ [date]: { [venueId]: [{ matchUpId, scheduleTime }] } }`: where each matchUp would go, the shape a
+caller stores as a plan (for example a schedule scenario). With `matchUpDailyLimits` it answers a what-if ("with two
+singles a day, what fits?") without touching the tournament's limits. A run without `dryRun` returns no `placements`.
 
 **Period length**: each profiled round is planned with the first of these that is stated:
 

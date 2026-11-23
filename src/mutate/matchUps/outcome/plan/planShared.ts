@@ -1,3 +1,4 @@
+import { topLevelStructureId } from '@Mutate/notifications/drawNotifications';
 import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
@@ -5,7 +6,7 @@ import { TEAM } from '@Constants/matchUpTypes';
 
 // constants and types
 import type { AbstainReason, DirectionPlan, MatchUpWrite, OutcomeRequest, OutcomeView, Route } from '../types';
-import type { MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
+import type { DrawDefinition, MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { OutcomeOp } from '../ops';
 import {
@@ -570,17 +571,24 @@ export function seatBye(seat: { structureId: string; drawPosition: number; match
  * structure as it announces in it, so a BYE the round-1 loser cascade takes back quietly stamps nothing by itself (its
  * walk stamps the structures it announces matchUps in, `unwindWalk`, `cascadedSeatOps`)
  */
-export function structureStamps(ops: OutcomeOp[], structureId: string): OutcomeOp[] {
-  const seatedIn = ops.flatMap((op) =>
-    (op.op === 'assignPosition' ||
-      op.op === 'assignBye' ||
-      op.op === 'announcePositionAssignments' ||
-      (op.op === 'withdrawBye' && op.announcesAssignments !== false)) &&
-    op.structureId !== structureId
-      ? [op.structureId]
-      : [],
-  );
-  return [...new Set(seatedIn)].map((id) => ({ op: 'stampUpdatedAt', entity: 'structure', id }));
+export function structureStamps(ops: OutcomeOp[], structureId: string, placementDraw?: DrawDefinition): OutcomeOp[] {
+  const touched = new Set<string>();
+  for (const op of ops) {
+    // A directed placement can return a winner to their existing assignment in another structure.
+    // Its match notice stamps the top-level owner even when no assignment there changes.
+    if (placementDraw && op.op === 'setMatchUpDrawPositions') {
+      const owner = topLevelStructureId(placementDraw, op.matchUpId);
+      if (owner && owner !== structureId) touched.add(owner);
+    } else if (
+      (op.op === 'assignPosition' ||
+        op.op === 'assignBye' ||
+        op.op === 'announcePositionAssignments' ||
+        (op.op === 'withdrawBye' && op.announcesAssignments !== false)) &&
+      op.structureId !== structureId
+    )
+      touched.add(op.structureId);
+  }
+  return [...touched].map((id) => ({ op: 'stampUpdatedAt', entity: 'structure', id }));
 }
 
 /** C20: a first plain loser arrival through same-structure BYEs, ending cleanly or in the last round. */

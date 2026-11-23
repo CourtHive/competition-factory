@@ -12,10 +12,10 @@ import { intersection } from '@Tools/arrays';
 // constants and types
 import { ARRAY, ERROR, OF_TYPE, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { GROUP, PAIR, TEAM as participantTeam } from '@Constants/participantConstants';
+import { Participant, Tournament } from '@Types/tournamentTypes';
 import { DELETE_PARTICIPANTS } from '@Constants/topicConstants';
 import { UNGROUPED } from '@Constants/entryStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Participant, Tournament } from '@Types/tournamentTypes';
 import { DOUBLES } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/eventConstants';
 import {
@@ -47,62 +47,9 @@ export function deleteParticipants(params: DeleteParticipantsArgs): {
   const participantsCount = tournamentRecord.participants?.length || 0;
   if (!participantsCount) return { ...SUCCESS };
 
-  const teamDrawIds = (tournamentRecord.events ?? [])
-    ?.filter(({ eventType }) => eventType === TEAM)
-    .map((event) => event?.drawDefinitions?.map(({ drawId }) => drawId))
-    .flat(Infinity);
-
-  // cannot use getParticipants() because event objects don't have drawIds array
-  const tournamentParticipants =
-    getParticipants({
-      participantFilters: { participantIds },
-      tournamentRecord,
-      withDraws: true,
-    }).participants ?? [];
-
-  const getPlacedPairParticipantIds = (teamDrawIds) => {
-    const matchUps =
-      allTournamentMatchUps({
-        matchUpFilters: { drawIds: teamDrawIds, matchUpTypes: [DOUBLES] },
-        tournamentRecord,
-      }).matchUps ?? [];
-
-    const placedPairParticipantIds = matchUps
-      .flatMap(({ sides }) => sides?.map(({ participantId }) => participantId ?? []))
-      .filter(Boolean);
-
-    return intersection(placedPairParticipantIds, participantIds);
-  };
-
-  // for team draws it is necessary to check matchUps for pair participantIds "discovered" in collectionAssignments
-  const placedPairParticipantIds = teamDrawIds?.length ? getPlacedPairParticipantIds(teamDrawIds) : [];
-
-  const participantsInDraws = tournamentParticipants.filter(
-    (participant) =>
-      participant.draws?.filter(
-        (drawInfo) => (!teamDrawIds?.length || !teamDrawIds?.includes(drawInfo.drawId)) && drawInfo.positionAssignments,
-      ).length,
-  );
-
-  if (placedPairParticipantIds?.length || participantsInDraws.length) {
-    return { error: EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT };
-  }
-
-  // Deleting an individual deletes every PAIR containing it, so those PAIRs must hold no drawPosition and
-  // their entries go with them: the refusal and the entries removal both cover the derived PAIR ids.
-  const derivedPairIds = (tournamentRecord.participants ?? [])
-    .filter(
-      (participant) => !participantIds.includes(participant.participantId) && isRemoved(participant, participantIds),
-    )
-    .map(({ participantId }) => participantId);
-  const entryParticipantIds = [...participantIds, ...derivedPairIds];
-
-  // Every refusal the writes below could make is asked here, before the first write.
-  const refusal = entriesRemovalRefusal({ tournamentRecord, participantIds: entryParticipantIds });
-  if (refusal) return refusal;
-  if (!(tournamentRecord.participants ?? []).some((participant) => isRemoved(participant, participantIds))) {
-    return { error: CANNOT_REMOVE_PARTICIPANTS };
-  }
+  const selection = resolveParticipantRemoval({ tournamentRecord, participantIds });
+  if ('error' in selection) return selection;
+  const { entryParticipantIds } = selection;
 
   const eventParticipantIdsRemoved = {};
   // what the notices announce: every participant removed (a PAIR goes with its deleted individual,
@@ -241,4 +188,66 @@ function entriesRemovalRefusal({
     ),
   );
   return assigned ? { error: EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT } : undefined;
+}
+
+/** Query the post-line-up view when deciding whether a superseded doubles pair can be removed. */
+export function resolveParticipantRemoval({ tournamentRecord, participantIds }: DeleteParticipantsArgs) {
+  const teamDrawIds = (tournamentRecord.events ?? [])
+    ?.filter(({ eventType }) => eventType === TEAM)
+    .map((event) => event?.drawDefinitions?.map(({ drawId }) => drawId))
+    .flat(Infinity);
+
+  // cannot use getParticipants() because event objects don't have drawIds array
+  const tournamentParticipants =
+    getParticipants({
+      participantFilters: { participantIds },
+      tournamentRecord,
+      withDraws: true,
+    }).participants ?? [];
+
+  const getPlacedPairParticipantIds = (teamDrawIds) => {
+    const matchUps =
+      allTournamentMatchUps({
+        matchUpFilters: { drawIds: teamDrawIds, matchUpTypes: [DOUBLES] },
+        tournamentRecord,
+      }).matchUps ?? [];
+
+    const placedPairParticipantIds = matchUps
+      .flatMap(({ sides }) => sides?.map(({ participantId }) => participantId ?? []))
+      .filter(Boolean);
+
+    return intersection(placedPairParticipantIds, participantIds);
+  };
+
+  // for team draws it is necessary to check matchUps for pair participantIds "discovered" in collectionAssignments
+  const placedPairParticipantIds = teamDrawIds?.length ? getPlacedPairParticipantIds(teamDrawIds) : [];
+
+  const participantsInDraws = tournamentParticipants.filter(
+    (participant) =>
+      participant.draws?.filter(
+        (drawInfo) => (!teamDrawIds?.length || !teamDrawIds?.includes(drawInfo.drawId)) && drawInfo.positionAssignments,
+      ).length,
+  );
+
+  if (placedPairParticipantIds?.length || participantsInDraws.length) {
+    return { error: EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT };
+  }
+
+  // Deleting an individual deletes every PAIR containing it, so those PAIRs must hold no drawPosition and
+  // their entries go with them: the refusal and the entries removal both cover the derived PAIR ids.
+  const derivedPairIds = (tournamentRecord.participants ?? [])
+    .filter(
+      (participant) => !participantIds.includes(participant.participantId) && isRemoved(participant, participantIds),
+    )
+    .map(({ participantId }) => participantId);
+  const entryParticipantIds = [...participantIds, ...derivedPairIds];
+
+  // Every refusal the writes below could make is asked here, before the first write.
+  const refusal = entriesRemovalRefusal({ tournamentRecord, participantIds: entryParticipantIds });
+  if (refusal) return refusal;
+  if (!(tournamentRecord.participants ?? []).some((participant) => isRemoved(participant, participantIds))) {
+    return { error: CANNOT_REMOVE_PARTICIPANTS };
+  }
+
+  return { entryParticipantIds };
 }

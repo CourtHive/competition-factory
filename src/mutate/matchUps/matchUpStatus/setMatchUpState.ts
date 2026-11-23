@@ -5,7 +5,7 @@ import { removalMissingDrawPositions } from '@Mutate/matchUps/drawPositions/remo
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { resolveRotatingPartnerOutcome } from '@Query/drawDefinition/resolveRotatingPartnerOutcome';
 import { refreshArrivals } from '@Mutate/drawDefinitions/matchUpGovernor/attemptToSetWinningSide';
-import { generateTieMatchUpScore } from '@Query/matchUp/tieMatchUpScore/generateTieMatchUpScore';
+import { projectTeamOutcome } from '@Query/matchUp/tieMatchUpScore/projectTeamOutcome';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
 import { correctionKindChange } from '@Mutate/matchUps/matchUpStatus/correctionKindGuard';
@@ -28,7 +28,7 @@ import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { isDeciderStructure } from '@Query/drawDefinition/deciderStructures';
 import { isPropagatedExit } from '@Helpers/drawTopology/sideExitProvenance';
-import { lineTakesPlayedOnDualWinner } from './lineTakesPlayedOnDualWinner';
+import { declaredWinnerPlayedOn, lineTakesPlayedOnDualWinner } from './lineTakesPlayedOnDualWinner';
 import { validateDrawTallyOptions } from '@Validators/validateTallyPolicy';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -75,6 +75,7 @@ import {
   MATCHUP_NOT_FOUND,
   MATCHUP_STATUS_OUT_OF_SCOPE,
   MISSING_DRAW_DEFINITION,
+  MISSING_ASSIGNMENTS,
   MISSING_DRAW_POSITIONS,
   NO_VALID_ACTIONS,
   PROPAGATED_EXITS_DOWNSTREAM,
@@ -129,6 +130,7 @@ type SetMatchUpStateArgs = {
   projectedWinningSide?: number;
   /** set from the tie context (`resolveTieMatchUpContext`) for a line: the tally's own projection, its score, the dual */
   talliedWinningSide?: number;
+  projectsByeWinner?: boolean;
   projectedDualScore?: Score;
   dualMatchUp?: HydratedMatchUp;
   keepsDualDecision?: boolean;
@@ -203,6 +205,8 @@ export function announceGoesTo({
   if (!drawDefinition || !hold?.written()) return;
   modifyDrawNotice({ drawDefinition, tournamentId: tournamentRecord?.tournamentId, eventId: event?.eventId });
 }
+
+type TeamPlan = { apply: () => void; refusal?: { error: typeof MISSING_ASSIGNMENTS } };
 
 function writeMatchUpState(params: SetMatchUpStateArgs) {
   const stack = 'setMatchUpStatus';
@@ -332,7 +336,7 @@ function writeMatchUpState(params: SetMatchUpStateArgs) {
   }
 
   let dualWinningSideChange;
-  let applyTeamWrites: (() => void) | undefined;
+  let teamPlan: TeamPlan | undefined;
   let unprojectedExit = false;
   if (isTeam) {
     const teamResult: any = handleTeamAutoCalc({
@@ -351,7 +355,7 @@ function writeMatchUpState(params: SetMatchUpStateArgs) {
     });
     if (teamResult?.error) return teamResult;
     if (teamResult?.dualWinningSideChange !== undefined) dualWinningSideChange = teamResult.dualWinningSideChange;
-    applyTeamWrites = teamResult.apply;
+    teamPlan = teamResult;
     unprojectedExit = !!teamResult.unprojectedExit;
   }
 
@@ -460,7 +464,8 @@ function writeMatchUpState(params: SetMatchUpStateArgs) {
       matchUp,
       score,
     }) ??
-    lineFeedEligibilityRefusal({
+    lineProjectionRefusal({
+      projectsByeWinner: params.projectsByeWinner,
       projectedWinningSide: params.talliedWinningSide,
       autoCalcDisabled: params.autoCalcDisabled,
       projectedScore: params.projectedDualScore,
@@ -483,7 +488,7 @@ function writeMatchUpState(params: SetMatchUpStateArgs) {
   return resolveAndApplyOutcome({
     dualWinningSideChange,
     activeDownstream,
-    applyTeamWrites,
+    teamPlan,
     unprojectedExit,
     params,
     isTeam,
@@ -789,7 +794,7 @@ function checkDownstreamCompatibility({ matchUpTieId, activeDownstream, matchUpS
 function resolveAndApplyOutcome({
   dualWinningSideChange,
   activeDownstream,
-  applyTeamWrites,
+  teamPlan,
   unprojectedExit,
   params,
   isTeam,
@@ -798,7 +803,7 @@ function resolveAndApplyOutcome({
   /** a TEAM dual's exit entered with a winner by a call that turns auto-calc on, the lines projecting none */
   unprojectedExit?: boolean;
   dualWinningSideChange?: boolean;
-  applyTeamWrites?: () => void;
+  teamPlan?: TeamPlan;
   activeDownstream?: boolean;
   isTeam: boolean;
   stack: string;
@@ -853,7 +858,7 @@ function resolveAndApplyOutcome({
   // exit entered with one becomes when the call turns auto-calc on and the lines project none). It was refused by
   // `attemptToSetMatchUpStatus` after the dual's writes below, which left its sides and line-ups under the error
   // (item 3, CA 2026-11-17). Asked here, with what the dispatch reads, so the error leaves the record unchanged.
-  if (applyTeamWrites && refusedAtTheStatusRoute(params, !!activeDownstream))
+  if (teamPlan && refusedAtTheStatusRoute(params, !!activeDownstream))
     return decorateResult({
       result: { error: INVALID_MATCHUP_STATUS },
       info: 'matchUpStatus: ' + params.matchUpStatus,
@@ -867,7 +872,7 @@ function resolveAndApplyOutcome({
   // dual, no carry). Refused before anything is written. A dual scored by hand is not projected: a call that disables
   // auto-calc, or names neither flag on a dual already so flagged, keeps the winner it names. Lines that project a
   // winner decide it: the exit is written with the projected winner.
-  if (applyTeamWrites && unprojectedExit)
+  if (teamPlan && unprojectedExit)
     return decorateResult({
       result: { error: INVALID_MATCHUP_STATUS },
       info: 'matchUpStatus: ' + params.matchUpStatus,
@@ -879,13 +884,13 @@ function resolveAndApplyOutcome({
   // stamped and announced under the error (measured 2026-11-18, TEAM SINGLE_ELIMINATION 4: a dual decided by its own
   // call, its winner played on, given the other winner). Asked here, as the dispatch asks, so the error leaves the
   // record unchanged.
-  if (applyTeamWrites) {
-    const refusal = downstreamRefusal(params, !!activeDownstream);
+  if (teamPlan) {
+    const refusal = downstreamRefusal(params, !!activeDownstream) ?? teamPlan.refusal;
     if (refusal) return decorateResult({ result: refusal, stack });
   }
 
   // the TEAM dual's auto-calc and lineUps, now that nothing before the outcome's own writes can refuse
-  applyTeamWrites?.();
+  teamPlan?.apply();
 
   const validWinningSideSwap =
     !isTeam && !dualWinningSideChange && winningSide && matchUp.winningSide && matchUp.winningSide !== winningSide;
@@ -1037,6 +1042,7 @@ function handleTeamAutoCalc({
 }) {
   let dualWinningSideChange;
   let unprojectedExit = false;
+  let missingTeams: boolean | undefined;
   let autoCalcValue: true | undefined;
 
   // A score without sets (a record of how a level tie was decided, or the strings alone) keeps the dual's aggregate
@@ -1049,25 +1055,10 @@ function handleTeamAutoCalc({
   } else if (enableAutoCalc) {
     const existingDualMatchUpWinningSide = matchUp.winningSide;
 
-    const {
-      winningSide: projectedWinningSide,
-      scoreStringSide1,
-      scoreStringSide2,
-      set,
-    } = generateTieMatchUpScore({
-      drawDefinition,
-      matchUpsMap,
-      structure,
-      matchUp,
-      event,
-    });
+    const projection = projectTeamOutcome({ drawDefinition, matchUpsMap, structure, matchUp, event }, params);
 
-    const score = {
-      scoreStringSide1,
-      scoreStringSide2,
-      sets: set ? [set] : [],
-    };
-
+    const { projectedWinningSide, score } = projection;
+    missingTeams = projection.missingTeams;
     dualWinningSideChange = projectedWinningSide !== existingDualMatchUpWinningSide;
 
     // if activeDownStream and dualWinningSideChange then disallow removal of autoCalc
@@ -1111,7 +1102,8 @@ function handleTeamAutoCalc({
     });
   };
 
-  return { dualWinningSideChange, unprojectedExit, apply };
+  const refusal = missingTeams ? { error: MISSING_ASSIGNMENTS } : undefined;
+  return { dualWinningSideChange, unprojectedExit, refusal, apply };
 }
 
 function resolveQualifyingContext({ inContextMatchUp, winningSide, matchUp, params }) {
@@ -1162,7 +1154,7 @@ function resolveTieMatchUpContext({
     event,
   })?.tieFormat;
 
-  const { projectedWinningSide, projectedScore } = getProjectedDualWinningSide({
+  const { projectedWinningSide, projectedScore, projectsByeWinner } = getProjectedDualWinningSide({
     drawDefinition,
     matchUpStatus,
     dualMatchUp,
@@ -1197,6 +1189,7 @@ function resolveTieMatchUpContext({
   return {
     projectedWinningSide: keptWinningSide,
     // the tally's own projection, as the line's feed-eligibility question reads it (row 12)
+    projectsByeWinner: !autoCalcDisabled && projectsByeWinner,
     talliedWinningSide: projectedWinningSide,
     projectedDualScore: projectedScore,
     isCollectionMatchUp: true,
@@ -1245,6 +1238,16 @@ function lineTakesDualWinnerRefusal(params, activeDownstream: boolean, winningSi
     autoCalcDisabled: params.autoCalcDisabled && params.disableAutoCalc !== false,
     projectedWinningSide: params.projectedWinningSide,
     isLine: params.isCollectionMatchUp,
+    declaredWinnerPlayedOn:
+      !params.dualLineDecided &&
+      declaredWinnerPlayedOn(
+        params.dualMatchUp?.winningSide,
+        params.projectedWinningSide,
+        activeDownstream,
+        params.targetData,
+        params.drawDefinition,
+        params.inContextDrawMatchUps,
+      ),
     lineDecided: params.dualLineDecided,
     activeDownstream,
   });
@@ -1508,10 +1511,20 @@ function feedEligibilityRefusal(args: Parameters<typeof feedEligibilityChange>[0
   });
 }
 
-/** a line whose tally relabels its dual, the dual's loser already directed under the previous outcome (row 12) */
-function lineFeedEligibilityRefusal(args: Parameters<typeof lineFeedEligibilityChange>[0]) {
+/** Check the line tally before it can change its dual or direct either team. */
+function lineProjectionRefusal(
+  args: Parameters<typeof lineFeedEligibilityChange>[0] & { projectsByeWinner?: boolean },
+) {
   const eligibilityChange = lineFeedEligibilityChange(args);
-  if (!eligibilityChange) return undefined;
+  if (!eligibilityChange) {
+    if (args.projectsByeWinner)
+      return decorateResult({
+        result: { error: INVALID_MATCHUP_STATUS },
+        info: 'a BYE cannot win a TEAM dual',
+        stack: 'lineProjection',
+      });
+    return undefined;
+  }
   return decorateResult({
     result: { error: CANNOT_CHANGE_FEED_ELIGIBILITY },
     info: 'the line relabels its dual, whose loser has already been directed under the previous outcome',

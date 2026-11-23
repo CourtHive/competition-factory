@@ -1,6 +1,7 @@
 import { kOf, resolveRatingsPolicy, tierK } from '@Helpers/ratings/ratingsPolicyRules';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { addDynamicRatings } from '@Mutate/participants/scaleItems/addDynamicRatings';
+import { planEligibleScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { getParticipantScaleItem } from '@Query/participant/getParticipantScaleItem';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { calculateNewRatings } from '@Helpers/ratings/calculateNewRatings';
@@ -8,10 +9,9 @@ import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { getRatingConvertedToELO } from '@Helpers/ratings/eloConversions';
 import { ratedResultOf, RatedResult } from '@Query/scales/ratedResult';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
-import { recorded } from '@Mutate/simulation/scenarioRecorder';
+import { recordMethod } from '@Mutate/simulation/scenarioRecorder';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { findStructure } from '@Acquire/findStructure';
-import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { findPolicy } from '@Acquire/findPolicy';
 
 // constants, fixtures and types
@@ -36,9 +36,6 @@ import { PAIR } from '@Constants/participantConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ELO } from '@Constants/ratingConstants';
 import { ResultType, ScaleItem } from '@Types/factoryTypes';
-
-// the ratings write, logged when a scenario is recorded (see scenarioRecorder)
-const addDynamicRatingsRecorded = recorded('addDynamicRatings', addDynamicRatings);
 
 /**
  * Rates `matchUps` (or those named by `matchUpIds`) in draw order — stage, structure sequence, round, position (see
@@ -235,17 +232,11 @@ export function generateDynamicRatings(params): ResultType & {
     Object.assign(modifiedScaleValues, scaleItemMap);
   }
 
-  // one write, after every matchUp is rated, all or nothing
-  if (updateParticipantRatings) {
-    const written = writeRatings({ tournamentRecord, modifiedScaleValues, removePriorValues });
-    if (written.error) return written;
-  }
-
   const processedMatchUpIds = rated.map(({ matchUp }) => matchUp.matchUpId);
   // the policies the run rated by, so a consumer can say which produced the values
   const ratingsPolicyNames = [...new Set(rated.map(({ policy }) => policy.policyName))];
 
-  return {
+  const result = {
     ...SUCCESS,
     modifiedScaleValues,
     outputScaleName,
@@ -254,6 +245,14 @@ export function generateDynamicRatings(params): ResultType & {
     ratingsPolicyNames,
     ...(isEloNative && { sourceRatingType: ratingType }),
   };
+
+  // one write, after every matchUp is rated, all or nothing
+  if (updateParticipantRatings) {
+    const written = writeRatings({ tournamentRecord, modifiedScaleValues, removePriorValues });
+    if (written.error) return written;
+  }
+
+  return result;
 }
 
 /** The participantIds whose `matchesPlayed` count is not a finite non-negative integer, or undefined when all are. */
@@ -268,10 +267,6 @@ function invalidCareerCounts(matchesPlayed: unknown): string | undefined {
   return invalid.length ? invalid.join(', ') : undefined;
 }
 
-/**
- * The run's ratings, written all or nothing: every participant must be in the record before anything is written,
- * and a write that still fails restores the timeItems of the participants already written.
- */
 type WriteRatingsArgs = {
   modifiedScaleValues: Record<string, ScaleItem>;
   removePriorValues?: boolean;
@@ -285,18 +280,42 @@ function writeRatings({ tournamentRecord, modifiedScaleValues, removePriorValues
   const missing = participantIds.filter((_, index) => !participants[index]);
   if (missing.length) return { error: PARTICIPANT_NOT_FOUND, info: `ratings not written: ${missing.join(', ')}` };
 
-  const snapshots = (participants as Participant[]).map((participant) => ({
-    participant,
-    timeItems: participant.timeItems && makeDeepCopy(participant.timeItems, false, true),
-  }));
-  const result = addDynamicRatingsRecorded({ tournamentRecord, modifiedScaleValues, removePriorValues });
-  if (result.error) {
-    for (const { participant, timeItems } of snapshots) {
-      if (timeItems) participant.timeItems = timeItems;
-      else delete participant.timeItems;
+  recordMethod('addDynamicRatings', { modifiedScaleValues, removePriorValues });
+  const writes: (() => void)[] = [];
+  const notices: Parameters<typeof modifyParticipantsNotice>[0][] = [];
+  const appends = removePriorValues
+    ? undefined
+    : new Map<NonNullable<Participant['timeItems']>, NonNullable<Participant['timeItems']>>();
+  for (const participant of participants as Participant[]) {
+    const scaleItem = modifiedScaleValues[participant.participantId];
+    const plan = planEligibleScaleItem(
+      {
+        scaleItem,
+        removePriorValues,
+        participant,
+      },
+      appends,
+    );
+    if ('error' in plan) return plan;
+    const { commit, valueChanged } = plan;
+    if (commit) {
+      const payload = { tournamentId: tournamentRecord.tournamentId, participants: [participant] };
+      writes.push(() => {
+        const changed = commit() ?? valueChanged;
+        if (changed) {
+          // Capture this append before another participant appends to the same
+          // borrowed array. The installed subdocument may have cast the value.
+          const entry = participant.timeItems?.at(-1);
+          scaleItem.scaleValue = entry?.itemValue;
+          if (scaleItem.scaleDate !== entry?.itemDate) scaleItem.scaleDate = entry?.itemDate;
+          notices.push(payload);
+        }
+      });
     }
   }
-  return result;
+  for (const write of writes) write();
+  for (const notice of notices) modifyParticipantsNotice(notice);
+  return { ...SUCCESS };
 }
 
 function resolveParticipantScaleItem({
