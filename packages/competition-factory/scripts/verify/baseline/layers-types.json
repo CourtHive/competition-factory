@@ -1,14 +1,9 @@
 {
-  "global/state/loadedFootprint.ts -> query/footprint/mutationFootprints.ts": 1,
-  "query/extensions/getMatchUpDailyLimits.ts -> mutate/matchUps/schedule/scheduleMatchUps/checkDailyLimits.ts": 1,
   "types/asyncEngineTypes.ts -> global/state/globalState.ts": 1,
   "types/asyncEngineTypes.ts -> global/state/loadedFootprint.ts": 1,
   "types/asyncEngineTypes.ts -> tools/clock.ts": 1,
   "types/asyncEngineTypes.ts -> tools/prng.ts": 1,
   "types/factoryTypes.ts -> forge/index.ts": 16,
-  "types/factoryTypes.ts -> mutate/drawDefinitions/positionGovernor/randomUnseededSeparation.ts": 1,
-  "types/factoryTypes.ts -> query/drawDefinition/positionActions/actionPolicyUtils.ts": 1,
-  "types/factoryTypes.ts -> query/matchUps/hydrationCache.ts": 1,
   "types/methodSignatures.ts -> acquire/findDrawDefinition.ts": 1,
   "types/methodSignatures.ts -> acquire/findMatchUp.ts": 1,
   "types/methodSignatures.ts -> acquire/findMatchUpFormatTiming.ts": 1,
@@ -622,6 +617,5 @@
   "types/methodSignatures.ts -> validators/validateSeason.ts": 1,
   "types/methodSignatures.ts -> validators/validateTeamLineUp.ts": 1,
   "types/methodSignatures.ts -> validators/validateTieFormat.ts": 1,
-  "types/methodSignatures.ts -> validators/validMatchUp.ts": 1,
-  "types/ratingsPolicyTypes.ts -> helpers/ratings/ratingUpdate.ts": 1
+  "types/methodSignatures.ts -> validators/validMatchUp.ts": 1
 }
