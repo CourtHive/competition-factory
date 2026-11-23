@@ -658,7 +658,18 @@ function reversalPlacements(args: Args) {
   if (winner) emissions.push({ match: winner, context: 'assignMatchUpDrawPosition', bound: true });
   emissions.push({ match: loser, context: 'positionAssignments', bound: true });
   const position = edges.targetMatchUps?.loserTargetDrawPosition;
-  return { matches, source, winner, loser, oldWinner, newWinner, emissions, chain, released, position };
+  return {
+    inContextDrawMatchUps: matches,
+    source,
+    winner,
+    loser,
+    oldWinner,
+    newWinner,
+    emissions,
+    chain,
+    released,
+    position,
+  };
 }
 
 /** A winner reversal removes the directed seats, then scores and directs the replacement.
@@ -667,7 +678,18 @@ function correctionProgram(args: Args): Program | undefined {
   const { request, view } = args;
   const placements = reversalPlacements(args);
   if (!placements) return;
-  const { matches, source, winner, loser, oldWinner, newWinner, emissions, chain, released, position } = placements;
+  const {
+    inContextDrawMatchUps: matches,
+    source,
+    winner,
+    loser,
+    oldWinner,
+    newWinner,
+    emissions,
+    chain,
+    released,
+    position,
+  } = placements;
   let removed = false,
     placed = false,
     redirected = false;
