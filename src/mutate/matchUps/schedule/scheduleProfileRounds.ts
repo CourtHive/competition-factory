@@ -9,7 +9,7 @@ type ScheduleProfileRoundsArgs = {
   allowInactiveEventDates?: boolean;
   tournamentRecords: TournamentRecords;
   /**
-   * @deprecated ignored: completed matchUps are never scheduled (CA 2026-10-23). Removed at the next major.
+   * @deprecated ignored: completed matchUps are never scheduled (CA 2026-10-23). Removed in 8.0.0.
    */
   scheduleCompletedMatchUps?: boolean;
   excludeNoDateCompleted?: boolean;
@@ -18,7 +18,7 @@ type ScheduleProfileRoundsArgs = {
   scheduleDates?: string[];
   periodLength?: number;
   /**
-   * @deprecated ignored: it was read only by the `pro` scheduler, removed (CA 2026-10-28). Removed at the next major.
+   * @deprecated ignored: it was read only by the `pro` scheduler, removed (CA 2026-10-28). Removed in 8.0.0.
    */
   useGarman?: boolean;
   courtIds?: string[];
@@ -27,7 +27,7 @@ type ScheduleProfileRoundsArgs = {
   dryRun?: boolean;
   /**
    * @deprecated ignored: the court-and-time scheduler it selected is removed (CA 2026-10-28); every call takes the
-   * profile scheduler. Removed at the next major.
+   * profile scheduler. Removed in 8.0.0.
    */
   pro?: boolean;
 };

@@ -67,7 +67,7 @@ type PositionActionsArgs = {
   inContextDrawMatchUps?: HydratedMatchUp[];
   /**
    * @deprecated no effect. A participant already in an AD_HOC round is never offered for that round,
-   * because `assignMatchUpSideParticipant` refuses the assignment.
+   * because `assignMatchUpSideParticipant` refuses the assignment. Removed in 8.0.0.
    */
   restrictAdHocRoundParticipants?: boolean;
   tournamentParticipants?: Participant[];

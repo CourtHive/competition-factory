@@ -27,7 +27,7 @@ type ScheduleProfileGridArgs = {
   allowInactiveEventDates?: boolean;
   matchUpDailyLimits?: { [key: string]: number };
   /**
-   * @deprecated ignored: completed matchUps are never scheduled (CA 2026-10-23). Removed at the next major.
+   * @deprecated ignored: completed matchUps are never scheduled (CA 2026-10-23). Removed in 8.0.0.
    */
   scheduleCompletedMatchUps?: boolean;
   clearScheduleDates?: boolean | string[];

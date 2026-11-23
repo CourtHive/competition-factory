@@ -24,7 +24,7 @@ export const dayStateConstants = {
 /**
  * @deprecated Renamed to `dayStateConstants` — "availability" collides with court
  * availability (`BLOCK_TYPES`). Same object; kept so the rename is not a breaking
- * change. Slated for removal in the next major.
+ * change. Removed in 8.0.0.
  */
 export const availabilityConstants = dayStateConstants;
 

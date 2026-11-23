@@ -573,7 +573,7 @@ export class ScoringEngine {
     this.patchPoint(pointIndex, metadata);
   }
 
-  /** deprecated: an annotation on the set only, discarded by the next rebuild (§ 2.9) */
+  /** @deprecated an annotation on the set only, discarded by the next rebuild (§ 2.9); removed in 8.0.0 */
   markHardBoundary(options: { setIndex: number; gameIndex: number }): void {
     const sets = this.record.score.sets.map((set, index) =>
       index === options.setIndex

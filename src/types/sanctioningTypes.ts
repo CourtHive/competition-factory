@@ -364,7 +364,7 @@ export interface Coordinates {
 }
 
 /**
- * @deprecated Use {@link RegistrationEntryFee}, which this now aliases.
+ * @deprecated Use {@link RegistrationEntryFee}, which this now aliases; removed in 8.0.0.
  *
  * `EntryFee` was a byte-identical duplicate of `RegistrationEntryFee` — same five fields, same
  * meaning, two declarations. Retained as an alias rather than deleted because it is a PUBLIC export

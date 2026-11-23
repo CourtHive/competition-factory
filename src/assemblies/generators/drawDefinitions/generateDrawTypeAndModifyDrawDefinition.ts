@@ -42,6 +42,7 @@ type GenerateDrawTypeAndModify = {
   drawDefinition: DrawDefinition;
   drawTypeCoercion?: boolean;
   qualifyingOnly?: boolean;
+  /** @deprecated in 8.0.0 the generator never modifies the drawDefinition it is given (see the 8.0.0 migration guide) */
   modifyOriginal?: boolean;
   qualifiersCount?: number;
   stageSequence?: number;

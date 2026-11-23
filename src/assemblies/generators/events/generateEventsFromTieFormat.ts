@@ -23,6 +23,7 @@ type GenerateEventsFromTieFormatArgs = {
   tournamentRecord: Tournament;
   tieFormatName?: string;
   tieFormat?: TieFormat;
+  /** @deprecated in 8.0.0 the generator never adds events; store them with `addEvent` (see the 8.0.0 migration guide) */
   addEvents?: boolean;
   uuids?: string[];
 };

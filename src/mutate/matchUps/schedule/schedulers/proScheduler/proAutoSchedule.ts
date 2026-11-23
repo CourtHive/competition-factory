@@ -27,7 +27,7 @@ type ProAutoScheduleArgs = {
   overnightRestWarnings?: boolean;
   /**
    * @deprecated ignored: completed matchUps are never scheduled (CA 2026-10-23); the write skips one and it is reported
-   * not scheduled. Removed at the next major.
+   * not scheduled. Removed in 8.0.0.
    */
   scheduleCompletedMatchUps?: boolean;
   matchUps: HydratedMatchUp[];

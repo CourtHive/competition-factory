@@ -394,6 +394,7 @@ export function getSchemaWriteMode(): SchemaWriteMode {
   return globalState.schemaWriteMode;
 }
 
+/** @deprecated the outcome pipeline selector is removed in 8.0.0: v2 is the only pipeline */
 export function setOutcomePipeline(mode?: OutcomePipelineMode): { success?: boolean; error?: ErrorType } {
   if (mode === undefined) {
     globalState.outcomePipeline = OUTCOME_PIPELINE_DEFAULT;
@@ -404,6 +405,7 @@ export function setOutcomePipeline(mode?: OutcomePipelineMode): { success?: bool
   return { ...SUCCESS };
 }
 
+/** @deprecated the outcome pipeline selector is removed in 8.0.0: v2 is the only pipeline */
 export function getOutcomePipeline(): OutcomePipelineMode {
   return globalState.outcomePipeline;
 }
@@ -606,7 +608,7 @@ export function getMethods(): { [key: string]: any } {
  * `Notice[]` — each entry is the unwrapped `Notice.payload`. Prefer
  * `getPayloads` in new code.
  *
- * @deprecated Use `getPayloads`.
+ * @deprecated Use `getPayloads`; removed in 8.0.0.
  */
 export function getNotices(params: GetNoticesArgs): any[] {
   return getPayloads(params);
@@ -722,7 +724,7 @@ export function hasTopic(topic) {
  */
 export type CallListenerArgs = {
   payloads: any[];
-  /** @deprecated alias for `payloads`; kept for back-compat with pre-5.0.0 providers. */
+  /** @deprecated alias for `payloads`; kept for back-compat with pre-5.0.0 providers; removed in 8.0.0. */
   notices?: any[];
   topic: string;
 };

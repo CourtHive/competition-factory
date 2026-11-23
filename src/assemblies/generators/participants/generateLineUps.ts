@@ -45,6 +45,7 @@ type GenerateLineUpsArgs = {
   scaleAccessor: any;
   singlesOnly?: boolean;
   tieFormat?: TieFormat;
+  /** @deprecated in 8.0.0 the generator only returns line-ups; store them with `applyLineUps` (see the 8.0.0 migration guide) */
   attach?: boolean;
   event: Event;
 };

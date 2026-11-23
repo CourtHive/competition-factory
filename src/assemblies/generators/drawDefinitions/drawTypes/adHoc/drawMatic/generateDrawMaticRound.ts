@@ -42,6 +42,7 @@ const MAX_ITERATIONS = 4000;
 
 type GenerateDrawMaticRoundArgs = {
   adHocRatings?: { [key: string]: number };
+  /** @deprecated in 8.0.0 drawMatic never writes ratings; store them with `setParticipantScaleItems` (see the 8.0.0 migration guide) */
   updateParticipantRatings?: boolean;
   ignoreLastRoundNumber?: boolean;
   restrictEntryStatus?: boolean;
