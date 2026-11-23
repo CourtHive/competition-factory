@@ -63,6 +63,9 @@ export type SchedulePlan = {
   /** matchUps left unplaced because every slot offered them was at or before a played source (or at or after a
    * played dependent): the first such slot and the played matchUps that refused it */
   playedOrderDeferredMatchUpIds: PlaceVenueRoundsArgs['playedOrderDeferredMatchUpIds'];
+  /** matchUps left unplaced because every slot offered them was before their profile round's `notBeforeTime` (G5):
+   * the first such slot and that time. They are also in `noTimeMatchUpIds`: they did not fit the day */
+  notBeforeDeferredMatchUpIds: PlaceVenueRoundsArgs['notBeforeDeferredMatchUpIds'];
   dependencyDeferredMatchUpIds: PlaceVenueRoundsArgs['dependencyDeferredMatchUpIds'];
   requestConflicts: PlaceVenueRoundsArgs['requestConflicts'];
   skippedScheduleTimes: PlaceVenueRoundsArgs['skippedScheduleTimes'];
@@ -100,6 +103,7 @@ export function planSchedule({
   const plan: SchedulePlan = {
     recoveryTimeDeferredMatchUpIds: {},
     playedOrderDeferredMatchUpIds: {},
+    notBeforeDeferredMatchUpIds: {},
     dependencyDeferredMatchUpIds: {},
     overLimitMatchUpDetails: {},
     scheduleTimesRemaining: {},
@@ -157,6 +161,7 @@ function planDate({
 
   plan.recoveryTimeDeferredMatchUpIds[scheduleDate] = {};
   plan.playedOrderDeferredMatchUpIds[scheduleDate] = {};
+  plan.notBeforeDeferredMatchUpIds[scheduleDate] = {};
   plan.dependencyDeferredMatchUpIds[scheduleDate] = {};
   plan.scheduleTimesRemaining[scheduleDate] = {};
   plan.skippedScheduleTimes[scheduleDate] = {};
@@ -195,6 +200,14 @@ function planDate({
 
   // every matchUp profiled on the date, at any venue: a dependency outside it is not waited for
   const allDateMatchUpIds = datePlan.venues.flatMap((venue) => venue.rounds.flatMap((round) => round.matchUpIds));
+
+  // the time each profiled round may not start before, by matchUp (G5): the round's own matchUps only, so a round
+  // without one (the carryover, in rain-day recovery) is held only by its own constraints
+  const profileNotBeforeTimes: PlaceVenueRoundsArgs['profileNotBeforeTimes'] = {};
+  for (const roundPlan of datePlan.venues.flatMap((venue) => venue.rounds)) {
+    const notBeforeTime = roundPlan.round?.notBeforeTime;
+    if (notBeforeTime) for (const matchUpId of roundPlan.matchUpIds) profileNotBeforeTimes[matchUpId] = notBeforeTime;
+  }
 
   const venueScheduledRoundDetails: { [venueId: string]: VenueRoundDetails & { matchUpMap?: MatchUpMap } } = {};
   for (const venue of datePlan.venues) {
@@ -278,7 +291,9 @@ function planDate({
     transit: view.transit,
     recoveryTimeDeferredMatchUpIds: plan.recoveryTimeDeferredMatchUpIds,
     playedOrderDeferredMatchUpIds: plan.playedOrderDeferredMatchUpIds,
+    notBeforeDeferredMatchUpIds: plan.notBeforeDeferredMatchUpIds,
     playedOrderRefusal: playedOrderGate(view, scheduleDate),
+    profileNotBeforeTimes,
     dependencyDeferredMatchUpIds: plan.dependencyDeferredMatchUpIds,
     overLimitMatchUpDetails: plan.overLimitMatchUpDetails,
     matchUpScheduleTimes: plan.matchUpScheduleTimes,
@@ -327,6 +342,10 @@ function recordDatePlacements({ venueScheduledRoundDetails, scheduleDate, datePl
     // a matchUp the played order held back is reported under that reason alone; one a later slot took is not reported
     const playedOrderDeferred = plan.playedOrderDeferredMatchUpIds[scheduleDate];
     for (const { matchUpId } of placements) delete playedOrderDeferred[matchUpId];
+    // a matchUp its round's notBeforeTime held back is reported only when no later slot took it; unlike the played
+    // order, it stays in noTimeMatchUpIds: it did not fit the day
+    const notBeforeDeferred = plan.notBeforeDeferredMatchUpIds[scheduleDate];
+    for (const { matchUpId } of placements) delete notBeforeDeferred[matchUpId];
     plan.noTimeMatchUpIds[scheduleDate].push(
       ...plan.unplaced[scheduleDate][venueId].filter((matchUpId) => !playedOrderDeferred[matchUpId]),
     );

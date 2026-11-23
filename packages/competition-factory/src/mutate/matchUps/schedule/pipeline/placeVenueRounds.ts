@@ -7,6 +7,7 @@ import { checkDependendantTiming } from '@Mutate/matchUps/schedule/scheduleMatch
 import { checkRequestConflicts } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkRequestConflicts';
 import type { DailyLimitOverrides } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkDailyLimits';
 import { checkRecoveryTime } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkRecoveryTime';
+import { timeStringMinutes } from '@Tools/dateTime';
 
 // constants and types
 import type { ParticipantReachability } from '@Mutate/matchUps/schedule/scheduleMatchUps/getParticipantReachability';
@@ -33,6 +34,8 @@ export type RecoveryDeferral = { scheduleTime: string } & Pick<
 export type DependencyDeferral = { scheduleTime: string; remainingDependencies: string[] };
 /** the first slot a matchUp was refused for the played order, and the played matchUps that refused it */
 export type PlayedOrderDeferral = { scheduleTime: string; blockingMatchUps: unknown[] };
+/** the first slot a matchUp was refused for its profile round's `notBeforeTime`, and that time (G5) */
+export type NotBeforeDeferral = { scheduleTime: string; notBeforeTime: string };
 type RequestConflict = NonNullable<ReturnType<typeof checkRequestConflicts>['conflicts']>[number];
 
 /** a venue's slots and the matchUps still to place on them, on one date */
@@ -50,6 +53,9 @@ export type VenueRoundDetails = {
 export type PlaceVenueRoundsArgs = {
   recoveryTimeDeferredMatchUpIds: ByDate<{ [matchUpId: string]: RecoveryDeferral[] }>;
   playedOrderDeferredMatchUpIds: ByDate<{ [matchUpId: string]: PlayedOrderDeferral }>;
+  notBeforeDeferredMatchUpIds: ByDate<{ [matchUpId: string]: NotBeforeDeferral }>;
+  /** each matchUp's profile round `notBeforeTime` (`HH:MM`), when its round states one (G5) */
+  profileNotBeforeTimes: { [matchUpId: string]: string };
   /** the played matchUps that would refuse this placement (spec § 3.7), or undefined when none would */
   playedOrderRefusal: (matchUp: HydratedMatchUp, scheduleTime: string) => unknown[] | undefined;
   dependencyDeferredMatchUpIds: ByDate<{ [matchUpId: string]: DependencyDeferral[] }>;
@@ -89,6 +95,8 @@ function tryScheduleMatchUp({
   checkPotentialRequestConflicts,
   recoveryTimeDeferredMatchUpIds,
   playedOrderDeferredMatchUpIds,
+  notBeforeDeferredMatchUpIds,
+  profileNotBeforeTimes,
   playedOrderRefusal,
   dependencyDeferredMatchUpIds,
   individualParticipantProfiles,
@@ -112,6 +120,14 @@ function tryScheduleMatchUp({
   matchUp,
 }: TryScheduleMatchUpArgs) {
   const { matchUpId, matchUpType } = matchUp;
+
+  // a slot before the round's notBeforeTime is never taken (G5); asked first, so a refusal here leaves no other gate's
+  // bookkeeping behind (an over-limit matchUp, for one, is dropped for the rest of the date)
+  const roundNotBeforeTime = profileNotBeforeTimes[matchUpId];
+  if (roundNotBeforeTime && timeStringMinutes(scheduleTime) < timeStringMinutes(roundNotBeforeTime)) {
+    notBeforeDeferredMatchUpIds[scheduleDate][matchUpId] ??= { scheduleTime, notBeforeTime: roundNotBeforeTime };
+    return false;
+  }
 
   const { participantIdsAtLimit } = checkDailyLimits({
     reachability: participantReachability,
@@ -244,6 +260,8 @@ export function scheduleVenueRounds({
   checkPotentialRequestConflicts,
   recoveryTimeDeferredMatchUpIds,
   playedOrderDeferredMatchUpIds,
+  notBeforeDeferredMatchUpIds,
+  profileNotBeforeTimes,
   dependencyDeferredMatchUpIds,
   individualParticipantProfiles,
   scheduleDateRequestConflicts,
@@ -290,6 +308,8 @@ export function scheduleVenueRounds({
             checkPotentialRequestConflicts,
             recoveryTimeDeferredMatchUpIds,
             playedOrderDeferredMatchUpIds,
+            notBeforeDeferredMatchUpIds,
+            profileNotBeforeTimes,
             playedOrderRefusal,
             dependencyDeferredMatchUpIds,
             individualParticipantProfiles,
