@@ -88,21 +88,36 @@ function sourceHeld({
  * Only while the carry's source still stands as an exit: a source re-scored as a played win is WITHDRAWING the carry,
  * and it must not be re-seated (`aRelabelWithdrawsACarryFromAByeHeldMatchUp`, `sideFactsFollowTheSeat`).
  */
-export function bringCarryHome({
-  drawDefinition,
-  drawPosition,
-  structureId,
-  matchUps,
-  carry,
-  from,
-}: {
+export function bringCarryHome(args: CarryHomeArgs) {
+  const landing = carryHomeLanding(args);
+  if (!landing) return;
+  const { home, homeSide } = landing;
+  const { carry } = args;
+  mergeSideExitProvenance({ matchUp: home, provenance: { [homeSide]: { ...carry } } });
+  // and the state the carrier's arrival would have written had the BYE never stood here: RULE 2, the exit pending,
+  // the side without it winning even while empty. `progressExitStatus` reads the STATUS to tell RULE 4 from RULE 2
+  // (P37: the provenance read re-routes convergences it has nothing to do with), so an undecided home with a carried
+  // exit on record would meet the next arrival as a played match. A BYE-held or decided home is left as it stands.
+  if (home.matchUpStatus === TO_BE_PLAYED) {
+    const derived = deriveExitStateFromProvenance(home.sideExitProvenance);
+    if (derived) {
+      home.matchUpStatus = derived.matchUpStatus;
+      home.winningSide = derived.winningSide;
+    }
+  }
+}
+
+type CarryHomeArgs = {
   drawDefinition: DrawDefinition;
   drawPosition: number;
   structureId: string;
   matchUps: MatchUp[];
   carry: SideExitProvenanceEntry;
   from: MatchUp;
-}) {
+};
+
+/** Locate the still-valid physical return before either the reader or writer changes the home match. */
+export function carryHomeLanding({ drawDefinition, drawPosition, structureId, matchUps, carry, from }: CarryHomeArgs) {
   const source = getMatchUpsMap({ drawDefinition }).drawMatchUps.find((m) => m.matchUpId === carry.sourceMatchUpId);
   if (!source || !isAnyExit(source.matchUpStatus)) return;
   const home = matchUps
@@ -116,18 +131,7 @@ export function bringCarryHome({
     structureId,
   });
   if (!homeSide || carriedExitStatus(home.sideExitProvenance?.[homeSide])) return;
-  mergeSideExitProvenance({ matchUp: home, provenance: { [homeSide]: { ...carry } } });
-  // and the state the carrier's arrival would have written had the BYE never stood here: RULE 2, the exit pending,
-  // the side without it winning even while empty. `progressExitStatus` reads the STATUS to tell RULE 4 from RULE 2
-  // (P37: the provenance read re-routes convergences it has nothing to do with), so an undecided home with a carried
-  // exit on record would meet the next arrival as a played match. A BYE-held or decided home is left as it stands.
-  if (home.matchUpStatus === TO_BE_PLAYED) {
-    const derived = deriveExitStateFromProvenance(home.sideExitProvenance);
-    if (derived) {
-      home.matchUpStatus = derived.matchUpStatus;
-      home.winningSide = derived.winningSide;
-    }
-  }
+  return { home, homeSide };
 }
 
 /**

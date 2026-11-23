@@ -73,7 +73,7 @@ export function withNoticeMarks<T>(fn: (read: () => NoticeMarks | undefined) => 
   }
 }
 
-function recordedNotice({ topic, key, payload }: Notice): RecordedNotice | undefined {
+export function recordedNotice({ topic, key, payload }: Notice): RecordedNotice | undefined {
   if (!key || !isObject(payload)) return undefined;
   const base = { topic, key, eventId: payload.eventId, context: payload.context };
   if (topic === UPDATE_INCONTEXT_MATCHUP) {

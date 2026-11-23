@@ -146,6 +146,12 @@ const ALLOWED = {
     'PLUMBING — the superseded relay certifies the original relay and its stale copy by their absent codes; decides nothing on them',
   'mutate/matchUps/outcome/plan/standaloneIndirect.ts':
     'PLUMBING — the standalone indirect programs certify the removal and the arrival seats by their absent codes; decide nothing on them',
+  'mutate/matchUps/outcome/settlement/receiver.ts': 'WRITE — projects public codes from keyed surviving provenance',
+  'mutate/matchUps/outcome/settlement/doubleWithdrawal.ts': 'WRITE — blank codes on a projected result reset',
+  'mutate/matchUps/outcome/settlement/projection.ts':
+    'PLUMBING — preserves the identity of the stored or supplied array when binding projected result fields',
+  'mutate/matchUps/outcome/settlement/effects.ts':
+    'PLUMBING — projects the cleared public side record to compare the two notice emission points',
   'mutate/matchUps/outcome/types.ts': 'PLUMBING — the v2 request carries the submitted array to the write',
   'mutate/matchUps/outcome/unwindWalk.ts':
     'PLUMBING — abstains where a matchUp its removal would write carries codes, so v1 writes it; decides nothing on them',

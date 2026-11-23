@@ -77,18 +77,53 @@ type ReleaseLinkedWinnerAdvancementArgs = {
  *
  * A grand final is reached only across a link, so on `dev` none of these ever reached it.
  * */
-export function releaseLinkedWinnerAdvancement({
-  clearDrawPosition,
+export function releaseLinkedWinnerAdvancement(args: ReleaseLinkedWinnerAdvancementArgs) {
+  const release = linkedWinnerRelease(args);
+  if (!release) return;
+  const { clearDrawPosition, tournamentRecord, drawDefinition, event } = args;
+  if (release.kind === 'assignment') {
+    const { assignment, holder, targetStructure } = release;
+    delete assignment.participantId;
+    modifyPositionAssignmentsNotice({
+      tournamentId: tournamentRecord?.tournamentId,
+      structure: targetStructure,
+      drawDefinition,
+      event,
+    });
+    modifyMatchUpNotice({
+      tournamentId: tournamentRecord?.tournamentId,
+      context: 'releaseLinkedWinnerAdvancement',
+      eventId: event?.eventId,
+      matchUp: holder,
+      drawDefinition,
+      event,
+    });
+    return;
+  }
+
+  releaseAdvancedDrawPositionAcrossLinks({
+    structureId: release.targetStructure.structureId,
+    clearDrawPosition,
+    fromRoundNumber: release.targetRoundNumber,
+    drawPosition: release.targetDrawPosition,
+    matchUpsMap: release.resolvedMap,
+    occupantLeaving: true,
+    tournamentRecord,
+    drawDefinition,
+    event,
+  });
+}
+
+/** Identify what the actual cross-link release owns before it writes or recurses. */
+export function linkedWinnerRelease({
   participantId,
-  tournamentRecord,
   drawDefinition,
   drawPosition,
   matchUpsMap,
   linkType = WINNER,
   structureId,
   roundNumber,
-  event,
-}: ReleaseLinkedWinnerAdvancementArgs) {
+}: Omit<ReleaseLinkedWinnerAdvancementArgs, 'clearDrawPosition' | 'event' | 'tournamentRecord'>) {
   const link = drawDefinition.links?.find(
     (candidate) =>
       candidate.linkType === linkType &&
@@ -155,35 +190,9 @@ export function releaseLinkedWinnerAdvancement({
     );
     if (!undecided || !assignment?.participantId) return;
 
-    delete assignment.participantId;
-    modifyPositionAssignmentsNotice({
-      tournamentId: tournamentRecord?.tournamentId,
-      structure: targetStructure,
-      drawDefinition,
-      event,
-    });
-    modifyMatchUpNotice({
-      tournamentId: tournamentRecord?.tournamentId,
-      context: 'releaseLinkedWinnerAdvancement',
-      eventId: event?.eventId,
-      matchUp: holder,
-      drawDefinition,
-      event,
-    });
-    return;
+    return { kind: 'assignment' as const, targetStructure, targetDrawPosition, holder, assignment };
   }
-
-  releaseAdvancedDrawPositionAcrossLinks({
-    structureId: targetStructure.structureId,
-    clearDrawPosition,
-    fromRoundNumber: targetRoundNumber,
-    drawPosition: targetDrawPosition,
-    matchUpsMap: resolvedMap,
-    occupantLeaving: true,
-    tournamentRecord,
-    drawDefinition,
-    event,
-  });
+  return { kind: 'advancement' as const, targetStructure, targetDrawPosition, targetRoundNumber, resolvedMap };
 }
 
 /**
