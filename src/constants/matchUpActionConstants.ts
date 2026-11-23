@@ -7,7 +7,7 @@ export const SUBSTITUTION_METHOD = 'substituteParticipant';
 export const REMOVE_SUBSTITUTION = 'REMOVE_SUBSTITUTION';
 export const REPLACE_PARTICIPANT = 'REPLACE_PARTICIPANT';
 export const REMOVE_PARTICIPANT = 'REMOVE_PARTICIPANT';
-/** @deprecated the method of SCORE, CLEAR_SCORE and EXIT, misnamed: use SCORE_METHOD */
+/** @deprecated the method of SCORE, CLEAR_SCORE and EXIT, misnamed: use SCORE_METHOD; removed in 8.0.0 */
 export const SCHEDULE_METHOD = 'setMatchUpStatus';
 export const SCHEDULE_ITEMS_METHOD = 'addMatchUpScheduleItems';
 export const SCHEDULE_LOCK_METHOD = 'setMatchUpScheduleLock';

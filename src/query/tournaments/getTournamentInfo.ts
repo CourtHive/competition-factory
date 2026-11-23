@@ -114,7 +114,7 @@ export function getTournamentInfo(params?: {
   withVenueData?: boolean;
 }): {
   tournamentInfo?: TournamentInfo;
-  /** @deprecated never returned: the events are listed on `tournamentInfo.eventInfo` */
+  /** @deprecated never returned: the events are listed on `tournamentInfo.eventInfo`; removed in 8.0.0 */
   eventInfo?: undefined;
   error?: ErrorType;
   success?: boolean;

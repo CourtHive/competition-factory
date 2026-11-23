@@ -33,6 +33,7 @@ type GenerateFlightProfileArgs = {
   // split only entries rated within the band (inclusive), on `scaleAttributes`; unrated entries are left out
   scaleRange?: { min?: number; max?: number };
   scaleAttributes: ScaleAttributes;
+  /** @deprecated in 8.0.0 the generator only returns the profile; store it with `attachFlightProfile` (see the 8.0.0 migration guide) */
   attachFlightProfile?: boolean;
   tournamentRecord: Tournament;
   deleteExisting?: boolean;

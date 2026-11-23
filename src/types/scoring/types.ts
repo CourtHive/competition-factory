@@ -179,7 +179,7 @@ export interface SetScore extends Partial<ScoringPeriod> {
   setFormat?: string;
   /**
    * Game indices recorded by markHardBoundary.
-   * @deprecated An annotation only, removed in the next major: recalculation does not respect it and a
+   * @deprecated An annotation only, removed in 8.0.0: recalculation does not respect it and a
    * rebuild discards it.
    */
   hardBoundaries?: number[];
@@ -367,7 +367,7 @@ export interface Point extends Partial<ScoringPeriod> {
   /** Specific penalty type from competition format profile */
   penaltyType?: string;
 
-  /** @deprecated Never written or read by the engine; removed in the next major. */
+  /** @deprecated Never written or read by the engine; removed in 8.0.0. */
   hardBoundary?: boolean;
 }
 

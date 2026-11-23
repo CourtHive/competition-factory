@@ -9,7 +9,8 @@
  *   Contains optional `roundLimit` and `scheduledRounds` with per-round embargo dates.
  * @param matchUps - Array of matchUp objects for the structure. Only `roundNumber` is read;
  *   used to determine the maximum round number.
- * @param asOf - The instant to judge embargoes against (a clock is an input). Defaults to the competition clock.
+ * @param asOf - The instant to judge embargoes against (a clock is an input). Defaults to the competition clock in
+ *   7.x; required in 8.0.0.
  * @returns A map from round number to `{ hidden?, embargoed? }`, or `undefined` when
  *   no rounds have visibility restrictions.
  */

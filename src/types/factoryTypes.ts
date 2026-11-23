@@ -1065,6 +1065,7 @@ export type DrawMaticArgs = {
   eventType?: EventTypeUnion;
   salted?: number | boolean;
   participantIds?: string[];
+  /** @deprecated in 8.0.0 drawMatic never writes ratings; store them with `setParticipantScaleItems` (see the 8.0.0 migration guide) */
   updateParticipantRatings?: boolean;
   dynamicRatings?: boolean;
   convertToELO?: boolean;

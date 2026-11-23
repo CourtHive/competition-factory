@@ -363,7 +363,7 @@ export type GenerateTournamentRecordArgs = MockEngineCall &
     policyDefinitions?: MockPolicyDefinitions;
     /**
      * @deprecated ignored: completed matchUps are never scheduled (CA 2026-10-23). An auto-scheduled tournament has its
-     * results applied after it is scheduled, so its completed matchUps carry schedules. Removed at the next major.
+     * results applied after it is scheduled, so its completed matchUps carry schedules. Removed in 8.0.0.
      */
     scheduleCompletedMatchUps?: boolean;
     tournamentExtensions?: Extension[];
