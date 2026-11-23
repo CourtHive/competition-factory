@@ -75,31 +75,34 @@ export function getSharedIndividualConflicts({
   individualIdsMap: Record<string, string[]>;
   participantIds: string[];
 }): string[][] {
-  // Linear in the individuals listed, not in pairs of entrants (CodeQL #224, #225: 7.7 s at 16,384 entrants).
-  // Index which positions hold each individual; only positions sharing one can conflict.
-  const positionsByIndividual = new Map<string, number[]>();
-  participantIds.forEach((participantId, position) => {
-    for (const individualId of new Set(individualIdsMap[participantId] ?? [])) {
-      const positions = positionsByIndividual.get(individualId);
-      if (positions) positions.push(position);
-      else positionsByIndividual.set(individualId, [position]);
-    }
-  });
+  const entrantsByIndividual = new Map<string, Set<string>>();
+  const priorPositions = new Map<string, number[]>();
+  const conflictsByFirstPosition: string[][][] = [];
 
-  // a pair that shares several individuals is still one conflict
-  const pairs = new Map<string, [number, number]>();
-  for (const positions of positionsByIndividual.values())
-    for (let a = 0; a < positions.length; a++)
-      for (let b = a + 1; b < positions.length; b++) {
-        const [i, j] = [positions[a], positions[b]];
-        // the same id twice is one entrant listed twice -- a DUPLICATE_ENTRY question, with its own
-        // suppression semantics -- not two entrants who overlap. Answering it here would pre-empt
-        // that handling with the wrong error.
-        if (participantIds[i] !== participantIds[j]) pairs.set(`${i},${j}`, [i, j]);
+  for (const [position, entrant] of participantIds.entries()) {
+    const otherEntrants = new Set<string>();
+    const roster = Object.hasOwn(individualIdsMap, entrant) ? individualIdsMap[entrant] : [];
+    for (const individual of new Set(roster ?? [])) {
+      const entrants = entrantsByIndividual.get(individual);
+      if (entrants) {
+        for (const other of entrants) {
+          if (other !== entrant) otherEntrants.add(other);
+        }
+        entrants.add(entrant);
+      } else {
+        entrantsByIndividual.set(individual, new Set([entrant]));
       }
+    }
 
-  // in the order of the entrants, as every caller has received them
-  return [...pairs.values()]
-    .sort(([i1, j1], [i2, j2]) => i1 - i2 || j1 - j2)
-    .map(([i, j]) => [participantIds[i], participantIds[j]]);
+    // Right positions arrive in order. Collect by left position to preserve the original pair order.
+    for (const other of otherEntrants) {
+      for (const first of priorPositions.get(other)!) {
+        (conflictsByFirstPosition[first] ??= []).push([other, entrant]);
+      }
+    }
+    const positions = priorPositions.get(entrant);
+    if (positions) positions.push(position);
+    else priorPositions.set(entrant, [position]);
+  }
+  return conflictsByFirstPosition.flat();
 }

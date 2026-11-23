@@ -1,10 +1,7 @@
 import { getSharedIndividualConflicts } from '@Query/participants/individualParticipantIds';
 import { describe, expect, it } from 'vitest';
 
-// CodeQL #224, #225 (js/loop-bound-injection), triaged 2026-11-23 as reachable but bounded: the check compared every
-// pair of entrants, 7.7 s at 16,384. A crafted import can reach that size, so it is now linear in the individuals listed.
-
-/** The pairwise implementation it replaced, kept verbatim as the reference the new one must match exactly. */
+// Compare against the original traversal, including its handling of repeated entrant positions.
 function pairwiseReference(individualIdsMap: Record<string, string[]>, participantIds: string[]): string[][] {
   const shares = (a: string, b: string) => {
     if (a === b) return true;
@@ -21,8 +18,8 @@ function pairwiseReference(individualIdsMap: Record<string, string[]>, participa
 }
 
 describe('getSharedIndividualConflicts', () => {
-  it('is linear in entrants: 16,384 without conflicts within budget', () => {
-    const participantIds = Array.from({ length: 16_384 }, (_, i) => `p${i}`);
+  it.each(['distinct', 'repeated'])('handles 16,384 %s entries without conflicts within budget', (kind) => {
+    const participantIds = Array.from({ length: 16_384 }, (_, i) => (kind === 'distinct' ? `p${i}` : 'p0'));
     const individualIdsMap = Object.fromEntries(participantIds.map((id) => [id, [`i-${id}`]]));
     const start = performance.now();
     expect(getSharedIndividualConflicts({ individualIdsMap, participantIds })).toEqual([]);
@@ -31,7 +28,7 @@ describe('getSharedIndividualConflicts', () => {
 
   it('returns exactly what the pairwise check returned, order and repeats included', () => {
     let seed = 20261123;
-    const random = () => (seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31;
+    const random = () => (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32;
     let nonEmpty = 0;
     for (let round = 0; round < 3_000; round++) {
       const people = Array.from({ length: 1 + Math.floor(random() * 8) }, (_, i) => `i${i}`);
