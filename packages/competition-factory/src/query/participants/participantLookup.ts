@@ -1,24 +1,8 @@
 // constants and types
 import { PAIR } from '@Constants/participantConstants';
-import { Participant } from '@Types/tournamentTypes';
+import type { ParticipantLookup } from '@Types/hydrationCacheTypes';
 
-/**
- * A participant list indexed ONCE, for the reads that otherwise scan it for every matchUp side and every line of
- * every dual (a TEAM draw of 2,550 matchUps scanned 2,560 participants several thousand times per hydration).
- *
- * It answers exactly what the scans it replaces answer, duplicates included:
- * - `firstById`: the FIRST participant in list order holding each `participantId` (`Array.find`), the entry for
- *   `undefined` being the first participant with no id;
- * - `pairsByMembers`: every PAIR participant with exactly these `individualParticipantIds`, in list order, so the
- *   first is the pair `getPairedParticipant` returns and the rest are its `duplicatedPairParticipants`.
- *
- * It is a snapshot of the list it was built from: an added, removed or re-keyed participant is not in it. Build it
- * inside one read and drop it with the read (see hydrationCache.ts); mutations keep scanning the live list.
- */
-export type ParticipantLookup = {
-  firstById: Map<string | undefined, Participant>;
-  pairsByMembers: Map<string, Participant[]>;
-};
+export type { ParticipantLookup } from '@Types/hydrationCacheTypes';
 
 /**
  * The key for one or two DISTINCT string ids, whatever their order; undefined for anything else, which a caller

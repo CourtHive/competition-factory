@@ -6,31 +6,10 @@ import { POLICY_MATCHUP_ACTIONS_DEFAULT } from '@Fixtures/policies/POLICY_MATCHU
 import { PolicyDefinitions } from '@Types/factoryTypes';
 import { HydratedParticipant } from '@Types/hydrated';
 
+export type { ActionsStructurePolicy, MatchUpActionsPolicy } from '@Types/policyShapes';
+
 export const POSITION_ACTION = 'positionAction';
 export const MATCHUP_ACTION = 'matchUpAction';
-
-/**
- * One entry of an actions policy's `enabledStructures` or `disabledStructures`: the structures it
- * matches (an empty or absent list matches all) and, when enabled, the actions it allows.
- */
-export type ActionsStructurePolicy = {
-  disabledActions?: string[];
-  enabledActions?: string[];
-  structureTypes?: string[];
-  stageSequences?: number[];
-  feedProfiles?: string[];
-  stages?: string[];
-};
-
-/** The matchUp actions policy (`POLICY_TYPE_MATCHUP_ACTIONS`) as `matchUpActions` reads it. */
-export type MatchUpActionsPolicy = {
-  participants?: { enforceCategory?: boolean; enforceGender?: boolean };
-  enabledStructures?: ActionsStructurePolicy[];
-  processCodes?: { substitution?: string[] };
-  substituteAfterCompleted?: boolean;
-  substituteWithoutScore?: boolean;
-  policyName?: string;
-};
 
 /**
  * What every position and matchUp action carries: its `type`, and for most the `method` to call with

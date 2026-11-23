@@ -154,18 +154,10 @@ describe('ladder is a policy type the factory defines', () => {
 describe('the newly modelled definitions match their TypeScript types', () => {
   const PAIRS: [file: string, typeName: string, definitionName: string, open?: boolean][] = [
     ['./src/types/factoryTypes.ts', 'RoundNamingPolicy', 'RoundNamingPolicy'],
-    ['./src/query/drawDefinition/positionActions/actionPolicyUtils.ts', 'MatchUpActionsPolicy', 'MatchUpActionsPolicy'],
-    [
-      './src/query/drawDefinition/positionActions/actionPolicyUtils.ts',
-      'ActionsStructurePolicy',
-      'ActionsStructurePolicy',
-    ],
-    ['./src/mutate/drawDefinitions/positionGovernor/randomUnseededSeparation.ts', 'AvoidancePolicy', 'AvoidancePolicy'],
-    [
-      './src/mutate/drawDefinitions/positionGovernor/randomUnseededSeparation.ts',
-      'PolicyAttribute',
-      'AvoidancePolicyAttribute',
-    ],
+    ['./src/types/policyShapes.ts', 'MatchUpActionsPolicy', 'MatchUpActionsPolicy'],
+    ['./src/types/policyShapes.ts', 'ActionsStructurePolicy', 'ActionsStructurePolicy'],
+    ['./src/types/policyShapes.ts', 'AvoidancePolicy', 'AvoidancePolicy'],
+    ['./src/types/policyShapes.ts', 'PolicyAttribute', 'AvoidancePolicyAttribute'],
     ['./src/types/roundRobinTallyPolicy.ts', 'RoundRobinTallyPolicy', 'RoundRobinTallyPolicy', true],
   ];
   const program = ts.createProgram([...new Set(PAIRS.map(([file]) => file))], {
