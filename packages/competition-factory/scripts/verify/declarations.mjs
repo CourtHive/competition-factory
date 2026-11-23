@@ -339,7 +339,8 @@ function registerCleanup(cleanup) {
   return run;
 }
 
-const git = (args, cwd = ROOT) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
+const git = (args, cwd = ROOT) =>
+  execFileSync('git', args, { cwd, encoding: 'utf8', timeout: 120_000, killSignal: 'SIGKILL' }).trim();
 
 /** A detached worktree of `sha` that borrows this checkout's node_modules; `remove` always cleans it up. */
 function baseWorktree(sha, dir) {
