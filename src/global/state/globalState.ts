@@ -11,6 +11,7 @@ import {
 import { BRIDGE, LEGACY, NATIVE, SchemaWriteMode, schemaWriteModes } from '@Constants/schemaWriteModeConstants';
 import { STAMP_SCOPE_TOURNAMENT, StampScope, stampScopes } from '@Constants/stampScopeConstants';
 import { TournamentRecords, ResultType } from '@Types/factoryTypes';
+import type { RequiredStateProviderMembers, StateProvider } from '@Types/stateProviderTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   ErrorType,
@@ -116,7 +117,7 @@ const globalState: GlobalStateTypes = {
 
 let _globalStateProvider: any = syncGlobalState;
 
-const requiredStateProviderMethods = [
+const requiredStateProviderMethods: ReadonlyArray<keyof RequiredStateProviderMembers> = [
   'addNotice',
   'callListener',
   'cycleMutationStatus',
@@ -137,7 +138,7 @@ const requiredStateProviderMethods = [
   'setTournamentRecords',
 ];
 
-export function setStateProvider(globalStateProvider?: { [key: string]: any }) {
+export function setStateProvider(globalStateProvider?: StateProvider) {
   // isObject, not `typeof === 'object'`: null passed that test and then threw an incidental TypeError
   if (!globalStateProvider || !isObject(globalStateProvider)) {
     throw new Error(`Global state provider can not be undefined or null`);
