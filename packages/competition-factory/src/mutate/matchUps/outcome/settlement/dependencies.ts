@@ -1,5 +1,6 @@
 import { feederSendsNobody, seatShowsBye } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { producedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { buildTargetIndex } from '@Query/matchUp/targetIndex';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
@@ -167,7 +168,10 @@ export function readGrant(
     grant.sourcePosition = entrant.drawPosition;
   }
   const status = source.matchUpStatus;
-  const produced = edge.role === 'winner' && !cross && isDoubleExit(status);
+  // Lucky advancement selects entrants at the round boundary. Withdrawing a previous winner
+  // still removes its position, but a double exit supplies no replacement award on that edge.
+  const produced =
+    edge.role === 'winner' && !cross && isDoubleExit(status) && !isLuckyBasedDraw(frame.drawDefinition.drawType);
   const carried =
     edge.role === 'loser' &&
     grant.participant &&
