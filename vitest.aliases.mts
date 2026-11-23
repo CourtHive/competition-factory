@@ -9,7 +9,7 @@
 export const testFileAliases = {
   '@Generators': new URL('./src/assemblies/generators', import.meta.url).pathname,
   '@Assemblies': new URL('./src/assemblies', import.meta.url).pathname,
-  '@Engines': new URL('./src/tests/engines', import.meta.url).pathname, // test engines
+  '@Engines': new URL('./src/assemblies/engines/test-entries', import.meta.url).pathname, // test engines
   '@Validators': new URL('./src/validators', import.meta.url).pathname,
   '@Constants': new URL('./src/constants', import.meta.url).pathname,
   '@Functions': new URL('./src/functions', import.meta.url).pathname,

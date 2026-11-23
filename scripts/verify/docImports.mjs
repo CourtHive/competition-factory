@@ -30,13 +30,14 @@
  * Requires a build first — it reads `dist/index.js`, not source, because the question is what a
  * CONSUMER gets.
  */
+import { REPO_ROOT } from '../lib/repoRoot.mjs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import fs from 'node:fs';
 
 const require = createRequire(import.meta.url);
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
-const DOCS = path.join(ROOT, 'documentation', 'docs');
+const DOCS = path.join(REPO_ROOT, 'documentation', 'docs');
 const PACKAGE_SPECIFIER = 'tods-competition-factory';
 const DIST = path.join(ROOT, 'dist', 'index.js');
 const BASELINE = path.join(ROOT, 'scripts', 'verify', 'docImports.baseline.json');
@@ -148,7 +149,7 @@ for (const file of walk(DOCS)) {
       }
       checked += 1;
       const line = block.startLine + offset + 1;
-      const where = `${path.relative(ROOT, file)}:${line}`;
+      const where = `${path.relative(REPO_ROOT, file)}:${line}`;
       const { named, hasDefault, typeOnly } = bindings(clause);
       if (typeOnly) continue;
       if (hasDefault) {

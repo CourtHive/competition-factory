@@ -1,4 +1,5 @@
 import { FORMAT_MATRIX } from './formatMatrix';
+import { repoFile } from '@Tests/testHarness/repoRoot';
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 
@@ -10,7 +11,7 @@ import fs from 'node:fs';
  */
 
 const SPEC = 'documentation/docs/scoring-engine/scoring-engine-spec.md';
-const spec = fs.readFileSync(SPEC, 'utf8');
+const spec = fs.readFileSync(repoFile(SPEC), 'utf8');
 const lines = spec.split('\n');
 
 /** Anything in inline code shaped like a matrix cell id. */

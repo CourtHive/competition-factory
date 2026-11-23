@@ -1,7 +1,7 @@
 import { getDrawCompleteness } from '@Query/drawDefinition/getDrawCompleteness';
 import { getEventCompleteness } from '@Query/event/getEventCompleteness';
 import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '@Tests/engines/syncEngine';
+import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
 

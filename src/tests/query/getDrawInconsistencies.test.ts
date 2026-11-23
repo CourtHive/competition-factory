@@ -1,7 +1,7 @@
 import { WINNING_SIDE_ADVANCEMENT_MISMATCH } from '@Query/drawDefinition/getStructureInconsistencies';
 import { getTargetLink } from '@Query/drawDefinition/linkGetter';
 import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '@Tests/engines/syncEngine';
+import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
 import {

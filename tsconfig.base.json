@@ -24,7 +24,7 @@
     "strict": true,
     "paths": {
       "@Generators/*": ["./src/assemblies/generators/*"],
-      "@Engines/*": ["./src/tests/engines/*"],
+      "@Engines/*": ["./src/assemblies/engines/test-entries/*"],
       "@Assemblies/*": ["./src/assemblies/*"],
       "@Validators/*": ["./src/validators/*"],
       "@Constants/*": ["./src/constants/*"],

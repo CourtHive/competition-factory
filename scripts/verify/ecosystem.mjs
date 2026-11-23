@@ -15,13 +15,13 @@
  *   --skip=name,name    skip the listed repos
  */
 import { execSync } from 'node:child_process';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
+import { PACKAGE_ROOT, REPO_ROOT } from '../lib/repoRoot.mjs';
 import { existsSync } from 'node:fs';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const FACTORY_ROOT = resolve(__dirname, '../..');
-const ECOSYSTEM_ROOT = resolve(FACTORY_ROOT, '..');
+const FACTORY_ROOT = PACKAGE_ROOT;
+// the sibling checkouts sit beside the factory REPOSITORY, which is not the package's parent after the move
+const ECOSYSTEM_ROOT = resolve(REPO_ROOT, '..');
 
 // Each consumer with a test script that exercises factory consumption.
 // Add new consumers here as the ecosystem grows.

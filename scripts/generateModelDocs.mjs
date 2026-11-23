@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 import { readFileSync, writeFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { pathToFileURL, fileURLToPath } from 'node:url';
+import { REPO_ROOT } from './lib/repoRoot.mjs';
 import ts from 'typescript';
 
 const root = new URL('../', import.meta.url);
-const target = new URL('documentation/docs/types/typedefs.mdx', root);
+const target = new URL('documentation/docs/types/typedefs.mdx', pathToFileURL(`${REPO_ROOT}/`));
 const sourcePath = 'src/types/tournamentTypes.ts';
 const source = ts.createSourceFile(
   sourcePath,

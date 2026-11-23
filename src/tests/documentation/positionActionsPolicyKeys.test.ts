@@ -1,4 +1,5 @@
 import { POLICY_POSITION_ACTIONS_DEFAULT } from '@Fixtures/policies/POLICY_POSITION_ACTIONS_DEFAULT';
+import { repoFile } from '@Tests/testHarness/repoRoot';
 import { expect, it } from 'vitest';
 import fs from 'node:fs';
 
@@ -35,7 +36,7 @@ it('the default position-actions policy carries only keys the engine reads', () 
 });
 
 it('the documentation copy of the policy carries the same keys', () => {
-  const published = JSON.parse(fs.readFileSync('documentation/docs/policies/positionActions.json', 'utf8'));
+  const published = JSON.parse(fs.readFileSync(repoFile('documentation/docs/policies/positionActions.json'), 'utf8'));
   const documented = Object.keys(published[POLICY_TYPE_POSITION_ACTIONS] ?? published);
   // CONTROL: the copy was found and parsed
   expect(documented.length).toBeGreaterThan(0);

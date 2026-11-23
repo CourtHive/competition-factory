@@ -1,6 +1,6 @@
 import { getEventInconsistencies, EVENT_PARTICIPANT_TYPE_MISMATCH } from '@Query/event/getEventInconsistencies';
 import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '@Tests/engines/syncEngine';
+import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
 import {
