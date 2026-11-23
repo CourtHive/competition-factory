@@ -296,6 +296,26 @@ jobs:
       - name: verify:surface
         run: pnpm verify:surface
 
+      # The declaration-diff gate (Mentat/planning/FACTORY_TYPE_GRAPH_SPLIT_PLAN.md, decision 4). It fingerprints
+      # every export of the three published declaration bundles and compares them with the PR's merge base, which it
+      # builds here in a throwaway worktree that borrows this job's node_modules (~10 s for both builds; this job has
+      # ~30 min of slack against the coverage shards). Its self-test always fails hard.
+      #
+      # REQUIRED on a type-split PR, INFORMATIONAL (job summary only, never failing) on every other PR. The switch
+      # is the head branch: a PR from a `type-split/...` branch is a type-split PR. A branch name is fixed when the
+      # run starts and cannot go stale; a `type-split` label would need `labeled` in this workflow's pull_request
+      # types (re-running every job on any label) and would be missed if added after the last push.
+      - name: verify:declarations
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          mode=informational
+          case "$HEAD_REF" in type-split/*) mode=required ;; esac
+          echo "verify:declarations mode: $mode"
+          pnpm verify:declarations --base "origin/$BASE_REF" --mode "$mode"
+
       # Needs dist, so it sits after verify:build. Checks that every import the docs tell a
       # reader to write actually resolves against the BUILT package — the documentation tests
       # import by module path and so cannot see a public-surface break.
