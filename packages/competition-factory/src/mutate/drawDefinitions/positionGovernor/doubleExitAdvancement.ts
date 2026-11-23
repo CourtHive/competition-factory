@@ -20,7 +20,7 @@ import { settleUnlessIdle } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
-import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
+import { doubleExitProducesNothing } from '@Query/drawDefinition/doubleExitProducesNothing';
 import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
@@ -46,7 +46,7 @@ import {
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants
-import { CONTAINER, FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
+import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
@@ -126,15 +126,6 @@ function logAdvancement(method, details) {
   pushGlobalLog({ method, ...details });
 }
 
-/**
- * Where a double exit sends nobody on. A round robin group's matchUp (a container's) has no next matchUp. And A LUCKY
- * DRAW'S DOUBLE EXIT ADVANCES NOBODY (CA, 2026-11-17): it is written on its own matchUp and produces nothing in the next
- * round, no exit awarded to whoever stands or arrives there, no position sent on, no advance withdrawn. Who goes on
- * from a lucky draw's round is chosen (`luckyDrawAdvancement`), and a double exit chooses nobody.
- */
-const producesNothing = (structure: Structure, drawDefinition?: DrawDefinition): boolean =>
-  structure.structureType === CONTAINER || isLuckyBasedDraw(drawDefinition?.drawType);
-
 export function doubleExitAdvancement(args) {
   // THE CALL'S SCORE STAYS ON THE MATCHUP IT WAS ENTERED ON. Every write below spreads these params into
   // `modifyMatchUpScore` for ANOTHER matchUp (the produced exit, a convergence, a carry), so a score the double exit's
@@ -144,7 +135,7 @@ export function doubleExitAdvancement(args) {
   const { tournamentRecord, appliedPolicies, drawDefinition, matchUpsMap, targetData, structure, event } = params;
   const stack = 'doubleExitAdvancement';
 
-  if (producesNothing(structure, drawDefinition)) return decorateResult({ result: { ...SUCCESS }, stack });
+  if (doubleExitProducesNothing(structure, drawDefinition)) return decorateResult({ result: { ...SUCCESS }, stack });
 
   const { matchUp: sourceMatchUp, targetMatchUps, targetLinks } = targetData;
   const { loserMatchUp, winnerMatchUp, loserTargetDrawPosition } = targetMatchUps;
