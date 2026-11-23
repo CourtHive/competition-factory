@@ -1,3 +1,4 @@
+import { isBracketWinnerSwap } from '@Query/matchUp/isBracketWinnerSwap';
 import { feedEligibilityChange, lineFeedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { missingDrawPositionsRefusal, isUndirectedDrawnOutcome } from '@Query/matchUp/missingDrawPositionsRefusal';
 import { addMatchUpScheduleItems, scheduleRefusal } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
@@ -892,10 +893,12 @@ function resolveAndApplyOutcome({
   // the TEAM dual's auto-calc and lineUps, now that nothing before the outcome's own writes can refuse
   teamPlan?.apply();
 
-  const validWinningSideSwap =
-    !isTeam && !dualWinningSideChange && winningSide && matchUp.winningSide && matchUp.winningSide !== winningSide;
-
-  if (allowChangePropagation && validWinningSideSwap && matchUp.roundPosition) {
+  if (
+    allowChangePropagation &&
+    !isTeam &&
+    !dualWinningSideChange &&
+    isBracketWinnerSwap(matchUp, winningSide, matchUpTieId)
+  ) {
     return swapWinnerLoser(params);
   }
 
