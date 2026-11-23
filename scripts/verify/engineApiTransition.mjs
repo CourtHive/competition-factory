@@ -197,7 +197,7 @@ if (process.argv.includes('--self-test')) {
     },
     (page) =>
       page === `${manifest.methods[0].destination}.md`
-        ? `${read(page).replace('**candidate for removal from', '**removed from')}\n\`\`\`js\nengine.${manifest.methods[0].name}({});\n\`\`\``
+        ? `${read(page).replace(/\*\*(?:candidate|scheduled) for removal from/, '**removed from')}\n\`\`\`js\nengine.${manifest.methods[0].name}({});\n\`\`\``
         : read(page),
     /obsolete current engine example/,
   );

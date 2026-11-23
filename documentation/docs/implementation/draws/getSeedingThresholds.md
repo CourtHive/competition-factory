@@ -6,7 +6,7 @@ title: getSeedingThresholds
 
 :::warning 8.0.0 engine API transition
 
-This method is a **candidate for removal from production governors and engine exports at 8.0.0**. Its 7.x route has not been removed. Final removal and standalone package-export decisions require the per-method review and external-integrator confirmation described in the [transition index](/docs/implementation/engine-api-transition-8).
+This method is **retained on its production governors and engine exports at 8.0.0**: an external integrator confirmed on 2026-10-28 that it calls this method. See the [transition index](/docs/implementation/engine-api-transition-8).
 
 :::
 
@@ -30,7 +30,7 @@ export function getSeedingThresholds({
 
 ## Consumer evidence
 
-The refreshed source-name scan found no name mentions in the scanned product source files. This does not establish external-integrator non-use. The manifest records repository revisions and scan exclusions. External-integrator confirmation is pending.
+The refreshed source-name scan found no name mentions in the scanned product source files. This does not establish external-integrator non-use. The manifest records repository revisions and scan exclusions. An external integrator confirmed use on 2026-10-28, so the method stays on its governors.
 
 ## Availability and ownership
 
