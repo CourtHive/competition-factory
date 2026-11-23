@@ -165,6 +165,9 @@ it.each(['direct', 'queue-off', 'queue-on'] as const)(
     reverse.params.outcome = { matchUpStatus: 'DOUBLE_WALKOVER' };
     check(reverse, route, false);
     check(beforeHistoricalClinch(), route, true);
+    const sparse = beforeHistoricalClinch();
+    at(sparse.prepared, 2, 1).drawPositions!.length = 2;
+    check(sparse, route, true);
     // Full receivers can still release this relabel's own advance or an orphan neither feeder holds.
     for (const releasable of [3, 7]) {
       const call = historicalClinch();

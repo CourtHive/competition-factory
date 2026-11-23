@@ -103,7 +103,12 @@ export function heldSeatRefusal({
   const { matchUp, structure, drawDefinition, targetData, winningSide, inContextMatchUp } = params;
   if (matchUp.collectionId) return lineSeatRefusal(params, activeDownstream);
   if (!drawDefinition || !structure || !targetData?.targetMatchUps) return undefined;
-  if (winningSide !== 1 && winningSide !== 2) return heldDoubleExitReceiver(params);
+  if (winningSide !== 1 && winningSide !== 2) {
+    if (matchUp.matchUpType !== TEAM) return undefined;
+    const held = targetData.targetMatchUps.winnerMatchUp?.drawPositions;
+    if (!held || held.length < 2) return undefined;
+    return heldDoubleExitReceiver(params, held);
+  }
   if (!matchUp.drawPositions || isAdHoc({ structure })) return undefined;
   // An undecided dual awarded a winner directs both sides, through the same placements as singles.
   if (matchUp.winningSide && (matchUp.tieMatchUps || isMatchUpEventType(TEAM)(matchUp.matchUpType))) return undefined;
@@ -237,14 +242,9 @@ function handoverLoserAssignment(params: HeldSeatParams): HeldSeat | undefined {
  * positions in the next dual. Relabelling the adjacent double exit releases its own positions
  * and orphaned advances. Neither release can free a position still supplied by the other feeder.
  */
-function heldDoubleExitReceiver(params: HeldSeatParams): HeldSeat | undefined {
+function heldDoubleExitReceiver(params: HeldSeatParams, positions: number[]): HeldSeat | undefined {
   const { matchUp, matchUpStatus, targetData, structure, inContextDrawMatchUps } = params;
-  if (
-    matchUp.matchUpType !== TEAM ||
-    !isDoubleExit(matchUp.matchUpStatus) ||
-    !isDoubleExit(matchUpStatus) ||
-    matchUpStatus === matchUp.matchUpStatus
-  )
+  if (!isDoubleExit(matchUp.matchUpStatus) || !isDoubleExit(matchUpStatus) || matchUpStatus === matchUp.matchUpStatus)
     return undefined;
 
   const target = targetData?.targetMatchUps?.winnerMatchUp;
@@ -256,8 +256,11 @@ function heldDoubleExitReceiver(params: HeldSeatParams): HeldSeat | undefined {
     targetData?.targetLinks?.winnerTargetLink
   )
     return undefined;
-  const held = target.drawPositions?.filter(Boolean) ?? [];
-  if (new Set(held).size !== 2 || held.some((position) => matchUp.drawPositions?.includes(position))) return undefined;
+  // Bracket receivers have two slots. Older imported arrays may also contain empty entries.
+  const held = positions.length === 2 ? positions : [...new Set(positions.filter(Boolean))];
+  const [first, second] = held;
+  if (held.length !== 2 || !first || !second || first === second) return undefined;
+  if (matchUp.drawPositions?.includes(first) || matchUp.drawPositions?.includes(second)) return undefined;
 
   const stillFed = inContextDrawMatchUps?.some(
     (feeder) =>
