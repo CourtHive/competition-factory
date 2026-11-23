@@ -212,3 +212,44 @@ it('reports an invalid argument and accepts a record with omitted collections', 
   for (const input of [undefined, null, [], 42]) expect(report(input)).toEqual({ error: MISSING_TOURNAMENT_RECORD });
   expect(report({}).total).toBe(0);
 });
+
+it('skips non-array legacy fields that migration skips and still inspects valid siblings', () => {
+  const record = {
+    tournamentId: 'T',
+    extensions: 'legacy',
+    participants: [{ participantId: 'p', timeItems: { itemType: SIGN_IN_STATUS } }],
+    venues: [{ extensions: { length: 1, 0: extension(DISABLED) }, courts: [{ extensions: [extension(DISABLED)] }] }],
+    events: [
+      {
+        drawDefinitions: [
+          {
+            structures: [
+              {
+                matchUps: [
+                  {
+                    roundNumber: 1,
+                    roundPosition: 1,
+                    finishingPositionRange: { winner: [1, 1] },
+                    timeItems: { itemType: CHECK_IN },
+                    drawPositions: { length: 1, 0: 2 },
+                  },
+                  {
+                    roundNumber: 1,
+                    roundPosition: 2,
+                    timeItems: [item(ASSIGN_COURT, 'A')],
+                    drawPositions: '51',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+  const migration = migrateTournamentRecord({ tournamentRecord: structuredClone(record) as unknown as Tournament });
+  expect(migration.totalPromoted).toBe(2);
+  freeze(record);
+  expect(report(record).legacyShapes).toStrictEqual(migration.promoted);
+  expect(report(record).legacyShapes).toMatchObject({ courts: 1, matchUpScheduleTimeItems: 1, drawPositions: 0 });
+});

@@ -28,7 +28,7 @@ import type { DrawDefinition, Extension, MatchUp, Structure, Tournament } from '
 export type { LegacyShapeCounts } from '@Constants/legacyShapePromotions';
 
 function extensionCount(owner: { extensions?: Extension[] }, definitions: ExtensionPromotion[]) {
-  if (!owner.extensions?.length) return 0;
+  if (!Array.isArray(owner.extensions) || !owner.extensions.length) return 0;
   let count = 0;
   for (const { name, attribute } of definitions) {
     if (Reflect.get(owner, attribute) === undefined && owner.extensions.some((e) => e?.name === name)) count++;
@@ -38,7 +38,7 @@ function extensionCount(owner: { extensions?: Extension[] }, definitions: Extens
 
 function tournamentExtensions(record: Tournament) {
   let count = extensionCount(record, TOURNAMENT_FLAT_PROMOTIONS);
-  if (!record.extensions?.length) return count;
+  if (!Array.isArray(record.extensions) || !record.extensions.length) return count;
   for (const { name, groupAttribute, leafAttribute } of TOURNAMENT_GROUP_PROMOTIONS) {
     if (
       Reflect.get(record, groupAttribute)?.[leafAttribute] === undefined &&
@@ -55,15 +55,16 @@ function inspectMatch(match: MatchUp, counts: LegacyShapeCounts) {
   counts.matchUps += extensionCount(match, MATCHUP_PROMOTIONS);
   // Inspect the sequence itself. Array.some skips a true sparse slot.
   let previous = -Infinity;
-  for (const position of match.drawPositions ?? []) {
+  for (const position of Array.isArray(match.drawPositions) ? match.drawPositions : []) {
     if (!position || position < previous) {
       counts.drawPositions++;
       break;
     }
     previous = position;
   }
+  if (!Array.isArray(match.timeItems)) return;
   let missing: Set<string> | undefined;
-  for (const item of match.timeItems ?? []) {
+  for (const item of match.timeItems) {
     if (!item?.itemType) continue;
     if (item.itemType === CHECK_IN || item.itemType === CHECK_OUT) {
       if (!Array.isArray(match.checkIns)) counts.matchUpCheckIns++;
@@ -106,8 +107,8 @@ export function detectLegacyShape(record: Tournament) {
   const legacyShapes = emptyLegacyShapeCounts();
   legacyShapes.tournament = tournamentExtensions(record);
   for (const participant of record.participants ?? []) {
-    if (!Array.isArray(participant.presence)) {
-      for (const item of participant.timeItems ?? [])
+    if (!Array.isArray(participant.presence) && Array.isArray(participant.timeItems)) {
+      for (const item of participant.timeItems)
         if (item?.itemType === SIGN_IN_STATUS) legacyShapes.participantPresence++;
     }
     for (const penalty of participant.penalties ?? []) {
