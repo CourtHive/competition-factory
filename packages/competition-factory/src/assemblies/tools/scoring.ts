@@ -6,6 +6,7 @@
  */
 export { calculateMatchStatistics, enrichPointHistory, getQuickStats } from '@Query/scoring/statistics/standalone';
 export { validateSetScore, validateMatchUpScore } from '@Scoring/analysis/validateMatchUpScore';
+export { parseScoreString } from '@Scoring/parse/parseScoreStringTool';
 export { deduceMatchUpFormat } from '@Helpers/matchUpFormatCode/deduceMatchUpFormat';
 export { validateMCPMatch, exportMatchUpJSON } from '@Scoring/replay/mcpValidator';
 export { toStatObjects } from '@Query/scoring/statistics/toStatObjects';

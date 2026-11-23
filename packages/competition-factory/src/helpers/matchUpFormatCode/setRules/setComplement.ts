@@ -87,7 +87,7 @@ type HighTiebreakValueArgs = {
   NoAD?: boolean;
 };
 
-function getHighTiebreakValue(params: HighTiebreakValueArgs): number {
+export function getHighTiebreakValue(params: HighTiebreakValueArgs): number {
   const { lowValue, NoAD, tiebreakTo } = params;
   const winBy = tiebreakMargin(tiebreakTo, NoAD);
   if (lowValue + 1 >= tiebreakTo) {
