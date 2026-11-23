@@ -96,6 +96,35 @@ node scripts/verify/ecosystem.mjs --skip=tidyScore
 node scripts/verify/ecosystem.mjs --build-factory        # rebuild dist before sweeping
 ```
 
+### `verify:declarations`
+
+The declaration-diff gate of the type-graph split (`Mentat/planning/FACTORY_TYPE_GRAPH_SPLIT_PLAN.md`).
+`scripts/verify/declarations.mjs` builds the three declaration bundles rollup ships (root, `constants`,
+`score-entry-state`) for the working tree and for `git merge-base HEAD origin/dev`, fingerprints every export
+(its declaration plus every top-level declaration it reaches, printed canonically) and reports exports added,
+removed and changed, with the declarations behind the changes.
+
+- **Base build.** The merge base is checked out with `git worktree add --detach` into a temporary directory that
+  borrows this checkout's `node_modules` by symlink (nothing is installed), built in parallel with HEAD, and
+  removed afterwards, on failure and on Ctrl-C too. About 9 s for both builds on an M-series Mac.
+- **Normalizations.** rollup's `$n` collision suffixes are stripped; names that still collide get a hash of their
+  own text; union and intersection members are sorted; synthesized namespace aliases (`type ns_X = X`) are
+  transparent; comments, and the public name of an `x as Y` export specifier, are ignored. Function overloads keep
+  source order. A byte diff cannot do this job: an import-graph change with no semantic change rewrites tens of
+  thousands of lines.
+- **`--self-test`** runs on synthetic bundles in about 0.1 s. It pins each normalization (reorder, renumber, swapped
+  collisions, alias, comments, specifier name: 0 changed) and the controls that must fire (a field made required,
+  an export added and removed, an overload reorder, a reference moved between colliding names).
+- **Modes.** `--mode required` (the default) exits 1 on any change; `--mode informational` always exits 0 and
+  appends the report to `$GITHUB_STEP_SUMMARY`. CI runs it after `verify:surface` on every PR: required when the
+  head branch starts with `type-split/`, informational otherwise.
+- **Other bases.** `--base <ref>` picks another ref to take the merge base with; `--base-dts <dir>` / `--head-dts
+  <dir>` compare already-built bundles instead (for example an unpacked npm tarball's `dist` before a release).
+  `--out <dir> --dump <Export>` keeps the bundles and writes that export's canonical closure, base and head.
+
+It is not in the `verify` chain: that chain is `prepublishOnly`, which runs on `master`, where a merge base
+with `dev` says nothing about the release.
+
 ## CI
 
 `.github/workflows/verify.yml` runs the `verify` chain on every PR + push to master, across the Node version matrix declared in `package.json#engines.node`. The job is skipped on release-please merge commits (CHANGELOG/version-only changes that don't need re-verification). The surface and bundle-size baselines participate in the same diff so updates are reviewable.

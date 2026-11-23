@@ -208,6 +208,7 @@
     "verify:publint": "node scripts/verify/publint.mjs",
     "verify:pack": "node scripts/verify/pack.mjs",
     "verify:surface": "node scripts/verify/surface.mjs",
+    "verify:declarations": "node scripts/verify/declarations.mjs --self-test && node scripts/verify/declarations.mjs",
     "verify:docs-imports": "node scripts/verify/docImports.mjs --ci",
     "verify:docs-examples": "node scripts/verify/docExamples.mjs",
     "verify:docs-mock-examples": "node scripts/verify/docMockExamples.mjs",
