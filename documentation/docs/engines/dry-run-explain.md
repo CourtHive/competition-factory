@@ -9,7 +9,7 @@ Two preview facades let callers see what a mutation _would_ do before committing
 | `engine.dryRun(directives)`      | Full per-method results, the RFC 6902 patch, and what topics would have fired             | Preview a multi-method `executionQueue` |
 | `engine.explain(method, params)` | `{ wouldSucceed, reason?, willEmitTopics, touchesPaths }` projection over a single method | UI gates and tooltips                   |
 
-Both run the real engine machinery against a snapshot and then **always** restore state at the end. Subscribers are NOT notified — the notice buffer is captured into the result and drained.
+Both dispatch the same methods as a queue on private copies of the loaded records. With the async provider, the copy belongs to a child of the calling request. Other requests and the caller keep their own records, selection, pending notices and mutation flags throughout dispatch. The preview returns the notices a commit would deliver.
 
 ## `engine.dryRun(directives)`
 
@@ -68,7 +68,7 @@ Three guard paths return `{ wouldSucceed: false, error }` without dispatching:
 | Any directive's `params` is not an object                    | `'params must be an object'`    |
 | A directive references a method not registered on the engine | `'method '<name>' not found'`   |
 
-Method-level errors (the dispatched method returned `{ error }`) populate the top-level `error` _and_ stop the loop — subsequent directives don't run. The post-state still reflects whatever earlier directives modified before the error, and the snapshot still restores everything.
+Method-level errors (the dispatched method returned `{ error }`) populate the top-level `error` _and_ stop the loop — subsequent directives don't run. The patch includes the changes earlier directives made to the private copy.
 
 ## `engine.explain(method, params)`
 
@@ -106,6 +106,10 @@ type ExplainResult = {
 
 ## Performance
 
-One `makeDeepCopy` of `tournamentRecords` up front (the same cost `rollbackOnError` already pays) and one O(n) tree-walk diff at the end. For typical state sizes — single tournament with a few draws — both facades return in well under 10 ms. For very large state (50+ events, full draws) it's 50–200 ms.
+The preview reads the loaded records to build a private working copy and a stable patch baseline. The baseline keeps a concurrent real write out of the patch, including when two requests share a borrowed record. Copy and diff costs scale with the size of the loaded records.
 
-Safe for dev/preflight callers; **not** for hot scoring paths. The planned "no-rollback explain" optimization (run validators only, skip mutation + diff) is future work; ships when the engine exposes per-method validator metadata.
+## Custom state providers
+
+Implement `runWithInstanceState(fn)` to invoke the callback with fresh record storage, selection, notice buffer and mutation flags. For Node servers, bind the child store using `AsyncLocalStorage.run` so continuations inherit it. Both built-in providers implement the hook. A provider without it receives `ERR_ROLLBACK_UNAVAILABLE` before dispatch. A provider-backed document can supply a plain projection with its existing `makeDeepCopy(..., { purpose: 'snapshot' })` hook. Keep external I/O out of previewed directives.
+
+Preview inherits request subscriptions. Providers can expose pending notices through `getNoticeBuffer` and `setNoticeBuffer`, and disabled notifications through `notificationsDisabled()` or `getNoticeState()`. Seeded randomness forks into the child. An opaque caller-supplied random function advances when the preview draws from it.

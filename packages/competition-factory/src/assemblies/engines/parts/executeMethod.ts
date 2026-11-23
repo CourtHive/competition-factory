@@ -24,7 +24,7 @@ export function executeFunction(
   methodName: string,
   engineType: string,
   // `dryRun` only tags the dev log — it does not change dispatch. The caller
-  // that sets it (`forge/dryRun`) owns snapshotting and restoring the state.
+  // that sets it (`forge/dryRun`) supplies the private state.
   options?: { dryRun?: boolean },
 ) {
   delete engine.success;

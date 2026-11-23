@@ -43,7 +43,8 @@ export type JsonPatch = JsonPatchOp[];
  * `/` -> `~1`. Order matters — escape `~` first so we don't double-escape.
  */
 function escapeSegment(key: string | number): string {
-  return String(key).replace(/~/g, '~0').replace(/\//g, '~1');
+  if (typeof key === 'number' || (!key.includes('~') && !key.includes('/'))) return String(key);
+  return key.replace(/~/g, '~0').replace(/\//g, '~1');
 }
 
 /**
@@ -119,6 +120,8 @@ function diffObjects(
   // Adds + replaces. Iterate `after` so the patch order reflects "the new
   // shape" rather than the diff direction — easier to read.
   for (const key of Object.keys(after)) {
+    // A record preview usually changes only a few leaves. Build paths only for keys the walk visits.
+    if (after[key] !== undefined && leafEqual(before[key], after[key])) continue;
     const childPath = `${path}/${escapeSegment(key)}`;
     if (!(key in before)) {
       ops.push({ op: 'add', path: childPath, value: after[key] });

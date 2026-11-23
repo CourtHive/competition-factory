@@ -46,9 +46,14 @@ export interface OptionalStateProviderMembers {
   cycleModifiedTopics: ProviderMember;
   cycleModifiedTournamentIds: ProviderMember;
   createInstanceState: ProviderMember;
+  /** Executes in a fresh state. Async providers bind the state to the callback and its descendants. */
+  runWithInstanceState?<T>(run: () => T): T;
   getNoticeBuffer: ProviderMember;
   setNoticeBuffer: ProviderMember;
   getNoticeState: ProviderMember;
+  notificationsDisabled: ProviderMember;
+  /** Stable per-scope identity for nested notice delivery. Defaults to the provider's loaded records. */
+  getDeliveryScope: ProviderMember;
   getPayloads: ProviderMember;
   handleCaughtError: ProviderMember;
   setMethods: ProviderMember;

@@ -1,6 +1,6 @@
 import { isFunction, isObject } from '@Tools/objects';
 import syncGlobalState from './syncGlobalState';
-import type { NoticeState } from './noticeIdentity';
+import { isPrivateDeliveryScope, type NoticeState } from './noticeIdentity';
 
 // constants and types
 import {
@@ -730,6 +730,7 @@ export type CallListenerArgs = {
   topic: string;
 };
 export async function callListener(payload) {
+  if (isPrivateDeliveryScope(_globalStateProvider)) return;
   return _globalStateProvider.callListener(payload, globalState.globalSubscriptions);
 }
 

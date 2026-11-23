@@ -18,7 +18,7 @@ import {
   NOT_FOUND,
 } from '@Constants/errorConditionConstants';
 
-const syncGlobalState: ImplemtationGlobalStateTypes = {
+const newInstanceState = (): ImplemtationGlobalStateTypes => ({
   disableNotifications: false,
   tournamentId: undefined,
   tournamentRecords: {},
@@ -28,9 +28,24 @@ const syncGlobalState: ImplemtationGlobalStateTypes = {
   modifiedTopics: new Set(),
   methods: {},
   notices: [],
-};
+});
+
+let syncGlobalState = newInstanceState();
+
+// Synchronous dispatch is stack-scoped. Each nested preview owns a fresh state object.
+function runWithInstanceState<T>(run: () => T): T {
+  const parent = syncGlobalState;
+  syncGlobalState = newInstanceState();
+  try {
+    return run();
+  } finally {
+    syncGlobalState = parent;
+  }
+}
 
 export default {
+  runWithInstanceState,
+  getDeliveryScope: () => syncGlobalState,
   addNotice,
   callListener,
   cycleMutationStatus,
@@ -186,8 +201,18 @@ export function setSubscriptions(params: any) {
   return { ...SUCCESS };
 }
 
-export function setMethods(params: { [key: string]: any }) {
+export function setMethods(params: { [key: string]: any }, options?: { privateRegistry?: boolean }) {
   if (typeof params !== 'object') return { error: INVALID_VALUES };
+
+  if (options?.privateRegistry) {
+    // Dispatch already resolved the outer queue. Only nested dispatch or registration needs its own registry.
+    let methods: typeof params;
+    Object.defineProperty(syncGlobalState, 'methods', {
+      configurable: true,
+      get: () => (methods ??= { ...params }),
+    });
+    return { ...SUCCESS };
+  }
 
   Object.keys(params).forEach((methodName) => {
     if (typeof params[methodName] !== 'function') return;
