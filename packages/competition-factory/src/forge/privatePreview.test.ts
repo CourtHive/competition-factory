@@ -139,3 +139,57 @@ it('requires an async scope before invoking a directive on the async engine', ()
   expect(engine.dryRun([{ method: 'later' }]).error).toEqual(MISSING_ASYNC_STATE_PROVIDER);
   expect(called).toBe(false);
 });
+
+it('detaches aliased collection members, sparse fields and provider metadata in a borrowed record', () => {
+  setStateProvider(syncGlobalState);
+  const tag = Symbol('tag');
+  const entity = { value: 1 };
+  const stamp = new Date('2026-11-23T12:00:00Z');
+  const members = new Set([stamp]);
+  const sparse = new Array(3);
+  sparse[2] = undefined;
+  const metadata = Object.assign(Object.create(null), { [tag]: entity, sparse });
+  Object.defineProperty(metadata, '__proto__', { value: entity, enumerable: true });
+  const record = { tournamentId: 'graph', entity, stamp, members, map: new Map([[entity, members]]), metadata };
+  syncEngine.setState(record, false);
+  syncEngine.importMethods({
+    editGraph: ({ tournamentRecord: child }) => {
+      expect(child.map.get(child.entity)).toBe(child.members);
+      expect(child.members.has(child.stamp)).toBe(true);
+      expect(child.metadata[tag]).toBe(child.entity);
+      expect(child.metadata.__proto__).toBe(child.entity);
+      expect(Object.getPrototypeOf(child.metadata)).toBe(null);
+      expect(0 in child.metadata.sparse).toBe(false);
+      expect(Object.hasOwn(child.metadata.sparse, 2)).toBe(true);
+      child.members.clear();
+      child.map.delete(child.entity);
+      child.stamp.setUTCFullYear(2030);
+      child.entity.value = 2;
+      return { success: true };
+    },
+  });
+  const result = syncEngine.dryRun([{ method: 'editGraph' }]);
+  expect(result.wouldSucceed).toBe(true);
+  expect(entity.value).toBe(1);
+  expect(record.map.get(entity)).toBe(members);
+  expect(members.has(stamp)).toBe(true);
+  expect(stamp.getUTCFullYear()).toBe(2026);
+});
+
+it.each([
+  ['function', () => undefined],
+  ['shared bytes', new Uint8Array(new SharedArrayBuffer(4))],
+  ['opaque weak references', new WeakMap()],
+])('refuses a borrowed %s field before dispatch', (_, field) => {
+  setStateProvider(syncGlobalState);
+  syncEngine.setState({ tournamentId: 'unavailable', field }, false);
+  let calls = 0;
+  syncEngine.importMethods({
+    attempt: () => {
+      calls++;
+      return { success: true };
+    },
+  });
+  expect(syncEngine.dryRun([{ method: 'attempt' }]).error).toEqual(ROLLBACK_UNAVAILABLE);
+  expect(calls).toBe(0);
+});
