@@ -1,4 +1,5 @@
 import { deleteNotices, getDevContext, getInvokeObserver } from '@Global/state/globalState';
+import { ownMethod } from '@Tools/ownMethod';
 import { captureOperation, restoreOperation } from '@Assemblies/engines/parts/operationState';
 import { caughtErrorResult, executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { prepareDirective, validateDirectives } from '@Assemblies/engines/parts/directives';
@@ -38,7 +39,7 @@ export async function asyncExecutionQueue(engine: FactoryEngine, directives: Dir
 
         // awaited, as asyncEngineInvoke awaits it: an imported async method returns a promise
         const result = await withCallRandomSourceAsync(unthreadedSource, async () =>
-          executeFunction(engine, methods[methodName], params, methodName, 'async'),
+          executeFunction(engine, ownMethod(methods, methodName), params, methodName, 'async'),
         );
         getInvokeObserver()?.({ phase: 'after', methodName, engineType: 'async', params, result });
 
