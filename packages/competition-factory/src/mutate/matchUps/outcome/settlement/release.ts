@@ -21,15 +21,13 @@ export function withdrawnAwardRelease(
 ) {
   const matches = view.inContextDrawMatchUps;
   const source = indexed(view, request.matchUpId);
-  if (
-    route !== 'remove-directed' ||
-    request.winningSide ||
-    request.matchUpStatus !== TO_BE_PLAYED ||
-    !matches ||
-    !source?.winningSide ||
-    !isExit(source.matchUpStatus)
-  )
-    return;
+  const clears = route === 'remove-directed' && !request.winningSide && request.matchUpStatus === TO_BE_PLAYED;
+  const reverses =
+    route === 'winner' &&
+    !!request.winningSide &&
+    request.winningSide !== source?.winningSide &&
+    !isExit(request.matchUpStatus);
+  if ((!clears && !reverses) || !matches || !source?.winningSide || !isExit(source.matchUpStatus)) return;
   const frame = { inContextDrawMatchUps: matches, drawDefinition };
   const edge = claimEdges(frame, source);
   const holder = edge.targetMatchUps?.loserMatchUp;

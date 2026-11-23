@@ -34,7 +34,7 @@ afterEach(() => {
   setNoticeBuffer([]);
 });
 
-function occupiedCarry(drawType: string, drawSize = 8) {
+function occupiedCarry(drawType: string, drawSize = 8, occupied = true) {
   setOutcomePipeline('v1');
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawType, drawSize }],
@@ -48,7 +48,7 @@ function occupiedCarry(drawType: string, drawSize = 8) {
   const paired = main.find((m) => m.roundNumber === 1 && m.roundPosition === 2);
   const played = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-2 6-1', winningSide: 1 }).outcome;
   for (const [matchUpId, outcome] of [
-    [paired.matchUpId, played],
+    ...(occupied ? [[paired.matchUpId, played]] : []),
     [root.matchUpId, { matchUpStatus: WALKOVER, winningSide: 1 }],
   ]) {
     expect(setMatchUpStatus({ ...context, matchUpId, outcome, propagateExitStatus: true })).toMatchObject({
@@ -166,3 +166,59 @@ it('leaves a scored onward holder or an unrelated second relay outside the withd
   view.inContextDrawMatchUps!.push({ ...release.onward, matchUpId: 'second-onward-holder' });
   expect(read()).toBeUndefined();
 });
+
+it.each([false, true])(
+  'orders the removal, score and redirected placements on winner reversal (occupied award %s)',
+  (occupied) => {
+    const ctx = occupiedCarry(FEED_IN_CHAMPIONSHIP, 8, occupied);
+    const outcome = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-3 6-1', winningSide: 2 }).outcome;
+    const request: OutcomeRequest = {
+      matchUpId: ctx.request.matchUpId,
+      winningSide: 2,
+      score: outcome.score,
+      flags: ctx.request.flags,
+    };
+    const actual = structuredClone(ctx);
+    setSubscriptions({ subscriptions: Object.fromEntries(subscriptions.map((t) => [t, () => {}])) });
+    setNoticeBuffer([]);
+    withCapturedClock((capturedClock) => {
+      const predicted = predictSettlement({
+        ...ctx,
+        request,
+        capturedClock,
+        topics: subscriptions,
+        priorNotices: [],
+        tracksModificationMarks: true,
+        disableNotifications: false,
+      });
+      const observed = withNoticeMarks((read) =>
+        withDraftWrites(() => {
+          const readings: unknown[] = [],
+            errors: unknown[] = [];
+          const result = observeClockReadings(
+            () => (r) => readings.push(r),
+            () =>
+              setMatchUpStatus({
+                ...actual,
+                matchUpId: request.matchUpId!,
+                outcome: { winningSide: 2, score: outcome.score },
+                propagateExitStatus: true,
+              }),
+            errors,
+          );
+          expect(errors).toEqual([]);
+          return {
+            result,
+            readings,
+            announced: [{ op: 'announceRecorded', notices: getNoticeBuffer()!.map(recordedNotice), marks: read() }],
+          };
+        }),
+      );
+      expect(predicted.drawDefinition).toStrictEqual(actual.drawDefinition);
+      expect(predicted.reasons).toEqual([]);
+      expect(predicted.result).toStrictEqual(observed.result);
+      expect(predicted.readings).toStrictEqual(observed.readings);
+      expect(predicted.announced).toStrictEqual(observed.announced);
+    });
+  },
+);

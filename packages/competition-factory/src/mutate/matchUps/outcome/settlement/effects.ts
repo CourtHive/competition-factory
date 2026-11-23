@@ -1,3 +1,4 @@
+import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
 import { appendNotice, type NoticeState } from '@Global/state/noticeIdentity';
@@ -14,11 +15,12 @@ import { recordedNotice } from '../plan/recordedDiff';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { TO_BE_PLAYED, IN_PROGRESS, BYE } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
-import { UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
+import { MODIFY_POSITION_ASSIGNMENTS, UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
 import {
   deferredQuery,
   deferInContextMatchUp,
   modifyMatchUpNotice,
+  modifyDrawNotice,
   type NoticeEffects,
 } from '@Mutate/notifications/drawNotifications';
 
@@ -269,8 +271,8 @@ function plainProducedLoser(args: Args, source: HydratedMatchUp, loser: Hydrated
     mark.matchUpStatus !== loser.matchUpStatus ||
     Number(side) === loser.winningSide ||
     !loser.sides?.some((s) => s.sideNumber === Number(side) && s.participantId === carrier.participantId) ||
-    loser.sides?.some((s) => s.sideNumber === loser.winningSide && s.drawPosition) ||
-    loser.drawPositions?.filter(Boolean).length !== 1
+    loser.sides?.some((s) => s.sideNumber === loser.winningSide && (s.participantId || s.bye || s.qualifier)) ||
+    !loser.sides?.some((s) => s.sideNumber === loser.winningSide && !s.participantId)
   )
     return false;
   const edge = claimEdges({ drawDefinition: args.drawDefinition, inContextDrawMatchUps: matches }, loser);
@@ -281,6 +283,8 @@ function plainProducedLoser(args: Args, source: HydratedMatchUp, loser: Hydrated
     edge.targetMatchUps.byeMatchUp
   )
     return false;
+  const reserved = loser.sides?.find((s) => s.sideNumber === loser.winningSide)?.drawPosition;
+  if (reserved && edge.targetMatchUps.winnerMatchUp?.drawPositions?.includes(reserved)) return false;
   return !matches.some((m) =>
     Object.values(getSideExitProvenance({ matchUp: m }) ?? {}).some(
       (entry) => entry.sourceMatchUpId === loser.matchUpId,
@@ -503,6 +507,141 @@ function removeProgram(args: Args): Program | undefined {
   };
 }
 
+/** A reversal of an actual first-round exit removes the directed seats, then scores and
+ * directs the replacement. The buffered assignment publication follows the winner placement.
+ * Both seats and every material operation must belong to these two placements or the named
+ * withdrawal. Further carries and qualifier changes require a different effect program. */
+function correctionProgram(args: Args): Program | undefined {
+  const { request, view } = args;
+  const matches = view.inContextDrawMatchUps;
+  const source = matches?.find((m) => m.matchUpId === request.matchUpId);
+  if (
+    !matches ||
+    !source ||
+    args.route !== 'winner' ||
+    view.line ||
+    view.group ||
+    view.isTeam ||
+    view.draw.tallied ||
+    view.draw.luckyBased ||
+    view.draw.unlinkedQualifierRemoval ||
+    source.roundNumber !== 1 ||
+    !source.winningSide ||
+    !isExit(source.matchUpStatus) ||
+    request.winningSide !== 3 - source.winningSide ||
+    (request.matchUpStatus && request.matchUpStatus !== 'COMPLETED') ||
+    request.carries?.schedule ||
+    request.carries?.notes ||
+    request.matchUpFormat
+  )
+    return;
+  const edges = claimEdges({ drawDefinition: args.drawDefinition, inContextDrawMatchUps: matches }, source);
+  const winner = edges.targetMatchUps?.winnerMatchUp;
+  const loser = edges.targetMatchUps?.loserMatchUp;
+  const oldWinner = source.sides?.find((s) => s.sideNumber === source.winningSide);
+  const newWinner = source.sides?.find((s) => s.sideNumber === request.winningSide);
+  if (
+    !winner ||
+    !loser ||
+    edges.targetMatchUps?.byeMatchUp ||
+    edges.targetLinks?.winnerTargetLink ||
+    !edges.targetLinks?.loserTargetLink ||
+    winner.structureId !== source.structureId ||
+    loser.structureId === source.structureId ||
+    !oldWinner?.participantId ||
+    !oldWinner.drawPosition ||
+    !newWinner?.participantId ||
+    !newWinner.drawPosition ||
+    oldWinner.participantId === newWinner.participantId ||
+    source.sides?.some((s) => s.bye || s.qualifier)
+  )
+    return;
+  const supplies = matches.filter((m) =>
+    Object.values(getSideExitProvenance({ matchUp: m }) ?? {}).some(
+      (mark) => mark.sourceMatchUpId === source.matchUpId,
+    ),
+  );
+  const released = releasesAward(args, loser, matches) ? args.release : undefined;
+  if (
+    supplies.length !== 1 ||
+    supplies[0].matchUpId !== loser.matchUpId ||
+    (!released && !plainProducedLoser(args, source, loser, matches))
+  )
+    return;
+  const emissions = [score(source, true)];
+  if (released) emissions.push({ match: released.onward, context: 'releaseAdvancedDrawPosition', bound: true });
+  emissions.push({ match: loser, context: 'withdrawProducedExits', bound: true });
+  if (
+    !winnerRemoval(matches, source, winner, oldWinner.drawPosition, emissions) ||
+    !loserRemoval(args, source, loser, matches, true, emissions)
+  )
+    return;
+  emissions.push(
+    score(source, true),
+    { match: winner, context: 'assignMatchUpDrawPosition', bound: true },
+    { match: loser, context: 'positionAssignments', bound: true },
+  );
+  const position = edges.targetMatchUps?.loserTargetDrawPosition;
+  let removed = false,
+    placed = false,
+    redirected = false;
+  for (const op of args.ops) {
+    if (released && isAwardRelease(op, released)) continue;
+    if (op.op === 'announcePositionAssignments' && op.structureId === loser.structureId) continue;
+    if (
+      op.op === 'clearPosition' &&
+      op.structureId === loser.structureId &&
+      op.drawPosition === position &&
+      op.participantId === newWinner.participantId
+    ) {
+      removed = true;
+      continue;
+    }
+    if (
+      op.op === 'assignPosition' &&
+      op.structureId === loser.structureId &&
+      op.drawPosition === position &&
+      op.participantId === oldWinner.participantId
+    ) {
+      placed = true;
+      continue;
+    }
+    if (
+      op.op === 'setMatchUpDrawPositions' &&
+      op.matchUpId === winner.matchUpId &&
+      op.removedDrawPosition === oldWinner.drawPosition &&
+      op.placedDrawPosition === newWinner.drawPosition
+    ) {
+      redirected = true;
+      continue;
+    }
+    if (
+      op.op === 'clearPosition' ||
+      op.op === 'setMatchUpDrawPositions' ||
+      !accountsForRemoval(op, matches, emissions, source, true, undefined, undefined, undefined, loser)
+    )
+      return;
+  }
+  if (!removed || !placed || !redirected) return;
+  const warnings =
+    !request.flags.disableScoreValidation && tiebreakPointsWarnings(request.score?.sets, view.existing.matchUpFormat);
+  return {
+    emissions,
+    result: {
+      success: true,
+      context: {},
+      stack: [
+        'directParticipants',
+        'attemptToSetWinningSide',
+        'noDownStreamDependencies',
+        'setMatchUpStatus',
+        'setMatchUpStatus',
+      ],
+      ...(warnings && warnings.length ? { warnings } : {}),
+    },
+  };
+}
+
 /** Append using the same keyed replacement, subscription and modification-mark rules as the provider.
  * Prior descriptors contribute their envelope identity; their original payloads are never evaluated. */
 function render(args: Args, program: Program): Prediction {
@@ -538,6 +677,25 @@ function render(args: Args, program: Program): Prediction {
     const matchUpId = emission.match.matchUpId;
     const matchUp = args.working.matchUpsMap.drawMatchUps.find((m) => m.matchUpId === matchUpId);
     if (!matchUp) return { reasons: ['unresolved notice entity'] };
+    if (context === 'positionAssignments') {
+      const { structure } = findStructure({ drawDefinition: projected, structureId: emission.match.structureId });
+      if (!structure) return { reasons: ['unresolved assignment notice structure'] };
+      const { structureId } = structure;
+      const eventId = event?.eventId;
+      effects.addNotice({
+        topic: MODIFY_POSITION_ASSIGNMENTS,
+        key: structureId,
+        payload: {
+          positionAssignments: getPositionAssignments({ structure }).positionAssignments,
+          tournamentId,
+          structureId,
+          eventId,
+          drawId: projected.drawId,
+        },
+      });
+      modifyDrawNotice({ drawDefinition: projected, tournamentId, eventId, structureIds: [structureId] }, effects);
+      continue;
+    }
     if (context === 'modifyMatchUpScore' && args.topics!.includes(UPDATE_INCONTEXT_MATCHUP))
       deferInContextMatchUp(
         {
@@ -581,7 +739,8 @@ export function planSettlementEffects(args: Args): Prediction {
     args.disableNotifications === undefined
   )
     return { reasons: ['missing captured notice or clock context'] };
-  const program = args.route === 'remove-directed' ? removeProgram(args) : clearProgram(args);
+  const program =
+    args.route === 'remove-directed' ? removeProgram(args) : (correctionProgram(args) ?? clearProgram(args));
   if (!program) return { reasons: ['unmodeled settlement emission order'] };
   const before = getMatchUpsMap({ drawDefinition: args.drawDefinition }).drawMatchUps;
   if (
