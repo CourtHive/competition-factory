@@ -60,7 +60,8 @@ globalState.setStateMethods(governors, true, 1, true); // traverse, depth 1, glo
 
 From the release that includes [#6564](https://github.com/CourtHive/competition-factory/pull/6564), a queue also
 resolves the methods the engine itself imported, so `tournamentEngineAsync` needs no global registration. Registering
-globally stays correct, and is still needed for an engine assembled with `asyncEngine()` per request.
+globally stays correct. An engine assembled with `asyncEngine()` inside the request already finds the
+methods it imports there.
 
 ## Handle a request
 
