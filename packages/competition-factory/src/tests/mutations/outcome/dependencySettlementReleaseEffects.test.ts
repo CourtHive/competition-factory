@@ -178,47 +178,63 @@ it.each([false, true])(
       score: outcome.score,
       flags: ctx.request.flags,
     };
-    const actual = structuredClone(ctx);
-    setSubscriptions({ subscriptions: Object.fromEntries(subscriptions.map((t) => [t, () => {}])) });
-    setNoticeBuffer([]);
-    withCapturedClock((capturedClock) => {
-      const predicted = predictSettlement({
-        ...ctx,
-        request,
-        capturedClock,
-        topics: subscriptions,
-        priorNotices: [],
-        tracksModificationMarks: true,
-        disableNotifications: false,
-      });
-      const observed = withNoticeMarks((read) =>
-        withDraftWrites(() => {
-          const readings: unknown[] = [],
-            errors: unknown[] = [];
-          const result = observeClockReadings(
-            () => (r) => readings.push(r),
-            () =>
-              setMatchUpStatus({
-                ...actual,
-                matchUpId: request.matchUpId!,
-                outcome: { winningSide: 2, score: outcome.score },
-                propagateExitStatus: true,
-              }),
-            errors,
-          );
-          expect(errors).toEqual([]);
-          return {
-            result,
-            readings,
-            announced: [{ op: 'announceRecorded', notices: getNoticeBuffer()!.map(recordedNotice), marks: read() }],
-          };
-        }),
-      );
-      expect(predicted.drawDefinition).toStrictEqual(actual.drawDefinition);
-      expect(predicted.reasons).toEqual([]);
-      expect(predicted.result).toStrictEqual(observed.result);
-      expect(predicted.readings).toStrictEqual(observed.readings);
-      expect(predicted.announced).toStrictEqual(observed.announced);
-    });
+    compareReplacement(ctx, request, { winningSide: 2, score: outcome.score });
   },
 );
+
+it.each(['DOUBLE_WALKOVER', 'DOUBLE_DEFAULT'] as const)(
+  'withdraws the played winner before a lucky %s',
+  (matchUpStatus) => {
+    const ctx = occupiedCarry('LUCKY_DRAW', 8, false);
+    compareReplacement(ctx, { ...ctx.request, matchUpStatus }, { matchUpStatus });
+  },
+);
+
+function compareReplacement(
+  ctx: ReturnType<typeof occupiedCarry>,
+  request: OutcomeRequest,
+  outcome: Parameters<typeof setMatchUpStatus>[0]['outcome'],
+) {
+  const actual = structuredClone(ctx);
+  setSubscriptions({ subscriptions: Object.fromEntries(subscriptions.map((t) => [t, () => {}])) });
+  setNoticeBuffer([]);
+  withCapturedClock((capturedClock) => {
+    const predicted = predictSettlement({
+      ...ctx,
+      request,
+      capturedClock,
+      topics: subscriptions,
+      priorNotices: [],
+      tracksModificationMarks: true,
+      disableNotifications: false,
+    });
+    const observed = withNoticeMarks((read) =>
+      withDraftWrites(() => {
+        const readings: unknown[] = [],
+          errors: unknown[] = [];
+        const result = observeClockReadings(
+          () => (r) => readings.push(r),
+          () =>
+            setMatchUpStatus({
+              ...actual,
+              matchUpId: request.matchUpId!,
+              outcome,
+              propagateExitStatus: true,
+            }),
+          errors,
+        );
+        expect(errors).toEqual([]);
+        return {
+          result,
+          readings,
+          announced: [{ op: 'announceRecorded', notices: getNoticeBuffer()!.map(recordedNotice), marks: read() }],
+        };
+      }),
+    );
+    expect(predicted.drawDefinition).toStrictEqual(actual.drawDefinition);
+    expect(predicted.reasons).toEqual([]);
+    expect(predicted.result).toStrictEqual(observed.result);
+    expect(predicted.readings).toStrictEqual(observed.readings);
+    expect(predicted.announced).toStrictEqual(observed.announced);
+  });
+}

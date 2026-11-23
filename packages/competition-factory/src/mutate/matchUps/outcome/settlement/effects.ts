@@ -1,3 +1,4 @@
+import { luckyReplacementEffects } from './luckyReplacementEffects';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
@@ -41,7 +42,7 @@ export type SettlementNoticeInput = {
 };
 
 type AwardRelease = NonNullable<ReturnType<typeof withdrawnAwardRelease>>;
-type Args = SettlementNoticeInput & {
+export type SettlementEffectArgs = SettlementNoticeInput & {
   release?: AwardRelease;
   drawDefinition: DrawDefinition;
   tournamentRecord?: Tournament;
@@ -54,8 +55,12 @@ type Args = SettlementNoticeInput & {
   ops: OutcomeOp[];
 };
 
+type Args = SettlementEffectArgs;
+
 type Emission = { match: HydratedMatchUp; context: string; bound: boolean; eventless?: boolean };
-type Program = { emissions: Emission[]; result: ResultType & { connectedStructures?: boolean } };
+export type SettlementProgram = { emissions: Emission[]; result: ResultType & { connectedStructures?: boolean } };
+type Program = SettlementProgram;
+
 type Prediction = {
   reasons: string[];
   announced?: Extract<OutcomeOp, { op: 'announceRecorded' }>;
@@ -740,7 +745,9 @@ export function planSettlementEffects(args: Args): Prediction {
   )
     return { reasons: ['missing captured notice or clock context'] };
   const program =
-    args.route === 'remove-directed' ? removeProgram(args) : (correctionProgram(args) ?? clearProgram(args));
+    args.route === 'remove-directed'
+      ? removeProgram(args)
+      : (correctionProgram(args) ?? luckyReplacementEffects(args) ?? clearProgram(args));
   if (!program) return { reasons: ['unmodeled settlement emission order'] };
   const before = getMatchUpsMap({ drawDefinition: args.drawDefinition }).drawMatchUps;
   if (
