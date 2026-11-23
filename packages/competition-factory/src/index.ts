@@ -110,6 +110,7 @@ export { fixtures } from './fixtures';
 export type { DisciplineProfile } from './fixtures/disciplines/disciplineProfiles';
 
 // PURE STATS — usable without an engine instance.
+export { detectLegacyShape, type LegacyShapeCounts } from './query/tournaments/detectLegacyShape';
 export { computeRatingDistributionStats } from './query/formatWizard/distributionStats';
 
 // SCALE VALUES — the single implementation of "turn a scaleValue into a number".
