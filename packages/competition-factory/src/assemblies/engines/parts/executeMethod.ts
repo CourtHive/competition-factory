@@ -24,7 +24,7 @@ export function executeFunction(
   methodName: string,
   engineType: string,
   // `dryRun` only tags the dev log — it does not change dispatch. The caller
-  // that sets it (`forge/dryRun`) supplies the private state.
+  // that sets it (`forge/dryRun`) owns snapshotting and restoring the state.
   options?: { dryRun?: boolean },
 ) {
   delete engine.success;
@@ -56,6 +56,9 @@ export function executeFunction(
 
   return result;
 }
+
+// A preview supplies its private records directly, below live dispatch logging and observers.
+export { resolve as resolveEngineMethod };
 
 function resolve({ method, params, methodName, tournamentRecords, tournamentId }) {
   const footprintError = checkLoadedFootprint({ methodName, params, tournamentRecords, tournamentId });

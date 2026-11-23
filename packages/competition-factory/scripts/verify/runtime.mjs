@@ -202,6 +202,34 @@ try {
       );
     }
   }
+
+  // Resolve the public exports as a production consumer would. Native imports evaluate
+  // the entire barrel and can mask missing registration or eagerly bundled governors.
+  const previews = await build({
+    entryPoints: ['barePreview', 'namedGovernorPreview', 'subpathGovernorPreview'].map((name) =>
+      join(__dirname, 'fixtures', name + '.mjs'),
+    ),
+    outdir: bundleDir,
+    outExtension: { '.js': '.mjs' },
+    format: 'esm',
+    platform: 'node',
+    bundle: true,
+    treeShaking: true,
+    minify: true,
+    metafile: true,
+    logLevel: 'silent',
+  });
+  for (const [file, output] of Object.entries(previews.metafile.outputs)) {
+    const contributors = Object.entries(output.inputs).filter(([, input]) => input.bytesInOutput > 0);
+    if (
+      file.endsWith('/barePreview.mjs') &&
+      contributors.some(
+        ([source]) => source.includes('/assemblies/governors/') || source.endsWith('/forge/privateRuntime.mjs'),
+      )
+    )
+      throw new Error('Bare preview pulled in the governor catalog or private method dispatcher');
+    execFileSync(process.execPath, [file], { stdio: 'inherit' });
+  }
 } finally {
   rmSync(bundleDir, { recursive: true, force: true });
 }

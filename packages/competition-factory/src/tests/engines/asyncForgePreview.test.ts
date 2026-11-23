@@ -1,9 +1,9 @@
-import { addNotice, getTournamentRecord, setStateProvider, setSubscriptions } from '@Global/state/globalState';
+import { getTournamentRecord, setStateProvider, setSubscriptions } from '@Global/state/globalState';
 import asyncGlobalState from '@Server/providers/factory/engines/asyncGlobalState';
 import { useQuietCaughtErrors } from '@Tests/testHarness/engineCatch';
 import syncGlobalState from '@Global/state/syncGlobalState';
 import { setTournamentName } from '@Mutate/tournaments/tournamentDetails';
-import { asyncEngine, dryRun, explain, tournamentEngine } from '../../index';
+import { asyncEngine, dryRun, explain, registerPreviewMethod, tournamentEngine } from '../../index';
 import { afterEach, expect, it, vi } from 'vitest';
 
 import type { AsyncFactoryEngine } from '@Types/asyncEngineTypes';
@@ -33,21 +33,16 @@ it('awaits a private directive before piping its result, while the caller can co
     const gate = Promise.withResolvers<void>();
     const entered = Promise.withResolvers<void>();
     const delivered = vi.fn();
-    setSubscriptions({ subscriptions: { previewWrite: delivered } });
+    setSubscriptions({ subscriptions: { modifyTournamentDetail: delivered } });
+    const later = vi.fn(() => ({ success: true }));
+    const consume = ({ tournamentRecord, name }: Write & { name: string }) => {
+      tournamentRecord.notes = name;
+      return { success: true, name };
+    };
     engine.importMethods({
-      later: async ({ tournamentRecord }: Write) => {
-        entered.resolve();
-        await gate.promise;
-        expect(getTournamentRecord(id)).toBe(tournamentRecord);
-        expect(tournamentRecord.tournamentName).toBe('entry');
-        tournamentRecord.tournamentName = 'projected';
-        addNotice({ topic: 'previewWrite', payload: { name: 'projected' } });
-        return { success: true, name: 'piped' };
-      },
-      consume: ({ tournamentRecord, name }: Write & { name: string }) => {
-        tournamentRecord.notes = name;
-        return { success: true, name };
-      },
+      setTournamentName,
+      later,
+      consume,
       commit: async ({ tournamentRecord }: Write) => {
         await Promise.resolve();
         expect(getTournamentRecord(id)).toBe(borrowed);
@@ -55,9 +50,26 @@ it('awaits a private directive before piping its result, while the caller can co
         return { success: true };
       },
     });
+    registerPreviewMethod(engine, consume, consume);
+    registerPreviewMethod(engine, later, async ({ tournamentRecord }: Write, receiver) => {
+      entered.resolve();
+      await gate.promise;
+      expect(tournamentRecord).not.toBe(borrowed);
+      expect(tournamentRecord.tournamentName).toBe('entry');
+      const nested = await receiver.executionQueue([
+        { method: 'setTournamentName', params: { tournamentName: 'projected' } },
+      ]);
+      expect(nested).toMatchObject({ success: true });
+      return { success: true, name: 'piped' };
+    });
     const pending = engine.dryRun([{ method: 'later' }, { method: 'consume', pipe: { name: true } }]);
     try {
-      await entered.promise;
+      await Promise.race([
+        entered.promise,
+        Promise.resolve(pending).then(() => {
+          throw new Error('private directive never entered');
+        }),
+      ]);
       expect((await engine.executionQueue([{ method: 'commit' }])).success).toBe(true);
       expect(getTournamentRecord(id)).toBe(borrowed);
     } finally {
@@ -75,52 +87,51 @@ it('awaits a private directive before piping its result, while the caller can co
         { op: 'add', path: '/preview/notes', value: 'piped' },
       ]),
     );
-    expect(result.willEmitNotices).toEqual([{ topic: 'previewWrite', payloads: [{ name: 'projected' }] }]);
+    expect(result.willEmitNotices).toMatchObject([
+      { topic: 'modifyTournamentDetail', payloads: [{ tournamentId: id, tournamentName: 'projected' }] },
+    ]);
+    expect(later).not.toHaveBeenCalled();
     expect(borrowed.tournamentName).toBe('committed');
     expect(borrowed.notes).toBeUndefined();
     expect(delivered).not.toHaveBeenCalled();
   }));
 
-it('keeps overlapping nested explanations in their own request state after await', () =>
+it('keeps two overlapping explanations independent when a private implementation resumes', () =>
   request(async (engine, borrowed) => {
     const entered = Promise.withResolvers<void>();
     const release = Promise.withResolvers<void>();
-    engine.importMethods({
-      inner: async ({ tournamentRecord, label }: Write & { label: string }) => {
-        const inherited = tournamentRecord.tournamentName;
-        if (label === 'first') {
-          entered.resolve();
-          await release.promise;
-        }
-        expect(getTournamentRecord(id)).toBe(tournamentRecord);
-        tournamentRecord.tournamentName = label;
-        return { success: true, inherited };
-      },
-      outer: async ({ tournamentRecord }: Write) => {
-        await Promise.resolve();
-        tournamentRecord.tournamentName = 'outer';
-        const first = engine.explain('inner', { label: 'first' });
-        await entered.promise;
-        try {
-          const second = await engine.explain('inner', { label: 'second' });
-          expect(second.detail.results[0]).toMatchObject({ inherited: 'outer' });
-          expect(second.detail.patch).toEqual([{ op: 'replace', path: '/preview/tournamentName', value: 'second' }]);
-        } finally {
-          release.resolve();
-        }
-        const resumed = await first;
-        expect(resumed.detail.patch).toEqual([{ op: 'replace', path: '/preview/tournamentName', value: 'first' }]);
-        expect(getTournamentRecord(id)).toBe(tournamentRecord);
-        expect(tournamentRecord.tournamentName).toBe('outer');
-        return { success: true };
-      },
+    const rename = vi.fn(() => ({ success: true }));
+    engine.importMethods({ rename });
+    registerPreviewMethod(engine, rename, async ({ tournamentRecord, label }: Write & { label: string }) => {
+      const inherited = tournamentRecord.tournamentName;
+      if (label === 'first') {
+        entered.resolve();
+        await release.promise;
+      }
+      expect(tournamentRecord.tournamentName).toBe('entry');
+      tournamentRecord.tournamentName = label;
+      return { success: true, inherited };
     });
-    const result = await engine.explain('outer');
-    expect(result.wouldSucceed).toBe(true);
-    expect(result.touchesPaths).toEqual(['/preview/tournamentName']);
-    expect(result.detail.patch).toEqual([{ op: 'replace', path: '/preview/tournamentName', value: 'outer' }]);
+    const first = engine.explain('rename', { label: 'first' });
+    try {
+      await Promise.race([
+        entered.promise,
+        Promise.resolve(first).then(() => {
+          throw new Error('first directive never entered');
+        }),
+      ]);
+      const second = await engine.explain('rename', { label: 'second' });
+      expect(second.detail.results[0]).toMatchObject({ inherited: 'entry' });
+      expect(second.detail.patch).toEqual([{ op: 'replace', path: '/preview/tournamentName', value: 'second' }]);
+    } finally {
+      release.resolve();
+    }
+    const resumed = await first;
+    expect(resumed.detail.results[0]).toMatchObject({ inherited: 'entry' });
+    expect(resumed.detail.patch).toEqual([{ op: 'replace', path: '/preview/tournamentName', value: 'first' }]);
     expect(getTournamentRecord(id)).toBe(borrowed);
     expect(borrowed.tournamentName).toBe('entry');
+    expect(rename).not.toHaveBeenCalled();
   }));
 
 it.each(['refuse', 'reject', 'dev-reject'] as const)('isolates writes preceding a post-await %s', (kind) =>
@@ -128,7 +139,7 @@ it.each(['refuse', 'reject', 'dev-reject'] as const)('isolates writes preceding 
     const failure = new Error('private directive rejected');
     const refusal = { code: 'PRIVATE_REFUSAL', message: 'private directive refused' };
     const next = vi.fn();
-    engine.importMethods({
+    const methods = {
       failing: async ({ tournamentRecord }: Write) => {
         await Promise.resolve();
         tournamentRecord.tournamentName = 'failed preview';
@@ -136,7 +147,10 @@ it.each(['refuse', 'reject', 'dev-reject'] as const)('isolates writes preceding 
         throw failure;
       },
       next,
-    });
+    };
+    engine.importMethods(methods);
+    registerPreviewMethod(engine, methods.failing, methods.failing);
+    registerPreviewMethod(engine, next, next);
     engine.devContext(kind === 'dev-reject');
     const result = engine.dryRun([{ method: 'failing' }, { method: 'next' }]);
     if (kind === 'dev-reject') {
@@ -156,13 +170,15 @@ it.each(['refuse', 'reject', 'dev-reject'] as const)('isolates writes preceding 
 
 it('awaits a Promise-returning directive through both standalone package exports', () =>
   request(async (engine, borrowed) => {
-    engine.importMethods({
+    const methods = {
       renameLater: async ({ tournamentRecord, name }: Write & { name: string }) => {
         await Promise.resolve();
         tournamentRecord.tournamentName = name;
         return { success: true, name };
       },
-    });
+    };
+    engine.importMethods(methods);
+    registerPreviewMethod(engine, methods.renameLater, methods.renameLater);
     const pendingDry = dryRun(engine, [{ method: 'renameLater', params: { name: 'dry' } }]);
     const pendingExplanation = explain(engine, 'renameLater', { name: 'explain' });
     expect(pendingDry).toBeInstanceOf(Promise);

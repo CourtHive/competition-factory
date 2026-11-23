@@ -9,6 +9,7 @@ import {
   getTournamentRecords,
   setNoticeBuffer,
   setTournamentId,
+  setTournamentRecords,
   Notice,
 } from '@Global/state/globalState';
 
@@ -88,15 +89,13 @@ export function captureOperation(): { captured: OperationState; error?: undefine
  * every later mutation went to a copy the caller never saw.
  */
 export function restoreOperation({ records, tournamentId, notices, borrowed, clone }: OperationState): void {
-  // All three paths reinstall records from this operation. Preserve their existing aliases.
-  const provider = getProvider();
   if (!borrowed) {
-    provider.setTournamentRecords(records);
+    setTournamentRecords(records);
   } else if (clone) {
-    provider.setTournamentRecords(restoreState(clone));
+    setTournamentRecords(restoreState(clone));
   } else {
     const live = getTournamentRecords();
-    provider.setTournamentRecords(provider.restoreSnapshot(live, records) ?? live);
+    setTournamentRecords(getProvider().restoreSnapshot(live, records) ?? live);
   }
   setTournamentId(tournamentId);
   setNoticeBuffer(notices);

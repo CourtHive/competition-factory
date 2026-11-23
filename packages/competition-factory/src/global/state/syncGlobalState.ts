@@ -1,4 +1,4 @@
-import { type PreviewContext, appendNotice, UNANNOUNCED_WRITE, UNNAMED_TOURNAMENT } from './noticeIdentity';
+import { appendNotice, UNANNOUNCED_WRITE, UNNAMED_TOURNAMENT } from './noticeIdentity';
 import {
   CallListenerArgs,
   DeleteNoticeArgs,
@@ -18,9 +18,7 @@ import {
   NOT_FOUND,
 } from '@Constants/errorConditionConstants';
 
-type SyncState = ImplemtationGlobalStateTypes & { preview?: PreviewContext };
-const newInstanceState = (): SyncState => ({
-  preview: undefined,
+const newInstanceState = (): ImplemtationGlobalStateTypes => ({
   disableNotifications: false,
   tournamentId: undefined,
   tournamentRecords: {},
@@ -34,16 +32,7 @@ const newInstanceState = (): SyncState => ({
 
 let syncGlobalState = newInstanceState();
 
-// Only a store created for a preview is silenced. Nested ordinary stores still deliver.
-export function markPrivateSyncDelivery(scope: object, context: PreviewContext) {
-  if (scope === syncGlobalState) syncGlobalState.preview = context;
-}
-
-export function syncPreviewContext() {
-  return syncGlobalState.preview;
-}
-
-// Synchronous dispatch is stack-scoped. Each nested preview owns a fresh state object.
+// Synchronous governors complete before this stack frame exits. Async previews require a request provider.
 function runWithInstanceState<T>(run: () => T): T {
   const parent = syncGlobalState;
   syncGlobalState = newInstanceState();
@@ -212,18 +201,8 @@ export function setSubscriptions(params: any) {
   return { ...SUCCESS };
 }
 
-export function setMethods(params: { [key: string]: any }, options?: { privateRegistry?: boolean }) {
+export function setMethods(params: { [key: string]: any }) {
   if (typeof params !== 'object') return { error: INVALID_VALUES };
-
-  if (options?.privateRegistry) {
-    // Dispatch already resolved the outer queue. Only nested dispatch or registration needs its own registry.
-    let methods: typeof params;
-    Object.defineProperty(syncGlobalState, 'methods', {
-      configurable: true,
-      get: () => (methods ??= { ...params }),
-    });
-    return { ...SUCCESS };
-  }
 
   Object.keys(params).forEach((methodName) => {
     if (typeof params[methodName] !== 'function') return;
@@ -318,7 +297,6 @@ export function getTopics(): { topics: string[] } {
 }
 
 export function callListener({ topic, payloads, notices }: CallListenerArgs, globalSubscriptions?: any) {
-  if (syncGlobalState.preview) return;
   // back-compat: accept either `payloads` (canonical) or `notices` (deprecated alias).
   const data = payloads ?? notices ?? [];
   const method = syncGlobalState.subscriptions[topic];

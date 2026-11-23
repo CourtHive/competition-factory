@@ -63,6 +63,8 @@ resolves the methods the engine itself imported, so `tournamentEngineAsync` need
 globally stays correct. An engine assembled with `asyncEngine()` inside the request already finds the
 methods it imports there.
 
+For a server-defined method, register its private implementation on the engine used by the request. Preview checks every directive before dispatch and returns `ERR_UNREGISTERED_PREVIEW_METHOD` for a custom method without a registration. [Previewing custom methods](./dry-run-explain.md#custom-methods)
+
 ## Handle a request
 
 Each mutation request follows the same steps, all inside one `runWithInstanceState` scope:

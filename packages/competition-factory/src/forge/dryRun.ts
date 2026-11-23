@@ -1,20 +1,10 @@
-import { prepareDirective, validateDirectives } from '@Assemblies/engines/parts/directives';
+import { validateDirectives } from '@Assemblies/engines/parts/directives';
 import { getQueueMethods } from '@Assemblies/engines/parts/engineMethodRegistry';
-import { caughtErrorResult, executeFunction } from '@Assemblies/engines/parts/executeMethod';
-import { generatePatch, JsonPatch } from '@Tools/jsonPatch';
-import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { readPreviewClocks } from '@Tools/clock';
+import type { JsonPatch } from '@Tools/jsonPatch';
 import { withPreviewState } from './previewState';
-import {
-  getCallRandomSource,
-  setCallRandomSource,
-  getDevContext,
-  getMethods,
-  getNotices,
-  getTopics,
-  getTournamentRecords,
-  globalLog,
-} from '@Global/state/globalState';
+import { resolvePreviewDirectives } from './previewBindings';
+import { runPreview } from './previewRunner';
 
 // types
 import type { AsyncFactoryEngine } from '@Types/asyncEngineTypes';
@@ -66,92 +56,22 @@ export function dryRun(engine: FactoryEngine | AsyncFactoryEngine, directives: D
     return refused({ ...invalid.error, message });
   }
 
-  const snapshotStart = Date.now();
-  const outcome = withPreviewState(directives, awaitMethods, clocks, (before, privateDirectives) => {
-    const snapshotElapsed = Date.now() - snapshotStart;
-    // executeFunction clears status on its dispatch receiver. A preview owns that receiver as well.
-    return executePreview(Object.create(engine), privateDirectives, methods, before, snapshotElapsed, awaitMethods);
-  });
-  return 'error' in outcome && !('wouldSucceed' in outcome) ? refused(outcome.error) : outcome;
-}
+  const plan = resolvePreviewDirectives(engine, directives, methods);
+  if (plan.error) return refused(plan.error);
 
-function executePreview(
-  engine: FactoryEngine,
-  directives: Directives,
-  methods: ReturnType<typeof getMethods>,
-  before: ReturnType<typeof getTournamentRecords>,
-  snapshotElapsed: number,
-  awaitMethods: boolean,
-): DryRunResult | Promise<DryRunResult> {
-  const executeStart = Date.now();
-  const results: DryRunResult['results'] = [];
-  const source = getCallRandomSource();
-  const finish = (error?: DryRunResult['error']) =>
-    finishPreview(before, results, error, snapshotElapsed, Date.now() - executeStart);
-
-  function dispatch(from: number): DryRunResult | Promise<DryRunResult> {
-    for (let index = from; index < directives.length; index++) {
-      const methodName = directives[index].method;
-      const { params, unthreadedSource } = prepareDirective(directives[index], results);
-      // This scope belongs only to this queue. Keep a seeded directive's stream until its Promise settles.
-      if (unthreadedSource) setCallRandomSource(unthreadedSource);
-      const result = executeFunction(engine, methods[methodName], params, methodName, awaitMethods ? 'async' : 'sync', {
-        dryRun: true,
-      });
-      if (awaitMethods && typeof result?.then === 'function') {
-        return Promise.resolve(result)
-          .catch((err) => {
-            if (getDevContext()) throw err;
-            return caughtErrorResult({ methodName, params, err });
-          })
-          .then((settled) => {
-            if (unthreadedSource) setCallRandomSource(source);
-            results.push({ ...settled, methodName });
-            return settled?.error ? finish(settled.error) : dispatch(index + 1);
-          });
+  // Only a registered implementation can initiate a nested queue. Capture its complete
+  // method table before entering the child; an overlapping import cannot retarget it.
+  const nestedMethods = [...plan.methods.values()].some((binding) => 'custom' in binding)
+    ? {
+        ...getQueueMethods(
+          engine,
+          Object.keys(engine).map((method) => ({ method })),
+        ),
       }
-      if (unthreadedSource) setCallRandomSource(source);
-      results.push({ ...result, methodName });
-      if (result?.error) return finish(result.error);
-    }
-    return finish();
-  }
-  return dispatch(0);
-}
-
-function finishPreview(
-  before: ReturnType<typeof getTournamentRecords>,
-  results: DryRunResult['results'],
-  error: DryRunResult['error'],
-  snapshotElapsed: number,
-  executeElapsed: number,
-): DryRunResult {
-  // Keep patch values independent of per-method results and notice payloads.
-  const diffStart = Date.now();
-  const patch = generatePatch(before, getTournamentRecords()).map((op) =>
-    'value' in op ? { ...op, value: makeDeepCopy(op.value, false, true) } : op,
+    : methods;
+  const snapshotStart = Date.now();
+  const outcome = withPreviewState(directives, awaitMethods, clocks, (state) =>
+    runPreview(state, engine, plan.methods, nestedMethods, awaitMethods, snapshotStart),
   );
-  const diffElapsed = Date.now() - diffStart;
-
-  // Include any notices already pending at entry, as a real queue would.
-  const willEmitNotices: EmittedNotice[] = [];
-  for (const topic of getTopics().topics) {
-    const payloads = getNotices({ topic });
-    if (payloads?.length) willEmitNotices.push({ topic, payloads });
-  }
-
-  if (typeof getDevContext() === 'object') {
-    globalLog(
-      {
-        dryRun: true,
-        methods: results.length,
-        elapsed: snapshotElapsed + executeElapsed + diffElapsed,
-        overhead: { snapshot: snapshotElapsed, diff: diffElapsed, restore: 0 },
-        execute: executeElapsed,
-        patchOps: patch.length,
-      },
-      'sync',
-    );
-  }
-  return { wouldSucceed: !error, results, patch, willEmitNotices, ...(error ? { error } : {}), rolledBack: true };
+  return 'error' in outcome && !('wouldSucceed' in outcome) ? refused(outcome.error) : outcome;
 }

@@ -1,3 +1,7 @@
+import { registerPreviewMethod } from './previewMethods';
+import { setTournamentName } from '@Mutate/tournaments/tournamentDetails';
+import { MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
+import { generatePatch } from '@Tools/jsonPatch';
 import { setClock } from '@Tools/clock';
 import { MISSING_ASYNC_STATE_PROVIDER, ROLLBACK_UNAVAILABLE } from '@Constants/errorConditionConstants';
 import syncEngine from '@Engines/syncEngine';
@@ -12,8 +16,6 @@ import {
   cycleMutationStatus,
   getTournamentRecord,
   getTournamentRecords,
-  getNoticeBuffer,
-  setTournamentRecord,
   setTournamentRecords,
   markModified,
   setDeepCopy,
@@ -31,57 +33,77 @@ afterEach(() => {
 it.each(['dryRun', 'explain'] as const)(
   '%s isolates borrowed records during dispatch and in async descendants',
   async (kind) => {
-    const engine = asyncEngine(true);
+    const at = new Date('2026-11-23T00:00:00Z');
+    setClock(() => at);
     setStateProvider(asyncGlobalState);
     async function request(id: string) {
       return asyncGlobalState.runWithInstanceState(async () => {
+        const engine = asyncEngine(true);
         const doc = { tournamentId: id, tournamentName: id, notes: 'loaded' };
+        const before = structuredClone(doc);
         await engine.setState(doc, false);
-        setSubscriptions({
-          subscriptions: {
-            preview: () => {
-              throw new Error('preview delivered');
-            },
-          },
-        });
+        const delivered: unknown[] = [];
+        setSubscriptions({ subscriptions: { [MODIFY_TOURNAMENT_DETAIL]: (payloads) => delivered.push(...payloads) } });
         const observeParent = AsyncResource.bind(() => {
           expect(getTournamentRecord(id)).toBe(doc);
           expect(doc.tournamentName).toBe(id);
           doc.notes = 'committed independently';
         });
         let descendant: Promise<void> | undefined;
-        function write({ tournamentRecord, entity }) {
-          expect(tournamentRecord).not.toBe(doc);
-          expect(entity).toBe(tournamentRecord);
-          entity.tournamentName = 'preview-' + id;
-          addNotice({ topic: 'preview', payload: { id } });
-          observeParent();
-          descendant = Promise.resolve().then(() => {
-            expect(getTournamentRecord(id)).toBe(entity);
-            entity.notes = 'child only';
-          });
-          return { success: true };
-        }
-        engine.importMethods({ write });
+        const write = () => {
+          throw new Error('ordinary closure dispatched');
+        };
+        engine.importMethods({ write, setTournamentName });
+        registerPreviewMethod(
+          engine,
+          write,
+          ({ tournamentRecord, entity }: { tournamentRecord: typeof doc; entity: typeof doc }, receiver) => {
+            expect(tournamentRecord).not.toBe(doc);
+            expect(entity).toBe(tournamentRecord);
+            const nested = receiver.executionQueue([
+              { method: 'setTournamentName', params: { tournamentName: 'preview-' + id } },
+            ]);
+            expect(nested).toMatchObject({ success: true });
+            observeParent();
+            descendant = Promise.resolve().then(() => {
+              entity.notes = 'child only';
+              expect(() => receiver.getState()).toThrow('outside its call');
+            });
+            return { success: true };
+          },
+        );
         markModified(id);
         await Promise.resolve();
         const params = { entity: doc };
         const result =
           kind === 'dryRun' ? engine.dryRun([{ method: 'write', params }]) : engine.explain('write', params).detail;
         expect(result.wouldSucceed).toBe(true);
-        expect(result.patch).toEqual([{ op: 'replace', path: '/' + id + '/tournamentName', value: 'preview-' + id }]);
-        expect(result.willEmitNotices).toEqual([{ topic: 'preview', payloads: [{ id }] }]);
+        expect(result.willEmitNotices).toMatchObject([
+          { topic: MODIFY_TOURNAMENT_DETAIL, payloads: [{ tournamentId: id, tournamentName: 'preview-' + id }] },
+        ]);
         await descendant;
         expect(doc).toEqual({ tournamentId: id, tournamentName: id, notes: 'committed independently' });
         expect(getTournamentRecord(id)).toBe(doc);
         expect(cycleMutationStatus()).toBe(true);
+        const actual = structuredClone(before);
+        engine.setState(actual, false);
+        expect(delivered).toEqual([]);
+        expect(
+          await engine.executionQueue([{ method: 'setTournamentName', params: { tournamentName: 'preview-' + id } }]),
+        ).toMatchObject({ success: true });
+        expect(actual).toMatchObject({
+          tournamentName: 'preview-' + id,
+          factory: { timeStamp: at.getTime(), version: engine.version() },
+        });
+        expect(delivered).toMatchObject([{ tournamentId: id, tournamentName: 'preview-' + id }]);
+        expect(result.patch).toEqual(generatePatch({ [id]: before }, { [id]: actual }));
       });
     }
     await Promise.all([request('first'), request('second')]);
   },
 );
 
-it('keeps a real subscriber out of nested dispatch inside a preview', async () => {
+it('refuses an unregistered closure that would notify a real subscriber', async () => {
   const engine = asyncEngine(true);
   const delivered: any[] = [];
   setStateProvider(asyncGlobalState);
@@ -96,7 +118,10 @@ it('keeps a real subscriber out of nested dispatch inside a preview', async () =
           return { success: true };
         },
       });
-      expect(engine.dryRun([{ method: 'nestedNotify' }]).wouldSucceed).toBe(true);
+      expect(await engine.dryRun([{ method: 'nestedNotify' }])).toMatchObject({
+        error: { code: 'ERR_UNREGISTERED_PREVIEW_METHOD' },
+        results: [],
+      });
       expect(delivered).toEqual([]);
     } finally {
       setGlobalSubscriptions({ subscriptions: { nestedPreview: undefined } });
@@ -135,11 +160,12 @@ it('requires an async scope before invoking a directive on the async engine', ()
   setStateProvider(syncGlobalState);
   const engine = asyncEngine(true);
   let called = false;
-  engine.importMethods({
-    later: async () => {
-      called = true;
-    },
-  });
+  const later = async () => {
+    called = true;
+    return { success: true };
+  };
+  engine.importMethods({ later });
+  registerPreviewMethod(engine, later, later);
   expect(engine.dryRun([{ method: 'later' }]).error).toEqual(MISSING_ASYNC_STATE_PROVIDER);
   expect(called).toBe(false);
 });
@@ -156,7 +182,7 @@ it('detaches aliased collection members, sparse fields and provider metadata in 
   Object.defineProperty(metadata, '__proto__', { value: entity, enumerable: true });
   const record = { tournamentId: 'graph', entity, stamp, members, map: new Map([[entity, members]]), metadata };
   syncEngine.setState(record, false);
-  syncEngine.importMethods({
+  const methods = {
     editGraph: ({ tournamentRecord: child }) => {
       expect(child.map.get(child.entity)).toBe(child.members);
       expect(child.members.has(child.stamp)).toBe(true);
@@ -171,7 +197,9 @@ it('detaches aliased collection members, sparse fields and provider metadata in 
       child.entity.value = 2;
       return { success: true };
     },
-  });
+  };
+  syncEngine.importMethods(methods);
+  registerPreviewMethod(syncEngine, methods.editGraph, methods.editGraph);
   const result = syncEngine.dryRun([{ method: 'editGraph' }]);
   expect(result.wouldSucceed).toBe(true);
   expect(entity.value).toBe(1);
@@ -188,52 +216,40 @@ it.each([
   setStateProvider(syncGlobalState);
   syncEngine.setState({ tournamentId: 'unavailable', field }, false);
   let calls = 0;
-  syncEngine.importMethods({
+  const methods = {
     attempt: () => {
       calls++;
       return { success: true };
     },
-  });
+  };
+  syncEngine.importMethods(methods);
+  registerPreviewMethod(syncEngine, methods.attempt, methods.attempt);
   expect(syncEngine.dryRun([{ method: 'attempt' }]).error).toEqual(ROLLBACK_UNAVAILABLE);
   expect(calls).toBe(0);
 });
 
-it('isolates public record installs and restores a refused nested queue into its original private graph', () => {
+it('prevents a custom closure from replacing the borrowed record map during preview', () => {
   const shared = { value: 'entry' };
   const live = { tournamentId: 'rollback', left: shared, right: shared };
   syncEngine.setState(live, false);
-  const borrowed = getTournamentRecord('rollback');
-  expect(borrowed).toBe(live);
-  setSubscriptions({ subscriptions: { pending: () => undefined } });
+  const map = getTournamentRecords();
+  let calls = 0;
   syncEngine.importMethods({
-    refuseAfterReplacingMap() {
+    replaceFromClosure() {
+      calls++;
       getTournamentRecord('rollback').left.value = 'dirty';
-      setTournamentRecords({ rollback: live });
+      setTournamentRecords({});
       return { error: 'TEST_REFUSAL' };
     },
-    inspectRollback() {
-      setTournamentRecord(borrowed);
-      const record = getTournamentRecord('rollback');
-      expect(record).not.toBe(live);
-      expect(record.left).not.toBe(shared);
-      expect(record.left).toBe(record.right);
-      setTournamentRecords({ rollback: record });
-      const map = getTournamentRecords();
-      expect(map.rollback).toBe(record);
-      const entity = record.left;
-      addNotice({ topic: 'pending', payload: { entity } });
-      const result = syncEngine.executionQueue([{ method: 'refuseAfterReplacingMap' }], true);
-      expect(result).toMatchObject({ error: 'TEST_REFUSAL', rolledBack: true });
-      expect(getTournamentRecords()).toBe(map);
-      expect(map.rollback).toBe(record);
-      expect(record.left).toBe(entity);
-      expect(record.right).toBe(entity);
-      expect(entity.value).toBe('entry');
-      expect(getNoticeBuffer()?.[0].payload.entity).toBe(entity);
-      return { success: true };
-    },
   });
-  expect(syncEngine.dryRun([{ method: 'inspectRollback' }])).toMatchObject({ wouldSucceed: true });
+  const result = syncEngine.dryRun([{ method: 'replaceFromClosure' }]);
+  expect(result).toMatchObject({
+    wouldSucceed: false,
+    error: { code: 'ERR_UNREGISTERED_PREVIEW_METHOD' },
+    results: [],
+  });
+  expect(calls).toBe(0);
+  expect(getTournamentRecords()).toBe(map);
   expect(getTournamentRecord('rollback')).toBe(live);
   expect(live.left).toBe(shared);
   expect(live.right).toBe(shared);

@@ -5,6 +5,7 @@ import { factoryVersion as version } from '@Functions/global/factoryVersion';
 import { deleteDrawDefinitions } from '@Mutate/events/deleteDrawDefinitions';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { getParticipants } from '@Query/participants/getParticipants';
+import { tournamentGovernor } from '@Assemblies/governors';
 import * as eventGovernor from '@Assemblies/governors/eventGovernor';
 import * as query from '@Assemblies/governors/queryGovernor';
 import { getMethods } from '@Global/state/syncGlobalState';
@@ -22,6 +23,27 @@ import {
   MISSING_ASYNC_STATE_PROVIDER,
   SCORES_PRESENT,
 } from '@Constants/errorConditionConstants';
+
+test('bare sync previews and a committed queue use the same imported governor immediately', () => {
+  expect(syncEngine.setTournamentName).toBeUndefined();
+  syncEngine.importMethods({ setTournamentName: tournamentGovernor.setTournamentName });
+  const record = { tournamentId: 'bare', tournamentName: 'entry' };
+  expect(syncEngine.setState(record, false)).toMatchObject({ success: true });
+  const params = { tournamentName: 'projection' };
+  const queue = [{ method: 'setTournamentName', params }];
+  const run = syncEngine.dryRun(queue);
+  const explanation = syncEngine.explain('setTournamentName', params);
+  expect(run).not.toBeInstanceOf(Promise);
+  expect(explanation).not.toBeInstanceOf(Promise);
+  expect(run).toMatchObject({
+    wouldSucceed: true,
+    patch: [{ op: 'replace', path: '/bare/tournamentName', value: 'projection' }],
+  });
+  expect(explanation.detail.patch).toEqual(run.patch);
+  expect(record.tournamentName).toBe('entry');
+  expect(syncEngine.executionQueue(queue)).toMatchObject({ success: true });
+  expect(record.tournamentName).toBe('projection');
+});
 
 test('sync syncEngine can set state and execute methods', () => {
   const {

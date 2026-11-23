@@ -1,160 +1,127 @@
 import { deferredQuery, deferredQueryBinding } from '@Mutate/notifications/drawNotifications';
-import { createSeededRandom, randomSource, SeededRandom } from '@Tools/prng';
 import { MISSING_ASYNC_STATE_PROVIDER, ROLLBACK_UNAVAILABLE } from '@Constants/errorConditionConstants';
-import { Directives, TournamentRecords } from '@Types/factoryTypes';
-import { deliveryScope, registerPrivateScope, type PreviewContext } from '@Global/state/noticeIdentity';
-import syncGlobalState, { markPrivateSyncDelivery } from '@Global/state/syncGlobalState';
+import { getLoadedFootprint, markLoadedFootprint } from '@Global/state/loadedFootprint';
+import { createSeededRandom, randomSource, type SeededRandom } from '@Tools/prng';
+import syncGlobalState from '@Global/state/syncGlobalState';
 import { isPlainContainer } from '@Tools/cloneState';
 import {
-  deepCopyEnabled,
   getCapturedStamps,
   getNoticeBuffer,
   getProvider,
+  getTopics,
   getTournamentId,
   getTournamentRecords,
-  setCallRandomSource,
-  setCapturedClock,
-  setCapturedCompetitionClock,
-  setCapturedStamps,
 } from '@Global/state/globalState';
+
+import type { Directives, TournamentRecords } from '@Types/factoryTypes';
+
+export type PrivateState = {
+  before: TournamentRecords;
+  directives: Directives;
+  topics: string[];
+  isCurrent: () => boolean;
+};
 
 const subscribe = () => undefined;
 
-/** A preview has no live writes to undo. Its provider must be able to bind an independent child state. */
+/** Only the child store receives writes. A legacy request provider can identify its child by its own records map. */
 export function withPreviewState<T>(
   directives: Directives,
   asyncEngine: boolean,
   clocks: { record: number; competition?: number },
-  run: (before: TournamentRecords, directives: Directives) => T,
+  run: (state: PrivateState) => T,
 ) {
   const provider = getProvider();
-  if (typeof provider.runWithInstanceState !== 'function') return { error: ROLLBACK_UNAVAILABLE };
-
+  if (!provider.runWithInstanceState || !provider.setCapturedClock || !provider.getCapturedClock)
+    return { error: ROLLBACK_UNAVAILABLE };
   if (asyncEngine && provider.runWithInstanceState === syncGlobalState.runWithInstanceState)
     return { error: MISSING_ASYNC_STATE_PROVIDER };
 
   const live = getTournamentRecords();
-  const projection = provider.makeDeepCopy
-    ? provider.makeDeepCopy(live, false, true, false, { purpose: 'snapshot' })
-    : live;
-  if (
-    !projection ||
-    Object.keys(live).some((id) => projection[id]?.tournamentId !== id || !isPlainContainer(projection[id]))
-  ) {
-    return { error: ROLLBACK_UNAVAILABLE };
-  }
-
   const tournamentId = getTournamentId();
-  const methods = provider.getMethods();
-  const topics: string[] = provider.getTopics().topics;
+  const scope = provider.getDeliveryScope?.();
+  const topics = getTopics().topics;
+  // Legacy providers without either reader use their default enabled configuration.
   const disabled = provider.notificationsDisabled?.() ?? provider.getNoticeState?.()?.disableNotifications;
   const source = randomSource() as SeededRandom;
-  const notices = getNoticeBuffer();
-  const parentScope = deliveryScope(provider);
-  const { enabled: deepCopy, ...attributes } = deepCopyEnabled();
-  const parentStamps = getCapturedStamps();
-  const privateStamps = new WeakSet<object>();
+  const stamps = new WeakSet<object>();
+  const copy = privateCopier(getCapturedStamps(), stamps);
   let before: TournamentRecords;
   let records: TournamentRecords;
   let privateDirectives: Directives;
-  let buffer: typeof notices;
+  let buffer: ReturnType<typeof getNoticeBuffer>;
   try {
-    // Copy both roots together. A buffered payload may point to an entity a directive will modify.
-    const copy = privateCopier(parentStamps, privateStamps);
-    // A callback may re-enter a request with the same borrowed record and commit independently.
-    // Keep the patch baseline and working copy together, reading each source field once.
-    ({ before, working: records } = copy(projection, true));
+    const projection = provider.makeDeepCopy
+      ? provider.makeDeepCopy(live, false, true, false, { purpose: 'snapshot' })
+      : live;
+    if (
+      !projection ||
+      Object.keys(live).some((id) => projection[id]?.tournamentId !== id || !isPlainContainer(projection[id]))
+    )
+      return { error: ROLLBACK_UNAVAILABLE };
+    ({ working: records, before } = copy(projection, true));
+    for (const id of Object.keys(live)) {
+      const footprint = getLoadedFootprint(live[id]);
+      if (footprint) markLoadedFootprint(records[id], copy(footprint, false).working);
+    }
     privateDirectives = copy(directives, false).working;
-    buffer = notices?.length ? copy(notices, false).working : undefined;
+    const notices = getNoticeBuffer();
+    buffer = notices?.length ? copy(notices, false, true).working : undefined;
   } catch {
     return { error: ROLLBACK_UNAVAILABLE };
   }
 
   return provider.runWithInstanceState(() => {
-    const declaredScope = provider.getDeliveryScope?.();
-    if (declaredScope && (typeof declaredScope !== 'object' || declaredScope === parentScope)) {
+    // Check BEFORE installing clocks or records: a provider accidentally running in the caller must stay untouched.
+    if (provider.getTournamentRecords() === live || (scope && scope === provider.getDeliveryScope?.()))
       return { error: ROLLBACK_UNAVAILABLE };
-    }
-    if (!declaredScope && (!provider.getCapturedStamps || !provider.setCapturedStamps || !provider.getCapturedClock)) {
-      return { error: ROLLBACK_UNAVAILABLE };
-    }
-    setCapturedClock(clocks.record);
-    setCapturedCompetitionClock(clocks.competition);
-    setCapturedStamps(privateStamps);
-    const scope = declaredScope ?? provider.getCapturedStamps?.();
-    // The clock keeps nested operations on the installed ledger. A legacy provider without
-    // an identifiable child must refuse before invoking user code.
-    if (
-      !scope ||
-      typeof scope !== 'object' ||
-      scope === parentScope ||
-      scope !== deliveryScope(provider) ||
-      (!declaredScope && (scope !== privateStamps || provider.getCapturedClock?.() !== clocks.record))
-    ) {
-      return { error: ROLLBACK_UNAVAILABLE };
-    }
-    const context: PreviewContext = {
-      deepCopy,
-      deepCopyAttributes: {
-        ...attributes,
-        ignore: [...attributes.ignore],
-        stringify: [...attributes.stringify],
-        toJSON: [...attributes.toJSON],
-      },
-      copyRecord(value) {
-        const installed = provider.getTournamentRecords();
-        if (value === installed || (value?.tournamentId && value === installed[value.tournamentId])) return value;
-        // A nested setState can supply an outer borrowed record. Only records already installed
-        // in this child retain their identity when the map is replaced.
-        const known = new Map<object, CopyPair>(
-          Object.values(installed).map((record: any) => [record, { working: record }]),
-        );
-        const projected = provider.makeDeepCopy
-          ? provider.makeDeepCopy(value, false, true, false, { purpose: 'snapshot' })
-          : value;
-        return privateCopier(undefined, undefined, known)(projected, true).working;
-      },
-    };
-    registerPrivateScope(scope, context);
-    markPrivateSyncDelivery(scope, context);
+    provider.setCapturedClock(clocks.record);
+    provider.setCapturedCompetitionClock?.(clocks.competition);
+    provider.setCapturedStamps?.(stamps);
+    provider.setCallRandomSource?.(typeof source.state === 'function' ? createSeededRandom(source.state()) : source);
     provider.setTournamentRecords(records);
     provider.setTournamentId(tournamentId);
-    provider.setMethods?.(methods, { privateRegistry: true });
     if (topics.length)
       provider.setSubscriptions({ subscriptions: Object.fromEntries(topics.map((t) => [t, subscribe])) });
     if (buffer) provider.setNoticeBuffer?.(buffer);
     if (disabled) provider.disableNotifications();
-    setCallRandomSource(typeof source.state === 'function' ? createSeededRandom(source.state()) : source);
-    return run(before, privateDirectives);
-  }) as T;
+    return run({
+      before,
+      directives: privateDirectives,
+      topics,
+      isCurrent: () => getProvider() === provider && provider.getTournamentRecords() === records,
+    });
+  });
+}
+
+/** Detach a nested queue input or an observed delivery at the point it crosses the private boundary. */
+export function copyPreviewValue<T>(value: T): T {
+  return privateCopier()(value, false).working;
 }
 
 type CopyPair = { working: any; before?: any };
 
 // Every object in a record, notice or directive has one working identity. Only records need a baseline.
-function privateCopier(
-  parentStamps?: WeakSet<object>,
-  privateStamps?: WeakSet<object>,
-  copies = new Map<object, CopyPair>(),
-) {
-  function copy(source: any, record: boolean): CopyPair {
+function privateCopier(parentStamps?: WeakSet<object>, privateStamps?: WeakSet<object>) {
+  const copies = new Map<object, CopyPair>();
+  function copy(source: any, record: boolean, notice = false): CopyPair {
     if (source == null || (typeof source !== 'object' && typeof source !== 'function'))
       return { working: source, before: source };
     const existing = copies.get(source);
     if (existing) return existing;
 
     if (typeof source === 'function') {
-      if (record) throw new TypeError('Uncopyable record field');
+      if (!notice) throw new TypeError('Callback in preview record or directive');
       const binding = deferredQueryBinding(source);
-      if (!binding) return { working: source };
+      if (!binding) throw new TypeError('Unbound callback in preview input');
       const working = deferredQuery(binding.query, undefined);
       copies.set(source, { working });
-      deferredQueryBinding(working)!.args = copy(binding.args, false).working;
+      deferredQueryBinding(working)!.args = copy(binding.args, false, true).working;
       return { working };
     }
 
-    if (source instanceof Map || source instanceof Set) return copyCollection(source, record);
-    if (!isPlainContainer(source)) return copyOpaque(source, record);
+    if (source instanceof Map || source instanceof Set) return copyCollection(source, record, notice);
+    if (!isPlainContainer(source)) return copyOpaque(source, record, notice);
 
     const working = emptyContainer(source);
     const before = record ? emptyContainer(source) : undefined;
@@ -162,9 +129,11 @@ function privateCopier(
     copies.set(source, pair);
     if (parentStamps?.has(source)) privateStamps!.add(working);
     for (const key of enumerableKeys(source)) {
-      const value = (source as Record<PropertyKey, unknown>)[key];
+      const field = Object.getOwnPropertyDescriptor(source, key)!;
+      if (!('value' in field)) throw new TypeError('Accessor in preview input');
+      const value = field.value;
       if (value !== null && (typeof value === 'object' || typeof value === 'function')) {
-        const child = copy(value, record);
+        const child = copy(value, record, notice);
         writeField(working, key, child.working);
         if (before) writeField(before, key, child.before);
       } else {
@@ -174,16 +143,16 @@ function privateCopier(
     }
     return pair;
   }
-  function copyCollection(source: Map<unknown, unknown> | Set<unknown>, record: boolean): CopyPair {
+  function copyCollection(source: Map<unknown, unknown> | Set<unknown>, record: boolean, notice: boolean): CopyPair {
     const create = () => (source instanceof Map ? new Map() : new Set());
     const working = create(),
       before = record ? create() : undefined;
     const pair = { working, before };
     copies.set(source, pair);
     for (const [key, value] of source.entries()) {
-      const item = copy(value, record);
+      const item = copy(value, record, notice);
       if (working instanceof Map) {
-        const id = copy(key, record);
+        const id = copy(key, record, notice);
         working.set(id.working, item.working);
         if (before instanceof Map) before.set(id.before, item.before);
       } else {
@@ -194,7 +163,7 @@ function privateCopier(
     return pair;
   }
 
-  function copyOpaque(source: any, record: boolean): CopyPair {
+  function copyOpaque(source: any, record: boolean, notice: boolean): CopyPair {
     if (
       typeof SharedArrayBuffer !== 'undefined' &&
       (source instanceof SharedArrayBuffer ||
@@ -205,7 +174,7 @@ function privateCopier(
     const detached = structuredClone(source);
     // A driver value may serialize to a plain object. Walk that projection as data as well.
     const pair = isPlainContainer(detached)
-      ? copy(detached, record)
+      ? copy(detached, record, notice)
       : { working: detached, before: record ? structuredClone(detached) : undefined };
     copies.set(source, pair);
     return pair;

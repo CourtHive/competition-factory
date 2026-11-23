@@ -60,6 +60,26 @@ tournamentEngine.dryRun([
 ]);
 ```
 
+### Custom methods
+
+`registerPreviewMethod(engine, liveMethod, privateImplementation)` associates a method supplied to `importMethods` with the code that models it in preview. Register the raw function you import. Both its identity and the engine matter. Replacing a function under the same method name requires a new registration.
+
+```ts
+import { registerPreviewMethod, tournamentEngine } from 'tods-competition-factory';
+
+const rename = (name: string) => [{ method: 'setTournamentName', params: { tournamentName: name } }];
+const renameForLeague = ({ name }: { name: string }) => tournamentEngine.executionQueue(rename(name));
+
+tournamentEngine.importMethods({ renameForLeague });
+registerPreviewMethod(tournamentEngine, renameForLeague, ({ name }: { name: string }, privateEngine) =>
+  privateEngine.executionQueue(rename(name)),
+);
+```
+
+Match the material result and notices of your live method. Use the supplied records and the second argument, a private receiver with `getState`, `getTournament` and `executionQueue`, for nested factory calls. A preview implementation must keep all writes in that scope. Code that closes over the live engine or an external document can still update it. Keep I/O in the live method. In an async implementation, await nested work before returning.
+
+The factory checks the entire directive list before dispatch. If a known engine method lacks a private implementation, preview returns `ERR_UNREGISTERED_PREVIEW_METHOD` and its `methodName`, with empty results, patch and notices. Ordinary queues continue to use the live method. Factory governor methods support previews directly.
+
 ### Errors
 
 Queue validation returns `{ wouldSucceed: false, error }` for each of these inputs.
@@ -114,8 +134,8 @@ The preview reads the loaded records to build a private working copy and a stabl
 
 Implement `runWithInstanceState(fn)` to invoke the callback with fresh record storage, selection, notice buffer and mutation flags. For Node servers, bind the child store using `AsyncLocalStorage.run` so continuations inherit it. Both built-in providers implement the hook. A provider without it receives `ERR_ROLLBACK_UNAVAILABLE` before dispatch. A provider-backed document can supply a plain projection with its existing `makeDeepCopy(..., { purpose: 'snapshot' })` hook. Keep external I/O out of previewed directives.
 
-Give each child a stable identity for subscriber delivery. A provider can return its active store from `getDeliveryScope()`. Older async providers can use their existing request-scoped clock and stamp ledger. Both must retain the values installed by the preview across awaits and nested record loads. A provider that cannot establish a private child receives `ERR_ROLLBACK_UNAVAILABLE` before its directive runs.
+Each child needs its own records map and captured clock. An async provider must retain that child across awaits. A provider can also expose its active store through `getDeliveryScope()`. The factory checks the new scope before installing private state and returns `ERR_ROLLBACK_UNAVAILABLE` if the provider reuses the calling scope.
 
-A nested public `setState` or `setTournamentRecord` installs records privately, including when the directive supplies a live borrowed record. The caller keeps its record and copy settings. Async continuations created by the preview keep its delivery scope even if they finish after the preview result. Only work awaited by the directive contributes to that result. Configure process-wide options and install providers outside previewed methods. A provider using its clock and stamp ledger for scope identity must leave those slots under factory control.
+The private receiver permits reads and nested queues during the preview. Await asynchronous work before returning. Configure engine options, providers and subscriptions in the host.
 
-Preview inherits request subscriptions. Providers can expose pending notices through `getNoticeBuffer` and `setNoticeBuffer`, and disabled notifications through `notificationsDisabled()` or `getNoticeState()`. Seeded randomness forks into the child. An opaque caller-supplied random function advances when the preview draws from it.
+Preview reads the active subscription topics and inherits buffered notices through `getNoticeBuffer()` and `setNoticeBuffer()`. Hosts that disable notifications must expose the current request’s flag via `notificationsDisabled()` or `getNoticeState().disableNotifications` so the preview can predict notice delivery. A provider without either getter uses the default enabled setting. Seeded randomness forks into the child. An opaque caller-supplied random source advances when the preview draws from it.

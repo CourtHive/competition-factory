@@ -1,6 +1,6 @@
 import { isFunction, isObject } from '@Tools/objects';
-import syncGlobalState, { syncPreviewContext } from './syncGlobalState';
-import { privateContext, type NoticeState } from './noticeIdentity';
+import syncGlobalState from './syncGlobalState';
+import type { NoticeState } from './noticeIdentity';
 
 // constants and types
 import {
@@ -81,8 +81,6 @@ type GlobalStateTypes = {
   deepCopy: boolean;
   globalLog?: any;
 };
-
-export type DeepCopySettings = Pick<GlobalStateTypes, 'deepCopy' | 'deepCopyAttributes'>;
 
 export type ImplemtationGlobalStateTypes = {
   tournamentRecords: TournamentRecords;
@@ -478,30 +476,23 @@ export type DeepCopyAttributes = {
   toJSON?: string[];
 };
 
-function activePreview() {
-  return _globalStateProvider === syncGlobalState ? syncPreviewContext() : privateContext(_globalStateProvider);
-}
-
 export function setDeepCopy(value: boolean, attributes: DeepCopyAttributes) {
-  if (typeof value !== 'boolean' && typeof attributes !== 'object') return;
-  const settings = activePreview() ?? globalState;
-  if (typeof value === 'boolean') settings.deepCopy = value;
+  if (typeof value === 'boolean') globalState.deepCopy = value;
   if (typeof attributes === 'object') {
-    if (Array.isArray(attributes.ignore)) settings.deepCopyAttributes.ignore = attributes.ignore;
-    if (Array.isArray(attributes.toJSON)) settings.deepCopyAttributes.toJSON = attributes.toJSON;
-    if (Array.isArray(attributes.stringify)) settings.deepCopyAttributes.stringify = attributes.stringify;
-    if (attributes.threshold) settings.deepCopyAttributes.threshold = attributes.threshold;
+    if (Array.isArray(attributes.ignore)) globalState.deepCopyAttributes.ignore = attributes.ignore;
+    if (Array.isArray(attributes.toJSON)) globalState.deepCopyAttributes.toJSON = attributes.toJSON;
+    if (Array.isArray(attributes.stringify)) globalState.deepCopyAttributes.stringify = attributes.stringify;
+    if (attributes.threshold) globalState.deepCopyAttributes.threshold = attributes.threshold;
     // an explicit `threshold: undefined` clears it; before, nothing could, and a threshold once set held for the process
     else if ('threshold' in attributes && attributes.threshold === undefined)
-      delete settings.deepCopyAttributes.threshold;
+      delete globalState.deepCopyAttributes.threshold;
   }
 }
 
 export function deepCopyEnabled() {
-  const settings = activePreview() ?? globalState;
   return {
-    enabled: settings.deepCopy,
-    ...settings.deepCopyAttributes,
+    enabled: globalState.deepCopy,
+    ...globalState.deepCopyAttributes,
   };
 }
 
@@ -708,14 +699,11 @@ export function setNoticeBuffer(notices?: Notice[]) {
  * notices that `notifySubscribers` then never delivered.
  */
 export function getTopics(): { topics: string[] } {
-  const topics: string[] = [...(_globalStateProvider.getTopics()?.topics ?? [])];
-  const subscriptions = globalState.globalSubscriptions;
-  for (const topic in subscriptions) {
-    if (Object.hasOwn(subscriptions, topic) && typeof subscriptions[topic] === 'function' && !topics.includes(topic)) {
-      topics.push(topic);
-    }
-  }
-  return { topics };
+  const topics: string[] = _globalStateProvider.getTopics()?.topics ?? [];
+  const globalTopics = Object.keys(globalState.globalSubscriptions).filter(
+    (topic) => isFunction(globalState.globalSubscriptions[topic]) && !topics.includes(topic),
+  );
+  return { topics: [...topics, ...globalTopics] };
 }
 
 export function hasTopic(topic) {
@@ -742,8 +730,6 @@ export type CallListenerArgs = {
   topic: string;
 };
 export async function callListener(payload) {
-  // The built-in synchronous listener has its own stack-scoped delivery flag.
-  if (_globalStateProvider !== syncGlobalState && privateContext(_globalStateProvider)) return;
   return _globalStateProvider.callListener(payload, globalState.globalSubscriptions);
 }
 
@@ -760,13 +746,11 @@ export function getTournamentRecords() {
 }
 
 export function setTournamentRecord(tournamentRecord: ResultType) {
-  const preview = activePreview();
-  return _globalStateProvider.setTournamentRecord(preview ? preview.copyRecord(tournamentRecord) : tournamentRecord);
+  return _globalStateProvider.setTournamentRecord(tournamentRecord);
 }
 
 export function setTournamentRecords(tournamentRecords: any) {
-  const preview = activePreview();
-  return _globalStateProvider.setTournamentRecords(preview ? preview.copyRecord(tournamentRecords) : tournamentRecords);
+  return _globalStateProvider.setTournamentRecords(tournamentRecords);
 }
 
 export function setTournamentId(tournamentId?: string): {
