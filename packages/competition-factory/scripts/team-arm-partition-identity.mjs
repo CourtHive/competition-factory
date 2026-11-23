@@ -34,10 +34,26 @@ const tokenHash = (text) =>
         ts.createSourceFile('identity.ts', `const captured = ${text};`, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS),
       ),
   );
-const read = (file, revision) =>
-  revision
-    ? execFileSync('git', ['show', `${revision}:${file}`], { encoding: 'utf8', timeout: 30_000, killSignal: 'SIGKILL' })
-    : readFileSync(resolve(root, file), 'utf8');
+// `rev:./path` is resolved from git's working directory (the package), where a bare `rev:path` is resolved from the
+// repository root, which holds the package in packages/competition-factory since the workspace layout move. A revision
+// from before the move (the sealed fixture's sourceRevision is one) held the package at the repository root, so a path
+// missing under the package is read from the root of that revision.
+const gitShow = (spec) =>
+  execFileSync('git', ['show', spec], {
+    cwd: root,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    timeout: 30_000,
+    killSignal: 'SIGKILL',
+  });
+const showAt = (revision, file) => {
+  try {
+    return gitShow(`${revision}:./${file}`);
+  } catch {
+    return gitShow(`${revision}:${file}`);
+  }
+};
+const read = (file, revision) => (revision ? showAt(revision, file) : readFileSync(resolve(root, file), 'utf8'));
 const render = (title, cell) => title.replace(/\$([A-Za-z][A-Za-z0-9_]*)/g, (_s, k) => String(cell[k]));
 const destination = (row) => {
   const arm = Object.keys(counts).find((n) => row.file === `${prefix}teamMatrix${n}.test.ts`);

@@ -17,7 +17,7 @@ corepack enable                                      # provides the pinned pnpm
 pnpm install
 git checkout -b fix/short-description origin/dev     # branch off dev, NOT master
 # …make your change, add a test…
-pnpm check-types && pnpm lint && pnpm format && pnpm test --run
+pnpm check-types && pnpm -C packages/competition-factory lint && pnpm format && pnpm test --run
 git commit -m "fix: describe the fix, not the file"
 git push -u origin fix/short-description
 gh pr create --base dev                              # PR against dev
@@ -67,8 +67,16 @@ Requirements: **Node >= 22** and **pnpm**, which `corepack enable` provides at t
 `package.json`. **Never run `npm install`** — it corrupts the pnpm-managed store and rewrites the
 lockfile.
 
+The repository is a pnpm workspace. The published package, `tods-competition-factory`, lives in
+`packages/competition-factory` (its `src/`, `scripts/`, configs and `package.json`); the root holds the
+workspace tooling (Husky, lint-staged, commitlint, Prettier, markdownlint) and `documentation/`. Run
+`pnpm install` at the root. The root forwards `build`, `test`, `check-types` and the pre-commit gates to
+the package; `format`, `format:check` and `lint:md` run at the root only. Run every other script from
+the package directory, or as `pnpm -C packages/competition-factory <script>` from the root:
+
 ```bash
-pnpm install
+pnpm install        # at the root
+cd packages/competition-factory
 pnpm build          # rollup + esbuild → dist/
 pnpm start          # rollup watch mode
 pnpm test           # vitest, watch mode
@@ -77,17 +85,18 @@ pnpm tui            # vitest interactive UI
 pnpm check-types    # tsc --noEmit
 pnpm lint           # eslint, zero warnings tolerated
 pnpm lint:fix       # eslint with auto-fix
-pnpm format         # prettier --write over the formatted target set
+pnpm -w format      # prettier --write over the formatted target set (runs at the root)
 pnpm coverage       # coverage report (thresholds 95/97/87/97.5)
 ```
 
-Before pushing, this is usually enough:
+Before pushing, this is usually enough (from the package directory):
 
 ```bash
-pnpm check-types && pnpm lint && pnpm format && pnpm test --run
+pnpm check-types && pnpm lint && pnpm -w format && pnpm test --run
 ```
 
-To reproduce the whole CI gate locally — slower, but it is exactly what the PR must pass:
+To reproduce the whole CI gate locally — slower, but it is exactly what the PR must pass (from the
+package directory):
 
 ```bash
 pnpm verify
@@ -107,7 +116,7 @@ minutes into a CI run.
 The suite is large (24,000+ tests in the default run) and a PR that changes behaviour is expected to carry a test.
 
 - Unit tests live **beside the code** as `*.test.ts`.
-- Broader integration and scenario suites live under `src/tests/`, organized by area.
+- Broader integration and scenario suites live under `packages/competition-factory/src/tests/`, organized by area.
 - `mocksEngine` is the house way to build tournament state for a test — `mocksEngine.generateTournamentRecord({ ..., setState: true })` — rather than hand-assembling records.
 - Where a test reassigns a result across successive engine calls, the house pattern is
   `let result: any = …` (`prefer-const` is off to permit it). Where a test calls once and never
@@ -129,9 +138,9 @@ surprise people:
   commit the result. It also runs `verify:constant-names`, which fails when a test uses a constant's
   NAME where the code expects its value (`'REMOVE_ASSIGNMENT'` for `REMOVE_ASSIGNMENT`, which is
   `'REMOVE'`): import the constant, or, if the name is deliberate, list the file and literal with
-  the reason in `scripts/verify/constantNames.allow.json`.
-- **`verify:format`** — Prettier is checked over `src/**` _and_ `documentation/docs/**`. Running
-  `pnpm format` fixes it.
+  the reason in `packages/competition-factory/scripts/verify/constantNames.allow.json`.
+- **`verify:format`** — Prettier is checked over `packages/competition-factory/src/**` _and_
+  `documentation/docs/**`. Running `pnpm format` at the root fixes it.
 - **`verify:migration-coverage`** — any commit carrying a breaking change must have its PR number
   present in `documentation/docs/migration-<next major>.0.0.md`. The guide is hand-maintained and is
   the authoritative list of breaking changes.

@@ -20,7 +20,7 @@
     { "type": "ci", "section": "CI", "hidden": true }
   ],
   "packages": {
-    ".": {
+    "packages/competition-factory": {
       "package-name": "tods-competition-factory"
     }
   }

@@ -1,6 +1,6 @@
 # Vendored dev tool — single source of truth in Mentat/tools/attr-audit
 # (installed via `node install.mjs`; do not reformat or it drifts from the template)
-scripts/attr-audit.mjs
+packages/competition-factory/scripts/attr-audit.mjs
 
 # Generated lockfiles — pnpm owns their format. Prettier reformatting them
 # (via lint-staged's `*` glob) produces a spurious full-file diff and drifts

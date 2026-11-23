@@ -11,5 +11,13 @@
     "MD041": false,
     "MD060": false,
   },
-  "ignores": ["**/node_modules/**", "dist/**", "build/**", "**/.git/**", "CHANGELOG.md"],
+  "ignores": [
+    "**/node_modules/**",
+    "dist/**",
+    "packages/*/dist/**",
+    "build/**",
+    "**/.git/**",
+    "CHANGELOG.md",
+    "packages/*/CHANGELOG.md",
+  ],
 }
