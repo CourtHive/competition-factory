@@ -1,3 +1,4 @@
+import { proposeAmendment } from '@Mutate/sanctioning/amendments';
 import { sanctioningEngine } from '@Assemblies/engines/sanctioning';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -52,6 +53,37 @@ function createApprovedRecord() {
 describe('Amendment Workflow — Propose', () => {
   beforeEach(() => {
     sanctioningEngine.reset();
+  });
+
+  it('updates only contacts stored on the proposal, including newly added optional fields', () => {
+    createApprovedRecord();
+    const recordResult = sanctioningEngine.getSanctioningRecord();
+    if (!('sanctioningRecord' in recordResult)) throw new Error('Expected approved record');
+    const { sanctioningRecord } = recordResult;
+    const defaults = { contact: { name: 'Default contact' } };
+    const director = Object.create(defaults);
+    sanctioningRecord.proposal.tournamentDirector = director;
+    const result = proposeAmendment({
+      sanctioningRecord,
+      sanctioningPolicy: testPolicy,
+      changes: [
+        {
+          field: 'tournamentDirector.contact.name',
+          changeType: 'MODIFIED',
+          previousValue: 'Default contact',
+          proposedValue: 'Other',
+        },
+        {
+          field: 'tournamentDirector.email',
+          changeType: 'ADDED',
+          previousValue: undefined,
+          proposedValue: 'director@example.com',
+        },
+      ],
+    });
+    expect(result).toMatchObject({ success: true });
+    expect(defaults.contact.name).toBe('Default contact');
+    expect(Object.entries(director)).toEqual([['email', 'director@example.com']]);
   });
 
   it('auto-approves minor amendments on APPROVED records', () => {
