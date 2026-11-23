@@ -75,17 +75,31 @@ export function getSharedIndividualConflicts({
   individualIdsMap: Record<string, string[]>;
   participantIds: string[];
 }): string[][] {
-  const conflicting: string[][] = [];
-  for (let i = 0; i < participantIds.length; i++) {
-    for (let j = i + 1; j < participantIds.length; j++) {
-      // the same id twice is one entrant listed twice -- a DUPLICATE_ENTRY question, with its own
-      // suppression semantics -- not two entrants who overlap. Answering it here would pre-empt
-      // that handling with the wrong error.
-      if (participantIds[i] === participantIds[j]) continue;
-      if (idsShareIndividual(individualIdsMap, participantIds[i], participantIds[j])) {
-        conflicting.push([participantIds[i], participantIds[j]]);
-      }
+  // Linear in the individuals listed, not in pairs of entrants (CodeQL #224, #225: 7.7 s at 16,384 entrants).
+  // Index which positions hold each individual; only positions sharing one can conflict.
+  const positionsByIndividual = new Map<string, number[]>();
+  participantIds.forEach((participantId, position) => {
+    for (const individualId of new Set(individualIdsMap[participantId] ?? [])) {
+      const positions = positionsByIndividual.get(individualId);
+      if (positions) positions.push(position);
+      else positionsByIndividual.set(individualId, [position]);
     }
-  }
-  return conflicting;
+  });
+
+  // a pair that shares several individuals is still one conflict
+  const pairs = new Map<string, [number, number]>();
+  for (const positions of positionsByIndividual.values())
+    for (let a = 0; a < positions.length; a++)
+      for (let b = a + 1; b < positions.length; b++) {
+        const [i, j] = [positions[a], positions[b]];
+        // the same id twice is one entrant listed twice -- a DUPLICATE_ENTRY question, with its own
+        // suppression semantics -- not two entrants who overlap. Answering it here would pre-empt
+        // that handling with the wrong error.
+        if (participantIds[i] !== participantIds[j]) pairs.set(`${i},${j}`, [i, j]);
+      }
+
+  // in the order of the entrants, as every caller has received them
+  return [...pairs.values()]
+    .sort(([i1, j1], [i2, j2]) => i1 - i2 || j1 - j2)
+    .map(([i, j]) => [participantIds[i], participantIds[j]]);
 }
