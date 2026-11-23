@@ -32,6 +32,9 @@ type AsyncEngineResult<Result> = Result extends object ? Result & Pick<ResultTyp
 /** These synchronous facades do not await governor calls and are not async-safe. */
 export type AsyncEngineUnsupportedFacade = 'q' | 'build';
 
+type PreviewResult<Method extends 'dryRun' | 'explain'> = ReturnType<FactoryEngineTyped[Method]>;
+type MaybeAsync<Result> = Result | Promise<Result>;
+
 type CopyArgs = [deepCopyOption?: boolean, deepCopyAttributes?: DeepCopyAttributes];
 type ReadOptions = { convertExtensions?: boolean; removeExtensions?: boolean };
 
@@ -40,11 +43,8 @@ export interface AsyncEngineSetup extends Pick<FactoryEngineTyped, 'on' | 'once'
   error?: unknown;
   success?: boolean;
   /** Await the result when a registered directive may return a Promise. */
-  dryRun(directives: Directives): import('../forge').DryRunResult | Promise<import('../forge').DryRunResult>;
-  explain(
-    method: string,
-    params?: Record<string, any>,
-  ): import('../forge').ExplainResult | Promise<import('../forge').ExplainResult>;
+  dryRun(directives: Directives): MaybeAsync<PreviewResult<'dryRun'>>;
+  explain(method: string, params?: Record<string, any>): MaybeAsync<PreviewResult<'explain'>>;
   version(): string;
   importMethods(
     methods: Record<string, unknown>,
