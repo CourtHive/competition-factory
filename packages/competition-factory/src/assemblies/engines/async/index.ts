@@ -1,5 +1,6 @@
 import { engineStart } from '@Assemblies/engines/parts/engineStart';
 import { createInstanceState } from '@Global/state/globalState';
+import { registerAsyncPreviewEngine } from '@Forge/dryRun';
 import { asyncExecutionQueue } from './asyncExecutionQueue';
 import { asyncEngineInvoke } from './asyncEngineInvoke';
 
@@ -16,6 +17,7 @@ export function asyncEngine(test?: boolean): FactoryEngine & { error?: any } {
     execute: (args: any) => asyncEngineInvoke(engine, args),
   };
 
+  registerAsyncPreviewEngine(engine);
   engineStart(engine, asyncEngineInvoke);
 
   return engine;

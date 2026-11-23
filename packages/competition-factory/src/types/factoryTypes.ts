@@ -210,11 +210,8 @@ export type FactoryEngineTyped = MethodSignatures &
     /**
      * Developer-JOY mutation preview — see `src/forge/dryRun.ts` (#3).
      *
-     * Run an `executionQueue` against the loaded state, capture the
-     * would-be diff (RFC 6902 JSON patch) and the topic/payload notices
-     * the real call would emit, then restore the engine's state (records,
-     * selected tournament, notice buffer, modification flag) in every case,
-     * including a method that throws under a truthy `devContext`.
+     * Run the directives in a child provider scope on private copies of the loaded records.
+     * Return the RFC 6902 patch, per-method results and notice payloads.
      * Subscribers are never notified. See `src/forge/dryRun.ts`.
      *
      *   const { wouldSucceed, patch, willEmitNotices } = engine.dryRun([

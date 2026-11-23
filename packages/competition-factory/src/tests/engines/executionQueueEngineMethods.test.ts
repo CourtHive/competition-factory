@@ -4,7 +4,7 @@ import syncGlobalState from '@Global/state/syncGlobalState';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { asyncEngine } from '@Assemblies/engines/async';
 import { mocksEngine } from '@Assemblies/engines/mock';
-import { addEvent } from '@Mutate/events/addEvent';
+import { eventGovernor } from '@Assemblies/governors';
 
 // constants
 import { METHOD_NOT_FOUND } from '@Constants/errorConditionConstants';
@@ -18,7 +18,7 @@ import { METHOD_NOT_FOUND } from '@Constants/errorConditionConstants';
 describe('executionQueue resolves the engine’s own imported methods under the async provider', () => {
   const engine = asyncEngine(true);
   // imported under the default provider: the method goes to that provider's registry, and to the engine
-  engine.importMethods({ addEvent });
+  engine.importMethods({ addEvent: eventGovernor.addEvent });
 
   beforeAll(() => setStateProvider(asyncGlobalState));
   afterAll(() => setStateProvider(syncGlobalState));

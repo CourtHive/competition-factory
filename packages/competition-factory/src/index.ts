@@ -5,7 +5,7 @@ export * as governors from './assemblies/governors';
 export * from './assemblies/governors';
 
 // UTILITIES ------------------------------------------------------------
-export * as matchUpFormatCode from './assemblies/governors/matchUpFormatGovernor';
+export { matchUpFormatGovernor as matchUpFormatCode } from './assemblies/governors';
 export * as utilities from './assemblies/tools'; // deprecate
 export * as tools from './assemblies/tools';
 
@@ -41,8 +41,18 @@ export {
 } from './errors';
 export type { FactoryErrorOptions } from './errors';
 
-export { forge, unwrap, unwrapOr, generatePatch, dryRun, explain } from './forge';
-export type { Unwrap, JsonPatch, JsonPatchOp, DryRunResult, EmittedNotice, ExplainResult } from './forge';
+export { forge, unwrap, unwrapOr, generatePatch, dryRun, explain, registerPreviewMethod } from './forge';
+export type {
+  Unwrap,
+  JsonPatch,
+  JsonPatchOp,
+  DryRunResult,
+  EmittedNotice,
+  ExplainResult,
+  PrivatePreviewEngine,
+  PreviewImplementation,
+  PreviewParams,
+} from './forge';
 export type {
   BuildFacade,
   BuildResult,

@@ -18,7 +18,7 @@ import {
   NOT_FOUND,
 } from '@Constants/errorConditionConstants';
 
-const syncGlobalState: ImplemtationGlobalStateTypes = {
+const newInstanceState = (): ImplemtationGlobalStateTypes => ({
   disableNotifications: false,
   tournamentId: undefined,
   tournamentRecords: {},
@@ -28,9 +28,24 @@ const syncGlobalState: ImplemtationGlobalStateTypes = {
   modifiedTopics: new Set(),
   methods: {},
   notices: [],
-};
+});
+
+let syncGlobalState = newInstanceState();
+
+// Synchronous governors complete before this stack frame exits. Async previews require a request provider.
+function runWithInstanceState<T>(run: () => T): T {
+  const parent = syncGlobalState;
+  syncGlobalState = newInstanceState();
+  try {
+    return run();
+  } finally {
+    syncGlobalState = parent;
+  }
+}
 
 export default {
+  runWithInstanceState,
+  getDeliveryScope: () => syncGlobalState,
   addNotice,
   callListener,
   cycleMutationStatus,

@@ -57,6 +57,9 @@ export function executeFunction(
   return result;
 }
 
+// A preview supplies its private records directly, below live dispatch logging and observers.
+export { resolve as resolveEngineMethod };
+
 function resolve({ method, params, methodName, tournamentRecords, tournamentId }) {
   const footprintError = checkLoadedFootprint({ methodName, params, tournamentRecords, tournamentId });
   if (footprintError) return footprintError;

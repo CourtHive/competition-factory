@@ -143,8 +143,7 @@ export function engineStart(engine: FactoryEngine, engineInvoke: any): void {
   // so it picks up governor methods that get added after engineStart returns.
   engine.q = buildQueryFacade(engine);
   engine.inspect = () => inspect();
-  // Preview + preflight. Both restore state before returning; subscribers
-  // are NOT notified. See `src/forge/{dryRun,explain}.ts`.
+  // Preview and preflight dispatch in a private child scope.
   engine.dryRun = (directives) => dryRun(engine, directives);
   engine.explain = (method, params) => explain(engine, method, params);
   const bus = createEventBus();

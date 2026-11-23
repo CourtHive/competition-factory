@@ -103,6 +103,6 @@ const topicValues = {
   [ADD_DRAW_DEFINITION]: 2,
 };
 
-function topicSort(a, b) {
+export function topicSort(a, b) {
   return (topicValues[b] || 0) - (topicValues[a] || 0);
 }

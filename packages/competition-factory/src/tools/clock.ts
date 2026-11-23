@@ -236,6 +236,17 @@ function readCompetition(provider: CompetitionTimeProvider): { ms: number } | Cl
   return { ms };
 }
 
+/** Read the instants for a private preview in the caller's context, without installing a capture there. */
+export function readPreviewClocks() {
+  const captured = getCapturedClock();
+  if (captured !== undefined) return { record: captured, competition: getCapturedCompetitionClock() };
+  const record = readSource();
+  if ('error' in record) return record;
+  const competition = competitionProvider && readCompetition(competitionProvider);
+  if (competition && 'error' in competition) return competition;
+  return { record: record.ms, competition: competition?.ms };
+}
+
 /**
  * Read and validate every configured source ONCE, and hold the instants for the call: record time
  * always, competition time when a provider is installed. `release` restores "nothing captured".

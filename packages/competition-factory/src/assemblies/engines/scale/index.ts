@@ -1,6 +1,7 @@
 import { generateDynamicRatings } from '@Mutate/participants/scaleItems/generateDynamicRatings';
 import { calculateNewRatings } from '@Helpers/ratings/calculateNewRatings';
-import * as rankingGovernor from '@Assemblies/governors/rankingGovernor';
+import { registerBuiltinPreviewMethods } from '@Forge/previewMethods';
+import { rankingGovernor } from '@Assemblies/governors';
 import syncEngine from '@Assemblies/engines/sync';
 
 const ratingsGovernor = {
@@ -27,7 +28,7 @@ const ratingsGovernor = {
  * re-export.
  */
 const scaleEngine = (() => {
-  syncEngine.importMethods({ ...rankingGovernor, ...ratingsGovernor });
+  syncEngine.importMethods({ ...rankingGovernor, ...registerBuiltinPreviewMethods(ratingsGovernor) });
   return syncEngine;
 })();
 

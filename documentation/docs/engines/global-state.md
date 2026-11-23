@@ -91,9 +91,9 @@ prototypes — that cannot be walked as plain JSON. `ignore`, `toJSON`, `stringi
 the walk. As an escape hatch, a state provider may supply its own `makeDeepCopy`, which the engine then uses for every
 copy in place of the built-in one.
 
-### Rollback and preview snapshots
+### Rollback snapshots
 
-A `rollbackOnError` call, a rolled-back `executionQueue` and `dryRun` / `explain` take a **snapshot** of the loaded
+A `rollbackOnError` call or queue takes a **snapshot** of the loaded
 records, which is not an outward copy and does not use the configuration above:
 
 - plain objects and arrays are always copied, including those under `ignore`, `toJSON` or `stringify` keys: a plain
@@ -103,7 +103,7 @@ records, which is not an outward copy and does not use the configuration above:
 - `null` stays `null`, and no `threshold` applies.
 
 With deep copy disabled the engine works on your own objects, so a snapshot is written back **into** them: after a
-rollback or a preview your objects, including nested objects the operation replaced or deleted, are the same objects with
+rollback your objects, including nested objects the operation replaced or deleted, are the same objects with
 their original values, and the engine still holds them.
 
 The snapshot is checked **before** the first method runs. When it could not be restored, the call is refused with
@@ -130,6 +130,8 @@ A snapshot must be a set of plain records keyed by `tournamentId`, distinct from
 a provider snapshot also needs `restoreSnapshot`; without it the call is refused. Values alone may not be the whole of a
 restore: a mapping library that tracks changes needs its tracking put back as well, which only `restoreSnapshot` can do.
 A `makeDeepCopy` hook that ignores `purpose` keeps working, but whether its snapshot is faithful is then up to the hook.
+
+Previews use a separate provider scope and private records. See [dryRun and explain](./dry-run-explain.md#custom-state-providers).
 
 Two more optional provider methods let a restore put back what is not in the records. `getNoticeBuffer()` /
 `setNoticeBuffer(notices)` read and replace the buffered notices; without them a restore deletes every buffered notice.

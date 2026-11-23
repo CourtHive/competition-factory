@@ -137,6 +137,8 @@ export default {
   enableNotifications,
   getMethods,
   getNoticeBuffer,
+  getDeliveryScope: getInstanceState,
+  notificationsDisabled: () => getInstanceState().disableNotifications,
   getNotices,
   getPayloads: getNotices, // canonical alias for the deprecated `getNotices`
   getTopics,

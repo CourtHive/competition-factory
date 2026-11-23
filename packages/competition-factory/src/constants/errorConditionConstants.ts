@@ -1025,6 +1025,11 @@ export const ROLLBACK_UNAVAILABLE = {
   code: 'ERR_ROLLBACK_UNAVAILABLE' as const,
 } satisfies ErrorType;
 
+export const UNREGISTERED_PREVIEW_METHOD = {
+  message: 'No private preview implementation registered for this method',
+  code: 'ERR_UNREGISTERED_PREVIEW_METHOD' as const,
+} satisfies ErrorType;
+
 export const MUTATION_LOCKED = {
   message: 'Mutation blocked by active lock',
   code: 'ERR_MUTATION_LOCKED' as const,
@@ -1193,6 +1198,7 @@ export const errorConditionConstants = {
   MATCHUP_NOT_FOUND,
   METHOD_NOT_FOUND,
   ROLLBACK_UNAVAILABLE,
+  UNREGISTERED_PREVIEW_METHOD,
   MUTATION_LOCKED,
   MUTATION_LOCK_EXISTS,
   MUTATION_LOCK_NOT_FOUND,
