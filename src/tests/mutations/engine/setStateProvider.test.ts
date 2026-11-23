@@ -19,6 +19,7 @@ it('can set state provider', () => {
     expect(err).not.toBeUndefined();
   }
   try {
+    // @ts-expect-error a provider without its required members is refused at compile time as well as at runtime
     result = setStateProvider({});
   } catch (err) {
     expect(err).not.toBeUndefined();
