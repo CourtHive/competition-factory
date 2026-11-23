@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 import { readFileSync, existsSync } from 'node:fs';
 import { dirname, resolve, join } from 'node:path';
+import { REPO_ROOT } from '../lib/repoRoot.mjs';
 import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const docs = join(root, 'documentation/docs');
-const manifest = JSON.parse(readFileSync(join(root, 'documentation/engine-api-transition.json'), 'utf8'));
+const docs = join(REPO_ROOT, 'documentation/docs');
+const manifest = JSON.parse(readFileSync(join(REPO_ROOT, 'documentation/engine-api-transition.json'), 'utf8'));
 const read = (relative) => readFileSync(join(docs, relative), 'utf8');
 function check(data, readPage = read) {
   assert.equal(data.schemaVersion, 1);
@@ -211,11 +212,11 @@ console.log(`[engine-api-transition] ${manifest.methods.length} symbol dispositi
 if (process.argv.includes('--rendered')) {
   let anchors = 0;
   for (const method of manifest.methods) {
-    const canonical = join(root, 'documentation/build/docs', method.destination, 'index.html');
+    const canonical = join(REPO_ROOT, 'documentation/build/docs', method.destination, 'index.html');
     assert(existsSync(canonical), `canonical page not rendered: ${method.name}`);
     for (const previous of method.previous) {
       const html = readFileSync(
-        join(root, 'documentation/build/docs', previous.doc.replace(/\.mdx?$/, ''), 'index.html'),
+        join(REPO_ROOT, 'documentation/build/docs', previous.doc.replace(/\.mdx?$/, ''), 'index.html'),
         'utf8',
       );
       assert(html.includes(`id="${previous.anchor}"`), `rendered anchor lost: ${previous.doc}#${previous.anchor}`);

@@ -2,6 +2,7 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { createRequire } from 'node:module';
+import { REPO_ROOT } from '../lib/repoRoot.mjs';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
@@ -10,6 +11,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const require = createRequire(import.meta.url);
 const factory = require(join(root, 'dist/tods-competition-factory.development.cjs.js'));
 const packageTypes = join(root, 'dist/tods-competition-factory');
+const docs = join(REPO_ROOT, 'documentation/docs');
 const factorySetup = `
 tournamentEngine.setState({ tournamentId: 'docs', participants: [
   { participantId: 'player-123', participantName: 'Docs Player', participantType: 'INDIVIDUAL', person: { personId: 'person-docs', standardGivenName: 'Docs' } }
@@ -17,7 +19,7 @@ tournamentEngine.setState({ tournamentId: 'docs', participants: [
 const eventId = 'event';`;
 // A page's own fence, by a line it contains: a shared helper an example builds on, run as the page shows it.
 function fenceOf(page, contains) {
-  const markdown = readFileSync(join(root, 'documentation/docs', page), 'utf8');
+  const markdown = readFileSync(join(docs, page), 'utf8');
   const fences = [...markdown.matchAll(/^```(?:js|javascript|ts|typescript)\s*\n([\s\S]*?)^```/gm)]
     .map((match) => match[1])
     .filter((code) => code.includes(contains));
@@ -200,7 +202,7 @@ const scorerClass = source.statements.find(
   (node) => ts.isClassDeclaration(node) && node.name?.text === 'ScoringEngine',
 );
 if (!scorerClass) throw new Error(`No ScoringEngine class in ${SCORER_SOURCE}: the API index cannot be checked`);
-const api = readFileSync(join(root, 'documentation/docs/scoring-engine/scoring-engine-api.md'), 'utf8');
+const api = readFileSync(join(docs, 'scoring-engine/scoring-engine-api.md'), 'utf8');
 const headings = new Set([...api.matchAll(/^### (\w+)\s*$/gm)].map((match) => match[1]));
 const methods = scorerClass.members.filter(
   (node) =>
@@ -213,7 +215,7 @@ console.log(`[docs-examples] ${methods.length} public ScoringEngine methods inde
 const workdir = mkdtempSync(join(root, '.doc-examples-'));
 try {
   const files = cases.map((example, index) => {
-    const markdown = readFileSync(join(root, 'documentation/docs', example.page), 'utf8');
+    const markdown = readFileSync(join(docs, example.page), 'utf8');
     const fences = [...markdown.matchAll(/^```(?:js|javascript|ts|typescript)\s*\n([\s\S]*?)^```/gm)]
       .map((match) => match[1])
       .filter((code) => code.includes(example.contains));

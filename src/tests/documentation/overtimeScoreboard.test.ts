@@ -1,4 +1,5 @@
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { repoFile } from '@Tests/testHarness/repoRoot';
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 
@@ -10,7 +11,7 @@ import fs from 'node:fs';
  * engine can change without the other.
  */
 
-const page = fs.readFileSync('documentation/docs/scoring-engine/scoring-engine-spec.md', 'utf8');
+const page = fs.readFileSync(repoFile('documentation/docs/scoring-engine/scoring-engine-spec.md'), 'utf8');
 const section = page.slice(page.indexOf('#### 9.8.1 '), page.indexOf('Undo/redo, corrections, supplementary-state'));
 
 const unquote = (cell: string) => cell.trim().replace(/^`/, '').replace(/`$/, '');

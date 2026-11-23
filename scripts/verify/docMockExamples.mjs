@@ -11,6 +11,7 @@
 // `<!-- doc-mock-examples:ignore -->` on one of the two lines above it. Failures already known are listed in
 // docMockExamples.baseline.json, which only shrinks: fix the page, then rerun with --update-baseline.
 
+import { REPO_ROOT } from '../lib/repoRoot.mjs';
 import { createRequire } from 'node:module';
 import { expect } from 'vitest';
 import { fileURLToPath } from 'node:url';
@@ -19,7 +20,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const DOCS = path.join(ROOT, 'documentation', 'docs');
+const DOCS = path.join(REPO_ROOT, 'documentation', 'docs');
 const BASELINE = path.join(ROOT, 'scripts', 'verify', 'docMockExamples.baseline.json');
 const UPDATE = process.argv.includes('--update-baseline');
 const VERBOSE = process.argv.includes('--verbose');
@@ -193,7 +194,7 @@ for (const file of walk(DOCS)) {
     }
     checked += 1;
     const reason = await run(fence.code);
-    if (reason) failures.push({ where: `${path.relative(ROOT, file)}:${fence.line}`, reason });
+    if (reason) failures.push({ where: `${path.relative(REPO_ROOT, file)}:${fence.line}`, reason });
   }
 }
 

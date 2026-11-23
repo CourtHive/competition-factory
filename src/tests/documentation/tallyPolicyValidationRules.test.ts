@@ -2,6 +2,7 @@ import { validateTallyPolicy } from '@Validators/validateTallyPolicy';
 import { validateSeason } from '@Validators/validateSeason';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { repoFile } from '@Tests/testHarness/repoRoot';
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 
@@ -26,7 +27,7 @@ import {
  * gives. This test reads that section and holds the validator to it, so neither can change without the other.
  */
 
-const page = fs.readFileSync('documentation/docs/policies/roundRobinTallyPolicy.md', 'utf8');
+const page = fs.readFileSync(repoFile('documentation/docs/policies/roundRobinTallyPolicy.md'), 'utf8');
 const section = page.slice(page.indexOf('\n## Validation\n'), page.indexOf('\n## Testing\n'));
 
 const codeSpans = (text: string) => [...text.matchAll(/`([^`]+)`/g)].map((match) => match[1]);

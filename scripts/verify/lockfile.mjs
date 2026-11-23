@@ -20,10 +20,12 @@
  * detection is the durable answer and attribution is not required.
  */
 
+import { REPO_ROOT } from '../lib/repoRoot.mjs';
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { join } from 'node:path';
 
-const LOCKFILE = resolve(process.cwd(), 'pnpm-lock.yaml');
+// The workspace lockfile, at the repository root on either layout (never the current directory's).
+const LOCKFILE = join(REPO_ROOT, 'pnpm-lock.yaml');
 
 /**
  * The BARE `@pnpm/exe` only — never the per-platform siblings.

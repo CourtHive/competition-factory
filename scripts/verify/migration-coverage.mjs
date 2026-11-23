@@ -15,13 +15,15 @@
  * history, and a naive implementation would find zero breaking commits and report success — a check
  * that cannot report dirty. Every precondition below is therefore an error, not a skip.
  */
+import { PACKAGE_PATH, RELEASE_MANIFEST, REPO_ROOT } from '../lib/repoRoot.mjs';
 import { existsSync, readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
-const MANIFEST = join(ROOT, '.release-please-manifest.json');
+// The manifest and the migration guides live at the repository root. The manifest keys a release by the
+// package's path from there: `.` while the package is the root, `packages/competition-factory` after the move.
+const ROOT = REPO_ROOT;
+const MANIFEST = join(ROOT, RELEASE_MANIFEST);
 
 const log = (m) => process.stdout.write(`[verify:migration-coverage] ${m}\n`);
 const fail = (m) => {
@@ -33,8 +35,8 @@ const git = (args) =>
   execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 64e6, timeout: 120_000, killSignal: 'SIGKILL' });
 
 if (!existsSync(MANIFEST)) fail(`no release manifest at ${MANIFEST}`);
-const released = JSON.parse(readFileSync(MANIFEST, 'utf8'))['.'];
-if (!/^\d+\.\d+\.\d+$/.test(released ?? '')) fail(`manifest '.' is not a version: ${released}`);
+const released = JSON.parse(readFileSync(MANIFEST, 'utf8'))[PACKAGE_PATH];
+if (!/^\d+\.\d+\.\d+$/.test(released ?? '')) fail(`manifest '${PACKAGE_PATH}' is not a version: ${released}`);
 
 const hasTag = (tag) => {
   try {

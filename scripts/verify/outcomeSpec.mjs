@@ -20,6 +20,7 @@
  * Self-test:  node scripts/verify/outcomeSpec.mjs --self-test   (fires on each gap, quiet when complete)
  */
 
+import { PACKAGE_ROOT, REPO_ROOT } from '../lib/repoRoot.mjs';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -141,10 +142,11 @@ function selfTest() {
 }
 
 function run() {
-  const read = (path) => readFileSync(join(process.cwd(), path), 'utf8');
+  // the spec lives in documentation/ at the repository root; the sources are the package's own
+  const read = (path) => readFileSync(join(PACKAGE_ROOT, path), 'utf8');
   const sources = Object.fromEntries(UNIONS.map(({ file }) => [file, read(file)]));
   const { problems, named, rows } = check({
-    spec: read(SPEC),
+    spec: readFileSync(join(REPO_ROOT, SPEC), 'utf8'),
     types: read(TYPES),
     refusals: read(REFUSALS),
     sources,

@@ -27,13 +27,14 @@
  *
  * It reads the built package, so it measures what a consumer gets rather than what source implies.
  */
+import { REPO_ROOT } from '../lib/repoRoot.mjs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import fs from 'node:fs';
 
 const require = createRequire(import.meta.url);
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
-const DOCS = path.join(ROOT, 'documentation', 'docs');
+const DOCS = path.join(REPO_ROOT, 'documentation', 'docs');
 const DIST = path.join(ROOT, 'dist', 'index.js');
 const BASELINE = path.join(ROOT, 'scripts', 'verify', 'docMethods.baseline.json');
 const UPDATE = process.argv.includes('--update-baseline');
@@ -119,7 +120,7 @@ for (const file of walk(DOCS)) {
         return;
       }
       if (open.ignored) return;
-      const at = `${path.relative(ROOT, file)}:${index + 1}`;
+      const at = `${path.relative(REPO_ROOT, file)}:${index + 1}`;
       for (const [, member, nested] of line.matchAll(TOOLS_CALL)) {
         counts.tools += 1;
         const found = nested ? pkg.tools?.[member] && nested in pkg.tools[member] : pkg.tools && member in pkg.tools;
@@ -140,7 +141,7 @@ for (const file of walk(DOCS)) {
         if (!surface) continue;
         checked += 1;
         if (!surface.has(method)) {
-          failures.push(`${path.relative(ROOT, file)}:${index + 1}  ${object}.${method}()`);
+          failures.push(`${path.relative(REPO_ROOT, file)}:${index + 1}  ${object}.${method}()`);
         }
       }
       return;

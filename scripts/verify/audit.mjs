@@ -8,7 +8,7 @@
  *
  * SCOPE — audits every lockfile in the repo, not just the package's.
  * `documentation/` carries its own lockfile and is not a pnpm workspace member,
- * so an audit run only at FACTORY_ROOT never saw it. That reported "no
+ * so an audit run only at the package's lockfile never saw it. That reported "no
  * high/critical advisories" for the repo while two high advisories sat open in
  * the docs tree — a check whose scope silently excluded where the finding was,
  * which is worse than no check because it settles the question.
@@ -21,18 +21,24 @@
  * accumulate exceptions after the advisories behind them are resolved.
  */
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { REPO_ROOT } from '../lib/repoRoot.mjs';
+import { dirname, join } from 'node:path';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const FACTORY_ROOT = resolve(__dirname, '../..');
 const WAIVERS_PATH = join(__dirname, 'audit-waivers.json');
 
-/** Every tree with its own lockfile. `name` is what a waiver's `tree` matches. */
+/**
+ * Every tree with its own lockfile. `name` is what a waiver's `tree` matches.
+ *
+ * The `package` tree is audited where its lockfile is: the workspace lockfile at the repository root. That is
+ * the package directory today and its workspace root after the move to `packages/competition-factory`, so it
+ * is REPO_ROOT on both layouts, never the package directory.
+ */
 const TREES = [
-  { name: 'package', cwd: FACTORY_ROOT },
-  { name: 'documentation', cwd: join(FACTORY_ROOT, 'documentation') },
+  { name: 'package', cwd: REPO_ROOT },
+  { name: 'documentation', cwd: join(REPO_ROOT, 'documentation') },
 ];
 
 const BLOCKING = new Set(['high', 'critical']);
@@ -73,9 +79,9 @@ const waived = [];
 const counts = { critical: 0, high: 0, moderate: 0, low: 0, info: 0 };
 
 for (const tree of TREES) {
+  // A missing lockfile is a failure, not a skip: a skipped tree reports "no advisories" for code it never read.
   if (!existsSync(join(tree.cwd, 'pnpm-lock.yaml'))) {
-    log(`skipping ${tree.name} — no pnpm-lock.yaml`);
-    continue;
+    fail(`FAIL — no pnpm-lock.yaml for the ${tree.name} tree at ${tree.cwd}; nothing would be audited there.`);
   }
 
   const report = auditTree(tree.cwd);

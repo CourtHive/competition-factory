@@ -24,6 +24,7 @@
  * Usage: node scripts/verify/verified-release.mjs [--ref <release commit>] [--wait <minutes>] [--dry]
  *   needs GITHUB_TOKEN (or GH_TOKEN) with actions:read, and GITHUB_REPOSITORY (owner/name).
  */
+import { RELEASE_MANIFEST, REPO_ROOT, repoPath } from '../lib/repoRoot.mjs';
 import { execFileSync } from 'node:child_process';
 
 const args = process.argv.slice(2);
@@ -35,7 +36,10 @@ const ref = option('ref', 'HEAD');
 const waitMinutes = Number(option('wait', '0'));
 const repository = process.env.GITHUB_REPOSITORY ?? 'CourtHive/competition-factory';
 const token = process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN;
-const VERSION_FILES = new Set(['package.json', 'CHANGELOG.md', '.release-please-manifest.json']);
+// Paths as git prints them, from the repository root: the package's manifest and changelog sit under the
+// package's directory (the root today, `packages/competition-factory` after the move); the manifest stays at the root.
+const PACKAGE_JSON = repoPath('package.json');
+const VERSION_FILES = new Set([PACKAGE_JSON, repoPath('CHANGELOG.md'), RELEASE_MANIFEST]);
 
 const log = (message) => console.log(`[verified-release] ${message}`);
 const fail = (message) => {
@@ -43,7 +47,7 @@ const fail = (message) => {
   process.exit(1);
 };
 const git = (...gitArgs) =>
-  execFileSync('git', gitArgs, { encoding: 'utf8', timeout: 120_000, killSignal: 'SIGKILL' }).trim();
+  execFileSync('git', gitArgs, { cwd: REPO_ROOT, encoding: 'utf8', timeout: 120_000, killSignal: 'SIGKILL' }).trim();
 
 async function api(path) {
   const response = await fetch(`https://api.github.com/repos/${repository}${path}`, {
@@ -59,11 +63,11 @@ function checkReleaseCommit(release) {
   const outside = changed.filter((file) => !VERSION_FILES.has(file));
   if (!changed.length) fail(`${release} changes nothing`);
   if (outside.length) fail(`${release} changes more than the version files: ${outside.join(', ')}`);
-  const packageLines = git('diff', '-U0', `${release}^`, release, '--', 'package.json')
+  const packageLines = git('diff', '-U0', `${release}^`, release, '--', PACKAGE_JSON)
     .split('\n')
     .filter((line) => /^[-+](?![-+])/.test(line));
   const notVersion = packageLines.filter((line) => !/^[-+]\s*"version":/.test(line));
-  if (notVersion.length) fail(`${release} changes package.json beyond its version: ${notVersion.join(' | ')}`);
+  if (notVersion.length) fail(`${release} changes ${PACKAGE_JSON} beyond its version: ${notVersion.join(' | ')}`);
   log(`release commit ${release.slice(0, 10)} changes only ${changed.join(', ')}`);
 }
 

@@ -1,4 +1,5 @@
 import { useEngineCatch } from '@Tests/testHarness/engineCatch';
+import { repoFile } from '@Tests/testHarness/repoRoot';
 import { afterEach, describe, expect, it } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -275,7 +276,7 @@ describe('Worked examples › A source that repeats is refused', () => {
 });
 
 describe('Worked examples › the page shows exactly these examples', () => {
-  const page = fs.readFileSync('documentation/docs/concepts/randomness.md', 'utf8');
+  const page = fs.readFileSync(repoFile('documentation/docs/concepts/randomness.md'), 'utf8');
   const source = fs.readFileSync('src/tests/global/randomnessExamples.test.ts', 'utf8');
   const dedent = (lines: string[]) => {
     const indent = Math.min(...lines.filter((l) => l.trim()).map((l) => /^ */.exec(l)![0].length));
