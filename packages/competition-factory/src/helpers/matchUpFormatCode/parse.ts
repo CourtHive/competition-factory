@@ -220,12 +220,27 @@ function parseMatchSpec(head: string):
   return { matchRoot, count, exactly, aggregate, matchMods };
 }
 
+/**
+ * `value` split into a non-empty base and a trailing `{digits}D`, as `[base, digits]`: what `/^(.+?)(\d+D)$/` captured
+ * (the lazy base keeps every trailing digit but the first character in the suffix), in linear time.
+ *
+ * WHY: that regex is quadratic (CodeQL #170): 100k characters of a matchUpFormat cost ~4.3 s.
+ */
+export function splitDeuceSuffix(value: string): [string, string] | undefined {
+  if (!value.endsWith('D')) return undefined;
+  let start = value.length - 1;
+  while (start > 1 && value.charCodeAt(start - 1) >= 48 && value.charCodeAt(start - 1) <= 57) start -= 1;
+  // at least one digit, and at least one character of base before them
+  if (start === value.length - 1 || start < 1) return undefined;
+  return [value.slice(0, start), value.slice(start, -1)];
+}
+
 // Parse -G: section value
 function parseGameFormat(value: string): GameFormat | undefined {
   // Match optional deuceSpec suffix: {digits}D
-  const deuceMatch = /^(.+?)(\d+D)$/.exec(value);
-  const baseValue = deuceMatch ? deuceMatch[1] : value;
-  const deuceAfter = deuceMatch ? Number(deuceMatch[2].slice(0, -1)) : undefined;
+  const deuceMatch = splitDeuceSuffix(value);
+  const baseValue = deuceMatch ? deuceMatch[0] : value;
+  const deuceAfter = deuceMatch ? Number(deuceMatch[1]) : undefined;
 
   // Validate deuceAfter if present (must be positive integer)
   if (deuceAfter !== undefined && (deuceAfter < 1 || !Number.isInteger(deuceAfter))) return undefined;
