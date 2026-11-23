@@ -36,38 +36,38 @@ tournamentEngine.addEvent({ event: { eventName: 'Singles', eventType: 'SINGLES' 
 
 ### Asynchronous Engines
 
-Use `asyncEngine` for multi-client server applications:
+Use `tournamentEngineAsync` for multi-client server applications. It carries every governor, and with an async state
+provider installed each request gets its own state. The full pattern is in
+[Hosting factory on a server](./hosting-on-a-server.md).
 
 **API Reference:** [addEvent](/docs/governors/event-governor#addevent)
 
-`asyncEngine` is a factory **function**, not an engine: call it to get one. Install the async
-state provider first — without one, `asyncEngine()` returns `{ error }` instead of an engine.
-
 ```js
-import { asyncEngine, globalState, governors } from 'tods-competition-factory';
+import { globalState, governors, tournamentEngineAsync } from 'tods-competition-factory';
 import asyncGlobalState from './asyncGlobalState'; // your copy of the reference implementation
 
-// Once, at startup: install the provider BEFORE any asyncEngine() call
+// Once, at startup
+globalState.setStateMethods(governors, true, 1, true); // executionQueue resolves methods by name from here
 globalState.setStateProvider(asyncGlobalState);
 
 // Each client request gets isolated state
 app.post('/api/tournament/:id/event', async (req, res) => {
   const result = await asyncGlobalState.runWithInstanceState(async () => {
-    const engine = asyncEngine(); // binds a fresh instance state to this request's context
-    if (engine.error) return { error: engine.error };
-    engine.importMethods(governors, true, 1);
-
     const tournamentRecord = await loadTournament(req.params.id);
-    engine.setState(tournamentRecord);
+    const { error } = tournamentEngineAsync.setState(tournamentRecord);
+    if (error) return { error };
 
-    const outcome = await engine.addEvent({ event: req.body.event }); // imported methods return promises
-    if (!outcome.error) await saveTournament(engine.getTournament().tournamentRecord);
+    const outcome = await tournamentEngineAsync.addEvent({ event: req.body.event }); // async methods return promises
+    if (!outcome.error) await saveTournament(tournamentEngineAsync.getTournament().tournamentRecord);
     return outcome;
   });
 
   res.json(result);
 });
 ```
+
+To assemble an engine with only some governors, `asyncEngine` is a factory **function**: call it inside the request
+scope, after installing the provider (without one it returns `{ error }`), and import the methods it needs.
 
 **When to Use:**
 
@@ -330,7 +330,7 @@ it at startup, which is exactly what competition-factory-server does:
 
 ```js
 // server.js
-import { globalState, asyncEngine, governors } from 'tods-competition-factory';
+import { globalState, governors, tournamentEngineAsync } from 'tods-competition-factory';
 import asyncGlobalState from './asyncGlobalState'; // your copy of the reference implementation
 
 // Configure once at app startup
@@ -346,13 +346,10 @@ request or bleed into a sibling:
 ```js
 app.post('/api/event', async (req, res) => {
   const result = await asyncGlobalState.runWithInstanceState(async () => {
-    // Instantiate inside the scope: construction binds a fresh instance state to the context,
-    // so do it before setState or setSubscriptions, never after.
-    const engine = asyncEngine();
-    if (engine.error) return { error: engine.error };
-    engine.setState(req.tournament);
+    const { error } = tournamentEngineAsync.setState(req.tournament);
+    if (error) return { error };
     // methods registered globally above resolve by name in every request context
-    return engine.executionQueue([{ method: 'addEvent', params: { event: req.body } }], true);
+    return tournamentEngineAsync.executionQueue([{ method: 'addEvent', params: { event: req.body } }], true);
   });
   res.json(result);
 });
