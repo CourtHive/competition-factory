@@ -237,9 +237,10 @@ scaleEngine.executionQueue([{ method: 'getMutationLocks', params: {} }]);
 
 - **A keep-warm engine.** Each request loads its record. Nothing in the engine keeps a record in memory between
   requests.
-- **An exported state provider or a typed `StateProvider`.** You copy the reference provider. `setStateProvider`
-  checks for the required method names at run time and throws `Global state provider is missing required methods`
-  when one is absent.
+- **An exported state provider.** You copy the reference provider. `setStateProvider` checks for the required
+  method names at run time and throws `Global state provider is missing required methods` when one is absent. From the
+  release that includes [#6561](https://github.com/CourtHive/competition-factory/pull/6561), the exported
+  `StateProvider` type describes the required and optional members, so a missing one also fails at compile time.
 
 ## Related
 
