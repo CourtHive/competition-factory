@@ -1,4 +1,5 @@
 import { applyResultPoints, type ResultPoints } from '@Query/standings/resultPoints';
+import { plainRecord } from '@Tools/plainRecord';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { validateDrawTallyOptions } from '@Validators/validateTallyPolicy';
 import { isDrawnResult, isCombinedPointFormat } from './drawnResults';
@@ -26,7 +27,17 @@ type GetParticipantResultsArgs = {
   tallyPolicy?: any;
 };
 
-export function getParticipantResults({
+/**
+ * The governor's `getParticipantResults`: what `buildParticipantResults` computes, with `participantResults` as a plain
+ * object. Internal callers keep adding to the null-prototype map, so they call the builder; see tools/plainRecord.
+ */
+export function getParticipantResults(params: Parameters<typeof buildParticipantResults>[0]) {
+  const outcome = buildParticipantResults(params);
+  if (!outcome || 'error' in outcome) return outcome;
+  return { ...outcome, participantResults: plainRecord(outcome.participantResults) };
+}
+
+export function buildParticipantResults({
   participantIds,
   pressureRating,
   groupingTotal,
@@ -68,7 +79,8 @@ export function getParticipantResults({
   const policyValidation = validateDrawTallyOptions(tallyPolicy);
   if (policyValidation.error) return { error: policyValidation.error, info: policyValidation.info };
 
-  const participantResults = {};
+  // keyed by participantId, which arrives from records: a null prototype makes "__proto__" an ordinary key (CodeQL #241)
+  const participantResults = Object.create(null);
 
   const excludeMatchUpStatuses = tallyPolicy?.excludeMatchUpStatuses ?? [];
 
@@ -170,7 +182,7 @@ export function getMatchUpContribution({
   pressureRating,
   perPlayer,
 }: GetMatchUpContributionArgs): { contribution: Record<string, any>; perPlayer?: number } {
-  const contribution: Record<string, any> = ledger ?? {};
+  const contribution: Record<string, any> = ledger ?? Object.create(null); // as participantResults (#242, #244)
   const { matchUpStatus, tieMatchUps, tieFormat, score, winningSide, sides } = matchUp;
 
   // first-class (NATIVE) with fallback to the legacy `_disableAutoCalc` hydrated alias (LEGACY)

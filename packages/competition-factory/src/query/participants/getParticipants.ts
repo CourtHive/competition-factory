@@ -1,4 +1,5 @@
 import { canPreFilter, getMissingParticipantIds, getPreFilteredParticipants } from './getPreFilteredParticipants';
+import { plainParticipantMap } from './getParticipantMap';
 import { getParticipantEntries } from '@Query/participants/getParticipantEntries';
 import { filterParticipants } from '@Query/participants/filterParticipants';
 import { getParticipantMap } from '@Query/participants/getParticipantMap';
@@ -236,7 +237,7 @@ export function getParticipants(params: GetParticipantsArgs): {
   );
 
   return {
-    participantMap: params.returnParticipantMap !== false ? emittedParticipantMap : undefined,
+    participantMap: params.returnParticipantMap !== false ? plainParticipantMap(emittedParticipantMap) : undefined,
     mappedMatchUps: params.returnMatchUps !== false ? mappedMatchUps : undefined,
     matchUps: params.returnMatchUps !== false ? stripCheckInAttribution(matchUps) : undefined,
     missingParticipantIds: preFilter

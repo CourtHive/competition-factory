@@ -1,4 +1,5 @@
 import { addParticipantGroupings } from '@Query/drawDefinition/avoidance/addParticipantGroupings';
+import { plainRecord } from '@Tools/plainRecord';
 import { addIndividualParticipants } from '@Query/participants/addIndividualParticipants';
 import { addNationalityCode } from '@Query/participants/addNationalityCode';
 import { latestPresenceState } from '@Acquire/presenceAttestations';
@@ -11,6 +12,36 @@ import { GROUP, PAIR, SIGNED_IN, TEAM } from '@Constants/participantConstants';
 import { GroupInfo, ParticipantMap } from '@Types/factoryTypes';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { Tournament } from '@Types/tournamentTypes';
+
+/**
+ * A map keyed by ids that come from tournament records. With a null prototype, an id of "__proto__" is an ordinary key
+ * instead of a write through to Object.prototype (CodeQL #211, 2026-11-23).
+ */
+const idMap = (): Record<string, any> => Object.create(null);
+
+const ID_MAPS = [
+  'structureParticipation',
+  'potentialMatchUps',
+  'scheduleConflicts',
+  'opponents',
+  'pairIdMap',
+  'matchUps',
+  'events',
+  'draws',
+] as const;
+
+/** The map as callers receive it: plain objects throughout, every id kept as an own key (see plainRecord). */
+export function plainParticipantMap(participantMap: ParticipantMap): ParticipantMap {
+  const plain = plainRecord(participantMap);
+  for (const entry of Object.values(plain))
+    for (const key of ID_MAPS) {
+      // only what is still a null-prototype map: later stages may have replaced one with an array
+      const value = entry?.[key];
+      if (value && typeof value === 'object' && Object.getPrototypeOf(value) === null)
+        Object.assign(entry, { [key]: plainRecord(value) });
+    }
+  return plain;
+}
 
 const typeMap = {
   [GROUP]: 'groupParticipantIds',
@@ -52,7 +83,7 @@ export function getParticipantMap({
   groupInfo?: GroupInfo;
 } {
   const missingParticipantIds: string[] = [];
-  const participantMap: ParticipantMap = {};
+  const participantMap: ParticipantMap = idMap();
 
   // initialize all participants first, to preserve order
   for (const participant of tournamentRecord.participants ?? []) {
@@ -182,9 +213,9 @@ function initializeParticipantId({ participantMap, participantId }) {
   };
 
   participantMap[participantId] = {
-    structureParticipation: {},
-    potentialMatchUps: {},
-    scheduleConflicts: {},
+    structureParticipation: idMap(),
+    potentialMatchUps: idMap(),
+    scheduleConflicts: idMap(),
     scheduleItems: [],
     participant: {
       groupParticipantIds: [],
@@ -197,11 +228,11 @@ function initializeParticipantId({ participantMap, participantId }) {
       teams: [],
     },
     statistics: {},
-    opponents: {},
-    pairIdMap: {},
-    matchUps: {},
-    events: {},
-    draws: {},
+    opponents: idMap(),
+    pairIdMap: idMap(),
+    matchUps: idMap(),
+    events: idMap(),
+    draws: idMap(),
     counters: {
       [SINGLES]: { ...counters },
       [DOUBLES]: { ...counters },

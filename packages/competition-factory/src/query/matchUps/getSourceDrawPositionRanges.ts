@@ -54,10 +54,13 @@ export function getSourceDrawPositionRanges({ drawDefinition, structureId, match
     matchUps: structureMatchUps,
   });
 
-  const sourceDrawPositionRanges = {};
+  // keyed by round numbers read from the record's links (CodeQL #151): no prototype to write through to
+  const sourceDrawPositionRanges = Object.create(null);
   relevantLinks?.forEach((link) => {
     const { structureId: sourceStructureId, roundNumber: sourceRoundNumber } = link.source;
     const { feedProfile, groupedOrder, positionInterleave, roundNumber: targetRoundNumber } = link.target;
+    // a round number is a positive integer; a link without one cannot be ranged
+    if (!Number.isSafeInteger(targetRoundNumber) || targetRoundNumber < 1) return;
     const sourceStructureProfile = sourceStructureProfiles[sourceStructureId];
     const firstRoundDrawPositions = sourceStructureProfile[1]?.drawPositions;
     const sourceRoundProfile = sourceStructureProfile[sourceRoundNumber];
