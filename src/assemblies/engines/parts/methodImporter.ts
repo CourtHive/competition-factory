@@ -1,4 +1,5 @@
 import { getDevContext, handleCaughtError, setStateMethods } from '@Global/state/globalState';
+import { registerEngineMethods } from '@Assemblies/engines/parts/engineMethodRegistry';
 import { isFunction } from '@Tools/objects';
 
 // constants and types
@@ -11,6 +12,7 @@ export function methodImporter(engine, engineInvoke, submittedMethods, traverse,
   const methods = setResult.methods ?? [];
 
   const methodNames = Object.keys(methods).filter((key) => isFunction(methods[key]));
+  registerEngineMethods(engine, methods, methodNames);
   methodNames.forEach((methodName) => {
     engine[methodName] = (params) => {
       const invoke = () =>

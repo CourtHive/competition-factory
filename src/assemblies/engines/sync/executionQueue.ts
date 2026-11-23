@@ -1,6 +1,7 @@
 import { captureOperation, restoreOperation } from '@Assemblies/engines/parts/operationState';
 import { prepareDirective, validateDirectives } from '@Assemblies/engines/parts/directives';
-import { deleteNotices, getInvokeObserver, getMethods } from '@Global/state/globalState';
+import { getQueueMethods } from '@Assemblies/engines/parts/engineMethodRegistry';
+import { deleteNotices, getInvokeObserver } from '@Global/state/globalState';
 import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
 import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { notifySubscribers } from '@Global/state/notifySubscribers';
@@ -12,7 +13,7 @@ import { withCapturedClock } from '@Tools/clock';
 import { Directives, FactoryEngine } from '@Types/factoryTypes';
 
 export function executionQueue(engine: FactoryEngine, directives: Directives, rollbackOnError?: boolean) {
-  const methods = getMethods();
+  const methods = getQueueMethods(engine, directives);
   const start = Date.now();
 
   // every directive is checked before any runs: a refusal here has written nothing
