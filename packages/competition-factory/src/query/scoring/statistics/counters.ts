@@ -80,8 +80,10 @@ export function buildCounters(points: PointWithMetadata[], options?: StatisticsO
 }
 
 function pushToCategory(container, side: number, category: string, item) {
-  if (!container[side][category]) container[side][category] = [];
-  container[side][category].push(item);
+  // Select a side explicitly. Both buckets are null-prototype category maps.
+  if (side !== 0 && side !== 1) return;
+  const categories = side === 0 ? container[0] : container[1];
+  (categories[category] ??= []).push(item);
 }
 
 function applyCategories(counters: StatCounters, side: number, categories: string[], point: PointWithMetadata) {

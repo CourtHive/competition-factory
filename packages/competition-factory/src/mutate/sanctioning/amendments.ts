@@ -235,15 +235,19 @@ function isAmendableField(field: string): boolean {
 /** `name[index]` notation in an amendment path, e.g. `events[0].drawSize`. */
 const ARRAY_KEY = /^(\w+)\[(\d+)\]$/;
 
-/** Resolve one path segment against `target`. Undefined when the segment does not lead anywhere. */
-function descend(target: any, key: string): any {
-  const arrayMatch = ARRAY_KEY.exec(key);
-  if (!arrayMatch) return target?.[key];
+/** Amendments address the record's own stored data, including optional fields added at the leaf. */
+function ownValue(target: unknown, key: string | number) {
+  if (target === null || typeof target !== 'object') return undefined;
+  return Object.getOwnPropertyDescriptor(target, key)?.value;
+}
 
-  const arr = target?.[arrayMatch[1]];
-  const idx = Number.parseInt(arrayMatch[2]);
-  if (!Array.isArray(arr) || idx < 0 || idx >= arr.length) return undefined;
-  return arr[idx];
+/** Resolve one path segment against the record. */
+function descend(target: unknown, key: string) {
+  const arrayMatch = ARRAY_KEY.exec(key);
+  if (!arrayMatch) return ownValue(target, key);
+
+  const arr = ownValue(target, arrayMatch[1]);
+  return Array.isArray(arr) ? ownValue(arr, Number(arrayMatch[2])) : undefined;
 }
 
 /** Walk every segment but the last, so the caller ends up holding the object to write into. */
@@ -258,15 +262,21 @@ function resolveContainer(root: any, parts: string[]): any {
 
 /** Write at the final segment. Out-of-bounds array writes are dropped rather than extending the array. */
 function assignAt(container: any, lastKey: string, value: any) {
+  if (typeof container !== 'object' || container === null) return;
   const arrayMatch = ARRAY_KEY.exec(lastKey);
-  if (!arrayMatch) {
-    container[lastKey] = value;
+  if (arrayMatch) {
+    const arr = ownValue(container, arrayMatch[1]);
+    const index = Number(arrayMatch[2]);
+    if (Array.isArray(arr) && index < arr.length) arr[index] = value;
     return;
   }
 
-  const arr = container[arrayMatch[1]];
-  const idx = Number.parseInt(arrayMatch[2]);
-  if (Array.isArray(arr) && idx >= 0 && idx < arr.length) arr[idx] = value;
+  // Define a data property on this record, preserving the attributes of existing fields.
+  Object.defineProperty(
+    container,
+    lastKey,
+    Object.hasOwn(container, lastKey) ? { value } : { value, enumerable: true, writable: true, configurable: true },
+  );
 }
 
 function applyChanges(record: SanctioningRecord, changes: ProposalChange[]) {

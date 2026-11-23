@@ -140,6 +140,15 @@ describe('a "__proto__" id, key or path segment cannot write onto a prototype', 
     expect(Object.getPrototypeOf(stats.counters.teams[0])).toBe(Object.prototype);
   });
 
+  it('counts a valid winner without attributing serves or breakpoints to an invalid side', () => {
+    const { counters } = calculateMatchStatistics({} as any, [{ winner: 1, server: 2, breakpoint: true }] as any);
+    expect(counters.teams[1].pointsWon).toHaveLength(1);
+    for (const side of [0, 1]) {
+      expect(counters.teams[side].pointsServed).toBeUndefined();
+      expect(counters.teams[side].breakpointsFaced).toBeUndefined();
+    }
+  });
+
   it('#151 a link whose target round number is not an integer is ignored when ranging draw positions', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP }],
