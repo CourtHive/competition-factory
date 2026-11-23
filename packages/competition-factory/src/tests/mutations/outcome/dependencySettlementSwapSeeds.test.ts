@@ -11,7 +11,7 @@ import { createWorkingView } from '@Mutate/matchUps/outcome/overlay';
 import { buildOutcomeView } from '@Mutate/matchUps/outcome/view';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { getOutcomePipeline, setOutcomePipeline } from '@Global/state/globalState';
-import { COMPASS } from '@Constants/drawDefinitionConstants';
+import { COMPASS, FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import type { OutcomeRequest } from '@Mutate/matchUps/outcome/types';
 import type { DrawDefinition } from '@Types/tournamentTypes';
@@ -22,10 +22,13 @@ const prior = getOutcomePipeline();
 beforeEach(() => setOutcomePipeline('v1'));
 afterEach(() => setOutcomePipeline(prior));
 
-function prepared() {
-  generateDraw(COMPASS, drawId, 16, 7001);
+function prepared(
+  drawType: string = COMPASS,
+  coordinate = { structureName: 'East', roundNumber: 1, roundPosition: 4 },
+) {
+  generateDraw(drawType, drawId, 16, 7001);
   playForward(drawId);
-  const { matchUpId } = findByCoord(drawId, { structureName: 'East', roundNumber: 1, roundPosition: 4 });
+  const { matchUpId } = findByCoord(drawId, coordinate);
   const request = {
     matchUpId,
     winningSide: 2,
@@ -131,4 +134,62 @@ it('rejects an unrelated holder, reversed receiver roles, an unproved link and a
       reasons: [reason],
     });
   }
+});
+
+it('requires a changing winner, both original occupants, and the actual winner path', () => {
+  const args = prepared();
+  const { view, request, drawDefinition } = args;
+  expect(
+    planSwapSeeds({ ...args, request: { ...request, flags: { ...request.flags, allowChangePropagation: false } } })
+      .reasons,
+  ).toEqual(['no-swap-topology']);
+  const check = (v: typeof view, reason: string) =>
+    expect(planSwapSeeds({ ...args, view: v })).toMatchObject({
+      ops: [],
+      roles: [],
+      assignmentReaders: [],
+      reasons: [reason],
+    });
+  const matches = view.inContextDrawMatchUps!;
+  const source = matches.find((m) => m.matchUpId === request.matchUpId)!;
+  check({ ...view, inContextDrawMatchUps: matches.filter((m) => m !== source) }, 'unresolved-swap-source');
+  check(
+    {
+      ...view,
+      inContextDrawMatchUps: matches.map((m) => (m === source ? { ...m, winningSide: request.winningSide } : m)),
+    },
+    'unresolved-swap-roles',
+  );
+  const target = matches.find((m) => m.matchUpId === view.targets.winnerMatchUpId)!;
+  expect(target.structureId).toBe(source.structureId);
+  check(
+    {
+      ...view,
+      targets: {
+        ...view.targets,
+        swap: {
+          ...view.targets.swap!,
+          pathMatchUpIds: view.targets.swap!.pathMatchUpIds.filter((id) => id !== target.matchUpId),
+        },
+      },
+    },
+    'unverified-swap-grant-seat',
+  );
+  const seat = positionAssignmentsOf(
+    drawDefinition.structures?.find((s) => s.structureId === source.structureId),
+  )!.find((a) => a.drawPosition === view.targets.swap!.positionA)!;
+  seat.participantId = 'stale-source-occupant';
+  check(view, 'unverified-swap-occupants');
+});
+
+it('withholds a loser role receipt when both players already won before a conditional feed', () => {
+  const args = prepared(FIRST_MATCH_LOSER_CONSOLATION, { structureName: 'Main', roundNumber: 2, roundPosition: 1 });
+  const matches = args.view.inContextDrawMatchUps!;
+  const source = matches.find((m) => m.matchUpId === args.request.matchUpId)!;
+  const prior = matches.filter((m) => m.structureId === source.structureId && m.winnerMatchUpId === source.matchUpId);
+  expect(prior).toHaveLength(2);
+  expect(prior.every((m) => m.winningSide)).toBe(true);
+  expect(args.view.targets.loserLink?.linkCondition).toBe('FIRST_MATCHUP');
+  const seed = planSwapSeeds(args);
+  expect(seed).toMatchObject({ ops: [], roles: [], assignmentReaders: [], reasons: ['unverified-swap-grant'] });
 });

@@ -8,7 +8,7 @@ import { drawPositionAssignmentRefusal } from '@Query/drawDefinition/drawPositio
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
-import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { findStructure } from '@Acquire/findStructure';
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import type { WorkingView } from '../overlay';
@@ -181,7 +181,7 @@ function unearnedAction(working: WorkingView, debt: Unearned): OutcomeOp[] | und
       (m) =>
         m.roundNumber === (match.roundNumber ?? 0) - 1 &&
         m.drawPositions?.includes(drawPosition) &&
-        m.matchUpStatus === 'BYE',
+        m.matchUpStatus === BYE,
     ) ||
     working.drawDefinition.links?.some(
       (l) =>

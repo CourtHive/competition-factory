@@ -286,3 +286,26 @@ it('indexes a later first-match loser receiver by its actual feeder positions an
   expect(dep.eligibilityTargets(early)).not.toContain(edge.receiver);
   expect(dep.markReaders.get(early.matchUpId)).not.toContain(donor.matchUpId);
 });
+
+it('reports the indirect named reader separately and refuses a fold addressing an absent holder', () => {
+  const { drawDefinition, source, final } = bracket();
+  final.sideExitProvenance = { 2: { sourceMatchUpId: source.matchUpId, previousMatchUpStatus: COMPLETED } };
+  const { matchUps = [] } = getAllDrawMatchUps({ drawDefinition, inContext: true });
+  const working = createWorkingView({
+    drawDefinition,
+    matchUpsMap: getMatchUpsMap({ drawDefinition }),
+    inContextDrawMatchUps: matchUps,
+    clockFree: true,
+  });
+  const queue = settlementWorklist(working, flags);
+  queue.fold([{ op: 'setMatchUpResult', matchUpId: source.matchUpId, matchUpStatus: COMPLETED, winningSide: 1 }]);
+  queue.drain('direction');
+  expect(queue.reasons).toContain('indirect-origin-relay');
+  expect(
+    working.matchUpsMap.drawMatchUps.find((m) => m.matchUpId === final.matchUpId)?.sideExitProvenance,
+  ).toStrictEqual(final.sideExitProvenance);
+  const prior = queue.ops.length;
+  queue.fold([{ op: 'clearMatchUpScoredTime', matchUpId: 'not-in-this-draw' }]);
+  expect(queue.reasons).toContain('projection-fold');
+  expect(queue.ops).toHaveLength(prior);
+});

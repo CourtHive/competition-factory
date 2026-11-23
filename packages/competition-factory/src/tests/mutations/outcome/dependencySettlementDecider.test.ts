@@ -7,11 +7,19 @@ import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structu
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
 import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { setOutcomePipeline } from '@Global/state/globalState';
+import { getOutcomePipeline, setOutcomePipeline } from '@Global/state/globalState';
 import type { DrawDefinition, MatchUpStatusUnion } from '@Types/tournamentTypes';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
-import { expect, it } from 'vitest';
+import { afterEach, beforeEach, expect, it } from 'vitest';
+
+let entryPipeline: ReturnType<typeof getOutcomePipeline>;
+beforeEach(() => {
+  entryPipeline = getOutcomePipeline();
+});
+afterEach(() => {
+  setOutcomePipeline(entryPipeline);
+});
 
 const drawId = 'settlement-decider';
 
@@ -181,4 +189,139 @@ it('predicts the actual winning participant and identifies a required quiet dele
       s.participantId?.startsWith('displaced-'),
     ),
   ).toBe(true);
+});
+
+it.each(['missing producer', 'consumed vacancy', 'occupied vacancy', 'qualified vacancy'] as const)(
+  'rechecks the current Decider reservation before a withdrawal (%s)',
+  (variant) => {
+    const { before, root, donor } = prepare();
+    const [grant] = deciderReservations(before);
+    const cursor = structuredClone(before);
+    const back = cursor.structures!.find((s) => matchUpsOf(s)?.some((m) => m.matchUpId === donor))!;
+    const seats = positionAssignmentsOf(cursor.structures!.find((s) => s.structureId === grant.structureId))!;
+    const seat = seats.find((s) => s.drawPosition === grant.drawPosition)!;
+    stored(cursor, donor).matchUpStatus = DEFAULTED;
+    if (variant === 'missing producer')
+      matchUpsOf(back)!.splice(
+        matchUpsOf(back)!.findIndex((m) => m.matchUpId === donor),
+        1,
+      );
+    if (variant === 'consumed vacancy') delete seat.byeFromPropagation;
+    if (variant === 'occupied vacancy') seat.participantId = 'new-occupant';
+    if (variant === 'qualified vacancy') seat.qualifier = true;
+    const snapshot = structuredClone(cursor);
+    const working = read(cursor);
+    const plan = planDeciderReservations({ before, working, matchUpId: root });
+    expect(plan.ops).toEqual([]);
+    if (variant === 'missing producer')
+      expect(plan.reasons).toEqual(['shared Decider reservation lost its mapped holder or producer']);
+    else if (variant === 'consumed vacancy') expect(plan.reasons).toEqual([]);
+    else expect(plan.reasons).toEqual(['changed Decider reservation has an occupied or qualified receiver']);
+    expect(working.drawDefinition).toStrictEqual(snapshot);
+  },
+);
+
+it('retains a reservation if the opposite feeder now supplies the typed exit', () => {
+  const { before, root, donor, final } = prepare();
+  const cursor = structuredClone(before);
+  const old = stored(cursor, donor);
+  const incoming = stored(cursor, root);
+  incoming.matchUpStatus = old.matchUpStatus;
+  delete incoming.winningSide;
+  delete incoming.score;
+  old.matchUpStatus = TO_BE_PLAYED;
+  const mark = Object.values(stored(cursor, final).sideExitProvenance!).find((m) => m.sourceMatchUpId === donor)!;
+  const sharedFinal = stored(cursor, final);
+  sharedFinal.winningSide = 1;
+  sharedFinal.sideExitProvenance = { 2: { ...mark, sourceMatchUpId: root } };
+  const replacement = deciderReservations(cursor);
+  expect(replacement).toMatchObject([{ producerId: root }]);
+  expect(planDeciderReservations({ before, working: read(cursor), matchUpId: root })).toEqual({
+    ops: [],
+    reasons: ['another producer supports the shared Decider reservation'],
+  });
+});
+
+it('rejects a grant with a mismatched exit type or an extra receiver assignment', () => {
+  const { before, donor, final } = prepare();
+  const [grant] = deciderReservations(before);
+  const wrong = structuredClone(before);
+  const mark = Object.values(stored(wrong, final).sideExitProvenance!).find((m) => m.sourceMatchUpId === donor)!;
+  mark.previousMatchUpStatus = DOUBLE_DEFAULT;
+  expect(deciderReservations(wrong)).toEqual([]);
+  const expanded = structuredClone(before);
+  positionAssignmentsOf(expanded.structures!.find((s) => s.structureId === grant.structureId))!.push({
+    drawPosition: 3,
+  });
+  expect(deciderReservations(expanded)).toEqual([]);
+  expect(deciderReservations(before)).toEqual([grant]);
+});
+
+it('requires a terminal Decider and single-branch feeding donor', () => {
+  const { before, donor } = prepare();
+  const [grant] = deciderReservations(before);
+  const feeder = before.links!.find((l) => l.linkType === 'WINNER' && l.target.structureId === grant.structureId)!;
+  const donorStructure = before.structures!.find((s) => matchUpsOf(s)?.some((m) => m.matchUpId === donor))!;
+  for (const variant of ['outgoing', 'both donor branches'] as const) {
+    const copy = structuredClone(before);
+    const edge = structuredClone(feeder);
+    if (variant === 'outgoing') {
+      edge.source = { ...edge.source, structureId: grant.structureId, roundNumber: 1 };
+      edge.target = { ...edge.target, structureId: donorStructure.structureId, roundNumber: 1 };
+    } else {
+      edge.linkType = 'LOSER';
+      edge.source = {
+        ...edge.source,
+        structureId: donorStructure.structureId,
+        roundNumber: stored(before, donor).roundNumber!,
+      };
+      edge.target = { ...edge.target, structureId: feeder.source.structureId, roundNumber: feeder.source.roundNumber! };
+    }
+    copy.links!.push(edge);
+    expect(deciderReservations(copy), variant).toEqual([]);
+  }
+  const unlinked = structuredClone(before);
+  delete unlinked.links;
+  expect(planDecider({ before: unlinked, working: read(unlinked), matchUpId: donor })).toEqual({
+    ops: [],
+    reasons: [],
+  });
+});
+
+it('preserves a correctly seated finalist when only the other seat needs clearing', () => {
+  const { before, final, root } = prepare();
+  const [grant] = deciderReservations(before);
+  const cursor = structuredClone(before);
+  const feeder = read(cursor).inContextDrawMatchUps.find((m) => m.matchUpId === final)!;
+  const winner = feeder.sides!.find((s) => s.sideNumber === feeder.winningSide)!.participantId!;
+  expect(winner).toBeTruthy();
+  const seats = [...positionAssignmentsOf(cursor.structures!.find((s) => s.structureId === grant.structureId))!].sort(
+    (a, b) => a.drawPosition - b.drawPosition,
+  );
+  for (const seat of seats) {
+    delete seat.bye;
+    delete seat.byeFromPropagation;
+  }
+  seats[0].participantId = winner;
+  seats[1].participantId = 'departed-loser';
+  const plan = planDecider({ before, working: read(cursor), matchUpId: root });
+  expect(plan.ops.filter((op) => op.op === 'relabelPosition')).toEqual([
+    {
+      op: 'relabelPosition',
+      drawPosition: seats[1].drawPosition,
+      structureId: grant.structureId,
+      participantId: undefined,
+    },
+  ]);
+});
+
+it('cannot repair an absent Decider match from its structure assignments alone', () => {
+  const { before, root } = prepare();
+  const [grant] = deciderReservations(before);
+  const cursor = structuredClone(before);
+  const receiver = cursor.structures!.find((s) => s.structureId === grant.structureId)!;
+  matchUpsOf(receiver)!.splice(0);
+  expect(positionAssignmentsOf(receiver)).toHaveLength(2);
+  const working = read(cursor);
+  expect(planDecider({ before, working, matchUpId: root })).toEqual({ ops: [], reasons: [] });
 });

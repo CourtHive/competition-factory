@@ -10,11 +10,19 @@ import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { COMPLETED, DOUBLE_DEFAULT, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { setOutcomePipeline } from '@Global/state/globalState';
+import { getOutcomePipeline, setOutcomePipeline } from '@Global/state/globalState';
 import type { DrawDefinition } from '@Types/tournamentTypes';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
-import { expect, it } from 'vitest';
+import { afterEach, beforeEach, expect, it } from 'vitest';
+
+let entryPipeline: ReturnType<typeof getOutcomePipeline>;
+beforeEach(() => {
+  entryPipeline = getOutcomePipeline();
+});
+afterEach(() => {
+  setOutcomePipeline(entryPipeline);
+});
 
 const drawId = 'links-for-settlement';
 function read(drawDefinition: DrawDefinition) {
@@ -147,6 +155,35 @@ it('returns a displaced carrier’s exit to the highest earlier holder; a standi
   const stored = cursor.structures!.flatMap((s) => matchUpsOf(s) ?? []);
   const landing = stored.find((m) => m.matchUpId === from.matchUpId)!;
   landing.drawPositions = landing.drawPositions!.filter((p) => p !== side.drawPosition);
+  const replaced = structuredClone(cursor);
+  const main = replaced.structures!.find((s) => s.structureName === 'Main')!;
+  positionAssignmentsOf(main)!.find((seat) => seat.drawPosition === side.drawPosition)!.participantId = 'replacement';
+  expect(planReturningCarries({ ...inputs, working: read(replaced) })).toEqual({
+    ops: [],
+    reasons: ['returning carry requires another landing or changed occupant'],
+  });
+  const missing = structuredClone(cursor);
+  const matches = matchUpsOf(missing.structures!.find((s) => s.structureName === 'Main'))!;
+  matches.splice(
+    matches.findIndex((m) => m.matchUpId === from.matchUpId),
+    1,
+  );
+  expect(planReturningCarries({ ...inputs, working: read(missing) })).toEqual({ ops: [], reasons: [] });
+  const producedOnly = structuredClone(before);
+  const origin = matchUpsOf(producedOnly.structures!.find((s) => s.structureName === 'Main'))!.find(
+    (m) => m.matchUpId === from.matchUpId,
+  )!;
+  origin.sideExitProvenance = {
+    [side.sideNumber!]: {
+      sourceMatchUpId: home.matchUpId,
+      previousMatchUpStatus: DOUBLE_DEFAULT,
+      matchUpStatus: 'DEFAULTED',
+    },
+  };
+  expect(planReturningCarries({ ...inputs, before: producedOnly, working: read(cursor) })).toEqual({
+    ops: [],
+    reasons: [],
+  });
   const projection = planReturningCarries({ ...inputs, working: read(cursor) });
   const expected = {
     op: 'mergeSideExitProvenance',
@@ -179,4 +216,142 @@ it('retains a structural BYE advancement across the link when the source has no 
   const before = structuredClone(draw);
   expect(reconcileLinkAdvancements({ drawDefinition: draw })?.error).toBeUndefined();
   expect(draw).toStrictEqual(before);
+});
+
+function backdrawFeed() {
+  const { draw, final, source: mainFinal } = finalReady();
+  const main = draw.structures!.find((s) => s.structureName === 'Main')!;
+  const back = draw.structures!.find((s) => s.structureName === 'Backdraw')!;
+  const donor = matchUpsOf(back)!.find((m) => m.roundNumber === 4)!;
+  const hydrated = read(draw).inContextDrawMatchUps.find((m) => m.matchUpId === donor.matchUpId)!;
+  const champion = hydrated.sides!.find((s) => s.sideNumber === hydrated.winningSide)?.participantId;
+  expect(champion).toBeTruthy();
+  const position = final.sides!.find((s) => s.participantId === champion)!.drawPosition!;
+  expect(mainFinal.drawPositions).toContain(position);
+  return { draw, main, mainFinal, donor, position };
+}
+
+it('restores the Backdraw champion to the vacant Main final by their existing Main position', () => {
+  const { draw, mainFinal, position } = backdrawFeed();
+  const full = [...mainFinal.drawPositions!];
+  mainFinal.drawPositions = full.filter((p) => p !== position);
+  const working = read(draw);
+  expect(planLinkedRepairs({ working, stage: 'missed' }).ops).toEqual([
+    { op: 'setMatchUpDrawPositions', matchUpId: mainFinal.matchUpId, drawPositions: full },
+  ]);
+  const reference = structuredClone(draw);
+  expect(reconcileMissedLinkAdvancements({ drawDefinition: reference })?.error).toBeUndefined();
+  expect(
+    matchUpsOf(reference.structures!.find((s) => s.structureName === 'Main'))!.find(
+      (m) => m.matchUpId === mainFinal.matchUpId,
+    )?.drawPositions,
+  ).toEqual(full);
+  expect(mainFinal.drawPositions).not.toContain(position);
+});
+
+it('holds a full final; the absent Backdraw champion cannot displace an unrelated seated finalist', () => {
+  const { draw, main, mainFinal, position } = backdrawFeed();
+  const other = positionAssignmentsOf(main)!.find(
+    (s) => s.participantId && !mainFinal.drawPositions!.includes(s.drawPosition),
+  )!;
+  mainFinal.drawPositions = mainFinal.drawPositions!.map((p) => (p === position ? other.drawPosition : p));
+  const input = structuredClone(draw);
+  const working = read(draw);
+  expect(planLinkedRepairs({ working, stage: 'missed' })).toEqual({
+    ops: [],
+    outstanding: mainFinal.matchUpId,
+    reasons: ['linked missed requires compound placement: ' + mainFinal.matchUpId],
+  });
+  expect(working.drawDefinition).toStrictEqual(input);
+});
+
+it.each(['sole holder', 'next winner link', 'already played', 'multiple holders'] as const)(
+  'withdrawal of a Backdraw award follows the actual Main final holder (%s)',
+  (variant) => {
+    const { draw, main, mainFinal, donor, position } = backdrawFeed();
+    delete donor.winningSide;
+    delete donor.score;
+    donor.matchUpStatus = TO_BE_PLAYED;
+    if (variant !== 'next winner link')
+      draw.links = draw.links!.filter((l) => l.source.structureId !== main.structureId || l.source.roundNumber !== 4);
+    if (variant === 'already played') {
+      mainFinal.matchUpStatus = COMPLETED;
+      mainFinal.winningSide = 1;
+    }
+    if (variant === 'multiple holders')
+      matchUpsOf(main)!.push({ ...structuredClone(mainFinal), matchUpId: 'next-round-holder', roundNumber: 5 });
+    const input = structuredClone(draw);
+    const working = read(draw);
+    expect(getUnearnedLinkAdvancements(working).some((d) => d.sourceMatchUp.matchUpId === donor.matchUpId)).toBe(true);
+    const plan = planLinkedRepairs({ working, stage: 'unearned' });
+    if (variant === 'sole holder') {
+      const kept = mainFinal.drawPositions!.filter((p) => p !== position);
+      expect(plan.ops).toEqual([
+        {
+          op: 'setMatchUpDrawPositions',
+          matchUpId: mainFinal.matchUpId,
+          drawPositions: kept,
+          releasedDrawPosition: position,
+        },
+      ]);
+      const reference = structuredClone(draw);
+      expect(reconcileLinkAdvancements({ drawDefinition: reference })?.error).toBeUndefined();
+      expect(
+        matchUpsOf(reference.structures!.find((s) => s.structureId === main.structureId))!.find(
+          (m) => m.matchUpId === mainFinal.matchUpId,
+        )?.drawPositions,
+      ).toEqual(kept);
+      expect(planLinkedRepairs({ working, stage: 'unearned' }).ops).toEqual([]);
+    } else {
+      expect(plan.outstanding).toBe(mainFinal.matchUpId);
+      expect(plan.ops).toEqual([]);
+      expect(working.drawDefinition).toStrictEqual(input);
+    }
+    expect(draw).toStrictEqual(input);
+  },
+);
+
+it.each(['seeded winner', 'decided receiver', 'no vacancies', 'winner assigned elsewhere', 'shared opening'] as const)(
+  'a missed winner respects the source and target assignments (%s)',
+  (variant) => {
+    const { draw, final, source, receiver } = finalReady();
+    source.matchUpStatus = COMPLETED;
+    source.winningSide = 2;
+    const winner = final.sides!.find((s) => s.sideNumber === 2)!.participantId!;
+    const holder = matchUpsOf(receiver)![0];
+    const seats = positionAssignmentsOf(receiver)!;
+    if (variant === 'seeded winner')
+      draw.structures!.find((s) => s.structureName === 'Main')!.seedAssignments = [
+        { seedNumber: 1, seedValue: '1', participantId: winner },
+      ];
+    if (variant === 'decided receiver') {
+      holder.winningSide = 1;
+      holder.matchUpStatus = COMPLETED;
+    }
+    if (variant === 'no vacancies')
+      seats.forEach((s) => {
+        s.participantId = 'independent-' + s.drawPosition;
+      });
+    if (variant === 'shared opening')
+      matchUpsOf(receiver)!.push({ ...structuredClone(holder), matchUpId: 'independent-later-holder', roundNumber: 2 });
+    if (variant === 'winner assigned elsewhere') seats.push({ drawPosition: 3, participantId: winner });
+    const input = structuredClone(draw);
+    const working = read(draw);
+    const plan = planLinkedRepairs({ working, stage: 'missed' });
+    expect(plan.ops).toEqual([]);
+    if (variant === 'winner assigned elsewhere') expect(plan.reasons).toEqual([]);
+    else expect(plan.outstanding).toBe(holder.matchUpId);
+    expect(working.drawDefinition).toStrictEqual(input);
+  },
+);
+
+it('a final winner and a vacant seat in an unlinked structure create no cross-structure repair', () => {
+  const { draw, source } = finalReady();
+  source.winningSide = 2;
+  source.matchUpStatus = COMPLETED;
+  delete draw.links;
+  const working = read(draw);
+  for (const stage of ['missed', 'unearned'] as const)
+    expect(planLinkedRepairs({ working, stage })).toEqual({ ops: [], reasons: [] });
+  expect(working.work.copiedMatchUps).toBe(0);
 });

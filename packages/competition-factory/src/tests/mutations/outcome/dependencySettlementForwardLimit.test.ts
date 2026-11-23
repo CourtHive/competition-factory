@@ -1,6 +1,6 @@
-import { planForward } from '@Mutate/matchUps/outcome/settlement/forwardLimit';
+import { planForward, winnerArrival } from '@Mutate/matchUps/outcome/settlement/forwardLimit';
 import { createWorkingView } from '@Mutate/matchUps/outcome/overlay';
-import { COMPLETED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { COMPLETED, WALKOVER, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -46,7 +46,7 @@ function fixture(count: number, pendingExitOnLastTarget = false) {
       .filter((match) => match.roundNumber === 2)
       .flatMap((match) => (match.sides ?? []).flatMap((s) => (s.participantId ? [s.drawPosition] : [])))
       .sort((a, b) => a - b);
-  return { owed, run, placements, tournamentRecord, drawDefinition };
+  return { owed, run, placements, tournamentRecord, drawDefinition, working, request };
 }
 
 it.each([64, 65])(
@@ -91,4 +91,51 @@ it('reports an outstanding holder at 65 even when its arrival needs another rule
   expect(placed).toHaveLength(64);
   expect(f.run()).toEqual({ ops: [], reasons: [`forward:winner:${first.exhausted}`] });
   expect(f.placements()).toEqual(placed);
+});
+
+it('keeps other owed actions separate from an ordinary winner placement', () => {
+  const { working, owed } = fixture(1);
+  const first = owed[0];
+  const debt = {
+    kind: 'winner' as const,
+    matchUpId: first.matchUpId,
+    drawPosition: first.sides![0].drawPosition!,
+    key: 'test',
+  };
+  expect(winnerArrival(working, debt)?.[0]).toMatchObject({
+    op: 'setMatchUpDrawPositions',
+    matchUpId: first.winnerMatchUpId,
+  });
+  for (const kind of ['loser', 'reservation', 'emptyWinner'] as const)
+    expect(winnerArrival(working, { ...debt, kind })).toBeUndefined();
+  // A stale debt naming the championship cannot advance a winner any further.
+  const final = working.inContextDrawMatchUps.find((m) => !m.winnerMatchUpId)!;
+  expect(winnerArrival(working, { ...debt, matchUpId: final.matchUpId })).toBeUndefined();
+  const [placed] = winnerArrival(working, debt)!;
+  expect(working.apply([placed])).toEqual({});
+  expect(winnerArrival(working, debt)).toBeUndefined();
+});
+
+it('leaves an ordinary arrival open when the paired feeder produced a double exit', () => {
+  const { working, owed, run, placements } = fixture(1);
+  const first = owed[0];
+  const sibling = working.inContextDrawMatchUps.find(
+    (m) => m.matchUpId !== first.matchUpId && m.winnerMatchUpId === first.winnerMatchUpId,
+  )!;
+  expect(
+    working.apply([{ op: 'setMatchUpResult', matchUpId: sibling.matchUpId, matchUpStatus: DOUBLE_WALKOVER }]),
+  ).toEqual({});
+  expect(run()).toEqual({ ops: [], reasons: [`forward:winner:${first.matchUpId}`] });
+  expect(placements()).toEqual([]);
+});
+
+it('returns a cursor refusal before accounting for the outstanding placement', () => {
+  const { working, request, placements } = fixture(1);
+  expect(planForward({ working: { ...working, temporal: undefined }, request })).toEqual({
+    ops: [],
+    reasons: ['forward:requires clock-free working view'],
+  });
+  const failing = { ...working, apply: () => ({ error: 'unavailable receiver' }) };
+  expect(planForward({ working: failing, request })).toEqual({ ops: [], reasons: ['unavailable receiver'] });
+  expect(placements()).toEqual([]);
 });
