@@ -10,6 +10,7 @@ import { planDecider, planDeciderReservations } from './decider';
 import { doubleWithdrawal } from './doubleWithdrawal';
 import { isDoubleExit } from '@Validators/isExit';
 import { planSettlementEffects, type SettlementNoticeInput } from './effects';
+import { withdrawnAwardRelease } from './release';
 import { planSwapSeeds } from './swapSeeds';
 import { inspectHeldPass } from './bounds';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
@@ -102,7 +103,8 @@ export function predictSettlement(args: Args): Prediction {
     clockFree: true,
   });
   const policies = getAppliedPolicies({ drawDefinition, event, tournamentRecord }).appliedPolicies;
-  const queue = settlementWorklist(working, request.flags, policies);
+  const release = withdrawnAwardRelease(view, request, route, drawDefinition);
+  const queue = settlementWorklist(working, request.flags, policies, release);
   const modelArgs = { before: drawDefinition, working, matchUpId: request.matchUpId };
   const direction = planDirection(request, view, route);
   const refused = seedRoot({ args, working, queue, view, root: source, route, write, direction, policies });
@@ -137,7 +139,7 @@ export function predictSettlement(args: Args): Prediction {
   bindResultAliases(working, matchUpsMap, queue.ops);
   const effects =
     !queue.reasons.size && !error && !forward.exhausted
-      ? planSettlementEffects({ ...args, working, route, view, ops: queue.ops })
+      ? planSettlementEffects({ ...args, working, route, view, ops: queue.ops, release })
       : undefined;
   for (const reason of effects?.reasons ?? []) queue.reasons.add(reason);
   const effectsComplete = !!effects?.announced && !!effects.result && !!effects.readings && !queue.reasons.size;

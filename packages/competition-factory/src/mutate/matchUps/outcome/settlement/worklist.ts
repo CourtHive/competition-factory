@@ -6,6 +6,7 @@ import type { PolicyDefinitions } from '@Types/factoryTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { OutcomeFlags } from '../types';
 import type { WorkingView } from '../overlay';
+import type { withdrawnAwardRelease } from './release';
 import type { OutcomeOp } from '../ops';
 
 type Trigger = 'match' | 'assignment';
@@ -13,7 +14,12 @@ export type Visit = { pass: string; matchUpId: string; trigger: Trigger };
 
 /** Call-local. Stable order is the actual match enumeration within each pass. The queue holds
  * consumers, never a permanent visited flag. A later fold invalidates the same consumer again. */
-export function settlementWorklist(working: WorkingView, flags: OutcomeFlags, policies?: PolicyDefinitions) {
+export function settlementWorklist(
+  working: WorkingView,
+  flags: OutcomeFlags,
+  policies?: PolicyDefinitions,
+  release?: ReturnType<typeof withdrawnAwardRelease>,
+) {
   const dependencies = buildDependencies(working);
   const { outgoing, incoming, readers, markReaders, rank } = dependencies;
   const owners = new Map<string, string>();
@@ -129,7 +135,7 @@ export function settlementWorklist(working: WorkingView, flags: OutcomeFlags, po
       history.get(id)!.add(signature);
       visited.push({ pass, matchUpId: id, trigger });
       previous.set(id, current);
-      const result = reconcileReceiver(working, target, old, current, trigger === 'assignment');
+      const result = reconcileReceiver(working, target, old, current, trigger === 'assignment', release);
       for (const reason of result.reasons) reasons.add(reason);
       fold(result.ops);
     }

@@ -9,6 +9,7 @@ import { isAnyExit } from '@Validators/isExit';
 import type { SideExitProvenance, SideExitProvenanceEntry } from '@Types/tournamentTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { Edge, Grant, Frame } from './dependencies';
+import type { withdrawnAwardRelease } from './release';
 import type { OutcomeOp } from '../ops';
 
 export type Input = { edge: Edge; grant: Grant; source: HydratedMatchUp };
@@ -216,6 +217,7 @@ export function reconcileReceiver(
   previous: Input[],
   current: Input[],
   assignmentChanged: boolean,
+  release?: ReturnType<typeof withdrawnAwardRelease>,
 ): Rule {
   const changes = current.flatMap((next, i) =>
     sameGrant(previous[i].grant, next.grant) ? [] : [{ old: previous[i], next }],
@@ -238,7 +240,21 @@ export function reconcileReceiver(
       if (reason) return stop(reason);
     }
   }
-  if (draft.removed || draft.added)
+  // The award that granted the onward seat was withdrawn. Only a proved old grant lost
+  // by that particular holder can use the narrow release, after all live inputs were evaluated.
+  if (
+    release &&
+    !draft.added &&
+    draft.removed === release.position &&
+    target.matchUpId === release.onward.matchUpId &&
+    release.op.drawPositions.length === draft.positions.size &&
+    release.op.drawPositions.every((position) => draft.positions.has(position)) &&
+    changes.some(
+      ({ old }) => old.edge.source === release.holder.matchUpId && old.grant.participant === release.participantId,
+    )
+  )
+    draft.ops.push(release.op);
+  else if (draft.removed || draft.added)
     draft.ops.push({
       op: 'setMatchUpDrawPositions',
       matchUpId: target.matchUpId,

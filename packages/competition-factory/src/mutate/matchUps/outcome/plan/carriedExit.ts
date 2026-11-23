@@ -131,7 +131,7 @@ export function withdrawnReason(view: OutcomeView, withdrawn: WithdrawnCarry): A
  * it (to be played, no winner, score, provenance or BYE). Undefined where they went nowhere (nothing to release), false
  * where the next matchUp is not that.
  */
-function releasedAward(
+export function releasedAward(
   view: OutcomeView,
   entry: HydratedMatchUp,
   drawPosition?: number,

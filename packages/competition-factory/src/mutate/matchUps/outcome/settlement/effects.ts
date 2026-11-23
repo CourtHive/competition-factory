@@ -9,6 +9,7 @@ import { findStructure } from '@Acquire/findStructure';
 import { matchUpWillNeverBePlayed } from '@Helpers/scheduling/schedulePredicates';
 import { matchUpHoldsScheduling } from '@Mutate/matchUps/schedule/byeScheduling';
 import { claimEdges } from '../plan/placementClaims';
+import type { withdrawnAwardRelease } from './release';
 import { recordedNotice } from '../plan/recordedDiff';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { TO_BE_PLAYED, IN_PROGRESS, BYE } from '@Constants/matchUpStatusConstants';
@@ -37,7 +38,9 @@ export type SettlementNoticeInput = {
   disableNotifications?: boolean;
 };
 
+type AwardRelease = NonNullable<ReturnType<typeof withdrawnAwardRelease>>;
 type Args = SettlementNoticeInput & {
+  release?: AwardRelease;
   drawDefinition: DrawDefinition;
   tournamentRecord?: Tournament;
   capturedClock?: number;
@@ -377,6 +380,47 @@ function accountsForRemoval(
   return false;
 }
 
+/** An occupied opponent won through the carrier. The source-derived certificate names the
+ * actual onward place. Its release keeps the holder's own score and precedes the notice for
+ * withdrawing the produced exit at the loser landing. A further relay requires its own emission. */
+function releasesAward(args: Args, loser: HydratedMatchUp, matches: HydratedMatchUp[]) {
+  const release = args.release;
+  if (
+    !release ||
+    release.holder.matchUpId !== loser.matchUpId ||
+    Object.keys(getSideExitProvenance({ matchUp: loser }) ?? {}).length !== 1 ||
+    matches.some((m) =>
+      Object.values(getSideExitProvenance({ matchUp: m }) ?? {}).some(
+        (mark) => mark.sourceMatchUpId === loser.matchUpId,
+      ),
+    )
+  )
+    return false;
+  const edges = claimEdges({ drawDefinition: args.drawDefinition, inContextDrawMatchUps: matches }, loser);
+  if (!edges.targetMatchUps || edges.targetMatchUps.loserMatchUp || edges.targetMatchUps.byeMatchUp) return false;
+  const writes = args.ops.filter(
+    (op) => op.op === 'setMatchUpDrawPositions' && op.matchUpId === release.onward.matchUpId,
+  );
+  if (writes.length !== 1 || !isAwardRelease(writes[0], release)) return false;
+  const stored = args.working.matchUpsMap.drawMatchUps.find((m) => m.matchUpId === release.onward.matchUpId);
+  return (
+    !!stored?.drawPositions &&
+    stored.drawPositions.length === release.op.drawPositions.length &&
+    stored.drawPositions.every((pos, i) => pos === release.op.drawPositions[i])
+  );
+}
+
+function isAwardRelease(op: OutcomeOp, release: AwardRelease) {
+  return (
+    op.op === 'setMatchUpDrawPositions' &&
+    op.matchUpId === release.onward.matchUpId &&
+    op.releasedDrawPosition === release.position &&
+    Object.keys(op).length === Object.keys(release.op).length &&
+    op.drawPositions.length === release.op.drawPositions.length &&
+    op.drawPositions.every((pos, i) => pos === release.op.drawPositions[i])
+  );
+}
+
 /** The source score is announced first. Removing its winner uses the source tournament but
  * drops the event binding. The plain linked loser removal publishes a match notice only when it
  * changes that target's side record; an assignment cleared without such a change is quiet. */
@@ -413,28 +457,32 @@ function removeProgram(args: Args): Program | undefined {
       (mark) => mark.sourceMatchUpId === source.matchUpId,
     ),
   );
+  const released = loser && releasesAward(args, loser, matches) ? args.release : undefined;
   const withdrawn =
     supplied.length === 1 &&
     loser?.matchUpId === supplied[0].matchUpId &&
     !!loser &&
-    plainProducedLoser(args, source, loser, matches);
+    (!!released || plainProducedLoser(args, source, loser, matches));
   if (supplied.length && !withdrawn) return undefined;
+  if (released) emissions.push({ match: released.onward, context: 'releaseAdvancedDrawPosition', bound: true });
   if (withdrawn && loser) emissions.push({ match: loser, context: 'withdrawProducedExits', bound: true });
   if (winner && winnerPosition && !winnerRemoval(matches, source, winner, winnerPosition, emissions)) return undefined;
   if (loser && !loserRemoval(args, source, loser, matches, withdrawn, emissions)) return undefined;
   if (
-    !args.ops.every((op) =>
-      accountsForRemoval(
-        op,
-        matches,
-        emissions,
-        source,
-        withdrawn,
-        losing?.participantId,
-        winner,
-        winnerPosition,
-        loser,
-      ),
+    !args.ops.every(
+      (op) =>
+        (released && isAwardRelease(op, released)) ||
+        accountsForRemoval(
+          op,
+          matches,
+          emissions,
+          source,
+          withdrawn,
+          losing?.participantId,
+          winner,
+          winnerPosition,
+          loser,
+        ),
     )
   )
     return undefined;
