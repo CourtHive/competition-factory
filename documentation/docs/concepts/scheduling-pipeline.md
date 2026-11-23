@@ -83,7 +83,7 @@ and lock.
   as part of their own write.
 - A profile that orders a round before a round it depends on is not refused and not reported by the scheduler (the
   query `getSchedulingProfileIssues` reports such rounds, with the matchUps each `shouldBeAfter`). The gate's dependency
-  rule (§ 4, step 4.3) still places the rounds in dependency order.
+  rule (§ 4, step 4.4) still places the rounds in dependency order.
 
 **OPEN:** the remaining parameter refusals (`INVALID_VALUES` for a malformed `courtIds` or `periodLength`) are not yet
 pinned by the corpus.
@@ -188,7 +188,7 @@ the **played** order (CA, 2026-10-22): only a COMPLETED, RETIRED or DEFAULTED ma
 now binds **plans as well as history** (CA, 2026-10-30): every matchUp but a BYE orders the matchUps linked to it,
 walkovers, defaults and double exits included, however far downstream the link runs. The comparison is scheduled against
 scheduled: an earlier date, or the same date with both times set and at or before. A same-day placement with no time, or
-a matchUp with no date, proves nothing. The profile scheduler asks it of each slot it offers (§ 4, step 4.2) and then
+a matchUp with no date, proves nothing. The profile scheduler asks it of each slot it offers (§ 4, step 4.3) and then
 once of its whole plan (§ 4, step 5); every schedule write refuses it with `ANACHRONISM`, and `plannedOrder: false` on a
 write keeps the played order only (see [schedule governor: schedule order](../governors/schedule-governor.md)). The
 facts it reads (`playedOrderFacts`) are present for any draw with a placed matchUp, played or not.
@@ -356,19 +356,24 @@ Dates are taken in order. On each date:
    retried in a later pass, up to 10 attempts. Venues alternate pass by pass until every venue is complete or the
    passes run out (bounded by the day's slots).
 4. **The gate,** in order; the first failure defers the matchUp for this slot, recorded under its reason:
-   1. a participant would go over a daily limit (§ 3.5): `overLimitMatchUpIds`. A participant's day only gains matchUps
+   1. the slot is before the `notBeforeTime` its profile round states (G5, CA 2026-11-23):
+      `notBeforeDeferredMatchUpIds`, with the first such slot and that time. It is asked first, so a refusal here leaves
+      no other gate's bookkeeping behind. Only the round's own matchUps are held: a round without one starts as early as
+      its other constraints allow, however late its matchUps were timed on an earlier day. A matchUp still unplaced at
+      the end of the date is reported under this reason **and** in `noTimeMatchUpIds`: it did not fit the day;
+   2. a participant would go over a daily limit (§ 3.5): `overLimitMatchUpIds`. A participant's day only gains matchUps
       as slots are filled, so the matchUp stays over the limit for the rest of the date: it leaves the date's list and
       is reported once (one `overLimitMatchUpDetails` entry, at the first slot it was offered), not under
       `noTimeMatchUpIds`;
-   2. the slot is at or before a played matchUp it depends on, or at or after a played matchUp that depends on it
+   3. the slot is at or before a played matchUp it depends on, or at or after a played matchUp that depends on it
       (§ 3.7): `playedOrderDeferredMatchUpIds`, with the first such slot and the played matchUps that refused it. The
       slot stays free for the next matchUp, and a matchUp still unplaced at the end of the date is reported under this
       reason alone;
-   3. a matchUp it feeds is already placed earlier than this one would be free: not placed here;
-   4. a matchUp it depends on, among the date's matchUps, is not yet placed: `dependencyDeferredMatchUpIds`;
-   5. a participant is not yet free (§ 3.4), or the matchUp's not-before time (its sources' free time) is later:
+   4. a matchUp it feeds is already placed earlier than this one would be free: not placed here;
+   5. a matchUp it depends on, among the date's matchUps, is not yet placed: `dependencyDeferredMatchUpIds`;
+   6. a participant is not yet free (§ 3.4), or the matchUp's not-before time (its sources' free time) is later:
       `recoveryTimeDeferredMatchUpIds`;
-   6. a person request blocks it (§ 3.6): `requestConflicts`.
+   7. a person request blocks it (§ 3.6): `requestConflicts`.
 
    A matchUp that passes is booked: its participants' loads and free times are updated for the rest of the date.
 
@@ -519,6 +524,7 @@ part, what `kernel.scheduling.plan@2` compares (CA 2026-10-25):
   `recoveryTimeDeferredMatchUpIds[date][matchUpId]` (`scheduleTime`, `blockingParticipantIds`, `notBeforeTime`),
   `dependencyDeferredMatchUpIds[date][matchUpId]` (`scheduleTime`, `remainingDependencies`),
   `playedOrderDeferredMatchUpIds[date][matchUpId]` (`scheduleTime`, `blockingMatchUps`),
+  `notBeforeDeferredMatchUpIds[date][matchUpId]` (`scheduleTime`, `notBeforeTime`: the profile round's),
   `overLimitMatchUpIds[date]` with `overLimitMatchUpDetails[date]` (the first attempt per matchUp), and
   `requestConflicts[date]`.
 

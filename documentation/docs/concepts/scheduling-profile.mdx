@@ -42,7 +42,7 @@ type RoundProfile = {
   roundNumber: number; // Round number (1-based)
 
   // Optional scheduling controls
-  notBeforeTime?: string; // 'HH:MM' - earliest start time for this round
+  notBeforeTime?: string; // 'HH:MM' - no matchUp of the round is placed before it (scheduleProfileRounds)
   roundSegment?: {
     segmentNumber: number; // Which segment (1-based)
     segmentsCount: number; // Total segments in round

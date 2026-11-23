@@ -49,6 +49,8 @@ import type { VenueTransit } from './transit';
 export type ProfileRound = {
   roundSegment?: { segmentNumber: number; segmentsCount: number };
   matchUpIds?: string[];
+  /** `HH:MM`: no matchUp of the round is placed before it (G5, CA 2026-11-23) */
+  notBeforeTime?: string;
   periodLength?: number;
   tournamentId: string;
   structureId: string;

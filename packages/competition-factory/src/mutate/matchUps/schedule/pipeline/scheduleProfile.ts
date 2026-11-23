@@ -135,6 +135,7 @@ export function scheduleProfileVNext(params: ScheduleProfileVNextArgs) {
     requestConflicts: plan.requestConflicts,
     scheduledMatchUpIds,
     playedOrderDeferredMatchUpIds: plan.playedOrderDeferredMatchUpIds,
+    notBeforeDeferredMatchUpIds: plan.notBeforeDeferredMatchUpIds,
     noFormatMatchUpIds: plan.noFormatMatchUpIds,
     scheduledDates: profileDates,
     overnightRestWarnings,
