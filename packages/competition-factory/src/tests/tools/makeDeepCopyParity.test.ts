@@ -1,9 +1,10 @@
 import { extensionsToAttributes, makeDeepCopy } from '@Tools/makeDeepCopy';
-import { getProvider } from '@Global/state/globalState';
+import { getProvider, setStateProvider } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import { isDateObject } from '@Tools/dateTime';
 import { isFunction } from '@Tools/objects';
-import { expect, it, vi } from 'vitest';
+import { installCopySnapshot, copySnapshot } from '@Tools/runtime';
+import { afterEach, expect, it } from 'vitest';
 
 // makeDeepCopy reads its settings once per copy rather than once per copied value. Every output must be
 // unchanged, so each case below is copied by the current implementation and by the implementation it
@@ -11,10 +12,8 @@ import { expect, it, vi } from 'vitest';
 // keys, and which nodes are shared with the source rather than copied.
 
 let settings: any = { enabled: true };
-vi.mock('@Global/state/globalState', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@Global/state/globalState')>()),
-  deepCopyEnabled: () => ({ ...settings }),
-}));
+const initialSettings = copySnapshot;
+afterEach(() => installCopySnapshot(initialSettings));
 const deepCopyEnabled = () => ({ ...settings });
 
 function referenceMakeDeepCopy(
@@ -130,6 +129,7 @@ it('copies every case exactly as the implementation it replaced', () => {
   for (const enabled of [true, false]) {
     for (const attributes of attributeCases) {
       settings = { enabled, ...attributes };
+      installCopySnapshot({ ...settings });
       for (const source of sources) {
         for (const internalUse of [undefined, true]) {
           for (const convertExtensions of [undefined, true]) {
@@ -151,11 +151,31 @@ it('copies every case exactly as the implementation it replaced', () => {
 
 it('honors a starting iteration against the threshold as before', () => {
   settings = { enabled: true, threshold: 4 };
+  installCopySnapshot({ ...settings });
   for (const iteration of [0, 2, 4, 6]) {
     const copy = makeDeepCopy(crafted, false, false, false, iteration);
     expect(copy).toStrictEqual(referenceMakeDeepCopy(crafted, false, false, false, iteration));
     expect(sharedPaths(copy, crafted)).toEqual(
       sharedPaths(referenceMakeDeepCopy(crafted, false, false, false, iteration), crafted),
     );
+  }
+});
+
+it('preserves the receiver and arguments of a provider copy override', () => {
+  const previous = getProvider();
+  const value = { a: 1 };
+  const provider = {
+    ...previous,
+    makeDeepCopy(source: unknown, convert?: boolean, internal?: boolean, remove?: boolean) {
+      expect(this).toBe(provider);
+      expect([source, convert, internal, remove]).toEqual([value, true, false, true]);
+      return value;
+    },
+  };
+  try {
+    setStateProvider(provider);
+    expect(makeDeepCopy(value, true, false, true)).toBe(value);
+  } finally {
+    setStateProvider(previous);
   }
 });
