@@ -222,10 +222,12 @@ function fieldRoot(field: string): string {
 
 // A path segment that resolves to a prototype rather than a value: writing through it pollutes every object in the
 // process (CodeQL #218: `events.__proto__.x` wrote Array.prototype.x on approval).
-const PROTOTYPE_SEGMENTS = new Set(['__proto__', 'constructor', 'prototype']);
+// A segment is `__proto__`, `constructor` or `prototype`, alone or with one `[index]`, between dots or the field's ends.
+// One test of the whole field, rather than a split and a replace per segment.
+const PROTOTYPE_SEGMENT = /(?:^|\.)(?:__proto__|constructor|prototype)(?:\[\d+\])?(?:\.|$)/;
 
 function namesPrototype(field: string): boolean {
-  return field.split('.').some((segment) => PROTOTYPE_SEGMENTS.has(segment.replace(/\[\d+\]$/, '')));
+  return PROTOTYPE_SEGMENT.test(field);
 }
 
 function isAmendableField(field: string): boolean {
