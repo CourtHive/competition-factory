@@ -97,6 +97,7 @@ export function DateHHMM(date): string {
   return HHMMSS(secs, { displaySeconds: false });
 }
 
+/** Get the UTC calendar date. The implicit current date is a 7.x default. Supply the date for 8.0.0. */
 export const getUTCdateString = (date?): string => {
   const dateDate = isDate(date) || isISODateString(date) ? new Date(date) : now();
   const monthNumber = dateDate.getUTCMonth() + 1;
@@ -104,17 +105,20 @@ export const getUTCdateString = (date?): string => {
   return `${dateDate.getUTCFullYear()}-${zeroPad(utcMonth)}-${zeroPad(dateDate.getUTCDate())}`;
 };
 
+/** Return UTC midnight for the local calendar date. The implicit current date is a 7.x default. Supply the date for 8.0.0. */
 export function timeUTC(date?) {
   const dateDate = isDate(date) || isISODateString(date) ? new Date(date) : now();
   return Date.UTC(dateDate.getFullYear(), dateDate.getMonth(), dateDate.getDate());
 }
 
+/** Offset the supplied date to local time. The implicit current date is a 7.x default. Supply the date for 8.0.0. */
 export function offsetDate(date): Date {
   const targetTime = date ? new Date(date) : now();
   const tzDifference = targetTime.getTimezoneOffset();
   return new Date(targetTime.getTime() - tzDifference * 60 * 1000);
 }
 
+/** Return the offset local timestamp. The implicit current date is a 7.x default. Supply the date for 8.0.0. */
 export function offsetTime(date?) {
   return offsetDate(date).getTime();
 }
@@ -126,6 +130,7 @@ export function isValidEmbargoDate(value: unknown): boolean {
   return /([zZ]|[+-]\d{2}:?\d{2})$/.test(value);
 }
 
+/** Combine the time of day with the supplied date. The implicit current date is a 7.x default. Supply the date for 8.0.0. */
 export function timeToDate(timeString, date: string | undefined = undefined): Date {
   const [hours, minutes] = (timeString || '00:00').split(':').map(zeroPad);
   const milliseconds = offsetDate(date).setHours(hours, minutes, 0, 0);

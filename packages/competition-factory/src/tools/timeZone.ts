@@ -28,6 +28,7 @@ export function isValidIANATimeZone(timeZone: string): boolean {
  * `undefined` when the zone is absent or unrecognised. It previously threw a
  * `RangeError` for an unrecognised zone, and returned the HOST machine's offset
  * when the zone was omitted — the same call answering differently on two servers.
+ * Omitting the date uses the call clock in 7.x. Supply the date for 8.0.0.
  */
 export function getTimeZoneOffsetMinutes(timeZone: string, date?: Date): number | undefined {
   return offsetMinutesAt((date ?? now()).getTime(), timeZone);
