@@ -237,10 +237,13 @@ function isAmendableField(field: string): boolean {
 /** `name[index]` notation in an amendment path, e.g. `events[0].drawSize`. */
 const ARRAY_KEY = /^(\w+)\[(\d+)\]$/;
 
-/** Amendments address the record's own stored data, including optional fields added at the leaf. */
+/**
+ * Amendments address the record's own stored data, including optional fields added at the leaf. An own-key check
+ * rather than a descriptor read: the record is data, so an own key holds a value, and nothing is inherited.
+ */
 function ownValue(target: unknown, key: string | number) {
   if (target === null || typeof target !== 'object') return undefined;
-  return Object.getOwnPropertyDescriptor(target, key)?.value;
+  return Object.hasOwn(target, key) ? (target as Record<string | number, unknown>)[key] : undefined;
 }
 
 /** Resolve one path segment against the record. */
