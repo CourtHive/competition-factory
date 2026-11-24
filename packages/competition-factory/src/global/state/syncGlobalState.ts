@@ -1,3 +1,4 @@
+import { callAccessFor, rootCallState } from '@Tools/runtime';
 import { appendNotice, UNANNOUNCED_WRITE, UNNAMED_TOURNAMENT } from './noticeIdentity';
 import {
   CallListenerArgs,
@@ -30,7 +31,7 @@ const newInstanceState = (): ImplemtationGlobalStateTypes => ({
   notices: [],
 });
 
-let syncGlobalState = newInstanceState();
+let syncGlobalState: ImplemtationGlobalStateTypes = Object.assign(rootCallState, newInstanceState());
 
 // Synchronous governors complete before this stack frame exits. Async previews require a request provider.
 function runWithInstanceState<T>(run: () => T): T {
@@ -42,6 +43,17 @@ function runWithInstanceState<T>(run: () => T): T {
     syncGlobalState = parent;
   }
 }
+
+export const {
+  getCapturedClock,
+  setCapturedClock,
+  getCapturedCompetitionClock,
+  setCapturedCompetitionClock,
+  getCapturedStamps,
+  setCapturedStamps,
+  getCallRandomSource,
+  setCallRandomSource,
+} = callAccessFor(() => syncGlobalState);
 
 export default {
   runWithInstanceState,
@@ -83,38 +95,6 @@ export default {
   setTournamentRecords,
   handleCaughtError,
 };
-
-export function getCapturedClock(): number | undefined {
-  return syncGlobalState.capturedClock;
-}
-
-export function setCapturedClock(timeStamp?: number): void {
-  syncGlobalState.capturedClock = timeStamp;
-}
-
-export function getCapturedCompetitionClock(): number | undefined {
-  return syncGlobalState.capturedCompetitionClock;
-}
-
-export function setCapturedCompetitionClock(timeStamp?: number): void {
-  syncGlobalState.capturedCompetitionClock = timeStamp;
-}
-
-export function getCapturedStamps(): WeakSet<object> | undefined {
-  return syncGlobalState.capturedStamps;
-}
-
-export function setCapturedStamps(stamps?: WeakSet<object>): void {
-  syncGlobalState.capturedStamps = stamps;
-}
-
-export function getCallRandomSource(): (() => number) | undefined {
-  return syncGlobalState.callRandomSource;
-}
-
-export function setCallRandomSource(source?: () => number): void {
-  syncGlobalState.callRandomSource = source;
-}
 
 export function disableNotifications(): void {
   syncGlobalState.disableNotifications = true;

@@ -1,4 +1,5 @@
 import { isFunction, isObject } from '@Tools/objects';
+import { installCallRuntime } from '@Tools/runtime';
 import syncGlobalState from './syncGlobalState';
 import type { NoticeState } from './noticeIdentity';
 
@@ -116,6 +117,7 @@ const globalState: GlobalStateTypes = {
 };
 
 let _globalStateProvider: any = syncGlobalState;
+installCallRuntime(syncGlobalState);
 
 const requiredStateProviderMethods: ReadonlyArray<keyof RequiredStateProviderMembers> = [
   'addNotice',
@@ -149,6 +151,7 @@ export function setStateProvider(globalStateProvider?: StateProvider) {
       throw new Error('Global state provider is missing required methods');
     } else {
       _globalStateProvider = globalStateProvider;
+      installCallRuntime(_globalStateProvider);
       // optional, so a provider that predates them still installs; but without them an engine call
       // cannot hold one instant (tools/clock.ts), and that must not degrade silently
       if (!isFunction(globalStateProvider.getCapturedClock) || !isFunction(globalStateProvider.setCapturedClock)) {
