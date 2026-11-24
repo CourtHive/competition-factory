@@ -15,7 +15,7 @@
  */
 
 import { createMatchUp, addPoint, getScore } from '@Assemblies/governors/scoreGovernor';
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { describe, test, expect } from 'vitest';
 
 // constants

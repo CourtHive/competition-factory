@@ -3,7 +3,7 @@ import { checkSetIsComplete } from '@Helpers/matchUpFormatCode/setRules/setCompl
 import { inputLevels } from '@Helpers/matchUpFormatCode/formatUtilities';
 import { getSetWinningSide } from '@Query/matchUp/getSetWinningSide';
 import { calculatePointsTo } from '@Scoring/v1/pointsToCalculator';
-import { ScoringEngine } from '@Assemblies/engines/scoring';
+import { ScoringEngine } from '@Scoring/engine';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { describe, expect, it } from 'vitest';
 

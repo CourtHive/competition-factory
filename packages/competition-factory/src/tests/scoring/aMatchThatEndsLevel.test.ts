@@ -1,4 +1,4 @@
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { createMatchUp } from '@Scoring/v1/createMatchUp';
 import { addPoint } from '@Scoring/v1/addPoint';
 import { describe, expect, it } from 'vitest';

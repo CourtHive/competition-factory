@@ -7,7 +7,7 @@
  * before tracking point-by-point.
  */
 
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { describe, test, expect } from 'vitest';
 
 /** Win a game by playing 4 points (assumes no-deuce scenario) */

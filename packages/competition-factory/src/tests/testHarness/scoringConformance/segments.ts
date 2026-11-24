@@ -1,5 +1,5 @@
 import { captureConformanceCase } from '../corpus/scoringScenariosConformance';
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { outcome, type Outcome, type SetOutcome } from './conformance';
 import { expect } from 'vitest';
 

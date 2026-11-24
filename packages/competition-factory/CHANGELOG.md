@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- `scoreGovernor.ScoringEngine` accepts an optional `clock: () => string` for instance-specific ISO timestamps. Explicit action timestamps take precedence.
+
 - Forge previews run on private records. Bare and assembled sync engines keep immediate `dryRun` and `explain`. Previewing a custom method requires `registerPreviewMethod` on that engine. An unregistered custom method refuses the entire preview with `ERR_UNREGISTERED_PREVIEW_METHOD` before dispatch.
 
 ## [7.48.0](https://github.com/CourtHive/competition-factory/compare/v7.47.0...v7.48.0) (2026-11-23)

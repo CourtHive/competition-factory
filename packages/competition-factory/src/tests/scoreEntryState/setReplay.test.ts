@@ -7,7 +7,7 @@
  * `tods-competition-factory/score-entry-state` must not reach. This pins the two together over regulation, overtime,
  * aggregate and level-close formats, every set sequence below, refusals and sets after the close included.
  */
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { replaySets } from '@Scoring/kernel/setReplay';
 import { describe, expect, it } from 'vitest';
 

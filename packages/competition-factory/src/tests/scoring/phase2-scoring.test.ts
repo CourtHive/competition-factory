@@ -4,7 +4,7 @@
  * Tests addSet(), addGame(), mixed-mode undo/redo, and getInputMode().
  */
 
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { describe, test, expect } from 'vitest';
 
 // constants

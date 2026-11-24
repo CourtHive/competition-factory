@@ -4,7 +4,7 @@
  * Tests for stateful engine with native undo/redo
  */
 
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { describe, test, expect, beforeEach } from 'vitest';
 
 // constants

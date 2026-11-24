@@ -1,4 +1,4 @@
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { engineObservable, REFUSED } from './corpus/scoringScenarios';
 import { canonicalJson } from '@Tools/canonicalJson';
 import { canonicalObject } from './corpus/hash';

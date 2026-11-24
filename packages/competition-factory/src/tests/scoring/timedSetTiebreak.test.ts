@@ -1,4 +1,4 @@
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { describe, expect, it } from 'vitest';
 
 // A timed set level at time plays its declared tiebreak (CA 2026-10-17). The clock does not decide a

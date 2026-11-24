@@ -1,5 +1,5 @@
 import { conforms } from '../../testHarness/scoringConformance/conformance';
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { describe, expect, it } from 'vitest';
 
 /*

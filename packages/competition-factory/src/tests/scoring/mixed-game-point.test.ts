@@ -5,7 +5,7 @@
  * point-by-point play. Exercises the data that buildEpisodes relies on.
  */
 
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { describe, test, expect } from 'vitest';
 
 /** Helper: win a game by playing 4 points (no-deuce scenario) */

@@ -1,4 +1,4 @@
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { describe, expect, it } from 'vitest';
 
 // every result a point can record, on first and second serves, with a breakpoint and a hand: the engine's statistics
