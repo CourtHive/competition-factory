@@ -29,10 +29,31 @@ export function callAccessFor(current: () => CallState) {
   };
 }
 
-type CallAccess = Partial<ReturnType<typeof callAccessFor>>;
+type CallAccess = Partial<ReturnType<typeof callAccessFor>> & {
+  makeDeepCopy?(
+    value: unknown,
+    convertExtensions?: boolean,
+    internalUse?: boolean,
+    removeExtensions?: boolean,
+  ): unknown;
+};
 export let callRuntime: CallAccess = callAccessFor(() => rootCallState);
 
 // Retain the provider as the method receiver. Missing hooks on a custom provider must stay absent.
 export function installCallRuntime(provider: CallAccess) {
   callRuntime = provider;
+}
+
+export type DeepCopySnapshot = Readonly<{
+  enabled: boolean;
+  stringify?: string[];
+  ignore?: unknown;
+  toJSON?: string[];
+  modulate?: (value: unknown) => unknown;
+  threshold?: number;
+}>;
+
+export let copySnapshot: DeepCopySnapshot = Object.freeze({ enabled: true });
+export function installCopySnapshot(settings: DeepCopySnapshot) {
+  copySnapshot = Object.freeze(settings);
 }

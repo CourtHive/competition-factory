@@ -1,8 +1,8 @@
-import { deepCopyEnabled } from '@Global/state/globalState';
+import { copySnapshot } from './runtime';
 
 export function definedAttributes(obj: object, ignoreFalse?: boolean, ignoreEmptyArrays?: boolean, shallow?: boolean) {
   if (typeof obj !== 'object' || obj === null) return obj;
-  if (!deepCopyEnabled()?.enabled) shallow = true;
+  if (!copySnapshot.enabled) shallow = true;
   return defined(obj, ignoreFalse, ignoreEmptyArrays, shallow);
 }
 

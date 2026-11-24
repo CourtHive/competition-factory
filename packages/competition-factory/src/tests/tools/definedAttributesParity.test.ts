@@ -1,6 +1,7 @@
 import { definedAttributes } from '@Tools/definedAttributes';
 import mocksEngine from '@Assemblies/engines/mock';
-import { expect, it, vi } from 'vitest';
+import { installCopySnapshot, copySnapshot } from '@Tools/runtime';
+import { afterEach, expect, it } from 'vitest';
 
 // definedAttributes builds its result in one object rather than merging a one-key object per attribute. Every
 // output must be unchanged, so each case is filtered by the current implementation and by the one it replaced (kept
@@ -8,10 +9,8 @@ import { expect, it, vi } from 'vitest';
 // with the source rather than rebuilt.
 
 let enabled = true;
-vi.mock('@Global/state/globalState', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@Global/state/globalState')>()),
-  deepCopyEnabled: () => ({ enabled }),
-}));
+const initialSettings = copySnapshot;
+afterEach(() => installCopySnapshot(initialSettings));
 const deepCopyEnabled = () => ({ enabled });
 
 function referenceGetDefinedKeys(obj, ignoreValues, ignoreEmptyArrays) {
@@ -97,6 +96,7 @@ it('filters every case exactly as the implementation it replaced', () => {
   let compared = 0;
   for (const deepCopy of [true, false]) {
     enabled = deepCopy;
+    installCopySnapshot({ enabled });
     for (const source of sources) {
       for (const ignoreFalse of [undefined, false, true]) {
         for (const ignoreEmptyArrays of [undefined, true]) {

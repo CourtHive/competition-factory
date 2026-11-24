@@ -1,4 +1,4 @@
-import { deepCopyEnabled, getProvider } from '@Global/state/globalState';
+import { callRuntime, copySnapshot, type DeepCopySnapshot } from './runtime';
 import { isDateObject } from './dateTime';
 import { isFunction } from './objects';
 
@@ -11,18 +11,16 @@ export function makeDeepCopy(
   removeExtensions?, // optional - strip all extension attributes
   iteration = 0, // escape hatch - check against iteration threshold
 ) {
-  const provider = getProvider();
-  if (provider.makeDeepCopy)
-    return provider.makeDeepCopy(sourceObject, convertExtensions, internalUse, removeExtensions);
+  if (callRuntime.makeDeepCopy)
+    return callRuntime.makeDeepCopy(sourceObject, convertExtensions, internalUse, removeExtensions);
 
-  const deepCopy = deepCopyEnabled();
-  if (!deepCopy?.enabled && !internalUse) return sourceObject;
+  if (!copySnapshot.enabled && !internalUse) return sourceObject;
 
   // the settings are read once per copy, not once per copied value: a large record has tens of thousands of values
   return copyValue(
     sourceObject,
     iteration,
-    getCopySettings(deepCopy, convertExtensions, internalUse, removeExtensions),
+    getCopySettings(copySnapshot, convertExtensions, internalUse, removeExtensions),
   );
 }
 
@@ -37,7 +35,7 @@ type CopySettings = {
 };
 
 function getCopySettings(
-  deepCopy: ReturnType<typeof deepCopyEnabled>,
+  deepCopy: DeepCopySnapshot,
   convertExtensions?: boolean,
   internalUse?: boolean,
   removeExtensions?: boolean,
@@ -47,7 +45,7 @@ function getCopySettings(
   let keepKey: CopySettings['keepKey'] = () => true;
   if (internalUse && ignore) {
     if (Array.isArray(ignore)) keepKey = (key) => !ignore.includes(key);
-    else if (isFunction(ignore)) keepKey = (key) => !ignore(key);
+    else if (typeof ignore === 'function') keepKey = (key) => !ignore(key);
     else keepKey = () => false;
   }
 

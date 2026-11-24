@@ -1,5 +1,5 @@
 import { isFunction, isObject } from '@Tools/objects';
-import { installCallRuntime } from '@Tools/runtime';
+import { installCallRuntime, installCopySnapshot } from '@Tools/runtime';
 import syncGlobalState from './syncGlobalState';
 import type { NoticeState } from './noticeIdentity';
 
@@ -118,6 +118,7 @@ const globalState: GlobalStateTypes = {
 
 let _globalStateProvider: any = syncGlobalState;
 installCallRuntime(syncGlobalState);
+installCopySnapshot(deepCopyEnabled());
 
 const requiredStateProviderMethods: ReadonlyArray<keyof RequiredStateProviderMembers> = [
   'addNotice',
@@ -490,6 +491,7 @@ export function setDeepCopy(value: boolean, attributes: DeepCopyAttributes) {
     else if ('threshold' in attributes && attributes.threshold === undefined)
       delete globalState.deepCopyAttributes.threshold;
   }
+  if (typeof value === 'boolean' || attributes) installCopySnapshot(deepCopyEnabled());
 }
 
 export function deepCopyEnabled() {
