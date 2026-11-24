@@ -2,9 +2,9 @@ import { createContext, initialState, positionOf, serverOf, step, INVALID_FORMAT
 import { readChallenge, readPoint, readServer, CALCULATED_POINT_FIELDS } from '@Scoring/kernel/actions';
 import { replayLegacy, LEGACY_IGNORED_INPUT, LEGACY_REFUSED_INPUT } from '@Scoring/kernel/legacy';
 import { configuredFormat, DEFAULT_MATCHUP_FORMAT, takesInput } from '@Scoring/kernel/format';
-import { calculateMatchStatistics } from '@Query/scoring/statistics/standalone';
+import { calculateMatchStatistics } from '@Scoring/statistics/standalone';
 import { segmentClosed } from '@Helpers/matchUpFormatCode/overtimeContext';
-import { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
+import { toStatObjects } from '@Scoring/statistics/toStatObjects';
 import { ruleInPlay, scoreOf } from '@Scoring/kernel/score';
 import { setInPlayFormat } from '@Scoring/kernel/setReplay';
 import { createMatchUp } from '@Scoring/v1/createMatchUp';
@@ -24,7 +24,7 @@ import {
 } from '@Scoring/kernel/lineUps';
 
 // constants and types
-import type { MatchStatistics, StatisticsOptions, StatObject } from '@Query/scoring/statistics/types';
+import type { MatchStatistics, StatisticsOptions, StatObject } from '@Scoring/statistics/types';
 import type { FormatStructure, SetFormatStructure, TeamCompetitor } from '@Types/scoring/types';
 import type { Side, ScoringState, StepOutcome, TimelineEntry } from '@Scoring/kernel/types';
 import type { PointMultiplier } from '@Types/competitionFormat';

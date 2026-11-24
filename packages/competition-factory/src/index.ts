@@ -161,7 +161,7 @@ export type { MethodSignatures } from './assemblies/engines/types/methodSignatur
 export * from './types/enumExports';
 
 // Statistics types (top-level convenience re-exports)
-export type { StatObject, MatchStatistics, StatCounters, StatisticsOptions } from './query/scoring/statistics/types';
+export type { StatObject, MatchStatistics, StatCounters, StatisticsOptions } from './scoring/statistics/types';
 
 // Episode + points-to types (top-level convenience re-exports).
 //
@@ -192,7 +192,7 @@ export type {
   RestSourceKind,
   RestStatus,
 } from './query/matchUps/scheduling/getParticipantRest';
-export { toStatObjects } from './query/scoring/statistics/toStatObjects';
-export { calculateMatchStatistics } from './query/scoring/statistics/standalone';
+export { toStatObjects } from './scoring/statistics/toStatObjects';
+export { calculateMatchStatistics } from './scoring/statistics/standalone';
 
 export { normalizeTeamPresentation, normalizeTeamPalette } from './validators/teamColors';

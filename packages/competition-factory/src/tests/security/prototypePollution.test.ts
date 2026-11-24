@@ -1,6 +1,6 @@
 import { POLICY_ROUND_ROBIN_TALLY_FIBA } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_FIBA';
 import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONING_GENERIC';
-import { calculateMatchStatistics } from '@Query/scoring/statistics/standalone';
+import { calculateMatchStatistics } from '@Scoring/statistics/standalone';
 import { FEED_IN_CHAMPIONSHIP, ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { sanctioningEngine } from '@Assemblies/engines/sanctioning';

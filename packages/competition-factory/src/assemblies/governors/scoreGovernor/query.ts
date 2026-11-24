@@ -26,12 +26,12 @@ export { deduceMatchUpFormat } from '@Helpers/matchUpFormatCode/deduceMatchUpFor
 export { getEpisodes } from '@Scoring/v1/getEpisodes';
 
 // Statistics
-export { calculateMatchStatistics, enrichPointHistory, getQuickStats } from '@Query/scoring/statistics/standalone';
-export { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
+export { calculateMatchStatistics, enrichPointHistory, getQuickStats } from '@Scoring/statistics/standalone';
+export { toStatObjects } from '@Scoring/statistics/toStatObjects';
 export type {
   CalculatedStat,
   MatchStatistics,
   StatisticsOptions,
   StatCounters,
   StatObject,
-} from '@Query/scoring/statistics/types';
+} from '@Scoring/statistics/types';

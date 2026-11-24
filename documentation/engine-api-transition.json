@@ -582,7 +582,7 @@
     {
       "name": "enrichPointHistory",
       "source": {
-        "path": "src/query/scoring/statistics/standalone.ts",
+        "path": "src/scoring/statistics/standalone.ts",
         "symbol": "enrichPointHistory",
         "line": 84
       },
@@ -1467,7 +1467,7 @@
     {
       "name": "getQuickStats",
       "source": {
-        "path": "src/query/scoring/statistics/standalone.ts",
+        "path": "src/scoring/statistics/standalone.ts",
         "symbol": "getQuickStats",
         "line": 125
       },
