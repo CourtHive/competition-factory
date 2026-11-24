@@ -11,18 +11,20 @@ import {
 import { arrivalOps, arrivalReturnOps } from './directionOps';
 import { bareResultRequest, positionsOf, structureStamps } from './planShared';
 import { tiebreakPointsWarnings } from '@Scoring/analysis/validateScore';
-import { writeLegacyEnabled } from '@Global/state/globalState';
+import syncGlobalState from '@Global/state/syncGlobalState';
+import { getProvider, writeLegacyEnabled } from '@Global/state/globalState';
 import { isDoubleExit } from '@Validators/isExit';
 import { BYE, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
+import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { resultOps } from './resultOps';
 import type { PositionTargets } from '@Query/matchUp/positionTargets';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { OutcomeOp } from '../ops';
-import type { PlanArgs } from '../types';
+import type { ForwardByePhases, PlanArgs } from '../types';
 
 type Prediction =
-  | { ops: OutcomeOp[]; shape: 'direction'; abstain?: undefined }
+  | { ops: OutcomeOp[]; shape: 'direction'; forwardBye: ForwardByePhases; abstain?: undefined }
   | { abstain: string; ops?: undefined; shape?: undefined };
 type Step = { match: HydratedMatchUp; position: number; positions: number[]; added: boolean; announce: boolean };
 
@@ -41,6 +43,8 @@ export function hasForwardByeArrival({ route, view, write }: PlanArgs): boolean 
  * returned ops with the normal executor. No recording, clock capture or routing takes place here. */
 export function predictForwardByePassage(args: PlanArgs): Prediction {
   if (!hasForwardByeArrival(args)) return { abstain: 'no forward BYE arrival' };
+  // A custom provider can observe the copy's draft callbacks and the recorded delivery that follows.
+  if (getProvider() !== syncGlobalState) return { abstain: 'custom state provider' };
   try {
     return predict(args);
   } catch (error) {
@@ -151,17 +155,34 @@ function predict(args: PlanArgs): Prediction {
         proveHeldSlot(graph, { holder: match, position }, incoming, view.draw.propagatesByeOnDoubleExit);
     }
   }
+  // Each receipt is produced inside its write. Independent scored-time cleanup would need another
+  // phase after the two arrivals and stays with the existing fallback.
+  for (const [id, match] of graph.stored)
+    requirePassage(id === sourceId || !hasStaleScoredTime(match), 'independent scored-time cleanup');
+  const own = resultOps(request, write, sourceId);
+  const result = own[0];
+  requirePassage(result.op === 'setMatchUpResult', 'missing source result');
+  const winner = placedPositions(winnerPath);
+  const lossPlacements = placedPositions(loserPath);
   const assignment = arrivalOps(view, direction.loser);
+  const seat = assignment[0];
+  requirePassage(!direction.loser || seat?.op === 'assignPosition', 'missing linked assignment');
+  const forwardBye: ForwardByePhases = {
+    result,
+    winner,
+    ...(seat?.op === 'assignPosition' && { loser: { assignment: seat, placements: lossPlacements } }),
+  };
   const placements = [
-    ...placementOps(winnerPath),
+    ...placementOps(winner),
     ...assignment,
-    ...placementOps(loserPath),
+    ...placementOps(lossPlacements),
     ...arrivalReturnOps(assignment),
   ];
   return {
     shape: 'direction',
+    forwardBye,
     ops: [
-      ...resultOps(request, write, sourceId),
+      ...own,
       ...placements,
       ...structureStamps(placements, source.structureId, drawDefinition),
       { op: 'stampUpdatedAt', entity: 'structure', id: source.structureId },
@@ -323,19 +344,22 @@ function checkByeLoserSeat(graph: PassageGraph, holder: HydratedMatchUp, edge: P
   requirePassage(seat && (seat.bye || seat.participantId), 'propagated holder owes its loser seat a BYE');
 }
 
-function placementOps(steps: Step[]): OutcomeOp[] {
-  return steps.flatMap(({ match, position, positions, added, announce }): OutcomeOp[] =>
-    announce
-      ? [
-          {
-            op: 'setMatchUpDrawPositions',
-            matchUpId: match.matchUpId,
-            placedDrawPosition: position,
-            drawPositions: positions,
-            ...(!added && { noticesOccupiedPosition: true as const }),
-          },
-          { op: 'stampUpdatedAt', entity: 'matchUp', id: match.matchUpId },
-        ]
-      : [],
-  );
+type Placement = ForwardByePhases['winner'][number];
+function placedPositions(path: Step[]): Placement[] {
+  return path
+    .filter((step) => step.announce)
+    .map(({ match, position, positions, added }) => ({
+      op: 'setMatchUpDrawPositions',
+      matchUpId: match.matchUpId,
+      placedDrawPosition: position,
+      drawPositions: positions,
+      ...(!added && { noticesOccupiedPosition: true as const }),
+    }));
+}
+
+function placementOps(placements: Placement[]): OutcomeOp[] {
+  return placements.flatMap((placement): OutcomeOp[] => [
+    placement,
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: placement.matchUpId },
+  ]);
 }

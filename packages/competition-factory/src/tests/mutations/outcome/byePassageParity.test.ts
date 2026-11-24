@@ -1,7 +1,9 @@
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { getProvider, setOutcomePipeline, setStateProvider, setSubscriptions } from '@Global/state/globalState';
 import { replaceWithBye } from '@Tests/mutations/drawDefinitions/testingUtilities';
 import { compareHeldClaims } from '@Tests/testHarness/outcome/compareHeldClaims';
-import { prepareCall } from '@Tests/testHarness/outcome/recordedCallHarness';
+import { playCall, prepareCall } from '@Tests/testHarness/outcome/recordedCallHarness';
+import { useEngineCatch } from '@Tests/testHarness/engineCatch';
+import { objectGraph } from '@Tests/testHarness/outcome/objectGraph';
 import * as nestedRecorder from '@Mutate/matchUps/outcome/plan/recordedCascade';
 import { setClock } from '@Tools/clock';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -17,6 +19,9 @@ import {
 } from '@Constants/drawDefinitionConstants';
 import { COMPLETED, DOUBLE_DEFAULT, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_FEED_IN, POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
+
+// The suite's rethrowing provider is a custom wrapper. Exercise the production sync boundary here.
+useEngineCatch();
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -88,6 +93,29 @@ it.each([
   expect(nested).not.toHaveBeenCalled();
 });
 
+it.each([
+  ['structural', structuralBye],
+  ['reserved', reservedBye],
+] as const)('sends each %s passage notice to the provider at the original write boundary', (_, build) => {
+  const call = prepareCall(build);
+  const provider = getProvider();
+  const addNotice = provider.addNotice.bind(provider);
+  const enqueued: string[] = [];
+  vi.spyOn(provider, 'addNotice').mockImplementation((notice, ...rest) => {
+    // Serialize here. Later writes can change the aliased draw or match in an earlier payload.
+    enqueued.push(
+      JSON.stringify(objectGraph(notice), (_, value) => (typeof value === 'function' ? '<function>' : value)),
+    );
+    return addNotice(notice, ...rest);
+  });
+  playCall('v1', call);
+  const original = enqueued.splice(0);
+  expect(original.length).toBeGreaterThan(0);
+  playCall('v2', call);
+  expect(enqueued).toHaveLength(original.length);
+  expect(enqueued).toEqual(original);
+});
+
 it('retains recorded settlement when the winner and loser paths meet in double elimination', () => {
   const call = prepareCall(() => {
     const {
@@ -122,4 +150,17 @@ it('keeps an exit-fed BYE on the recorder when its reservation marker is missing
   expect(seat.bye).toBe(true);
   delete seat.byeFromPropagation;
   compareHeldClaims(call, false);
+});
+
+it('preserves the recording path for a provider that observes notice writes', () => {
+  const call = prepareCall(reservedBye);
+  const original = getProvider();
+  const addNotice = vi.fn(original.addNotice.bind(original));
+  try {
+    setStateProvider({ ...original, addNotice });
+    compareHeldClaims(call, false);
+    expect(addNotice).toHaveBeenCalled();
+  } finally {
+    setStateProvider(original);
+  }
 });

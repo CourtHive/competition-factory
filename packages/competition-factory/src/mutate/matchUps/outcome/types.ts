@@ -682,10 +682,20 @@ export type AbstainReason =
 
 /** which of the allowlist's shapes a complete plan is: `local` (the matchUp's own result) or the first `direction` */
 export type PlanShape = 'local' | 'direction';
+export type ForwardByePhases = {
+  result: Extract<OutcomeOp, { op: 'setMatchUpResult' }>;
+  winner: Extract<OutcomeOp, { op: 'setMatchUpDrawPositions' }>[];
+  loser?: {
+    assignment: Extract<OutcomeOp, { op: 'assignPosition' }>;
+    placements: Extract<OutcomeOp, { op: 'setMatchUpDrawPositions' }>[];
+  };
+};
+
 export type OutcomePlan =
   | {
       ops: OutcomeOp[];
       shape: PlanShape;
+      forwardBye?: ForwardByePhases;
       abstain?: undefined;
       /** RECORDED: what v1 returned for the whole call it wrote on a copy, which the owned call returns */
       recordedResult?: ResultType;

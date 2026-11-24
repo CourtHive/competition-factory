@@ -1,7 +1,7 @@
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
 import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
-import { applyOwnedPlan, applyTemporalPhases, compileTemporalPhases } from './apply';
+import { applyForwardByePassage, applyOwnedPlan, applyTemporalPhases, compileTemporalPhases } from './apply';
 import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { PREDICTED_CALL, predictSettleWork, type SettleSite } from './settleWork';
 import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
@@ -212,6 +212,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     // S2: a call whose complete plan is a shape v2 owns is written by v2, and v1 is not asked (F1 (a), fail-closed)
     const { outcome, phases, route } = planCall(args, view);
     if (!outcome.ops || !OWNED_SHAPES.has(outcome.shape)) return {};
+    if (outcome.forwardBye) return { owned: applyForwardByePassage(args, outcome.forwardBye) };
     const applied = phases
       ? applyTemporalPhases(args, phases, outcome.shape)
       : applyOwnedPlan({ args, ops: outcome.ops, shape: outcome.shape, route });
