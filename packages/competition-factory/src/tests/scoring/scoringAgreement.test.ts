@@ -1,5 +1,5 @@
 import { categorizePoint, enrichPoint } from '@Scoring/statistics/pointParser';
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { enrichPointHistory } from '@Scoring/statistics/standalone';
 import { describe, expect, it } from 'vitest';
 

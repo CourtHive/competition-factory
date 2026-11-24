@@ -3,7 +3,7 @@ export { generateScoreString } from '@Scoring/views/generateScoreString';
 export { reverseScore } from '@Scoring/views/reverseScore';
 
 // ScoringEngine
-export { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+export { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 export type {
   ScoringEngineOptions,
   ScoringEngineSupplementaryState,
@@ -15,4 +15,4 @@ export type {
   PlayerRules,
   PenaltyProfile,
   PointProfile,
-} from '@Assemblies/engines/scoring/ScoringEngine';
+} from '@Scoring/engine/ScoringEngine';

@@ -120,6 +120,8 @@ export interface ScoringEventHandlers {
 }
 
 export interface ScoringEngineOptions {
+  /** Supplies ISO timestamps when a scoring action omits its timestamp. Defaults to the Factory call clock. */
+  clock?: () => string;
   competitionFormat?: CompetitionFormat;
   pointMultipliers?: PointMultiplier[];
   eventHandlers?: ScoringEventHandlers;

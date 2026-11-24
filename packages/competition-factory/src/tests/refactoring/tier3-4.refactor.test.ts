@@ -7,7 +7,7 @@
  * - scheduleItems.addMatchUpScheduleItems
  * - addEventEntries.getTypedParticipantIdsHelper
  */
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { shotParser } from '@Scoring/replay/mcpParser';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';

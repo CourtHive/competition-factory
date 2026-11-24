@@ -1,6 +1,6 @@
 import { formatCell, unknownKeys } from '../../testHarness/scoringConformance/formatCells';
 import { harvestFormats } from '../../testHarness/scoringConformance/harvestFormats';
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { FORMAT_MATRIX } from './formatMatrix';
 import { describe, expect, it } from 'vitest';

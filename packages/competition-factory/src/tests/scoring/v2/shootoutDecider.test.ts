@@ -1,5 +1,5 @@
 import { shootoutTallyRefusal } from '@Helpers/matchUpFormatCode/shootout';
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { validateSetScore } from '@Scoring/analysis/validateMatchUpScore';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { overtimeScoreVerdict } from '@Scoring/analysis/overtimeScore';

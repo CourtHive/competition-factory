@@ -9,7 +9,7 @@
  * The oracle is the engine: a point completed its game exactly when the games of its set grew as it was added.
  */
 
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { describe, expect, it } from 'vitest';
 
 type Step = ['point' | 'game', 0 | 1] | ['set', 1 | 2, number, number];

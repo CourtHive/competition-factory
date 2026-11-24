@@ -1,5 +1,5 @@
 import { addPoint, createMatchUp } from '@Assemblies/governors/scoreGovernor';
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { resolveFormat } from '@Helpers/matchUpFormatCode/matchRule';
 import { stringify } from '@Helpers/matchUpFormatCode/stringify';

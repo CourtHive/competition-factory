@@ -1,4 +1,4 @@
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { repoFile } from '@Tests/testHarness/repoRoot';
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';

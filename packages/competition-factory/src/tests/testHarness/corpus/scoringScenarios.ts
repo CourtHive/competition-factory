@@ -1,4 +1,4 @@
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { harvestScoringReduce } from '../kernel/harvestScoringReduce';
 import { factoryVersion } from '@Functions/global/factoryVersion';
 import { getSchemaWriteMode } from '@Global/state/globalState';

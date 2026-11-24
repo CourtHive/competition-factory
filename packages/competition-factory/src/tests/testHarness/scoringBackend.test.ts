@@ -1,4 +1,4 @@
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { PARAMS, VIEWS, comparable } from './scoringBackend';
 import { expect, it } from 'vitest';
 

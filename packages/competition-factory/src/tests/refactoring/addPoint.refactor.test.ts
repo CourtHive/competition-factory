@@ -5,7 +5,7 @@
  * the ScoringEngine to verify extraction doesn't break behavior.
  */
 import { addPoint, deriveServerBase, formatGameScore } from '@Scoring/v1/addPoint';
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { expect, it } from 'vitest';
 

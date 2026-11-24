@@ -10,7 +10,7 @@
  * (the minimum is 3), and an existing exact assertion encoded the wrong value.
  */
 import { resolveSetType } from '@Helpers/matchUpFormatCode/formatUtilities';
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { calculatePointsTo } from '@Scoring/v1/pointsToCalculator';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { describe, expect, it } from 'vitest';

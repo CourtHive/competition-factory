@@ -83,6 +83,7 @@ Every action is offered to the reducer, which refuses, ignores or records it; re
 
 ```ts
 interface ScoringEngineOptions {
+  clock?: () => string; // ISO timestamp source for this instance (default: Factory call clock)
   matchUpFormat?: string; // Format code (default: 'SET3-S:6/TB7')
   matchUpId?: string; // Optional matchUp identifier
   isDoubles?: boolean; // Doubles match (default: false)
