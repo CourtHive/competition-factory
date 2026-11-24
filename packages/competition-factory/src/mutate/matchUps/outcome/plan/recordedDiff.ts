@@ -2,7 +2,7 @@ import { DEFERRED_PAYLOAD, getCapturedStamps, getNoticeBuffer, getNoticeState } 
 import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { deferredQueryBinding } from '@Mutate/notifications/drawNotifications';
 import { DRAW_CHILDREN, MATCHUP_CHILDREN, RECORDED_ENTITY, recordedName, STRUCTURE_CHILDREN } from '../ops';
-import { cloneData } from '@Tools/cloneState';
+import { cloneData, isPlainContainer } from '@Tools/cloneState';
 import { isObject } from '@Tools/objects';
 
 // constants and types
@@ -160,6 +160,126 @@ export function readBefore(drawDefinition: DrawDefinition) {
 }
 
 /**
+ * The measure `recordedOps` takes of a change, per entity of the copy: true where the entity is unchanged since the
+ * copy was read. Either from a reading taken before the run (`snapshotBaseline`), or from the stored record itself
+ * (`storedBaseline`).
+ */
+export type RecordedBaseline = {
+  unchanged: (entity: object, children: string[]) => boolean;
+  notices: Set<Notice>;
+};
+
+/** the reading `readBefore` took: each entity's own fields by its id, compared as `unchanged` compares them */
+export function snapshotBaseline(before: RecordedBefore): RecordedBaseline {
+  const of = (entity: Record<string, unknown>, children: string[]) => {
+    if (children === MATCHUP_CHILDREN) return before.matchUps.get(entity.matchUpId as string);
+    if (children === STRUCTURE_CHILDREN) return before.structures.get(entity.structureId as string);
+    return before.draw;
+  };
+  return {
+    unchanged: (entity, children) =>
+      unchanged(ownState(entity, children), of(entity as Record<string, unknown>, children)),
+    notices: before.notices,
+  };
+}
+
+type Indexable = Record<string, unknown>;
+
+/**
+ * THE STORED RECORD IS THE READING (G4, 2026-11-24). A copy made by `cloneState` reads, before anything runs on it,
+ * exactly as the stored record it was made from: every plain object and array copied once, in its key order and
+ * holding what it held (a key holding undefined among them), shared references kept shared, every other value held BY
+ * REFERENCE. And a recording's run writes only the copy. So the stored entity an entity of the copy was made from
+ * (`originals`) IS that entity as the run found it, and `readBefore`'s reading of the whole draw (two texts and two
+ * object lists per entity, before and after) is not needed to say what the run changed: the copy is compared with the
+ * stored record once, after the run.
+ *
+ * The verdict is `unchanged`'s exactly: the entity's own fields read as they did (`shapeOf`), and each object holding
+ * them is the one that held it: the copy made there of the stored object (a plain object or array), or the very stored
+ * value (one held by reference). First a walk that allocates nothing and answers only where it can PROVE the entity
+ * unchanged (same keys in the same order, the same primitives, each object the copy of the stored one and itself
+ * unchanged): what no call wrote, nearly all of a draw. Anything else is measured as `unchanged` measures it, against
+ * the stored side.
+ *
+ * Not for a draw holding a Date (`Recording.holdsDate`): `cloneState` copies each Date where it finds it, so one Date
+ * held in two places is two copies whose original is the same, and that a run swapped them could not be told. Such a
+ * draw is read before the run (`snapshotBaseline`). Not for a copy written before the reading, either: the recorded
+ * cascade applies its prefix first (`recordedCascade.ts`), so its copy no longer reads as the stored record.
+ */
+export function storedBaseline(originals: WeakMap<object, object>): RecordedBaseline {
+  const { copiedFrom, sameKeys } = provingWalk(originals);
+  const own = (entity: object, children: string[]) => Object.keys(entity).filter((key) => !children.includes(key));
+  const measured = (state: object, storedState: object) => {
+    if (shapeOf(state) !== shapeOf(storedState)) return false;
+    const objects = objectsOf(state);
+    const storedObjects = objectsOf(storedState);
+    return objects.length === storedObjects.length && objects.every((held, at) => copiedFrom(held, storedObjects[at]));
+  };
+  return {
+    unchanged: (entity, children) => {
+      // every entity recordedOps is handed is a copy (`placed`: the run added and moved none)
+      const stored = originals.get(entity);
+      if (!stored) return false;
+      const proved = sameKeys(entity as Indexable, stored as Indexable, own(entity, children), own(stored, children));
+      return proved || measured(ownState(entity, children), ownState(stored, children));
+    },
+    notices: new Set(getNoticeBuffer() ?? []),
+  };
+}
+
+/**
+ * The walk `storedBaseline` proves with: true only where the copy's value is, place for place, what `cloneState` made
+ * of the stored one and the run left it (the same keys in the same order, the same primitives, each object the copy
+ * made there of the stored object, or the very value held by reference). False says only that it could not prove it.
+ * `leaf`: a pair of objects, one of the copy and its stored counterpart, read as equal wherever both stand and not
+ * walked (the draw, where what is outside it is compared).
+ */
+function provingWalk(originals: WeakMap<object, object>, leaf?: [copied: object, stored: object]) {
+  // the object at a place of the copy is the one the copy held there before the run
+  const copiedFrom = (held: object, stored: object) =>
+    isPlainContainer(stored) ? originals.get(held) === stored : held === stored;
+  const same = (held: unknown, stored: unknown): boolean => {
+    if (typeof held !== 'object' || held === null) return held === stored;
+    if (leaf && (held === leaf[0] || stored === leaf[1])) return held === leaf[0] && stored === leaf[1];
+    if (typeof stored !== 'object' || stored === null || !copiedFrom(held, stored)) return false;
+    if (!isPlainContainer(held)) return true;
+    if (Array.isArray(held) && held.length !== (stored as unknown[]).length) return false;
+    return sameKeys(held as Indexable, stored as Indexable, Object.keys(held), Object.keys(stored));
+  };
+  const sameKeys = (held: Indexable, stored: Indexable, keys: string[], storedKeys: string[]) => {
+    if (keys.length !== storedKeys.length) return false;
+    for (let at = 0; at < keys.length; at += 1) {
+      const key = keys[at];
+      if (key !== storedKeys[at] || !same(held[key], stored[key])) return false;
+    }
+    return true;
+  };
+  return { copiedFrom, same, sameKeys };
+}
+
+/**
+ * Whether what the copy holds outside its draw reads as it did before the run, the text `outside` compares in
+ * `recordedCall.ts` (the draw read as 0 wherever it stands), measured against the stored record the copy was made
+ * from (`storedBaseline`): proved by the walk where nothing there was written, which is what a recording requires,
+ * and otherwise compared as text, the copy's with the stored record's.
+ */
+export function outsideAsStored({
+  originals,
+  copied,
+  stored,
+}: {
+  originals: WeakMap<object, object>;
+  copied: { tournamentRecord?: unknown; event?: unknown; drawDefinition: object };
+  stored: { tournamentRecord?: unknown; event?: unknown; drawDefinition: object };
+}): boolean {
+  const { same } = provingWalk(originals, [copied.drawDefinition, stored.drawDefinition]);
+  if (same(copied.tournamentRecord, stored.tournamentRecord) && same(copied.event, stored.event)) return true;
+  const text = ({ tournamentRecord, event, drawDefinition }: typeof copied) =>
+    JSON.stringify({ tournamentRecord, event }, (_key, value) => (value === drawDefinition ? 0 : value));
+  return text(copied) === text(stored);
+}
+
+/**
  * Whether the copy is, object for object, as `before` read it: every matchUp's, structure's and the draw's own fields
  * read the same and are held by the same objects (`unchanged`, the measure `recordedOps` takes of a change), and no
  * notice has been buffered since.
@@ -197,7 +317,7 @@ export function recordedOps({
   marks,
 }: {
   drawDefinition: DrawDefinition;
-  before: RecordedBefore;
+  before: RecordedBaseline;
   recording: Recording;
   marks?: NoticeMarks;
 }): OutcomeOp[] | undefined {
@@ -208,19 +328,18 @@ export function recordedOps({
   };
   // a dual's own fields, then each of its lines': a line is a matchUp of its own, and stamps as one
   for (const stored of drawMatchUps(drawDefinition)) {
-    const state = ownState(stored, MATCHUP_CHILDREN);
-    if (unchanged(state, before.matchUps.get(stored.matchUpId))) continue;
-    const matchUp = asData(state) as MatchUp;
+    if (before.unchanged(stored, MATCHUP_CHILDREN)) continue;
+    const matchUp = asData(ownState(stored, MATCHUP_CHILDREN)) as MatchUp;
     replace({ op: 'replaceMatchUp', matchUpId: stored.matchUpId, matchUp, recording }, stored);
   }
   for (const s of drawStructures(drawDefinition)) {
-    const state = ownState(s, STRUCTURE_CHILDREN);
-    if (unchanged(state, before.structures.get(s.structureId))) continue;
-    replace({ op: 'replaceStructureState', structureId: s.structureId, state: asData(state), recording }, s);
+    if (before.unchanged(s, STRUCTURE_CHILDREN)) continue;
+    const state = asData(ownState(s, STRUCTURE_CHILDREN));
+    replace({ op: 'replaceStructureState', structureId: s.structureId, state, recording }, s);
   }
-  const state = ownState(drawDefinition, DRAW_CHILDREN);
-  if (!unchanged(state, before.draw)) {
-    replace({ op: 'replaceDrawState', drawId: drawDefinition.drawId, state: asData(state), recording }, drawDefinition);
+  if (!before.unchanged(drawDefinition, DRAW_CHILDREN)) {
+    const state = asData(ownState(drawDefinition, DRAW_CHILDREN));
+    replace({ op: 'replaceDrawState', drawId: drawDefinition.drawId, state, recording }, drawDefinition);
   }
   const notices: RecordedNotice[] = [];
   for (const notice of getNoticeBuffer() ?? []) {

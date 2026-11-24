@@ -23,10 +23,13 @@ export class Recording {
   private readonly origins = new Map<object, Origin>();
   private readonly sources = new Map<string, object>();
   private readonly bindings = new Map<object, { counterpart: Map<object, object>; done: Map<object, object> }>();
+  /** whether the draw holds a Date anywhere: `cloneState` copies each where it finds it (`storedBaseline`) */
+  holdsDate = false;
 
   /** `root`: the working copy's draw as the module is about to find it */
   constructor(private readonly root: object) {
     const visit = (value: unknown, origin: Origin) => {
+      if (value instanceof Date) this.holdsDate = true;
       if (!isNode(value) || this.origins.has(value)) return;
       this.origins.set(value, origin);
       for (const key of Object.keys(value)) visit(value[key], { parent: value, key });

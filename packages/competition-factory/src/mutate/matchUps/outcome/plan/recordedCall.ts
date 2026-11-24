@@ -4,22 +4,29 @@ import {
   drawStructures,
   nothingChanged,
   objectsOf,
+  outsideAsStored,
   readBefore,
   recordedOps,
   shapeOf,
+  snapshotBaseline,
   stampCopies,
+  storedBaseline,
   withNoticeMarks,
 } from './recordedDiff';
 import { FORWARD_SETTLE_EXHAUSTED } from '@Mutate/matchUps/matchUpStatus/settleForwardConsequences';
 import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
+import { differentialTally, OutcomePipelineDivergence } from '../differential';
 import { withClockSourceReader, type ClockSourceReading } from '@Tools/clock';
 import { withDraftWrites } from '@Global/state/withDraftWrites';
+import { getOutcomePipeline } from '@Global/state/globalState';
 import { withAmbientRandomSource } from '@Tools/prng';
 import { cloneState, restoreState } from '@Tools/cloneState';
 import { stampedInThisCall } from '../ops';
 import { Recording } from '../recording';
 
 // constants and types
+import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Constants/outcomePipelineConstants';
+import type { RecordedBaseline } from './recordedDiff';
 import type { BuildViewArgs, RecordCopy } from '../types';
 import type { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
 import type { ResultType } from '@Types/factoryTypes';
@@ -156,19 +163,26 @@ export function recordWholeCall(args: BuildViewArgs): RecordedCall | undefined {
       withoutSettleTelemetry(() => {
         // where every object of the copy stands as v1 is about to find it (`recording.ts`)
         const recording = new Recording(drawDefinition);
-        const before = {
-          ...readBefore(drawDefinition),
-          placed: placed(drawDefinition),
-          outside: outside(),
-        };
+        // what the run changed is read off the stored record, which the copy read as before it ran (`storedBaseline`)
+        const oracle = !recording.holdsDate && getOutcomePipeline() === OUTCOME_PIPELINE_DIFFERENTIAL;
+        const reading = recording.holdsDate || oracle ? snapshotBaseline(readBefore(drawDefinition)) : undefined;
+        const stored = recording.holdsDate ? undefined : storedBaseline(originals);
+        const matchUpId = request.matchUpId as string | undefined;
+        const baseline = (
+          stored && reading ? heldToReading(stored, reading, matchUpId) : (stored ?? reading)
+        ) as RecordedBaseline;
+        const outsideBefore = oracle ? outside() : undefined;
+        const placedBefore = placed(drawDefinition);
         const ran = runOnCopy(args, { tournamentRecord, drawDefinition, event });
         if (!ran || ran.error) return undefined;
         const after = placed(drawDefinition);
-        const moved = after.length !== before.placed.length || after.some((entity, at) => entity !== before.placed[at]);
-        if (moved || outside() !== before.outside) return undefined;
+        const moved = after.length !== placedBefore.length || after.some((entity, at) => entity !== placedBefore[at]);
+        const outsideKept = outsideAsStored({ originals, copied: copy as RecordCopy, stored: args as RecordCopy });
+        if (outsideBefore !== undefined) holdOutside(outsideKept, outside() === outsideBefore, matchUpId);
+        if (moved || !outsideKept) return undefined;
         // a scored time v1 left stale is one the plan's own cleanup would clear (`finalizePlan`)
         if (after.some((entity) => hasStaleScoredTime(entity as MatchUp))) return undefined;
-        const ops = recordedOps({ drawDefinition, recording, before, marks: readMarks() });
+        const ops = recordedOps({ drawDefinition, recording, before: baseline, marks: readMarks() });
         // last: the ops are read off the copy as the run left it, before the result is given the stored objects
         if (!ops || !returnedOnStored(ran, originals, drawDefinition)) return undefined;
         // stopped at the forward bound: what the pass left is v1's to leave, and running it again would do the rest
@@ -235,6 +249,45 @@ function settledOnCopy(args: BuildViewArgs, copy: RecordCopy, outside: () => str
     ),
   );
 }
+
+/**
+ * THE BASELINE ORACLE, `differential` only (G4, 2026-11-24): every verdict the stored record gives (`storedBaseline`)
+ * is held to the one `readBefore`'s reading of the copy gives, entity by entity, and the stored record's word on what
+ * is outside the draw to the text `outside` compares. A disagreement is thrown while the call is still planning,
+ * before v1 has written anything.
+ */
+function heldToReading(stored: RecordedBaseline, reading: RecordedBaseline, matchUpId?: string): RecordedBaseline {
+  return {
+    notices: reading.notices,
+    unchanged: (entity, children) => {
+      const verdict = stored.unchanged(entity, children);
+      const expected = reading.unchanged(entity, children);
+      if (verdict !== expected)
+        throw new OutcomePipelineDivergence({
+          matchUpId,
+          v1: `reading: ${describe(entity)} unchanged ${expected}`,
+          v2: `recorder:baseline ${describe(entity)} unchanged ${verdict}`,
+        });
+      differentialTally('recorder:baseline', 'compared');
+      return verdict;
+    },
+  };
+}
+
+function holdOutside(verdict: boolean, expected: boolean, matchUpId?: string) {
+  if (verdict !== expected)
+    throw new OutcomePipelineDivergence({
+      matchUpId,
+      v1: `reading: outside the draw unchanged ${expected}`,
+      v2: `recorder:outside unchanged ${verdict}`,
+    });
+  differentialTally('recorder:outside', 'compared');
+}
+
+const describe = (entity: object) => {
+  const { matchUpId, structureId, drawId } = entity as Record<string, unknown>;
+  return String(matchUpId ?? structureId ?? drawId ?? 'entity');
+};
 
 /** a throw is v1's to make on the stored record, as it makes it today */
 function runOnCopy(args: BuildViewArgs, copy: RecordCopy) {

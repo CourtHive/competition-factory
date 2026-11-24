@@ -11,7 +11,7 @@ import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findStructure } from '@Acquire/findStructure';
 import { cloneState } from '@Tools/cloneState';
-import { readBefore, recordedOps, stampCopies, withNoticeMarks } from './recordedDiff';
+import { readBefore, recordedOps, snapshotBaseline, stampCopies, withNoticeMarks } from './recordedDiff';
 import { applyOutcomeOps, stampedInThisCall } from '../ops';
 import { isObject } from '@Tools/objects';
 import { Recording } from '../recording';
@@ -125,7 +125,8 @@ function recordOnCopy(args: BuildViewArgs, prefix: OutcomeOp[]): OutcomeOp[] | u
           matchUpsMap,
         });
         if (settled.error || settled.exhausted || outside() !== before.outside) return undefined;
-        return recordedOps({ drawDefinition, recording, before, marks: readMarks() });
+        // its copy is written before it is read (the prefix), so it is read, not compared with the stored record
+        return recordedOps({ drawDefinition, recording, before: snapshotBaseline(before), marks: readMarks() });
       }),
     ),
   );
