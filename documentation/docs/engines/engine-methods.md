@@ -1017,3 +1017,19 @@ const footprint = engine.getLoadedFootprint(); // undefined unless marked
 ```
 
 ---
+
+### Experimental operator match detail
+
+The optional `venueTimeZone` identifies the assigned venue’s unambiguous IANA zone on the committed record. An unknown or conflicting venue zone is omitted.
+
+The unpublished CMX candidate accepts an explicit `operatorAudience` of `recorder` or `director` on
+`matchUpActions`. A server verifies the caller's live grant and supplies tournament, event, draw and match IDs.
+The engine checks its loaded footprint before invoking the action computation. It resolves the four IDs within
+the named tournament, refusing an inconsistent target and caller-supplied context or policy. The canonical
+action computation runs once; its formatter consumes those same hydrated sides, score and offers.
+The guarded query returns one `operatorMatch` for singles or doubles. The result includes display names, the
+scoring format, the reviewed score, first-entry or correction intent when scoring is offered, clear permission,
+disabled statuses and the observed round of advancement when the winner occupies the target match.
+Both audiences use the same field list in this slice. TEAM and collection lines are outside its supported scope.
+Omitting the option preserves the usual factory action response. The factory adapter supplies no authorization or
+storage revision. CFS owns both.

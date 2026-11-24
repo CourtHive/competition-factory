@@ -2,7 +2,7 @@ import { isValidIANATimeZone } from '@Tools/timeZone';
 
 // constants and types
 import { CONFLICTING_TIME_ZONES, INVALID_TIME_ZONE } from '@Constants/errorConditionConstants';
-import { Tournament } from '@Types/tournamentTypes';
+import type { Tournament, Venue } from '@Types/tournamentTypes';
 
 type GetTournamentTimeZoneArgs = {
   tournamentRecord?: Tournament;
@@ -34,7 +34,11 @@ export function getTournamentTimeZone({ tournamentRecord }: GetTournamentTimeZon
     return { timeZone: localTimeZone };
   }
 
-  const venueZones = (tournamentRecord?.venues ?? [])
+  return timeZoneFromVenues(tournamentRecord?.venues ?? []);
+}
+
+export function timeZoneFromVenues(venues: Venue[]): TimeZoneResult {
+  const venueZones = venues
     .flatMap((venue) => venue.addresses ?? [])
     .map((address) => address?.timeZone)
     .filter((timeZone): timeZone is string => !!timeZone && isValidIANATimeZone(timeZone));
