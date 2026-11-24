@@ -6,7 +6,7 @@ import { setTournamentName } from '@Mutate/tournaments/tournamentDetails';
 import { asyncEngine, dryRun, explain, registerPreviewMethod, tournamentEngine } from '../../index';
 import { afterEach, expect, it, vi } from 'vitest';
 
-import type { AsyncFactoryEngine } from '@Types/asyncEngineTypes';
+import type { AsyncFactoryEngine } from '@Assemblies/engines/types/asyncEngineTypes';
 import type { Tournament } from '@Types/tournamentTypes';
 
 type Write = { tournamentRecord: Tournament };

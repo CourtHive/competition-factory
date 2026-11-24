@@ -145,6 +145,9 @@ export * from './constants';
 
 // TYPES -----------------------------------------------------------------
 export type * from './types';
+export type * from './assemblies/engines/types/asyncEngineTypes';
+export type * from './assemblies/engines/types/engineTypes';
+export type { MethodSignatures } from './assemblies/engines/types/methodSignatures';
 
 // Enums are value-exported (runtime) IN ADDITION to the type-only `./types` surface
 // above, so consumers can reference members at runtime (e.g. `MatchUpStatusEnum.COMPLETED`),

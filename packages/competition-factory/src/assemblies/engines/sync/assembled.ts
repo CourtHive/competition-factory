@@ -2,7 +2,8 @@ import * as governors from '@Assemblies/governors';
 import syncEngine from '@Assemblies/engines/sync';
 
 // types
-import { FactoryEngine, FactoryEngineTyped } from '@Types/factoryTypes';
+import type { FactoryEngineTyped } from '@Assemblies/engines/types/engineTypes';
+import type { FactoryEngine } from '@Types/factoryTypes';
 
 syncEngine.importMethods(governors, true, 1);
 

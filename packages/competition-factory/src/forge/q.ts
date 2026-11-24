@@ -106,7 +106,7 @@ const QUERY_REGISTRY: Record<string, QueryRegistryEntry> = {
  *
  * Per-method arg shapes are still `any` because the underlying engine methods
  * accept varied input shapes — tightening the arg side is part of the broader
- * #1 typed-signatures work (see `src/types/methodSignatures.ts`), which threads
+ * #1 typed-signatures work (see `src/assemblies/engines/types/methodSignatures.ts`), which threads
  * `typeof <method>` for direct engine methods. Returns here are typed against
  * TODS shapes so consumers stop casting at the call site.
  *

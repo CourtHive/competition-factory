@@ -7,7 +7,7 @@ import { resolvePreviewDirectives } from './previewBindings';
 import { runPreview } from './previewRunner';
 
 // types
-import type { AsyncFactoryEngine } from '@Types/asyncEngineTypes';
+import type { AsyncFactoryEngine } from '@Assemblies/engines/types/asyncEngineTypes';
 import { Directives, FactoryEngine } from '@Types/factoryTypes';
 
 export type EmittedNotice = {

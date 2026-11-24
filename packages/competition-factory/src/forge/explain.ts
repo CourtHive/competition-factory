@@ -31,7 +31,7 @@
 import { dryRun, DryRunResult } from './dryRun';
 
 // types
-import type { AsyncFactoryEngine } from '@Types/asyncEngineTypes';
+import type { AsyncFactoryEngine } from '@Assemblies/engines/types/asyncEngineTypes';
 import { FactoryEngine } from '@Types/factoryTypes';
 
 export type ExplainResult = {

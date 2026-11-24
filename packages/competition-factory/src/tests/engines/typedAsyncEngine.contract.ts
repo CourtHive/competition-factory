@@ -1,7 +1,11 @@
 import { asyncEngine, competitionEngineAsync, tournamentEngineAsync } from '../../index';
 
-import type { AsyncEngineSetup, AsyncEngineUnsupportedFacade, AsyncFactoryEngine } from '../../types/asyncEngineTypes';
-import type { AsyncEngineDirectMethod } from '../../types/asyncEngineDirectMethods';
+import type {
+  AsyncEngineSetup,
+  AsyncEngineUnsupportedFacade,
+  AsyncFactoryEngine,
+} from '@Assemblies/engines/types/asyncEngineTypes';
+import type { AsyncEngineDirectMethod } from '@Assemblies/engines/types/asyncEngineDirectMethods';
 import type { FactoryEngineMethod } from '../../types/factoryEngineMethods';
 
 type Assert<T extends true> = T;
