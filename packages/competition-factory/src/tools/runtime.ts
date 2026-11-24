@@ -57,3 +57,9 @@ export let copySnapshot: DeepCopySnapshot = Object.freeze({ enabled: true });
 export function installCopySnapshot(settings: DeepCopySnapshot) {
   copySnapshot = Object.freeze(settings);
 }
+
+// Standalone scorers have no engine log. The engine installs its sink when the log module loads.
+export let devLog: ((value: unknown) => void) | undefined;
+export function installDevLog(sink: (value: unknown) => void) {
+  devLog = sink;
+}
