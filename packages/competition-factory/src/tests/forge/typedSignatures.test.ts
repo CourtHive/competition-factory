@@ -15,7 +15,7 @@ import tournamentEngine from '@Engines/syncEngine';
 
 // types
 import type { Event, MatchUp, Tournament } from '@Types/tournamentTypes';
-import type { FactoryEngineTyped } from '@Types/factoryTypes';
+import type { FactoryEngineTyped } from '@Assemblies/engines/types/engineTypes';
 
 const engine = tournamentEngine as unknown as FactoryEngineTyped;
 

@@ -1,7 +1,7 @@
 import { competitionEngineAsync as assembled } from './assembled';
 import createAsyncEngine from './index';
 
-import type { AsyncEngineFactory, AsyncFactoryEngine } from '../../../types/asyncEngineTypes';
+import type { AsyncEngineFactory, AsyncFactoryEngine } from '@Assemblies/engines/types/asyncEngineTypes';
 
 // The dynamic internal assemblies retain their open type for method registration.
 // Publish a closed, classified contract without wrapping or changing any runtime call.

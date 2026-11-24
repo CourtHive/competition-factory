@@ -11,14 +11,14 @@
  * drawDefinition, tournamentRecord, etc.) become optional, hint keys
  * (drawId, eventId, ...) are admitted, and 0-arg calls are allowed on
  * methods that need nothing beyond engine state. See `EngineMethod`
- * doc in `factoryTypes.ts` for the rationale.
+ * doc in `engineTypes.ts` for the rationale.
  *
  * Methods not in this map fall through to the `(...args: any[]) => any`
  * fallback on `FactoryEngineTyped`; that set shrinks as the parser
  * resolves more of the public surface over time.
  */
 
-import type { EngineMethod } from './factoryTypes';
+import type { EngineMethod } from './engineTypes';
 
 import type { getRotatingPartnerRoundPreview } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/getRotatingPartnerRoundPreview';
 import type { generateRotatingPartnerRound } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/generateRotatingPartnerRound';

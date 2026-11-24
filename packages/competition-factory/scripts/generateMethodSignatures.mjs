@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Codegen: emit `src/types/methodSignatures.ts` from governor barrels +
+ * Codegen: emit `src/assemblies/engines/types/methodSignatures.ts` from governor barrels +
  * engineStart's lambda wrappers.
  *
  * Reads `src/types/factoryEngineMethods.ts` for the canonical list of names
@@ -27,8 +27,8 @@ const ROOT = resolve(__dirname, '..');
 const ENGINE_METHODS = join(ROOT, 'src/types/factoryEngineMethods.ts');
 const GOVERNORS_DIR = join(ROOT, 'src/assemblies/governors');
 const ENGINE_START = join(ROOT, 'src/assemblies/engines/parts/engineStart.ts');
-const OUT = join(ROOT, 'src/types/methodSignatures.ts');
-const DIRECT_OUT = join(ROOT, 'src/types/asyncEngineDirectMethods.ts');
+const OUT = join(ROOT, 'src/assemblies/engines/types/methodSignatures.ts');
+const DIRECT_OUT = join(ROOT, 'src/assemblies/engines/types/asyncEngineDirectMethods.ts');
 
 // Method names that are NOT signature-able through this pipeline. Facades
 // (handled by inline declarations on FactoryEngineTyped) + engine internals
@@ -210,14 +210,14 @@ lines.push(' * transformed into the engine-call shape — auto-resolved keys (ev
 lines.push(' * drawDefinition, tournamentRecord, etc.) become optional, hint keys');
 lines.push(' * (drawId, eventId, ...) are admitted, and 0-arg calls are allowed on');
 lines.push(' * methods that need nothing beyond engine state. See `EngineMethod`');
-lines.push(' * doc in `factoryTypes.ts` for the rationale.');
+lines.push(' * doc in `engineTypes.ts` for the rationale.');
 lines.push(' *');
 lines.push(' * Methods not in this map fall through to the `(...args: any[]) => any`');
 lines.push(' * fallback on `FactoryEngineTyped`; that set shrinks as the parser');
 lines.push(' * resolves more of the public surface over time.');
 lines.push(' */');
 lines.push('');
-lines.push("import type { EngineMethod } from './factoryTypes';");
+lines.push("import type { EngineMethod } from './engineTypes';");
 lines.push('');
 
 const importChunks = [];

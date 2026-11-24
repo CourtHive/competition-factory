@@ -9,6 +9,7 @@
   "src/assemblies/engines/sanctioning": 35,
   "src/assemblies/engines/scoring": 12,
   "src/assemblies/engines/sync": 4,
+  "src/assemblies/engines/types": 1,
   "src/assemblies/generators/drawDefinitions": 22,
   "src/assemblies/generators/drawDefinitions/drawTypes": 17,
   "src/assemblies/generators/drawDefinitions/drawTypes/adHoc": 2,
@@ -142,7 +143,7 @@
   "src/server/providers/factory/engines": 2,
   "src/server/providers/factory/functions": 1,
   "src/tools": 17,
-  "src/types": 67,
+  "src/types": 66,
   "src/types/scoring": 1,
   "src/validators": 19,
   "src/validators/officiating": 1

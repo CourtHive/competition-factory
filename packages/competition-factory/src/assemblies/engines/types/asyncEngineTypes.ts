@@ -1,16 +1,11 @@
 import type { AsyncEngineDirectMethod } from './asyncEngineDirectMethods';
-import type { LoadedFootprint } from '../global/state/loadedFootprint';
-import type { setClock, setCompetitionClock } from '../tools/clock';
-import type { setRandomSource } from '../tools/prng';
-import type { Tournament } from './tournamentTypes';
-import type {
-  FactoryEngineTyped,
-  MethodSignatures,
-  FactoryEngineMethod,
-  Directives,
-  ResultType,
-  TournamentRecords,
-} from './factoryTypes';
+import type { LoadedFootprint } from '@Global/state/loadedFootprint';
+import type { setClock, setCompetitionClock } from '@Tools/clock';
+import type { setRandomSource } from '@Tools/prng';
+import type { Tournament } from '@Types/tournamentTypes';
+import type { Directives, FactoryEngineMethod, ResultType, TournamentRecords } from '@Types/factoryTypes';
+import type { FactoryEngineTyped } from './engineTypes';
+import type { MethodSignatures } from './methodSignatures';
 import type {
   DeepCopyAttributes,
   DevContextType,
@@ -18,7 +13,7 @@ import type {
   getSchemaWriteMode,
   getStampScope,
   setTournamentId,
-} from '../global/state/globalState';
+} from '@Global/state/globalState';
 
 /** Always a Promise, even when a source signature currently returns any. */
 export type AsyncEngineMethod<F> = F extends (...args: infer Args) => infer Result

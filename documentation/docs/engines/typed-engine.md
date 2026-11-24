@@ -54,7 +54,7 @@ const tournament: Tournament | undefined = engine.q.tournament();
 
 ## Extending the typed surface
 
-`src/types/methodSignatures.ts` is generated. **Do not hand-edit it.** Coverage grows automatically as new governor exports land — no per-method maintenance burden.
+`src/assemblies/engines/types/methodSignatures.ts` is generated. **Do not hand-edit it.** Coverage grows automatically as new governor exports land — no per-method maintenance burden.
 
 To add a method:
 
@@ -93,4 +93,4 @@ A few special engine surfaces are declared explicitly on `FactoryEngineTyped` ra
 
 Before: `engine.getEvents` had the signature `(...args: any[]) => any`. Every consumer cast the return, every typo compiled cleanly. Today, the same call returns the real `{ events?: Event[]; … }` shape, autocompletes in the IDE, and a misspelled method name is a compile error.
 
-See `src/types/methodSignatures.ts` (generated), `scripts/generateMethodSignatures.mjs` (generator), and `src/types/factoryTypes.ts` (composition) for the implementation.
+See `src/assemblies/engines/types/methodSignatures.ts` (generated), `scripts/generateMethodSignatures.mjs` (generator), and `src/assemblies/engines/types/engineTypes.ts` (composition) for the implementation.

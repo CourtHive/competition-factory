@@ -47,7 +47,7 @@ const ALIAS_BY_DIR = Object.entries(ALIASES).sort((a, b) => b[1].length - a[1].l
 
 // Files emitted by `pnpm prebuild` generators — fix the generator, never the file.
 const GENERATED = new Set([
-  'src/types/methodSignatures.ts',
+  'src/assemblies/engines/types/methodSignatures.ts',
   'src/types/enumExports.ts',
   'src/types/factoryEngineMethods.ts',
   'src/constants/matchUpStatusValues.ts',
