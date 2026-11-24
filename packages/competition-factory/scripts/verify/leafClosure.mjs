@@ -31,6 +31,8 @@ for (const [leaf, allowed] of Object.entries(leaves)) {
     {
       cwd: root,
       encoding: 'utf8',
+      timeout: 120_000,
+      killSignal: 'SIGKILL',
       maxBuffer: 8 * 1024 * 1024,
     },
   );
