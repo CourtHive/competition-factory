@@ -1,6 +1,7 @@
 import type { FactoryEngineMethod } from '@Types/factoryEngineMethods';
 import type { MethodSignatures } from './methodSignatures';
 import type { Directives } from '@Types/factoryTypes';
+import type * as Forge from '../../../forge';
 
 /**
  * Hint keys consumers pass instead of the fully-resolved entities. The
@@ -95,7 +96,7 @@ export type FactoryEngineTyped = MethodSignatures &
      * Replaces the `tournamentEngine.getEvents()?.events ?? []` boilerplate.
      * Per-method arg shapes are still `any`; typed signatures are a follow-up.
      */
-    q: import('../../../forge').QueryFacade;
+    q: Forge.QueryFacade;
 
     /**
      * Developer-JOY typed event bus — see `src/forge/bus.ts`.
@@ -112,22 +113,13 @@ export type FactoryEngineTyped = MethodSignatures &
     // so contextual inference flows through in consumer code under strict.
     // The handler param picks up its TopicPayloadMap[T] type from the topic
     // literal without an explicit annotation.
-    on<T extends import('../../../forge').Topic>(
+    on<T extends Forge.Topic>(topic: T, handler: (payload: Forge.TopicPayloadMap[T]) => void): Forge.Unsubscribe;
+    once<T extends Forge.Topic>(topic: T, handler: (payload: Forge.TopicPayloadMap[T]) => void): Forge.Unsubscribe;
+    off<T extends Forge.Topic>(topic: T, handler?: (payload: Forge.TopicPayloadMap[T]) => void): void;
+    waitFor<T extends Forge.Topic>(
       topic: T,
-      handler: (payload: import('../../../forge').TopicPayloadMap[T]) => void,
-    ): import('../../../forge').Unsubscribe;
-    once<T extends import('../../../forge').Topic>(
-      topic: T,
-      handler: (payload: import('../../../forge').TopicPayloadMap[T]) => void,
-    ): import('../../../forge').Unsubscribe;
-    off<T extends import('../../../forge').Topic>(
-      topic: T,
-      handler?: (payload: import('../../../forge').TopicPayloadMap[T]) => void,
-    ): void;
-    waitFor<T extends import('../../../forge').Topic>(
-      topic: T,
-      predicate?: (payload: import('../../../forge').TopicPayloadMap[T]) => boolean,
-    ): Promise<import('../../../forge').TopicPayloadMap[T]>;
+      predicate?: (payload: Forge.TopicPayloadMap[T]) => boolean,
+    ): Promise<Forge.TopicPayloadMap[T]>;
 
     /**
      * Developer-JOY state-inspection snapshot — see `src/forge/inspect.ts`.
@@ -136,7 +128,7 @@ export type FactoryEngineTyped = MethodSignatures &
      * write-mode flags, loaded tournament IDs + counts, subscribed topics,
      * devContext. Side-effect-free and cheap; safe to call from hot paths.
      */
-    inspect(): import('../../../forge').EngineInspection;
+    inspect(): Forge.EngineInspection;
 
     /**
      * Developer-JOY fluent builders — see `src/forge/builders/`.
@@ -152,7 +144,7 @@ export type FactoryEngineTyped = MethodSignatures &
      *   const request = engine.build.event(...).singles().draw(8).toRequest();
      *   socket.send('executionQueue', request);
      */
-    build: import('../../../forge').BuildFacade;
+    build: Forge.BuildFacade;
 
     /**
      * Developer-JOY mutation preview — see `src/forge/dryRun.ts` (#3).
@@ -165,7 +157,7 @@ export type FactoryEngineTyped = MethodSignatures &
      *     { method: 'deleteDrawDefinition', params: { drawId } },
      *   ]);
      */
-    dryRun(directives: Directives): import('../../../forge').DryRunResult;
+    dryRun(directives: Directives): Forge.DryRunResult;
 
     /**
      * Developer-JOY pre-flight readiness check — see `src/forge/explain.ts` (#12).
@@ -177,5 +169,5 @@ export type FactoryEngineTyped = MethodSignatures &
      *
      *   const { wouldSucceed, reason } = engine.explain('deleteDrawDefinition', { drawId });
      */
-    explain(method: string, params?: Record<string, any>): import('../../../forge').ExplainResult;
+    explain(method: string, params?: Record<string, any>): Forge.ExplainResult;
   };
