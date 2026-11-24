@@ -77,7 +77,7 @@ Each change below is planned for 8.0.0 and announced in 7.x; one marked _propose
 - **Writes are native only.** The `LEGACY` and `BRIDGE` schema write modes are removed. Records written by them are still read.
 - **The positional `matchUpStatusCodes` array is no longer written**, and the `appliedPolicies` extension is no longer written (the first-class `appliedPolicies` attribute replaces it). Both are still read from older records.
 - **Penalties refuse the old label spellings and the two misspelled type values** (the deprecated aliases of `EQUIPMENT_VIOLATION` and `FAILURE_TO_SIGN_IN`). Store `PenaltyTypeEnum` codes.
-- **Date helpers need the instant.** Exported date helpers lose their implicit "now"; pass the instant, or call through an engine.
+- **Date helpers need the instant.** Exported date helpers lose their implicit "now" in 8.0.0. In 7.x, pass a Date or ISO date string as the second argument to `tools.plainDate.isDateInPast(dateString, asOf)` and `tools.generateTimeCode(index, asOf)`. When omitted, both still read the call clock.
 - **`asOf` is required** on `tools.publishing` (`isEmbargoed`, `isVisiblyPublished`, `getRoundVisibilityState`).
 
 ### Removed options, constants and fields
