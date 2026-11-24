@@ -5,21 +5,14 @@ import { relative, resolve, sep } from 'node:path';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const contracts = ['types/', 'constants/', 'errors/'];
-// Layering step 9 removes these three dependencies. A new global/state file needs its own review.
-const primitives = [
-  'tools/',
-  'global/state/noticeIdentity.ts',
-  'global/state/syncGlobalState.ts',
-  'global/state/globalState.ts',
-];
 const formats = 'helpers/matchUpFormatCode/';
 const leaves = {
   contracts,
-  primitives: [...contracts, ...primitives],
+  primitives: [...contracts, 'tools/'],
   formats: [...contracts, 'tools/', formats],
-  scoring: [...contracts, ...primitives, formats, 'scoring/', 'fixtures/scoring/outcomes/'],
-  ratings: [...contracts, ...primitives, formats, 'helpers/ratings/', 'fixtures/ratings/', 'fixtures/policies/'],
-  'draw-topology': [...contracts, ...primitives, 'helpers/drawTopology/', 'validators/isExit.ts'],
+  scoring: [...contracts, 'tools/', formats, 'scoring/', 'fixtures/scoring/outcomes/'],
+  ratings: [...contracts, 'tools/', formats, 'helpers/ratings/', 'fixtures/ratings/', 'fixtures/policies/'],
+  'draw-topology': [...contracts, 'tools/', 'helpers/drawTopology/', 'validators/isExit.ts'],
 };
 
 for (const [leaf, allowed] of Object.entries(leaves)) {

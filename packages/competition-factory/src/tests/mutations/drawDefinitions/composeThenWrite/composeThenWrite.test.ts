@@ -1,4 +1,4 @@
-import { composeThenWrite, isStoredDraw } from '@Tools/composeThenWrite';
+import { composeThenWrite, isStoredDraw } from '@Mutate/drawDefinitions/composeThenWrite';
 import { randomSource, setRandomSource } from '@Tools/prng';
 import { afterEach, expect, test } from 'vitest';
 
