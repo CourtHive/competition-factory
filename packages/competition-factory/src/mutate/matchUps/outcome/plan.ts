@@ -1,3 +1,4 @@
+import { hasForwardByeArrival, predictForwardByePassage } from './plan/forwardByePassage';
 import { relabelKeepsReservation } from './plan/standingReservation';
 import { heldLoserByeClaims } from './plan/heldLoserBye';
 import { clearedSingleExit, correctedSingleExit, refreshedArrivalOps, relabelledExit } from './plan/exitCorrections';
@@ -419,6 +420,18 @@ export function planOutcome(args: PlanArgs): OutcomePlan {
   const plan = args.route === RESULT_TO_DOUBLE_EXIT ? resultToDoubleExit(args) : planOps(args);
   // a TEAM line's result numbers it in its collection's finishing order (a deciding line's dual is planned in its plan)
   const ordered = !plan.ops || args.asDual ? plan : { ...plan, ops: withFinishingOrder(plan.ops, args.drawDefinition) };
+  // Singles passage has no finishing-order effects. Keep its certified ops array for finalizePlan's fold.
+  if (
+    (ordered.abstain === 'cascade' || ordered.abstain === 'exit') &&
+    hasForwardByeArrival(args) &&
+    !recordReason(args)
+  ) {
+    const passage = predictForwardByePassage(args);
+    if (passage.ops) {
+      const certified = args.clockFree ? args.certifiesPhases?.(passage.ops) : args.settles?.(passage.ops) === false;
+      if (certified) return wholeCarry(args, passage);
+    }
+  }
   return wholeCarry(args, ordered);
 }
 

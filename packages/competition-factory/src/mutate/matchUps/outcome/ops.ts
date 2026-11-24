@@ -149,6 +149,8 @@ export type OutcomeOp =
     }
   | {
       op: 'setMatchUpDrawPositions';
+      /** The linked assignment just occupied an already advanced position. Only its match notice is owed. */
+      noticesOccupiedPosition?: true;
       /** A re-key before the score write leaves the winner's own key alone. */
       preservesWinningSide?: true;
       /** A released result writes an own undefined score before its subsequent reset. */
@@ -761,7 +763,7 @@ function foldMatchUpWrite(
   if (!matchUp) return { error: `${op.op}: no matchUp ${op.matchUpId}` };
   if (op.op === 'setMatchUpResult') setMatchUpResult(matchUp, op, context);
   // through the one writer, which normalises the positions and re-keys a side's facts if an occupant changes side
-  else {
+  else if (!op.noticesOccupiedPosition) {
     // v1's advance through a BYE (`assignDrawPositionBye`) writes the matchUp it advances into with no score, as a
     // removal does: a blank one a cleared result left there goes with it
     // The position writer assigns score below, after its own winner write.
