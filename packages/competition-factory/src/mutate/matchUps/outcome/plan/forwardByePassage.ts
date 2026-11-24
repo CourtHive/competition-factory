@@ -11,8 +11,7 @@ import {
 import { arrivalOps, arrivalReturnOps } from './directionOps';
 import { bareResultRequest, positionsOf, structureStamps } from './planShared';
 import { tiebreakPointsWarnings } from '@Scoring/analysis/validateScore';
-import syncGlobalState from '@Global/state/syncGlobalState';
-import { getProvider, writeLegacyEnabled } from '@Global/state/globalState';
+import { syncNoticeEffectsInstalled, writeLegacyEnabled } from '@Global/state/globalState';
 import { isDoubleExit } from '@Validators/isExit';
 import { BYE, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
@@ -44,7 +43,7 @@ export function hasForwardByeArrival({ route, view, write }: PlanArgs): boolean 
 export function predictForwardByePassage(args: PlanArgs): Prediction {
   if (!hasForwardByeArrival(args)) return { abstain: 'no forward BYE arrival' };
   // A custom provider can observe the copy's draft callbacks and the recorded delivery that follows.
-  if (getProvider() !== syncGlobalState) return { abstain: 'custom state provider' };
+  if (!syncNoticeEffectsInstalled) return { abstain: 'custom state provider' };
   try {
     return predict(args);
   } catch (error) {

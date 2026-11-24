@@ -2,7 +2,7 @@ import { getProvider, setOutcomePipeline, setStateProvider, setSubscriptions } f
 import { replaceWithBye } from '@Tests/mutations/drawDefinitions/testingUtilities';
 import { compareHeldClaims } from '@Tests/testHarness/outcome/compareHeldClaims';
 import { playCall, prepareCall } from '@Tests/testHarness/outcome/recordedCallHarness';
-import { useEngineCatch } from '@Tests/testHarness/engineCatch';
+import * as noticeIdentity from '@Global/state/noticeIdentity';
 import { objectGraph } from '@Tests/testHarness/outcome/objectGraph';
 import * as nestedRecorder from '@Mutate/matchUps/outcome/plan/recordedCascade';
 import { setClock } from '@Tools/clock';
@@ -19,9 +19,6 @@ import {
 } from '@Constants/drawDefinitionConstants';
 import { COMPLETED, DOUBLE_DEFAULT, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_FEED_IN, POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
-
-// The suite's rethrowing provider is a custom wrapper. Exercise the production sync boundary here.
-useEngineCatch();
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -98,15 +95,15 @@ it.each([
   ['reserved', reservedBye],
 ] as const)('sends each %s passage notice to the provider at the original write boundary', (_, build) => {
   const call = prepareCall(build);
-  const provider = getProvider();
-  const addNotice = provider.addNotice.bind(provider);
+  const append = noticeIdentity.appendNotice;
   const enqueued: string[] = [];
-  vi.spyOn(provider, 'addNotice').mockImplementation((notice, ...rest) => {
+  // Observe inside the installed sync provider without replacing its addNotice implementation.
+  vi.spyOn(noticeIdentity, 'appendNotice').mockImplementation((state, notice, subscribed) => {
     // Serialize here. Later writes can change the aliased draw or match in an earlier payload.
     enqueued.push(
       JSON.stringify(objectGraph(notice), (_, value) => (typeof value === 'function' ? '<function>' : value)),
     );
-    return addNotice(notice, ...rest);
+    return append(state, notice, subscribed);
   });
   playCall('v1', call);
   const original = enqueued.splice(0);
