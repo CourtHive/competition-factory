@@ -1,185 +1,18 @@
 #!/usr/bin/env node
-/**
- * Codegen: emit `src/assemblies/engines/types/methodSignatures.ts` from governor barrels +
- * engineStart's lambda wrappers.
- *
- * Reads `src/types/factoryEngineMethods.ts` for the canonical list of names
- * on the live tournamentEngine. For each name, locates the source function
- * by walking governor `export { ... } from '@<Alias>/...'` barrels (and
- * engineStart's `engine.X = (...) => Y(...)` mount block). Emits a
- * `MethodSignatures` interface whose entries are `typeof <sourceName>`,
- * grouped + deduplicated by source path so imports stay clean.
- *
- * Methods that don't resolve to a source export (some facades, some
- * dynamically registered methods) silently fall through to the
- * `Record<Exclude<FactoryEngineMethod, ...>, (...args: any[]) => any>`
- * fallback in `factoryTypes.ts`. A coverage report lands on stdout.
- *
- * Regenerate via `pnpm gen:method-signatures`. CI runs
- * `pnpm check:method-signatures` which re-runs this and fails on any diff.
- */
-import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+/** Generate engine signatures, direct mount names and query-purity kinds from one descriptor inventory. */
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readDescriptors } from './engineMethodDescriptors.mjs';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = resolve(__dirname, '..');
-const ENGINE_METHODS = join(ROOT, 'src/types/factoryEngineMethods.ts');
-const GOVERNORS_DIR = join(ROOT, 'src/assemblies/governors');
-const ENGINE_START = join(ROOT, 'src/assemblies/engines/parts/engineStart.ts');
-const OUT = join(ROOT, 'src/assemblies/engines/types/methodSignatures.ts');
-const DIRECT_OUT = join(ROOT, 'src/assemblies/engines/types/asyncEngineDirectMethods.ts');
-
-// Method names that are NOT signature-able through this pipeline. Facades
-// (handled by inline declarations on FactoryEngineTyped) + engine internals
-// (executionQueue/execute/importMethods — varargs shapes that hand-curation
-// would model better than typeof).
-const SKIP = new Set([
-  'q',
-  'on',
-  'once',
-  'off',
-  'waitFor',
-  'inspect',
-  'build',
-  'executionQueue',
-  'execute',
-  'importMethods',
-]);
-
-/** Walk a directory recursively, return all .ts paths. */
-function walkTs(dir, acc = []) {
-  for (const entry of readdirSync(dir)) {
-    const full = join(dir, entry);
-    const s = statSync(full);
-    if (s.isDirectory()) walkTs(full, acc);
-    else if (entry.endsWith('.ts')) acc.push(full);
-  }
-  return acc;
-}
-
-/** Read the FactoryEngineMethod union (string literal entries). */
-function readEngineMethodNames() {
-  const src = readFileSync(ENGINE_METHODS, 'utf8');
-  // pull the type-union body
-  const m = src.match(/export type FactoryEngineMethod =([\s\S]+?);/);
-  if (!m) throw new Error('could not locate FactoryEngineMethod union');
-  const body = m[1];
-  return Array.from(body.matchAll(/'([^']+)'/g))
-    .map((mm) => mm[1])
-    .filter((n) => !SKIP.has(n));
-}
-
-/**
- * Resolve a governor's `from '...'` import path so methodSignatures.ts (which
- * lives in a different directory) can use it. `@Alias/...` paths stay as-is
- * (the alias resolves anywhere in src/). Relative paths get rewritten to be
- * relative to methodSignatures.ts's location.
- */
-function resolveImportPath(importPath, governorFile) {
-  if (!importPath.startsWith('.')) return importPath; // alias — passes through
-  const absolute = resolve(dirname(governorFile), importPath);
-  let rel = relative(dirname(OUT), absolute);
-  if (!rel.startsWith('.')) rel = './' + rel;
-  return rel;
-}
-
-/**
- * Parse a governor file for `export { name1, name2 as publicName, ... } from '@X/...'`
- * Returns array of { publicName, sourceName, sourcePath }.
- */
-function parseGovernor(filePath) {
-  const src = readFileSync(filePath, 'utf8');
-  const out = [];
-  const reExportRe = /export\s+(?:type\s+)?\{\s*([^}]+)\}\s+from\s+['"]([^'"]+)['"]/g;
-  let m;
-  while ((m = reExportRe.exec(src))) {
-    const names = m[1]
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const sourcePath = resolveImportPath(m[2], filePath);
-    for (const n of names) {
-      // skip type-only imports
-      if (n.startsWith('type ')) continue;
-      const asMatch = n.match(/^(\S+)\s+as\s+(\S+)$/);
-      const sourceName = asMatch ? asMatch[1] : n;
-      const publicName = asMatch ? asMatch[2] : n;
-      out.push({ publicName, sourceName, sourcePath });
-    }
-  }
-  return out;
-}
-
-/**
- * Parse engineStart.ts. Looks for `engine.X = ... Y(...)` patterns where Y
- * is one of the imported functions at the top of the file. The lambda wraps
- * Y, so `typeof Y` is more precise than the wrapper's `(params?) => ...`.
- *
- * Returns array of { publicName, sourceName, sourcePath }.
- */
-function parseEngineStart() {
-  const src = readFileSync(ENGINE_START, 'utf8');
-  const out = [];
-
-  // Collect imports: name → path
-  const imports = new Map();
-  const importRe = /import\s+\{([^}]+)\}\s+from\s+['"]([^'"]+)['"]/g;
-  let im;
-  while ((im = importRe.exec(src))) {
-    const path = im[2];
-    for (const n of im[1]
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)) {
-      // strip `type ` and aliases
-      const clean = n
-        .replace(/^type\s+/, '')
-        .split(/\s+as\s+/)[0]
-        .trim();
-      imports.set(clean, path);
-    }
-  }
-
-  // Collect simple-wrapper mounts ONLY: `engine.publicName = (...) => sourceCall(...)`.
-  // We require the source call to be the immediate next expression after `=>`
-  // (no opening brace, no other statements). Complex multi-line wrappers
-  // (engine.reset, engine.setState, engine.newTournamentRecord, etc.) where
-  // the public signature differs from any single inner call get skipped and
-  // fall through to the `(...args: any[]) => any` fallback. A naive heuristic
-  // that grabbed the first inner call would mis-type these (e.g. mapping
-  // engine.reset to setTournamentRecords because that's the first body call).
-  const mountRe = /engine\.(\w+)\s*=\s*\(([^)]*)\)\s*=>\s*(\w+)\(/g;
-  let mm;
-  while ((mm = mountRe.exec(src))) {
-    const publicName = mm[1];
-    const sourceName = mm[3];
-    if (publicName === sourceName || !imports.has(sourceName)) continue;
-    const sourcePath = imports.get(sourceName);
-    // Skip forge-facade mounts (handled inline on FactoryEngineTyped).
-    if (['buildQueryFacade', 'buildFacade', 'createEventBus', 'inspect'].includes(sourceName)) continue;
-    out.push({ publicName, sourceName, sourcePath });
-  }
-  return out;
-}
-
-// --- build resolver map ---
-const resolver = new Map(); // publicName → { sourceName, sourcePath, origin }
-
-for (const file of walkTs(GOVERNORS_DIR)) {
-  for (const entry of parseGovernor(file)) {
-    if (!resolver.has(entry.publicName)) resolver.set(entry.publicName, { ...entry, origin: file });
-  }
-}
-
-for (const entry of parseEngineStart()) {
-  if (!resolver.has(entry.publicName)) resolver.set(entry.publicName, { ...entry, origin: ENGINE_START });
-}
-
-// --- intersect with FactoryEngineMethod ---
-const engineMethods = readEngineMethodNames();
-const resolved = engineMethods.filter((n) => resolver.has(n)).map((n) => ({ publicName: n, ...resolver.get(n) }));
-const unresolved = engineMethods.filter((n) => !resolver.has(n));
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const outputDir = join(ROOT, 'src/assemblies/engines/types');
+const OUT = join(outputDir, 'methodSignatures.ts');
+const DIRECT_OUT = join(outputDir, 'asyncEngineDirectMethods.ts');
+const { descriptors, directNames } = readDescriptors(ROOT, outputDir);
+const resolved = descriptors
+  .filter((entry) => entry.source)
+  .map(({ publicName, source }) => ({ publicName, ...source }));
 
 // --- group by source path so the import list stays clean ---
 const byPath = new Map();
@@ -267,9 +100,6 @@ lines.push('');
 const content = lines.join('\n');
 // These mounts bypass asyncEngineInvoke. Keep their inventory generated so a newly
 // mounted synchronous helper cannot silently acquire a Promise return type.
-const directNames = [
-  ...new Set(Array.from(readFileSync(ENGINE_START, 'utf8').matchAll(/\bengine\.(\w+)\s*=/g), (match) => match[1])),
-].sort();
 const directContent = [
   '/** Generated by scripts/generateMethodSignatures.mjs. Do not hand-edit. */',
   'export type AsyncEngineDirectMethod =',
@@ -277,30 +107,22 @@ const directContent = [
   '',
 ].join('\n');
 
-// --- write or check ---
-const checkMode = process.argv.includes('--check');
+const kinds = Object.fromEntries(
+  descriptors.map(({ publicName, kind }) => [publicName, kind]).sort(([a], [b]) => a.localeCompare(b)),
+);
 const outputs = [
   [OUT, content],
   [DIRECT_OUT, directContent],
+  [join(ROOT, 'src/tests/testHarness/queryPurity/methodKinds.json'), JSON.stringify(kinds, null, 2) + '\n'],
 ];
-
-if (checkMode) {
-  if (
-    outputs.some(([path, generated]) => !existsSync(path) || readFileSync(path, 'utf8').trim() !== generated.trim())
-  ) {
-    process.stderr.write('[gen:method-signatures] drift detected. Run `pnpm gen:method-signatures`.\n');
-    process.exit(1);
-  }
-  process.stdout.write(`[gen:method-signatures] up to date (${resolved.length}/${engineMethods.length})\n`);
-} else {
-  writeFileSync(OUT, content);
-  writeFileSync(DIRECT_OUT, directContent);
-  const total = engineMethods.length;
-  const covered = resolved.length;
-  const pct = ((covered / total) * 100).toFixed(1);
-  process.stdout.write(`[gen:method-signatures] wrote ${relative(ROOT, OUT)}\n`);
-  process.stdout.write(`  ${covered}/${total} (${pct}%) typed; ${unresolved.length} fall through to Record fallback\n`);
-  if (process.env.GEN_VERBOSE && unresolved.length) {
-    process.stdout.write(`  unresolved (first 30): ${unresolved.slice(0, 30).join(', ')}\n`);
+const check = process.argv.includes('--check');
+for (const [path, generated] of outputs) {
+  if (!check) writeFileSync(path, generated);
+  else if (!existsSync(path) || readFileSync(path, 'utf8') !== generated) {
+    console.error(`[engine-methods] stale ${path}; run pnpm gen:method-signatures`);
+    process.exitCode = 1;
   }
 }
+console.log(
+  `[engine-methods] ${resolved.length} signatures, ${directNames.length} direct mounts, ${descriptors.length} kinds`,
+);
