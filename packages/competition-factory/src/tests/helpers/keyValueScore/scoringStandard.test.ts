@@ -1,4 +1,4 @@
-import { keyValueMatchUpScore } from '@Helpers/keyValueScore/keyValueScore';
+import { keyValueMatchUpScore } from '@Scoring/entry/keyValueScore/keyValueScore';
 import { stressTests } from './standardStress';
 import { expect, it } from 'vitest';
 

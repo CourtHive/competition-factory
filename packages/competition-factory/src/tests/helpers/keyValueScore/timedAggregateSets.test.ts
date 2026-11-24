@@ -1,4 +1,4 @@
-import { keyValueMatchUpScore, keyValueScore } from '@Helpers/keyValueScore/keyValueScore';
+import { keyValueMatchUpScore, keyValueScore } from '@Scoring/entry/keyValueScore/keyValueScore';
 import { enterValues } from './primitives';
 import { expect, it } from 'vitest';
 

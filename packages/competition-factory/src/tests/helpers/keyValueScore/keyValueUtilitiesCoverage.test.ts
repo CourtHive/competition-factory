@@ -8,7 +8,7 @@ import {
   getHighTiebreakValue,
   getMatchUpWinner,
   removeFromScore,
-} from '@Helpers/keyValueScore/keyValueUtilities';
+} from '@Scoring/entry/keyValueScore/keyValueUtilities';
 
 import { FORMAT_STANDARD, FORMAT_ATP_DOUBLES } from '@Fixtures/scoring/matchUpFormats';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
