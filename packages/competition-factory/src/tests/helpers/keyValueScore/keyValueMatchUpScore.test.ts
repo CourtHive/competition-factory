@@ -1,4 +1,4 @@
-import { keyValueMatchUpScore } from '@Helpers/keyValueScore/keyValueScore';
+import { keyValueMatchUpScore } from '@Scoring/entry/keyValueScore/keyValueScore';
 import { expect, it } from 'vitest';
 
 // Fixtures
