@@ -1,6 +1,6 @@
 import { getDevContext, setDevContext } from '@Global/state/globalState';
 import { getGlobalLog, purgeGlobalLog } from '@Functions/global/globalLog';
-import { buildCounters } from '@Query/scoring/statistics/counters';
+import { buildCounters } from '@Scoring/statistics/counters';
 import { expect, it } from 'vitest';
 
 it('routes scoring diagnostics through the installed engine log and honors dev context', () => {

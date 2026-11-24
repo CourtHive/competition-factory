@@ -1,8 +1,8 @@
-import { calculateMatchStatistics, enrichPointHistory, getQuickStats } from '@Query/scoring/statistics/standalone';
-import { buildCounters, getCountersSummary, filterCountersBySet } from '@Query/scoring/statistics/counters';
-import { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
-import { calculateStats } from '@Query/scoring/statistics/calculator';
-import { PointWithMetadata } from '@Query/scoring/statistics/types';
+import { calculateMatchStatistics, enrichPointHistory, getQuickStats } from '@Scoring/statistics/standalone';
+import { buildCounters, getCountersSummary, filterCountersBySet } from '@Scoring/statistics/counters';
+import { toStatObjects } from '@Scoring/statistics/toStatObjects';
+import { calculateStats } from '@Scoring/statistics/calculator';
+import { PointWithMetadata } from '@Scoring/statistics/types';
 import { describe, expect, it } from 'vitest';
 import {
   enrichPoint,
@@ -10,7 +10,7 @@ import {
   parsePointInput,
   categorizePoint,
   getPointType,
-} from '@Query/scoring/statistics/pointParser';
+} from '@Scoring/statistics/pointParser';
 
 // ─── Test Fixtures ────────────────────────────────────────────────────
 

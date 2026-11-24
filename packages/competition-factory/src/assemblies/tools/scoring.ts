@@ -4,12 +4,12 @@
  * also exported by `scoreGovernor`, which mounts them on engines that cannot call them correctly; that placement goes
  * at 8.0.0.
  */
-export { calculateMatchStatistics, enrichPointHistory, getQuickStats } from '@Query/scoring/statistics/standalone';
+export { calculateMatchStatistics, enrichPointHistory, getQuickStats } from '@Scoring/statistics/standalone';
 export { validateSetScore, validateMatchUpScore } from '@Scoring/analysis/validateMatchUpScore';
 export { parseScoreString } from '@Scoring/parse/parseScoreStringTool';
 export { deduceMatchUpFormat } from '@Helpers/matchUpFormatCode/deduceMatchUpFormat';
 export { validateMCPMatch, exportMatchUpJSON } from '@Scoring/replay/mcpValidator';
-export { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
+export { toStatObjects } from '@Scoring/statistics/toStatObjects';
 export { getSetScoreString } from '@Scoring/replay/validateMatchUp';
 export { calculatePointsTo } from '@Scoring/v1/pointsToCalculator';
 export { resolvePointValue } from '@Scoring/v1/resolvePointValue';

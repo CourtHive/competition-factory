@@ -54,7 +54,7 @@ export type {
   StatisticsOptions,
   StatCounters,
   StatObject,
-} from '@Query/scoring/statistics/types';
+} from '@Scoring/statistics/types';
 
 // Scoring validators
 export { validateMatchUp, validateSet, getSetScoreString } from '@Scoring/replay/validateMatchUp';
