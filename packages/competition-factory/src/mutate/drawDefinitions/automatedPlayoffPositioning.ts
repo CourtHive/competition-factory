@@ -2,7 +2,7 @@ import { disableNotifications, enableNotifications } from '@Global/state/globalS
 import { automatedPositioning, positionStructure } from './automatedPositioning';
 import { getMinFinishingPositionRange } from '@Functions/sorters/structureSort';
 import { isCompletedStructure } from '@Query/drawDefinition/structureActions';
-import { composeThenWrite, isStoredDraw } from '@Tools/composeThenWrite';
+import { composeThenWrite, isStoredDraw } from '@Mutate/drawDefinitions/composeThenWrite';
 import { getPlayoffStructures } from '@Query/structure/structureGetter';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';

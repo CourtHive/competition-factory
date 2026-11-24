@@ -12,7 +12,7 @@ import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { resetLineUps } from '@Mutate/matchUps/lineUps/resetLineUps';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { composeDrawMutation } from '@Tools/composeThenWrite';
+import { composeDrawMutation } from '@Mutate/drawDefinitions/composeThenWrite';
 import { findStructure } from '@Acquire/findStructure';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 

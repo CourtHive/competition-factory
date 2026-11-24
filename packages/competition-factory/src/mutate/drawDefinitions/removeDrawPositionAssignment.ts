@@ -12,7 +12,7 @@ import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
 import { destroyPairEntry } from '@Mutate/entries/destroyPairEntry';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { composeDrawMutation } from '@Tools/composeThenWrite';
+import { composeDrawMutation } from '@Mutate/drawDefinitions/composeThenWrite';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
