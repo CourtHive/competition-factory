@@ -2,12 +2,7 @@ import { hasForwardByeArrival, predictForwardByePassage } from './plan/forwardBy
 import { relabelKeepsReservation } from './plan/standingReservation';
 import { heldLoserByeClaims } from './plan/heldLoserBye';
 import { clearedSingleExit, correctedSingleExit, refreshedArrivalOps, relabelledExit } from './plan/exitCorrections';
-import {
-  getCapturedClock,
-  getCapturedStamps,
-  syncNoticeEffectsInstalled,
-  writeLegacyEnabled,
-} from '@Global/state/globalState';
+import { getCapturedClock, getCapturedStamps, writeLegacyEnabled } from '@Global/state/globalState';
 import { producedRelayAfterOps, unwoundOps, unwoundPath, unwoundView } from './plan/unwindPath';
 import { standaloneBareWinnerOps, standaloneCarriedWinnerOps } from './plan/standaloneIndirect';
 import { carriedReason, heldByeCarryWithdrawal, retainedByeCarry } from './plan/carriedExit';
@@ -426,14 +421,9 @@ export function planOutcome(args: PlanArgs): OutcomePlan {
   // a TEAM line's result numbers it in its collection's finishing order (a deciding line's dual is planned in its plan)
   const ordered = !plan.ops || args.asDual ? plan : { ...plan, ops: withFinishingOrder(plan.ops, args.drawDefinition) };
   // Singles passage has no finishing-order effects. Keep its certified ops array for finalizePlan's fold.
-  if (
-    (ordered.abstain === 'cascade' || ordered.abstain === 'exit') &&
-    hasForwardByeArrival(args) &&
-    syncNoticeEffectsInstalled &&
-    !recordReason(args)
-  ) {
+  if ((ordered.abstain === 'cascade' || ordered.abstain === 'exit') && hasForwardByeArrival(args)) {
     const passage = predictForwardByePassage(args);
-    if (passage.ops) {
+    if (passage.ops && !recordReason(args)) {
       const certified = args.clockFree ? args.certifiesPhases?.(passage.ops) : args.settles?.(passage.ops) === false;
       if (certified) return wholeCarry(args, passage);
     }

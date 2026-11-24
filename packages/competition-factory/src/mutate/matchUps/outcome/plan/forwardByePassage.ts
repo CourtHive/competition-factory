@@ -11,7 +11,8 @@ import {
 import { arrivalOps, arrivalReturnOps } from './directionOps';
 import { bareResultRequest, positionsOf, structureStamps } from './planShared';
 import { tiebreakPointsWarnings } from '@Scoring/analysis/validateScore';
-import { syncNoticeEffectsInstalled, writeLegacyEnabled } from '@Global/state/globalState';
+import syncGlobalState from '@Global/state/syncGlobalState';
+import { getProvider, writeLegacyEnabled } from '@Global/state/globalState';
 import { isDoubleExit } from '@Validators/isExit';
 import { BYE, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
@@ -38,12 +39,32 @@ export function hasForwardByeArrival({ route, view, write }: PlanArgs): boolean 
   );
 }
 
+// Snapshot the built-in methods, not the installed provider. A provider can change a method in place.
+const syncEffects = Object.entries(syncGlobalState).filter(([key]) => key !== 'handleCaughtError');
+function usesSyncEffects(): boolean {
+  const provider = getProvider();
+  try {
+    // Reads a data descriptor without invoking an installed accessor.
+    return (
+      Object.getPrototypeOf(provider) === Object.prototype &&
+      Reflect.ownKeys(provider).length === syncEffects.length + 1 &&
+      Object.hasOwn(provider, 'handleCaughtError') &&
+      syncEffects.every(
+        ([key, implementation]) => Object.getOwnPropertyDescriptor(provider, key)?.value === implementation,
+      )
+    );
+  } catch {
+    // A proxy can refuse descriptor inspection. Its existing writer still owns the call.
+    return false;
+  }
+}
+
 /** Candidate hook at planCall's pre-write boundary. The differential can fold and certify the
  * returned ops with the normal executor. No recording, clock capture or routing takes place here. */
 export function predictForwardByePassage(args: PlanArgs): Prediction {
   if (!hasForwardByeArrival(args)) return { abstain: 'no forward BYE arrival' };
   // A custom provider can observe the copy's draft callbacks and the recorded delivery that follows.
-  if (!syncNoticeEffectsInstalled) return { abstain: 'custom state provider' };
+  if (!usesSyncEffects()) return { abstain: 'custom state provider' };
   try {
     return predict(args);
   } catch (error) {

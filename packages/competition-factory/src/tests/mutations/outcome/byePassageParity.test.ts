@@ -2,13 +2,14 @@ import { getProvider, setOutcomePipeline, setStateProvider, setSubscriptions } f
 import { replaceWithBye } from '@Tests/mutations/drawDefinitions/testingUtilities';
 import { compareHeldClaims } from '@Tests/testHarness/outcome/compareHeldClaims';
 import { playCall, prepareCall } from '@Tests/testHarness/outcome/recordedCallHarness';
+import syncGlobalState from '@Global/state/syncGlobalState';
 import * as noticeIdentity from '@Global/state/noticeIdentity';
 import { objectGraph } from '@Tests/testHarness/outcome/objectGraph';
 import * as nestedRecorder from '@Mutate/matchUps/outcome/plan/recordedCascade';
 import { setClock } from '@Tools/clock';
 import mocksEngine from '@Assemblies/engines/mock';
 import engine from '@Engines/syncEngine';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 import {
   DOUBLE_ELIMINATION,
@@ -19,6 +20,16 @@ import {
 } from '@Constants/drawDefinitionConstants';
 import { COMPLETED, DOUBLE_DEFAULT, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_FEED_IN, POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
+
+// The shared query-purity observer wraps its provider's notice methods. Use the production
+// implementations for this fixture and preserve the harness's rethrowing error handler.
+beforeEach(() => {
+  const previous = getProvider();
+  setStateProvider({ ...syncGlobalState, handleCaughtError: previous.handleCaughtError });
+  return () => {
+    setStateProvider(previous);
+  };
+});
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -157,6 +168,20 @@ it('preserves the recording path for a provider that observes notice writes', ()
     setStateProvider({ ...original, addNotice });
     compareHeldClaims(call, false);
     expect(addNotice).toHaveBeenCalled();
+  } finally {
+    setStateProvider(original);
+  }
+});
+
+it('preserves recording when a sync provider replaces addNotice after installation', () => {
+  const call = prepareCall(reservedBye);
+  const original = getProvider();
+  const provider = { ...syncGlobalState };
+  setStateProvider(provider);
+  try {
+    provider.addNotice = vi.fn(syncGlobalState.addNotice);
+    compareHeldClaims(call, false);
+    expect(provider.addNotice).toHaveBeenCalled();
   } finally {
     setStateProvider(original);
   }

@@ -117,21 +117,6 @@ const globalState: GlobalStateTypes = {
 };
 
 let _globalStateProvider: any = syncGlobalState;
-/** The successful-call effects supplied at installation. Observers may instrument these methods
- * afterward. Reinstalling a provider rechecks its contract, including a changed addNotice. */
-export let syncNoticeEffectsInstalled = true;
-const syncMembers = Object.entries(syncGlobalState);
-function suppliesSyncEffects(provider: StateProvider): boolean {
-  if (
-    Object.getPrototypeOf(provider) !== Object.getPrototypeOf(syncGlobalState) ||
-    Reflect.ownKeys(provider).length !== syncMembers.length
-  )
-    return false;
-  return syncMembers.every(([key, implementation]) => {
-    const member = Object.getOwnPropertyDescriptor(provider, key);
-    return member && 'value' in member && (key === 'handleCaughtError' || member.value === implementation);
-  });
-}
 installCallRuntime(syncGlobalState);
 installCopySnapshot(deepCopyEnabled());
 
@@ -166,7 +151,6 @@ export function setStateProvider(globalStateProvider?: StateProvider) {
     if (providerMethods.length !== requiredStateProviderMethods.length) {
       throw new Error('Global state provider is missing required methods');
     } else {
-      syncNoticeEffectsInstalled = suppliesSyncEffects(globalStateProvider);
       _globalStateProvider = globalStateProvider;
       installCallRuntime(_globalStateProvider);
       // optional, so a provider that predates them still installs; but without them an engine call
