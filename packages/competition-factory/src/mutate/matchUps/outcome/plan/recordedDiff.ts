@@ -207,7 +207,7 @@ type Indexable = Record<string, unknown>;
  * cascade applies its prefix first (`recordedCascade.ts`), so its copy no longer reads as the stored record.
  */
 export function storedBaseline(originals: WeakMap<object, object>): RecordedBaseline {
-  const { copiedFrom, sameKeys } = provingWalk(originals);
+  const { copiedFrom, compareKeys } = provingWalk(originals, { identity: true });
   const own = (entity: object, children: string[]) => Object.keys(entity).filter((key) => !children.includes(key));
   const measured = (state: object, storedState: object) => {
     if (shapeOf(state) !== shapeOf(storedState)) return false;
@@ -220,41 +220,86 @@ export function storedBaseline(originals: WeakMap<object, object>): RecordedBase
       // every entity recordedOps is handed is a copy (`placed`: the run added and moved none)
       const stored = originals.get(entity);
       if (!stored) return false;
-      const proved = sameKeys(entity as Indexable, stored as Indexable, own(entity, children), own(stored, children));
-      return proved || measured(ownState(entity, children), ownState(stored, children));
+      const walked = compareKeys(
+        entity as Indexable,
+        stored as Indexable,
+        own(entity, children),
+        own(stored, children),
+      );
+      if (walked !== UNKNOWN) return walked === SAME;
+      return measured(ownState(entity, children), ownState(stored, children));
     },
     notices: new Set(getNoticeBuffer() ?? []),
   };
 }
 
+/** what the walk below found: proved the same, proved changed, or neither (the text decides) */
+const SAME = 0;
+const CHANGED = 1;
+const UNKNOWN = 2;
+type Walked = typeof SAME | typeof CHANGED | typeof UNKNOWN;
+
+/** a primitive whose text is its value, one for one: two that differ read differently, in either text */
+const textual = (value: unknown) =>
+  (typeof value === 'string' && value !== UNDEFINED) ||
+  typeof value === 'boolean' ||
+  (typeof value === 'number' && Number.isFinite(value));
+
 /**
- * The walk `storedBaseline` proves with: true only where the copy's value is, place for place, what `cloneState` made
- * of the stored one and the run left it (the same keys in the same order, the same primitives, each object the copy
- * made there of the stored object, or the very value held by reference). False says only that it could not prove it.
- * `leaf`: a pair of objects, one of the copy and its stored counterpart, read as equal wherever both stand and not
- * walked (the draw, where what is outside it is compared).
+ * The walk `storedBaseline` and `outsideAsStored` decide with. SAME only where the copy's value is, place for place,
+ * what `cloneState` made of the stored one and the run left it: the same keys in the same order, the same primitives,
+ * each object the copy made there of the stored object (or the very value held by reference). CHANGED only where the
+ * verdict it stands for is decided by what the walk found, whatever follows: two primitives whose text is their value
+ * and differ, or an array of another length; and, where the verdict counts the objects holding the fields
+ * (`identity`), an object that is not the copy made there, or an object where there was none or none where there was.
+ * The text cannot tell everything else apart (a function or a symbol, which it drops; NaN or an infinity, which it
+ * writes as null; a key added, removed or moved, which may hold one of those; undefined beside null, in an array), so
+ * it is UNKNOWN, and the caller measures the text.
+ *
+ * Every place before the one that decides was SAME, so the place stands at the same position in both texts and in
+ * both lists of objects (`objectsOf`). `leaf`: a pair, an object of the copy and its stored counterpart, read as the
+ * same wherever both stand and not walked (the draw, where what is outside it is compared).
  */
-function provingWalk(originals: WeakMap<object, object>, leaf?: [copied: object, stored: object]) {
+function provingWalk(
+  originals: WeakMap<object, object>,
+  { identity, leaf }: { identity: boolean; leaf?: [copied: object, stored: object] },
+) {
   // the object at a place of the copy is the one the copy held there before the run
   const copiedFrom = (held: object, stored: object) =>
     isPlainContainer(stored) ? originals.get(held) === stored : held === stored;
-  const same = (held: unknown, stored: unknown): boolean => {
-    if (typeof held !== 'object' || held === null) return held === stored;
-    if (leaf && (held === leaf[0] || stored === leaf[1])) return held === leaf[0] && stored === leaf[1];
-    if (typeof stored !== 'object' || stored === null || !copiedFrom(held, stored)) return false;
-    if (!isPlainContainer(held)) return true;
-    if (Array.isArray(held) && held.length !== (stored as unknown[]).length) return false;
-    return sameKeys(held as Indexable, stored as Indexable, Object.keys(held), Object.keys(stored));
+  const different = identity ? CHANGED : UNKNOWN;
+  const comparePrimitive = (held: unknown, stored: unknown): Walked => {
+    // a bigint is measured, where the text throws on it as it always has
+    if (typeof held === 'bigint' || typeof stored === 'bigint') return UNKNOWN;
+    if (held === stored) return typeof held === 'number' && !Number.isFinite(held) ? UNKNOWN : SAME;
+    if (typeof stored === 'object' && stored !== null) return different;
+    if (textual(held) && textual(stored)) return CHANGED;
+    // undefined and null: one text marks undefined (`shapeOf`), the other drops it, or writes it as null in an array
+    const empty = (value: unknown) => value === undefined || value === null;
+    if (identity && (empty(held) || textual(held)) && (empty(stored) || textual(stored))) return CHANGED;
+    return UNKNOWN;
   };
-  const sameKeys = (held: Indexable, stored: Indexable, keys: string[], storedKeys: string[]) => {
-    if (keys.length !== storedKeys.length) return false;
+  const compare = (held: unknown, stored: unknown): Walked => {
+    if (typeof held !== 'object' || held === null) return comparePrimitive(held, stored);
+    if (leaf && (held === leaf[0] || stored === leaf[1]))
+      return held === leaf[0] && stored === leaf[1] ? SAME : UNKNOWN;
+    if (typeof stored !== 'object' || stored === null) return different;
+    if (!copiedFrom(held, stored)) return different;
+    if (!isPlainContainer(held)) return SAME;
+    if (Array.isArray(held) && held.length !== (stored as unknown[]).length) return CHANGED;
+    return compareKeys(held as Indexable, stored as Indexable, Object.keys(held), Object.keys(stored));
+  };
+  const compareKeys = (held: Indexable, stored: Indexable, keys: string[], storedKeys: string[]): Walked => {
+    if (keys.length !== storedKeys.length) return UNKNOWN;
     for (let at = 0; at < keys.length; at += 1) {
       const key = keys[at];
-      if (key !== storedKeys[at] || !same(held[key], stored[key])) return false;
+      if (key !== storedKeys[at]) return UNKNOWN;
+      const walked = compare(held[key], stored[key]);
+      if (walked !== SAME) return walked;
     }
-    return true;
+    return SAME;
   };
-  return { copiedFrom, same, sameKeys };
+  return { copiedFrom, compare, compareKeys };
 }
 
 /**
@@ -272,8 +317,13 @@ export function outsideAsStored({
   copied: { tournamentRecord?: unknown; event?: unknown; drawDefinition: object };
   stored: { tournamentRecord?: unknown; event?: unknown; drawDefinition: object };
 }): boolean {
-  const { same } = provingWalk(originals, [copied.drawDefinition, stored.drawDefinition]);
-  if (same(copied.tournamentRecord, stored.tournamentRecord) && same(copied.event, stored.event)) return true;
+  const { compare } = provingWalk(originals, {
+    identity: false,
+    leaf: [copied.drawDefinition, stored.drawDefinition],
+  });
+  const walked = compare(copied.tournamentRecord, stored.tournamentRecord);
+  const both = walked === SAME ? compare(copied.event, stored.event) : walked;
+  if (both !== UNKNOWN) return both === SAME;
   const text = ({ tournamentRecord, event, drawDefinition }: typeof copied) =>
     JSON.stringify({ tournamentRecord, event }, (_key, value) => (value === drawDefinition ? 0 : value));
   return text(copied) === text(stored);

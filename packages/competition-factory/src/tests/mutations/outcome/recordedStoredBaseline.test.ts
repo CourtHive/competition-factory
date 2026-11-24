@@ -149,6 +149,40 @@ const WRITES: {
     write: (copy) => (firstMatchUp(copy).fn = () => 'another'),
   },
   {
+    label: 'a number made NaN',
+    prepare: (stored) => (firstMatchUp(stored).counted = 1),
+    write: (copy) => (firstMatchUp(copy).counted = Number.NaN),
+    changed: (copy) => firstMatchUp(copy).matchUpId,
+  },
+  // JSON writes both as null: the reading calls this unchanged
+  {
+    label: 'an infinity made the other',
+    prepare: (stored) => (firstMatchUp(stored).counted = Number.POSITIVE_INFINITY),
+    write: (copy) => (firstMatchUp(copy).counted = Number.NEGATIVE_INFINITY),
+  },
+  {
+    label: 'null made undefined',
+    prepare: (stored) => (firstMatchUp(stored).held = null),
+    write: (copy) => (firstMatchUp(copy).held = undefined),
+    changed: (copy) => firstMatchUp(copy).matchUpId,
+  },
+  {
+    label: 'an object made a primitive',
+    write: (copy) => (firstMatchUp(copy).score = 'none'),
+    changed: (copy) => firstMatchUp(copy).matchUpId,
+  },
+  {
+    label: 'a primitive made an object',
+    write: (copy) => (firstMatchUp(copy).matchUpStatus = { matchUpStatus: firstMatchUp(copy).matchUpStatus }),
+    changed: (copy) => firstMatchUp(copy).matchUpId,
+  },
+  {
+    label: 'a function replaced, then a field written after it',
+    prepare: (stored) => Object.assign(firstMatchUp(stored), { fn: () => 'one', after: 'kept' }),
+    write: (copy) => Object.assign(firstMatchUp(copy), { fn: () => 'another', after: 'written' }),
+    changed: (copy) => firstMatchUp(copy).matchUpId,
+  },
+  {
     label: "a structure's own field",
     write: (copy) => ((copy.drawDefinition.structures as any)[0].structureName = 'renamed'),
     changed: (copy) => (copy.drawDefinition.structures as any)[0].structureId,
@@ -163,7 +197,7 @@ const WRITES: {
 describe('storedBaseline gives readBefore’s verdict', () => {
   for (const [drawType, eventType] of [[DOUBLE_ELIMINATION], [ROUND_ROBIN, TEAM]] as [string, string?][])
     for (const { label, prepare, write, changed } of WRITES)
-      it(`${drawType}${eventType ? ` ${eventType}` : ''}: ${label}`, () => {
+      it(`${[drawType, eventType].filter(Boolean).join(' ')}: ${label}`, () => {
         const stored = fixture(drawType, eventType, drawType === DOUBLE_ELIMINATION ? 16 : 4);
         prepare?.(stored);
         const results = verdicts(stored, write);
@@ -193,6 +227,12 @@ describe('outsideAsStored gives the text comparison’s verdict', () => {
       true,
     ],
     ['the draw moved off the event', (copy) => (copy.event.drawDefinitions as any).pop(), false],
+    [
+      'a participant field made undefined',
+      (copy) => ((copy.tournamentRecord.participants as any)[0].participantName = undefined),
+      false,
+    ],
+    ['an outside primitive made an object', (copy) => ((copy.event as any).eventName = { eventName: 'x' }), false],
   ];
   for (const [label, write, expected] of CASES)
     it(label, () => {
