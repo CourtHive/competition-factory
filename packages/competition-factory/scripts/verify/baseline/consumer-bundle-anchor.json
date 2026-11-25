@@ -30,6 +30,61 @@
     "syncEngine + governors subpath namespace": {
       "raw": 834327,
       "gzip": 252153
+    },
+    "scoreGovernor + tools/scoring subpath + fixtures": {
+      "raw": 471869,
+      "gzip": 141561,
+      "seeded": "2026-11-25"
+    },
+    "tools/draws subpath": {
+      "raw": 9879,
+      "gzip": 3937,
+      "seeded": "2026-11-25"
+    },
+    "tools/entries subpath": {
+      "raw": 10387,
+      "gzip": 3886,
+      "seeded": "2026-11-25"
+    },
+    "tools/formats subpath": {
+      "raw": 33968,
+      "gzip": 11720,
+      "seeded": "2026-11-25"
+    },
+    "tools/matchUps subpath": {
+      "raw": 277528,
+      "gzip": 83873,
+      "seeded": "2026-11-25"
+    },
+    "tools/officiating subpath": {
+      "raw": 1376,
+      "gzip": 749,
+      "seeded": "2026-11-25"
+    },
+    "tools/publishing subpath": {
+      "raw": 3072,
+      "gzip": 1371,
+      "seeded": "2026-11-25"
+    },
+    "tools/rankings subpath": {
+      "raw": 76060,
+      "gzip": 23195,
+      "seeded": "2026-11-25"
+    },
+    "tools/sanctioning subpath": {
+      "raw": 2888,
+      "gzip": 1348,
+      "seeded": "2026-11-25"
+    },
+    "tools/scoring subpath": {
+      "raw": 154413,
+      "gzip": 48847,
+      "seeded": "2026-11-25"
+    },
+    "tools/seasons subpath": {
+      "raw": 124999,
+      "gzip": 39279,
+      "seeded": "2026-11-25"
     }
   }
 }
