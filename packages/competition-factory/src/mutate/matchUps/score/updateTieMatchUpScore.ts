@@ -1,4 +1,5 @@
 import { generateTieMatchUpScore } from '@Query/matchUp/tieMatchUpScore/generateTieMatchUpScore';
+import { isDrawnDual } from '@Query/matchUp/tieMatchUpScore/isDrawnDual';
 import { resolveTieScoreSource } from '@Query/hierarchical/tieFormats/resolveTieScoreSource';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
@@ -160,8 +161,10 @@ export function updateTieMatchUpScore(params: UpdateTieMatchUpScoreArgs): {
   };
 
   const hasWinner = winningSide && [1, 2].includes(winningSide);
+  // a round robin tie whose lines all finished level is a draw: COMPLETED, no winner (`isDrawnDual`)
+  const drawn = isDrawnDual({ tieMatchUps: matchUp.tieMatchUps, winningSide, structure, set });
   const newMatchUpStatus =
-    (hasWinner && COMPLETED) ||
+    ((hasWinner || drawn) && COMPLETED) ||
     (isActiveMatchUp({
       matchUpStatus: matchUpStatus ?? matchUp.matchUpStatus,
       tieMatchUps: matchUp.tieMatchUps,
