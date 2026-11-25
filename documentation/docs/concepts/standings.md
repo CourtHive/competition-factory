@@ -165,6 +165,10 @@ outcome: {
 - A TEAM dual's score is the aggregate its lines produce. A decision recorded on a level dual needs only the record
   (`score: { overtime: { decidedIn: 'EXTERNAL', decidedBy } }`): a score given to a dual without `sets` is laid over the
   aggregate, which is kept as played, and does not replace it. An explicit clear (both score strings `''`) still clears.
+- A round robin TEAM dual whose lines have all finished with the aggregate level is a draw: `COMPLETED`, no winner, the
+  aggregate kept, and `matchUpsDrawn` for both teams. It stays in progress while any line is still to be played, and it
+  returns there if a line is cleared. In elimination a level dual stays in progress until a decider or a recorded
+  decision names its winner.
 - In a round robin a level result is a draw; one decided outside the score is the winner's win, and a standings rule
   can award it differently (`decidedIn`, `decidedBy`: see the
   [round robin tally policy](../policies/roundRobinTallyPolicy.md)).

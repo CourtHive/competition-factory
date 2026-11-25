@@ -36,6 +36,7 @@ import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
+import { isDrawnDual } from '@Query/matchUp/tieMatchUpScore/isDrawnDual';
 import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
 import { addGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
 import { buildStructuralIndex } from '@Query/matchUps/structuralIndex';
@@ -2234,6 +2235,7 @@ function lineViewOf({
           projectedWinningSide,
           projectedScore,
           projectedTieMatchUps,
+          structure,
         }),
         autoCalcDisabled,
         talliedByScore:
@@ -2258,13 +2260,19 @@ function projectedDualStatus({
   projectedWinningSide,
   projectedScore,
   dualMatchUp,
+  structure,
 }: {
   projectedTieMatchUps?: HydratedMatchUp['tieMatchUps'];
   projectedWinningSide?: number;
   projectedScore?: OutcomeScore;
   dualMatchUp: HydratedMatchUp;
+  structure?: Structure;
 }): MatchUpStatusUnion {
   if (projectedWinningSide) return COMPLETED;
+  // a round robin tie whose lines all finished level is a draw, as v1 derives it (`isDrawnDual`)
+  const set = projectedScore?.sets?.[0];
+  if (isDrawnDual({ tieMatchUps: projectedTieMatchUps, winningSide: projectedWinningSide, structure, set }))
+    return COMPLETED;
   const active = isActiveMatchUp({
     matchUpStatus: dualMatchUp.matchUpStatus,
     tieMatchUps: projectedTieMatchUps,
