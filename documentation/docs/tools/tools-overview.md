@@ -28,8 +28,8 @@ so a positional function cannot be called correctly through an engine.
 - **`tools.draws`:** draw-type predicates: `isAdHocType`, `isLadder`.
 - **`tools.matchUps`:** matchUp shape validators: `validMatchUp`, `validMatchUps`.
 - **`tools.rankings`:** the rolling award window (`computeAwardWindow`, `isAwardInWindow`, `rollingPeriodDaysFrom`)
-  that `generateRankingList` applies, and `deriveRankingList`, which derives a sub-list (an age or category cut) from
-  ranked entries.
+  that `generateRankingList` applies, `deriveRankingList`, which derives a sub-list (an age or category cut) from
+  ranked entries, and the points readers `getParticipantPoints` and `getQualityWinPoints`.
 - **Availability:** the availability helpers (`hhmmToMinutes`, `generateCapacityCurve`, …) are exported from the
   standalone `availability` namespace, beside `AvailabilityEngine`.
 
