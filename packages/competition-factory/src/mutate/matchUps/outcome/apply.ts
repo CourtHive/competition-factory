@@ -4,6 +4,7 @@ import { UNANNOUNCED_WRITE, UNNAMED_TOURNAMENT } from '@Global/state/noticeIdent
 import { applyOutcomeOps, RECORDED_ENTITY, splitScoredTimeCleanup } from './ops';
 import { getInContextMatchUp } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
 import {
   liveNoticeEffects,
@@ -20,7 +21,8 @@ import {
 import { MODIFY_DRAW_DEFINITION, MODIFY_MATCHUP, UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import type { BuildViewArgs, OutcomeView, PlanShape, Route } from './types';
-import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
+import { BYE, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
 import type { ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -31,23 +33,70 @@ type ArrivalOp = Extract<OutcomeOp, { op: 'setMatchUpDrawPositions' }>;
 export type TemporalPhases = {
   result: ResultOp;
   arrival?: ArrivalOp;
+  onward?: ArrivalOp;
   sourceStructureId: string;
   /** Every input op is consumed, including the batch stamp obligations replaced by actual notices. */
   consumed: number;
 };
 
+/** Both placements must be on the winner edge of the same ordinary consolation writer.
+ * A linked loser, a decided receiving match, or an arrival with its own effects stays recorded. */
+function isWinnerByeRelay(
+  draw: DrawDefinition,
+  view: OutcomeView,
+  result: ResultOp,
+  arrival: ArrivalOp,
+  onward: ArrivalOp,
+) {
+  const side = result.winningSide;
+  if (
+    draw.drawType !== FEED_IN_CHAMPIONSHIP ||
+    !view.draw.storesEdges ||
+    view.draw.perMatchUpCompetition ||
+    view.existing.scoreHasValue ||
+    view.targets.loserMatchUpId ||
+    view.targets.winner?.matchUpStatus !== BYE ||
+    (side !== 1 && side !== 2) ||
+    view.targets.winnerThroughBye?.[side]?.matchUpId !== onward.matchUpId
+  )
+    return false;
+  const group = draw.structures?.find((s) => s.structureId === view.targets.source.structureId);
+  const matches = group && matchUpsOf(group);
+  const relay = matches?.find((m) => m.matchUpId === arrival.matchUpId);
+  const destination = matches?.find((m) => m.matchUpId === onward.matchUpId);
+  return (
+    !!relay &&
+    relay.winnerMatchUpId === onward.matchUpId &&
+    !relay.loserMatchUpId &&
+    destination?.matchUpStatus === TO_BE_PLAYED &&
+    !destination.winningSide &&
+    onward.matchUpId !== arrival.matchUpId &&
+    onward.matchUpId !== result.matchUpId
+  );
+}
+
+function plainArrival(op: OutcomeOp): op is ArrivalOp {
+  return (
+    op.op === 'setMatchUpDrawPositions' &&
+    Object.keys(op).every((key) => ['op', 'matchUpId', 'drawPositions'].includes(key))
+  );
+}
+
 /** Certify ordinary result/arrival occurrences before any live write; unsupported programs remain owed. */
-export function compileTemporalPhases({
-  args,
-  view,
-  route,
-  ops,
-}: {
-  args: BuildViewArgs;
-  view: OutcomeView;
-  route?: Route;
-  ops: OutcomeOp[];
-}): TemporalPhases | undefined {
+export function compileTemporalPhases(
+  {
+    args,
+    view,
+    route,
+    ops,
+  }: {
+    args: BuildViewArgs;
+    view: OutcomeView;
+    route?: Route;
+    ops: OutcomeOp[];
+  },
+  allowRelay = false,
+): TemporalPhases | undefined {
   const sourceStructureId = view.targets.source.structureId;
   if (route !== 'winner' || !sourceStructureId || !args.drawDefinition || !args.request.matchUpId) return undefined;
   if (view.isTeam || view.line || view.group || view.existing.winningSide || view.existing.hasSideExitProvenance)
@@ -76,20 +125,24 @@ export function compileTemporalPhases({
     return undefined;
   const writes = ops.filter((op) => op.op !== 'stampUpdatedAt');
   const arrival = writes[1];
-  if (writes.length > 2 || (arrival && arrival.op !== 'setMatchUpDrawPositions')) return undefined;
+  const onward = writes[2];
+  if (writes.length > (allowRelay ? 3 : 2) || (arrival && !plainArrival(arrival))) return undefined;
+  if (onward && !plainArrival(onward)) return undefined;
   if (arrival) {
     const target = view.targets.winner;
     if (!target || arrival.matchUpId !== view.targets.winnerMatchUpId || arrival.matchUpId === result.matchUpId)
       return undefined;
-    if (target.matchUpStatus !== TO_BE_PLAYED || target.hasBye || target.holdsResult || target.carriesExit)
+    if (onward) {
+      if (!isWinnerByeRelay(args.drawDefinition, view, result, arrival, onward)) return undefined;
+    } else if (target.matchUpStatus !== TO_BE_PLAYED || target.hasBye || target.holdsResult || target.carriesExit)
       return undefined;
-    if (Object.keys(arrival).some((key) => !['op', 'matchUpId', 'drawPositions'].includes(key))) return undefined;
   }
   // The phase compiler replaces these exact stamp obligations; an extra or missing effect must not disappear.
   const expected: OutcomeOp[] = [
     result,
     { op: 'stampUpdatedAt', entity: 'matchUp', id: result.matchUpId },
     ...(arrival ? [arrival, { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: arrival.matchUpId }] : []),
+    ...(onward ? [onward, { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: onward.matchUpId }] : []),
     { op: 'stampUpdatedAt', entity: 'structure', id: sourceStructureId },
     { op: 'stampUpdatedAt', entity: 'drawDefinition', id: args.drawDefinition.drawId },
   ];
@@ -103,7 +156,7 @@ export function compileTemporalPhases({
     })
   )
     return undefined;
-  return { result, arrival: arrival as ArrivalOp | undefined, sourceStructureId, consumed: ops.length };
+  return { result, arrival, onward, sourceStructureId, consumed: ops.length };
 }
 
 /** Execute only a previously certified complete program, preserving each writer's clock and notice boundary. */
@@ -119,6 +172,8 @@ export function applyTemporalPhases(
   const source = stored.get(phases.result.matchUpId);
   const destination = phases.arrival && stored.get(phases.arrival.matchUpId);
   if (!source || (phases.arrival && !destination)) return { error: INVALID_VALUES };
+  const onward = phases.onward && stored.get(phases.onward.matchUpId);
+  if (phases.onward && !onward) return { error: INVALID_VALUES };
   const tournamentId = tournamentRecord?.tournamentId;
   const result = applyOutcomeOps(drawDefinition, [{ ...phases.result, stampsScoredTime: false }], undefined, {
     phase: 'ordinary-result',
@@ -141,10 +196,16 @@ export function applyTemporalPhases(
       effects.notices,
     );
   announce(source, 'modifyMatchUpScore');
+
   if (phases.arrival && destination) {
     const placed = applyOutcomeOps(drawDefinition, [phases.arrival], undefined, { phase: 'ordinary-arrival' });
     if (placed.error) return { error: INVALID_VALUES, info: placed.error };
     announce(destination, 'assignMatchUpDrawPosition');
+  }
+  if (phases.onward && onward) {
+    const placed = applyOutcomeOps(drawDefinition, [phases.onward], undefined, { phase: 'ordinary-arrival' });
+    if (placed.error) return { error: INVALID_VALUES, info: placed.error };
+    announce(onward, 'assignMatchUpDrawPosition');
   }
   const action = scoredTimeAction(source);
   if (action === 'initialize') {

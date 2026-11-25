@@ -136,17 +136,28 @@ function returnedOnStored(written: ResultType, originals: WeakMap<object, object
   return true;
 }
 
-export function recordWholeCall(args: BuildViewArgs, sampledStamps?: Set<string>): RecordedCall | undefined {
+/** The whole writer's snapshot, taken after the provider's stamp scan. A native
+ * draft can inspect this same copy and hand it directly to the recorder. */
+export function prepareRecordedCopy(args: BuildViewArgs) {
+  const requested = JSON.stringify(args.request);
+  const kept = cloneState(args.request);
+  const snapshot = cloneState({
+    tournamentRecord: args.tournamentRecord,
+    drawDefinition: args.drawDefinition!,
+    event: args.event,
+  });
+  return { requested, kept, ...snapshot };
+}
+
+export function recordWholeCall(
+  args: BuildViewArgs,
+  sampledStamps?: Set<string>,
+  prepared?: ReturnType<typeof prepareRecordedCopy>,
+): RecordedCall | undefined {
   const { writeOnCopy, request } = args;
   if (!args.drawDefinition || !writeOnCopy) return undefined;
   const stampedBefore = sampledStamps ?? stampedInThisCall(args.drawDefinition);
-  const requested = JSON.stringify(request);
-  const kept = cloneState(request);
-  const { copy, originals } = cloneState({
-    tournamentRecord: args.tournamentRecord,
-    drawDefinition: args.drawDefinition,
-    event: args.event,
-  });
+  const { requested, kept, copy, originals } = prepared ?? prepareRecordedCopy(args);
   const { tournamentRecord, drawDefinition, event } = copy as RecordCopy;
   const outside = () =>
     JSON.stringify({ tournamentRecord, event }, (_key, value) => (value === drawDefinition ? 0 : value));
