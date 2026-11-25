@@ -102,11 +102,15 @@ export {
 } from '@Tools/arrays';
 
 // Stateless positional functions by domain (CA 2026-11-07): their home, rather than a governor that mounts them on
-// engines which call every method with one params object. Each module says what its domain holds.
+// engines which call every method with one params object. Each module says what its domain holds. The confirmed
+// stateless governor queries (params objects, no state) join them by domain; their engine routes are unchanged in 7.x.
+export * as officiating from './officiating';
+export * as sanctioning from './sanctioning';
 export * as publishing from './publishing';
 export * as rankings from './rankings';
 export * as matchUps from './matchUps';
 export * as formats from './formats';
+export * as seasons from './seasons';
 export * as scoring from './scoring';
 export * as entries from './entries';
 export * as draws from './draws';

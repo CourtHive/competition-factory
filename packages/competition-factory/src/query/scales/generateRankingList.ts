@@ -2,9 +2,11 @@ import { computeAwardWindow, isAwardInWindow, rollingPeriodDaysFrom, type AwardW
 import { applyRetentionAfterAging, RankingParticipantContext } from './retentionAfterAging';
 import { applyAuthorityRules, type AuthorityRules } from './authorityRules';
 import { DEFAULT_POINT_COMPONENTS } from '@Constants/rankingConstants';
+import { paramRefusal } from '@Helpers/parameters/paramRefusal';
 import { applyEligibleSourceWindow } from './eligibleSourceWindow';
 import { processBucketResults } from './processBucketResults';
 import { applyPointDecay } from './applyPointDecay';
+import type { ResultType } from '@Types/factoryTypes';
 import type {
   RankingListBucketBreakdown,
   RankingListWarning,
@@ -64,18 +66,29 @@ type GenerateRankingListArgs = AuthorityRules & {
   headToHead?: (personIdA: string, personIdB: string) => number;
 };
 
-export function generateRankingList({
-  pointAwards: awards,
-  authorityFilter,
-  authorityWeights,
-  aggregationRules = {},
-  categoryFilter,
-  asOfDate,
-  pointPoolModel = 'per-category',
-  onWarning,
-  participantContext,
-  headToHead,
-}: GenerateRankingListArgs): RankingListEntry[] {
+/**
+ * Without `pointAwards` as an array, refuses with `MISSING_VALUE` or `INVALID_VALUES` rather than throwing, so a direct
+ * call and an engine call answer alike.
+ */
+export function generateRankingList(params: GenerateRankingListArgs): RankingListEntry[];
+// eslint-disable-next-line no-redeclare -- TypeScript overload, not a second implementation
+export function generateRankingList(params?: Partial<GenerateRankingListArgs>): RankingListEntry[] | ResultType;
+// eslint-disable-next-line no-redeclare -- TypeScript overload, not a second implementation
+export function generateRankingList(params?: Partial<GenerateRankingListArgs>): RankingListEntry[] | ResultType {
+  if (!Array.isArray(params?.pointAwards))
+    return paramRefusal('pointAwards', params?.pointAwards, 'generateRankingList');
+  const {
+    pointAwards: awards,
+    authorityFilter,
+    authorityWeights,
+    aggregationRules = {},
+    categoryFilter,
+    asOfDate,
+    pointPoolModel = 'per-category',
+    onWarning,
+    participantContext,
+    headToHead,
+  } = params as GenerateRankingListArgs;
   const {
     countingBuckets,
     tiebreakCriteria = [],

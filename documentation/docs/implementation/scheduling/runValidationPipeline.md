@@ -39,7 +39,7 @@ The refreshed source-name scan found no name mentions in the scanned product sou
 - **Production governor declarations:** `availabilityGovernor`.
 - **Standalone package API after 8.0.0:** decision pending; this page does not establish a supported import.
 - **Implementation:** [`src/assemblies/governors/availabilityGovernor/validationPipeline.ts` — `runValidationPipeline`](https://github.com/CourtHive/competition-factory/blob/8c2aaca6801734223ef1e0a8127872344373fbd5/src/assemblies/governors/availabilityGovernor/validationPipeline.ts). Source paths and aliases are not package import paths.
-- **Replacement workflow:** not yet established; no supported replacement is promised.
+- **Replacement workflow:** use `availability.runValidationPipeline`, the same function on the standalone `availability` export.
 - **Test-only adapters:** may exercise this implementation independently of production engine exports; this is not evidence of product use.
 
 ## Implementation contract

@@ -50,7 +50,11 @@ const BUNDLE_OF = {
   'score-entry-state': 'score-entry-state',
   governors: 'governors',
 };
-const bundleOf = (file) => BUNDLE_OF[basename(file).replace(/\.d\.[cm]?ts$/, '')];
+// `dist/tools/<domain>.d.*`, the per-domain tools subpaths: aliases of the root's `tools.<domain>` members
+const bundleOf = (file) =>
+  /[\\/]dist[\\/]tools[\\/][^\\/]+\.d\.[cm]?ts$/.test(file)
+    ? 'tools'
+    : BUNDLE_OF[basename(file).replace(/\.d\.[cm]?ts$/, '')];
 
 const count = (list) => list.reduce((m, x) => m.set(x, (m.get(x) ?? 0) + 1), new Map());
 
@@ -65,6 +69,20 @@ export function checkFile(text, deprecations, { bundle, fileName, resolve }) {
     const sf = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true);
     if (sf.statements.some((st) => !ts.isExportDeclaration(st) || !st.moduleSpecifier))
       problems.push(`${fileName}: not a pure re-export list`);
+    if (/@deprecated\b/.test(text)) problems.push(`${fileName}: carries @deprecated tags`);
+    return { problems, byCategory: {}, total: 0 };
+  }
+  if (bundle === 'tools') {
+    // one import of the root's `tools` and a `typeof` alias per member: no declarations of its own, so no tags. A tools
+    // member is never deprecated, so a tag here would also be wrong where the alias points.
+    const sf = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true);
+    const alias = (st) =>
+      ts.isVariableStatement(st) &&
+      st.declarationList.declarations.every(
+        (d) => d.type && ts.isTypeQueryNode(d.type) && /^tools\./.test(d.type.exprName.getText(sf)),
+      );
+    if (sf.statements.some((st) => !ts.isImportDeclaration(st) && !alias(st)))
+      problems.push(`${fileName}: not a pure alias list of the root's tools`);
     if (/@deprecated\b/.test(text)) problems.push(`${fileName}: carries @deprecated tags`);
     return { problems, byCategory: {}, total: 0 };
   }
@@ -134,7 +152,7 @@ export function checkPackage(packageDir, deprecations) {
   }
   for (const [bundle, set] of totals)
     if (set.size > 1) problems.push(`the ${bundle} declaration copies carry different tag counts: ${[...set]}`);
-  for (const bundle of ['root', 'constants', 'score-entry-state', 'governors'])
+  for (const bundle of ['root', 'constants', 'score-entry-state', 'governors', 'tools'])
     if (!totals.has(bundle)) problems.push(`no ${bundle} declaration file shipped`);
   return { problems, report, files };
 }
@@ -238,6 +256,20 @@ function selfTest() {
   const expect = (label, condition) => {
     if (!condition) failures.push(label);
   };
+
+  // a tools subpath file: clean passes; a tag, or a declaration of its own, fails
+  const toolsFile = `import { tools } from '../tods-competition-factory';\n\nexport declare const a: typeof tools.scoring.a;\n`;
+  const toolsCheck = (text) => checkFile(text, deprecations, { bundle: 'tools', fileName: 'dist/tools/scoring.d.ts' });
+  expect('a tools subpath alias list passes', !toolsCheck(toolsFile).problems.length);
+  expect(
+    'a tag in a tools subpath fails',
+    toolsCheck(toolsFile.replace('export', '/** @deprecated x */\nexport')).problems.length,
+  );
+  expect(
+    'a declaration in a tools subpath fails',
+    toolsCheck(`${toolsFile}export declare function b(): void;\n`).problems.length,
+  );
+  expect('a tools subpath file is the tools bundle', bundleOf('/p/dist/tools/scoring.d.mts') === 'tools');
   const injected = injectDeprecations(ts, FIXTURE, deprecations, { bundle: 'root' });
   const byAddress = Object.fromEntries(injected.targets.map((t) => [t.address, t]));
   // b on alphaGovernor, c on alphaGovernor.query, and the positional `a` and `parseMatchUpFormat` copies; never

@@ -59,6 +59,106 @@
         "default": "./dist/governors.js"
       }
     },
+    "./tools/draws": {
+      "import": {
+        "types": "./dist/tools/draws.d.mts",
+        "default": "./dist/esm/assemblies/tools/draws.mjs"
+      },
+      "require": {
+        "types": "./dist/tools/draws.d.cts",
+        "default": "./dist/tools/draws.js"
+      }
+    },
+    "./tools/entries": {
+      "import": {
+        "types": "./dist/tools/entries.d.mts",
+        "default": "./dist/esm/assemblies/tools/entries.mjs"
+      },
+      "require": {
+        "types": "./dist/tools/entries.d.cts",
+        "default": "./dist/tools/entries.js"
+      }
+    },
+    "./tools/formats": {
+      "import": {
+        "types": "./dist/tools/formats.d.mts",
+        "default": "./dist/esm/assemblies/tools/formats.mjs"
+      },
+      "require": {
+        "types": "./dist/tools/formats.d.cts",
+        "default": "./dist/tools/formats.js"
+      }
+    },
+    "./tools/matchUps": {
+      "import": {
+        "types": "./dist/tools/matchUps.d.mts",
+        "default": "./dist/esm/assemblies/tools/matchUps.mjs"
+      },
+      "require": {
+        "types": "./dist/tools/matchUps.d.cts",
+        "default": "./dist/tools/matchUps.js"
+      }
+    },
+    "./tools/officiating": {
+      "import": {
+        "types": "./dist/tools/officiating.d.mts",
+        "default": "./dist/esm/assemblies/tools/officiating.mjs"
+      },
+      "require": {
+        "types": "./dist/tools/officiating.d.cts",
+        "default": "./dist/tools/officiating.js"
+      }
+    },
+    "./tools/publishing": {
+      "import": {
+        "types": "./dist/tools/publishing.d.mts",
+        "default": "./dist/esm/assemblies/tools/publishing.mjs"
+      },
+      "require": {
+        "types": "./dist/tools/publishing.d.cts",
+        "default": "./dist/tools/publishing.js"
+      }
+    },
+    "./tools/rankings": {
+      "import": {
+        "types": "./dist/tools/rankings.d.mts",
+        "default": "./dist/esm/assemblies/tools/rankings.mjs"
+      },
+      "require": {
+        "types": "./dist/tools/rankings.d.cts",
+        "default": "./dist/tools/rankings.js"
+      }
+    },
+    "./tools/sanctioning": {
+      "import": {
+        "types": "./dist/tools/sanctioning.d.mts",
+        "default": "./dist/esm/assemblies/tools/sanctioning.mjs"
+      },
+      "require": {
+        "types": "./dist/tools/sanctioning.d.cts",
+        "default": "./dist/tools/sanctioning.js"
+      }
+    },
+    "./tools/scoring": {
+      "import": {
+        "types": "./dist/tools/scoring.d.mts",
+        "default": "./dist/esm/assemblies/tools/scoring.mjs"
+      },
+      "require": {
+        "types": "./dist/tools/scoring.d.cts",
+        "default": "./dist/tools/scoring.js"
+      }
+    },
+    "./tools/seasons": {
+      "import": {
+        "types": "./dist/tools/seasons.d.mts",
+        "default": "./dist/esm/assemblies/tools/seasons.mjs"
+      },
+      "require": {
+        "types": "./dist/tools/seasons.d.cts",
+        "default": "./dist/tools/seasons.js"
+      }
+    },
     "./score-entry-state": {
       "import": {
         "types": "./dist/score-entry-state.d.mts",
@@ -96,6 +196,9 @@
       ],
       "governors": [
         "./dist/governors.d.ts"
+      ],
+      "tools/*": [
+        "./dist/tools/*.d.ts"
       ]
     }
   },

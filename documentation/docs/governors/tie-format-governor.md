@@ -12,6 +12,12 @@ Some methods on this page are candidates for removal from production engine expo
 import { tieFormatGovernor } from 'tods-competition-factory';
 ```
 
+:::info Also on tools
+
+These tieFormatGovernor queries read no tournament state, so each is also on `tools`, the same function, called with the same params object: `tools.formats.compareTieFormats`, `tools.formats.tieFormatGenderValidityCheck`. Their engine routes are unchanged in 7.x; see [tools by domain](/docs/tools/tools-overview#domains-stateless-functions-by-subject).
+
+:::
+
 The **tieFormatGovernor** manages the creation, modification, validation, and storage optimisation of `tieFormat` objects, which define the structure and scoring rules for TEAM matchUps.
 
 ## Introduction to tieFormats

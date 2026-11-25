@@ -12,6 +12,12 @@ Some methods on this page are candidates for removal from production engine expo
 import { matchUpGovernor } from 'tods-competition-factory';
 ```
 
+:::info Also on tools
+
+These matchUpGovernor queries read no tournament state, so each is also on `tools`, the same function, called with the same params object: `tools.matchUps.analyzeMatchUp`, `tools.matchUps.calculateMatchUpMargin`, `tools.matchUps.filterMatchUps`, `tools.matchUps.getCheckedInParticipantIds`, `tools.matchUps.getDualIssues`, `tools.matchUps.getHomeParticipantId`, `tools.matchUps.getMatchUpCheckInState`, `tools.matchUps.getMatchUpType`, `tools.matchUps.getMatchUpUpset`, `tools.matchUps.getRoundMatchUps`, `tools.matchUps.participantScheduledMatchUps`, `tools.formats.calculateWinCriteria`. Their engine routes are unchanged in 7.x; see [tools by domain](/docs/tools/tools-overview#domains-stateless-functions-by-subject).
+
+:::
+
 ## abandonTournamentMatchUps
 
 Bulk "end the tournament": sets every still-playable matchUp to `ABANDONED`. Intended for tournaments whose draws cannot be completed (for example, rain) — rather than leaving unplayed matchUps as `TO_BE_PLAYED`, a director marks them `ABANDONED` in a single call.

@@ -1,8 +1,10 @@
 import { CATEGORY_SCOPE_FIELDS, PROFILE_SCOPE_FIELDS } from '@Constants/rankingConstants';
+import { paramRefusal } from '@Helpers/parameters/paramRefusal';
 
 // types
 import type { AwardProfile, CategoryScope, DateRange } from '@Types/rankingTypes';
 import type { Category, EventTypeUnion } from '@Types/tournamentTypes';
+import type { ResultType } from '@Types/factoryTypes';
 
 /** The slice of a participant's draw participation that scopes profile selection. */
 type AwardProfileParticipation = {
@@ -38,19 +40,32 @@ function includesValue<T>(values: readonly T[], value: T | undefined): boolean {
   return value !== undefined && values.includes(value);
 }
 
-export function getAwardProfile({
-  participation = {},
-  awardProfiles,
-  wheelchairClass,
-  startDate,
-  eventType,
-  drawSize,
-  drawType,
-  category,
-  endDate,
-  gender,
-  level,
-}: GetAwardProfileArgs): { awardProfile: AwardProfile | undefined } {
+type AwardProfileResult = { awardProfile: AwardProfile | undefined };
+
+/**
+ * Without `awardProfiles` as an array, refuses with `MISSING_VALUE` or `INVALID_VALUES` rather than throwing, so a
+ * direct call and an engine call answer alike.
+ */
+export function getAwardProfile(params: GetAwardProfileArgs): AwardProfileResult;
+// eslint-disable-next-line no-redeclare -- TypeScript overload, not a second implementation
+export function getAwardProfile(params?: Partial<GetAwardProfileArgs>): AwardProfileResult | ResultType;
+// eslint-disable-next-line no-redeclare -- TypeScript overload, not a second implementation
+export function getAwardProfile(params?: Partial<GetAwardProfileArgs>): AwardProfileResult | ResultType {
+  if (!Array.isArray(params?.awardProfiles))
+    return paramRefusal('awardProfiles', params?.awardProfiles, 'getAwardProfile');
+  const {
+    participation = {},
+    awardProfiles,
+    wheelchairClass,
+    startDate,
+    eventType,
+    drawSize,
+    drawType,
+    category,
+    endDate,
+    gender,
+    level,
+  } = params as GetAwardProfileArgs;
   const { participationOrder, flightNumber, rankingStage } = participation;
 
   const isValidDateRange = (profile: AwardProfile): boolean => {

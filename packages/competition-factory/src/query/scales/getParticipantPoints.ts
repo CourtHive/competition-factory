@@ -1,6 +1,8 @@
 import type { RankingListBucketBreakdown, RankingListAward, AggregationRules } from '@Types/rankingTypes';
 import { DEFAULT_POINT_COMPONENTS } from '@Constants/rankingConstants';
+import { paramRefusal } from '@Helpers/parameters/paramRefusal';
 import { processBucketResults } from './processBucketResults';
+import type { ResultType } from '@Types/factoryTypes';
 
 type GetParticipantPointsArgs = {
   pointAwards: RankingListAward[];
@@ -8,10 +10,20 @@ type GetParticipantPointsArgs = {
   aggregationRules?: AggregationRules;
 };
 
-export function getParticipantPoints({ pointAwards, personId, aggregationRules = {} }: GetParticipantPointsArgs): {
-  buckets: RankingListBucketBreakdown[];
-  totalPoints: number;
-} {
+type ParticipantPoints = { buckets: RankingListBucketBreakdown[]; totalPoints: number };
+
+/**
+ * Without `pointAwards` as an array, refuses with `MISSING_VALUE` or `INVALID_VALUES` rather than throwing, so a direct
+ * call and an engine call answer alike.
+ */
+export function getParticipantPoints(params: GetParticipantPointsArgs): ParticipantPoints;
+// eslint-disable-next-line no-redeclare -- TypeScript overload, not a second implementation
+export function getParticipantPoints(params?: Partial<GetParticipantPointsArgs>): ParticipantPoints | ResultType;
+// eslint-disable-next-line no-redeclare -- TypeScript overload, not a second implementation
+export function getParticipantPoints(params?: Partial<GetParticipantPointsArgs>): ParticipantPoints | ResultType {
+  if (!Array.isArray(params?.pointAwards))
+    return paramRefusal('pointAwards', params?.pointAwards, 'getParticipantPoints');
+  const { pointAwards, personId, aggregationRules = {} } = params as GetParticipantPointsArgs;
   const { countingBuckets, maxResultsPerLevel, bestOfCount } = aggregationRules;
 
   // Filter to this participant's awards

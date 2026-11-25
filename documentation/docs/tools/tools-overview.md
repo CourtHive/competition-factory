@@ -6,9 +6,29 @@ The **tools** module provides utility functions for working with tournament data
 
 ## Import
 
+Import a tools domain from its own subpath, so your bundle loads that domain and nothing else:
+
+```js
+import { validateMatchUpScore, getScore } from 'tods-competition-factory/tools/scoring';
+import { parse, stringify } from 'tods-competition-factory/tools/formats';
+import { generateRankingList } from 'tods-competition-factory/tools/rankings';
+```
+
+Each domain has one: `tools/scoring`, `tools/formats`, `tools/matchUps`, `tools/draws`, `tools/entries`,
+`tools/rankings`, `tools/publishing`, `tools/seasons`, `tools/sanctioning` and `tools/officiating`. A subpath holds
+the same functions as `tools.<domain>`, under ESM, CommonJS and TypeScript (including `moduleResolution: node10`).
+Bundlers read the ESM build, where a subpath loads only that domain's own modules. The CommonJS subpath reads its
+domain from the main bundle, so global state such as the competition clock is shared with the rest of the package.
+
+The aggregate `tools` export stays in 7.x. It holds every domain and the general utilities below, and importing it
+loads every domain:
+
 ```js
 import { tools } from 'tods-competition-factory';
 ```
+
+A scoring client that needs no engine pairs `scoreGovernor` with `tools/scoring`: it bundles to about the size of
+`scoreGovernor` alone, where the aggregate `tools` adds every other domain.
 
 ## Domains: stateless functions by subject
 
@@ -34,12 +54,46 @@ so a positional function cannot be called correctly through an engine.
 - **Availability:** the availability helpers (`hhmmToMinutes`, `generateCapacityCurve`, …) are exported from the
   standalone `availability` namespace, beside `AvailabilityEngine`.
 
+### Stateless queries that take a params object
+
+Some governor queries take one params object and read no tournament state: a test calls each through an engine with
+no record, with a record loaded, and directly, and requires the same answer. They are also on `tools`, by domain, the
+same functions called the same way, so a caller that holds the values needs no engine. Their engine routes are
+unchanged in 7.x.
+
+- **`tools.scoring`:** `analyzeScore`, `analyzeSet`, `checkScoreHasValue`, `checkSetIsComplete`, `getMaxSetScore`,
+  `getSetComplement`, `getTiebreakComplement`, `keyValueScore`, `repairScore`, `retainScoreForFormat`, `validateScore`,
+  `mcpValidator`, `pbpValidator`.
+- **`tools.formats`:** the tieFormat functions `validateTieFormat`, `compareTieFormats`,
+  `tieFormatGenderValidityCheck` and `calculateWinCriteria`.
+- **`tools.matchUps`:** `analyzeMatchUp`, `calculateMatchUpMargin`, `filterMatchUps`, `getCheckedInParticipantIds`,
+  `getDualIssues`, `getHomeParticipantId`, `getMatchUpCheckInState`, `getMatchUpType`, `getMatchUpUpset`,
+  `getRoundMatchUps`, `participantScheduledMatchUps`, `matchUpScheduleLocked`, `courtGridRows`.
+- **`tools.draws`:** `getDrawTypeCoercion`, `getFeedInQualifyingPositions`, `getSeedingThresholds`, `getTally`,
+  `getValidGroupSizes`, `validatePlayoffGroups`.
+- **`tools.entries`:** `getEntryStatusOrdinals`, `getMaxEntryPosition`, `categoryCanContain`.
+- **`tools.rankings`:** `generateRankingList`, `getParticipantPoints`, `getAwardProfile`, `getAwardPoints`,
+  `getScaleValues`, `participantScaleItem`. Each refuses a missing required list with `MISSING_VALUE` (or
+  `INVALID_VALUES` for one that is not a list) instead of throwing, as does `deriveRankingList`.
+- **`tools.seasons`:** a box league's `getSeasonStandings`, `getSeasonMovement`, `getSeasonAdvancement`,
+  `planNextPeriod`, `validateSeason`, and `getTierMovement` between two seasons.
+- **`tools.sanctioning`:** `querySanctioningRecord`, `validateStatusTransition`, over a sanctioning record you hold.
+- **`tools.officiating`:** `queryOfficialRecord`, `validateOfficiatingStatusTransition`, over an official record you
+  hold.
+
+`seasons`, `sanctioning` and `officiating` are domains of their own because no other domain holds them; sanctioning
+and officiating are planned as separate packages. Two confirmed queries keep another name: the matchUpFormat governor's
+`isValid` is `tools.formats.isValidMatchUpFormat`, and `applyDerivedRankings` is `tools.rankings.deriveRankingList`.
+The score governor's `parseScoreString({ scoreString })` has no params-object counterpart:
+`tools.scoring.parseScoreString(scoreString, options)` is the positional reader, whose default answers alike.
+
 ```js
 import { tools } from 'tods-competition-factory';
 
 const { isValid } = tools.scoring.validateMatchUpScore(sets, 'SET3-S:6/TB7');
 const format = tools.formats.parse('SET3-S:6/TB7-F:TB10');
 const valid = tools.formats.isValidMatchUpFormat({ matchUpFormat: 'SET3-S:6/TB7-F:TB10' });
+const { roundMatchUps } = tools.matchUps.getRoundMatchUps({ matchUps });
 ```
 
 **A clock is an input.** A tool that depends on time takes the instant to judge against as `asOf` (a `Date` or an ISO
@@ -49,8 +103,9 @@ string). In 7.x it falls back to the competition clock when omitted. In 8.0.0 th
 fragments you hold (a publish detail, a fee, a format code, a set of scores) and needs no engine.
 
 In 7.x the same functions are still exported by their governors (`scoreGovernor`, `matchUpFormatGovernor`). In 8.0.0
-they leave the governors and the engines: import them from `tools` (see
-[migration to 8.0.0](/docs/migration-8.0.0)).
+the positional ones leave the governors and the engines: import them from `tools` (see
+[migration to 8.0.0](/docs/migration-8.0.0)). For a params-object query, the
+[transition index](/docs/implementation/engine-api-transition-8) records whether its engine route stays.
 
 ## Categories
 
