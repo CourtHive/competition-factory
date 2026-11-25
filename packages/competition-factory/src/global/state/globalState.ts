@@ -32,6 +32,7 @@ export {
   UNNAMED_TOURNAMENT,
   noticeModifies,
 } from './noticeIdentity';
+import { noticeValue, selectNoticeAudit } from './noticePayloadAudit';
 
 export type Notice = {
   topic: string;
@@ -401,6 +402,9 @@ export function getSchemaWriteMode(): SchemaWriteMode {
 
 /** @deprecated the outcome pipeline selector is removed in 8.0.0: v2 is the only pipeline */
 export function setOutcomePipeline(mode?: OutcomePipelineMode): { success?: boolean; error?: ErrorType } {
+  // the audit build's second argument, `{ checkNoticePayloadWrites }` (noticePayloadAudit.ts)
+  /* v8 ignore next -- @preserve: compiled out of every published bundle */
+  if (__NOTICE_PAYLOAD_DIAGNOSTICS__ && !selectNoticeAudit(mode, arguments[1])) return { error: INVALID_VALUES };
   if (mode === undefined) {
     globalState.outcomePipeline = OUTCOME_PIPELINE_DEFAULT;
     return { ...SUCCESS };
@@ -596,6 +600,8 @@ export function restoreMutationStatus(status?: boolean) {
 
 export function addNotice(notice: Notice) {
   if (typeof notice?.topic !== 'string') return;
+  /* v8 ignore next -- @preserve: compiled out of every published bundle */
+  if (__NOTICE_PAYLOAD_DIAGNOSTICS__) notice = noticeValue(notice);
   const isGlobalSubscription = globalState.globalSubscriptions[notice.topic];
   return _globalStateProvider.addNotice(notice, isGlobalSubscription);
 }
@@ -735,6 +741,8 @@ export type CallListenerArgs = {
   topic: string;
 };
 export async function callListener(payload) {
+  /* v8 ignore next -- @preserve: compiled out of every published bundle */
+  if (__NOTICE_PAYLOAD_DIAGNOSTICS__) payload = noticeValue(payload);
   return _globalStateProvider.callListener(payload, globalState.globalSubscriptions);
 }
 

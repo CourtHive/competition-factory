@@ -14,6 +14,7 @@ import {
 } from '@Global/state/globalState';
 
 import type { Directives, TournamentRecords } from '@Types/factoryTypes';
+import { originalNoticeValue } from '@Global/state/noticePayloadAudit';
 
 export type PrivateState = {
   before: TournamentRecords;
@@ -105,6 +106,9 @@ type CopyPair = { working: any; before?: any };
 function privateCopier(parentStamps?: WeakSet<object>, privateStamps?: WeakSet<object>) {
   const copies = new Map<object, CopyPair>();
   function copy(source: any, record: boolean, notice = false): CopyPair {
+    // A retained notice view can reference an entity already copied from the record or a directive.
+    /* v8 ignore next -- @preserve: compiled out of every published bundle */
+    if (__NOTICE_PAYLOAD_DIAGNOSTICS__) source = originalNoticeValue(source);
     if (source == null || (typeof source !== 'object' && typeof source !== 'function'))
       return { working: source, before: source };
     const existing = copies.get(source);

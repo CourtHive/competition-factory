@@ -306,7 +306,8 @@ describe('linked tournaments', () => {
     let observed = observe(() => tournamentEngine.linkTournaments());
     expect(observed.result.success).toEqual(true);
     expect(announced(observed)).toEqual(ids);
-    expect(observed.of(MODIFY_TOURNAMENT_DETAIL)[0].linkedTournamentIds.sort()).toEqual(ids);
+    // copied before sorting: a payload is read-only (CA ruling 27)
+    expect([...observed.of(MODIFY_TOURNAMENT_DETAIL)[0].linkedTournamentIds].sort()).toEqual(ids);
     expect(observed.violations).toEqual([]);
 
     // linked already

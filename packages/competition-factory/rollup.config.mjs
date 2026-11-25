@@ -27,6 +27,18 @@ const onwarn = (warning, warn) => {
   warn(warning);
 };
 
+// Compile-time constants (src/global/state/compileTimeConstants.d.ts), replaced after TypeScript has emitted each
+// module. `false` padded to the name's length keeps every column, so the sourcemaps need no update; tree-shaking then
+// drops each guarded statement, and with it the only imports of the notice payload detector.
+const compileTimeConstants = {
+  name: 'compile-time-constants',
+  transform(code) {
+    const name = '__NOTICE_PAYLOAD_DIAGNOSTICS__';
+    if (!code.includes(name)) return null;
+    return { code: code.replaceAll(name, 'false'.padEnd(name.length)), map: null };
+  },
+};
+
 const buildOutput = ({ packageName = 'tods-competition-factory', minified, folder, format }) => {
   const development = format === 'cjs' && !minified ? 'development.' : '';
   const subFolder = folder ? `/${folder}` : '';
@@ -84,6 +96,7 @@ function createExport({ input, folder, packageName, cjs, esm }) {
   return {
     plugins: [
       typescript({ tsconfig: './tsconfig.json', declaration: false, sourceMap: true }),
+      compileTimeConstants,
       babel({ babelHelpers: 'bundled' }),
       nodeResolve(),
       commonjs(),
@@ -120,6 +133,7 @@ const esmExport = [
     onwarn,
     plugins: [
       typescript({ tsconfig: './tsconfig.json', declaration: false, sourceMap: false, outDir: `${distPath}/esm` }),
+      compileTimeConstants,
       nodeResolve(),
       commonjs(),
       json(),

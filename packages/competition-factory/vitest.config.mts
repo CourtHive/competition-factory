@@ -65,9 +65,16 @@ const isolatedFiles = [
   ...ISOLATED_FILES,
 ];
 const shareModules = process.env.FACTORY_MATRIX_TIER === 'pr';
+
+// The read-only notice payload detector (CA ruling 27; src/global/state/noticePayloadAudit.ts). It exists only where
+// `__NOTICE_PAYLOAD_DIAGNOSTICS__` is true: here under NOTICE_PAYLOAD_WRITE_CHECK=1, never in a published bundle
+// (rollup.config.mjs). Off, each guard is dead code and the suite runs the shipped code paths. On, its setup file
+// turns the detector on for every test, and a write through any notice or callback payload fails the test.
+const auditNoticeWrites = process.env.NOTICE_PAYLOAD_WRITE_CHECK === '1';
 const testExclude = [...configDefaults.exclude, '**/scratch/**'];
 
 export default defineConfig({
+  define: { __NOTICE_PAYLOAD_DIAGNOSTICS__: JSON.stringify(auditNoticeWrites) },
   test: {
     testTimeout, // 30 seconds for slow tests; 180 under a second implementation or the differential (above)
     environment: 'node',
@@ -102,6 +109,7 @@ export default defineConfig({
     // the `legacyMode()` helper; behavioral specs cover all modes via `writeModeMatrix`.
     // setSchemaWriteModeLegacy.ts is retained for the legacyMode() helper.
     setupFiles: [
+      ...(auditNoticeWrites ? ['./src/tests/testHarness/noticePayloadWriteCheck.ts'] : []),
       './src/tests/testHarness/resetGlobalState.ts',
       './src/tests/testHarness/setSchemaWriteModeNative.ts',
       './src/tests/testHarness/seedMathRandom.ts',
@@ -136,6 +144,10 @@ export default defineConfig({
         'src/mutate/score/staticScoreChange/**',
         'src/mutate/matchUps/score/history/**',
         'src/tests/testHarness/**',
+        // the read-only notice payload detector: compiled out of every published bundle (rollup.config.mjs), and each
+        // guard that reaches it carries a v8 ignore hint, so a flag-off run measures exactly the shipped code
+        'src/global/state/noticePayloadAudit.ts',
+        'src/global/state/compileTimeConstants.d.ts',
         // the frozen v1 standings engine: an oracle for the differential fuzz, not product code
         'src/tests/standings/v1Reference/**',
         // notice-conformance harness is test infrastructure (like testHarness/**),
