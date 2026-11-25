@@ -123,6 +123,35 @@ function governorsSubpath(root) {
   return target ? join(root, target) : undefined;
 }
 
+// Where a `tods-competition-factory/tools/<domain>` subpath resolves for a bundler, read the same way. A release
+// without the subpath has no target, so its fixture is anchored from the current build.
+const toolsSubpath = (domain) => (root) => {
+  const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+  const target = pkg.exports?.[`./tools/${domain}`]?.import?.default;
+  return target ? join(root, target) : undefined;
+};
+
+// The per-domain tools subpaths (CA 2026-11-25), each alone with every member kept live: the most a consumer of one
+// domain loads. A domain's fixture growing means its own closure grew, never that another domain joined it.
+const TOOLS_DOMAINS = [
+  'draws',
+  'entries',
+  'formats',
+  'matchUps',
+  'officiating',
+  'publishing',
+  'rankings',
+  'sanctioning',
+  'scoring',
+  'seasons',
+];
+const toolsSubpathFixtures = Object.fromEntries(
+  TOOLS_DOMAINS.map((domain) => [
+    `tools/${domain} subpath`,
+    { imports: [], namespaces: { domain: toolsSubpath(domain) }, body: 'console.log(Object.values(domain).length);' },
+  ]),
+);
+
 // Each body keeps its imports live (an unused import would itself be shaken away).
 const FIXTURES = {
   // The trap form custom-engines.md warns against. esbuild keeps every governor for any use of
@@ -144,11 +173,19 @@ const FIXTURES = {
     imports: ['syncEngine', 'queryGovernor'],
     body: 'syncEngine.importMethods(queryGovernor);\nconsole.log(typeof syncEngine.getParticipants);',
   },
-  // A scoring client: the score governor plus tools and fixtures, no engine.
+  // The aggregate `tools` export with a scoring client: it loads every tools domain by design (keepLive reads the whole
+  // namespace), and stays as it is in 7.x. The per-domain subpaths are the supported way to load one domain.
   'scoreGovernor + tools + fixtures': {
     imports: ['scoreGovernor', 'tools', 'fixtures'],
     body: keepLive(['scoreGovernor', 'tools', 'fixtures']),
   },
+  // The recommended scoring client: the score governor, the `tools/scoring` subpath and fixtures, no engine.
+  'scoreGovernor + tools/scoring subpath + fixtures': {
+    imports: ['scoreGovernor', 'fixtures'],
+    namespaces: { scoring: toolsSubpath('scoring') },
+    body: 'console.log(typeof scoreGovernor, typeof fixtures, Object.values(scoring).length);',
+  },
+  ...toolsSubpathFixtures,
   'TMX import union': {
     imports: TMX_IMPORTS,
     body: keepLive(TMX_IMPORTS),
@@ -169,6 +206,9 @@ const SHAKE_CEILINGS = {
   syncEngine: 0.05,
   'syncEngine + queryGovernor': 0.5,
   'scoreGovernor + tools + fixtures': 0.4,
+  'scoreGovernor + tools/scoring subpath + fixtures': 0.4,
+  // one tools domain alone: a domain near this ceiling is loading another domain's or the engine's code
+  ...Object.fromEntries(TOOLS_DOMAINS.map((domain) => [`tools/${domain} subpath`, 0.15])),
   'syncEngine + governors subpath namespace': 0.5,
 };
 
@@ -216,7 +256,10 @@ function areaOf(modulePath) {
 // `root` is the checkout whose dist is bundled: this one, or a release checkout for --set-anchor.
 async function measure(workdir, name, { imports, namespaces = {}, body }, root = FACTORY_ROOT) {
   const esmDir = join(root, 'dist/esm');
-  const lines = [`import { ${imports.join(', ')} } from ${JSON.stringify(join(esmDir, 'index.mjs'))};`];
+  // a subpath fixture imports nothing from the root, not an empty `import {}` of it
+  const lines = imports.length
+    ? [`import { ${imports.join(', ')} } from ${JSON.stringify(join(esmDir, 'index.mjs'))};`]
+    : [];
   for (const [local, locate] of Object.entries(namespaces)) {
     const target = locate(root);
     if (!target || !existsSync(target)) throw new Error(`${name}: no ${local} module in ${root}`);

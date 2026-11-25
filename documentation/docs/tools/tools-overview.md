@@ -6,9 +6,29 @@ The **tools** module provides utility functions for working with tournament data
 
 ## Import
 
+Import a tools domain from its own subpath, so your bundle loads that domain and nothing else:
+
+```js
+import { validateMatchUpScore, getScore } from 'tods-competition-factory/tools/scoring';
+import { parse, stringify } from 'tods-competition-factory/tools/formats';
+import { generateRankingList } from 'tods-competition-factory/tools/rankings';
+```
+
+Each domain has one: `tools/scoring`, `tools/formats`, `tools/matchUps`, `tools/draws`, `tools/entries`,
+`tools/rankings`, `tools/publishing`, `tools/seasons`, `tools/sanctioning` and `tools/officiating`. A subpath holds
+the same functions as `tools.<domain>`, under ESM, CommonJS and TypeScript (including `moduleResolution: node10`).
+Bundlers read the ESM build, where a subpath loads only that domain's own modules. The CommonJS subpath reads its
+domain from the main bundle, so global state such as the competition clock is shared with the rest of the package.
+
+The aggregate `tools` export stays in 7.x. It holds every domain and the general utilities below, and importing it
+loads every domain:
+
 ```js
 import { tools } from 'tods-competition-factory';
 ```
+
+A scoring client that needs no engine pairs `scoreGovernor` with `tools/scoring`: it bundles to about the size of
+`scoreGovernor` alone, where the aggregate `tools` adds every other domain.
 
 ## Domains: stateless functions by subject
 

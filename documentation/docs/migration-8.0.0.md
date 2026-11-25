@@ -16,14 +16,20 @@ Engine-route removal, standalone package-export retention and internal implement
 
 Governor functions that read no tournament state and take positional arguments leave the governors and the engines in
 8.0.0. An engine calls every method with one params object, so it could never call them correctly. Import them from
-their domain in `tools`, available from 7.33:
+their domain in `tools`, available from 7.33. From 7.49, import the domain from its own subpath
+(`tods-competition-factory/tools/<domain>`), which loads that domain alone; the aggregate `tools` export, which loads
+every domain, stays in 7.x:
 
 ```js
+import { validateMatchUpScore } from 'tods-competition-factory/tools/scoring';
+import { parse } from 'tods-competition-factory/tools/formats';
 import { tools } from 'tods-competition-factory';
 
-// 7.33 and later; the only route in 8.0.0
+// 7.49 and later: the domain's subpath, recommended
+validateMatchUpScore(sets, 'SET3-S:6/TB7');
+parse('SET3-S:6/TB7');
+// 7.33 and later: the aggregate, which loads every domain
 tools.scoring.validateMatchUpScore(sets, 'SET3-S:6/TB7');
-tools.formats.parse('SET3-S:6/TB7');
 // 7.x only
 scoreGovernor.validateMatchUpScore(sets, 'SET3-S:6/TB7');
 ```
