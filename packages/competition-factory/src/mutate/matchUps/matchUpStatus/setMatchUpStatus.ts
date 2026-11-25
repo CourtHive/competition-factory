@@ -276,6 +276,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
         enableAutoCalc,
       },
     },
+    tournamentRecords,
     writeOnCopy: (copy) => draws.record(() => instants.record(() => writeOnCopy(copy))),
     settleOnCopy,
     instantsExact: instants.exact,

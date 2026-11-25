@@ -106,6 +106,8 @@ const ALLOWED = {
     'PLUMBING — abstains when a client sent the array, so v1 writes it; carries the planned array into the op; decides nothing on it',
   'mutate/matchUps/outcome/plan/planShared.ts':
     'PLUMBING — the clean and scoreless predicates abstain where a matchUp carries codes, so v1 writes it; decide nothing on them',
+  'mutate/matchUps/outcome/plan/teamFinalLine.ts':
+    'WRITE — a newly completed TEAM line receives the fresh empty policy-code array of attemptToModifyScore',
   'mutate/matchUps/outcome/plan/resultOps.ts':
     'PLUMBING — carries the planned array into the result op, as plan.ts did before the split; decides nothing on it',
   'mutate/matchUps/outcome/plan/producedExit.ts':
