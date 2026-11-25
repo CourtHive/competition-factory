@@ -1,3 +1,4 @@
+import { noticeViewOrigins } from '@Global/state/readonlyNoticePayload';
 import { deferredQuery, deferredQueryBinding } from '@Mutate/notifications/drawNotifications';
 import { MISSING_ASYNC_STATE_PROVIDER, ROLLBACK_UNAVAILABLE } from '@Constants/errorConditionConstants';
 import { getLoadedFootprint, markLoadedFootprint } from '@Global/state/loadedFootprint';
@@ -104,7 +105,13 @@ type CopyPair = { working: any; before?: any };
 // Every object in a record, notice or directive has one working identity. Only records need a baseline.
 function privateCopier(parentStamps?: WeakSet<object>, privateStamps?: WeakSet<object>) {
   const copies = new Map<object, CopyPair>();
-  function copy(source: any, record: boolean, notice = false): CopyPair {
+  // Normalize before consulting the copy cache. A retained notice can reference
+  // the very entity already copied from the tournament or from a directive.
+  const origins = noticeViewOrigins();
+  const copy: typeof copySource = origins
+    ? (source, record, notice) => copySource(origins.get(source) ?? source, record, notice)
+    : copySource;
+  function copySource(source: any, record: boolean, notice = false): CopyPair {
     if (source == null || (typeof source !== 'object' && typeof source !== 'function'))
       return { working: source, before: source };
     const existing = copies.get(source);
