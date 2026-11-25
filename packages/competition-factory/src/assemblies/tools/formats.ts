@@ -9,8 +9,8 @@
  * `isValidMatchUpFormat` under the matchUpFormat governor's short name.
  */
 export { aggregateDeciderSetNumber, finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
-export { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
 export { isValidMatchUpFormat as isValid, isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
+export { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
 export { validateMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 export { stringify } from '@Helpers/matchUpFormatCode/stringify';
 export { parse } from '@Helpers/matchUpFormatCode/parse';
