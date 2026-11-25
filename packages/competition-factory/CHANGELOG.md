@@ -7,6 +7,33 @@
 
 - Forge previews run on private records. Bare and assembled sync engines keep immediate `dryRun` and `explain`. Previewing a custom method requires `registerPreviewMethod` on that engine. An unregistered custom method refuses the entire preview with `ERR_UNREGISTERED_PREVIEW_METHOD` before dispatch.
 
+## [7.49.0](https://github.com/CourtHive/competition-factory/compare/v7.48.0...v7.49.0) (2026-11-25)
+
+
+### Features
+
+* **build:** ship [@deprecated](https://github.com/deprecated) tags in the published declarations ([#6622](https://github.com/CourtHive/competition-factory/issues/6622)) ([39e03ed](https://github.com/CourtHive/competition-factory/commit/39e03ed6a1af0f88caff60c695b351157f7fafa5))
+* **scoring:** move the scoring engine into the leaf and accept an instance clock ([b89b552](https://github.com/CourtHive/competition-factory/commit/b89b5522ee4b6c01d94a69230bf28e75f272c895))
+* **tools:** accept an explicit instant in date comparisons and time codes ([d409742](https://github.com/CourtHive/competition-factory/commit/d40974211ceb0ea4ee642e3e301132e5c2ba5534))
+* **tools:** export getParticipantPoints and getQualityWinPoints from tools.rankings ([#6621](https://github.com/CourtHive/competition-factory/issues/6621)) ([5fe7de2](https://github.com/CourtHive/competition-factory/commit/5fe7de2117f7b36d9456cf592db156dae839e6fd))
+* **tools:** format validators in tools.formats; retain generateStatCrew and getEventInconsistencies ([#6620](https://github.com/CourtHive/competition-factory/issues/6620)) ([53446f6](https://github.com/CourtHive/competition-factory/commit/53446f6f8d7be8559aa834901e3227cffdc921f7))
+* **verify:** type-check and bound six independent leaf programs ([07545af](https://github.com/CourtHive/competition-factory/commit/07545af21bab6ea1841e6fccedbb9f79597e6464))
+
+
+### Bug Fixes
+
+* **mocks:** mount simulationGovernor on mocksEngine ([#6609](https://github.com/CourtHive/competition-factory/issues/6609)) ([3ff57de](https://github.com/CourtHive/competition-factory/commit/3ff57de8a68ee2bef1603db76ed3109f24f8414d))
+* **security:** keep round-robin finishing positions and win/loss counters off Object.prototype ([#6608](https://github.com/CourtHive/competition-factory/issues/6608)) ([5fb767f](https://github.com/CourtHive/competition-factory/commit/5fb767f4b3d3fda21eabe046a4841525c9fd251d))
+* **security:** read event types and scale formats as own keys in getParticipants ([#6610](https://github.com/CourtHive/competition-factory/issues/6610)) ([3f05405](https://github.com/CourtHive/competition-factory/commit/3f05405f3b62d0848b92334d4e47754b9a17e8fb))
+* **team:** complete a level round-robin TEAM tie as a draw ([#6612](https://github.com/CourtHive/competition-factory/issues/6612)) ([c03085e](https://github.com/CourtHive/competition-factory/commit/c03085e252e164f4014ed2bed57fd9498e11eef7))
+* **verify:** bound each leaf compiler invocation ([22323d7](https://github.com/CourtHive/competition-factory/commit/22323d72c28f05c5391013c767a38001fa361c4c))
+
+
+### Performance
+
+* **participants:** restore [#6584](https://github.com/CourtHive/competition-factory/issues/6584)'s lost speed without weakening its guards ([#6607](https://github.com/CourtHive/competition-factory/issues/6607)) ([bb7b9b0](https://github.com/CourtHive/competition-factory/commit/bb7b9b019ac73ddd326c0b02daf7348ebb213274))
+* **runtime:** cache deep-copy settings at configuration time ([d62941b](https://github.com/CourtHive/competition-factory/commit/d62941b8cdb2c4aadd82f91fe1ce5be62762ccaf))
+
 ## [7.48.0](https://github.com/CourtHive/competition-factory/compare/v7.47.0...v7.48.0) (2026-11-23)
 
 
