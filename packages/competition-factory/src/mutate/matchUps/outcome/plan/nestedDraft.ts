@@ -2,13 +2,14 @@ import { deferInContextMatchUp, deferredQuery, modifyMatchUpNotice } from '@Muta
 import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { firstDoubleExitEntry, recordPreparedCascade } from './recordedCascade';
+import { predictSettleWork } from '../settleWork';
 import { buildOutcomeView } from '../view';
 import { getInContextMatchUp } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getNoticeBuffer, getTopics } from '@Global/state/globalState';
 import { withDraftWrites } from '@Global/state/withDraftWrites';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
-import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
+import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { cloneData, cloneState } from '@Tools/cloneState';
 import {
   applyOutcomeOps,
@@ -79,6 +80,24 @@ function ownFields(entity: object, children: string[]) {
   return cloneData(ownState(entity, children));
 }
 
+/** The recorder declines writes visible elsewhere in the tournament. Follow only references outside normal draw containment. */
+function externallyHeld(copy: RecordCopy) {
+  const entities = new Set<object>();
+  for (const structure of copy.drawDefinition.structures ?? []) {
+    entities.add(structure);
+    for (const matchUp of matchUpsOf(structure) ?? []) entities.add(matchUp);
+    for (const assignment of positionAssignmentsOf(structure) ?? []) entities.add(assignment);
+  }
+  const seen = new Set<object>();
+  const retains = (value: unknown): boolean => {
+    if (!value || typeof value !== 'object' || value === copy.drawDefinition || seen.has(value)) return false;
+    if (entities.has(value)) return true;
+    seen.add(value);
+    return Object.values(value).some(retains);
+  };
+  return retains(copy.tournamentRecord) || retains(copy.event);
+}
+
 /** Run the admitted downstream write on the detached record with its original prefix and provider scope. */
 export function nestedDraft<T>(
   args: BuildViewArgs,
@@ -106,7 +125,19 @@ export function nestedDraft<T>(
       if (matchUpsMap.drawMatchUps.some(hasStaleScoredTime)) return resume();
       const view = buildOutcomeView(fresh);
       const r = plainNestedPrefix(fresh, view, prefix) && certify(copy.drawDefinition, view);
-      if (!r) return resume();
+      const inContextDrawMatchUps = view.inContextDrawMatchUps;
+      if (!r || !inContextDrawMatchUps || externallyHeld(copy)) return resume();
+      const priorWork = predictSettleWork({
+        ...copy,
+        matchUpId,
+        inContextDrawMatchUps,
+        working: { drawDefinition: copy.drawDefinition, matchUpsMap, inContextDrawMatchUps },
+        ops: [],
+        loserLinked: !!view.targets.loserLink,
+        propagateExitStatus: request.flags.propagateExitStatus,
+        propagateRetirementAsExit: request.flags.propagateRetirementAsExit,
+      });
+      if (priorWork.length) return resume();
       stampCopies(copy.drawDefinition, stamped);
       return withNoticeMarks((readMarks) =>
         withDraftWrites(() => {
