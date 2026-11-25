@@ -47,3 +47,20 @@ done
 ```
 
 These receipts measure the isolated rank-D change. Application after ranks A, B and C, the non-interposing census, rule 17 suites and rule 22c timing have separate qualification gates.
+
+## Stepwise history and census queue
+
+On each detached revision the archived replay carried state through 1,236 public steps in 113 scenarios and 33 enclosed steps in four generator groups. V1, V2 and differential produced 3,807 step observations per revision. Every sequence matched the historical baseline, including intermediate record hashes. The stock replay admissions bind to 106 distinct sealed history occurrences. [Stepwise receipt and focused V8 coverage](stepwise.json)
+
+A separate focused V8 run exercised the six stock arms plus the nine BYE regression cases. The native projector and apply function each ran 435 times. The two test files passed and all 732 stock observations matched. The coverage command exited 1 on the configured global and per-file thresholds for this restricted workload, including the larger shared apply and recorder modules. The receipt lists uncovered statements, functions and branch counts per file.
+
+For the cumulative job, pin the validated detector successor and apply the reviewed A, B and C changes in order in a detached checkout. Freeze that revision as the before arm. Apply D to a separate detached checkout for the after arm. Repeat stock and supplemental parity on those two revisions. Use the stock replay output directories to bind the additional native occurrences. In Jason's rank-D window run the census with both arms serial under a single reservation.
+
+```sh
+python3 -B "$proof/admissions.py" . "$stock_before" "$stock_after" "$history" "$admitted"
+python3 -B "$proof/commonCensus.py" prepare "$before" "$after" . "$census"
+python3 scripts/outcome-v2-runner.py --reserve-workers "$workers" -- \
+  python3 -B "$proof/commonCensus.py" run "$before" "$after" . "$census" --workers "$workers" --admitted "$admitted"
+```
+
+The before/after census uses the same full V2 test-file inventory, the stock query mirror, and the original #6549 recording counters. The D-only regression file is excluded from both arms. The comparator checks each frozen site's multiplicity, unchanged unrelated stable rows, and at least 100 new admissions. Run the unfiltered rule 17 suites on the after revision with the D tests included. Rule 22c requires paired timing of the touched writers in an exclusive reservation. Record the tested revisions and receipts for each stage.

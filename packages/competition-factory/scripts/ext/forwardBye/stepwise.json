@@ -1,0 +1,128 @@
+{
+  "history": [
+    {
+      "head": "3ff57de8a68ee2bef1603db76ed3109f24f8414d",
+      "boundary": "public",
+      "rows": 1236,
+      "modes": 3,
+      "rowsSha256": "e491b16271abcd432dd46ad34186d65a16b6e4bb0a5d71dae4ca5e24aad10d50"
+    },
+    {
+      "head": "3ff57de8a68ee2bef1603db76ed3109f24f8414d",
+      "boundary": "enclosed",
+      "rows": 99,
+      "modes": 3,
+      "rowsSha256": "770eebe97abcba44613de42562d3667916368f79b208c819f2350fe7991463ec"
+    },
+    {
+      "head": "ba2f42cbf0a9df754c3dfee1bf27ee6f280cae18",
+      "boundary": "public",
+      "rows": 1236,
+      "modes": 3,
+      "rowsSha256": "e491b16271abcd432dd46ad34186d65a16b6e4bb0a5d71dae4ca5e24aad10d50"
+    },
+    {
+      "head": "ba2f42cbf0a9df754c3dfee1bf27ee6f280cae18",
+      "boundary": "enclosed",
+      "rows": 99,
+      "modes": 3,
+      "rowsSha256": "770eebe97abcba44613de42562d3667916368f79b208c819f2350fe7991463ec"
+    }
+  ],
+  "publicScenarios": 113,
+  "enclosedGroups": 4,
+  "observationsPerRevision": 3807,
+  "boundOccurrences": 122,
+  "admissionsSha256": "10f7dffe82c99fa73aa25ef207df408fa3c277e4b35ab30145df6f0da9feff96",
+  "focusedCoverage": {
+    "head": "ba2f42cbf0a9df754c3dfee1bf27ee6f280cae18",
+    "files": {
+      "mutate/matchUps/outcome/apply.ts": {
+        "functionsHit": 60,
+        "functions": 98,
+        "statementsHit": 245,
+        "statements": 484,
+        "branchArmsHit": 167,
+        "branchArms": 609,
+        "uncoveredStatements": [
+          51, 52, 53, 54, 55, 56, 57, 58, 59, 62, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 89, 96, 97, 99, 100, 105,
+          106, 116, 117, 118, 119, 120, 121, 122, 123, 140, 147, 153, 160, 162, 177, 182, 201, 208, 240, 244, 245, 247,
+          249, 293, 294, 295, 296, 297, 307, 308, 309, 311, 312, 313, 314, 315, 322, 326, 327, 330, 332, 333, 395, 422,
+          428, 429, 470, 472, 473, 474, 483, 489, 506, 509, 517, 527, 528, 532, 533, 534, 535, 536, 542, 544, 549, 550,
+          551, 552, 563, 564, 565, 569, 571, 574, 580, 582, 584, 585, 593, 596, 597, 599, 602, 603, 621, 623, 624, 635,
+          636, 637, 638, 664, 665, 666, 667, 669, 670, 671, 673, 674, 689, 692, 696, 704, 731, 733, 734, 736, 737, 738,
+          741, 749, 750, 774, 775, 784, 798, 799, 834, 835, 851, 852, 854, 856, 858, 861, 869, 893, 898, 922, 923, 936,
+          955, 956, 957, 958, 973, 975, 978, 989, 990, 991, 1007, 1008, 1010, 1011, 1012, 1014, 1015, 1016, 1017, 1034,
+          1037, 1038, 1040, 1041, 1042, 1048, 1053, 1054, 1056, 1057, 1058
+        ],
+        "routeFunctionCalls": {
+          "applyForwardByePassage": 435
+        }
+      },
+      "mutate/matchUps/outcome/plan/forwardByeEntitlement.ts": {
+        "functionsHit": 20,
+        "functions": 20,
+        "statementsHit": 109,
+        "statements": 113,
+        "branchArmsHit": 116,
+        "branchArms": 125,
+        "uncoveredStatements": [139, 166, 170, 246],
+        "routeFunctionCalls": {}
+      },
+      "mutate/matchUps/outcome/plan/forwardByePassage.ts": {
+        "functionsHit": 17,
+        "functions": 18,
+        "statementsHit": 119,
+        "statements": 123,
+        "branchArmsHit": 149,
+        "branchArms": 161,
+        "uncoveredStatements": [43, 48, 214, 327],
+        "routeFunctionCalls": {
+          "hasForwardByeArrival": 503,
+          "predictForwardByePassage": 503
+        }
+      },
+      "mutate/matchUps/outcome/plan/projectByePassage.ts": {
+        "functionsHit": 9,
+        "functions": 9,
+        "statementsHit": 24,
+        "statements": 28,
+        "branchArmsHit": 14,
+        "branchArms": 19,
+        "uncoveredStatements": [14, 42, 47, 50],
+        "routeFunctionCalls": {
+          "projectByePassage": 435
+        }
+      },
+      "mutate/matchUps/outcome/plan/recordedCall.ts": {
+        "functionsHit": 14,
+        "functions": 32,
+        "statementsHit": 57,
+        "statements": 123,
+        "branchArmsHit": 28,
+        "branchArms": 76,
+        "uncoveredStatements": [
+          72, 76, 80, 81, 82, 83, 84, 86, 87, 106, 108, 109, 110, 116, 123, 126, 127, 128, 130, 134, 135, 141, 165, 168,
+          170, 173, 175, 176, 183, 184, 204, 205, 206, 207, 208, 209, 210, 211, 212, 214, 215, 216, 218, 219, 220, 224,
+          226, 227, 228, 229, 230, 231, 232, 233, 244
+        ],
+        "routeFunctionCalls": {}
+      }
+    },
+    "exactRows": 732,
+    "mismatchCounts": {},
+    "testsPassed": 10,
+    "vitestExit": 1,
+    "thresholdMessages": [
+      "ERROR: Coverage for lines (70.25%) does not meet global threshold (97.5%)",
+      "ERROR: Coverage for functions (67.79%) does not meet global threshold (97%)",
+      "ERROR: Coverage for statements (63.6%) does not meet global threshold (95%)",
+      "ERROR: Coverage for branches (47.87%) does not meet global threshold (87%)",
+      "ERROR: Coverage for branches (27.42%) does not meet per-file threshold (50%) for src/mutate/matchUps/outcome/apply.ts",
+      "ERROR: Coverage for functions (43.75%) does not meet per-file threshold (50%) for src/mutate/matchUps/outcome/plan/recordedCall.ts",
+      "ERROR: Coverage for statements (46.34%) does not meet per-file threshold (50%) for src/mutate/matchUps/outcome/plan/recordedCall.ts",
+      "ERROR: Coverage for branches (36.84%) does not meet per-file threshold (50%) for src/mutate/matchUps/outcome/plan/recordedCall.ts"
+    ],
+    "v8JsonSha256": "c418b373f2c2076b12427d716243ddb52025e2ca5393d98b07e421b1c96e920c"
+  }
+}
