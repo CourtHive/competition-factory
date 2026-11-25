@@ -218,6 +218,9 @@ async function measure(
       setStateProvider(proxy);
       setOutcomePipeline(mode);
       const subscribed = ['modifyMatchUp', 'modifyDrawDefinition', 'updateInContextMatchUp'];
+      const stamped: object[] = [];
+      if (change === 'pre-stamped' || change === 'live-parent') stamped.push(params.drawDefinition);
+      if (change === 'live-parent') stamped.push(params.drawDefinition.structures![0]);
       Object.assign(scope, {
         tournamentRecords: { t: params.tournamentRecord },
         tournamentId: 't',
@@ -230,13 +233,7 @@ async function measure(
         modifiedTournamentIds: new Set(['previous', 't']),
         disableNotifications: false,
         capturedClock: undefined,
-        capturedStamps: new ObservedStamps(
-          change === 'live-parent'
-            ? [params.drawDefinition, params.drawDefinition.structures![0]]
-            : change === 'pre-stamped'
-              ? [params.drawDefinition]
-              : [],
-        ),
+        capturedStamps: new ObservedStamps(stamped),
         callRandomSource: undefined,
       });
       const matches = params.drawDefinition.structures![0].matchUps!;
