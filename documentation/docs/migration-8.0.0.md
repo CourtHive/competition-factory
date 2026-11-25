@@ -66,7 +66,7 @@ Each change below is planned for 8.0.0 and announced in 7.x; one marked _propose
 - **`addFinishingRounds`** leaves its governor, and **`applyDerivedRankings`** is available only as `tools.rankings.deriveRankingList`.
 - **`setMatchUpState`** is removed from the engine surface. Use `setMatchUpStatus`.
 - **`tournamentGovernor.query.cleanExpiredMutationLocks`** is removed; the function stays on `tournamentGovernor.mutate`, because it writes.
-- **The mocks-governor simulation aliases** (`generateOutcome`, `generateOutcomeFromScoreString`, `completeDrawMatchUps`) are removed. Use `simulationGovernor`.
+- **The mocks-governor simulation aliases** (`generateOutcome`, `generateOutcomeFromScoreString`, `completeDrawMatchUps`) are removed from `mocksGovernor`. Use `simulationGovernor`. `mocksEngine` mounts `simulationGovernor`, so `mocksEngine.generateOutcome` and the other two keep working unchanged.
 
 ### Behaviour changes
 
