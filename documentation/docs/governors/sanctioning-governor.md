@@ -12,6 +12,12 @@ Some methods on this page are candidates for removal from production engine expo
 import { sanctioningGovernor } from 'tods-competition-factory';
 ```
 
+:::info Also on tools
+
+These sanctioningGovernor queries read no tournament state, so each is also on `tools`, the same function, called with the same params object: `tools.sanctioning.querySanctioningRecord`, `tools.sanctioning.validateStatusTransition`. Their engine routes are unchanged in 7.x; see [tools by domain](/docs/tools/tools-overview#domains-stateless-functions-by-subject).
+
+:::
+
 The **sanctioningGovernor** re-exports all sanctioning mutation and query functions for use outside the sanctioning engine. While the `sanctioningEngine` provides a complete stateful API, the governor exports individual functions that can be called directly with a `sanctioningRecord` parameter.
 
 :::note Reachable since 7.x

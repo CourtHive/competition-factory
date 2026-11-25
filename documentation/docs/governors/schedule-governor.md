@@ -14,6 +14,12 @@ The **Schedule Governor** provides methods for assigning dates, times, venues, a
 import { scheduleGovernor } from 'tods-competition-factory';
 ```
 
+:::info Also on tools
+
+These scheduleGovernor queries read no tournament state, so each is also on `tools`, the same function, called with the same params object: `tools.matchUps.courtGridRows`, `tools.matchUps.matchUpScheduleLocked`. Their engine routes are unchanged in 7.x; see [tools by domain](/docs/tools/tools-overview#domains-stateless-functions-by-subject).
+
+:::
+
 :::tip
 See **[Scheduling Overview](../concepts/scheduling-overview.mdx)**, **[Automated Scheduling](../concepts/automated-scheduling.md)**, **[Pro Scheduling](../concepts/pro-scheduling.md)**, and **[Scheduling Policy](../policies/scheduling.md)** for comprehensive scheduling concepts.
 :::

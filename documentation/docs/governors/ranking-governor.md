@@ -12,6 +12,12 @@ Some methods on this page are candidates for removal from production engine expo
 import { rankingGovernor } from 'tods-competition-factory';
 ```
 
+:::info Also on tools
+
+These rankingGovernor queries read no tournament state, so each is also on `tools`, the same function, called with the same params object: `tools.rankings.generateRankingList`, `tools.rankings.getAwardPoints`, `tools.rankings.getAwardProfile`, `tools.rankings.getParticipantPoints`. Their engine routes are unchanged in 7.x; see [tools by domain](/docs/tools/tools-overview#domains-stateless-functions-by-subject). `applyDerivedRankings` is `tools.rankings.deriveRankingList`. All five refuse a missing or malformed required input (`pointAwards`, `awardProfiles`, or `entries` and `filter`) with `MISSING_VALUE` or `INVALID_VALUES` instead of throwing, called directly as through an engine.
+
+:::
+
 The **rankingGovernor** provides ranking points computation, quality win calculation, multi-tournament aggregation, and write-back functions. It groups all ranking-related operations and is composed into the [Scale Engine](/docs/scale-engine/scale-engine-overview) alongside the ratings governor.
 
 :::info

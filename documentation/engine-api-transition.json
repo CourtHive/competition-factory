@@ -291,7 +291,7 @@
       "engineDisposition": "scheduled-for-removal",
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
-      "replacement": null,
+      "replacement": "tools.matchUps.calculateMatchUpMargin",
       "destination": "implementation/records/calculateMatchUpMargin",
       "previous": [],
       "documentationMentions": ["concepts/draw-types/lucky-draw.mdx", "migration-3.0.0.md"],
@@ -829,7 +829,7 @@
       "engineDisposition": "scheduled-for-removal",
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
-      "replacement": null,
+      "replacement": "tools.rankings.getAwardPoints",
       "destination": "implementation/records/getAwardPoints",
       "previous": [
         {
@@ -950,7 +950,7 @@
       "engineDisposition": "scheduled-for-removal",
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
-      "replacement": null,
+      "replacement": "tools.draws.getDrawTypeCoercion",
       "destination": "implementation/draws/getDrawTypeCoercion",
       "previous": [
         {
@@ -1239,7 +1239,7 @@
       "engineDisposition": "scheduled-for-removal",
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
-      "replacement": null,
+      "replacement": "tools.matchUps.getMatchUpType",
       "destination": "implementation/records/getMatchUpType",
       "previous": [
         {
@@ -1499,7 +1499,7 @@
       "engineDisposition": "scheduled-for-removal",
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
-      "replacement": null,
+      "replacement": "tools.rankings.getScaleValues",
       "destination": "implementation/records/getScaleValues",
       "previous": [
         {
@@ -1921,7 +1921,7 @@
       "engineDisposition": "scheduled-for-removal",
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
-      "replacement": null,
+      "replacement": "tools.scoring.mcpValidator",
       "destination": "implementation/scoring/mcpValidator",
       "previous": [],
       "documentationMentions": [],
@@ -2089,7 +2089,7 @@
       "engineDisposition": "scheduled-for-removal",
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
-      "replacement": null,
+      "replacement": "tools.matchUps.participantScheduledMatchUps",
       "destination": "implementation/records/participantScheduledMatchUps",
       "previous": [
         {
@@ -2118,7 +2118,7 @@
       "engineDisposition": "scheduled-for-removal",
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
-      "replacement": null,
+      "replacement": "tools.scoring.pbpValidator",
       "destination": "implementation/scoring/pbpValidator",
       "previous": [],
       "documentationMentions": [],
@@ -2214,7 +2214,7 @@
       "engineDisposition": "scheduled-for-removal",
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
-      "replacement": null,
+      "replacement": "tools.officiating.queryOfficialRecord",
       "destination": "implementation/records/queryOfficialRecord",
       "previous": [
         {
@@ -2243,7 +2243,7 @@
       "engineDisposition": "scheduled-for-removal",
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
-      "replacement": null,
+      "replacement": "tools.sanctioning.querySanctioningRecord",
       "destination": "implementation/records/querySanctioningRecord",
       "previous": [
         {
@@ -2560,7 +2560,7 @@
       "engineDisposition": "scheduled-for-removal",
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
-      "replacement": null,
+      "replacement": "availability.runValidationPipeline",
       "destination": "implementation/scheduling/runValidationPipeline",
       "previous": [],
       "documentationMentions": ["availability-engine/event-system-and-validation.md"],
@@ -3078,7 +3078,7 @@
       "engineDisposition": "scheduled-for-removal",
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
-      "replacement": null,
+      "replacement": "tools.officiating.validateOfficiatingStatusTransition",
       "destination": "implementation/validation/validateOfficiatingStatusTransition",
       "previous": [],
       "documentationMentions": [],
@@ -3102,7 +3102,7 @@
       "engineDisposition": "scheduled-for-removal",
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
-      "replacement": null,
+      "replacement": "tools.draws.validatePlayoffGroups",
       "destination": "implementation/draws/validatePlayoffGroups",
       "previous": [],
       "documentationMentions": ["concepts/draw-types/round-robin-with-playoff.mdx"],
@@ -3230,7 +3230,7 @@
       "engineDisposition": "scheduled-for-removal",
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
-      "replacement": null,
+      "replacement": "tools.sanctioning.validateStatusTransition",
       "destination": "implementation/validation/validateStatusTransition",
       "previous": [
         {
@@ -3263,7 +3263,7 @@
       "engineDisposition": "scheduled-for-removal",
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
-      "replacement": null,
+      "replacement": "tools.formats.validateTieFormat",
       "destination": "implementation/validation/validateTieFormat",
       "previous": [
         {
