@@ -136,6 +136,8 @@
     "check:enum-exports": "node scripts/generateEnumExports.mjs --check",
     "check:enum-constants": "node scripts/generateEnumConstants.mjs --check",
     "prebuild": "node scripts/generateEnumConstants.mjs && node scripts/generateEnumExports.mjs && node scripts/generateEngineMethods.mjs && node scripts/generateMethodSignatures.mjs",
+    "build:notice-diagnostics": "node diagnostics/notice-payloads/check-types.mjs && node diagnostics/notice-payloads/build.mjs",
+    "verify:notice-diagnostics": "pnpm build:notice-diagnostics && node diagnostics/notice-payloads/verify.mjs",
     "build": "rimraf dist && rollup --config && node postbuild.mjs",
     "test": "VITE_CJS_IGNORE_WARNING=true vitest",
     "test:server": "vitest run --config vitest.server.config.mts",
