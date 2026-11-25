@@ -44,3 +44,19 @@ export function isIdRecord(value: unknown): value is Record<string, any> {
   const prototype = Object.getPrototypeOf(value);
   return prototype === NO_INHERITANCE || prototype === null;
 }
+
+/**
+ * The array a plain object holds under a key from a record, created when absent. For maps handed to callers as they
+ * are built, so they keep `Object.prototype` and cannot be an {@link idRecord}: only an own key counts, so
+ * "constructor" or "toString" read as absent rather than as a built-in, and "__proto__" is defined as an own key
+ * rather than assigned through the inherited setter. Ordinary keys are assigned, in the same order as before.
+ */
+export function ownArray<T = any>(map: Record<string, T[]>, key: string): T[] {
+  const existing = Object.hasOwn(map, key) ? map[key] : undefined;
+  if (existing) return existing;
+  const list: T[] = [];
+  if (key === '__proto__')
+    Object.defineProperty(map, key, { value: list, enumerable: true, writable: true, configurable: true });
+  else map[key] = list;
+  return list;
+}
