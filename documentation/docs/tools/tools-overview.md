@@ -18,7 +18,8 @@ not a governor. A governor export becomes an engine method, and an engine calls 
 so a positional function cannot be called correctly through an engine.
 
 - **`tools.formats`:** matchUpFormat codes: `parse`, `stringify`, `isAggregateFormat`, `finalSetGoverns`,
-  `aggregateDeciderSetNumber`.
+  `aggregateDeciderSetNumber`, and the format validators `isValidMatchUpFormat`, `validateMatchUpFormat` and `isValid`
+  (the same function as `isValidMatchUpFormat`). The validators take `{ matchUpFormat }`.
 - **`tools.scoring`:** score validators (`validateMatchUpScore`, `validateSetScore`, `deduceMatchUpFormat`), readers of
   a scoring-engine matchUp state (`getScore`, `getScoreboard`, `isComplete`, `getWinner`, `getEpisodes`, `addPoint`, …)
   and point and statistics parsers (`parseMCPPoint`, `shotParser`, `calculateMatchStatistics`, …).

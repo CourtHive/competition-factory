@@ -28,8 +28,9 @@ tools.formats.parse('SET3-S:6/TB7');
 scoreGovernor.validateMatchUpScore(sets, 'SET3-S:6/TB7');
 ```
 
-- `tools.formats` replaces the matchUpFormat governor's `parse`, `stringify`, `isAggregateFormat`, `finalSetGoverns` and
-  `aggregateDeciderSetNumber`, and the score governor's aliases `parseMatchUpFormat` / `stringifyMatchUpFormat`.
+- `tools.formats` replaces the matchUpFormat governor's `parse`, `stringify`, `isAggregateFormat`, `finalSetGoverns`,
+  `aggregateDeciderSetNumber` and its validators `isValid`, `isValidMatchUpFormat` and `validateMatchUpFormat` (available
+  in 7.x), and the score governor's aliases `parseMatchUpFormat` / `stringifyMatchUpFormat`.
 - `tools.scoring` replaces the score governor's validators, scoring-engine state readers and point and statistics
   parsers.
 - The availability helpers stay on the `availability` export and leave the engines.

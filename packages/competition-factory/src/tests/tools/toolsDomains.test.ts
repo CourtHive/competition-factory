@@ -9,7 +9,16 @@ import * as tools from '@Assemblies/tools';
  * the governor's own function, so the two homes cannot drift before 8.0.0 removes the governor placements.
  */
 
-const FORMATS = ['aggregateDeciderSetNumber', 'finalSetGoverns', 'isAggregateFormat', 'parse', 'stringify'];
+const FORMATS = [
+  'aggregateDeciderSetNumber',
+  'finalSetGoverns',
+  'isAggregateFormat',
+  'isValid',
+  'isValidMatchUpFormat',
+  'parse',
+  'stringify',
+  'validateMatchUpFormat',
+];
 const GOVERNOR_SCORING = [
   'addPoint',
   'analyzeSequence',
@@ -54,6 +63,15 @@ describe('tools.formats', () => {
     // the score governor's aliases are the same functions
     expect(governors.scoreGovernor.parseMatchUpFormat).toBe(tools.formats.parse);
     expect(governors.scoreGovernor.stringifyMatchUpFormat).toBe(tools.formats.stringify);
+  });
+
+  it('validates a format code for new use', () => {
+    expect(tools.formats.isValidMatchUpFormat({ matchUpFormat: 'SET3-S:6/TB7' })).toBe(true);
+    expect(tools.formats.isValid({ matchUpFormat: 'SET3-S:6/TB7' })).toBe(true);
+    expect(tools.formats.validateMatchUpFormat({ matchUpFormat: 'SET3-S:6/TB7' }).valid).toBe(true);
+    // an implicit even best-of is well-formed but refused for new use
+    expect(tools.formats.isValidMatchUpFormat({ matchUpFormat: 'SET2-S:6/TB7' })).toBe(false);
+    expect(tools.formats.validateMatchUpFormat({ matchUpFormat: 'not a format' }).valid).toBe(false);
   });
 });
 
