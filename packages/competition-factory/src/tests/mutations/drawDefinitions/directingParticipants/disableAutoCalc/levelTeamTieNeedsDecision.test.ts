@@ -259,7 +259,8 @@ describe('a level total its tally directives decide', () => {
         const sets = segment.matchUpFormat.startsWith('SET2')
           ? [first, { setNumber: 2, side1Score: 10, side2Score: 10 }]
           : [first];
-        const winningSide = delta ? (delta > 0 ? 1 : 2) : undefined;
+        // the line's winner: side 1 ahead, side 2 ahead, or none on a level line
+        const winningSide = { [1]: 1, [-1]: 2 }[Math.sign(delta)];
         const outcome = { matchUpStatus: COMPLETED, score: { sets }, ...(winningSide ? { winningSide } : {}) };
         const result = tournamentEngine.setMatchUpStatus({ outcome, matchUpId: segment.matchUpId, drawId });
         expect(result.success).toEqual(true);
