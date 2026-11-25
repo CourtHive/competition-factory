@@ -1,3 +1,4 @@
+import { diagnosticSelector as setOutcomePipeline } from '../../../../diagnostics/notice-payloads/testSelector';
 import {
   addNotice,
   callListener,
@@ -5,11 +6,10 @@ import {
   type Notice,
   getOutcomePipeline,
   getProvider,
-  setOutcomePipeline,
   setStateProvider,
 } from '@Global/state/globalState';
 import { notifySubscribers, notifySubscribersAsync } from '@Global/state/notifySubscribers';
-import { noticePayloadTestMode } from '@Global/state/readonlyNoticePayload';
+import { noticePayloadTestMode } from '../../../../diagnostics/notice-payloads/readonlyNoticePayload';
 import { liveNoticeEffects } from '@Mutate/notifications/drawNotifications';
 import asyncProvider from '../../../examples/asyncEngine/asyncGlobalState';
 import syncGlobalState from '@Global/state/syncGlobalState';

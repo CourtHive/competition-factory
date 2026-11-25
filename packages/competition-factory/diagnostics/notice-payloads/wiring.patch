@@ -1,0 +1,114 @@
+diff --git a/src/forge/previewState.ts b/src/forge/previewState.ts
+index 086daed922..5fa0b50b9e 100644
+--- a/src/forge/previewState.ts
++++ b/src/forge/previewState.ts
+@@ -1,3 +1,4 @@
++import { noticeViewOrigins } from '../../diagnostics/notice-payloads/readonlyNoticePayload';
+ import { deferredQuery, deferredQueryBinding } from '@Mutate/notifications/drawNotifications';
+ import { MISSING_ASYNC_STATE_PROVIDER, ROLLBACK_UNAVAILABLE } from '@Constants/errorConditionConstants';
+ import { getLoadedFootprint, markLoadedFootprint } from '@Global/state/loadedFootprint';
+@@ -104,7 +105,13 @@ type CopyPair = { working: any; before?: any };
+ // Every object in a record, notice or directive has one working identity. Only records need a baseline.
+ function privateCopier(parentStamps?: WeakSet<object>, privateStamps?: WeakSet<object>) {
+   const copies = new Map<object, CopyPair>();
+-  function copy(source: any, record: boolean, notice = false): CopyPair {
++  // Normalize before consulting the copy cache. A retained notice can reference
++  // the very entity already copied from the tournament or from a directive.
++  const origins = noticeViewOrigins();
++  const copy: typeof copySource = origins
++    ? (source, record, notice) => copySource(origins.get(source) ?? source, record, notice)
++    : copySource;
++  function copySource(source: any, record: boolean, notice = false): CopyPair {
+     if (source == null || (typeof source !== 'object' && typeof source !== 'function'))
+       return { working: source, before: source };
+     const existing = copies.get(source);
+diff --git a/src/global/state/globalState.ts b/src/global/state/globalState.ts
+index 5f0905d408..ec0c2fd72b 100644
+--- a/src/global/state/globalState.ts
++++ b/src/global/state/globalState.ts
+@@ -1,3 +1,4 @@
++import { deliverNotice, noticeValue, withNoticeAudit } from '../../../diagnostics/notice-payloads/delivery';
+ import { isFunction, isObject } from '@Tools/objects';
+ import { installCallRuntime, installCopySnapshot } from '@Tools/runtime';
+ import syncGlobalState from './syncGlobalState';
+@@ -400,7 +401,8 @@ export function getSchemaWriteMode(): SchemaWriteMode {
+ }
+
+ /** @deprecated the outcome pipeline selector is removed in 8.0.0: v2 is the only pipeline */
+-export function setOutcomePipeline(mode?: OutcomePipelineMode): { success?: boolean; error?: ErrorType } {
++export const setOutcomePipeline = withNoticeAudit(selectOutcomePipeline);
++function selectOutcomePipeline(mode?: OutcomePipelineMode): { success?: boolean; error?: ErrorType } {
+   if (mode === undefined) {
+     globalState.outcomePipeline = OUTCOME_PIPELINE_DEFAULT;
+     return { ...SUCCESS };
+@@ -597,7 +599,7 @@ export function restoreMutationStatus(status?: boolean) {
+ export function addNotice(notice: Notice) {
+   if (typeof notice?.topic !== 'string') return;
+   const isGlobalSubscription = globalState.globalSubscriptions[notice.topic];
+-  return _globalStateProvider.addNotice(notice, isGlobalSubscription);
++  return _globalStateProvider.addNotice(noticeValue(notice), isGlobalSubscription);
+ }
+
+ export type GetNoticesArgs = {
+@@ -734,8 +736,8 @@ export type CallListenerArgs = {
+   notices?: any[];
+   topic: string;
+ };
+-export async function callListener(payload) {
+-  return _globalStateProvider.callListener(payload, globalState.globalSubscriptions);
++export function callListener(payload) {
++  return deliverNotice(payload, (value) => _globalStateProvider.callListener(value, globalState.globalSubscriptions));
+ }
+
+ export function getTournamentId() {
+diff --git a/src/mutate/matchUps/outcome/shadow.ts b/src/mutate/matchUps/outcome/shadow.ts
+index 697d5fa279..0ea585da53 100644
+--- a/src/mutate/matchUps/outcome/shadow.ts
++++ b/src/mutate/matchUps/outcome/shadow.ts
+@@ -1,3 +1,4 @@
++import { originalNoticeValue } from '../../../../diagnostics/notice-payloads/readonlyNoticePayload';
+ import { deferredQuery, deferredQueryBinding } from '@Mutate/notifications/drawNotifications';
+ import { announcesAssignments, eventlessNotices, applyTemporalPhases, type TemporalPhases } from './apply';
+ import { getNoticeState, getTopics, getCapturedStamps } from '@Global/state/globalState';
+@@ -252,7 +253,10 @@ export function prepareTemporalShadow(args: BuildViewArgs, phases: TemporalPhase
+   const forward = new Map<object, object>();
+   const seen = new Set<object>();
+   const seed = (value: unknown) => {
+-    if (!value || (typeof value !== 'object' && typeof value !== 'function') || seen.has(value)) return;
++    if (!value || (typeof value !== 'object' && typeof value !== 'function')) return;
++    const original = originalNoticeValue(value);
++    if (original !== value) return seed(original);
++    if (seen.has(value)) return;
+     seen.add(value);
+     const copy = initial.copies.get(value);
+     if (copy) forward.set(value, copy);
+@@ -484,6 +488,10 @@ function cloneTemporal<T>(root: T) {
+   const originals = new WeakMap<object, object>();
+   const clone = (value: unknown): unknown => {
+     if (!value || (typeof value !== 'object' && typeof value !== 'function')) return value;
++    // The private oracle compares stored graph aliases with payloads retained by a
++    // forwarding diagnostic provider. Compare their original identities here only.
++    const original = originalNoticeValue(value);
++    if (original !== value) return clone(original);
+     if (copies.has(value)) return copies.get(value);
+     if (typeof value === 'function') {
+       const binding = deferredQueryBinding(value);
+diff --git a/src/mutate/notifications/drawNotifications.ts b/src/mutate/notifications/drawNotifications.ts
+index d29a890c1d..63f8ae4ae1 100644
+--- a/src/mutate/notifications/drawNotifications.ts
++++ b/src/mutate/notifications/drawNotifications.ts
+@@ -1,3 +1,4 @@
++import { deferredQueries, type DeferredQuery } from '../../../diagnostics/notice-payloads/deferredNoticeBinding';
+ import { addNotice, deleteNotice, DEFERRED_PAYLOAD, getCapturedStamps, markModified } from '@Global/state/globalState';
+ import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
+ import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+@@ -305,9 +306,6 @@ export function modifyMatchUpNotice(
+   return { ...SUCCESS };
+ }
+
+-type DeferredQuery = { query: (args: unknown) => unknown; args: unknown };
+-const deferredQueries = new WeakMap<object, DeferredQuery>();
+-
+ /** A lazy read with an explicit binding, inspectable without invoking a subscriber's payload builder. */
+ export function deferredQuery<A, T>(query: (args: A) => T, args: A): () => T {
+   const binding: DeferredQuery = { query: query as (args: unknown) => unknown, args };

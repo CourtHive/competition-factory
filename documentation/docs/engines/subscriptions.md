@@ -8,7 +8,35 @@ The payload for each subscription is an array of objects, with each element of t
 
 In 7.x, subscription payloads are read-only, including the array and every object reachable through it. To update a score, take the matchUp ID from the notice and use it in a subsequent `setMatchUpStatus` call. Keep display-only annotations in a separate application object.
 
-To check a provider or subscriber for attempted writes, enable `globalState.setOutcomePipeline('differential', { checkNoticePayloadWrites: true })`. In Factory tests, `NOTICE_PAYLOAD_WRITE_CHECK=1` enables the same check in any pipeline. Call `globalState.setOutcomePipeline('differential')` to return to ordinary differential delivery. The write check supplies proxy views. These preserve aliases within deliveries but have distinct identities from pre-held raw references, and native `structuredClone` cannot clone them. Use ordinary differential delivery to compare callback identities, prototypes and cloneability.
+### Auditing a provider or subscriber
+
+Build the standalone diagnostic engine from a Factory source checkout at the revision you want to audit. Use Git, Node 24 or later and the pnpm version in the checkout's `packageManager` field. From the workspace root run:
+
+```sh
+pnpm install --frozen-lockfile
+cd packages/competition-factory
+pnpm build:notice-diagnostics
+```
+
+The build writes two standalone Node entry points in `.diagnostics/notice-payloads/`. You can copy the matching file into your integration test project. Use the provider, selector and engine from the same imported instance throughout the audit. For ESM:
+
+```js
+import { globalState, syncEngine } from './.diagnostics/notice-payloads/index.mjs';
+
+globalState.setOutcomePipeline('differential', { checkNoticePayloadWrites: true });
+// Install your provider on globalState, or register your subscriber, then exercise syncEngine.
+```
+
+For CommonJS:
+
+```js
+const { globalState, syncEngine } = require('./.diagnostics/notice-payloads/index.cjs');
+globalState.setOutcomePipeline('differential', { checkNoticePayloadWrites: true });
+```
+
+The ordinary package entry serves production and passive differential comparisons. Its selector accepts the pipeline mode alone. The diagnostic build checks enqueue and subscriber delivery, including writes through nested references retained after delivery. Its proxy views preserve aliases within the delivery. A pre-held raw reference has a different identity and native `structuredClone` cannot clone a proxy. Use `globalState.setOutcomePipeline('differential')` to resume raw delivery for new payloads. Previously retained views continue to reject writes.
+
+In the Factory source test suite, `NOTICE_PAYLOAD_WRITE_CHECK=1` enables the same audit in any pipeline. For example, run `NOTICE_PAYLOAD_WRITE_CHECK=1 OUTCOME_PIPELINE=differential pnpm exec vitest run path/to/provider.test.ts` from the package directory. The regular suite runs focused attempted-write regressions in the `notice-diagnostics` Vitest project and passive consumer tests against the ordinary engine.
 
 :::info
 All engine methods may be passed the additional parameter `{ delayNotify: true }`, in which case subscription methods are **_not_** called until a subsequent engine method is invoked.

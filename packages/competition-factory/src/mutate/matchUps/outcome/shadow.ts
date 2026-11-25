@@ -1,4 +1,3 @@
-import { originalNoticeValue } from '@Global/state/readonlyNoticePayload';
 import { deferredQuery, deferredQueryBinding } from '@Mutate/notifications/drawNotifications';
 import { announcesAssignments, eventlessNotices, applyTemporalPhases, type TemporalPhases } from './apply';
 import { getNoticeState, getTopics, getCapturedStamps } from '@Global/state/globalState';
@@ -253,10 +252,7 @@ export function prepareTemporalShadow(args: BuildViewArgs, phases: TemporalPhase
   const forward = new Map<object, object>();
   const seen = new Set<object>();
   const seed = (value: unknown) => {
-    if (!value || (typeof value !== 'object' && typeof value !== 'function')) return;
-    const original = originalNoticeValue(value);
-    if (original !== value) return seed(original);
-    if (seen.has(value)) return;
+    if (!value || (typeof value !== 'object' && typeof value !== 'function') || seen.has(value)) return;
     seen.add(value);
     const copy = initial.copies.get(value);
     if (copy) forward.set(value, copy);
@@ -488,10 +484,6 @@ function cloneTemporal<T>(root: T) {
   const originals = new WeakMap<object, object>();
   const clone = (value: unknown): unknown => {
     if (!value || (typeof value !== 'object' && typeof value !== 'function')) return value;
-    // The private oracle compares stored graph aliases with payloads retained by a
-    // forwarding diagnostic provider. Compare their original identities here only.
-    const original = originalNoticeValue(value);
-    if (original !== value) return clone(original);
     if (copies.has(value)) return copies.get(value);
     if (typeof value === 'function') {
       const binding = deferredQueryBinding(value);
