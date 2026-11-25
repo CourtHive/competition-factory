@@ -18,6 +18,7 @@ import { processSides } from '@Query/matchUps/processSides';
 import { stringSort } from '@Functions/sorters/stringSort';
 import { isExit } from '@Validators/isExit';
 import { isObject } from '@Tools/objects';
+import { idRecord } from '@Tools/plainRecord';
 
 // constants and types
 import { CONTAINER, MAIN, PLAY_OFF, QUALIFYING } from '@Constants/drawDefinitionConstants';
@@ -92,8 +93,8 @@ export function getParticipantEntries(params) {
   const derivedDrawInfo: any = {};
 
   // RR group matchUp collection for tally-based finishing positions
-  const rrGroupMatchUps: { [structureId: string]: HydratedMatchUp[] } = {};
-  const rrContainerInfo: RRContainerInfo = {};
+  const rrGroupMatchUps: { [structureId: string]: HydratedMatchUp[] } = idRecord();
+  const rrContainerInfo: RRContainerInfo = idRecord();
 
   const getRanking = ({ eventType, scaleNames, participantId }) =>
     participantMap[participantId]?.participant?.rankings?.[eventType]?.find((ranking) =>
@@ -845,8 +846,10 @@ function computeRRFinishingPositions(
   rrContainerInfo: RRContainerInfo,
   withRankingProfile?: boolean,
 ) {
-  const rrFinishingPositions: { [drawId: string]: { [participantId: string]: number[] } } = {};
-  const rrGroupPlaces: { [drawId: string]: { [participantId: string]: RRGroupPlace } } = {};
+  // keyed by ids from the record and used only within this query: nothing is inherited, so a drawId, structureId or
+  // participantId of "__proto__", "constructor" or "toString" is an ordinary key, never a built-in that writes land on
+  const rrFinishingPositions: { [drawId: string]: { [participantId: string]: number[] } } = idRecord();
+  const rrGroupPlaces: { [drawId: string]: { [participantId: string]: RRGroupPlace } } = idRecord();
 
   if (!withRankingProfile) return { rrFinishingPositions, rrGroupPlaces };
 
@@ -862,8 +865,8 @@ function computeRRFinishingPositions(
     const drawPositionsCount = containedStructures.reduce((sum, s) => sum + (positionAssignmentsOf(s)?.length || 0), 0);
     const playoffStructure = drawDefinition.structures?.find((s) => s.stage === PLAY_OFF);
 
-    if (!rrFinishingPositions[drawId]) rrFinishingPositions[drawId] = {};
-    if (!rrGroupPlaces[drawId]) rrGroupPlaces[drawId] = {};
+    if (!rrFinishingPositions[drawId]) rrFinishingPositions[drawId] = idRecord();
+    if (!rrGroupPlaces[drawId]) rrGroupPlaces[drawId] = idRecord();
 
     for (const containedStructure of containedStructures) {
       processRRBracket({

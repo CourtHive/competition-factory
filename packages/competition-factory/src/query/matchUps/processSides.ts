@@ -313,27 +313,31 @@ function updateWinLossCounters({
   matchUpType,
 }) {
   const processParticipantId = (id) => {
+    const counters = participantMap[id].counters;
+    // matchUpType comes from the record: only a type the counters hold is counted, never an inherited key such as
+    // "__proto__" or "constructor", whose counts would land on Object.prototype or the Object built-in
+    const typeCounters = Object.hasOwn(counters, matchUpType) ? counters[matchUpType] : undefined;
     if (participantWon) {
-      participantMap[id].counters[matchUpType].wins += 1;
-      participantMap[id].counters.wins += 1;
+      if (typeCounters) typeCounters.wins += 1;
+      counters.wins += 1;
       if (matchUpStatus === WALKOVER) {
-        participantMap[id].counters[matchUpType].walkoverWins += 1;
-        participantMap[id].counters.walkoverWins += 1;
+        if (typeCounters) typeCounters.walkoverWins += 1;
+        counters.walkoverWins += 1;
       }
       if (matchUpStatus === DEFAULTED) {
-        participantMap[id].counters[matchUpType].defaultWins += 1;
-        participantMap[id].counters.defaultWins += 1;
+        if (typeCounters) typeCounters.defaultWins += 1;
+        counters.defaultWins += 1;
       }
     } else {
-      participantMap[id].counters[matchUpType].losses += 1;
-      participantMap[id].counters.losses += 1;
+      if (typeCounters) typeCounters.losses += 1;
+      counters.losses += 1;
       if (matchUpStatus === WALKOVER) {
-        participantMap[id].counters[matchUpType].walkovers += 1;
-        participantMap[id].counters.walkovers += 1;
+        if (typeCounters) typeCounters.walkovers += 1;
+        counters.walkovers += 1;
       }
       if (matchUpStatus === DEFAULTED) {
-        participantMap[id].counters[matchUpType].defaults += 1;
-        participantMap[id].counters.defaults += 1;
+        if (typeCounters) typeCounters.defaults += 1;
+        counters.defaults += 1;
       }
     }
   };
