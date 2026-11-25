@@ -1,6 +1,7 @@
 """Prepare or execute identical pre/post-D workloads with the original #6549 census."""
 import argparse
 from contextlib import ExitStack
+from datetime import datetime, timezone
 from hashlib import sha256
 import json
 import os
@@ -31,6 +32,25 @@ def checksum(data):
     return sha256(data).hexdigest()
 
 
+def instrument(wt, mentat):
+    original = mentat / 'assessment/v3-2/qualification'
+    contents = {name: (original / name).read_bytes() for name in INJECT.values()}
+    name = 'outcomeCensus.config.mts'
+    plan = (wt / PACKAGE / 'src/mutate/matchUps/outcome/plan.ts').read_text()
+    # Feed-in passes the pre-read stamps into the recorder. Preserve that exact call
+    # in both the source anchor and the forwarding closure used by the original census.
+    old = 'args.recordWhole?.()'
+    new = 'args.recordWhole?.(relay?.stampedBefore)'
+    if f'const recorded = {new};' in plan:
+        cfg = contents[name].decode()
+        if cfg.count(old) != 2:
+            raise ValueError('Unexpected #6549 capture or forwarding expression')
+        contents[name] = cfg.replace(old, new).encode()
+    elif f'const recorded = {old};' not in plan:
+        raise ValueError('Unrecognized recorder call in the pinned planner')
+    return contents
+
+
 def prepare(args):
     heads = {}
     for arm, wt in [('before', args.before), ('after', args.after)]:
@@ -40,8 +60,10 @@ def prepare(args):
     common = inventory(args.before)
     if inventory(args.after) != sorted(common + [ADDED]):
         raise ValueError('Expected the common test inventory plus the single new BYE control')
-    source = args.mentat / 'assessment/v3-2/qualification'
-    instruments = {name: checksum((source / name).read_bytes()) for name in INJECT.values()}
+    probe = instrument(args.before, args.mentat)
+    if instrument(args.after, args.mentat) != probe:
+        raise ValueError('Before and after require different instrumentation')
+    instruments = {name: checksum(data) for name, data in probe.items()}
     return common, dict(revisions=heads, instrument=instruments, files=len(common),
                         commonFilesSha256=checksum(('\n'.join(common) + '\n').encode()))
 
@@ -56,13 +78,13 @@ def run(wt, out, tests, args, meta):
     for name in ('QUERY_PURITY', 'FACTORY_BACKEND', 'OUTCOME_EXTERNAL_COVERAGE_JSONL', 'NOTICE_PAYLOAD_WRITE_CHECK'):
         env.pop(name, None)
     cfg = next(iter(INJECT))
-    from datetime import datetime, timezone
     with ExitStack() as cleanup:
+        files = instrument(wt, args.mentat)
         for target, name in INJECT.items():
             dest = pkg / target
             with dest.open('xb') as handle:
                 cleanup.callback(dest.unlink)
-                handle.write((args.mentat / 'assessment/v3-2/qualification' / name).read_bytes())
+                handle.write(files[name])
         (out / 'start').write_text(datetime.now(timezone.utc).isoformat() + '\n')
         with (out / 'suite.log').open('x') as log:
             rc = subprocess.run(['node_modules/.bin/vitest', 'run', '--no-color', '--reporter=default',
@@ -105,6 +127,7 @@ def main():
     cmd = [sys.executable, '-B', args.mentat / 'assessment/2026-11-24-bye-passage-effects/qualification/census.py',
            args.output / 'after', args.after, '--previous', args.output / 'before', '--admitted', args.admitted]
     report = json.loads(subprocess.check_output(cmd))
+    report['instrument'] = manifest['instrument']
     (args.output / 'movement.json').write_text(json.dumps(dict(report, beforeSuite=before, afterSuite=after), indent=2) + '\n')
 
 
