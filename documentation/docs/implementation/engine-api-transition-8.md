@@ -4,7 +4,7 @@ title: Engine API transition at 8.0.0
 
 # Engine API transition at 8.0.0
 
-The 125 methods below come from the 2026-10-15 engine-reach catalog: none of their names appeared in its 21-repository product consumer sweep. External integrators reviewed the list on 2026-10-28: 6 are in use and are **retained**; the other **119 are scheduled for removal** from the production governors and engines at 8.0.0. The list was closed on 2026-11-22. The 191 methods not driven through an engine by tests are a different, larger set; standalone engine reach is not grounds for removal.
+The 125 methods below come from the 2026-10-15 engine-reach catalog: none of their names appeared in its 21-repository product consumer sweep. External integrators reviewed the list on 2026-10-28: 6 are in use and are **retained**. The list was closed on 2026-11-22. On 2026-11-25 CA retained 2 more that back shipped TMX features, `generateStatCrew` and `getEventInconsistencies`, so 8 are **retained** and the other **117 are scheduled for removal** from the production governors and engines at 8.0.0. The 191 methods not driven through an engine by tests are a different, larger set; standalone engine reach is not grounds for removal.
 
 **No runtime exports change in 7.x.** Every 7.x route below still works. The scheduled routes are removed at 8.0.0; the per-method standalone package-export decision is separate. Test-only conformance-harness access is independent of product exposure.
 
@@ -55,7 +55,7 @@ External confirmation is complete for every entry. 61 scheduled methods are stat
 | [`findBlocksContainingTime`](/docs/implementation/scheduling/findBlocksContainingTime)                             | `availabilityGovernor`                 | Scheduled             | Review required |
 | [`generateCapacityCurve`](/docs/implementation/scheduling/generateCapacityCurve)                                   | `availabilityGovernor`                 | Scheduled             | Review required |
 | [`generateDrawStructuresAndLinks`](/docs/implementation/draws/generateDrawStructuresAndLinks)                      | `drawsGovernor`, `generationGovernor`  | Scheduled             | Review required |
-| [`generateStatCrew`](/docs/implementation/records/generateStatCrew)                                                | `generationGovernor`                   | Scheduled             | Review required |
+| [`generateStatCrew`](/docs/implementation/records/generateStatCrew)                                                | `generationGovernor`                   | Retained              | Review required |
 | [`getAllowedDrawTypes`](/docs/implementation/records/getAllowedDrawTypes)                                          | `queryGovernor`, `tournamentGovernor`  | Scheduled             | Review required |
 | [`getAwardPoints`](/docs/implementation/records/getAwardPoints)                                                    | `rankingGovernor`                      | Scheduled             | Review required |
 | [`getDrawCompleteness`](/docs/implementation/draws/getDrawCompleteness)                                            | `drawsGovernor`, `queryGovernor`       | Scheduled             | Review required |
@@ -67,7 +67,7 @@ External confirmation is complete for every entry. 61 scheduled methods are stat
 | [`getEntryFeeRange`](/docs/implementation/records/getEntryFeeRange)                                                | `entriesGovernor`, `queryGovernor`     | Scheduled             | Review required |
 | [`getEventCompleteness`](/docs/implementation/records/getEventCompleteness)                                        | `eventGovernor`, `queryGovernor`       | Scheduled             | Review required |
 | [`getEventEntryFees`](/docs/implementation/records/getEventEntryFees)                                              | `entriesGovernor`, `queryGovernor`     | Scheduled             | Review required |
-| [`getEventInconsistencies`](/docs/implementation/records/getEventInconsistencies)                                  | `eventGovernor`, `queryGovernor`       | Scheduled             | Review required |
+| [`getEventInconsistencies`](/docs/implementation/records/getEventInconsistencies)                                  | `eventGovernor`, `queryGovernor`       | Retained              | Review required |
 | [`getLadderMovement`](/docs/implementation/records/getLadderMovement)                                              | `ladderGovernor`                       | Scheduled             | Review required |
 | [`getMatchUpContextIds`](/docs/implementation/records/getMatchUpContextIds)                                        | `matchUpGovernor`, `queryGovernor`     | Retained              | Review required |
 | [`getMatchUpRatingDelta`](/docs/implementation/records/getMatchUpRatingDelta)                                      | `matchUpGovernor`, `queryGovernor`     | Scheduled             | Review required |
@@ -154,6 +154,6 @@ External confirmation is complete for every entry. 61 scheduled methods are stat
 
 ## Migration procedure
 
-During 7.x, keep old governor anchors as migration stubs and preserve full explanations here. Confirmed removals are marked scheduled, with a real replacement named where one exists (done 2026-11-22 for all 119). At the 8.x code change, verify each built engine and package namespace, update generated method signatures, and change notices to removed. Runtime export removal is a separate breaking change.
+During 7.x, keep old governor anchors as migration stubs and preserve full explanations here. Confirmed removals are marked scheduled, with a real replacement named where one exists (done 2026-11-22; 117 after the 2026-11-25 retentions). At the 8.x code change, verify each built engine and package namespace, update generated method signatures, and change notices to removed. Runtime export removal is a separate breaking change.
 
 Historical engine examples are labeled 7.x. They must not be presented as current 8.x examples. Do not globally disable example checks for this area. Source files own concise contracts; Markdown retains workflows and rationale.

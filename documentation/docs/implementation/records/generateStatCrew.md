@@ -6,7 +6,7 @@ title: generateStatCrew
 
 :::warning 8.0.0 engine API transition
 
-This method is **scheduled for removal from production governors and engine exports at 8.0.0**. Its 7.x route still works. The removal list was confirmed with external integrators on 2026-10-28 and closed on 2026-11-22. The standalone package-export decision is made per method; see the [transition index](/docs/implementation/engine-api-transition-8).
+This method is **retained on its production governors and engine exports at 8.0.0**: CA decided on 2026-11-25 to keep it, because TMX's shipped StatCrew export calls it. It reads the tournament record, so it stays an engine method; its 8.0.0 governor family is open, and the `generationGovernor` route stays through 7.x. See the [transition index](/docs/implementation/engine-api-transition-8).
 
 :::
 
