@@ -193,7 +193,7 @@ For callers who need protection from storage-layer exceptions, use plain writabl
 success, or submit the operation with `executionQueue([{ method, params }], true)`. Queue rollback restores a
 supported record when a directive returns an error. A borrowed document that cannot be restored faithfully yields
 `ROLLBACK_UNAVAILABLE` before the queue writes. An error raised later when saving to the database is handled by
-the persistence layer. [Borrowed records and rollback support](/docs/engines/global-state#rollback-and-preview-snapshots)
+the persistence layer. [Borrowed records and rollback support](/docs/engines/global-state#rollback-snapshots)
 
 ### Basic Rollback
 
