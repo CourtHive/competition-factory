@@ -11,6 +11,8 @@ This document is for **consumers** of the factory (TMX, courthive-components, th
 tools). It catalogues the breaking changes in 7.0.0 and the exact steps to adopt them. For the
 feature tour and the full list of 7.0.0 additions, see [What's New in 7.0.0](./whats-new-7.0.0).
 
+Throughout 7.x, notice and callback payloads are read-only. Move writes in providers or subscribers to an engine mutation, or keep application-only data separately. See [Subscriptions](./engines/subscriptions.md).
+
 ## Breaking changes at a glance
 
 | Change                                                                                            | Who is affected                                                                | Action required   |

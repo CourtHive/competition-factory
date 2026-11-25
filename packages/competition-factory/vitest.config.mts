@@ -10,6 +10,7 @@ import { configDefaults, defineConfig } from 'vitest/config';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { noticeDiagnosticPlugin } from './diagnostics/notice-payloads/overlay.mjs';
 import DurationSequencer from './vitest.sequencer.mjs';
 import { testFileAliases } from './vitest.aliases.mjs';
 
@@ -60,14 +61,36 @@ const testFiles = (dir: string): string[] =>
     if (entry.isDirectory()) return entry.name === 'scratch' || entry.name === 'node_modules' ? [] : testFiles(path);
     return TEST_FILE.test(entry.name) ? [path] : [];
   });
+const noticeDiagnosticFiles = [
+  'src/tests/global/state/readonlyNoticePayloads.test.ts',
+  'src/tests/global/state/noticePayloadPreview.test.ts',
+  'src/tests/global/state/noticePayloadRecordedGroup.test.ts',
+];
+const auditNoticeWrites = process.env.NOTICE_PAYLOAD_WRITE_CHECK === '1';
+// The audit and ordinary engines have different source maps for the same four module IDs.
+// Combining their V8 maps double-counts statements. Measure one graph per coverage run.
+const coverageRun = process.argv.some((arg) => /^--coverage(?:\.enabled)?(?:=true)?$/.test(arg));
+const noticeDiagnosticProjects =
+  !coverageRun || auditNoticeWrites
+    ? [
+        {
+          extends: true as const,
+          plugins: auditNoticeWrites ? [] : [noticeDiagnosticPlugin()],
+          test: { name: 'notice-diagnostics', include: noticeDiagnosticFiles, isolate: true },
+        },
+      ]
+    : [];
 const isolatedFiles = [
-  ...testFiles('src').filter((path) => MOCKS_A_MODULE.test(readFileSync(path, 'utf8'))),
+  ...testFiles('src').filter(
+    (path) => !noticeDiagnosticFiles.includes(path) && MOCKS_A_MODULE.test(readFileSync(path, 'utf8')),
+  ),
   ...ISOLATED_FILES,
 ];
 const shareModules = process.env.FACTORY_MATRIX_TIER === 'pr';
 const testExclude = [...configDefaults.exclude, '**/scratch/**'];
 
 export default defineConfig({
+  plugins: auditNoticeWrites ? [noticeDiagnosticPlugin()] : [],
   test: {
     testTimeout, // 30 seconds for slow tests; 180 under a second implementation or the differential (above)
     environment: 'node',
@@ -83,6 +106,7 @@ export default defineConfig({
     exclude: testExclude,
     // see TEST ISOLATION above
     projects: [
+      ...noticeDiagnosticProjects,
       { extends: true, test: { name: 'isolated', include: isolatedFiles, isolate: true } },
       {
         extends: true,
@@ -91,7 +115,7 @@ export default defineConfig({
           // `include` lives on the projects only: `extends: true` concatenates arrays, so a root include would put
           // every file in both projects
           include: ['src/**/*.test.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-          exclude: [...testExclude, ...isolatedFiles],
+          exclude: [...testExclude, ...isolatedFiles, ...noticeDiagnosticFiles],
           isolate: !shareModules,
         },
       },
@@ -102,6 +126,7 @@ export default defineConfig({
     // the `legacyMode()` helper; behavioral specs cover all modes via `writeModeMatrix`.
     // setSchemaWriteModeLegacy.ts is retained for the legacyMode() helper.
     setupFiles: [
+      ...(auditNoticeWrites ? ['./diagnostics/notice-payloads/setup.ts'] : []),
       './src/tests/testHarness/resetGlobalState.ts',
       './src/tests/testHarness/setSchemaWriteModeNative.ts',
       './src/tests/testHarness/seedMathRandom.ts',
