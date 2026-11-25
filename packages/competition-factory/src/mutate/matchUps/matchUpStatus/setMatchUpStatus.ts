@@ -276,9 +276,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
         enableAutoCalc,
       },
     },
-    // a native TEAM line asks the same closure to complete its return on the copy (`plan/teamFinalLine.ts`)
-    writeOnCopy: (copy, finish) =>
-      finish ? writeOnCopy(copy, finish) : draws.record(() => instants.record(() => writeOnCopy(copy))),
+    writeOnCopy: (copy) => draws.record(() => instants.record(() => writeOnCopy(copy))),
     settleOnCopy,
     instantsExact: instants.exact,
     recordDraws: draws.record,
@@ -311,14 +309,10 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
    * and the readings the settle passes are handed, taken as they are taken above. Not for a call that names more than
    * one tournament record: only the one it is made in is copied.
    */
-  function writeOnCopy(copy: RecordCopy, finish?: CopyFinish) {
+  function writeOnCopy(copy: RecordCopy) {
     const copied = copy.tournamentRecord;
     const named = Object.keys(tournamentRecords);
     if (named.length > 1 || (named.length && named[0] !== copied?.tournamentId)) return undefined;
-    if (finish) {
-      const { owned, matchUpsMap: map } = finish;
-      return ownedResult({ owned, params: { ...params, ...copy }, matchUpsMap: map, neverPlayedBefore, stack });
-    }
     const records = copied ? { [copied.tournamentId]: copied } : tournamentRecords;
     const map = getMatchUpsMap({ drawDefinition: copy.drawDefinition });
     const target: V1Target = {
@@ -340,8 +334,18 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
    * RECORDED, THE FIXPOINT (`outcome/plan/recordedCall.ts` `settledOnCopy`): the settle passes run once more on the copy
    * v1 has written, with this call's parameters and the readings taken of the copy as it now stands (its double exits,
    * its deciders), as the next call's settle would take them. Undefined for a copy this call did not write.
+   *
+   * With `finish`, a native TEAM line's detached write (`plan/teamFinalLine.ts`) completes its public return on its
+   * copy instead: the warnings v1 adds, from the copy's own map. Undefined for a call that names another tournament
+   * record, as `writeOnCopy` refuses it. It reuses this closure so the decision's arguments stay those of every call.
    */
-  function settleOnCopy(copy: RecordCopy) {
+  function settleOnCopy(copy: RecordCopy, finish?: CopyFinish) {
+    if (finish) {
+      const named = Object.keys(tournamentRecords);
+      if (named.length > 1 || (named.length && named[0] !== copy.tournamentRecord?.tournamentId)) return undefined;
+      const { owned, matchUpsMap: map } = finish;
+      return ownedResult({ owned, params: { ...params, ...copy }, matchUpsMap: map, neverPlayedBefore, stack });
+    }
     const target = copies.get(copy.drawDefinition);
     if (!target) return undefined;
     const map = getMatchUpsMap({ drawDefinition: copy.drawDefinition });

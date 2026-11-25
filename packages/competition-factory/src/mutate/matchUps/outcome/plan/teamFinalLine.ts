@@ -331,7 +331,7 @@ export function teamFinalLine(
   why: 'team' | 'cascade',
   sample: () => Set<string>,
 ): OutcomePlan | undefined {
-  if (!args.drawDefinition || !args.recordDraws || !args.writeOnCopy || !args.tournamentRecord) return;
+  if (!args.drawDefinition || !args.recordDraws || !args.settleOnCopy || !args.tournamentRecord) return;
   if (plan.clockFree || !(plan.view.line?.keepsDualDecision || plan.dual?.route === 'winner')) return;
   const ids = lineCircuit(plan, why);
   if (!ids) return;
@@ -368,12 +368,12 @@ export function teamFinalLine(
       for (const entity of byId.values()) changed.set(entity, changedOwnState(entity, MATCHUP_CHILDREN));
       for (const entity of structures) changed.set(entity, changedOwnState(entity, STRUCTURE_CHILDREN));
       changed.set(draw, changedOwnState(draw, DRAW_CHILDREN));
-      let result: ReturnType<NonNullable<BuildViewArgs['writeOnCopy']>>;
+      let result: ReturnType<NonNullable<BuildViewArgs['settleOnCopy']>>;
       try {
         result = args.recordDraws!(() => {
           const written = playPhases(copy, plan, ids, matchUpsMap, byId);
           // a call naming another tournament record is refused here, as the recorder refuses it
-          return written && args.writeOnCopy!(copy, { owned: written, matchUpsMap });
+          return written && args.settleOnCopy!(copy, { owned: written, matchUpsMap });
         });
       } catch {
         return { abstain: why };
