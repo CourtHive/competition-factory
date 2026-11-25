@@ -1,13 +1,5 @@
 import { buildSideExitProvenance, mergeSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
-import {
-  deferInContextMatchUp,
-  deferredQuery,
-  modifyMatchUpNotice,
-  modifyPositionAssignmentsNotice,
-} from '@Mutate/notifications/drawNotifications';
-import { getInContextMatchUp } from '@Mutate/matchUps/score/modifyMatchUpScore';
-import { getNoticeBuffer, getTopics } from '@Global/state/globalState';
-import { withDraftWrites } from '@Global/state/withDraftWrites';
+import { modifyMatchUpNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import {
   CONSOLATION,
   FIRST_MATCH_LOSER_CONSOLATION,
@@ -18,51 +10,28 @@ import {
 } from '@Constants/drawDefinitionConstants';
 import {
   BYE,
+  COMPLETED,
   DEFAULTED,
   DOUBLE_DEFAULT,
   DOUBLE_WALKOVER,
-  TO_BE_PLAYED,
   WALKOVER,
 } from '@Constants/matchUpStatusConstants';
-import { UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
 import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
-import { cloneData, cloneState } from '@Tools/cloneState';
-import {
-  applyOutcomeOps,
-  DRAW_CHILDREN,
-  MATCHUP_CHILDREN,
-  recordedName,
-  stampedInThisCall,
-  STRUCTURE_CHILDREN,
-} from '../ops';
-import { ownState, pendingAnnouncement, stampCopies, withNoticeMarks } from './recordedDiff';
-import { Recording } from '../recording';
+import { announceNestedScore, nestedDraft, openNestedTarget, plainNestedPrefix } from './nestedDraft';
 
 import type { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
 import type { BuildViewArgs, OutcomeView, RecordCopy } from '../types';
 import type { OutcomeOp } from '../ops';
 
-function open(match?: MatchUp) {
-  return (
-    match?.matchUpStatus === TO_BE_PLAYED &&
-    !match.winningSide &&
-    !match.score &&
-    !match.matchUpStatusCodes &&
-    !match.sideExitProvenance &&
-    !match.schedule &&
-    !match.tieMatchUps
-  );
-}
-
 /** The main target's unfillable loser seat must meet the loser target's winner at the same crossing. */
-function reservation(draw: DrawDefinition, view: OutcomeView, id: string) {
+function reservation(draw: DrawDefinition, view: OutcomeView, id: string, occupied: boolean) {
   const { targets } = view;
   const seat = targets.winnerLoserSeat;
   if (
     !seat?.seat?.free ||
     seat.linkCondition !== FIRST_MATCHUP ||
     !targets.loserTargetSeat?.free ||
-    targets.loserTargetSeat.opponentHeld ||
+    targets.loserTargetSeat.opponentHeld !== occupied ||
     draw.structures?.length !== 2
   )
     return;
@@ -99,15 +68,14 @@ function reservation(draw: DrawDefinition, view: OutcomeView, id: string) {
     !loser ||
     !crossing ||
     !onward ||
-    !open(source) ||
-    !open(pending) ||
-    !open(loser) ||
-    !open(crossing)
+    !openNestedTarget(source) ||
+    !openNestedTarget(pending) ||
+    !openNestedTarget(loser) ||
+    !openNestedTarget(crossing)
   )
     return;
   const paired = mainMatches.find((m) => m !== source && m.winnerMatchUpId === pending.matchUpId);
   if (
-    !open(paired) ||
     paired?.loserMatchUpId !== loser.matchUpId ||
     loser.roundNumber !== 1 ||
     pending.roundNumber !== 2 ||
@@ -122,49 +90,103 @@ function reservation(draw: DrawDefinition, view: OutcomeView, id: string) {
     crossing.loserMatchUpId ||
     !crossing.roundPosition ||
     crossing.roundPosition % 2 ||
-    pending.drawPositions?.length !== 0 ||
     loser.drawPositions?.length !== 2 ||
     crossing.drawPositions?.length !== 1 ||
     crossing.drawPositions[0] !== seat.drawPosition ||
     loser.drawPositions[1] !== targets.loserTargetDrawPosition ||
-    onward.drawPositions?.length !== 0 ||
     onward.winningSide ||
-    onward.matchUpStatus !== WALKOVER
+    onward.sideExitProvenance?.[2]
   )
     return;
   const origin = onward.sideExitProvenance?.[1];
-  const previous = matches.find((m) => m.matchUpId === origin?.sourceMatchUpId);
-  const otherFeeder = matches.find((m) => m.matchUpId === previous?.winnerMatchUpId);
-  if (
-    origin?.previousMatchUpStatus !== DOUBLE_WALKOVER ||
-    origin.matchUpStatus !== WALKOVER ||
-    onward.sideExitProvenance?.[2] ||
-    previous?.matchUpStatus !== DOUBLE_WALKOVER ||
-    otherFeeder?.matchUpStatus !== BYE ||
-    otherFeeder.winnerMatchUpId !== onward.matchUpId
-  )
-    return;
   const advancing = loser.drawPositions[0];
   const assignments = positionAssignmentsOf(consolation) ?? [];
-  const assignment = assignments.find((a) => a.drawPosition === seat.drawPosition);
+  const at = (dp: number) => assignments.find((a) => a.drawPosition === dp);
+  const vacant = (dp: number) => {
+    const a = at(dp);
+    return a && Object.keys(a).length === 1;
+  };
+  const assignment = at(seat.drawPosition);
   if (
+    !assignment ||
     !advancing ||
     advancing <= seat.drawPosition ||
-    !assignment ||
-    ![seat.drawPosition, ...loser.drawPositions].every((dp) =>
-      assignments.some((a) => a.drawPosition === dp && Object.keys(a).length === 1),
-    )
+    !vacant(seat.drawPosition) ||
+    !vacant(loser.drawPositions[1])
   )
     return;
-  return { source, pending, loser, crossing, onward, main, consolation, assignment, advancing };
+  const shared = { source, pending, loser, crossing, onward, consolation, assignment, advancing };
+  if (!occupied) {
+    const previous = matches.find((m) => m.matchUpId === origin?.sourceMatchUpId);
+    const feeder = matches.find((m) => m.matchUpId === previous?.winnerMatchUpId);
+    if (
+      !openNestedTarget(paired) ||
+      !vacant(advancing) ||
+      pending.drawPositions?.length !== 0 ||
+      onward.drawPositions?.length !== 0 ||
+      onward.matchUpStatus !== WALKOVER ||
+      origin?.previousMatchUpStatus !== DOUBLE_WALKOVER ||
+      origin.matchUpStatus !== WALKOVER ||
+      previous?.matchUpStatus !== DOUBLE_WALKOVER ||
+      feeder?.matchUpStatus !== BYE ||
+      feeder.winnerMatchUpId !== onward.matchUpId
+    )
+      return;
+    return { ...shared, arrivals: undefined };
+  }
+  // Both losers reached their linked structure. The participant goes past the crossing and wins the pending default.
+  const previous = mainMatches.find((m) => m.matchUpId === origin?.sourceMatchUpId);
+  const first = matches.find((m) => m.matchUpId === previous?.loserMatchUpId);
+  const feeder = matches.find((m) => m.matchUpId === first?.winnerMatchUpId);
+  const consolationFinal = matches.find((m) => m.matchUpId === onward.winnerMatchUpId);
+  const mainNext = mainMatches.find((m) => m.matchUpId === pending.winnerMatchUpId);
+  if (
+    !paired ||
+    paired.matchUpStatus !== COMPLETED ||
+    paired.winningSide !== 1 ||
+    pending.drawPositions?.length !== 1 ||
+    pending.drawPositions[0] !== paired.drawPositions?.[0] ||
+    !mainNext ||
+    !openNestedTarget(mainNext) ||
+    mainNext.drawPositions?.length !== 1 ||
+    mainNext.drawPositions[0] >= pending.drawPositions[0] ||
+    !consolationFinal ||
+    !openNestedTarget(consolationFinal) ||
+    consolationFinal.drawPositions?.length !== 0 ||
+    consolationFinal.winnerMatchUpId ||
+    consolationFinal.loserMatchUpId ||
+    onward.drawPositions?.length !== 1 ||
+    !vacant(onward.drawPositions[0]) ||
+    onward.drawPositions[0] >= advancing ||
+    !at(advancing)?.participantId ||
+    onward.matchUpStatus !== DEFAULTED ||
+    origin?.previousMatchUpStatus !== DOUBLE_DEFAULT ||
+    origin.matchUpStatus !== DEFAULTED ||
+    onward.sideStatusCodes ||
+    onward.matchUpStatusCodes?.length ||
+    previous?.matchUpStatus !== DOUBLE_DEFAULT ||
+    first?.matchUpStatus !== BYE ||
+    feeder?.matchUpStatus !== BYE ||
+    feeder.winnerMatchUpId !== onward.matchUpId
+  )
+    return;
+  const arrivals = {
+    paired,
+    mainNext,
+    consolationFinal,
+    mainPosition: pending.drawPositions[0],
+    mainWaiting: mainNext.drawPositions[0],
+    consolationWaiting: onward.drawPositions[0],
+  };
+  return { ...shared, arrivals };
 }
 
 type Reservation = NonNullable<ReturnType<typeof reservation>>;
 
 function applyReservation(copy: RecordCopy, r: Reservation) {
-  const { drawDefinition, tournamentRecord, event } = copy;
+  const { drawDefinition, tournamentRecord } = copy;
   const tournamentId = tournamentRecord?.tournamentId;
-  const scoreExit = (matchUp: MatchUp, awarded: boolean) => {
+  const scoreExit = (matchUp: MatchUp, awarded: boolean, paired?: MatchUp) => {
     matchUp.matchUpStatus = DEFAULTED;
     delete matchUp.orderOfFinish;
     matchUp.matchUpStatusCodes = [];
@@ -172,27 +194,15 @@ function applyReservation(copy: RecordCopy, r: Reservation) {
     delete matchUp.sideStatusCodes;
     if (awarded) matchUp.winningSide = 1;
     // Score subscribers see the result before provenance is merged into the target.
-    const matchUpId = matchUp.matchUpId;
-    if (getTopics().topics.includes(UPDATE_INCONTEXT_MATCHUP))
-      deferInContextMatchUp({
-        inContextMatchUp: deferredQuery(getInContextMatchUp, { tournamentRecord, drawDefinition, matchUpId }),
-        tournamentId,
-        matchUpId,
-      });
-    modifyMatchUpNotice({
-      tournamentId,
-      eventId: event?.eventId,
-      event,
-      drawDefinition,
-      matchUp,
-      context: 'modifyMatchUpScore',
-    });
+    announceNestedScore(copy, matchUp);
     mergeSideExitProvenance({
       matchUp,
       provenance: buildSideExitProvenance({
         sourceMatchUpId: r.source.matchUpId,
         sourceMatchUpStatus: DOUBLE_DEFAULT,
         sourceSideNumber: 2,
+        pairedMatchUpId: paired?.matchUpId,
+        pairedMatchUpStatus: paired?.matchUpStatus,
       }),
     });
   };
@@ -207,14 +217,28 @@ function applyReservation(copy: RecordCopy, r: Reservation) {
   r.crossing.matchUpStatus = BYE;
   r.crossing.score = undefined;
   modifyMatchUpNotice({ tournamentId, drawDefinition, matchUp: r.crossing, context: 'setMatchUpStatusBye' });
-  r.onward.drawPositions = [r.advancing];
+  const arrivals = r.arrivals;
+  if (arrivals) {
+    r.onward.winningSide = 2;
+    r.onward.matchUpStatusCodes = [];
+    r.onward.score = undefined;
+    r.onward.drawPositions = [arrivals.consolationWaiting, r.advancing];
+  } else r.onward.drawPositions = [r.advancing];
   modifyMatchUpNotice({ tournamentId, drawDefinition, matchUp: r.onward, context: 'advanceWinner' });
+  if (arrivals) {
+    const final = arrivals.consolationFinal;
+    final.score = undefined;
+    final.winningSide = undefined;
+    final.drawPositions = [r.advancing];
+    modifyMatchUpNotice({ tournamentId, drawDefinition, matchUp: final, context: 'advanceWinner' });
+  }
   modifyPositionAssignmentsNotice({ tournamentId, drawDefinition, structure: r.consolation, event: undefined });
-  scoreExit(r.pending, false);
-}
-
-function ownFields(entity: object, children: string[]) {
-  return cloneData(ownState(entity, children));
+  scoreExit(r.pending, !!arrivals, arrivals?.paired);
+  if (arrivals) {
+    arrivals.mainNext.drawPositions = [arrivals.mainWaiting, arrivals.mainPosition];
+    arrivals.mainNext.winningSide = undefined;
+    modifyMatchUpNotice({ drawDefinition, matchUp: arrivals.mainNext, context: 'assignMatchUpDrawPosition' });
+  }
 }
 
 export function nestedReservationSuffix(args: BuildViewArgs, view: OutcomeView, prefix: OutcomeOp[]) {
@@ -225,73 +249,15 @@ export function nestedReservationSuffix(args: BuildViewArgs, view: OutcomeView, 
     !id ||
     draw.drawType !== FIRST_MATCH_LOSER_CONSOLATION ||
     args.request.matchUpStatus !== DOUBLE_DEFAULT ||
-    args.request.flags.propagateExitStatus !== false ||
-    view.draw.propagatesByeOnDoubleExit ||
-    view.draw.defaultProcessCodes ||
-    view.draw.perMatchUpCompetition ||
-    !view.draw.storesEdges ||
-    prefix.length !== 4 ||
-    prefix[0].op !== 'setMatchUpResult' ||
-    !prefix.slice(1).every((op) => op.op === 'stampUpdatedAt')
+    !plainNestedPrefix(args, view, prefix)
   )
     return;
-  const seats = reservation(draw, view, id);
+  const seats = reservation(draw, view, id, args.request.flags.propagateExitStatus === true);
   if (!seats) return;
-  return () =>
-    args.recordDraws?.(() => {
-      const stamped = stampedInThisCall(draw);
-      const { copy } = cloneState({
-        tournamentRecord: args.tournamentRecord,
-        drawDefinition: draw,
-        event: args.event,
-        seats,
-      });
-      stampCopies(copy.drawDefinition, stamped);
-      return withNoticeMarks((readMarks) =>
-        withDraftWrites(() => {
-          const r = copy.seats;
-          if (applyOutcomeOps(copy.drawDefinition, prefix, stamped).error) return;
-          const drawStamp = copy.drawDefinition.updatedAt,
-            mainStamp = r.main.updatedAt;
-          // Bind the detached entities to their live counterparts, including retained assignment and score references.
-          const recording = new Recording(copy.drawDefinition);
-          const before = new Set(getNoticeBuffer() ?? []);
-          applyReservation(copy, r);
-          const ops: OutcomeOp[] = [];
-          for (const matchUp of [r.pending, r.loser, r.crossing, r.onward]) {
-            const op = {
-              op: 'replaceMatchUp' as const,
-              matchUpId: matchUp.matchUpId,
-              matchUp: ownFields(matchUp, MATCHUP_CHILDREN) as MatchUp,
-              recording,
-            };
-            recording.source(recordedName(op), matchUp);
-            ops.push(op);
-          }
-          for (const structure of copy.drawDefinition.structures ?? []) {
-            if (structure !== r.consolation && (structure !== r.main || structure.updatedAt === mainStamp)) continue;
-            const op = {
-              op: 'replaceStructureState' as const,
-              structureId: structure.structureId,
-              state: ownFields(structure, STRUCTURE_CHILDREN),
-              recording,
-            };
-            recording.source(recordedName(op), structure);
-            ops.push(op);
-          }
-          if (copy.drawDefinition.updatedAt !== drawStamp) {
-            const op = {
-              op: 'replaceDrawState' as const,
-              drawId: copy.drawDefinition.drawId,
-              state: ownFields(copy.drawDefinition, DRAW_CHILDREN),
-              recording,
-            };
-            recording.source(recordedName(op), copy.drawDefinition);
-            ops.push(op);
-          }
-          const announce = pendingAnnouncement(before, readMarks());
-          return announce && [...ops, announce];
-        }),
-      );
-    });
+  return nestedDraft(args, draw, prefix, seats, (copy, r) => {
+    applyReservation(copy, r);
+    const matches = [r.pending, r.loser, r.crossing, r.onward];
+    if (r.arrivals) matches.push(r.arrivals.mainNext, r.arrivals.consolationFinal);
+    return { matches, assignments: r.consolation };
+  });
 }

@@ -12,6 +12,7 @@ import { addGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
 import { convergence, isRelabel, planDirection } from './direction';
 import { compareIndex, type IndexComparison } from './indexOracle';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { nestedCarriedConvergence } from './plan/nestedCarriedConvergence';
 import { nestedReservationSuffix } from './plan/nestedReservation';
 import { recordDoubleExitCascade } from './plan/recordedCascade';
 import { positionTargets } from '@Query/matchUp/positionTargets';
@@ -101,8 +102,9 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
     project: projectOutcome(args, view),
     landing: landingView(args, view),
     record: (prefix, missingSeats) => {
-      const reservation = missingSeats && nestedReservationSuffix(args, view, prefix);
-      return reservation ? reservation() : recordDoubleExitCascade({ ...args, request: planned }, prefix);
+      const suffix =
+        missingSeats && (nestedReservationSuffix(args, view, prefix) ?? nestedCarriedConvergence(args, view, prefix));
+      return suffix ? suffix() : recordDoubleExitCascade({ ...args, request: planned }, prefix);
     },
     recordWhole: () => recordWholeCall(args),
     certifiesPhases: (ops) => !!compileTemporalPhases({ args, view, route, ops }),
