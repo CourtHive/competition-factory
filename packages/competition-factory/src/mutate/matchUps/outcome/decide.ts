@@ -1,3 +1,4 @@
+import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { teamFinalLine, watchTeamLineInputs } from './plan/teamFinalLine';
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
 import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
@@ -20,13 +21,14 @@ import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { compareViews, hydrateShadow } from './viewOracle';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
-import { recordWholeCall } from './plan/recordedCall';
+import { feedInRelay, outsideRelayReference } from './plan/feedInRelay';
+import { prepareRecordedCopy, recordWholeCall } from './plan/recordedCall';
 import { observeWrite, planWrite } from './write';
 import { refuseOutcome } from './refusals';
 import { stampedInThisCall } from './ops';
 import { buildOutcomeView } from './view';
 import { chooseRoute } from './route';
-import { planOutcome } from './plan';
+import { copiedWinnerOps, planOutcome } from './plan';
 import {
   addedNotices,
   captureShadow,
@@ -85,7 +87,8 @@ const OWNED_SHAPES = new Set<PlanShape>(['local', 'direction']);
  * the settle passes' has-work predicates. A plan that leaves a pass work abstains `settle`.
  */
 function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, keepFoldedView = false) {
-  let teamStamps: Set<string> | undefined;
+  let sampledStamps: Set<string> | undefined;
+  let relayCopy: ReturnType<typeof prepareRecordedCopy> | undefined;
   args = { ...args, clockFree: getCapturedClock() === undefined };
   // TEAM auto-calc: a dual whose result is computed from its lines takes the PROJECTED winner and score in
   // place of the call's before anything is routed, as `handleTeamAutoCalc` rewrites v1's parameters
@@ -105,10 +108,41 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
     teamLine: (plan, why) =>
       args.teamLineUnchanged &&
       teamFinalLine(args, plan, why, () => {
-        teamStamps = stampedInThisCall(args.drawDefinition);
-        return args.teamLineUnchanged?.() ? teamStamps : undefined;
+        sampledStamps = stampedInThisCall(args.drawDefinition);
+        return args.teamLineUnchanged?.() ? sampledStamps : undefined;
       }),
-    recordWhole: () => recordWholeCall(args, teamStamps),
+    recordWhole: () => recordWholeCall(args, sampledStamps, relayCopy),
+    clockRelay: (ops) => {
+      if (ops.length !== 8 || !args.drawDefinition || !args.writeOnCopy) return undefined;
+      const initial = compileTemporalPhases({ args, view, route, ops }, true);
+      if (!initial?.onward) return undefined;
+      sampledStamps = stampedInThisCall(args.drawDefinition);
+      relayCopy = prepareRecordedCopy(args);
+      const copy = relayCopy.copy;
+      const copiedArgs = { ...args, ...copy, matchUpsMap: getMatchUpsMap({ drawDefinition: copy.drawDefinition }) };
+      const current = buildOutcomeView(copiedArgs);
+      const request = args.request;
+      if (refuseOutcome(request, current) || chooseRoute(request, current) !== 'winner') return undefined;
+      const fresh = copiedWinnerOps({
+        request,
+        view: current,
+        route: 'winner',
+        drawDefinition: copy.drawDefinition,
+        tournamentRecord: copy.tournamentRecord,
+        clockFree: true,
+        write: planWrite(request, current, 'winner'),
+        direction: planDirection(request, current, 'winner'),
+      });
+      const phases = fresh && compileTemporalPhases({ args: copiedArgs, view: current, route, ops: fresh }, true);
+      if (!phases?.arrival || !phases.onward || outsideRelayReference(copy, copiedArgs.matchUpsMap, phases))
+        return undefined;
+      // Project material writes on the same detached graph v1 would settle. Stamp
+      // obligations belong to the draft's real notices and would reread the provider.
+      const projection: OutcomeOp[] = [{ ...phases.result, stampsScoredTime: false }, phases.arrival, phases.onward];
+      const folded = settleFold(copiedArgs, current, projection);
+      if (!folded || folded.error !== undefined || folded.sites.length) return undefined;
+      return { native: feedInRelay(args, phases, sampledStamps, relayCopy) };
+    },
     certifiesPhases: (ops) => !!compileTemporalPhases({ args, view, route, ops }),
     dual: dualCallFor(route, args, view),
     request: planned,
@@ -129,7 +163,7 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
   // v1's whole write, recorded with the instants it read (`recordedWhole`): apply writes them as data, and reads no clock
   const recorded = outcome.ops && outcome.recordedResult ? outcome : undefined;
   // An uncaptured call requires a complete phase program and a replayable effect scope, in either mode.
-  if (args.clockFree && !observe) outcome = { abstain: 'clock' };
+  if (args.clockFree && !observe && !(outcome.ops && outcome.draftClock)) outcome = { abstain: 'clock' };
   if (recorded) outcome = recorded;
   return { planned, route, plan, direction, folded, outcome, phases, observe };
 }
@@ -362,7 +396,11 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     if (!shadowBefore || !args.drawDefinition) return differentialTally('shadow:abstain:no-record', 'deferred');
     // RECORDED with no captured instant: v1 here read the clock as often as it did on the copy, or the recorded
     // instants are not the ones this run stamped (`tools/replayedInstants.ts`)
-    if (outcome.recordedResult && getCapturedClock() === undefined && args.instantsExact?.() === false)
+    if (
+      (outcome.recordedResult || outcome.draftClock) &&
+      getCapturedClock() === undefined &&
+      args.instantsExact?.() === false
+    )
       throw new OutcomePipelineDivergence({
         matchUpId: args.request.matchUpId,
         v1: 'read the clock on the stored record',

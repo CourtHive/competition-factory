@@ -491,6 +491,8 @@ function recordedWhole(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
     const planned = args.teamLine?.(args, plan.abstain);
     if (planned) return planned;
   }
+  const relay = args.clockFree && plan.ops ? args.clockRelay?.(plan.ops) : undefined;
+  if (relay) return relay.native ?? plan;
   const recorded = args.recordWhole?.();
   if (!recorded) return plan;
   // a predicate that finds work on v1's own write is answered by the passes themselves (`settledOnCopy`): only where
@@ -733,6 +735,13 @@ function reservedAfter(ops: OutcomeOp[], dual: DualCall): number {
   const stamp = ops[bye + 1];
   const stamped = stamp?.op === 'stampUpdatedAt' && stamp.entity === 'matchUp' && stamp.id === reservation.matchUpId;
   return bye + (stamped ? 2 : 1);
+}
+
+/** Rebuild an ordinary winner's placements on the actual recorder copy after
+ * its clock mode was sampled. Abstentions and other writers stay with v1. */
+export function copiedWinnerOps(args: PlanArgs): OutcomeOp[] | undefined {
+  if (!args.drawDefinition || !args.write || args.route !== 'winner' || abstainReason(args)) return undefined;
+  return recordedPlanOps(args, args.drawDefinition).ops;
 }
 
 /** the call's plan as ops, or the reason it is v1's */
