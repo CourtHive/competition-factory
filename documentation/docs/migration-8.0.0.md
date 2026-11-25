@@ -58,8 +58,22 @@ Use [the supported storage, ingest, draw-addition and read-projection routes](/d
 
 ## Other 8.0.0 changes
 
-Each change below is planned for 8.0.0 and announced in 7.x; one marked _proposed_ still awaits its final decision. Where a 7.x symbol is affected, it carries a
-`@deprecated` note naming its replacement. The 8.0.0 release notes repeat this list with links.
+Each change below is planned for 8.0.0 and announced in 7.x; one marked _proposed_ still awaits its final decision. The 8.0.0 release notes repeat this list with links.
+
+From the first 7.x release after 7.48.0, the published type declarations carry a `@deprecated` tag, which an editor
+shows as a strike-through with its message, on:
+
+- each method leaving the engines and governors, and each positional governor function moving to `tools` or
+  `availability`: on the governor member (`drawsGovernor.addGoesTo`, `drawsGovernor.query.addGoesTo`,
+  `governors.drawsGovernor.addGoesTo` and the `tods-competition-factory/governors` subpath) and on the
+  `tournamentEngine` / `competitionEngine` method where the engine types it;
+- `utilities`;
+- `getNotices` and the `notices` field of `CallListenerArgs`, `SCHEDULE_METHOD`, the `restrictAdHocRoundParticipants`
+  option, `getTournamentInfo`'s `eventInfo` and `EntryFee`.
+
+The message names the replacement where there is one, and otherwise links this guide. The asynchronous engines and the
+untyped `syncEngine` / `askEngine` show no tag, and the other symbols below are not tagged in the declarations; 7.48.0
+and earlier carry no tags at all.
 
 ### Engine and governor routes
 
