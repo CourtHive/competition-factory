@@ -14,6 +14,8 @@ import { addGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
 import { convergence, isRelabel, planDirection } from './direction';
 import { compareIndex, type IndexComparison } from './indexOracle';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { nestedReservationSuffix } from './plan/nestedReservation';
+import { nestedCarriedConvergence } from './plan/nestedCarriedConvergence';
 import { recordDoubleExitCascade } from './plan/recordedCascade';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { createWorkingView, type WorkingView } from './overlay';
@@ -104,7 +106,11 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
     rebuild: rebuildView(args, view, planned),
     project: projectOutcome(args, view),
     landing: landingView(args, view),
-    record: (prefix) => recordDoubleExitCascade({ ...args, request: planned }, prefix),
+    record: (prefix, missingSeats) => {
+      const suffix =
+        missingSeats && (nestedReservationSuffix(args, view, prefix) ?? nestedCarriedConvergence(args, view, prefix));
+      return suffix ? suffix() : recordDoubleExitCascade({ ...args, request: planned }, prefix);
+    },
     teamLine: (plan, why) =>
       args.teamLineUnchanged &&
       teamFinalLine(args, plan, why, () => {
