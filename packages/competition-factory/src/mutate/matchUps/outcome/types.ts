@@ -472,6 +472,7 @@ export type MatchUpWrite = {
 };
 
 export type BuildViewArgs = {
+  teamLineUnchanged?: () => boolean;
   tournamentRecords?: Record<string, Tournament>;
   /** Private planning mode; it grants no runtime ownership. */
   clockFree?: boolean;

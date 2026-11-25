@@ -1,5 +1,11 @@
 import { prepareCall, playCall, expectPlayedParity } from '@Tests/testHarness/outcome/recordedCallHarness';
-import { getOutcomePipeline, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import {
+  getOutcomePipeline,
+  getProvider,
+  setOutcomePipeline,
+  setStateProvider,
+  setSubscriptions,
+} from '@Global/state/globalState';
 import { findTarget, POLICY_OFF, won } from '@Tests/testHarness/outcome/directionFixtures';
 import * as nested from '@Mutate/matchUps/outcome/plan/recordedCascade';
 import * as legacy from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
@@ -13,6 +19,7 @@ import engine from '@Engines/syncEngine';
 
 import { CONSOLATION, DOUBLE_ELIMINATION, LOSER, MAIN } from '@Constants/drawDefinitionConstants';
 import { TEAM } from '@Constants/matchUpTypes';
+import type { Tournament } from '@Types/tournamentTypes';
 
 const drawId = 'd';
 const target = { structureName: 'Main', roundNumber: 3, roundPosition: 1 };
@@ -124,3 +131,52 @@ it.each(['wrong feed', 'finishing order gap', 'occupied receiver', 'stale scored
     expectPlayedParity(actual, baseline);
   },
 );
+
+it('uses the original recorder when a stamp getter changes the separately held tournament', () => {
+  const call = prepare(1);
+  const original = getProvider();
+  const planned = family.teamFinalLine;
+  const planner = vi.spyOn(family, 'teamFinalLine');
+  const recorder = vi.spyOn(whole, 'recordWholeCall');
+  let measuring = false;
+  let edited = false;
+  let stampReads = 0;
+  const run = (native: boolean) => {
+    measuring = false;
+    edited = false;
+    stampReads = 0;
+    recorder.mockClear();
+    planner.mockImplementationOnce((...args) => {
+      measuring = true;
+      return native ? planned(...args) : undefined;
+    });
+    const actual = playCall('v2', call);
+    expect(edited).toBe(true);
+    expect(recorder).toHaveBeenCalledTimes(1);
+    return { actual, stampReads };
+  };
+  try {
+    setStateProvider({
+      ...original,
+      getCapturedStamps() {
+        if (measuring) {
+          stampReads++;
+          if (!edited) {
+            edited = true;
+            const stored = Object.values(original.getTournamentRecords())[0] as Tournament;
+            const draw = stored.events![0].drawDefinitions![0];
+            const dormant = draw.structures!.find((s) => s.stage === CONSOLATION)!.matchUps![0];
+            dormant.schedule = { ...dormant.schedule, scoredTime: '2026-10-24T11:00:00.000Z' };
+          }
+        }
+        return original.getCapturedStamps?.();
+      },
+    });
+    const baseline = run(false);
+    const candidate = run(true);
+    expect(candidate.stampReads).toBe(baseline.stampReads);
+    expectPlayedParity(candidate.actual, baseline.actual);
+  } finally {
+    setStateProvider(original);
+  }
+});

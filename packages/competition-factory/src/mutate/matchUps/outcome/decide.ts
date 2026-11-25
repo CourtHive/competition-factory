@@ -1,4 +1,4 @@
-import { teamFinalLine } from './plan/teamFinalLine';
+import { teamFinalLine, watchTeamLineInputs } from './plan/teamFinalLine';
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
 import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
@@ -85,6 +85,7 @@ const OWNED_SHAPES = new Set<PlanShape>(['local', 'direction']);
  * the settle passes' has-work predicates. A plan that leaves a pass work abstains `settle`.
  */
 function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, keepFoldedView = false) {
+  let teamStamps: Set<string> | undefined;
   args = { ...args, clockFree: getCapturedClock() === undefined };
   // TEAM auto-calc: a dual whose result is computed from its lines takes the PROJECTED winner and score in
   // place of the call's before anything is routed, as `handleTeamAutoCalc` rewrites v1's parameters
@@ -101,8 +102,13 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
     project: projectOutcome(args, view),
     landing: landingView(args, view),
     record: (prefix) => recordDoubleExitCascade({ ...args, request: planned }, prefix),
-    teamLine: (plan, why) => teamFinalLine(args, plan, why),
-    recordWhole: () => recordWholeCall(args),
+    teamLine: (plan, why) =>
+      args.teamLineUnchanged &&
+      teamFinalLine(args, plan, why, () => {
+        teamStamps = stampedInThisCall(args.drawDefinition);
+        return args.teamLineUnchanged?.() ? teamStamps : undefined;
+      }),
+    recordWhole: () => recordWholeCall(args, teamStamps),
     certifiesPhases: (ops) => !!compileTemporalPhases({ args, view, route, ops }),
     dual: dualCallFor(route, args, view),
     request: planned,
@@ -206,6 +212,8 @@ export function decideOutcomeV2(args: BuildViewArgs): {
 
   // a precheck disagreement belongs to the call that met it: whatever an earlier call left is not this call's
   takePrecheckDivergences();
+  const teamLineUnchanged = watchTeamLineInputs(args);
+  if (teamLineUnchanged) args = { ...args, teamLineUnchanged };
   const view = buildOutcomeView(args);
   const refusal: Refusal | undefined = refuseOutcome(args.request, view);
 

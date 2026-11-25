@@ -17,7 +17,7 @@ import { nowIso } from '@Tools/clock';
 import { bareResultRequest } from './planShared';
 import { Recording } from '../recording';
 import { ownState, pendingAnnouncement, stampCopies, withNoticeMarks } from './recordedDiff';
-import { DRAW_CHILDREN, MATCHUP_CHILDREN, recordedName, stampedInThisCall, STRUCTURE_CHILDREN } from '../ops';
+import { DRAW_CHILDREN, MATCHUP_CHILDREN, recordedName, STRUCTURE_CHILDREN } from '../ops';
 
 // constants and types
 import type { BuildViewArgs, PlanArgs, OutcomePlan, RecordCopy } from '../types';
@@ -215,8 +215,21 @@ function lineCircuit(args: PlanArgs, why: 'team' | 'cascade'): Circuit | undefin
   return { ...base, winnerId: final.matchUpId, loserId: feeder.matchUpId, backId: back.structureId };
 }
 
-/** Non-data values can run caller code when the shipped recorder reads the draw. Leave those reads to it. */
-function ordinaryData(root: unknown) {
+/**
+ * A provider may change a separately held record when asked for the clock or stamp ledger.
+ * Capture ordinary data before the view reads it, then verify values AND references at the
+ * recorder's clone boundary. Unusual fields remain with the existing writer.
+ */
+export function watchTeamLineInputs(args: BuildViewArgs): (() => boolean) | undefined {
+  if (args.drawDefinition?.drawType !== DOUBLE_ELIMINATION || !args.recordDraws || !args.request.winningSide) return;
+  const main = args.drawDefinition.structures?.find((s) => s.stage === MAIN);
+  if (positionAssignmentsOf(main)?.filter((a) => a.participantId).length !== 2) return;
+  const dual = matchUpsOf(main)?.find((m) =>
+    m.tieMatchUps?.some((line) => line.matchUpId === args.request.matchUpId && line.matchUpStatus === TO_BE_PLAYED),
+  );
+  if (!dual || (dual.matchUpStatus !== COMPLETED && dual.matchUpStatus !== IN_PROGRESS)) return;
+
+  const fields: { node: object; keys: string[]; values: unknown[] }[] = [];
   const seen = new Set<object>();
   const active = new Set<object>();
   function visit(value: unknown): boolean {
@@ -227,15 +240,40 @@ function ordinaryData(root: unknown) {
     const proto = Object.getPrototypeOf(value);
     if (proto !== Object.prototype && proto !== Array.prototype && proto !== null) return false;
     active.add(value);
-    for (const key of Object.keys(value)) {
+    const keys = Object.getOwnPropertyNames(value);
+    const values: unknown[] = [];
+    for (const key of keys) {
       const field = Object.getOwnPropertyDescriptor(value, key);
       if (!field || !('value' in field) || !visit(field.value)) return false;
+      values.push(field.value);
     }
     active.delete(value);
     seen.add(value);
+    fields.push({ node: value, keys, values });
     return true;
   }
-  return visit(root);
+  if (
+    ![
+      args.request,
+      args.drawDefinition,
+      args.event,
+      args.tournamentRecord,
+      args.tournamentRecords,
+      args.policyDefinitions,
+    ].every(visit)
+  )
+    return;
+  return () =>
+    fields.every(({ node, keys, values }) => {
+      const current = Object.getOwnPropertyNames(node);
+      return (
+        keys.length === current.length &&
+        keys.every((key, index) => {
+          const field = Object.getOwnPropertyDescriptor(node, key);
+          return current[index] === key && field && 'value' in field && Object.is(field.value, values[index]);
+        })
+      );
+    });
 }
 
 function playPhases(copy: RecordCopy, plan: PlanArgs, ids: Circuit) {
@@ -328,15 +366,20 @@ function playPhases(copy: RecordCopy, plan: PlanArgs, ids: Circuit) {
  * draw, then its retained notices on storage. The write targets are fixed by the links before
  * the first phase. Mirror those targets together to preserve references across line-ups and scores.
  */
-export function teamFinalLine(args: BuildViewArgs, plan: PlanArgs, why: 'team' | 'cascade'): OutcomePlan | undefined {
+export function teamFinalLine(
+  args: BuildViewArgs,
+  plan: PlanArgs,
+  why: 'team' | 'cascade',
+  sample: () => Set<string> | undefined,
+): OutcomePlan | undefined {
   if (!args.drawDefinition || !args.recordDraws || !args.tournamentRecord || !args.tournamentRecords) return;
   if (plan.clockFree || !(plan.view.line?.keepsDualDecision || plan.dual?.route === 'winner')) return;
   const named = Object.keys(args.tournamentRecords);
   if (named.length > 1 || (named.length && named[0] !== args.tournamentRecord.tournamentId)) return;
-  if (!ordinaryData([args.tournamentRecord, args.event, args.drawDefinition, args.request])) return;
   const ids = lineCircuit(plan, why);
   if (!ids) return;
-  const stamped = stampedInThisCall(args.drawDefinition);
+  const stamped = sample();
+  if (!stamped) return;
   const { copy } = cloneState({
     tournamentRecord: args.tournamentRecord,
     event: args.event,
