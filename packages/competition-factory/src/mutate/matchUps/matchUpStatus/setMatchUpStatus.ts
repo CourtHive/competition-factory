@@ -36,7 +36,7 @@ import { isString } from '@Tools/objects';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Set as SetType, Tournament } from '@Types/tournamentTypes';
-import type { RecordCopy } from '@Mutate/matchUps/outcome/types';
+import type { CopyWriter, RecordCopy } from '@Mutate/matchUps/outcome/types';
 import { MatchUpsMap, PolicyDefinitions, ResultType, ResultWarning, TournamentRecords } from '@Types/factoryTypes';
 import { INVALID_VALUES, INVALID_WINNING_SIDE, SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING, POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
@@ -276,7 +276,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
         enableAutoCalc,
       },
     },
-    writeOnCopy: (copy) => draws.record(() => instants.record(() => writeOnCopy(copy))),
+    writeOnCopy: (copy, writer) => draws.record(() => instants.record(() => writeOnCopy(copy, writer))),
     settleOnCopy,
     instantsExact: instants.exact,
     recordDraws: draws.record,
@@ -307,12 +307,13 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
    * and the readings the settle passes are handed, taken as they are taken above. Not for a call that names more than
    * one tournament record: only the one it is made in is copied.
    */
-  function writeOnCopy(copy: RecordCopy) {
+  function writeOnCopy(copy: RecordCopy, writer?: CopyWriter) {
     const copied = copy.tournamentRecord;
     const named = Object.keys(tournamentRecords);
     if (named.length > 1 || (named.length && named[0] !== copied?.tournamentId)) return undefined;
     const records = copied ? { [copied.tournamentId]: copied } : tournamentRecords;
     const map = getMatchUpsMap({ drawDefinition: copy.drawDefinition });
+    if (writer) return writer(copy, map);
     const target: V1Target = {
       params: { ...params, ...copy, tournamentRecord: copied as Tournament, tournamentRecords: records },
       doubleExitsBefore: new Set(
