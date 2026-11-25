@@ -42,6 +42,8 @@ export function decidedResultRefusal(params: {
   matchUpStatus?: MatchUpStatusUnion;
   matchUpFormat?: string;
   winningSide?: number;
+  /** whether the score is level, where the format cannot say: a TEAM dual's aggregate (`levelDualDecisionRefusal`) */
+  level?: boolean;
   score?: Score;
 }): ResultType | undefined {
   const { matchUpStatus, matchUpFormat, winningSide, score } = params;
@@ -60,13 +62,15 @@ export function decidedResultRefusal(params: {
   }
   const tallyRefusal = decidedBy.tally === undefined ? undefined : tallyProblem(decidedBy, winningSide);
   if (tallyRefusal) return refuse(tallyRefusal);
-  const parsed = parse(matchUpFormat ?? '');
-  const level = parsed?.overtimeFormat
-    ? isLevelOvertimeScore(score, matchUpFormat)
-    : isLevelScore(score, matchUpFormat);
+  const level = params.level ?? isLevelForFormat(score, matchUpFormat);
   if (!level)
     return refuse('only a level score is decided outside it: this score decides the match, or is not complete');
   return undefined;
+}
+
+function isLevelForFormat(score?: Score, matchUpFormat?: string): boolean {
+  const parsed = parse(matchUpFormat ?? '');
+  return parsed?.overtimeFormat ? isLevelOvertimeScore(score, matchUpFormat) : isLevelScore(score, matchUpFormat);
 }
 
 function isLevelOvertimeScore(score?: Score, matchUpFormat?: string): boolean {

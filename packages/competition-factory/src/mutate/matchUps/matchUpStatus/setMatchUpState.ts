@@ -34,6 +34,7 @@ import { validateDrawTallyOptions } from '@Validators/validateTallyPolicy';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
+import { levelDualDecisionRefusal } from '@Mutate/matchUps/matchUpStatus/levelDualDecision';
 import { isPartialDualScore } from '@Scoring/analysis/isPartialDualScore';
 import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -1052,6 +1053,18 @@ function handleTeamAutoCalc({
   if (!enableAutoCalc && isPartialDualScore(params.score)) {
     Object.assign(params, { score: { ...matchUp.score, ...params.score } });
   }
+  // a winner on a level tie records how it was decided; `setMatchUpStatus` asks first, this is for direct callers
+  const levelDual = levelDualDecisionRefusal({
+    matchUpStatus: params.matchUpStatus,
+    score: params.score,
+    dual: matchUp,
+    drawDefinition,
+    enableAutoCalc,
+    matchUpsMap,
+    winningSide,
+    event,
+  });
+  if (levelDual) return levelDual;
 
   if (disableAutoCalc) {
     autoCalcValue = true;

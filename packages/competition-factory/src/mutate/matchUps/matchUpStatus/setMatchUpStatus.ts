@@ -3,6 +3,7 @@ import { FORWARD_SETTLE_EXHAUSTED } from '@Mutate/matchUps/matchUpStatus/settleF
 import { resolveRotatingPartnerOutcome } from '@Query/drawDefinition/resolveRotatingPartnerOutcome';
 import { checkMatchUpFormatApplication } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { announceGoesTo, setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
+import { levelDualDecisionRefusal } from '@Mutate/matchUps/matchUpStatus/levelDualDecision';
 import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { settleAfterWrite } from '@Mutate/matchUps/matchUpStatus/settleAfterWrite';
 import { withoutZeroZeroTiebreak } from '@Helpers/matchUpFormatCode/setRules/tiebreakSetShape';
@@ -231,6 +232,9 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
 
   // once, here, so the v2 decision and v1's writes read the same score
   keepDualAggregate({ enableAutoCalc, matchUpsMap, matchUpId, outcome });
+  // and refused here, before either pipeline: a winner on a level TEAM tie records how it was decided
+  const levelDual = levelDualRefusal({ ...params, matchUpsMap, outcome });
+  if (levelDual) return decorateResult({ result: levelDual, stack });
 
   // read BEFORE the mutation: `reconcileDeciders` acts only on a final whose winner has changed
   const finalsBefore = getDeciderFinals(drawDefinition);
@@ -460,6 +464,11 @@ type V1Target = {
   onCopy?: boolean;
 };
 
+type LevelDualArgs = Pick<SetMatchUpStatusArgs, 'drawDefinition' | 'enableAutoCalc' | 'outcome' | 'event'> & {
+  matchUpsMap: MatchUpsMap;
+  matchUpId: string;
+};
+
 type KeepDualAggregateArgs = Pick<SetMatchUpStatusArgs, 'enableAutoCalc' | 'outcome'> & {
   matchUpsMap: MatchUpsMap;
   matchUpId: string;
@@ -474,6 +483,21 @@ function keepDualAggregate({ enableAutoCalc, matchUpsMap, matchUpId, outcome }: 
   if (!outcome || enableAutoCalc || !isPartialDualScore(outcome.score)) return;
   const dual = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === matchUpId);
   if (dual?.matchUpType === TEAM) outcome.score = { ...dual.score, ...outcome.score };
+}
+
+function levelDualRefusal({ drawDefinition, enableAutoCalc, matchUpsMap, matchUpId, outcome, event }: LevelDualArgs) {
+  const dual = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === matchUpId);
+  if (dual?.matchUpType !== TEAM) return undefined;
+  return levelDualDecisionRefusal({
+    matchUpStatus: outcome?.matchUpStatus,
+    winningSide: outcome?.winningSide,
+    score: outcome?.score,
+    drawDefinition,
+    enableAutoCalc,
+    matchUpsMap,
+    event,
+    dual,
+  });
 }
 
 /**
