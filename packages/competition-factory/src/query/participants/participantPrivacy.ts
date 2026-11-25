@@ -1,4 +1,5 @@
 import { attributeFilter } from '@Tools/attributeFilter';
+import { idRecord } from '@Tools/plainRecord';
 
 // constants and types
 import { POLICY_TYPE_PARTICIPANT } from '@Constants/policyConstants';
@@ -61,7 +62,8 @@ export function applyParticipantPrivacyToMap(params: { participantMap?: any; tem
   const { participantMap, template } = params;
   if (!template || !participantMap) return participantMap;
 
-  const filtered = {};
+  // keyed by participantId, as the map it filters: an id record keeps "__proto__" an ordinary key
+  const filtered = idRecord();
   for (const [participantId, entry] of Object.entries<any>(participantMap)) {
     filtered[participantId] = entry?.participant
       ? { ...entry, participant: attributeFilter({ source: entry.participant, template }) }
@@ -140,7 +142,8 @@ function withoutAttribution(
 export function stripPresenceAttributionFromMap(participantMap?: any): any {
   if (!participantMap) return participantMap;
 
-  const stripped = {};
+  // keyed by participantId: an id record keeps "__proto__" an ordinary key (getParticipants hands it over plain)
+  const stripped = idRecord();
   for (const [participantId, entry] of Object.entries<any>(participantMap)) {
     stripped[participantId] = entry?.participant
       ? { ...entry, participant: strippedParticipant(entry.participant) }

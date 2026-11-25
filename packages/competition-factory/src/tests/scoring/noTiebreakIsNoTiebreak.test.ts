@@ -3,7 +3,7 @@ import { checkSetIsComplete } from '@Helpers/matchUpFormatCode/setRules/setCompl
 import { enterValues, scoreMatchUp } from '../helpers/keyValueScore/primitives';
 import { setHasTiebreak } from '@Helpers/matchUpFormatCode/formatUtilities';
 import { retainScoreForFormat } from '@Query/matchUp/retainScoreForFormat';
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { validateScore } from '@Scoring/analysis/validateScore';
 import { describe, expect, it } from 'vitest';
 

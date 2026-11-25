@@ -1,5 +1,5 @@
 import { ScoringEngine as Governed } from '@Assemblies/governors/scoreGovernor';
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants and types

@@ -18,6 +18,7 @@ import { processSides } from '@Query/matchUps/processSides';
 import { stringSort } from '@Functions/sorters/stringSort';
 import { isExit } from '@Validators/isExit';
 import { isObject } from '@Tools/objects';
+import { idRecord, ownArray } from '@Tools/plainRecord';
 
 // constants and types
 import { CONTAINER, MAIN, PLAY_OFF, QUALIFYING } from '@Constants/drawDefinitionConstants';
@@ -92,13 +93,15 @@ export function getParticipantEntries(params) {
   const derivedDrawInfo: any = {};
 
   // RR group matchUp collection for tally-based finishing positions
-  const rrGroupMatchUps: { [structureId: string]: HydratedMatchUp[] } = {};
-  const rrContainerInfo: RRContainerInfo = {};
+  const rrGroupMatchUps: { [structureId: string]: HydratedMatchUp[] } = idRecord();
+  const rrContainerInfo: RRContainerInfo = idRecord();
 
-  const getRanking = ({ eventType, scaleNames, participantId }) =>
-    participantMap[participantId]?.participant?.rankings?.[eventType]?.find((ranking) =>
-      scaleNames.includes(ranking.scaleName),
-    )?.scaleValue;
+  // an event type is a record value: "constructor" or "toString" must read as no rankings, not as a built-in
+  const getRanking = ({ eventType, scaleNames, participantId }) => {
+    const rankings = participantMap[participantId]?.participant?.rankings;
+    if (!rankings || !Object.hasOwn(rankings, eventType)) return undefined;
+    return rankings[eventType]?.find((ranking) => scaleNames.includes(ranking.scaleName))?.scaleValue;
+  };
 
   for (const event of tournamentRecord?.events ?? []) {
     if (participantFilters?.eventIds && !participantFilters.eventIds.includes(event.eventId)) continue;
@@ -397,16 +400,17 @@ function addParticipantDrawEntrySeedings({
 
   const seedValue = mainSeeding || qualifyingSeeding;
   if (seedValue) {
-    if (!participantMap[id].participant.seedings[eventType]) participantMap[id].participant.seedings[eventType] = [];
+    // seedings is returned as built, so an event type is an own key of a plain object rather than an idRecord key
+    const eventSeedings = ownArray(participantMap[id].participant.seedings, eventType);
 
     if (mainSeedingAssignments) {
-      participantMap[id].participant.seedings[eventType].push({
+      eventSeedings.push({
         ...mainSeedingAssignments,
         scaleName: drawId,
       });
     }
     if (qualifyingSeedingAssignments) {
-      participantMap[id].participant.seedings[eventType].push({
+      eventSeedings.push({
         ...qualifyingSeedingAssignments,
         scaleName: drawId,
       });
@@ -845,8 +849,10 @@ function computeRRFinishingPositions(
   rrContainerInfo: RRContainerInfo,
   withRankingProfile?: boolean,
 ) {
-  const rrFinishingPositions: { [drawId: string]: { [participantId: string]: number[] } } = {};
-  const rrGroupPlaces: { [drawId: string]: { [participantId: string]: RRGroupPlace } } = {};
+  // keyed by ids from the record and used only within this query: nothing is inherited, so a drawId, structureId or
+  // participantId of "__proto__", "constructor" or "toString" is an ordinary key, never a built-in that writes land on
+  const rrFinishingPositions: { [drawId: string]: { [participantId: string]: number[] } } = idRecord();
+  const rrGroupPlaces: { [drawId: string]: { [participantId: string]: RRGroupPlace } } = idRecord();
 
   if (!withRankingProfile) return { rrFinishingPositions, rrGroupPlaces };
 
@@ -862,8 +868,8 @@ function computeRRFinishingPositions(
     const drawPositionsCount = containedStructures.reduce((sum, s) => sum + (positionAssignmentsOf(s)?.length || 0), 0);
     const playoffStructure = drawDefinition.structures?.find((s) => s.stage === PLAY_OFF);
 
-    if (!rrFinishingPositions[drawId]) rrFinishingPositions[drawId] = {};
-    if (!rrGroupPlaces[drawId]) rrGroupPlaces[drawId] = {};
+    if (!rrFinishingPositions[drawId]) rrFinishingPositions[drawId] = idRecord();
+    if (!rrGroupPlaces[drawId]) rrGroupPlaces[drawId] = idRecord();
 
     for (const containedStructure of containedStructures) {
       processRRBracket({
@@ -893,7 +899,7 @@ function detectScheduleConflicts({ scheduleItems, potentialMatchUps, scheduleAna
     if (scheduledTime) dateItems[scheduledDate].push(scheduleItem);
 
     return dateItems;
-  }, {});
+  }, idRecord());
 
   Object.values(dateItems).forEach((items: any) => items.sort(timeSort));
 

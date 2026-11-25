@@ -1,10 +1,4 @@
-import {
-  getCapturedClock,
-  getCapturedCompetitionClock,
-  setCapturedClock,
-  setCapturedCompetitionClock,
-  setCapturedStamps,
-} from '@Global/state/globalState';
+import { callRuntime } from './runtime';
 
 // constants
 import { ErrorType, INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
@@ -238,8 +232,8 @@ function readCompetition(provider: CompetitionTimeProvider): { ms: number } | Cl
 
 /** Read the instants for a private preview in the caller's context, without installing a capture there. */
 export function readPreviewClocks() {
-  const captured = getCapturedClock();
-  if (captured !== undefined) return { record: captured, competition: getCapturedCompetitionClock() };
+  const captured = callRuntime.getCapturedClock?.();
+  if (captured !== undefined) return { record: captured, competition: callRuntime.getCapturedCompetitionClock?.() };
   const record = readSource();
   if ('error' in record) return record;
   const competition = competitionProvider && readCompetition(competitionProvider);
@@ -257,16 +251,16 @@ function beginCapture(): { timeStamp: number; release: () => void } | ClockError
   const competition = competitionProvider && readCompetition(competitionProvider);
   if (competition && 'error' in competition) return competition;
 
-  setCapturedClock(record.ms);
-  if (competition) setCapturedCompetitionClock(competition.ms);
+  callRuntime.setCapturedClock?.(record.ms);
+  if (competition) callRuntime.setCapturedCompetitionClock?.(competition.ms);
   // the call's stamp ledger opens and closes with its instant: an entity is stamped once per call
-  setCapturedStamps(new WeakSet());
+  callRuntime.setCapturedStamps?.(new WeakSet());
   return {
     timeStamp: record.ms,
     release: () => {
-      setCapturedClock(undefined);
-      setCapturedCompetitionClock(undefined);
-      setCapturedStamps(undefined);
+      callRuntime.setCapturedClock?.(undefined);
+      callRuntime.setCapturedCompetitionClock?.(undefined);
+      callRuntime.setCapturedStamps?.(undefined);
     },
   };
 }
@@ -278,7 +272,7 @@ function beginCapture(): { timeStamp: number; release: () => void } | ClockError
  * competition provider that cannot.
  */
 export function withCapturedClock<T>(fn: (timeStamp: number) => T): T | ClockError {
-  const captured = getCapturedClock();
+  const captured = callRuntime.getCapturedClock?.();
   if (captured !== undefined) return fn(captured);
 
   const capture = beginCapture();
@@ -292,7 +286,7 @@ export function withCapturedClock<T>(fn: (timeStamp: number) => T): T | ClockErr
 
 /** `withCapturedClock` for an async `fn`: the capture is released only once `fn` settles. */
 export async function withCapturedClockAsync<T>(fn: (timeStamp: number) => Promise<T>): Promise<T | ClockError> {
-  const captured = getCapturedClock();
+  const captured = callRuntime.getCapturedClock?.();
   if (captured !== undefined) return fn(captured);
 
   const capture = beginCapture();
@@ -306,7 +300,7 @@ export async function withCapturedClockAsync<T>(fn: (timeStamp: number) => Promi
 
 /** The current instant as a Date: the captured one inside an engine call, else read at the call. */
 export function now(effect?: ClockEffect): Date {
-  const captured = getCapturedClock();
+  const captured = callRuntime.getCapturedClock?.();
   if (captured !== undefined) return new Date(captured);
 
   const read = readSource(effect);
@@ -330,7 +324,7 @@ export function nowMs(effect?: ClockEffect): number {
  * provider that cannot produce a valid instant throws, as `now()` does for its own source.
  */
 export function competitionNow(): Date {
-  const captured = getCapturedCompetitionClock();
+  const captured = callRuntime.getCapturedCompetitionClock?.();
   if (captured !== undefined) return new Date(captured);
   if (!competitionProvider) return now();
 

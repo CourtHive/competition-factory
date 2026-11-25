@@ -5,7 +5,7 @@
  * Winner determined by total runs across all 4 innings (not innings won).
  */
 
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { describe, test, expect } from 'vitest';
 
 // constants

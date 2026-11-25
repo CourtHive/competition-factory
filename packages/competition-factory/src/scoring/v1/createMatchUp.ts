@@ -20,6 +20,10 @@ import type { MatchUp, CreateMatchUpOptions, Side, Score } from '@Types/scoring/
  * @returns New matchUp object
  */
 export function createMatchUp(options: CreateMatchUpOptions): MatchUp {
+  return createMatchUpWithClock(options, nowIso);
+}
+
+export function createMatchUpWithClock(options: CreateMatchUpOptions, clock: () => string): MatchUp {
   const { matchUpId = UUID(), matchUpFormat, participants = [], isDoubles = false, matchUpType, occurredAt } = options;
 
   // Determine matchUpType
@@ -50,7 +54,7 @@ export function createMatchUp(options: CreateMatchUpOptions): MatchUp {
     matchUpType: type,
     sides,
     score,
-    createdAt: occurredAt ?? nowIso(),
+    createdAt: occurredAt ?? clock(),
   };
 
   return matchUp;

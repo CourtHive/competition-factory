@@ -50,7 +50,7 @@ it('no source file outside constants, types and fixtures writes a matchUpStatus 
   const files = sourceFiles(SRC);
   // CONTROL: the walk reached the files this rule came from
   expect(files.length).toBeGreaterThan(500);
-  expect(files.some((file) => file.endsWith(path.join('engines', 'scoring', 'ScoringEngine.ts')))).toBe(true);
+  expect(files.some((file) => file.endsWith(path.join('scoring', 'engine', 'ScoringEngine.ts')))).toBe(true);
 
   const found = files.flatMap((file) =>
     bareLiterals(fs.readFileSync(file, 'utf8')).map((line) => `${path.relative(SRC, file)}:${line}`),

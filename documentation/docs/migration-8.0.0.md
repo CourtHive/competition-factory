@@ -29,7 +29,9 @@ scoreGovernor.validateMatchUpScore(sets, 'SET3-S:6/TB7');
 ```
 
 - `tools.formats` replaces the matchUpFormat governor's `parse`, `stringify`, `isAggregateFormat`, `finalSetGoverns` and
-  `aggregateDeciderSetNumber`, and the score governor's aliases `parseMatchUpFormat` / `stringifyMatchUpFormat`.
+  `aggregateDeciderSetNumber`, and the score governor's aliases `parseMatchUpFormat` / `stringifyMatchUpFormat`. It
+  also holds the format validators `isValidMatchUpFormat` and `validateMatchUpFormat`; the governor's `isValid` alias
+  has no `tools.formats` counterpart, so use `isValidMatchUpFormat`.
 - `tools.scoring` replaces the score governor's validators, scoring-engine state readers and point and statistics
   parsers.
 - The availability helpers stay on the `availability` export and leave the engines.
@@ -39,7 +41,9 @@ scoreGovernor.validateMatchUpScore(sets, 'SET3-S:6/TB7');
 - `tools.entries`, `tools.draws` and `tools.matchUps` replace the entries governor's fee helpers, the draws governor's
   `isAdHocType` / `isLadder`, and the matchUp governor's `validMatchUp` / `validMatchUps`.
 - `tools.rankings.deriveRankingList` replaces the ranking governor's `applyDerivedRankings` (the same function, named
-  for what it does). The rolling award window is `tools.rankings.computeAwardWindow`.
+  for what it does). The rolling award window is `tools.rankings.computeAwardWindow`. The ranking governor's
+  `getParticipantPoints` and `getQualityWinPoints` are `tools.rankings.getParticipantPoints` and
+  `tools.rankings.getQualityWinPoints`.
 - `publishingGovernor.isTournamentPublished(tournamentRecord)` is retired. It takes a whole record, so it is neither a
   query nor a tool. Use the `getPublishState` query.
 
@@ -56,17 +60,31 @@ Use [the supported storage, ingest, draw-addition and read-projection routes](/d
 
 ## Other 8.0.0 changes
 
-Each change below is planned for 8.0.0 and announced in 7.x; one marked _proposed_ still awaits its final decision. Where a 7.x symbol is affected, it carries a
-`@deprecated` note naming its replacement. The 8.0.0 release notes repeat this list with links.
+Each change below is planned for 8.0.0 and announced in 7.x; one marked _proposed_ still awaits its final decision. The 8.0.0 release notes repeat this list with links.
+
+From the first 7.x release after 7.48.0, the published type declarations carry a `@deprecated` tag, which an editor
+shows as a strike-through with its message, on:
+
+- each method leaving the engines and governors, and each positional governor function moving to `tools` or
+  `availability`: on the governor member (`drawsGovernor.addGoesTo`, `drawsGovernor.query.addGoesTo`,
+  `governors.drawsGovernor.addGoesTo` and the `tods-competition-factory/governors` subpath) and on the
+  `tournamentEngine` / `competitionEngine` method where the engine types it;
+- `utilities`;
+- `getNotices` and the `notices` field of `CallListenerArgs`, `SCHEDULE_METHOD`, the `restrictAdHocRoundParticipants`
+  option, `getTournamentInfo`'s `eventInfo` and `EntryFee`.
+
+The message names the replacement where there is one, and otherwise links this guide. The asynchronous engines and the
+untyped `syncEngine` / `askEngine` show no tag, and the other symbols below are not tagged in the declarations; 7.48.0
+and earlier carry no tags at all.
 
 ### Engine and governor routes
 
-- **119 methods leave the production governors and engines.** See the [engine API transition](/docs/implementation/engine-api-transition-8) for the list, the replacement where one exists, and the standalone-export decision for each.
+- **117 methods leave the production governors and engines.** See the [engine API transition](/docs/implementation/engine-api-transition-8) for the list, the replacement where one exists, and the standalone-export decision for each.
 - **`matchUpFormatCode` and `matchUpFormatGovernor` are retired.** `tools.formats` is the single format surface, including the format validators.
 - **`addFinishingRounds`** leaves its governor, and **`applyDerivedRankings`** is available only as `tools.rankings.deriveRankingList`.
 - **`setMatchUpState`** is removed from the engine surface. Use `setMatchUpStatus`.
 - **`tournamentGovernor.query.cleanExpiredMutationLocks`** is removed; the function stays on `tournamentGovernor.mutate`, because it writes.
-- **The mocks-governor simulation aliases** (`generateOutcome`, `generateOutcomeFromScoreString`, `completeDrawMatchUps`) are removed. Use `simulationGovernor`.
+- **The mocks-governor simulation aliases** (`generateOutcome`, `generateOutcomeFromScoreString`, `completeDrawMatchUps`) are removed from `mocksGovernor`. Use `simulationGovernor`. `mocksEngine` mounts `simulationGovernor`, so `mocksEngine.generateOutcome` and the other two keep working unchanged.
 
 ### Behaviour changes
 
@@ -77,7 +95,7 @@ Each change below is planned for 8.0.0 and announced in 7.x; one marked _propose
 - **Writes are native only.** The `LEGACY` and `BRIDGE` schema write modes are removed. Records written by them are still read.
 - **The positional `matchUpStatusCodes` array is no longer written**, and the `appliedPolicies` extension is no longer written (the first-class `appliedPolicies` attribute replaces it). Both are still read from older records.
 - **Penalties refuse the old label spellings and the two misspelled type values** (the deprecated aliases of `EQUIPMENT_VIOLATION` and `FAILURE_TO_SIGN_IN`). Store `PenaltyTypeEnum` codes.
-- **Date helpers need the instant.** Exported date helpers lose their implicit "now"; pass the instant, or call through an engine.
+- **Date helpers need the instant.** Exported date helpers lose their implicit "now" in 8.0.0. In 7.x, pass a Date or ISO date string as the second argument to `tools.plainDate.isDateInPast(dateString, asOf)` and `tools.generateTimeCode(index, asOf)`. When omitted, both still read the call clock.
 - **`asOf` is required** on `tools.publishing` (`isEmbargoed`, `isVisiblyPublished`, `getRoundVisibilityState`).
 
 ### Removed options, constants and fields

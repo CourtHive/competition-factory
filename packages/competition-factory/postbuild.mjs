@@ -10,6 +10,28 @@
  * rollup.config.mjs `esmExport`. This step only handles the .d.ts variants.)
  */
 import fs from 'fs';
+import ts from 'typescript';
+import { injectDeprecations, loadDeprecations } from './scripts/lib/deprecations.mjs';
+import { PACKAGE_ROOT, REPO_ROOT } from './scripts/lib/repoRoot.mjs';
+
+// The `@deprecated` tags a consumer's editor shows. `removeComments` strips every doc comment from the bundled
+// declarations, so the tags for the routes leaving the engines at 8.0.0 (transition manifest + positional guard list),
+// for `utilities` and for the long-deprecated aliases are injected here, before the per-format copies below, into
+// every declaration bundle rollup writes. See scripts/lib/deprecations.mjs; `verify:deprecations` counts them in the
+// packed tarball. A plan problem (a scheduled route no governor holds, an alias that moved) fails the build.
+const deprecations = loadDeprecations({ REPO_ROOT, PACKAGE_ROOT });
+for (const [bundle, file] of [
+  ['root', './dist/tods-competition-factory.d.ts'],
+  ['constants', './dist/constants.d.ts'],
+  ['score-entry-state', './dist/score-entry-state.d.ts'],
+]) {
+  if (!fs.existsSync(file)) continue;
+  const result = injectDeprecations(ts, fs.readFileSync(file, 'utf8'), deprecations, { bundle, fileName: file });
+  if (result.problems.length)
+    throw new Error(`postbuild: @deprecated injection into ${file}:\n  ${result.problems.join('\n  ')}`);
+  fs.writeFileSync(file, result.text);
+  console.log(`postbuild: ${result.targets.length} @deprecated tags injected into ${file}`);
+}
 
 const dtsSource = './dist/tods-competition-factory.d.ts';
 if (fs.existsSync(dtsSource)) {

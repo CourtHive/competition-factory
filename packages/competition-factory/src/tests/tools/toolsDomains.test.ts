@@ -9,7 +9,15 @@ import * as tools from '@Assemblies/tools';
  * the governor's own function, so the two homes cannot drift before 8.0.0 removes the governor placements.
  */
 
-const FORMATS = ['aggregateDeciderSetNumber', 'finalSetGoverns', 'isAggregateFormat', 'parse', 'stringify'];
+const FORMATS = [
+  'aggregateDeciderSetNumber',
+  'finalSetGoverns',
+  'isAggregateFormat',
+  'isValidMatchUpFormat',
+  'parse',
+  'stringify',
+  'validateMatchUpFormat',
+];
 const GOVERNOR_SCORING = [
   'addPoint',
   'analyzeSequence',
@@ -54,6 +62,19 @@ describe('tools.formats', () => {
     // the score governor's aliases are the same functions
     expect(governors.scoreGovernor.parseMatchUpFormat).toBe(tools.formats.parse);
     expect(governors.scoreGovernor.stringifyMatchUpFormat).toBe(tools.formats.stringify);
+  });
+
+  it('validates a format code, without the governor isValid alias', () => {
+    const { isValidMatchUpFormat, validateMatchUpFormat } = tools.formats;
+    expect(isValidMatchUpFormat).toBe(governors.matchUpFormatGovernor.isValidMatchUpFormat);
+    expect(validateMatchUpFormat).toBe(governors.matchUpFormatGovernor.validateMatchUpFormat);
+    expect(isValidMatchUpFormat({ matchUpFormat: 'SET3-S:6/TB7' })).toEqual(true);
+    expect(isValidMatchUpFormat({ matchUpFormat: 'SET2-S:6/TB7' })).toEqual(false);
+    expect(validateMatchUpFormat({ matchUpFormat: 'SET3-S:6/TB7' })).toEqual({ valid: true });
+    const invalid = validateMatchUpFormat({ matchUpFormat: 'SET2-S:6/TB7' });
+    expect(invalid.valid).toEqual(false);
+    expect(invalid.info).toContain('odd count');
+    expect('isValid' in tools.formats).toEqual(false);
   });
 });
 
@@ -119,12 +140,14 @@ describe('tools.publishing takes the instant as an input', () => {
 });
 
 describe('tools.rankings', () => {
-  it('holds the award window and the derived-list function', () => {
+  it('holds the award window, the derived-list function and the points readers', () => {
     expect(Object.keys(tools.rankings).sort()).toEqual(
       [
         'DEFAULT_ROLLING_PERIOD_DAYS',
         'computeAwardWindow',
         'deriveRankingList',
+        'getParticipantPoints',
+        'getQualityWinPoints',
         'isAwardInWindow',
         'rollingPeriodDaysFrom',
       ].sort(),
@@ -133,6 +156,19 @@ describe('tools.rankings', () => {
 
   it('deriveRankingList is the ranking governor applyDerivedRankings, under a derivation name', () => {
     expect(tools.rankings.deriveRankingList).toBe(governors.rankingGovernor.applyDerivedRankings);
+  });
+
+  it.each(['getParticipantPoints', 'getQualityWinPoints'])('%s is the ranking governor function', (name) => {
+    expect(tools.rankings[name]).toBe(governors.rankingGovernor[name]);
+  });
+
+  it('totals one person from point awards', () => {
+    const pointAwards: any[] = [
+      { personId: 'p1', points: 100 },
+      { personId: 'p1', points: 50 },
+      { personId: 'p2', points: 70 },
+    ];
+    expect(tools.rankings.getParticipantPoints({ pointAwards, personId: 'p1' }).totalPoints).toEqual(150);
   });
 
   it('is the window generateRankingList applies', () => {

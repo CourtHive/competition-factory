@@ -10,7 +10,7 @@ import { getQualifiersCount } from '@Query/drawDefinition/getQualifiersCount';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import { composeThenWrite, isStoredDraw } from '@Tools/composeThenWrite';
+import { composeThenWrite, isStoredDraw } from '@Mutate/drawDefinitions/composeThenWrite';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { getStageEntries } from '@Query/drawDefinition/stageGetter';
 import { decorateResult } from '@Functions/global/decorateResult';

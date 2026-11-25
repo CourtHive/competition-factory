@@ -1,5 +1,5 @@
 import { addParticipantGroupings } from '@Query/drawDefinition/avoidance/addParticipantGroupings';
-import { plainRecord } from '@Tools/plainRecord';
+import { idRecord, isIdRecord, plainRecord } from '@Tools/plainRecord';
 import { addIndividualParticipants } from '@Query/participants/addIndividualParticipants';
 import { addNationalityCode } from '@Query/participants/addNationalityCode';
 import { latestPresenceState } from '@Acquire/presenceAttestations';
@@ -14,10 +14,10 @@ import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { Tournament } from '@Types/tournamentTypes';
 
 /**
- * A map keyed by ids that come from tournament records. With a null prototype, an id of "__proto__" is an ordinary key
- * instead of a write through to Object.prototype (CodeQL #211, 2026-11-23).
+ * A map keyed by ids that come from tournament records: nothing inherited, so an id of "__proto__" is an ordinary key
+ * instead of a write through to Object.prototype (CodeQL #211, 2026-11-23). See tools/plainRecord.
  */
-const idMap = (): Record<string, any> => Object.create(null);
+const idMap = (): Record<string, any> => idRecord();
 
 const ID_MAPS = [
   'structureParticipation',
@@ -30,17 +30,27 @@ const ID_MAPS = [
   'draws',
 ] as const;
 
-/** The map as callers receive it: plain objects throughout, every id kept as an own key (see plainRecord). */
+/**
+ * The map as callers receive it: plain objects throughout, every id kept as an own key (see plainRecord). It is handed
+ * over in place, not copied, so it is the last step of a query: nothing may add ids to the map afterwards.
+ */
 export function plainParticipantMap(participantMap: ParticipantMap): ParticipantMap {
-  const plain = plainRecord(participantMap);
-  for (const entry of Object.values(plain))
+  for (const participantId of Object.keys(participantMap)) {
+    const entry: Record<string, unknown> = participantMap[participantId];
+    if (!entry || typeof entry !== 'object') continue;
     for (const key of ID_MAPS) {
-      // only what is still a null-prototype map: later stages may have replaced one with an array
-      const value = entry?.[key];
-      if (value && typeof value === 'object' && Object.getPrototypeOf(value) === null)
-        Object.assign(entry, { [key]: plainRecord(value) });
+      // only what is still an id map: later stages may have replaced one with an array
+      const value = entry[key];
+      if (isIdRecord(value)) entry[key] = isEmpty(value) ? {} : plainRecord(value);
     }
-  return plain;
+  }
+  return plainRecord(participantMap);
+}
+
+// an empty map has no ids to keep: a fresh plain object is cheaper than changing the prototype of the old one
+function isEmpty(map: object): boolean {
+  for (const key in map) if (Object.hasOwn(map, key)) return false;
+  return true;
 }
 
 const typeMap = {

@@ -1,3 +1,4 @@
+import { asOfDate } from './asOfDate';
 /**
  * `plainDate` — a calendar day, with no time and no zone.
  *
@@ -132,6 +133,7 @@ export function dateStringDaysChange(dateString, daysChange): string | undefined
   return extractDate(date.toISOString());
 }
 
+/** Omitting the date selects the current week in 7.x. Supply a date for 8.0.0. */
 export function weekdays(date: any = now(), firstDayOfWeek = 0): string[] {
   if (!isDate(date)) return [];
   const dates = [0, 1, 2, 3, 4, 5, 6].map((i) => dayOfWeek(date, i + firstDayOfWeek));
@@ -163,8 +165,9 @@ export function sameDay(date1, date2) {
   return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
 }
 
-export function isDateInPast(dateString: string): boolean {
-  return new Date(dateString) < now();
+/** Compare instants strictly. Omitting asOf reads the call clock in 7.x. Supply it for 8.0.0. */
+export function isDateInPast(dateString: string, asOf?: Date | string): boolean {
+  return new Date(dateString) < asOfDate(asOf);
 }
 
 export function localizeDate(submittedDate, dateLocalization, locale): string | undefined {

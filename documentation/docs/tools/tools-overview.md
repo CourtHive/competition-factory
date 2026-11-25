@@ -18,7 +18,8 @@ not a governor. A governor export becomes an engine method, and an engine calls 
 so a positional function cannot be called correctly through an engine.
 
 - **`tools.formats`:** matchUpFormat codes: `parse`, `stringify`, `isAggregateFormat`, `finalSetGoverns`,
-  `aggregateDeciderSetNumber`.
+  `aggregateDeciderSetNumber`, and the format validators `isValidMatchUpFormat` and `validateMatchUpFormat`, which take
+  `{ matchUpFormat }` and answer whether a code is valid for new use.
 - **`tools.scoring`:** score validators (`validateMatchUpScore`, `validateSetScore`, `deduceMatchUpFormat`), readers of
   a scoring-engine matchUp state (`getScore`, `getScoreboard`, `isComplete`, `getWinner`, `getEpisodes`, `addPoint`, …)
   and point and statistics parsers (`parseMCPPoint`, `shotParser`, `calculateMatchStatistics`, …).
@@ -28,8 +29,8 @@ so a positional function cannot be called correctly through an engine.
 - **`tools.draws`:** draw-type predicates: `isAdHocType`, `isLadder`.
 - **`tools.matchUps`:** matchUp shape validators: `validMatchUp`, `validMatchUps`.
 - **`tools.rankings`:** the rolling award window (`computeAwardWindow`, `isAwardInWindow`, `rollingPeriodDaysFrom`)
-  that `generateRankingList` applies, and `deriveRankingList`, which derives a sub-list (an age or category cut) from
-  ranked entries.
+  that `generateRankingList` applies, `deriveRankingList`, which derives a sub-list (an age or category cut) from
+  ranked entries, and the points readers `getParticipantPoints` and `getQualityWinPoints`.
 - **Availability:** the availability helpers (`hhmmToMinutes`, `generateCapacityCurve`, …) are exported from the
   standalone `availability` namespace, beside `AvailabilityEngine`.
 
@@ -38,6 +39,7 @@ import { tools } from 'tods-competition-factory';
 
 const { isValid } = tools.scoring.validateMatchUpScore(sets, 'SET3-S:6/TB7');
 const format = tools.formats.parse('SET3-S:6/TB7-F:TB10');
+const valid = tools.formats.isValidMatchUpFormat({ matchUpFormat: 'SET3-S:6/TB7-F:TB10' });
 ```
 
 **A clock is an input.** A tool that depends on time takes the instant to judge against as `asOf` (a `Date` or an ISO

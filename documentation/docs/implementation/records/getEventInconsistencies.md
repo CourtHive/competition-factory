@@ -6,7 +6,7 @@ title: getEventInconsistencies
 
 :::warning 8.0.0 engine API transition
 
-This method is **scheduled for removal from production governors and engine exports at 8.0.0**. Its 7.x route still works. The removal list was confirmed with external integrators on 2026-10-28 and closed on 2026-11-22. The standalone package-export decision is made per method; see the [transition index](/docs/implementation/engine-api-transition-8).
+This method is **retained on its production governors and engine exports at 8.0.0**: CA decided on 2026-11-25 to keep it, because TMX's shipped check for event dates outside the tournament calls it. It belongs with the data-integrity analysis family (`getStructureInconsistencies`, `getDrawInconsistencies`, `getTournamentInconsistencies`). See the [transition index](/docs/implementation/engine-api-transition-8).
 
 :::
 

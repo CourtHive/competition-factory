@@ -1,5 +1,5 @@
 import { setSubscriptions, deleteNotices, getPayloads } from '@Global/state/globalState';
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { settlementOutcome } from '@Validators/rotatingPartnerSettlement';
 import { isCompetitionProfile } from '@Validators/competitionProfile';
 import { writeModeMatrix } from '@Tests/testHarness/writeModeMatrix';

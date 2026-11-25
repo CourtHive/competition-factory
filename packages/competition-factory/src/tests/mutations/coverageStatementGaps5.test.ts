@@ -6,7 +6,7 @@ import { generateVoluntaryConsolation } from '@Generators/drawDefinitions/drawTy
 import { setParticipantScaleItems, addParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
 import { initializeDraft, defaultTierCount } from '@Mutate/drawDefinitions/draft/initializeDraft';
 import { getParticipantIdFinishingPositions } from '@Query/drawDefinition/finishingPositions';
-import { keyValueScore, keyValueMatchUpScore } from '@Helpers/keyValueScore/keyValueScore';
+import { keyValueScore, keyValueMatchUpScore } from '@Scoring/entry/keyValueScore/keyValueScore';
 import { removeCollectionDefinition } from '@Mutate/tieFormat/removeCollectionDefinition';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';

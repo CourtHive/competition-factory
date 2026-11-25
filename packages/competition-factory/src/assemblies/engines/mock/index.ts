@@ -1,5 +1,6 @@
 import { handleCaughtError, deleteNotices, setDevContext, setDeepCopy, getDevContext } from '@Global/state/globalState';
 import { seedRandomParam } from '@Assemblies/engines/parts/seedRandomParam';
+import * as simulationGovernor from '@Assemblies/governors/simulationGovernor';
 import * as mocksGovernor from '@Assemblies/governors/mocksGovernor';
 import { notifySubscribers } from '@Global/state/notifySubscribers';
 import { createDerivedRandom, withRandomSource } from '@Tools/prng';
@@ -49,7 +50,11 @@ export const mocksEngine: MocksEngine = (() => {
     },
   };
 
-  importGovernors([mocksGovernor]);
+  // simulationGovernor is mounted so that mocksEngine.generateOutcome, generateOutcomeFromScoreString and
+  // completeDrawMatchUps survive the removal of their mocksGovernor aliases at 8.0.0: the names are part of the
+  // MocksEngine surface, and a caller moved to the bare governor would lose this engine's nonRandom seeding.
+  // Mounted first, so mocksGovernor's own keys win where the two governors share one.
+  importGovernors([simulationGovernor, mocksGovernor]);
 
   return engine as MocksEngine;
 

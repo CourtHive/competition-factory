@@ -152,7 +152,7 @@ describe('checkAndFinalizeMatch — aggregate timed via ScoringEngine (lines 534
 
   // Importing ScoringEngine for timed tests
   it('aggregate timed format finalizes after all segments played', async () => {
-    const { ScoringEngine } = await import('@Assemblies/engines/scoring/ScoringEngine');
+    const { ScoringEngine } = await import('@Scoring/engine/ScoringEngine');
     const engine = new ScoringEngine({ matchUpFormat: 'SET2XA-S:T10' });
 
     // Segment 1: side 0 scores 7, side 1 scores 3
@@ -172,7 +172,7 @@ describe('checkAndFinalizeMatch — aggregate timed via ScoringEngine (lines 534
   });
 
   it('aggregate timed: side 2 wins on aggregate total', async () => {
-    const { ScoringEngine } = await import('@Assemblies/engines/scoring/ScoringEngine');
+    const { ScoringEngine } = await import('@Scoring/engine/ScoringEngine');
     const engine = new ScoringEngine({ matchUpFormat: 'SET2XA-S:T10' });
 
     // Segment 1: side 0 scores 2, side 1 scores 6

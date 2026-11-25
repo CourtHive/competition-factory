@@ -14,7 +14,7 @@
  *  - rebuildFromEntries(): initialScore branch with TO_BE_PLAYED status
  */
 
-import type { CompetitionFormat } from '@Assemblies/engines/scoring/ScoringEngine';
+import type { CompetitionFormat } from '@Scoring/engine/ScoringEngine';
 import { ScoringEngine } from '@Assemblies/governors/scoreGovernor';
 import { describe, expect, it } from 'vitest';
 

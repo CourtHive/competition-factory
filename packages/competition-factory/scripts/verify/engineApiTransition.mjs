@@ -83,7 +83,7 @@ async function argumentPilot() {
     skipLibCheck: true,
   };
   const filename = join(root, '__engine_doc_argument_pilot.ts');
-  const source = `import type { MethodSignatures } from './src/types/methodSignatures';
+  const source = `import type { MethodSignatures } from './src/assemblies/engines/types/methodSignatures';
   declare const addGoesTo: MethodSignatures['addGoesTo'];
   declare const addNotes: MethodSignatures['addNotes'];
   addGoesTo({ drawId: 'draw' });

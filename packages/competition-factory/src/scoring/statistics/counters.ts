@@ -1,4 +1,4 @@
-import { pushGlobalLog } from '@Functions/global/globalLog';
+import { devLog } from '@Tools/runtime';
 import { plainRecord } from '@Tools/plainRecord';
 /**
  * Statistics Counter Builder
@@ -58,7 +58,7 @@ export function buildCounters(points: PointWithMetadata[], options?: StatisticsO
   filteredPoints.forEach((point, index) => {
     // side 0 or 1 only: the winner indexes the counters, and points arrive from callers (CodeQL #197)
     if (point.winner !== 0 && point.winner !== 1) {
-      pushGlobalLog({ method: 'counters', issue: 'point missing winner', point });
+      devLog?.({ method: 'counters', issue: 'point missing winner', point });
       return;
     }
 

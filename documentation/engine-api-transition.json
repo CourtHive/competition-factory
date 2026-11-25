@@ -582,7 +582,7 @@
     {
       "name": "enrichPointHistory",
       "source": {
-        "path": "src/query/scoring/statistics/standalone.ts",
+        "path": "src/scoring/statistics/standalone.ts",
         "symbol": "enrichPointHistory",
         "line": 84
       },
@@ -764,7 +764,7 @@
         "line": 17
       },
       "governors": ["generationGovernor"],
-      "engineDisposition": "scheduled-for-removal",
+      "engineDisposition": "retained",
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
       "replacement": null,
@@ -1126,7 +1126,7 @@
         "line": 85
       },
       "governors": ["eventGovernor", "queryGovernor"],
-      "engineDisposition": "scheduled-for-removal",
+      "engineDisposition": "retained",
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
       "replacement": null,
@@ -1297,7 +1297,7 @@
       "engineDisposition": "scheduled-for-removal",
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
-      "replacement": null,
+      "replacement": "tools.rankings.getParticipantPoints",
       "destination": "implementation/records/getParticipantPoints",
       "previous": [
         {
@@ -1441,7 +1441,7 @@
       "engineDisposition": "scheduled-for-removal",
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
-      "replacement": null,
+      "replacement": "tools.rankings.getQualityWinPoints",
       "destination": "implementation/records/getQualityWinPoints",
       "previous": [
         {
@@ -1467,7 +1467,7 @@
     {
       "name": "getQuickStats",
       "source": {
-        "path": "src/query/scoring/statistics/standalone.ts",
+        "path": "src/scoring/statistics/standalone.ts",
         "symbol": "getQuickStats",
         "line": 125
       },

@@ -1,8 +1,10 @@
 import { getDevContext } from '@Global/state/globalState';
+import { installDevLog } from '@Tools/runtime';
 import { isString } from '@Tools/objects';
 import { logColors } from './logColors';
 
 const globalLog: any[] = [];
+installDevLog(pushGlobalLog);
 
 export function pushGlobalLog(value: any, devContextOverride?) {
   if (isString(value)) value = { method: value };

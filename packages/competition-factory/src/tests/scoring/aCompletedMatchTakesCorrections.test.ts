@@ -1,4 +1,4 @@
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { describe, expect, test } from 'vitest';
 

@@ -241,7 +241,7 @@ export function generateDynamicRatings(params): ResultType & {
 
   const result = {
     ...SUCCESS,
-    modifiedScaleValues: plainRecord(modifiedScaleValues),
+    modifiedScaleValues,
     outputScaleName,
     processedMatchUpIds,
     ratedMatchUpIds,
@@ -255,6 +255,8 @@ export function generateDynamicRatings(params): ResultType & {
     if (written.error) return written;
   }
 
+  // handed over in place once nothing writes into it any more (see plainRecord)
+  plainRecord(modifiedScaleValues);
   return result;
 }
 

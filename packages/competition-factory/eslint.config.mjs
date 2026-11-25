@@ -4,6 +4,31 @@ import tsparser from '@typescript-eslint/parser';
 import sonarjs from 'eslint-plugin-sonarjs';
 import globals from 'globals';
 
+const restrictedSyntax = [
+  'error',
+  {
+    selector:
+      "CallExpression[callee.object.name='JSON'][callee.property.name='parse'] > CallExpression[callee.object.name='JSON'][callee.property.name='stringify']",
+    message:
+      'Use structuredClone() to deep-copy — JSON.parse(JSON.stringify(x)) drops undefined/functions/Date/Map/Set and throws on cycles. For tournamentRecords use tools.makeDeepCopy, which carries factory extension semantics.',
+  },
+  // The TeamLevel brand says a list holds no tieMatchUps. Only `teamLevelMatchUps` may mint it: a cast would
+  // assert what nothing checked, and the functions requiring the brand would count rubbers again.
+  {
+    selector:
+      "TSAsExpression TSTypeReference[typeName.name='TeamLevel'], TSTypeAssertion TSTypeReference[typeName.name='TeamLevel']",
+    message:
+      'Do not cast to TeamLevel. Read the list through teamLevelMatchUps (src/acquire/teamLevelMatchUps.ts), which filters out tieMatchUps.',
+  },
+];
+
+const nonProduction = ['src/tests/**', 'src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/__tests__/**', 'src/server/**'];
+const elapsedClockFiles = [
+  'src/global/state/globalState.ts',
+  'src/forge/{privateRuntime,previewRunner,finishPreview,dryRun}.ts',
+  'src/assemblies/engines/{sync/executionQueue,async/asyncExecutionQueue,parts/executeMethod,parts/logMethodNotFound}.ts',
+];
+
 export default [
   {
     ignores: ['node_modules/**', 'dist/**', 'coverage/**', '**/scratch/**', 'server/**'],
@@ -55,23 +80,7 @@ export default [
       // all and mutated it in place. Machine-enforced because prose could not hold it.
       // Genuinely testing JSON serialization (a `toJSON` round-trip) is a different thing: disable the
       // rule on that line with a reason.
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector:
-            "CallExpression[callee.object.name='JSON'][callee.property.name='parse'] > CallExpression[callee.object.name='JSON'][callee.property.name='stringify']",
-          message:
-            'Use structuredClone() to deep-copy — JSON.parse(JSON.stringify(x)) drops undefined/functions/Date/Map/Set and throws on cycles. For tournamentRecords use tools.makeDeepCopy, which carries factory extension semantics.',
-        },
-        // The TeamLevel brand says a list holds no tieMatchUps. Only `teamLevelMatchUps` may mint it: a cast would
-        // assert what nothing checked, and the functions requiring the brand would count rubbers again.
-        {
-          selector:
-            "TSAsExpression TSTypeReference[typeName.name='TeamLevel'], TSTypeAssertion TSTypeReference[typeName.name='TeamLevel']",
-          message:
-            'Do not cast to TeamLevel. Read the list through teamLevelMatchUps (src/acquire/teamLevelMatchUps.ts), which filters out tieMatchUps.',
-        },
-      ],
+      'no-restricted-syntax': restrictedSyntax,
       'sonarjs/cognitive-complexity': ['warn', 30],
       'sonarjs/no-all-duplicated-branches': 'warn',
       'sonarjs/no-collapsible-if': 'warn',
@@ -211,6 +220,40 @@ export default [
       ecmaVersion: 'latest',
       sourceType: 'module',
       globals: { ...globals.node },
+    },
+  },
+  {
+    files: ['src/**/*.ts'],
+    ignores: nonProduction,
+    rules: {
+      'no-restricted-syntax': [
+        ...restrictedSyntax,
+        {
+          selector: "NewExpression[callee.name='Date'][arguments.length=0]",
+          message: 'Read the call clock through tools/clock.',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/**/*.ts'],
+    ignores: [...nonProduction, 'src/tools/prng.ts'],
+    rules: {
+      'no-restricted-properties': ['error', { object: 'Math', property: 'random', message: 'Use tools/prng.' }],
+    },
+  },
+  {
+    files: ['src/**/*.ts'],
+    ignores: [...nonProduction, 'src/tools/clock.ts', ...elapsedClockFiles],
+    rules: {
+      'no-restricted-syntax': [
+        ...restrictedSyntax,
+        {
+          selector:
+            "NewExpression[callee.name='Date'][arguments.length=0], MemberExpression[object.name='Date'][property.name='now']",
+          message: 'Read the call clock through tools/clock.',
+        },
+      ],
     },
   },
 ];

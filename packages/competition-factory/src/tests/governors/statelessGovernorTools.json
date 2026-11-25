@@ -1,0 +1,233 @@
+{
+  "$comment": [
+    "Ratchet of the stateless governor tools: statelessGovernorTools.test.ts confirms each name in `confirmed` answers alike",
+    "through the engine without a record, with a record loaded, and called directly; and checks each exclusion still holds.",
+    "Candidates: the query/object/no-state rows of Mentat assessment/2026-11-08-factory-role-inventory.csv.",
+    "Plan: Mentat planning/FACTORY_ENGINE_API_MIGRATION_PREP_PLAN.md, slice A; slice C exposes `confirmed` as tools."
+  ],
+  "candidates": 99,
+  "confirmed": [
+    "analyzeMatchUp",
+    "analyzeScore",
+    "analyzeSet",
+    "applyDerivedRankings",
+    "calculateMatchUpMargin",
+    "calculateWinCriteria",
+    "categoryCanContain",
+    "checkScoreHasValue",
+    "checkSetIsComplete",
+    "compareTieFormats",
+    "courtGridRows",
+    "filterMatchUps",
+    "generateRankingList",
+    "getAwardPoints",
+    "getAwardProfile",
+    "getCheckedInParticipantIds",
+    "getDrawTypeCoercion",
+    "getDualIssues",
+    "getEntryStatusOrdinals",
+    "getFeedInQualifyingPositions",
+    "getHomeParticipantId",
+    "getMatchUpCheckInState",
+    "getMatchUpType",
+    "getMatchUpUpset",
+    "getMaxEntryPosition",
+    "getMaxSetScore",
+    "getParticipantPoints",
+    "getRoundMatchUps",
+    "getScaleValues",
+    "getSeasonAdvancement",
+    "getSeasonMovement",
+    "getSeasonStandings",
+    "getSeedingThresholds",
+    "getSetComplement",
+    "getTally",
+    "getTiebreakComplement",
+    "getTierMovement",
+    "getValidGroupSizes",
+    "isValid",
+    "isValidMatchUpFormat",
+    "keyValueScore",
+    "matchUpScheduleLocked",
+    "mcpValidator",
+    "parseScoreString",
+    "participantScaleItem",
+    "participantScheduledMatchUps",
+    "pbpValidator",
+    "planNextPeriod",
+    "queryOfficialRecord",
+    "querySanctioningRecord",
+    "repairScore",
+    "retainScoreForFormat",
+    "runValidationPipeline",
+    "tieFormatGenderValidityCheck",
+    "validateMatchUpFormat",
+    "validateOfficiatingStatusTransition",
+    "validatePlayoffGroups",
+    "validateScore",
+    "validateSeason",
+    "validateStatusTransition",
+    "validateTieFormat"
+  ],
+  "excluded": {
+    "allCompetitionMatchUps": {
+      "reason": "needs-state",
+      "detail": "reads every record the engine holds; refuses with none (MISSING_TOURNAMENTS)"
+    },
+    "allDrawMatchUps": {
+      "reason": "needs-state",
+      "detail": "drawId resolves to a draw in state; refuses without it (MISSING_DRAWDEF)"
+    },
+    "allEventMatchUps": {
+      "reason": "needs-state",
+      "detail": "eventId resolves to an event in state; refuses without it (EVENT_NOT_FOUND)"
+    },
+    "allTournamentMatchUps": {
+      "reason": "needs-state",
+      "detail": "reads the loaded record; refuses without it (MISSING_TOURNAMENT)"
+    },
+    "competitionScheduleMatchUps": {
+      "reason": "needs-state",
+      "detail": "reads every record the engine holds; refuses with none (MISSING_TOURNAMENTS)"
+    },
+    "drawMatchUps": {
+      "reason": "needs-state",
+      "detail": "drawId resolves to a draw in state; refuses without it (MISSING_DRAWDEF)"
+    },
+    "eventMatchUps": {
+      "reason": "needs-state",
+      "detail": "eventId resolves to an event in state; refuses without it (EVENT_NOT_FOUND)"
+    },
+    "getAllDrawMatchUps": {
+      "reason": "needs-state",
+      "detail": "drawId resolves to a draw in state; refuses without it (MISSING_DRAWDEF)"
+    },
+    "getAllStructureMatchUps": {
+      "reason": "needs-state",
+      "detail": "a passed structure answers alike without inContext; inContext hydrates it from the record the engine supplies"
+    },
+    "getAvailableTransitions": {
+      "reason": "own-engine",
+      "detail": "mounted on sanctioningEngine, which supplies the sanctioning record from its own state"
+    },
+    "getCalendarConflicts": {
+      "reason": "own-engine",
+      "detail": "mounted on sanctioningEngine, which supplies the sanctioning record from its own state"
+    },
+    "getChallengeState": {
+      "reason": "needs-state",
+      "detail": "answers from input when policy and matchUp are passed; without policy, the attached ladder policy sets acceptanceDays"
+    },
+    "getCompetitionMatchUps": {
+      "reason": "needs-state",
+      "detail": "reads every record the engine holds; refuses with none (MISSING_TOURNAMENTS)"
+    },
+    "getCompleteness": {
+      "reason": "own-engine",
+      "detail": "mounted on sanctioningEngine, which supplies the sanctioning record from its own state"
+    },
+    "getDrawData": {
+      "reason": "needs-state",
+      "detail": "drawId resolves to a draw in state; refuses without it (MISSING_DRAWDEF)"
+    },
+    "getEligibleTiers": {
+      "reason": "own-engine",
+      "detail": "mounted on sanctioningEngine, which supplies the sanctioning record from its own state"
+    },
+    "getEvaluationSummary": {
+      "reason": "own-engine",
+      "detail": "mounted on officiatingEngine, which supplies the official record from its own state"
+    },
+    "getEvaluationTemplate": {
+      "reason": "own-engine",
+      "detail": "mounted on officiatingEngine, which supplies the official record from its own state"
+    },
+    "getEventData": {
+      "reason": "needs-state",
+      "detail": "eventId resolves to an event in state; refuses without it (EVENT_NOT_FOUND)"
+    },
+    "getLadderMovement": {
+      "reason": "needs-state",
+      "detail": "resolves the ladder policy attached to the record (structure, draw, event, tournament); defaults without it"
+    },
+    "getLadderOrdering": {
+      "reason": "needs-state",
+      "detail": "resolves the ladder policy attached to the record (structure, draw, event, tournament); defaults without it"
+    },
+    "getLadderPolicy": {
+      "reason": "needs-state",
+      "detail": "resolves the ladder policy attached to the record (structure, draw, event, tournament); defaults without it"
+    },
+    "getOfficialCertifications": {
+      "reason": "own-engine",
+      "detail": "mounted on officiatingEngine, which supplies the official record from its own state"
+    },
+    "getOfficialConflicts": {
+      "reason": "own-engine",
+      "detail": "mounted on officiatingEngine, which supplies the official record from its own state"
+    },
+    "getOfficialEligibility": {
+      "reason": "own-engine",
+      "detail": "mounted on officiatingEngine, which supplies the official record from its own state"
+    },
+    "getPresenceExpectation": {
+      "reason": "needs-state",
+      "detail": "resolves the sanctioning presence policy attached to the record; undeclared without it"
+    },
+    "getPresenceRules": {
+      "reason": "needs-state",
+      "detail": "resolves the sanctioning presence policy attached to the record; undefined without it"
+    },
+    "getScenarioScheduleProjection": {
+      "reason": "needs-state",
+      "detail": "reads the record's scheduling scenarios; not found without it"
+    },
+    "getScheduleScenario": {
+      "reason": "needs-state",
+      "detail": "reads the record's scheduling scenarios; refuses without it (MISSING_TOURNAMENT)"
+    },
+    "getScheduleScenarios": {
+      "reason": "needs-state",
+      "detail": "reads the record's scheduling scenarios; refuses without it (MISSING_TOURNAMENT)"
+    },
+    "getStatusHistory": {
+      "reason": "own-engine",
+      "detail": "mounted on sanctioningEngine, which supplies the sanctioning record from its own state"
+    },
+    "getTimeItem": {
+      "reason": "needs-state",
+      "detail": "answers from input when element is passed; without it, reads the loaded record's timeItems"
+    },
+    "isChallengeInRange": {
+      "reason": "needs-state",
+      "detail": "answers from input when policy is passed; without it, the attached ladder policy sets challengeRange"
+    },
+    "positionActions": {
+      "reason": "needs-state",
+      "detail": "needs the event and draw the engine resolves from drawId; refuses without them (MISSING_EVENT_ID)"
+    },
+    "publicFindCourt": {
+      "reason": "needs-state",
+      "detail": "finds the court in the loaded record's venues; refuses without it (MISSING_TOURNAMENT)"
+    },
+    "tournamentMatchUps": {
+      "reason": "needs-state",
+      "detail": "reads the loaded record; refuses without it (MISSING_TOURNAMENT)"
+    },
+    "validateCertification": {
+      "reason": "own-engine",
+      "detail": "mounted on officiatingEngine, which supplies the official record from its own state"
+    },
+    "validateProposal": {
+      "reason": "own-engine",
+      "detail": "mounted on sanctioningEngine, which supplies the sanctioning record from its own state"
+    }
+  },
+  "throwsOnEmptyInput": {
+    "applyDerivedRankings": "Cannot read properties of undefined (reading 'filter')",
+    "generateRankingList": "Cannot read properties of undefined (reading 'filter')",
+    "getAwardProfile": "Cannot read properties of undefined (reading 'filter')",
+    "getParticipantPoints": "Cannot read properties of undefined (reading 'filter')",
+    "runValidationPipeline": "Cannot read properties of undefined (reading 'getTournamentDays')"
+  }
+}

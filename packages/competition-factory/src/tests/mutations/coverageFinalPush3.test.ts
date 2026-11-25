@@ -5,7 +5,7 @@
 import { anonymizeTournamentRecord } from '@Generators/tournamentRecords/anonymizeTournamentRecord';
 import { processPlayoffGroups } from '@Generators/drawDefinitions/drawTypes/processPlayoffGroups';
 import { validateSetScore } from '@Scoring/analysis/validateMatchUpScore';
-import { keyValueScore } from '@Helpers/keyValueScore/keyValueScore';
+import { keyValueScore } from '@Scoring/entry/keyValueScore/keyValueScore';
 import { analyzeSet } from '@Query/matchUp/analyzeSet';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';

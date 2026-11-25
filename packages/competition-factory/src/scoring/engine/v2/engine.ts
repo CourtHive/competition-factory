@@ -2,12 +2,12 @@ import { createContext, initialState, positionOf, serverOf, step, INVALID_FORMAT
 import { readChallenge, readPoint, readServer, CALCULATED_POINT_FIELDS } from '@Scoring/kernel/actions';
 import { replayLegacy, LEGACY_IGNORED_INPUT, LEGACY_REFUSED_INPUT } from '@Scoring/kernel/legacy';
 import { configuredFormat, DEFAULT_MATCHUP_FORMAT, takesInput } from '@Scoring/kernel/format';
-import { calculateMatchStatistics } from '@Query/scoring/statistics/standalone';
+import { calculateMatchStatistics } from '@Scoring/statistics/standalone';
 import { segmentClosed } from '@Helpers/matchUpFormatCode/overtimeContext';
-import { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
+import { toStatObjects } from '@Scoring/statistics/toStatObjects';
 import { ruleInPlay, scoreOf } from '@Scoring/kernel/score';
 import { setInPlayFormat } from '@Scoring/kernel/setReplay';
-import { createMatchUp } from '@Scoring/v1/createMatchUp';
+import { createMatchUpWithClock } from '@Scoring/v1/createMatchUp';
 import { getScoreboard } from '@Scoring/v1/getScoreboard';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { getEpisodes } from '@Scoring/v1/getEpisodes';
@@ -24,7 +24,7 @@ import {
 } from '@Scoring/kernel/lineUps';
 
 // constants and types
-import type { MatchStatistics, StatisticsOptions, StatObject } from '@Query/scoring/statistics/types';
+import type { MatchStatistics, StatisticsOptions, StatObject } from '@Scoring/statistics/types';
 import type { FormatStructure, SetFormatStructure, TeamCompetitor } from '@Types/scoring/types';
 import type { Side, ScoringState, StepOutcome, TimelineEntry } from '@Scoring/kernel/types';
 import type { PointMultiplier } from '@Types/competitionFormat';
@@ -138,16 +138,22 @@ export class ScoringEngine {
   /** the match's initial server, set before anything was recorded; every replay starts from it (SE3-E1) */
   private initialServer?: Side;
 
+  readonly #clock: () => string;
+
   constructor(options: ScoringEngineOptions = {}) {
+    this.#clock = options.clock ?? nowIso;
     this.competitionFormat = options.competitionFormat;
     this.matchUpFormat = options.matchUpFormat || options.competitionFormat?.matchUpFormat || DEFAULT_MATCHUP_FORMAT;
     this.pointMultipliers = options.pointMultipliers ?? options.competitionFormat?.pointMultipliers ?? [];
     this.eventHandlers = options.eventHandlers;
-    this.record = createMatchUp({
-      matchUpFormat: this.matchUpFormat,
-      matchUpId: options.matchUpId,
-      isDoubles: options.isDoubles || false,
-    });
+    this.record = createMatchUpWithClock(
+      {
+        matchUpFormat: this.matchUpFormat,
+        matchUpId: options.matchUpId,
+        isDoubles: options.isDoubles || false,
+      },
+      this.#clock,
+    );
     this.entries = [];
     if (this.context().match?.overtime) this.write([]);
   }
@@ -185,11 +191,11 @@ export class ScoringEngine {
     const placedBefore = (index: number): ScoreEntry[] =>
       substitutions
         .filter((sub) => Math.min(sub.beforePointIndex ?? points.length, points.length) === index)
-        .map((sub) => ({ type: 'substitution', data: sub, timestamp: sub.timestamp ?? nowIso() }));
+        .map((sub) => ({ type: 'substitution', data: sub, timestamp: sub.timestamp ?? this.#clock() }));
     return [
       ...points.flatMap((point, pointIndex): ScoreEntry[] => [
         ...placedBefore(pointIndex),
-        { type: 'point', data: replayInput(point), timestamp: point.timestamp ?? nowIso(), pointIndex },
+        { type: 'point', data: replayInput(point), timestamp: point.timestamp ?? this.#clock(), pointIndex },
       ]),
       ...placedBefore(points.length),
     ];
@@ -358,7 +364,7 @@ export class ScoringEngine {
     const entry: ScoreEntry = {
       type: 'point',
       data: recordedInput(given),
-      timestamp: (given.timestamp as string | undefined) ?? nowIso(),
+      timestamp: (given.timestamp as string | undefined) ?? this.#clock(),
     };
     const result = this.offer(entry);
     if (result.recorded) this.pointEvents(before);
@@ -368,7 +374,7 @@ export class ScoringEngine {
   /** a game, a set total or a segment end: no point events, but `onMatchTie` when it ends the match level */
   private scoringInput(type: ScoreEntry['type'], data: unknown, timestamp?: string): ScoringActionResult {
     const before = this.state;
-    const result = this.offer({ type, data: { ...(data as object) }, timestamp: timestamp ?? nowIso() });
+    const result = this.offer({ type, data: { ...(data as object) }, timestamp: timestamp ?? this.#clock() });
     if (result.recorded && !this.state.winningSide) this.matchEvents(before);
     return result;
   }
@@ -393,11 +399,11 @@ export class ScoringEngine {
     const { timestamp, ...data } = options;
     const reason = readChallenge(data);
     if (reason) throw new Error(reason.message);
-    this.offer({ type: 'challenge', data, timestamp: timestamp ?? nowIso() });
+    this.offer({ type: 'challenge', data, timestamp: timestamp ?? this.#clock() });
   }
 
   addAnnotation(data: Record<string, unknown>, options?: { timestamp?: string }): void {
-    this.offer({ type: 'annotation', data: { ...data }, timestamp: options?.timestamp ?? nowIso() });
+    this.offer({ type: 'annotation', data: { ...data }, timestamp: options?.timestamp ?? this.#clock() });
   }
 
   /**
@@ -417,7 +423,7 @@ export class ScoringEngine {
     // it, so a server supplied on the first point no longer flips the derivation (§ 10.6)
     if (JSON.stringify(corrected.service) === JSON.stringify(this.state.service)) return;
     if (options?.recordEntry !== false) {
-      this.offer({ type: 'setServer', data: { side }, timestamp: nowIso() });
+      this.offer({ type: 'setServer', data: { side }, timestamp: this.#clock() });
       return;
     }
     const entries = this.entries as ScoreEntry[];
@@ -588,7 +594,7 @@ export class ScoringEngine {
 
   reset(): void {
     const { matchUpId, matchUpType } = this.record;
-    this.record = createMatchUp({ matchUpFormat: this.matchUpFormat, matchUpId, matchUpType });
+    this.record = createMatchUpWithClock({ matchUpFormat: this.matchUpFormat, matchUpId, matchUpType }, this.#clock);
     this.entries = [];
     this.redoStack = [];
     this.initialLineUps = undefined;
@@ -609,7 +615,7 @@ export class ScoringEngine {
   setState(matchUp: MatchUp): void {
     const loaded = copy(matchUp);
     const overtime = !!parse(loaded.matchUpFormat)?.overtimeFormat;
-    const overtimeTimeline = overtime ? readOvertimeTimeline(loaded) : undefined;
+    const overtimeTimeline = overtime ? readOvertimeTimeline(loaded, this.#clock) : undefined;
     this.record = loaded;
     this.matchUpFormat = loaded.matchUpFormat;
     this.redoStack = [];
@@ -811,7 +817,7 @@ export class ScoringEngine {
     const error = substitutionError(this.lineUps, event);
     if (error) return { success: false, error };
     this.lineUps = substituted(this.lineUps as LineUps, event);
-    this.offer({ type: 'substitution', data: event, timestamp: timestamp ?? nowIso() });
+    this.offer({ type: 'substitution', data: event, timestamp: timestamp ?? this.#clock() });
     return { success: true };
   }
 
@@ -894,7 +900,7 @@ export class ScoringEngine {
 type ReducerContextConfig = Parameters<typeof configuredFormat>[0]['competitionFormat'];
 
 /** O did not exist in v1: require a real timeline, or turn an explicit score-only record into a baseline. */
-function readOvertimeTimeline(record: MatchUp): ScoreEntry[] {
+function readOvertimeTimeline(record: MatchUp, clock: () => string): ScoreEntry[] {
   const context = createContext({ matchUpFormat: record.matchUpFormat }, { allowOvertime: true });
   if (!context.match?.overtime) throw new Error('Unsupported overtime format');
   if (record.history?.entries?.length) return [...record.history.entries];
@@ -905,7 +911,7 @@ function readOvertimeTimeline(record: MatchUp): ScoreEntry[] {
   const open = record.matchUpStatus !== COMPLETED && !segmentClosed(last);
   const entry: ScoreEntry = {
     type: 'setInitialScore',
-    timestamp: record.endTime ?? record.createdAt ?? nowIso(),
+    timestamp: record.endTime ?? record.createdAt ?? clock(),
     data: {
       sets: open ? sets.slice(0, -1) : sets,
       ...(open ? openOvertimeBaseline(last) : {}),

@@ -191,7 +191,7 @@ const engine = tournamentEngine; const matchUpId = 'context'; const matchUps = [
 ];
 // Keep the advertised complete index synchronized with public class methods. The class is the reducer's shell
 // (`v2/engine.ts`) since SE4; `ScoringEngine.ts` re-exports it.
-const SCORER_SOURCE = 'src/assemblies/engines/scoring/v2/engine.ts';
+const SCORER_SOURCE = 'src/scoring/engine/v2/engine.ts';
 const source = ts.createSourceFile(
   'engine.ts',
   readFileSync(join(root, SCORER_SOURCE), 'utf8'),

@@ -12,7 +12,7 @@ import { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDeta
 import { addCollectionDefinition } from '@Mutate/tieFormat/addCollectionDefinition';
 import { getItemTieFormat } from '@Query/hierarchical/tieFormats/getItemTieFormat';
 import { generateVirtualCourts } from '@Helpers/scheduling/generateVirtualCourts';
-import { processTiebreakSet } from '@Helpers/keyValueScore/processTiebreakSet';
+import { processTiebreakSet } from '@Scoring/entry/keyValueScore/processTiebreakSet';
 import { calculateNewRatings } from '@Helpers/ratings/calculateNewRatings';
 import { validatePlayoffGroups } from '@Validators/validatePlayoffGroups';
 import { addParticipant } from '@Mutate/participants/addParticipant';

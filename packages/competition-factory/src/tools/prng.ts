@@ -1,4 +1,4 @@
-import { getCallRandomSource, setCallRandomSource } from '@Global/state/globalState';
+import { callRuntime } from './runtime';
 
 // constants
 import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
@@ -156,12 +156,12 @@ export function withRandomSource<T>(source: RandomFunction | undefined, fn: () =
  */
 export function withCallRandomSource<T>(source: RandomFunction | undefined, fn: () => T): T {
   if (typeof source !== 'function') return fn();
-  const previous = getCallRandomSource();
-  setCallRandomSource(source);
+  const previous = callRuntime.getCallRandomSource?.();
+  callRuntime.setCallRandomSource?.(source);
   try {
     return fn();
   } finally {
-    setCallRandomSource(previous);
+    callRuntime.setCallRandomSource?.(previous);
   }
 }
 
@@ -171,12 +171,12 @@ export async function withCallRandomSourceAsync<T>(
   fn: () => Promise<T>,
 ): Promise<T> {
   if (typeof source !== 'function') return fn();
-  const previous = getCallRandomSource();
-  setCallRandomSource(source);
+  const previous = callRuntime.getCallRandomSource?.();
+  callRuntime.setCallRandomSource?.(source);
   try {
     return await fn();
   } finally {
-    setCallRandomSource(previous);
+    callRuntime.setCallRandomSource?.(previous);
   }
 }
 
@@ -194,5 +194,5 @@ export function withAmbientRandomSource<T>(source: RandomFunction, fn: () => T):
  * `Math.random`. Read at the call, never captured at import.
  */
 export function randomSource(): RandomFunction {
-  return getCallRandomSource() ?? configuredSource ?? Math.random;
+  return callRuntime.getCallRandomSource?.() ?? configuredSource ?? Math.random;
 }
