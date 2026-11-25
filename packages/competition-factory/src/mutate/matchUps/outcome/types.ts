@@ -512,7 +512,8 @@ export type RecordCopy = { tournamentRecord?: Tournament; drawDefinition: DrawDe
  * the call's whole answer, warnings included. Undefined where the call cannot be run on a copy (it names more than one
  * tournament record).
  */
-export type WriteOnCopy = (copy: RecordCopy) => ResultType | undefined;
+export type CopyWriter = (copy: RecordCopy, map: MatchUpsMap) => ResultType;
+export type WriteOnCopy = (copy: RecordCopy, writer?: CopyWriter) => ResultType | undefined;
 
 /** § 5 rule 1: what direction must have done once the route has written */
 /** F2: what the loser's matchUp holds once a relabel withdraws the exit carried there */
@@ -692,6 +693,8 @@ export type OutcomePlan =
       recordedResult?: ResultType;
       /** The public return from a native sequence that writes a line and keeps or decides its dual. */
       phaseResult?: ResultType;
+      /** An uncaptured native draft writer already consumed the clock at its ordered write boundaries. */
+      draftClock?: true;
     }
   | { abstain: AbstainReason; ops?: undefined; shape?: undefined };
 
@@ -753,9 +756,13 @@ export type PlanArgs = {
   /** RECORDED: the double-exit module's cascade after `prefix`, read on a copy of the record. */
   record?: (prefix: OutcomeOp[]) => OutcomeOp[] | undefined;
   /** RECORDED: v1's whole write for the call, read on a copy of the record (`plan/recordedCall.ts`). */
-  recordWhole?: () => { ops: OutcomeOp[]; written: ResultType; provesSettled?: () => boolean } | undefined;
+  recordWhole?: (
+    stampedBefore?: Set<string>,
+  ) => { ops: OutcomeOp[]; written: ResultType; provesSettled?: () => boolean } | undefined;
   /** with no captured instant: whether `ops` is a program the ordered temporal executor certifies (`compileTemporalPhases`) */
   certifiesPhases?: (ops: OutcomeOp[]) => boolean;
+  /** A certified two-arrival writer runs once inside the existing draft and clock scopes. */
+  clockRelay?: (ops: OutcomeOp[]) => { native: OutcomePlan | undefined } | { stampedBefore: Set<string> } | undefined;
   /** S7: the dual's call a deciding line makes */
   dual?: DualCall;
   /** S7: this call is a deciding line's dual, planned as part of the line's plan: its TEAM shape is the line's to vet */

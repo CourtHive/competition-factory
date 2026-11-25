@@ -491,7 +491,9 @@ function recordedWhole(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
     const planned = args.teamLine?.(args, plan.abstain);
     if (planned) return planned;
   }
-  const recorded = args.recordWhole?.();
+  const relay = args.clockFree && plan.ops ? args.clockRelay?.(plan.ops) : undefined;
+  if (relay && 'native' in relay) return relay.native ?? plan;
+  const recorded = args.recordWhole?.(relay?.stampedBefore);
   if (!recorded) return plan;
   // a predicate that finds work on v1's own write is answered by the passes themselves (`settledOnCopy`): only where
   // they change nothing at all is the program marked settled, and no predicate is asked of it again

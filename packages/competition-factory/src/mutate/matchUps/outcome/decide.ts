@@ -20,6 +20,7 @@ import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { compareViews, hydrateShadow } from './viewOracle';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
+import { feedInRelay, watchRelayInputs } from './plan/feedInRelay';
 import { recordWholeCall } from './plan/recordedCall';
 import { observeWrite, planWrite } from './write';
 import { refuseOutcome } from './refusals';
@@ -85,6 +86,7 @@ const OWNED_SHAPES = new Set<PlanShape>(['local', 'direction']);
  * the settle passes' has-work predicates. A plan that leaves a pass work abstains `settle`.
  */
 function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, keepFoldedView = false) {
+  const relayUnchanged = watchRelayInputs(args, view);
   args = { ...args, clockFree: getCapturedClock() === undefined };
   // TEAM auto-calc: a dual whose result is computed from its lines takes the PROJECTED winner and score in
   // place of the call's before anything is routed, as `handleTeamAutoCalc` rewrites v1's parameters
@@ -102,7 +104,20 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
     landing: landingView(args, view),
     record: (prefix) => recordDoubleExitCascade({ ...args, request: planned }, prefix),
     teamLine: (plan, why) => teamFinalLine(args, plan, why),
-    recordWhole: () => recordWholeCall(args),
+    recordWhole: (stamps) => recordWholeCall(args, stamps),
+    clockRelay: (ops) => {
+      if (!relayUnchanged || ops.length !== 8 || !args.writeOnCopy) return undefined;
+      const phases = compileTemporalPhases({ args, view, route, ops }, true);
+      if (!phases?.arrival || !phases.onward) return undefined;
+      // Settle predicates inspect the result and the occupied seats. Replaying updatedAt
+      // obligations here would consult the installed ledger before the draft starts.
+      const projection: OutcomeOp[] = [{ ...phases.result, stampsScoredTime: false }, phases.arrival, phases.onward];
+      const folded = settleFold(args, view, projection);
+      if (!folded || folded.error !== undefined || folded.sites.length) return undefined;
+      const stampedBefore = stampedInThisCall(args.drawDefinition);
+      if (!relayUnchanged()) return { stampedBefore };
+      return { native: feedInRelay(args, phases, stampedBefore) };
+    },
     certifiesPhases: (ops) => !!compileTemporalPhases({ args, view, route, ops }),
     dual: dualCallFor(route, args, view),
     request: planned,
@@ -123,7 +138,7 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
   // v1's whole write, recorded with the instants it read (`recordedWhole`): apply writes them as data, and reads no clock
   const recorded = outcome.ops && outcome.recordedResult ? outcome : undefined;
   // An uncaptured call requires a complete phase program and a replayable effect scope, in either mode.
-  if (args.clockFree && !observe) outcome = { abstain: 'clock' };
+  if (args.clockFree && !observe && !(outcome.ops && outcome.draftClock)) outcome = { abstain: 'clock' };
   if (recorded) outcome = recorded;
   return { planned, route, plan, direction, folded, outcome, phases, observe };
 }
@@ -352,7 +367,11 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     if (!shadowBefore || !args.drawDefinition) return differentialTally('shadow:abstain:no-record', 'deferred');
     // RECORDED with no captured instant: v1 here read the clock as often as it did on the copy, or the recorded
     // instants are not the ones this run stamped (`tools/replayedInstants.ts`)
-    if (outcome.recordedResult && getCapturedClock() === undefined && args.instantsExact?.() === false)
+    if (
+      (outcome.recordedResult || outcome.draftClock) &&
+      getCapturedClock() === undefined &&
+      args.instantsExact?.() === false
+    )
       throw new OutcomePipelineDivergence({
         matchUpId: args.request.matchUpId,
         v1: 'read the clock on the stored record',
