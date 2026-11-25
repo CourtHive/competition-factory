@@ -146,13 +146,20 @@ function unchanged(state: object, before?: Read): boolean {
 
 /** the copy as the writers are about to find it: each entity's own fields, and the notices already buffered */
 export type RecordedBefore = ReturnType<typeof readBefore>;
-export function readBefore(drawDefinition: DrawDefinition) {
+type Entities = { matchUps: MatchUp[]; structures: Structure[] };
+export function readBefore(drawDefinition: DrawDefinition, entities?: Entities) {
   return {
     matchUps: new Map(
-      drawMatchUps(drawDefinition).map((stored) => [stored.matchUpId, read(ownState(stored, MATCHUP_CHILDREN))]),
+      (entities?.matchUps ?? drawMatchUps(drawDefinition)).map((stored) => [
+        stored.matchUpId,
+        read(ownState(stored, MATCHUP_CHILDREN)),
+      ]),
     ),
     structures: new Map(
-      drawStructures(drawDefinition).map((s) => [s.structureId, read(ownState(s, STRUCTURE_CHILDREN))]),
+      (entities?.structures ?? drawStructures(drawDefinition)).map((s) => [
+        s.structureId,
+        read(ownState(s, STRUCTURE_CHILDREN)),
+      ]),
     ),
     draw: read(ownState(drawDefinition, DRAW_CHILDREN)),
     notices: new Set(getNoticeBuffer() ?? []),
@@ -195,9 +202,11 @@ export function recordedOps({
   recording,
   before,
   marks,
+  entities,
 }: {
   drawDefinition: DrawDefinition;
   before: RecordedBefore;
+  entities?: Entities;
   recording: Recording;
   marks?: NoticeMarks;
 }): OutcomeOp[] | undefined {
@@ -207,13 +216,13 @@ export function recordedOps({
     ops.push(op);
   };
   // a dual's own fields, then each of its lines': a line is a matchUp of its own, and stamps as one
-  for (const stored of drawMatchUps(drawDefinition)) {
+  for (const stored of entities?.matchUps ?? drawMatchUps(drawDefinition)) {
     const state = ownState(stored, MATCHUP_CHILDREN);
     if (unchanged(state, before.matchUps.get(stored.matchUpId))) continue;
     const matchUp = asData(state) as MatchUp;
     replace({ op: 'replaceMatchUp', matchUpId: stored.matchUpId, matchUp, recording }, stored);
   }
-  for (const s of drawStructures(drawDefinition)) {
+  for (const s of entities?.structures ?? drawStructures(drawDefinition)) {
     const state = ownState(s, STRUCTURE_CHILDREN);
     if (unchanged(state, before.structures.get(s.structureId))) continue;
     replace({ op: 'replaceStructureState', structureId: s.structureId, state: asData(state), recording }, s);

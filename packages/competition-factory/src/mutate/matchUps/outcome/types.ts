@@ -496,6 +496,7 @@ export type BuildViewArgs = {
    * `writeOnCopy` keeps its own.
    */
   recordDraws?: RecordDraws;
+  callRecords?: Record<string, Tournament>;
   /**
    * RECORDED, with no captured instant: whether v1's run on the stored record read the clock exactly as its run on
    * the copy did (`tools/replayedInstants.ts`); `differential` asks it of a call recorded whole.
@@ -682,6 +683,15 @@ export type AbstainReason =
 
 /** which of the allowlist's shapes a complete plan is: `local` (the matchUp's own result) or the first `direction` */
 export type PlanShape = 'local' | 'direction';
+export type ForwardByePhases = {
+  result: Extract<OutcomeOp, { op: 'setMatchUpResult' }>;
+  winner: Extract<OutcomeOp, { op: 'setMatchUpDrawPositions' }>[];
+  loser?: {
+    assignment: Extract<OutcomeOp, { op: 'assignPosition' }>;
+    placements: Extract<OutcomeOp, { op: 'setMatchUpDrawPositions' }>[];
+  };
+};
+
 export type OutcomePlan =
   | {
       ops: OutcomeOp[];
@@ -689,6 +699,8 @@ export type OutcomePlan =
       abstain?: undefined;
       /** RECORDED: what v1 returned for the whole call it wrote on a copy, which the owned call returns */
       recordedResult?: ResultType;
+      /** The independent BYE writer ran its observable phases on the captured draft clock. */
+      projectedBye?: true;
     }
   | { abstain: AbstainReason; ops?: undefined; shape?: undefined };
 
@@ -749,6 +761,7 @@ export type PlanArgs = {
   /** RECORDED: the double-exit module's cascade after `prefix`, read on a copy of the record. */
   record?: (prefix: OutcomeOp[]) => OutcomeOp[] | undefined;
   /** RECORDED: v1's whole write for the call, read on a copy of the record (`plan/recordedCall.ts`). */
+  projectBye?: (phases: ForwardByePhases) => OutcomeOp[] | undefined;
   recordWhole?: () => { ops: OutcomeOp[]; written: ResultType; provesSettled?: () => boolean } | undefined;
   /** with no captured instant: whether `ops` is a program the ordered temporal executor certifies (`compileTemporalPhases`) */
   certifiesPhases?: (ops: OutcomeOp[]) => boolean;

@@ -280,6 +280,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     settleOnCopy,
     instantsExact: instants.exact,
     recordDraws: draws.record,
+    callRecords: tournamentRecords,
     policyDefinitions,
     tournamentRecord,
     drawDefinition,

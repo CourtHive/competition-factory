@@ -1,3 +1,4 @@
+import { projectByePassage } from './plan/projectByePassage';
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
 import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
@@ -101,6 +102,7 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
     landing: landingView(args, view),
     record: (prefix) => recordDoubleExitCascade({ ...args, request: planned }, prefix),
     recordWhole: () => recordWholeCall(args),
+    projectBye: (phases) => projectByePassage(args, phases),
     certifiesPhases: (ops) => !!compileTemporalPhases({ args, view, route, ops }),
     dual: dualCallFor(route, args, view),
     request: planned,
@@ -349,7 +351,11 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     if (!shadowBefore || !args.drawDefinition) return differentialTally('shadow:abstain:no-record', 'deferred');
     // RECORDED with no captured instant: v1 here read the clock as often as it did on the copy, or the recorded
     // instants are not the ones this run stamped (`tools/replayedInstants.ts`)
-    if (outcome.recordedResult && getCapturedClock() === undefined && args.instantsExact?.() === false)
+    if (
+      (outcome.recordedResult || outcome.projectedBye) &&
+      getCapturedClock() === undefined &&
+      args.instantsExact?.() === false
+    )
       throw new OutcomePipelineDivergence({
         matchUpId: args.request.matchUpId,
         v1: 'read the clock on the stored record',

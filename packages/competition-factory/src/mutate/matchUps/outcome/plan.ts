@@ -1,3 +1,4 @@
+import { predictForwardByePassage } from './plan/forwardByePassage';
 import { relabelKeepsReservation } from './plan/standingReservation';
 import { heldLoserByeClaims } from './plan/heldLoserBye';
 import { clearedSingleExit, correctedSingleExit, refreshedArrivalOps, relabelledExit } from './plan/exitCorrections';
@@ -483,6 +484,13 @@ function recordedWhole(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
   const unanswered = (ops: OutcomeOp[]) => (args.clockFree ? !args.certifiesPhases?.(ops) : !!args.settles?.(ops));
   const answered = plan.ops ? unanswered(plan.ops) : RECORDED_WHOLE.has(plan.abstain);
   if (!answered) return plan;
+  if (!args.clockFree && args.projectBye && (plan.abstain === 'cascade' || plan.abstain === 'exit')) {
+    const passage = predictForwardByePassage(args);
+    if (passage.ops && args.settles?.(passage.ops) === false) {
+      const ops = args.projectBye(passage.forwardBye);
+      return ops ? { shape: 'direction', projectedBye: true, ops } : plan;
+    }
+  }
   const recorded = args.recordWhole?.();
   if (!recorded) return plan;
   // a predicate that finds work on v1's own write is answered by the passes themselves (`settledOnCopy`): only where
