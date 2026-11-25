@@ -1113,7 +1113,7 @@ export interface MethodSignatures {
   getParticipantIdFinishingPositions: EngineMethod<typeof getParticipantIdFinishingPositions>;
   getParticipantMembership: EngineMethod<typeof getParticipantMembership>;
   getParticipantPaymentStatus: EngineMethod<typeof getParticipantPaymentStatus>;
-  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.rankings.getParticipantPoints` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals) */
   getParticipantPoints: EngineMethod<typeof getParticipantPoints>;
   getParticipantPresenceHistory: EngineMethod<typeof getParticipantPresenceHistory>;
   getParticipantRest: EngineMethod<typeof getParticipantRest>;
@@ -1142,7 +1142,7 @@ export interface MethodSignatures {
   getPresenceRules: EngineMethod<typeof getPresenceRules>;
   getProfileRounds: EngineMethod<typeof getProfileRounds>;
   getPublishState: EngineMethod<typeof getPublishState>;
-  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.rankings.getQualityWinPoints` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals) */
   getQualityWinPoints: EngineMethod<typeof getQualityWinPoints>;
   /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.getQuickStats` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   getQuickStats: EngineMethod<typeof getQuickStats>;
