@@ -20,7 +20,7 @@ import {
 // constants and types
 import { MODIFY_DRAW_DEFINITION, MODIFY_MATCHUP, UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
-import type { BuildViewArgs, OutcomeView, PlanShape, Route } from './types';
+import type { BuildViewArgs, ForwardByePhases, OutcomeView, PlanShape, Route } from './types';
 import { FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
 import { BYE, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
@@ -166,7 +166,7 @@ export function applyTemporalPhases(
   shape: PlanShape,
   effects: { notices: NoticeEffects; topics: string[] } = { notices: liveNoticeEffects, topics: getTopics().topics },
 ): ResultType {
-  const { drawDefinition, tournamentRecord, event } = args;
+  const { drawDefinition } = args;
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
   const stored = new Map(args.matchUpsMap?.drawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
   const source = stored.get(phases.result.matchUpId);
@@ -174,8 +174,66 @@ export function applyTemporalPhases(
   if (!source || (phases.arrival && !destination)) return { error: INVALID_VALUES };
   const onward = phases.onward && stored.get(phases.onward.matchUpId);
   if (phases.onward && !onward) return { error: INVALID_VALUES };
+  return applyOrdinaryWinner(args, source, phases.result, shape, effects, (announce) => {
+    if (phases.arrival && destination) {
+      const error = placeAndAnnounce(drawDefinition, phases.arrival, destination, announce);
+      if (error) return error;
+    }
+    return phases.onward && onward ? placeAndAnnounce(drawDefinition, phases.onward, onward, announce) : undefined;
+  });
+}
+
+type AnnounceMatch = (match: MatchUp, context: string) => void;
+function placeAndAnnounce(draw: DrawDefinition, position: ArrivalOp, match: MatchUp, announce: AnnounceMatch) {
+  const placed = applyOutcomeOps(draw, [position], undefined, { phase: 'ordinary-arrival' });
+  if (!placed.error) announce(match, 'assignMatchUpDrawPosition');
+  return placed.error;
+}
+
+/** The two branches certified by the passage reader. Each notice sees the state of its own write.
+ * assignDrawPosition announces its assignments only after the loser's onward placements return. */
+export function applyForwardByePassage(args: BuildViewArgs, phases: ForwardByePhases): ResultType {
+  const { drawDefinition, event, tournamentRecord } = args;
+  if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
+  const stored = new Map(args.matchUpsMap?.drawMatchUps.map((m) => [m.matchUpId, m]));
+  const source = stored.get(phases.result.matchUpId);
+  const { loser } = phases;
+  const structure = loser && findStructure({ drawDefinition, structureId: loser.assignment.structureId }).structure;
+  const placements = [...phases.winner, ...(loser?.placements ?? [])];
+  if (!source || (loser && !structure) || placements.some((p) => !stored.has(p.matchUpId)))
+    return { error: INVALID_VALUES };
+  const effects = { notices: liveNoticeEffects, topics: getTopics().topics };
+  return applyOrdinaryWinner(args, source, phases.result, 'direction', effects, (announce) => {
+    const place = (path: ArrivalOp[]) => {
+      for (const p of path) {
+        const error = placeAndAnnounce(drawDefinition, p, stored.get(p.matchUpId)!, announce);
+        if (error) return error;
+      }
+      return undefined;
+    };
+    const winnerError = place(phases.winner);
+    if (winnerError || !loser) return winnerError;
+    const { error } = applyOutcomeOps(drawDefinition, [loser.assignment]);
+    if (error) return error;
+    const loserError = place(loser.placements);
+    if (loserError) return loserError;
+    modifyPositionAssignmentsNotice({ drawDefinition, structure, tournamentId: tournamentRecord?.tournamentId, event });
+    return undefined;
+  });
+}
+
+/** The ordinary source write, its deferred and immediate notices, and its scored time on return. */
+function applyOrdinaryWinner(
+  { drawDefinition, tournamentRecord, event }: BuildViewArgs,
+  source: MatchUp,
+  resultOp: ResultOp,
+  shape: PlanShape,
+  effects: { notices: NoticeEffects; topics: string[] },
+  direct: (announce: AnnounceMatch) => string | undefined | void,
+): ResultType {
+  if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
   const tournamentId = tournamentRecord?.tournamentId;
-  const result = applyOutcomeOps(drawDefinition, [{ ...phases.result, stampsScoredTime: false }], undefined, {
+  const result = applyOutcomeOps(drawDefinition, [{ ...resultOp, stampsScoredTime: false }], undefined, {
     phase: 'ordinary-result',
   });
   if (result.error) return { error: INVALID_VALUES, info: result.error };
@@ -196,17 +254,8 @@ export function applyTemporalPhases(
       effects.notices,
     );
   announce(source, 'modifyMatchUpScore');
-
-  if (phases.arrival && destination) {
-    const placed = applyOutcomeOps(drawDefinition, [phases.arrival], undefined, { phase: 'ordinary-arrival' });
-    if (placed.error) return { error: INVALID_VALUES, info: placed.error };
-    announce(destination, 'assignMatchUpDrawPosition');
-  }
-  if (phases.onward && onward) {
-    const placed = applyOutcomeOps(drawDefinition, [phases.onward], undefined, { phase: 'ordinary-arrival' });
-    if (placed.error) return { error: INVALID_VALUES, info: placed.error };
-    announce(onward, 'assignMatchUpDrawPosition');
-  }
+  const error = direct(announce);
+  if (error) return { error: INVALID_VALUES, info: error };
   const action = scoredTimeAction(source);
   if (action === 'initialize') {
     source.schedule ??= {};
@@ -214,7 +263,7 @@ export function applyTemporalPhases(
       effects.notices.readClock({ kind: 'scoredTime', target: source }),
     ).toISOString();
   } else if (action === 'clear' && source.schedule) delete source.schedule.scoredTime;
-  return planResult(shape, [phases.result]);
+  return planResult(shape, [resultOp]);
 }
 
 /**

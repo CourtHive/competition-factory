@@ -1,3 +1,6 @@
+import { passageOnCopy } from './plan/forwardByeEntitlement';
+import { predictForwardByePassage } from './plan/forwardByePassage';
+import { projectByePassage } from './plan/projectByePassage';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { teamFinalLine, watchTeamLineInputs } from './plan/teamFinalLine';
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
@@ -90,7 +93,7 @@ const OWNED_SHAPES = new Set<PlanShape>(['local', 'direction']);
  */
 function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, keepFoldedView = false) {
   let sampledStamps: Set<string> | undefined;
-  let relayCopy: ReturnType<typeof prepareRecordedCopy> | undefined;
+  let preparedCopy: ReturnType<typeof prepareRecordedCopy> | undefined;
   args = { ...args, clockFree: getCapturedClock() === undefined };
   // TEAM auto-calc: a dual whose result is computed from its lines takes the PROJECTED winner and score in
   // place of the call's before anything is routed, as `handleTeamAutoCalc` rewrites v1's parameters
@@ -117,14 +120,48 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
         sampledStamps = stampedInThisCall(args.drawDefinition);
         return args.teamLineUnchanged?.() ? sampledStamps : undefined;
       }),
-    recordWhole: () => recordWholeCall(args, sampledStamps, relayCopy),
+    recordWhole: () => recordWholeCall(args, sampledStamps, preparedCopy),
+    projectBye: () => {
+      if (!args.drawDefinition || !args.writeOnCopy) return undefined;
+      sampledStamps = stampedInThisCall(args.drawDefinition);
+      preparedCopy = prepareRecordedCopy(args);
+      const { copy } = preparedCopy;
+      const passage = passageOnCopy(copy);
+      if (!passage) return undefined;
+      const copied = {
+        ...args,
+        ...copy,
+        matchUpsMap: passage.matchUpsMap,
+        inContextDrawMatchUps: passage.graph.draw.inContextDrawMatchUps,
+        structural: true,
+      };
+      const current = buildOutcomeView(copied);
+      const request = args.request;
+      if (refuseOutcome(request, current) || chooseRoute(request, current) !== 'winner') return undefined;
+      const fresh = predictForwardByePassage(
+        {
+          request,
+          view: current,
+          route: 'winner',
+          drawDefinition: copy.drawDefinition,
+          tournamentRecord: copy.tournamentRecord,
+          write: planWrite(request, current, 'winner'),
+          direction: planDirection(request, current, 'winner'),
+        },
+        passage.graph,
+      );
+      if (!fresh.ops) return undefined;
+      const folded = settleFold(copied, current, fresh.ops);
+      if (!folded || folded.error !== undefined || folded.sites.length) return undefined;
+      return projectByePassage(copied, fresh.forwardBye, sampledStamps, preparedCopy);
+    },
     clockRelay: (ops) => {
       if (ops.length !== 8 || !args.drawDefinition || !args.writeOnCopy) return undefined;
       const initial = compileTemporalPhases({ args, view, route, ops }, true);
       if (!initial?.onward) return undefined;
       sampledStamps = stampedInThisCall(args.drawDefinition);
-      relayCopy = prepareRecordedCopy(args);
-      const copy = relayCopy.copy;
+      preparedCopy = prepareRecordedCopy(args);
+      const copy = preparedCopy.copy;
       const copiedArgs = { ...args, ...copy, matchUpsMap: getMatchUpsMap({ drawDefinition: copy.drawDefinition }) };
       const current = buildOutcomeView(copiedArgs);
       const request = args.request;
@@ -147,7 +184,7 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
       const projection: OutcomeOp[] = [{ ...phases.result, stampsScoredTime: false }, phases.arrival, phases.onward];
       const folded = settleFold(copiedArgs, current, projection);
       if (!folded || folded.error !== undefined || folded.sites.length) return undefined;
-      return { native: feedInRelay(args, phases, sampledStamps, relayCopy) };
+      return { native: feedInRelay(args, phases, sampledStamps, preparedCopy) };
     },
     certifiesPhases: (ops) => !!compileTemporalPhases({ args, view, route, ops }),
     dual: dualCallFor(route, args, view),
@@ -403,7 +440,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     // RECORDED with no captured instant: v1 here read the clock as often as it did on the copy, or the recorded
     // instants are not the ones this run stamped (`tools/replayedInstants.ts`)
     if (
-      (outcome.recordedResult || outcome.draftClock) &&
+      (outcome.recordedResult || outcome.draftClock || outcome.projectedBye) &&
       getCapturedClock() === undefined &&
       args.instantsExact?.() === false
     )

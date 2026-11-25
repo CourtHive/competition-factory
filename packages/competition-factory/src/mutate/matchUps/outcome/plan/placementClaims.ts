@@ -211,7 +211,12 @@ function awardOnArrival(draw: ClaimDraw, path: PlacementClaim[], claim: Placemen
   return true;
 }
 
-function crossStructurePosition(draw: ClaimDraw, match: HydratedMatchUp, next: HydratedMatchUp, participantId: string) {
+export function crossStructurePosition(
+  draw: ClaimDraw,
+  match: HydratedMatchUp,
+  next: HydratedMatchUp,
+  participantId: string,
+) {
   const source = findStructure({ drawDefinition: draw.drawDefinition, structureId: match.structureId }).structure;
   const seats = getPositionAssignments({
     drawDefinition: draw.drawDefinition,

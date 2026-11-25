@@ -34,6 +34,11 @@ export class Recording {
     visit(root, {});
   }
 
+  /** The detached draw contains this object. External aliases can make a bounded write nonlocal. */
+  contains(value: object): boolean {
+    return this.origins.has(value);
+  }
+
   /** ops are data: a recording says nothing when they are serialized */
   toJSON() {
     return undefined;
