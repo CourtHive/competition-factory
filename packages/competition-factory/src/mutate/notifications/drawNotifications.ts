@@ -24,6 +24,7 @@ import {
   MODIFY_SEED_ASSIGNMENTS,
   UPDATE_INCONTEXT_MATCHUP,
 } from '@Constants/topicConstants';
+import { originalNoticeValue } from '@Global/state/noticePayloadAudit';
 
 /** Explicit primitive effects keep a private replay off the live provider and clock. */
 export type NoticeEffects = {
@@ -317,6 +318,9 @@ export function deferredQuery<A, T>(query: (args: A) => T, args: A): () => T {
 }
 
 export function deferredQueryBinding(read: object) {
+  // a read-only view of a lazy notice shares its binding, including later argument rebinding
+  /* v8 ignore next -- @preserve: compiled out of every published bundle */
+  if (__NOTICE_PAYLOAD_DIAGNOSTICS__) read = originalNoticeValue(read);
   return deferredQueries.get(read);
 }
 

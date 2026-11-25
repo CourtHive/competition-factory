@@ -46,6 +46,8 @@ export default [
         ...globals.node,
         ...globals.browser,
         ...globals.es2021,
+        // a compile-time constant (src/global/state/compileTimeConstants.d.ts)
+        __NOTICE_PAYLOAD_DIAGNOSTICS__: 'readonly',
       },
     },
     plugins: {
