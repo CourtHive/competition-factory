@@ -378,7 +378,7 @@ export function teamFinalLine(
   if (
     !args.drawDefinition ||
     !args.recordDraws ||
-    !args.finishTeamLine ||
+    !args.finishOnCopy ||
     !args.tournamentRecord ||
     !args.tournamentRecords
   )
@@ -422,11 +422,11 @@ export function teamFinalLine(
       for (const entity of byId.values()) changed.set(entity, changedOwnState(entity, MATCHUP_CHILDREN));
       for (const entity of structures) changed.set(entity, changedOwnState(entity, STRUCTURE_CHILDREN));
       changed.set(draw, changedOwnState(draw, DRAW_CHILDREN));
-      let result: ReturnType<NonNullable<BuildViewArgs['finishTeamLine']>> | undefined;
+      let result: ReturnType<NonNullable<BuildViewArgs['finishOnCopy']>> | undefined;
       try {
         result = args.recordDraws!(() => {
           const written = playPhases(copy, plan, ids, matchUpsMap, byId);
-          return written && args.finishTeamLine!(copy, matchUpsMap, written);
+          return written && args.finishOnCopy!(copy, matchUpsMap, written);
         });
       } catch {
         return { abstain: why };
