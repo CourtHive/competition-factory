@@ -6,6 +6,8 @@ Subscriptions enable external methods to be called when certain events occur whi
 
 The payload for each subscription is an array of objects, with each element of the array having been produced by an `addNotice` statement within engine methods. Subscription methods are called **_after_** an engine method completes, not during execution.
 
+In 7.x, subscription payloads are read-only, including the array and every object reachable through it. To annotate a matchUp, take its ID from the notice and submit the change through the engine. For display-only annotations, keep a separate application object.
+
 :::info
 All engine methods may be passed the additional parameter `{ delayNotify: true }`, in which case subscription methods are **_not_** called until a subsequent engine method is invoked.
 :::
