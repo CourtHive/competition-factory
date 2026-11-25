@@ -473,6 +473,8 @@ export type MatchUpWrite = {
 
 export type BuildViewArgs = {
   teamLineUnchanged?: () => boolean;
+  /** Complete the public return at the end of detached writes, before replay onto storage. */
+  finishTeamLine?: (copy: RecordCopy, matchUpsMap: MatchUpsMap, written: ResultType) => ResultType;
   tournamentRecords?: Record<string, Tournament>;
   /** Private planning mode; it grants no runtime ownership. */
   clockFree?: boolean;

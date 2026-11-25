@@ -144,6 +144,12 @@ function unchanged(state: object, before?: Read): boolean {
   return objects.length === before.objects.length && objects.every((held, at) => held === before.objects[at]);
 }
 
+/** For a preselected target, distinguish a changed field or reference from an already satisfied write. */
+export function changedOwnState(entity: object, children: string[]): () => boolean {
+  const before = read(ownState(entity, children));
+  return () => !unchanged(ownState(entity, children), before);
+}
+
 /** the copy as the writers are about to find it: each entity's own fields, and the notices already buffered */
 export type RecordedBefore = ReturnType<typeof readBefore>;
 export function readBefore(drawDefinition: DrawDefinition) {

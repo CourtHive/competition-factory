@@ -12,11 +12,12 @@ import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getNoticeBuffer } from '@Global/state/globalState';
 import { withDraftWrites } from '@Global/state/withDraftWrites';
-import { cloneData, cloneState } from '@Tools/cloneState';
+import { cloneData, cloneState, restoreState } from '@Tools/cloneState';
 import { nowIso } from '@Tools/clock';
+import { returnedOnStored } from './recordedCall';
 import { bareResultRequest } from './planShared';
 import { Recording } from '../recording';
-import { ownState, pendingAnnouncement, stampCopies, withNoticeMarks } from './recordedDiff';
+import { changedOwnState, ownState, pendingAnnouncement, stampCopies, withNoticeMarks } from './recordedDiff';
 import { DRAW_CHILDREN, MATCHUP_CHILDREN, recordedName, STRUCTURE_CHILDREN } from '../ops';
 
 // constants and types
@@ -116,6 +117,7 @@ function lineCircuit(args: PlanArgs, why: 'team' | 'cascade'): Circuit | undefin
     !view.draw.storesEdges ||
     view.draw.perMatchUpCompetition ||
     line.dualRewrite.scoreReported ||
+    line.talliedByScore ||
     line.autoCalcDisabled ||
     !bareResultRequest({ ...request, score: undefined }) ||
     request.flags.disableAutoCalc ||
@@ -276,10 +278,14 @@ export function watchTeamLineInputs(args: BuildViewArgs): (() => boolean) | unde
     });
 }
 
-function playPhases(copy: RecordCopy, plan: PlanArgs, ids: Circuit) {
+function playPhases(
+  copy: RecordCopy,
+  plan: PlanArgs,
+  ids: Circuit,
+  matchUpsMap: ReturnType<typeof getMatchUpsMap>,
+  byId: Map<string, MatchUp>,
+) {
   const { drawDefinition, tournamentRecord, event } = copy;
-  const matchUpsMap = getMatchUpsMap({ drawDefinition });
-  const byId = new Map(matchUpsMap.drawMatchUps.map((m) => [m.matchUpId, m]));
   const source = byId.get(ids.lineId)!;
   const dual = byId.get(ids.dualId)!;
   const main = drawDefinition.structures!.find((s) => s.structureId === ids.mainId)!;
@@ -351,13 +357,10 @@ function playPhases(copy: RecordCopy, plan: PlanArgs, ids: Circuit) {
     source.schedule.scoredTime = nowIso({ kind: 'scoredTime', target: source });
   }
   return {
-    byId,
-    written: {
-      success: true,
-      tieMatchUpResult,
-      stack: ['directParticipants', 'attemptToSetWinningSide', 'noDownStreamDependencies', 'setMatchUpStatus'],
-      context: {},
-    },
+    success: true,
+    tieMatchUpResult,
+    stack: ['directParticipants', 'attemptToSetWinningSide', 'noDownStreamDependencies', 'setMatchUpStatus'],
+    context: {},
   };
 }
 
@@ -372,7 +375,14 @@ export function teamFinalLine(
   why: 'team' | 'cascade',
   sample: () => Set<string> | undefined,
 ): OutcomePlan | undefined {
-  if (!args.drawDefinition || !args.recordDraws || !args.tournamentRecord || !args.tournamentRecords) return;
+  if (
+    !args.drawDefinition ||
+    !args.recordDraws ||
+    !args.finishTeamLine ||
+    !args.tournamentRecord ||
+    !args.tournamentRecords
+  )
+    return;
   if (plan.clockFree || !(plan.view.line?.keepsDualDecision || plan.dual?.route === 'winner')) return;
   const named = Object.keys(args.tournamentRecords);
   if (named.length > 1 || (named.length && named[0] !== args.tournamentRecord.tournamentId)) return;
@@ -380,13 +390,15 @@ export function teamFinalLine(
   if (!ids) return;
   const stamped = sample();
   if (!stamped) return;
-  const { copy } = cloneState({
+  const requested = JSON.stringify(args.request);
+  const kept = cloneState(args.request);
+  const { copy, originals } = cloneState({
     tournamentRecord: args.tournamentRecord,
     event: args.event,
     drawDefinition: args.drawDefinition,
   });
   stampCopies(copy.drawDefinition, stamped);
-  return withNoticeMarks((marks) =>
+  const program = withNoticeMarks((marks): OutcomePlan =>
     withDraftWrites(() => {
       const prior = new Set(getNoticeBuffer() ?? []);
       const recording = new Recording(copy.drawDefinition);
@@ -397,9 +409,25 @@ export function teamFinalLine(
           v === copy.drawDefinition ? 0 : v,
         );
       const startingOutside = outside();
-      let result: ReturnType<typeof playPhases>;
+      const draw = copy.drawDefinition;
+      const matchUpsMap = getMatchUpsMap({ drawDefinition: draw });
+      const writtenIds = new Set([ids.dualId, ids.lineId, ids.winnerId, ids.loserId]);
+      const byId = new Map(
+        matchUpsMap.drawMatchUps.filter((m) => writtenIds.has(m.matchUpId)).map((m) => [m.matchUpId, m]),
+      );
+      const structures = draw.structures!.filter((s) => s.structureId === ids.mainId || s.structureId === ids.backId);
+      // A pre-stamped parent can remain untouched. Mirroring it anyway would overwrite an
+      // independent live edit made between the detached enqueue and application.
+      const changed = new Map<object, () => boolean>();
+      for (const entity of byId.values()) changed.set(entity, changedOwnState(entity, MATCHUP_CHILDREN));
+      for (const entity of structures) changed.set(entity, changedOwnState(entity, STRUCTURE_CHILDREN));
+      changed.set(draw, changedOwnState(draw, DRAW_CHILDREN));
+      let result: ReturnType<NonNullable<BuildViewArgs['finishTeamLine']>> | undefined;
       try {
-        result = args.recordDraws!(() => playPhases(copy, plan, ids));
+        result = args.recordDraws!(() => {
+          const written = playPhases(copy, plan, ids, matchUpsMap, byId);
+          return written && args.finishTeamLine!(copy, matchUpsMap, written);
+        });
       } catch {
         return { abstain: why };
       }
@@ -407,16 +435,14 @@ export function teamFinalLine(
       const ops: OutcomeOp[] = [];
       const own = (entity: object, skip: string[]) => cloneData(ownState(entity, skip));
       const add = (op: Extract<OutcomeOp, { recording?: Recording }>, entity: object) => {
+        if (!changed.get(entity)!()) return;
         recording.source(recordedName(op), entity);
         ops.push(op);
       };
-      const writtenIds = new Set([ids.dualId, ids.lineId, ids.winnerId, ids.loserId]);
-      for (const [matchUpId, entity] of result.byId) {
-        if (!writtenIds.has(matchUpId)) continue;
+      for (const [matchUpId, entity] of byId) {
         add({ op: 'replaceMatchUp', matchUpId, matchUp: own(entity, MATCHUP_CHILDREN) as MatchUp, recording }, entity);
       }
-      for (const entity of copy.drawDefinition.structures!) {
-        if (entity.structureId !== ids.mainId && entity.structureId !== ids.backId) continue;
+      for (const entity of structures) {
         add(
           {
             op: 'replaceStructureState',
@@ -427,12 +453,14 @@ export function teamFinalLine(
           entity,
         );
       }
-      const draw = copy.drawDefinition;
       add({ op: 'replaceDrawState', drawId: draw.drawId, state: own(draw, DRAW_CHILDREN), recording }, draw);
       const announce = pendingAnnouncement(prior, marks());
-      if (!announce) return { abstain: why };
+      if (!announce || !returnedOnStored(result, originals, draw)) return { abstain: why };
       ops.push(announce);
-      return { ops, shape: 'local', phaseResult: result.written };
+      return { ops, shape: 'local', phaseResult: result };
     }),
   );
+  if (JSON.stringify(args.request) === requested) return program;
+  restoreState(kept);
+  return { abstain: why };
 }

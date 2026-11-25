@@ -12,6 +12,8 @@ import * as legacy from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import * as whole from '@Mutate/matchUps/outcome/plan/recordedCall';
 import * as family from '@Mutate/matchUps/outcome/plan/teamFinalLine';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { storedRecord } from '@Tests/testHarness/outcome/objectGraph';
+import { inDraftWrites } from '@Global/state/withDraftWrites';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { setClock } from '@Tools/clock';
 import mocks from '@Assemblies/engines/mock';
@@ -65,6 +67,14 @@ function prepare(side: 1 | 2, policyOff = false, held = false) {
   });
 }
 
+function scoreAlias(result: ReturnType<typeof playCall>, lineId: unknown) {
+  const score = result.result.tieMatchUpResult?.score;
+  if (score === undefined) return 'absent';
+  const main = storedRecord().events![0].drawDefinitions![0].structures!.find((s) => s.stage === MAIN)!;
+  const dual = main.matchUps!.find((m) => m.tieMatchUps?.some((line) => line.matchUpId === lineId))!;
+  return score === dual.score ? 'stored dual' : 'detached';
+}
+
 it.each([
   [1, false, false],
   [2, false, false],
@@ -79,6 +89,7 @@ it.each([
     program.mockReturnValueOnce(undefined);
     const reference = playCall('v2', call);
     expect(reference.result.success).toBe(true);
+    const referenceAlias = scoreAlias(reference, call.params.matchUpId);
     expect(program).toHaveBeenCalledTimes(1);
     const wholeWriter = vi.spyOn(whole, 'recordWholeCall').mockReturnValue(undefined);
     const nestedWriter = vi.spyOn(nested, 'recordDoubleExitCascade').mockReturnValue(undefined);
@@ -89,6 +100,7 @@ it.each([
     expect(wholeWriter).not.toHaveBeenCalled();
     expect(nestedWriter).not.toHaveBeenCalled();
     expect(oldWriter).not.toHaveBeenCalled();
+    expect(scoreAlias(native, call.params.matchUpId)).toBe(referenceAlias);
     expectPlayedParity(native, reference);
     expectPlayedParity(playCall('differential', call), reference);
   },
@@ -176,6 +188,99 @@ it('uses the original recorder when a stamp getter changes the separately held t
     const candidate = run(true);
     expect(candidate.stampReads).toBe(baseline.stampReads);
     expectPlayedParity(candidate.actual, baseline.actual);
+  } finally {
+    setStateProvider(original);
+  }
+});
+
+it('preserves an independent live edit on pre-stamped parents during detached delivery', () => {
+  const call = prepare(2, false, true);
+  const original = getProvider();
+  const planned = family.teamFinalLine;
+  const planner = vi.spyOn(family, 'teamFinalLine');
+  const recorder = vi.spyOn(whole, 'recordWholeCall');
+  const parents = () => {
+    const stored = Object.values(original.getTournamentRecords())[0] as Tournament;
+    const draw = stored.events![0].drawDefinitions![0];
+    return [draw, draw.structures!.find((s) => s.stage === MAIN)!];
+  };
+  let measuring = false;
+  let seeded = false;
+  let edited = false;
+  const run = (native: boolean) => {
+    measuring = seeded = edited = false;
+    recorder.mockClear();
+    planner.mockImplementationOnce((...args) => {
+      measuring = true;
+      return native ? planned(...args) : undefined;
+    });
+    const actual = playCall('v2', call);
+    expect([seeded, edited]).toEqual([true, true]);
+    expect(recorder).toHaveBeenCalledTimes(native ? 0 : 1);
+    expect(parents().map((p) => p.notes)).toEqual(['independent edit', 'independent edit']);
+    return actual;
+  };
+  try {
+    setStateProvider({
+      ...original,
+      getCapturedStamps() {
+        const stamps = original.getCapturedStamps?.();
+        if (measuring && !seeded && stamps) {
+          seeded = true;
+          for (const parent of parents()) stamps.add(parent);
+        }
+        return stamps;
+      },
+      addNotice(notice, settings) {
+        if (measuring && !edited && inDraftWrites()) {
+          edited = true;
+          for (const parent of parents()) parent.notes = 'independent edit';
+        }
+        return original.addNotice(notice, settings);
+      },
+    });
+    const baseline = run(false);
+    expectPlayedParity(run(true), baseline);
+  } finally {
+    setStateProvider(original);
+  }
+});
+
+it('restores the caller-owned score extension before falling back on a changed request', () => {
+  const call = prepare(1);
+  const planned = family.teamFinalLine;
+  const planner = vi.spyOn(family, 'teamFinalLine');
+  const original = getProvider();
+  const borrowed = { revision: 1 };
+  call.params.outcome = { winningSide: 1, score: { extensions: [{ name: 'client observation', value: borrowed }] } };
+  let measuring = false;
+  let edited = false;
+  const run = (native: boolean) => {
+    measuring = edited = false;
+    planner.mockImplementationOnce((...args) => {
+      measuring = true;
+      return native ? planned(...args) : undefined;
+    });
+    const actual = playCall('v2', call, true);
+    expect(edited).toBe(true);
+    expect(borrowed.revision).toBe(1);
+    return actual;
+  };
+  try {
+    setStateProvider({
+      ...original,
+      addNotice(notice, settings) {
+        if (measuring && !edited && inDraftWrites()) {
+          edited = true;
+          borrowed.revision = 2;
+        }
+        return original.addNotice(notice, settings);
+      },
+    });
+    const baseline = run(false);
+    const actual = run(true);
+    expect(planner.mock.results.at(-1)?.value?.ops).toBeUndefined();
+    expectPlayedParity(actual, baseline);
   } finally {
     setStateProvider(original);
   }
