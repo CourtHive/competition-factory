@@ -9,7 +9,15 @@ import * as tools from '@Assemblies/tools';
  * the governor's own function, so the two homes cannot drift before 8.0.0 removes the governor placements.
  */
 
-const FORMATS = ['aggregateDeciderSetNumber', 'finalSetGoverns', 'isAggregateFormat', 'parse', 'stringify'];
+const FORMATS = [
+  'aggregateDeciderSetNumber',
+  'finalSetGoverns',
+  'isAggregateFormat',
+  'isValidMatchUpFormat',
+  'parse',
+  'stringify',
+  'validateMatchUpFormat',
+];
 const GOVERNOR_SCORING = [
   'addPoint',
   'analyzeSequence',
@@ -54,6 +62,19 @@ describe('tools.formats', () => {
     // the score governor's aliases are the same functions
     expect(governors.scoreGovernor.parseMatchUpFormat).toBe(tools.formats.parse);
     expect(governors.scoreGovernor.stringifyMatchUpFormat).toBe(tools.formats.stringify);
+  });
+
+  it('validates a format code, without the governor isValid alias', () => {
+    const { isValidMatchUpFormat, validateMatchUpFormat } = tools.formats;
+    expect(isValidMatchUpFormat).toBe(governors.matchUpFormatGovernor.isValidMatchUpFormat);
+    expect(validateMatchUpFormat).toBe(governors.matchUpFormatGovernor.validateMatchUpFormat);
+    expect(isValidMatchUpFormat({ matchUpFormat: 'SET3-S:6/TB7' })).toEqual(true);
+    expect(isValidMatchUpFormat({ matchUpFormat: 'SET2-S:6/TB7' })).toEqual(false);
+    expect(validateMatchUpFormat({ matchUpFormat: 'SET3-S:6/TB7' })).toEqual({ valid: true });
+    const invalid = validateMatchUpFormat({ matchUpFormat: 'SET2-S:6/TB7' });
+    expect(invalid.valid).toEqual(false);
+    expect(invalid.info).toContain('odd count');
+    expect('isValid' in tools.formats).toEqual(false);
   });
 });
 
