@@ -204,6 +204,8 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   owned?: ResultType;
   /** `owned` is v1's whole answer for a call recorded on a copy (`plan/recordedCall.ts`) */
   recorded?: boolean;
+  /** A native line phase completed its warnings and return before replay. */
+  finished?: boolean;
   compare?: (v1Result: ResultType) => void;
   runV1?: <T>(run: () => T) => T;
 } {
@@ -226,7 +228,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
       ? applyTemporalPhases(args, phases, outcome.shape)
       : applyOwnedPlan({ args, ops: outcome.ops, shape: outcome.shape, route });
     // a call recorded whole returns what v1 returned for it
-    if (!applied.error && outcome.phaseResult) return { owned: outcome.phaseResult };
+    if (!applied.error && outcome.phaseResult) return { owned: outcome.phaseResult, finished: true };
     if (applied.error || !outcome.recordedResult) return { owned: applied };
     return { owned: outcome.recordedResult, recorded: true };
   }

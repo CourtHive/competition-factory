@@ -277,6 +277,8 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
       },
     },
     tournamentRecords,
+    finishTeamLine: (copy, map, owned) =>
+      ownedResult({ owned, params: { ...params, ...copy }, matchUpsMap: map, neverPlayedBefore, stack }),
     writeOnCopy: (copy) => draws.record(() => instants.record(() => writeOnCopy(copy))),
     settleOnCopy,
     instantsExact: instants.exact,
@@ -291,7 +293,9 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // S2: a call v2 owns has been written by it (`outcome/apply.ts`); v1 is not asked, and the warnings are v1's own
   // a call recorded whole returns what v1 returned for it on the copy, its warnings among them
   if (v2.owned)
-    return v2.recorded ? v2.owned : ownedResult({ owned: v2.owned, params, matchUpsMap, neverPlayedBefore, stack });
+    return v2.recorded || v2.finished
+      ? v2.owned
+      : ownedResult({ owned: v2.owned, params, matchUpsMap, neverPlayedBefore, stack });
 
   const stored: V1Target = {
     deciderSnapshotBefore,
