@@ -18,7 +18,7 @@ import { processSides } from '@Query/matchUps/processSides';
 import { stringSort } from '@Functions/sorters/stringSort';
 import { isExit } from '@Validators/isExit';
 import { isObject } from '@Tools/objects';
-import { idRecord } from '@Tools/plainRecord';
+import { idRecord, ownArray } from '@Tools/plainRecord';
 
 // constants and types
 import { CONTAINER, MAIN, PLAY_OFF, QUALIFYING } from '@Constants/drawDefinitionConstants';
@@ -96,10 +96,12 @@ export function getParticipantEntries(params) {
   const rrGroupMatchUps: { [structureId: string]: HydratedMatchUp[] } = idRecord();
   const rrContainerInfo: RRContainerInfo = idRecord();
 
-  const getRanking = ({ eventType, scaleNames, participantId }) =>
-    participantMap[participantId]?.participant?.rankings?.[eventType]?.find((ranking) =>
-      scaleNames.includes(ranking.scaleName),
-    )?.scaleValue;
+  // an event type is a record value: "constructor" or "toString" must read as no rankings, not as a built-in
+  const getRanking = ({ eventType, scaleNames, participantId }) => {
+    const rankings = participantMap[participantId]?.participant?.rankings;
+    if (!rankings || !Object.hasOwn(rankings, eventType)) return undefined;
+    return rankings[eventType]?.find((ranking) => scaleNames.includes(ranking.scaleName))?.scaleValue;
+  };
 
   for (const event of tournamentRecord?.events ?? []) {
     if (participantFilters?.eventIds && !participantFilters.eventIds.includes(event.eventId)) continue;
@@ -398,16 +400,17 @@ function addParticipantDrawEntrySeedings({
 
   const seedValue = mainSeeding || qualifyingSeeding;
   if (seedValue) {
-    if (!participantMap[id].participant.seedings[eventType]) participantMap[id].participant.seedings[eventType] = [];
+    // seedings is returned as built, so an event type is an own key of a plain object rather than an idRecord key
+    const eventSeedings = ownArray(participantMap[id].participant.seedings, eventType);
 
     if (mainSeedingAssignments) {
-      participantMap[id].participant.seedings[eventType].push({
+      eventSeedings.push({
         ...mainSeedingAssignments,
         scaleName: drawId,
       });
     }
     if (qualifyingSeedingAssignments) {
-      participantMap[id].participant.seedings[eventType].push({
+      eventSeedings.push({
         ...qualifyingSeedingAssignments,
         scaleName: drawId,
       });
@@ -896,7 +899,7 @@ function detectScheduleConflicts({ scheduleItems, potentialMatchUps, scheduleAna
     if (scheduledTime) dateItems[scheduledDate].push(scheduleItem);
 
     return dateItems;
-  }, {});
+  }, idRecord());
 
   Object.values(dateItems).forEach((items: any) => items.sort(timeSort));
 
