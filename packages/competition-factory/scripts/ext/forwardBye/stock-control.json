@@ -1,0 +1,88 @@
+{
+  "recorded": {
+    "factory": "3ff57de8a68ee2bef1603db76ed3109f24f8414d",
+    "tree": "069cb7f5284107637878731f1ed85d859193102b",
+    "sealedBindingSha256": "f96bea64dd175000d5f03f1ee6f070dca81b195b04f3467c9e63322607bcc8ad",
+    "observationCounts": {
+      "v1 recorder on": 122,
+      "v1 recorder off": 122,
+      "v2 recorder on": 122,
+      "v2 recorder off": 122,
+      "differential recorder on": 122,
+      "differential recorder off": 122
+    },
+    "recorderOffV2Calls": {
+      "positive {\"nested\": 0, \"whole\": 1, \"writer\": 1}": 106,
+      "negative {\"nested\": 0, \"whole\": 1, \"writer\": 1}": 16
+    },
+    "mismatchCounts": {},
+    "firstMismatches": {},
+    "comparedFields": [
+      "boundary",
+      "pre",
+      "landingBefore",
+      "publicEvents",
+      "thrown",
+      "material",
+      "landingAfter",
+      "post",
+      "retained",
+      "returnJoint"
+    ],
+    "diagnosticStackContentDifferences": 0,
+    "diagnosticStackKeyPositionChanges": {},
+    "stackShapes": {
+      "array": 732
+    },
+    "verifiedRawNative": 0,
+    "plannerOverlay": false,
+    "providerObserverTaps": false,
+    "customProviderOverride": false,
+    "effectsTransform": false,
+    "orderedObservationFileDigest": "4f432aeb9454e0991f94acf4f156e56be6b20bde04bc794675a1d0cdbae53489"
+  },
+  "native": {
+    "factory": "ba2f42cbf0a9df754c3dfee1bf27ee6f280cae18",
+    "tree": "7f84b4953844806d9630db214bbd88806dbbb618",
+    "sealedBindingSha256": "f96bea64dd175000d5f03f1ee6f070dca81b195b04f3467c9e63322607bcc8ad",
+    "observationCounts": {
+      "v1 recorder on": 122,
+      "v1 recorder off": 122,
+      "v2 recorder on": 122,
+      "v2 recorder off": 122,
+      "differential recorder on": 122,
+      "differential recorder off": 122
+    },
+    "recorderOffV2Calls": {
+      "positive {\"nested\": 0, \"whole\": 0, \"writer\": 0}": 106,
+      "negative {\"nested\": 0, \"whole\": 1, \"writer\": 1}": 16
+    },
+    "mismatchCounts": {},
+    "firstMismatches": {},
+    "comparedFields": [
+      "boundary",
+      "pre",
+      "landingBefore",
+      "publicEvents",
+      "thrown",
+      "material",
+      "landingAfter",
+      "post",
+      "retained",
+      "returnJoint"
+    ],
+    "diagnosticStackContentDifferences": 212,
+    "diagnosticStackKeyPositionChanges": {
+      "(1, 2)": 212
+    },
+    "stackShapes": {
+      "array": 732
+    },
+    "verifiedRawNative": 106,
+    "plannerOverlay": false,
+    "providerObserverTaps": false,
+    "customProviderOverride": false,
+    "effectsTransform": false,
+    "orderedObservationFileDigest": "ea850fa3f681c5a763e997aa91bcc8dfc119b5c90f61858ce43e8657b6f5f38e"
+  }
+}

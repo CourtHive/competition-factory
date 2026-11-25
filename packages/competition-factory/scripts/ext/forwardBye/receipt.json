@@ -1,0 +1,539 @@
+{
+  "heads": {
+    "recorded": "3ff57de8a68ee2bef1603db76ed3109f24f8414d",
+    "native": "ba2f42cbf0a9df754c3dfee1bf27ee6f280cae18"
+  },
+  "sealedManifest": "f96bea64dd175000d5f03f1ee6f070dca81b195b04f3467c9e63322607bcc8ad",
+  "probe": "9e9d7369ff9a2680ffd6803e426439f640e51f5275c5f9348367f3ede989b0f9",
+  "counts": {
+    "v2/mirror": {
+      "totals": {
+        "pairs": 122,
+        "positive": 106,
+        "positive-recorded-writer": 106,
+        "positive-recorded-recorder": 106,
+        "positive-recorded-nested": 0,
+        "positive-native-writer": 0,
+        "positive-native-recorder": 0,
+        "positive-native-nested": 0,
+        "positive-provider-entries": 13798,
+        "positive-draft-notices": 830,
+        "positive-live-notices": 574,
+        "negative": 16,
+        "negative-recorded-writer": 16,
+        "negative-recorded-recorder": 16,
+        "negative-recorded-nested": 0,
+        "negative-native-writer": 16,
+        "negative-native-recorder": 16,
+        "negative-native-nested": 0
+      },
+      "topicOrders": [
+        {
+          "boundary": "enclosed",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp"],
+          "count": 3
+        },
+        {
+          "boundary": "enclosed",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp", "modifyPositionAssignments"],
+          "count": 4
+        },
+        {
+          "boundary": "public",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp"],
+          "count": 59
+        },
+        {
+          "boundary": "public",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp", "modifyPositionAssignments"],
+          "count": 40
+        }
+      ]
+    },
+    "v2/sync": {
+      "totals": {
+        "pairs": 122,
+        "positive": 106,
+        "positive-recorded-writer": 106,
+        "positive-recorded-recorder": 106,
+        "positive-recorded-nested": 0,
+        "positive-native-writer": 0,
+        "positive-native-recorder": 0,
+        "positive-native-nested": 0,
+        "positive-provider-entries": 13600,
+        "positive-draft-notices": 830,
+        "positive-live-notices": 574,
+        "negative": 16,
+        "negative-recorded-writer": 16,
+        "negative-recorded-recorder": 16,
+        "negative-recorded-nested": 0,
+        "negative-native-writer": 16,
+        "negative-native-recorder": 16,
+        "negative-native-nested": 0
+      },
+      "topicOrders": [
+        {
+          "boundary": "enclosed",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp"],
+          "count": 3
+        },
+        {
+          "boundary": "enclosed",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp", "modifyPositionAssignments"],
+          "count": 4
+        },
+        {
+          "boundary": "public",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp"],
+          "count": 59
+        },
+        {
+          "boundary": "public",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp", "modifyPositionAssignments"],
+          "count": 40
+        }
+      ]
+    },
+    "v2/custom": {
+      "totals": {
+        "pairs": 122,
+        "positive": 106,
+        "positive-recorded-writer": 106,
+        "positive-recorded-recorder": 106,
+        "positive-recorded-nested": 0,
+        "positive-native-writer": 0,
+        "positive-native-recorder": 0,
+        "positive-native-nested": 0,
+        "positive-provider-entries": 13600,
+        "positive-draft-notices": 830,
+        "positive-live-notices": 574,
+        "negative": 16,
+        "negative-recorded-writer": 16,
+        "negative-recorded-recorder": 16,
+        "negative-recorded-nested": 0,
+        "negative-native-writer": 16,
+        "negative-native-recorder": 16,
+        "negative-native-nested": 0
+      },
+      "topicOrders": [
+        {
+          "boundary": "enclosed",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp"],
+          "count": 3
+        },
+        {
+          "boundary": "enclosed",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp", "modifyPositionAssignments"],
+          "count": 4
+        },
+        {
+          "boundary": "public",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp"],
+          "count": 59
+        },
+        {
+          "boundary": "public",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp", "modifyPositionAssignments"],
+          "count": 40
+        }
+      ]
+    },
+    "v2/async": {
+      "totals": {
+        "pairs": 122,
+        "positive": 106,
+        "positive-recorded-writer": 106,
+        "positive-recorded-recorder": 106,
+        "positive-recorded-nested": 0,
+        "positive-native-writer": 0,
+        "positive-native-recorder": 0,
+        "positive-native-nested": 0,
+        "positive-provider-entries": 12815,
+        "positive-draft-notices": 830,
+        "positive-live-notices": 574,
+        "negative": 16,
+        "negative-recorded-writer": 16,
+        "negative-recorded-recorder": 16,
+        "negative-recorded-nested": 0,
+        "negative-native-writer": 16,
+        "negative-native-recorder": 16,
+        "negative-native-nested": 0
+      },
+      "topicOrders": [
+        {
+          "boundary": "enclosed",
+          "topics": ["updateInContextMatchUp", "modifyMatchUp", "modifyDrawDefinition"],
+          "count": 3
+        },
+        {
+          "boundary": "enclosed",
+          "topics": ["updateInContextMatchUp", "modifyMatchUp", "modifyPositionAssignments", "modifyDrawDefinition"],
+          "count": 4
+        },
+        {
+          "boundary": "public",
+          "topics": ["updateInContextMatchUp", "modifyMatchUp", "modifyDrawDefinition"],
+          "count": 60
+        },
+        {
+          "boundary": "public",
+          "topics": ["updateInContextMatchUp", "modifyMatchUp", "modifyPositionAssignments", "modifyDrawDefinition"],
+          "count": 39
+        }
+      ]
+    },
+    "v2/async-engine": {
+      "totals": {
+        "pairs": 122,
+        "positive": 106,
+        "positive-recorded-writer": 106,
+        "positive-recorded-recorder": 106,
+        "positive-recorded-nested": 0,
+        "positive-native-writer": 0,
+        "positive-native-recorder": 0,
+        "positive-native-nested": 0,
+        "positive-provider-entries": 12815,
+        "positive-draft-notices": 830,
+        "positive-live-notices": 574,
+        "negative": 16,
+        "negative-recorded-writer": 16,
+        "negative-recorded-recorder": 16,
+        "negative-recorded-nested": 0,
+        "negative-native-writer": 16,
+        "negative-native-recorder": 16,
+        "negative-native-nested": 0
+      },
+      "topicOrders": [
+        {
+          "boundary": "enclosed",
+          "topics": ["updateInContextMatchUp", "modifyMatchUp", "modifyDrawDefinition"],
+          "count": 3
+        },
+        {
+          "boundary": "enclosed",
+          "topics": ["updateInContextMatchUp", "modifyMatchUp", "modifyPositionAssignments", "modifyDrawDefinition"],
+          "count": 4
+        },
+        {
+          "boundary": "public",
+          "topics": ["updateInContextMatchUp", "modifyMatchUp", "modifyDrawDefinition"],
+          "count": 60
+        },
+        {
+          "boundary": "public",
+          "topics": ["updateInContextMatchUp", "modifyMatchUp", "modifyPositionAssignments", "modifyDrawDefinition"],
+          "count": 39
+        }
+      ]
+    },
+    "v2/custom-eager": {
+      "totals": {
+        "pairs": 122,
+        "positive": 106,
+        "positive-recorded-writer": 106,
+        "positive-recorded-recorder": 106,
+        "positive-recorded-nested": 0,
+        "positive-native-writer": 0,
+        "positive-native-recorder": 0,
+        "positive-native-nested": 0,
+        "positive-provider-entries": 13600,
+        "positive-draft-notices": 830,
+        "positive-live-notices": 574,
+        "negative": 16,
+        "negative-recorded-writer": 16,
+        "negative-recorded-recorder": 16,
+        "negative-recorded-nested": 0,
+        "negative-native-writer": 16,
+        "negative-native-recorder": 16,
+        "negative-native-nested": 0
+      },
+      "topicOrders": [
+        {
+          "boundary": "enclosed",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp"],
+          "count": 3
+        },
+        {
+          "boundary": "enclosed",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp", "modifyPositionAssignments"],
+          "count": 4
+        },
+        {
+          "boundary": "public",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp"],
+          "count": 59
+        },
+        {
+          "boundary": "public",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp", "modifyPositionAssignments"],
+          "count": 40
+        }
+      ]
+    },
+    "differential/mirror": {
+      "totals": {
+        "pairs": 122,
+        "positive": 106,
+        "positive-recorded-writer": 212,
+        "positive-recorded-recorder": 106,
+        "positive-recorded-nested": 0,
+        "positive-native-writer": 106,
+        "positive-native-recorder": 0,
+        "positive-native-nested": 0,
+        "positive-provider-entries": 16168,
+        "positive-draft-notices": 830,
+        "positive-live-notices": 830,
+        "negative": 16,
+        "negative-recorded-writer": 32,
+        "negative-recorded-recorder": 16,
+        "negative-recorded-nested": 0,
+        "negative-native-writer": 32,
+        "negative-native-recorder": 16,
+        "negative-native-nested": 0
+      },
+      "topicOrders": [
+        {
+          "boundary": "enclosed",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp"],
+          "count": 3
+        },
+        {
+          "boundary": "enclosed",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp", "modifyPositionAssignments"],
+          "count": 4
+        },
+        {
+          "boundary": "public",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp"],
+          "count": 59
+        },
+        {
+          "boundary": "public",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp", "modifyPositionAssignments"],
+          "count": 40
+        }
+      ]
+    },
+    "differential/sync": {
+      "totals": {
+        "pairs": 122,
+        "positive": 106,
+        "positive-recorded-writer": 212,
+        "positive-recorded-recorder": 106,
+        "positive-recorded-nested": 0,
+        "positive-native-writer": 106,
+        "positive-native-recorder": 0,
+        "positive-native-nested": 0,
+        "positive-provider-entries": 15970,
+        "positive-draft-notices": 830,
+        "positive-live-notices": 830,
+        "negative": 16,
+        "negative-recorded-writer": 32,
+        "negative-recorded-recorder": 16,
+        "negative-recorded-nested": 0,
+        "negative-native-writer": 32,
+        "negative-native-recorder": 16,
+        "negative-native-nested": 0
+      },
+      "topicOrders": [
+        {
+          "boundary": "enclosed",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp"],
+          "count": 3
+        },
+        {
+          "boundary": "enclosed",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp", "modifyPositionAssignments"],
+          "count": 4
+        },
+        {
+          "boundary": "public",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp"],
+          "count": 59
+        },
+        {
+          "boundary": "public",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp", "modifyPositionAssignments"],
+          "count": 40
+        }
+      ]
+    },
+    "differential/custom": {
+      "totals": {
+        "pairs": 122,
+        "positive": 106,
+        "positive-recorded-writer": 212,
+        "positive-recorded-recorder": 106,
+        "positive-recorded-nested": 0,
+        "positive-native-writer": 106,
+        "positive-native-recorder": 0,
+        "positive-native-nested": 0,
+        "positive-provider-entries": 15970,
+        "positive-draft-notices": 830,
+        "positive-live-notices": 830,
+        "negative": 16,
+        "negative-recorded-writer": 32,
+        "negative-recorded-recorder": 16,
+        "negative-recorded-nested": 0,
+        "negative-native-writer": 32,
+        "negative-native-recorder": 16,
+        "negative-native-nested": 0
+      },
+      "topicOrders": [
+        {
+          "boundary": "enclosed",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp"],
+          "count": 3
+        },
+        {
+          "boundary": "enclosed",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp", "modifyPositionAssignments"],
+          "count": 4
+        },
+        {
+          "boundary": "public",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp"],
+          "count": 59
+        },
+        {
+          "boundary": "public",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp", "modifyPositionAssignments"],
+          "count": 40
+        }
+      ]
+    },
+    "differential/async": {
+      "totals": {
+        "pairs": 122,
+        "positive": 106,
+        "positive-recorded-writer": 212,
+        "positive-recorded-recorder": 106,
+        "positive-recorded-nested": 0,
+        "positive-native-writer": 106,
+        "positive-native-recorder": 0,
+        "positive-native-nested": 0,
+        "positive-provider-entries": 15546,
+        "positive-draft-notices": 830,
+        "positive-live-notices": 830,
+        "negative": 16,
+        "negative-recorded-writer": 32,
+        "negative-recorded-recorder": 16,
+        "negative-recorded-nested": 0,
+        "negative-native-writer": 32,
+        "negative-native-recorder": 16,
+        "negative-native-nested": 0
+      },
+      "topicOrders": [
+        {
+          "boundary": "enclosed",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp"],
+          "count": 3
+        },
+        {
+          "boundary": "enclosed",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp", "modifyPositionAssignments"],
+          "count": 4
+        },
+        {
+          "boundary": "public",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp"],
+          "count": 60
+        },
+        {
+          "boundary": "public",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp", "modifyPositionAssignments"],
+          "count": 39
+        }
+      ]
+    },
+    "differential/async-engine": {
+      "totals": {
+        "pairs": 122,
+        "positive": 106,
+        "positive-recorded-writer": 212,
+        "positive-recorded-recorder": 106,
+        "positive-recorded-nested": 0,
+        "positive-native-writer": 106,
+        "positive-native-recorder": 0,
+        "positive-native-nested": 0,
+        "positive-provider-entries": 15546,
+        "positive-draft-notices": 830,
+        "positive-live-notices": 830,
+        "negative": 16,
+        "negative-recorded-writer": 32,
+        "negative-recorded-recorder": 16,
+        "negative-recorded-nested": 0,
+        "negative-native-writer": 32,
+        "negative-native-recorder": 16,
+        "negative-native-nested": 0
+      },
+      "topicOrders": [
+        {
+          "boundary": "enclosed",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp"],
+          "count": 3
+        },
+        {
+          "boundary": "enclosed",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp", "modifyPositionAssignments"],
+          "count": 4
+        },
+        {
+          "boundary": "public",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp"],
+          "count": 60
+        },
+        {
+          "boundary": "public",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp", "modifyPositionAssignments"],
+          "count": 39
+        }
+      ]
+    },
+    "differential/custom-eager": {
+      "totals": {
+        "pairs": 122,
+        "positive": 106,
+        "positive-recorded-writer": 212,
+        "positive-recorded-recorder": 106,
+        "positive-recorded-nested": 0,
+        "positive-native-writer": 106,
+        "positive-native-recorder": 0,
+        "positive-native-nested": 0,
+        "positive-provider-entries": 15970,
+        "positive-draft-notices": 830,
+        "positive-live-notices": 830,
+        "negative": 16,
+        "negative-recorded-writer": 32,
+        "negative-recorded-recorder": 16,
+        "negative-recorded-nested": 0,
+        "negative-native-writer": 32,
+        "negative-native-recorder": 16,
+        "negative-native-nested": 0
+      },
+      "topicOrders": [
+        {
+          "boundary": "enclosed",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp"],
+          "count": 3
+        },
+        {
+          "boundary": "enclosed",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp", "modifyPositionAssignments"],
+          "count": 4
+        },
+        {
+          "boundary": "public",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp"],
+          "count": 59
+        },
+        {
+          "boundary": "public",
+          "topics": ["updateInContextMatchUp", "modifyDrawDefinition", "modifyMatchUp", "modifyPositionAssignments"],
+          "count": 40
+        }
+      ]
+    }
+  },
+  "ledgerSha256": "fb40dcbc8f78fe21b27eceded9a65f3e2ef8129ea501cb3518b429a955f6fe8c"
+}
