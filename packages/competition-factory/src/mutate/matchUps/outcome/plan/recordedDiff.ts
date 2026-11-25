@@ -20,7 +20,7 @@ import type { Recording } from '../recording';
  * buffered.
  */
 
-const ownState = (entity: object, children: string[]) =>
+export const ownState = (entity: object, children: string[]) =>
   Object.fromEntries(Object.entries(entity).filter(([key]) => !children.includes(key)));
 
 /** every structure of the draw, a round robin's groups after it, in the draw's order */
@@ -222,13 +222,20 @@ export function recordedOps({
   if (!unchanged(state, before.draw)) {
     replace({ op: 'replaceDrawState', drawId: drawDefinition.drawId, state: asData(state), recording }, drawDefinition);
   }
+  const announce = pendingAnnouncement(before.notices, marks);
+  if (!announce) return undefined;
+  ops.push(announce);
+  return ops;
+}
+
+/** Capture the notices retained by the real provider after a detached write. */
+export function pendingAnnouncement(prior: Set<Notice>, marks?: NoticeMarks): OutcomeOp | undefined {
   const notices: RecordedNotice[] = [];
   for (const notice of getNoticeBuffer() ?? []) {
-    if (before.notices.has(notice)) continue;
+    if (prior.has(notice)) continue;
     const recorded = recordedNotice(notice);
     if (!recorded) return undefined;
     notices.push(recorded);
   }
-  ops.push({ op: 'announceRecorded', notices, marks });
-  return ops;
+  return { op: 'announceRecorded', notices, marks };
 }
