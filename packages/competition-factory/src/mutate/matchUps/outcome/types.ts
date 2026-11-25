@@ -754,7 +754,7 @@ export type PlanArgs = {
   /** A converged landing's view on the cursor (1b, L2). */
   landing?: LandingView;
   /** RECORDED: the double-exit module's cascade after `prefix`, read on a copy of the record. */
-  record?: (prefix: OutcomeOp[]) => OutcomeOp[] | undefined;
+  record?: (prefix: OutcomeOp[], missingSeats?: boolean) => OutcomeOp[] | undefined;
   /** RECORDED: v1's whole write for the call, read on a copy of the record (`plan/recordedCall.ts`). */
   recordWhole?: (
     stampedBefore?: Set<string>,

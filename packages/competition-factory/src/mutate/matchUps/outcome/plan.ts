@@ -1024,7 +1024,9 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
     seatObligation,
   );
   // RECORDED: seats the planners do not write are read off the double-exit module, where it can be recorded
-  const recordedSeats = seatOps ? undefined : recordedCascade(args, drawDefinition, structureId, ops, cascadeParts());
+  const recordedSeats = seatOps
+    ? undefined
+    : recordedCascade(args, drawDefinition, structureId, ops, cascadeParts(), true);
   if (recordedSeats) return recordedSeats;
   if (!seatOps) return { abstain: 'exit' };
   const doubleExitSeated = seatOps?.ops ?? [];
@@ -1129,6 +1131,7 @@ function recordedCascade(
   structureId: string,
   ops: OutcomeOp[],
   parts: OutcomeOp[][],
+  missingSeats = false,
 ): OutcomePlan | undefined {
   const { view, record } = args;
   if (!record || args.route !== DOUBLE_EXIT || args.clockFree) return undefined;
@@ -1139,7 +1142,7 @@ function recordedCascade(
     { op: 'stampUpdatedAt', entity: 'structure', id: structureId },
     { op: 'stampUpdatedAt', entity: 'drawDefinition', id: drawDefinition.drawId },
   ];
-  const recorded = record(prefix);
+  const recorded = record(prefix, missingSeats);
   if (!recorded) return undefined;
   const recordedOps = [...prefix, ...recorded];
   // whole or not at all (C27): a recording a settle predicate still finds work on stays where it was refused
