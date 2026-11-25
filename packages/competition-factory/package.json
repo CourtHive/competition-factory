@@ -240,6 +240,8 @@
     "check:enum-constants": "node scripts/generateEnumConstants.mjs --check",
     "prebuild": "node scripts/generateEnumConstants.mjs && node scripts/generateEnumExports.mjs && node scripts/generateEngineMethods.mjs && node scripts/generateMethodSignatures.mjs",
     "build": "rimraf dist && rollup --config && node postbuild.mjs",
+    "build:notice-diagnostics": "node scripts/noticeDiagnostics/build.mjs",
+    "verify:notice-diagnostics": "pnpm build:notice-diagnostics && node scripts/noticeDiagnostics/verify.mjs && NOTICE_PAYLOAD_WRITE_CHECK=1 vitest run src/tests/global/state/readonlyNoticePayloads.test.ts src/tests/global/state/noticePayloadAuditSwitch.test.ts src/tests/global/state/noticePayloadPreview.test.ts src/tests/global/state/noticePayloadRecordedGroup.test.ts",
     "test": "VITE_CJS_IGNORE_WARNING=true vitest",
     "test:server": "vitest run --config vitest.server.config.mts",
     "test:server-debug": "vitest --config vitest.server.config.mts --inspect-brk --no-file-parallelism",

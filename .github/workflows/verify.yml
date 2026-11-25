@@ -26,7 +26,9 @@ name: Verify
 #                   v1 fallback into dev (coverage runs v2, the default), v2 on the path to a release (coverage
 #                   runs the differential, whose applied writes are v1's)
 #   differential-arm the suite under OUTCOME_PIPELINE=differential on a dev PR touching the outcome pipeline, split
-#                   4 ways: a divergence between v1 and v2 fails it (into master the coverage shards run it)
+#                   4 ways: a divergence between v1 and v2 fails it (into master the coverage shards run it). Its
+#                   audit leg runs it again with the notice payload detector compiled in, also when the notice
+#                   delivery paths change: a write through a payload fails it (CA ruling 27)
 #   verify          `verify (node N)`, the check master's branch protection requires: it passes only
 #                   when every job above passed (or, on a light run, was skipped as intended)
 #
@@ -267,6 +269,13 @@ jobs:
 
       - name: verify:build
         run: pnpm verify:build
+
+      # The read-only notice payload detector (CA ruling 27), compiled out of the dist verify:build just made: the
+      # standalone audit build rejects a write the published build delivers raw, and the focused write checks run
+      # with the detector compiled in (NOTICE_PAYLOAD_WRITE_CHECK=1). The whole suite runs that way in the
+      # differential arm's audit leg.
+      - name: verify:notice-diagnostics
+        run: pnpm verify:notice-diagnostics
 
       - name: verify:publint
         run: pnpm verify:publint
@@ -582,7 +591,9 @@ jobs:
       fail-fast: false
       matrix:
         shard: [1, 2, 3, 4]
-    name: differential-arm ${{ matrix.shard }}/4
+        # audit: the same run with the read-only notice payload detector compiled in (NOTICE_PAYLOAD_WRITE_CHECK=1)
+        leg: [plain, audit]
+    name: differential-arm ${{ matrix.shard }}/4 ${{ matrix.leg }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -590,13 +601,19 @@ jobs:
 
       - name: touches the outcome pipeline
         id: paths
-        # `git diff --name-only` prints repo-root paths wherever it runs, hence the package prefix
+        # `git diff --name-only` prints repo-root paths wherever it runs, hence the package prefix. The audit leg also
+        # runs when notice delivery changes: the global state, the notices, the preview copier or the detector itself.
+        env:
+          LEG: ${{ matrix.leg }}
         run: |
-          if git diff --name-only HEAD^1 HEAD | grep -qE '^packages/competition-factory/src/(mutate/(matchUps|drawDefinitions/positionGovernor|drawDefinitions/matchUpGovernor)|query/(matchUps|matchUp|drawDefinition))/'; then
+          changed=$(git diff --name-only HEAD^1 HEAD)
+          if grep -qE '^packages/competition-factory/src/(mutate/(matchUps|drawDefinitions/positionGovernor|drawDefinitions/matchUpGovernor)|query/(matchUps|matchUp|drawDefinition))/' <<<"$changed"; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          elif [ "$LEG" = audit ] && grep -qE '^packages/competition-factory/(src/(global/state|mutate/notifications)/|src/forge/previewState\.ts|scripts/noticeDiagnostics/)' <<<"$changed"; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "no outcome pipeline path changed; the differential arm does not run"
+            echo "no outcome pipeline path changed; the differential arm's $LEG leg does not run"
           fi
 
       - if: steps.paths.outputs.run == 'true'
@@ -604,11 +621,12 @@ jobs:
         with:
           node-version: 26
 
-      - name: vitest under OUTCOME_PIPELINE=differential, shard ${{ matrix.shard }}/4
+      - name: vitest under OUTCOME_PIPELINE=differential, shard ${{ matrix.shard }}/4, ${{ matrix.leg }}
         if: steps.paths.outputs.run == 'true'
         run: pnpm exec vitest run --shard=${{ matrix.shard }}/4
         env:
           OUTCOME_PIPELINE: differential
+          NOTICE_PAYLOAD_WRITE_CHECK: ${{ matrix.leg == 'audit' && '1' || '' }}
           TZ: UTC
 
   # verify:team-arms: the TEAM matrix over the seven extension draw types and more tieFormats, inert on
