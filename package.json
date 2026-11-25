@@ -9,6 +9,7 @@
     "build": "pnpm --dir packages/competition-factory build",
     "test": "pnpm --dir packages/competition-factory test",
     "check-types": "pnpm --dir packages/competition-factory check-types",
+    "docs:publish": "pnpm --dir packages/competition-factory docs:publish",
     "verify:generated": "pnpm --dir packages/competition-factory verify:generated",
     "verify:implicit-any": "pnpm --dir packages/competition-factory verify:implicit-any",
     "verify:hard-union": "pnpm --dir packages/competition-factory verify:hard-union",
