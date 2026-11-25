@@ -474,9 +474,6 @@ export type MatchUpWrite = {
 export type BuildViewArgs = {
   /** The stamp ledger as read before the view, for a fresh two-team double-elimination line. */
   teamLedger?: { stamps?: WeakSet<object> };
-  /** Complete the public return at the end of detached writes, before replay onto storage. */
-  finishTeamLine?: (copy: RecordCopy, matchUpsMap: MatchUpsMap, written: ResultType) => ResultType;
-  tournamentRecords?: Record<string, Tournament>;
   /** Private planning mode; it grants no runtime ownership. */
   clockFree?: boolean;
   temporal?: TemporalProjection;
@@ -516,7 +513,9 @@ export type RecordCopy = { tournamentRecord?: Tournament; drawDefinition: DrawDe
  * the call's whole answer, warnings included. Undefined where the call cannot be run on a copy (it names more than one
  * tournament record).
  */
-export type WriteOnCopy = (copy: RecordCopy) => ResultType | undefined;
+/** Complete a detached native write's public return on its copy, before replay onto storage. */
+export type CopyFinish = { owned: ResultType; matchUpsMap: MatchUpsMap };
+export type WriteOnCopy = (copy: RecordCopy, finish?: CopyFinish) => ResultType | undefined;
 
 /** § 5 rule 1: what direction must have done once the route has written */
 /** F2: what the loser's matchUp holds once a relabel withdraws the exit carried there */

@@ -36,7 +36,7 @@ import { isString } from '@Tools/objects';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Set as SetType, Tournament } from '@Types/tournamentTypes';
-import type { RecordCopy } from '@Mutate/matchUps/outcome/types';
+import type { CopyFinish, RecordCopy } from '@Mutate/matchUps/outcome/types';
 import { MatchUpsMap, PolicyDefinitions, ResultType, ResultWarning, TournamentRecords } from '@Types/factoryTypes';
 import { INVALID_VALUES, INVALID_WINNING_SIDE, SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING, POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
@@ -276,10 +276,9 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
         enableAutoCalc,
       },
     },
-    tournamentRecords,
-    finishTeamLine: (copy, map, owned) =>
-      ownedResult({ owned, params: { ...params, ...copy }, matchUpsMap: map, neverPlayedBefore, stack }),
-    writeOnCopy: (copy) => draws.record(() => instants.record(() => writeOnCopy(copy))),
+    // a native TEAM line asks the same closure to complete its return on the copy (`plan/teamFinalLine.ts`)
+    writeOnCopy: (copy, finish) =>
+      finish ? writeOnCopy(copy, finish) : draws.record(() => instants.record(() => writeOnCopy(copy))),
     settleOnCopy,
     instantsExact: instants.exact,
     recordDraws: draws.record,
@@ -312,10 +311,14 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
    * and the readings the settle passes are handed, taken as they are taken above. Not for a call that names more than
    * one tournament record: only the one it is made in is copied.
    */
-  function writeOnCopy(copy: RecordCopy) {
+  function writeOnCopy(copy: RecordCopy, finish?: CopyFinish) {
     const copied = copy.tournamentRecord;
     const named = Object.keys(tournamentRecords);
     if (named.length > 1 || (named.length && named[0] !== copied?.tournamentId)) return undefined;
+    if (finish) {
+      const { owned, matchUpsMap: map } = finish;
+      return ownedResult({ owned, params: { ...params, ...copy }, matchUpsMap: map, neverPlayedBefore, stack });
+    }
     const records = copied ? { [copied.tournamentId]: copied } : tournamentRecords;
     const map = getMatchUpsMap({ drawDefinition: copy.drawDefinition });
     const target: V1Target = {
