@@ -9,6 +9,7 @@ import {
 import { findTarget, POLICY_OFF, won } from '@Tests/testHarness/outcome/directionFixtures';
 import * as nested from '@Mutate/matchUps/outcome/plan/recordedCascade';
 import * as legacy from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
+import * as lineUps from '@Mutate/matchUps/lineUps/ensureSideLineUps';
 import * as whole from '@Mutate/matchUps/outcome/plan/recordedCall';
 import * as family from '@Mutate/matchUps/outcome/plan/teamFinalLine';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
@@ -106,43 +107,57 @@ it.each([
   },
 );
 
-it.each(['wrong feed', 'finishing order gap', 'occupied receiver', 'stale scored time'] as const)(
-  'leaves %s to the existing writer',
-  (condition) => {
-    const call = prepare(1);
-    const draw = call.prepared.events![0].drawDefinitions![0];
-    const main = draw.structures!.find((s) => s.stage === MAIN)!;
-    const back = draw.structures!.find((s) => s.stage === CONSOLATION)!;
-    const dual = main.matchUps!.find((m) => m.tieMatchUps?.some((line) => line.matchUpId === call.params.matchUpId))!;
-    const feeder = back.matchUps!.find((m) => m.matchUpId === dual.loserMatchUpId)!;
-    if (condition === 'wrong feed') {
-      const final = main.matchUps!.find((m) => m.matchUpId === dual.winnerMatchUpId)!;
-      const link = draw.links!.find(
-        (l) =>
-          l.linkType === LOSER &&
-          l.source.structureId === main.structureId &&
-          l.source.roundNumber === final.roundNumber,
-      )!;
-      link.source.roundNumber = dual.roundNumber;
-    } else if (condition === 'occupied receiver') {
-      const held = back.positionAssignments!.find((a) => feeder.drawPositions!.includes(a.drawPosition) && !a.bye)!;
-      held.participantId = main.positionAssignments!.find(
-        (a) => a.drawPosition === getSideDrawPosition({ matchUp: dual, sideNumber: 2 }),
-      )!.participantId;
-    } else if (condition === 'finishing order gap') {
-      dual.tieMatchUps!.find((m) => m.orderOfFinish === 1)!.orderOfFinish = 99;
-    } else {
-      feeder.tieMatchUps![0].schedule = { scoredTime: '2026-10-24T11:00:00.000Z' };
-    }
-    const native = vi.spyOn(family, 'teamFinalLine');
-    native.mockImplementationOnce(() => undefined);
-    const baseline = playCall('v2', call);
-    native.mockClear();
-    const actual = playCall('v2', call);
-    expect(native.mock.results.some(({ value }) => value?.ops)).toBe(false);
-    expectPlayedParity(actual, baseline);
-  },
-);
+it.each([
+  'wrong feed',
+  'finishing order gap',
+  'occupied receiver',
+  'stale scored time',
+  'scored line',
+  'qualifier seat',
+  'propagated bye',
+  'auto-calc flag',
+] as const)('leaves %s to the existing writer', (condition) => {
+  const call = prepare(1);
+  const draw = call.prepared.events![0].drawDefinitions![0];
+  const main = draw.structures!.find((s) => s.stage === MAIN)!;
+  const back = draw.structures!.find((s) => s.stage === CONSOLATION)!;
+  const dual = main.matchUps!.find((m) => m.tieMatchUps?.some((line) => line.matchUpId === call.params.matchUpId))!;
+  const feeder = back.matchUps!.find((m) => m.matchUpId === dual.loserMatchUpId)!;
+  if (condition === 'wrong feed') {
+    const final = main.matchUps!.find((m) => m.matchUpId === dual.winnerMatchUpId)!;
+    const link = draw.links!.find(
+      (l) =>
+        l.linkType === LOSER && l.source.structureId === main.structureId && l.source.roundNumber === final.roundNumber,
+    )!;
+    link.source.roundNumber = dual.roundNumber;
+  } else if (condition === 'occupied receiver') {
+    const held = back.positionAssignments!.find((a) => feeder.drawPositions!.includes(a.drawPosition) && !a.bye)!;
+    held.participantId = main.positionAssignments!.find(
+      (a) => a.drawPosition === getSideDrawPosition({ matchUp: dual, sideNumber: 2 }),
+    )!.participantId;
+  } else if (condition === 'scored line') {
+    const line = dual.tieMatchUps!.find((m) => m.matchUpId === call.params.matchUpId)!;
+    line.schedule = { ...line.schedule, scoredTime: '2026-10-24T11:00:00.000Z' };
+  } else if (condition === 'qualifier seat') {
+    main.positionAssignments!.find((a) => a.participantId)!.qualifier = true;
+  } else if (condition === 'propagated bye') {
+    back.positionAssignments!.find((a) => feeder.drawPositions!.includes(a.drawPosition) && a.bye)!.byeFromPropagation =
+      true;
+  } else if (condition === 'auto-calc flag') {
+    Object.assign(call.params, { enableAutoCalc: true });
+  } else if (condition === 'finishing order gap') {
+    dual.tieMatchUps!.find((m) => m.orderOfFinish === 1)!.orderOfFinish = 99;
+  } else {
+    feeder.tieMatchUps![0].schedule = { scoredTime: '2026-10-24T11:00:00.000Z' };
+  }
+  const native = vi.spyOn(family, 'teamFinalLine');
+  native.mockImplementationOnce(() => undefined);
+  const baseline = playCall('v2', call);
+  native.mockClear();
+  const actual = playCall('v2', call);
+  expect(native.mock.results.some(({ value }) => value?.ops)).toBe(false);
+  expectPlayedParity(actual, baseline);
+});
 
 it('uses the original recorder when a stamp getter changes the separately held tournament', () => {
   const call = prepare(1);
@@ -284,4 +299,34 @@ it('restores the caller-owned score extension before falling back on a changed r
   } finally {
     setStateProvider(original);
   }
+});
+
+it('leaves an unusual request value to the recorder, which samples the stamp ledger itself', () => {
+  const call = prepare(1);
+  call.params.outcome = { winningSide: 1, score: { extensions: [{ name: 'client clock', value: new Date(0) }] } };
+  const native = vi.spyOn(family, 'teamFinalLine');
+  native.mockImplementationOnce(() => undefined);
+  const baseline = playCall('v2', call);
+  native.mockClear();
+  const recorder = vi.spyOn(whole, 'recordWholeCall');
+  const actual = playCall('v2', call);
+  expect(native.mock.results.map(({ value }) => value)).toEqual([undefined]);
+  expect(recorder.mock.calls.map((args) => args[1])).toEqual([undefined]);
+  expectPlayedParity(actual, baseline);
+});
+
+it('abstains to the existing writer when a detached phase throws', () => {
+  const call = prepare(2);
+  const native = vi.spyOn(family, 'teamFinalLine');
+  native.mockImplementationOnce(() => undefined);
+  const baseline = playCall('v2', call);
+  native.mockClear();
+  const recorder = vi.spyOn(whole, 'recordWholeCall');
+  vi.spyOn(lineUps, 'ensureSideLineUps').mockImplementationOnce(() => {
+    throw new Error('detached phase');
+  });
+  const actual = playCall('v2', call);
+  expect(native.mock.results.map(({ value }) => value)).toEqual([{ abstain: 'cascade' }]);
+  expect(recorder).not.toHaveBeenCalled();
+  expectPlayedParity(actual, baseline);
 });

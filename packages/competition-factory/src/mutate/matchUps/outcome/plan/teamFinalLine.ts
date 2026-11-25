@@ -218,19 +218,12 @@ function lineCircuit(args: PlanArgs, why: 'team' | 'cascade'): Circuit | undefin
 }
 
 /**
- * A provider may change a separately held record when asked for the clock or stamp ledger.
- * Capture ordinary data before the view reads it, then verify values AND references at the
- * recorder's clone boundary. Unusual fields remain with the existing writer.
+ * A provider may change a separately held record when asked for the stamp ledger. Only a call
+ * whose circuit already qualified reaches this: its ordinary data is captured just before the
+ * ledger is sampled, then values AND references are verified at the recorder's clone boundary.
+ * Unusual fields remain with the existing writer. No other call pays for the walk.
  */
-export function watchTeamLineInputs(args: BuildViewArgs): (() => boolean) | undefined {
-  if (args.drawDefinition?.drawType !== DOUBLE_ELIMINATION || !args.recordDraws || !args.request.winningSide) return;
-  const main = args.drawDefinition.structures?.find((s) => s.stage === MAIN);
-  if (positionAssignmentsOf(main)?.filter((a) => a.participantId).length !== 2) return;
-  const dual = matchUpsOf(main)?.find((m) =>
-    m.tieMatchUps?.some((line) => line.matchUpId === args.request.matchUpId && line.matchUpStatus === TO_BE_PLAYED),
-  );
-  if (!dual || (dual.matchUpStatus !== COMPLETED && dual.matchUpStatus !== IN_PROGRESS)) return;
-
+function watchTeamLineInputs(args: BuildViewArgs): (() => boolean) | undefined {
   const fields: { node: object; keys: string[]; values: unknown[] }[] = [];
   const seen = new Set<object>();
   const active = new Set<object>();
@@ -373,7 +366,7 @@ export function teamFinalLine(
   args: BuildViewArgs,
   plan: PlanArgs,
   why: 'team' | 'cascade',
-  sample: () => Set<string> | undefined,
+  sample: () => Set<string>,
 ): OutcomePlan | undefined {
   if (
     !args.drawDefinition ||
@@ -388,8 +381,10 @@ export function teamFinalLine(
   if (named.length > 1 || (named.length && named[0] !== args.tournamentRecord.tournamentId)) return;
   const ids = lineCircuit(plan, why);
   if (!ids) return;
+  const unchanged = watchTeamLineInputs(args);
+  if (!unchanged) return;
   const stamped = sample();
-  if (!stamped) return;
+  if (!unchanged()) return;
   const requested = JSON.stringify(args.request);
   const kept = cloneState(args.request);
   const { copy, originals } = cloneState({

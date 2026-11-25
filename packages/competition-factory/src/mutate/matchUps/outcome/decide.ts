@@ -1,4 +1,4 @@
-import { teamFinalLine, watchTeamLineInputs } from './plan/teamFinalLine';
+import { teamFinalLine } from './plan/teamFinalLine';
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
 import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
@@ -103,11 +103,7 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
     landing: landingView(args, view),
     record: (prefix) => recordDoubleExitCascade({ ...args, request: planned }, prefix),
     teamLine: (plan, why) =>
-      args.teamLineUnchanged &&
-      teamFinalLine(args, plan, why, () => {
-        teamStamps = stampedInThisCall(args.drawDefinition);
-        return args.teamLineUnchanged?.() ? teamStamps : undefined;
-      }),
+      teamFinalLine(args, plan, why, () => (teamStamps = stampedInThisCall(args.drawDefinition))),
     recordWhole: () => recordWholeCall(args, teamStamps),
     certifiesPhases: (ops) => !!compileTemporalPhases({ args, view, route, ops }),
     dual: dualCallFor(route, args, view),
@@ -214,8 +210,6 @@ export function decideOutcomeV2(args: BuildViewArgs): {
 
   // a precheck disagreement belongs to the call that met it: whatever an earlier call left is not this call's
   takePrecheckDivergences();
-  const teamLineUnchanged = watchTeamLineInputs(args);
-  if (teamLineUnchanged) args = { ...args, teamLineUnchanged };
   const view = buildOutcomeView(args);
   const refusal: Refusal | undefined = refuseOutcome(args.request, view);
 
