@@ -1,3 +1,4 @@
+import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import {
   buildSideExitProvenance,
@@ -104,7 +105,7 @@ function convergingFinals(draw: DrawDefinition, view: OutcomeView, id: string) {
   const holder = (position?: number) => assignments?.find((a) => a.drawPosition === position);
   if (!holder(standing)?.participantId || !holder(sidePosition(loser, 1, consolation.structureId))?.participantId)
     return;
-  return { source, pending, final, paired, loser, held, advancing };
+  return { source, pending, final, paired, loser, held, advancing, mainStructureId: main.structureId };
 }
 
 type Finals = NonNullable<ReturnType<typeof convergingFinals>>;
@@ -140,7 +141,12 @@ function applyConvergence(copy: RecordCopy, r: Finals) {
   scoreCarried(copy, r.loser, r.source);
   scoreCarried(copy, r.held, r.loser);
   scoreCarried(copy, r.pending, r.source, r.paired);
-  r.final.drawPositions = [r.advancing];
+  setMatchUpDrawPositions({
+    drawDefinition: copy.drawDefinition,
+    structureId: r.mainStructureId,
+    matchUp: r.final,
+    drawPositions: [r.advancing],
+  });
   r.final.winningSide = undefined;
   modifyMatchUpNotice({ drawDefinition: copy.drawDefinition, matchUp: r.final, context: 'assignMatchUpDrawPosition' });
   return { matches: [r.loser, r.held, r.pending, r.final] };

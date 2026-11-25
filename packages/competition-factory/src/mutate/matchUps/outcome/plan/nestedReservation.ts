@@ -1,3 +1,4 @@
+import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { buildSideExitProvenance, mergeSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { modifyMatchUpNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
@@ -185,6 +186,7 @@ function reservation(draw: DrawDefinition, view: OutcomeView, id: string, occupi
     return;
   const arrivals = {
     paired,
+    mainStructureId: main.structureId,
     mainNext,
     consolationFinal,
     mainPosition,
@@ -219,8 +221,10 @@ function applyReservation(copy: RecordCopy, r: Reservation) {
       }),
     });
   };
+  const place = (matchUp: MatchUp, drawPositions: number[], structureId = r.consolation.structureId) =>
+    setMatchUpDrawPositions({ drawDefinition, structureId, matchUp, drawPositions, rekeyWinningSide: false });
   scoreExit(r.loser, true);
-  r.crossing.drawPositions = [r.assignment.drawPosition, r.advancing];
+  place(r.crossing, [r.assignment.drawPosition, r.advancing]);
   r.crossing.winningSide = undefined;
   // The placement is entered from the loser-side award without a tournament context.
   modifyMatchUpNotice({ drawDefinition, matchUp: r.crossing, context: 'assignMatchUpDrawPosition' });
@@ -235,20 +239,20 @@ function applyReservation(copy: RecordCopy, r: Reservation) {
     r.onward.winningSide = 2;
     r.onward.matchUpStatusCodes = [];
     r.onward.score = undefined;
-    r.onward.drawPositions = [arrivals.consolationWaiting, r.advancing];
-  } else r.onward.drawPositions = [r.advancing];
+    place(r.onward, [arrivals.consolationWaiting, r.advancing]);
+  } else place(r.onward, [r.advancing]);
   modifyMatchUpNotice({ tournamentId, drawDefinition, matchUp: r.onward, context: 'advanceWinner' });
   if (arrivals) {
     const final = arrivals.consolationFinal;
     final.score = undefined;
     final.winningSide = undefined;
-    final.drawPositions = [r.advancing];
+    place(final, [r.advancing]);
     modifyMatchUpNotice({ tournamentId, drawDefinition, matchUp: final, context: 'advanceWinner' });
   }
   modifyPositionAssignmentsNotice({ tournamentId, drawDefinition, structure: r.consolation, event: undefined });
   scoreExit(r.pending, !!arrivals, arrivals?.paired);
   if (arrivals) {
-    arrivals.mainNext.drawPositions = [arrivals.mainWaiting, arrivals.mainPosition];
+    place(arrivals.mainNext, [arrivals.mainWaiting, arrivals.mainPosition], arrivals.mainStructureId);
     arrivals.mainNext.winningSide = undefined;
     modifyMatchUpNotice({ drawDefinition, matchUp: arrivals.mainNext, context: 'assignMatchUpDrawPosition' });
   }
