@@ -1,11 +1,13 @@
 import { isFunction, isObject } from '@Tools/objects';
 import { installCallRuntime, installCopySnapshot } from '@Tools/runtime';
+import { noticePayloadTestMode, readonlyNoticeValue } from './readonlyNoticePayload';
 import syncGlobalState from './syncGlobalState';
 import type { NoticeState } from './noticeIdentity';
 
 // constants and types
 import {
   OUTCOME_PIPELINE_DEFAULT,
+  OUTCOME_PIPELINE_DIFFERENTIAL,
   OutcomePipelineMode,
   outcomePipelineModes,
 } from '@Constants/outcomePipelineConstants';
@@ -117,6 +119,12 @@ const globalState: GlobalStateTypes = {
 };
 
 let _globalStateProvider: any = syncGlobalState;
+function selectNoticeDispatch() {
+  const diagnose = noticePayloadTestMode.enabled || globalState.outcomePipeline === OUTCOME_PIPELINE_DIFFERENTIAL;
+  addNotice = diagnose ? diagnosticAddNotice : ordinaryAddNotice;
+  callListener = diagnose ? diagnosticCallListener : ordinaryCallListener;
+}
+
 installCallRuntime(syncGlobalState);
 installCopySnapshot(deepCopyEnabled());
 
@@ -401,12 +409,9 @@ export function getSchemaWriteMode(): SchemaWriteMode {
 
 /** @deprecated the outcome pipeline selector is removed in 8.0.0: v2 is the only pipeline */
 export function setOutcomePipeline(mode?: OutcomePipelineMode): { success?: boolean; error?: ErrorType } {
-  if (mode === undefined) {
-    globalState.outcomePipeline = OUTCOME_PIPELINE_DEFAULT;
-    return { ...SUCCESS };
-  }
-  if (!outcomePipelineModes.includes(mode)) return { error: INVALID_VALUES };
-  globalState.outcomePipeline = mode;
+  if (mode !== undefined && !outcomePipelineModes.includes(mode)) return { error: INVALID_VALUES };
+  globalState.outcomePipeline = mode ?? OUTCOME_PIPELINE_DEFAULT;
+  selectNoticeDispatch();
   return { ...SUCCESS };
 }
 
@@ -594,7 +599,13 @@ export function restoreMutationStatus(status?: boolean) {
   return _globalStateProvider.cycleMutationStatus();
 }
 
-export function addNotice(notice: Notice) {
+export let addNotice = ordinaryAddNotice;
+
+function diagnosticAddNotice(notice: Notice) {
+  return ordinaryAddNotice(readonlyNoticeValue(notice));
+}
+
+function ordinaryAddNotice(notice: Notice) {
   if (typeof notice?.topic !== 'string') return;
   const isGlobalSubscription = globalState.globalSubscriptions[notice.topic];
   return _globalStateProvider.addNotice(notice, isGlobalSubscription);
@@ -734,7 +745,17 @@ export type CallListenerArgs = {
   notices?: any[];
   topic: string;
 };
-export async function callListener(payload) {
+export let callListener = ordinaryCallListener;
+
+function diagnosticCallListener(payload: CallListenerArgs) {
+  // A sync subscriber's violation must reach the sync dispatch caller immediately.
+  // Async providers return their own promise, including rejections after an await.
+  return Promise.resolve(
+    _globalStateProvider.callListener(readonlyNoticeValue(payload), globalState.globalSubscriptions),
+  );
+}
+
+async function ordinaryCallListener(payload: Notice['payload']) {
   return _globalStateProvider.callListener(payload, globalState.globalSubscriptions);
 }
 

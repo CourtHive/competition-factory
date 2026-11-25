@@ -1,3 +1,4 @@
+import { getProvider, setStateProvider, type Notice } from '@Global/state/globalState';
 import { play, walkover, won } from '@Tests/testHarness/outcome/directionFixtures';
 import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { storedGraph } from '@Tests/testHarness/outcome/objectGraph';
@@ -141,4 +142,26 @@ describe('a call in a tallied structure the planners abstain from is recorded wh
       expect(actual.notices).toEqual(v1.notices);
     }
   });
+});
+
+it('records the subscribed deferred in-context notice through a forwarding provider in differential mode', () => {
+  const previous = getProvider();
+  let enqueued = 0;
+  setStateProvider({
+    ...previous,
+    addNotice(notice: Notice, subscription?: boolean) {
+      if (notice.topic === 'updateInContextMatchUp') enqueued++;
+      return previous.addNotice(notice, subscription);
+    },
+  });
+  try {
+    const before = tally('shadow:applied');
+    const result = play(OUTCOME_PIPELINE_DIFFERENTIAL, ROWS[0][2]);
+    expect(enqueued).toBeGreaterThan(0);
+    expect(result.notices.some((n) => n.startsWith('updateInContextMatchUp '))).toBe(true);
+    expect(tally('shadow:applied')).toBe(before + 1);
+    expect(result.results.every((r) => r.success)).toBe(true);
+  } finally {
+    setStateProvider(previous);
+  }
 });

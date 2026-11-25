@@ -1,3 +1,4 @@
+import { deferredQueries, type DeferredQuery } from '@Global/state/deferredNoticeBinding';
 import { addNotice, deleteNotice, DEFERRED_PAYLOAD, getCapturedStamps, markModified } from '@Global/state/globalState';
 import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
@@ -32,7 +33,13 @@ export type NoticeEffects = {
   addNotice: typeof addNotice;
   getCapturedStamps: typeof getCapturedStamps;
 };
-export const liveNoticeEffects: NoticeEffects = { readClock: nowMs, addNotice, getCapturedStamps };
+export const liveNoticeEffects: NoticeEffects = {
+  readClock: nowMs,
+  get addNotice() {
+    return addNotice;
+  },
+  getCapturedStamps,
+};
 
 /**
  * The next `updatedAt` for an entity: now, or 1 ms past its previous stamp when that is already now or later, so a
@@ -304,9 +311,6 @@ export function modifyMatchUpNotice(
 
   return { ...SUCCESS };
 }
-
-type DeferredQuery = { query: (args: unknown) => unknown; args: unknown };
-const deferredQueries = new WeakMap<object, DeferredQuery>();
 
 /** A lazy read with an explicit binding, inspectable without invoking a subscriber's payload builder. */
 export function deferredQuery<A, T>(query: (args: A) => T, args: A): () => T {
