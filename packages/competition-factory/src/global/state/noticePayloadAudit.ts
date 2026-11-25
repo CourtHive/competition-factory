@@ -80,6 +80,14 @@ function objectLike(value: unknown): value is object {
 
 type Callable = (...args: unknown[]) => unknown;
 
+// Built-in constructors and their prototypes are never payload state. Returned as they are, a view's prototype and
+// `constructor` are the real ones, so type checks and deep equality treat a view as the class it wraps.
+const intrinsics = new WeakSet<object>(
+  [Object, Function, Array, Map, Set, WeakMap, WeakSet, Date, RegExp, Error, Promise, Number, String, Boolean].flatMap(
+    (constructor) => [constructor, constructor.prototype],
+  ),
+);
+
 function shadowTarget(value: object): object {
   // Bound constructable functions have no fixed own prototype, caller or arguments.
   if (typeof value === 'function') return Object.bind(undefined);
@@ -142,7 +150,7 @@ function applyView(fn: Callable, receiver: unknown, args: unknown[]) {
 }
 
 export function readonlyNoticeValue<T>(value: T): T {
-  if (!objectLike(value)) return value;
+  if (!objectLike(value) || intrinsics.has(value)) return value;
   views ??= new WeakMap();
   originals ??= new WeakMap();
   if (originals.has(value)) return value;
