@@ -8,6 +8,12 @@ export const noticePayloadTestMode = { enabled: false };
 let views: WeakMap<object, object> | undefined;
 let originals: WeakMap<object, object> | undefined;
 
+// A private copier chooses its traversal once. A previously enqueued view can
+// still be present after diagnosis is disabled, including in a custom provider.
+export function noticeViewOrigins(): Pick<WeakMap<object, object>, 'get'> | undefined {
+  return originals;
+}
+
 export function originalNoticeValue<T extends object>(value: T): T {
   return (originals?.get(value) as T) ?? value;
 }
