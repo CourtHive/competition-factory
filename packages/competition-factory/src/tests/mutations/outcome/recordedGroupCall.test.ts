@@ -1,4 +1,11 @@
-import { getProvider, setStateProvider, type Notice } from '@Global/state/globalState';
+import { noticePayloadTestMode } from '@Global/state/readonlyNoticePayload';
+import {
+  getOutcomePipeline,
+  getProvider,
+  setOutcomePipeline,
+  setStateProvider,
+  type Notice,
+} from '@Global/state/globalState';
 import { play, walkover, won } from '@Tests/testHarness/outcome/directionFixtures';
 import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { storedGraph } from '@Tests/testHarness/outcome/objectGraph';
@@ -146,6 +153,9 @@ describe('a call in a tallied structure the planners abstain from is recorded wh
 
 it('records the subscribed deferred in-context notice through a forwarding provider in differential mode', () => {
   const previous = getProvider();
+  const previousMode = getOutcomePipeline();
+  const previousCheck = noticePayloadTestMode.enabled;
+  noticePayloadTestMode.enabled = true;
   let enqueued = 0;
   setStateProvider({
     ...previous,
@@ -162,6 +172,8 @@ it('records the subscribed deferred in-context notice through a forwarding provi
     expect(tally('shadow:applied')).toBe(before + 1);
     expect(result.results.every((r) => r.success)).toBe(true);
   } finally {
+    noticePayloadTestMode.enabled = previousCheck;
+    setOutcomePipeline(previousMode);
     setStateProvider(previous);
   }
 });

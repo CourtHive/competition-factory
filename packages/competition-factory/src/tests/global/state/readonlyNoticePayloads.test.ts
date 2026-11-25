@@ -61,7 +61,9 @@ it.each(['ordinary', 'testing', 'differential'])(
     };
     setStateProvider(provider);
     noticePayloadTestMode.enabled = mode === 'testing';
-    setOutcomePipeline(mode === 'differential' ? 'differential' : 'v2');
+    setOutcomePipeline(mode === 'differential' ? 'differential' : 'v2', {
+      checkNoticePayloadWrites: mode === 'differential',
+    });
     expect(getProvider()).toBe(provider);
     addNotice(notice);
     expect(build).not.toHaveBeenCalled();
@@ -72,7 +74,7 @@ it.each(['ordinary', 'testing', 'differential'])(
 );
 
 it('rejects attempts on retained nested values, descriptors, arrays, functions, dates and collection entries', () => {
-  setOutcomePipeline('differential');
+  setOutcomePipeline('differential', { checkNoticePayloadWrites: true });
   const item = { n: 1 };
   const date = new Date(10);
   const fn = Object.assign(() => item, { item });
@@ -131,7 +133,7 @@ it('rejects attempts on retained nested values, descriptors, arrays, functions, 
 
 it('fails inside a custom provider and during synchronous and asynchronous subscriber delivery', async () => {
   const payload = { score: 3 };
-  setOutcomePipeline('differential');
+  setOutcomePipeline('differential', { checkNoticePayloadWrites: true });
   setStateProvider({
     ...syncGlobalState,
     addNotice(notice: Notice) {
@@ -177,7 +179,7 @@ it.each(['v2', 'differential'] as const)(
     const match = { label: 'M' };
     const date = new Date(42);
     const payload = { match, map: new Map([[match, date]]), set: new Set([match]) };
-    setOutcomePipeline(mode);
+    setOutcomePipeline(mode, { checkNoticePayloadWrites: mode === 'differential' });
     setStateProvider(asyncProvider);
     await asyncProvider.runWithInstanceState(async () => {
       const subscriber = vi.fn(async ([p]) => {
@@ -204,3 +206,22 @@ it.each(['v2', 'differential'] as const)(
     });
   },
 );
+
+it('keeps passive delivery cloneable in ordinary differential and limits the public write check to differential', () => {
+  const match = { winningSide: 2 };
+  let delivered: unknown;
+  setStateProvider({
+    ...syncGlobalState,
+    addNotice(notice: Notice) {
+      expect(notice.payload.match).toBe(match);
+      delivered = structuredClone(notice.payload);
+    },
+  });
+  expect(setOutcomePipeline('differential').success).toBe(true);
+  for (const mode of ['v1', 'v2'] as const) {
+    expect(setOutcomePipeline(mode, { checkNoticePayloadWrites: true }).error).toBeDefined();
+    expect(getOutcomePipeline()).toBe('differential');
+  }
+  addNotice({ topic: 'score', payload: { match } });
+  expect(delivered).toEqual({ match });
+});

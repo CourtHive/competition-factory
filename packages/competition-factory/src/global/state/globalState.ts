@@ -1,3 +1,4 @@
+import { selectDrawNoticeDispatch } from './drawNoticeDispatch';
 import { isFunction, isObject } from '@Tools/objects';
 import { installCallRuntime, installCopySnapshot } from '@Tools/runtime';
 import { noticePayloadTestMode, readonlyNoticeValue } from './readonlyNoticePayload';
@@ -119,10 +120,10 @@ const globalState: GlobalStateTypes = {
 };
 
 let _globalStateProvider: any = syncGlobalState;
-function selectNoticeDispatch() {
-  const diagnose = noticePayloadTestMode.enabled || globalState.outcomePipeline === OUTCOME_PIPELINE_DIFFERENTIAL;
+function selectNoticeDispatch(diagnose: boolean) {
   addNotice = diagnose ? diagnosticAddNotice : ordinaryAddNotice;
   callListener = diagnose ? diagnosticCallListener : ordinaryCallListener;
+  selectDrawNoticeDispatch(addNotice);
 }
 
 installCallRuntime(syncGlobalState);
@@ -408,10 +409,15 @@ export function getSchemaWriteMode(): SchemaWriteMode {
 }
 
 /** @deprecated the outcome pipeline selector is removed in 8.0.0: v2 is the only pipeline */
-export function setOutcomePipeline(mode?: OutcomePipelineMode): { success?: boolean; error?: ErrorType } {
+export function setOutcomePipeline(
+  mode?: OutcomePipelineMode,
+  options?: { checkNoticePayloadWrites?: boolean },
+): { success?: boolean; error?: ErrorType } {
   if (mode !== undefined && !outcomePipelineModes.includes(mode)) return { error: INVALID_VALUES };
+  const checkWrites = options?.checkNoticePayloadWrites === true;
+  if (checkWrites && mode !== OUTCOME_PIPELINE_DIFFERENTIAL) return { error: INVALID_VALUES };
   globalState.outcomePipeline = mode ?? OUTCOME_PIPELINE_DEFAULT;
-  selectNoticeDispatch();
+  selectNoticeDispatch(checkWrites || noticePayloadTestMode.enabled);
   return { ...SUCCESS };
 }
 

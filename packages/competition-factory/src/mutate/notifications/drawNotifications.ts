@@ -1,3 +1,4 @@
+import { bindDrawEffects } from '@Global/state/drawNoticeDispatch';
 import { deferredQueries, type DeferredQuery } from '@Global/state/deferredNoticeBinding';
 import { addNotice, deleteNotice, DEFERRED_PAYLOAD, getCapturedStamps, markModified } from '@Global/state/globalState';
 import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
@@ -33,13 +34,8 @@ export type NoticeEffects = {
   addNotice: typeof addNotice;
   getCapturedStamps: typeof getCapturedStamps;
 };
-export const liveNoticeEffects: NoticeEffects = {
-  readClock: nowMs,
-  get addNotice() {
-    return addNotice;
-  },
-  getCapturedStamps,
-};
+export const liveNoticeEffects: NoticeEffects = { readClock: nowMs, addNotice, getCapturedStamps };
+bindDrawEffects(liveNoticeEffects);
 
 /**
  * The next `updatedAt` for an entity: now, or 1 ms past its previous stamp when that is already now or later, so a
