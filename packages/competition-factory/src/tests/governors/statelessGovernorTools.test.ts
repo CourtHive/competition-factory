@@ -16,6 +16,7 @@ import { MAIN, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { SINGLES, TEAM_EVENT } from '@Constants/eventConstants';
 import { ADVANCE_TOP_N } from '@Constants/seasonConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
+import { INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
 
 /**
  * THE STATELESS GOVERNOR TOOLS, CONFIRMED (Mentat planning/FACTORY_ENGINE_API_MIGRATION_PREP_PLAN.md, slice A).
@@ -492,9 +493,9 @@ describe('an excluded tool is excluded for its stated reason', () => {
 });
 
 /**
- * A confirmed tool that throws on an empty input, recorded rather than fixed (slice A is test-only): outside devContext
- * the engine catches the throw and answers `{ error }`, so the engine and a direct call agree only on a valid input.
- * When one is fixed to refuse instead, remove it from `throwsOnEmptyInput`.
+ * No confirmed tool throws on an empty input. Five did at slice A (applyDerivedRankings, generateRankingList,
+ * getAwardProfile, getParticipantPoints, runValidationPipeline); slice C made them refuse. `throwsOnEmptyInput` stays
+ * in the list, empty, so a new thrower is recorded there or fixed, not missed.
  */
 describe('an empty input', () => {
   const throwsOnEmptyInput = ratchet.throwsOnEmptyInput as Record<string, string>;
@@ -510,5 +511,38 @@ describe('an empty input', () => {
 
   it('records only confirmed tools, each answered on its valid input above', () => {
     expect(Object.keys(throwsOnEmptyInput).filter((name) => !confirmed.includes(name))).toEqual([]);
+  });
+});
+
+// the five former throwers: the standard refusal for the required input, alike through the engine and called directly
+const REFUSALS: Record<string, { param: string; invalid: Params }> = {
+  applyDerivedRankings: { param: 'entries', invalid: { entries: 'not a list', filter: {} } },
+  generateRankingList: { param: 'pointAwards', invalid: { pointAwards: {} } },
+  getAwardProfile: { param: 'awardProfiles', invalid: { awardProfiles: 'not a list' } },
+  getParticipantPoints: { param: 'pointAwards', invalid: { pointAwards: 7, personId: 'alice' } },
+  runValidationPipeline: { param: 'engine', invalid: { engine: {} } },
+};
+
+describe('a former thrower refuses a missing or invalid required input', () => {
+  it.each(Object.entries(REFUSALS))('%s', (name, { param, invalid }) => {
+    for (const [params, error] of [
+      [{}, MISSING_VALUE],
+      [invalid, INVALID_VALUES],
+    ] as const) {
+      const { unloaded, loaded, direct } = threeWays(name, () => clone(params));
+      expect(direct.threw).toBeUndefined();
+      expect(direct.value).toMatchObject({ error, info: { param } });
+      expect(unloaded).toEqual(direct);
+      expect(loaded).toEqual(direct);
+    }
+    // no params object at all
+    expect(governorFunction(name)()).toMatchObject({ error: MISSING_VALUE, info: { param } });
+  });
+
+  it('refuses a missing filter, not only missing entries', () => {
+    expect(governors.rankingGovernor.applyDerivedRankings({ entries: RANKING_LIST() } as any)).toMatchObject({
+      error: MISSING_VALUE,
+      info: { param: 'filter' },
+    });
   });
 });

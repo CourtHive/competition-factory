@@ -12,6 +12,8 @@
  */
 
 import type { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
+import { paramRefusal } from '@Helpers/parameters/paramRefusal';
+import type { ResultType } from '@Types/factoryTypes';
 import type { DayPlan } from './planState';
 import type { DayId } from './types';
 
@@ -269,10 +271,21 @@ const PHASE_VALIDATORS: Record<ValidationPhase, (engine: AvailabilityEngine, pla
  * @param params.engine - The AvailabilityEngine instance
  * @param params.day - Optional: validate only a specific day's plan
  * @param params.phases - Optional: run only specific phases (default: all)
- * @returns Results array and issue index keyed by planItemId
+ * @returns Results array and issue index keyed by planItemId; without an engine, a refusal
  */
-export function runValidationPipeline(params: ValidationPipelineParams): ValidationPipelineResult {
-  const { engine, day, phases } = params;
+export function runValidationPipeline(params: ValidationPipelineParams): ValidationPipelineResult;
+// eslint-disable-next-line no-redeclare -- TypeScript overload, not a second implementation
+export function runValidationPipeline(
+  params?: Partial<ValidationPipelineParams>,
+): ValidationPipelineResult | ResultType;
+// eslint-disable-next-line no-redeclare -- TypeScript overload, not a second implementation
+export function runValidationPipeline(
+  params?: Partial<ValidationPipelineParams>,
+): ValidationPipelineResult | ResultType {
+  // without an availability engine, a refusal (MISSING_VALUE or INVALID_VALUES) rather than a throw
+  if (typeof params?.engine?.getAllPlans !== 'function')
+    return paramRefusal('engine', params?.engine, 'runValidationPipeline');
+  const { engine, day, phases } = params as ValidationPipelineParams;
 
   // Gather plans
   let plans: DayPlan[];

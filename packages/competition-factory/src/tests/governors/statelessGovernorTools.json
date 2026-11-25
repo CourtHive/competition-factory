@@ -3,7 +3,8 @@
     "Ratchet of the stateless governor tools: statelessGovernorTools.test.ts confirms each name in `confirmed` answers alike",
     "through the engine without a record, with a record loaded, and called directly; and checks each exclusion still holds.",
     "Candidates: the query/object/no-state rows of Mentat assessment/2026-11-08-factory-role-inventory.csv.",
-    "Plan: Mentat planning/FACTORY_ENGINE_API_MIGRATION_PREP_PLAN.md, slice A; slice C exposes `confirmed` as tools."
+    "Plan: Mentat planning/FACTORY_ENGINE_API_MIGRATION_PREP_PLAN.md, slice A; slice C exposes `confirmed` as tools.",
+    "`throwsOnEmptyInput` was five confirmed tools at slice A; slice C made them refuse, so it stays empty."
   ],
   "candidates": 99,
   "confirmed": [
@@ -223,11 +224,5 @@
       "detail": "mounted on sanctioningEngine, which supplies the sanctioning record from its own state"
     }
   },
-  "throwsOnEmptyInput": {
-    "applyDerivedRankings": "Cannot read properties of undefined (reading 'filter')",
-    "generateRankingList": "Cannot read properties of undefined (reading 'filter')",
-    "getAwardProfile": "Cannot read properties of undefined (reading 'filter')",
-    "getParticipantPoints": "Cannot read properties of undefined (reading 'filter')",
-    "runValidationPipeline": "Cannot read properties of undefined (reading 'getTournamentDays')"
-  }
+  "throwsOnEmptyInput": {}
 }
