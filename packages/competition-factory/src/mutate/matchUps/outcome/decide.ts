@@ -1,3 +1,4 @@
+import { teamFinalLine } from './plan/teamFinalLine';
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
 import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
@@ -100,6 +101,7 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
     project: projectOutcome(args, view),
     landing: landingView(args, view),
     record: (prefix) => recordDoubleExitCascade({ ...args, request: planned }, prefix),
+    teamLine: (plan, why) => teamFinalLine(args, plan, why),
     recordWhole: () => recordWholeCall(args),
     certifiesPhases: (ops) => !!compileTemporalPhases({ args, view, route, ops }),
     dual: dualCallFor(route, args, view),
@@ -216,6 +218,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
       ? applyTemporalPhases(args, phases, outcome.shape)
       : applyOwnedPlan({ args, ops: outcome.ops, shape: outcome.shape, route });
     // a call recorded whole returns what v1 returned for it
+    if (!applied.error && outcome.phaseResult) return { owned: outcome.phaseResult };
     if (applied.error || !outcome.recordedResult) return { owned: applied };
     return { owned: outcome.recordedResult, recorded: true };
   }

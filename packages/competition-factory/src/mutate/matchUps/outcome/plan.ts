@@ -95,7 +95,7 @@ import {
 // constants and types
 import { DEFAULTED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { DrawDefinition, Score } from '@Types/tournamentTypes';
-import { LUCKY_DRAW } from '@Constants/drawDefinitionConstants';
+import { DOUBLE_ELIMINATION, LUCKY_DRAW } from '@Constants/drawDefinitionConstants';
 import type { OutcomeOp } from './ops';
 import type {
   AbstainReason,
@@ -483,6 +483,14 @@ function recordedWhole(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
   const unanswered = (ops: OutcomeOp[]) => (args.clockFree ? !args.certifiesPhases?.(ops) : !!args.settles?.(ops));
   const answered = plan.ops ? unanswered(plan.ops) : RECORDED_WHOLE.has(plan.abstain);
   if (!answered) return plan;
+  if (
+    args.view.line &&
+    args.view.drawType === DOUBLE_ELIMINATION &&
+    (plan.abstain === 'team' || plan.abstain === 'cascade')
+  ) {
+    const planned = args.teamLine?.(args, plan.abstain);
+    if (planned) return planned;
+  }
   const recorded = args.recordWhole?.();
   if (!recorded) return plan;
   // a predicate that finds work on v1's own write is answered by the passes themselves (`settledOnCopy`): only where

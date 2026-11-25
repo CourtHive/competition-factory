@@ -472,6 +472,7 @@ export type MatchUpWrite = {
 };
 
 export type BuildViewArgs = {
+  tournamentRecords?: Record<string, Tournament>;
   /** Private planning mode; it grants no runtime ownership. */
   clockFree?: boolean;
   temporal?: TemporalProjection;
@@ -689,6 +690,8 @@ export type OutcomePlan =
       abstain?: undefined;
       /** RECORDED: what v1 returned for the whole call it wrote on a copy, which the owned call returns */
       recordedResult?: ResultType;
+      /** The public return from a native sequence that writes a line and keeps or decides its dual. */
+      phaseResult?: ResultType;
     }
   | { abstain: AbstainReason; ops?: undefined; shape?: undefined };
 
@@ -733,6 +736,7 @@ export type SeatObligation = { kind: 'double-exit-seats'; targetMatchUpId?: stri
  * for it, and the composition points a plan folds one step on another with.
  */
 export type PlanArgs = {
+  teamLine?: (plan: PlanArgs, why: 'team' | 'cascade') => OutcomePlan | undefined;
   clockFree?: boolean;
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
