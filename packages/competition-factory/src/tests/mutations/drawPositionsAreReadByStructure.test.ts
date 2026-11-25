@@ -55,6 +55,10 @@ const ALLOWED: Record<string, { count: number; why: string }> = {
       "and read at `[0]` as the lone position otherwise. (The cascade's exiting side and the bye claim's side, which " +
       'did misread, now read structurally.)',
   },
+  'mutate/matchUps/outcome/plan/forwardByePassage.ts': {
+    count: 1,
+    why: 'sourceSeat reads the side-keyed map from the outcome view, resolved by in-context sideNumber',
+  },
   'mutate/matchUps/outcome/plan/terminalAward.ts': {
     count: 1,
     why:
