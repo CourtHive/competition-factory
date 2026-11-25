@@ -159,7 +159,7 @@ it.each([
   expectPlayedParity(actual, baseline);
 });
 
-it('uses the original recorder when a stamp getter changes the separately held tournament', () => {
+it('reads the stamp ledger once, before planning, when its getter changes the separately held tournament', () => {
   const call = prepare(1);
   const original = getProvider();
   const planned = family.teamFinalLine;
@@ -167,42 +167,42 @@ it('uses the original recorder when a stamp getter changes the separately held t
   const recorder = vi.spyOn(whole, 'recordWholeCall');
   let measuring = false;
   let edited = false;
-  let stampReads = 0;
+  let editedBeforePlanning = false;
   const run = (native: boolean) => {
-    measuring = false;
-    edited = false;
-    stampReads = 0;
+    edited = editedBeforePlanning = false;
     recorder.mockClear();
     planner.mockImplementationOnce((...args) => {
-      measuring = true;
+      editedBeforePlanning = edited;
       return native ? planned(...args) : undefined;
     });
+    measuring = true;
     const actual = playCall('v2', call);
-    expect(edited).toBe(true);
+    measuring = false;
+    expect([edited, editedBeforePlanning]).toEqual([true, true]);
+    // the edit was read by the view, so the circuit no longer qualifies: the recorder writes the call, handed
+    // the reading taken before the view rather than a second one
+    expect(planner.mock.results.at(-1)?.value).toBeUndefined();
     expect(recorder).toHaveBeenCalledTimes(1);
-    return { actual, stampReads };
+    expect(recorder.mock.calls[0][1]).toBeInstanceOf(Set);
+    return actual;
   };
   try {
     setStateProvider({
       ...original,
       getCapturedStamps() {
-        if (measuring) {
-          stampReads++;
-          if (!edited) {
-            edited = true;
-            const stored = Object.values(original.getTournamentRecords())[0] as Tournament;
-            const draw = stored.events![0].drawDefinitions![0];
-            const dormant = draw.structures!.find((s) => s.stage === CONSOLATION)!.matchUps![0];
-            dormant.schedule = { ...dormant.schedule, scoredTime: '2026-10-24T11:00:00.000Z' };
-          }
+        if (measuring && !edited) {
+          edited = true;
+          const stored = Object.values(original.getTournamentRecords())[0] as Tournament;
+          const draw = stored.events![0].drawDefinitions![0];
+          const dormant = draw.structures!.find((s) => s.stage === CONSOLATION)!.matchUps![0];
+          dormant.schedule = { ...dormant.schedule, scoredTime: '2026-10-24T11:00:00.000Z' };
         }
         return original.getCapturedStamps?.();
       },
     });
     const baseline = run(false);
     const candidate = run(true);
-    expect(candidate.stampReads).toBe(baseline.stampReads);
-    expectPlayedParity(candidate.actual, baseline.actual);
+    expectPlayedParity(candidate, baseline);
   } finally {
     setStateProvider(original);
   }
@@ -225,11 +225,10 @@ it('preserves an independent live edit on pre-stamped parents during detached de
   const run = (native: boolean) => {
     measuring = seeded = edited = false;
     recorder.mockClear();
-    planner.mockImplementationOnce((...args) => {
-      measuring = true;
-      return native ? planned(...args) : undefined;
-    });
+    planner.mockImplementationOnce((...args) => (native ? planned(...args) : undefined));
+    measuring = true;
     const actual = playCall('v2', call);
+    measuring = false;
     expect([seeded, edited]).toEqual([true, true]);
     expect(recorder).toHaveBeenCalledTimes(native ? 0 : 1);
     expect(parents().map((p) => p.notes)).toEqual(['independent edit', 'independent edit']);
@@ -301,17 +300,15 @@ it('restores the caller-owned score extension before falling back on a changed r
   }
 });
 
-it('leaves an unusual request value to the recorder, which samples the stamp ledger itself', () => {
+it('matches the recorder when the request carries a non-plain value', () => {
   const call = prepare(1);
   call.params.outcome = { winningSide: 1, score: { extensions: [{ name: 'client clock', value: new Date(0) }] } };
   const native = vi.spyOn(family, 'teamFinalLine');
   native.mockImplementationOnce(() => undefined);
   const baseline = playCall('v2', call);
   native.mockClear();
-  const recorder = vi.spyOn(whole, 'recordWholeCall');
   const actual = playCall('v2', call);
-  expect(native.mock.results.map(({ value }) => value)).toEqual([undefined]);
-  expect(recorder.mock.calls.map((args) => args[1])).toEqual([undefined]);
+  expect(native).toHaveBeenCalledTimes(1);
   expectPlayedParity(actual, baseline);
 });
 

@@ -1,4 +1,4 @@
-import { teamFinalLine } from './plan/teamFinalLine';
+import { readTeamLineLedger, teamFinalLine } from './plan/teamFinalLine';
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
 import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
@@ -23,7 +23,7 @@ import { findStructure } from '@Acquire/findStructure';
 import { recordWholeCall } from './plan/recordedCall';
 import { observeWrite, planWrite } from './write';
 import { refuseOutcome } from './refusals';
-import { stampedInThisCall } from './ops';
+import { stampedIn, stampedInThisCall } from './ops';
 import { buildOutcomeView } from './view';
 import { chooseRoute } from './route';
 import { planOutcome } from './plan';
@@ -102,9 +102,15 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
     project: projectOutcome(args, view),
     landing: landingView(args, view),
     record: (prefix) => recordDoubleExitCascade({ ...args, request: planned }, prefix),
-    teamLine: (plan, why) =>
-      teamFinalLine(args, plan, why, () => (teamStamps = stampedInThisCall(args.drawDefinition))),
-    recordWhole: () => recordWholeCall(args, teamStamps),
+    teamLine: (plan, why) => {
+      const ledger = args.teamLedger;
+      return (
+        ledger && teamFinalLine(args, plan, why, () => (teamStamps = stampedIn(args.drawDefinition, ledger.stamps)))
+      );
+    },
+    // a call whose ledger was read before the view is recorded with that reading, never a second one
+    recordWhole: () =>
+      recordWholeCall(args, teamStamps ?? (args.teamLedger && stampedIn(args.drawDefinition, args.teamLedger.stamps))),
     certifiesPhases: (ops) => !!compileTemporalPhases({ args, view, route, ops }),
     dual: dualCallFor(route, args, view),
     request: planned,
@@ -210,6 +216,8 @@ export function decideOutcomeV2(args: BuildViewArgs): {
 
   // a precheck disagreement belongs to the call that met it: whatever an earlier call left is not this call's
   takePrecheckDivergences();
+  const teamLedger = readTeamLineLedger(args);
+  if (teamLedger) args = { ...args, teamLedger };
   const view = buildOutcomeView(args);
   const refusal: Refusal | undefined = refuseOutcome(args.request, view);
 

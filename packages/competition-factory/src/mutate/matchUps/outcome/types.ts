@@ -472,6 +472,8 @@ export type MatchUpWrite = {
 };
 
 export type BuildViewArgs = {
+  /** The stamp ledger as read before the view, for a fresh two-team double-elimination line. */
+  teamLedger?: { stamps?: WeakSet<object> };
   /** Complete the public return at the end of detached writes, before replay onto storage. */
   finishTeamLine?: (copy: RecordCopy, matchUpsMap: MatchUpsMap, written: ResultType) => ResultType;
   tournamentRecords?: Record<string, Tournament>;

@@ -10,7 +10,7 @@ import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieForma
 import { finishingOrderUpdates } from '@Query/matchUp/finishingOrder';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { positionTargets } from '@Query/matchUp/positionTargets';
-import { getNoticeBuffer } from '@Global/state/globalState';
+import { getCapturedStamps, getNoticeBuffer } from '@Global/state/globalState';
 import { withDraftWrites } from '@Global/state/withDraftWrites';
 import { cloneData, cloneState, restoreState } from '@Tools/cloneState';
 import { nowIso } from '@Tools/clock';
@@ -218,57 +218,20 @@ function lineCircuit(args: PlanArgs, why: 'team' | 'cascade'): Circuit | undefin
 }
 
 /**
- * A provider may change a separately held record when asked for the stamp ledger. Only a call
- * whose circuit already qualified reaches this: its ordinary data is captured just before the
- * ledger is sampled, then values AND references are verified at the recorder's clone boundary.
- * Unusual fields remain with the existing writer. No other call pays for the walk.
+ * A provider may change a separately held record when asked for the stamp ledger. For a fresh
+ * line in a two-team double-elimination dual, the ledger is therefore read once, before the view
+ * is built: whatever the read changes is what the view, the plan and any recorder then read, and
+ * no later read can leave the plan behind it. Every other call reads nothing here.
  */
-function watchTeamLineInputs(args: BuildViewArgs): (() => boolean) | undefined {
-  const fields: { node: object; keys: string[]; values: unknown[] }[] = [];
-  const seen = new Set<object>();
-  const active = new Set<object>();
-  function visit(value: unknown): boolean {
-    if (typeof value === 'function' || typeof value === 'bigint') return false;
-    if (value === null || typeof value !== 'object') return true;
-    if (active.has(value)) return false;
-    if (seen.has(value)) return true;
-    const proto = Object.getPrototypeOf(value);
-    if (proto !== Object.prototype && proto !== Array.prototype && proto !== null) return false;
-    active.add(value);
-    const keys = Object.getOwnPropertyNames(value);
-    const values: unknown[] = [];
-    for (const key of keys) {
-      const field = Object.getOwnPropertyDescriptor(value, key);
-      if (!field || !('value' in field) || !visit(field.value)) return false;
-      values.push(field.value);
-    }
-    active.delete(value);
-    seen.add(value);
-    fields.push({ node: value, keys, values });
-    return true;
-  }
-  if (
-    ![
-      args.request,
-      args.drawDefinition,
-      args.event,
-      args.tournamentRecord,
-      args.tournamentRecords,
-      args.policyDefinitions,
-    ].every(visit)
-  )
-    return;
-  return () =>
-    fields.every(({ node, keys, values }) => {
-      const current = Object.getOwnPropertyNames(node);
-      return (
-        keys.length === current.length &&
-        keys.every((key, index) => {
-          const field = Object.getOwnPropertyDescriptor(node, key);
-          return current[index] === key && field && 'value' in field && Object.is(field.value, values[index]);
-        })
-      );
-    });
+export function readTeamLineLedger(args: BuildViewArgs): { stamps?: WeakSet<object> } | undefined {
+  if (args.drawDefinition?.drawType !== DOUBLE_ELIMINATION || !args.recordDraws || !args.request.winningSide) return;
+  const main = args.drawDefinition.structures?.find((s) => s.stage === MAIN);
+  if (positionAssignmentsOf(main)?.filter((a) => a.participantId).length !== 2) return;
+  const dual = matchUpsOf(main)?.find((m) =>
+    m.tieMatchUps?.some((line) => line.matchUpId === args.request.matchUpId && line.matchUpStatus === TO_BE_PLAYED),
+  );
+  if (!dual || (dual.matchUpStatus !== COMPLETED && dual.matchUpStatus !== IN_PROGRESS)) return;
+  return { stamps: getCapturedStamps() };
 }
 
 function playPhases(
@@ -381,10 +344,7 @@ export function teamFinalLine(
   if (named.length > 1 || (named.length && named[0] !== args.tournamentRecord.tournamentId)) return;
   const ids = lineCircuit(plan, why);
   if (!ids) return;
-  const unchanged = watchTeamLineInputs(args);
-  if (!unchanged) return;
   const stamped = sample();
-  if (!unchanged()) return;
   const requested = JSON.stringify(args.request);
   const kept = cloneState(args.request);
   const { copy, originals } = cloneState({

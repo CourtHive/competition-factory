@@ -599,8 +599,12 @@ function stamp(target: Stamped | undefined, key: string, { stampedBefore, tempor
  * draw cannot see that, so the keys are read from the live draw before v1 writes.
  */
 export function stampedInThisCall(drawDefinition?: DrawDefinition): Set<string> {
+  return stampedIn(drawDefinition, getCapturedStamps());
+}
+
+/** The same keys, from a ledger already read from the provider. */
+export function stampedIn(drawDefinition: DrawDefinition | undefined, stamped: WeakSet<object> | undefined) {
   const keys = new Set<string>();
-  const stamped = getCapturedStamps();
   if (!stamped || !drawDefinition) return keys;
   if (stamped.has(drawDefinition)) keys.add(`drawDefinition:${drawDefinition.drawId}`);
   const { matchUps, structures } = indexDraw(drawDefinition);
