@@ -68,3 +68,6 @@ dist
 
 # verify:docs-examples scratch (removed in finally; ignored in case a run is killed)
 .doc-examples-*/
+
+# Explicit diagnostic build, separate from the published dist tree.
+/packages/competition-factory/.diagnostics/
