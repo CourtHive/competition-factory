@@ -1,3 +1,4 @@
+import { noticePayloadTestMode } from '@Global/state/readonlyNoticePayload';
 import { registerPreviewMethod } from './previewMethods';
 import { setTournamentName } from '@Mutate/tournaments/tournamentDetails';
 import { MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
@@ -9,11 +10,14 @@ import { AsyncResource } from 'node:async_hooks';
 import asyncGlobalState from '@Server/providers/factory/engines/asyncGlobalState';
 import { notifySubscribers } from '@Global/state/notifySubscribers';
 import syncGlobalState from '@Global/state/syncGlobalState';
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { asyncEngine } from '@Assemblies/engines/async';
 import {
   addNotice,
   cycleMutationStatus,
+  getOutcomePipeline,
+  deleteNotices,
+  setOutcomePipeline,
   getTournamentRecord,
   getTournamentRecords,
   setTournamentRecords,
@@ -254,4 +258,61 @@ it('prevents a custom closure from replacing the borrowed record map during prev
   expect(live.left).toBe(shared);
   expect(live.right).toBe(shared);
   expect(shared.value).toBe('entry');
+});
+
+it.each([
+  ['v2', 'v2'],
+  ['differential', 'differential'],
+  ['differential', 'v2'],
+] as const)('dryRun preserves a buffered %s notice and its record aliases in %s', (enqueue, preview) => {
+  const previous = getOutcomePipeline();
+  const previousCheck = noticePayloadTestMode.enabled;
+  const topic = 'pending-preview';
+  const record = { tournamentId: 'preview-alias', tournamentName: 'before' };
+  const date = new Date(42);
+  const delivered = vi.fn();
+  try {
+    setStateProvider(syncGlobalState);
+    noticePayloadTestMode.enabled = enqueue === 'differential';
+    setOutcomePipeline(enqueue);
+    syncEngine.setState(record, false);
+    deleteNotices();
+    setSubscriptions({ subscriptions: { [topic]: delivered } });
+    addNotice({
+      topic,
+      payload: { record, list: [record], byRecord: new Map([[record, date]]), dates: new Set([date]) },
+    });
+    noticePayloadTestMode.enabled = preview === 'differential';
+    setOutcomePipeline(preview);
+    const detail = syncEngine.dryRun([{ method: 'setTournamentName', params: { tournamentName: 'after' } }]);
+    expect(detail.error).toBeUndefined();
+    expect(detail.wouldSucceed).toBe(true);
+    const payloads = detail.willEmitNotices.find((notice) => notice.topic === topic)?.payloads;
+    const payload = payloads?.[0] as {
+      record: typeof record;
+      list: (typeof record)[];
+      byRecord: Map<typeof record, Date>;
+      dates: Set<Date>;
+    };
+    expect(payload.record.tournamentName).toBe('after');
+    expect(payload.record).not.toBe(record);
+    expect(payload.list[0]).toBe(payload.record);
+    expect(payload.list).toBeInstanceOf(Array);
+    expect(payload.byRecord).toBeInstanceOf(Map);
+    expect(payload.dates).toBeInstanceOf(Set);
+    const copiedDate = payload.byRecord.get(payload.record);
+    expect(copiedDate).toBeInstanceOf(Date);
+    expect(copiedDate!.toISOString()).toBe(date.toISOString());
+    expect([...payload.dates][0]).toBe(copiedDate);
+    const saved = structuredClone(payload);
+    expect(saved.byRecord.get(saved.record)).toBe([...saved.dates][0]);
+    expect(saved.list[0]).toBe(saved.record);
+    expect(delivered).not.toHaveBeenCalled();
+    expect(record.tournamentName).toBe('before');
+  } finally {
+    deleteNotices();
+    setSubscriptions({ subscriptions: {} });
+    noticePayloadTestMode.enabled = previousCheck;
+    setOutcomePipeline(previous);
+  }
 });

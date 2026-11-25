@@ -1,3 +1,4 @@
+import { noticePayloadTestMode } from '@Global/state/readonlyNoticePayload';
 import { setOutcomePipeline } from '@Global/state/globalState';
 import { beforeEach } from 'vitest';
 
@@ -25,6 +26,7 @@ const mode: OutcomePipelineMode = outcomePipelineModes.includes(requested as Out
 if (requested && mode !== requested)
   throw new Error(`OUTCOME_PIPELINE=${requested} is not one of ${outcomePipelineModes.join(', ')}`);
 
+noticePayloadTestMode.enabled = process.env.NOTICE_PAYLOAD_WRITE_CHECK === '1';
 setOutcomePipeline(mode);
 beforeEach(() => {
   setOutcomePipeline(mode);
