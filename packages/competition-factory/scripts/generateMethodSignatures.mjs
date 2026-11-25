@@ -4,12 +4,18 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readDescriptors } from './engineMethodDescriptors.mjs';
+import { loadDeprecations } from './lib/deprecations.mjs';
+import { REPO_ROOT } from './lib/repoRoot.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const outputDir = join(ROOT, 'src/assemblies/engines/types');
 const OUT = join(outputDir, 'methodSignatures.ts');
 const DIRECT_OUT = join(outputDir, 'asyncEngineDirectMethods.ts');
 const { descriptors, directNames } = readDescriptors(ROOT, outputDir);
+// The routes leaving the engines at 8.0.0 (transition manifest + positional guard list) carry their `@deprecated`
+// message here for in-repo editors; `postbuild.mjs` injects the same tags into the built declarations, which lose
+// every comment (`removeComments`).
+const { names: deprecated } = loadDeprecations({ REPO_ROOT, PACKAGE_ROOT: ROOT });
 const resolved = descriptors
   .filter((entry) => entry.source)
   .map(({ publicName, source }) => ({ publicName, ...source }));
@@ -92,6 +98,8 @@ lines.push('');
 lines.push('export interface MethodSignatures {');
 const byPublic = resolved.slice().sort((a, b) => a.publicName.localeCompare(b.publicName));
 for (const e of byPublic) {
+  const deprecation = deprecated.get(e.publicName);
+  if (deprecation) lines.push(`  /** @deprecated ${deprecation.message} */`);
   lines.push(`  ${e.publicName}: EngineMethod<typeof ${e.sourceName}>;`);
 }
 lines.push('}');
