@@ -298,6 +298,8 @@ unchanged without it.
 
 ## Global State Provider
 
+The 7.x read-only payload contract also applies to custom state providers. A provider may inspect the notice passed to `addNotice` and the payloads passed to `callListener`, including references to a draft draw. Writes through those references are unsupported. Keep provider bookkeeping in provider-owned state. See [Subscriptions](./subscriptions.md), which also describes the audit engine.
+
 ### Synchronous State (Default)
 
 Synchronous engines maintain state in memory without special configuration:
