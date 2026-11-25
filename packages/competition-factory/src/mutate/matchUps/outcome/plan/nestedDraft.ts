@@ -1,4 +1,8 @@
 import { deferInContextMatchUp, deferredQuery, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
+import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { firstDoubleExitEntry, recordPreparedCascade } from './recordedCascade';
+import { buildOutcomeView } from '../view';
 import { getInContextMatchUp } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getNoticeBuffer, getTopics } from '@Global/state/globalState';
 import { withDraftWrites } from '@Global/state/withDraftWrites';
@@ -80,22 +84,32 @@ export function nestedDraft<T>(
   args: BuildViewArgs,
   draw: DrawDefinition,
   prefix: OutcomeOp[],
-  seats: T,
+  certify: (draw: DrawDefinition, view: OutcomeView) => T | undefined,
   apply: (copy: RecordCopy, seats: T) => { matches: MatchUp[]; assignments?: Structure },
 ) {
   return () =>
     args.recordDraws?.(() => {
+      const request = args.request,
+        matchUpId = request.matchUpId as string;
+      if (!firstDoubleExitEntry(args, matchUpId)) return;
       const stamped = stampedInThisCall(draw);
       const { copy } = cloneState({
         tournamentRecord: args.tournamentRecord,
         drawDefinition: draw,
         event: args.event,
-        seats,
       });
+      const matchUpsMap = getMatchUpsMap({ drawDefinition: copy.drawDefinition });
+      const fresh = { ...args, ...copy, matchUpsMap, inContextDrawMatchUps: undefined, structural: undefined };
+      // An installed provider may have changed its borrowed tournament during the stamp read.
+      // Certify the actual copy once and keep it for either writer. Off-path time cleanup emits its own draft notices.
+      const resume = () => recordPreparedCascade(args, prefix, copy, stamped, request, matchUpId);
+      if (matchUpsMap.drawMatchUps.some(hasStaleScoredTime)) return resume();
+      const view = buildOutcomeView(fresh);
+      const r = plainNestedPrefix(fresh, view, prefix) && certify(copy.drawDefinition, view);
+      if (!r) return resume();
       stampCopies(copy.drawDefinition, stamped);
       return withNoticeMarks((readMarks) =>
         withDraftWrites(() => {
-          const r = copy.seats;
           if (applyOutcomeOps(copy.drawDefinition, prefix, stamped).error) return;
           const drawStamp = copy.drawDefinition.updatedAt;
           const beforeStamps = new Map(
