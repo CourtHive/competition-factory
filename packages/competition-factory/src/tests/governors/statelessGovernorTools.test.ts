@@ -3,7 +3,9 @@ import { AvailabilityEngine } from '@Assemblies/engines/availability/Availabilit
 import { officiatingEngine } from '@Assemblies/engines/officiating';
 import { sanctioningEngine } from '@Assemblies/engines/sanctioning';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
+import * as availabilityExport from '@Assemblies/engines/availability';
 import * as governors from '@Assemblies/governors';
+import * as tools from '@Assemblies/tools';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import ratchet from './statelessGovernorTools.json';
@@ -38,6 +40,10 @@ import { INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstant
  * `statelessGovernorTools.json` is the ratchet: a confirmed tool that starts depending on state fails here, and so does
  * an excluded one whose reason stops holding (a needs-state tool that no longer reads the record, a thrower that no
  * longer throws, an own-engine tool that leaves its engine), and so does any drift between the list and these cases.
+ *
+ * EXPOSED (slice C): each confirmed tool has a standalone home, `exposed[name]` (`tools.<domain>.<member>`, or the
+ * `availability` export), holding the governor's own function, so the two cannot drift while 7.x keeps the engine
+ * routes. A confirmed tool without one is in `unexposed`, with the reason.
  */
 
 type Params = Record<string, any>;
@@ -544,5 +550,23 @@ describe('a former thrower refuses a missing or invalid required input', () => {
       error: MISSING_VALUE,
       info: { param: 'filter' },
     });
+  });
+});
+
+const exposed = ratchet.exposed as Record<string, string>;
+const unexposed = ratchet.unexposed as Record<string, string>;
+const HOMES: Record<string, any> = { tools, availability: availabilityExport };
+const resolveHome = (path: string) => path.split('.').reduce((node: any, key) => node?.[key], HOMES);
+
+describe('a confirmed tool has a standalone home', () => {
+  it('each confirmed tool is exposed or says why not, and nothing else is listed', () => {
+    expect([...Object.keys(exposed), ...Object.keys(unexposed)].sort()).toEqual(confirmed);
+    expect(Object.keys(exposed).filter((name) => name in unexposed)).toEqual([]);
+    expect(Object.keys(unexposed).filter((name) => !unexposed[name])).toEqual([]);
+  });
+
+  it.each(Object.keys(exposed))('%s is the governor function at its home', (name) => {
+    expect(typeof resolveHome(exposed[name])).toEqual('function');
+    expect(resolveHome(exposed[name])).toBe(governorFunction(name));
   });
 });
