@@ -1,4 +1,5 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { ownArray } from '@Tools/plainRecord';
 import { unique } from '@Tools/arrays';
 
 // constants and types
@@ -89,8 +90,8 @@ export function getScaleValues(params): ResultType & {
 
         const scaleType = (type === SEEDING && 'seedings') || (type === RANKING && 'rankings') || 'ratings';
 
-        if (!scales[scaleType][format]) scales[scaleType][format] = [];
-        scales[scaleType][format].push({
+        // the format is a record value and the maps are returned as built: see ownArray
+        ownArray(scales[scaleType], format).push({
           scaleValue: scaleItem.itemValue,
           scaleDate: scaleItem.itemDate,
           scaleName: namedScale,
