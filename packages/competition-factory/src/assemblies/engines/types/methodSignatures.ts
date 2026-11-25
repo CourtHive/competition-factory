@@ -768,6 +768,7 @@ export interface MethodSignatures {
   addExtension: EngineMethod<typeof addElementExtension>;
   addFinishingRounds: EngineMethod<typeof addFinishingRounds>;
   addFlight: EngineMethod<typeof addFlight>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use one of: migrateTournamentRecord (stores the edges; promoted.goesTo) | POST /provider-key/tournaments | `addDrawDefinition` | getDrawData/getStructureData/getEventData; readModel.applyProgressionEdges for flattened matchUps (https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals) */
   addGoesTo: EngineMethod<typeof addGoesTo>;
   addIndividualParticipantIds: EngineMethod<typeof addIndividualParticipantIds>;
   addLadderParticipant: EngineMethod<typeof addLadderParticipant>;
@@ -782,6 +783,7 @@ export interface MethodSignatures {
   addMatchUpStartTime: EngineMethod<typeof addMatchUpStartTime>;
   addMatchUpStopTime: EngineMethod<typeof addMatchUpStopTime>;
   addMutationLock: EngineMethod<typeof addMutationLock>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   addNotes: EngineMethod<typeof addNotes>;
   addOnlineResource: EngineMethod<typeof addOnlineResource>;
   addParticipant: EngineMethod<typeof addParticipant>;
@@ -794,6 +796,7 @@ export interface MethodSignatures {
   addPersonRequests: EngineMethod<typeof addPersonRequests>;
   addPersons: EngineMethod<typeof addPersons>;
   addPlayoffStructures: EngineMethod<typeof addPlayoffStructures>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.addPoint` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   addPoint: EngineMethod<typeof addPoint>;
   addPracticeRegistration: EngineMethod<typeof addPracticeRegistration>;
   addQualifyingStructure: EngineMethod<typeof addQualifyingStructure>;
@@ -809,6 +812,7 @@ export interface MethodSignatures {
   addVenueOtherId: EngineMethod<typeof addVenueOtherId>;
   addVoluntaryConsolationStructure: EngineMethod<typeof addVoluntaryConsolationStructure>;
   adHocPositionSwap: EngineMethod<typeof adHocPositionSwap>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.formats.aggregateDeciderSetNumber` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   aggregateDeciderSetNumber: EngineMethod<typeof aggregateDeciderSetNumber>;
   aggregateTieFormats: EngineMethod<typeof aggregateTieFormats>;
   allCompetitionMatchUps: EngineMethod<typeof allCompetitionMatchUps>;
@@ -821,6 +825,7 @@ export interface MethodSignatures {
   analyzeDraws: EngineMethod<typeof analyzeDraws>;
   analyzeMatchUp: EngineMethod<typeof analyzeMatchUp>;
   analyzeScore: EngineMethod<typeof analyzeScore>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.analyzeSequence` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   analyzeSequence: EngineMethod<typeof analyzeSequence>;
   analyzeSet: EngineMethod<typeof analyzeSet>;
   analyzeTournament: EngineMethod<typeof analyzeTournament>;
@@ -858,8 +863,11 @@ export interface MethodSignatures {
   bulkScheduleTournamentMatchUps: EngineMethod<typeof bulkScheduleTournamentMatchUps>;
   bulkUpdateCourtAssignments: EngineMethod<typeof bulkUpdateCourtAssignments>;
   bulkUpdatePublishedEventIds: EngineMethod<typeof bulkUpdatePublishedEventIds>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.calculateMatchStatistics` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   calculateMatchStatistics: EngineMethod<typeof calculateMatchStatistics>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   calculateMatchUpMargin: EngineMethod<typeof calculateMatchUpMargin>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.calculatePointsTo` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   calculatePointsTo: EngineMethod<typeof calculatePointsTo>;
   calculateScheduleTimes: EngineMethod<typeof calculateScheduleTimes>;
   calculateWinCriteria: EngineMethod<typeof calculateWinCriteria>;
@@ -884,6 +892,7 @@ export interface MethodSignatures {
   copyTournamentRecord: EngineMethod<typeof copyTournamentRecord>;
   courtGridRows: EngineMethod<typeof courtGridRows>;
   createGroupParticipant: EngineMethod<typeof createGroupParticipant>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   createMatchUp: EngineMethod<typeof createMatchUp>;
   createOfficialRecord: EngineMethod<typeof createOfficialRecord>;
   createSanctioningRecord: EngineMethod<typeof createSanctioningRecord>;
@@ -892,6 +901,7 @@ export interface MethodSignatures {
   credits: EngineMethod<typeof credits>;
   declineChallenge: EngineMethod<typeof declineChallenge>;
   declineEndorsement: EngineMethod<typeof declineEndorsement>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.deduceMatchUpFormat` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   deduceMatchUpFormat: EngineMethod<typeof deduceMatchUpFormat>;
   deleteAdHocMatchUps: EngineMethod<typeof deleteAdHocMatchUps>;
   deleteCourt: EngineMethod<typeof deleteCourt>;
@@ -915,11 +925,14 @@ export interface MethodSignatures {
   enableTieAutoCalc: EngineMethod<typeof enableTieAutoCalc>;
   enableVenues: EngineMethod<typeof enableVenues>;
   endorseApplication: EngineMethod<typeof endorseApplication>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.enrichPointHistory` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   enrichPointHistory: EngineMethod<typeof enrichPointHistory>;
   eventMatchUps: EngineMethod<typeof eventMatchUps>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.exportMatchUpJSON` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   exportMatchUpJSON: EngineMethod<typeof exportMatchUpJSON>;
   filterMatchUps: EngineMethod<typeof filterMatchUps>;
   filterParticipants: EngineMethod<typeof filterParticipants>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.formats.finalSetGoverns` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   finalSetGoverns: EngineMethod<typeof finalSetGoverns>;
   findDrawDefinition: EngineMethod<typeof publicFindDrawDefinition>;
   findExtension: EngineMethod<typeof findExtension>;
@@ -938,6 +951,7 @@ export interface MethodSignatures {
   generateCourts: EngineMethod<typeof generateCourts>;
   generateDrawDefinition: EngineMethod<typeof generateDrawDefinition>;
   generateDrawMaticRound: EngineMethod<typeof generateDrawMaticRound>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   generateDrawStructuresAndLinks: EngineMethod<typeof generateDrawStructuresAndLinks>;
   generateDrawTypeAndModifyDrawDefinition: EngineMethod<typeof generateDrawTypeAndModifyDrawDefinition>;
   generateEventsFromTieFormat: EngineMethod<typeof generateEventsFromTieFormat>;
@@ -965,6 +979,7 @@ export interface MethodSignatures {
   getAggregateTeamResults: EngineMethod<typeof getAggregateTeamResults>;
   getAllDrawMatchUps: EngineMethod<typeof getAllDrawMatchUps>;
   getAllEventData: EngineMethod<typeof getAllEventData>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   getAllowedDrawTypes: EngineMethod<typeof getAllowedDrawTypes>;
   getAllowedMatchUpFormats: EngineMethod<typeof getAllowedMatchUpFormats>;
   getAllStructureMatchUps: EngineMethod<typeof getAllStructureMatchUps>;
@@ -976,6 +991,7 @@ export interface MethodSignatures {
   getAvailableQualifyingTargets: EngineMethod<typeof getAvailableQualifyingTargets>;
   getAvailableReports: EngineMethod<typeof getAvailableReports>;
   getAvailableTransitions: EngineMethod<typeof getAvailableTransitions>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   getAwardPoints: EngineMethod<typeof getAwardPoints>;
   getAwardProfile: EngineMethod<typeof getAwardProfile>;
   getCalendarConflicts: EngineMethod<typeof getCalendarConflicts>;
@@ -998,33 +1014,43 @@ export interface MethodSignatures {
   getCourtInfo: EngineMethod<typeof getCourtInfo>;
   getCourts: EngineMethod<typeof getCourts>;
   getDraftState: EngineMethod<typeof getDraftState>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   getDrawCompleteness: EngineMethod<typeof getDrawCompleteness>;
   getDrawCompositionConstraints: EngineMethod<typeof getDrawCompositionConstraints>;
   getDrawData: EngineMethod<typeof getDrawData>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   getDrawDefinitionTimeItem: EngineMethod<typeof getDrawDefinitionTimeItem>;
   getDrawFit: EngineMethod<typeof getDrawFit>;
   getDrawFitProposals: EngineMethod<typeof getDrawFitProposals>;
   getDrawInconsistencies: EngineMethod<typeof getDrawInconsistencies>;
   getDrawParticipantRepresentativeIds: EngineMethod<typeof getDrawParticipantRepresentativeIds>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   getDrawStructures: EngineMethod<typeof getDrawStructures>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   getDrawTypeCoercion: EngineMethod<typeof getDrawTypeCoercion>;
   getDualIssues: EngineMethod<typeof getDualIssues>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   getEffectiveRegistrationProfile: EngineMethod<typeof getEffectiveRegistrationProfile>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   getEligibleEvents: EngineMethod<typeof getEligibleEvents>;
   getEligibleTiers: EngineMethod<typeof getEligibleTiers>;
   getEligibleVoluntaryConsolationParticipants: EngineMethod<typeof getEligibleVoluntaryConsolationParticipants>;
   getEntriesAndSeedsCount: EngineMethod<typeof getEntriesAndSeedsCount>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.entries.getEntryFeeRange` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   getEntryFeeRange: EngineMethod<typeof getEntryFeeRange>;
   getEntryStatusOrdinals: EngineMethod<typeof getEntryStatusOrdinals>;
   getEntryStatusReports: EngineMethod<typeof getEntryStatusReports>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.getEpisodes` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   getEpisodes: EngineMethod<typeof getEpisodes>;
   getEvaluations: EngineMethod<typeof getEvaluations>;
   getEvaluationSummary: EngineMethod<typeof getEvaluationSummary>;
   getEvaluationTemplate: EngineMethod<typeof getEvaluationTemplate>;
   getEvent: EngineMethod<typeof getEvent>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   getEventCompleteness: EngineMethod<typeof getEventCompleteness>;
   getEventData: EngineMethod<typeof getEventData>;
   getEventDateIssues: EngineMethod<typeof getEventDateIssues>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   getEventEntryFees: EngineMethod<typeof getEventEntryFees>;
   getEventEntrySpace: EngineMethod<typeof getEventEntrySpace>;
   getEventInconsistencies: EngineMethod<typeof getEventInconsistencies>;
@@ -1040,6 +1066,7 @@ export interface MethodSignatures {
   getFlightProfile: EngineMethod<typeof getFlightProfile>;
   getHomeParticipantId: EngineMethod<typeof getHomeParticipantId>;
   getIndividualParticipantMergePreview: EngineMethod<typeof getIndividualParticipantMergePreview>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   getLadderMovement: EngineMethod<typeof getLadderMovement>;
   getLadderOrdering: EngineMethod<typeof getLadderOrdering>;
   getLadderPolicy: EngineMethod<typeof getLadderPolicy>;
@@ -1061,6 +1088,7 @@ export interface MethodSignatures {
   getMatchUpFormatVariance: EngineMethod<typeof getMatchUpFormatVariance>;
   getMatchUpOfficialConflicts: EngineMethod<typeof getMatchUpOfficialConflicts>;
   getMatchUpParticipantIds: EngineMethod<typeof getMatchUpParticipantIds>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   getMatchUpRatingDelta: EngineMethod<typeof getMatchUpRatingDelta>;
   getMatchUpReadiness: EngineMethod<typeof getMatchUpReadiness>;
   getMatchUpScheduleBounds: EngineMethod<typeof getMatchUpScheduleBounds>;
@@ -1068,6 +1096,7 @@ export interface MethodSignatures {
   getMatchUpsMap: EngineMethod<typeof getMatchUpsMap>;
   getMatchUpsStats: EngineMethod<typeof getMatchUpsStats>;
   getMatchUpsToSchedule: EngineMethod<typeof getMatchUpsToSchedule>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   getMatchUpType: EngineMethod<typeof getMatchUpType>;
   getMatchUpUpset: EngineMethod<typeof getMatchUpUpset>;
   getMaxEntryPosition: EngineMethod<typeof getMaxEntryPosition>;
@@ -1084,6 +1113,7 @@ export interface MethodSignatures {
   getParticipantIdFinishingPositions: EngineMethod<typeof getParticipantIdFinishingPositions>;
   getParticipantMembership: EngineMethod<typeof getParticipantMembership>;
   getParticipantPaymentStatus: EngineMethod<typeof getParticipantPaymentStatus>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   getParticipantPoints: EngineMethod<typeof getParticipantPoints>;
   getParticipantPresenceHistory: EngineMethod<typeof getParticipantPresenceHistory>;
   getParticipantRest: EngineMethod<typeof getParticipantRest>;
@@ -1096,19 +1126,25 @@ export interface MethodSignatures {
   getParticipantsRest: EngineMethod<typeof getParticipantsRest>;
   getParticipantsStillSignedInOnDate: EngineMethod<typeof getParticipantsStillSignedInOnDate>;
   getParticipantStats: EngineMethod<typeof getParticipantStats>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   getParticipantTimeItem: EngineMethod<typeof getParticipantTimeItem>;
   getParticipation: EngineMethod<typeof getParticipation>;
   getPersonRequests: EngineMethod<typeof getPersonRequests>;
   getPolicyDefinitions: EngineMethod<typeof getPolicyDefinitions>;
   getPositionAssignments: EngineMethod<typeof getPositionAssignments>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   getPositionsPlayedOff: EngineMethod<typeof getPositionsPlayedOff>;
   getPracticeRegistrations: EngineMethod<typeof getPracticeRegistrations>;
   getPredictiveAccuracy: EngineMethod<typeof getPredictiveAccuracy>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   getPresenceExpectation: EngineMethod<typeof getPresenceExpectation>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   getPresenceRules: EngineMethod<typeof getPresenceRules>;
   getProfileRounds: EngineMethod<typeof getProfileRounds>;
   getPublishState: EngineMethod<typeof getPublishState>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   getQualityWinPoints: EngineMethod<typeof getQualityWinPoints>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.getQuickStats` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   getQuickStats: EngineMethod<typeof getQuickStats>;
   getRandomQualifierList: EngineMethod<typeof getRandomQualifierList>;
   getRegistrationProfile: EngineMethod<typeof getRegistrationProfile>;
@@ -1120,8 +1156,10 @@ export interface MethodSignatures {
   getRotatingPartnerTallyPolicy: EngineMethod<typeof getRotatingPartnerTallyPolicy>;
   getRoundMatchUps: EngineMethod<typeof getRoundMatchUps>;
   getRounds: EngineMethod<typeof getRounds>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.publishing.getRoundVisibilityState` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   getRoundVisibilityState: EngineMethod<typeof getRoundVisibilityState>;
   getScaledEntries: EngineMethod<typeof getScaledEntries>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   getScaleValues: EngineMethod<typeof getScaleValues>;
   getScenarioScheduleProjection: EngineMethod<typeof getScenarioScheduleProjection>;
   getScenarioScheduleView: EngineMethod<typeof getScenarioScheduleView>;
@@ -1132,7 +1170,9 @@ export interface MethodSignatures {
   getScheduleScenarioStatus: EngineMethod<typeof getScheduleScenarioStatus>;
   getSchedulingProfile: EngineMethod<typeof getSchedulingProfile>;
   getSchedulingProfileIssues: EngineMethod<typeof getSchedulingProfileIssues>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.getScore` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   getScore: EngineMethod<typeof getScore>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.getScoreboard` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   getScoreboard: EngineMethod<typeof getScoreboard>;
   getSeasonAdvancement: EngineMethod<typeof getSeasonAdvancement>;
   getSeasonMovement: EngineMethod<typeof getSeasonMovement>;
@@ -1140,6 +1180,7 @@ export interface MethodSignatures {
   getSeedingThresholds: EngineMethod<typeof getSeedingThresholds>;
   getSeedsCount: EngineMethod<typeof getSeedsCount>;
   getSetComplement: EngineMethod<typeof getSetComplement>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.getSetScoreString` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   getSetScoreString: EngineMethod<typeof getSetScoreString>;
   getStatusHistory: EngineMethod<typeof getStatusHistory>;
   getStructureCompleteness: EngineMethod<typeof getStructureCompleteness>;
@@ -1167,6 +1208,7 @@ export interface MethodSignatures {
   getTournamentPoints: EngineMethod<typeof getTournamentPoints>;
   getTournamentPublishStatus: EngineMethod<typeof getTournamentPublishStatus>;
   getTournamentStructures: EngineMethod<typeof getTournamentStructures>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   getTournamentTimeItem: EngineMethod<typeof getTournamentTimeItem>;
   getTournamentTimeZone: EngineMethod<typeof getTournamentTimeZone>;
   getTournamentVisibleFrom: EngineMethod<typeof getTournamentVisibleFrom>;
@@ -1175,30 +1217,43 @@ export interface MethodSignatures {
   getVenuesAndCourts: EngineMethod<typeof getVenuesAndCourts>;
   getVenuesReport: EngineMethod<typeof getVenuesReport>;
   getVenueTransits: EngineMethod<typeof getVenueTransits>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.getWinner` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   getWinner: EngineMethod<typeof getWinner>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.groupByMatch` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   groupByMatch: EngineMethod<typeof groupByMatch>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   hasLuckyRounds: EngineMethod<typeof hasLuckyRounds>;
   hydrateTournamentRecord: EngineMethod<typeof hydrateTournamentRecord>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.inferServeSide` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   inferServeSide: EngineMethod<typeof inferServeSide>;
   initializeCompetitionState: EngineMethod<typeof initializeCompetitionState>;
   initializeDraft: EngineMethod<typeof initializeDraft>;
   isAdHoc: EngineMethod<typeof isAdHoc>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.draws.isAdHocType` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   isAdHocType: EngineMethod<typeof isAdHocType>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.formats.isAggregateFormat` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   isAggregateFormat: EngineMethod<typeof isAggregateFormat>;
   isChallengeInRange: EngineMethod<typeof isChallengeInRange>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.isComplete` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   isComplete: EngineMethod<typeof isComplete>;
   isCompletedStructure: EngineMethod<typeof isCompletedStructure>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.publishing.isEmbargoed` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   isEmbargoed: EngineMethod<typeof isEmbargoed>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.entries.isIndeterminateFee` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   isIndeterminateFee: EngineMethod<typeof isIndeterminateFee>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.draws.isLadder` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   isLadder: EngineMethod<typeof isLadder>;
   isScheduleLocked: EngineMethod<typeof isScheduleLocked>;
   issueChallenge: EngineMethod<typeof issueChallenge>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use the getPublishState query (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   isTournamentPublished: EngineMethod<typeof isTournamentPublished>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   isTournamentVisible: EngineMethod<typeof isTournamentVisible>;
   isValid: EngineMethod<typeof isValidMatchUpFormat>;
   isValidForQualifying: EngineMethod<typeof isValidForQualifying>;
   isValidMatchUpFormat: EngineMethod<typeof isValidMatchUpFormat>;
   isValidSeedPosition: EngineMethod<typeof isValidSeedPosition>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.publishing.isVisiblyPublished` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   isVisiblyPublished: EngineMethod<typeof isVisiblyPublished>;
   keyValueScore: EngineMethod<typeof keyValueScore>;
   linkTournaments: EngineMethod<typeof linkTournaments>;
@@ -1207,6 +1262,7 @@ export interface MethodSignatures {
   matchUpActions: EngineMethod<typeof matchUpActions>;
   matchUpScheduleChange: EngineMethod<typeof matchUpScheduleChange>;
   matchUpScheduleLocked: EngineMethod<typeof matchUpScheduleLocked>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   mcpValidator: EngineMethod<typeof mcpValidator>;
   meetCondition: EngineMethod<typeof meetCondition>;
   mergeFacilitySchedule: EngineMethod<typeof mergeFacilitySchedule>;
@@ -1241,18 +1297,27 @@ export interface MethodSignatures {
   modifyVenue: EngineMethod<typeof modifyVenue>;
   openProposalRegistration: EngineMethod<typeof openProposalRegistration>;
   orderCollectionDefinitions: EngineMethod<typeof orderCollectionDefinitions>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.formats.parse` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   parse: EngineMethod<typeof parse>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.parseCSV` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   parseCSV: EngineMethod<typeof parseCSV>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.formats.parse` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   parseMatchUpFormat: EngineMethod<typeof parse>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.parseMCPPoint` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   parseMCPPoint: EngineMethod<typeof parseMCPPoint>;
   parseScoreString: EngineMethod<typeof parseScoreString>;
   participantScaleItem: EngineMethod<typeof participantScaleItem>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   participantScheduledMatchUps: EngineMethod<typeof participantScheduledMatchUps>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   pbpValidator: EngineMethod<typeof pbpValidator>;
   planNextPeriod: EngineMethod<typeof planNextPeriod>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.pointParser` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   pointParser: EngineMethod<typeof pointParser>;
   positionActions: EngineMethod<typeof positionActions>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   predictDrawCompetitiveBands: EngineMethod<typeof predictDrawCompetitiveBands>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   predictMatchUpCompetitiveBands: EngineMethod<typeof predictMatchUpCompetitiveBands>;
   proAutoSchedule: EngineMethod<typeof proAutoSchedule>;
   processCompetitionMatchUp: EngineMethod<typeof processCompetitionMatchUp>;
@@ -1264,6 +1329,7 @@ export interface MethodSignatures {
   proposeAmendment: EngineMethod<typeof proposeAmendment>;
   pruneDrawDefinition: EngineMethod<typeof pruneDrawDefinition>;
   publicFindCourt: EngineMethod<typeof publicFindCourt>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   publicFindVenue: EngineMethod<typeof publicFindVenue>;
   publishEvent: EngineMethod<typeof publishEvent>;
   publishEventSeeding: EngineMethod<typeof publishEventSeeding>;
@@ -1272,13 +1338,17 @@ export interface MethodSignatures {
   publishTournamentInfo: EngineMethod<typeof publishTournamentInfo>;
   qualifierDrawPositionAssignment: EngineMethod<typeof qualifierDrawPositionAssignment>;
   qualifierProgression: EngineMethod<typeof qualifierProgression>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   queryOfficialRecord: EngineMethod<typeof queryOfficialRecord>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   querySanctioningRecord: EngineMethod<typeof querySanctioningRecord>;
   rebaseScheduleScenario: EngineMethod<typeof rebaseScheduleScenario>;
   refreshEventDrawOrder: EngineMethod<typeof refreshEventDrawOrder>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   refreshLadderRatings: EngineMethod<typeof refreshLadderRatings>;
   regenerateParticipantNames: EngineMethod<typeof regenerateParticipantNames>;
   rejectApplication: EngineMethod<typeof rejectApplication>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   remapDrawDefinitionMatchUpIds: EngineMethod<typeof remapDrawDefinitionMatchUpIds>;
   removeCertification: EngineMethod<typeof removeCertification>;
   removeCollectionDefinition: EngineMethod<typeof removeCollectionDefinition>;
@@ -1304,9 +1374,11 @@ export interface MethodSignatures {
   removeMatchUpSideParticipant: EngineMethod<typeof removeMatchUpSideParticipant>;
   removeMatchUpTimekeeper: EngineMethod<typeof removeMatchUpTimekeeper>;
   removeMutationLock: EngineMethod<typeof removeMutationLock>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   removeNotes: EngineMethod<typeof removeNotes>;
   removeOfficialAssignment: EngineMethod<typeof removeOfficialAssignment>;
   removeOnlineResource: EngineMethod<typeof removeOnlineResource>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   removeOrphanedTieFormats: EngineMethod<typeof removeOrphanedTieFormats>;
   removeParticipantExtension: EngineMethod<typeof removeParticipantExtension>;
   removeParticipantIdsFromAllTeams: EngineMethod<typeof removeParticipantIdsFromAllTeams>;
@@ -1316,6 +1388,7 @@ export interface MethodSignatures {
   removePracticeRegistration: EngineMethod<typeof removePracticeRegistration>;
   removeRatings: EngineMethod<typeof removeRatings>;
   removeRoundMatchUps: EngineMethod<typeof removeRoundMatchUps>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   removeScaleValues: EngineMethod<typeof removeScaleValues>;
   removeScheduleScenario: EngineMethod<typeof removeScheduleScenario>;
   removeSeededParticipant: EngineMethod<typeof removeSeededParticipant>;
@@ -1344,9 +1417,11 @@ export interface MethodSignatures {
   resetTieFormat: EngineMethod<typeof resetTieFormat>;
   resetVoluntaryConsolationStructure: EngineMethod<typeof resetVoluntaryConsolationStructure>;
   resolveDraftPositions: EngineMethod<typeof resolveDraftPositions>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.entries.resolveEntryFee` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   resolveEntryFee: EngineMethod<typeof resolveEntryFee>;
   resolveHomeParticipantId: EngineMethod<typeof resolveHomeParticipantId>;
   resolveMergedParticipantId: EngineMethod<typeof resolveMergedParticipantId>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.resolvePointValue` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   resolvePointValue: EngineMethod<typeof resolvePointValue>;
   retainScoreForFormat: EngineMethod<typeof retainScoreForFormat>;
   reverseScore: EngineMethod<typeof reverseScore>;
@@ -1403,9 +1478,13 @@ export interface MethodSignatures {
   setVenueTransit: EngineMethod<typeof setVenueTransit>;
   setVenueTransits: EngineMethod<typeof setVenueTransits>;
   shiftAdHocRounds: EngineMethod<typeof shiftAdHocRounds>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.shotParser` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   shotParser: EngineMethod<typeof shotParser>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.shotSplitter` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   shotSplitter: EngineMethod<typeof shotSplitter>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.formats.stringify` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   stringify: EngineMethod<typeof stringify>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.formats.stringify` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   stringifyMatchUpFormat: EngineMethod<typeof stringify>;
   submitApplication: EngineMethod<typeof submitApplication>;
   submitComplianceItem: EngineMethod<typeof submitComplianceItem>;
@@ -1417,6 +1496,7 @@ export interface MethodSignatures {
   tallyParticipantResults: EngineMethod<typeof tallyParticipantResults>;
   tieFormatGenderValidityCheck: EngineMethod<typeof tieFormatGenderValidityCheck>;
   toggleParticipantCheckInState: EngineMethod<typeof toggleParticipantCheckInState>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.toStatObjects` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   toStatObjects: EngineMethod<typeof toStatObjects>;
   tournamentMatchUps: EngineMethod<typeof tournamentMatchUps>;
   transitionAssignmentStatus: EngineMethod<typeof transitionAssignmentStatus>;
@@ -1436,29 +1516,45 @@ export interface MethodSignatures {
   updatePracticeRegistration: EngineMethod<typeof updatePracticeRegistration>;
   updateProposal: EngineMethod<typeof updateProposal>;
   updateScheduleScenario: EngineMethod<typeof updateScheduleScenario>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   updateTeamLineUp: EngineMethod<typeof updateTeamLineUp>;
   updateTieMatchUpScore: EngineMethod<typeof updateTieMatchUpScore>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   validateCategory: EngineMethod<typeof validateCategory>;
   validateCertification: EngineMethod<typeof validateCertification>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   validateCollectionDefinition: EngineMethod<typeof validateCollectionDefinition>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   validateLineUp: EngineMethod<typeof validateLineUp>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   validateMatchUp: EngineMethod<typeof validateMatchUp>;
   validateMatchUpFormat: EngineMethod<typeof validateMatchUpFormat>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.validateMatchUpScore` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   validateMatchUpScore: EngineMethod<typeof validateMatchUpScore>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.validateMCPMatch` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   validateMCPMatch: EngineMethod<typeof validateMCPMatch>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   validateOfficiatingStatusTransition: EngineMethod<typeof validateOfficiatingStatusTransition>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   validatePlayoffGroups: EngineMethod<typeof validatePlayoffGroups>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   validatePresenceAttribution: EngineMethod<typeof validatePresenceAttribution>;
   validateProposal: EngineMethod<typeof validateProposal>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   validateScheduleScenario: EngineMethod<typeof validateScheduleScenario>;
   validateSchedulingProfile: EngineMethod<typeof validateSchedulingProfile>;
   validateScore: EngineMethod<typeof validateScore>;
   validateSeason: EngineMethod<typeof validateSeason>;
   validateSet: EngineMethod<typeof validateSet>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.scoring.validateSetScore` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   validateSetScore: EngineMethod<typeof validateSetScore>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   validateStatusTransition: EngineMethod<typeof validateStatusTransition>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   validateTieFormat: EngineMethod<typeof validateTieFormat>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.matchUps.validMatchUp` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   validMatchUp: EngineMethod<typeof validMatchUp>;
+  /** @deprecated Removed from the governors and engines in 8.0.0; use `tools.matchUps.validMatchUps` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#stateless-functions-move-to-tools) */
   validMatchUps: EngineMethod<typeof validMatchUps>;
   verifyComplianceItem: EngineMethod<typeof verifyComplianceItem>;
   version: EngineMethod<typeof factoryVersion>;

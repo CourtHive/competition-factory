@@ -297,6 +297,12 @@ jobs:
       - name: verify:surface
         run: pnpm verify:surface
 
+      # Needs dist, so it sits after verify:build. Packs it, counts the @deprecated tags postbuild.mjs injected into
+      # every shipped declaration file against the transition manifest, the positional guard list and the alias
+      # list (missing or unexpected fails), then runs the editor probe (TypeScript language service) on the tarball.
+      - name: verify:deprecations
+        run: pnpm verify:deprecations
+
       # The declaration-diff gate (Mentat/planning/FACTORY_TYPE_GRAPH_SPLIT_PLAN.md, decision 4). It fingerprints
       # every export of the three published declaration bundles and compares them with the PR's merge base, which it
       # builds here in a throwaway worktree that borrows this job's node_modules (~10 s for both builds; this job has

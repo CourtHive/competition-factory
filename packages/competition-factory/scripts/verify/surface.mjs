@@ -64,7 +64,8 @@ function parseArgs(argv) {
  */
 function extractSurface(dtsPath) {
   if (!existsSync(dtsPath)) fail(`missing .d.ts: ${dtsPath}`);
-  const src = readFileSync(dtsPath, 'utf8');
+  // the `@deprecated` tags postbuild.mjs injects sit inside the export lists; a name is what is left without them
+  const src = readFileSync(dtsPath, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 
   const surface = new Set();
   // The dist groups everything into one `export { ... }` and one
