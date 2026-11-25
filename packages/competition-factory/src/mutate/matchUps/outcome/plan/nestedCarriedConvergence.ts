@@ -1,3 +1,4 @@
+import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import {
   buildSideExitProvenance,
   mergeSideExitProvenance,
@@ -53,6 +54,10 @@ function convergingFinals(draw: DrawDefinition, view: OutcomeView, id: string) {
     !openNestedTarget(pending)
   )
     return;
+  const advancing = pending.drawPositions?.find(Boolean),
+    standing = held.drawPositions?.find(Boolean);
+  const sidePosition = (matchUp: MatchUp, sideNumber: number, structureId: string) =>
+    getSideDrawPosition({ drawDefinition: draw, structureId, matchUp, sideNumber });
   const carried = held.sideExitProvenance?.[1];
   const carrier = mainMatches.find((m) => m.matchUpId === carried?.sourceMatchUpId);
   const bye = matches.find((m) => m.matchUpId === carrier?.loserMatchUpId);
@@ -72,9 +77,10 @@ function convergingFinals(draw: DrawDefinition, view: OutcomeView, id: string) {
     paired.matchUpStatus !== DEFAULTED ||
     paired.winningSide !== 1 ||
     paired.loserMatchUpId !== loser.matchUpId ||
-    paired.drawPositions?.[0] !== pending.drawPositions[0] ||
+    !advancing ||
+    sidePosition(paired, 1, main.structureId) !== advancing ||
     loser.drawPositions?.length !== 2 ||
-    loser.drawPositions[1] !== view.targets.loserTargetDrawPosition ||
+    sidePosition(loser, 2, consolation.structureId) !== view.targets.loserTargetDrawPosition ||
     loser.sideExitProvenance?.[1]?.sourceMatchUpId !== paired.matchUpId ||
     loser.sideExitProvenance[1].matchUpStatus !== DEFAULTED ||
     loser.sideExitProvenance[1].previousMatchUpStatus !== DEFAULTED ||
@@ -95,9 +101,10 @@ function convergingFinals(draw: DrawDefinition, view: OutcomeView, id: string) {
   )
     return;
   const assignments = positionAssignmentsOf(consolation);
-  const holder = (position: number) => assignments?.find((a) => a.drawPosition === position);
-  if (!holder(held.drawPositions[0])?.participantId || !holder(loser.drawPositions[0])?.participantId) return;
-  return { source, pending, final, paired, loser, held, advancing: pending.drawPositions[0] };
+  const holder = (position?: number) => assignments?.find((a) => a.drawPosition === position);
+  if (!holder(standing)?.participantId || !holder(sidePosition(loser, 1, consolation.structureId))?.participantId)
+    return;
+  return { source, pending, final, paired, loser, held, advancing };
 }
 
 type Finals = NonNullable<ReturnType<typeof convergingFinals>>;
@@ -151,6 +158,11 @@ export function nestedCarriedConvergence(args: BuildViewArgs, view: OutcomeView,
     !plainNestedPrefix(args, view, prefix)
   )
     return;
-  const seats = convergingFinals(draw, view, id);
-  return seats && nestedDraft(args, draw, prefix, seats, applyConvergence);
+  const certify = (current: DrawDefinition, reading: OutcomeView) =>
+    current.drawType === FIRST_ROUND_LOSER_CONSOLATION &&
+    args.request.matchUpStatus === DOUBLE_WALKOVER &&
+    args.request.flags.propagateExitStatus
+      ? convergingFinals(current, reading, id)
+      : undefined;
+  return certify(draw, view) && nestedDraft(args, draw, prefix, certify, applyConvergence);
 }

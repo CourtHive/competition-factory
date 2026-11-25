@@ -116,6 +116,12 @@ const ALLOWED = {
     'PLUMBING — the passage past a BYE-held matchUp (moved from producedExit.ts) abstains where a matchUp beyond holds codes and writes [] where v1 writes it; decides nothing on them',
   'mutate/matchUps/outcome/plan/producedTarget.ts':
     "PLUMBING — the produced target's write carries [] and its reader abstains where the target holds codes; decides nothing on them",
+  'mutate/matchUps/outcome/plan/nestedReservation.ts':
+    'WRITE — the bounded produced default and its conditional award reset the policy-code array; the source side comes from the link and carried provenance',
+  'mutate/matchUps/outcome/plan/nestedCarriedConvergence.ts':
+    'WRITE — the two convergences retain policy codes; the feeder and its exit are identified by the side-keyed provenance',
+  'mutate/matchUps/outcome/plan/nestedDraft.ts':
+    'PLUMBING — declines a client code array or an already coded target; no position in the array is consulted',
   'mutate/matchUps/outcome/plan/byeChain.ts':
     'PLUMBING — the BYE chain abstains where a matchUp it would write holds codes, and writes [] where v1 writes it; decides nothing on them',
   'mutate/matchUps/outcome/plan/carriedConvergence.ts':

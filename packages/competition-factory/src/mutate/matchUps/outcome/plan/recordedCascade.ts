@@ -24,7 +24,7 @@ import {
   POLICY_TYPE_SCORING,
 } from '@Constants/policyConstants';
 import type { DrawDefinition } from '@Types/tournamentTypes';
-import type { BuildViewArgs } from '../types';
+import type { BuildViewArgs, RecordCopy } from '../types';
 import type { OutcomeOp } from '../ops';
 
 /**
@@ -46,19 +46,33 @@ export function recordDoubleExitCascade(args: BuildViewArgs, prefix: OutcomeOp[]
 }
 
 function recordOnCopy(args: BuildViewArgs, prefix: OutcomeOp[]): OutcomeOp[] | undefined {
-  const { request } = args;
+  const request = args.request;
   const matchUpId = request.matchUpId as string;
-  if (!args.drawDefinition) return undefined;
-  // a first entry only: a decided or exited matchUp made a double exit is removed first (`removeWinningSideAndSetDoubleExit`)
-  const entered = args.matchUpsMap?.drawMatchUps.find((stored) => stored.matchUpId === matchUpId);
-  if (!entered || entered.winningSide || (entered.matchUpStatus && entered.matchUpStatus !== TO_BE_PLAYED))
-    return undefined;
+  if (!args.drawDefinition || !firstDoubleExitEntry(args, matchUpId)) return undefined;
   const stampedBefore = stampedInThisCall(args.drawDefinition);
   const { copy } = cloneState({
     tournamentRecord: args.tournamentRecord,
     drawDefinition: args.drawDefinition,
     event: args.event,
   });
+  return recordPreparedCascade(args, prefix, copy, stampedBefore, request, matchUpId);
+}
+
+/** The recorder admits only a source still standing before its first double exit. */
+export function firstDoubleExitEntry(args: BuildViewArgs, matchUpId: string) {
+  const entered = args.matchUpsMap?.drawMatchUps.find((stored) => stored.matchUpId === matchUpId);
+  return !!entered && !entered.winningSide && (!entered.matchUpStatus || entered.matchUpStatus === TO_BE_PLAYED);
+}
+
+/** Resume at the shipped clone boundary when the detached reading differs from a provisional native admission. */
+export function recordPreparedCascade(
+  args: BuildViewArgs,
+  prefix: OutcomeOp[],
+  copy: RecordCopy,
+  stampedBefore: Set<string>,
+  request: BuildViewArgs['request'],
+  matchUpId: string,
+) {
   const { tournamentRecord, event } = copy;
   const drawDefinition = copy.drawDefinition as DrawDefinition;
   const outside = () =>
