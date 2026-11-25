@@ -411,6 +411,10 @@ Mutations that set a format carry the same explanation with their refusal: in `i
 in `info.message` where the format fails parameter validation, and in `errors` from collection definition
 validation.
 
+`validateMatchUpFormat` and `isValidMatchUpFormat` are also `tools.formats.validateMatchUpFormat` and
+`tools.formats.isValidMatchUpFormat`, the same functions; `tools.formats` is their home in 8.0.0, when this governor is
+retired. The `isValid` alias is not carried over: use `isValidMatchUpFormat`.
+
 ---
 
 ## isValid / isValidMatchUpFormat

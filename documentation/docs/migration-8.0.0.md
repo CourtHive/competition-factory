@@ -29,7 +29,9 @@ scoreGovernor.validateMatchUpScore(sets, 'SET3-S:6/TB7');
 ```
 
 - `tools.formats` replaces the matchUpFormat governor's `parse`, `stringify`, `isAggregateFormat`, `finalSetGoverns` and
-  `aggregateDeciderSetNumber`, and the score governor's aliases `parseMatchUpFormat` / `stringifyMatchUpFormat`.
+  `aggregateDeciderSetNumber`, and the score governor's aliases `parseMatchUpFormat` / `stringifyMatchUpFormat`. It
+  also holds the format validators `isValidMatchUpFormat` and `validateMatchUpFormat`; the governor's `isValid` alias
+  has no `tools.formats` counterpart, so use `isValidMatchUpFormat`.
 - `tools.scoring` replaces the score governor's validators, scoring-engine state readers and point and statistics
   parsers.
 - The availability helpers stay on the `availability` export and leave the engines.
@@ -61,7 +63,7 @@ Each change below is planned for 8.0.0 and announced in 7.x; one marked _propose
 
 ### Engine and governor routes
 
-- **119 methods leave the production governors and engines.** See the [engine API transition](/docs/implementation/engine-api-transition-8) for the list, the replacement where one exists, and the standalone-export decision for each.
+- **117 methods leave the production governors and engines.** See the [engine API transition](/docs/implementation/engine-api-transition-8) for the list, the replacement where one exists, and the standalone-export decision for each.
 - **`matchUpFormatCode` and `matchUpFormatGovernor` are retired.** `tools.formats` is the single format surface, including the format validators.
 - **`addFinishingRounds`** leaves its governor, and **`applyDerivedRankings`** is available only as `tools.rankings.deriveRankingList`.
 - **`setMatchUpState`** is removed from the engine surface. Use `setMatchUpStatus`.
