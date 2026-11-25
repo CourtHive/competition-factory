@@ -450,6 +450,15 @@ export type Route =
   | 'refused'; // § 3's own refusals, v2's since S7 (`refuseRoute`): a BYE without a seat (row 28), the fallthrough (row 6)
 
 /** § 4: what the matchUp itself holds once the write has landed */
+export type ForwardByePhases = {
+  result: Extract<OutcomeOp, { op: 'setMatchUpResult' }>;
+  winner: Extract<OutcomeOp, { op: 'setMatchUpDrawPositions' }>[];
+  loser?: {
+    assignment: Extract<OutcomeOp, { op: 'assignPosition' }>;
+    placements: Extract<OutcomeOp, { op: 'setMatchUpDrawPositions' }>[];
+  };
+};
+
 export type MatchUpWrite = {
   /** The v1 write resets the result through the shared fixture. */
   resetsScore?: true;
@@ -698,6 +707,8 @@ export type OutcomePlan =
       phaseResult?: ResultType;
       /** An uncaptured native draft writer already consumed the clock at its ordered write boundaries. */
       draftClock?: true;
+      /** The BYE write consumed its captured clock inside the normal draft. */
+      projectedBye?: true;
     }
   | { abstain: AbstainReason; ops?: undefined; shape?: undefined };
 
@@ -742,6 +753,7 @@ export type SeatObligation = { kind: 'double-exit-seats'; targetMatchUpId?: stri
  * for it, and the composition points a plan folds one step on another with.
  */
 export type PlanArgs = {
+  projectBye?: () => { ops: OutcomeOp[] | undefined } | undefined;
   teamLine?: (plan: PlanArgs, why: 'team' | 'cascade') => OutcomePlan | undefined;
   clockFree?: boolean;
   tournamentRecord?: Tournament;
