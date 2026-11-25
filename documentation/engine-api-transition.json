@@ -1297,7 +1297,7 @@
       "engineDisposition": "scheduled-for-removal",
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
-      "replacement": null,
+      "replacement": "tools.rankings.getParticipantPoints",
       "destination": "implementation/records/getParticipantPoints",
       "previous": [
         {
@@ -1441,7 +1441,7 @@
       "engineDisposition": "scheduled-for-removal",
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
-      "replacement": null,
+      "replacement": "tools.rankings.getQualityWinPoints",
       "destination": "implementation/records/getQualityWinPoints",
       "previous": [
         {

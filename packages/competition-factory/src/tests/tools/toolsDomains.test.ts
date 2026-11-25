@@ -140,12 +140,14 @@ describe('tools.publishing takes the instant as an input', () => {
 });
 
 describe('tools.rankings', () => {
-  it('holds the award window and the derived-list function', () => {
+  it('holds the award window, the derived-list function and the points readers', () => {
     expect(Object.keys(tools.rankings).sort()).toEqual(
       [
         'DEFAULT_ROLLING_PERIOD_DAYS',
         'computeAwardWindow',
         'deriveRankingList',
+        'getParticipantPoints',
+        'getQualityWinPoints',
         'isAwardInWindow',
         'rollingPeriodDaysFrom',
       ].sort(),
@@ -154,6 +156,19 @@ describe('tools.rankings', () => {
 
   it('deriveRankingList is the ranking governor applyDerivedRankings, under a derivation name', () => {
     expect(tools.rankings.deriveRankingList).toBe(governors.rankingGovernor.applyDerivedRankings);
+  });
+
+  it.each(['getParticipantPoints', 'getQualityWinPoints'])('%s is the ranking governor function', (name) => {
+    expect(tools.rankings[name]).toBe(governors.rankingGovernor[name]);
+  });
+
+  it('totals one person from point awards', () => {
+    const pointAwards: any[] = [
+      { personId: 'p1', points: 100 },
+      { personId: 'p1', points: 50 },
+      { personId: 'p2', points: 70 },
+    ];
+    expect(tools.rankings.getParticipantPoints({ pointAwards, personId: 'p1' }).totalPoints).toEqual(150);
   });
 
   it('is the window generateRankingList applies', () => {

@@ -32,14 +32,14 @@ export function getQualityWinPoints({
 
 ## Consumer evidence
 
-The refreshed source-name scan found no name mentions in the scanned product source files. This does not establish external-integrator non-use. The manifest records repository revisions and scan exclusions. External-integrator review (2026-10-28) found no use, and the removal list was closed on 2026-11-22.
+The refreshed source-name scan found no name mentions in the scanned product source files. This does not establish external-integrator non-use. The manifest records repository revisions and scan exclusions. External-integrator review (2026-10-28) found no use, and the removal list was closed on 2026-11-22. A later integrator audit (2026-11-06) found it in use; that call moves to `tools.rankings.getQualityWinPoints`.
 
 ## Availability and ownership
 
 - **Production governor declarations:** `rankingGovernor`.
 - **Standalone package API after 8.0.0:** decision pending; this page does not establish a supported import.
 - **Implementation:** [`src/query/scales/getQualityWinPoints.ts` — `getQualityWinPoints`](https://github.com/CourtHive/competition-factory/blob/8c2aaca6801734223ef1e0a8127872344373fbd5/src/query/scales/getQualityWinPoints.ts). Source paths and aliases are not package import paths.
-- **Replacement workflow:** not yet established; no supported replacement is promised.
+- **Replacement workflow:** use `tools.rankings.getQualityWinPoints` (available from 7.49).
 - **Test-only adapters:** may exercise this implementation independently of production engine exports; this is not evidence of product use.
 
 ## Preserved 7.x reference
