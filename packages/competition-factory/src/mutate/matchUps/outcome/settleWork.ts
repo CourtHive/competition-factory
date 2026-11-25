@@ -73,7 +73,7 @@ type SettleWorkArgs = {
   /** the call's own matchUp, which `settleRederivedDoubleExits` leaves to the call's own write */
   matchUpId?: string;
   tournamentRecord?: Tournament;
-  working: WorkingView;
+  working: Pick<WorkingView, 'drawDefinition' | 'inContextDrawMatchUps' | 'matchUpsMap'>;
   ops: OutcomeOp[];
   event?: Event;
 };
