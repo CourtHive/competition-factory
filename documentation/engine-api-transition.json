@@ -764,7 +764,7 @@
         "line": 17
       },
       "governors": ["generationGovernor"],
-      "engineDisposition": "scheduled-for-removal",
+      "engineDisposition": "retained",
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
       "replacement": null,
@@ -1126,7 +1126,7 @@
         "line": 85
       },
       "governors": ["eventGovernor", "queryGovernor"],
-      "engineDisposition": "scheduled-for-removal",
+      "engineDisposition": "retained",
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
       "replacement": null,

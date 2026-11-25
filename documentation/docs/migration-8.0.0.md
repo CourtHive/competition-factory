@@ -63,7 +63,7 @@ Each change below is planned for 8.0.0 and announced in 7.x; one marked _propose
 
 ### Engine and governor routes
 
-- **119 methods leave the production governors and engines.** See the [engine API transition](/docs/implementation/engine-api-transition-8) for the list, the replacement where one exists, and the standalone-export decision for each.
+- **117 methods leave the production governors and engines.** See the [engine API transition](/docs/implementation/engine-api-transition-8) for the list, the replacement where one exists, and the standalone-export decision for each.
 - **`matchUpFormatCode` and `matchUpFormatGovernor` are retired.** `tools.formats` is the single format surface, including the format validators.
 - **`addFinishingRounds`** leaves its governor, and **`applyDerivedRankings`** is available only as `tools.rankings.deriveRankingList`.
 - **`setMatchUpState`** is removed from the engine surface. Use `setMatchUpStatus`.
