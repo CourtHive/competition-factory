@@ -271,6 +271,7 @@ jobs:
       - name: verify:notice-diagnostics (compiled attempted writes and passive controls)
         run: |
           pnpm verify:notice-diagnostics
+          pnpm exec vitest run --project notice-diagnostics --maxWorkers=1
           NOTICE_PAYLOAD_WRITE_CHECK=1 OUTCOME_PIPELINE=differential pnpm exec vitest run --maxWorkers=1 src/tests/global/state/noticePayloadAuditSwitch.test.ts
 
       - name: verify:publint

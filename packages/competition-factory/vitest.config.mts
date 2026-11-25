@@ -67,6 +67,19 @@ const noticeDiagnosticFiles = [
   'src/tests/global/state/noticePayloadRecordedGroup.test.ts',
 ];
 const auditNoticeWrites = process.env.NOTICE_PAYLOAD_WRITE_CHECK === '1';
+// The audit and ordinary engines have different source maps for the same four module IDs.
+// Combining their V8 maps double-counts statements. Measure one graph per coverage run.
+const coverageRun = process.argv.some((arg) => /^--coverage(?:\.enabled)?(?:=true)?$/.test(arg));
+const noticeDiagnosticProjects =
+  !coverageRun || auditNoticeWrites
+    ? [
+        {
+          extends: true as const,
+          plugins: auditNoticeWrites ? [] : [noticeDiagnosticPlugin()],
+          test: { name: 'notice-diagnostics', include: noticeDiagnosticFiles, isolate: true },
+        },
+      ]
+    : [];
 const isolatedFiles = [
   ...testFiles('src').filter(
     (path) => !noticeDiagnosticFiles.includes(path) && MOCKS_A_MODULE.test(readFileSync(path, 'utf8')),
@@ -93,11 +106,7 @@ export default defineConfig({
     exclude: testExclude,
     // see TEST ISOLATION above
     projects: [
-      {
-        extends: true,
-        plugins: auditNoticeWrites ? [] : [noticeDiagnosticPlugin()],
-        test: { name: 'notice-diagnostics', include: noticeDiagnosticFiles, isolate: true },
-      },
+      ...noticeDiagnosticProjects,
       { extends: true, test: { name: 'isolated', include: isolatedFiles, isolate: true } },
       {
         extends: true,
