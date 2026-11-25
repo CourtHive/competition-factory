@@ -30,6 +30,8 @@ it.each([
   { seed: 371, size: 16, block: 0, status: DOUBLE_DEFAULT, change: 'none' },
   { seed: 371, size: 16, block: 0, status: DOUBLE_WALKOVER, change: 'stale' },
   { seed: 371, size: 16, block: 0, status: DOUBLE_WALKOVER, change: 'borrowed' },
+  { seed: 371, size: 16, block: 0, status: DOUBLE_WALKOVER, change: 'external' },
+  { seed: 371, size: 16, block: 0, status: DOUBLE_WALKOVER, change: 'origin' },
 ] as const)(
   'carries the vacant loser seat through the intersecting BYE on a fresh $size draw (block $block, $change)',
   ({ seed, size, block, status, change }) => {
@@ -55,6 +57,11 @@ it.each([
       };
       const play = (matchUpId: string, outcome: Outcome) =>
         tournamentEngine.setMatchUpStatus({ drawId, matchUpId, outcome, propagateExitStatus: false });
+      if (change === 'origin') {
+        expect(play(at('MAIN', 1, 5).matchUpId, { matchUpStatus: DOUBLE_DEFAULT }).success).toBe(true);
+        expect(play(at('MAIN', 1, 6).matchUpId, { winningSide: 2 }).success).toBe(true);
+        expect(play(at('MAIN', 1, 7).matchUpId, { matchUpStatus: DOUBLE_WALKOVER }).success).toBe(true);
+      }
       for (const [stage, round, position, outcome] of history)
         expect(
           play(at(stage, round, position).matchUpId, stage === 'CONSOLATION' ? { matchUpStatus: status } : outcome)
@@ -77,6 +84,15 @@ it.each([
         if (change === 'stale') {
           const elsewhere = matchUpsOf(main)!.find((m) => m.roundNumber === 1 && m.roundPosition === 8)!;
           elsewhere.schedule = { scoredTime: '2026-11-08T11:00:00.000Z' };
+          changedId = elsewhere.matchUpId;
+        } else if (change === 'external') {
+          const matchUp = matchUpsOf(consolation)!.find((m) => m.matchUpId === loser.matchUpId)!;
+          Object.assign(args.tournamentRecord!, { relatedMatch: matchUp });
+          changedId = matchUp.matchUpId;
+        } else if (change === 'origin') {
+          const elsewhere = matchUpsOf(main)!.find((m) => m.roundNumber === 1 && m.roundPosition === 7)!;
+          elsewhere.matchUpStatus = 'TO_BE_PLAYED';
+          delete elsewhere.schedule;
           changedId = elsewhere.matchUpId;
         } else {
           onStamp = () => {
