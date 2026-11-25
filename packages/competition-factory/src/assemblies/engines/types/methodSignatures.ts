@@ -969,7 +969,6 @@ export interface MethodSignatures {
   generateScoreString: EngineMethod<typeof generateScoreString>;
   generateSeason: EngineMethod<typeof generateSeason>;
   generateSeedingScaleItems: EngineMethod<typeof generateSeedingScaleItems>;
-  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   generateStatCrew: EngineMethod<typeof generateStatCrew>;
   generateSwissRound: EngineMethod<typeof generateSwissRound>;
   generateTieMatchUpScore: EngineMethod<typeof generateTieMatchUpScore>;
@@ -1054,7 +1053,6 @@ export interface MethodSignatures {
   /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   getEventEntryFees: EngineMethod<typeof getEventEntryFees>;
   getEventEntrySpace: EngineMethod<typeof getEventEntrySpace>;
-  /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   getEventInconsistencies: EngineMethod<typeof getEventInconsistencies>;
   getEventMatchUpFormatTiming: EngineMethod<typeof getEventMatchUpFormatTiming>;
   getEventPlayingDates: EngineMethod<typeof getEventPlayingDates>;
