@@ -1,3 +1,4 @@
+import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { buildSideExitProvenance, mergeSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { modifyMatchUpNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import {
@@ -74,6 +75,18 @@ function reservation(draw: DrawDefinition, view: OutcomeView, id: string, occupi
     !openNestedTarget(crossing)
   )
     return;
+  const advancing = getSideDrawPosition({
+    drawDefinition: draw,
+    structureId: consolation.structureId,
+    matchUp: loser,
+    sideNumber: 1,
+  });
+  const fed = getSideDrawPosition({
+    drawDefinition: draw,
+    structureId: consolation.structureId,
+    matchUp: loser,
+    sideNumber: 2,
+  });
   const paired = mainMatches.find((m) => m !== source && m.winnerMatchUpId === pending.matchUpId);
   if (
     paired?.loserMatchUpId !== loser.matchUpId ||
@@ -92,14 +105,14 @@ function reservation(draw: DrawDefinition, view: OutcomeView, id: string, occupi
     crossing.roundPosition % 2 ||
     loser.drawPositions?.length !== 2 ||
     crossing.drawPositions?.length !== 1 ||
-    crossing.drawPositions[0] !== seat.drawPosition ||
-    loser.drawPositions[1] !== targets.loserTargetDrawPosition ||
+    !crossing.drawPositions.includes(seat.drawPosition) ||
+    !fed ||
+    fed !== targets.loserTargetDrawPosition ||
     onward.winningSide ||
     onward.sideExitProvenance?.[2]
   )
     return;
   const origin = onward.sideExitProvenance?.[1];
-  const advancing = loser.drawPositions[0];
   const assignments = positionAssignmentsOf(consolation) ?? [];
   const at = (dp: number) => assignments.find((a) => a.drawPosition === dp);
   const vacant = (dp: number) => {
@@ -107,14 +120,7 @@ function reservation(draw: DrawDefinition, view: OutcomeView, id: string, occupi
     return a && Object.keys(a).length === 1;
   };
   const assignment = at(seat.drawPosition);
-  if (
-    !assignment ||
-    !advancing ||
-    advancing <= seat.drawPosition ||
-    !vacant(seat.drawPosition) ||
-    !vacant(loser.drawPositions[1])
-  )
-    return;
+  if (!assignment || !advancing || advancing <= seat.drawPosition || !vacant(seat.drawPosition) || !vacant(fed)) return;
   const shared = { source, pending, loser, crossing, onward, consolation, assignment, advancing };
   if (!occupied) {
     const previous = matches.find((m) => m.matchUpId === origin?.sourceMatchUpId);
@@ -140,24 +146,31 @@ function reservation(draw: DrawDefinition, view: OutcomeView, id: string, occupi
   const feeder = matches.find((m) => m.matchUpId === first?.winnerMatchUpId);
   const consolationFinal = matches.find((m) => m.matchUpId === onward.winnerMatchUpId);
   const mainNext = mainMatches.find((m) => m.matchUpId === pending.winnerMatchUpId);
+  const mainPosition = pending.drawPositions?.find(Boolean);
+  const mainWaiting = mainNext?.drawPositions?.find(Boolean);
+  const consolationWaiting = onward.drawPositions?.find(Boolean);
   if (
     !paired ||
     paired.matchUpStatus !== COMPLETED ||
     paired.winningSide !== 1 ||
     pending.drawPositions?.length !== 1 ||
-    pending.drawPositions[0] !== paired.drawPositions?.[0] ||
+    !mainPosition ||
+    mainPosition !==
+      getSideDrawPosition({ drawDefinition: draw, structureId: main.structureId, matchUp: paired, sideNumber: 1 }) ||
     !mainNext ||
     !openNestedTarget(mainNext) ||
     mainNext.drawPositions?.length !== 1 ||
-    mainNext.drawPositions[0] >= pending.drawPositions[0] ||
+    !mainWaiting ||
+    mainWaiting >= mainPosition ||
     !consolationFinal ||
     !openNestedTarget(consolationFinal) ||
     consolationFinal.drawPositions?.length !== 0 ||
     consolationFinal.winnerMatchUpId ||
     consolationFinal.loserMatchUpId ||
     onward.drawPositions?.length !== 1 ||
-    !vacant(onward.drawPositions[0]) ||
-    onward.drawPositions[0] >= advancing ||
+    !consolationWaiting ||
+    !vacant(consolationWaiting) ||
+    consolationWaiting >= advancing ||
     !at(advancing)?.participantId ||
     onward.matchUpStatus !== DEFAULTED ||
     origin?.previousMatchUpStatus !== DOUBLE_DEFAULT ||
@@ -174,9 +187,9 @@ function reservation(draw: DrawDefinition, view: OutcomeView, id: string, occupi
     paired,
     mainNext,
     consolationFinal,
-    mainPosition: pending.drawPositions[0],
-    mainWaiting: mainNext.drawPositions[0],
-    consolationWaiting: onward.drawPositions[0],
+    mainPosition,
+    mainWaiting,
+    consolationWaiting,
   };
   return { ...shared, arrivals };
 }
@@ -252,9 +265,12 @@ export function nestedReservationSuffix(args: BuildViewArgs, view: OutcomeView, 
     !plainNestedPrefix(args, view, prefix)
   )
     return;
-  const seats = reservation(draw, view, id, args.request.flags.propagateExitStatus === true);
-  if (!seats) return;
-  return nestedDraft(args, draw, prefix, seats, (copy, r) => {
+  const certify = (current: DrawDefinition, reading: OutcomeView) =>
+    current.drawType === FIRST_MATCH_LOSER_CONSOLATION && args.request.matchUpStatus === DOUBLE_DEFAULT
+      ? reservation(current, reading, id, args.request.flags.propagateExitStatus === true)
+      : undefined;
+  if (!certify(draw, view)) return;
+  return nestedDraft(args, draw, prefix, certify, (copy, r) => {
     applyReservation(copy, r);
     const matches = [r.pending, r.loser, r.crossing, r.onward];
     if (r.arrivals) matches.push(r.arrivals.mainNext, r.arrivals.consolationFinal);

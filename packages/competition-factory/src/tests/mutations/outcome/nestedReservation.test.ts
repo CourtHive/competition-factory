@@ -2,6 +2,8 @@ import { getDrawDefinition, getDrawMatchUps } from '@Tests/testHarness/exitPropa
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
 import { getOutcomePipeline, getProvider, setOutcomePipeline, setStateProvider } from '@Global/state/globalState';
 import { inDraftWrites } from '@Global/state/withDraftWrites';
+import * as reservations from '@Mutate/matchUps/outcome/plan/nestedReservation';
+import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import * as cascade from '@Mutate/matchUps/outcome/plan/recordedCascade';
 import * as whole from '@Mutate/matchUps/outcome/plan/recordedCall';
 import tournamentEngine from '@Engines/syncEngine';
@@ -23,12 +25,14 @@ const history: [string, number, number, Outcome][] = [
 ];
 
 it.each([
-  { seed: 371, size: 16, block: 0, status: DOUBLE_WALKOVER },
-  { seed: 9173, size: 32, block: 1, status: DOUBLE_WALKOVER },
-  { seed: 371, size: 16, block: 0, status: DOUBLE_DEFAULT },
+  { seed: 371, size: 16, block: 0, status: DOUBLE_WALKOVER, change: 'none' },
+  { seed: 9173, size: 32, block: 1, status: DOUBLE_WALKOVER, change: 'none' },
+  { seed: 371, size: 16, block: 0, status: DOUBLE_DEFAULT, change: 'none' },
+  { seed: 371, size: 16, block: 0, status: DOUBLE_WALKOVER, change: 'stale' },
+  { seed: 371, size: 16, block: 0, status: DOUBLE_WALKOVER, change: 'borrowed' },
 ] as const)(
-  'carries the vacant loser seat through the intersecting BYE on a fresh $size draw (block $block)',
-  ({ seed, size, block, status }) => {
+  'carries the vacant loser seat through the intersecting BYE on a fresh $size draw (block $block, $change)',
+  ({ seed, size, block, status, change }) => {
     const pipeline = getOutcomePipeline(),
       provider = getProvider();
     const drawId = 'nested-' + seed;
@@ -61,21 +65,57 @@ it.each([
       const crossing = at('CONSOLATION', 2, 2),
         onward = at('CONSOLATION', 3, 1);
       expect(onward.matchUpStatus).toBe(status === DOUBLE_DEFAULT ? DEFAULTED : WALKOVER);
+      let onStamp: (() => void) | undefined;
+      let changedId: string | undefined;
+      const prepare = reservations.nestedReservationSuffix;
+      vi.spyOn(reservations, 'nestedReservationSuffix').mockImplementation((args, view, prefix) => {
+        const run = prepare(args, view, prefix);
+        if (!run || change === 'none') return run;
+        const draw = args.drawDefinition!;
+        const main = draw.structures!.find((s) => s.stage === 'MAIN')!;
+        const consolation = draw.structures!.find((s) => s.stage === 'CONSOLATION')!;
+        if (change === 'stale') {
+          const elsewhere = matchUpsOf(main)!.find((m) => m.roundNumber === 1 && m.roundPosition === 8)!;
+          elsewhere.schedule = { scoredTime: '2026-11-08T11:00:00.000Z' };
+          changedId = elsewhere.matchUpId;
+        } else {
+          onStamp = () => {
+            const target = positionAssignmentsOf(consolation)!.find((a) => a.drawPosition === loser.drawPositions[0])!;
+            target.participantId = positionAssignmentsOf(main)!.find((a) => a.participantId)!.participantId;
+            changedId = source.matchUpId;
+          };
+        }
+        return run;
+      });
+      const preparedFallback = vi.spyOn(cascade, 'recordPreparedCascade');
       const nested = vi.spyOn(cascade, 'recordDoubleExitCascade');
       const wholeCall = vi.spyOn(whole, 'recordWholeCall');
       const adds: { draft: boolean; key?: string }[] = [];
       setStateProvider({
         ...provider,
+        getCapturedStamps() {
+          const changeRecord = onStamp;
+          onStamp = undefined;
+          changeRecord?.();
+          return provider.getCapturedStamps?.();
+        },
         addNotice(...args: Parameters<AddNotice>) {
           adds.push({ draft: inDraftWrites(), key: args[0].key });
           return (provider.addNotice as AddNotice).apply(provider, args);
         },
       });
       expect(play(source.matchUpId, { matchUpStatus: DOUBLE_DEFAULT }).success).toBe(true);
+      if (change !== 'none') {
+        expect(changedId).toBeDefined();
+        expect(preparedFallback).toHaveBeenCalledOnce();
+        if (change === 'stale') expect(adds.some((n) => n.draft && n.key === changedId)).toBe(true);
+        return;
+      }
       if (status === DOUBLE_DEFAULT) {
         expect(nested).toHaveBeenCalledOnce();
         return;
       }
+      expect(preparedFallback).not.toHaveBeenCalled();
       expect(nested).not.toHaveBeenCalled();
       expect(wholeCall).not.toHaveBeenCalled();
       expect(adds.filter((n) => n.draft).map((n) => n.key)).toEqual([
