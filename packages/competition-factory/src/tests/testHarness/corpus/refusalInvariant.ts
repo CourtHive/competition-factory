@@ -1,6 +1,7 @@
 import allowlist from './refusalAllowlist.json';
 import { relative } from 'node:path';
 import { getTournamentRecords, readMutationStatus } from '@Global/state/globalState';
+import { setBulkItemObserver } from '@Mutate/bulkItem';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { generatePatch } from '@Tools/jsonPatch';
 import { isDeepStrictEqual } from 'node:util';
@@ -163,10 +164,8 @@ function traceItem<T>(run: () => T): T {
   return result instanceof Promise ? (result.then(close) as T) : close(result);
 }
 
-vi.mock('@Mutate/bulkItem', async (original) => {
-  const actual = await original<typeof import('@Mutate/bulkItem')>();
-  return { ...actual, bulkItem: (run: () => unknown) => traceItem(() => actual.bulkItem(run)) };
-});
+// installed, not mocked: a worker that shares modules across files keeps the bulkItem it first loaded
+setBulkItemObserver(traceItem);
 vi.mock('@Assemblies/engines/sync/engineInvoke', async (original) => {
   const actual = await original<typeof import('@Assemblies/engines/sync/engineInvoke')>();
   return {
