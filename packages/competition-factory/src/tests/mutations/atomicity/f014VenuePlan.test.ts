@@ -25,7 +25,7 @@ import {
 } from '@Constants/errorConditionConstants';
 
 /**
- * F-014: a venue edit is planned whole before it writes: the venue's attributes, paired default times and date
+ * A venue edit is planned whole before it writes: the venue's attributes, paired default times and date
  * availability, the courts it deletes (scheduled matchUps, force or policy, and the schedule clears), each court it
  * modifies or adds (availability and scheduled conflicts included), and any scheduling-profile repair, in every record
  * that holds the venue. Before the fix a refused court left the venue's new name, abbreviation and earlier courts behind.
@@ -129,7 +129,7 @@ const lateRefusals = () => {
   ];
 };
 
-describe('F-014 venue edit', () => {
+describe('a venue edit is planned whole before it writes', () => {
   for (const mode of OUTCOME_MODES) {
     for (const borrowed of [false, true]) {
       it(`${mode}, borrowed=${borrowed}: the finding fixtures leave the record unchanged`, () => {
