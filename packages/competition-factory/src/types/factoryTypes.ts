@@ -741,6 +741,8 @@ export type AddScheduleAttributeArgs = {
   disableNotice?: boolean;
   matchUpId: string;
   event?: Event;
+  /** a schedule plan's working copy of the matchUp, written in its place; internal (a caller's `matchUp` is never written) */
+  workingMatchUp?: MatchUp;
 };
 
 export type MatchUpFilters = {

@@ -70,9 +70,41 @@ function venueAdd({ tournamentRecord, disableNotice, context, venue }: AddVenueA
   if (paramsCheck.error) return paramsCheck;
   if (!venue) return { error: MISSING_VALUE, info: 'missing venue' };
 
+  const prepared = prepareVenue({ tournamentRecord, context, venue });
+  if (prepared.error || !prepared.venue) return prepared;
+  venue = prepared.venue;
+
+  const clearedPrimaryVenues = venue.isPrimary ? clearPrimaryVenue({ tournamentRecord }) : [];
+
+  tournamentRecord.venues ??= [];
+  tournamentRecord.venues.push(venue);
+
+  if (!disableNotice) {
+    addNotice({
+      payload: { venue, tournamentId: tournamentRecord.tournamentId },
+      topic: ADD_VENUE,
+    });
+  }
+
+  return { ...SUCCESS, venue: makeDeepCopy(venue), clearedPrimaryVenues };
+}
+
+/**
+ * The venue a record would store, without storing it: a copy with its id, refused when the record already holds the id
+ * or its availability or default times are not valid, with availability and times canonical.
+ */
+function prepareVenue({
+  tournamentRecord,
+  context,
+  venue: given,
+}: {
+  context?: AddVenueArgs['context'];
+  tournamentRecord: Tournament;
+  venue: Venue;
+}): { error?: ErrorType; info?: string; venue?: Venue } {
   // each record stores its own copy, so neither the caller's object nor another record's venue is written; `venues`
   // is created only when a venue is stored (a refusal writes nothing)
-  venue = makeDeepCopy({ ...venue, venueId: venue.venueId ?? UUID() }, false, true);
+  const venue = makeDeepCopy({ ...given, venueId: given.venueId ?? UUID() }, false, true);
 
   const venueExists = (tournamentRecord.venues ?? []).some((existingVenue) => existingVenue.venueId === venue.venueId);
   if (venueExists) {
@@ -104,17 +136,21 @@ function venueAdd({ tournamentRecord, disableNotice, context, venue }: AddVenueA
     addExtension({ element: venue, extension });
   }
 
-  const clearedPrimaryVenues = venue.isPrimary ? clearPrimaryVenue({ tournamentRecord }) : [];
+  return { venue };
+}
 
-  tournamentRecord.venues ??= [];
-  tournamentRecord.venues.push(venue);
-
-  if (!disableNotice) {
-    addNotice({
-      payload: { venue, tournamentId: tournamentRecord.tournamentId },
-      topic: ADD_VENUE,
-    });
-  }
-
-  return { ...SUCCESS, venue: makeDeepCopy(venue), clearedPrimaryVenues };
+/**
+ * A schedule plan's copy of a venue only a linked record holds (assignMatchUpVenue): prepared and validated now, the
+ * commit stores it, taking the primary flag as an added venue does. Nothing is announced, as nothing was when the
+ * schedule writer copied it. Undefined when the copy is refused; the assignment goes ahead without it, as before.
+ */
+export function planVenueCopy({ tournamentRecord, venue }: { tournamentRecord: Tournament; venue: Venue }) {
+  const prepared = prepareVenue({ tournamentRecord, venue });
+  if (prepared.error || !prepared.venue) return undefined;
+  const copy = prepared.venue;
+  return () => {
+    if (copy.isPrimary) clearPrimaryVenue({ tournamentRecord });
+    tournamentRecord.venues ??= [];
+    tournamentRecord.venues.push(copy);
+  };
 }

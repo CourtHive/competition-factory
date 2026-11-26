@@ -3,7 +3,6 @@
     "F-008": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-0b8ef85b5d4aa8db9b085f1d1e019de0a73c30248cc29089e82caaf0ac55bdc1",
     "F-009": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-b467984b227aa55a3dcdfec53ffc92b110b657eb1253862d74c58bf7c918dadb",
     "F-014": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-6ca70d9c78e30736cbac87cf97189d8737db673dbcb28b24721f55386a94ce84",
-    "F-007": "https://github.com/CourtHive/competition-factory/pull/6503",
     "F-016-exit-walk": "A public BYE placement whose walk meets an exit keeps the writer: a loser seat filled ahead of its feeder, or (malformed) a repeated matchUpId past a resolved exit, refuses after the main writes (f016ExitWalkResidual.test.ts)",
     "cascadeWriteErrorsReachTheCaller": "Forced downstream write error",
     "reconcileDeciderReturnsItsError": "Injected reconciliation failure",
@@ -788,54 +787,6 @@
         "pending": true
       }
     ],
-    "src/tests/mutations/scheduling/proConflicts.test.ts::proConflicts - Comprehensive Conflict Detection > prevents double booking of same court slot (courtId, courtOrder, scheduledDate)": [
-      {
-        "method": "addMatchUpScheduleItems",
-        "error": "ERR_SCHEDULE_CONFLICT_DOUBLE_BOOKING",
-        "reason": "F-007",
-        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/1/schedule"]
-      }
-    ],
-    "src/tests/mutations/scheduling/scheduleMatchUps.test.ts::[writeMode: legacy] > can schedule many attributes at once": [
-      {
-        "method": "addMatchUpScheduleItems",
-        "error": "ERR_INVALID_RESUME_TIME",
-        "reason": "F-007",
-        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"]
-      },
-      {
-        "method": "addMatchUpScheduleItems",
-        "error": "ERR_INVALID_STOP_TIME",
-        "reason": "F-007",
-        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"]
-      },
-      {
-        "method": "addMatchUpScheduleItems",
-        "error": "ERR_INVALID_END_TIME",
-        "reason": "F-007",
-        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"]
-      }
-    ],
-    "src/tests/mutations/scheduling/scheduleMatchUps.test.ts::[writeMode: native] > can schedule many attributes at once": [
-      {
-        "method": "addMatchUpScheduleItems",
-        "error": "ERR_INVALID_RESUME_TIME",
-        "reason": "F-007",
-        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"]
-      },
-      {
-        "method": "addMatchUpScheduleItems",
-        "error": "ERR_INVALID_STOP_TIME",
-        "reason": "F-007",
-        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"]
-      },
-      {
-        "method": "addMatchUpScheduleItems",
-        "error": "ERR_INVALID_END_TIME",
-        "reason": "F-007",
-        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"]
-      }
-    ],
     "src/tests/mutations/subscriptions/inContextNoticeAfterSuccess.test.ts::updateInContextMatchUp > is never built, nor sent, for a call refused after its write": [
       {
         "method": "setMatchUpStatus",
@@ -869,22 +820,6 @@
         "error": "ERR_INVALID_TIME",
         "reason": "F-014",
         "paths": ["/venues/0/courts", "/venues/0/venueAbbreviation", "/venues/0/venueName"]
-      }
-    ],
-    "src/tests/refactoring/scheduleCoverage.test.ts::addMatchUpTimeModifiers coverage > returns error for non-array timeModifiers": [
-      {
-        "method": "addMatchUpScheduleItems",
-        "error": "ERR_INVALID_VALUES",
-        "reason": "F-007",
-        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule"]
-      }
-    ],
-    "src/tests/refactoring/scheduleCoverage.test.ts::proConflictDetection in addMatchUpScheduleItems > detects double-booking when proConflictDetection is true": [
-      {
-        "method": "addMatchUpScheduleItems",
-        "error": "ERR_SCHEDULE_CONFLICT_DOUBLE_BOOKING",
-        "reason": "F-007",
-        "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/1/schedule"]
       }
     ]
   }

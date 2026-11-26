@@ -6,7 +6,7 @@ import { addTimeItem } from '@Mutate/timeItems//addTimeItem';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 
 // constants and types
-import { DrawDefinition, Event, TimeItem, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, MatchUp, TimeItem, Tournament } from '@Types/tournamentTypes';
 import { MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { CHECK_IN, CHECK_OUT } from '@Constants/timeItemConstants';
 import type { PresenceAttestation } from '@Types/presenceTypes';
@@ -27,6 +27,8 @@ type AddMatchUpTimeItem = {
   timeItem: TimeItem;
   matchUpId: string;
   event?: Event;
+  /** a schedule plan's working copy of the matchUp, written in its place; internal (a caller's `matchUp` is never written) */
+  workingMatchUp?: MatchUp;
 };
 export function addMatchUpTimeItem({
   removePriorValues,
@@ -37,8 +39,9 @@ export function addMatchUpTimeItem({
   matchUpId,
   timeItem,
   event,
+  workingMatchUp,
 }: AddMatchUpTimeItem) {
-  const { matchUp } = findDrawMatchUp({ drawDefinition, event, matchUpId });
+  const matchUp = workingMatchUp ?? findDrawMatchUp({ drawDefinition, event, matchUpId }).matchUp;
   if (!matchUp) return { error: MATCHUP_NOT_FOUND };
 
   if (PLAY_TIME_ITEM_TYPES.has(timeItem?.itemType ?? '')) {

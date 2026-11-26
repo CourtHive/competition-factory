@@ -23,6 +23,8 @@ type AddScheduleAttributeArgs = {
   disableNotice?: boolean;
   matchUpId: string;
   event?: Event;
+  /** a schedule plan's working copy of the matchUp, written in its place; internal (a caller's `matchUp` is never written) */
+  workingMatchUp?: MatchUp;
 };
 
 type AddMatchUpScheduledTimeArgs = {
@@ -35,6 +37,8 @@ type AddMatchUpScheduledTimeArgs = {
   scheduledTime?: string;
   matchUpId?: string;
   matchUp?: MatchUp;
+  /** a schedule plan's working copy of the matchUp, written in its place; internal (a caller's `matchUp` is never written) */
+  workingMatchUp?: MatchUp;
 };
 
 export const DATE_TIME_ANOTHER_DAY = "a scheduledTime's date must be the matchUp's scheduledDate";
@@ -47,9 +51,9 @@ export function datedOnAnotherDay(matchUp: MatchUp | undefined, day: string): bo
 
 export function addMatchUpScheduledTime(params: AddMatchUpScheduledTimeArgs) {
   const stack = 'addMatchUpScheduledTime';
-  let matchUp = params.matchUp;
-
   const { removePriorValues, tournamentRecord, drawDefinition, disableNotice, scheduledTime, matchUpId } = params;
+  const { workingMatchUp } = params;
+  let matchUp = workingMatchUp ?? params.matchUp;
 
   if (!matchUpId) return decorateResult({ result: { error: MISSING_MATCHUP_ID }, stack });
 
@@ -84,6 +88,7 @@ export function addMatchUpScheduledTime(params: AddMatchUpScheduledTimeArgs) {
       scheduledDate: timeDate,
       removePriorValues,
       tournamentRecord,
+      workingMatchUp,
       drawDefinition,
       disableNotice,
       matchUpId,
@@ -101,6 +106,7 @@ export function addMatchUpScheduledTime(params: AddMatchUpScheduledTimeArgs) {
       removePriorValues,
       tournamentRecord,
       timeModifiers: [],
+      workingMatchUp,
       drawDefinition,
       matchUpId,
       matchUp,
@@ -115,6 +121,7 @@ export function addMatchUpScheduledTime(params: AddMatchUpScheduledTimeArgs) {
     value: clearing ? undefined : canonicalTime(scheduledTime),
     removePriorValues,
     tournamentRecord,
+    workingMatchUp,
     drawDefinition,
     disableNotice,
     matchUpId,
@@ -127,13 +134,15 @@ export function addMatchUpTimeModifiers({
   tournamentRecord,
   drawDefinition,
   disableNotice,
+  workingMatchUp,
   timeModifiers,
   matchUpId,
-  matchUp,
+  ...params
 }: AddScheduleAttributeArgs & {
   matchUp?: MatchUp;
   timeModifiers: string[];
 }) {
+  let matchUp = workingMatchUp ?? params.matchUp;
   const stack = 'addMatchUpTimeModifiers';
   if (!matchUpId) return decorateResult({ result: { error: MISSING_MATCHUP_ID }, stack });
 
@@ -166,6 +175,7 @@ export function addMatchUpTimeModifiers({
       removePriorValues,
       scheduledTime: '',
       tournamentRecord,
+      workingMatchUp,
       drawDefinition,
       matchUpId,
     });
@@ -182,6 +192,7 @@ export function addMatchUpTimeModifiers({
     value: itemValue,
     removePriorValues,
     tournamentRecord,
+    workingMatchUp,
     drawDefinition,
     disableNotice,
     matchUpId,

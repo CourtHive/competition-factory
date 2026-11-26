@@ -21,8 +21,6 @@ import { getParticipants } from '@Query/participants/getParticipants';
 import { checkPlayedOrder, PendingPlacements } from './playedOrder';
 import { eventDateWarning } from '@Query/events/eventDateWarning';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { withDraftWrites } from '@Global/state/withDraftWrites';
-import { replayedInstants } from '@Tools/replayedInstants';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { findParticipant } from '@Acquire/findParticipant';
 import { validTimeString } from '@Tools/dateTimePatterns';
@@ -76,6 +74,7 @@ import {
   MISSING_TOURNAMENT_RECORD,
   MISSING_PARTICIPANT_ID,
   PARTICIPANT_NOT_FOUND,
+  MATCHUP_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
 import {
   START_TIME,
@@ -110,6 +109,7 @@ function timeDate(value, scheduledDate) {
 }
 
 function applyScheduleTiming({
+  workingMatchUp,
   removePriorValues,
   tournamentRecord,
   drawDefinition,
@@ -141,6 +141,7 @@ function applyScheduleTiming({
     const result = setMatchUpCalledAt({
       disableNotice: true,
       tournamentRecord,
+      workingMatchUp,
       drawDefinition,
       matchUpId,
       calledAt,
@@ -155,6 +156,7 @@ function applyScheduleTiming({
       disableNotice: true,
       removePriorValues,
       tournamentRecord,
+      workingMatchUp,
       drawDefinition,
       scheduledDate,
       matchUpId,
@@ -169,6 +171,7 @@ function applyScheduleTiming({
       disableNotice: true,
       removePriorValues,
       tournamentRecord,
+      workingMatchUp,
       drawDefinition,
       matchUpId,
       matchUp,
@@ -182,6 +185,7 @@ function applyScheduleTiming({
       disableNotice: true,
       removePriorValues,
       tournamentRecord,
+      workingMatchUp,
       drawDefinition,
       matchUpId,
       startTime,
@@ -194,6 +198,7 @@ function applyScheduleTiming({
       disableNotice: true,
       removePriorValues,
       tournamentRecord,
+      workingMatchUp,
       drawDefinition,
       matchUpId,
       stopTime,
@@ -206,6 +211,7 @@ function applyScheduleTiming({
       disableNotice: true,
       removePriorValues,
       tournamentRecord,
+      workingMatchUp,
       drawDefinition,
       resumeTime,
       matchUpId,
@@ -219,6 +225,7 @@ function applyScheduleTiming({
       disableNotice: true,
       removePriorValues,
       tournamentRecord,
+      workingMatchUp,
       drawDefinition,
       matchUpId,
       endTime,
@@ -230,6 +237,8 @@ function applyScheduleTiming({
 }
 
 function applyScheduleAssignments({
+  workingMatchUp,
+  deferVenueCopy,
   proConflictDetection,
   removePriorValues,
   tournamentRecords,
@@ -252,6 +261,7 @@ function applyScheduleAssignments({
       disableNotice: true,
       removePriorValues,
       tournamentRecord,
+      workingMatchUp,
       drawDefinition,
       matchUpId,
       courtIds,
@@ -276,11 +286,13 @@ function applyScheduleAssignments({
   const clearsCourt = courtId !== undefined && !courtId;
   if (courtId !== undefined && (scheduledDate !== undefined || clearsCourt)) {
     const result = assignMatchUpCourt({
+      deferVenueCopy,
       courtDayDate: scheduledDate,
       disableNotice: true,
       removePriorValues,
       tournamentRecords,
       tournamentRecord,
+      workingMatchUp,
       drawDefinition,
       matchUpId,
       courtId,
@@ -290,10 +302,12 @@ function applyScheduleAssignments({
 
   if (venueId !== undefined) {
     const result = assignMatchUpVenue({
+      deferVenueCopy,
       disableNotice: true,
       removePriorValues,
       tournamentRecords,
       tournamentRecord,
+      workingMatchUp,
       drawDefinition,
       matchUpId,
       venueId,
@@ -306,6 +320,7 @@ function applyScheduleAssignments({
       disableNotice: true,
       removePriorValues,
       tournamentRecord,
+      workingMatchUp,
       drawDefinition,
       courtOrder,
       matchUpId,
@@ -318,6 +333,7 @@ function applyScheduleAssignments({
       disableNotice: true,
       removePriorValues,
       tournamentRecord,
+      workingMatchUp,
       drawDefinition,
       courtAnnotation,
       matchUpId,
@@ -330,6 +346,7 @@ function applyScheduleAssignments({
       disableNotice: true,
       removePriorValues,
       tournamentRecord,
+      workingMatchUp,
       drawDefinition,
       timeModifiers,
       matchUpId,
@@ -344,6 +361,7 @@ function applyScheduleAssignments({
       homeParticipantId,
       removePriorValues,
       tournamentRecord,
+      workingMatchUp,
       drawDefinition,
       matchUpId,
     });
@@ -376,10 +394,14 @@ function unassignGridPosition({
   drawDefinition,
   clearCalledAt,
   courtDayDate,
+  workingMatchUp,
+  deferVenueCopy,
   clearVenue,
   matchUpId,
   event,
 }: {
+  deferVenueCopy?: (commit: () => void) => void;
+  workingMatchUp?: MatchUp;
   tournamentRecords?: TournamentRecords;
   tournamentRecord: Tournament;
   drawDefinition: DrawDefinition;
@@ -389,12 +411,20 @@ function unassignGridPosition({
   matchUpId: string;
   event?: Event;
 }) {
-  const shared = { removePriorValues: true, disableNotice: true, tournamentRecord, drawDefinition, matchUpId };
+  const shared = {
+    removePriorValues: true,
+    disableNotice: true,
+    tournamentRecord,
+    workingMatchUp,
+    drawDefinition,
+    matchUpId,
+  };
   addMatchUpCourtOrder({ ...shared, courtOrder: undefined });
-  assignMatchUpCourt({ ...shared, tournamentRecords, courtDayDate, courtId: undefined });
-  if (clearVenue) assignMatchUpVenue({ ...shared, tournamentRecords, venueId: undefined });
+  assignMatchUpCourt({ ...shared, deferVenueCopy, tournamentRecords, courtDayDate, courtId: undefined });
+  if (clearVenue) assignMatchUpVenue({ ...shared, deferVenueCopy, tournamentRecords, venueId: undefined });
   if (clearCalledAt) {
-    setMatchUpCalledAt({ disableNotice: true, tournamentRecord, drawDefinition, matchUpId, calledAt: null, event });
+    const clear = { disableNotice: true, tournamentRecord, workingMatchUp, drawDefinition, matchUpId, calledAt: null };
+    setMatchUpCalledAt({ ...clear, event });
   }
 }
 
@@ -529,7 +559,7 @@ type AddMatchUpScheduleItemsArgs = {
   playedOrderChecked?: boolean;
   /** false: only a played matchUp orders, as before CA 2026-10-30 (default true: plans order too) */
   plannedOrder?: boolean;
-  /** run every refusal WITHOUT writing anything — see `checkScheduleValues` */
+  /** plan the request, every refusal included, and commit none of it */
   validateOnly?: boolean;
   removePriorValues?: boolean;
   checkChronology?: boolean;
@@ -542,30 +572,29 @@ type AddMatchUpScheduleItemsArgs = {
   event?: Event;
 };
 
-/** Outcome and scheduling callers use the same complete preflight. */
+/** Outcome and scheduling callers use the same complete preflight: the plan, never committed. */
 export function scheduleRefusal(params: Omit<AddMatchUpScheduleItemsArgs, 'validateOnly'>) {
-  const result = addMatchUpScheduleItems({ ...params, validateOnly: true });
-  return result.error ? result : undefined;
+  const plan = planScheduleItems(params);
+  return 'commit' in plan ? undefined : plan;
 }
 
 type ScheduleResult = { error?: ErrorType; success?: boolean; warnings?: any[]; info?: any };
+type SchedulePlan = { result: ScheduleResult; commit: () => void };
 
+/**
+ * One schedule request, planned and then committed (F-007). Every rule is evaluated, in its public order, against the
+ * record as it stands and a working copy of the target matchUp (its own `schedule` and `timeItems`); the draw is never
+ * copied and never written while planning. The commit then installs the working matchUp's changed fields on the stored
+ * matchUp, stores any linked venue copy and announces the matchUp. `validateOnly` plans and commits nothing.
+ */
 export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): ScheduleResult {
-  // Keep caller-supplied matchUp aliases on the same graph as the draft. Team line, round robin,
-  // court and participant checks need the complete draw. Tournament/venue data is read-only.
-  const { drawDefinition, drawMatchUps } = structuredClone({
-    drawDefinition: params?.drawDefinition,
-    drawMatchUps: params?.drawMatchUps,
-  });
-  const clock = replayedInstants();
-  const checked = clock.record(() =>
-    withDraftWrites(() => writeScheduleItems({ ...params, drawMatchUps, drawDefinition, disableNotice: true })),
-  );
-  if (checked.error || params.validateOnly) return checked;
-  return clock.replay(() => writeScheduleItems(params));
+  const plan = planScheduleItems(params);
+  if (!('commit' in plan)) return plan;
+  if (!params.validateOnly) plan.commit();
+  return plan.result;
 }
 
-function writeScheduleItems(params: AddMatchUpScheduleItemsArgs): ScheduleResult {
+function planScheduleItems(params: AddMatchUpScheduleItemsArgs): ScheduleResult | SchedulePlan {
   const stack = 'addMatchUpScheduleItems';
 
   const paramsCheck = checkRequiredParameters(
@@ -602,6 +631,8 @@ function writeScheduleItems(params: AddMatchUpScheduleItemsArgs): ScheduleResult
 
   if (drawMatchUps) {
     matchUp = drawMatchUps.find((drawMatchUp) => drawMatchUp.matchUpId === matchUpId);
+    // the plan writes a copy of its target, so a target the caller's matchUps do not hold is refused as the draw's is
+    if (!matchUp) return decorateResult({ result: { error: MATCHUP_NOT_FOUND }, stack });
   } else {
     const result = findDrawMatchUp({ drawDefinition, event, matchUpId });
     if (result.error) return result;
@@ -710,7 +741,13 @@ function writeScheduleItems(params: AddMatchUpScheduleItemsArgs): ScheduleResult
 
   const dateWarning = scheduleDateWarning({ tournamentRecord, drawDefinition, schedule, matchUpId, event });
 
+  // every write below lands on the working matchUp; a linked venue's copy is planned and held for the commit
+  const workingMatchUp = workingCopy(matchUp);
+  const venueCopies: (() => void)[] = [];
+  const deferVenueCopy = (commit: () => void) => venueCopies.push(commit);
+
   const timingResult = applyScheduleTiming({
+    workingMatchUp,
     removePriorValues,
     tournamentRecord,
     drawDefinition,
@@ -722,13 +759,15 @@ function writeScheduleItems(params: AddMatchUpScheduleItemsArgs): ScheduleResult
     endTime,
     calledAt,
     matchUpId,
-    matchUp,
+    matchUp: workingMatchUp,
     event,
     stack,
   });
   if (timingResult?.error) return timingResult;
 
   const assignmentResult = applyScheduleAssignments({
+    workingMatchUp,
+    deferVenueCopy,
     proConflictDetection,
     removePriorValues,
     tournamentRecords,
@@ -743,13 +782,15 @@ function writeScheduleItems(params: AddMatchUpScheduleItemsArgs): ScheduleResult
     courtId,
     venueId,
     matchUpId,
-    matchUp,
+    matchUp: workingMatchUp,
     stack,
   });
   if (assignmentResult?.error) return assignmentResult;
 
   if (clearGridPositionOnDateChange) {
     unassignGridPosition({
+      workingMatchUp,
+      deferVenueCopy,
       courtDayDate: nextScheduledDate,
       clearCalledAt: calledAt === undefined,
       clearVenue: hadCourt,
@@ -761,18 +802,62 @@ function writeScheduleItems(params: AddMatchUpScheduleItemsArgs): ScheduleResult
     });
   }
 
-  if (!disableNotice) {
-    modifyMatchUpNotice({
-      tournamentId: tournamentRecord?.tournamentId,
-      eventId: event?.eventId,
-      context: stack,
-      drawDefinition,
-      matchUp,
-      event,
-    });
-  }
+  const commit = () => {
+    for (const venueCopy of venueCopies) venueCopy();
+    installWorkingMatchUp(matchUp, workingMatchUp);
+    if (!disableNotice) {
+      modifyMatchUpNotice({
+        tournamentId: tournamentRecord?.tournamentId,
+        eventId: event?.eventId,
+        context: stack,
+        drawDefinition,
+        matchUp,
+        event,
+      });
+    }
+  };
 
-  return scheduleItemsResult([warning, dateWarning], unwritable);
+  return { result: scheduleItemsResult([warning, dateWarning], unwritable), commit };
+}
+
+/** The target matchUp as the plan writes it: its own `schedule` and `timeItems` are copies, every other field shared. */
+function workingCopy(matchUp: MatchUp): MatchUp {
+  const working = { ...matchUp };
+  if (matchUp.schedule) working.schedule = { ...matchUp.schedule };
+  if (matchUp.timeItems) working.timeItems = [...matchUp.timeItems];
+  return working;
+}
+
+/**
+ * The commit: the stored matchUp takes exactly what the working matchUp changed. Its own `schedule` object is kept and
+ * edited field by field; `timeItems` keeps its array and is appended to when the plan only appended, and otherwise
+ * takes the plan's array, as the writers that filter it always replaced it. An absent field stays absent.
+ */
+function installWorkingMatchUp(stored: MatchUp, working: MatchUp) {
+  const target = stored as unknown as Record<string, unknown>;
+  const source = working as unknown as Record<string, unknown>;
+  for (const key of Object.keys(target)) if (!(key in source)) delete target[key];
+  for (const key of Object.keys(source)) {
+    const value = source[key];
+    if (key === 'schedule' && stored.schedule && working.schedule) installFields(stored.schedule, working.schedule);
+    else if (key === 'timeItems' && stored.timeItems && working.timeItems) installTimeItems(stored, working.timeItems);
+    else if (target[key] !== value) target[key] = value;
+  }
+}
+
+function installFields(stored: object, working: object) {
+  const target = stored as Record<string, unknown>;
+  const source = working as Record<string, unknown>;
+  for (const key of Object.keys(target)) if (!(key in source)) delete target[key];
+  for (const key of Object.keys(source)) if (target[key] !== source[key]) target[key] = source[key];
+}
+
+function installTimeItems(stored: MatchUp, timeItems: NonNullable<MatchUp['timeItems']>) {
+  const current = stored.timeItems ?? [];
+  const appended =
+    timeItems.length >= current.length && current.every((timeItem, index) => timeItems[index] === timeItem);
+  if (!appended) stored.timeItems = timeItems;
+  else if (timeItems.length > current.length) current.push(...timeItems.slice(current.length));
 }
 
 /**
@@ -1019,6 +1104,7 @@ export function addMatchUpCourtOrder({
   removePriorValues,
   tournamentRecord,
   drawDefinition,
+  workingMatchUp,
   disableNotice,
   courtOrder,
   matchUpId,
@@ -1037,6 +1123,7 @@ export function addMatchUpCourtOrder({
     value: itemValue,
     removePriorValues,
     tournamentRecord,
+    workingMatchUp,
     drawDefinition,
     disableNotice,
     matchUpId,
@@ -1048,6 +1135,7 @@ export function addMatchUpCourtAnnotation({
   tournamentRecord,
   drawDefinition,
   courtAnnotation,
+  workingMatchUp,
   disableNotice,
   matchUpId,
 }: AddScheduleAttributeArgs & { courtAnnotation?: string }) {
@@ -1063,6 +1151,7 @@ export function addMatchUpCourtAnnotation({
     value: itemValue,
     removePriorValues,
     tournamentRecord,
+    workingMatchUp,
     drawDefinition,
     disableNotice,
     matchUpId,
@@ -1172,6 +1261,7 @@ export function addMatchUpStartTime({
   recordedOrderChecked,
   removePriorValues,
   tournamentRecord,
+  workingMatchUp,
   drawDefinition,
   disableNotice,
   matchUpId,
@@ -1181,7 +1271,7 @@ export function addMatchUpStartTime({
   if (!matchUpId) return { error: MISSING_MATCHUP_ID };
   if (!validTimeValue(startTime)) return { error: INVALID_TIME };
 
-  const { matchUp } = findDrawMatchUp({ drawDefinition, event, matchUpId });
+  const matchUp = workingMatchUp ?? findDrawMatchUp({ drawDefinition, event, matchUpId }).matchUp;
   const choice = collectionChoiceRefusal({ drawDefinition, event, matchUp });
   if (choice) return choice;
   const { scheduledDate } = scheduledMatchUpDate({ matchUp });
@@ -1215,6 +1305,7 @@ export function addMatchUpStartTime({
       duplicateValues: false,
       removePriorValues,
       tournamentRecord,
+      workingMatchUp,
       drawDefinition,
       disableNotice,
       matchUpId,
@@ -1267,6 +1358,7 @@ export function addMatchUpEndTime({
   recordedOrderChecked,
   removePriorValues,
   tournamentRecord,
+  workingMatchUp,
   drawDefinition,
   disableNotice,
   matchUpId,
@@ -1281,7 +1373,7 @@ export function addMatchUpEndTime({
   if (!matchUpId) return { error: MISSING_MATCHUP_ID };
   if (!validTimeValue(endTime)) return { error: INVALID_TIME };
 
-  const { matchUp } = findDrawMatchUp({ drawDefinition, event, matchUpId });
+  const matchUp = workingMatchUp ?? findDrawMatchUp({ drawDefinition, event, matchUpId }).matchUp;
   const choice = collectionChoiceRefusal({ drawDefinition, event, matchUp });
   if (choice) return choice;
   const { scheduledDate } = scheduledMatchUpDate({ matchUp });
@@ -1316,6 +1408,7 @@ export function addMatchUpEndTime({
     duplicateValues: false,
     removePriorValues,
     tournamentRecord,
+    workingMatchUp,
     drawDefinition,
     disableNotice,
     matchUpId,
@@ -1329,6 +1422,7 @@ export function addMatchUpEndTime({
       duplicateValues: false,
       removePriorValues,
       tournamentRecord,
+      workingMatchUp,
       drawDefinition,
       disableNotice,
       matchUpId,
@@ -1343,6 +1437,7 @@ export function addMatchUpEndTime({
 function addChronologicalTimeItem({
   removePriorValues,
   tournamentRecord,
+  workingMatchUp,
   drawDefinition,
   disableNotice,
   invalidError,
@@ -1358,7 +1453,7 @@ function addChronologicalTimeItem({
   if (!matchUpId) return { error: MISSING_MATCHUP_ID };
   if (!validTimeValue(timeValue)) return { error: INVALID_TIME };
 
-  const { matchUp } = findDrawMatchUp({ drawDefinition, event, matchUpId });
+  const matchUp = workingMatchUp ?? findDrawMatchUp({ drawDefinition, event, matchUpId }).matchUp;
   const choice = collectionChoiceRefusal({ drawDefinition, event, matchUp });
   if (choice) return choice;
   const { scheduledDate } = scheduledMatchUpDate({ matchUp });
@@ -1397,6 +1492,7 @@ function addChronologicalTimeItem({
       duplicateValues: true,
       removePriorValues,
       tournamentRecord,
+      workingMatchUp,
       drawDefinition,
       disableNotice,
       matchUpId,
@@ -1411,6 +1507,7 @@ function addChronologicalTimeItem({
 export function addMatchUpStopTime({
   removePriorValues,
   tournamentRecord,
+  workingMatchUp,
   drawDefinition,
   disableNotice,
   matchUpId,
@@ -1425,6 +1522,7 @@ export function addMatchUpStopTime({
     itemType: STOP_TIME,
     removePriorValues,
     tournamentRecord,
+    workingMatchUp,
     drawDefinition,
     disableNotice,
     matchUpId,
@@ -1435,6 +1533,7 @@ export function addMatchUpStopTime({
 export function addMatchUpResumeTime({
   removePriorValues,
   tournamentRecord,
+  workingMatchUp,
   drawDefinition,
   disableNotice,
   resumeTime,
@@ -1449,6 +1548,7 @@ export function addMatchUpResumeTime({
     itemType: RESUME_TIME,
     removePriorValues,
     tournamentRecord,
+    workingMatchUp,
     drawDefinition,
     disableNotice,
     matchUpId,

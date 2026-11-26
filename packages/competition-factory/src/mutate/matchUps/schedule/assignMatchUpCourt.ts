@@ -4,7 +4,7 @@ import { findCourt } from '@Query/venues/findCourt';
 
 // constants and types
 import { ErrorType, MISSING_MATCHUP_ID, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
-import { DrawDefinition, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { ASSIGN_COURT } from '@Constants/timeItemConstants';
 
 type AssignMatchUpCourtArgs = {
@@ -16,6 +16,10 @@ type AssignMatchUpCourtArgs = {
   courtDayDate: string;
   matchUpId: string;
   courtId?: string;
+  /** a schedule plan's working copy of the matchUp, written in its place; internal (a caller's `matchUp` is never written) */
+  workingMatchUp?: MatchUp;
+  /** a schedule plan's collector: the linked venue's copy onto this record is planned and handed here, not written */
+  deferVenueCopy?: (commit: () => void) => void;
 };
 export function assignMatchUpCourt({
   removePriorValues,
@@ -24,6 +28,8 @@ export function assignMatchUpCourt({
   drawDefinition,
   disableNotice,
   courtDayDate,
+  deferVenueCopy,
+  workingMatchUp,
   matchUpId,
   courtId, // not required as "unasigning" court can be achieved by setting value to `undefined`
 }: AssignMatchUpCourtArgs): { error?: ErrorType; success?: boolean } {
@@ -42,6 +48,8 @@ export function assignMatchUpCourt({
     assignMatchUpVenue({
       tournamentRecords,
       tournamentRecord,
+      deferVenueCopy,
+      workingMatchUp,
       drawDefinition,
       disableNotice,
       matchUpId,
@@ -57,6 +65,7 @@ export function assignMatchUpCourt({
     value: courtId,
     removePriorValues,
     tournamentRecord,
+    workingMatchUp,
     drawDefinition,
     disableNotice,
     matchUpId,
