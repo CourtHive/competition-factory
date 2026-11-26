@@ -1,7 +1,7 @@
 import { firstClassGroupLeafOrExtension } from '@Helpers/extensions/firstClassGroupLeafOrExtension';
 import { getCompetitionDateRange } from '@Query/tournaments/getCompetitionDateRange';
 import { getProfileRoundKey } from '@Query/matchUps/scheduling/schedulingUtils';
-import { setSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
+import { planSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import { extractDate, isValidDateString, sameDay } from '@Tools/dateTime';
 import { eventDateResolver } from '@Query/events/eventPlaysOnDate';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -13,6 +13,9 @@ import type { ProfileRound, ProfileVenue } from '@Query/matchUps/scheduling/sche
 import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
+// Every rule is decided before the profile is written: the date and its range, the round at another venue, the round
+// already at this venue, and the validity of the whole proposed profile (its draw, structure and round references).
+// A refusal leaves the stored profile as it was; an accepted round is appended where the planner found its place.
 export function addSchedulingProfileRound({ tournamentRecords, scheduleDate, venueId, round }) {
   if (!isValidDateString(scheduleDate)) {
     return { error: INVALID_DATE };
@@ -31,9 +34,9 @@ export function addSchedulingProfileRound({ tournamentRecords, scheduleDate, ven
         }),
       )
       .find((p) => p !== undefined) ?? [];
-  let dateProfile = schedulingProfile.find((dateProfile) => sameDay(scheduleDate, dateProfile.scheduleDate));
+  const storedDateProfile = schedulingProfile.find((dateProfile) => sameDay(scheduleDate, dateProfile.scheduleDate));
 
-  if (!dateProfile) {
+  if (!storedDateProfile) {
     const { startDate, endDate } = getCompetitionDateRange({
       tournamentRecords,
     });
@@ -42,10 +45,8 @@ export function addSchedulingProfileRound({ tournamentRecords, scheduleDate, ven
     if ((startDate && day < extractDate(startDate)) || (endDate && day > extractDate(endDate))) {
       return { error: INVALID_DATE };
     }
-
-    dateProfile = { scheduleDate: day, venues: [] };
-    schedulingProfile.push(dateProfile);
   }
+  const dateProfile = storedDateProfile ?? { scheduleDate: extractDate(scheduleDate), venues: [] };
 
   // a round profiled at a second venue on the same date would be scheduled once per venue
   const roundKey = getProfileRoundKey(round);
@@ -57,12 +58,8 @@ export function addSchedulingProfileRound({ tournamentRecords, scheduleDate, ven
   if (atOtherVenue)
     return decorateResult({ result: { error: EXISTING_ROUND }, info: 'round is profiled at another venue', stack });
 
-  let venueOnDate = dateProfile.venues.find((venue) => venue.venueId === venueId);
-
-  if (!venueOnDate) {
-    venueOnDate = { venueId, rounds: [] };
-    dateProfile.venues.push(venueOnDate);
-  }
+  const storedVenue = dateProfile.venues.find((venue) => venue.venueId === venueId);
+  const venueOnDate = storedVenue ?? { venueId, rounds: [] };
 
   // ensure round is not already present
   const excludeKeys = ['notBeforeTime'];
@@ -76,16 +73,29 @@ export function addSchedulingProfileRound({ tournamentRecords, scheduleDate, ven
 
   const roundExists = venueOnDate.rounds.find((existingRound) => hashRound(existingRound) === hashRound(round));
   if (roundExists) return decorateResult({ result: { error: EXISTING_ROUND }, stack });
-  venueOnDate.rounds.push(round);
+
+  // the profile as it would be stored, validated before any of it is: the stored date and venue entries are not written
+  const proposedVenue = { ...venueOnDate, rounds: [...venueOnDate.rounds, round] };
+  const proposedVenues = storedVenue
+    ? dateProfile.venues.map((venue) => (venue === storedVenue ? proposedVenue : venue))
+    : [...dateProfile.venues, proposedVenue];
+  const proposedDate = { ...dateProfile, venues: proposedVenues };
+  const proposedProfile = storedDateProfile
+    ? schedulingProfile.map((entry) => (entry === storedDateProfile ? proposedDate : entry))
+    : [...schedulingProfile, proposedDate];
 
   // a NEW date outside the competition's dates is refused above; a date already in the profile is not re-judged,
   // and whatever the save reports of the profile's other dates is passed on
-  const result = setSchedulingProfile({ tournamentRecords, schedulingProfile });
-  if (result.error) return result;
+  const planned = planSchedulingProfile({
+    schedulingProfile: proposedProfile,
+    storedProfile: schedulingProfile,
+    tournamentRecords,
+  });
+  if (!('commit' in planned)) return planned;
 
   // a round profiled on a day its event does not play is added, and warned about (CA 2026-11-01), beside whatever
   // setSchedulingProfile warns of the profile's other dates
-  const warnings = [...(result.warnings ?? [])];
+  const warnings = [...(planned.result.warnings ?? [])];
   const verdict =
     round?.tournamentId &&
     eventDateResolver(tournamentRecords)({
@@ -102,6 +112,12 @@ export function addSchedulingProfileRound({ tournamentRecords, scheduleDate, ven
       roundKey,
     });
   }
+
+  // commit: the stored profile takes the round in place, as it always did, and is then saved to every record
+  if (!storedDateProfile) schedulingProfile.push(dateProfile);
+  if (!storedVenue) dateProfile.venues.push(venueOnDate);
+  venueOnDate.rounds.push(round);
+  planned.commit();
 
   return warnings.length ? { ...SUCCESS, warnings } : { ...SUCCESS };
 }

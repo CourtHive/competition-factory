@@ -8,6 +8,7 @@ import { findEvent } from '@Acquire/findEvent';
 import { ALLOCATE_COURTS, ASSIGN_COURT } from '@Constants/timeItemConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
+  ErrorType,
   MATCHUP_NOT_FOUND,
   MISSING_DRAW_ID,
   MISSING_MATCHUP_ID,
@@ -25,13 +26,25 @@ type RemoveCourtAssignmentArgs = {
   matchUpId: string;
   drawId?: string;
 };
-export function removeCourtAssignment({
+export function removeCourtAssignment(params: RemoveCourtAssignmentArgs): { success?: boolean; error?: ErrorType } {
+  const plan = planCourtAssignmentRemoval(params);
+  if (!('commit' in plan)) return plan;
+  plan.commit();
+  return { ...SUCCESS };
+}
+
+/**
+ * Resolves the matchUp and decides what removing its court assignment writes (its court and allocation timeItems,
+ * its first-class `courtId` and `allocatedCourts`) without writing it. The commit performs those removals and
+ * announces the matchUp only when something was removed.
+ */
+export function planCourtAssignmentRemoval({
   tournamentRecord,
   drawDefinition,
   matchUpId,
   drawId,
   event,
-}: RemoveCourtAssignmentArgs) {
+}: RemoveCourtAssignmentArgs): { error: ErrorType } | { commit: () => void } {
   const stack = 'removeCourtAssignment';
   if (!matchUpId) return { error: MISSING_MATCHUP_ID };
   if (!drawDefinition && !drawId) return { error: MISSING_DRAW_ID };
@@ -51,36 +64,26 @@ export function removeCourtAssignment({
   }
   if (!matchUp) return { error: MATCHUP_NOT_FOUND };
 
-  let modified = false;
+  const writes: (() => void)[] = [];
 
   // LEGACY / BRIDGE: court assignment lives in timeItems
-  if (matchUp.timeItems) {
-    const hasCourtAssignment = matchUp.timeItems.find((candidate) =>
-      [ASSIGN_COURT, ALLOCATE_COURTS].includes(candidate.itemType),
-    );
-
-    if (hasCourtAssignment) {
-      matchUp.timeItems = matchUp.timeItems.filter(
-        ({ itemType }) => ![ASSIGN_COURT, ALLOCATE_COURTS].includes(itemType),
-      );
-      modified = true;
-    }
+  const assignmentTypes = new Set<string>([ASSIGN_COURT, ALLOCATE_COURTS]);
+  if (matchUp.timeItems?.some((candidate) => assignmentTypes.has(candidate.itemType))) {
+    const timeItems = matchUp.timeItems.filter(({ itemType }) => !assignmentTypes.has(itemType));
+    writes.push(() => (matchUp.timeItems = timeItems));
   }
 
   // NATIVE / BRIDGE: court assignment is first-class schedule.courtId / schedule.allocatedCourts,
   // with no timeItem mirror — without this, deleteCourt left the court assigned in NATIVE.
-  if (matchUp.schedule && typeof matchUp.schedule === 'object') {
-    if (matchUp.schedule.courtId !== undefined) {
-      delete matchUp.schedule.courtId;
-      modified = true;
-    }
-    if (matchUp.schedule.allocatedCourts !== undefined) {
-      delete matchUp.schedule.allocatedCourts;
-      modified = true;
-    }
+  const schedule = matchUp.schedule;
+  if (schedule && typeof schedule === 'object') {
+    if (schedule.courtId !== undefined) writes.push(() => delete schedule.courtId);
+    if (schedule.allocatedCourts !== undefined) writes.push(() => delete schedule.allocatedCourts);
   }
 
-  if (modified) {
+  const commit = () => {
+    if (!writes.length) return;
+    for (const write of writes) write();
     modifyMatchUpNotice({
       tournamentId: tournamentRecord?.tournamentId,
       context: stack,
@@ -88,7 +91,6 @@ export function removeCourtAssignment({
       matchUp,
       event,
     });
-  }
-
-  return { ...SUCCESS };
+  };
+  return { commit };
 }

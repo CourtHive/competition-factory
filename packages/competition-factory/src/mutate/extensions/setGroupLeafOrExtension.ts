@@ -2,6 +2,7 @@ import { writeLegacyEnabled, writeNativeEnabled } from '@Global/state/globalStat
 import { decorateResult } from '@Functions/global/decorateResult';
 import { removeExtension } from './removeExtension';
 import { addExtension } from './addExtension';
+import { nowIso } from '@Tools/clock';
 
 // constants
 import { ErrorType, INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
@@ -81,4 +82,52 @@ export function setGroupLeafOrExtension(params?: SetGroupLeafOrExtensionArgs): {
   }
 
   return { ...SUCCESS };
+}
+
+/**
+ * `setGroupLeafOrExtension` for a writer that plans before it writes: every decision (the schema write mode, whether
+ * the group, the leaf's extension and the element's extensions exist, the extension's `createdAt`) is taken now, and
+ * the returned commit performs only the writes `setGroupLeafOrExtension` would make, in the same order.
+ */
+export function planGroupLeafOrExtension({
+  element,
+  groupAttribute,
+  leafAttribute,
+  name,
+  value,
+  creationTime = true,
+}: SetGroupLeafOrExtensionArgs): () => void {
+  const writes: (() => void)[] = [];
+  const clearing = value === undefined || value === null;
+  if (writeNativeEnabled()) {
+    if (clearing) {
+      const group = element[groupAttribute];
+      if (group)
+        writes.push(() => {
+          delete group[leafAttribute];
+          if (Object.keys(group).length === 0) delete element[groupAttribute];
+        });
+    } else {
+      const group = element[groupAttribute];
+      writes.push(
+        group ? () => (group[leafAttribute] = value) : () => (element[groupAttribute] = { [leafAttribute]: value }),
+      );
+    }
+  }
+  const extensions: { name?: string; value?: unknown }[] | undefined = element.extensions;
+  const existing = extensions?.find((extension) => extension?.name === name);
+  if (writeLegacyEnabled() && !clearing) {
+    if (!extensions) writes.push(() => (element.extensions = []));
+    if (existing) writes.push(() => (existing.value = value));
+    else if (value) {
+      const extension = creationTime ? { name, value, createdAt: nowIso() } : { name, value };
+      writes.push(() => element.extensions.push(extension));
+    }
+  } else if (extensions && (writeLegacyEnabled() || existing)) {
+    // removeExtension (legacy clear) or stripExtensionByName (native or bridge without legacy)
+    writes.push(() => (element.extensions = extensions.filter((extension) => extension?.name !== name)));
+  }
+  return () => {
+    for (const write of writes) write();
+  };
 }

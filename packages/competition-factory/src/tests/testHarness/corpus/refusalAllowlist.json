@@ -2,8 +2,6 @@
   "reasons": {
     "F-008": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-0b8ef85b5d4aa8db9b085f1d1e019de0a73c30248cc29089e82caaf0ac55bdc1",
     "F-009": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-b467984b227aa55a3dcdfec53ffc92b110b657eb1253862d74c58bf7c918dadb",
-    "F-011": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-7f2e8e6148d52b207556e9958aac3126409874b2326a4942c6a1d0df7b502b91",
-    "F-013": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-84c889669b97889b919b0db9782aa1f9d582c4002137ea41d036a4bd8e0c21b1",
     "F-014": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-6ca70d9c78e30736cbac87cf97189d8737db673dbcb28b24721f55386a94ce84",
     "F-007": "https://github.com/CourtHive/competition-factory/pull/6503",
     "F-016-exit-walk": "A public BYE placement whose walk meets an exit keeps the writer: a loser seat filled ahead of its feeder, or (malformed) a repeated matchUpId past a resolved exit, refuses after the main writes (f016ExitWalkResidual.test.ts)",
@@ -838,14 +836,6 @@
         "paths": ["/events/0/drawDefinitions/0/structures/0/matchUps/0/timeItems"]
       }
     ],
-    "src/tests/mutations/scheduling/updatedSchedulingProfile.test.ts::can update a schedulingProfile when venues change": [
-      {
-        "method": "addSchedulingProfileRound",
-        "error": "ERR_INVALID_VALUES",
-        "reason": "F-011",
-        "paths": ["/scheduling/profile/0/venues/0/rounds/1"]
-      }
-    ],
     "src/tests/mutations/subscriptions/inContextNoticeAfterSuccess.test.ts::updateInContextMatchUp > is never built, nor sent, for a call refused after its write": [
       {
         "method": "setMatchUpStatus",
@@ -871,23 +861,6 @@
         "error": "ERR_SCHEDULED_MATCHUPS",
         "reason": "F-014",
         "paths": ["/venues/0/venueAbbreviation", "/venues/0/venueName"]
-      }
-    ],
-    "src/tests/mutations/venues/deleteCourts.test.ts::deleteCourts > stops on first error and preserves remaining courts": [
-      {
-        "method": "deleteCourts",
-        "error": "ERR_NOT_FOUND_COURT",
-        "reason": "F-013",
-        "paths": [
-          "/factory/timeStamp",
-          "/venues/0/courts/0/courtId",
-          "/venues/0/courts/0/courtName",
-          "/venues/0/courts/1/courtId",
-          "/venues/0/courts/1/courtName",
-          "/venues/0/courts/2/courtId",
-          "/venues/0/courts/2/courtName",
-          "/venues/0/courts/3"
-        ]
       }
     ],
     "src/tests/mutations/venues/modifyVenue.test.ts::can define and modify a venue": [

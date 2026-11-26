@@ -129,10 +129,12 @@ A scheduling policy can allow the change without `force`: when `force` is not gi
 
 ## deleteCourts
 
-Bulk delete multiple courts. If any court has scheduled matchUps, deletion will fail unless `force: true`, in which case all relevant matchUps will be unscheduled.
+Bulk delete multiple courts. A court with scheduled matchUps is refused unless `force: true`, in which case all relevant matchUps will be unscheduled.
+
+Each court is its own item, deleted in order. A refused court leaves the record unchanged and the courts after it are still attempted; a court that is deleted stays deleted. `results` holds one entry per `courtId`, in order: `{ index, courtId, success: true }` or `{ index, courtId, error, info? }`. When any court is refused, the first refusal is also the call's own `error`, as before, with `committed: true` if any court was deleted, so the deleted courts' notices are still delivered.
 
 ```js
-engine.deleteCourts({
+const { success, error, committed, results } = engine.deleteCourts({
   courtIds: ['court-uuid-1', 'court-uuid-2'],
   force, // override warnings about matchUps scheduled on specified courts
 });
