@@ -20,6 +20,7 @@ import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { compareViews, hydrateShadow } from './viewOracle';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
+import { comparedRefusalOnCopy, refusedOnCopy } from './refusedOnCopy';
 import { recordWholeCall } from './plan/recordedCall';
 import { observeWrite, planWrite } from './write';
 import { refuseOutcome } from './refusals';
@@ -136,9 +137,7 @@ function planCall(
   // An uncaptured call requires a complete phase program and a replayable effect scope, in either mode.
   if (args.clockFree && !observe) outcome = { abstain: 'clock' };
   if (recorded) outcome = recorded;
-  // v1 refused the whole call on a copy (`recordedCall.ts`): its refusal is the answer, asked before any stored write
-  const refusedOnCopy = allowed.abstain ? allowed.refusedOnCopy : undefined;
-  return { planned, route, plan, direction, folded, outcome, phases, observe, refusedOnCopy };
+  return { planned, route, plan, direction, folded, outcome, phases, observe };
 }
 
 /**
@@ -229,9 +228,8 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   if (mode === OUTCOME_PIPELINE_V2) {
     if (refusal) return { refused: toResult(refusal, args) };
     // S2: a call whose complete plan is a shape v2 owns is written by v2, and v1 is not asked (F1 (a), fail-closed)
-    const { outcome, phases, route, refusedOnCopy } = planCall(args, view, undefined, false, teamLedger);
-    if (refusedOnCopy) return { refused: refusedOnCopy };
-    if (!outcome.ops || !OWNED_SHAPES.has(outcome.shape)) return {};
+    const { outcome, phases, route } = planCall(args, view, undefined, false, teamLedger);
+    if (!outcome.ops || !OWNED_SHAPES.has(outcome.shape)) return refusedOnCopy(outcome);
     const applied = phases
       ? applyTemporalPhases(args, phases, outcome.shape)
       : applyOwnedPlan({ args, ops: outcome.ops, shape: outcome.shape, route });
@@ -245,18 +243,8 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   const indexed = indexOracle(args, view);
 
   // the folded view is kept for the view oracle only, which reads it after v1 has written
-  const { planned, route, plan, direction, folded, outcome, observe, refusedOnCopy } = planCall(
-    args,
-    view,
-    refusal,
-    true,
-    teamLedger,
-  );
-  // v1's refusal on the copy is compared as v1's answer, and nothing is written on the stored record
-  if (refusedOnCopy) {
-    compareWithV1(refusedOnCopy);
-    return { refused: refusedOnCopy };
-  }
+  const { planned, route, plan, direction, folded, outcome, observe } = planCall(args, view, refusal, true, teamLedger);
+  if (outcome.refusedOnCopy) return comparedRefusalOnCopy(outcome.refusedOnCopy, compareWithV1);
   const dual = route ? planDual(args, view) : undefined;
   const shadowBefore =
     outcome.ops && args.drawDefinition ? captureShadow({ ...args, drawDefinition: args.drawDefinition }) : undefined;

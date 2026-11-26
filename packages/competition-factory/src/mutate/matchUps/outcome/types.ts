@@ -693,6 +693,7 @@ export type OutcomePlan =
       recordedResult?: ResultType;
       /** The public return from a native sequence that writes a line and keeps or decides its dual. */
       phaseResult?: ResultType;
+      refusedOnCopy?: undefined;
     }
   | {
       abstain: AbstainReason;
