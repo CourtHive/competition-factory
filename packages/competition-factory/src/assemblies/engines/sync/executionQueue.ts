@@ -11,8 +11,9 @@ import { keepWrites } from '@Assemblies/engines/parts/keepWrites';
 import { withCallRandomSource } from '@Tools/prng';
 import { withCapturedClock } from '@Tools/clock';
 
-// types
+// constants and types
 import { Directives, FactoryEngine } from '@Types/factoryTypes';
+import { PARTIAL_COMMIT } from '@Constants/resultConstants';
 
 let queueReentry = false;
 
@@ -70,8 +71,17 @@ export function executionQueue(engine: FactoryEngine, directives: Directives, ro
         restoreOperation(captured);
         return { ...refusal, rolledBack: true };
       }
-      keepWrites(timeStamp);
-      return { ...refusal, rolledBack: false, results };
+      // a directive that committed part of its work announces it, and the queue's buffer with it (ruling 33)
+      if (refusal[PARTIAL_COMMIT] === true) {
+        const mutationStatus = getMutationStatus({ timeStamp });
+        notifySubscribers({ directives: directives.slice(0, results.length + 1), mutationStatus, timeStamp });
+        deleteNotices();
+      } else keepWrites(timeStamp);
+      // a refused bulk directive is listed, last, with its whole result: its per-item results among it
+      const listed = Array.isArray(refusal.results)
+        ? [...results, { ...refusal, methodName: directives[results.length].method }]
+        : results;
+      return { ...refusal, rolledBack: false, results: listed };
     }
 
     const mutationStatus = getMutationStatus({ timeStamp }); // timeStamp reaches the record via the factory extension
