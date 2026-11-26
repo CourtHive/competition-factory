@@ -3333,6 +3333,257 @@
         "notices": "not-assessed",
         "evidence": null
       }
+    },
+    {
+      "name": "isValid",
+      "source": {
+        "path": "src/validators/isValidMatchUpFormat.ts",
+        "symbol": "isValidMatchUpFormat",
+        "line": 32
+      },
+      "governors": ["matchUpFormatGovernor"],
+      "engineDisposition": "scheduled-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "confirmed",
+      "replacement": "tools.formats.isValidMatchUpFormat",
+      "destination": "implementation/validation/isValid",
+      "previous": [],
+      "documentationMentions": ["governors/matchup-format-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "removal or rename recorded in the 8.0.0 migration guide; added to the manifest 2026-11-26",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "isValidMatchUpFormat",
+      "source": {
+        "path": "src/validators/isValidMatchUpFormat.ts",
+        "symbol": "isValidMatchUpFormat",
+        "line": 32
+      },
+      "governors": ["matchUpFormatGovernor", "scoreGovernor"],
+      "retainedOn": ["matchUpGovernor", "queryGovernor"],
+      "engineDisposition": "scheduled-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "confirmed",
+      "replacement": "tools.formats.isValidMatchUpFormat",
+      "destination": "implementation/validation/isValidMatchUpFormat",
+      "previous": [],
+      "documentationMentions": [
+        "governors/matchup-format-governor.md",
+        "governors/score-governor.md",
+        "governors/matchup-governor.md",
+        "governors/query-governor.md"
+      ],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "removal or rename recorded in the 8.0.0 migration guide; added to the manifest 2026-11-26",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "validateMatchUpFormat",
+      "source": {
+        "path": "src/validators/isValidMatchUpFormat.ts",
+        "symbol": "validateMatchUpFormat",
+        "line": 44
+      },
+      "governors": ["matchUpFormatGovernor"],
+      "engineDisposition": "scheduled-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "confirmed",
+      "replacement": "tools.formats.validateMatchUpFormat",
+      "destination": "implementation/validation/validateMatchUpFormat",
+      "previous": [],
+      "documentationMentions": ["governors/matchup-format-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "removal or rename recorded in the 8.0.0 migration guide; added to the manifest 2026-11-26",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "applyDerivedRankings",
+      "source": {
+        "path": "src/query/scales/applyDerivedRankings.ts",
+        "symbol": "applyDerivedRankings",
+        "line": 53
+      },
+      "governors": ["rankingGovernor"],
+      "engineDisposition": "scheduled-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "confirmed",
+      "replacement": "tools.rankings.deriveRankingList",
+      "destination": "implementation/records/applyDerivedRankings",
+      "previous": [],
+      "documentationMentions": ["governors/ranking-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "removal or rename recorded in the 8.0.0 migration guide; added to the manifest 2026-11-26",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "addFinishingRounds",
+      "source": {
+        "path": "src/query/structure/addFinishingRounds.ts",
+        "symbol": "addFinishingRounds",
+        "line": 37
+      },
+      "governors": ["drawsGovernor"],
+      "engineDisposition": "scheduled-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "confirmed",
+      "replacement": null,
+      "destination": "implementation/draws/addFinishingRounds",
+      "previous": [],
+      "documentationMentions": ["governors/draws-governor.md", "apis/draw-engine-api.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "removal or rename recorded in the 8.0.0 migration guide; added to the manifest 2026-11-26",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "setMatchUpState",
+      "source": {
+        "path": "src/mutate/matchUps/matchUpStatus/setMatchUpState.ts",
+        "symbol": "setMatchUpState",
+        "line": 176
+      },
+      "governors": ["matchUpGovernor"],
+      "engineDisposition": "scheduled-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "confirmed",
+      "replacement": "matchUpGovernor.setMatchUpStatus",
+      "destination": "implementation/records/setMatchUpState",
+      "previous": [],
+      "documentationMentions": ["governors/matchup-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "removal or rename recorded in the 8.0.0 migration guide; added to the manifest 2026-11-26",
+      "engineEffects": {
+        "writes": "yes",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "cleanExpiredMutationLocks",
+      "source": {
+        "path": "src/mutate/tournaments/mutationLocks/cleanExpiredMutationLocks.ts",
+        "symbol": "cleanExpiredMutationLocks",
+        "line": 16
+      },
+      "governors": ["tournamentGovernor"],
+      "routes": ["tournamentGovernor.query.cleanExpiredMutationLocks"],
+      "retainedOn": ["queryGovernor"],
+      "engineDisposition": "scheduled-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "confirmed",
+      "replacement": "tournamentGovernor.mutate.cleanExpiredMutationLocks",
+      "destination": "implementation/records/cleanExpiredMutationLocks",
+      "previous": [],
+      "documentationMentions": ["governors/tournament-governor.md", "concepts/mutation-locks.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "removal or rename recorded in the 8.0.0 migration guide; added to the manifest 2026-11-26",
+      "engineEffects": {
+        "writes": "yes",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "generateOutcome",
+      "source": {
+        "path": "src/assemblies/generators/simulation/generateOutcome.ts",
+        "symbol": "generateOutcome",
+        "line": 164
+      },
+      "governors": ["mocksGovernor"],
+      "retainedOn": ["simulationGovernor"],
+      "engineDisposition": "scheduled-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "confirmed",
+      "replacement": "simulationGovernor.generateOutcome",
+      "destination": "implementation/records/generateOutcome",
+      "previous": [],
+      "documentationMentions": ["governors/mocks-governor.md", "governors/simulation-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "removal or rename recorded in the 8.0.0 migration guide; added to the manifest 2026-11-26",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "generateOutcomeFromScoreString",
+      "source": {
+        "path": "src/scoring/parse/outcomeFromScoreString.ts",
+        "symbol": "generateOutcomeFromScoreString",
+        "line": 97
+      },
+      "governors": ["mocksGovernor"],
+      "retainedOn": ["simulationGovernor"],
+      "engineDisposition": "scheduled-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "confirmed",
+      "replacement": "simulationGovernor.generateOutcomeFromScoreString",
+      "destination": "implementation/records/generateOutcomeFromScoreString",
+      "previous": [],
+      "documentationMentions": ["governors/mocks-governor.md", "governors/simulation-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "removal or rename recorded in the 8.0.0 migration guide; added to the manifest 2026-11-26",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "completeDrawMatchUps",
+      "source": {
+        "path": "src/assemblies/generators/simulation/completeDrawMatchUps.ts",
+        "symbol": "completeDrawMatchUps",
+        "line": 175
+      },
+      "governors": ["mocksGovernor"],
+      "retainedOn": ["simulationGovernor"],
+      "engineDisposition": "scheduled-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "confirmed",
+      "replacement": "simulationGovernor.completeDrawMatchUps",
+      "destination": "implementation/records/completeDrawMatchUps",
+      "previous": [],
+      "documentationMentions": ["governors/mocks-governor.md", "governors/simulation-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "removal or rename recorded in the 8.0.0 migration guide; added to the manifest 2026-11-26",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
     }
   ],
   "consumerRefresh": {
@@ -3465,5 +3716,5 @@
       "contentBasis": "filesystem contents at scan time; repository HEADs are recorded, working-tree cleanliness was not attested"
     }
   },
-  "candidateCount": 125
+  "candidateCount": 135
 }

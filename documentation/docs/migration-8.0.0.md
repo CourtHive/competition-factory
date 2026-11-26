@@ -143,7 +143,7 @@ instead. Methods that stay are not listed.
 
 | Old call                                       | Replacement                         | Notes                                                                                          |
 | ---------------------------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `drawsGovernor.addFinishingRounds`             | None                                | Leaves the governor.                                                                           |
+| `drawsGovernor.addFinishingRounds`             | None                                | See [its reference](/docs/implementation/draws/addFinishingRounds).                            |
 | `drawsGovernor.addGoesTo`                      | Several routes                      | See [the supported routes](/docs/implementation/records/addGoesTo#supported-migration-routes). |
 | `drawsGovernor.generateDrawStructuresAndLinks` | None                                | See [its reference](/docs/implementation/draws/generateDrawStructuresAndLinks).                |
 | `drawsGovernor.getDrawCompleteness`            | None                                | See [its reference](/docs/implementation/draws/getDrawCompleteness).                           |
@@ -193,16 +193,16 @@ instead. Methods that stay are not listed.
 
 #### matchUpFormatGovernor
 
-| Old call                                          | Replacement                               | Notes                                                          |
-| ------------------------------------------------- | ----------------------------------------- | -------------------------------------------------------------- |
-| `matchUpFormatGovernor.aggregateDeciderSetNumber` | `tools.formats.aggregateDeciderSetNumber` | Positional arguments: call it directly, not through an engine. |
-| `matchUpFormatGovernor.finalSetGoverns`           | `tools.formats.finalSetGoverns`           | Positional arguments: call it directly, not through an engine. |
-| `matchUpFormatGovernor.isAggregateFormat`         | `tools.formats.isAggregateFormat`         | Positional arguments: call it directly, not through an engine. |
-| `matchUpFormatGovernor.isValid`                   | `tools.formats.isValidMatchUpFormat`      | Renamed. The governor is retired.                              |
-| `matchUpFormatGovernor.isValidMatchUpFormat`      | `tools.formats.isValidMatchUpFormat`      | The governor is retired.                                       |
-| `matchUpFormatGovernor.parse`                     | `tools.formats.parse`                     | Positional arguments: call it directly, not through an engine. |
-| `matchUpFormatGovernor.stringify`                 | `tools.formats.stringify`                 | Positional arguments: call it directly, not through an engine. |
-| `matchUpFormatGovernor.validateMatchUpFormat`     | `tools.formats.validateMatchUpFormat`     | The governor is retired.                                       |
+| Old call                                          | Replacement                               | Notes                                                                                                                          |
+| ------------------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `matchUpFormatGovernor.aggregateDeciderSetNumber` | `tools.formats.aggregateDeciderSetNumber` | Positional arguments: call it directly, not through an engine. The governor is retired.                                        |
+| `matchUpFormatGovernor.finalSetGoverns`           | `tools.formats.finalSetGoverns`           | Positional arguments: call it directly, not through an engine. The governor is retired.                                        |
+| `matchUpFormatGovernor.isAggregateFormat`         | `tools.formats.isAggregateFormat`         | Positional arguments: call it directly, not through an engine. The governor is retired.                                        |
+| `matchUpFormatGovernor.isValid`                   | `tools.formats.isValidMatchUpFormat`      | The same params object. Renamed. The governor is retired.                                                                      |
+| `matchUpFormatGovernor.isValidMatchUpFormat`      | `tools.formats.isValidMatchUpFormat`      | The same params object. The engine method stays: `matchUpGovernor` and `queryGovernor` keep the name. The governor is retired. |
+| `matchUpFormatGovernor.parse`                     | `tools.formats.parse`                     | Positional arguments: call it directly, not through an engine. The governor is retired.                                        |
+| `matchUpFormatGovernor.stringify`                 | `tools.formats.stringify`                 | Positional arguments: call it directly, not through an engine. The governor is retired.                                        |
+| `matchUpFormatGovernor.validateMatchUpFormat`     | `tools.formats.validateMatchUpFormat`     | The same params object. The governor is retired.                                                                               |
 
 #### matchUpGovernor
 
@@ -213,17 +213,17 @@ instead. Methods that stay are not listed.
 | `matchUpGovernor.getMatchUpType`                 | `tools.matchUps.getMatchUpType`               | The same params object.                                                           |
 | `matchUpGovernor.participantScheduledMatchUps`   | `tools.matchUps.participantScheduledMatchUps` | The same params object.                                                           |
 | `matchUpGovernor.predictMatchUpCompetitiveBands` | None                                          | See [its reference](/docs/implementation/records/predictMatchUpCompetitiveBands). |
-| `matchUpGovernor.setMatchUpState`                | `matchUpGovernor.setMatchUpStatus`            | Renamed.                                                                          |
+| `matchUpGovernor.setMatchUpState`                | `matchUpGovernor.setMatchUpStatus`            | The same params object. Renamed.                                                  |
 | `matchUpGovernor.validMatchUp`                   | `tools.matchUps.validMatchUp`                 | Positional arguments: call it directly, not through an engine.                    |
 | `matchUpGovernor.validMatchUps`                  | `tools.matchUps.validMatchUps`                | Positional arguments: call it directly, not through an engine.                    |
 
 #### mocksGovernor
 
-| Old call                                       | Replacement                                         | Notes                                                                                                 |
-| ---------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `mocksGovernor.completeDrawMatchUps`           | `simulationGovernor.completeDrawMatchUps`           | `mocksEngine.completeDrawMatchUps` is unchanged: `mocksEngine` mounts `simulationGovernor`.           |
-| `mocksGovernor.generateOutcome`                | `simulationGovernor.generateOutcome`                | `mocksEngine.generateOutcome` is unchanged: `mocksEngine` mounts `simulationGovernor`.                |
-| `mocksGovernor.generateOutcomeFromScoreString` | `simulationGovernor.generateOutcomeFromScoreString` | `mocksEngine.generateOutcomeFromScoreString` is unchanged: `mocksEngine` mounts `simulationGovernor`. |
+| Old call                                       | Replacement                                         | Notes                                                                                 |
+| ---------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `mocksGovernor.completeDrawMatchUps`           | `simulationGovernor.completeDrawMatchUps`           | The same params object. The engine method stays: `simulationGovernor` keeps the name. |
+| `mocksGovernor.generateOutcome`                | `simulationGovernor.generateOutcome`                | The same params object. The engine method stays: `simulationGovernor` keeps the name. |
+| `mocksGovernor.generateOutcomeFromScoreString` | `simulationGovernor.generateOutcomeFromScoreString` | The same params object. The engine method stays: `simulationGovernor` keeps the name. |
 
 #### officiatingGovernor
 
@@ -300,12 +300,12 @@ instead. Methods that stay are not listed.
 
 #### rankingGovernor
 
-| Old call                               | Replacement                           | Notes                       |
-| -------------------------------------- | ------------------------------------- | --------------------------- |
-| `rankingGovernor.applyDerivedRankings` | `tools.rankings.deriveRankingList`    | Renamed. The same function. |
-| `rankingGovernor.getAwardPoints`       | `tools.rankings.getAwardPoints`       | The same params object.     |
-| `rankingGovernor.getParticipantPoints` | `tools.rankings.getParticipantPoints` | The same params object.     |
-| `rankingGovernor.getQualityWinPoints`  | `tools.rankings.getQualityWinPoints`  | The same params object.     |
+| Old call                               | Replacement                           | Notes                            |
+| -------------------------------------- | ------------------------------------- | -------------------------------- |
+| `rankingGovernor.applyDerivedRankings` | `tools.rankings.deriveRankingList`    | The same params object. Renamed. |
+| `rankingGovernor.getAwardPoints`       | `tools.rankings.getAwardPoints`       | The same params object.          |
+| `rankingGovernor.getParticipantPoints` | `tools.rankings.getParticipantPoints` | The same params object.          |
+| `rankingGovernor.getQualityWinPoints`  | `tools.rankings.getQualityWinPoints`  | The same params object.          |
 
 #### sanctioningGovernor
 
@@ -322,41 +322,42 @@ instead. Methods that stay are not listed.
 
 #### scoreGovernor
 
-| Old call                                 | Replacement                              | Notes                                                                   |
-| ---------------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------- |
-| `scoreGovernor.addPoint`                 | `tools.scoring.addPoint`                 | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.analyzeSequence`          | `tools.scoring.analyzeSequence`          | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.calculateMatchStatistics` | `tools.scoring.calculateMatchStatistics` | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.calculatePointsTo`        | `tools.scoring.calculatePointsTo`        | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.createMatchUp`            | None                                     | See [its reference](/docs/implementation/scoring/createMatchUp).        |
-| `scoreGovernor.deduceMatchUpFormat`      | `tools.scoring.deduceMatchUpFormat`      | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.enrichPointHistory`       | `tools.scoring.enrichPointHistory`       | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.exportMatchUpJSON`        | `tools.scoring.exportMatchUpJSON`        | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.getEpisodes`              | `tools.scoring.getEpisodes`              | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.getQuickStats`            | `tools.scoring.getQuickStats`            | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.getScore`                 | `tools.scoring.getScore`                 | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.getScoreboard`            | `tools.scoring.getScoreboard`            | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.getSetScoreString`        | `tools.scoring.getSetScoreString`        | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.getWinner`                | `tools.scoring.getWinner`                | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.groupByMatch`             | `tools.scoring.groupByMatch`             | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.inferServeSide`           | `tools.scoring.inferServeSide`           | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.isComplete`               | `tools.scoring.isComplete`               | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.mcpValidator`             | `tools.scoring.mcpValidator`             | The same params object.                                                 |
-| `scoreGovernor.parseCSV`                 | `tools.scoring.parseCSV`                 | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.parseMatchUpFormat`       | `tools.formats.parse`                    | Positional arguments: call it directly, not through an engine. Renamed. |
-| `scoreGovernor.parseMCPPoint`            | `tools.scoring.parseMCPPoint`            | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.pbpValidator`             | `tools.scoring.pbpValidator`             | The same params object.                                                 |
-| `scoreGovernor.pointParser`              | `tools.scoring.pointParser`              | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.resolvePointValue`        | `tools.scoring.resolvePointValue`        | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.shotParser`               | `tools.scoring.shotParser`               | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.shotSplitter`             | `tools.scoring.shotSplitter`             | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.stringifyMatchUpFormat`   | `tools.formats.stringify`                | Positional arguments: call it directly, not through an engine. Renamed. |
-| `scoreGovernor.toStatObjects`            | `tools.scoring.toStatObjects`            | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.validateMatchUp`          | None                                     | See [its reference](/docs/implementation/scoring/validateMatchUp).      |
-| `scoreGovernor.validateMatchUpScore`     | `tools.scoring.validateMatchUpScore`     | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.validateMCPMatch`         | `tools.scoring.validateMCPMatch`         | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.validateSetScore`         | `tools.scoring.validateSetScore`         | Positional arguments: call it directly, not through an engine.          |
-| `scoreGovernor.validateTieFormat`        | `tools.formats.validateTieFormat`        | The same params object.                                                 |
+| Old call                                 | Replacement                              | Notes                                                                                                 |
+| ---------------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `scoreGovernor.addPoint`                 | `tools.scoring.addPoint`                 | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.analyzeSequence`          | `tools.scoring.analyzeSequence`          | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.calculateMatchStatistics` | `tools.scoring.calculateMatchStatistics` | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.calculatePointsTo`        | `tools.scoring.calculatePointsTo`        | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.createMatchUp`            | None                                     | See [its reference](/docs/implementation/scoring/createMatchUp).                                      |
+| `scoreGovernor.deduceMatchUpFormat`      | `tools.scoring.deduceMatchUpFormat`      | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.enrichPointHistory`       | `tools.scoring.enrichPointHistory`       | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.exportMatchUpJSON`        | `tools.scoring.exportMatchUpJSON`        | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.getEpisodes`              | `tools.scoring.getEpisodes`              | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.getQuickStats`            | `tools.scoring.getQuickStats`            | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.getScore`                 | `tools.scoring.getScore`                 | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.getScoreboard`            | `tools.scoring.getScoreboard`            | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.getSetScoreString`        | `tools.scoring.getSetScoreString`        | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.getWinner`                | `tools.scoring.getWinner`                | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.groupByMatch`             | `tools.scoring.groupByMatch`             | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.inferServeSide`           | `tools.scoring.inferServeSide`           | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.isComplete`               | `tools.scoring.isComplete`               | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.isValidMatchUpFormat`     | `tools.formats.isValidMatchUpFormat`     | The same params object. The engine method stays: `matchUpGovernor` and `queryGovernor` keep the name. |
+| `scoreGovernor.mcpValidator`             | `tools.scoring.mcpValidator`             | The same params object.                                                                               |
+| `scoreGovernor.parseCSV`                 | `tools.scoring.parseCSV`                 | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.parseMatchUpFormat`       | `tools.formats.parse`                    | Positional arguments: call it directly, not through an engine. Renamed.                               |
+| `scoreGovernor.parseMCPPoint`            | `tools.scoring.parseMCPPoint`            | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.pbpValidator`             | `tools.scoring.pbpValidator`             | The same params object.                                                                               |
+| `scoreGovernor.pointParser`              | `tools.scoring.pointParser`              | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.resolvePointValue`        | `tools.scoring.resolvePointValue`        | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.shotParser`               | `tools.scoring.shotParser`               | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.shotSplitter`             | `tools.scoring.shotSplitter`             | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.stringifyMatchUpFormat`   | `tools.formats.stringify`                | Positional arguments: call it directly, not through an engine. Renamed.                               |
+| `scoreGovernor.toStatObjects`            | `tools.scoring.toStatObjects`            | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.validateMatchUp`          | None                                     | See [its reference](/docs/implementation/scoring/validateMatchUp).                                    |
+| `scoreGovernor.validateMatchUpScore`     | `tools.scoring.validateMatchUpScore`     | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.validateMCPMatch`         | `tools.scoring.validateMCPMatch`         | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.validateSetScore`         | `tools.scoring.validateSetScore`         | Positional arguments: call it directly, not through an engine.                                        |
+| `scoreGovernor.validateTieFormat`        | `tools.formats.validateTieFormat`        | The same params object.                                                                               |
 
 #### tieFormatGovernor
 
@@ -367,13 +368,13 @@ instead. Methods that stay are not listed.
 
 #### tournamentGovernor
 
-| Old call                                             | Replacement                                           | Notes                                                                                                    |
-| ---------------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `tournamentGovernor.addNotes`                        | None                                                  | See [its reference](/docs/implementation/records/addNotes).                                              |
-| `tournamentGovernor.getAllowedDrawTypes`             | None                                                  | See [its reference](/docs/implementation/records/getAllowedDrawTypes).                                   |
-| `tournamentGovernor.getTournamentTimeItem`           | None                                                  | See [its reference](/docs/implementation/scheduling/getTournamentTimeItem).                              |
-| `tournamentGovernor.query.cleanExpiredMutationLocks` | `tournamentGovernor.mutate.cleanExpiredMutationLocks` | The function writes. `tournamentGovernor.cleanExpiredMutationLocks` and the engine method are unchanged. |
-| `tournamentGovernor.removeNotes`                     | None                                                  | See [its reference](/docs/implementation/records/removeNotes).                                           |
+| Old call                                             | Replacement                                           | Notes                                                                                                      |
+| ---------------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `tournamentGovernor.addNotes`                        | None                                                  | See [its reference](/docs/implementation/records/addNotes).                                                |
+| `tournamentGovernor.getAllowedDrawTypes`             | None                                                  | See [its reference](/docs/implementation/records/getAllowedDrawTypes).                                     |
+| `tournamentGovernor.getTournamentTimeItem`           | None                                                  | See [its reference](/docs/implementation/scheduling/getTournamentTimeItem).                                |
+| `tournamentGovernor.query.cleanExpiredMutationLocks` | `tournamentGovernor.mutate.cleanExpiredMutationLocks` | The same params object. The engine method stays: `queryGovernor` keeps the name. Only this placement goes. |
+| `tournamentGovernor.removeNotes`                     | None                                                  | See [its reference](/docs/implementation/records/removeNotes).                                             |
 
 #### venueGovernor
 
@@ -404,7 +405,7 @@ and earlier carry no tags at all.
 
 ### Engine and governor routes
 
-- **117 methods leave the production governors and engines.** See the [engine API transition](/docs/implementation/engine-api-transition-8) for the list, the replacement where one exists, and the standalone-export decision for each.
+- **127 governor routes leave the production governors, and 122 of them leave the engines too.** The other five keep their engine method because another governor still holds the name (`isValidMatchUpFormat`, `cleanExpiredMutationLocks` and the three mocks-governor simulation aliases). See the [engine API transition](/docs/implementation/engine-api-transition-8) for the list, the replacement where one exists, and the standalone-export decision for each.
 - **`matchUpFormatCode` and `matchUpFormatGovernor` are retired.** `tools.formats` is the single format surface, including the format validators.
 - **`addFinishingRounds`** leaves its governor, and **`applyDerivedRankings`** is available only as `tools.rankings.deriveRankingList`.
 - **`setMatchUpState`** is removed from the engine surface. Use `setMatchUpStatus`.
@@ -418,10 +419,29 @@ and earlier carry no tags at all.
 - **`addPoint` no longer mutates the matchUp it is given.** Use its return value.
 - **Generators no longer attach.** `generateLineUps` (`attach`), `generateFlightProfile` (`attachFlightProfile`), `drawMatic` (`updateParticipantRatings`), `generateDrawTypeAndModifyDrawDefinition` (`modifyOriginal`), `generateEventsFromTieFormat` (attaching unless `addEvents: false`) and `generateTournamentRecord` through an engine return what they generate. Call the matching attach mutation to store it.
 - **Writes are native only.** The `LEGACY` and `BRIDGE` schema write modes are removed. Records written by them are still read.
-- **The positional `matchUpStatusCodes` array is no longer written**, and the `appliedPolicies` extension is no longer written (the first-class `appliedPolicies` attribute replaces it). Both are still read from older records.
+- **The `appliedPolicies` extension is no longer written** (the first-class `appliedPolicies` attribute replaces it). It is still read from older records.
+- **The positional `matchUpStatusCodes` array is no longer written or read for decisions.** See [Records written before 8.0.0](#records-written-before-800).
 - **Penalties refuse the old label spellings and the two misspelled type values** (the deprecated aliases of `EQUIPMENT_VIOLATION` and `FAILURE_TO_SIGN_IN`). Store `PenaltyTypeEnum` codes.
 - **Date helpers need the instant.** Exported date helpers lose their implicit "now" in 8.0.0. In 7.x, pass a Date or ISO date string as the second argument to `tools.plainDate.isDateInPast(dateString, asOf)` and `tools.generateTimeCode(index, asOf)`. When omitted, both still read the call clock.
 - **`asOf` is required** on `tools.publishing` (`isEmbargoed`, `isVisiblyPublished`, `getRoundVisibilityState`).
+
+### Records written before 8.0.0
+
+8.0.0 reads any tournament record a 7.x or earlier release wrote: every query works on it unchanged.
+
+Writes are stricter. 8.0.0 records a matchUp's exit and status reasons by side, under the side keys it introduces. A
+matchUp whose stored shape predates those keys is not rewritten when a record loads, and 8.0.0 does not silently
+convert it on write either:
+
+- **A write to such a matchUp is refused** unless the caller passes `force: true`. The refusal changes nothing.
+- **A forced write uses the new representation alone.** It stores the side-keyed form and does not keep the older shape
+  beside it.
+
+Status reasons travel side-keyed:
+
+- **The positional `matchUpStatusCodes` array is no longer written, and no outcome or mutation decision reads it.** On
+  an older record it stays where it is.
+- **A write that carries no reason keeps the stored ones.** Pass reasons by side to change them.
 
 ### Removed options, constants and fields
 
