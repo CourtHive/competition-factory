@@ -685,8 +685,8 @@ export const schedulingCaseSources: Source[] = [
     caseId: 'scheduling.plan.overnight-rest-is-warned-not-held.v1',
     note:
       'A junior first-round matchUp is timed at 21:00 on the first date (90 minutes: play ends 22:30). The default ' +
-      "policy's overnight rest for JUNIOR is 12 hours, which a player may waive: it is warned, not held (§ 9.8, CA " +
-      '2026-10-25). Recovery alone ends the night before, so the final takes the first slot of the next date, 08:00.',
+      "policy's overnight rest for JUNIOR is 12 hours, which a player may waive: it is warned, not held (§ 9.8). " +
+      'Recovery alone ends the night before, so the final takes the first slot of the next date, 08:00.',
     build: () => {
       mocksEngine.generateTournamentRecord({
         venueProfiles: [{ venueId: VENUE, courtsCount: 1, startTime: '08:00', endTime: '23:00' }],
