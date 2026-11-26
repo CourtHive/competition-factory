@@ -1,3 +1,4 @@
+import { readTeamLineLedger, teamFinalLine, type TeamLedger } from './plan/teamFinalLine';
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
 import { hasStaleScoredTime } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
@@ -22,7 +23,7 @@ import { findStructure } from '@Acquire/findStructure';
 import { recordWholeCall } from './plan/recordedCall';
 import { observeWrite, planWrite } from './write';
 import { refuseOutcome } from './refusals';
-import { stampedInThisCall } from './ops';
+import { stampedIn, stampedInThisCall } from './ops';
 import { buildOutcomeView } from './view';
 import { chooseRoute } from './route';
 import { planOutcome } from './plan';
@@ -83,7 +84,14 @@ const OWNED_SHAPES = new Set<PlanShape>(['local', 'direction']);
  * matchUp and the direction, then the plan as ops behind the fail-closed allowlist, then the working view after them and
  * the settle passes' has-work predicates. A plan that leaves a pass work abstains `settle`.
  */
-function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, keepFoldedView = false) {
+function planCall(
+  args: BuildViewArgs,
+  view: OutcomeView,
+  refusal?: Refusal,
+  keepFoldedView = false,
+  teamLedger?: TeamLedger,
+) {
+  let teamStamps: Set<string> | undefined;
   args = { ...args, clockFree: getCapturedClock() === undefined };
   // TEAM auto-calc: a dual whose result is computed from its lines takes the PROJECTED winner and score in
   // place of the call's before anything is routed, as `handleTeamAutoCalc` rewrites v1's parameters
@@ -100,7 +108,12 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal, kee
     project: projectOutcome(args, view),
     landing: landingView(args, view),
     record: (prefix) => recordDoubleExitCascade({ ...args, request: planned }, prefix),
-    recordWhole: () => recordWholeCall(args),
+    teamLine: (plan, why) =>
+      teamLedger &&
+      teamFinalLine(args, plan, why, () => (teamStamps = stampedIn(args.drawDefinition, teamLedger.stamps))),
+    // a call whose ledger was read before the view is recorded with that reading, never a second one
+    recordWhole: () =>
+      recordWholeCall(args, teamStamps ?? (teamLedger && stampedIn(args.drawDefinition, teamLedger.stamps))),
     certifiesPhases: (ops) => !!compileTemporalPhases({ args, view, route, ops }),
     dual: dualCallFor(route, args, view),
     request: planned,
@@ -196,6 +209,8 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   owned?: ResultType;
   /** `owned` is v1's whole answer for a call recorded on a copy (`plan/recordedCall.ts`) */
   recorded?: boolean;
+  /** A native line phase completed its warnings and return before replay. */
+  finished?: boolean;
   compare?: (v1Result: ResultType) => void;
   runV1?: <T>(run: () => T) => T;
 } {
@@ -204,18 +219,21 @@ export function decideOutcomeV2(args: BuildViewArgs): {
 
   // a precheck disagreement belongs to the call that met it: whatever an earlier call left is not this call's
   takePrecheckDivergences();
+  // handed to the plan alone: the view and the refusals read the arguments every call passes
+  const teamLedger = readTeamLineLedger(args);
   const view = buildOutcomeView(args);
   const refusal: Refusal | undefined = refuseOutcome(args.request, view);
 
   if (mode === OUTCOME_PIPELINE_V2) {
     if (refusal) return { refused: toResult(refusal, args) };
     // S2: a call whose complete plan is a shape v2 owns is written by v2, and v1 is not asked (F1 (a), fail-closed)
-    const { outcome, phases, route } = planCall(args, view);
+    const { outcome, phases, route } = planCall(args, view, undefined, false, teamLedger);
     if (!outcome.ops || !OWNED_SHAPES.has(outcome.shape)) return {};
     const applied = phases
       ? applyTemporalPhases(args, phases, outcome.shape)
       : applyOwnedPlan({ args, ops: outcome.ops, shape: outcome.shape, route });
     // a call recorded whole returns what v1 returned for it
+    if (!applied.error && outcome.phaseResult) return { owned: outcome.phaseResult, finished: true };
     if (applied.error || !outcome.recordedResult) return { owned: applied };
     return { owned: outcome.recordedResult, recorded: true };
   }
@@ -224,7 +242,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   const indexed = indexOracle(args, view);
 
   // the folded view is kept for the view oracle only, which reads it after v1 has written
-  const { planned, route, plan, direction, folded, outcome, observe } = planCall(args, view, refusal, true);
+  const { planned, route, plan, direction, folded, outcome, observe } = planCall(args, view, refusal, true, teamLedger);
   const dual = route ? planDual(args, view) : undefined;
   const shadowBefore =
     outcome.ops && args.drawDefinition ? captureShadow({ ...args, drawDefinition: args.drawDefinition }) : undefined;

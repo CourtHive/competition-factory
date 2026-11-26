@@ -102,7 +102,11 @@ function objectsUnder(root: object): Set<object> {
  * object the run changed and took out of the draw, or one outside the draw that does not read as its stored
  * counterpart (the event and the tournament record hold the draw, so they read as changed wherever the draw is).
  */
-function returnedOnStored(written: ResultType, originals: WeakMap<object, object>, drawDefinition: DrawDefinition) {
+export function returnedOnStored(
+  written: ResultType,
+  originals: WeakMap<object, object>,
+  drawDefinition: DrawDefinition,
+) {
   const storedOf = (held: object) => originals.get(held) ?? held;
   const reads = (copied: object, stored: object) => {
     if (shapeOf(copied) !== shapeOf(stored)) return false;
@@ -136,10 +140,10 @@ function returnedOnStored(written: ResultType, originals: WeakMap<object, object
   return true;
 }
 
-export function recordWholeCall(args: BuildViewArgs): RecordedCall | undefined {
+export function recordWholeCall(args: BuildViewArgs, sampledStamps?: Set<string>): RecordedCall | undefined {
   const { writeOnCopy, request } = args;
   if (!args.drawDefinition || !writeOnCopy) return undefined;
-  const stampedBefore = stampedInThisCall(args.drawDefinition);
+  const stampedBefore = sampledStamps ?? stampedInThisCall(args.drawDefinition);
   const requested = JSON.stringify(request);
   const kept = cloneState(request);
   const { copy, originals } = cloneState({

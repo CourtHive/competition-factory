@@ -489,7 +489,7 @@ export type BuildViewArgs = {
   /** RECORDED: v1's whole write for this call, run on a copy of the record (`plan/recordedCall.ts`) */
   writeOnCopy?: WriteOnCopy;
   /** RECORDED: this call's settle passes run once more on a copy `writeOnCopy` wrote (`plan/recordedCall.ts`) */
-  settleOnCopy?: (copy: RecordCopy) => (ResultType & { exhausted?: string }) | undefined;
+  settleOnCopy?: (copy: RecordCopy, finish?: CopyFinish) => (ResultType & { exhausted?: string }) | undefined;
   /**
    * RECORDED: runs the cascade recorder's write on a copy with its random draws kept, so that v1's run on the stored
    * record, where it follows, is handed the same draws (`tools/replayedDraws.ts`); not given it, it records nothing.
@@ -512,6 +512,8 @@ export type RecordCopy = { tournamentRecord?: Tournament; drawDefinition: DrawDe
  * tournament record).
  */
 export type WriteOnCopy = (copy: RecordCopy) => ResultType | undefined;
+/** Complete a detached native write's public return on its copy, before replay onto storage. */
+export type CopyFinish = { owned: ResultType; matchUpsMap: MatchUpsMap };
 
 /** § 5 rule 1: what direction must have done once the route has written */
 /** F2: what the loser's matchUp holds once a relabel withdraws the exit carried there */
@@ -689,6 +691,8 @@ export type OutcomePlan =
       abstain?: undefined;
       /** RECORDED: what v1 returned for the whole call it wrote on a copy, which the owned call returns */
       recordedResult?: ResultType;
+      /** The public return from a native sequence that writes a line and keeps or decides its dual. */
+      phaseResult?: ResultType;
     }
   | { abstain: AbstainReason; ops?: undefined; shape?: undefined };
 
@@ -733,6 +737,7 @@ export type SeatObligation = { kind: 'double-exit-seats'; targetMatchUpId?: stri
  * for it, and the composition points a plan folds one step on another with.
  */
 export type PlanArgs = {
+  teamLine?: (plan: PlanArgs, why: 'team' | 'cascade') => OutcomePlan | undefined;
   clockFree?: boolean;
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;

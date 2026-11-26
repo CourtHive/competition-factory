@@ -37,7 +37,7 @@ import { isString } from '@Tools/objects';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Set as SetType, Tournament } from '@Types/tournamentTypes';
-import type { RecordCopy } from '@Mutate/matchUps/outcome/types';
+import type { CopyFinish, RecordCopy } from '@Mutate/matchUps/outcome/types';
 import { MatchUpsMap, PolicyDefinitions, ResultType, ResultWarning, TournamentRecords } from '@Types/factoryTypes';
 import { INVALID_VALUES, INVALID_WINNING_SIDE, SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING, POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
@@ -294,7 +294,9 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // S2: a call v2 owns has been written by it (`outcome/apply.ts`); v1 is not asked, and the warnings are v1's own
   // a call recorded whole returns what v1 returned for it on the copy, its warnings among them
   if (v2.owned)
-    return v2.recorded ? v2.owned : ownedResult({ owned: v2.owned, params, matchUpsMap, neverPlayedBefore, stack });
+    return v2.recorded || v2.finished
+      ? v2.owned
+      : ownedResult({ owned: v2.owned, params, matchUpsMap, neverPlayedBefore, stack });
 
   const stored: V1Target = {
     deciderSnapshotBefore,
@@ -336,8 +338,18 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
    * RECORDED, THE FIXPOINT (`outcome/plan/recordedCall.ts` `settledOnCopy`): the settle passes run once more on the copy
    * v1 has written, with this call's parameters and the readings taken of the copy as it now stands (its double exits,
    * its deciders), as the next call's settle would take them. Undefined for a copy this call did not write.
+   *
+   * With `finish`, a native TEAM line's detached write (`plan/teamFinalLine.ts`) completes its public return on its
+   * copy instead: the warnings v1 adds, from the copy's own map. Undefined for a call that names another tournament
+   * record, as `writeOnCopy` refuses it. It reuses this closure so the decision's arguments stay those of every call.
    */
-  function settleOnCopy(copy: RecordCopy) {
+  function settleOnCopy(copy: RecordCopy, finish?: CopyFinish) {
+    if (finish) {
+      const named = Object.keys(tournamentRecords);
+      if (named.length > 1 || (named.length && named[0] !== copy.tournamentRecord?.tournamentId)) return undefined;
+      const { owned, matchUpsMap: map } = finish;
+      return ownedResult({ owned, params: { ...params, ...copy }, matchUpsMap: map, neverPlayedBefore, stack });
+    }
     const target = copies.get(copy.drawDefinition);
     if (!target) return undefined;
     const map = getMatchUpsMap({ drawDefinition: copy.drawDefinition });
