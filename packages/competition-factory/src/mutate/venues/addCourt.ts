@@ -62,7 +62,13 @@ type BuildCourtArgs = {
   venueId: string;
   venue: Venue;
 };
-function buildCourt({ venue, venueId, courtId, court, pending = [] }: BuildCourtArgs): ResultType & { court?: Court } {
+export function buildCourt({
+  venue,
+  venueId,
+  courtId,
+  court,
+  pending = [],
+}: BuildCourtArgs): ResultType & { court?: Court } {
   const courtRecord: any = { ...courtTemplate(), venueId, courtId };
   if (!courtRecord.courtId) {
     courtRecord.courtId = UUID();

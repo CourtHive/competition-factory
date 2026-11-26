@@ -74,6 +74,8 @@ type SetSchedulingProfileArgs = {
 type PlanSchedulingProfileArgs = SetSchedulingProfileArgs & {
   /** the array the commit stores and announces, when it is edited in place to equal `schedulingProfile` first */
   storedProfile?: unknown[];
+  /** the records written, when they are not the records validated (a plan validates against a proposed view) */
+  targets?: TournamentRecords;
 };
 export function setSchedulingProfile(params: SetSchedulingProfileArgs) {
   const plan = planSchedulingProfile(params);
@@ -93,6 +95,7 @@ export function planSchedulingProfile({
   tournamentRecord,
   schedulingProfile,
   storedProfile,
+  targets: written,
 }: PlanSchedulingProfileArgs) {
   const profileValidity = validateSchedulingProfile({
     tournamentRecords,
@@ -104,7 +107,7 @@ export function planSchedulingProfile({
   // CODES: apply to every tournamentRecord (discover semantics) using the
   // group-leaf helper so writes land on `scheduling.profile` and / or the
   // legacy `schedulingProfile` extension based on schemaWriteMode.
-  const targets = tournamentRecord ? [tournamentRecord] : Object.values(tournamentRecords ?? {});
+  const targets = tournamentRecord ? [tournamentRecord] : Object.values(written ?? tournamentRecords ?? {});
   const writes = targets.map((target) =>
     planGroupLeafOrExtension({
       element: target,

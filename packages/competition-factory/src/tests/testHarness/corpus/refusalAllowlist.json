@@ -2,7 +2,6 @@
   "reasons": {
     "F-008": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-0b8ef85b5d4aa8db9b085f1d1e019de0a73c30248cc29089e82caaf0ac55bdc1",
     "F-009": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-b467984b227aa55a3dcdfec53ffc92b110b657eb1253862d74c58bf7c918dadb",
-    "F-014": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-6ca70d9c78e30736cbac87cf97189d8737db673dbcb28b24721f55386a94ce84",
     "F-016-exit-walk": "A public BYE placement whose walk meets an exit keeps the writer: a loser seat filled ahead of its feeder, or (malformed) a repeated matchUpId past a resolved exit, refuses after the main writes (f016ExitWalkResidual.test.ts)",
     "cascadeWriteErrorsReachTheCaller": "Forced downstream write error",
     "reconcileDeciderReturnsItsError": "Injected reconciliation failure",
@@ -804,22 +803,6 @@
           "/events/0/drawDefinitions/0/updatedAt",
           "/factory/timeStamp"
         ]
-      }
-    ],
-    "src/tests/mutations/venues/courtDeletion.test.ts::can add events, venues, and schedule matchUps": [
-      {
-        "method": "modifyVenue",
-        "error": "ERR_SCHEDULED_MATCHUPS",
-        "reason": "F-014",
-        "paths": ["/venues/0/venueAbbreviation", "/venues/0/venueName"]
-      }
-    ],
-    "src/tests/mutations/venues/modifyVenue.test.ts::can define and modify a venue": [
-      {
-        "method": "modifyVenue",
-        "error": "ERR_INVALID_TIME",
-        "reason": "F-014",
-        "paths": ["/venues/0/courts", "/venues/0/venueAbbreviation", "/venues/0/venueName"]
       }
     ]
   }

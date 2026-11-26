@@ -25,20 +25,34 @@ type ModifyCourtAvailabilityArgs = {
   courtId: string;
   force?: boolean;
 };
-export function modifyCourtAvailability({
-  tournamentRecord,
-  dateAvailability,
-  disableNotice,
-  venueMatchUps,
-  courtId,
-  force,
-}: ModifyCourtAvailabilityArgs): {
+type CourtAvailabilityRefusal = { error?: ErrorType; info?: string; matchUpIds?: string[] };
+
+export function modifyCourtAvailability(params: ModifyCourtAvailabilityArgs): {
   error?: ErrorType;
   success?: boolean;
   totalMergeCount?: number;
   matchUpIds?: string[];
   info?: string;
 } {
+  const plan = planCourtAvailability(params);
+  if (!('commit' in plan)) return plan;
+  plan.commit();
+  return { ...SUCCESS, totalMergeCount: plan.totalMergeCount };
+}
+
+/**
+ * A court's new availability, decided without writing it: validated, sorted and merged, and refused when it leaves a
+ * scheduled, unplayed matchUp outside every window (unless forced or the policy allows it). The commit stores it and
+ * announces the venue (unless `disableNotice`).
+ */
+export function planCourtAvailability({
+  tournamentRecord,
+  dateAvailability,
+  disableNotice,
+  venueMatchUps,
+  courtId,
+  force,
+}: ModifyCourtAvailabilityArgs): CourtAvailabilityRefusal | { commit: () => void; totalMergeCount: number } {
   const paramsCheck = requireParams({ tournamentRecord, courtId }, [TOURNAMENT_RECORD, COURT_ID]);
   if (paramsCheck.error) return paramsCheck;
 
@@ -105,18 +119,25 @@ export function modifyCourtAvailability({
     // and affected matchUps will need to be rescheduled by the caller
   }
 
-  if (court) {
-    court.dateAvailability = dateAvailability;
-
+  const availability = dateAvailability;
+  const commit = () => {
+    if (!court) return;
+    court.dateAvailability = availability;
     if (!disableNotice && venue)
       addNotice({
         payload: { venue, tournamentId: tournamentRecord.tournamentId },
         topic: MODIFY_VENUE,
         key: venue.venueId,
       });
-  }
+  };
+  return { commit, totalMergeCount };
+}
 
-  return { ...SUCCESS, totalMergeCount };
+/** An availability as a court stores it: validated, then sorted and merged by date. */
+export function mergedCourtAvailability(dateAvailability: Availability[]) {
+  const dateResult = validDateAvailability({ dateAvailability });
+  if (dateResult.error) return { refusal: dateResult };
+  return { dateAvailability: sortAndMergeDateAvailability(dateResult.canonicalAvailability).updatedDateAvailability };
 }
 
 /**

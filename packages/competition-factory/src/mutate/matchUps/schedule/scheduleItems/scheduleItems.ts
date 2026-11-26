@@ -594,7 +594,7 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): Sc
   return plan.result;
 }
 
-function planScheduleItems(params: AddMatchUpScheduleItemsArgs): ScheduleResult | SchedulePlan {
+export function planScheduleItems(params: AddMatchUpScheduleItemsArgs): ScheduleResult | SchedulePlan {
   const stack = 'addMatchUpScheduleItems';
 
   const paramsCheck = checkRequiredParameters(
