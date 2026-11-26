@@ -95,18 +95,14 @@ export const ALLOW = [
     why: "agent instructions for this checkout, which point agents at the orchestration repository; changing what agents are told to read is the owner's call, not a comment sweep's",
   },
 
-  // ---- TEMPORARY: files changed by open PRs, held back so this sweep does not conflict with them. When the PR
-  // ---- merges, clean the file's comments and test titles in a follow-up; its entry then goes STALE and fails:
-  // ---- delete it.
+  // ---- TEMPORARY: files changed by open PR #6638, held back so this sweep does not conflict with it. When it
+  // ---- merges, clean each file's comments and test titles in a follow-up; an entry whose file is then clean goes
+  // ---- STALE and fails: delete it.
   ...[
     'src/mutate/events/bulkMatchUpStatusUpdate.ts',
     'src/mutate/matchUps/matchUpStatus/setMatchUpStatus.ts',
     'src/tests/mutations/events/bulkMatchUpStatusUpdateRefusals.test.ts',
   ].map((file) => ({ rule: '*', file: pkg(file), why: 'TEMPORARY: changed by open PR #6638; clean after it merges' })),
-  ...[
-    'src/mutate/matchUps/schedule/bulkScheduleTournamentMatchUps.ts',
-    'src/mutate/matchUps/schedule/scheduleItems/scheduleItems.ts',
-  ].map((file) => ({ rule: '*', file: pkg(file), why: 'TEMPORARY: changed by open PR #6641; clean after it merges' })),
 ];
 
 const JS = /\.(ts|mts|cts|js|mjs|cjs)$/;
