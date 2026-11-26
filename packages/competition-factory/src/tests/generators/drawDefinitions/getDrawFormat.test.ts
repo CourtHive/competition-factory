@@ -6,6 +6,9 @@
  *     > event.tieFormats[tieFormatName] > inline event.tieFormat matching tieFormatName
  *     > tieFormatDefaults(tieFormatName) > event tieFormat > tieFormatDefaults()
  *
+ * A tieFormatName that reaches the catalogue lookup and names no factory tie format is refused with
+ * INVALID_VALUES, as `addEvent` refuses it. It used to build STANDARD silently.
+ *
  * The two lookups in the middle of that chain — the MAIN-structure `find` and the
  * `tieFormatId` `find` — were never invoked by any spec, so both callbacks sat
  * uncovered while the file's happy path (a draw generated with no existing
@@ -18,8 +21,9 @@ import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { INVALID_TIE_FORMAT } from '@Constants/errorConditionConstants';
+import { INVALID_TIE_FORMAT, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
 
 describe('getDrawFormat — TEAM tieFormat resolution', () => {
@@ -94,6 +98,57 @@ describe('getDrawFormat — TEAM tieFormat resolution', () => {
     const result: any = getDrawFormat({ matchUpType: TEAM, eventType: TEAM, existingDrawDefinition });
 
     expect(result.error).toEqual(INVALID_TIE_FORMAT);
+    expect(result.tieFormat).toBeUndefined();
+  });
+
+  it('refuses a tieFormatName that names no factory tie format, as addEvent does', () => {
+    const result: any = getDrawFormat({ tieFormatName: 'NOT_A_TIE_FORMAT', matchUpType: TEAM, eventType: TEAM });
+
+    expect(result.error).toEqual(INVALID_VALUES);
+    expect(result.context).toEqual({ tieFormatName: 'NOT_A_TIE_FORMAT' });
+    expect(result.tieFormat).toBeUndefined();
+  });
+
+  it('refuses an unknown tieFormatName rather than falling back to the event tieFormat', () => {
+    const event: any = { tieFormat: { ...tieFormatDefaults({}), tieFormatName: 'EVENT_FORMAT' } };
+
+    const result: any = getDrawFormat({ tieFormatName: 'NOT_A_TIE_FORMAT', matchUpType: TEAM, eventType: TEAM, event });
+
+    expect(result.error).toEqual(INVALID_VALUES);
+  });
+
+  it('still builds a catalogue tie format by name, and STANDARD', () => {
+    let result: any = getDrawFormat({ tieFormatName: COLLEGE_D3, matchUpType: TEAM, eventType: TEAM });
+    expect(result.error).toBeUndefined();
+    expect(result.tieFormat.tieFormatName).toEqual('College D3');
+
+    result = getDrawFormat({ tieFormatName: 'STANDARD', matchUpType: TEAM, eventType: TEAM });
+    expect(result.error).toBeUndefined();
+    expect(result.tieFormat.winCriteria.valueGoal).toEqual(5);
+  });
+
+  it('does not check the name when a higher-precedence tieFormat resolves', () => {
+    const tieFormat = tieFormatDefaults({});
+
+    const result: any = getDrawFormat({
+      tieFormatName: 'NOT_A_TIE_FORMAT',
+      matchUpType: TEAM,
+      eventType: TEAM,
+      tieFormat,
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(result.tieFormat).toEqual(tieFormat);
+  });
+
+  it('ignores tieFormatName outside a TEAM event', () => {
+    const result: any = getDrawFormat({
+      tieFormatName: 'NOT_A_TIE_FORMAT',
+      matchUpType: 'SINGLES',
+      eventType: 'SINGLES',
+    });
+
+    expect(result.error).toBeUndefined();
     expect(result.tieFormat).toBeUndefined();
   });
 });
