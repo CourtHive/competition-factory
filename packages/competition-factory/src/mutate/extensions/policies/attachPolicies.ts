@@ -74,7 +74,8 @@ export function attachPolicies(params: AttachPoliciesArgs): ResultType & { appli
     const result = writePolicies(element, plan);
     if (result.error) return result;
     applied.push(...plan.applied);
-    // the record now says which policies it pins; the defaults stamp says what it relies on for the rest
+    // the record now says which policies it pins; the defaults stamp says what it relies on for the rest (a record
+    // carries it from creation, so it is written only for a record that predates it)
     stampDefaultsIfAbsent(params.tournamentRecord);
 
     if (params.drawDefinition) {

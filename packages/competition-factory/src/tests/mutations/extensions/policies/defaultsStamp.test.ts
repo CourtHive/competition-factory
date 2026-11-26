@@ -64,9 +64,18 @@ describe('creation stamps the defaults', () => {
     tournamentEngine.newTournamentRecord({ startDate: '2026-11-26', endDate: '2026-11-27' });
     const { tournamentRecord } = tournamentEngine.getTournament();
     expect(tournamentRecord.factory).toMatchObject({ createdVersion: factoryVersion(), defaultsHash, defaultsHashes });
-    // a copy: no record shares the module's constant
-    expect(tournamentRecord.factory.defaultsHashes).not.toBe(defaultsHashes);
-    expect(Object.isFrozen(tournamentRecord.factory.defaultsHashes)).toEqual(false);
+  });
+
+  it('the per-type hashes are the frozen build-time object, and a copy of the record is plain data', () => {
+    const tournamentRecord = createTournamentRecord({ tournamentName: 'Shared' });
+    expect(tournamentRecord.factory.defaultsHashes).toBe(defaultsHashes);
+    expect(Object.isFrozen(tournamentRecord.factory.defaultsHashes)).toEqual(true);
+    // a record read back is a copy: the stamp is ordinary data there
+    tournamentEngine.setState(tournamentRecord);
+    const copied = tournamentEngine.getTournament().tournamentRecord;
+    expect(copied.factory.defaultsHashes).toEqual(defaultsHashes);
+    expect(Object.isFrozen(copied.factory.defaultsHashes)).toEqual(false);
+    expect(structuredClone(tournamentRecord).factory.defaultsHashes).toEqual(defaultsHashes);
   });
 
   it('a generated tournament carries it too', () => {
