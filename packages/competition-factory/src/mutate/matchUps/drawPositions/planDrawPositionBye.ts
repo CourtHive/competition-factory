@@ -22,7 +22,6 @@ import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { drawPositionFilled } from './drawPositionFilled';
 import { findStructure } from '@Acquire/findStructure';
-import { cloneData } from '@Tools/cloneState';
 import { numericSort } from '@Tools/sorting';
 
 // constants and types
@@ -166,13 +165,11 @@ function createDraft(drawDefinition: DrawDefinition, base: MatchUpsMap): Draft {
       const structure = structureId ? findStructure({ drawDefinition: working, structureId }).structure : undefined;
       const matchUps = matchUpsOf(structure);
       const index = matchUps?.indexOf(stored) ?? -1;
-      const copy = cloneData(stored);
+      // SHALLOW: what a planned step writes is the matchUp's own fields (a new array for its positions) and, on a release,
+      // its schedule, which is copied; a plain matchUp's provenance is never written, and its lines are never written
+      const copy: MatchUp = { ...stored, ...(stored.schedule ? { schedule: { ...stored.schedule } } : {}) };
       if (matchUps && index >= 0) matchUps[index] = copy;
       replaceInDraw(stored, copy);
-      (stored.tieMatchUps ?? []).forEach((line, lineIndex) => {
-        const copiedLine = copy.tieMatchUps?.[lineIndex];
-        if (copiedLine) replaceInDraw(line, copiedLine);
-      });
       return copy;
     },
     writableAssignment(assignments, index) {
@@ -251,8 +248,7 @@ function planBye(plan: Plan, params: PlanByeArgs & { drawDefinition: DrawDefinit
   const { tournamentRecord, provisionalPositioning, preserveScheduling, isPositionAction, event } = params;
   const appliedPolicies = getAppliedPolicies({ tournamentRecord, drawDefinition, event }).appliedPolicies ?? {};
   const matchUpsMap = draft.matchUpsMap;
-  const inContextDrawMatchUps =
-    getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? ([] as HydratedMatchUp[]);
+  const inContextDrawMatchUps = seat.inContextDrawMatchUps ?? hydrate(plan, drawDefinition);
   const { matchUps } = getAllStructureMatchUps({
     matchUpFilters: { isCollectionMatchUp: false },
     structure: workingStructure,
@@ -321,7 +317,12 @@ function seatRefusal(
   plan: Plan,
   params: PlanByeArgs & { drawDefinition: DrawDefinition; structureId: string },
   workingStructure: Structure,
-): { done?: ResultType; positionAssignments: PositionAssignment[]; appended?: PositionAssignment } {
+): {
+  done?: ResultType;
+  positionAssignments: PositionAssignment[];
+  appended?: PositionAssignment;
+  inContextDrawMatchUps?: HydratedMatchUp[];
+} {
   const { drawDefinition, drawPosition, structureId } = params;
   const { positionAssignments } = getPositionAssignments({ structure: workingStructure });
 
@@ -337,9 +338,16 @@ function seatRefusal(
   // a propagation placement never reaches the planner (the public wrapper keeps the writer for it), and no loserMatchUp
   // reaches a public placement or its nested ones, so the topology inference is false: this is no propagation placement
 
+  // ONE HYDRATION for the activity check and the walk: the writer hydrates the draw for each, with nothing written
+  // between them (an absent assignment appended after the check is hydrated again, below)
+  const inContextDrawMatchUps = params.drawPositionsInactive ? undefined : hydrate(plan, drawDefinition);
   const drawPositionIsActive =
-    !params.drawPositionsInactive &&
-    getStructureDrawPositionProfiles({ drawDefinition, structureId }).activeDrawPositions?.includes(drawPosition);
+    inContextDrawMatchUps &&
+    getStructureDrawPositionProfiles({
+      drawDefinition,
+      structureId,
+      inContextDrawMatchUps,
+    }).activeDrawPositions?.includes(drawPosition);
   if (drawPositionIsActive) return { done: { error: DRAW_POSITION_ACTIVE }, positionAssignments };
 
   let positionAssignment = positionAssignments?.find((assignment) => assignment.drawPosition === drawPosition);
@@ -357,7 +365,7 @@ function seatRefusal(
   const { filled } = drawPositionFilled(positionAssignment);
   if (filled)
     return { done: decorateResult({ result: { error: DRAW_POSITION_ASSIGNED }, stack: STACK }), positionAssignments };
-  return { positionAssignments, appended: created };
+  return { positionAssignments, appended: created, inContextDrawMatchUps: created ? undefined : inContextDrawMatchUps };
 }
 
 /** the seat's assignment takes the BYE (no propagation marker); an absent one is appended to the stored array first */
@@ -454,6 +462,12 @@ function planFurthest(
     });
   }
   return undefined;
+}
+
+/** the draft in context, as the writer's own `getAllDrawMatchUps` reads the draw it has written so far */
+function hydrate(plan: Plan, drawDefinition: DrawDefinition): HydratedMatchUp[] {
+  const matchUpsMap = plan.draft.matchUpsMap;
+  return getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
 }
 
 function unplanned(plan: Plan, reason: string): ResultType {
