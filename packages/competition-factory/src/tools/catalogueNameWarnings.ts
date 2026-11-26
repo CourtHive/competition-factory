@@ -31,7 +31,12 @@ export type CatalogueNameInput = keyof typeof CATALOGUE_NAME_INPUTS;
 /** Node's `process`, where there is one: only `emitWarning` is read. */
 type WarningHost = { emitWarning?: (message: string, options: { type: string; code: string }) => void };
 
-const warned: { [input in CatalogueNameInput]?: true } = {};
+/**
+ * The inputs that have warned. A call site reads its flag before calling `warnCatalogueName`, so a use after the first
+ * costs that one read and no call.
+ */
+export const catalogueNameWarned: { [input in CatalogueNameInput]?: true } = {};
+const warned = catalogueNameWarned;
 let attributedTo: CatalogueNameInput | undefined;
 
 /**

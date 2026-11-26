@@ -1,5 +1,6 @@
 import { addEventEntriesRecorded, addEventRecorded, publishEventRecorded } from './recordedWrites';
 import { getStageParticipantsCount } from '@Query/drawDefinition/getStageParticipantsCount';
+import { catalogueNameWarned, warnCatalogueName } from '@Tools/catalogueNameWarnings';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getStageParticipants } from '@Query/drawDefinition/getStageParticipants';
 import { generateFlightDrawDefinitions } from './generateFlightDrawDefinitions';
@@ -7,7 +8,6 @@ import { eventGeneratesOwnParticipants } from './eventGeneratesOwnParticipants';
 import { generateEventParticipants } from './generateEventParticipants';
 import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { resolveCompletionOptions } from './resolveCompletionOptions';
-import { warnCatalogueName } from '@Tools/catalogueNameWarnings';
 import { addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { attachProfilePolicies } from './attachProfilePolicies';
 import { getParticipantId } from '@Functions/global/extractors';
@@ -59,7 +59,8 @@ export function generateEventWithFlights(params) {
   } = eventProfile;
 
   const eventId = eventProfile.eventId || UUID(undefined, random);
-  if (eventType === TEAM && !eventProfile.tieFormat && tieFormatName) warnCatalogueName('mocksProfile', tieFormatName);
+  if (!catalogueNameWarned.mocksProfile && eventType === TEAM && !eventProfile.tieFormat && tieFormatName)
+    warnCatalogueName('mocksProfile', tieFormatName);
   const tieFormat =
     eventProfile.tieFormat ||
     (eventType === TEAM

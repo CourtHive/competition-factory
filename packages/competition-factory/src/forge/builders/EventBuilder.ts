@@ -14,7 +14,7 @@
  * executionQueue `pipe` mechanism to thread `event` and `drawDefinition`
  * results between steps without forcing the caller to materialize them.
  */
-import { attributeCatalogueNames, warnCatalogueName } from '@Tools/catalogueNameWarnings';
+import { attributeCatalogueNames, catalogueNameWarned, warnCatalogueName } from '@Tools/catalogueNameWarnings';
 
 import { DOUBLES, HYBRID, SINGLES, TEAM } from '@Constants/eventConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
@@ -86,7 +86,7 @@ export class EventBuilder {
   }
   /** A string names a catalogue tie format, sent as addEvent's `tieFormatName`: deprecated, pass a tieFormat object */
   private namedTieFormat(tieFormatName: string): void {
-    warnCatalogueName('eventBuilder', tieFormatName);
+    if (!catalogueNameWarned.eventBuilder) warnCatalogueName('eventBuilder', tieFormatName);
     this.eventState.tieFormatName = tieFormatName;
   }
 

@@ -156,10 +156,12 @@ A `tieFormatName` that matches a tieFormat the event already holds is a label, n
 warn.
 
 Stored records read unchanged. Every stored TEAM tie carries its full `tieFormat`, and a `tieFormatName` on a stored
-record is a label. From 7.x, a `competitionFormat` attached with a preset name stores the preset's full policy as
-`ratingsPolicy` (the name is kept as `ratingsPolicyName`, a label), so it rates in 8.0.0 without the preset. A record
-stored earlier with only a preset name rates in 7.x; to rate it in 8.0.0, attach the policy object (`modifyEvent` with
-the `competitionFormat`), or pass `ratingsPolicy` to `generateDynamicRatings`.
+record is a label. From 7.x, a preset name is stored by value when it is attached: a `competitionFormat` (`addEvent`,
+`modifyEvent`) and a competition policy's `dynamicFormRating` (`attachPolicies`) store the preset's full policy as
+`ratingsPolicy`, and keep the name beside it as `ratingsPolicyName`, a label. Such a record rates in 8.0.0 without the
+preset. A record stored earlier with only a preset name rates in 7.x; to rate it in 8.0.0, attach the policy object
+(`modifyEvent` with the `competitionFormat`, or `attachPolicies` with `allowReplacement`), or pass `ratingsPolicy` to
+`generateDynamicRatings`.
 
 ### The outcome pipeline selector is removed
 

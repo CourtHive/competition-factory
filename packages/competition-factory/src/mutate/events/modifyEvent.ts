@@ -1,6 +1,6 @@
 import { getObjectTieFormat } from '@Query/hierarchical/tieFormats/getObjectTieFormat';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { pinnedCompetitionFormat } from '@Helpers/ratings/pinnedCompetitionFormat';
+import { pinnedCompetitionFormat } from '@Helpers/ratings/pinnedRatingsPresets';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { categoryCanContain } from '@Helpers/categories/categoryCanContain';
 import { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';

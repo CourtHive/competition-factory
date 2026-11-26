@@ -1,4 +1,5 @@
 import { modifyTournamentDetailNotice } from '@Mutate/tournaments/tournamentDetailNotice';
+import { pinnedCompetitionPolicy } from '@Helpers/ratings/pinnedRatingsPresets';
 import { validateTallyPolicy } from '@Validators/validateTallyPolicy';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
@@ -7,8 +8,8 @@ import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExte
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
+import { POLICY_TYPE_COMPETITION, POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { PolicyDefinitions, TournamentRecords, ResultType } from '@Types/factoryTypes';
-import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { DrawDefinition, Event, Extension, Tournament } from '@Types/tournamentTypes';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -162,7 +163,8 @@ function planPolicies(params: any, element: any): PolicyPlan {
       // attributes would read back as its name alone, which this check refuses
       const defined = Object.values(values).some((value) => value !== undefined);
       if (!defined || (policyName && !isString(policyName))) return { error: INVALID_VALUES, appliedPolicies, applied };
-      appliedPolicies[policyType] = params.policyDefinitions[policyType];
+      // a ratings preset the competition policy's form rating names is stored by value, so reading never needs the name
+      appliedPolicies[policyType] = policyType === POLICY_TYPE_COMPETITION ? pinnedCompetitionPolicy(policy) : policy;
       applied.push(policyType);
     }
   }

@@ -1,5 +1,5 @@
+import { catalogueNameWarned, warnCatalogueName } from '@Tools/catalogueNameWarnings';
 import { ratingsPolicies } from '@Fixtures/policies/ratingsPolicies';
-import { warnCatalogueName } from '@Tools/catalogueNameWarnings';
 import { matchesPlayedK } from './ratingUpdate';
 
 // types
@@ -91,6 +91,6 @@ export function resolveRatingsPolicy(selected: string | RatingsPolicy): RatingsP
   if (typeof selected !== 'string') return isRatingsPolicy(selected) ? selected : undefined;
   const policy = ratingsPolicies[selected];
   if (!isRatingsPolicy(policy)) return undefined;
-  warnCatalogueName('ratingsPreset', selected);
+  if (!catalogueNameWarned.ratingsPreset) warnCatalogueName('ratingsPreset', selected);
   return policy;
 }

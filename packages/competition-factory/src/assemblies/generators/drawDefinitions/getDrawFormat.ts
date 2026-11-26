@@ -1,7 +1,7 @@
 import tieFormatDefaults, { isNamedTieFormat } from '@Helpers/tieFormats/tieFormatDefaults';
 import { getObjectTieFormat } from '@Query/hierarchical/tieFormats/getObjectTieFormat';
+import { catalogueNameWarned, warnCatalogueName } from '@Tools/catalogueNameWarnings';
 import { validateTieFormat } from '@Validators/validateTieFormat';
-import { warnCatalogueName } from '@Tools/catalogueNameWarnings';
 
 // constants and types
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
@@ -49,7 +49,7 @@ export function getDrawFormat(params): ResultType & { tieFormat?: TieFormat; mat
       // A name the event does not carry must name a factory tie format. An unknown one is refused, as `addEvent`
       // refuses it: it used to build STANDARD silently, which generated a draw in a format nobody asked for.
       if (!isNamedTieFormat(tieFormatName)) return { context: { tieFormatName }, error: INVALID_VALUES };
-      warnCatalogueName('generateDrawDefinition', tieFormatName);
+      if (!catalogueNameWarned.generateDrawDefinition) warnCatalogueName('generateDrawDefinition', tieFormatName);
       tieFormat = tieFormatDefaults({ namedFormat: tieFormatName, hydrateCollections, isMock, event });
     }
 

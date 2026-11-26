@@ -1,6 +1,6 @@
 import { generateDrawDefinition } from '@Generators/drawDefinitions/generateDrawDefinition/generateDrawDefinition';
+import { attributeCatalogueNames, catalogueNameWarned, warnCatalogueName } from '@Tools/catalogueNameWarnings';
 import { drawMatic } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/drawMatic';
-import { attributeCatalogueNames, warnCatalogueName } from '@Tools/catalogueNameWarnings';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { completeDrawMatchUps } from '@Generators/simulation/completeDrawMatchUps';
@@ -1071,7 +1071,7 @@ function resolveTieFormat({
   }
 
   if (eventType === TEAM) {
-    if (tieFormatName) warnCatalogueName('mocksProfile', tieFormatName);
+    if (!catalogueNameWarned.mocksProfile && tieFormatName) warnCatalogueName('mocksProfile', tieFormatName);
     return tieFormatDefaults({
       event: { eventId, category, gender },
       namedFormat: tieFormatName,

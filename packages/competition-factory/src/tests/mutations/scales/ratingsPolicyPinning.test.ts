@@ -1,6 +1,7 @@
+import { POLICY_COMPETITION_STANDARD } from '@Fixtures/policies/POLICY_COMPETITION_STANDARD';
 import { POLICY_RATINGS_ELO_538_NHL } from '@Fixtures/policies/POLICY_RATINGS_ELO_538_NHL';
 import { formRatingsPolicy } from '@Helpers/ratings/competition/formRatingsPolicy';
-import { pinnedCompetitionFormat } from '@Helpers/ratings/pinnedCompetitionFormat';
+import { pinnedCompetitionFormat } from '@Helpers/ratings/pinnedRatingsPresets';
 import { ratingsPolicies } from '@Fixtures/policies/ratingsPolicies';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { mocksEngine } from '@Assemblies/engines/mock';
@@ -8,8 +9,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';
 
 // constants
+import { POLICY_TYPE_COMPETITION, POLICY_TYPE_RATINGS } from '@Constants/policyConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
-import { POLICY_TYPE_RATINGS } from '@Constants/policyConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 
@@ -146,4 +147,49 @@ it("a competition policy's form rating names a preset it does not hold in its re
     context: { ratingsPolicy: 'NONE' },
     error: INVALID_VALUES,
   });
+});
+
+it("attachPolicies stores the full policy of a preset a competition policy's form rating names", () => {
+  mocksEngine.generateTournamentRecord({ setState: true });
+  const FORM = 'POLICY_RATINGS_COMPETITION_FORM';
+  const standard = POLICY_COMPETITION_STANDARD[POLICY_TYPE_COMPETITION];
+  const competition = {
+    ...standard,
+    ratingPolicy: {
+      ...standard.ratingPolicy,
+      dynamicFormRating: { enabled: true, initializeFrom: 'BASELINE', ratingsPolicy: FORM },
+    },
+  };
+  const attached: any = tournamentEngine.attachPolicies({
+    policyDefinitions: { [POLICY_TYPE_COMPETITION]: competition },
+  });
+  expect(attached.success).toEqual(true);
+
+  const { appliedPolicies } = tournamentEngine.getAppliedPolicies();
+  const stored = appliedPolicies[POLICY_TYPE_COMPETITION];
+  expect(stored.ratingPolicy.dynamicFormRating).toEqual({
+    enabled: true,
+    initializeFrom: 'BASELINE',
+    ratingsPolicy: ratingsPolicies[FORM],
+    ratingsPolicyName: FORM,
+  });
+  expect(competition.ratingPolicy.dynamicFormRating.ratingsPolicy).toEqual(FORM);
+  expect(stored.ratingPolicy.baselineRating).toEqual(standard.ratingPolicy.baselineRating);
+
+  // the stored policy reads without the catalogue
+  const preset = ratingsPolicies[FORM];
+  delete ratingsPolicies[FORM];
+  try {
+    expect(formRatingsPolicy(stored)).toEqual({ policy: preset, referenced: true });
+  } finally {
+    ratingsPolicies[FORM] = preset;
+  }
+});
+
+it('a competition policy without a preset name is stored as given', () => {
+  mocksEngine.generateTournamentRecord({ setState: true });
+  const policyDefinitions = POLICY_COMPETITION_STANDARD;
+  expect(tournamentEngine.attachPolicies({ policyDefinitions }).success).toEqual(true);
+  const { appliedPolicies } = tournamentEngine.getAppliedPolicies();
+  expect(appliedPolicies[POLICY_TYPE_COMPETITION]).toEqual(POLICY_COMPETITION_STANDARD[POLICY_TYPE_COMPETITION]);
 });
