@@ -91,7 +91,7 @@ import {
   7. If loserMatchUp is part of different structure... return to step #1
  */
 
-type AssignDrawPositionByeArgs = {
+export type AssignDrawPositionByeArgs = {
   /**
    * Set by a propagation cascade that KNOWS it is placing this BYE.
    *
@@ -560,7 +560,7 @@ function correctResultsAwardedToTheBye({
  * Does NOT include matchUps a BYE later cascades into; those take the caller's decision
  * (see advanceWinner) rather than re-opening the question mid-cascade.
  */
-function byeTargetMatchUps({
+export function byeTargetMatchUps({
   structure,
   matchUps,
   drawPosition,
@@ -711,7 +711,7 @@ function withdrawDisplacedCarry({
  * walkover winner on side 2; a BYE then took `South|2|1`'s side 1 and the arrival stayed on a BYE). Entered with the BYE
  * first, `South|2|1` records nothing on that side.
  */
-function withdrawArrivalsByResult(matchUp: MatchUp): void {
+export function withdrawArrivalsByResult(matchUp: MatchUp): void {
   const provenance = getSideExitProvenance({ matchUp });
   const arrivalSides = ([1, 2] as const).filter((sideNumber) => arrivedByResult(provenance?.[sideNumber]));
   if (!provenance || !arrivalSides.length) return;
@@ -803,7 +803,7 @@ function assignRoundRobinBYE({
  * `{ error }`. The factory no longer mints repeated ids (`UUID`), so only a record built elsewhere
  * reaches this.
  */
-function refuseNonForwardAdvance(
+export function refuseNonForwardAdvance(
   source: HydratedMatchUp | undefined,
   targetMatchUpId: string,
   inContextDrawMatchUps: HydratedMatchUp[],

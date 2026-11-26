@@ -27,6 +27,10 @@ const ALLOWED: Record<string, { count: number; why: string }> = {
     count: 3,
     why: 'two BYE-path arrivals call `rekeySideFacts` first; the third places into a matchUp holding no position',
   },
+  'mutate/matchUps/drawPositions/planDrawPositionBye.ts': {
+    count: 1,
+    why: "the planned BYE path's advance (F-016): the side change is read first (`arrivalMovesOccupant`) and `swapSideFacts` runs before the write, as `advanceWinner` re-keys",
+  },
   'mutate/matchUps/drawPositions/removeSubsequentRoundsParticipant.ts': {
     count: 1,
     why: '`rekeySideFacts` runs first; this removal keeps its compacted array, so it does not use the setter',

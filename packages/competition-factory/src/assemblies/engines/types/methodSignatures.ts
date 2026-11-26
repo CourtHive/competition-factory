@@ -160,7 +160,6 @@ import type { getCompetitionPolicy } from '@Query/drawDefinition/competition/get
 import type { getParticipantIdFinishingPositions } from '@Query/drawDefinition/finishingPositions';
 import type { getParticipantResults } from '@Query/matchUps/roundRobinTally/getParticipantResults';
 import type { generateEventsFromTieFormat } from '@Generators/events/generateEventsFromTieFormat';
-import type { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import type { modifyParticipantOtherName } from '@Mutate/participants/modifyParticipantOtherName';
 import type { regenerateParticipantNames } from '@Mutate/participants/regenerateParticipantNames';
 import type { publishEventSeeding, unPublishEventSeeding } from '@Mutate/publishing/eventSeeding';
@@ -235,6 +234,7 @@ import type { getDrawFitProposals } from '@Generators/drawDefinitions/getDrawFit
 import type { getDrawTypeCoercion } from '@Generators/drawDefinitions/getDrawTypeCoercion';
 import type { generateTournamentRecord } from '@Generators/mocks/generateTournamentRecord';
 import type { getValidGroupSizes } from '@Helpers/drawTopology/roundRobin/validGroupSizes';
+import type { assignDrawPositionBye } from '@Mutate/drawDefinitions/assignDrawPositionBye';
 import type { seedWithdrawalCascade } from '@Mutate/drawDefinitions/seedWithdrawalCascade';
 import type { substituteParticipant } from '@Mutate/drawDefinitions/substituteParticipant';
 import type { acceptChallenge, declineChallenge } from '@Mutate/ladder/respondToChallenge';
