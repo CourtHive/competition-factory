@@ -99,7 +99,7 @@ lines.push('export interface MethodSignatures {');
 const byPublic = resolved.slice().sort((a, b) => a.publicName.localeCompare(b.publicName));
 for (const e of byPublic) {
   const deprecation = deprecated.get(e.publicName);
-  if (deprecation) lines.push(`  /** @deprecated ${deprecation.message} */`);
+  if (deprecation && deprecation.engine !== false) lines.push(`  /** @deprecated ${deprecation.message} */`);
   lines.push(`  ${e.publicName}: EngineMethod<typeof ${e.sourceName}>;`);
 }
 lines.push('}');

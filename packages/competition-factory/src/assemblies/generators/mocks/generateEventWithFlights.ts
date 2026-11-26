@@ -1,5 +1,6 @@
 import { addEventEntriesRecorded, addEventRecorded, publishEventRecorded } from './recordedWrites';
 import { getStageParticipantsCount } from '@Query/drawDefinition/getStageParticipantsCount';
+import { catalogueNameWarned, warnCatalogueName } from '@Tools/catalogueNameWarnings';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getStageParticipants } from '@Query/drawDefinition/getStageParticipants';
 import { generateFlightDrawDefinitions } from './generateFlightDrawDefinitions';
@@ -58,6 +59,8 @@ export function generateEventWithFlights(params) {
   } = eventProfile;
 
   const eventId = eventProfile.eventId || UUID(undefined, random);
+  if (!catalogueNameWarned.mocksProfile && eventType === TEAM && !eventProfile.tieFormat && tieFormatName)
+    warnCatalogueName('mocksProfile', tieFormatName);
   const tieFormat =
     eventProfile.tieFormat ||
     (eventType === TEAM

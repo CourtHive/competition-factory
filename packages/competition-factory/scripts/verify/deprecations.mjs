@@ -30,6 +30,7 @@ import {
   findDeprecations,
   injectDeprecations,
   loadDeprecations,
+  planDeprecations,
   readDeprecations,
   readStructure,
   resolvesPublicPath,
@@ -175,6 +176,28 @@ function negativeControl(text, deprecations, options) {
   };
   return outcomes;
 }
+
+const SCOPED_FIXTURE = `declare function e(p: { id: string }): void;
+declare const q2_e: typeof e;
+declare namespace q2 {
+  export { q2_e as e };
+}
+declare const g3_e: typeof e;
+declare namespace g3 {
+  export { g3_e as e, q2 as query };
+}
+declare const g4_e: typeof e;
+declare namespace g4 {
+  export { g4_e as e };
+}
+declare namespace index$1 {
+  export { g3 as alphaGovernor, g4 as betaGovernor };
+}
+interface MethodSignatures {
+  e: typeof e;
+}
+export { index$1 as governors };
+`;
 
 const FIXTURE = `declare function a(x: string): string;
 declare function b(p: { id: string }): void;
@@ -347,11 +370,43 @@ function selfTest() {
     'control: a route on an unlisted governor is a problem',
     injectDeprecations(ts, FIXTURE, stale, { bundle: 'root' }).problems.length > 0,
   );
+
+  // `routes` and `retainedOn`: only alphaGovernor.query.e leaves; alphaGovernor.e stays, betaGovernor keeps the name,
+  // so the engine method stays untagged. Without `retainedOn`, betaGovernor's copy is a problem.
+  const scoped = (route) =>
+    readDeprecations({
+      manifest: { methods: [route] },
+      guardText: `const POSITIONAL_GOVERNOR_FUNCTIONS = {\n  draws: [],\n};`,
+    });
+  const eRoute = {
+    name: 'e',
+    governors: ['alphaGovernor'],
+    routes: ['alphaGovernor.query.e'],
+    retainedOn: ['betaGovernor'],
+    engineDisposition: 'scheduled-for-removal',
+    replacement: 'tools.e',
+  };
+  const scopedPlan = (route) =>
+    planDeprecations(ts, SCOPED_FIXTURE, scoped(route), { bundle: 'score-entry-state', fileName: 'scoped' });
+  const scopedTargets = scopedPlan(eRoute).targets.map((t) => t.address);
+  expect(
+    'scoped: only the listed route is tagged',
+    scopedTargets.length === 1 && scopedTargets[0] === 'governor:alphaGovernor.query.e',
+  );
+  expect('scoped: no problems', scopedPlan(eRoute).problems.length === 0);
+  expect(
+    'control: a kept copy on an unlisted governor is a problem',
+    scopedPlan({ ...eRoute, retainedOn: undefined }).problems.length > 0,
+  );
+  expect(
+    'control: without retainedOn the engine method is tagged',
+    scopedPlan({ ...eRoute, retainedOn: undefined }).targets.some((t) => t.address === 'engine:e'),
+  );
   if (failures.length) {
     for (const f of failures) process.stderr.write(`${TAG} self-test FAIL: ${f}\n`);
     process.exit(1);
   }
-  log('self-test OK: plan, injection, re-injection guard and six negative controls');
+  log('self-test OK: plan, injection, re-injection guard, scoped routes and eight negative controls');
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

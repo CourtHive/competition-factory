@@ -1,4 +1,5 @@
 import { generateDrawDefinition } from '@Generators/drawDefinitions/generateDrawDefinition/generateDrawDefinition';
+import { attributeCatalogueNames, catalogueNameWarned, warnCatalogueName } from '@Tools/catalogueNameWarnings';
 import { drawMatic } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/drawMatic';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
@@ -660,16 +661,19 @@ function generateAndAttachDraw({
     ? { ...makeDeepCopy(drawProfile, false, true), roundsCount: 1, automated: drawProfile.automated ?? true }
     : makeDeepCopy(drawProfile, false, true);
 
-  const result = generateDrawDefinition({
-    ...drawProfileForGeneration,
-    tournamentRecord,
-    seedingScaleName,
-    matchUpFormat,
-    eventId,
-    isMock,
-    random,
-    event,
-  });
+  // the profile's tieFormatName reaches generateDrawDefinition: a warning for it names the mocks profile
+  const result = attributeCatalogueNames('mocksProfile', () =>
+    generateDrawDefinition({
+      ...drawProfileForGeneration,
+      tournamentRecord,
+      seedingScaleName,
+      matchUpFormat,
+      eventId,
+      isMock,
+      random,
+      event,
+    }),
+  );
 
   if (result.error) return result;
   if (!result.drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
@@ -1067,6 +1071,7 @@ function resolveTieFormat({
   }
 
   if (eventType === TEAM) {
+    if (!catalogueNameWarned.mocksProfile && tieFormatName) warnCatalogueName('mocksProfile', tieFormatName);
     return tieFormatDefaults({
       event: { eventId, category, gender },
       namedFormat: tieFormatName,
