@@ -128,7 +128,8 @@ describe('F-007 read-only schedule plan', () => {
           .filter((type) => type.startsWith('SCHEDULE.TIME'));
         expect(types).toEqual(expect.arrayContaining([START_TIME, STOP_TIME, RESUME_TIME, END_TIME]));
         expect(notices.map(({ topic }) => topic)).toEqual([MODIFY_DRAW_DEFINITION, MODIFY_MATCHUP, MUTATIONS]);
-        expect(notices[1].payload.matchUp).toBe(stored());
+        // the payload carries the stored matchUp (a read-only view of it when the notice payload detector is on)
+        expect(notices[1].payload.matchUp).toEqual(stored());
       } finally {
         setSchemaWriteMode();
       }
