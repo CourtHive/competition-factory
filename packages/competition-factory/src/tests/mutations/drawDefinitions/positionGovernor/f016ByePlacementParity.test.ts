@@ -234,3 +234,14 @@ describe('the planned BYE placement matches the writer it replaces', () => {
     }
   }
 });
+
+it('matches the writer where the caller declares the positions inactive over a won matchUp', () => {
+  const built = scenario(SINGLE_ELIMINATION, 8, SINGLES_EVENT, 'scored');
+  if (!built) return;
+  // positions 3 and 4 were played: position 3 won, and is placed a BYE where it stands
+  compare(
+    built.state,
+    { drawId: built.drawId, structureId: built.structureId, drawPosition: 3, drawPositionsInactive: true },
+    false,
+  );
+});

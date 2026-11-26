@@ -6,7 +6,6 @@ import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTo
 import { matchUpHoldsScheduling, releaseByeScheduling } from '@Mutate/matchUps/schedule/byeScheduling';
 import { getDrawPositionSideNumber, getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
-import { deriveExitStateFromProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
@@ -228,8 +227,7 @@ export function planDrawPositionBye(
 }
 
 /** `plain`: no exit and no exit provenance, the only matchUps the walk plans through */
-function plain(matchUp?: MatchUp): boolean {
-  if (!matchUp) return true;
+function plain(matchUp: MatchUp): boolean {
   return !isExit(matchUp.matchUpStatus) && !isDoubleExit(matchUp.matchUpStatus) && !getSideExitProvenance({ matchUp });
 }
 
@@ -336,8 +334,8 @@ function seatRefusal(
       return { done: decorateResult({ result: { error: LUCKY_DRAW_BYE_LIMIT }, stack: STACK }), positionAssignments };
   }
 
-  // no loserMatchUp reaches a public placement or its nested ones, so the topology inference is false
-  if (params.byeFromPropagation) return { done: unplanned(plan, 'propagation placement'), positionAssignments };
+  // a propagation placement never reaches the planner (the public wrapper keeps the writer for it), and no loserMatchUp
+  // reaches a public placement or its nested ones, so the topology inference is false: this is no propagation placement
 
   const drawPositionIsActive =
     !params.drawPositionsInactive &&
@@ -355,8 +353,8 @@ function seatRefusal(
     positionAssignment = created;
   }
 
-  const { filled, containsBye } = drawPositionFilled(positionAssignment);
-  if (containsBye) return { done: { ...SUCCESS }, positionAssignments };
+  // a BYE already here returned above: the seat found is the one asked first, or an empty one appended
+  const { filled } = drawPositionFilled(positionAssignment);
   if (filled)
     return { done: decorateResult({ result: { error: DRAW_POSITION_ASSIGNED }, stack: STACK }), positionAssignments };
   return { positionAssignments, appended: created };
@@ -695,7 +693,8 @@ function planAdvanceWinner(plan: Plan, args: PlanAdvanceWinnerArgs): ResultType 
   const matchUpStatus =
     drawPositionIsBye || pairedDrawPositionIsBye
       ? BYE
-      : (standingExitStatus(noContextWinnerMatchUp, !drawPositionToAdvanceAssigment?.participantId) ?? TO_BE_PLAYED);
+      : // `standingExitStatus` reads the matchUp's exit provenance, which a plain matchUp has none of
+        TO_BE_PLAYED;
 
   const sideChanged = arrivalMovesOccupant({
     structureId: winnerMatchUp?.structureId,
@@ -756,14 +755,6 @@ function planAdvanceWinner(plan: Plan, args: PlanAdvanceWinnerArgs): ResultType 
     }
   }
   return undefined;
-}
-
-/** `standingExitStatus`: none on a plain matchUp, read all the same */
-function standingExitStatus(matchUp: MatchUp, advancesNobody: boolean) {
-  const standingExit = deriveExitStateFromProvenance(getSideExitProvenance({ matchUp }));
-  if (!standingExit) return undefined;
-  if (!standingExit.winningSide) return standingExit.matchUpStatus;
-  return advancesNobody ? standingExit.matchUpStatus : undefined;
 }
 
 /** as `assignByeToLoserTarget` */

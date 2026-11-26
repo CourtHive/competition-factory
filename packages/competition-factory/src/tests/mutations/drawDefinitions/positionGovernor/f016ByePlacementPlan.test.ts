@@ -1,7 +1,10 @@
 import { assignDrawPositionBye as placeDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
+import { planDrawPositionBye } from '@Mutate/matchUps/drawPositions/planDrawPositionBye';
+import { assignDrawPositionBye } from '@Mutate/drawDefinitions/assignDrawPositionBye';
 import asyncGlobalState from '@Server/providers/factory/engines/asyncGlobalState';
 import { setOutcomePipeline, setStateProvider } from '@Global/state/globalState';
 import { captureNotices } from '../../notifications/noticeConformance/harness';
+import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { useEngineCatch } from '@Tests/testHarness/engineCatch';
 import syncGlobalState from '@Global/state/syncGlobalState';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -11,8 +14,13 @@ import asyncEngine from '@Engines/asyncEngine';
 import { setClock } from '@Tools/clock';
 
 // constants
-import { DRAW_POSITION_ASSIGNED, INVALID_MATCHUP, MATCHUP_HAS_SCHEDULING } from '@Constants/errorConditionConstants';
-import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { FIRST_MATCH_LOSER_CONSOLATION, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import {
+  DRAW_POSITION_ASSIGNED,
+  INVALID_MATCHUP,
+  MATCHUP_HAS_SCHEDULING,
+  MISSING_DRAW_DEFINITION,
+} from '@Constants/errorConditionConstants';
 
 /**
  * F-016: a public BYE placement is planned before it writes (`planDrawPositionBye`). Every refusal its walk can meet
@@ -207,5 +215,58 @@ describe('an accepted BYE placement keeps borrowed plain identities', () => {
     expect(first.matchUpStatus).toBe('BYE');
     expect(stored.structures[0].matchUps).toContain(first);
     expect(consolationSeat.bye).toBe(true);
+  });
+});
+
+describe('the edges of the planned domain', () => {
+  it('asks for a draw before anything else', () => {
+    const planned: any = planDrawPositionBye({ drawPosition: 1 });
+    expect(planned.result.error).toEqual(MISSING_DRAW_DEFINITION);
+  });
+
+  it('keeps the writer for a call that hands in its own draw state', () => {
+    const { tournamentRecord, drawDefinition } = unpositioned();
+    const event = tournamentRecord.events[0];
+    const structureId = drawDefinition.structures[0].structureId;
+    const matchUpsMap = getMatchUpsMap({ drawDefinition });
+    const result: any = assignDrawPositionBye({
+      tournamentRecord,
+      drawDefinition,
+      structureId,
+      drawPosition: 1,
+      event,
+      matchUpsMap,
+    });
+    expect(result.success).toBe(true);
+    expect(drawDefinition.structures[0].positionAssignments.find((a: any) => a.drawPosition === 1).bye).toBe(true);
+  });
+
+  it('leaves a round robin position with no assignment to the writer', () => {
+    const { tournamentRecord, drawDefinition, drawId } = unpositioned(ROUND_ROBIN);
+    const [group] = drawDefinition.structures[0].structures;
+    group.positionAssignments = group.positionAssignments.filter(
+      (a: any) => a.drawPosition !== group.positionAssignments[0].drawPosition,
+    );
+    tournamentEngine.setState(tournamentRecord);
+    const result: any = tournamentEngine.assignDrawPositionBye({
+      structureId: drawDefinition.structures[0].structureId,
+      drawPosition: 1,
+      drawId,
+    });
+    expect(result.error ?? result.success).toBeDefined();
+  });
+
+  it('refuses a malformed round link before the first write', () => {
+    const { tournamentRecord, drawDefinition, drawId } = unpositioned(FIRST_MATCH_LOSER_CONSOLATION);
+    for (const link of drawDefinition.links ?? []) delete link.source.roundNumber;
+    tournamentEngine.setState(tournamentRecord);
+    const before = record();
+    const result: any = tournamentEngine.assignDrawPositionBye({
+      structureId: drawDefinition.structures[0].structureId,
+      drawPosition: 1,
+      drawId,
+    });
+    expect(result.error).toBeDefined();
+    expect(record()).toBe(before);
   });
 });
