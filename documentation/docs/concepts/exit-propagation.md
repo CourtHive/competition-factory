@@ -230,8 +230,7 @@ validated _before_ any removal runs, where it used to skip the early participant
 only after the existing result had been unwound.
 
 **A factory validation refusal must leave the draw unchanged on a direct call.** The cascade checks
-the request before writing. A factory refusal after a write is a defect. A borrowed document can also
-raise a storage error during assignment. [Validation and borrowed storage](../engines/mutation-engines.md#rollback-on-error)
+the request before writing. A factory refusal after a write is a defect. [Validation and rollback](../engines/mutation-engines.md#rollback-on-error)
 
 Be precise about where that stands. Refusals that can only arise part-way through a cascade are
 being made impossible one root cause at a time; those that cannot be removed in the current pipeline

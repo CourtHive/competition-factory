@@ -154,20 +154,17 @@ export function planAddParticipant(params: AddParticipantType): ParticipantPlan 
       delete participant.teamColors;
     });
 
-  // A missing list is initialized in the original order. Append through the list installed by its setter.
-  let stored: Participant;
+  // A missing list is initialized in the original order.
   writes.push(() => {
     const target = list ?? tournamentRecord.participants!;
-    const position = target.length;
     target.push(participant);
-    stored = target[position];
-    if (participantsIndex) indexParticipant(participantsIndex, stored, position);
+    if (participantsIndex) indexParticipant(participantsIndex, participant, target.length - 1);
   });
 
   const result = { ...SUCCESS };
   const committedResult = () =>
     definedAttributes({
-      participant: returnParticipant && materialParticipant(participant, stored),
+      participant: returnParticipant && makeDeepCopy(participant),
       ...SUCCESS,
     });
   const notice = disableNotice
@@ -182,28 +179,6 @@ export function planAddParticipant(params: AddParticipantType): ParticipantPlan 
     committedResult,
     notice,
   };
-}
-
-// Document arrays may cast a plain submission into a subdocument. Keep the submission's public
-// shape (including application fields and hydrated inputs) while taking stored fields from the cast.
-function materialParticipant(input, stored) {
-  if (input === stored) return makeDeepCopy(input);
-  const options = { transform: false, virtuals: false, getters: false };
-  const hydratedInput = typeof input.toObject === 'function' && typeof input.$clone === 'function';
-  const supplied = hydratedInput ? input.toObject(options) : input;
-  const values = typeof stored.toObject === 'function' ? stored.toObject(options) : stored;
-  let material = supplied;
-  for (const key of Object.keys(supplied)) {
-    if (Object.hasOwn(values, key) && stored[key] !== input[key]) {
-      if (material === supplied) material = { ...supplied };
-      material[key] = values[key];
-    }
-  }
-  if (material === supplied) return makeDeepCopy(input);
-  // A submitted document has a different public shape than the subdocument installed by the roster.
-  // Initialize a detached clone with the committed data, without reapplying the submission's setters.
-  if (hydratedInput) return makeDeepCopy(input.$clone().$init(material));
-  return makeDeepCopy(material);
 }
 
 function planIndividual({ participant, name, writes }) {
@@ -229,7 +204,6 @@ function planIndividual({ participant, name, writes }) {
   writes.push(() => {
     coercePersonSex(person);
     normalizePersonNames(person);
-    // A hydrated setter can canonicalize either name. Compose from what the setters stored.
     if (!participant.participantName) {
       participant.participantName =
         person?.standardGivenName && person?.standardFamilyName
