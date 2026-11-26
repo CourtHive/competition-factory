@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## [7.50.0](https://github.com/CourtHive/competition-factory/compare/v7.49.0...v7.50.0) (2026-11-26)
+
+### Highlights
+
 - `rollbackOnError` no longer copies the loaded records for a call, or a queue, that is one directive of a factory method that refuses before it writes: such a refusal has nothing to restore. Results are unchanged, `rolledBack: true` included. A queue of two or more directives, a bulk method (`bulkMatchUpStatusUpdate`, `deleteCourts`, `resetAdHocMatchUps`), a BYE placement (`assignDrawPositionBye`, `assignDrawPosition` with `bye: true`) and a custom method still take the snapshot. Without one, a method that throws partway through a write keeps its writes and returns `rolledBack: false`.
 - A rolled-back result claims no kept work. It carries `rolledBack: true`, on direct calls as on queues, and never `committed`; a bulk call's items that had succeeded are listed with `rolledBack: true` in place of `success`.
 - Inside an `executionQueue` without rollback, the directives that succeeded before a refusal now deliver their notices whatever the refusing directive, not only when it was a bulk call that committed some items. A queue whose first directive refuses still delivers nothing.
@@ -11,12 +15,6 @@
 - Committed work announces itself. A bulk mutation that commits some items and refuses another returns its error with `committed: true`, and with rollback off the engine now delivers the committed items' notices in the usual topic order instead of dropping them. Inside an `executionQueue` without rollback, such a directive also delivers the notices of the directives before it. Explicit rollback is unchanged: the whole call is restored and nothing is delivered.
 - Bulk mutations commit each successful item and return a result for every input in order. A refused item leaves its record unchanged, and later items are still attempted. `deleteCourts` returns `results`, one per `courtId`; its first refusal is still the call's `error`. Before, it stopped at the first refused court, so a refused court before a valid one left the valid court in place.
 - `addSchedulingProfileRound`, `deleteCourt` and `deleteCourts` decide every refusal before writing. A round naming a draw or structure the profile cannot hold no longer stays in the profile after the refusal, and a court scheduled in one linked record no longer leaves it deleted from another.
-- `scoreGovernor.ScoringEngine` accepts an optional `clock: () => string` for instance-specific ISO timestamps. Explicit action timestamps take precedence.
-- `tools.plainDate.isDateInPast(dateString, asOf?)` and `tools.generateTimeCode(index?, asOf?)` accept a Date or ISO date string. Omitted instants still use the Factory call clock in 7.x.
-
-- Forge previews run on private records. Bare and assembled sync engines keep immediate `dryRun` and `explain`. Previewing a custom method requires `registerPreviewMethod` on that engine. An unregistered custom method refuses the entire preview with `ERR_UNREGISTERED_PREVIEW_METHOD` before dispatch.
-
-## [7.50.0](https://github.com/CourtHive/competition-factory/compare/v7.49.0...v7.50.0) (2026-11-26)
 
 
 ### Features
