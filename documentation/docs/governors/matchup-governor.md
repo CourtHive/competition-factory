@@ -213,7 +213,9 @@ engine.bulkMatchUpStatusUpdate({
 
 The options mean what they mean on `setMatchUpStatus`, with the same precedence for the three propagation flags: an applied scoring policy that speaks on a flag wins over the call, and the call decides only where the policy is silent.
 
-Every outcome is located before any is applied: its tournament, event, draw (which must belong to that event) and matchUp. If one is missing or not found, the call is refused and nothing is written. The error names what is missing (`MISSING_TOURNAMENT_RECORD`, `MISSING_EVENT`, `EVENT_NOT_FOUND`, `MISSING_DRAW_ID`, `DRAW_DEFINITION_NOT_FOUND`, `MISSING_MATCHUP_ID` or `MATCHUP_NOT_FOUND`), and `context.outcomeIndex` says which outcome. Outcomes are then applied in the order given. If `setMatchUpStatus` refuses one of them, the call returns that error and the outcomes before it stay written; pass `rollbackOnError: true` to make the whole call all or nothing.
+Each outcome is one unit, applied whole or not at all. Outcomes are processed in the order given, each against the record as the outcomes before it left it: its tournament, event, draw (which must belong to that event) and matchUp are located, its result is planned, and only then is it written. An outcome that is refused writes nothing, and the outcomes before and after it are still applied. The result has one entry per outcome in `results`, in order: `{ outcomeIndex, tournamentId, eventId, drawId, matchUpId, success, warnings? }` for an outcome written, or the same identifiers with its `error` for one refused (`MISSING_TOURNAMENT_RECORD`, `MISSING_EVENT`, `EVENT_NOT_FOUND`, `MISSING_DRAW_ID`, `DRAW_DEFINITION_NOT_FOUND`, `MISSING_MATCHUP_ID`, `MATCHUP_NOT_FOUND`, or what `setMatchUpStatus` refuses it with). If any outcome is refused, the call also returns the first refusal as its own `error`, with `context.outcomeIndex` naming it, and `committed: true` when some outcome was written; the engine then announces what was written. A malformed `outcomes` (missing or not an array) is refused before any outcome is looked at. Pass `rollbackOnError: true` to make the whole call all or nothing.
+
+Before this release the call located every outcome first and refused the whole call when one named something not there; an outcome refused by `setMatchUpStatus` stopped the call, with the outcomes before it written.
 
 ---
 
@@ -928,6 +930,8 @@ engine.resetMatchUpLineUps({
 ## resetAdHocMatchUps
 
 Will remove all results (scores) and optionally all participant assignments from specified matchUps (via matchUpIds or roundNumbers).
+
+Each matchUp is reset as one unit: its scorecard and, with `removeAssignments`, its line-ups, its blank outcome with what that propagates, and its side assignments. A unit that is refused at any step leaves that matchUp exactly as it was. MatchUps are reset in order and every one is attempted. The result has one entry per matchUp in `results`: `{ index, matchUpId, success }` or `{ index, matchUpId, error }` (an unknown ID is `MATCHUP_NOT_FOUND`). If any is refused, the call returns the first refusal as its own `error`; the matchUps reset before and after it stay reset, and the result then carries `committed: true` so the engine announces them.
 
 ```js
 const result = engine.resetAdHocMatchUps({

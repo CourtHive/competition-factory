@@ -83,15 +83,6 @@ export const ALLOW = [
     line: /SET1-S:P32, P31, P4:/,
     why: 'P31 is a combined-total format code (`SET1-S:P31`), not a plan id',
   },
-
-  // ---- TEMPORARY: files changed by open PR #6638, held back so this sweep does not conflict with it. When it
-  // ---- merges, clean each file's comments and test titles in a follow-up; an entry whose file is then clean goes
-  // ---- STALE and fails: delete it.
-  ...[
-    'src/mutate/events/bulkMatchUpStatusUpdate.ts',
-    'src/mutate/matchUps/matchUpStatus/setMatchUpStatus.ts',
-    'src/tests/mutations/events/bulkMatchUpStatusUpdateRefusals.test.ts',
-  ].map((file) => ({ rule: '*', file: pkg(file), why: 'TEMPORARY: changed by open PR #6638; clean after it merges' })),
 ];
 
 const JS = /\.(ts|mts|cts|js|mjs|cjs)$/;
