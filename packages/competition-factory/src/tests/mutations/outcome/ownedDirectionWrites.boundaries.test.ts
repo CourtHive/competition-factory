@@ -631,7 +631,7 @@ describe('under v2, notes on a double exit are recorded (batch 5: v1 forwards th
   });
 });
 
-describe('the convergence beyond a relayed copy that feeds on is v1s (ruling 2: the geometry wall held by a test)', () => {
+describe('the convergence beyond a relayed copy that feeds on is v1s (the geometry wall held by a test)', () => {
   // Consolation 3/1 converges to a double walkover holding the carrier alone, but feeds Consolation 4/1, which v1 also
   // rewrites (and takes a participant back out of 5/1). Every relay program refuses it; only `occupiedFinalRelaySeatOps`'s
   // `next.winnerMatchUpId` clause tells it from the occupied final. A classifier on the copy's content alone would own it.

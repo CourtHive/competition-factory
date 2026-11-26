@@ -15,7 +15,7 @@ import { FEED_IN_CHAMPIONSHIP_TO_SF } from '@Constants/drawDefinitionConstants';
  *
  * ## The rule
  *
- * CA, 2026-09-18: *a DOUBLE_WALKOVER in a source structure can logically only produce a BYE in a
+ * The rule: *a DOUBLE_WALKOVER in a source structure can logically only produce a BYE in a
  * target structure.* A double exit removes BOTH competitors, so the downstream loser slot will
  * receive nobody — and a position that will receive nobody is a BYE. Producing a WALKOVER there puts
  * a RESULT where a COMPETITOR belongs, and the slot can then never be claimed.
@@ -38,8 +38,8 @@ import { FEED_IN_CHAMPIONSHIP_TO_SF } from '@Constants/drawDefinitionConstants';
  * ## What changed on 2026-09-20, and why these tests were re-authored
  *
  * That guard had a SECOND consequence, independent of the policy: with the flag OFF the vacant slot
- * got no record either — not the BYE, and not the produced exit that belongs there. CA drove it in
- * TMX on FIRST_MATCH_LOSER_CONSOLATION and ruled that the exit must be recorded on the loser
+ * got no record either — not the BYE, and not the produced exit that belongs there. Driven in
+ * TMX on FIRST_MATCH_LOSER_CONSOLATION, the rule is that the exit must be recorded on the loser
  * drawPosition's own side and carried onward, with the BYE beside it left alone. Closing that put
  * the produced exit into the linked structure BY DEFAULT.
  *
@@ -49,7 +49,7 @@ import { FEED_IN_CHAMPIONSHIP_TO_SF } from '@Constants/drawDefinitionConstants';
  * decides: `vacant` with the flag off, a propagated BYE with it on. That is a stronger control than
  * the defect's presence, because it states the policy's actual contract rather than a symptom.
  *
- * CA, 2026-09-20, on what the policy governs: *"doubleExitPropagateBye: true is ONLY referring to
+ * On what the policy governs: *"doubleExitPropagateBye: true is ONLY referring to
  * connected structure propagation … because in the structure in which the doubleExit occurs there
  * still should be a produced exit."* Measured and true — all three consultation sites in `src/` are
  * on the loser-target path, and the Main structure is byte-identical either way. The third test
@@ -57,7 +57,7 @@ import { FEED_IN_CHAMPIONSHIP_TO_SF } from '@Constants/drawDefinitionConstants';
  *
  * ## The scenario
  *
- * `Mentat/testing/EXIT_CASCADE_MANUAL_REPRODUCTIONS.md` scenario H, records in
+ * Manual reproduction scenario H, records in
  * `CourtHive/repro-H-ficsf8-*`. Three entries, no matchUp scored twice. `Main R1 M3` is a double
  * walkover, so it has no loser; the consolation slot that would have received that loser stays vacant
  * and `Consolation|2|2` ends up a WALKOVER awarded to an empty position that nobody can ever fill —
@@ -131,11 +131,11 @@ test('with the policy OFF the loser slot keeps the produced exit rather than bec
   });
 
   // and the produced exit is recorded there, on that position's own side. The matchUp itself stays
-  // BYE because its OTHER position (drawPosition 6) carries a draw BYE — CA's rule, 2026-09-20:
+  // BYE because its OTHER position (drawPosition 6) carries a draw BYE — the rule:
   // a propagated exit meeting a BYE is advanced, and the BYE remains a BYE.
   const fed = matchUps().find((m: any) => key(m) === 'Consolation|1|2');
   expect(fed?.matchUpStatus, 'the draw BYE beside the loser slot is untouched').toEqual(BYE);
-  // P37. Read from `sideExitProvenance`, which is keyed by side, rather than by hunting the legacy
+  // Read from `sideExitProvenance`, which is keyed by side, rather than by hunting the legacy
   // array for an element that carries a matching `sideNumber` property.
   expect(fed?.sideExitProvenance?.[1]).toMatchObject({
     previousMatchUpStatus: DOUBLE_WALKOVER,
@@ -162,7 +162,7 @@ test('the policy governs the LINKED structure only — the source structure is u
   const on = mainState(build('deb-src-on', true));
 
   /**
-   * CA, 2026-09-20: *"in the structure in which the doubleExit occurs there still should be a
+   * The rule: *"in the structure in which the doubleExit occurs there still should be a
    * produced exit."* The flag decides what lands at the loser drawPosition in the TARGET structure
    * and nothing else; a double exit still produces a WALKOVER for its own winner target.
    *

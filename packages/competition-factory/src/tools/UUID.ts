@@ -33,8 +33,6 @@ type TakeUUIDArgs = {
  *
  * So: pool absent → mint. Pool present with entries → draw. Pool present and
  * empty → `INSUFFICIENT_UUIDS`.
- *
- * See `Mentat/planning/DISCONNECTED_SYNC_RECONCILIATION.md` §4.1.
  */
 export function takeUUID({ uuids, prefix }: TakeUUIDArgs): { uuid?: string; error?: typeof INSUFFICIENT_UUIDS } {
   if (uuids === undefined) return { uuid: UUID(prefix) };

@@ -1,6 +1,7 @@
 import { checkMutationLock } from '@Mutate/tournaments/mutationLocks/checkMutationLock';
 import { engineLogging, paramsMayBeLogged } from '@Global/state/engineLogging';
 import { withContextExclusion } from '@Query/matchUps/contextExclusion';
+import { engineBoundaryObservers } from './boundaryObservers';
 import { checkLoadedFootprint } from './loadedFootprintGuard';
 import { paramsMiddleware } from './paramsMiddleware';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
@@ -17,6 +18,8 @@ import {
 import { FactoryEngine } from '@Types/factoryTypes';
 import { Tournament } from '@Types/tournamentTypes';
 
+let directiveReentry = false;
+
 export function executeFunction(
   engine: FactoryEngine,
   method: any,
@@ -27,6 +30,16 @@ export function executeFunction(
   // that sets it (`forge/dryRun`) owns snapshotting and restoring the state.
   options?: { dryRun?: boolean },
 ) {
+  const observe = engineBoundaryObservers.directive;
+  if (observe) {
+    // an installed observer (a test harness) is handed the call; it re-enters once, past this check
+    if (!directiveReentry)
+      return observe(methodName, (): unknown => {
+        directiveReentry = true;
+        return executeFunction(engine, method, params, methodName, engineType, options);
+      }) as never;
+    directiveReentry = false;
+  }
   delete engine.success;
   delete engine.error;
 
@@ -110,7 +123,17 @@ export function caughtErrorResult({
     params: params ?? {},
     err,
   });
-  if (caught?.error) return caught;
   const error = typeof err === 'string' ? err.toUpperCase() : ((err as Error)?.message ?? 'UNKNOWN_ERROR');
-  return { ...caught, error };
+  const result = caught?.error ? caught : { ...caught, error };
+  thrownResults.add(result);
+  return result;
+}
+
+// The envelopes of methods that threw. A throw can come partway through a write, so a rollback that took no snapshot
+// (rollbackSnapshot.ts) cannot claim to have restored one. Kept by identity: the envelope's shape is the provider's.
+const thrownResults = new WeakSet<object>();
+
+/** true when `result` is the envelope of a method that threw, not a refusal it returned */
+export function isThrownResult(result: unknown): boolean {
+  return typeof result === 'object' && result !== null && thrownResults.has(result);
 }

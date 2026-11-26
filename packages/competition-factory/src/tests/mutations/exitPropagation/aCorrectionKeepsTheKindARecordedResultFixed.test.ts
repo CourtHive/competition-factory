@@ -11,7 +11,7 @@ import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstant
 import { CANNOT_CHANGE_OUTCOME } from '@Constants/errorConditionConstants';
 
 /**
- * A CORRECTION KEEPS THE KIND OF OUTCOME A RECORDED RESULT FIXED (P52; CA, 2026-10-11).
+ * A CORRECTION KEEPS THE KIND OF OUTCOME A RECORDED RESULT FIXED.
  *
  * > if there is a result someone recorded in the consolation then it implies something was really played and it
  * > shouldn't be removed. the assumption is that the person who recorded the score simply didn't realize that the

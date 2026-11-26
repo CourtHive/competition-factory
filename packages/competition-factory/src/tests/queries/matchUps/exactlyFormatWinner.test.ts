@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
  *
  * ── Aggregate formats are a different question, and this does not answer it ──
  *
- * CA, 2026-09-29: *"Sets to win is not a consideration when the format is INTENNSE."* An aggregate
+ * Sets to win is not a consideration when the format is INTENNSE. An aggregate
  * format is decided by total points across the bolts, not by how many bolts each side took. Nothing
  * here sums points, so aggregate keeps returning `undefined` — the last describe holds that, because
  * the dangerous outcome is not silence but a confident answer to the wrong question.
@@ -116,13 +116,13 @@ describe('a BEST-OF format is untouched, which is most of tennis', () => {
 });
 
 describe('an AGGREGATE format is decided on POINTS', () => {
-  // CA's ruling, 2026-09-29: *"Sets to win is not a consideration when the format is INTENNSE ...
-  // INTENNSE doesn't have games, so the aggregate is across all bolts."*
+  // Sets to win is not a consideration when the format is INTENNSE: INTENNSE doesn't have games, so
+  // the aggregate is across all bolts.
   //
   // This describe previously pinned the OPPOSITE — that an aggregate format yields no winner however
   // the bolts fall. That was correct while nothing summed points: no opinion beat the bolt-count
   // winner. It is superseded now that the sum exists, and the cases below are the same scores with the
-  // answers CA specified.
+  // answers the rule gives.
 
   /** Bolts won 22-21 / 21-22, so the bolt count and the points agree. */
   const totalsOf = (a: number, b: number) => [a * 22 + b * 21, a * 21 + b * 22];
@@ -146,7 +146,7 @@ describe('an AGGREGATE format is decided on POINTS', () => {
 
   it('follows the POINTS where they disagree with the bolts — the case that makes this a rule', () => {
     // Six bolts to side 1, and side 2 ahead 132-78 on points. Counting bolts would name side 1
-    // confidently and wrongly, which is exactly what CA's ruling exists to prevent.
+    // confidently and wrongly, which is exactly what the rule exists to prevent.
     const sets = [
       ...Array.from({ length: 6 }, (_unused, index) => ({
         setNumber: index + 1,
@@ -199,8 +199,8 @@ describe("INTENNSE's own format, and the one case that stays open", () => {
   });
 
   it('stays UNDECIDED only when the points are exactly level — the sudden-death case', () => {
-    // CA: *"The only case where SET2XA-S:T10 never resolves a winner is if both sides score the same
-    // exact number of points."* `undefined` means a decider is owed, not that the match ended level.
+    // The only case where SET2XA-S:T10 never resolves a winner is if both sides score the same
+    // exact number of points. `undefined` means a decider is owed, not that the match ended level.
     expect(winnerOf(twoBolts(22, 21, 20, 21), INTENNSE_SINGLES)).toBeUndefined();
   });
 
@@ -215,10 +215,10 @@ describe("INTENNSE's own format, and the one case that stays open", () => {
     // by construction. Reading the games alone would add nothing for it and leave the two level bolts
     // tied forever — the one point that settles the match would be the one point not counted.
     //
-    // CA has said the decider need not appear in the matchUpFormat for INTENNSE; this is the case where
+    // The decider need not appear in the matchUpFormat for INTENNSE; this is the case where
     // it DOES, and the sum has to handle it either way.
     const DECIDER_FORMAT = 'SET3XA-S:T10-F:TB1';
-    // the decider is set 4, after all three bolts (CA, 2026-10-04: never one of the three)
+    // the decider is set 4, after all three bolts (never one of the three)
     const sets = [
       { setNumber: 1, side1Score: 20, side2Score: 21, winningSide: 2 },
       { setNumber: 2, side1Score: 21, side2Score: 20, winningSide: 1 },
@@ -236,7 +236,7 @@ describe("INTENNSE's own format, and the one case that stays open", () => {
     expect(analysis.calculatedWinningSide).toEqual(2);
   });
 
-  it("keeps a shootout's goals out of the aggregate after a finite overtime (Ruling 3)", () => {
+  it("keeps a shootout's goals out of the aggregate after a finite overtime", () => {
     const SHOOTOUT_FORMAT = 'PER3XA-S:T20P-O:1SD/T5P-F:SO5';
     const sets = [
       { setNumber: 1, side1Score: 1, side2Score: 0, winningSide: 1 },
@@ -256,7 +256,7 @@ describe("INTENNSE's own format, and the one case that stays open", () => {
   });
 
   it('gives no winner while a bolt is still missing', () => {
-    // CA: *"INTENNSE requires all sets recorded to be included in the aggregate total."* A running
+    // INTENNSE requires all sets recorded to be included in the aggregate total. A running
     // total taken before the last bolt is in names a leader, and a leader is not a winner.
     const analysis = analyzeMatchUp({
       matchUp: {

@@ -16,14 +16,20 @@ Engine-route removal, standalone package-export retention and internal implement
 
 Governor functions that read no tournament state and take positional arguments leave the governors and the engines in
 8.0.0. An engine calls every method with one params object, so it could never call them correctly. Import them from
-their domain in `tools`, available from 7.33:
+their domain in `tools`, available from 7.33. From 7.49, import the domain from its own subpath
+(`tods-competition-factory/tools/<domain>`), which loads that domain alone; the aggregate `tools` export, which loads
+every domain, stays in 7.x:
 
 ```js
+import { validateMatchUpScore } from 'tods-competition-factory/tools/scoring';
+import { parse } from 'tods-competition-factory/tools/formats';
 import { tools } from 'tods-competition-factory';
 
-// 7.33 and later; the only route in 8.0.0
+// 7.49 and later: the domain's subpath, recommended
+validateMatchUpScore(sets, 'SET3-S:6/TB7');
+parse('SET3-S:6/TB7');
+// 7.33 and later: the aggregate, which loads every domain
 tools.scoring.validateMatchUpScore(sets, 'SET3-S:6/TB7');
-tools.formats.parse('SET3-S:6/TB7');
 // 7.x only
 scoreGovernor.validateMatchUpScore(sets, 'SET3-S:6/TB7');
 ```
@@ -46,6 +52,17 @@ scoreGovernor.validateMatchUpScore(sets, 'SET3-S:6/TB7');
   `tools.rankings.getQualityWinPoints`.
 - `publishingGovernor.isTournamentPublished(tournamentRecord)` is retired. It takes a whole record, so it is neither a
   query nor a tool. Use the `getPublishState` query.
+- **Stateless queries that take a params object** (read no tournament state; confirmed by test) are also on `tools`,
+  by domain, from 7.49: the same functions, called the same way. If you call one through an engine, move the call to
+  its `tools` home, for example `engine.getRoundMatchUps({ matchUps })` to
+  `tools.matchUps.getRoundMatchUps({ matchUps })`, and `scaleEngine.generateRankingList({ pointAwards })` to
+  `tools.rankings.generateRankingList({ pointAwards })`. The engine routes are unchanged in 7.x; the
+  [transition index](/docs/implementation/engine-api-transition-8) records which leave at 8.0.0. The homes:
+  `tools.scoring` (score and set readers, `keyValueScore`, `repairScore`, `mcpValidator`, `pbpValidator`),
+  `tools.formats` (the tieFormat functions), `tools.matchUps` (matchUp readers, `matchUpScheduleLocked`,
+  `courtGridRows`), `tools.draws`, `tools.entries`, `tools.rankings` (ranking lists, award profiles and points, scale
+  readers), and three new domains, `tools.seasons`, `tools.sanctioning` and `tools.officiating`. The availability
+  engine's `runValidationPipeline` is `availability.runValidationPipeline`.
 
 The 8.0.0 release notes list every function this moves, by governor.
 

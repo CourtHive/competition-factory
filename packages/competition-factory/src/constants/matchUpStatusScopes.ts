@@ -30,7 +30,7 @@ export const matchUpStatusScopes: Partial<Record<MatchUpStatusUnion, MatchUpStat
     reason: 'CHALLENGED describes a fixture a participant created, which only a LADDER produces',
   },
 
-  // CA, 2026-10-13 (option (a) of TASKS.md § "`DEAD_RUBBER` is scoped by convention"): a rubber of a decided dual,
+  // DEAD_RUBBER is scoped to a rubber of a decided dual,
   // or an unneeded DOUBLE_ELIMINATION Decider — the factory itself writes the second (`reconcileDecider`). The Decider
   // is a SINGLES/DOUBLES matchUp or the TEAM dual itself, never a rubber, hence `deciderAllowed`.
   [DEAD_RUBBER]: {

@@ -1,8 +1,8 @@
 /**
  * Where the repository and the package are, for scripts that reach outside the package.
  *
- * WHY THIS EXISTS. The package is moving from the repository root to `packages/competition-factory`
- * (Mentat/planning/FACTORY_LAYOUT_MOVE_PLAN.md). Most scripts resolve paths inside the package, from
+ * WHY THIS EXISTS. The package is moving from the repository root to `packages/competition-factory`.
+ * Most scripts resolve paths inside the package, from
  * their own location, and keep working wherever the package sits. A few reach things that stay at
  * the repository root: `documentation/`, the workspace lockfile, the release-please manifest and the
  * sibling checkouts. Those resolve from here, so they are right on both layouts.

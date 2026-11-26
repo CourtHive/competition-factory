@@ -46,6 +46,8 @@ export default [
         ...globals.node,
         ...globals.browser,
         ...globals.es2021,
+        // a compile-time constant (src/global/state/compileTimeConstants.d.ts)
+        __NOTICE_PAYLOAD_DIAGNOSTICS__: 'readonly',
       },
     },
     plugins: {
@@ -150,7 +152,7 @@ export default [
   },
   {
     /**
-     * `@Query` may not import `@Mutate` (CA, 2026-10-13: "a mutation shouldn't be exposed via @Query, ever"). A query
+     * `@Query` may not import `@Mutate`: a mutation is never exposed through `@Query`. A query
      * that can reach a mutation module rests its read-only guarantee on convention; three of them wrote to the record
      * they read until #5491 and the purity fix that added this rule.
      *

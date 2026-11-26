@@ -140,7 +140,8 @@ type DrawContext = {
 /**
  * An entry that records how a side ARRIVED, not an exit standing on it.
  *
- * Records written before F9 (CA, 2026-10-07) stamped an arrival with its source's status, so a participant who won a
+ * Records written before arrivals stopped recording a status stamped an arrival with its source's status, so a
+ * participant who won a
  * DEFAULTED carried `{ matchUpStatus: DEFAULTED, previousMatchUpStatus: DEFAULTED }` into the next round: the same
  * shape as the exit the loser of that DEFAULTED carries over the loser link. Only the link tells them apart. v1's
  * forward rules read the target's status and never saw the entry; this read did, and planned a convergence where a
@@ -162,7 +163,7 @@ function arrivedByWinning(
 
 /**
  * Did `sourceMatchUpId` place a BYE this holder holds? It did when it feeds one of the holder's BYE seats across its
- * loser link: read from the draw, not from the `byeClaims` ledger the double exit used to record there (Mentat P58).
+ * loser link: read from the draw, not from the `byeClaims` ledger the double exit used to record there.
  */
 function placedTheHoldersBye(matchUp: HydratedMatchUp, sourceMatchUpId: string, draw: DrawContext): boolean {
   const byeSeats = (matchUp.sides ?? []).filter((side) => side?.bye).map((side) => side?.drawPosition);
@@ -177,7 +178,7 @@ function placedTheHoldersBye(matchUp: HydratedMatchUp, sourceMatchUpId: string, 
  * to their furthest round. When this request withdraws the BYE its double exit placed on the loser target, v1 brings
  * the occupant back and their exit with them (`reconcileCarriesPastByes` re-carries from the origin record), and the
  * arriving loser's exit converges with it — census 20178071 (FEED_IN_CHAMPIONSHIP 8/7, `Consolation|2|2`), where this
- * view, reading the holder alone, had planned the loser's walkover won by the occupant; and census 20057285 (P50),
+ * view, reading the holder alone, had planned the loser's walkover won by the occupant; and census 20057285,
  * where v1 itself lost the carry until the origin record was kept on the holder (`progressExitStatus` RULE 1).
  *
  * Since F2 (census A1, 2026-10-17) v1 also records the carry on the holder itself, beside the BYE, in every round and
@@ -275,7 +276,7 @@ function standingExits(matchUp?: HydratedMatchUp, sourceMatchUpId?: string, draw
 }
 
 /**
- * P51 group 2 (CA, 2026-10-11): an exit decided this matchUp for the seat still awaiting its second participant, and a
+ * An exit decided this matchUp for the seat still awaiting its second participant, and a
  * result recorded below it would be taken back by a convergence there. The arrival carrying an exit of their own takes
  * that seat and carries the exit on from its winner matchUp, as past a BYE. Asked as v1's \`carryPastDecidedMatchUp\`
  * asks it: a single exit won by an empty side, a winner matchUp to go on to, and active downstream read as a
@@ -1404,7 +1405,7 @@ function priorWins(
 }
 
 /** a lucky draw's round with an odd number of matchUps feeds nobody forward (`checkIsPreFeedRound`) */
-/** a result of its own: what a relabel's carry may not overwrite (CA, 2026-10-02) */
+/** a result of its own: what a relabel's carry may not overwrite */
 function hasResult(matchUp?: HydratedMatchUp): boolean {
   if (!matchUp) return false;
   return (
@@ -1441,8 +1442,8 @@ function resolveFormat(
 }
 
 /**
- * § 2 row 4, as v1's `checkMatchUpFormatApplication` decides it (#5608, scoring engine spec § 16 decision 19, CA
- * 2026-10-18): a format that is not well-formed is refused; one well-formed but refused for NEW use is refused only
+ * § 2 row 4, as v1's `checkMatchUpFormatApplication` decides it (#5608, scoring engine spec § 16 decision 19): a
+ * format that is not well-formed is refused; one well-formed but refused for NEW use is refused only
  * when it would change the format the matchUp plays under. A score sent back with the stored format is not a new use.
  */
 function formatRecognizedFor(incoming: string | undefined, stored: string | undefined): boolean {
@@ -1462,7 +1463,7 @@ function appliedFormat(
 }
 
 /**
- * THE DRAW THE VIEW DECIDES ON (§ 3.1.1, CA 2026-10-24): the structural index, never a hydration. A draw the index does
+ * THE DRAW THE VIEW DECIDES ON (§ 3.1.1): the structural index, never a hydration. A draw the index does
  * not cover yet (TEAM) is hydrated as before; another view of the same draw in the same call reuses the first's.
  */
 function drawToDecideOn(
@@ -1795,7 +1796,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         }).calculatedWinningSide
       : undefined;
 
-  // a malformed round link, the matchUp's own or downstream, is an error in v1 (CA, 2026-10-06): § 2 row 21
+  // a malformed round link, the matchUp's own or downstream, is an error in v1: § 2 row 21
   const targets = getTargetsDownstream({
     matchUpId: matchUpTieId || request.matchUpId,
     inContextDrawMatchUps,
@@ -1850,7 +1851,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     score: request.score,
   });
 
-  // the same predicate v1 asks: one rule, read by both pipelines (P52)
+  // the same predicate v1 asks: one rule, read by both pipelines
   const kind = request.flags.propagatingExit
     ? undefined
     : correctionKindChange({
@@ -2186,7 +2187,7 @@ function lineViewOf({
         });
       const autoCalcDisabled = !!(dualMatchUp.disableAutoCalc ?? dualMatchUp._disableAutoCalc);
       // v1's own read (`resolveTieMatchUpContext`): a dual decided by its own exit or call keeps its winner while its
-      // lines project none, and that winner is the projected one (CA, 2026-11-20, class 4)
+      // lines project none, and that winner is the projected one (class 4)
       const { keepsDecision: keepsDualDecision, lineDecided: dualLineDecided } = dualKeepsOwnDecision({
         projectedWinningSide,
         autoCalcDisabled,

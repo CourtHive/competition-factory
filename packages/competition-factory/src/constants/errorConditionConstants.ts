@@ -27,7 +27,7 @@ export const EVENT_DATE_INACTIVE = {
   code: 'EVENT_DATE_INACTIVE' as const,
 } satisfies ErrorType;
 // A person.nationalityCode modifyParticipant wrote although it is not a recognised country code. Always a WARNING,
-// never a refusal (CA 2026-11-02): federations carry codes the country fixture does not list. An instance adds
+// never a refusal: federations carry codes the country fixture does not list. An instance adds
 // { participantId, nationalityCode }.
 export const NATIONALITY_CODE_UNRECOGNIZED = {
   message: 'The nationalityCode is not a recognised country code.',
@@ -597,9 +597,8 @@ export const CANNOT_CHANGE_WINNING_SIDE = {
  * A DOUBLE_WALKOVER and a DOUBLE_DEFAULT carry NO `winningSide` — neither side advances — yet they
  * propagate produced exits downstream, so re-scoring one is exactly the operation that must be
  * refused when those exits are load-bearing for a decided result. Reporting
- * `CANNOT_CHANGE_WINNING_SIDE` there names a field the matchUp does not have. CA, 2026-09-21:
- * *"maybe 'Cannot change outcome' is better than 'Cannot change winningSide' in the case where
- * there is no winningSide?"*
+ * `CANNOT_CHANGE_WINNING_SIDE` there names a field the matchUp does not have, so the refusal names
+ * the outcome instead.
  */
 export const CANNOT_CHANGE_OUTCOME = {
   message: 'Cannot change outcome',
@@ -1053,7 +1052,7 @@ export const SCHEDULED_MATCHUPS = {
 } satisfies ErrorType;
 
 /**
- * A settle pass reached its bound with work still to do (F9 (i), CA 2026-10-19 and 2026-10-24). Not reached on any of
+ * A settle pass reached its bound with work still to do. Not reached on any of
  * ~97,000 census schedules; the refusal is the bound's honest report, where it used to stop silently.
  */
 export const SETTLE_BOUND_REACHED = {

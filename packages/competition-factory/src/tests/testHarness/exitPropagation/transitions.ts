@@ -125,7 +125,7 @@ export function projectDraw(drawDefinition: any): any {
  * its clear holds `['', 'WO']`, and the round trip reported that as residue (census a1 cases 14, 24, 29, 32). Deriving
  * the codes at settle was measured as the alternative and refused: it closed those four but opened 20 failures in the
  * exitPropagation folder, three of them a code on the winning side (`aWithdrawnExitTakesItsCode`), and changed 4 pinned
- * expectations outside it. `matchUpStatusCodes` is legacy and 8.x removes it (CA, 2026-10-15).
+ * expectations outside it. `matchUpStatusCodes` is legacy and 8.x removes it.
  *
  * The defect does not go unobserved: {@link checkCodesConsistent} asks it of a settled draw, as its own property.
  *
@@ -146,7 +146,7 @@ export function projectRoundTrip(drawDefinition: any): any {
 }
 
 /**
- * A BYE's drawPosition is rendered `BYE`, not as its number (CA, 2026-09-29; census R10, 2026-10-18).
+ * A BYE's drawPosition is rendered `BYE`, not as its number (census R10, 2026-10-18).
  *
  * When two BYEs meet, which of the two seats goes on depends on the order they were placed in, and that is not
  * information: `correctionDivergence`'s `renderDrawPositions` already renders it so, and its docblock records the

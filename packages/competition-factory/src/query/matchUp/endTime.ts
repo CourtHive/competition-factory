@@ -2,7 +2,7 @@ import { END_TIME } from '@Constants/timeItemConstants';
 
 /**
  * A matchUp's end of play: a first-class `schedule.endTime`, else the latest END_TIME timeItem, the last of those with
- * the same stamp, as every other schedule attribute reads its timeItems (CA 2026-10-26, hydration OPEN-9).
+ * the same stamp, as every other schedule attribute reads its timeItems.
  */
 export function matchUpEndTime({ matchUp }) {
   const firstClass = matchUp?.schedule?.endTime;

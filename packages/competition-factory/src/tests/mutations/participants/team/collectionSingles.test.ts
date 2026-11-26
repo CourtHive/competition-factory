@@ -140,7 +140,7 @@ it('can both assign and remove individualParticipants in SINGLES matchUps that a
   } = tournamentEngine.allTournamentMatchUps({
     matchUpFilters: { matchUpIds: [singlesMatchUp.matchUpTieId] },
   }));
-  // a dual with no rubber result holds no score (CA, 2026-10-05); it held a derived 0-0 before
+  // a dual with no rubber result holds no score; it held a derived 0-0 before
   expect(teamMatchUp.score).toBeUndefined();
 
   teamMatchUp.sides.forEach((side) => {

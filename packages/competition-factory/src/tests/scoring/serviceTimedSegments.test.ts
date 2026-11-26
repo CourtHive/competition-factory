@@ -2,7 +2,7 @@ import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { describe, expect, it } from 'vitest';
 
 /*
- * Timed service (scoring-engine spec § 10.3, § 10.5; § 16 decision 14, CA 2026-10-18): "Service alternates by
+ * Timed service (scoring-engine spec § 10.3, § 10.5; § 16 decision 14): "Service alternates by
  * unit, continuously across segments: game by game where points build games, point by point otherwise, and a
  * new segment's first unit is served by the side that did not serve the last unit of the segment before, as
  * games run on across sets. A tiebreak at time follows Rule 5(b), opened by the side due to serve the next
@@ -20,7 +20,7 @@ function serveSides(engine: ScoringEngine) {
   return engine.getState().history!.points.map((point) => point.serveSide);
 }
 
-describe('§ 10.3 timed service runs on across segments (CA 2026-10-18, decision 14)', () => {
+describe('§ 10.3 timed service runs on across segments (decision 14)', () => {
   it('SET3-S:T10P: 0, 1, 0 in segment one, then 1, 0 in segment two', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:T10P' });
     for (const winner of [0, 0, 1] as const) engine.addPoint({ winner });
@@ -53,7 +53,7 @@ describe('§ 10.3 timed service runs on across segments (CA 2026-10-18, decision
   });
 });
 
-describe('§ 10.3 a tiebreak at time follows Rule 5(b) (CA 2026-10-18, decision 14)', () => {
+describe('§ 10.3 a tiebreak at time follows Rule 5(b) (decision 14)', () => {
   it('SET3-S:T20/TB7 level 1-1 at time: opened by the side due to serve the next game, then two each', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:T20/TB7' });
     engine.addGame({ winner: 0 });
@@ -75,7 +75,7 @@ describe('§ 10.3 a tiebreak at time follows Rule 5(b) (CA 2026-10-18, decision 
   });
 });
 
-describe('§ 10.5 a timed aggregate segment takes the aggregate court half (CA 2026-10-18, decision 14)', () => {
+describe('§ 10.5 a timed aggregate segment takes the aggregate court half (decision 14)', () => {
   it('SET7XA-S:T10P: deuce when the aggregate total is even, across segments', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET7XA-S:T10P' });
     for (const winner of [0, 0, 1] as const) engine.addPoint({ winner });

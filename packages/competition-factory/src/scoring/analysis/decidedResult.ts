@@ -27,7 +27,7 @@ export function isDecidedOutsideScore(score?: Score): boolean {
 }
 
 /**
- * Standings phase 2 § 1.1 (CA 2026-11-04), the decided result: a level sporting score, kept as played, plus the
+ * Standings phase 2 § 1.1, the decided result: a level sporting score, kept as played, plus the
  * `winningSide` and a record of how the winner was decided (`decidedIn: 'EXTERNAL'` and `decidedBy`). Refuses a record
  * that does not describe one; `undefined` when the score carries no such record, or a sound one.
  *
@@ -42,6 +42,8 @@ export function decidedResultRefusal(params: {
   matchUpStatus?: MatchUpStatusUnion;
   matchUpFormat?: string;
   winningSide?: number;
+  /** whether the score is level, where the format cannot say: a TEAM dual's aggregate (`levelDualDecisionRefusal`) */
+  level?: boolean;
   score?: Score;
 }): ResultType | undefined {
   const { matchUpStatus, matchUpFormat, winningSide, score } = params;
@@ -60,13 +62,15 @@ export function decidedResultRefusal(params: {
   }
   const tallyRefusal = decidedBy.tally === undefined ? undefined : tallyProblem(decidedBy, winningSide);
   if (tallyRefusal) return refuse(tallyRefusal);
-  const parsed = parse(matchUpFormat ?? '');
-  const level = parsed?.overtimeFormat
-    ? isLevelOvertimeScore(score, matchUpFormat)
-    : isLevelScore(score, matchUpFormat);
+  const level = params.level ?? isLevelForFormat(score, matchUpFormat);
   if (!level)
     return refuse('only a level score is decided outside it: this score decides the match, or is not complete');
   return undefined;
+}
+
+function isLevelForFormat(score?: Score, matchUpFormat?: string): boolean {
+  const parsed = parse(matchUpFormat ?? '');
+  return parsed?.overtimeFormat ? isLevelOvertimeScore(score, matchUpFormat) : isLevelScore(score, matchUpFormat);
 }
 
 function isLevelOvertimeScore(score?: Score, matchUpFormat?: string): boolean {

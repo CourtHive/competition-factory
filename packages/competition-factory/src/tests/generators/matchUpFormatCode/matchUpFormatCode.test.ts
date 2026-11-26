@@ -224,7 +224,7 @@ const invalidFormats = [
   'SET3-S:6/TB7@',
   'SET5-S:6/T9-F:6',
   'SET-S:6/TB7-F:6',
-  // 'SET35-S:6/TB7-F:TB10' was here: any best-of count is a format (CA, 2026-10-02), so it parses now
+  // 'SET35-S:6/TB7-F:TB10' was here: any best-of count is a format, so it parses now
   'SET5-S:6/TB7-X:6/TB10',
   'SET5-S:5NOAD/TB9NOD@4',
   'SET5-S:5NAD/TB9NOAD@4',
@@ -400,7 +400,7 @@ it('supports an even number of timed sets', () => {
   expect(stringifiedWithFinalSet).toEqual(withFinalSetFormat);
 });
 
-it('accepts any bestOf, and exactly N on a standard set (CA 2026-10-25)', () => {
+it('accepts any bestOf, and exactly N on a standard set', () => {
   const format = 'SET4-S:6';
   const parsed = matchUpFormatCode.parse(format);
   expect(parsed).toEqual({ bestOf: 4, setFormat: { setTo: 6, noTiebreak: true } });
@@ -600,7 +600,7 @@ it('supports -G:TN1D golden point format', () => {
   expect(isValidMatchUpFormat({ matchUpFormat: format })).toEqual(true);
 });
 
-// -G:TN is the default traditional game: an equivalent spelling of no -G: section (CA 2026-10-25)
+// -G:TN is the default traditional game: an equivalent spelling of no -G: section
 it('supports -G:TN (explicit traditional, no deuce cap)', () => {
   const format = 'SET3-S:6/TB7-G:TN';
   const parsed = matchUpFormatCode.parse(format);

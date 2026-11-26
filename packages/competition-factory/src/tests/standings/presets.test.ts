@@ -12,7 +12,7 @@ import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
 /**
- * Standings presets written from rulebooks verified at source (Mentat `planning/STANDINGS_ENGINE_SPEC.md` § 7, S6).
+ * Standings presets written from rulebooks verified at source (S6).
  */
 
 describe.each([

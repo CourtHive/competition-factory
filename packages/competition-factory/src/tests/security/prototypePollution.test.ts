@@ -10,7 +10,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';
 import { afterEach, describe, expect, it } from 'vitest';
 
-// CodeQL js/prototype-polluting-assignment, triaged 2026-11-23 (Mentat assessment 2026-11-23-factory-codeql-triage).
+// CodeQL js/prototype-polluting-assignment, triaged 2026-11-23.
 // The factory runs in CFS on client payloads and imported records, so "__proto__" can arrive as an id, a key or a path
 // segment. Each case below wrote onto Object.prototype or Array.prototype on dev.
 const baseline = new Set(Object.getOwnPropertyNames(Object.prototype));

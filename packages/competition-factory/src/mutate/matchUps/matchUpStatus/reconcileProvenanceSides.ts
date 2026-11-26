@@ -18,7 +18,7 @@ const completedStatuses = new Set<string>(
 );
 
 /**
- * A PROVENANCE ENTRY FOLLOWS ITS FEEDER'S SIDE AS THE SEATS SETTLE (CA ruling (1), 2026-10-20; Mentat P59).
+ * A PROVENANCE ENTRY FOLLOWS ITS FEEDER'S SIDE AS THE SEATS SETTLE.
  *
  * `sideExitProvenance` is keyed by side number, and a feeder's side is read two ways: with both positions present, by
  * drawPosition order (`draw-positions.md` rule 3, `getExitArrivalSideNumber`); with one or none, by feeder order. Where

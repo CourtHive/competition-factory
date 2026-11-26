@@ -727,7 +727,7 @@ describe('ScoringEngine — endSegment', () => {
   });
 
   test('endSegment on an already-completed set is refused, changing nothing', () => {
-    // a closed segment takes no input, and a second endSegment on it is refused (spec § 6.4, CA 2026-10-18)
+    // a closed segment takes no input, and a second endSegment on it is refused (spec § 6.4)
     const engine = new ScoringEngine({ matchUpFormat: 'SET7XA-S:T10P' });
     engine.addPoint({ winner: 0 });
     engine.endSegment();
@@ -1073,7 +1073,7 @@ describe('addPoint — tiebreak-only sets', () => {
 
 describe('addPoint — rally scoring', () => {
   test('under rally scoring the rally winner serves next', () => {
-    // SET3-S:TB21@RALLY — rally scoring tiebreak. Spec § 10.4 (CA 2026-10-18, decision 15): the server of a
+    // SET3-S:TB21@RALLY — rally scoring tiebreak. Spec § 10.4 (decision 15): the server of a
     // point is the winner of the point before it; the first point's server follows the orientation (side 1).
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:TB21@RALLY' });
 
@@ -1660,7 +1660,7 @@ describe('ScoringEngine — lineUp on points', () => {
 // ============================================================================
 
 describe('addPoint — setTo:1 (short sets)', () => {
-  // ITF Rule 6 at setTo 1 (CA 2026-10-17): a set needs a margin of two games, and the declared
+  // ITF Rule 6 at setTo 1: a set needs a margin of two games, and the declared
   // tiebreak decides it at one game all. 1-0 used to close the set, so the tiebreak was unreachable.
   test('one game is not a set; two games to love are', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:1/TB7' });

@@ -8,12 +8,12 @@ import { RANKING, SEEDING } from '@Constants/scaleConstants';
 import { SINGLES } from '@Constants/eventConstants';
 
 /**
- * A draw generated before its entries: "shell now, draw later" (CA, 2026-10-09: "we need a way to generate
- * entire draw structures irregardless of the number of entries"). The whole structure, main and qualifying,
+ * A draw generated before its entries: "shell now, draw later": a way to generate
+ * entire draw structures regardless of the number of entries. The whole structure, main and qualifying,
  * is generated with nobody placed; entries are added as they arrive, and the positioning places everyone.
  *
- * CA, 2026-10-09: "the slots for qualifiers shouldn't be reserved in advance at all, those qualifying
- * placeholders or the qualifiers themselves get placed when the draw positioning is generated".
+ * The slots for qualifiers are not reserved in advance at all: the qualifying placeholders, or the qualifiers
+ * themselves, are placed when the draw positioning is generated.
  */
 const QUALIFIERS = 4;
 const SEEDING_SCALE = 'SHELL_SEEDING';

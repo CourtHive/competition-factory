@@ -39,12 +39,12 @@ export function checkSetIsComplete({
 
   const setFormat = (isDecidingSet && matchUpScoringFormat.finalSetFormat) || (matchUpScoringFormat?.setFormat ?? {});
   if (setFormat.combinedPointTotal) return analyzeCombinedPointSet(set, setFormat).complete;
-  // a shootout is a final tally: complete once it is a tally a shootout can end on (Ruling 3, CA 2026-11-04)
+  // a shootout is a final tally: complete once it is a tally a shootout can end on
   if (setFormat.shootout) return !shootoutTallyRefusal(setFormat.shootout, [set.side1Score, set.side2Score]);
   // A tiebreak-only set's points are read from wherever they are, so a set that carried them in its game
   // fields (a format-aware parse) is the same set as one that carries them beside the 1-0 marker
   const reading = readTiebreakSet(set, setFormat);
-  // the 1-0 marker alone records a finished tiebreak set (CA, V11)
+  // the 1-0 marker alone records a finished tiebreak set
   if (reading.isMarker) return true;
   isTiebreakSet ??= reading.isTiebreakSet;
   set = withoutZeroZeroTiebreak(withPointsInTiebreakFields(set, setFormat));
@@ -73,9 +73,9 @@ export function checkSetIsComplete({
     (leadingSide === 1 && set.side1TiebreakScore > set.side2TiebreakScore) ||
     (leadingSide === 2 && set.side2TiebreakScore > set.side1TiebreakScore);
 
-  // ── A tiebreak games score with no points is a finished set (CA, 2026-11-07) ──
+  // ── A tiebreak games score with no points is a finished set ──
   //
-  // `7-6` alone has been a recorded result since ruling V11 (CA, 2026-10-02): `setMatchUpStatus` accepts it with
+  // `7-6` alone is a recorded result: `setMatchUpStatus` accepts it with
   // TIEBREAK_POINTS_NOT_RECORDED, `validateSetScore` passes it and `analyzeSet` validates its outcome. This function
   // alone called it unfinished, so `getSetWinningSide` named no winner, `analyzeMatchUp` found none, and a score-entry
   // interface delegating to the analysis could never submit the score the engine would record. The games decide:
@@ -102,11 +102,9 @@ export function checkSetIsComplete({
   // one-game SET margin is a different token, `WB1` (`parse('SET1-S:5WB1')` emits `winBy: 1`; TYPTI).
   // This function read `NoAD` as that margin, so a `6-5` under `SET3-S:6NOAD/TB7-F:TB10` came back
   // COMPLETE, and `getSetWinningSide` and `analyzeSet`, which delegate here, named a winner for it.
-  // Settled by CA 2026-10-01; the grammar and sources are in
-  // `Mentat/statuses/2026-10-01-noad-at-three-levels-and-the-one-game-set.md`.
   //
   // `winBy` itself was previously ignored: a 5-4 under `SET1-S:5WB1` fell through to a two-game margin
-  // and came back INCOMPLETE, though first-to-five wins that set (CA, 2026-09-27).
+  // and came back INCOMPLETE, though first-to-five wins that set.
   const declaredWinBy = setFormat.winBy;
   const winMargin = requiresTiebreak || (isTiebreakSet && setFormat.tiebreakFormat?.NoAD) ? 1 : (declaredWinBy ?? 2);
   const hasWinMargin = scoreDiff >= winMargin;

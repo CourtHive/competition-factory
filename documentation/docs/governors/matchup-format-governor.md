@@ -449,7 +449,7 @@ boolean; // true if valid, false if invalid
 `isValidMatchUpFormat` answers whether a code is valid **for a new format**; `parse` answers whether a stored
 code can be read. `parse` refuses every code that is not well-formed, so a malformed stored format is never
 quietly reinterpreted. `isValidMatchUpFormat` also refuses two well-formed kinds, for new use only (scoring
-engine specification § 16, decision 19; CA 2026-10-18): a standard set whose tiebreak comes below S − 1, and an
+engine specification § 16, decision 19): a standard set whose tiebreak comes below S − 1, and an
 aggregate of standard sets. See [parse and stringify](/docs/codes/matchup-format#parse-and-stringify). A code is
 well-formed when it parses, and when its re-stringified form matches it after these equivalent spellings are rewritten:
 
@@ -464,7 +464,7 @@ trailing space), a fractional `@6.5`, an invalid section (`SET5-S:6/TB7-F:S:6`),
 one-set match (`SET1-S:6/TB7-F:TB10`). Sections must appear in the canonical order.
 
 Any odd best-of count is valid (`SET7-S:TB11`, `SET9-S:6/TB7`). An even implicit best-of count is refused for
-new use (CA 2026-11-03): `SET6-S:6/TB7` and `SET2-S:6/TB7-F:TB10` declare best of six and best of two. Use `X`
+new use (since 2026-11-03): `SET6-S:6/TB7` and `SET2-S:6/TB7-F:TB10` declare best of six and best of two. Use `X`
 for exactly N segments (`SET6X-S:6/TB7`; a level exactly-two result is valid) or `A` for aggregate scoring, and
 write two sets plus a deciding match tiebreak as `SET3-S:6/TB7-F:TB10`. A stored even best-of code still parses,
 so existing records stay readable. `X` (exactly) applies to every root and every kind of set

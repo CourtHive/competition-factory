@@ -12,6 +12,12 @@ Some methods on this page are candidates for removal from production engine expo
 import { entriesGovernor } from 'tods-competition-factory';
 ```
 
+:::info Also on tools
+
+These entriesGovernor queries read no tournament state, so each is also on `tools`, the same function, called with the same params object: `tools.entries.getEntryStatusOrdinals`, `tools.entries.getMaxEntryPosition`. Their engine routes are unchanged in 7.x; see [tools by domain](/docs/tools/tools-overview#domains-stateless-functions-by-subject).
+
+:::
+
 ## addDrawEntries
 
 Bulk add an array of `participantIds` to a specific **stage** of a draw with a specific **entryStatus**. Will fail if `participantIds` are not already present in `event.entries`. Use `addEventEntries` to add to both `event` and `drawDefinition` at the same time.

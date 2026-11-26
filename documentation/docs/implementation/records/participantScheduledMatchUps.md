@@ -34,7 +34,7 @@ The refreshed source-name scan found no name mentions in the scanned product sou
 - **Production governor declarations:** `matchUpGovernor`, `queryGovernor`.
 - **Standalone package API after 8.0.0:** decision pending; this page does not establish a supported import.
 - **Implementation:** [`src/query/matchUps/participantScheduledMatchUps.ts` — `participantScheduledMatchUps`](https://github.com/CourtHive/competition-factory/blob/8c2aaca6801734223ef1e0a8127872344373fbd5/src/query/matchUps/participantScheduledMatchUps.ts). Source paths and aliases are not package import paths.
-- **Replacement workflow:** not yet established; no supported replacement is promised.
+- **Replacement workflow:** use `tools.matchUps.participantScheduledMatchUps`, the same function (available from 7.49).
 - **Test-only adapters:** may exercise this implementation independently of production engine exports; this is not evidence of product use.
 
 ## Corrected 7.x reference

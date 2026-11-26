@@ -35,8 +35,7 @@ import type { OutcomeOp } from '../ops';
  * readings of each seat, and the view with the unwind folded in.
  */
 
-// This is the plan's one "unwind, then re-plan" composition (Mentat
-// assessment/2026-11-07-outcome-refactor-debates.md, ruling 6): its arguments are the caller's facts (`args`,
+// This is the plan's one "unwind, then re-plan" composition: its arguments are the caller's facts (`args`,
 // `releasedLandings`), and the plain-winner sites call it. The sites that call `rebuild` directly (the standalone and
 // terminal programs, the geometry probes) fold a different ops set (`clearing`, `clearOnly`, extra ops) and must not
 // be routed through here. It is deliberately not memoised: a per-call cache of the unwind and its rebuilt views would
@@ -603,8 +602,9 @@ function unwoundLevelSeatOps(
   if (!loserSeat) return [];
   const byeHeld = loserSeat.matchUpStatus === BYE;
   // a convergence re-derived still sends its seat nobody: the BYE it placed there stands (v1 withdraws the claim and
-  // P39 claims it back, `settleRederivedDoubleExit`), nothing written. Under `doubleExitPropagateBye: false` the seat
-  // holds the carries' own convergence, which the first level's branch refuses before this level is read
+  // `propagateUnfillableLoserBye` claims it back, `settleRederivedDoubleExit`), nothing written. Under
+  // `doubleExitPropagateBye: false` the seat holds the carries' own convergence, which the first level's branch
+  // refuses before this level is read
   if (at.kept) return [];
   if (branched && !byeHeld) return unwoundBranch(view, loserSeat, at.first, withdrawn, relay);
   if (branched && !loserSeat.seat?.bye) return unwoundPassage(view, loserSeat, relay);

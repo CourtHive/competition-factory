@@ -9,8 +9,7 @@ import { POLICY_SCHEDULING_DEFAULT } from '@Fixtures/policies/POLICY_SCHEDULING_
 import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
 
 /**
- * The timing hydration reports, as CA ruled it on 2026-10-26 (Mentat planning/HYDRATION_DERIVATIONS_SCHEDULING_FIELDS.md
- * § 9, OPEN-7, 8, 9, 11). The default policy times a best-of-three standard format at 90 minutes and recovers 60.
+ * The timing hydration reports. The default policy times a best-of-three standard format at 90 minutes and recovers 60.
  */
 const FORMAT = 'SET3-S:6/TB7';
 
@@ -43,7 +42,7 @@ const hydrated = (matchUpId: string) =>
     .allTournamentMatchUps({ afterRecoveryTimes: true, nextMatchUps: true, inContext: true })
     .matchUps.find((m: any) => m.matchUpId === matchUpId);
 
-describe('a wall-clock addition is arithmetic, not a Date (OPEN-7)', () => {
+describe('a wall-clock addition is arithmetic, not a Date', () => {
   it.each([
     ['10:00', 90, '11:30'],
     ['23:30', 60, '00:30'],
@@ -56,7 +55,7 @@ describe('a wall-clock addition is arithmetic, not a Date (OPEN-7)', () => {
   });
 });
 
-describe('a recovery carries its date across midnight (OPEN-8)', () => {
+describe('a recovery carries its date across midnight', () => {
   it('within the day: the date of play', () => {
     const { firstRound, startDate } = singleDraw();
     schedule(firstRound[0], { scheduledDate: startDate, scheduledTime: '10:00' });
@@ -100,7 +99,7 @@ describe('a recovery carries its date across midnight (OPEN-8)', () => {
   });
 });
 
-describe('endTime reads as every schedule attribute does (OPEN-9)', () => {
+describe('endTime reads as every schedule attribute does', () => {
   it('a first-class schedule.endTime is read', () => {
     const { firstRound, startDate, drawId } = singleDraw();
     schedule(firstRound[0], { scheduledDate: startDate, scheduledTime: '10:00' });
@@ -130,7 +129,7 @@ describe('endTime reads as every schedule attribute does (OPEN-9)', () => {
   });
 });
 
-describe('a draw’s scheduling policy times its matchUps (OPEN-11)', () => {
+describe('a draw’s scheduling policy times its matchUps', () => {
   it('a draw recovering 30 minutes, under a tournament policy that recovers 60', () => {
     const { firstRound, startDate, drawId } = singleDraw();
     const drawPolicy = {

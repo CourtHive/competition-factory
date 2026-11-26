@@ -7,8 +7,7 @@ import { FORMAT_STANDARD_NOAD } from '@Fixtures/scoring/matchUpFormats';
 /**
  * `SET3-S:6NOAD` is an advantage set with no-advantage GAMES. The games rule does not shorten the set:
  * a 5 completes to a 7, a 6 wants its tiebreak, and a 5-6 names no winner. These three pinned `6-5` as a
- * finished set until 2026-10-01 — `NOAD` read as a one-game SET margin, which is `WB1`'s job. Settled
- * by CA; grammar and sources in `Mentat/statuses/2026-10-01-noad-at-three-levels-and-the-one-game-set.md`.
+ * finished set until 2026-10-01 — `NOAD` read as a one-game SET margin, which is `WB1`'s job.
  */
 it('handles set scoring with NoAD', () => {
   const matchUpFormat = FORMAT_STANDARD_NOAD;

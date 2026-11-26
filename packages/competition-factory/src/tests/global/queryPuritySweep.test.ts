@@ -9,7 +9,7 @@ import { ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConsta
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
 /**
- * EVERY QUERY AND GENERATOR, DRIVEN ONCE THROUGH AN ENGINE (CA 2026-11-08). The query-purity harness checks every engine
+ * EVERY QUERY AND GENERATOR, DRIVEN ONCE THROUGH AN ENGINE. The query-purity harness checks every engine
  * call the suite makes, so a query that no test drives through an engine is never checked: `addGoesTo` wrote stored
  * matchUps, with no notice, and passed. Each method here runs in its own test, from a fresh state, against a bag of the
  * record's own ids; the suite-wide harness (testHarness/queryPurity.ts) fails a test whose call wrote.
@@ -87,7 +87,7 @@ describe.each(Object.entries(fixtures))('%s record: every query and generator, t
 
 /**
  * Queries and generators whose names begin with a mutation verb. A RATCHET: a new one fails, and an entry leaves when
- * its method is renamed, reclassified or removed. Each disposition awaits CA's ruling (role inventory, 2026-11-08).
+ * its method is renamed, reclassified or removed. Each disposition is still to be decided.
  */
 const MISNAMED: Record<string, string> = {
   addFinishingRounds:

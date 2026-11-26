@@ -1,5 +1,5 @@
 /**
- * Matrix tiers (CA, 2026-11-05). The exit-propagation matrices are most of the suite's time, and the suite runs
+ * Matrix tiers. The exit-propagation matrices are most of the suite's time, and the suite runs
  * once per CI arm. An ordinary PR into dev runs a bounded, stratified SLICE of each tiered matrix; a checkpoint PR
  * into master, a push to master and every local run execute the FULL matrix. verify.yml sets
  * `FACTORY_MATRIX_TIER=pr` on a pull_request whose base is not master and nowhere else, so an unset variable means

@@ -6,6 +6,40 @@ Subscriptions enable external methods to be called when certain events occur whi
 
 The payload for each subscription is an array of objects, with each element of the array having been produced by an `addNotice` statement within engine methods. Subscription methods are called **_after_** an engine method completes, not during execution.
 
+A call that returns an error delivers no notices, with one exception. A bulk mutation that commits some items and then refuses another returns its error with `committed: true`. Unless rollback was requested, the engine then delivers the notices of the committed items in the usual topic order. A refused item buffers no notices. Inside an `executionQueue` without rollback, the directives that succeeded before a refusal are announced in the same way, whatever the refusing directive (see [Transaction Pattern](/docs/engines/mutation-engines#transaction-pattern)).
+
+In 7.x, subscription payloads are read-only, including the array and every object reachable through it. To update a score, take the matchUp ID from the notice and use it in a subsequent `setMatchUpStatus` call. Keep display-only annotations in a separate application object.
+
+### Auditing a provider or subscriber
+
+The published package delivers each payload as it is: in some pipelines it is the live record object, and copying or freezing it would add latency. A standalone audit engine checks for writes instead. Build it from a Factory source checkout at the revision you want to audit, with Git, Node 24 or later and the pnpm version in the checkout's `packageManager` field. From the workspace root run:
+
+```sh
+pnpm install --frozen-lockfile
+cd packages/competition-factory
+pnpm build:notice-diagnostics
+```
+
+The build writes two standalone Node entry points in `.diagnostics/notice-payloads/`. You can copy the matching file into your integration test project. Use the provider, selector and engine from the same imported instance throughout the audit. For ESM:
+
+```js
+import { globalState, syncEngine } from './.diagnostics/notice-payloads/index.mjs';
+
+globalState.setOutcomePipeline('differential', { checkNoticePayloadWrites: true });
+// Install your provider on globalState, or register your subscriber, then exercise syncEngine.
+```
+
+For CommonJS:
+
+```js
+const { globalState, syncEngine } = require('./.diagnostics/notice-payloads/index.cjs');
+globalState.setOutcomePipeline('differential', { checkNoticePayloadWrites: true });
+```
+
+The audit engine hands enqueue (`addNotice`) and subscriber delivery (`callListener`) a read-only view of each payload, including nested references retained after delivery and lazily built payloads. A write through a view throws a `TypeError`. A synchronous subscriber's throw rejects the delivery promise, as any subscriber error does. Views preserve aliases within the delivery. A reference you held before the notice was raised has a different identity from its view, and native `structuredClone` cannot clone a view. The write check is offered with the differential pipeline only. Any later `setOutcomePipeline` call without the option resumes raw delivery for new payloads; views already retained still reject writes. In the published package the option is ignored and the detector is absent.
+
+In the Factory source test suite, `NOTICE_PAYLOAD_WRITE_CHECK=1` compiles the detector in and turns it on for every test in any pipeline. A write through a payload then fails its test, even when the throw is caught. For example, run `NOTICE_PAYLOAD_WRITE_CHECK=1 OUTCOME_PIPELINE=differential pnpm exec vitest run path/to/provider.test.ts` from the package directory.
+
 :::info
 All engine methods may be passed the additional parameter `{ delayNotify: true }`, in which case subscription methods are **_not_** called until a subsequent engine method is invoked.
 :::

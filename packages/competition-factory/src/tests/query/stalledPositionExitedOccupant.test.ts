@@ -12,11 +12,11 @@ import { DOUBLE_WALKOVER, WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatu
 /**
  * AN OCCUPANT WHO EXITED IS NOT WAITING FOR ANYBODY.
  *
- * CA, 2026-09-29, of a converged double exit holding one occupant who themselves exited: *"There is
- * nothing to be done and it needs to be considered a valid end state."*
+ * A converged double exit holding one occupant who themselves exited has nothing to be done: it is a
+ * valid end state.
  *
- * Two halves, because the rule is only worth having if it is narrow. The first is the draw CA was
- * shown. The second is the state the rule's status-blindness exists to catch — an exit stamped onto
+ * Two halves, because the rule is only worth having if it is narrow. The first is the reported
+ * draw. The second is the state the rule's status-blindness exists to catch — an exit stamped onto
  * a matchUp somebody is still waiting in — and it must go on being reported.
  */
 
@@ -53,7 +53,7 @@ it('does not report the lone occupant of a converged double exit — COMPASS 16/
   play(511);
   const converged = at('Southeast', 1, 1);
 
-  // CONTROL: the state CA was shown. One occupant, no winner, and BOTH sides arrived carrying an exit
+  // CONTROL: the reported state. One occupant, no winner, and BOTH sides arrived carrying an exit
   expect(converged.matchUpStatus).toEqual(DOUBLE_WALKOVER);
   expect(converged.winningSide).toBeUndefined();
   expect(occupantsOf(converged).length).toEqual(1);

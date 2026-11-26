@@ -78,7 +78,7 @@ export function analyzeSet(params) {
   // standard-set check — which requires `setTo` — refused every completed one, so a BLW result was
   // never a validated score and `setMatchUpState`'s revert guard failed open on it (2026-10-17)
   const expectOutsSet = !!setFormat?.outs;
-  // a shootout decider is a tally (Ruling 3): two totals a shootout can end on, the higher one winning
+  // a shootout decider is a tally: two totals a shootout can end on, the higher one winning
   const expectShootoutSet = !!setFormat?.shootout;
   const expectStandardSet = !expectTiebreakSet && !expectTimedSet && !expectOutsSet && !expectShootoutSet;
 
@@ -354,8 +354,8 @@ function validateTiebreakCondition({
         error: { message: 'invalid winning game scoreString (5)' },
       };
     }
-    // A 7-6 with NO tiebreak points recorded is a finished set (CA, 2026-10-02, ruling V11: "so prevalent"
-    // — 4.6% of ITA's completed tiebreak sets). One side's points without the other's is still refused.
+    // A 7-6 with NO tiebreak points recorded is a finished set (the form is so prevalent:
+    // 4.6% of ITA's completed tiebreak sets). One side's points without the other's is still refused.
     const noTiebreakPoints = sideTiebreakScores?.every((s) => s === undefined || s === null);
     if (
       noTiebreakPoints &&
@@ -452,7 +452,7 @@ function checkValidTiebreakSetOutcome({ setObject, setFormat, sideTiebreakScores
   const { tiebreakSet } = setFormat ?? {};
   const { NoAD, tiebreakTo } = tiebreakSet ?? {};
 
-  // The 1-0 marker alone: a finished tiebreak set whose points were not kept (CA, V11)
+  // The 1-0 marker alone: a finished tiebreak set whose points were not kept
   if (isTiebreakMarker(setObject, setFormat)) {
     const markerWinner = setObject.side1Score === 1 ? 1 : 2;
     return setObject.winningSide === markerWinner

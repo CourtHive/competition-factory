@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 /**
- * A format with no tiebreak has no tiebreak. Settled by CA 2026-10-02 from the validator debate: the
+ * A format with no tiebreak has no tiebreak (settled 2026-10-02). Before, the
  * ScoringEngine played a full TB7 at six-all in `SET1-S:6`; the strict validator and the mutation path
  * accepted `7-6(5)` in an advantage set and `retainScoreForFormat` carried it across; key-value entry
  * opened a tiebreak the format lacks and ignored `winBy`. One reading, `setHasTiebreak`, at every site.

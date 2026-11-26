@@ -26,7 +26,7 @@ import {
  * A corrected result must leave no trace — swept, not sampled.
  *
  * Score a double exit, score a second, then CORRECT the first. The draw must be indistinguishable
- * from one that reached the same two final outcomes directly. This is CA's re-score invariant
+ * from one that reached the same two final outcomes directly. This is the re-score invariant
  * generalised past a single matchUp: *how you got here must not change where you are*.
  *
  * ## Why this file exists at all
@@ -64,21 +64,21 @@ import {
  * corrected path left a STALE `sideExitProvenance` entry the direct path did not have, with status, winner
  * and positions already agreeing.
  *
- * The cause was P37's last legacy-array decision read. `drawPositionPlacement` and
- * `removeSubsequentRoundsParticipant` gated the NATIVE provenance write on `matchUp.matchUpStatusCodes`
- * being truthy — and because every blanking site sets that field to `[]`, the gate admitted writes onto
- * matchUps that had merely been touched by an earlier pass. Asking the native question instead
- * (`participatesInExitCascade`: does it already hold provenance, or is it an exit or a BYE) admits only the
- * matchUps where a late-learned origin belongs.
+ * The cause was the last decision read of the legacy array before the exit tenant's eviction. `drawPositionPlacement`
+ * and `removeSubsequentRoundsParticipant` gated the NATIVE provenance write on `matchUp.matchUpStatusCodes` being
+ * truthy — and because every blanking site sets that field to `[]`, the gate admitted writes onto matchUps that had
+ * merely been touched by an earlier pass. Asking the native question instead (`participatesInExitCascade`: does it
+ * already hold provenance, or is it an exit or a BYE) admits only the matchUps where a late-learned origin belongs.
  *
  * So this bucket existing at all was a symptom of the array, not of the correction. **`provenanceOnly` is
  * now zero and should stay there** — a cell landing in it again means a writer is stamping provenance
- * somewhere the cascade does not reach, which is P19's failure mode.
+ * somewhere the cascade does not reach, which is the failure mode of a presence-read `sideExitProvenance`: one bad
+ * writer flips every exclusion.
  */
 /**
  * ## Lowered 2026-09-27: 36 -> 28 severe, and the eight went to IDENTICAL
  *
- * `propagateUnfillableLoserBye` (punch-list **P39**) resolves a first-round seat as a BYE when the
+ * `propagateUnfillableLoserBye` resolves a first-round seat as a BYE when the
  * matchUp feeding it produced an exit and can never produce a loser. Eight cells that previously
  * diverged visibly between the direct and corrected paths now agree **exactly** — `identical` 36 -> 44,
  * `provenanceOnly` and `incomparable` unchanged — because the BYE is placed on both paths instead of
@@ -91,7 +91,7 @@ import {
 /**
  * ## Lowered 2026-09-28: 28 -> 8 severe, and the twenty went straight to IDENTICAL
  *
- * `reconcileStaleExitOrigins` (punch-list **P40**) withdraws a carried exit whose ORIGIN has stopped
+ * `reconcileStaleExitOrigins` withdraws a carried exit whose ORIGIN has stopped
  * being a double exit and now delivers a winner. Twenty cells diverged because the corrected path
  * left that entry standing: the origin had re-derived to a single exit with a real participant in the
  * winning seat, so what it sent downstream was an ADVANCEMENT, and the stale entry kept describing an
@@ -209,9 +209,9 @@ function firstRoundStructure(config: Parameters<typeof resolveFirstRoundStructur
  * exits, then the first CORRECTED DOWN to a single. `UPGRADE` is the reverse — a single exit, a double
  * beside it, then the single RE-SCORED UP to a double — and it was **unswept across all eight draw
  * types** until 2026-09-27. It is the direction the three `unwindRemovesDrawPosition` reproductions
- * use, and the only one that reaches punch-list **P42**.
+ * use, and the only one that reaches a single exit RE-SCORED UP to a double.
  *
- * Both directions end at the same pair of outcomes, so both are valid tests of CA's invariant: *how you
+ * Both directions end at the same pair of outcomes, so both are valid tests of the invariant: *how you
  * got here must not change where you are.*
  */
 type Direction = 'DOWNGRADE' | 'UPGRADE' | 'ORDER';
@@ -319,7 +319,7 @@ it.each(POLICIES)(
 );
 
 /**
- * THE UNSWEPT DIRECTION — a single exit RE-SCORED UP to a double. **Punch-list P42.**
+ * THE UNSWEPT DIRECTION — a single exit RE-SCORED UP to a double.
  *
  * Added 2026-09-27, and it found 52 severe divergences on its first run. Everything above sweeps the
  * DOWNGRADE — correct a double exit down to a single — and reports 28 severe. The reverse had never
@@ -350,7 +350,7 @@ it.each(POLICIES)(
  *
  * **These 52 cells still diverge**, now on the CONSEQUENCE rather than the status: `Consolation|2|1`
  * differs, because the corrected status does not re-run the propagation that should follow from it. That
- * is the missing half **P40** names as *"cross-structure re-advancement"*, and it is why this baseline is
+ * is the missing half, *"cross-structure re-advancement"*, and it is why this baseline is
  * unchanged at 52. Fixing the status without the consequence is progress, not a fix, and this arm is what
  * says so.
  *
@@ -450,7 +450,7 @@ it.each(POLICIES)(
 );
 
 /**
- * THE THIRD DIRECTION — no correction at all. **Punch-list P44.**
+ * THE THIRD DIRECTION — no correction at all: ordinary play at a convergence's winner target.
  *
  * Two double exits, entered `1 then 2` and `2 then 1`. Nothing is re-scored; this is ordinary play,
  * and it is the arm neither of the two above could see because both enter in one fixed order.

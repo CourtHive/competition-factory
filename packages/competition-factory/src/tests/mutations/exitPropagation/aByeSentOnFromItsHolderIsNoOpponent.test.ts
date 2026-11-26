@@ -160,7 +160,7 @@ it('a convergence over the loser link leaves the seat beyond its BYE as entering
   const late = playCompass('bye-from-holder-compass-last', [...COMPASS_SCHEDULE, COMPASS_CONVERGING]);
   const lateStates = keys.map((key) => state(late, key));
   // the produced exit held beside `Southwest|1|1`'s BYE goes on to wait, pending, and is awarded to nobody: the seat
-  // standing alone there is the holder's own (census S6, CA 2026-09-24; TO_BE_PLAYED in 18 of the schedule's 24 orders
+  // standing alone there is the holder's own (census S6; TO_BE_PLAYED in 18 of the schedule's 24 orders
   // while the exit was held, WALKOVER in the other 6, one state in all 24 since)
   expect(late('Southwest|2|1').matchUpStatus).toEqual('WALKOVER');
   expect(late('Southwest|2|1').winningSide).toBeUndefined();

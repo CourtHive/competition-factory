@@ -16,7 +16,7 @@ export const OUTCOME_PIPELINE_DIFFERENTIAL = 'differential';
 
 // The pipeline that decides when no mode has been chosen: the engine's initial state, what
 // `setOutcomePipeline()` with no argument restores, and what the suite runs when OUTCOME_PIPELINE is unset.
-// v2 since the flip (Path A step 3, CA 2026-11-19). `v1` stays selectable as a fallback through 7.x, and the
+// v2 since the default moved from v1. `v1` stays selectable as a fallback through 7.x, and the
 // selector itself (`engine.outcomePipeline`, `setOutcomePipeline`, the footprint's `outcomePipeline` option) is
 // deprecated in 7.x and removed in 8.0.
 export const OUTCOME_PIPELINE_DEFAULT = OUTCOME_PIPELINE_V2;

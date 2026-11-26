@@ -30,7 +30,7 @@ import { SUCCESS } from '@Constants/resultConstants';
  * context read the first's state. A per-request boundary that holds in one call shape and
  * silently leaks in another is the worst failure mode, because it passes tests and leaks in
  * production. AsyncLocalStorage propagates deterministically across every await shape.
- * See competition-factory#4564 / Mentat TASKS.md.
+ * See competition-factory#4564.
  */
 
 const asyncLocalStorage = new AsyncLocalStorage<ImplemtationGlobalStateTypes>();

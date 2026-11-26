@@ -17,8 +17,7 @@ type RelabelDualExitParams = {
 };
 
 /**
- * A LINE WHOSE TALLY RELABELS ITS DUAL'S OWN EXIT SETTLES THE LOSER AS THE DUAL'S OWN RELABEL DOES (CA, 2026-11-20,
- * class 4).
+ * A LINE WHOSE TALLY RELABELS ITS DUAL'S OWN EXIT SETTLES THE LOSER AS THE DUAL'S OWN RELABEL DOES (class 4).
  *
  * A dual decided by its own exit keeps it while its lines project no winner (`dualKeepsOwnDecision`). Once they project
  * that same winner the tally writes the dual COMPLETED: the exit relabelled a played result, by the same winner. Where the

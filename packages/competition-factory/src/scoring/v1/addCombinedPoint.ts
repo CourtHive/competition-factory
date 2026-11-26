@@ -25,7 +25,7 @@ export function addCombinedPoint(
   if (!analysis.valid) return matchUp;
   set.winningSide = analysis.winningSide;
   const index = matchUp.history?.points.length ?? 0;
-  // every point carries its coordinates (§ 11.1, CA 2026-10-21): a combined total is one set played as one game
+  // every point carries its coordinates (§ 11.1): a combined total is one set played as one game
   const point: Point & { index: number; set: number; game: number; number: number } = {
     ...options,
     index,

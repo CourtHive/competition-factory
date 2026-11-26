@@ -31,7 +31,7 @@ The refreshed source-name scan found no name mentions in the scanned product sou
 - **Production governor declarations:** `sanctioningGovernor`.
 - **Standalone package API after 8.0.0:** decision pending; this page does not establish a supported import.
 - **Implementation:** [`src/validators/sanctioning/validateStatusTransition.ts` — `validateStatusTransition`](https://github.com/CourtHive/competition-factory/blob/8c2aaca6801734223ef1e0a8127872344373fbd5/src/validators/sanctioning/validateStatusTransition.ts). Source paths and aliases are not package import paths.
-- **Replacement workflow:** not yet established; no supported replacement is promised.
+- **Replacement workflow:** use `tools.sanctioning.validateStatusTransition`, the same function (available from 7.49).
 - **Test-only adapters:** may exercise this implementation independently of production engine exports; this is not evidence of product use.
 
 ## Preserved 7.x reference

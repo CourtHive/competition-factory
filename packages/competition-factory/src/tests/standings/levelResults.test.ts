@@ -13,7 +13,7 @@ import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import type { MatchUp } from '@Types/tournamentTypes';
 
 /*
- * Standings phase 2 § 1.1, slice 1 (CA 2026-11-04): a level finish of a format that can end level (scoring spec § 9.7)
+ * Standings phase 2 § 1.1, slice 1: a level finish of a format that can end level (scoring spec § 9.7)
  * is a drawn result where no winner is needed: the score is kept, no winner is named, and the tally counts a draw.
  * Before this, both pipelines stored a soccer 1-1 COMPLETED with no score.
  */

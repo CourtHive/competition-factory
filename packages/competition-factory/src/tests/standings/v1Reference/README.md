@@ -1,7 +1,7 @@
 # Frozen v1 round-robin tally (oracle)
 
 A byte-for-byte copy of `src/query/matchUps/roundRobinTally/` taken at factory `origin/dev` `857309b4f0`
-(2026-11-01), before the standings engine restructure (Mentat `planning/STANDINGS_ENGINE_SPEC.md` § 7, S1).
+(2026-11-01), before the standings engine restructure (S1).
 
 `../v1Differential.test.ts` runs the live engine and this copy over the same seeded random groups and requires
 identical output. **Never edit these files.** When a ruled behaviour change lands (S3: K1, K8, K10), the

@@ -10,7 +10,7 @@ import { DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 /**
  * A STORED `drawPositions` HOLE IS COMPACTED BY `migrateTournamentRecord`, AND NO SIDE MOVES (leading-hole step 3).
  *
- * Since 7.7.0 no writer stores a hole (CA's Q2 ruling, 2026-10-05: `tournament.schema.json` admits no `null`). Records
+ * Since 7.7.0 no writer stores a hole (`tournament.schema.json` admits no `null`). Records
  * written before may hold `[undefined, 5]`, `[5, null]` or `[null]`. The engine reads them structurally already; the
  * migration makes them validate. The sides a consumer hydrates must be the same before and after.
  */

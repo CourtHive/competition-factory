@@ -3,6 +3,7 @@ import { FORWARD_SETTLE_EXHAUSTED } from '@Mutate/matchUps/matchUpStatus/settleF
 import { resolveRotatingPartnerOutcome } from '@Query/drawDefinition/resolveRotatingPartnerOutcome';
 import { checkMatchUpFormatApplication } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { announceGoesTo, setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
+import { levelDualDecisionRefusal } from '@Mutate/matchUps/matchUpStatus/levelDualDecision';
 import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { settleAfterWrite } from '@Mutate/matchUps/matchUpStatus/settleAfterWrite';
 import { withoutZeroZeroTiebreak } from '@Helpers/matchUpFormatCode/setRules/tiebreakSetShape';
@@ -36,7 +37,7 @@ import { isString } from '@Tools/objects';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Set as SetType, Tournament } from '@Types/tournamentTypes';
-import type { RecordCopy } from '@Mutate/matchUps/outcome/types';
+import type { CopyFinish, RecordCopy } from '@Mutate/matchUps/outcome/types';
 import { MatchUpsMap, PolicyDefinitions, ResultType, ResultWarning, TournamentRecords } from '@Types/factoryTypes';
 import { INVALID_VALUES, INVALID_WINNING_SIDE, SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING, POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
@@ -71,6 +72,8 @@ type SetMatchUpStatusArgs = {
   notes?: string;
   event?: Event;
   outcome?: any;
+  /** private to the bulk writers: what to return, unwritten, for a call v2 neither refuses nor owns */
+  bound?: { unowned: ResultType };
 };
 /**
  * Find the draw from a `drawId` when no `drawDefinition` was passed.
@@ -148,10 +151,9 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     event,
   });
 
-  // THE POLICY GOVERNS, both ways (CA, 2026-10-01). An applied scoring policy that SPEAKS on a flag,
-  // true or false, wins over anything on the call; the call decides only where the policy is silent.
-  // "If a governance policy is someone who retires can no longer continue playing, a tournament
-  // director under that policy shouldn't be able to allow a participant to continue in the draw."
+  // THE POLICY GOVERNS, both ways. An applied scoring policy that SPEAKS on a flag, true or false, wins
+  // over anything on the call; the call decides only where the policy is silent. Under a policy that says a
+  // retiree cannot continue, a tournament director cannot let that participant continue in the draw.
   // Before this, params won (`propagateRetirementAsExit`) or a truthy param won (`||`, the other
   // two), so a caller could override its federation's rule. The same rule for all three:
   // `policy ?? param ?? default`. `POLICY_SCORING_DEFAULT` is SILENT on all three, so a provider
@@ -166,14 +168,14 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // DECISION: Validate winningSide is 1 or 2 (or undefined)
   // WHY: winningSide represents which side won - only 1 (side 1) or 2 (side 2) are valid
   // Catching invalid values here prevents downstream errors
-  // a winningSide is 1 or 2, or it is absent: 0 is refused, never read as absent (CA, 2026-10-01)
+  // a winningSide is 1 or 2, or it is absent: 0 is refused, never read as absent
   if (outcome?.winningSide != null && ![1, 2].includes(outcome.winningSide)) {
     return { error: INVALID_WINNING_SIDE };
   }
 
   // NOTES ARE VALIDATED BEFORE THE FIRST WRITE. They are written last, onto the matchUp, after `modifyMatchUpScore` has
   // already written its score and status, and `addNotes` refused `notes: 123` there: an error over a result that had
-  // landed (CA, 2026-10-22: an error leaves the record unchanged, and no mutation relies on rollback). Asked here with
+  // landed (an error leaves the record unchanged, and no mutation relies on rollback). Asked here with
   // `addNotes`' own rule, so that write cannot fail (`refusedBeforeTheFirstWrite.test.ts`).
   if (notes && !isString(notes) && !(notes as { testing?: boolean })?.testing) {
     return decorateResult({ result: { error: INVALID_VALUES }, info: 'notes must be a string', stack });
@@ -231,6 +233,9 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
 
   // once, here, so the v2 decision and v1's writes read the same score
   keepDualAggregate({ enableAutoCalc, matchUpsMap, matchUpId, outcome });
+  // and refused here, before either pipeline: a winner on a level TEAM tie records how it was decided
+  const levelDual = levelDualRefusal({ ...params, matchUpsMap, outcome });
+  if (levelDual) return decorateResult({ result: levelDual, stack });
 
   // read BEFORE the mutation: `reconcileDeciders` acts only on a final whose winner has changed
   const finalsBefore = getDeciderFinals(drawDefinition);
@@ -290,7 +295,12 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // S2: a call v2 owns has been written by it (`outcome/apply.ts`); v1 is not asked, and the warnings are v1's own
   // a call recorded whole returns what v1 returned for it on the copy, its warnings among them
   if (v2.owned)
-    return v2.recorded ? v2.owned : ownedResult({ owned: v2.owned, params, matchUpsMap, neverPlayedBefore, stack });
+    return v2.recorded || v2.finished
+      ? v2.owned
+      : ownedResult({ owned: v2.owned, params, matchUpsMap, neverPlayedBefore, stack });
+  // ONE UNIT OF A BULK CALL: a call v2 neither refuses nor owns is handed back unwritten, and the bulk
+  // writer plans it whole on a copy (`outcome/plan/recordedUnit.ts`), so v1 never writes the stored record here
+  if (params.bound) return params.bound.unowned;
 
   const stored: V1Target = {
     deciderSnapshotBefore,
@@ -332,8 +342,18 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
    * RECORDED, THE FIXPOINT (`outcome/plan/recordedCall.ts` `settledOnCopy`): the settle passes run once more on the copy
    * v1 has written, with this call's parameters and the readings taken of the copy as it now stands (its double exits,
    * its deciders), as the next call's settle would take them. Undefined for a copy this call did not write.
+   *
+   * With `finish`, a native TEAM line's detached write (`plan/teamFinalLine.ts`) completes its public return on its
+   * copy instead: the warnings v1 adds, from the copy's own map. Undefined for a call that names another tournament
+   * record, as `writeOnCopy` refuses it. It reuses this closure so the decision's arguments stay those of every call.
    */
-  function settleOnCopy(copy: RecordCopy) {
+  function settleOnCopy(copy: RecordCopy, finish?: CopyFinish) {
+    if (finish) {
+      const named = Object.keys(tournamentRecords);
+      if (named.length > 1 || (named.length && named[0] !== copy.tournamentRecord?.tournamentId)) return undefined;
+      const { owned, matchUpsMap: map } = finish;
+      return ownedResult({ owned, params: { ...params, ...copy }, matchUpsMap: map, neverPlayedBefore, stack });
+    }
     const target = copies.get(copy.drawDefinition);
     if (!target) return undefined;
     const map = getMatchUpsMap({ drawDefinition: copy.drawDefinition });
@@ -354,8 +374,8 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     const { tournamentRecord, drawDefinition, event } = params;
     // a copy's write is compared with nothing: it is what v2 plans from
     const compare = target.onCopy ? undefined : v2.compare;
-    // A REFUSED CALL STORES NONE OF THE MISSING EDGES (CA, 2026-10-18: "no, a refused call does not store a draw's
-    // missing edges. v1 should no longer do so."). `setMatchUpState` writes them before deciding anything, and takes
+    // A REFUSED CALL STORES NONE OF THE MISSING EDGES: a refused call does not store a draw's missing edges, in v1
+    // either. `setMatchUpState` writes them before deciding anything, and takes
     // them back on its own refusal; what it held is held here too, for a refusal met after it returned.
     const heldEdges = holdGoesTo({ drawDefinition, matchUpsMap });
     const refuse = (refusal: ResultType) => {
@@ -460,6 +480,11 @@ type V1Target = {
   onCopy?: boolean;
 };
 
+type LevelDualArgs = Pick<SetMatchUpStatusArgs, 'drawDefinition' | 'enableAutoCalc' | 'outcome' | 'event'> & {
+  matchUpsMap: MatchUpsMap;
+  matchUpId: string;
+};
+
 type KeepDualAggregateArgs = Pick<SetMatchUpStatusArgs, 'enableAutoCalc' | 'outcome'> & {
   matchUpsMap: MatchUpsMap;
   matchUpId: string;
@@ -474,6 +499,21 @@ function keepDualAggregate({ enableAutoCalc, matchUpsMap, matchUpId, outcome }: 
   if (!outcome || enableAutoCalc || !isPartialDualScore(outcome.score)) return;
   const dual = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === matchUpId);
   if (dual?.matchUpType === TEAM) outcome.score = { ...dual.score, ...outcome.score };
+}
+
+function levelDualRefusal({ drawDefinition, enableAutoCalc, matchUpsMap, matchUpId, outcome, event }: LevelDualArgs) {
+  const dual = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === matchUpId);
+  if (dual?.matchUpType !== TEAM) return undefined;
+  return levelDualDecisionRefusal({
+    matchUpStatus: outcome?.matchUpStatus,
+    winningSide: outcome?.winningSide,
+    score: outcome?.score,
+    drawDefinition,
+    enableAutoCalc,
+    matchUpsMap,
+    event,
+    dual,
+  });
 }
 
 /**
@@ -530,8 +570,8 @@ const isZero = (value: unknown) => value !== null && value !== '' && value !== u
 
 /**
  * A WARNING IN THE SUCCESS PAYLOAD: the score was recorded, and a set in it was decided by its tiebreak
- * with no tiebreak points (`7-6` alone) — accepted because results feeds record it so often (CA,
- * 2026-10-02, ruling V11). Read off the RECORDED matchUp in context, so the format is the one the score
+ * with no tiebreak points (`7-6` alone) — accepted because results feeds record it so often. Read off
+ * the RECORDED matchUp in context, so the format is the one the score
  * was validated against — a TEAM line's comes from its collection — and a dual's tally is never asked.
  */
 function recordedScoreWarnings({
@@ -558,9 +598,8 @@ function recordedScoreWarnings({
  * (`CONFLICT_BYE_SCHEDULED`, `CONFLICT_EXIT_SCHEDULED`). What the read side cannot do is tell the
  * client that just made the mutation, at the moment it can offer "release these slots?". This does.
  * Additive and state-free: `executionQueue` passes it through like any other result field, and
- * nothing here snapshots or restores. CA, 2026-10-01: *"for recoverability we have to keep the
- * schedules, or perhaps they should imply another notification in the success payload (warning)
- * that clients can respond to"* — both.
+ * nothing here snapshots or restores. For recoverability the schedules are kept, and the success
+ * payload carries a warning that clients can respond to: both.
  *
  * Only matchUps that became unplayable IN THIS CALL are named: a BYE that held a court before the
  * call was reported when it was placed, and repeating it on every later score would be noise.
@@ -659,7 +698,7 @@ function propagateExitFrom({
       iterate = true;
     }
   }
-  // stopped at the bound with a level still to propagate to: refused (F9 (i), CA 2026-10-24), and recorded for the census
+  // stopped at the bound with a level still to propagate to: refused, and recorded for the census
   if (iterate) {
     recordSettleEvent({ kind: 'bound', site: 'propagateExitFrom', detail: context.loserMatchUp?.matchUpId });
     return { error: SETTLE_BOUND_REACHED, info: 'propagateExitFrom' };

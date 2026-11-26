@@ -68,7 +68,7 @@ it('will remove BYEs fed into CONSOLATION', () => {
   });
   expect(result.success).toEqual(true);
 
-  // one fewer than before P46: seat 16's second-round entry is kept rather than removed and
+  // one fewer than before a BYE seat kept its advancement: seat 16's second-round entry is kept rather than removed and
   // re-placed, so the second-round matchUp is notified once, not twice
   expect(matchUpModifyNotices.length).toEqual(3);
 

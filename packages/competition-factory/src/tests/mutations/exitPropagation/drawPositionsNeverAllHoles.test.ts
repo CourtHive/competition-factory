@@ -152,7 +152,7 @@ const scenarios: Scenario[] = [
     drawSize: 32,
     seed: 9000408,
     steps: [
-      // the seat Main|1|2 feeds is reached first: a direct double exit needs both seats (CA, 2026-10-04)
+      // the seat Main|1|2 feeds is reached first: a direct double exit needs both seats
       { structureName: 'Main', roundNumber: 1, roundPosition: 2, outcome: { winningSide: 1 } },
       { structureName: 'Main', roundNumber: 2, roundPosition: 1, outcome: { matchUpStatus: 'DOUBLE_WALKOVER' } },
       { structureName: 'Main', roundNumber: 2, roundPosition: 1, outcome: TBP },
@@ -190,7 +190,7 @@ const scenarios: Scenario[] = [
     // downstream `[n]` became `[undefined]`. Reachable only through `allowChangePropagation`.
     //
     // ROUTE CLOSED 2026-10-03: the flip in step 5 is of `Consolation|2|4`, a CARRIED walkover, and a
-    // carried exit is changed at its origin, never re-scored (CA). The step is refused and changes
+    // carried exit is changed at its origin, never re-scored. The step is refused and changes
     // nothing, so no position is removed; the no-all-holes assertion still runs over the schedule.
     writer: 'swapWinnerLoser',
     closedBy: 'ERR_UNCHANGED_CANNOT_CHANGE_OUTCOME',

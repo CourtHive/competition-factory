@@ -75,7 +75,7 @@ it('supports transitive BYE removal in large structures', () => {
 
   ({ filteredOrderedPairs } = getOrderedDrawPositionPairs());
   // seat 8 was BYE-advanced from generation and seat 6 advanced over seat 5's BYE; each KEEPS its
-  // advancement on becoming a BYE itself (P46), so the seats that sit here are the ones that were
+  // advancement on becoming a BYE itself, so the seats that sit here are the ones that were
   // already advanced, not the ones BYEd last.
   expect(filteredOrderedPairs).toEqual([
     [1, 2],
@@ -195,7 +195,7 @@ function swapTest({ swapPosition }) {
   ({ filteredOrderedPairs } = getOrderedDrawPositionPairs());
   // seat 4 advanced over seat 3's BYE and KEEPS that advancement on becoming a BYE itself; it is
   // not torn down and seat 3 advanced in its place. Which of two BYE seats sits here is not
-  // information (CA, 2026-09-29), and a seat's advancement never depended on its occupant (P46).
+  // information, and a seat's advancement never depended on its occupant.
   expect(filteredOrderedPairs).toEqual([
     [1, 2],
     [3, 4],

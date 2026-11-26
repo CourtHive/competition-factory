@@ -37,7 +37,7 @@ import {
  * instruments now exist, so the composition lives here rather than being copied a third time.
  *
  * The matrix test's own copy is deliberately NOT changed to import this: it is the baseline every
- * census number in `Mentat/fixtures/exit-propagation-census/README.md` was taken against, and
+ * recorded census number was taken against, and
  * re-pointing its generation at shared code is a change to the measurement itself. If the two ever
  * disagree, THIS file is the copy to fix — a seed that names a different draw than the matrix names
  * is the failure mode to watch for, and `label()` is what makes it checkable by eye.

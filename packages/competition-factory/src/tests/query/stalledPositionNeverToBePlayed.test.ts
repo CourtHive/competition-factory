@@ -11,9 +11,8 @@ import { MATCHUP_STATUS_OUT_OF_SCOPE } from '@Constants/errorConditionConstants'
 /**
  * A MATCHUP THAT WILL NEVER BE PLAYED STRANDS NOBODY, and neither does anything it feeds.
  *
- * CA, 2026-09-29: *"DEAD_RUBBER, CANCELLED, ABANDONED should all silence stalls. All of those say
- * that a matchup isn't ever going to be played (and any matchUps fed by the matchUp that won't be
- * played are also excluded)."*
+ * DEAD_RUBBER, CANCELLED and ABANDONED all silence stalls. Each says that a matchUp is never going to
+ * be played, and any matchUps fed by the matchUp that won't be played are also excluded.
  *
  * The draw is `playStalledChain`'s: SINGLE_ELIMINATION 32/32 with a double walkover whose cascade never ran, which
  * ends with four stalls in one chain:
@@ -57,7 +56,7 @@ function play() {
 }
 
 /**
- * DEAD_RUBBER is refused on a SINGLE_ELIMINATION matchUp since CA, 2026-10-13 (a rubber of a team tie or a
+ * DEAD_RUBBER is refused on a SINGLE_ELIMINATION matchUp since 2026-10-13 (a rubber of a team tie or a
  * DOUBLE_ELIMINATION Decider only). The detector's rule above still holds for a record that carries it — one stored
  * before the scope existed — so the status is written into the stored record directly, after asserting the refusal.
  */

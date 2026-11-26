@@ -47,7 +47,7 @@ export function getMatchUpFormatTiming({
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
 
   // event is optional, so eventType can also be passed in directly. A line of a TEAM event is timed by its own
-  // type (SINGLES/DOUBLES), never by a TEAM figure: a team matchUp holds no court of its own (CA 2026-11-20)
+  // type (SINGLES/DOUBLES), never by a TEAM figure: a team matchUp holds no court of its own
   eventType = eventType ?? event?.eventType ?? SINGLES_EVENT;
 
   const { scheduleTiming } = getScheduleTiming({
@@ -203,7 +203,7 @@ function deriveTimedDefaultMinutes(parsed: ReturnType<typeof parseMatchUpFormat>
 const UNLIMITED_OVERTIME_PERIODS_PRICED = 1;
 
 /**
- * Overtime prices its ceiling (CA ruling, 2026-11-04): every period of a finite block, sudden death or not, then the
+ * Overtime prices its ceiling: every period of a finite block, sudden death or not, then the
  * decider (`-F:` follows the block) at its own minutes when timed and none otherwise. Unlimited periods have no ceiling and price UNLIMITED_OVERTIME_PERIODS_PRICED; a decider
  * never follows them.
  */
@@ -216,7 +216,7 @@ function overtimeCeilingMinutes(parsed: NonNullable<ReturnType<typeof parseMatch
 }
 
 /**
- * A decider adds only the clock the code gives it: a tiebreak or a shootout has none (CA, 2026-11-04). An allowance
+ * A decider adds only the clock the code gives it: a tiebreak or a shootout has none. An allowance
  * for the time an untimed decider takes belongs in the scheduling policy's averageTimes for the format, not here.
  */
 function deciderMinutesOf(final: NonNullable<ReturnType<typeof parseMatchUpFormat>>['finalSetFormat']): number {

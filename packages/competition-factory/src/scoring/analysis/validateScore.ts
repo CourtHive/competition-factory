@@ -146,7 +146,7 @@ export function validateScore({
       if (setError) return setError;
     }
 
-    // ── No format, no score (CA, 2026-10-02, ruling X1) ──
+    // ── No format, no score ──
     //
     // Every check below is a question about the format: whether a set is finished, how many sets the
     // match plays, where its tiebreak is. Without one each of them answered "valid", so a score recorded

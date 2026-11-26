@@ -12,7 +12,7 @@ import type {
 } from '@Types/tournamentTypes';
 
 /**
- * A PRODUCED exit has no winningSide until a participant arrives (CA, 2026-09-20); a CARRIED exit keeps its
+ * A PRODUCED exit has no winningSide until a participant arrives; a CARRIED exit keeps its
  * winningSide on an empty seat (exit-propagation.md). `deriveExitStateFromProvenance` awards the other side either
  * way, so the award stands here only for a carried exit or a seat that holds a participant. Census de 9302775
  * (DE 16/11): a produced DEFAULTED retained on `Backdraw|3|2` side 1 was otherwise won by an empty dp 7.

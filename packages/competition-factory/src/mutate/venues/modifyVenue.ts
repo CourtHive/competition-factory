@@ -1,31 +1,33 @@
 import { getScheduledCourtMatchUps, getScheduledVenueMatchUps } from '@Query/venues/getScheduledCourtMatchUps';
-import { bulkScheduleTournamentMatchUps } from '@Mutate/matchUps/schedule/bulkScheduleTournamentMatchUps';
+import { planBulkScheduleTournamentMatchUps } from '@Mutate/matchUps/schedule/bulkScheduleTournamentMatchUps';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
-import { checkAndUpdateSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
+import { planSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
+import { getSchedulingProfile } from '@Query/scheduling/getSchedulingProfile';
 import { validDateAvailability } from '@Validators/validateDateAvailability';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { deletionMessage } from '@Mutate/venues/deletionMessage';
+import { mergedCourtAvailability } from './courtAvailability';
 import venueTemplate from '@Helpers/scheduling/venueTemplate';
-import { clearPrimaryVenue } from './clearPrimaryVenue';
+import courtTemplate from '@Helpers/scheduling/courtTemplate';
+import { planCourtModification } from './modifyCourt';
 import { canonicalTime } from '@Tools/canonicalClock';
 import { addNotice } from '@Global/state/globalState';
 import { findVenue } from '@Query/venues/findVenue';
 import { modifyVenueNotice } from './venueNotices';
-import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { validTimePeriod } from '@Validators/time';
-import { modifyCourt } from './modifyCourt';
-import { addCourt } from './addCourt';
+import { buildCourt } from './addCourt';
 
 // constants and types
 import { TOURNAMENT_RECORD, VENUE_ID } from '@Constants/attributeConstants';
 import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
+import { ResultType, TournamentRecords } from '@Types/factoryTypes';
 import { Venue, Tournament, Court } from '@Types/tournamentTypes';
 import { MODIFY_VENUE } from '@Constants/topicConstants';
-import { TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 import {
+  ErrorType,
   COURT_NOT_FOUND,
   INVALID_OBJECT,
   INVALID_VALUES,
@@ -45,7 +47,7 @@ type ModifyVenueArgs = {
   venueId: string;
   force?: boolean;
 };
-export function modifyVenue(params: ModifyVenueArgs) {
+export function modifyVenue(params: ModifyVenueArgs): ResultType {
   const { modifications, venueId, force } = params;
 
   const tournamentRecords = resolveTournamentRecords(params);
@@ -53,121 +55,49 @@ export function modifyVenue(params: ModifyVenueArgs) {
   if (!Object.keys(tournamentRecords).length) return { error: MISSING_TOURNAMENT_RECORDS };
   if (typeof venueId !== 'string') return { error: MISSING_VENUE_ID };
 
+  // every record is planned before any is written: a refusal in a later record leaves the earlier ones as they were.
+  // A record that does not hold the venue is passed over (its NOT FOUND suppressed when another record succeeds).
   let error;
-  let success;
-  // in this case suppress NOT FOUND errors if there is at least one success
+  const plans: VenuePlan[] = [];
   for (const tournamentRecord of Object.values(tournamentRecords)) {
-    const result = venueModify({
-      tournamentRecord,
-      modifications,
-      venueId,
-      force,
-    });
-    if (result.success) success = true;
-    if (result.error) error = result.error;
-    if (result.error && result.error !== VENUE_NOT_FOUND) return result;
+    const result = planVenueModify({ tournamentRecord, modifications, venueId, force });
+    if ('commit' in result) plans.push(result);
+    else {
+      if (result.error) error = result.error;
+      if (result.error && result.error !== VENUE_NOT_FOUND) return result;
+    }
   }
 
-  checkAndUpdateSchedulingProfile({ tournamentRecords });
+  // the profile across every record, as the per-record repairs leave it
+  const views = Object.fromEntries(
+    Object.entries(tournamentRecords).map(([tournamentId, record]) => {
+      const repaired = plans.find((plan) => plan.tournamentRecord === record)?.repairedProfile;
+      return [tournamentId, repaired ? withProfile(record, repaired) : record];
+    }),
+  );
+  const competitionRepair = planProfileRepair({ tournamentRecords: views, targets: tournamentRecords });
 
-  return success ? { ...SUCCESS } : { error };
+  for (const plan of plans) plan.commit();
+  competitionRepair?.commit();
+
+  return plans.length ? { ...SUCCESS } : { error };
 }
 
-function handleCourtDeletions({
-  venue,
-  modifications,
-  tournamentRecord,
-  venueMatchUps,
-  allowModificationWhenMatchUpsScheduled,
-}: {
+type VenuePlan = {
+  tournamentRecord: Tournament;
+  repairedProfile?: unknown[];
+  commit: () => void;
   venue: Venue;
-  modifications: VenueModifications;
-  tournamentRecord: Tournament;
-  venueMatchUps?: HydratedMatchUp[];
-  allowModificationWhenMatchUpsScheduled?: boolean;
-}) {
-  const existingCourtIds = venue?.courts?.map((court) => court.courtId) ?? [];
-  const courtIdsToModify = modifications.courts?.map((court) => court.courtId) ?? [];
-  const courtIdsToDelete = courtIdsToModify.length
-    ? existingCourtIds.filter((courtId) => !courtIdsToModify.includes(courtId))
-    : modifications?.courts && existingCourtIds;
+};
 
-  const matchUpsWithCourtId: { matchUpId: string; drawId: string }[] = [];
-  if (courtIdsToDelete?.length) {
-    const courtsToDelete = venue?.courts?.filter((court) => courtIdsToDelete.includes(court.courtId));
-    const scheduleDeletionsCount = courtsToDelete
-      ?.map((court) => {
-        const result = getScheduledCourtMatchUps({
-          courtId: court.courtId,
-          tournamentRecord,
-          venueMatchUps,
-        });
-        for (const matchUp of result.matchUps ?? []) {
-          matchUpsWithCourtId.push({
-            matchUpId: matchUp.matchUpId,
-            drawId: matchUp.drawId,
-          });
-        }
-        return result.matchUps?.length ?? 0;
-      })
-      .reduce((a, b) => a + b);
-    if (venue && (!scheduleDeletionsCount || allowModificationWhenMatchUpsScheduled)) {
-      venue.courts = venue.courts?.filter((court) => courtIdsToModify.includes(court.courtId));
-      bulkScheduleTournamentMatchUps({
-        schedule: { courtId: '', scheduledDate: '' },
-        matchUpDetails: matchUpsWithCourtId,
-        removePriorValues: true,
-        tournamentRecord,
-      });
-      return { success: true };
-    } else {
-      return deletionMessage({
-        matchUpsCount: scheduleDeletionsCount,
-      });
-    }
-  }
-  return { success: true };
-}
-
-function handleCourtModifications({
-  modifications,
-  tournamentRecord,
-  venueMatchUps,
-  venueId,
-  force,
-}: {
-  modifications: any;
-  tournamentRecord: Tournament;
-  venueMatchUps?: HydratedMatchUp[];
-  venueId: string;
-  force?: boolean;
-}) {
-  if (modifications.courts) {
-    for (const court of modifications.courts) {
-      const { courtId } = court ?? {};
-      let result = modifyCourt({
-        modifications: court,
-        disableNotice: true,
-        tournamentRecord,
-        venueMatchUps,
-        courtId,
-        force,
-      });
-      if (result?.error === COURT_NOT_FOUND) {
-        result = addCourt({
-          disableNotice: true,
-          tournamentRecord,
-          venueId,
-          court,
-        });
-      }
-      if (result?.error) return result;
-    }
-  }
-  return { success: true };
-}
-
-export function venueModify({ tournamentRecord, modifications, venueId, force }: ModifyVenueArgs): any {
+/**
+ * One record's venue edit, decided before anything is written, in the public error order: the parameters, the venue,
+ * its editable attributes, paired default times, the date availability, deleting courts (scheduled matchUps, force or
+ * policy, and the schedule clears they need), each court modified or added (availability and scheduled conflicts
+ * included), and the repair of a scheduling profile left naming what is gone. The commit makes those writes in the
+ * order the writer always made them and sends the same notices.
+ */
+function planVenueModify({ tournamentRecord, modifications, venueId, force }: ModifyVenueArgs): ResultType | VenuePlan {
   const paramsCheck = requireParams({ tournamentRecord, venueId }, [TOURNAMENT_RECORD, VENUE_ID]);
   if (paramsCheck.error) return paramsCheck;
   if (!modifications || typeof modifications !== 'object') return { error: INVALID_OBJECT };
@@ -220,64 +150,232 @@ export function venueModify({ tournamentRecord, modifications, venueId, force }:
     }
   }
 
-  validReplacementAttributes.forEach((attribute) => Object.assign(venue, { [attribute]: modifications[attribute] }));
-  if (modStartTime) venue.defaultStartTime = canonicalTime(modStartTime);
-  if (modEndTime) venue.defaultEndTime = canonicalTime(modEndTime);
+  const fields: Record<string, unknown> = {};
+  for (const attribute of validReplacementAttributes) fields[attribute] = modifications[attribute];
+  if (modStartTime) fields.defaultStartTime = canonicalTime(modStartTime);
+  if (modEndTime) fields.defaultEndTime = canonicalTime(modEndTime);
 
-  // Handle isPrimary modifications; a venue that loses its primary flag to this one is modified too
-  let clearedPrimaryVenues: Venue[] = [];
-  if ('isPrimary' in modifications) {
-    if (modifications.isPrimary) {
-      clearedPrimaryVenues = clearPrimaryVenue({ tournamentRecord: record, exceptVenueId: venueId });
-      venue.isPrimary = true;
-    } else {
-      delete venue.isPrimary;
-    }
-  }
+  // a venue that loses its primary flag to this one is modified too
+  const primary = 'isPrimary' in modifications ? !!modifications.isPrimary : undefined;
+  const clearedPrimaryVenues =
+    primary === true ? (record.venues ?? []).filter((other) => other.isPrimary && other.venueId !== venueId) : [];
 
-  // Handle venue dateAvailability modifications
+  let dateAvailability: { value: unknown } | undefined;
   if (modifications.dateAvailability !== undefined) {
     if (Array.isArray(modifications.dateAvailability) && modifications.dateAvailability.length) {
       const result = validDateAvailability({ dateAvailability: modifications.dateAvailability });
       if (result.error) return result;
-      venue.dateAvailability = result.canonicalAvailability;
+      dateAvailability = { value: result.canonicalAvailability };
     } else {
-      venue.dateAvailability = modifications.dateAvailability;
+      dateAvailability = { value: modifications.dateAvailability };
     }
   }
 
-  // Handle court deletions
-  const deletionResult = handleCourtDeletions({
-    venue,
-    modifications,
-    tournamentRecord: record,
-    venueMatchUps,
+  const deletions = planCourtDeletions({
     allowModificationWhenMatchUpsScheduled,
-  });
-  if ('error' in deletionResult && deletionResult.error) return deletionResult;
-
-  // Handle court modifications/additions
-  const modificationResult = handleCourtModifications({
-    modifications,
     tournamentRecord: record,
     venueMatchUps,
+    modifications,
+    venue,
+  });
+  if (!('commit' in deletions)) return deletions;
+
+  const courts = planCourtModifications({
+    remainingCourts: deletions.remainingCourts ?? venue.courts,
+    tournamentRecord: record,
+    venueMatchUps,
+    modifications,
     venueId,
     force,
   });
-  if (modificationResult?.error) return modificationResult;
+  if (!('commit' in courts)) return courts;
 
-  checkAndUpdateSchedulingProfile({ tournamentRecord: record });
+  const records = { [record.tournamentId]: record };
+  const repair = planProfileRepair({ tournamentRecords: records, targets: records });
 
-  if (venue) {
+  const commit = () => {
+    Object.assign(venue, fields);
+    for (const cleared of clearedPrimaryVenues) delete cleared.isPrimary;
+    if (primary === true) venue.isPrimary = true;
+    else if (primary === false) delete venue.isPrimary;
+    if (dateAvailability) Object.assign(venue, { dateAvailability: dateAvailability.value });
+    deletions.commit();
+    courts.commit();
+    repair?.commit();
     addNotice({
       payload: { venue, tournamentId: record.tournamentId },
       topic: MODIFY_VENUE,
-      key: venue?.venueId,
+      key: venue.venueId,
+    });
+    for (const cleared of clearedPrimaryVenues) {
+      modifyVenueNotice({ tournamentId: record.tournamentId, venue: cleared });
+    }
+  };
+
+  return { tournamentRecord: record, repairedProfile: repair?.schedulingProfile, venue, commit };
+}
+
+/**
+ * The courts the edit deletes (those the modified courts do not name; every court when `courts` is empty), refused when
+ * they hold scheduled matchUps unless forced or the policy allows it, and the schedule clears they then need, planned
+ * as the bulk schedule writer plans them. The commit removes the courts and clears the schedules.
+ */
+function planCourtDeletions({
+  allowModificationWhenMatchUpsScheduled,
+  tournamentRecord,
+  venueMatchUps,
+  modifications,
+  venue,
+}: {
+  allowModificationWhenMatchUpsScheduled?: boolean;
+  modifications: VenueModifications;
+  venueMatchUps?: HydratedMatchUp[];
+  tournamentRecord: Tournament;
+  venue: Venue;
+}): { error: ErrorType; info?: string } | { commit: () => void; remainingCourts?: Court[] } {
+  const existingCourtIds = venue?.courts?.map((court) => court.courtId) ?? [];
+  const courtIdsToModify = modifications.courts?.map((court) => court.courtId) ?? [];
+  const courtIdsToDelete = courtIdsToModify.length
+    ? existingCourtIds.filter((courtId) => !courtIdsToModify.includes(courtId))
+    : modifications?.courts && existingCourtIds;
+
+  if (!courtIdsToDelete?.length) return { commit: () => undefined };
+
+  const matchUpsWithCourtId: { matchUpId: string; drawId: string }[] = [];
+  const courtsToDelete = venue?.courts?.filter((court) => courtIdsToDelete.includes(court.courtId));
+  const scheduleDeletionsCount = courtsToDelete
+    ?.map((court) => {
+      const result = getScheduledCourtMatchUps({
+        courtId: court.courtId,
+        tournamentRecord,
+        venueMatchUps,
+      });
+      for (const matchUp of result.matchUps ?? []) {
+        matchUpsWithCourtId.push({
+          matchUpId: matchUp.matchUpId,
+          drawId: matchUp.drawId,
+        });
+      }
+      return result.matchUps?.length ?? 0;
+    })
+    .reduce((a, b) => a + b);
+  if (scheduleDeletionsCount && !allowModificationWhenMatchUpsScheduled)
+    return deletionMessage({ matchUpsCount: scheduleDeletionsCount });
+
+  const remainingCourts = venue.courts?.filter((court) => courtIdsToModify.includes(court.courtId));
+  // the clears are planned now; the batch's own outcome was never the edit's (a locked matchUp keeps its court)
+  const { commits } = planBulkScheduleTournamentMatchUps({
+    schedule: { courtId: '', scheduledDate: '' },
+    matchUpDetails: matchUpsWithCourtId,
+    removePriorValues: true,
+    tournamentRecord,
+  });
+  const commit = () => {
+    venue.courts = remainingCourts;
+    for (const clear of commits) clear();
+  };
+  return { commit, remainingCourts };
+}
+
+/**
+ * Each submitted court, in order: an existing court is modified (its attributes and availability), and one the record
+ * does not hold is added to the venue, refused when an earlier court of the edit, or a remaining one, holds its id.
+ */
+function planCourtModifications({
+  remainingCourts,
+  tournamentRecord,
+  venueMatchUps,
+  modifications,
+  venueId,
+  force,
+}: {
+  venueMatchUps?: HydratedMatchUp[];
+  tournamentRecord: Tournament;
+  modifications: VenueModifications;
+  remainingCourts?: Court[];
+  venueId: string;
+  force?: boolean;
+}): ResultType | { commit: () => void } {
+  const commits: (() => void)[] = [];
+  const added: Court[] = [];
+  for (const court of modifications.courts ?? []) {
+    const { courtId } = court ?? {};
+    const pendingCourt = courtId ? added.find((candidate) => candidate.courtId === courtId) : undefined;
+    if (pendingCourt) {
+      // a court added earlier in this edit is modified as the stored court would have been (it is not stored yet)
+      const refusal = modifyPendingCourt({ court: pendingCourt, modifications: court });
+      if (refusal) return refusal;
+      continue;
+    }
+    const result = planCourtModification({
+      // a court without an id is refused by the lookup as before, and then added
+      courtId: courtId as string,
+      modifications: court,
+      disableNotice: true,
+      tournamentRecord,
+      venueMatchUps,
+      force,
+    });
+    if ('commit' in result) {
+      commits.push(result.commit);
+      continue;
+    }
+    if (result?.error !== COURT_NOT_FOUND) return result;
+    const { venue } = findVenue({ tournamentRecord, venueId });
+    if (!venue) return { error: VENUE_NOT_FOUND };
+    const built = buildCourt({ venue: { ...venue, courts: remainingCourts }, venueId, court, pending: added });
+    if (built.error || !built.court) return { error: built.error };
+    const courtRecord = built.court;
+    added.push(courtRecord);
+    commits.push(() => {
+      venue.courts ??= [];
+      venue.courts.push(courtRecord);
     });
   }
-  for (const cleared of clearedPrimaryVenues) {
-    modifyVenueNotice({ tournamentId: record.tournamentId, venue: cleared });
-  }
+  return {
+    commit: () => {
+      for (const commit of commits) commit();
+    },
+  };
+}
 
-  return { ...SUCCESS, venue: makeDeepCopy(venue) };
+// modifyCourt's edit of a court this edit has only just added: its attributes, then its availability (a new court has no
+// scheduled matchUps to conflict with); the court is the planned record, not yet stored
+function modifyPendingCourt({ court, modifications }: { court: Court; modifications: Partial<Court> }) {
+  const validAttributes = Object.keys(courtTemplate()).filter((attribute) => attribute !== 'courtId');
+  const attributes = Object.keys(modifications).filter((attribute) => validAttributes.includes(attribute));
+  if (!attributes.length) return { error: NO_VALID_ATTRIBUTES };
+  const availability = modifications.dateAvailability && mergedCourtAvailability(modifications.dateAvailability);
+  if (availability && 'refusal' in availability) return availability.refusal;
+  for (const attribute of attributes)
+    if (attribute !== 'dateAvailability') Object.assign(court, { [attribute]: modifications[attribute] });
+  if (availability && 'dateAvailability' in availability) court.dateAvailability = availability.dateAvailability;
+  return undefined;
+}
+
+/**
+ * The scheduling profile repair checkAndUpdateSchedulingProfile makes after a venue edit (a round naming a venue, event
+ * or draw that is gone), decided against `tournamentRecords` and stored on `targets`. A venue edit adds and removes no
+ * venue, event or draw, so the records as they stand decide it. Undefined when nothing needs repair.
+ */
+function planProfileRepair({
+  tournamentRecords,
+  targets,
+}: {
+  tournamentRecords: TournamentRecords;
+  targets: TournamentRecords;
+}): { schedulingProfile: unknown[]; commit: () => void } | undefined {
+  const { schedulingProfile, modifications } = getSchedulingProfile({ tournamentRecords });
+  if (!modifications) return undefined;
+  const plan = planSchedulingProfile({
+    tournamentRecords,
+    schedulingProfile,
+    storedProfile: schedulingProfile,
+    targets,
+  });
+  return 'commit' in plan ? { schedulingProfile, commit: plan.commit } : undefined;
+}
+
+function withProfile(record: Tournament, schedulingProfile: unknown[]): Tournament {
+  return { ...record, scheduling: { ...record.scheduling, profile: schedulingProfile } } as Tournament;
 }

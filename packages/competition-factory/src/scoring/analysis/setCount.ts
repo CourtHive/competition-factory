@@ -12,7 +12,7 @@ const isPlayed = (set?: SetType) =>
 /**
  * The most sets an `exactly` format records: N, plus one where the match is decided by AGGREGATE points.
  * There a level total goes to a sudden-death tiebreak (`-F:TB1`), and that tiebreak is NOT one of the N
- * sets (CA, 2026-10-04, the INTENNSE format). A format decided by sets plays N and no more.
+ * sets (the INTENNSE format). A format decided by sets plays N and no more.
  */
 export function maxExactlySets(parsed?: ParsedFormat): number | undefined {
   const exactly = parsed?.exactly;

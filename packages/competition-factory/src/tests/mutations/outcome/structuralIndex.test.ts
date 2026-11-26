@@ -21,7 +21,7 @@ import {
 } from '@Constants/drawDefinitionConstants';
 
 /**
- * THE STRUCTURAL INDEX (outcome v2 executor plan § 3.1.1, CA 2026-10-24: v2 decides on stored data and a structural
+ * THE STRUCTURAL INDEX (outcome v2 executor plan § 3.1.1: v2 decides on stored data and a structural
  * index, never on a hydration). One entry per matchUp in the hydrated shape, carrying only what the outcome logic reads.
  *
  * Its agreement over the suite is the index oracle's (`differential`: every call's index against the view's hydration,

@@ -116,7 +116,7 @@ describe('generateDrawDefinition policyDefinitions', () => {
 
 /**
  * An existing event's eventProfile `policyDefinitions` were accepted by the key check and never read. They now replace
- * the event's own policies, but only while nothing has happened under them (CA 2026-10-21): replacing a policy after
+ * the event's own policies, but only while nothing has happened under them: replacing a policy after
  * results would lose the record of the policy those results were produced under.
  */
 describe('modifyTournamentRecord: an existing event', () => {

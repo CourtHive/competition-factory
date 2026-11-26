@@ -26,26 +26,29 @@
 //   5. KEY/VALUE MISMATCH — in a "self-mapping enum" object (`export const X = { FOO:
 //      'FOO', BAR: 'BAR', … } as const`, the pattern behind `type T = keyof typeof X`)
 //      OR a string enum declaration (`export enum X { FOO = 'FOO', … }`, `type T = keyof
-//      typeof X`), the KEY is declared identical to its string VALUE: the KEY becomes a union member
-//      while the VALUE is what code emits. A KEY that differs from its own VALUE — most
-//      often by CASE alone (`CURTIS_cONSOLATION: 'CURTIS_CONSOLATION'`) — silently
-//      pollutes the `keyof typeof` union with a misspelled member. Passes #1 and #4 are
+//      typeof X`), the KEY is declared identical to its string VALUE: the KEY becomes a
+//      union member while the VALUE is what code emits. A KEY that differs from its own
+//      VALUE — most often by CASE alone (`CURTIS_cONSOLATION: 'CURTIS_CONSOLATION'`) —
+//      silently pollutes the `keyof typeof` union with a misspelled member. Passes #1 and #4 are
 //      both blind to this: the CORRECT spelling appears only as a string VALUE (never as
 //      a frequent property NAME, so #1 has no canonical), and the VALUE itself is
 //      canonical (so #4 sees nothing wrong). This pass compares each key to its own value
-//      inside self-mapping objects and flags case-only or edit-distance-1 divergence.
+//      inside self-mapping objects and enums and flags case-only, case+separator
+//      (`NETcORD` vs `NET_CORD`) or edit-distance-1 divergence. When the deviating keys
+//      outnumber the exact self-maps, the container is reported once as SYSTEMIC (a
+//      naming convention, not a set of typos) so it cannot drown out lone outliers.
 //
 // This file is the CANONICAL source. It is:
 //   - installed into each repo as `scripts/attr-audit.mjs` + a `pnpm attr-audit` script
-//     (see Mentat/tools/attr-audit/install.mjs), and
-//   - invoked cross-repo by Mentat/tools/attr-audit/run.mjs.
+//     by the shared CourtHive tooling's installer, and
+//   - invoked cross-repo by that tooling's runner.
 // Zero dependencies beyond the target repo's own `typescript`.
 //
 // Usage:
 //   node attr-audit.mjs [--root DIR] [--src DIR]... [--exclude REGEX]...
 //                       [--schema FILE]... [--types DIR]... [--constants DIR]...
 //                       [--ignore NAME]... [--min-common N] [--ratio N] [--max-suspect N]
-//                       [--write-only] [--json OUTDIR] [--ci] [--quiet]
+//                       [--write-only] [--extended] [--json OUTDIR] [--ci] [--quiet]
 //
 // Config: flags override an optional `attr-audit.config.json` in --root. Shape:
 //   { "src": ["src"], "exclude": ["/scratch/"], "schema": ["src/global/schema/x.json"],

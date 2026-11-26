@@ -248,13 +248,13 @@ test('doubleExitAdvancement of BYE encountering drawPosition', () => {
    * above already reads it as `BYE` before the double walkover is entered — so it is a BYE whatever
    * arrives beside it.
    *
-   * CA, 2026-09-20: *"An advancing participant encountering a BYE should always be advanced; a
+   * The rule: *"An advancing participant encountering a BYE should always be advanced; a
    * propagated exit encountering a BYE should be advanced. In both cases the BYE remains a BYE"* —
-   * and, asked to be unambiguous, *"the BYE remains a BYE means the `matchUpStatus: BYE` does not
+   * and, stated unambiguously, *"the BYE remains a BYE means the `matchUpStatus: BYE` does not
    * change."*
    *
    * This previously expected `WALKOVER`: the produced exit OVERWROTE the BYE. Re-authored under
-   * that ruling, confirmed by CA against this exact scenario driven in TMX.
+   * that rule, confirmed against this exact scenario driven in TMX.
    *
    * The exit is not lost by staying out of the status — `match-3-1` below is still a WALKOVER, so
    * it travelled onward exactly as before.
@@ -334,7 +334,7 @@ test('doubleExitAdvancement of BYE encountering WALKOVER', () => {
 
   matchUps = tournamentEngine.allTournamentMatchUps({ matchUpFilters: { roundNumbers: [2] } }).matchUps;
   // `match-2-1` stays a BYE for the same reason as the test above — measured: both its feeding
-  // drawPositions carry draw BYEs and it holds no participant. See that test for CA's ruling.
+  // drawPositions carry draw BYEs and it holds no participant. See that test for the rule.
   expect(matchUps.map((m) => [m.matchUpId, m.matchUpStatus])).toEqual([
     ['match-2-2', DOUBLE_WALKOVER],
     ['match-2-3', TO_BE_PLAYED],
@@ -347,7 +347,7 @@ test('doubleExitAdvancement of BYE encountering WALKOVER', () => {
    * BYE at `match-2-1` and sent on from there, and the WALKOVER `match-2-2`'s double walkover produced. They
    * converge to a DOUBLE_WALKOVER, which sends ONE exit on to `match-4-1`.
    *
-   * CA, 2026-10-06: *"If two propagated exits meet, then they SHOULD result in a DOUBLE_WALKOVER and advance one
+   * The rule: *"If two propagated exits meet, then they SHOULD result in a DOUBLE_WALKOVER and advance one
    * exit"*, and a held exit is sent on only where its paired position is present as a BYE, which stays where it is.
    *
    * This read `WALKOVER` at `match-3-1`: the held exit was never sent on under the default policy, so the exit

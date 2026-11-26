@@ -7,7 +7,7 @@ import { performance } from 'node:perf_hooks';
  *
  * Counts what one `setMatchUpStatus` asks of the draw: how many times it builds the `matchUpsMap`,
  * hydrates every matchUp, reads a structure's assignments, resolves a matchUp's targets — and WHO
- * asked. The question it answers is CA's, 2026-10-01: *"ensure we're not doubling work that is done
+ * asked. The question it answers, 2026-10-01: *"ensure we're not doubling work that is done
  * elsewhere in the pipeline"*. A caller that rebuilds what the pipeline already holds shows up here
  * as a site with more than one call per `setMatchUpStatus`.
  *

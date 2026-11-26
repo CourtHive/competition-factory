@@ -73,7 +73,7 @@ The following actions can be controlled by this policy:
 
 #### The qualifier flag
 
-`qualifier: true` on a position assignment marks a qualifier, both before and after one arrives (CA, 2026-10-15):
+`qualifier: true` on a position assignment marks a qualifier, both before and after one arrives:
 
 - **Placing** a qualifier on a seat marked for one (**QUALIFIER**, `qualifierDrawPositionAssignment`) keeps the flag. A consumer reads it to show a 'Q' beside the participant.
 - **Clearing** the position (**REMOVE**, `removeDrawPositionAssignment`) removes the flag along with the participant.

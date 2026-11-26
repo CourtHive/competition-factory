@@ -16,7 +16,7 @@ import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
  * played match clears dp 7 back out of `Backdraw|3|2`. The removal read the cleared side as `indexOf + 1`, which is
  * 1 for a lone position whatever its side: it erased side 1's produced exit and kept side 2's stale entry. Read
  * structurally, side 1's exit stands; and because it is PRODUCED, it has no winningSide until somebody arrives on
- * side 2 (CA, 2026-09-20), which is the state the same results entered in their final order leave.
+ * side 2, which is the state the same results entered in their final order leave.
  */
 
 type Step = { structureName: string; roundNumber: number; roundPosition: number; outcome: any };

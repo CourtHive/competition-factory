@@ -34,6 +34,11 @@ export function setBuiltinPreviewMethods<T extends object>(namespace: T): T {
   return namespace;
 }
 
+/** true for one of the factory's own governor methods, as registered above; false for an imported custom method */
+export function isBuiltinMethod(method: unknown): boolean {
+  return typeof method === 'function' && builtins.has(method);
+}
+
 /** Bind a raw importMethods function to the implementation that can run on private state. */
 export function setPreviewMethod<Params extends object = PreviewParams>(
   engine: object,

@@ -6,7 +6,7 @@
  * an ending is offered, whether a score is finished, what Submit sends and when it is live are answered here. A
  * refusal is a code a host words (courthive-components keeps the dialog's sentences).
  *
- * CA's rulings behind each rule are quoted where the rule is, so the reason travels with it.
+ * The reason behind each rule is stated where the rule is, so it travels with it.
  */
 import { NON_DIRECTING_ENDINGS, NO_SCORE_STATUSES } from './irregularEnding';
 import { resolveReportedEnding } from './ending';
@@ -142,10 +142,10 @@ export function contradictsFinishedScore(status: string): boolean {
 /**
  * Whether an ending can be chosen at all, given the score.
  *
- * CA, 2026-09-30: *"I should not be able to select (Retired) if the score is actually complete!"* A
+ * Retired cannot be chosen when the score is complete. A
  * retirement means the match did not finish, and a finished score says it did.
  *
- * CA, 2026-10-04, on DEFAULTED: *"keep the score (and then refuse Defaulted on a complete score)"*.
+ * DEFAULTED keeps the score, and is refused on a complete score.
  * A default keeps the part-score it was given at, so it is the same contradiction as a retirement
  * and is refused the same way. DOUBLE_DEFAULT is not offered on its own — it is DEFAULTED with "no
  * one advances" ticked — so refusing DEFAULTED refuses it too.
@@ -157,8 +157,8 @@ export function contradictsFinishedScore(status: string): boolean {
  * the score changed, so the other order walked straight past it.
  *
  * A retirement keeps the score that was played; with nothing played there is nothing to keep, and the
- * result would be a walkover wearing the wrong name (CA, 2026-10-08: "Retired is only supposed to be
- * enabled once there is a score present"). A default is different: a player can be defaulted before the
+ * result would be a walkover wearing the wrong name, so Retired is enabled only
+ * once there is a score present. A default is different: a player can be defaulted before the
  * first ball, so it stays offered.
  *
  * NOT refused: the endings that carry no score at all — a walkover, Cancelled, Dead Rubber. Choosing
@@ -192,8 +192,8 @@ export function endingRefusal(
 /**
  * The ending a score that has just finished contradicts, as the intent that un-chooses it.
  *
- * CA, 2026-09-30: *"If I click (Suspended) and then complete the score the Suspended status should
- * disappear. A completed score should cause matchUpStatus to change to COMPLETED."*
+ * Choosing Suspended and then completing the score un-chooses Suspended: a completed score makes the
+ * matchUpStatus COMPLETED.
  *
  * Applies to every ending that resolves nobody — Suspended, Abandoned, Incomplete — and to a side
  * RETIRED or DEFAULTED, which is the same contradiction reached from the other direction:
@@ -233,9 +233,9 @@ export function scoreLocked(model: ScoreEntryModel): boolean {
 /**
  * The model with its score discarded, when the chosen ending cannot have one — and the score it took.
  *
- * CA, 2026-09-30: *"when I enter set score(s) and then select (Walkover) the set score(s) should
- * clear."* Driven by `carriesNoScore` through `resolveScoreEntry`: WALKOVER, DOUBLE_WALKOVER, CANCELLED,
- * DEAD_RUBBER. **DEFAULTED is NOT in it** (CA, 2026-10-04): a default keeps the score it was given at.
+ * Entering set scores and then choosing Walkover clears them.
+ * Driven by `carriesNoScore` through `resolveScoreEntry`: WALKOVER, DOUBLE_WALKOVER, CANCELLED,
+ * DEAD_RUBBER. **DEFAULTED is NOT in it**: a default keeps the score it was given at.
  *
  * `discarded` is for the band alone — a past tense, never re-entered and never submitted. `undefined`
  * when the ending keeps the score, which tells the card to forget any past tense it was holding.
@@ -281,9 +281,9 @@ export type ClearGate = {
  *   - `!holdsEntry` — the card is still empty. This is what makes a clear-then-retype submit the SCORE
  *     rather than a deletion, and it is why `cleared` needs no reset.
  *
- * Mirrors the removed `scoringModal`'s `wasCleared && hadExistingScore`, deliberately: CA asked for it by
- * name — *"the current scoring modals allow for an empty score to be submitted which clears a submitted
- * score in the factory for the matchUp being modified"*.
+ * Mirrors the removed `scoringModal`'s `wasCleared && hadExistingScore`, deliberately: the scoring
+ * modals allowed an empty score to be submitted, which clears a submitted score in the factory for the
+ * matchUp being modified.
  *
  * `clearable: false` withholds only the removal: `[Clear]` still resets the form so the operator can type
  * a replacement score.

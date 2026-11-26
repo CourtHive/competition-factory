@@ -100,7 +100,7 @@ describe('census reproductions — cross-structure advancement never refuses ove
     /** the shape the case pins: after step `after`, each matchUp holds the status given */
     reaches?: { after: number; statuses: Record<string, string> }[];
   }[] = [
-    // REFUSED STEPS (CA, 2026-10-04: a direct double exit needs both seats reached; 2026-10-03: a carried exit is
+    // REFUSED STEPS (a direct double exit needs both seats reached; a carried exit is
     // not re-scored where it landed). A refused step leaves the draw unchanged, which hollowed these cases out after
     // #5154(factory): they kept passing without reaching the shapes they were written to pin. Every refusal a case
     // expects is now DECLARED in `refusals` and asserted, so an undeclared one fails; and each rebuilt case asserts
@@ -136,7 +136,7 @@ describe('census reproductions — cross-structure advancement never refuses ove
         ['Main', 3, 1, { matchUpStatus: DEFAULTED, winningSide: 1 }],
       ],
       reaches: [{ after: 5, statuses: { 'Backdraw|4|1': DOUBLE_WALKOVER, 'Main|4|1': WALKOVER } }],
-      // P52 (CA, 2026-10-11, approved change of assertion): step 6 used to be accepted. The semifinal's loser stands in
+      // An approved change of assertion: step 6 used to be accepted. The semifinal's loser stands in
       // a Backdraw final a director recorded as a DOUBLE_WALKOVER, and a recorded result downstream, played or not,
       // fixes the kind of the semifinal's outcome: turning its played result into a default is refused.
       refusals: [6],
@@ -179,10 +179,10 @@ describe('census reproductions — cross-structure advancement never refuses ove
     {
       // unwinding a Backdraw double walkover asked which Backdraw-final positions the Main final
       // held, by NUMBER: Backdraw 1 (a BYE) matched Main 1 (the Main-draw winner), who was removed.
-      // Since CA's 2026-10-04 ruling steps 2 and 4 are REFUSED, unchanged: each is a direct double exit
-      // on a matchUp holding one participant beside a seat nobody has reached, and a direct double exit
-      // needs both. Those steps set up F3's dropped convergence; `aDirectDoubleExitNeedsBothSeats.test.ts`
-      // pins the refusal.
+      // Since a direct double exit needs both seats reached, steps 2 and 4 are REFUSED, unchanged: each is a direct
+      // double exit on a matchUp holding one participant beside a seat nobody has reached, and a direct double exit
+      // needs both. Those steps set up F3's dropped convergence; `aDirectDoubleExitNeedsBothSeats.test.ts` pins the
+      // refusal.
       name: 'census 9100555 — a Backdraw double exit beside an unreached seat is refused; the Main-draw winner stays in the Main final',
       participantsCount: 6,
       nonRandom: 9100555,
@@ -281,7 +281,7 @@ describe('census reproductions — cross-structure advancement never refuses ove
         // ERRORS only, for the reason `hasErrorSeverity` documents: `STALLED_POSITION` is advisory, and
         // this per-step assertion is about structural soundness. One stall DOES occur here and it is
         // tracked rather than dropped: census 9100555's transient inside a correction sequence. DE
-        // window 9301605 was the second, punch-list **P40**, and it is closed —
+        // window 9301605 was the second, and it is closed —
         // `reconcileStaleExitOrigins` withdraws the carried exit whose origin stopped being a double
         // exit, and `staleExitOriginReconciliation.test.ts` asserts that sequence reports NOTHING at any
         // severity.

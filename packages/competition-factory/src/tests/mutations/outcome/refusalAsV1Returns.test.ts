@@ -209,8 +209,8 @@ describe('an exit no route accepts on a TEAM dual is refused before the dual is 
     }
   });
 
-  // carried, auto-calc turned on, lines projecting no winner: refused before anything is written (CA, 2026-11-19,
-  // the ruling of 56f04654af), in every mode
+  // carried, auto-calc turned on, lines projecting no winner: refused before anything is written (since
+  // 56f04654af), in every mode
   it('a WALKOVER naming a winner, carried with auto-calc enabled, is refused, alike', () => {
     generate(TEAM_DRAW);
     const prepared = stored();

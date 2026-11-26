@@ -8,8 +8,8 @@
  *
  * A byte diff is useless here: an import-graph change with no semantic change rewrites tens of thousands of lines
  * (rollup's `$n` collision suffixes renumber, inferred unions reorder, namespace members are reached by alias or not).
- * Each normalization below was forced by a false positive (Mentat FACTORY_TYPE_GRAPH_SPLIT_PLAN.md § "The
- * declaration-diff exit gate"), and `--self-test` pins every one of them, plus the controls that must fire.
+ * Each normalization below was forced by a false positive, and `--self-test` pins every one of them, plus the
+ * controls that must fire.
  *
  *   node scripts/verify/declarations.mjs --self-test
  *   node scripts/verify/declarations.mjs [--base <ref>] [--mode required|informational]

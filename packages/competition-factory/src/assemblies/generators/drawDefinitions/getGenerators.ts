@@ -191,7 +191,7 @@ export function getGenerators(params): { generators?: any; error?: ErrorType } {
 
     [FEED_IN]: () => {
       // the rounds its fed positions enter, when not the default: a 48 as [8, 8] enters 8 at R3 and 8 at R4, so seeds
-      // take the latest round and qualifiers routed to R3 the one before (CA, 2026-11-18)
+      // take the latest round and qualifiers routed to R3 the one before
       const feedRoundsProfile = params.structureOptions?.feedRoundsProfile;
       if (feedRoundsProfile && !isValidFeedRoundsProfile({ drawSize, feedRoundsProfile }))
         return { error: INVALID_VALUES, info: 'feedRoundsProfile does not describe a FEED_IN draw of drawSize' };

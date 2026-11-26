@@ -12,6 +12,12 @@ Some methods on this page are candidates for removal from production engine expo
 import { scoreGovernor } from 'tods-competition-factory';
 ```
 
+:::info Also on tools
+
+These scoreGovernor queries read no tournament state, so each is also on `tools`, the same function, called with the same params object: `tools.scoring.analyzeScore`, `tools.scoring.analyzeSet`, `tools.scoring.checkScoreHasValue`, `tools.scoring.checkSetIsComplete`, `tools.scoring.getMaxSetScore`, `tools.scoring.getSetComplement`, `tools.scoring.getTiebreakComplement`, `tools.scoring.keyValueScore`, `tools.scoring.mcpValidator`, `tools.scoring.pbpValidator`, `tools.scoring.repairScore`, `tools.scoring.retainScoreForFormat`, `tools.scoring.validateScore`, `tools.formats.validateTieFormat`. Their engine routes are unchanged in 7.x; see [tools by domain](/docs/tools/tools-overview#domains-stateless-functions-by-subject). The governor's `parseScoreString` is not among them: `tools.scoring.parseScoreString` is a positional reader whose default answers as the governor's does.
+
+:::
+
 The **scoreGovernor** is a collection of scoring related tools that provide analysis/validation or generate values.
 
 Lightweight independent/reusable components such as scoring dialogs can make use of the **scoreGovernor** without having to import any Competition Factory engines.
@@ -194,7 +200,7 @@ A set decided by its tiebreak with no points recorded is complete: `7-6` under `
 under `S:6/TB7@12`. The games are the one score a tiebreak produces, and the record accepts them
 alone (`TIEBREAK_POINTS_NOT_RECORDED`). `6-6` is a tiebreak still being played and is not complete.
 A `0-0` pair in the tiebreak-point fields reads as no points. Points on one side only, or a pair the
-set winner did not win, leave the set incomplete. (Since 7.33.0; CA, 2026-11-07.)
+set winner did not win, leave the set incomplete. (Since 7.33.0.)
 
 ---
 

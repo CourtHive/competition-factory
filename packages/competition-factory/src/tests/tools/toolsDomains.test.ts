@@ -3,10 +3,14 @@ import { describe, expect, it } from 'vitest';
 import * as tools from '@Assemblies/tools';
 
 /**
- * Stateless positional functions have a home in `tools`, by domain (CA 2026-11-07), rather than in a governor that
+ * Stateless positional functions have a home in `tools`, by domain, rather than in a governor that
  * mounts them on engines which call every method with one params object. `tools.formats` and `tools.scoring` match the
  * planned `formats` and `scoring` packages. In 7.x the governors still export the shared functions; each shared entry is
  * the governor's own function, so the two homes cannot drift before 8.0.0 removes the governor placements.
+ *
+ * Slice C of the engine API migration added the confirmed stateless governor queries, which take one
+ * params object, to their domains (`QUERIES` below): `statelessGovernorTools.json` lists each one's home and
+ * `statelessGovernorTools.test.ts` checks it is the governor function. Their engine routes are unchanged in 7.x.
  */
 
 const FORMATS = [
@@ -18,6 +22,79 @@ const FORMATS = [
   'stringify',
   'validateMatchUpFormat',
 ];
+// the confirmed stateless governor queries each domain also holds (slice C), by the governor that exports them
+const QUERIES = {
+  formats: {
+    tieFormatGovernor: ['compareTieFormats', 'tieFormatGenderValidityCheck'],
+    scoreGovernor: ['validateTieFormat'],
+    matchUpGovernor: ['calculateWinCriteria'],
+  },
+  scoring: {
+    scoreGovernor: [
+      'analyzeScore',
+      'analyzeSet',
+      'checkScoreHasValue',
+      'checkSetIsComplete',
+      'getMaxSetScore',
+      'getSetComplement',
+      'getTiebreakComplement',
+      'keyValueScore',
+      'mcpValidator',
+      'pbpValidator',
+      'repairScore',
+      'retainScoreForFormat',
+      'validateScore',
+    ],
+  },
+  matchUps: {
+    matchUpGovernor: [
+      'analyzeMatchUp',
+      'calculateMatchUpMargin',
+      'filterMatchUps',
+      'getCheckedInParticipantIds',
+      'getDualIssues',
+      'getHomeParticipantId',
+      'getMatchUpCheckInState',
+      'getMatchUpType',
+      'getMatchUpUpset',
+      'getRoundMatchUps',
+      'participantScheduledMatchUps',
+    ],
+    scheduleGovernor: ['courtGridRows', 'matchUpScheduleLocked'],
+  },
+  draws: {
+    drawsGovernor: [
+      'getDrawTypeCoercion',
+      'getFeedInQualifyingPositions',
+      'getSeedingThresholds',
+      'getTally',
+      'getValidGroupSizes',
+      'validatePlayoffGroups',
+    ],
+  },
+  entries: {
+    entriesGovernor: ['getEntryStatusOrdinals', 'getMaxEntryPosition'],
+    eventGovernor: ['categoryCanContain'],
+  },
+  rankings: {
+    rankingGovernor: ['generateRankingList', 'getAwardPoints', 'getAwardProfile'],
+    participantGovernor: ['getScaleValues', 'participantScaleItem'],
+  },
+  seasons: {
+    seasonGovernor: [
+      'getSeasonAdvancement',
+      'getSeasonMovement',
+      'getSeasonStandings',
+      'planNextPeriod',
+      'validateSeason',
+    ],
+    tournamentGovernor: ['getTierMovement'],
+  },
+  sanctioning: { sanctioningGovernor: ['querySanctioningRecord', 'validateStatusTransition'] },
+  officiating: { officiatingGovernor: ['queryOfficialRecord', 'validateOfficiatingStatusTransition'] },
+};
+const queriesOf = (domain: string): string[] => Object.values(QUERIES[domain] ?? {}).flat() as string[];
+
 const GOVERNOR_SCORING = [
   'addPoint',
   'analyzeSequence',
@@ -49,7 +126,7 @@ const GOVERNOR_SCORING = [
 
 describe('tools.formats', () => {
   it('holds exactly the matchUpFormat functions', () => {
-    expect(Object.keys(tools.formats).sort()).toEqual([...FORMATS].sort());
+    expect(Object.keys(tools.formats).sort()).toEqual([...FORMATS, ...queriesOf('formats')].sort());
   });
 
   it.each(FORMATS)('%s is the matchUpFormat governor function', (name) => {
@@ -80,7 +157,9 @@ describe('tools.formats', () => {
 
 describe('tools.scoring', () => {
   it('holds exactly the scoring functions', () => {
-    expect(Object.keys(tools.scoring).sort()).toEqual([...GOVERNOR_SCORING, 'parseScoreString'].sort());
+    expect(Object.keys(tools.scoring).sort()).toEqual(
+      [...GOVERNOR_SCORING, ...queriesOf('scoring'), 'parseScoreString'].sort(),
+    );
   });
 
   it.each(GOVERNOR_SCORING)('%s is the score governor function', (name) => {
@@ -105,7 +184,7 @@ const DOMAINS = {
 
 describe.each(Object.entries(DOMAINS))('tools.%s', (domain, { governor, names }) => {
   it('holds exactly its functions', () => {
-    expect(Object.keys(tools[domain]).sort()).toEqual([...names].sort());
+    expect(Object.keys(tools[domain]).sort()).toEqual([...names, ...queriesOf(domain)].sort());
   });
 
   it.each(names)(`%s is the ${governor} function`, (name) => {
@@ -150,6 +229,7 @@ describe('tools.rankings', () => {
         'getQualityWinPoints',
         'isAwardInWindow',
         'rollingPeriodDaysFrom',
+        ...queriesOf('rankings'),
       ].sort(),
     );
   });
@@ -173,5 +253,33 @@ describe('tools.rankings', () => {
 
   it('is the window generateRankingList applies', () => {
     expect(tools.rankings.computeAwardWindow('2025-12-31', 365)).toEqual({ from: '2024-12-31', to: '2025-12-31' });
+  });
+});
+
+describe.each(Object.entries(QUERIES))('tools.%s: the confirmed stateless queries', (domain, byGovernor) => {
+  const entries = Object.entries(byGovernor).flatMap(([governor, names]) => names.map((name) => [name, governor]));
+
+  it.each(entries)(`%s is the %s function`, (name, governor) => {
+    expect(typeof tools[domain][name]).toEqual('function');
+    expect(tools[domain][name]).toBe(governors[governor][name]);
+  });
+});
+
+describe('the new domains hold only the confirmed stateless queries', () => {
+  it.each(['seasons', 'sanctioning', 'officiating'])('tools.%s', (domain) => {
+    expect(Object.keys(tools[domain]).sort()).toEqual(queriesOf(domain).sort());
+  });
+});
+
+describe('a tool called with a params object, as a 7.x engine route is', () => {
+  it('reads a score, a format and a matchUp', () => {
+    expect(tools.scoring.checkScoreHasValue({ score: { sets: [{ side1Score: 1 }] } })).toEqual(true);
+    expect(tools.scoring.getSetComplement({ isSide1: true, lowValue: 3, setTo: 6, tiebreakAt: 6 })).toEqual([3, 6]);
+    expect(tools.draws.getValidGroupSizes({ drawSize: 8 }).validGroupSizes).toContain(4);
+  });
+
+  it('refuses a missing required input instead of throwing', () => {
+    expect(tools.rankings.generateRankingList({} as any)).toMatchObject({ error: { code: 'ERR_MISSING_VALUE' } });
+    expect(tools.rankings.deriveRankingList({} as any)).toMatchObject({ error: { code: 'ERR_MISSING_VALUE' } });
   });
 });

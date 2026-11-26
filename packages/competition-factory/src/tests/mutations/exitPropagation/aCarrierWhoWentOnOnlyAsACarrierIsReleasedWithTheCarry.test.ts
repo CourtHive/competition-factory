@@ -29,8 +29,8 @@ import { expect, it } from 'vitest';
  * stands in, even with nobody opposite yet, and it is changed only at its origin (`CANNOT_CHANGE_OUTCOME`). So a carrier
  * goes on only past BYEs, and every onward matchUp is a BYE, waiting on the carry, or decided by it.
  *
- * The first carrier's seat once recorded `West|2|4`'s claim on its BYE (`byeClaims`); the ledger is retired (Mentat
- * P58, CA 2026-10-21), so the seat holds no provenance, and what the claim stood for is read from the draw: `West|2|4`
+ * The first carrier's seat once recorded `West|2|4`'s claim on its BYE (`byeClaims`); the ledger is
+ * retired, so the seat holds no provenance, and what the claim stood for is read from the draw: `West|2|4`
  * is a double exit and sends nobody across its loser link (`feederSendsNobody`: `DOUBLE_EXIT`).
  */
 

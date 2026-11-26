@@ -32,6 +32,7 @@ export {
   UNNAMED_TOURNAMENT,
   noticeModifies,
 } from './noticeIdentity';
+import { noticeValue, selectNoticeAudit } from './noticePayloadAudit';
 
 export type Notice = {
   topic: string;
@@ -356,8 +357,8 @@ export function setCapturedCompetitionClock(timeStamp?: number) {
 }
 
 /**
- * The entities an outer engine call has stamped `updatedAt` on, so each is stamped once per call (F2 (i), CA
- * 2026-10-19). Opened and released with the captured clock. Optional hooks like it: a provider without them has no
+ * The entities an outer engine call has stamped `updatedAt` on, so each is stamped once per call.
+ * Opened and released with the captured clock. Optional hooks like it: a provider without them has no
  * ledger, and an entity is then stamped at each notice, as before.
  */
 export function getCapturedStamps(): WeakSet<object> | undefined {
@@ -401,6 +402,9 @@ export function getSchemaWriteMode(): SchemaWriteMode {
 
 /** @deprecated the outcome pipeline selector is removed in 8.0.0: v2 is the only pipeline */
 export function setOutcomePipeline(mode?: OutcomePipelineMode): { success?: boolean; error?: ErrorType } {
+  // the audit build's second argument, `{ checkNoticePayloadWrites }` (noticePayloadAudit.ts)
+  /* v8 ignore next -- @preserve: compiled out of every published bundle */
+  if (__NOTICE_PAYLOAD_DIAGNOSTICS__ && !selectNoticeAudit(mode, arguments[1])) return { error: INVALID_VALUES };
   if (mode === undefined) {
     globalState.outcomePipeline = OUTCOME_PIPELINE_DEFAULT;
     return { ...SUCCESS };
@@ -596,6 +600,8 @@ export function restoreMutationStatus(status?: boolean) {
 
 export function addNotice(notice: Notice) {
   if (typeof notice?.topic !== 'string') return;
+  /* v8 ignore next -- @preserve: compiled out of every published bundle */
+  if (__NOTICE_PAYLOAD_DIAGNOSTICS__) notice = noticeValue(notice);
   const isGlobalSubscription = globalState.globalSubscriptions[notice.topic];
   return _globalStateProvider.addNotice(notice, isGlobalSubscription);
 }
@@ -638,8 +644,8 @@ export function getPayloads(params: GetNoticesArgs): any[] {
 /**
  * A notice's payload may be DEFERRED: built only when the notices are read, which the engine does once a call has
  * succeeded (a call that errors deletes its notices unread). So a payload that costs a hydration, the in-context
- * matchUp of `UPDATE_INCONTEXT_MATCHUP`, is never built for a refused call, nor for a topic no one subscribes to
- * (CA, 2026-10-24). A deferred payload that builds nothing is dropped. Provider-agnostic: a provider stores the
+ * matchUp of `UPDATE_INCONTEXT_MATCHUP`, is never built for a refused call, nor for a topic no one subscribes to.
+ * A deferred payload that builds nothing is dropped. Provider-agnostic: a provider stores the
  * payload as it is given.
  */
 export const DEFERRED_PAYLOAD = '__deferredPayload';
@@ -735,6 +741,8 @@ export type CallListenerArgs = {
   topic: string;
 };
 export async function callListener(payload) {
+  /* v8 ignore next -- @preserve: compiled out of every published bundle */
+  if (__NOTICE_PAYLOAD_DIAGNOSTICS__) payload = noticeValue(payload);
   return _globalStateProvider.callListener(payload, globalState.globalSubscriptions);
 }
 

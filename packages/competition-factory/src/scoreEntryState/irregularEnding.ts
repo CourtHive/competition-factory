@@ -25,7 +25,7 @@ import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
  * Every score-entry approach needs the same rule, and each once carried its own copy: "walkover with a winner is a
  * WALKOVER, walkover without one is a DOUBLE_WALKOVER". Here absence is absence: `undefined` is "not answered yet" and
  * is never valid, and a double exit requires explicitly choosing `NEITHER_SIDE`. Reading a missing winner as a double
- * exit was a fail-open default (Mentat architectural standard A3): a double exit advances nobody and propagates a
+ * exit was a fail-open default: a double exit advances nobody and propagates a
  * walkover downstream.
  */
 
@@ -38,8 +38,8 @@ const FACTORY_NON_DIRECTING = new Set<string>(nonDirectingMatchUpStatuses);
 /**
  * Every irregular ending score entry offers, in display order: the three that name a winner, then the three an
  * operator reaches for most mid-tournament, then the rest. They partition exactly onto the factory's directing and
- * non-directing classifications. `WITHDRAWN` is not a matchUpStatus: a withdrawal is expressed AS a walkover (CA,
- * 2026-09-27), with its code in the WALKOVER group.
+ * non-directing classifications. `WITHDRAWN` is not a matchUpStatus: a withdrawal is expressed AS a walkover,
+ * with its code in the WALKOVER group.
  */
 export const SELECTABLE_ENDINGS: string[] = [
   RETIRED,
@@ -74,7 +74,7 @@ export function requiresWinner(selectedOutcome: string | undefined): boolean {
 
 /**
  * Statuses that carry NO score at all. The factory blanks the score for `{WALKOVER, DOUBLE_WALKOVER}`; CANCELLED and
- * DEAD_RUBBER are added by CLIENT policy (CA, 2026-09-27: choosing them clears any partial score), so this set is
+ * DEAD_RUBBER are added by CLIENT policy (choosing them clears any partial score), so this set is
  * deliberately wider than the factory's. Not here: DEFAULTED / DOUBLE_DEFAULT and RETIRED, which keep what was
  * played, and ABANDONED / INCOMPLETE / SUSPENDED, where the partial score is the content of the result.
  */

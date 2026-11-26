@@ -31,7 +31,7 @@ export function lineTakesPlayedOnDualWinner({
 }
 
 /** A declared winner is protected on its own path. A recorded consolation result on
- * the loser's path can stand when its incoming team changes (P52). */
+ * the loser's path can stand when its incoming team changes. */
 export function declaredWinnerPlayedOn(
   standing: number | undefined,
   projected: number | undefined,

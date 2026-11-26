@@ -10,7 +10,7 @@ import { DEFAULTED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConst
 import { EXIT } from '@Constants/matchUpActionConstants';
 
 /**
- * **The census arm for a walkover or default recorded before the opponent arrives** (CA, 2026-10-04).
+ * **The census arm for a walkover or default recorded before the opponent arrives**.
  *
  * The exit-propagation sweep targets matchUps with two participants only (its `replay` skips any other),
  * so a recorded exit beside an unreached seat was measured by hand-built cases alone. This plays random

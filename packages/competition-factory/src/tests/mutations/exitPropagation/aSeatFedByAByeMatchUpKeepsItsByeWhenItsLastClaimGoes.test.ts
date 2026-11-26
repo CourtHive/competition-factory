@@ -23,7 +23,7 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  * matchUp (its dp 2 a BYE `East|1|3` claims), so the seat's BYE now also stands because a BYE matchUp's loser is a BYE.
  * Correcting `East|1|4` to a played result dissolves `West|1|2` to a single default; its claim on the seat went, and
  * `withdrawByeSeats` cleared the BYE with it, though `South|1|1` still held its BYE. Every entry order of the standing
- * results leaves the BYE. The claim ledger records who claims a BYE, not why it stands (Mentat P58), so the rule
+ * results leaves the BYE. The claim ledger records who claims a BYE, not why it stands, so the rule
  * `removeDoubleExit` keeps on its own path (`aByeMatchUpsLoserSeatKeepsItsBye`) is now kept here too: a seat whose feeder
  * holds a BYE keeps its BYE when its last claim goes.
  */

@@ -128,7 +128,7 @@ describe('applyScenarioProfile reports a refused shift instead of swallowing it'
     const semifinal = matchUps.find((matchUp: any) => matchUp.roundNumber === 1);
 
     // the final placed BEFORE its semifinal, then the semifinal played: stored out of order. The schedule writes refuse
-    // that order (CA 2026-10-30), so it is stored raw, as an import or an older engine would have left it
+    // that order, so it is stored raw, as an import or an older engine would have left it
     const raw = tournamentEngine.getTournament().tournamentRecord;
     for (const matchUp of raw.events[0].drawDefinitions[0].structures[0].matchUps) {
       if (matchUp.matchUpId === final.matchUpId) matchUp.schedule = { scheduledDate: day, scheduledTime: '08:00' };

@@ -10,7 +10,7 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  * A participant arriving at a PENDING propagated exit wins it, and goes on — SIGNAL 1's other half.
  *
  * `drawPositionPlacement` recognised "this matchUp already holds a propagated exit" as
- * `isExit(status) && winningSide`. CA's Migration §20 ruling of 2026-09-20 — *a pending exit has no
+ * `isExit(status) && winningSide`. The Migration §20 rule — *a pending exit has no
  * `winningSide` until a participant arrives* — removed the field that test keyed on, so from that
  * day the check answered false for exactly the state it was written for, and the arrival path was
  * skipped: the status was cleared to TO_BE_PLAYED and nobody was awarded or advanced.
@@ -54,7 +54,7 @@ it('awards the arriving participant and advances them onward', () => {
 
   expect(put('East', 1, 2, { matchUpStatus: DOUBLE_WALKOVER }).success).toEqual(true);
 
-  // the pending exit: carried, recorded, and NOT yet awarded — CA's §20 ruling
+  // the pending exit: carried, recorded, and NOT yet awarded — the §20 rule
   const pending = find('West', 2, 1);
   expect(pending.matchUpStatus).toEqual(WALKOVER);
   expect(pending.winningSide).toBeUndefined();

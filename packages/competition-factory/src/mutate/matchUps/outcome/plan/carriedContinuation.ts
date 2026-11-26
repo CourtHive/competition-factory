@@ -23,7 +23,7 @@ export type CarriedLanding = {
   ensuredSides?: unknown[];
 };
 
-/** The origin a continuation's provenance names (ruling 11). */
+/** The origin a continuation's provenance names. */
 export type FrameLineage = { sourceMatchUpId: string; previousMatchUpStatus: MatchUpStatusUnion };
 
 /** The loser target a seat frame serves, read once by its adapter. `at` only where the link names a whole seat. */

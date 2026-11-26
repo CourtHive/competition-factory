@@ -12,6 +12,12 @@ Some methods on this page are candidates for removal from production engine expo
 import { eventGovernor } from 'tods-competition-factory';
 ```
 
+:::info Also on tools
+
+This eventGovernor query reads no tournament state, so it is also on `tools`, the same function, called with the same params object: `tools.entries.categoryCanContain`. Its engine route is unchanged in 7.x; see [tools by domain](/docs/tools/tools-overview#domains-stateless-functions-by-subject).
+
+:::
+
 ## addDrawDefinition
 
 Adds a drawDefinition to an event in a tournamentRecord. Called after [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition). See examples: [Complete Example](../concepts/events/entries.mdx#complete-example), [Creating Draws from Flight Profiles](../concepts/events/flights.mdx#creating-draws-from-flight-profiles), [Complete Example](../concepts/events/flights.mdx#complete-example).

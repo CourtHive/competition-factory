@@ -12,6 +12,12 @@ Some methods on this page are candidates for removal from production engine expo
 import { tournamentGovernor } from 'tods-competition-factory';
 ```
 
+:::info Also on tools
+
+This tournamentGovernor query reads no tournament state, so it is also on `tools`, the same function, called with the same params object: `tools.seasons.getTierMovement`. Its engine route is unchanged in 7.x; see [tools by domain](/docs/tools/tools-overview#domains-stateless-functions-by-subject).
+
+:::
+
 ## addExtension
 
 Adds an extension to an element you hold, or to the tournament record. It does not resolve ids: called with only

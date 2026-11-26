@@ -63,9 +63,9 @@ export function removeDoubleExit(params) {
 
   const stack = 'removeDoubleExit';
 
-  // A LUCKY DRAW'S DOUBLE EXIT PRODUCED NOTHING (`doubleExitAdvancement`, CA 2026-11-17), so there is nothing to take
+  // A LUCKY DRAW'S DOUBLE EXIT PRODUCED NOTHING (`doubleExitAdvancement`), so there is nothing to take
   // back: visiting its targets wrote a status, codes and a score onto matchUps nobody had reached. A record whose
-  // double exit did produce one, before that ruling, names this matchUp as the exit's source and is unwound as ever
+  // double exit did produce one, before that change, names this matchUp as the exit's source and is unwound as ever
   const producedHere = (matchUpsMap?.drawMatchUps ?? []).some((candidate) =>
     Object.values(getSideExitProvenance({ matchUp: candidate }) ?? {}).some(
       (entry) => entry?.sourceMatchUpId === matchUpId,
@@ -164,7 +164,7 @@ export function removeDoubleExit(params) {
    * draw-derived `byeSeatStands` below answers. For a round-2 source it collected no matchUps at
    * all, and `[].every(...)` is `true`, so it returned SUCCESS having withdrawn nothing.
    *
-   * Measured 2026-09-30 by CA in TMX on FIRST_MATCH_LOSER_CONSOLATION 8/5: `Main|2|1` a
+   * Measured 2026-09-30 in TMX on FIRST_MATCH_LOSER_CONSOLATION 8/5: `Main|2|1` a
    * DOUBLE_WALKOVER, its BYE propagated to Consolation drawPosition 1 and on into the consolation
    * final; removing the double walkover left both in place. *"the BYE propagated to dp1 /
    * CONSOLATION|2|1 should have been withdrawn as well as its advance to the consolation final and
@@ -249,7 +249,7 @@ export function removeDoubleExit(params) {
      * the loser link named, and carried onward through however many BYEs stand between it and a
      * matchUp that can hold it. Skipping the target on the way back left all of that standing.
      *
-     * CA, 2026-09-20: *"When I remove it the consolation R1P1 matchUpStatusCodes don't clear and
+     * Reported 2026-09-20: *"When I remove it the consolation R1P1 matchUpStatusCodes don't clear and
      * the WALKOVER remains advanced to consolation R3P1."* Measured on
      * FIRST_MATCH_LOSER_CONSOLATION 8: THREE consolation matchUps kept residue, not one —
      * `CONSOLATION|1|1`, `CONSOLATION|2|1` and `CONSOLATION|3|1`.
@@ -492,7 +492,7 @@ function withdrawExitFromByeChain({
    * carries no provenance of its own — it merely HOLDS the participant this one advanced. So the walk
    * stopped here, the winner was cleared, and the participant stayed in the later round.
    *
-   * Measured on COMPASS 16/14 (CA, 2026-09-25): clearing `East|1|2` reset `West|2|1` correctly and
+   * Measured on COMPASS 16/14 (2026-09-25): clearing `East|1|2` reset `West|2|1` correctly and
    * left `West|3|1` holding `drawPositions: [3]` and its occupant, with `getDrawInconsistencies`
    * still reporting `valid: true`. Clearing `West|2|1` DIRECTLY unwinds correctly, which is what
    * localised the gap to this path.
@@ -747,7 +747,7 @@ export function conditionallyRemoveDrawPosition(params) {
    * below is unconditional: `getUnwoundState`'s final fallthrough returns `TO_BE_PLAYED` and drops
    * `retained` on the floor.
    *
-   * CA, 2026-09-20, reading the reproduction: *"when the [...] DOUBLE_WALKOVER is removed the
+   * The report, 2026-09-20, reading the reproduction: *"when the [...] DOUBLE_WALKOVER is removed the
    * provenance of the sideNumber: 1 matchUpStatus: WALKOVER is lost... that's the bug."*
    *
    * Measured on FIRST_MATCH_LOSER_CONSOLATION 8/8 (`nonRandom: 61`), clearing `Consolation|1|2`:
@@ -819,8 +819,9 @@ export function conditionallyRemoveDrawPosition(params) {
   if (unwound.provenance) setSideExitProvenance({ provenance: unwound.provenance, matchUp: noContextTargetMatchUp });
 
   // RE-DERIVED TO AN AWARDED SINGLE EXIT, the matchUp has nobody for a loser, and sends its loser seat the BYE forward
-  // play gives it (P39). The convergence's claim on that BYE was withdrawn on the way down, which left the BYE to go
-  // with it (census A1 wave 4, COMPASS 32/27 21034527: `aDissolvedConvergenceSendsItsSingleExitsBye`).
+  // play gives it (the BYE an unfillable loser seat is sent). The convergence's claim on that BYE was withdrawn on the
+  // way down, which left the BYE to go with it (census A1 wave 4, COMPASS 32/27 21034527:
+  // `aDissolvedConvergenceSendsItsSingleExitsBye`).
   if (unwound.winningSide && isExit(unwound.matchUpStatus)) {
     const propagated = propagateUnfillableLoserBye({
       tournamentRecord: params.tournamentRecord,
@@ -975,8 +976,8 @@ function getUnwoundState({
   if (pairedPreviousDoubleExit) {
     // The STATUS here is unchanged — a still-live paired double exit keeps its produced exit — but
     // the provenance that describes it is carried through rather than blanked. Writing
-    // `matchUpStatusCodes: []` onto a matchUp that is still an exit is the residue CA ruled on
-    // 2026-09-09: "RE-DERIVE the codes on unwind from the current upstream state instead of writing
+    // `matchUpStatusCodes: []` onto a matchUp that is still an exit is the residue the rule
+    // forbids: "RE-DERIVE the codes on unwind from the current upstream state instead of writing
     // []". See `knownFailures.ts`, DOUBLE_EXIT_STATUS_CODES_RESIDUE.
     //
     // The label is the KEPT exit's, read from what it retains: a mixed convergence is stored as a DOUBLE_WALKOVER
@@ -1018,7 +1019,7 @@ function getUnwoundState({
   if (isDoubleExit(noContextTargetMatchUp?.matchUpStatus)) {
     const rederived = deriveExitStateFromProvenance(retained);
     if (rederived) {
-      // A PRODUCED exit has no winningSide until a participant arrives (CA, 2026-09-20); a CARRIED exit keeps its
+      // A PRODUCED exit has no winningSide until a participant arrives; a CARRIED exit keeps its
       // award on an empty seat. The derivation awards the other side either way, so the award stands only for a
       // carried exit, or where the winning seat holds somebody (as `positionClear`'s `awardStands`). Matrix FMLC 8/8,
       // do/undo: a double exit undone left the pending WALKOVER it had converged with won by a seat nobody had reached.
@@ -1106,7 +1107,7 @@ function producedAwardStands({
 /**
  * A BYE feeding the target holds the exit's origin: it reached the target relayed past that BYE, not straight down its
  * link. Relayed, it lands pending on the direct path (`carryExitOnward` writes no winningSide), so the unwind leaves it
- * pending too unless somebody stands on the seat it would be awarded to (CA 2026-10-03, Q3; census S6 Class B 20641116,
+ * pending too unless somebody stands on the seat it would be awarded to (census S6 Class B 20641116,
  * COMPASS 32/27 policy-off: `East|1|13` corrected from DOUBLE_WALKOVER to WALKOVER left `West|2|4` awarded to its
  * empty side, and the loser arriving there took the award instead of converging with the exit).
  */

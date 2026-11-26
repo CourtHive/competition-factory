@@ -7,7 +7,7 @@ import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusCo
 import type { DrawDefinition } from '@Types/tournamentTypes';
 
 /**
- * The S1 op reducer and its stamps (outcome v2 executor plan § 3.3; F2 (i), CA 2026-10-19).
+ * The S1 op reducer and its stamps (outcome v2 executor plan § 3.3; F2 (i)).
  *
  * The reducer folds ops into a stored-shape draw and decides nothing. Its stamp rule is F2 (i): one per touched entity
  * per call, the call's instant T, or the previous stamp + 1 ms when that is already as late. v1 keeps the same rule

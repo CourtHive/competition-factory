@@ -9,7 +9,7 @@ import { validMatchUpStatuses } from '@Constants/matchUpStatusConstants';
  * A MATCHUPSTATUS IS SPELLED BY THE CONSTANTS MODULE, NOT BY A STRING LITERAL.
  *
  * Until 2026-10-04, 30 lines in src compared or assigned a matchUpStatus as a bare literal — 12 in
- * ScoringEngine alone (CA: "compares against the bare literal 'COMPLETED', bypassing the constants
+ * ScoringEngine alone (one "compares against the bare literal 'COMPLETED', bypassing the constants
  * module entirely"). The point-by-point engine kept its own hand-written status union, so the literals
  * type-checked; a status renamed or misspelled in one place would not have been caught in the other.
  *

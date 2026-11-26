@@ -19,7 +19,7 @@ import { TOTAL } from '@Constants/scheduleConstants';
 import { SINGLES } from '@Constants/matchUpTypes';
 
 /**
- * Golden corpus § 5 of `Mentat/planning/SCHEDULING_PIPELINE_VNEXT.md`: authored scheduling scenarios, one per rule the
+ * Golden corpus of the scheduling pipeline: authored scheduling scenarios, one per rule the
  * scheduling spec will state. Each is a generated record (on the corpus clock and its own seed, so it reproduces), the
  * directives that build a scheduling profile and run a scheduler, and the claims the record the patches rebuild must
  * satisfy. Every scenario claims the scheduling step properties (INVARIANTS.md), so the writer refuses one whose
@@ -148,7 +148,7 @@ export function schedulingScenarios(): Authored[] {
   }
 
   {
-    // CA 2026-10-16 (plan § 8.1): a feeder's winner path and loser path are alternatives, not a sum. R1 plus EITHER main
+    // A feeder's winner path and loser path are alternatives, not a sum. R1 plus EITHER main
     // R2 OR consolation R1 is two singles, inside the limit, so all four consolation R1 matchUps are placed beside R2
     const { tournamentRecord, round } = generate({
       policyDefinitions: POLICY_SCHEDULING_DEFAULT,
@@ -268,7 +268,7 @@ export function schedulingScenarios(): Authored[] {
   }
 
   {
-    // C1 (found building this corpus, 2026-10-22; CA: recovery is calculated): a COMPLETED matchUp still holds its
+    // C1 (found building this corpus, 2026-10-22; recovery is calculated): a COMPLETED matchUp still holds its
     // participants. Main R1 at 08:00 is completed, and a second profile run places consolation R1, whose players are
     // R1's losers, only once R1's 90 minutes and 60 of recovery are over
     const { tournamentRecord, round, matchUpsOf, drawId } = generate({
@@ -339,8 +339,8 @@ export function schedulingScenarios(): Authored[] {
   }
 
   {
-    // C2 (CA 2026-10-22): R1 played on day 2, with scores, and R2 profiled on day 1, where its sources are not yet
-    // played. The planner's gate never takes such a slot (CA 2026-10-23): R2 is reported under
+    // C2: R1 played on day 2, with scores, and R2 profiled on day 1, where its sources are not yet
+    // played. The planner's gate never takes such a slot: R2 is reported under
     // playedOrderDeferredMatchUpIds and nothing is written
     const { tournamentRecord, round, matchUpsOf, drawId } = generate({ drawProfile: { drawSize: 8 }, courtsCount: 4 });
     const outcome = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 1 }).outcome;
@@ -369,7 +369,7 @@ export function schedulingScenarios(): Authored[] {
   }
 
   {
-    // a profiled round none of whose matchUps has a format: nothing of it is placed, and (CA 2026-10-23) it is
+    // a profiled round none of whose matchUps has a format: nothing of it is placed, and it is
     // reported, under noFormatMatchUpIds
     const { tournamentRecord, round } = generate({ drawProfile: { drawSize: 8 }, courtsCount: 4 });
     // strip every format a matchUp could inherit: tournament, event, draw, structures, matchUps
@@ -404,8 +404,8 @@ export function schedulingScenarios(): Authored[] {
     });
   }
 
-  // a matchUp on the court grid without a time is timed, and a time that contradicts its row is reported (CA
-  // 2026-10-28): the first round of an 8 draw on one court's rows, in reverse of the order the scheduler takes them
+  // a matchUp on the court grid without a time is timed, and a time that contradicts its row is reported:
+  // the first round of an 8 draw on one court's rows, in reverse of the order the scheduler takes them
   for (const via of ['direct', 'profile'] as const) {
     const { tournamentRecord, round, matchUpsOf, drawId } = generate({ drawProfile: { drawSize: 8 }, courtsCount: 2 });
     const courtId = tournamentRecord.venues[0].courts[0].courtId;

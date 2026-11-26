@@ -76,7 +76,7 @@ and re-inherit the same bugs — a second draft by the same author is not an ora
 
 The matrices are most of the suite's running time, and CI runs the suite once per arm. So an ordinary PR
 into `dev` runs a bounded **slice** of the tiered matrices, and the **full** matrices run on checkpoint PRs
-into `master`, on pushes to `master`, and on every local run (CA, 2026-11-05).
+into `master`, on pushes to `master`, and on every local run.
 
 `FACTORY_MATRIX_TIER` selects the tier: `full` (the default when unset) or `pr`. `verify.yml` sets `pr`
 only on a `pull_request` whose base is not `master`, so a run that does not set the variable tests more,
@@ -238,8 +238,7 @@ Before any fix in this area merges, the eight **frozen census arms** (`sched-w1`
 `sched-de` under each flag, plus the two policy arms) are replayed on the branch and on `dev` and
 diffed by seed: `opened` must be zero. `STALLED_POSITION` shipped as a `warning` and was promoted to an
 `error` once an at-scale run read zero in all three arms — the seventh run, on 7.9.0 (`dev`
-`bdc5c4b258`), did — so a stalled draw is no longer `valid`; the rule and the run history are in
-`Mentat/planning/STALLED_POSITION_AT_SCALE.md`.
+`bdc5c4b258`), did — so a stalled draw is no longer `valid`.
 
 The TEAM arms (`pnpm verify:team-arms`) drive duals line by line. In the uneven-dual arm a double exit
 on one rubber can leave a DOMINANT_DUO dual at 1-1 with every rubber finished: no score can decide it.
@@ -324,18 +323,18 @@ Empty/absent normalization also limits accepted-transition differences. Record t
 seed range, replay disposition and projection when reporting a zero. Native-mode evidence does not
 establish LEGACY/BRIDGE behavior. A frozen zero describes those fixtures; new seeds can find failures.
 
-`DO_UNDO_IDENTITY` compares a projection, and leaves out by ruling what forward play records in some entry orders and
+`DO_UNDO_IDENTITY` compares a projection, and leaves out by design what forward play records in some entry orders and
 not others: arrival entries (F4) and the `{ BYE, BYE }` origin pair (F5), the legacy `matchUpStatusCodes` array (F1,
 counted by the `CODES_CONSISTENT` ledger), and BYE drawPositions rendered as `BYE` (R10). From 2026-10-20 to
-2026-10-22 it also left out BYE claims on a loser seat a BYE matchUp feeds (CA ruling (b)); the `byeClaims` ledger is
-retired (Mentat P58), so nothing claims a BYE and that exclusion is gone. Each omission is policed for truth by
+2026-10-22 it also left out BYE claims on a loser seat a BYE matchUp feeds; the `byeClaims` ledger is
+retired, so nothing claims a BYE and that exclusion is gone. Each omission is policed for truth by
 `ARRIVAL_TRUE`: an entry that is present must be true, so an omission hides only absence, never a falsehood.
 
 `LOSER_SEAT_DERIVED` holds every replay step to a reading of the draw rather than of the claim ledger (since
-2026-10-21; the ledger is being retired, Mentat P58). For every matchUp with a loser link, `feederSendsNobody` says
+2026-10-21; the ledger is being retired). For every matchUp with a loser link, `feederSendsNobody` says
 whether it will ever send anyone across that link: not when it holds a BYE, is a double exit, was won against an exit,
 is pending with a double exit's produced exit that came along its winner path (one that came over a loser link waits for
-the award, P39), or feeds a FIRST_MATCHUP link that excludes every candidate loser. A propagated BYE on
+the award), or feeds a FIRST_MATCHUP link that excludes every candidate loser. A propagated BYE on
 the seat it feeds must have such a reason, and a participant there must not. Whether a seat whose feeder sends nobody
 shows a BYE or a produced exit is left to the policy and the rules that place them. Measured before it was asserted:
 2,493,487 seat observations in the census gate inputs and 118,803 in the exitPropagation suite, with no contradiction.

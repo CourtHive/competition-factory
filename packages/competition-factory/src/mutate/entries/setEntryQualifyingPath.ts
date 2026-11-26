@@ -34,7 +34,7 @@ type SetEntryQualifyingPathArgs = {
 /**
  * Sets the path a QUALIFYING entry takes to MAIN: `entryStageSequence`, how deep in the qualifying chain it starts (1 is
  * the deepest: pre-qualifying, then qualifying), and `roundTarget`, the MAIN round its chain leads to. The topology
- * builder decides both from the structures the director draws (CA, 2026-11-18); generation reads them to seat each
+ * builder decides both from the structures the director draws; generation reads them to seat each
  * entry in its structure. `addEventEntries` sets them only as entries are added; this sets them on existing entries.
  *
  * With a `drawId`, the entries of that draw (and its flight) change; without one, the event's entries and every

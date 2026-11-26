@@ -14,7 +14,7 @@ import { INVALID_SCORE, MISSING_MATCHUP_FORMAT } from '@Constants/errorCondition
  *
  * The write path asked only whether a set EXCEEDED the format, never whether it was FINISHED, so under
  * `SET3-S:6/TB7` the engine recorded `3-7 6-4 6-4` and `4-2 2-6 2-6` as COMPLETED (measured 2026-10-01).
- * CA: "accepting 3-7 6-4 6-4 for a standard SET3-S:6/TB7 is unacceptable behavior!" Ruled a fix to
+ * Accepting 3-7 6-4 6-4 for a standard SET3-S:6/TB7 is unacceptable, so the fix is in
  * validation; `disableScoreValidation` is the opt-out. See `scoreCompleteness`.
  */
 const FORMAT = 'SET3-S:6/TB7-F:TB10';

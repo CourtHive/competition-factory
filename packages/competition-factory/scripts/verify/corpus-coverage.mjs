@@ -5,7 +5,7 @@
  * Reads `<CORPUS_OUT>/coverage.json` (written by `pnpm corpus:coverage` after the sources have
  * run) and compares it to `scripts/verify/baseline/corpus-coverage.json`. Two things may only
  * rise: the number of core methods with at least one scenario, and, per method, the set of
- * declared error codes observed. Scenarios are not committed (CA, 2026-10-01), so this baseline
+ * declared error codes observed. Scenarios are not committed, so this baseline
  * is the committed artifact: small, a count and a code list per method, and the only part of the
  * corpus that git tracks. Headroom to 100% is printed on every run in the unit that matters,
  * methods at zero and codes never observed, because a percentage would hide which ones.

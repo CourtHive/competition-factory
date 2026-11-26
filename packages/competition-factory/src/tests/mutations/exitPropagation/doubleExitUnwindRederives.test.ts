@@ -114,7 +114,7 @@ test('re-scoring one feeder leaves the other feeder’s origin standing', () => 
    * AND THE EXIT MUST REACH THE NEXT ROUND, which is what a dead reservation silently loses.
    *
    * This asserted `Consolation|2|1` was `DEFAULTED` — the produced exit having OVERWRITTEN the BYE
-   * that matchUp holds. CA ruled otherwise on 2026-09-20: *"a propagated exit encountering a BYE
+   * that matchUp holds. The rule is otherwise: *"a propagated exit encountering a BYE
    * should be advanced. In both cases the BYE remains a BYE"* — *"the `matchUpStatus: BYE` does not
    * change."* Measured: `Consolation|2|1` holds drawPosition 1 and nothing else, and drawPosition 1
    * is a draw BYE.

@@ -9,7 +9,7 @@ import { SUBJECT_PERSON } from '@Constants/seasonConstants';
 import type { Season } from '@Types/seasonTypes';
 
 /**
- * Combined season tables (Mentat `planning/STANDINGS_PHASE_2_PLAN.md` § 1.3, slice 1.3b): a conference CONF with the
+ * Combined season tables (standings phase 2, slice 1.3b): a conference CONF with the
  * divisions EAST (A, B, D) and WEST (C, E, F). Division games are referenced on each division, the cross-division games
  * on the conference. Worked by hand:
  *

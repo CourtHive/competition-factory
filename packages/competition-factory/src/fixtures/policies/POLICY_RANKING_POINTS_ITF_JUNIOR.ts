@@ -32,7 +32,7 @@
  *
  *   - International Team Competitions (level 3): a #1 singles, #2 singles or doubles win in the quarterfinal, semifinal
  *     or final earns points; a player keeps one result only, their best, and it counts among their six best singles
- *     results (CA, 2026-10-25). Only the best 8 teams reach those rounds; a 5th–8th classification tie earns nothing
+ *     results. Only the best 8 teams reach those rounds; a 5th–8th classification tie earns nothing
  */
 
 import { MAIN, QUALIFYING, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';

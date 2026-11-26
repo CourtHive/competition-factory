@@ -4,7 +4,7 @@ title: Engine API transition at 8.0.0
 
 # Engine API transition at 8.0.0
 
-The 125 methods below come from the 2026-10-15 engine-reach catalog: none of their names appeared in its 21-repository product consumer sweep. External integrators reviewed the list on 2026-10-28: 6 are in use and are **retained**. The list was closed on 2026-11-22. On 2026-11-25 CA retained 2 more that back shipped TMX features, `generateStatCrew` and `getEventInconsistencies`, so 8 are **retained** and the other **117 are scheduled for removal** from the production governors and engines at 8.0.0. The 191 methods not driven through an engine by tests are a different, larger set; standalone engine reach is not grounds for removal.
+The 125 methods below come from the 2026-10-15 engine-reach catalog: none of their names appeared in its 21-repository product consumer sweep. External integrators reviewed the list on 2026-10-28: 6 are in use and are **retained**. The list was closed on 2026-11-22. On 2026-11-25, two more were retained because they back shipped TMX features, `generateStatCrew` and `getEventInconsistencies`, so 8 are **retained** and the other **117 are scheduled for removal** from the production governors and engines at 8.0.0. The 191 methods not driven through an engine by tests are a different, larger set; standalone engine reach is not grounds for removal.
 
 **No runtime exports change in 7.x.** Every 7.x route below still works. The scheduled routes are removed at 8.0.0; the per-method standalone package-export decision is separate. Test-only conformance-harness access is independent of product exposure.
 
@@ -22,7 +22,7 @@ No deep import or replacement API is introduced here. An existing governor names
 
 ## Candidate disposition
 
-External confirmation is complete for every entry. 61 scheduled methods are stateless functions that already have a home on `tools` or the standalone `availability` export, named as their replacement; `addGoesTo` has supported replacement routes listed on its page. The others have no replacement on the engine. The machine-readable owner is `documentation/engine-api-transition.json`: source identity, declaring governors, previous anchors, related docs and decisions. Update it when a decision changes; never infer approval from a test-only invocation.
+External confirmation is complete for every entry. 77 scheduled methods are stateless functions that already have a home on `tools` or the standalone `availability` export, named as their replacement (15 of them since the confirmed stateless governor queries joined `tools` on 2026-11-25); `isTournamentPublished` names the `getPublishState` query, and `addGoesTo` has supported replacement routes listed on its page. The others have no replacement on the engine. The machine-readable owner is `documentation/engine-api-transition.json`: source identity, declaring governors, previous anchors, related docs and decisions. Update it when a decision changes; never infer approval from a test-only invocation.
 
 | Method                                                                                                             | Declaring governors                    | Engine route at 8.0.0 | Standalone API  |
 | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------- | --------------------- | --------------- |

@@ -12,6 +12,12 @@ Some methods on this page are candidates for removal from production engine expo
 import { officiatingGovernor } from 'tods-competition-factory';
 ```
 
+:::info Also on tools
+
+These officiatingGovernor queries read no tournament state, so each is also on `tools`, the same function, called with the same params object: `tools.officiating.queryOfficialRecord`, `tools.officiating.validateOfficiatingStatusTransition`. Their engine routes are unchanged in 7.x; see [tools by domain](/docs/tools/tools-overview#domains-stateless-functions-by-subject).
+
+:::
+
 The **officiatingGovernor** re-exports all officiating mutation and query functions for use outside the officiating engine. While the `officiatingEngine` provides a complete stateful API, the governor exports individual functions that can be called directly with an `officialRecord` parameter.
 
 For full engine documentation including state management, executionQueue, state machines, and workflow examples, see [Officiating Engine](../engines/officiating-engine.md).

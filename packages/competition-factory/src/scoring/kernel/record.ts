@@ -78,7 +78,7 @@ export type Materialized = {
   /** the index of the entry that completed the match, when it is complete */
   completedBy?: number;
   lineUps: { initial?: LineUps; current?: LineUps; doubles: boolean };
-  /** the match's initial server, set before anything was recorded (SE3-E1); kept on the history, not the timeline */
+  /** the match's initial server, set before anything was recorded; kept on the history, not the timeline */
   initialServer?: 0 | 1;
   /** a legacy point-only record (§ 12.6 shape 2) keeps no `entries` */
   timeline: boolean;

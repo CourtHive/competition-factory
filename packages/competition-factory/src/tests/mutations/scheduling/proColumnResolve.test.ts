@@ -162,8 +162,8 @@ describe('proColumnResolve - court-preserving conflict resolution', () => {
     const round1 = matchUps.find((m) => m.roundNumber === 1 && m.winnerMatchUpId);
     const round2Id = round1.winnerMatchUpId;
 
-    // feeder (round 1) at a LATER clock time than the match it feeds (round 2): an order the schedule writes refuse
-    // (CA 2026-10-30), so it is stored raw, as an import or an older engine would have left it
+    // feeder (round 1) at a LATER clock time than the match it feeds (round 2): an order the schedule writes refuse,
+    // so it is stored raw, as an import or an older engine would have left it
     storeRawSchedules({
       [round2Id]: { courtId: 'court-1', scheduledDate: startDate, scheduledTime: '09:00', courtOrder: 1 },
       [round1.matchUpId]: { courtId: 'court-2', scheduledDate: startDate, scheduledTime: '12:00', courtOrder: 2 },

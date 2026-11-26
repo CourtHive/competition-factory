@@ -16,6 +16,7 @@ export function addMatchUpScheduledDate({
   tournamentRecord,
   drawDefinition,
   playedOrderChecked,
+  workingMatchUp,
   disableNotice,
   matchUpId,
   event,
@@ -52,13 +53,14 @@ export function addMatchUpScheduledDate({
     value: scheduledDate,
     removePriorValues,
     tournamentRecord,
+    workingMatchUp,
     drawDefinition,
     disableNotice,
     matchUpId,
   });
   if (result.error) return result;
 
-  // a day the matchUp's event does not play: written, and warned about, never refused (CA 2026-11-01)
+  // a day the matchUp's event does not play: written, and warned about, never refused
   const warning = eventDateWarning({ tournamentRecord, drawDefinition, scheduledDate, matchUpId, event });
   return warning ? { ...result, warnings: [warning] } : result;
 }

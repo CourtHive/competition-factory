@@ -19,7 +19,7 @@ import {
 } from '@Constants/matchUpStatusConstants';
 
 /**
- * `sideExitProvenance` IS READ BY WHAT IT SAYS. **Punch-list P19.**
+ * `sideExitProvenance` IS READ BY WHAT IT SAYS.
  *
  * The field holds three different facts under one key — a CARRIED EXIT, an ARRIVAL, and a BYE CLAIM
  * LEDGER — and only the first is an exit. Two things follow, and they are pinned separately because
@@ -30,7 +30,7 @@ import {
  *     that is the state an over-permissive writer leaves, and no reader can tell its entry from a
  *     real one.
  *
- * The second is the one that matters. Re-creating the writer P19 cites moved the suite by ONE
+ * The second is the one that matters. Re-creating the over-permissive writer moved the suite by ONE
  * failure when the reader changed (64 -> 63); what it actually broke was `DO_UNDO_IDENTITY`, 58
  * times, by leaving a record behind.
  */
@@ -148,7 +148,7 @@ it('reports nothing for the origins the cascade itself records', () => {
 /**
  * A BYE RECORDS NO ARRIVAL BY RESULT — and keeps the two things it may record.
  *
- * CA, 2026-09-29: *"a BYE should not carry COMPLETED provenance"*, and that `BYE -> BYE` *"is
+ * The rule: *"a BYE should not carry COMPLETED provenance"*, and that `BYE -> BYE` *"is
  * legitimate and should stay"*. The three cases below are the rule, its control, and the detector
  * that would catch a writer which got round it.
  */
@@ -191,7 +191,7 @@ it('does not record how a participant ARRIVED at a BYE they advanced through', (
 
 /**
  * Matrix cell 337 (FEED_IN_CHAMPIONSHIP_TO_SF 16/16, DOUBLE_WALKOVER). `Consolation|4|2` holds a produced WALKOVER beside
- * a seat that later becomes a BYE, and settles to that BYE. CA, 2026-10-04: "BYE holder, exit sent on". So the WALKOVER
+ * a seat that later becomes a BYE, and settles to that BYE. The rule: BYE holder, exit sent on. So the WALKOVER
  * travels into `Consolation|5|1`, not the BYE, and meets the WALKOVER `Consolation|4|1`'s double exit produced there:
  * two exits, nobody arrives, a DOUBLE_WALKOVER. Before, side 2 recorded the BYE's arrival and the exit was lost.
  */

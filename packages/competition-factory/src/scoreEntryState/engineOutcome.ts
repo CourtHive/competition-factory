@@ -2,8 +2,8 @@
  * From what a score state reports to what the factory's `setMatchUpStatus` reads: the canonical `outcome` a host sends
  * (to CFS's executionQueue, or to an engine) for a score state.
  *
- * CA, 2026-10-08: *"Shouldn't the new score entry modal be built in such a way that it cleanly
- * understands and integrates with the factory setMatchUpStatus method?"* It should. The mapping lives here, with
+ * The score entry modal is built to understand and integrate cleanly with the factory's `setMatchUpStatus`.
+ * The mapping lives here, with
  * the score state; courthive-components' dialog applies it on Submit, and a host hands the result on as its `outcome`.
  *
  * Every line is a MEASURED difference between the two shapes (2026-10-01 against factory 7.4.0, re-measured

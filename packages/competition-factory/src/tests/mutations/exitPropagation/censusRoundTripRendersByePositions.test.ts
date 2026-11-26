@@ -6,9 +6,9 @@ import { expect, it } from 'vitest';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 /**
- * WHICH BYE GOES ON IS NOT A ROUND-TRIP DIFFERENCE (census R10, 2026-10-18; CA, 2026-09-29).
+ * WHICH BYE GOES ON IS NOT A ROUND-TRIP DIFFERENCE (census R10, 2026-10-18).
  *
- * When two BYEs meet, one goes on, and which seat it is depends on the order they were placed in. CA ruled that this is
+ * When two BYEs meet, one goes on, and which seat it is depends on the order they were placed in. That is
  * not information, and the correction oracle renders a BYE's drawPosition as `BYE`. The round trip read the number, so
  * a probe and its clear that sent the other BYE on reported a residue. The same draw with the other BYE advanced must
  * project the same; the full projection, which still sees the number, is the control.

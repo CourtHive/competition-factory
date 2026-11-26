@@ -5,12 +5,11 @@
  * ## What this guards
  *
  * `matchUpStatusCodes` carried two unrelated tenants: the scoring policy's code vocabulary, and the
- * per-side provenance of a propagated exit. P37 evicted the second one — `sideExitProvenance` is the
+ * per-side provenance of a propagated exit. The second one is evicted — `sideExitProvenance` is the
  * side-KEYED first-class record, and the array is the positional string contract clients consume.
  *
- * CA's statement of the destination, 2026-09-27: *"we want to ultimately get away from dependance on
- * any legacy arrays!"* — meaning no behaviour anywhere derives from this array. The eviction got there
- * for the write path and for every read but one. Nothing stops it growing back, which is what this is.
+ * The destination: no dependence on any legacy array, meaning no behaviour anywhere derives from this array.
+ * The eviction got there for the write path and for every read but one. Nothing stops it growing back, which is what this is.
  *
  * ## Why a FILE allowlist rather than a count or a line list
  *
@@ -47,9 +46,8 @@ const NEEDLE = 'matchUpStatusCodes';
  *   a keyed form nothing downstream has to index. This is the opposite of a dependence: it is what ENDS
  *   one. There should be exactly one such site, and it is `sideStatusCodes.splitStatusCodes`.
  * `DECISION` — engine behaviour derives from the array's contents or shape. **This list reached ZERO on
- * 2026-09-28 and the check below now REFUSES to let it grow again**, which is what makes CA's destination
- * enforceable rather than aspirational: *"we want to ultimately get away from dependance on any legacy
- * arrays!"*
+ * 2026-09-28 and the check below now REFUSES to let it grow again**, which is what makes that destination
+ * enforceable rather than aspirational: no dependence on any legacy array.
  */
 const ALLOWED = {
   // the tenant that stays: the policy's code vocabulary
@@ -106,6 +104,8 @@ const ALLOWED = {
     'PLUMBING — abstains when a client sent the array, so v1 writes it; carries the planned array into the op; decides nothing on it',
   'mutate/matchUps/outcome/plan/planShared.ts':
     'PLUMBING — the clean and scoreless predicates abstain where a matchUp carries codes, so v1 writes it; decide nothing on them',
+  'mutate/matchUps/outcome/plan/teamFinalLine.ts':
+    'WRITE — a newly completed TEAM line receives the fresh empty policy-code array of attemptToModifyScore',
   'mutate/matchUps/outcome/plan/resultOps.ts':
     'PLUMBING — carries the planned array into the result op, as plan.ts did before the split; decides nothing on it',
   'mutate/matchUps/outcome/plan/producedExit.ts':
@@ -241,7 +241,8 @@ if (stale.length) {
  *
  * If you genuinely need to read the array to decide something, this is the conversation to have first: the
  * exit tenant is evicted and `sideExitProvenance` is the side-keyed record. Reclassifying an entry to get
- * past this check re-opens a dependence that took P37, P41 and six refuted candidates to close.
+ * past this check re-opens a dependence that took the exit-tenant eviction, the removal of the legacy fallback in
+ * `modifyMatchUpScore`'s window and six refuted candidates to close.
  */
 const decisions = Object.entries(ALLOWED).filter(([, reason]) => reason.includes('DECISION'));
 if (decisions.length) {

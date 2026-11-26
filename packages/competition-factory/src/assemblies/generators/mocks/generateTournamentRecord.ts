@@ -164,7 +164,7 @@ function buildTournamentRecord(params: GenerateTournamentRecordArgs) {
     drawIds: string[] = [];
 
   // auto-scheduled: the draws' results are applied once the tournament is scheduled, as a real one is played, since the
-  // schedulers never place a completed matchUp (CA 2026-10-23)
+  // schedulers never place a completed matchUp
   const deferredOutcomes: DeferredOutcomes | undefined = schedulingProfile && params?.autoSchedule ? [] : undefined;
   const profilesResult = processAllProfiles({
     params: deferredOutcomes ? { ...params, deferredOutcomes } : params,

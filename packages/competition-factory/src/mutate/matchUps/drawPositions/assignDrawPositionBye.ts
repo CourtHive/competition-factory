@@ -91,7 +91,7 @@ import {
   7. If loserMatchUp is part of different structure... return to step #1
  */
 
-type AssignDrawPositionByeArgs = {
+export type AssignDrawPositionByeArgs = {
   /**
    * Set by a propagation cascade that KNOWS it is placing this BYE.
    *
@@ -560,7 +560,7 @@ function correctResultsAwardedToTheBye({
  * Does NOT include matchUps a BYE later cascades into; those take the caller's decision
  * (see advanceWinner) rather than re-opening the question mid-cascade.
  */
-function byeTargetMatchUps({
+export function byeTargetMatchUps({
   structure,
   matchUps,
   drawPosition,
@@ -711,7 +711,7 @@ function withdrawDisplacedCarry({
  * walkover winner on side 2; a BYE then took `South|2|1`'s side 1 and the arrival stayed on a BYE). Entered with the BYE
  * first, `South|2|1` records nothing on that side.
  */
-function withdrawArrivalsByResult(matchUp: MatchUp): void {
+export function withdrawArrivalsByResult(matchUp: MatchUp): void {
   const provenance = getSideExitProvenance({ matchUp });
   const arrivalSides = ([1, 2] as const).filter((sideNumber) => arrivedByResult(provenance?.[sideNumber]));
   if (!provenance || !arrivalSides.length) return;
@@ -803,7 +803,7 @@ function assignRoundRobinBYE({
  * `{ error }`. The factory no longer mints repeated ids (`UUID`), so only a record built elsewhere
  * reaches this.
  */
-function refuseNonForwardAdvance(
+export function refuseNonForwardAdvance(
   source: HydratedMatchUp | undefined,
   targetMatchUpId: string,
   inContextDrawMatchUps: HydratedMatchUp[],
@@ -1303,7 +1303,7 @@ function advanceWinner({
   // arrives, so the branches below see the convergence (RULE 4). The record used to be here already: when the other
   // feeder's double exit produced onto this matchUp, the carrier's feeder (a single exit, undecided as to who would
   // come through) was stamped presumptively with its status, as though an exit were certain to arrive from it. An
-  // arrival records no status (CA, 2026-10-07; F9), so the presumptive stamp is gone and the exit is written at the
+  // arrival records no status, so the presumptive stamp is gone and the exit is written at the
   // moment it is true, and only there: a carrier passing a BYE into an undecided matchUp is left as it was.
   const convergesOnArrival = stampCarriedExitOnArrival({
     inContextDrawMatchUps,
@@ -1348,7 +1348,7 @@ function advanceWinner({
     return;
   }
 
-  // AN EMPTY POSITION RESOLVES NOTHING. A pending exit is awarded to whoever ARRIVES on its seat (CA 2026-09-20; #5158
+  // AN EMPTY POSITION RESOLVES NOTHING. A pending exit is awarded to whoever ARRIVES on its seat (#5158
   // for the arrival path); a position that holds nobody yet, advanced structurally ahead of a BYE being placed on it,
   // takes its seat and the exit stands, still awarded to that seat. Resolving it advanced the empty position onward as
   // the walkover's winner, where the BYE then landed, while the carrier who met the BYE stayed behind (census w2
@@ -1742,7 +1742,8 @@ function resolvePropagatedExitOnAdvance({
   /**
    * THE POLICY CODE FOLLOWS THE EXITING SIDE — and the exit tenant is not here to be re-sided.
    *
-   * **P37.** This site is `applyPositionToMatchUp`'s twin and it never got that site's narrowing
+   * **The exit tenant's move to `sideExitProvenance`.** This site is `applyPositionToMatchUp`'s twin and it never got
+   * that site's narrowing
    * (#4996). Two things were wrong once the projection stopped being written:
    *
    *  - `find(Boolean)` took the first TRUTHY element, and a provenance-shaped element is an object, so
@@ -1850,7 +1851,7 @@ export function assignFedDrawPositionBye({
  * The exit still standing on a matchUp a position is advanced into past a BYE, which the advance must not overwrite.
  *
  * A CONVERGENCE STANDS. When the matchUp already records an exit on BOTH sides, the position advancing in is a carrier
- * passing a BYE with its exit (a propagated exit meeting a BYE is advanced, CA 2026-09-20), beside an exit produced for
+ * passing a BYE with its exit (a propagated exit meeting a BYE is advanced), beside an exit produced for
  * the other seat: the two collapse and nobody wins (RULE 4; #5161, "an arrival carrying an exit converges, never
  * takes"). Writing TO_BE_PLAYED lost both while provenance still recorded them (census w2 9100283, FRLC 32/30
  * `Consolation|2|3`; de 9301596, DE 16/13 `Backdraw|3|1`: ORIGIN_ON_UNDECIDED_MATCHUP).
@@ -1871,7 +1872,7 @@ function standingExitStatus({ matchUp, advancesNobody }: { matchUp: MatchUp; adv
 /**
  * The side a PARTICIPANT advanced past a BYE takes, when it arrives opposite a single pending exit standing here.
  *
- * A pending exit is awarded to whoever arrives on the side without it (`progressExitStatus` RULE 2; CA 2026-09-20).
+ * A pending exit is awarded to whoever arrives on the side without it (`progressExitStatus` RULE 2).
  * `arrivalIntoProvenanceOnlyExit` reads that award only where the matchUp holds no position yet; here the exiting
  * side already holds one, an empty seat advanced ahead of the exit, and the arrival was written TO_BE_PLAYED over the
  * exit (PROPAGATED_EXIT_LOST). Census 20076731 (DOUBLE_ELIMINATION 8/7, `doubleExitPropagateBye: false`), forward play:

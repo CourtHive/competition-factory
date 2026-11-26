@@ -2,6 +2,7 @@ import { addParticipant, planAddParticipant } from '@Mutate/participants/addPart
 import { captureNotices } from '../notifications/noticeConformance/harness';
 import { indexParticipants } from '@Mutate/participants/participantsIndex';
 import { ADD_PARTICIPANTS, MUTATIONS } from '@Constants/topicConstants';
+import { originalNoticeValue } from '@Global/state/noticePayloadAudit';
 import { afterEach, expect, it } from 'vitest';
 import engine from '@Engines/syncEngine';
 import { setClock } from '@Tools/clock';
@@ -281,7 +282,8 @@ it.each([false, true])('returns the installed canonical values in the submitted 
     $inc: { __v: 1 },
   });
   expect(notices.map((n) => n.topic)).toEqual([ADD_PARTICIPANTS, MUTATIONS]);
-  expect(notices[0].payload.participants[0]).toBe(input);
+  // under NOTICE_PAYLOAD_WRITE_CHECK=1 the payload holds a read-only view of the input; this is a no-op otherwise
+  expect(originalNoticeValue(notices[0].payload.participants[0])).toBe(input);
   expect(input.participantId).toBe('p');
   expect(input.participantName).toBe('Alice Li');
 });
@@ -318,7 +320,8 @@ it('retains the submitted model shape when the destination recasts a hydrated in
       expect(material.toObject()).toEqual({ ...participant.toObject(), participantName: 'ALICE LI' });
     });
     expect(doc.participants[0].participantName).toBe('ALICE LI');
-    expect(notices[0].payload.participants[0]).toBe(participant);
+    // the raw participant behind the payload's read-only view under NOTICE_PAYLOAD_WRITE_CHECK=1
+    expect(originalNoticeValue(notices[0].payload.participants[0])).toBe(participant);
     expect(participant.participantName).toBe('Alice Li');
   }
 });

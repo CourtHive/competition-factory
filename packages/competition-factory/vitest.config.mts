@@ -33,7 +33,7 @@ const isShard = process.argv.some((arg) => arg.startsWith('--shard'));
 const slowSuite = process.env.FACTORY_BACKEND || process.env.OUTCOME_PIPELINE === 'differential';
 const testTimeout = slowSuite ? 180_000 : 30_000;
 
-// TEST ISOLATION (CA, 2026-11-05). By default vitest gives every test file a fresh module graph, so each of ~2,100 files
+// TEST ISOLATION (2026-11-05). By default vitest gives every test file a fresh module graph, so each of ~2,100 files
 // re-imports and re-instruments the engine: import was a third of a CI coverage shard. On PRs into dev
 // (FACTORY_MATRIX_TIER=pr) the `shared` project lets a worker keep its modules across files, which halved the suite.
 // Files share module state then, so resetGlobalState.ts restores the engine's global state before every file, and a
@@ -65,9 +65,16 @@ const isolatedFiles = [
   ...ISOLATED_FILES,
 ];
 const shareModules = process.env.FACTORY_MATRIX_TIER === 'pr';
+
+// The read-only notice payload detector (src/global/state/noticePayloadAudit.ts). It exists only where
+// `__NOTICE_PAYLOAD_DIAGNOSTICS__` is true: here under NOTICE_PAYLOAD_WRITE_CHECK=1, never in a published bundle
+// (rollup.config.mjs). Off, each guard is dead code and the suite runs the shipped code paths. On, its setup file
+// turns the detector on for every test, and a write through any notice or callback payload fails the test.
+const auditNoticeWrites = process.env.NOTICE_PAYLOAD_WRITE_CHECK === '1';
 const testExclude = [...configDefaults.exclude, '**/scratch/**'];
 
 export default defineConfig({
+  define: { __NOTICE_PAYLOAD_DIAGNOSTICS__: JSON.stringify(auditNoticeWrites) },
   test: {
     testTimeout, // 30 seconds for slow tests; 180 under a second implementation or the differential (above)
     environment: 'node',
@@ -102,6 +109,7 @@ export default defineConfig({
     // the `legacyMode()` helper; behavioral specs cover all modes via `writeModeMatrix`.
     // setSchemaWriteModeLegacy.ts is retained for the legacyMode() helper.
     setupFiles: [
+      ...(auditNoticeWrites ? ['./src/tests/testHarness/noticePayloadWriteCheck.ts'] : []),
       './src/tests/testHarness/resetGlobalState.ts',
       './src/tests/testHarness/setSchemaWriteModeNative.ts',
       './src/tests/testHarness/seedMathRandom.ts',
@@ -136,6 +144,10 @@ export default defineConfig({
         'src/mutate/score/staticScoreChange/**',
         'src/mutate/matchUps/score/history/**',
         'src/tests/testHarness/**',
+        // the read-only notice payload detector: compiled out of every published bundle (rollup.config.mjs), and each
+        // guard that reaches it carries a v8 ignore hint, so a flag-off run measures exactly the shipped code
+        'src/global/state/noticePayloadAudit.ts',
+        'src/global/state/compileTimeConstants.d.ts',
         // the frozen v1 standings engine: an oracle for the differential fuzz, not product code
         'src/tests/standings/v1Reference/**',
         // notice-conformance harness is test infrastructure (like testHarness/**),
@@ -149,12 +161,12 @@ export default defineConfig({
         'src/assemblies/governors/**',
         'src/assemblies/tools/**',
         'src/fixtures/data/**',
-        // The v2 outcome pipeline is measured wherever it runs (CA, 2026-10-02: measure it where it runs). Since
+        // The v2 outcome pipeline is measured wherever it runs. Since
         // the flip (Path A step 3) it is the default, so an unset OUTCOME_PIPELINE, `v2` and `differential` all
         // measure it, and `verify.yml` runs coverage under v2 into dev and under the differential on the path to a
         // release. Only a run on the v1 fallback (OUTCOME_PIPELINE=v1) leaves it out, where it is barely executed.
         // v1's code stays in the measured set on every run: v2 hands every call it does not own to v1 whole, so
-        // that code still executes under v2; nothing v1-only is excluded (a decision for CA, not this file).
+        // that code still executes under v2; nothing v1-only is excluded (a project decision, not this file's).
         ...(process.env.OUTCOME_PIPELINE === 'v1' ? ['src/mutate/matchUps/outcome/**'] : []),
       ],
       provider: 'v8',

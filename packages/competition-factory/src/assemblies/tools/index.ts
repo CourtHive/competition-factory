@@ -37,7 +37,7 @@ export { inferDrawLinks } from '@Query/drawDefinition/inferDrawLinks';
 export { positionTargets } from '@Query/matchUp/positionTargets';
 // How a link TRAVERSES: by finishing position (out of a round robin, labelled POSITION or WINNER) or by round (out of
 // an elimination structure). A client reading `drawDefinition.links` asks here instead of comparing `linkType`, so it
-// reads a round robin's WINNER link as the engine does (CA, 2026-10-23). Positional arguments: (link, drawDefinition).
+// reads a round robin's WINNER link as the engine does. Positional arguments: (link, drawDefinition).
 export { traversesByFinishingPosition, traversesByRound, isRoundWinnerLink } from '@Helpers/drawTopology/linkTraversal';
 // Assemble a tournamentRecord from partial/third-party sources. Moved here from a TMX dev utility
 // so there is ONE versioned, tested copy: it was consumed by seven call sites across four repos
@@ -101,12 +101,16 @@ export {
   unique,
 } from '@Tools/arrays';
 
-// Stateless positional functions by domain (CA 2026-11-07): their home, rather than a governor that mounts them on
-// engines which call every method with one params object. Each module says what its domain holds.
+// Stateless positional functions by domain: their home, rather than a governor that mounts them on
+// engines which call every method with one params object. Each module says what its domain holds. The confirmed
+// stateless governor queries (params objects, no state) join them by domain; their engine routes are unchanged in 7.x.
+export * as officiating from './officiating';
+export * as sanctioning from './sanctioning';
 export * as publishing from './publishing';
 export * as rankings from './rankings';
 export * as matchUps from './matchUps';
 export * as formats from './formats';
+export * as seasons from './seasons';
 export * as scoring from './scoring';
 export * as entries from './entries';
 export * as draws from './draws';

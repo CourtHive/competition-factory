@@ -7,8 +7,8 @@ import { ALTERNATE, DIRECT_ACCEPTANCE, WILDCARD, WITHDRAWN } from '@Constants/en
 import { MAIN, QUALIFYING, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 
 /**
- * getDrawFit — whether an event's entries fit a draw, structure by structure, without making it (CA, 2026-11-08: the
- * dry-run fit query for the topology's Fit mode and the Format Wizard).
+ * getDrawFit — whether an event's entries fit a draw, structure by structure, without making it: the
+ * dry-run fit query for the topology's Fit mode and the Format Wizard.
  *
  * The counts are the draw generator's own placements: the query runs it and attaches nothing.
  */

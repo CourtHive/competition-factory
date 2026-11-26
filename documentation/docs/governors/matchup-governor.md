@@ -12,6 +12,12 @@ Some methods on this page are candidates for removal from production engine expo
 import { matchUpGovernor } from 'tods-competition-factory';
 ```
 
+:::info Also on tools
+
+These matchUpGovernor queries read no tournament state, so each is also on `tools`, the same function, called with the same params object: `tools.matchUps.analyzeMatchUp`, `tools.matchUps.calculateMatchUpMargin`, `tools.matchUps.filterMatchUps`, `tools.matchUps.getCheckedInParticipantIds`, `tools.matchUps.getDualIssues`, `tools.matchUps.getHomeParticipantId`, `tools.matchUps.getMatchUpCheckInState`, `tools.matchUps.getMatchUpType`, `tools.matchUps.getMatchUpUpset`, `tools.matchUps.getRoundMatchUps`, `tools.matchUps.participantScheduledMatchUps`, `tools.formats.calculateWinCriteria`. Their engine routes are unchanged in 7.x; see [tools by domain](/docs/tools/tools-overview#domains-stateless-functions-by-subject).
+
+:::
+
 ## abandonTournamentMatchUps
 
 Bulk "end the tournament": sets every still-playable matchUp to `ABANDONED`. Intended for tournaments whose draws cannot be completed (for example, rain) — rather than leaving unplayed matchUps as `TO_BE_PLAYED`, a director marks them `ABANDONED` in a single call.
@@ -207,7 +213,9 @@ engine.bulkMatchUpStatusUpdate({
 
 The options mean what they mean on `setMatchUpStatus`, with the same precedence for the three propagation flags: an applied scoring policy that speaks on a flag wins over the call, and the call decides only where the policy is silent.
 
-Every outcome is located before any is applied: its tournament, event, draw (which must belong to that event) and matchUp. If one is missing or not found, the call is refused and nothing is written. The error names what is missing (`MISSING_TOURNAMENT_RECORD`, `MISSING_EVENT`, `EVENT_NOT_FOUND`, `MISSING_DRAW_ID`, `DRAW_DEFINITION_NOT_FOUND`, `MISSING_MATCHUP_ID` or `MATCHUP_NOT_FOUND`), and `context.outcomeIndex` says which outcome. Outcomes are then applied in the order given. If `setMatchUpStatus` refuses one of them, the call returns that error and the outcomes before it stay written; pass `rollbackOnError: true` to make the whole call all or nothing.
+Each outcome is one unit, applied whole or not at all. Outcomes are processed in the order given, each against the record as the outcomes before it left it: its tournament, event, draw (which must belong to that event) and matchUp are located, its result is planned, and only then is it written. An outcome that is refused writes nothing, and the outcomes before and after it are still applied. The result has one entry per outcome in `results`, in order: `{ outcomeIndex, tournamentId, eventId, drawId, matchUpId, success, warnings? }` for an outcome written, or the same identifiers with its `error` for one refused (`MISSING_TOURNAMENT_RECORD`, `MISSING_EVENT`, `EVENT_NOT_FOUND`, `MISSING_DRAW_ID`, `DRAW_DEFINITION_NOT_FOUND`, `MISSING_MATCHUP_ID`, `MATCHUP_NOT_FOUND`, or what `setMatchUpStatus` refuses it with). If any outcome is refused, the call also returns the first refusal as its own `error`, with `context.outcomeIndex` naming it, and `committed: true` when some outcome was written; the engine then announces what was written. A malformed `outcomes` (missing or not an array) is refused before any outcome is looked at. Pass `rollbackOnError: true` to make the whole call all or nothing.
+
+Before this release the call located every outcome first and refused the whole call when one named something not there; an outcome refused by `setMatchUpStatus` stopped the call, with the outcomes before it written.
 
 ---
 
@@ -923,6 +931,8 @@ engine.resetMatchUpLineUps({
 
 Will remove all results (scores) and optionally all participant assignments from specified matchUps (via matchUpIds or roundNumbers).
 
+Each matchUp is reset as one unit: its scorecard and, with `removeAssignments`, its line-ups, its blank outcome with what that propagates, and its side assignments. A unit that is refused at any step leaves that matchUp exactly as it was. MatchUps are reset in order and every one is attempted. The result has one entry per matchUp in `results`: `{ index, matchUpId, success }` or `{ index, matchUpId, error }` (an unknown ID is `MATCHUP_NOT_FOUND`). If any is refused, the call returns the first refusal as its own `error`; the matchUps reset before and after it stay reset, and the result then carries `committed: true` so the engine announces them.
+
 ```js
 const result = engine.resetAdHocMatchUps({
   removeAssignments, // optional; remove all assigned participants
@@ -1191,17 +1201,17 @@ Under `SET3-S:6/TB7` this refuses `3-7 6-4 6-4` (a 7-3 set does not exist with a
 at six) and `4-2 2-6 2-6` (the first set never finished), both of which were previously
 recorded as `COMPLETED`. A refusal returns `INVALID_SCORE` with an `info` naming the set,
 e.g. `Set 1: …`, and the matchUp is left unchanged. A score with no resolvable `matchUpFormat` is refused with `ERR_MISSING_MATCHUP_FORMAT`
-(CA, 2026-10-02): every rule above is a question about the format. A TEAM line's format is its
+(since 2026-10-02): every rule above is a question about the format. A TEAM line's format is its
 collection definition's, and is resolved from there.
 
 **To record a score the format cannot produce** — an import, a migration, a correction to
 history, an abandoned line — pass `disableScoreValidation: true`. It skips both questions.
 
-Three tiebreak records are settled (CA, 2026-10-02):
+Three tiebreak records are settled:
 
 - **`7-6` with no tiebreak points is a finished set.** It is recorded, and `validateScore` names
   the set in a `TIEBREAK_POINTS_NOT_RECORDED` warning. Since 7.33.0 the analysis agrees with the
-  record (CA, 2026-11-07): `checkSetIsComplete` calls the tiebreak games score finished with no
+  record: `checkSetIsComplete` calls the tiebreak games score finished with no
   points, `getSetWinningSide` and `analyzeSet` name the games leader, and a score-entry interface
   delegating to them can submit the score the engine records. `6-6` is a tiebreak still being
   played and names nobody; points on one side only, or a pair the set winner did not win, are
@@ -1211,7 +1221,7 @@ Three tiebreak records are settled (CA, 2026-10-02):
 - **Impossible tiebreak points are refused**, such as `7-6(10-7)` with a tiebreak to seven. An
   ingestion pipeline can call `scoreGovernor.repairScore` first, which drops such points and keeps
   `7-6`.
-- **`0` and `0` in the tiebreak-point fields are not recorded points** (CA, 2026-11-04). No
+- **`0` and `0` in the tiebreak-point fields are not recorded points**. No
   tiebreak finishes 0-0, so `setMatchUpStatus` drops the pair before validating and storing the
   set. A `6-7` sent with `0`/`0` is recorded as a bare `7-6`, with the
   `TIEBREAK_POINTS_NOT_RECORDED` warning, and its score string reads `6-7`, not `6-7(0)`. Since

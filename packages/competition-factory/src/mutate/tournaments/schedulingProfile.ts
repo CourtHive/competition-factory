@@ -1,6 +1,6 @@
 import { getUpdatedSchedulingProfile } from '@Query/matchUps/scheduling/getUpdatedSchedulingProfile';
 import { validateSchedulingProfile } from '@Query/scheduling/validateSchedulingProfile';
-import { setGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
+import { planGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
 import { getCompetitionDateRange } from '@Query/tournaments/getCompetitionDateRange';
 import { getEventIdsAndDrawIds } from '@Query/tournaments/getEventIdsAndDrawIds';
 import { getSchedulingProfile } from '@Query/scheduling/getSchedulingProfile';
@@ -71,11 +71,32 @@ type SetSchedulingProfileArgs = {
   tournamentRecord?: Tournament;
   schedulingProfile?: any[];
 };
-export function setSchedulingProfile({
+type PlanSchedulingProfileArgs = SetSchedulingProfileArgs & {
+  /** the array the commit stores and announces, when it is edited in place to equal `schedulingProfile` first */
+  storedProfile?: unknown[];
+  /** the records written, when they are not the records validated (a plan validates against a proposed view) */
+  targets?: TournamentRecords;
+};
+export function setSchedulingProfile(params: SetSchedulingProfileArgs) {
+  const plan = planSchedulingProfile(params);
+  if (!('commit' in plan)) return plan;
+  plan.commit();
+  return plan.result;
+}
+
+/**
+ * The profile is validated, and its warning found, before anything is written: the commit stores the profile on every
+ * target record and announces each, in record order, with no lookup or validation left in it. A caller that edits the
+ * stored profile in place validates the proposed copy and names the stored array as `storedProfile`, which is what the
+ * records and the notices then hold.
+ */
+export function planSchedulingProfile({
   tournamentRecords,
   tournamentRecord,
   schedulingProfile,
-}: SetSchedulingProfileArgs) {
+  storedProfile,
+  targets: written,
+}: PlanSchedulingProfileArgs) {
   const profileValidity = validateSchedulingProfile({
     tournamentRecords,
     schedulingProfile,
@@ -86,27 +107,34 @@ export function setSchedulingProfile({
   // CODES: apply to every tournamentRecord (discover semantics) using the
   // group-leaf helper so writes land on `scheduling.profile` and / or the
   // legacy `schedulingProfile` extension based on schemaWriteMode.
-  const targets = tournamentRecord ? [tournamentRecord] : Object.values(tournamentRecords ?? {});
-  for (const target of targets) {
-    setGroupLeafOrExtension({
+  const targets = tournamentRecord ? [tournamentRecord] : Object.values(written ?? tournamentRecords ?? {});
+  const writes = targets.map((target) =>
+    planGroupLeafOrExtension({
       element: target,
       groupAttribute: 'scheduling',
       leafAttribute: 'profile',
       name: SCHEDULING_PROFILE,
-      value: schedulingProfile,
-    });
-    // the scheduling profile (an extension) previously changed silently — cover it so
-    // consumers (read-model projection) can react to the scheduling plan changing.
-    addNotice({
-      topic: MODIFY_SCHEDULING_PROFILE,
-      payload: { tournamentId: target.tournamentId, schedulingProfile },
-      key: target.tournamentId,
-    });
-  }
+      value: storedProfile ?? schedulingProfile,
+    }),
+  );
 
   // saved regardless: a refusal would block legitimate saves (see SCHEDULING_PROFILE_DATES_OUT_OF_RANGE)
   const warning = profileDatesWarning({ tournamentRecords, schedulingProfile });
-  return warning ? { ...SUCCESS, warnings: [warning] } : { ...SUCCESS };
+  const result = warning ? { ...SUCCESS, warnings: [warning] } : { ...SUCCESS };
+
+  const commit = () => {
+    targets.forEach((target, index) => {
+      writes[index]();
+      // the scheduling profile (an extension) previously changed silently — cover it so
+      // consumers (read-model projection) can react to the scheduling plan changing.
+      addNotice({
+        topic: MODIFY_SCHEDULING_PROFILE,
+        payload: { tournamentId: target.tournamentId, schedulingProfile: storedProfile ?? schedulingProfile },
+        key: target.tournamentId,
+      });
+    });
+  };
+  return { result, commit };
 }
 
 export function checkAndUpdateSchedulingProfile(params) {

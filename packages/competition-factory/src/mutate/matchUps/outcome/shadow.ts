@@ -20,6 +20,7 @@ import {
   MODIFY_POSITION_ASSIGNMENTS,
   UPDATE_INCONTEXT_MATCHUP,
 } from '@Constants/topicConstants';
+import { originalNoticeValue } from '@Global/state/noticePayloadAudit';
 
 /**
  * The outcome pipeline, v2: the SHADOW APPLY (executor plan § 6 S1; F7 (a)). v2 writes nothing. In `differential`, a
@@ -28,7 +29,7 @@ import {
  * state.
  *
  * STAMPS ARE COMPARED BY VALUE. v1 stamps each entity once per call, and only the structure holding the matchUp, as
- * v2 does (F2 (i), CA 2026-10-19).
+ * v2 does.
  */
 
 type Json = Record<string, unknown>;
@@ -252,6 +253,8 @@ export function prepareTemporalShadow(args: BuildViewArgs, phases: TemporalPhase
   const forward = new Map<object, object>();
   const seen = new Set<object>();
   const seed = (value: unknown) => {
+    /* v8 ignore next -- @preserve: compiled out of every published bundle */
+    if (__NOTICE_PAYLOAD_DIAGNOSTICS__) value = originalNoticeValue(value);
     if (!value || (typeof value !== 'object' && typeof value !== 'function') || seen.has(value)) return;
     seen.add(value);
     const copy = initial.copies.get(value);
@@ -483,6 +486,9 @@ function cloneTemporal<T>(root: T) {
   const copies = new Map<object, object>();
   const originals = new WeakMap<object, object>();
   const clone = (value: unknown): unknown => {
+    // The private oracle compares stored aliases with payloads a forwarding audit provider retained.
+    /* v8 ignore next -- @preserve: compiled out of every published bundle */
+    if (__NOTICE_PAYLOAD_DIAGNOSTICS__) value = originalNoticeValue(value);
     if (!value || (typeof value !== 'object' && typeof value !== 'function')) return value;
     if (copies.has(value)) return copies.get(value);
     if (typeof value === 'function') {

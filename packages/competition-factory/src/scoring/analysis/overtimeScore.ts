@@ -135,7 +135,7 @@ function toScoredSet(set: StaticSet, index: number, open: boolean): ScoredSet {
   };
 }
 
-/** a shootout decider's tally must be one a shootout can end on (Ruling 3) */
+/** a shootout decider's tally must be one a shootout can end on */
 function shootoutViolation(rule: MatchRule, sets: ScoredSet[]): string | undefined {
   const { overtime, final } = rule;
   if (final?.kind !== 'shootout' || !overtime || overtime.count === 'unlimited') return undefined;

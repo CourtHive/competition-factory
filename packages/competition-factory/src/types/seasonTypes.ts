@@ -17,9 +17,6 @@ import type {
  * `CompetitionRef` narrows to an event or a draw for exactly that reason. The factory defines and validates these
  * documents and answers questions about them with pure functions; it stores nothing. Whichever service declares a
  * season stores it.
- *
- * Design: Mentat `planning/RECURRING_SEASON_STRUCTURE_RESEARCH.md` (shape A) and
- * `planning/LEAGUE_MANAGEMENT_REQUIREMENTS_SYNTHESIS.md` (R10 advancement).
  */
 
 export type SeasonStatus = 'DECLARED' | 'ACTIVE' | 'CLOSED' | 'ABANDONED';

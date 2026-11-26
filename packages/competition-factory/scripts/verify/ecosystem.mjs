@@ -85,7 +85,7 @@ for (const c of CONSUMERS) {
     // Capture stderr too — jest writes its "Tests: X passed" summary to
     // stderr, vitest writes to stdout. Without 2>&1 we miss the count for
     // every jest-based repo (NestJS apps).
-    // a consumer's whole suite: a deadline long enough for the slowest, so a hang fails it instead of stalling (P62)
+    // a consumer's whole suite: a deadline long enough for the slowest, so a hang fails it instead of stalling
     const out = execSync(`pnpm ${c.script} 2>&1`, {
       cwd: dir,
       encoding: 'utf8',

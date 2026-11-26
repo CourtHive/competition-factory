@@ -11,6 +11,8 @@ This document is for **consumers** of the factory (TMX, courthive-components, th
 tools). It catalogues the breaking changes in 7.0.0 and the exact steps to adopt them. For the
 feature tour and the full list of 7.0.0 additions, see [What's New in 7.0.0](./whats-new-7.0.0).
 
+Throughout 7.x, notice and callback payloads are read-only. Move writes in providers or subscribers to an engine mutation, or keep application-only data separately. See [Subscriptions](./engines/subscriptions.md).
+
 ## Breaking changes at a glance
 
 | Change                                                                                            | Who is affected                                                                | Action required   |
@@ -1519,7 +1521,7 @@ offline desk still records who was at it.
 
 _Shipped in `44042278e`, `eba5d813e`, `78b77d88c` and `d86e2f469` on the exit-propagation branch._
 
-**CA's ruling, certified in TMX 2026-09-20:** _"An advancing participant encountering a BYE should
+**The rule, certified in TMX 2026-09-20:** _"An advancing participant encountering a BYE should
 always be advanced; a propagated exit encountering a BYE should be advanced. In both cases the BYE
 remains a BYE"_ — _"the `matchUpStatus: BYE` does not change."_
 

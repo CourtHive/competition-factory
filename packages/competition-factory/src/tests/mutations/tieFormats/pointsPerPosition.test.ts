@@ -207,7 +207,7 @@ describe('points per position: what validation refuses', () => {
     expect(result.error).toEqual(INVALID_TIE_FORMAT);
   });
 
-  // CA 2026-10-31: "refuse on save, but not on calculation". A save (event, draw, modification) enforces the
+  // Refuse on save, but not on calculation. A save (event, draw, modification) enforces the
   // value rules; scoring a tieFormat already stored in a record does not, so an older record still scores.
   const NEGATIVE_LINE = [
     { collectionPosition: 1, matchUpValue: -5 },

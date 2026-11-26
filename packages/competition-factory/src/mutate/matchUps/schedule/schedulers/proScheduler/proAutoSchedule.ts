@@ -26,7 +26,7 @@ type ProAutoScheduleArgs = {
   /** false: the caller reports overnight rest itself, once for all its dates (the grid) */
   overnightRestWarnings?: boolean;
   /**
-   * @deprecated ignored: completed matchUps are never scheduled (CA 2026-10-23); the write skips one and it is reported
+   * @deprecated ignored: completed matchUps are never scheduled; the write skips one and it is reported
    * not scheduled. Removed in 8.0.0.
    */
   scheduleCompletedMatchUps?: boolean;

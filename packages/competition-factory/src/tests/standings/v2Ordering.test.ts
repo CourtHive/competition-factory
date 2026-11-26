@@ -8,7 +8,7 @@ import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 /**
- * The v2 ordering features of S3b (Mentat `planning/STANDINGS_ENGINE_SPEC.md` § 5.4): split modes, size and `when`
+ * The v2 ordering features of S3b: split modes, size and `when`
  * gates, terminal steps. Every expected order is worked by hand from the results below.
  */
 

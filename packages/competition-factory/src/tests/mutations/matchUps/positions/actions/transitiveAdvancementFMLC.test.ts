@@ -122,7 +122,7 @@ it('can advance participants when double BYEs are created removing 3-4', () => {
     [3, 4],
     [5, 6],
     [7, 8],
-    [1, 4], // seat 4 advanced over seat 3's BYE and keeps that advancement on becoming a BYE (P46)
+    [1, 4], // seat 4 advanced over seat 3's BYE and keeps that advancement on becoming a BYE
     [8],
     [1], // drawPosition 4 is now a BYE, advancing 1
   ]);
@@ -140,7 +140,7 @@ it('can advance participants when double BYEs are created removing 3-4', () => {
   expect(filteredOrderedPairs).toEqual([
     [3, 4], // 3 and 4 are BYEs
     [5, 6], // 6 is a BYE
-    [1, 4], // 1 is BYE-advanced, 4 is BYE and kept its advancement over 3's BYE (P46)
+    [1, 4], // 1 is BYE-advanced, 4 is BYE and kept its advancement over 3's BYE
     [2, 5], // 5 is BYE-advanced
     [1], // 1 is BYE advanced by 4 which is a BYE
   ]);
@@ -232,7 +232,7 @@ it('can advance participants when double BYEs are created removing 5-6', () => {
     [5, 6],
     [7, 8],
     [1],
-    [6, 8], // seat 6 advanced over seat 5's BYE and keeps that advancement on becoming a BYE (P46)
+    [6, 8], // seat 6 advanced over seat 5's BYE and keeps that advancement on becoming a BYE
     [8], // drawPosition 6 is now a BYE, advancing 8
   ]);
 
@@ -249,7 +249,7 @@ it('can advance participants when double BYEs are created removing 5-6', () => {
     [3, 4], // 3 is a BYE; 4 is unassigned
     [5, 6], // 5, 6 are BYEs
     [1, 4], // 4 is BYE-advanced; 1 is unassigned
-    [2, 5], // 2 is a BYE; 5 is BYE-advanced and kept its advancement over 6's BYE (P46)
+    [2, 5], // 2 is a BYE; 5 is BYE-advanced and kept its advancement over 6's BYE
     [2], // 2 is BYE advanced by 5 which is a BYE
   ]);
   const consolationStructureAssignments: any = structureAssignedDrawPositions({
@@ -326,7 +326,7 @@ it('does not remove CONSOLATION BYE if at least one source position is a BYE', (
   ({ filteredOrderedPairs } = getOrderedDrawPositionPairs({
     structureId: consolationStructure.structureId,
   }));
-  // consolation seat 4 advanced over seat 3's BYE and keeps that advancement on becoming a BYE (P46)
+  // consolation seat 4 advanced over seat 3's BYE and keeps that advancement on becoming a BYE
   expect(filteredOrderedPairs).toEqual([[3, 4], [5, 6], [1, 4], [2, 5], [1]]);
 
   // ACTION: remove draw position do NOT replace with BYE
@@ -340,7 +340,7 @@ it('does not remove CONSOLATION BYE if at least one source position is a BYE', (
     structureId: mainStructure.structureId,
   }));
   // seat 4 is now EMPTY beside seat 3's BYE; the generated state of such a seat is advanced, and it
-  // stays advanced (P46). Seat 1's advancement over 4 goes: 4 is no longer a BYE.
+  // stays advanced. Seat 1's advancement over 4 goes: 4 is no longer a BYE.
   expect(filteredOrderedPairs.filter((p) => p?.length)).toEqual([[1, 2], [3, 4], [5, 6], [7, 8], [1, 4], [8]]);
 
   ({ filteredOrderedPairs } = getOrderedDrawPositionPairs({

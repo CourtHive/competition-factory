@@ -34,7 +34,7 @@ it('generates appropriate sourceMatchUpStatuses in sideExitProvenance', () => {
   let { matchUps } = tournamentEngine.allTournamentMatchUps();
   let matchUp = matchUps.find(({ roundNumber }) => roundNumber === 2);
 
-  // P37. Each side's ORIGIN, read from the side-keyed record rather than from the legacy array's
+  // Each side's ORIGIN, read from the side-keyed record rather than from the legacy array's
   // positional `previousMatchUpStatus`. The facts are the same and the side is now the key.
   expect(matchUp.sideExitProvenance?.[1]?.previousMatchUpStatus).toEqual(DOUBLE_WALKOVER);
   expect(matchUp.sideExitProvenance?.[2]?.previousMatchUpStatus).toEqual(COMPLETED);
@@ -58,7 +58,7 @@ it('generates appropriate sourceMatchUpStatuses in sideExitProvenance', () => {
   matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
   matchUp = matchUps.find(({ roundNumber }) => roundNumber === 2);
 
-  // P37, AND A REAL DIFFERENCE, recorded rather than smoothed over. The legacy array reads
+  // A REAL DIFFERENCE, recorded rather than smoothed over. The legacy array reads
   // `['DOUBLE_WALKOVER', 'TO_BE_PLAYED']` here: side 2's source was un-scored back to TO_BE_PLAYED and
   // the array stores that as though it were an origin. Provenance refuses to —
   // `updateMatchUpStatusCodes` records nothing for an UNDECIDED source, because *"provenance can never

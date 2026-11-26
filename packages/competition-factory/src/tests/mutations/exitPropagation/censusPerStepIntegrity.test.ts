@@ -10,7 +10,7 @@ import fs from 'fs';
  * PER-STEP DRAW INTEGRITY over a frozen census window. INERT unless `PER_STEP_INTEGRITY=1`.
  *
  *   PER_STEP_INTEGRITY=1 TZ=UTC \
- *     SCHEDULES_IN=../Mentat/fixtures/exit-propagation-census/sched-w2.jsonl \
+ *     SCHEDULES_IN=path/to/sched-w2.jsonl \
  *     OUT=/tmp/per-step-w2.jsonl \
  *     npx vitest run src/tests/mutations/exitPropagation/censusPerStepIntegrity.test.ts
  *
@@ -20,25 +20,24 @@ import fs from 'fs';
  *
  * `replay` calls `checkIntegrity` **once, after the whole schedule** (`sweep.ts`). So an
  * inconsistency that appears at step 5 and is overwritten by step 9 is invisible to the census: the
- * seed is reported as clean, and it IS clean at the end. That blind spot is punch-list **P28**, and
- * P28 also records why the obvious fix is not allowed — *"making it per-step would re-baseline the
- * census"*, which would invalidate every number in
- * `Mentat/fixtures/exit-propagation-census/README.md` and every A/B taken against them.
+ * seed is reported as clean, and it IS clean at the end. That blind spot is known, and so is
+ * why the obvious fix is not allowed — *"making it per-step would re-baseline the
+ * census"*, which would invalidate every recorded census number and every A/B taken against them.
  *
  * This instrument therefore reads the same frozen bytes and replays them the same way, but reports
  * a DIFFERENT measurement alongside the census rather than inside it. The census keeps its baseline;
  * this answers the question the census structurally cannot.
  *
- * ## What it is for: **P29**
+ * ## What it is for: a produced WALKOVER awarded to the side that CARRIES the exit
  *
- * P29 is *a produced WALKOVER is awarded to the side that CARRIES the exit*. Its cited reproduction
+ * The defect is *a produced WALKOVER is awarded to the side that CARRIES the exit*. Its cited reproduction
  * is seed **9100426** on `sched-w2` with the flag ON, where `Consolation|4|1` becomes `WALKOVER ws=2`
  * at step 5 — correct — and `ws=1` at step 9, which awards the match to the side whose provenance
  * says it exited. #4988 fixed a different mechanism (the side was mis-identified at the moment of
- * writing); this one is a LATER FLIP and belongs to winner-change progression (**P18**, **P3**).
+ * writing); this one is a LATER FLIP and belongs to winner-change progression.
  *
  * A flip like that survives to the end only if nothing overwrites it. When something does, the
- * census sees nothing — which is exactly why P29's own reproduction could not be confirmed from
+ * census sees nothing — which is exactly why that defect's own reproduction could not be confirmed from
  * census output.
  *
  * ## Output
@@ -47,7 +46,7 @@ import fs from 'fs';
  * per-seed record saying whether the last step was clean. Read together they separate:
  *
  *  - **TRANSIENT** — findings appear mid-schedule and the final state is clean. Invisible to the
- *    census. This is the class P29 lives in.
+ *    census. This is the class that defect lives in.
  *  - **PERSISTENT** — findings still present at the last step. The census sees these already.
  *
  * Controls, asserted rather than printed: the window must yield scenarios, and those scenarios must

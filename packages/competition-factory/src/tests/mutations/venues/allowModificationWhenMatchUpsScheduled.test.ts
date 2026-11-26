@@ -1,4 +1,4 @@
-import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
+import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Tests/fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
 import { SCHEDULED_MATCHUPS } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
 import mocksEngine from '@Assemblies/engines/mock';

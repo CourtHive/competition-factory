@@ -213,7 +213,7 @@
       "kind": "error",
       "code": "UNPARSEABLE_FORMAT"
     },
-    "note": "§ 2 rule 2, § 4: a closed lenient reading (CA 2026-10-02); there is no trimming"
+    "note": "§ 2 rule 2, § 4: a closed lenient reading; there is no trimming"
   },
   {
     "caseId": "grammar.parse.leading-space.v1",
@@ -453,7 +453,7 @@
       "kind": "error",
       "code": "UNPARSEABLE_FORMAT"
     },
-    "note": "§ 3.2 rule 3: S, G, F, M (v1 used -G:TN, now an equivalent spelling that drops away, CA 2026-10-25)"
+    "note": "§ 3.2 rule 3: S, G, F, M (v1 used -G:TN, now an equivalent spelling that drops away)"
   },
   {
     "caseId": "grammar.parse.match-section-first.v1",
@@ -498,7 +498,7 @@
         }
       }
     },
-    "note": "§ 3.2 rule 4: exactly N on every root and every kind of set (CA 2026-10-25)"
+    "note": "§ 3.2 rule 4: exactly N on every root and every kind of set"
   },
   {
     "caseId": "grammar.parse.combined-total-best-of-three.v1",
@@ -1127,7 +1127,7 @@
       "kind": "value",
       "value": false
     },
-    "note": "§ 6 rule 1 (CA 2026-10-18)"
+    "note": "§ 6 rule 1"
   },
   {
     "caseId": "grammar.valid.short-set-below-s-less-one.v1",
@@ -1163,7 +1163,7 @@
       "kind": "value",
       "value": false
     },
-    "note": "§ 6 rule 2 (CA 2026-10-18)"
+    "note": "§ 6 rule 2"
   },
   {
     "caseId": "grammar.valid.aggregate-standard-final.v1",
@@ -1364,7 +1364,7 @@
       "kind": "value",
       "value": "SET3X-S:6/TB7"
     },
-    "note": "§ 7: exactly N on a standard set is written (CA 2026-10-25)"
+    "note": "§ 7: exactly N on a standard set is written"
   },
   {
     "caseId": "grammar.stringify.no-count.v1",
@@ -1452,7 +1452,7 @@
       "kind": "error",
       "code": "UNPARSEABLE_FORMAT"
     },
-    "note": "§ 3.4 rule 4: a modifier is upper-case letters (CA 2026-10-25); @rally scored side-out"
+    "note": "§ 3.4 rule 4: a modifier is upper-case letters; @rally scored side-out"
   },
   {
     "caseId": "grammar.parse.lower-case-timed-modifier.v1",
@@ -1464,7 +1464,7 @@
       "kind": "error",
       "code": "UNPARSEABLE_FORMAT"
     },
-    "note": "§ 3.4 rule 4 (CA 2026-10-25)"
+    "note": "§ 3.4 rule 4"
   },
   {
     "caseId": "grammar.parse.modifier-not-letters.v1",
@@ -1476,7 +1476,7 @@
       "kind": "error",
       "code": "UNPARSEABLE_FORMAT"
     },
-    "note": "§ 3.4 rule 4 (CA 2026-10-25)"
+    "note": "§ 3.4 rule 4"
   },
   {
     "caseId": "grammar.parse.modifier-with-a-digit.v1",
@@ -1488,7 +1488,7 @@
       "kind": "error",
       "code": "UNPARSEABLE_FORMAT"
     },
-    "note": "§ 3.4 rule 4 (CA 2026-10-25)"
+    "note": "§ 3.4 rule 4"
   },
   {
     "caseId": "grammar.parse.unknown-modifier-kept.v1",
@@ -1526,7 +1526,7 @@
         }
       }
     },
-    "note": "§ 4, § 5: an equivalent spelling parses to its canonical form's object (CA 2026-10-25)"
+    "note": "§ 4, § 5: an equivalent spelling parses to its canonical form's object"
   },
   {
     "caseId": "grammar.parse.timed-games-basis-not-kept.v1",
@@ -1544,7 +1544,7 @@
         }
       }
     },
-    "note": "§ 4, § 5 (CA 2026-10-25)"
+    "note": "§ 4, § 5"
   },
   {
     "caseId": "grammar.parse.default-game-not-kept.v1",
@@ -1565,7 +1565,7 @@
         }
       }
     },
-    "note": "§ 4, § 5 (CA 2026-10-25)"
+    "note": "§ 4, § 5"
   },
   {
     "caseId": "grammar.parse.deuce-game-kept.v1",
@@ -1624,7 +1624,7 @@
       "kind": "value",
       "value": "SET3-S:6/TB7"
     },
-    "note": "§ 4 (CA 2026-10-25)"
+    "note": "§ 4"
   },
   {
     "caseId": "grammar.canonical.default-game-timed.v1",
@@ -1636,7 +1636,7 @@
       "kind": "value",
       "value": "SET3-S:T10"
     },
-    "note": "§ 4 (CA 2026-10-25)"
+    "note": "§ 4"
   },
   {
     "caseId": "grammar.canonical.default-game-with-final.v1",
@@ -1648,7 +1648,7 @@
       "kind": "value",
       "value": "SET3-S:6/TB7-F:TB10"
     },
-    "note": "§ 4 (CA 2026-10-25)"
+    "note": "§ 4"
   },
   {
     "caseId": "grammar.valid.exactly-on-a-games-set.v1",
@@ -1660,7 +1660,7 @@
       "kind": "value",
       "value": true
     },
-    "note": "§ 3.2 rule 4 (CA 2026-10-25)"
+    "note": "§ 3.2 rule 4"
   },
   {
     "caseId": "grammar.valid.lower-case-modifier.v1",
@@ -1672,7 +1672,7 @@
       "kind": "value",
       "value": false
     },
-    "note": "§ 3.4 rule 4 (CA 2026-10-25)"
+    "note": "§ 3.4 rule 4"
   },
   {
     "caseId": "grammar.stringify.default-game-dropped.v1",
@@ -1696,7 +1696,7 @@
       "kind": "value",
       "value": "SET3-S:6/TB7"
     },
-    "note": "§ 7: the default game is not written (CA 2026-10-25)"
+    "note": "§ 7: the default game is not written"
   },
   {
     "caseId": "grammar.stringify.lower-case-modifier.v1",
@@ -1940,7 +1940,7 @@
       "kind": "error",
       "code": "UNPARSEABLE_FORMAT"
     },
-    "note": "§ 3.4 rule 5: a shootout needs -O: (CA 2026-11-04)"
+    "note": "§ 3.4 rule 5: a shootout needs -O:"
   },
   {
     "caseId": "grammar.parse.shootout-as-set-format.v1",
@@ -1976,7 +1976,7 @@
       "kind": "error",
       "code": "UNPARSEABLE_FORMAT"
     },
-    "note": "§ 9: repeating blocks are deferred, no syntax reserved (Ruling 4)"
+    "note": "§ 9: repeating blocks are deferred, no syntax reserved"
   },
   {
     "caseId": "grammar.parse.overtime-unlimited-with-decider.v1",
@@ -2048,7 +2048,7 @@
       "kind": "value",
       "value": false
     },
-    "note": "§ 9: a match clock with overtime is refused (Ruling 1)"
+    "note": "§ 9: a match clock with overtime is refused"
   },
   {
     "caseId": "grammar.valid.overtime-untimed-period.v1",

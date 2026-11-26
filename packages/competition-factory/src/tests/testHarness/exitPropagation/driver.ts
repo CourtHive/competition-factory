@@ -2,7 +2,7 @@ import { checkErrorAtomicity, checkInvariants, getDrawMatchUps, observeMutation 
 import type { PropertyFailure } from './transitions';
 
 // constants
-import { completedMatchUpStatuses, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { completedMatchUpStatuses, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 /**
  * Deterministic forward driver.
@@ -58,7 +58,8 @@ export function firstPlayable(matchUps: any[], skip: Set<string> = new Set()): a
  * With `STALLED_POSITION` a warning that audit passed vacuously; as an error it reported the next
  * round's lone occupant stranded on all 16 early-mode DOUBLE_WALKOVER / DOUBLE_DEFAULT cells — a true
  * reading of a draw the harness itself had abandoned. The driver now decides the dual as a director
- * would (`winningSideFor`, side 1 by default), and only once nothing else is playable.
+ * would (`winningSideFor`, side 1 by default), and only once nothing else is playable; on a level dual with the
+ * record of an official's decision (`directorsDecision`).
  */
 function isUndecidableDual(matchUp: any): boolean {
   const rubbers = matchUp.tieMatchUps ?? [];
@@ -66,6 +67,18 @@ function isUndecidableDual(matchUp: any): boolean {
   const assigned = (matchUp.sides ?? []).filter((side: any) => side?.participantId).length;
   if (assigned !== 2) return false;
   return rubbers.every((rubber: any) => rubber.winningSide || completedMatchUpStatuses.includes(rubber.matchUpStatus));
+}
+
+/**
+ * A director's winner on a LEVEL dual records how it was decided (TEAM results item 3): the factory
+ * refuses a winner on a level tie without `score.overtime` (`decidedIn: 'EXTERNAL'`, `decidedBy`). The decision is an
+ * official's, the one a director makes when no rubber can decide the dual.
+ */
+function directorsDecision(dual: any, winner: { winningSide: number }) {
+  const set = dual.score?.sets?.[0];
+  if ((set?.side1Score ?? 0) !== (set?.side2Score ?? 0)) return winner;
+  const overtime = { decidedIn: 'EXTERNAL', decidedBy: { method: 'OFFICIAL_DECISION' } };
+  return { ...winner, matchUpStatus: COMPLETED, score: { overtime } };
 }
 
 export function firstUndecidableDual(matchUps: any[], skip: Set<string> = new Set()): any {
@@ -148,7 +161,9 @@ export function playForward({
 
     // a director's decision on an undecidable dual is a result, never an exit
     const exitStep = playable && exitOutcome && taken % exitPeriod === exitPeriod - 1;
-    const outcome = exitStep ? exitOutcome : { winningSide: winningSideFor?.(target) ?? 1 };
+    const winner = { winningSide: winningSideFor?.(target) ?? 1 };
+    const decided = playable ? winner : directorsDecision(target, winner);
+    const outcome = exitStep ? exitOutcome : decided;
     const observation = observeMutation({
       matchUpId: target.matchUpId,
       propagateExitStatus,

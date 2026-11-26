@@ -18,6 +18,8 @@ import swc from 'unplugin-swc';
 import { testFileAliases } from './vitest.aliases.mjs';
 
 export default defineConfig({
+  // the notice payload detector is compiled out, as in the published build (vitest.config.mts)
+  define: { __NOTICE_PAYLOAD_DIAGNOSTICS__: 'false' },
   test: {
     testTimeout: 30000,
     environment: 'node',

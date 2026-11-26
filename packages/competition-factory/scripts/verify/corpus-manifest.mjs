@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 /**
- * The golden corpus hash manifest (CA, 2026-10-01: commit a manifest of hashes, keep the scenarios
- * out of git).
+ * The golden corpus hash manifest: a committed manifest of hashes, with the scenarios kept out of git.
  *
  * `corpus/MANIFEST.txt` holds one line per scenario from the sources that reproduce bit for bit
  * (authored, scheduling, grammar, scoring): the scenario id, its step count, the hash of the state after its

@@ -12,7 +12,7 @@ A further check, `verify:ecosystem`, runs downstream consumer tests against the 
 | `verify:types`             | type errors anywhere in `src`, test files included (`tsconfig.tests.json`); and `verify:implicit-any` — a directory gaining implicit `any`                                                                                                                                                                                                                                                                                                                                                                                                                                      | ~25 s  |
 | `verify:lint`              | style + cognitive-complexity violations; zero-warnings rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | ~5 s   |
 | `verify:layers`            | a runtime import into a higher layer that `baseline/layers.json` does not hold (a type-only one that `baseline/layers-types.json` does not hold), or a baseline entry the source no longer has (lower it in the same PR); a production file outside every layer; an internal import that resolves to nothing                                                                                                                                                                                                                                                                    | ~1 s   |
-| `verify:exit-tenant`       | a NEW file in `src/` reaching for `matchUpStatusCodes` — the LEGACY array whose per-side exit tenant was evicted (P37); reads `sideExitProvenance` instead. Allowlisted by FILE, with a reason each, and a stale entry fails so the list ratchets down                                                                                                                                                                                                                                                                                                                          | ~0 s   |
+| `verify:exit-tenant`       | a NEW file in `src/` reaching for `matchUpStatusCodes` — the LEGACY array whose per-side exit tenant was evicted; reads `sideExitProvenance` instead. Allowlisted by FILE, with a reason each, and a stale entry fails so the list ratchets down                                                                                                                                                                                                                                                                                                                                | ~0 s   |
 | `verify:outcome-spec`      | outcome v2 deciding by a name its spec does not state: every `Route` id named in `outcome-pipeline.md` § 3, every refusal row `refusals.ts` raises a row of § 2 (outcome v2 executor plan G5); `--self-test` first                                                                                                                                                                                                                                                                                                                                                              | ~0 s   |
 | `verify:coverage`          | regressions below `95/97/87/97.5` statements/functions/branches/lines                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | ~100 s |
 | `verify:coverage-headroom` | a change spending more than 25 items of margin before the coverage floor; always prints headroom per metric                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | ~0 s   |
@@ -99,7 +99,7 @@ node scripts/verify/ecosystem.mjs --build-factory        # rebuild dist before s
 
 ### `verify:declarations`
 
-The declaration-diff gate of the type-graph split (`Mentat/planning/FACTORY_TYPE_GRAPH_SPLIT_PLAN.md`).
+The declaration-diff gate of the type-graph split.
 `scripts/verify/declarations.mjs` builds the three declaration bundles rollup ships (root, `constants`,
 `score-entry-state`) for the working tree and for `git merge-base HEAD origin/dev`, fingerprints every export
 (its declaration plus every top-level declaration it reaches, printed canonically) and reports exports added,
@@ -175,8 +175,7 @@ never been shown to fail is indistinguishable from a scan that matches nothing.
 (non-recursive) in non-test `src`, and fails when a directory rises above
 `scripts/verify/baseline/any-count.json`, or a directory missing from it holds any at all. Comments, test
 files and `Record<string, any>`-style open maps are not counted. `no-explicit-any` is off in this repo, so
-this ratchet is the only thing holding the count; the plan that lowers it is
-`Mentat/planning/FACTORY_ANY_TIGHTENING.md`.
+this ratchet is the only thing holding the count.
 
 - `pnpm verify:any-count --update-baseline` writes LOWER counts after you remove `any`.
 - It refuses to write a rise. `--accept-rise` records one deliberately, so it shows up as a reviewed line
@@ -186,7 +185,7 @@ this ratchet is the only thing holding the count; the plan that lowers it is
 ## `verify:layers` — imports into a higher layer may only go down
 
 `scripts/verify/layers.mjs` assigns every production file in `src/` a layer by the longest matching path prefix
-(the table is `LAYERS` in the script, from `Mentat/planning/FACTORY_LAYERING_PLAN.md`): contracts 0, primitives 1,
+(the table is `LAYERS` in the script): contracts 0, primitives 1,
 formats 2.1, scoring 2.2, domain helpers 2.3, queries 3, mutations 4, generators 5, assemblies 6. A runtime import
 (static, re-export, literal `import()`/`require()`; type-only forms excluded) into a higher layer is a violation.
 Production code importing a test harness or the dev server (`src/tests/`, `src/server/`) is one too: shipped
@@ -195,8 +194,7 @@ code must not live there.
 The same walk counts type-only edges into a higher layer as a second ratchet: `import type`, `export type`
 (`export type *` too), a statement whose every named binding is `type`-qualified, and every `import('...')` type
 node, `typeof import('...')` included. A type edge upward pulls the higher layer into every type-check program
-that loads the file, which is what the type-graph split removes (`Mentat/planning/FACTORY_TYPE_GRAPH_SPLIT_PLAN.md`,
-decision 6). It holds everywhere, not only from contracts.
+that loads the file, which is what the type-graph split removes. It holds everywhere, not only from contracts.
 
 `scripts/verify/baseline/layers.json` holds every violating runtime import as `from -> to` with its count, and
 `scripts/verify/baseline/layers-types.json` every violating type-only one; both ratchet by the rules below.
@@ -249,7 +247,7 @@ all in the 14 unconverted writes and the areas another workstream holds). A read
 `structure.matchUps` without narrowing — raises the count; read it through `matchUpsOf` / `positionAssignmentsOf` /
 `structuresOf` (`@Helpers/drawTopology/structureMembers`) or narrow on `structureType`. `src/tests/typeAssertions` is not counted:
 its soft-form assertions fail under the hard form by design. When the count is 0 everywhere, 8.0.0 deletes the
-`never` fields (Mentat/planning/FACTORY_STRUCTURE_UNIONS_8_0_0.md). The transform refuses to run unless each `never`
+`never` fields. The transform refuses to run unless each `never`
 line is found exactly once, so a reshaped `tournamentTypes.ts` fails loudly instead of silently counting the soft form.
 
 ## Resetting the consumer-bundle anchor

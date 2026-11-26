@@ -14,7 +14,7 @@ import { TEAM_EVENT } from '@Constants/eventConstants';
 /**
  * A REFUSAL THE CASCADE COULD ONLY MEET AFTER IT HAD WRITTEN IS ASKED BEFORE THE FIRST WRITE.
  *
- * CA, 2026-10-22: an error leaves the record unchanged on a DIRECT call, and no mutation relies on rollback. Each case
+ * The rule: an error leaves the record unchanged on a DIRECT call, and no mutation relies on rollback. Each case
  * here was an error returned over writes that had already landed; each is now refused before the first one. The calls
  * are direct (no `rollbackOnError`), so nothing puts anything back: the record is unchanged only if nothing was written.
  */

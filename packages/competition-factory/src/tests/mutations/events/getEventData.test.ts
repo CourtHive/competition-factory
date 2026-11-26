@@ -166,7 +166,6 @@ it('returns team information for participants in SINGLES and DOUBLES matchUps in
 // Hydration of `competitionFormat` onto eventInfo lets consumers (e.g. epixodic
 // applying INTENNSE point multipliers) read sport rules through the standard
 // data flow instead of falling back to a sport-detect heuristic.
-// See Mentat/planning/COMPETITION_FORMAT_HYDRATION.md.
 it('hydrates competitionFormat onto eventInfo and gates it on usePublishState', () => {
   const eventId = 'cf-eid';
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({

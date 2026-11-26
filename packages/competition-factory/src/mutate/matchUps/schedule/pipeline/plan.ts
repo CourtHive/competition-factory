@@ -275,7 +275,7 @@ function planDate({
     });
 
     venueScheduledRoundDetails[venue.venueId] = {
-      // the venue's courts available on the date, not every court it has (CA 2026-10-25): a turn places at most that many
+      // the venue's courts available on the date, not every court it has: a turn places at most that many
       courtsCount: (view.dateCourts[scheduleDate] ?? []).filter((court) =>
         venueCourts.some(({ courtId }) => courtId === court.courtId),
       ).length,

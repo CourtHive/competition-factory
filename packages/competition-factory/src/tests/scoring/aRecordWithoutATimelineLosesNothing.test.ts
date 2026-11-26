@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
  * A record saved without a timeline (§ 12.6 shape 2: points, and perhaps a substitution list, but no entries)
  * takes its timeline on the first action that changes it: its points as point entries, each substitution placed
  * before the point it preceded. Every operation then works on that timeline, so nothing the record holds is lost
- * to an undo, a redo or a rebuild (CA 2026-10-22).
+ * to an undo, a redo or a rebuild.
  */
 
 const FORMAT = 'SET1-S:TB7';

@@ -10,7 +10,7 @@ import { expect, it } from 'vitest';
 import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, BYE } from '@Constants/matchUpStatusConstants';
 
 /**
- * **A BYE IS NEVER WON, AND TWO BYES PRODUCE A BYE.** CA, 2026-09-27:
+ * **A BYE IS NEVER WON, AND TWO BYES PRODUCE A BYE.** The rule:
  *
  * > `BYE_WON` likely means that another side needs to be progressed as there can never be
  * > `{ winningSide }` with a value in a matchUp with `matchUpStatus: BYE`. If two BYEs encounter each

@@ -11,6 +11,9 @@ and contribution requirements.
 documents and ecosystem standards, including their precedence rules. Read any
 more specific instructions in the repository or subdirectory you are modifying.
 
+If an untracked `CLAUDE.local.md` sits beside `CLAUDE.md`, read and follow it too.
+It holds machine-local workspace instructions and is never committed.
+
 ## Maintaining This Guide
 
 Update shared repository instructions in `CLAUDE.md`; keep this file as a pointer

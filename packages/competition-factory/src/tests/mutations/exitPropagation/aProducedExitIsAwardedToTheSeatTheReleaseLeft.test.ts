@@ -9,7 +9,7 @@ import { expect, it } from 'vitest';
 import { DOUBLE_WALKOVER, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
- * A PRODUCED EXIT IS AWARDED TO THE SEAT THE RELEASE LEFT, NOT THE ONE IT EMPTIED (punch-list P60).
+ * A PRODUCED EXIT IS AWARDED TO THE SEAT THE RELEASE LEFT, NOT THE ONE IT EMPTIED.
  *
  * DOUBLE_ELIMINATION 8/6 under `doubleExitPropagateBye: false`. Census F2 fixture seed 20506968 (30 steps, shrunk here
  * to 5) and DE window seed 9301858 (its first 9 steps): the only two schedules, of every census window and both

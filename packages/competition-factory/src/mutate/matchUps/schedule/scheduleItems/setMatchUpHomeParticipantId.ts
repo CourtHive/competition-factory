@@ -33,6 +33,7 @@ export function setMatchUpHomeParticipantId(
     return { error: INVALID_PARTICIPANT_ID };
 
   const { disableNotice, homeParticipantId, removePriorValues, tournamentRecord, drawDefinition, matchUpId } = params;
+  const { workingMatchUp } = params;
 
   return setMatchUpFirstClassOrTimeItem({
     duplicateValues: false,
@@ -41,6 +42,7 @@ export function setMatchUpHomeParticipantId(
     value: homeParticipantId,
     removePriorValues,
     tournamentRecord,
+    workingMatchUp,
     drawDefinition,
     disableNotice,
     matchUpId,

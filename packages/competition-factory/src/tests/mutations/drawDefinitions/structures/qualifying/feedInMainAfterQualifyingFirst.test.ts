@@ -8,7 +8,7 @@ import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 /**
- * A FEED_IN main populated after its qualifying (CA, 2026-10-09, in TMX): a qualifying of 32 producing
+ * A FEED_IN main populated after its qualifying (reproduced in TMX): a qualifying of 32 producing
  * 8 qualifiers, then "Generate main draw" as FEED_IN 22, Automated. It was refused with "Insufficient
  * drawPositions to accommodate qualifiers".
  *
@@ -17,9 +17,9 @@ import { SINGLES_EVENT } from '@Constants/eventConstants';
  * And with no MAIN entries yet, Automated filled every non-qualifier position with a BYE, leaving none
  * for the entries still to come. Now BYEs leave the qualifiers their room and spill onto fed positions.
  *
- * With no entries, nothing is placed, qualifier seats included (CA, 2026-10-09: "the slots for qualifiers
- * shouldn't be reserved in advance at all, those qualifying placeholders or the qualifiers themselves get placed
- * when the draw positioning is generated"). This replaced the morning's choice of placing only the qualifier seats.
+ * With no entries, nothing is placed, qualifier seats included: the slots for qualifiers
+ * are not reserved in advance at all; the qualifying placeholders, or the qualifiers themselves, are placed when the
+ * draw positioning is generated. This replaced the morning's choice of placing only the qualifier seats.
  */
 const QUALIFIERS = 8;
 

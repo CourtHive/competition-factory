@@ -11,7 +11,7 @@ import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Constants/outcomePipelineConstan
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 /**
- * F9 (`OUTCOME_PIPELINE_OPEN_QUESTIONS.md`), CA 2026-10-07: *"A's Main|2|2 is not a produced exit at all. It's just an
+ * F9, the rule: *"A's Main|2|2 is not a produced exit at all. It's just an
  * advanced participant, advanced by the fact that their previous round opponent DEFAULTED. The provenance
  * `{ previousMatchUpStatus: DEFAULTED }` would be correct, but the matchUpStatus of Main|2|2 should not be seen as an exit
  * awaiting a participant, so the produced exit from Main|1|4 should advance the waiting participant to Main|3. There
@@ -86,7 +86,7 @@ it('a participant who won a DEFAULTED arrives with the origin recorded and nothi
   score('Main|1|4', { matchUpStatus: DOUBLE_WALKOVER });
 
   // Main|1|4's double walkover produces a WALKOVER onto Main|2|2's other side, and the convergence writer records
-  // both origins. A's reads as an ARRIVAL: the origin, and nothing decided (CA, 2026-10-07). It used to read
+  // both origins. A's reads as an ARRIVAL: the origin, and nothing decided. It used to read
   // `{ matchUpStatus: DEFAULTED, previousMatchUpStatus: DEFAULTED }`, byte for byte B's carried exit below.
   const produced = find('Main|2|2');
   expect(produced.matchUpStatus).toEqual(WALKOVER);

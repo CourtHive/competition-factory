@@ -13,7 +13,7 @@ import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
  *
  * Census de 9300866 (DE 16/15, propagation off), shrunk to nine steps. `Backdraw|1|3`'s double walkover produces a
  * walkover on `Backdraw|2|3`, whose other side is a BYE (from `Main|1|6`'s double walkover), so the exit is carried
- * on to `Backdraw|3|2` (CA, 2026-09-20). Re-scoring `Main|1|6` as a single walkover takes the BYE back: the exit
+ * on to `Backdraw|3|2`. Re-scoring `Main|1|6` as a single walkover takes the BYE back: the exit
  * now rests on `Backdraw|2|3`, pending for `Main|2|3`'s loser. The copy beyond it kept the ORIGIN's id, which is
  * still a double exit, so nothing withdrew it; `Main|2|3`'s loser then won both walkovers, and the participant
  * arriving on `Backdraw|3|2`'s other side was recorded as its winner (WINNING_SIDE_ADVANCEMENT_MISMATCH).

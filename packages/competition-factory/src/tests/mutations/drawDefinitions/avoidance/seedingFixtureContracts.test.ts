@@ -15,7 +15,7 @@ import { SINGLES_EVENT } from '@Constants/eventConstants';
  * Three fixture behaviours that each produced a confident FALSE NEGATIVE while diagnosing seeded
  * avoidance — a test that executed the code, asserted successfully, and measured nothing.
  *
- * They are pinned here because the cost has already been paid twice. `TASKS.md` carried
+ * They are pinned here because the cost has already been paid twice. The task list carried
  * "seeded avoidance is dead TWICE OVER" for months on the strength of a reading that trap 3 fully
  * explains, and the end-to-end proof was recorded as unwritable on that basis.
  *

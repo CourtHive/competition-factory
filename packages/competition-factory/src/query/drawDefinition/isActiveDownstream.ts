@@ -13,14 +13,13 @@ import { ResultType } from '@Types/factoryTypes';
 
 /** one walk: the answers already given, and the first refusal met (a malformed round link downstream) */
 /**
- * `carriedExitsAreInert`: the walk asks only whether somebody PLAYED downstream (CA, 2026-10-11, census F2's P51
- * group). See `getTargetsDownstream`.
+ * `carriedExitsAreInert`: the walk asks only whether somebody PLAYED downstream. See `getTargetsDownstream`.
  */
 type Walk = { seen: Map<string, boolean>; refused?: ResultType; carriedExitsAreInert?: boolean };
 
 /**
  * Whether anything downstream of the matchUp is active, as a boolean. A downstream structure whose
- * links cannot be read (a malformed round link, CA 2026-10-06) reads as ACTIVE here, never as
+ * links cannot be read (a malformed round link) reads as ACTIVE here, never as
  * "nothing downstream". A caller that returns results asks `getTargetsDownstream`, which returns that
  * refusal as an error instead.
  */
@@ -30,7 +29,7 @@ export function isActiveDownstream(params): boolean {
 
 /**
  * A matchUp's position targets, and whether anything downstream of it is active, in one call. Either can
- * meet a malformed round link (CA, 2026-10-06: an error): the matchUp's own, or one in a structure it feeds.
+ * meet a malformed round link (an error): the matchUp's own, or one in a structure it feeds.
  * Either way that error is the answer.
  */
 export function getTargetsDownstream(params: {
@@ -178,10 +177,10 @@ function activeBelow(params, walk: Walk): boolean {
    * into it.*
    */
   //
-  // ONE EXCEPTION, for a CONVERGENCE (CA, 2026-10-11): the cascade bringing a second carried exit into a matchUp an
+  // ONE EXCEPTION, for a CONVERGENCE: the cascade bringing a second carried exit into a matchUp an
   // exit already decided. There a carried exit downstream is inert even when its loser carried it on further — a carry
   // that went one hop further was read as a played match, and the convergence was refused although nobody had played
-  // anything below it (census F2's P51 group: 24 of 25 instances, all COMPASS). The 2026-09-25 rule — only GENUINELY
+  // anything below it (census F2: 24 of 25 instances, all COMPASS). The 2026-09-25 rule — only GENUINELY
   // active downstream blocks, never ADVANCED active — applied to convergence. The walk still recurses, so a result
   // somebody played further down still blocks. A CLEAR keeps the stricter reading (`isActiveDownstream.test.ts`: the
   // origin of a carried walkover that an unrelated arrival has since won is not clearable).
@@ -216,7 +215,7 @@ function activeBelow(params, walk: Walk): boolean {
    * cascade itself produced and handed to whoever happened to be waiting — so a derived result blocked
    * the unwind of the cascade that derived it.
    *
-   * CA, 2026-09-25: *"an advanced propagated WALKOVER where there is no participant that walkedover …
+   * The rule, 2026-09-25: *"an advanced propagated WALKOVER where there is no participant that walkedover …
    * should be clearable"*, and on the mechanism: *"I don't think `{ allowChangePropagation: true }`
    * should be relevant … not genuinely blocked by genuinely active (as opposed to advanced active)
    * positions."* A flag is explicitly NOT the mechanism; the distinction is.
@@ -251,7 +250,7 @@ function activeBelow(params, walk: Walk): boolean {
    * exit from the produced one; with both positions present `winnerSideResolved` already says so.
    */
   //
-  // Recorded BEFORE the opponent arrived (CA, 2026-10-04), the walkover names only the participant already
+  // Recorded BEFORE the opponent arrived, the walkover names only the participant already
   // there. A source that feeds the VACANT, winning side decides nothing but who arrives to take it, and may
   // change freely; only the source the exited participant came from is held. Census arm 9700004 (COMPASS
   // 8/7): a DEFAULTED recorded at `West|2|1` was "active" against `West|1|2`, which feeds its empty side,
@@ -327,7 +326,7 @@ function activeBelow(params, walk: Walk): boolean {
 const IN_PLAY_STATUSES: MatchUpStatusUnion[] = [AWAITING_RESULT, IN_PROGRESS, INCOMPLETE, SUSPENDED];
 
 /**
- * A MATCHUP IN PLAY DOWNSTREAM IS ACTIVE, though nothing has been decided there (CA, 2026-10-18, P57).
+ * A MATCHUP IN PLAY DOWNSTREAM IS ACTIVE, though nothing has been decided there.
  *
  * Every result test in `activeBelow` opens with `winningSide`, so a downstream matchUp being PLAYED — a score, or a
  * status that says play has started — read as inactive. A completed source above it could then be re-scored as
@@ -335,7 +334,7 @@ const IN_PLAY_STATUSES: MatchUpStatusUnion[] = [AWAITING_RESULT, IN_PROGRESS, IN
  * live score: SINGLE_ELIMINATION 4, the final IN_PROGRESS at 3-2, `m-1-1` re-scored IN_PROGRESS 4-3 — accepted,
  * and the final left TO_BE_PLAYED with no score and one side empty.
  *
- * CA: *"downstream matchUps e.g. "the match it feeds" should be considered active and a source matchUp (a matchUp
+ * The rule: *"downstream matchUps e.g. "the match it feeds" should be considered active and a source matchUp (a matchUp
  * earler in the dependency chain) should not be able to be re-scored as unfinished! a downstream matchUp
  * AWAITING_RESULT should be considered an active matchUp also"*.
  *

@@ -443,7 +443,7 @@ describe('SET3-S:1/TB7 — the one-game set', () => {
 });
 
 /*
- * Fixed 2026-10-17 (CA: "Rule 6: margin of two"); found by these cases.
+ * Fixed 2026-10-17 (ITF Rule 6: a margin of two); found by these cases.
  *
  * `S:1/TB7` read by Rule 6 (and Appendix VI short sets) at `setTo` 1: the first side to one game wins
  * the set PROVIDED there is a margin of two games, and at one game all a tie-break is played. The

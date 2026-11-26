@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 /**
  * What survives a change of `matchUpFormat`.
  *
- * The scenario CA gave is the first test, verbatim: someone enters two sets, realises the third is a
+ * The reported scenario is the first test, verbatim: someone enters two sets, realises the third is a
  * match tiebreak, and changes format. The first two sets must not move; a part-entered third must go.
  *
  * ── These assert the SETS, not a count ──
@@ -15,7 +15,7 @@ import { describe, expect, it } from 'vitest';
  */
 
 const STANDARD = 'SET3-S:6/TB7';
-/** CA's target: no-ad games, and a match tiebreak as the decider. */
+/** The target format: no-ad games, and a match tiebreak as the decider. */
 const NOAD_WITH_MATCH_TIEBREAK = 'SET3-S:6NOAD/TB7-F:TB10';
 
 const set = (setNumber: number, side1Score: number, side2Score: number, winningSide?: number) => ({
@@ -25,7 +25,7 @@ const set = (setNumber: number, side1Score: number, side2Score: number, winningS
   ...(winningSide ? { winningSide } : {}),
 });
 
-describe("CA's scenario — the third set becomes a tiebreak", () => {
+describe('the reported scenario — the third set becomes a tiebreak', () => {
   it('keeps both finished sets and trims the part-entered third', () => {
     const sets = [set(1, 6, 4, 1), set(2, 6, 3, 1), set(3, 2, 1)];
 
@@ -70,7 +70,7 @@ describe("CA's scenario — the third set becomes a tiebreak", () => {
 
 describe('a set whose own rule did not change is left alone, finished or not', () => {
   it('keeps a PART-ENTERED set when its position is unaffected', () => {
-    // CA's ruling on this, 2026-09-29: trim what the new format invalidates, not every trailing
+    // The rule: trim what the new format invalidates, not every trailing
     // partial. Here only the DECIDING set's rule moved, and the part-entered set is the second — which
     // the change did not touch, so it stays.
     const sets = [set(1, 6, 4, 1), set(2, 3, 1)];
@@ -106,7 +106,7 @@ describe('a set whose own rule did not change is left alone, finished or not', (
     // An earlier version of the test above used `SET2X-S:TB10`, which did not parse then, and passed for the
     // wrong reason: nothing was discarded because nothing could be judged, not because the sets had survived
     // a comparison. Pinned so the fail-safe direction is the asserted one. `SET2X-S:TB10` parses since exactly
-    // N is a format on every root (CA 2026-10-25); a tiebreak with no target (`/TB`) never does.
+    // N is a format on every root; a tiebreak with no target (`/TB`) never does.
     const sets = [set(1, 6, 4, 1), set(2, 3, 1)];
 
     const result = retainScoreForFormat({ sets, matchUpFormat: 'SET2-S:6/TB', previousMatchUpFormat: STANDARD });
@@ -118,7 +118,7 @@ describe('a set whose own rule did not change is left alone, finished or not', (
 
 describe('a set is kept or dropped WHOLE', () => {
   it('discards a 7-6 rather than trimming it to its games when the tiebreak is resized', () => {
-    // CA, 2026-09-29: "drop whole". Keeping 7-6 with its points discarded would leave the set in the
+    // A set is dropped whole. Keeping 7-6 with its points discarded would leave the set in the
     // one state the interface treats as unfinished, and reopen it mid-tiebreak.
     const sets = [
       { setNumber: 1, side1Score: 7, side2Score: 6, side1TiebreakScore: 7, side2TiebreakScore: 3, winningSide: 1 },

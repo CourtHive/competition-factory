@@ -48,7 +48,7 @@ type RelabelArgs = {
 
 /**
  * A RELABEL: the source matchUp keeps its winner but changes what it says about the loser, after the
- * loser was already directed (CA, 2026-10-02). Under exit propagation:
+ * loser was already directed. Under exit propagation:
  *
  * - **to an exit** (a COMPLETED result re-entered as a WALKOVER or DEFAULTED): the exit is CARRIED to
  *   the matchUp the loser now stands in, as it would have been had the exit been entered first.
@@ -142,7 +142,7 @@ export function relabelLoserExit(args: RelabelArgs): ResultType & { carry?: bool
       }
       return { carry: !hasResult(standing) };
     }
-    // An exit re-entered as the OTHER exit, the winner unchanged (WALKOVER <-> DEFAULTED; CA, 2026-10-04,
+    // An exit re-entered as the OTHER exit, the winner unchanged (WALKOVER <-> DEFAULTED,
     // for a walkover or default recorded before the opponent arrives, which the director may change until
     // they do): the carry follows the label. Withdrawn and carried again, under the same guards as a
     // withdrawal; where the loser or the carry's winner has played on, the carry stands as it was.
@@ -240,14 +240,14 @@ export function onlyThisCarry(standing: HydratedMatchUp, loserParticipantId: str
   // converged: withdrawn whichever kind the kept exit is. CARRIED, and the settle replays the kept origin's carry;
   // PRODUCED by a double exit, and the settle replays that origin's production, which the relabelled loser, now a
   // participant standing opposite a pending produced exit, wins and advances out of (RULE 2; census w2 9100377, MFIC
-  // 16/11 `Consolation|3|2`, which stood as a double exit until F2 was settled, CA 2026-10-07)
+  // 16/11 `Consolation|3|2`, which stood as a double exit until F2 was settled)
   if (carriedExitStatus(other)) return isDoubleExit(standing.matchUpStatus) && !standing.winningSide;
   return standing.matchUpStatus === own.matchUpStatus && standing.winningSide === (loserSide === 1 ? 2 : 1);
 }
 
 /**
  * Where a CARRIED-PAST loser's carry stands. A loser carrying an exit into a matchUp another exit had already decided for
- * the seat awaiting them, over a result recorded below, is carried past it (P51 group 2, `carryPastDecidedMatchUp`):
+ * the seat awaiting them, over a result recorded below, is carried past it (`carryPastDecidedMatchUp`):
  * they win that matchUp by the exit standing there and carry their own exit on from its winner matchUp, and nothing of
  * theirs is written on the matchUp they passed. That is the earliest matchUp holding them, so the relabel looked there,
  * found no carry, and withdrew nothing: re-entering the origin as played left the carry deciding the matchUp onward

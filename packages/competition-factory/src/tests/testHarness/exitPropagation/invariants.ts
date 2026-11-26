@@ -51,15 +51,15 @@ const hasScoreValue = (score: any): boolean =>
   !!(score?.sets?.length || score?.scoreStringSide1 || score?.scoreStringSide2);
 
 /**
- * A WINNING SIDE HOLDS SOMEBODY — or a seat still to be reached, opposite the exit that decided it (punch-list P60).
+ * A WINNING SIDE HOLDS SOMEBODY — or a seat still to be reached, opposite the exit that decided it.
  *
  * `getStructureInconsistencies`' WINNING_SIDE_WITHOUT_PARTICIPANT asks this of non-exits only, because an exit can be
  * decided before its winner arrives (exit-propagation.md, "The pending propagated exit"), so an exit with an empty
- * winning side went unread by every check. P60 lived there: DOUBLE_ELIMINATION 8/6, `doubleExitPropagateBye: false`,
- * seed 20506968 (census F2 fixture). A correction made the Backdraw final a double walkover, the Main final's
- * Backdraw finalist was released across the link, and the produced WALKOVER was then awarded from a view taken before
- * the release: `Main|4|1` read WALKOVER ws=1 with side 1 empty and the Main winner, who exited nothing, on side 2,
- * for five steps until a later call rewrote it.
+ * winning side went unread by every check. A decided produced exit keeping a `winningSide` that names an empty side
+ * lived there: DOUBLE_ELIMINATION 8/6, `doubleExitPropagateBye: false`, seed 20506968 (census F2 fixture). A correction
+ * made the Backdraw final a double walkover, the Main final's Backdraw finalist was released across the link, and the
+ * produced WALKOVER was then awarded from a view taken before the release: `Main|4|1` read WALKOVER ws=1 with side 1
+ * empty and the Main winner, who exited nothing, on side 2, for five steps until a later call rewrote it.
  *
  * Returns the reason when the winning side holds nobody and nothing explains why, else undefined. Measured over the
  * exitPropagation, testHarness and corpus suites (2026-10-21, hydrated matchUps) the winning side was empty 6,598
@@ -74,13 +74,13 @@ const hasScoreValue = (score: any): boolean =>
  *   occupant on the losing side exited, and no provenance stands on either side.
  *
  * So an empty winning side is pending only for a single exit, with nothing recorded on the winning side, and with the
- * exit accounted for on the losing side: its provenance records an exit, or its occupant made one. P60's shape fails
+ * exit accounted for on the losing side: its provenance records an exit, or its occupant made one. That shape fails
  * the second: the winning side's provenance records the produced exit itself. Not read where it cannot be: only a
  * hydrated matchUp (`hasContext`) names who stands on a side — a stored TEAM matchUp's `sides` hold lineUps and no
  * `participantId`, so read raw every dual and rubber in the corpus fired (2,012 times, all false) — and a BYE on the
  * winning side is BYE_WON's.
  *
- * Falsified: before the P60 fix it fires on exactly two schedules of every census window (`sched-w1`, `sched-w2`,
+ * Falsified: before that fix it fires on exactly two schedules of every census window (`sched-w1`, `sched-w2`,
  * `sched-de`) and both census-fail sets replayed under `doubleExitPropagateBye: false` — 20506968 and 9301858, both
  * `Main|4|1` — and after it on none, under any of the three arms.
  */
@@ -189,14 +189,14 @@ function matchUpInvariants(matchUp: any): InvariantViolation[] {
 
   /**
    * A matchUp with a BYE side is a BYE (`progressExitStatus` RULE 1): its participant advances through it. One standing
-   * at TO_BE_PLAYED reads as a fixture to be scheduled against nobody, and it never occurs (CA, 2026-10-24; punch-list
-   * P26). None of the BYE rules above saw it, because each reads a matchUp that IS a `BYE`, and this one has stopped
+   * at TO_BE_PLAYED reads as a fixture to be scheduled against nobody, and it never occurs.
+   * None of the BYE rules above saw it, because each reads a matchUp that IS a `BYE`, and this one has stopped
    * being one. Measured before the fix on sched-w1 (both arms, 18,000 steps): 4 seeds, every one a clear accepted on a
    * BYE matchUp; sched-w2: 0. `clearsABye` now leaves a BYE the BYE it is.
    *
    * Not the lines of a TEAM dual: a BYE dual's lines are generated at TO_BE_PLAYED with the dual's BYE side, which is how
-   * a dual that is never played is represented, and they stay so (CA, 2026-10-24: "it's ok to leave the lines as they are
-   * today"). The dual itself is the BYE.
+   * a dual that is never played is represented, and they stay so (the lines are left as they
+   * are). The dual itself is the BYE.
    */
   if (byeSide && !matchUp.collectionId && (!matchUpStatus || matchUpStatus === TO_BE_PLAYED)) {
     record(

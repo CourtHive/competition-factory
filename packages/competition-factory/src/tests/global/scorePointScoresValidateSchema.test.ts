@@ -7,7 +7,7 @@ import Ajv from 'ajv';
 
 /**
  * Live scoring records the current game's points on the matchUp's score (`score.side1PointScore`), and the factory
- * carries them forward on purpose (matchUpScore.ts). CODES `Score` declares them (CA, 2026-10-25), so a record that
+ * carries them forward on purpose (matchUpScore.ts). CODES `Score` declares them, so a record that
  * carries them must validate; before they were declared, `additionalProperties: false` rejected it.
  */
 const ajv = new Ajv({ allowUnionTypes: true, allErrors: true });

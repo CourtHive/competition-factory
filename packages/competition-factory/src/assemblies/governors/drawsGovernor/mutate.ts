@@ -22,7 +22,7 @@ export { qualifierDrawPositionAssignment } from '@Mutate/matchUps/drawPositions/
 export { setStructureOrder } from '@Mutate/drawDefinitions/structureGovernor/setStructureOrder';
 export { attachQualifyingStructure } from '@Mutate/drawDefinitions/attachQualifyingStructure';
 export { renameStructures } from '@Mutate/drawDefinitions/structureGovernor/renameStructures';
-export { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
+export { assignDrawPositionBye } from '@Mutate/drawDefinitions/assignDrawPositionBye';
 export { addDrawDefinitionTimeItem } from '@Mutate/drawDefinitions/addDrawDefinitionTimeItem';
 export { addDrawOtherId, setDrawOtherIds } from '@Mutate/drawDefinitions/drawOtherIds';
 export { resolveDraftPositions } from '@Mutate/drawDefinitions/draft/resolveDraftPositions';

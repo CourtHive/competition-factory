@@ -13,7 +13,7 @@ import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 /**
- * A SETTLE PASS REPORTS WHAT IT CANNOT DO (outcome v2 executor plan, Phase C prerequisite 2 and F9 (i); CA 2026-10-24).
+ * A SETTLE PASS REPORTS WHAT IT CANNOT DO (outcome v2 executor plan, Phase C prerequisite 2 and F9 (i)).
  *
  * `reconcileMissedLinkAdvancements` dropped the error of the direction it makes, and `reconcileLinkAdvancements`
  * stopped silently at its bound. Neither was reached on ~97,000 census schedules (settle telemetry, 2026-10-24). Each

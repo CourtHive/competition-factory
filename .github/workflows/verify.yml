@@ -10,7 +10,7 @@ name: Verify
 # when needed. CI tests the factory in isolation across the supported Node
 # matrix.
 #
-# LAYOUT (CA, 2026-10-05). The gates used to run in ONE job per Node version, in sequence, and
+# LAYOUT (2026-10-05). The gates used to run in ONE job per Node version, in sequence, and
 # verify:coverage alone took ~38 min of a 30-59 min dev PR run (~70 min at a checkpoint). They now run
 # as parallel jobs, each once per Node version as before:
 #
@@ -26,7 +26,9 @@ name: Verify
 #                   v1 fallback into dev (coverage runs v2, the default), v2 on the path to a release (coverage
 #                   runs the differential, whose applied writes are v1's)
 #   differential-arm the suite under OUTCOME_PIPELINE=differential on a dev PR touching the outcome pipeline, split
-#                   4 ways: a divergence between v1 and v2 fails it (into master the coverage shards run it)
+#                   4 ways: a divergence between v1 and v2 fails it (into master the coverage shards run it). Its
+#                   audit leg runs it again with the notice payload detector compiled in, also when the notice
+#                   delivery paths change: a write through a payload fails it (notice payloads are read-only)
 #   verify          `verify (node N)`, the check master's branch protection requires: it passes only
 #                   when every job above passed (or, on a light run, was skipped as intended)
 #
@@ -59,7 +61,7 @@ permissions:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   FACTORY_COVERAGE_WORKERS: ${{ github.event_name == 'workflow_dispatch' && inputs.coverage-workers || 'default' }}
-  # MATRIX TIERS (CA, 2026-11-05; src/tests/testHarness/matrixTier.ts). An ordinary PR into dev runs a bounded,
+  # MATRIX TIERS (2026-11-05; src/tests/testHarness/matrixTier.ts). An ordinary PR into dev runs a bounded,
   # stratified slice of the heavy exit-propagation matrices; a checkpoint PR into master, a push to master and a
   # manual dispatch run them in full. Only a pull_request whose base is not master gets `pr`: anything else, an
   # unset variable included, is the full run.
@@ -69,7 +71,7 @@ jobs:
   # A release-please PR (into master) or the back-merge PR (master into dev, after a publish) changes
   # only the version files: package.json's "version" line, CHANGELOG.md and
   # .release-please-manifest.json. The tree under it was verified when it landed, so the heavy test
-  # jobs have nothing new to test, and they cost ~55 minutes per release (CA, 2026-10-04). Decided by
+  # jobs have nothing new to test, and they cost ~55 minutes per release. Decided by
   # the DIFF, not the branch name: a release-path PR that touches anything else gets the full run.
   # The `gates` job and the aggregating `verify` job always run, because master requires the
   # `verify (node 26)` check; the cheap gates plus the build chain still run.
@@ -123,7 +125,7 @@ jobs:
       fail-fast: false
       matrix:
         # Node 26 only, PRs and pushes alike: it is what the deploy hosts run. The Node 24 leg (the
-        # `engines: ">=24"` floor) was dropped 2026-10-31 for the CI time it cost (CA).
+        # `engines: ">=24"` floor) was dropped 2026-10-31 for the CI time it cost.
         node-version: [26]
     name: gates (node ${{ matrix.node-version }})
 
@@ -213,13 +215,13 @@ jobs:
       - name: verify:format
         run: pnpm verify:format
 
-      # The layer ratchet (Mentat/planning/FACTORY_LAYERING_PLAN.md): an import into a higher layer fails
+      # The layer ratchet (the `LAYERS` table in scripts/verify/layers.mjs): an import into a higher layer fails
       # unless the baseline holds it, and a baseline entry the source no longer has fails too, so the
       # baseline only goes down. Self-tested first: it must fire on planted violations.
       - name: verify:layers
         run: pnpm verify:layers
 
-      # P37's REGROWTH GUARD. `matchUpStatusCodes` carried the per-side provenance of a propagated exit
+      # THE EXIT TENANT'S REGROWTH GUARD. `matchUpStatusCodes` carried the per-side provenance of a propagated exit
       # as well as the scoring policy's vocabulary; the exit tenant is evicted and `sideExitProvenance`
       # is the record. This fails when a NEW file in `src/` reaches for the array, so the destination is
       # enforceable rather than aspirational.
@@ -236,7 +238,7 @@ jobs:
         run: pnpm verify:outcome-spec
 
       # the golden corpus hash manifest: a behaviour change moves a hash, and a moved hash needs
-      # a deliberate `pnpm corpus:manifest` in the same PR (CA, 2026-10-01)
+      # a deliberate `pnpm corpus:manifest` in the same PR
       - name: verify:corpus-manifest
         run: pnpm verify:corpus-manifest
 
@@ -267,6 +269,13 @@ jobs:
 
       - name: verify:build
         run: pnpm verify:build
+
+      # The read-only notice payload detector (notice payloads are read-only), compiled out of the dist verify:build just made: the
+      # standalone audit build rejects a write the published build delivers raw, and the focused write checks run
+      # with the detector compiled in (NOTICE_PAYLOAD_WRITE_CHECK=1). The whole suite runs that way in the
+      # differential arm's audit leg.
+      - name: verify:notice-diagnostics
+        run: pnpm verify:notice-diagnostics
 
       - name: verify:publint
         run: pnpm verify:publint
@@ -303,7 +312,7 @@ jobs:
       - name: verify:deprecations
         run: pnpm verify:deprecations
 
-      # The declaration-diff gate (Mentat/planning/FACTORY_TYPE_GRAPH_SPLIT_PLAN.md, decision 4). It fingerprints
+      # The declaration-diff gate of the type-graph split. It fingerprints
       # every export of the three published declaration bundles and compares them with the PR's merge base, which it
       # builds here in a throwaway worktree that borrows this job's node_modules (~10 s for both builds; this job has
       # ~30 min of slack against the coverage shards). Its self-test always fails hard.
@@ -322,6 +331,18 @@ jobs:
           case "$HEAD_REF" in type-split/*) mode=required ;; esac
           echo "verify:declarations mode: $mode"
           pnpm verify:declarations --base "origin/$BASE_REF" --mode "$mode"
+
+      # Public text (documentation/**, the READMEs, the CHANGELOG) states rules, not who decided them: no
+      # attribution to a person's rulings, no ruling, plan or finding ids, no pointers into the private planning
+      # repository. Needs no build; its self-test runs first and fails hard.
+      - name: verify:docs-provenance
+        run: pnpm verify:docs-provenance
+
+      # The same rules for everything else tracked: comments, JSDoc and test titles in src/, scripts/, .github/ and
+      # .husky/ (separated from code by TypeScript's scanner), runtime string literals that reach callers, and the
+      # remaining plain-text files. Needs no build; its self-test runs first and fails hard.
+      - name: verify:source-provenance
+        run: pnpm verify:source-provenance
 
       # Needs dist, so it sits after verify:build. Checks that every import the docs tell a
       # reader to write actually resolves against the BUILT package — the documentation tests
@@ -459,8 +480,8 @@ jobs:
         env:
           OUTCOME_PIPELINE: ${{ (github.event_name == 'workflow_dispatch' || github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'differential' || 'v2' }}
 
-      # How much margin the merged coverage has above the floors, in items (CA, 2026-10-05: report +
-      # an absolute minimum). Written to the job summary on every run, and the run fails if any metric
+      # How much margin the merged coverage has above the floors, in items (a report plus an
+      # absolute minimum). Written to the job summary on every run, and the run fails if any metric
       # has fewer than 50 items of headroom: early warning, well before the thresholds fail at 0. Report
       # mode skips the committed-baseline budget, which local `pnpm verify` still applies.
       - name: verify:coverage-headroom
@@ -582,7 +603,9 @@ jobs:
       fail-fast: false
       matrix:
         shard: [1, 2, 3, 4]
-    name: differential-arm ${{ matrix.shard }}/4
+        # audit: the same run with the read-only notice payload detector compiled in (NOTICE_PAYLOAD_WRITE_CHECK=1)
+        leg: [plain, audit]
+    name: differential-arm ${{ matrix.shard }}/4 ${{ matrix.leg }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -590,13 +613,19 @@ jobs:
 
       - name: touches the outcome pipeline
         id: paths
-        # `git diff --name-only` prints repo-root paths wherever it runs, hence the package prefix
+        # `git diff --name-only` prints repo-root paths wherever it runs, hence the package prefix. The audit leg also
+        # runs when notice delivery changes: the global state, the notices, the preview copier or the detector itself.
+        env:
+          LEG: ${{ matrix.leg }}
         run: |
-          if git diff --name-only HEAD^1 HEAD | grep -qE '^packages/competition-factory/src/(mutate/(matchUps|drawDefinitions/positionGovernor|drawDefinitions/matchUpGovernor)|query/(matchUps|matchUp|drawDefinition))/'; then
+          changed=$(git diff --name-only HEAD^1 HEAD)
+          if grep -qE '^packages/competition-factory/src/(mutate/(matchUps|drawDefinitions/positionGovernor|drawDefinitions/matchUpGovernor)|query/(matchUps|matchUp|drawDefinition))/' <<<"$changed"; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          elif [ "$LEG" = audit ] && grep -qE '^packages/competition-factory/(src/(global/state|mutate/notifications)/|src/forge/previewState\.ts|scripts/noticeDiagnostics/)' <<<"$changed"; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "no outcome pipeline path changed; the differential arm does not run"
+            echo "no outcome pipeline path changed; the differential arm's $LEG leg does not run"
           fi
 
       - if: steps.paths.outputs.run == 'true'
@@ -604,11 +633,12 @@ jobs:
         with:
           node-version: 26
 
-      - name: vitest under OUTCOME_PIPELINE=differential, shard ${{ matrix.shard }}/4
+      - name: vitest under OUTCOME_PIPELINE=differential, shard ${{ matrix.shard }}/4, ${{ matrix.leg }}
         if: steps.paths.outputs.run == 'true'
         run: pnpm exec vitest run --shard=${{ matrix.shard }}/4
         env:
           OUTCOME_PIPELINE: differential
+          NOTICE_PAYLOAD_WRITE_CHECK: ${{ matrix.leg == 'audit' && '1' || '' }}
           TZ: UTC
 
   # verify:team-arms: the TEAM matrix over the seven extension draw types and more tieFormats, inert on

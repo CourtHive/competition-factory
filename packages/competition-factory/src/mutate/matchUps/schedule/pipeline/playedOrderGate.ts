@@ -10,11 +10,11 @@ import { ResultType } from '@Types/factoryTypes';
 import type { SchedulePlan } from './plan';
 
 /**
- * The played order in the pipeline (spec § 3.7; CA 2026-10-23, the write shape of SCHEDULING_PIPELINE_VNEXT.md § 7.A).
+ * The played order in the pipeline (spec § 3.7).
  *
  * - The GATE: the planner asks it of each slot it offers a matchUp, and a slot the rule refuses is never taken. Only a
- *   matchUp with a placed source or a placed dependent can be refused, so only those are asked. Since CA 2026-10-30 an
- *   unplayed neighbour orders too: plans, not only history.
+ *   matchUp with a placed source or a placed dependent can be refused, so only those are asked. An unplayed
+ *   neighbour orders too: plans, not only history.
  * - The GUARD: the writer asks it once of the whole plan, against the state the plan leaves, before anything is
  *   written. A plan made by the gate passes it; a refusal is a planner defect, and nothing is written.
  */

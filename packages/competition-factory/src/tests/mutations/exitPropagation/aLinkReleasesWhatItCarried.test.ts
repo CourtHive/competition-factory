@@ -13,7 +13,7 @@ import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
  *
  * The DOUBLE_ELIMINATION grand-final family: nine frozen-census seeds failing `ERR_EXISTING_POSITION_ASSIGNMENT`
  * after mutating, traced to four release paths that stopped at the `Backdraw --WINNER--> Main` link
- * (`Mentat/planning/EXIT_CASCADE_DE_GRAND_FINAL_AND_SIDE_KEY_DESIGN.md` § 3; CA chose the build, 2026-10-05). The
+ * (the double-elimination grand-final design, § 3). The
  * rule is the published one: no drawPosition crosses a link, a link moves a participant, so whatever it carried
  * belongs to the participant and comes back when they stop being the source round's winner.
  *
@@ -103,7 +103,7 @@ describe('the grand-final family: each shrunk census seed replays clean', () => 
  * THE STATE NO DETECTOR SAW. In de 9303011's draw, CLEARING the Backdraw semifinal instead of re-scoring it left
  * the participant who no longer won anything in the grand final, winning it by default, and in the Decider; and
  * `getDrawInconsistencies` called the draw clean. Now they come back out of both, and the grand final's produced
- * exit stands pending: a produced exit has no winningSide until a participant arrives (CA, 2026-09-20).
+ * exit stands pending: a produced exit has no winningSide until a participant arrives.
  */
 it('clearing the Backdraw semifinal takes its winner back out of the grand final and the Decider', () => {
   const drawId = 'link-clear';

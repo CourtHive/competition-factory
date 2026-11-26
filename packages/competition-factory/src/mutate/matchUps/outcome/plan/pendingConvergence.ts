@@ -30,7 +30,7 @@ import type { SeatFrame } from './carriedContinuation';
 export type PendingConvergence = ConvergedWrite & { touched: string[] };
 
 /**
- * 1b, the off-diagonal cell (ruling 3: its own rule): under `doubleExitPropagateBye: false` a double exit's loser seat
+ * 1b, the off-diagonal cell (a rule of its own): under `doubleExitPropagateBye: false` a double exit's loser seat
  * meets the pending exit an earlier double exit produced on its loser matchUp, with nobody in it. v1 converges it there
  * (`handleLoserMatchUp` → `handleEmptyExitLoser`, DEA:646–781): the collapsed double exit written by `modifyMatchUpScore`
  * (`removeScore`, codes retained, no winner), the arriving side's carried origin merged beside the provenance standing

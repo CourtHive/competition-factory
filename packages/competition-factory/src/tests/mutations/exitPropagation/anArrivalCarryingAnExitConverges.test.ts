@@ -10,8 +10,8 @@ import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Constants/outcomePipelineConstan
 import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 /**
- * An arrival carrying an exit CONVERGES with the exit standing where it lands; it never takes it (F3, CA
- * 2026-10-04: fix the arrival itself).
+ * An arrival carrying an exit CONVERGES with the exit standing where it lands; it never takes it (F3: the
+ * arrival itself is fixed).
  *
  * The early-exit census arm (`exitBeforeArrivalCensus`), COMPASS 8/7 seed 9700004. `East|1|4`'s loser carries a
  * WALKOVER into West, passes a BYE and reaches `West|1|2`, which holds a carried DEFAULTED pending for its empty

@@ -1,6 +1,6 @@
 /**
  * Penalty CODES: each value is its `PenaltyTypeEnum` code, the vocabulary of the `Penalty.penaltyType` type, the
- * CODES schema and the `@courthive/i18n` `penalties.<CODE>` keys (CA, 2026-10-15). The factory keeps no display
+ * CODES schema and the `@courthive/i18n` `penalties.<CODE>` keys. The factory keeps no display
  * strings; a consumer renders a code through `@courthive/i18n` (the `courthive-i18n` repo).
  *
  * They were display labels (`'Ball Abuse'`) until this 7.x release, and a label is what got stored. A legacy label

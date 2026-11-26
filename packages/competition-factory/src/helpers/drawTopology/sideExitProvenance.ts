@@ -13,7 +13,7 @@ import { BYE, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 /**
  * Did this side's participant get here by WINNING its origin?
  *
- * An arrival records its origin and no decided status (F9, CA 2026-10-07): `{ previousMatchUpStatus, sourceMatchUpId }`.
+ * An arrival records its origin and no decided status: `{ previousMatchUpStatus, sourceMatchUpId }`.
  * Records written before that carry the origin's status as `matchUpStatus` too, so a non-exit, non-BYE status is
  * accepted as the same answer. A BYE's own arrival (`{ BYE, BYE }`) is not a result.
  */
@@ -26,14 +26,13 @@ export function arrivedByResult(entry?: SideExitProvenanceEntry): boolean {
 /**
  * Read a matchUp's side-keyed exit provenance.
  *
- * **P37 REMOVED THE LEGACY FALLBACK.** This function used to prefer the native field and, when it was
+ * **THE LEGACY FALLBACK IS GONE.** This function used to prefer the native field and, when it was
  * absent, DERIVE provenance from the provenance-shaped elements of `matchUpStatusCodes` — for records
  * written before the native field existed, or by a `LEGACY`-mode writer.
  *
- * CA settled it, 2026-09-27: *"we don't need to carry forward legacy equivalence at this point, and not
- * supporting LEGACY for bugs we are closing with provenance should not be considered a breaking change.
- * Any client that wants the resolutions should be moving to full NATIVE support."* So there is no
- * hydration boundary to negotiate and no cutover to stage: the fallback goes.
+ * Legacy equivalence is not carried forward, and dropping LEGACY support for defects that provenance
+ * closes is not a breaking change: a client that wants the resolutions moves to full NATIVE support.
+ * So there is no hydration boundary to negotiate and no cutover to stage: the fallback goes.
  *
  * Three reasons it was load-bearing, and why none of them survives:
  *
@@ -85,8 +84,8 @@ export function carriedExitStatus(entry?: SideExitProvenanceEntry): MatchUpStatu
 /**
  * Whether this matchUp's exit was PRODUCED by upstream propagation rather than played.
  *
- * **A PROVENANCE test, and the counterpart to `isExit`, which is a STATUS test.** CA asked for the
- * split by name, 2026-09-13, for the reason `isDoubleExit` was split out before it: readers reach
+ * **A PROVENANCE test, and the counterpart to `isExit`, which is a STATUS test.** It is split out
+ * by name for the reason `isDoubleExit` was split out before it: readers reach
  * for the predicate whose name is nearest, and `isExit` is nearest to everything.
  *
  * The two answer different questions and the difference is not cosmetic. `isExit(status)` is true of
@@ -111,13 +110,13 @@ export function isPropagatedExit({ matchUp }: { matchUp?: MatchUp }): boolean {
  * The sides of this matchUp that CARRY AN EXIT — read from what each entry says, not from its
  * being there.
  *
- * **Punch-list P19.** `sideExitProvenance` holds three different facts under one key, and only one
+ * **One key, three facts.** `sideExitProvenance` holds three different facts under one key, and only one
  * of them is an exit:
  *
  *  - a CARRIED EXIT — `matchUpStatus` is an exit status; the cascade delivered it to this side;
  *  - an ARRIVAL — `matchUpStatus: COMPLETED` or `BYE`; this side's occupant got here by winning or
  *    by advancing through a BYE, recorded because it is a real fact about a convergence;
- *  - (until 2026-10-22) a BYE CLAIM LEDGER — `byeClaims` and nothing else; retired (Mentat P58), ignored if stored.
+ *  - (until 2026-10-22) a BYE CLAIM LEDGER — `byeClaims` and nothing else; retired, ignored if stored.
  *
  * Every reader that asked *"does this matchUp hold a propagated exit"* by testing that the field
  * was non-empty therefore answered yes for all three. Measured 2026-09-29 over 1,440 draws played
@@ -145,8 +144,8 @@ export function getExitSides({ matchUp }: { matchUp?: MatchUp }): number[] {
  * exempts a matchUp from a detector but cannot decide whether a particular clear may proceed: the clear
  * takes back only what its own matchUp produced.
  *
- * ONE entry naming the source is enough (CA, 2026-10-03: *"clearing either origin of a converged
- * DOUBLE_EXIT cannot be refused if there is no downstream active matchUp"*). This asked that EVERY entry
+ * ONE entry naming the source is enough: clearing either origin of a converged
+ * DOUBLE_EXIT cannot be refused when there is no active matchUp downstream. This asked that EVERY entry
  * name it, on the reasoning that withdrawing one of a convergence's two origins would not restore the
  * prior state. It does: `withdrawProducedExits` is keyed on the source, and what is retained re-derives
  * (`deriveExitStateFromProvenance`) to the single carried exit the matchUp held before the second

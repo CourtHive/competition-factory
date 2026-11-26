@@ -8,7 +8,7 @@ import { intersection } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
 // constants and fixtures
-import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
+import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Tests/fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
 import { COMPASS, FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SINGLES } from '@Constants/eventConstants';

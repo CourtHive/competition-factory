@@ -48,7 +48,7 @@ function seedOf(side?: HydratedSide): number | undefined {
 /**
  * A result that was played to the end and fully scored: `COMPLETED` with a winner and a score whose every set is a
  * finished, legal set under the matchUp's format (`checkScoreCompleteness`, the rule the score-entry dialog gates its
- * Submit on). Retirements, walkovers and defaults are not, whatever their score (CA, 2026-10-26).
+ * Submit on). Retirements, walkovers and defaults are not, whatever their score.
  */
 function isFullyScored(matchUp: Partial<HydratedMatchUp>): boolean {
   if (matchUp?.matchUpStatus !== COMPLETED || !matchUp.winningSide) return false;

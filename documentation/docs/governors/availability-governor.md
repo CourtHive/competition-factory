@@ -128,6 +128,10 @@ The one authority for snapping and converting times, in place of ad hoc slot len
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | `runValidationPipeline` | validates a scheduling plan against engine state in ordered phases, collecting rule results with severity and fix actions |
 
+Without an `AvailabilityEngine` as `engine`, `runValidationPipeline` refuses with `MISSING_VALUE` (or `INVALID_VALUES` for
+something that is not an availability engine) instead of throwing. Its home is the standalone `availability` export,
+`availability.runValidationPipeline`.
+
 → [Validation Pipeline](../availability-engine/event-system-and-validation.md#validation-pipeline)
 
 ---

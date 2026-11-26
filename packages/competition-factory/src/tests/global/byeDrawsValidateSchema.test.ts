@@ -20,8 +20,8 @@ import {
  *
  * A BYE advances its opponent into round 2 beside a seat nobody has reached, and three writers stored
  * that as `[5, undefined]`, serialised `[5, null]`, which `tournament.schema.json` rejects (`drawPositions`
- * items are numbers). Measured 2026-10-02: every draw type below failed at 15, 13 and 11 of 16. CA ruled
- * the trailing hole be trimmed: `[5]` says the same thing. Validated AFTER a JSON round trip, because
+ * items are numbers). Measured 2026-10-02: every draw type below failed at 15, 13 and 11 of 16. The
+ * trailing hole is now trimmed: `[5]` says the same thing. Validated AFTER a JSON round trip, because
  * that is where `undefined` becomes the `null` the schema sees.
  */
 const ajv = new Ajv({ allowUnionTypes: true, allErrors: true });

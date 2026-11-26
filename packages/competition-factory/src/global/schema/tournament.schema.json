@@ -5735,7 +5735,7 @@
         },
         "byeClaims": {
           "type": "array",
-          "description": "Retired (Mentat P58, 2026-10-22): no longer written or read; accepted so that stored records still validate.",
+          "description": "Retired: no longer written or read; accepted so that stored records still validate.",
           "items": {
             "type": "string"
           }
@@ -6238,7 +6238,7 @@
       "additionalProperties": false
     },
     "PolicyDefinitions": {
-      "$comment": "Policies keyed by policy type, the shape of the appliedPolicies extension value on a Tournament, Event, DrawDefinition or Structure (resolved tournament, then event, then draw, then structure; a later level replaces a policy type whole). Its keys are the policy types the factory defines (policyConstants). A policy type described only as an object is not yet modelled here; the modelled ones are closed. Not yet referenced by any record definition: policies are stored in the extension, whose value is unconstrained. See Mentat/planning/CODES_POLICY_DEFINITIONS.md for the path to a first-class attribute.",
+      "$comment": "Policies keyed by policy type, the shape of the appliedPolicies extension value on a Tournament, Event, DrawDefinition or Structure (resolved tournament, then event, then draw, then structure; a later level replaces a policy type whole). Its keys are the policy types the factory defines (policyConstants). A policy type described only as an object is not yet modelled here; the modelled ones are closed. Not yet referenced by any record definition: policies are stored in the extension, whose value is unconstrained.",
       "type": "object",
       "properties": {
         "audit": {

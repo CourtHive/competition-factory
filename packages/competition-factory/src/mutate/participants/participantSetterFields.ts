@@ -18,7 +18,7 @@ import { TEAM_EVENT } from '@Constants/eventConstants';
  * Consumers send the whole participant on every save, so each of these arrives on almost every call. A value equal to
  * the stored one is therefore never refused; only a CHANGED value is acted on:
  *
- * - `timeItems` and `person.personOtherIds` are MERGED (CA 2026-11-02): a re-import must be able to carry new ratings
+ * - `timeItems` and `person.personOtherIds` are MERGED: a re-import must be able to carry new ratings
  *   and new ids, and nothing stored is ever deleted by omission.
  * - every other setter-owned attribute is REFUSED with an error naming the method that writes it.
  */

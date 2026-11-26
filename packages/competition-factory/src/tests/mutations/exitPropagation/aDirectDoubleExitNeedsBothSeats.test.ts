@@ -10,14 +10,14 @@ import { DOUBLE_ELIMINATION, SINGLE_ELIMINATION } from '@Constants/drawDefinitio
 import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Constants/outcomePipelineConstants';
 
 /**
- * A DIRECT double exit needs both seats reached — CA, 2026-10-04: *"There should be no way for a matchUp
+ * A DIRECT double exit needs both seats reached — the rule: *"There should be no way for a matchUp
  * to be a DOUBLE_EXIT when another produced exit arrives … How can three entities arrive in one matchUp
  * which can only hold two drawPositions?"*
  *
  * `checkParticipants` waived the two-participant rule for any direct entry naming no winner whenever
  * `propagateExitStatus` was on, so a double exit could be entered beside a seat nobody had reached. The
- * arrival into that seat then met a double exit already standing. F3 (Mentat OUTCOME_PIPELINE_OPEN_QUESTIONS)
- * was the result: in census 9100555 the convergence written there was refused and the refusal dropped,
+ * arrival into that seat then met a double exit already standing. Finding F3 of the outcome pipeline's
+ * open questions was the result: in census 9100555 the convergence written there was refused and the refusal dropped,
  * reported as success over a walked-over player standing as a winner.
  *
  * Run under the differential, so v2's refusal (row 6, § 2.1) must agree with v1's on every call.

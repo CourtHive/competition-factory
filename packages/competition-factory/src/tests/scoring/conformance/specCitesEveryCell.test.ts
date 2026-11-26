@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 
 /*
- * The scoring-engine spec gate (SE1 of Mentat/planning/SCORING_ENGINE_SPEC_AND_V2_PLAN.md). The spec is
+ * The scoring-engine spec gate. The spec is
  * what a reimplementer builds from, so every cell of the conformance matrix must be placed under a rule
  * of it. A cell is cited by its id, verbatim, in inline code, on a line that names the spec section
  * (`§ n`) whose rules govern it. A new matrix cell fails here until the spec says which rule scores it.

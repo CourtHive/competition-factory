@@ -32,7 +32,7 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  * `reDerivedLoserStands` does not cover it: `West|2|2` re-derives to a pending walkover, undecided, so there is no
  * re-derived result to serve the link from. Only the claim said the BYE had a reason to exist.
  *
- * The `byeClaims` ledger is retired (Mentat P58, CA 2026-10-21): nothing records the claim now, and the BYE's reason is
+ * The `byeClaims` ledger is retired: nothing records the claim now, and the BYE's reason is
  * read from the draw. `West|2|2` holds `West|1|3`'s produced walkover alone on its side, so its loser will be nobody
  * (`feederSendsNobody`: `EXIT_PENDING`; while the probe stands `West|2|2` is a BYE matchUp, `FEEDER_HOLDS_BYE`), and
  * the seat is among those `West|1|3` is the reason for (`byeSeatsOwedTo`), in the probed draw and after the clear

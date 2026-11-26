@@ -9,7 +9,7 @@ import { addDays } from '@Tools/dateTime';
 import { expect, test } from 'vitest';
 
 // constants and fixtures
-import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
+import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Tests/fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
 import { MAIN, QUALIFYING, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { MISSING_EVENT, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';
@@ -369,7 +369,7 @@ test.each([tournamentEngine])(
       venueId,
     };
     // every qualifying round at one time is no order the rounds can play in; this test is about the date filter, so
-    // it keeps the played order only (CA 2026-10-30 made the order bind plans)
+    // it keeps the played order only (the played order binds plans)
     result = tournamentEngine.bulkScheduleMatchUps({
       plannedOrder: false,
       matchUpContextIds,

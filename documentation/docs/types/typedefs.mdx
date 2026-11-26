@@ -666,7 +666,7 @@ export interface DrawDefinition {
 /**
  * Discriminated by `structureType`: test `structureType === CONTAINER` to reach `structures`, anything else to
  * reach `matchUps` and `positionAssignments`. This is the soft form; the 8.0.0 form drops the `never` fields so
- * that a read must narrow first (Mentat/planning/FACTORY_STRUCTURE_UNIONS_8_0_0.md).
+ * that a read must narrow first.
  */
 export type Structure = ItemStructure | ContainerStructure;
 ```
@@ -844,7 +844,7 @@ export interface RoundDrawLink extends DrawLinkBase {
 /**
  * A link that moves participants by their FINISHING POSITION in a round robin: `finishingPositions` names the group
  * places that cross it (`[1]`: every group's winner), decided by tally. Labelled `POSITION`, or `WINNER` (valid,
- * permanently: CA, 2026-10-23); a reader asks `traversesByFinishingPosition`, never the label alone. A `roundNumber` is
+ * permanently); a reader asks `traversesByFinishingPosition`, never the label alone. A `roundNumber` is
  * allowed and decides nothing (the factory records the groups' final round on a qualifying link).
  */
 export interface PositionDrawLink extends DrawLinkBase {

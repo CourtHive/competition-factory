@@ -4,7 +4,7 @@ import { extractDate } from '@Tools/dateTime';
 import { expect, it } from 'vitest';
 
 // constants and fixtures
-import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
+import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Tests/fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
 import { SCHEDULED_MATCHUPS } from '@Constants/errorConditionConstants';
 
 it('thows an error if a venue has scheduled matchUps', () => {

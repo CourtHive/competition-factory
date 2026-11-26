@@ -169,6 +169,12 @@ outcome: {
   aggregate kept, and `matchUpsDrawn` for both teams. It stays in progress while any line is still to be played, and it
   returns there if a line is cleared. In elimination a level dual stays in progress until a decider or a recorded
   decision names its winner.
+- A winner on a level TEAM dual, in any draw type, records how it was decided, as a single matchUp's does: without
+  `score.overtime` (`decidedIn: 'EXTERNAL'`, `decidedBy`) it is refused with `INVALID_SCORE`, whether the winner is
+  given alone or with a level team score typed by hand, and with or without `disableAutoCalc`. The record is refused too
+  where it does not describe a decided result: no winner, an unknown `decidedBy.method`, or a dual that is not level.
+  Unaffected: an exit naming its winner (`RETIRED`, `WALKOVER`, `DEFAULTED`), a manual winner on a dual that is not
+  level, and a tie format whose own `tallyDirectives` name the winner of a level total.
 - In a round robin a level result is a draw; one decided outside the score is the winner's win, and a standings rule
   can award it differently (`decidedIn`, `decidedBy`: see the
   [round robin tally policy](../policies/roundRobinTallyPolicy.md)).

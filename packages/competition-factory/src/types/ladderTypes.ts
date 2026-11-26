@@ -9,8 +9,8 @@ import type {
 } from '@Constants/ladderConstants';
 
 /**
- * The rules that make a ladder a ladder. Every field varies by club — see
- * Mentat `planning/LADDER_COMPETITION_MODEL.md` §1.2 — so all of it is data.
+ * The rules that make a ladder a ladder. Every field varies by club, so all of
+ * it is data.
  */
 export type LadderPolicy = {
   policyName?: string;

@@ -6,8 +6,8 @@ import type { TimelineEntry } from '@Scoring/kernel/types';
 
 /*
  * ScoringEngine v2 (SE2b): the points-to views (§ 11.2), held to the spec. `pointsToGame` and `isBreakpoint` are
- * also held to v1 by the differential; `gamesToSet`, `pointsToSet` and `pointsToMatch` are held here alone until CA
- * rules on how v1 counts them (plan § 9, SE2b-D23, D25, D26), so these cases are their only oracle.
+ * also held to v1 by the differential; `gamesToSet`, `pointsToSet` and `pointsToMatch` are held here alone until it
+ * is decided how v1 counts them, so these cases are their only oracle.
  */
 
 const pts = (stream: string): TimelineEntry[] =>

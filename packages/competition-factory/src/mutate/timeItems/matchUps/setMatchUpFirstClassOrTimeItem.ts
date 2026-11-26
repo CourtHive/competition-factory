@@ -3,7 +3,7 @@ import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 
 // constants and types
-import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { ResultType } from '@Types/factoryTypes';
 
@@ -20,6 +20,8 @@ type SetMatchUpFirstClassOrTimeItemArgs = {
   itemType: string;
   value: any;
   event?: Event;
+  /** a schedule plan's working copy of the matchUp, written in its place; internal (a caller's `matchUp` is never written) */
+  workingMatchUp?: MatchUp;
 };
 
 /**
@@ -45,8 +47,9 @@ export function setMatchUpFirstClassOrTimeItem({
   itemType,
   value,
   event,
+  workingMatchUp,
 }: SetMatchUpFirstClassOrTimeItemArgs): ResultType {
-  const { matchUp } = findDrawMatchUp({ drawDefinition, event, matchUpId });
+  const matchUp = workingMatchUp ?? findDrawMatchUp({ drawDefinition, event, matchUpId }).matchUp;
   if (!matchUp) return { error: MATCHUP_NOT_FOUND };
 
   const result = setFirstClassOrTimeItem({

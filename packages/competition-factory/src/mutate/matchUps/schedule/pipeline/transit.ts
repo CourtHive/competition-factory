@@ -1,5 +1,5 @@
 /**
- * Transit between venues (scheduling-pipeline.md § 3.4, CA 2026-10-25): a participant whose consecutive matchUps are at
+ * Transit between venues (scheduling-pipeline.md § 3.4): a participant whose consecutive matchUps are at
  * different venues needs time to get from one to the other. Recovery counts toward it, so the later matchUp may not start
  * before the earlier ends plus the GREATER of the recovery and the transit; transit holds participants, never courts.
  */

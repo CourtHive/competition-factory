@@ -333,7 +333,7 @@ describe('Tiebreak NoAD extended play — calcSideTiebreakPointsTo', () => {
 });
 
 // ============================================================================
-// 5. gamesToSet counts the games won in a row that win the set (§ 11.2; SE2b-D23, CA 2026-10-21): a set whose
+// 5. gamesToSet counts the games won in a row that win the set (§ 11.2): a set whose
 //    score already wins it, never marked won, counts the next game, as v2 does; and the no-tiebreak margin
 // ============================================================================
 describe('gamesToSet — a score that already wins the set, and the no-tiebreak margin', () => {

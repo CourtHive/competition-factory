@@ -112,7 +112,7 @@ it.each(refused)('is not made where %s', (_label, writer) => {
 });
 
 /**
- * v1 succeeds where its forward settle stops at the bound, and warns (CA, 2026-11-18: recorded, with v1's warning). The
+ * v1 succeeds where its forward settle stops at the bound, and warns (recorded, with v1's warning). The
  * program says the run stopped there, and offers no proof of a fixpoint: running the passes again would do the rest.
  */
 it('is made where v1 stops its forward settle at the bound, and says so', () => {

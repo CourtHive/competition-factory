@@ -16,7 +16,7 @@ import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { RATING } from '@Constants/scaleConstants';
 import { ELO } from '@Constants/ratingConstants';
 
-// ratings policy S2 (Mentat planning/RATINGS_POLICY_PLAN.md): margin, overtime and shootout, draws, knock-out loss
+// ratings policy S2: margin, overtime and shootout, draws, knock-out loss
 // protection and K by tier, each from a published method; every expected value is worked from the source's formula
 
 const HOCKEY = 'PER3XA-S:T20P-O:1SD/T5P-F:SO5';

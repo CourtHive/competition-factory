@@ -5,8 +5,8 @@ import { expect, it } from 'vitest';
 // Constants
 import { SCHEDULE_LOCKED } from '@Constants/errorConditionConstants';
 
-// A schedule lock is respected by every path that moves a placement (CA, 2026-10-16: "schedule locks should always be
-// respected"). bulkRescheduleMatchUps and reorderUpcomingMatchUps moved locked matchUps; a date change cleared the court
+// A schedule lock is respected by every path that moves a placement: schedule locks are always
+// respected. bulkRescheduleMatchUps and reorderUpcomingMatchUps moved locked matchUps; a date change cleared the court
 // of a matchUp whose lock pinned only its court.
 
 const startDate = '2024-01-15';

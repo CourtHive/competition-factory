@@ -42,14 +42,13 @@ import {
  * All four cases are shrunk reproductions from that window, which is why the seeds are the sweep's
  * own.
  *
- * TWO NOW STOP AT A REFUSAL (CA, 2026-10-04). Each entered a DIRECT double exit on a matchUp holding one
+ * TWO NOW STOP AT A REFUSAL. Each entered a DIRECT double exit on a matchUp holding one
  * participant beside a seat nobody had reached, which is no longer accepted: a double exit is one exit
  * per seat. `refusedAt` pins the step and that it changes nothing. Measured the same day: with the
  * `holdsPropagatedBye` clause switched off, the chain-of-walkovers case was the ONLY one that failed,
  * and only through that refused shape; a double exit entered with both seats filled and then re-scored
  * to a winner never needed the clause (six draw types, both double exits, propagation on and off).
- * Whether the clause is reachable from legal steps at all is recorded as open in
- * `Mentat/planning/OUTCOME_PIPELINE_OPEN_QUESTIONS.md` (F3).
+ * Whether the clause is reachable from legal steps at all is an open question (F3).
  */
 
 const DRAW_ID = 'propagated-bye-yields';

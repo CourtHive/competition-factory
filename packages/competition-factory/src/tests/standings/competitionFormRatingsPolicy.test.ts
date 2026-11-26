@@ -13,7 +13,7 @@ import { POLICY_TYPE_COMPETITION, POLICY_TYPE_RATINGS } from '@Constants/policyC
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 /**
- * A competition's dynamic form rating may name a ratings policy (CA 2026-11-05); without one it is rated as today, from
+ * A competition's dynamic form rating may name a ratings policy; without one it is rated as today, from
  * the policy's own kFactor and logisticScale, else POLICY_RATINGS_COMPETITION_FORM's 24 and 400, with the share of the
  * points (else games) won as the actual result.
  */

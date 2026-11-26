@@ -267,9 +267,9 @@ describe('Issue #3848: DOUBLE_WALKOVER propagation in FMLC consolation rounds', 
      *
      * It said *"(fed participant wins)"*. Measured 2026-09-20: `Consolation|2|1` holds drawPosition
      * 1 and NOTHING else — dp1 is a draw BYE and the other side is empty. Zero participants. Nobody
-     * was fed, so nobody could win. CA confirmed the comment is wrong, not just the expectation.
+     * was fed, so nobody could win. The comment was wrong, not just the expectation.
      *
-     * These previously expected `WALKOVER`, the produced exit overwriting the BYE. CA, 2026-09-20:
+     * These previously expected `WALKOVER`, the produced exit overwriting the BYE. The rule:
      * *"a propagated exit encountering a BYE should be advanced. In both cases the BYE remains a
      * BYE"* — *"the `matchUpStatus: BYE` does not change."*
      *
@@ -290,10 +290,10 @@ describe('Issue #3848: DOUBLE_WALKOVER propagation in FMLC consolation rounds', 
 
     // R2P2 status codes should reference the consolation R1 DOUBLE_WALKOVER
     // (not the main draw match), showing DOUBLE_WALKOVER as previousMatchUpStatus
-    // P37, and the assertion gets STRONGER for it. The claim the comment above makes is about
+    // The assertion is now on provenance, and it gets STRONGER for it. The claim the comment above makes is about
     // IDENTITY — the exit came from the consolation R1 matchUp, not from the main-draw one — and the
-    // legacy array cannot express that: `sourceMatchUpId` is deliberately not projected into it (CA,
-    // 2026-09-09). So this could only ever check that a `DOUBLE_WALKOVER` appeared somewhere in the
+    // legacy array cannot express that: `sourceMatchUpId` is deliberately not projected into it.
+    // So this could only ever check that a `DOUBLE_WALKOVER` appeared somewhere in the
     // array, which is true of either source. Provenance names the producer, so the test now asserts
     // the thing it was written to assert.
     const r2p2Origin = consolR2P2?.sideExitProvenance?.[2];

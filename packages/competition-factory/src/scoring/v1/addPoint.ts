@@ -90,7 +90,7 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
   // Parse format to get structure
   const parsed = parse(matchUp.matchUpFormat);
   // Overtime syntax is readable before its runtime integration is activated. Never ignore its policy. A shootout
-  // final takes a tally only (Ruling 3), never a point.
+  // final takes a tally only, never a point.
   if (!parsed || parsed.overtimeFormat || parsed.finalSetFormat?.shootout) {
     throw new Error(`Invalid matchUpFormat: ${matchUp.matchUpFormat}`);
   }
@@ -186,7 +186,7 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
 
   // Resolve point multiplier for score increment
   // If scoreValue is explicitly set on options, use it directly (parser override). A configured multiplier
-  // applies only where a point is a unit; where points build games it is not consulted (§ 4.4, CA 2026-10-18).
+  // applies only where a point is a unit; where points build games it is not consulted (§ 4.4).
   const multipliers = config?.pointMultipliers ?? [];
   const countsUnits = pointCountsUnits(newMatchUp, formatStructure, setType, activeSetFormat);
   const scoreIncrement = options.scoreValue ?? (countsUnits ? resolvePointValue(point, multipliers) : 1);
@@ -458,7 +458,7 @@ function handleMatchTiebreak(
   const tiebreakTo = formatStructure.finalSetFormat?.tiebreakSet?.tiebreakTo || 10;
   const isNoAD = formatStructure.finalSetFormat?.tiebreakSet?.NoAD || false;
 
-  // a match tiebreak is a set scored by a tiebreak-only rule, and is marked as one (§ 1.2, CA 2026-10-21)
+  // a match tiebreak is a set scored by a tiebreak-only rule, and is marked as one (§ 1.2)
   const currentSet = getOrCreateSet(matchUp, true, false);
   const currentSetIndex = matchUp.score.sets.indexOf(currentSet);
 
@@ -516,7 +516,7 @@ type PlacedPoint = Point & { set?: number; game?: number; number?: number };
 
 /**
  * A point's `number`: the points played in its game before it (§ 11.1), not their values. The running score counts
- * values, so each earlier point of the game worth other than one is taken back to one (SE2a-D12, CA 2026-10-21).
+ * values, so each earlier point of the game worth other than one is taken back to one.
  */
 function pointsPlayedBefore(matchUp: MatchUp, point: Point, runningScore: number): number {
   const { set, game } = point as PlacedPoint;
@@ -575,8 +575,8 @@ function handleTimedSet(
 /**
  * Whether points in this timed set build games. A games-based timed set (`T{minutes}`, `T{minutes}G`)
  * under the SET root is a tennis-family set: its points make games of the match's game format (`-G:`:
- * traditional, with deuce, No-Ad and deuce caps, or consecutive points, CA 2026-10-18), and the set
- * counts games (CA 2026-10-17). Elsewhere a point stays one scoring unit:
+ * traditional, with deuce, No-Ad and deuce caps, or consecutive points), and the set
+ * counts games. Elsewhere a point stays one scoring unit:
  * - under another root (HAL, QTR, PER, RND, INN) and in the standalone form, a game is the sport's own
  *   unit (a goal, a basket);
  * - in an aggregate format the segment's total is its units: INTENNSE bolts (`SET2XA-S:T10`) score
@@ -591,8 +591,8 @@ export function timedSetBuildsGames(
 }
 
 /**
- * Whether a point is a unit of the set in play's score, so its value counts (spec § 4.4, § 5 rule 5, § 6.2;
- * CA 2026-10-18): a tiebreak-only segment (a match tiebreak included), and a timed segment whose points do
+ * Whether a point is a unit of the set in play's score, so its value counts (spec § 4.4, § 5 rule 5, § 6.2):
+ * a tiebreak-only segment (a match tiebreak included), and a timed segment whose points do
  * not build games. Where points build games (a standard set, a tennis-family timed set, the tiebreak a level
  * timed set plays at time) and in a combined total, a point is one point and nothing else.
  */
@@ -630,7 +630,7 @@ function handleTimedGamePoint(
   if (winner === 0) side1GameScores[last] += 1;
   else side2GameScores[last] += 1;
 
-  // the games are of the match's declared game format, a consecutive-points one included (§ 3.5, CA 2026-10-18)
+  // the games are of the match's declared game format, a consecutive-points one included (§ 3.5)
   const gameFormat = formatStructure?.gameFormat;
   const consecutiveCount = gameFormat?.type === 'CONSECUTIVE' ? gameFormat.count || 3 : undefined;
   let gameWon: number | undefined;
@@ -654,7 +654,7 @@ function handleTimedGamePoint(
 }
 
 /**
- * A point of the tiebreak a level timed set plays at time (`T{minutes}/TB{n}`, CA 2026-10-17). The
+ * A point of the tiebreak a level timed set plays at time (`T{minutes}/TB{n}`). The
  * tiebreak's winner takes the set by one more game (or point, in a points-based set), as a tennis
  * tiebreak wins 7-6, and the set is closed.
  */
@@ -682,7 +682,7 @@ function handleTimedTiebreakPoint(
   point.score = `${tb1}-${tb2}`;
   if (won === undefined) return;
 
-  // the point that completes the tiebreak completes a game, so it shows the next game's 0-0 (§ 11.1, CA 2026-10-21)
+  // the point that completes the tiebreak completes a game, so it shows the next game's 0-0 (§ 11.1)
   point.score = '0-0';
   if (won === 0) currentSet.side1Score = games[0] + 1;
   else currentSet.side2Score = games[1] + 1;
@@ -708,7 +708,7 @@ function getOrCreateSet(matchUp: MatchUp, isTiebreakOnly: boolean, isTimed: bool
   // Need new set
   const newSet: SetScore = { setNumber: matchUp.score.sets.length + 1, side1Score: 0, side2Score: 0 };
   // a timed set scored in units plays no game point by point, so it has no per-game counts; one whose points build
-  // games opens them with its first point (CA 2026-10-21)
+  // games opens them with its first point
   if (!isTimed) Object.assign(newSet, { side1GameScores: [], side2GameScores: [] });
   if (isTiebreakOnly) newSet.isTiebreakOnly = true;
   if (isTimed) newSet.isTimed = true;
@@ -744,7 +744,7 @@ export function validatePointInput(options: Partial<AddPointOptions>): void {
 }
 
 /**
- * How the side due to serve is known in a set (spec § 10, CA 2026-10-18):
+ * How the side due to serve is known in a set (spec § 10):
  * - `rotation`: derived by the format (§ 10.1–10.3): game by game in standard sets, Rule 5(b) in a tiebreak
  *   (a tennis match tiebreak `-F:TB{n}` included), and unit by unit in timed segments, continuously across
  *   segments;
@@ -801,7 +801,7 @@ export function deriveServer(matchUp: MatchUp, formatStructure: FormatStructure,
   if (matchUp.serverFlip !== undefined) {
     return matchUp.serverFlip ? ((1 - baseServer) as 0 | 1) : baseServer;
   }
-  // A record that names its initial server and has no point yet is oriented by it (SE3-E1): v2 writes no
+  // A record that names its initial server and has no point yet is oriented by it: v2 writes no
   // serverFlip, so this is how v1 reads the record v2 writes. Once a point is played, its server says it.
   const initialServer = matchUp.history?.initialServer;
   if ((initialServer === 0 || initialServer === 1) && !matchUp.history?.points?.length) {

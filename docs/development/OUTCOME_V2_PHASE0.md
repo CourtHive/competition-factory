@@ -1,19 +1,19 @@
 # Outcome v2 Phase 0 progress
 
-Status: A3, A4 and the A6 finding-record fields are on this branch (`efd9836d`, `de61075a`); A5 runners on Mentat
-`feat/outcome-v2-phase0-runners`. Phase B (the normal census) ran at `efd9836d`; its four engine findings have fixes on
+Status: A3, A4 and the A6 finding-record fields are on this branch (`efd9836d`, `de61075a`); A5 runners on the census
+runners' `feat/outcome-v2-phase0-runners` branch. Phase B (the normal census) ran at `efd9836d`; its four engine findings have fixes on
 separate branches from `dev`. Branch: `feat/outcome-v2-phase0`, from `origin/dev` at
 `7afc4399a194a0c1ed0399d3f07e19390d787b94`. Verified: 2026-10-20.
 
 ## Orientation and sequence
 
-The controlling tracker is Mentat's top TASKS entry. The executor plan §4 and census instrument repair
+The executor plan §4 and census instrument repair
 plan establish A3 full-record observation, A4 replay dispositions/accounting and A5 derived runner
 verdicts. The October 19 closing status records every F1–F9/O1 ruling; older pending-review wording
 is superseded. S0/S1 may precede Phase C; v2 ownership of writes waits for v1 closure. Production uses v1.
 
 Read alongside the plans: the October 17 exit-cascade/census assessment, outcome pipeline open questions
-and specification, design-flaw punch list (P15/P26/P27), canonical coding/architectural standards,
+and specification, design-flaw punch list, canonical coding/architectural standards,
 ATC instructions, active claims and the five latest session logs. Source confirmed the omitted fields,
 ambiguous build-failure/null result, per-step policy omission and unconditional runner DONE convention.
 
@@ -52,7 +52,7 @@ ambiguous build-failure/null result, per-step policy omission and unconditional 
   policy reaches the executor.
 - Census, policy, per-step and stall instruments write per-scenario REPLAY receipts and SUMMARY totals.
   Missing histories and recorded generation failures are build failures; the stall instrument no longer
-  filters them out. The current Mentat runners have not yet been adapted to these new rows.
+  filters them out. The current census runners have not yet been adapted to these new rows.
 
 ## A6: finding records that reproduce (fields only)
 
@@ -112,23 +112,23 @@ Ran on Button at `efd9836d`, output `~/censuses/outcome-v2-phase0-20261019/phase
 - **The 20 incomplete histories** have scheduled steps that no longer hold two participants (`not-scoreable`). 18 replay
   complete at the S8 emitting ref `bf5553012b`; a bisect over first-parent `dev` attributes each to an exit-propagation
   fix: #5576 (12), #5599 (4), #5510 (2). One representative per fix was read parent vs fix; in each the parent state was
-  the defective one. **CA ruled 2026-10-20 to retire the 18 in a ledger, never delete them**: Mentat
+  the defective one. **The 18 are retired in a ledger, never deleted**: the runners'
   `retired-inputs-phase-b.json` (`b685fd9c`) records each identity; runner support and re-emission are open. The 2 gate-set
   histories (on 20625776, on 21027128) were incomplete before S8 and are not yet adjudicated.
 - **The four findings**, re-replayed at `de61075a` for the A6 fields, all DO_UNDO_IDENTITY at the `clear` stage, all
   engine-side (shrunk keeping property, probe and first divergence; `~/census-work/shrunk/`):
 
-| seed     | draw                   | mechanism                                                                                                  | fix (branch from `dev`)                                                                          |
-| -------- | ---------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| 30004303 | COMPASS 32/30          | a convergence dissolved through `applyWithdrawnExits` never got back the BYE `reclaimSingleExitBye` took   | `fix/census-b-30004303`: owed once the call settles; plus CA ruling (b) in the round-trip oracle |
-| 30007402 | COMPASS 32/32          | `withdrawByeSeats` cleared a BYE with its last claim though the seat's feeder was a BYE matchUp            | `fix/census-b-30007402`                                                                          |
-| 30009232 | CURTIS_CONSOLATION 8/6 | a WALKOVER ⇄ DEFAULTED relabel missed the carry recorded on a BYE-held matchUp                             | `fix/census-b-30009232`                                                                          |
-| 30030527 | MFIC 32/32             | a provenance entry kept the side it was written on when its feeder's side changed (rule 3 vs feeder order) | `fix/census-b-30030527`: end-of-call re-key, CA ruling (1)                                       |
+| seed     | draw                   | mechanism                                                                                                  | fix (branch from `dev`)                                                                           |
+| -------- | ---------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| 30004303 | COMPASS 32/30          | a convergence dissolved through `applyWithdrawnExits` never got back the BYE `reclaimSingleExitBye` took   | `fix/census-b-30004303`: owed once the call settles; plus rule (b) below in the round-trip oracle |
+| 30007402 | COMPASS 32/32          | `withdrawByeSeats` cleared a BYE with its last claim though the seat's feeder was a BYE matchUp            | `fix/census-b-30007402`                                                                           |
+| 30009232 | CURTIS_CONSOLATION 8/6 | a WALKOVER ⇄ DEFAULTED relabel missed the carry recorded on a BYE-held matchUp                             | `fix/census-b-30009232`                                                                           |
+| 30030527 | MFIC 32/32             | a provenance entry kept the side it was written on when its feeder's side changed (rule 3 vs feeder order) | `fix/census-b-30030527`: end-of-call re-key, rule (1) below                                       |
 
-- **CA rulings 2026-10-20.** (b): a BYE claim on a loser seat a BYE matchUp feeds is history-dependent by design, so the
+- **Rules settled 2026-10-20.** (b): a BYE claim on a loser seat a BYE matchUp feeds is history-dependent by design, so the
   round trip leaves it out and polices it (both state rules, never and always claiming, were measured and each reopened
-  a pinned fix). (1): re-key provenance by the feeder's current side; rule 3 unchanged. Design flaws recorded in Mentat
-  DESIGN_FLAWS_PUNCH_LIST: P58 (the BYE-claim ledger records who, not why), P59 (side-keyed provenance is unstable).
+  a pinned fix). (1): re-key provenance by the feeder's current side; rule 3 unchanged. Two design flaws recorded with them:
+  the BYE-claim ledger records who, not why; side-keyed provenance is unstable.
 - **Validation of the fix branches (local + Button standalone):** each passes the exitPropagation folder (322 files),
   the full default suite and `pnpm verify`; each pin fails without its fix. No comparative Button gate has passed yet:
   the A5 runners validate this branch's receipt format, which `dev` lacks, so the fixes are gated after this branch
@@ -136,7 +136,7 @@ Ran on Button at `efd9836d`, output `~/censuses/outcome-v2-phase0-20261019/phase
 
 ## Remaining
 
-1. Merge this branch, then the A5 runners (Mentat `feat/outcome-v2-phase0-runners`, which also carries the gate
+1. Merge this branch, then the A5 runners (the runners' `feat/outcome-v2-phase0-runners` branch, which also carries the gate
    install/output isolation fix `930a93ac` and the retirement ledger).
 2. Rebase each fix branch onto the merged harness and gate it on Button (frozen arms, then openings); then its PR.
 3. Runner support for retired inputs (`RETIRED` rows, re-emission at the current revision); adjudicate the two

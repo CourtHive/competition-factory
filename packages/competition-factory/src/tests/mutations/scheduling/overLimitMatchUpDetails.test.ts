@@ -81,7 +81,7 @@ describe('overLimitMatchUpDetails', () => {
     }
 
     // Every matchUpId in overLimitMatchUpIds has exactly one entry in the details payload: every refusal
-    // got an explanation, and a matchUp over a limit is asked once per date, not at every slot after (CA 2026-10-23)
+    // got an explanation, and a matchUp over a limit is asked once per date, not at every slot after
     const detailIds = details.map((d) => d.matchUpId);
     expect(detailIds.toSorted()).toEqual(overLimitIds.toSorted());
   });

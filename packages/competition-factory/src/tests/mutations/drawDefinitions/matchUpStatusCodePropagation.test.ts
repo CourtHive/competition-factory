@@ -53,7 +53,7 @@ it('will properly clean up matchUpStatusCodes when removing DOUBLE_WALKOVERs', (
   expect(finalMatchUp.roundNumber).toEqual(2);
   expect(finalMatchUp.winningSide).toEqual(1);
   expect(finalMatchUp.matchUpStatus).toEqual(WALKOVER);
-  // P37. The claim is that the scored matchUp's POLICY codes (`WD.WD`) did not ride downstream onto
+  // The claim is that the scored matchUp's POLICY codes (`WD.WD`) did not ride downstream onto
   // the propagated final — so it is stated against the policy tenant, which is what survives the
   // exit tenant's eviction. It used to read `filter((code) => !code.sideNumber)`, i.e. "keep the
   // elements that are not the projection", which spelled the same claim in terms of the projection's

@@ -9,7 +9,7 @@ import { penaltyConstants } from '@Constants/penaltyConstants';
 import { PenaltyTypeEnum } from '@Types/tournamentTypes';
 
 /**
- * THE FACTORY STORES PENALTY CODES (CA, 2026-10-15). Every `penaltyConstants` value is its `PenaltyTypeEnum` code,
+ * THE FACTORY STORES PENALTY CODES. Every `penaltyConstants` value is its `PenaltyTypeEnum` code,
  * the vocabulary of the `Penalty` type, the CODES schema and the `@courthive/i18n` `penalties.<CODE>` keys. The
  * display labels earlier releases stored are accepted and rewritten to the code on write, and by
  * `migrateTournamentRecord` for a record that already holds them, until 8.0.0.

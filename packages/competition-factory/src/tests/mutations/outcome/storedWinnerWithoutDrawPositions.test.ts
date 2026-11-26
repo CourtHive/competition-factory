@@ -18,7 +18,7 @@ const MODES: OutcomePipelineMode[] = [OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2, 
 
 /**
  * A WINNER GIVEN AGAIN TO A MATCHUP WITH NO drawPositions IS REFUSED BEFORE THE FIRST WRITE (record soak 2026-11-18,
- * class D5: 122 calls, 118 of them on doubles draws of one USTA record consistent as loaded; CA, 2026-11-19).
+ * class D5: 122 calls, 118 of them on doubles draws of one USTA record consistent as loaded).
  *
  * A draw labelled AD_HOC whose matchUps store a `roundPosition` is not ad hoc to the factory (`isAdHoc` reads the
  * matchUps), and its matchUps hold their sides and no `drawPositions`. A first winner there was already refused

@@ -123,7 +123,7 @@ export type OutcomeView = {
   declaredWinnerPlayedOn?: boolean;
   /**
    * a WINNER/LOSER link with no source roundNumber, met reading this matchUp's targets or what depends on
-   * it (§ 2 row 21; CA, 2026-10-06: a malformed round link is an error)
+   * it (§ 2 row 21: a malformed round link is an error)
    */
   unreadableLink?: { error: ErrorType; info?: string; context?: Record<string, unknown> };
   participants: {
@@ -135,7 +135,7 @@ export type OutcomeView = {
   };
   /** § 2 row 12: the loser of the linked round has already been directed under the previous outcome */
   feedEligibilityBlockedBy?: string;
-  /** § 2 row 22: a result recorded downstream fixes whether this outcome is an exit or a played result (P52) */
+  /** § 2 row 22: a result recorded downstream fixes whether this outcome is an exit or a played result */
   correctionKindBlockedBy?: string;
   /**
    * § 2 row 26: a swap over a FIRST_MATCHUP link would have to place a loser on, or take one off, a fed seat that has
@@ -335,7 +335,7 @@ export type OutcomeView = {
       relabels?: { structureId: string; drawPosition: number; participantId: string }[];
     };
     /**
-     * P51 group 2: the loserMatchUp is a single exit already decided for the seat the loser arrives in, with a result
+     * The loserMatchUp is a single exit already decided for the seat the loser arrives in, with a result
      * recorded below it. A carried exit arriving there is carried past it, as past a BYE, rather than converging.
      */
     loserMatchUpDecidedForArrival: boolean;
@@ -411,7 +411,7 @@ export type OutcomeView = {
     defaultProcessCodes?: boolean;
     /**
      * the progression policy's `doubleExitPropagateBye` as v1 reads it (`propagatesByeOnDoubleExit`): off, a double
-     * exit's loser seat shows its produced exit instead of a BYE (CA ruling (A), 2026-10-21)
+     * exit's loser seat shows its produced exit instead of a BYE (`seatShowsBye`)
      */
     propagatesByeOnDoubleExit?: boolean;
     /** Clearing a qualifying final whose winner link feeds no DRAW still returns qualifierRemoved. */
@@ -489,7 +489,7 @@ export type BuildViewArgs = {
   /** RECORDED: v1's whole write for this call, run on a copy of the record (`plan/recordedCall.ts`) */
   writeOnCopy?: WriteOnCopy;
   /** RECORDED: this call's settle passes run once more on a copy `writeOnCopy` wrote (`plan/recordedCall.ts`) */
-  settleOnCopy?: (copy: RecordCopy) => (ResultType & { exhausted?: string }) | undefined;
+  settleOnCopy?: (copy: RecordCopy, finish?: CopyFinish) => (ResultType & { exhausted?: string }) | undefined;
   /**
    * RECORDED: runs the cascade recorder's write on a copy with its random draws kept, so that v1's run on the stored
    * record, where it follows, is handed the same draws (`tools/replayedDraws.ts`); not given it, it records nothing.
@@ -512,6 +512,8 @@ export type RecordCopy = { tournamentRecord?: Tournament; drawDefinition: DrawDe
  * tournament record).
  */
 export type WriteOnCopy = (copy: RecordCopy) => ResultType | undefined;
+/** Complete a detached native write's public return on its copy, before replay onto storage. */
+export type CopyFinish = { owned: ResultType; matchUpsMap: MatchUpsMap };
 
 /** § 5 rule 1: what direction must have done once the route has written */
 /** F2: what the loser's matchUp holds once a relabel withdraws the exit carried there */
@@ -539,7 +541,7 @@ export type DirectionPlan = {
     exit?: MatchUpStatusUnion;
     /** S2c: the double exit the carried exit makes where an exit already stands */
     converged?: MatchUpStatusUnion;
-    /** P51 group 2: the exit the loser carries past a matchUp already decided for their seat, onward */
+    /** the exit the loser carries past a matchUp already decided for their seat, onward */
     carriedPast?: MatchUpStatusUnion;
     /**
      * F2: a relabel to a played result withdraws the exit this matchUp carried there. Alone, the target is left
@@ -689,6 +691,8 @@ export type OutcomePlan =
       abstain?: undefined;
       /** RECORDED: what v1 returned for the whole call it wrote on a copy, which the owned call returns */
       recordedResult?: ResultType;
+      /** The public return from a native sequence that writes a line and keeps or decides its dual. */
+      phaseResult?: ResultType;
     }
   | { abstain: AbstainReason; ops?: undefined; shape?: undefined };
 
@@ -733,6 +737,7 @@ export type SeatObligation = { kind: 'double-exit-seats'; targetMatchUpId?: stri
  * for it, and the composition points a plan folds one step on another with.
  */
 export type PlanArgs = {
+  teamLine?: (plan: PlanArgs, why: 'team' | 'cascade') => OutcomePlan | undefined;
   clockFree?: boolean;
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;

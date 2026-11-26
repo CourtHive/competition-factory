@@ -5,8 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { UNRECOGNIZED_DRAW_TYPE } from '@Constants/errorConditionConstants';
 
 /**
- * modifyTournamentRecord is all or nothing by default (assessment M10; CA 2026-10-18: "ALL OR NOTHING as
- * default with boolean for keep partial").
+ * modifyTournamentRecord is all or nothing by default (assessment M10), with a boolean
+ * to keep a partial result.
  *
  * Before: a valid draw followed by an unrecognized draw type returned ERR_UNRECOGNIZED_DRAW_TYPE having
  * already written 4 participants and an event, and the error said nothing about them.

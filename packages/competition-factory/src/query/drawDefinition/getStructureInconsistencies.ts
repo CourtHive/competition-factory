@@ -44,7 +44,7 @@ import {
 //    CONDITIONAL on history and excluded — the winner mirror of the FMLC loser-feed caveat.
 //  - BYE_ADVANCEMENT_MISSING: the participant opposite a BYE is absent from its next
 //    matchUp within the same structure. A BYE carries no winningSide ("a BYE is never
-//    won" — CA, 2026-09-20), so none of the winner-rooted checks above can see it; this
+//    won"), so none of the winner-rooted checks above can see it; this
 //    is the one advancement invariant that has to start from the positionAssignment
 //    instead. Bye-vs-bye and bye-vs-empty are excluded — neither has a participant whose
 //    absence would mean anything.
@@ -91,8 +91,7 @@ import {
 //    target round, although the source-round matchUp they play in has no result. Advancing across a WINNER or
 //    LOSER link means that matchUp was decided; ADVANCED_FROM_UNDECIDED reads only within a structure, so an
 //    advancement left behind across a link was invisible to every check (design § 3.1: clearing `Backdraw|3|1`
-//    left its finalist in the grand final and the Decider, and the draw read clean; CA approved the check
-//    2026-10-05).
+//    left its finalist in the grand final and the Decider, and the draw read clean).
 //  - TWO_POSITIONS_FROM_ONE_FEEDER: both drawPositions of a matchUp were delivered by the same earlier matchUp
 //    in the structure, which sends exactly one on. A BYE holder whose other seat was empty advanced its lone
 //    position, and a participant passing the BYE later was added beside it (census w2 9100198, Consolation|5|1
@@ -141,9 +140,8 @@ export const TWO_POSITIONS_FROM_ONE_FEEDER = 'TWO_POSITIONS_FROM_ONE_FEEDER';
 //
 // The check belongs at the mutation boundary, and is there: a carried exit records its
 // origin (`sideExitProvenance.sourceMatchUpId`), and `reconcileStaleExitOrigins`
-// withdraws one whose origin stopped being a double exit (P40). A DIRECT walkover
+// withdraws one whose origin stopped being a double exit. A DIRECT walkover
 // carries no provenance, so a read-only scan still cannot tell it from a stale one.
-// See Mentat TASKS.md for the full disposition.
 
 type StructureInconsistency = {
   issueType: string;
@@ -178,7 +176,7 @@ type GetStructureInconsistenciesArgs = {
  * positives, and broke two named negative-control tests.
  *
  * The fix is the tenant split, not a wider read — once the array holds policy codes only, this
- * rule is correct as written. See Mentat/planning/MATCHUP_STATUS_CODES_PER_SIDE.md.
+ * rule is correct as written.
  */
 function codeString(code: any): string | undefined {
   const value = typeof code === 'string' ? code : code?.code;
@@ -263,7 +261,7 @@ function getPhantomPositionInconsistencies(
  * BYE_ADVANCEMENT_MISSING — the participant opposite a BYE is absent from its next matchUp.
  *
  * Checked SEPARATELY from every rule in the main loop, and it has to be: those all start from a
- * `winningSide`, and a BYE carries none — *"a BYE is never won"* (CA, 2026-09-20). That blindness is
+ * `winningSide`, and a BYE carries none — *"a BYE is never won"*. That blindness is
  * not hypothetical. It is why `resetDrawDefinition` could strand every BYE advancement in a draw and
  * still have it rated `valid: true`, which is how the defect reached a user.
  *
@@ -512,8 +510,8 @@ function getWinnerAdvancementInconsistency(
  * The question is whether the cascade actually stamped its own record here. `getSideExitProvenance`
  * used to fall back to the legacy `matchUpStatusCodes` array and could return stale entries, which
  * would have turned every stale legacy code into a reported defect — so this check read the
- * fallback-free `getSideExitProvenance`. P37 removed the fallback and with it that second
- * reader, so the one remaining reader answers exactly the question this check asks.
+ * fallback-free `getSideExitProvenance`. Moving the exit provenance out of the array removed the fallback and with it
+ * that second reader, so the one remaining reader answers exactly the question this check asks.
  *
  * ## What is deliberately NOT flagged
  *
@@ -526,7 +524,7 @@ function getWinnerAdvancementInconsistency(
  * ORIGIN_ON_UNDECIDED_MATCHUP — `sideExitProvenance` records where a side CAME FROM, on a matchUp
  * that is neither an exit nor a BYE.
  *
- * **Punch-list P19, and what it turned out to need.** The entry was filed as a READER hazard:
+ * **A presence-read `sideExitProvenance`, and what it turned out to need.** The hazard was filed as a READER hazard:
  * `isPropagatedExit` tests that the field is non-empty, *"so one bad writer silently flips every
  * exclusion"*. Re-measured 2026-09-29 by re-creating the over-permissive writer that entry cites
  * (both `participatesInExitCascade` gates forced open) under each reading:
@@ -546,7 +544,7 @@ function getWinnerAdvancementInconsistency(
  * came to be in a CONTEST THAT HAS BEEN DECIDED WITHOUT BEING PLAYED: an exit, a double exit, or a
  * BYE. On a matchUp that is still to be played, or was played, there is nothing for it to explain.
  *
- * A `byeClaims` entry on a stored record (the ledger retired by Mentat P58) is exempt: it carries no origin.
+ * A `byeClaims` entry on a stored record (the retired BYE-claim ledger) is exempt: it carries no origin.
  *
  * **SEVERITY `error`, and the population is ZERO.** Measured over 1,440 draws played to exhaustion —
  * 126,786 matchUp-states carrying provenance, sampled after every step — and over the full suite,
@@ -619,7 +617,7 @@ function getLostPropagatedExitInconsistency(matchUp: any): StructureInconsistenc
 }
 
 /**
- * THE STATUSES THAT SAY A MATCHUP WILL NEVER BE PLAYED — CA, 2026-09-29.
+ * THE STATUSES THAT SAY A MATCHUP WILL NEVER BE PLAYED.
  *
  * *"DEAD_RUBBER, CANCELLED, ABANDONED should all silence stalls. All of those say that a matchup
  * isn't ever going to be played (and any matchUps fed by the matchUp that won't be played are also
@@ -658,7 +656,7 @@ function getNeverToBePlayed(drawMatchUps: any[]): Set<string> {
 }
 
 /**
- * BEHIND A LUCKY DRAW'S DOUBLE EXIT — CA, 2026-11-17 and 2026-11-18.
+ * BEHIND A LUCKY DRAW'S DOUBLE EXIT.
  *
  * In a lucky-based draw (`isLuckyBasedDraw`: LUCKY_DRAW and ADAPTIVE) a double exit advances nobody: it is written on
  * its own matchUp and produces nothing downstream (`doubleExitAdvancement`). So the seat it would have filled stays
@@ -756,9 +754,9 @@ function getBehindLuckyDoubleExit(drawMatchUps: any[], drawType?: string): Set<s
  * silence this rule everywhere.
  *
  * A `winningSide` still ends the enquiry here: somebody advanced out of that matchUp, so nobody is
- * stranded in it. Whether the RIGHT side was awarded is a separate defect (punch-list **P29**) —
- * measured at 4 of the same 600 cells, all `FEED_IN_CHAMPIONSHIP 16/16` `Consolation|6|1`, where the
- * winner is the vacant seat and the lone occupant lost. That is not this rule's question.
+ * stranded in it. Whether the RIGHT side was awarded is a separate defect (a produced exit awarded to the side carrying
+ * it) — measured at 4 of the same 600 cells, all `FEED_IN_CHAMPIONSHIP 16/16` `Consolation|6|1`, where the winner is
+ * the vacant seat and the lone occupant lost. That is not this rule's question.
  */
 function getStalledPositionInconsistencies(
   /** REPORTED over these — narrowed to one structure when the caller asked for one */
@@ -807,7 +805,7 @@ function getStalledPositionInconsistencies(
     if (present.length !== 1) continue;
 
     /**
-     * AN OCCUPANT WHO EXITED IS NOT WAITING FOR ANYBODY — CA, 2026-09-29.
+     * AN OCCUPANT WHO EXITED IS NOT WAITING FOR ANYBODY.
      *
      * *"There is nothing to be done and it needs to be considered a valid end state."*
      *
@@ -862,8 +860,8 @@ function getStalledPositionInconsistencies(
        * instructed) and driven to zero at scale: seven randomised censuses of 40,000 scenarios per arm
        * in three arms (`allowChangePropagation` off and on, `doubleExitPropagateBye: false`), the
        * last of them (`dev` bdc5c4b258, 7.9.0) reading 0 / 0 / 0, with the eight frozen census
-       * windows at zero and the shrink-only ratchets' OPEN lists empty. CA's rule for the promotion
-       * was exactly that reading; the history is `Mentat/planning/STALLED_POSITION_AT_SCALE.md`.
+       * windows at zero and the shrink-only ratchets' OPEN lists empty. The rule for the promotion
+       * was exactly that reading.
        *
        * So `valid` is now false for a draw holding a stall, and the ordinary `valid` assertions
        * across the suite are the guard — strictly better than a budget.
@@ -970,7 +968,7 @@ export function getStructureInconsistencies(
     /**
      * HOW MANY SIDES HAD AN EXIT *DELIVERED* — asked of provenance, per side.
      *
-     * **P37.** `singleExit` is a STATUS test, and the two checks below both mean *"only ONE side
+     * `singleExit` is a STATUS test, and the two checks below both mean *"only ONE side
      * exited"*. Those agree for a draw whose status matches its own record and part company for one
      * whose does not, which is precisely the case the eviction made visible. Provenance answers the
      * question directly, and the discriminator is `previousMatchUpStatus` being a DOUBLE exit —
@@ -991,12 +989,12 @@ export function getStructureInconsistencies(
     /**
      * UNCOLLAPSED_CONVERGENCE — two exits met and the matchUp did not become a double exit.
      *
-     * **P37 raised this, and it is PRE-EXISTING — measured identical on clean `dev` at the same
-     * coordinates.** It was previously reported as `EXIT_CODE_ON_WINNER_SIDE`, which is the wrong
-     * name for it: on such a matchUp the winning side genuinely DOES carry a delivered exit, so the
-     * code is a faithful rendering of a corrupt status rather than a misplaced code. Evicting the exit
-     * tenant is what made it visible — the projection used to overwrite this array with objects, which
-     * `codeString` ignores — so the observation is KEPT here rather than lost to the narrowing above.
+     * **The exit-provenance eviction raised this, and it is PRE-EXISTING — measured identical on clean `dev` at the
+     * same coordinates.** It was previously reported as `EXIT_CODE_ON_WINNER_SIDE`, which is the wrong name for it: on
+     * such a matchUp the winning side genuinely DOES carry a delivered exit, so the code is a faithful rendering of a
+     * corrupt status rather than a misplaced code. Evicting the exit tenant is what made it visible — the projection
+     * used to overwrite this array with objects, which `codeString` ignores — so the observation is KEPT here rather
+     * than lost to the narrowing above.
      *
      * Traced 2026-09-27 on `unwindRemovesDrawPosition` seed 9000036 (MODIFIED_FEED_IN_CHAMPIONSHIP
      * 8/8): a consolation matchUp with `drawPositions: [5, 6]`, both slots empty, two DELIVERED

@@ -97,7 +97,7 @@ function readBaselineNpm(tag) {
   const stage = mkdtempSync(join(tmpdir(), 'verify-surface-'));
   log(`pulling tods-competition-factory@${tag} from npm…`);
   try {
-    // a deadline on every child (punch list P62)
+    // a deadline on every child
     const kill = { killSignal: 'SIGKILL' };
     execSync(`npm pack tods-competition-factory@${tag} --silent`, { cwd: stage, timeout: 300_000, ...kill });
     const tarball = execSync('ls *.tgz', { cwd: stage, encoding: 'utf8', timeout: 60_000, ...kill }).trim();

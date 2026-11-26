@@ -9,7 +9,7 @@ import { expect, it } from 'vitest';
 import { MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_RATINGS } from '@Constants/policyConstants';
 
-// the ratings policy (Mentat planning/RATINGS_POLICY_PLAN.md; CA 2026-11-05): the default is Huang 2014's flat-K Elo,
+// the ratings policy: the default is Huang 2014's flat-K Elo,
 // K = 25 for both players, the actual result by sets played; FiveThirtyEight's K needs the caller's career counts
 
 function rate({

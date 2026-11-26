@@ -16,7 +16,7 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  *
  * The early-exit census arm (`exitBeforeArrivalCensus`), COMPASS 32/27 seed 9700103, shrunk from 30 steps to 7.
  * `West|2|1` and `West|2|2` both lose by default, so `Southwest|1|1` is a DOUBLE_DEFAULT and the DEFAULTED it
- * produces stands pending on side 1 of `Southwest|2|1` (no winningSide while side 2 is unreached: CA, 2026-09-20).
+ * produces stands pending on side 1 of `Southwest|2|1` (no winningSide while side 2 is unreached).
  * Then a WALKOVER is recorded at `West|2|4` before its second opponent arrives: the participant there loses it,
  * carries the WALKOVER into `Southwest|1|2`, passes the BYE (RULE 1) and reaches `Southwest|2|1`. A walkover
  * meeting a default converges to a DOUBLE_WALKOVER (exit-propagation.md, "any other combination, including a
@@ -93,7 +93,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_DIFFERENTIAL] as const)(
     expect(onward.sideExitProvenance?.[2]?.matchUpStatus).toEqual(WALKOVER);
     expect((tournamentEngine.getDrawInconsistencies({ drawId }) as any).inconsistencies ?? []).toEqual([]);
 
-    // the call is recorded whole: the differential defers its direction, not checked (CA, 2026-11-19)
+    // the call is recorded whole: the differential defers its direction, not checked
     const tally = getDifferentialTally()['winner:loser-exit-past-bye-converged'];
     expect(tally).toBeUndefined();
     const direction = getDifferentialTally()['winner:direction'];

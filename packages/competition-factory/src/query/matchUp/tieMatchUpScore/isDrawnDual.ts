@@ -8,7 +8,7 @@ import type { MatchUp, Structure } from '@Types/tournamentTypes';
 type SetScore = { side1Score?: number; side2Score?: number };
 
 /**
- * A ROUND ROBIN TEAM TIE WHOSE LINES HAVE ALL FINISHED LEVEL IS A DRAW (CA ruling, 2026-11-07; TEAM results item 2):
+ * A ROUND ROBIN TEAM TIE WHOSE LINES HAVE ALL FINISHED LEVEL IS A DRAW:
  * COMPLETED with no winner, as a single matchUp that ends level in a format that can end level. In elimination a winner
  * must advance, so a level tie there stays in progress until a decider or a recorded decision names one.
  *

@@ -1,5 +1,5 @@
 /**
- * Why a shootout's final tally could not have happened (Ruling 3, CA 2026-11-04), or undefined when it could.
+ * Why a shootout's final tally could not have happened, or undefined when it could.
  * `-F:SO{n}` is entered as a tally only: a shootout is never level when it ends, and past its n rounds it is
  * sudden death, so a side above n won by exactly one; within n it ends as soon as one side cannot catch up. Attempt-by-attempt entry is a later slice that reduces to the
  * same tally.

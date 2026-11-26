@@ -6,6 +6,12 @@ title: Season Governor
 import { seasonGovernor } from 'tods-competition-factory';
 ```
 
+:::info Also on tools
+
+These seasonGovernor queries read no tournament state, so each is also on `tools`, the same function, called with the same params object: `tools.seasons.getSeasonAdvancement`, `tools.seasons.getSeasonMovement`, `tools.seasons.getSeasonStandings`, `tools.seasons.planNextPeriod`, `tools.seasons.validateSeason`. Their engine routes are unchanged in 7.x; see [tools by domain](/docs/tools/tools-overview#domains-stateless-functions-by-subject).
+
+:::
+
 The **seasonGovernor** answers questions about a CODES `Season`: whether it is well formed, its standings, who
 advances out of a period and who moves between tiers when a period closes. A season references competitions across
 tournament records and never contains them, so every method here is **pure**. The caller passes the season and the

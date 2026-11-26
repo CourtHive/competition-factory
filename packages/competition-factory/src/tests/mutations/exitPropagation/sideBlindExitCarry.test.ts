@@ -28,13 +28,13 @@ import { COMPASS, OLYMPIC } from '@Constants/drawDefinitionConstants';
  * wins even while still empty, because it is the side that will receive the eventual opponent.* Here
  * that side is not even empty — the opponent has already arrived.
  *
- * CA, 2026-09-25, on COMPASS 16/14: *"I believe that an advanced propagated WALKOVER not carrying a
+ * Reported on COMPASS 16/14: *"I believe that an advanced propagated WALKOVER not carrying a
  * participant encountering a participant at WEST|2|1 SHOULD advance the encountered participant to
  * WEST|3|1, and that this is a bug or an incomplete bit of logic."*
  *
  * ## Why the winner is awarded HERE and not left to the arrival
  *
- * `carryExitOnward` otherwise writes `winningSide: undefined` deliberately (CA, 2026-09-20), on the
+ * `carryExitOnward` otherwise writes `winningSide: undefined` deliberately, on the
  * stated understanding that *"the winningSide will display the checkmark once a participant
  * arrives."* That reasoning has an unstated precondition — that the opponent has NOT yet arrived.
  * When they are already in place there is no future arrival to resolve anything, and leaving it
@@ -77,7 +77,7 @@ describe('a produced exit carries when the opponent has already arrived', () => 
   };
 
   /**
-   * CA's reproduction: a fresh COMPASS 16/14 with the DOUBLE_WALKOVER entered LAST, so `West|2|1`
+   * The reported reproduction: a fresh COMPASS 16/14 with the DOUBLE_WALKOVER entered LAST, so `West|2|1`
    * already holds the `West|1|2` winner on drawPosition 3 while the exit is travelling to
    * drawPosition 2.
    */
@@ -168,7 +168,7 @@ describe('a produced exit carries when the opponent has already arrived', () => 
    * business:
    *
    *  - `matchUpStatusCodes` come back in object form down the cascade path and in string form down the
-   *    arrival path (`["WALKOVER"]`), so one draw can hold both shapes. Measured in CA's own TMX
+   *    arrival path (`["WALKOVER"]`), so one draw can hold both shapes. Measured in the reporting TMX
    *    export, where `East|2|1` carries objects and `West|2|1` carries a string.
    *  - a lone drawPosition is `[3]` on one path and `[3, null]` on the other.
    *

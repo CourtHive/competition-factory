@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { ANACHRONISM } from '@Constants/errorConditionConstants';
 import { END_TIME } from '@Constants/timeItemConstants';
 
-// The recorded times of linked matchUps may not conflict (CA 2026-10-30): a source must have ended by the time its
+// The recorded times of linked matchUps may not conflict: a source must have ended by the time its
 // dependent started, and must have started first. Only recorded start and end times are compared; an end that falls
 // after a dependent's SCHEDULED time is fine.
 

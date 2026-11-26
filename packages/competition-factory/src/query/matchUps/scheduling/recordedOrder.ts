@@ -13,7 +13,7 @@ import { BYE } from '@Constants/matchUpStatusConstants';
 import { ResultType } from '@Types/factoryTypes';
 
 /**
- * The recorded times of linked matchUps may not conflict (CA 2026-10-30). Where a matchUp depends on another (the same
+ * The recorded times of linked matchUps may not conflict. Where a matchUp depends on another (the same
  * links as the order rule: winner, loser, feed, qualifying to main, group to playoff), the source must have ENDED by
  * the time the dependent STARTED, and must have started first. An end that falls after the dependent's SCHEDULED time
  * is fine: only recorded start and end times are compared here, never a scheduled time.

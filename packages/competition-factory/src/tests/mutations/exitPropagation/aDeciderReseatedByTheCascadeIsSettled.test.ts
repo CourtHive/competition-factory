@@ -15,7 +15,7 @@ import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
  * (DOUBLE_ELIMINATION 8/5, both `allowChangePropagation` arms).
  *
  * `Backdraw|3|1` is a DOUBLE_DEFAULT, so the Backdraw sends no champion and the Main winner wins the final by the
- * produced DEFAULTED; the decider is a DEAD_RUBBER (CA, 2026-09-29). Re-entered as a DOUBLE_WALKOVER, the produced exit
+ * produced DEFAULTED; the decider is a DEAD_RUBBER. Re-entered as a DOUBLE_WALKOVER, the produced exit
  * re-derives to a WALKOVER — the SAME winner — and the unwind re-seats that winner in the decider as `TO_BE_PLAYED`.
  * `reconcileDecider` acted only on a change of the final's `winningSide`, so it never ran, and the winner waited alone.
  *

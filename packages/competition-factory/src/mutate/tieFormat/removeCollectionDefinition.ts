@@ -186,7 +186,7 @@ function removeDefinition({
   // the write leaves the splice behind. Measured: an empty pool took
   // tieMatchUp counts from [9,9,9,9,9,9,9] to [6,9,9,9,9,9,9] and still returned
   // an error. A method's error must leave the record unchanged on a direct call,
-  // without relying on `rollbackOnError` (CA, 2026-10-22), so the mutation must not
+  // without relying on `rollbackOnError`, so the mutation must not
   // begin at all when it cannot finish.
   const requiredIds = requiredForkIds({
     targets: [...targetMatchUps, resolveWriteTarget({ eventId, event, matchUpId, matchUp, structure, drawDefinition })],

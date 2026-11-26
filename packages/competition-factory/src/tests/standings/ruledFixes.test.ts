@@ -17,7 +17,7 @@ import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 
 /**
- * The ruled changes of S3a (Mentat `planning/STANDINGS_ENGINE_SPEC.md` § 5.8, § 5.10): K10 fixed, K8 implemented, and
+ * The changes of S3a: K10 fixed, K8 implemented, and
  * the tally policy validated where it is saved. K1 is pinned in the corpus (`v1Corpus.ts`).
  */
 

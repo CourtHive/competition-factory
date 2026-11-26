@@ -435,7 +435,7 @@ export type OutcomeOp =
   | {
       op: 'replaceMatchUp';
       /**
-       * RECORDED (CA, 2026-11-16): the stored matchUp as the double-exit module left it on a copy of the draw
+       * RECORDED: the stored matchUp as the double-exit module left it on a copy of the draw
        * (`plan/recordedCascade.ts`), written whole: its own fields. A dual's lines (`tieMatchUps`) are not among them:
        * the dual keeps the lines it holds, and a line that changed has an op of its own
        */
@@ -550,7 +550,7 @@ export function splitScoredTimeCleanup(ops: OutcomeOp[]) {
 }
 
 /**
- * F2 (i), CA 2026-10-19: one stamp per touched entity per call. The call's captured instant T (`nowIso()` reads it
+ * One stamp per touched entity per call. The call's captured instant T (`nowIso()` reads it
  * inside an engine call), or the previous stamp + 1 ms when that is already T or later, so a stamp always moves on.
  */
 export function nextStamp(previous: string | Date | undefined, now: string = nowIso()): string {
@@ -599,8 +599,12 @@ function stamp(target: Stamped | undefined, key: string, { stampedBefore, tempor
  * draw cannot see that, so the keys are read from the live draw before v1 writes.
  */
 export function stampedInThisCall(drawDefinition?: DrawDefinition): Set<string> {
+  return stampedIn(drawDefinition, getCapturedStamps());
+}
+
+/** The same keys, from a ledger already read from the provider. */
+export function stampedIn(drawDefinition: DrawDefinition | undefined, stamped: WeakSet<object> | undefined) {
   const keys = new Set<string>();
-  const stamped = getCapturedStamps();
   if (!stamped || !drawDefinition) return keys;
   if (stamped.has(drawDefinition)) keys.add(`drawDefinition:${drawDefinition.drawId}`);
   const { matchUps, structures } = indexDraw(drawDefinition);

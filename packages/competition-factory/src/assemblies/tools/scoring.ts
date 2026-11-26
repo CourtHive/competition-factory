@@ -1,8 +1,14 @@
 /**
- * Scoring functions: stateless, positional, no engine (CA 2026-11-07). Score validators, readers of a scoring-engine
+ * Scoring functions: stateless, positional, no engine. Score validators, readers of a scoring-engine
  * matchUp state, and point and statistics parsers. Their home is `tools.scoring`, the planned `scoring` package. They are
  * also exported by `scoreGovernor`, which mounts them on engines that cannot call them correctly; that placement goes
  * at 8.0.0.
+ *
+ * Below them, the score governor's stateless queries that take one params object (confirmed stateless by the
+ * statelessGovernorTools test): set and score readers, score repair and entry, and the point-by-point
+ * and MCP validators. `scoreGovernor` keeps them in 7.x and their engine routes are unchanged. The governor's
+ * `parseScoreString` is not among them: `tools.scoring.parseScoreString` is the positional, strict-capable reader whose
+ * default answers as the governor's does.
  */
 export { calculateMatchStatistics, enrichPointHistory, getQuickStats } from '@Scoring/statistics/standalone';
 export { validateSetScore, validateMatchUpScore } from '@Scoring/analysis/validateMatchUpScore';
@@ -29,3 +35,20 @@ export {
   pointParser,
   shotParser,
 } from '@Scoring/replay/mcpParser';
+
+// params-object queries, also scoreGovernor
+export {
+  getMaxSetScore,
+  getSetComplement,
+  getTiebreakComplement,
+} from '@Helpers/matchUpFormatCode/setRules/setComplement';
+export { checkSetIsComplete } from '@Helpers/matchUpFormatCode/setRules/setCompletion';
+export { keyValueScore } from '@Scoring/entry/keyValueScore/keyValueScore';
+export { retainScoreForFormat } from '@Query/matchUp/retainScoreForFormat';
+export { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
+export { validateScore } from '@Scoring/analysis/validateScore';
+export { analyzeScore } from '@Scoring/analysis/analyzeScore';
+export { repairScore } from '@Scoring/analysis/repairScore';
+export { mcpValidator } from '@Scoring/replay/mcpValidator';
+export { pbpValidator } from '@Scoring/replay/pbpValidator';
+export { analyzeSet } from '@Query/matchUp/analyzeSet';

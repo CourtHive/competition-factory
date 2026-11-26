@@ -10,8 +10,8 @@ import asyncEngine from '@Engines/asyncEngine';
 import { METHOD_NOT_FOUND } from '@Constants/errorConditionConstants';
 
 /**
- * WHAT ANY ASYNC WRAPPER MUST GUARANTEE (CA, 2026-10-10: "demonstrate ways in which async wrappers are valid rather than
- * checking actual methods"). competition-factory-server is the real implementation; this is the checklist it, or any
+ * WHAT ANY ASYNC WRAPPER MUST GUARANTEE: the ways in which an async wrapper is valid, rather than a
+ * check of actual methods. competition-factory-server is the real implementation; this is the checklist it, or any
  * other embedder, can mirror. Each request runs in its own `runWithInstanceState` context, and while requests
  * interleave on awaits:
  *

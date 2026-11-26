@@ -1,7 +1,7 @@
 /**
  * Import-convention audit + codemod for tods-competition-factory.
  *
- * Conventions enforced (see Mentat/standards/coding-standards.md § Imports):
+ * Conventions enforced (the ecosystem's import conventions):
  *   1. Reach other alias roots through the tsconfig alias, not a relative path
  *   2. Within each section, single-line imports descend by line length
  *   3. Multi-line destructured imports come last in their section

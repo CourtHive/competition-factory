@@ -198,7 +198,7 @@ export const getMaxSetScore = (params: MaxSetScoreArgs): number | undefined => {
   //
   // Found from `courthive-components`, which hand-rolls this and gets 5 right: its own branch for
   // `oppScore === tiebreakAt - 1` returns `setTo + 1`. Adopting this function unchanged would have
-  // REGRESSED a 7-5 there, which is how the disagreement surfaced (CA, 2026-09-30).
+  // REGRESSED a 7-5 there, which is how the disagreement surfaced.
   // facing fewer than T - 1 the set ends by the margin before the tiebreak: 6 against a 3, 10 against
   // an 8 under `@12`
   if (opponentScore !== undefined && opponentScore < tiebreakAt - 1) return Math.max(setTo, opponentScore + 2);

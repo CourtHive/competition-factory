@@ -14,8 +14,7 @@ import { UTR } from '@Constants/ratingConstants';
  * `occurredAt` — recording when something HAPPENED rather than when this
  * instance wrote it.
  *
- * Decisions taken by CA 2026-08-15, recorded in
- * `Mentat/planning/DISCONNECTED_SYNC_RECONCILIATION.md` §4.1:
+ * The decisions:
  *
  *   D1 — record-root `updatedAt` keeps WRITE-time semantics, because the
  *        staleness probe (`POST /factory/updated-at`) derives from it. Only

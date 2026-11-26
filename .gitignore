@@ -68,3 +68,10 @@ dist
 
 # verify:docs-examples scratch (removed in finally; ignored in case a run is killed)
 .doc-examples-*/
+
+# the standalone notice payload audit build (pnpm build:notice-diagnostics), never published
+/packages/competition-factory/.diagnostics/
+
+# Machine-local agent instructions. Claude Code loads CLAUDE.local.md beside CLAUDE.md; it is kept
+# per machine and never committed.
+CLAUDE.local.md

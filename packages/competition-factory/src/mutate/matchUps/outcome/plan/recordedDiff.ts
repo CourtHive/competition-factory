@@ -13,14 +13,14 @@ import type { OutcomeOp, RecordedNotice } from '../ops';
 import type { Recording } from '../recording';
 
 /**
- * RECORDED (CA, 2026-11-16): what the two recorders share (`recordedCascade.ts`, `recordedCall.ts`). v1's writers run on
+ * RECORDED: what the two recorders share (`recordedCascade.ts`, `recordedCall.ts`). v1's writers run on
  * a COPY of the record; what the copy held before is read here, and what the run changed is returned as the recorded
  * ops: each matchUp it wrote (a dual's own fields, and each line's), each structure's own fields (a round robin's groups
  * are structures of their own, and a group's tally is among its fields), the draw's own fields, and the notices it
  * buffered.
  */
 
-const ownState = (entity: object, children: string[]) =>
+export const ownState = (entity: object, children: string[]) =>
   Object.fromEntries(Object.entries(entity).filter(([key]) => !children.includes(key)));
 
 /** every structure of the draw, a round robin's groups after it, in the draw's order */
@@ -144,6 +144,12 @@ function unchanged(state: object, before?: Read): boolean {
   return objects.length === before.objects.length && objects.every((held, at) => held === before.objects[at]);
 }
 
+/** For a preselected target, distinguish a changed field or reference from an already satisfied write. */
+export function changedOwnState(entity: object, children: string[]): () => boolean {
+  const before = read(ownState(entity, children));
+  return () => !unchanged(ownState(entity, children), before);
+}
+
 /** the copy as the writers are about to find it: each entity's own fields, and the notices already buffered */
 export type RecordedBefore = ReturnType<typeof readBefore>;
 export function readBefore(drawDefinition: DrawDefinition) {
@@ -222,13 +228,20 @@ export function recordedOps({
   if (!unchanged(state, before.draw)) {
     replace({ op: 'replaceDrawState', drawId: drawDefinition.drawId, state: asData(state), recording }, drawDefinition);
   }
+  const announce = pendingAnnouncement(before.notices, marks);
+  if (!announce) return undefined;
+  ops.push(announce);
+  return ops;
+}
+
+/** Capture the notices retained by the real provider after a detached write. */
+export function pendingAnnouncement(prior: Set<Notice>, marks?: NoticeMarks): OutcomeOp | undefined {
   const notices: RecordedNotice[] = [];
   for (const notice of getNoticeBuffer() ?? []) {
-    if (before.notices.has(notice)) continue;
+    if (prior.has(notice)) continue;
     const recorded = recordedNotice(notice);
     if (!recorded) return undefined;
     notices.push(recorded);
   }
-  ops.push({ op: 'announceRecorded', notices, marks });
-  return ops;
+  return { op: 'announceRecorded', notices, marks };
 }

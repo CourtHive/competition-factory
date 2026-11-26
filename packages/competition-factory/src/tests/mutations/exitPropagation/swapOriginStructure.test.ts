@@ -61,8 +61,8 @@ it('flipping a Backdraw result leaves Main positionAssignments untouched', () =>
 
 /**
  * The census route (DE window 9300175) reached that flip through a CARRIED walkover: `Main|1|4`'s loser
- * walked over into `Backdraw|1|3`. Flipping it re-scores a carried exit, which is refused (CA,
- * 2026-10-03), so the route now stops there, unchanged; the double exits that followed it still converge
+ * walked over into `Backdraw|1|3`. Flipping it re-scores a carried exit, which is refused, so
+ * the route now stops there, unchanged; the double exits that followed it still converge
  * with the oracle clean.
  */
 it('a carried Backdraw walkover is not flipped, and the double exits after it converge cleanly', () => {
@@ -82,11 +82,11 @@ it('a carried Backdraw walkover is not flipped, and the double exits after it co
   /**
    * THE ORACLE IS CLEAN — and it is back to asserting that, which it briefly could not.
    *
-   * **P37/P42.** Evicting the exit tenant unmasked an `UNCOLLAPSED_CONVERGENCE` here: provenance
-   * recording an exit delivered into BOTH sides of a consolation matchUp while its status was a single
-   * `WALKOVER` with a winner. That was **pre-existing** — measured identical on clean `dev`, at the same
-   * coordinates — and had been surfacing under the wrong name, `EXIT_CODE_ON_WINNER_SIDE`, because the
-   * projection was overwriting the array the old rule read.
+   * **The exit tenant's eviction, and a single exit re-scored up to a double.** Evicting the exit tenant unmasked an
+   * `UNCOLLAPSED_CONVERGENCE` here: provenance recording an exit delivered into BOTH sides of a consolation matchUp
+   * while its status was a single `WALKOVER` with a winner. That was **pre-existing** — measured identical on clean
+   * `dev`, at the same coordinates — and had been surfacing under the wrong name, `EXIT_CODE_ON_WINNER_SIDE`, because
+   * the projection was overwriting the array the old rule read.
    *
    * For one commit this asserted the finding BY NAME rather than expecting none. The convergence
    * reconciliation in `doubleExitAdvancement` closes it, so the stronger form is restored. Kept as two

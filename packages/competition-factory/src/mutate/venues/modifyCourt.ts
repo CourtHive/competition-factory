@@ -1,7 +1,7 @@
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import courtTemplate from '@Helpers/scheduling/courtTemplate';
-import { modifyCourtAvailability } from './courtAvailability';
+import { planCourtAvailability } from './courtAvailability';
 import { addNotice } from '@Global/state/globalState';
 import { findCourt } from '@Query/venues/findCourt';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
@@ -10,10 +10,10 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { INVALID_OBJECT, MISSING_TOURNAMENT_RECORDS, NO_VALID_ATTRIBUTES } from '@Constants/errorConditionConstants';
 import { TOURNAMENT_RECORD, COURT_ID } from '@Constants/attributeConstants';
 import { TournamentRecords, ResultType } from '@Types/factoryTypes';
+import { Court, Tournament, Venue } from '@Types/tournamentTypes';
 import { HydratedMatchUp, HydratedCourt } from '@Types/hydrated';
 import { MODIFY_VENUE } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Tournament } from '@Types/tournamentTypes';
 
 type ModifyCourtArgs = {
   tournamentRecords?: TournamentRecords;
@@ -48,14 +48,26 @@ export function modifyCourt(params: ModifyCourtArgs) {
   return courtModified ? { ...SUCCESS } : undefined;
 }
 
-export function courtModification({
+export function courtModification(params: ModifyCourtArgs): ResultType & { court?: HydratedCourt } {
+  const plan = planCourtModification(params);
+  if (!('commit' in plan)) return plan;
+  plan.commit();
+  return { ...SUCCESS, court: makeDeepCopy(plan.court) };
+}
+
+/**
+ * One court's modification, decided without writing it: the court, its editable attributes and any new availability
+ * (planCourtAvailability). The commit assigns the attributes, stores the availability and announces the venue (unless
+ * `disableNotice`).
+ */
+export function planCourtModification({
   tournamentRecord,
   disableNotice,
   venueMatchUps,
   modifications,
   courtId,
   force,
-}: ModifyCourtArgs): ResultType & { court?: HydratedCourt } {
+}: ModifyCourtArgs): ResultType | { commit: () => void; court?: Court; venue?: Venue } {
   const paramsCheck = requireParams({ tournamentRecord, courtId }, [TOURNAMENT_RECORD, COURT_ID]);
   if (paramsCheck.error) return paramsCheck;
   if (!modifications || typeof modifications !== 'object') return { error: INVALID_OBJECT };
@@ -79,11 +91,13 @@ export function courtModification({
 
   const validReplacementAttributes = Object.keys(modifications).filter((attribute) => validReplacements.has(attribute));
 
-  if (court)
-    validReplacementAttributes.forEach((attribute) => Object.assign(court, { [attribute]: modifications[attribute] }));
+  const replacements = Object.fromEntries(
+    validReplacementAttributes.map((attribute) => [attribute, modifications[attribute]]),
+  );
 
+  let availability: { commit: () => void } | undefined;
   if (modifications.dateAvailability) {
-    const result = modifyCourtAvailability({
+    const result = planCourtAvailability({
       dateAvailability: modifications.dateAvailability,
       tournamentRecord: tournamentRecord!,
       venueMatchUps,
@@ -91,16 +105,20 @@ export function courtModification({
       courtId,
       force,
     });
-    if (result.error) return result;
+    if (!('commit' in result)) return result;
+    availability = result;
   }
 
-  if (!disableNotice) {
-    addNotice({
-      payload: { venue, tournamentId: tournamentRecord!.tournamentId },
-      topic: MODIFY_VENUE,
-      key: venue?.venueId,
-    });
-  }
-
-  return { ...SUCCESS, court: makeDeepCopy(court) };
+  const commit = () => {
+    if (court) Object.assign(court, replacements);
+    availability?.commit();
+    if (!disableNotice) {
+      addNotice({
+        payload: { venue, tournamentId: tournamentRecord!.tournamentId },
+        topic: MODIFY_VENUE,
+        key: venue?.venueId,
+      });
+    }
+  };
+  return { commit, court, venue };
 }

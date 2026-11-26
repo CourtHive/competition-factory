@@ -34,6 +34,7 @@ import { validateDrawTallyOptions } from '@Validators/validateTallyPolicy';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
+import { levelDualDecisionRefusal } from '@Mutate/matchUps/matchUpStatus/levelDualDecision';
 import { isPartialDualScore } from '@Scoring/analysis/isPartialDualScore';
 import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -173,7 +174,7 @@ type SetMatchUpStateArgs = {
  * consumers call `setMatchUpStatus`.
  */
 export function setMatchUpState(params: SetMatchUpStateArgs): any {
-  // A REFUSED CALL STORES NONE OF THE MISSING EDGES (CA, 2026-10-18): what `ensureGoesTo` writes below is held, and
+  // A REFUSED CALL STORES NONE OF THE MISSING EDGES: what `ensureGoesTo` writes below is held, and
   // written back if the call returns an error. See `holdGoesTo`.
   const hold = holdGoesTo({ drawDefinition: params.drawDefinition, matchUpsMap: params.matchUpsMap });
   const result = writeMatchUpState(params);
@@ -184,8 +185,8 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
 }
 
 /**
- * A CALL THAT REPAIRS A DRAW'S MISSING EDGES ANNOUNCES THE DRAW ONCE (CA, 2026-10-18: "Option 2 and document the
- * decision in tasks. Missing edges are most likely from hand assembled draws and themselves an edge case.")
+ * A CALL THAT REPAIRS A DRAW'S MISSING EDGES ANNOUNCES THE DRAW ONCE. Missing edges most likely come from
+ * hand-assembled draws and are themselves an edge case.
  *
  * One `MODIFY_DRAW_DEFINITION`, keyed by the draw, not a `MODIFY_MATCHUP` per matchUp whose only change is an edge: a
  * subscriber told the draw changed re-projects it, edges included. Sent only by a call that succeeds and only when the
@@ -286,7 +287,7 @@ function writeMatchUpState(params: SetMatchUpStateArgs) {
   });
   if (impliedCompletionError) return impliedCompletionError;
 
-  // A carried or produced exit is changed at its ORIGIN, never here (CA, 2026-10-03); the cascade's own
+  // A carried or produced exit is changed at its ORIGIN, never here; the cascade's own
   // writes are not direct. See `rewritesCarriedExit`.
   const carriedExit = !params.propagatingExit && isPropagatedExit({ matchUp });
   const rewrite = rewritesCarriedExit({
@@ -306,7 +307,7 @@ function writeMatchUpState(params: SetMatchUpStateArgs) {
     });
   }
 
-  // the matchUp's targets and what depends on it; a malformed round link in either is the answer (CA, 2026-10-06)
+  // the matchUp's targets and what depends on it; a malformed round link in either is the answer
   const targets = downstreamOf({
     propagatingExit: params.propagatingExit,
     matchUpId: matchUpTieId || matchUpId,
@@ -447,7 +448,7 @@ function writeMatchUpState(params: SetMatchUpStateArgs) {
    * property `ERROR_IMPLIES_NO_MUTATION` asserts, and the reason this is not inside
    * `winningSideWithDownstreamDependencies` where an earlier attempt put it.
    */
-  // row 22 (P52), then row 12: both ask about the loser's path before anything is written
+  // row 22, then row 12: both ask about the loser's path before anything is written
   const preWriteRefusal =
     correctionKindRefusal({
       loserTargetLink: targetData?.targetLinks?.loserTargetLink,
@@ -673,8 +674,8 @@ function resolveMatchUpAndContext({
    * computed `winnerTo`, `loserTo` and `potentialParticipants` for every matchUp, a `positionTargets`
    * each, which nothing a `setMatchUpStatus` reaches reads: 89,071 -> 20,459 calls in the census.
    *
-   * THE WRITE PRECEDES VALIDATION, and a refusal takes it back. CA, 2026-10-18: "no, a refused call
-   * does not store a draw's missing edges. v1 should no longer do so." What this write touches is held
+   * THE WRITE PRECEDES VALIDATION, and a refusal takes it back: a refused call does not store a draw's
+   * missing edges, and v1 no longer does so. What this write touches is held
    * before it (`holdGoesTo`, in `setMatchUpState` and `setMatchUpStatus`) and written back on any error
    * the call returns, so a refused call leaves the record as it was, edges included. A call that
    * succeeds keeps them: they are derived from the draw's own links, are what it would have stored had
@@ -858,7 +859,7 @@ function resolveAndApplyOutcome({
   // § 2 row 6's fallthrough clause on a TEAM dual: a status no route accepts as named (an exit with no winner, which an
   // exit entered with one becomes when the call turns auto-calc on and the lines project none). It was refused by
   // `attemptToSetMatchUpStatus` after the dual's writes below, which left its sides and line-ups under the error
-  // (item 3, CA 2026-11-17). Asked here, with what the dispatch reads, so the error leaves the record unchanged.
+  // (item 3). Asked here, with what the dispatch reads, so the error leaves the record unchanged.
   if (teamPlan && refusedAtTheStatusRoute(params, !!activeDownstream))
     return decorateResult({
       result: { error: INVALID_MATCHUP_STATUS },
@@ -866,7 +867,7 @@ function resolveAndApplyOutcome({
       stack,
     });
 
-  // § 2 row 6 on a TEAM dual (CA, 2026-11-18 and 2026-11-19): a single exit entered with a winner by a call that turns
+  // § 2 row 6 on a TEAM dual: a single exit entered with a winner by a call that turns
   // auto-calc on, where the lines project no winner. The call's winner is replaced by the projected one, none, and
   // the exit was written with no winner (a fresh dual, or a decided one whose exit carries: left undecided under an
   // exit status, its winner taken back out of the next dual) or beside the winner the dual already held (a decided
@@ -1026,7 +1027,7 @@ function applyScoredTime({ matchUp }) {
  * The decision (the projected winningSide, and the refusal to change it under active downstream) reads only the draw.
  * The writes (the `disableAutoCalc` flag, the sides' lineUps) used to be made here, above every refusal that follows
  * them in `writeMatchUpState`, so a TEAM call refused there (`AWAITING_RESULT`, a participant check, a schedule) had
- * already written them (CA, 2026-10-22: an error leaves the record unchanged, and no mutation relies on rollback).
+ * already written them (an error leaves the record unchanged, and no mutation relies on rollback).
  * Nothing between reads them, so `apply` is called once every refusal before the outcome's own writes has been asked.
  */
 function handleTeamAutoCalc({
@@ -1052,6 +1053,18 @@ function handleTeamAutoCalc({
   if (!enableAutoCalc && isPartialDualScore(params.score)) {
     Object.assign(params, { score: { ...matchUp.score, ...params.score } });
   }
+  // a winner on a level tie records how it was decided; `setMatchUpStatus` asks first, this is for direct callers
+  const levelDual = levelDualDecisionRefusal({
+    matchUpStatus: params.matchUpStatus,
+    score: params.score,
+    dual: matchUp,
+    drawDefinition,
+    enableAutoCalc,
+    matchUpsMap,
+    winningSide,
+    event,
+  });
+  if (levelDual) return levelDual;
 
   if (disableAutoCalc) {
     autoCalcValue = true;
@@ -1173,7 +1186,7 @@ function resolveTieMatchUpContext({
   // first-class (NATIVE) with fallback to the legacy `_disableAutoCalc` hydrated alias (LEGACY)
   const autoCalcDisabled = dualMatchUp.disableAutoCalc ?? dualMatchUp._disableAutoCalc;
   // a dual decided by its own exit or call keeps its winner while its lines project none: that winner is the projected
-  // one, so nothing downstream reads the line as taking it away (CA, 2026-11-20, class 4)
+  // one, so nothing downstream reads the line as taking it away (class 4)
   const { keepsDecision: keepsDualDecision, lineDecided: dualLineDecided } = dualKeepsOwnDecision({
     projectedWinningSide,
     autoCalcDisabled,
@@ -1231,7 +1244,7 @@ function lineDualRefusal(params, activeDownstream: boolean, winningSide?: number
 }
 
 /**
- * § 2 row 14 (CA, 2026-11-19; line-decided duals, 2026-11-20): a TEAM line whose tally would take away the winner its
+ * § 2 row 14 (and line-decided duals): a TEAM line whose tally would take away the winner its
  * lines gave the dual, sent on to a played-on downstream. Asked of the dual before anything is written, whether or not
  * the line itself has propagated
  */
@@ -1293,7 +1306,7 @@ function winningSideWithDownstreamDependencies(params) {
     if (result.error || !relabel) return result;
     refreshArrivals(params);
     // a RELABEL with the winner already played on: nothing here directs the loser, so the exit it now
-    // carries (or no longer carries) is settled on its own (CA, 2026-10-02)
+    // carries (or no longer carries) is settled on its own
     const relabelled = relabelWithoutDirection({
       matchUpId: params.matchUpId ?? matchUp.matchUpId,
       ...params,
@@ -1384,9 +1397,9 @@ function checkParticipants({
     matchUpStatus &&
     // A single WALKOVER or DEFAULTED can stand with ONE participant present: carried there by the cascade,
     // or RECORDED by the director before the second opponent arrives — the present participant is ill,
-    // injured or defaulted for conduct between matches, and whoever arrives takes the walkover. CA,
-    // 2026-10-04: *"propagateExitStatus shouldn't have anything to do with this ability"*; this waiver
-    // required the flag until then, so the same entry was refused under any policy that left it off.
+    // injured or defaulted for conduct between matches, and whoever arrives takes the walkover.
+    // `propagateExitStatus` has nothing to do with this ability; this waiver used to require the flag,
+    // so the same entry was refused under any policy that left it off.
     //
     // DOUBLE_DEFAULT was missing from this list while DOUBLE_WALKOVER was present, so a
     // single-participant propagated DOUBLE_DEFAULT fell through to the participants-required
@@ -1404,9 +1417,9 @@ function checkParticipants({
     (propagatingExit ||
       !winningSide ||
       exitAwardable({ positionAssignments: allAssignments, inContextMatchUp, winningSide, matchUp })) &&
-    // A DOUBLE exit is two exits, one per seat, so a DIRECT one needs both seats reached. CA,
-    // 2026-10-04: *"How can three entities arrive in one matchUp which can only hold two
-    // drawPositions?"* Entered beside an unreached seat, the arrival later meets a double exit already
+    // A DOUBLE exit is two exits, one per seat, so a DIRECT one needs both seats reached: three entities
+    // cannot arrive in a matchUp that holds only two drawPositions. Entered beside an unreached seat, the
+    // arrival later meets a double exit already
     // standing, and the convergence written there was refused and dropped (F3, census 9100555). Only
     // the cascade's own write keeps the waiver, as it does with propagation off: refused.
     (propagatingExit || !isDoubleExit(matchUpStatus))
@@ -1456,7 +1469,7 @@ function outcomePolicies(params: SetMatchUpStateArgs): PolicyDefinitions {
 }
 
 /**
- * A recorded result downstream fixes the KIND of this outcome (P52; CA, 2026-10-11): a correction from an exit to a
+ * A recorded result downstream fixes the KIND of this outcome: a correction from an exit to a
  * played result, or the reverse, is refused above every mutation when the loser's path holds one. The cascade's own
  * writes are not corrections and are not asked.
  */

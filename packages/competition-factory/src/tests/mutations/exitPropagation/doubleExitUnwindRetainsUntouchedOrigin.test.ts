@@ -12,7 +12,7 @@ import { DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatu
 /**
  * CLEARING ONE DOUBLE EXIT MUST NOT DESTROY ANOTHER'S RECORD.
  *
- * CA, 2026-09-20, reading the reproduction below: *"when the [...] DOUBLE_WALKOVER is removed the
+ * Reported, reading the reproduction below: *"when the [...] DOUBLE_WALKOVER is removed the
  * provenance of the sideNumber: 1 matchUpStatus: WALKOVER is lost... that's the bug."*
  *
  * `Consolation|3|1` is a WALKOVER produced by `Consolation|1|1`'s double walkover. Clearing a

@@ -14,7 +14,7 @@ import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { MALE, FEMALE } from '@Constants/genderConstants';
 
 /**
- * Activation carries public registration across (P23 option A, D6).
+ * Activation carries public registration across.
  *
  * A proposal whose registration was opened is already public on its registration page. Activating it
  * must not create a record that is dark: the information is published, scoped to exactly the events that

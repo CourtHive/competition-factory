@@ -5,9 +5,9 @@ import { expect, it } from 'vitest';
 import { DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
- * `matchUpStatusCodes` has TWO TENANTS, and P37 evicts one of them.
+ * `matchUpStatusCodes` has TWO TENANTS, and the per-side exit provenance is evicted.
  *
- * CA, 2026-09-27: *"I'm not sure that finding full resolution on the matchUpStatusCodes is a goal
+ * The direction: *"I'm not sure that finding full resolution on the matchUpStatusCodes is a goal
  * since Provenance gives us clear detail that is side based and consumers should switch to provenance
  * detail. We don't want to be relying on the old matchUpStatusCodes array order and work around
  * derivations for the long term."*

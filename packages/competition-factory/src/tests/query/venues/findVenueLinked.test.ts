@@ -35,7 +35,7 @@ it('findVenue returns a venue found only in a linked tournament', () => {
   expect(result.venue?.venueName).toEqual('Linked Venue');
 });
 
-// P54: findVenue is a query. It used to add a copy of the linked venue to the current record (with an ADD_VENUE
+// findVenue is a query. It used to add a copy of the linked venue to the current record (with an ADD_VENUE
 // notice); now it writes nothing, to either record.
 it('findVenue writes nothing to either record', () => {
   const { first, second, tournamentRecords, venueId } = linkedPair();

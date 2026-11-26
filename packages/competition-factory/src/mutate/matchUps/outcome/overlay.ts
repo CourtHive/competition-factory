@@ -11,7 +11,7 @@ import type { HydratedMatchUp } from '@Types/hydrated';
 import type { OutcomeOp, TemporalProjection } from './ops';
 
 /**
- * The outcome pipeline, v2: THE WORKING VIEW (executor plan § 3.2; S2, CA 2026-10-24).
+ * The outcome pipeline, v2: THE WORKING VIEW (executor plan § 3.2; S2).
  *
  * The view is built from the structural index of the draw (§ 3.1.1), a TEAM draw included since S7, or from a hydrated
  * array its caller hands it. As a plan's ops are folded, the working view is the draw as it will
@@ -26,7 +26,7 @@ import type { OutcomeOp, TemporalProjection } from './ops';
  * RE-DERIVATION, LOCAL. The matchUps an op wrote, and those whose sides read a reassigned drawPosition, are derived
  * again from the working copies: on an index base, by indexing again the top-level structures that hold them
  * (`buildStructuralIndex` scoped to those structures, whose round profiles are read whole), with no hydration; on a
- * hydrated base, by `getAllDrawMatchUps` projected to their ids (CA, 2026-10-24: re-derive by projection). Each
+ * hydrated base, by `getAllDrawMatchUps` projected to their ids (re-derived by projection). Each
  * replaces its entry in v2's copy of the array, through an id → index map built once. The matchUps map handed to it is
  * assembled from the call's, with the copies in place, rather than built again.
  *

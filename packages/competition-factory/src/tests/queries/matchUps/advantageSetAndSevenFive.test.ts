@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 /**
  * Two defects found while settling set-level NOAD (#5076), both reproducing with or without the token,
- * fixed on CA's instruction 2026-10-02.
+ * fixed 2026-10-02.
  */
 const won = (side1Score: number, side2Score: number, extra: Record<string, number> = {}) => ({
   setNumber: 1,
@@ -38,7 +38,7 @@ describe('an advantage set is complete by two clear games, however far it runs',
   it('a set WITH a tiebreak still wants it at six-all — the control', () => {
     // 8-6 is two games past a tiebreak the format plays at six-all: no such set exists
     expect(checkSetIsComplete({ set: won(8, 6), matchUpFormat: 'SET3-S:6/TB7' })).toBe(false);
-    // 7-6 is the set a tiebreak at six-all produces: finished, its points not recorded (CA, 2026-11-07)
+    // 7-6 is the set a tiebreak at six-all produces: finished, its points not recorded
     expect(checkSetIsComplete({ set: won(7, 6), matchUpFormat: 'SET3-S:6/TB7' })).toBe(true);
     expect(
       checkSetIsComplete({

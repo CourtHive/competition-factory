@@ -10,7 +10,7 @@ import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { CLEAR_SCORE, SCORE } from '@Constants/matchUpActionConstants';
 
 /**
- * **A carried or produced exit is changed at its ORIGIN, never where it was carried to** (CA, 2026-10-03).
+ * **A carried or produced exit is changed at its ORIGIN, never where it was carried to**.
  *
  * Census seed 9000184 (DOUBLE_ELIMINATION 32/30): `Main|1|8` is a WALKOVER, so its loser carries the
  * walkover into `Backdraw|1|5`, where the participant opposite wins it and advances. The director then

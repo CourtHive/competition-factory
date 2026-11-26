@@ -10,7 +10,7 @@ import { DEFAULTED, DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStat
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 /**
- * A CARRY PAST TWO BYES COMES HOME WHEN ONE OF THEM GOES (P53), census de 9300487 shrunk to four steps.
+ * A CARRY PAST TWO BYES COMES HOME WHEN ONE OF THEM GOES, census de 9300487 shrunk to four steps.
  *
  * DOUBLE_ELIMINATION 16/13, `propagateExitStatus`. `Main|1|6`'s double walkover puts a BYE in `Backdraw|1|2`, and
  * `Main|1|4`'s puts one in `Backdraw|2|2`. Hedges defaults out of `Main|1|5`: he passes both BYEs, and his default is
@@ -19,9 +19,9 @@ import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
  *
  * Before the change his default stayed at `Backdraw|3|1`: decided, over two empty seats, against whoever arrived
  * (on `dev`, the full census schedule had it decide `3|1` against Ahern, who never defaulted); and `1|2` was an
- * ordinary match. P50 brought a carry home on the REMOVAL path; this was the RELEASE path, which takes a carrier back
- * out of the rounds a withdrawn BYE had moved them through. Forward play, the double walkover never entered, is the
- * reference: the default meets Wormwood at `1|2`, who wins it and goes on past the BYE at `2|2`.
+ * ordinary match. An earlier fix brought a carry home on the REMOVAL path; this was the RELEASE path, which takes a
+ * carrier back out of the rounds a withdrawn BYE had moved them through. Forward play, the double walkover never
+ * entered, is the reference: the default meets Wormwood at `1|2`, who wins it and goes on past the BYE at `2|2`.
  */
 const key = (matchUp: any) => `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`;
 const CONFIG = {

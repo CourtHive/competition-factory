@@ -19,7 +19,7 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  * seat of `South` holding no participant: the BYE's advancement into `South|3|1` was released while both BYEs behind it
  * still stood.
  *
- * Under the policy off the convergence no longer leaves a BYE there (CA ruling (A), 2026-10-21): `West|1|2`'s loser seat
+ * Under the policy off the convergence no longer leaves a BYE there: `West|1|2`'s loser seat
  * shows the walkover it produced, which `South|1|1`'s draw BYE relays into `South|2|1`, where it meets `South|1|2`'s
  * produced walkover. The guard stands: the loser taken back is still nobody, and nothing the draw placed in `South` is
  * released for it.
@@ -78,7 +78,7 @@ it("the convergence's produced walkover travels on past the BYE beside it and co
   }
   expect(find('West|1|2').matchUpStatus).toEqual(DOUBLE_WALKOVER);
   // under the policy off the convergence's loser seat, `South|1|1` dp 2, shows the walkover it produced, not the BYE its
-  // single exit had sent there (CA ruling (A), 2026-10-21); the draw's own BYE beside it relays that walkover on, and in
+  // single exit had sent there; the draw's own BYE beside it relays that walkover on, and in
   // `South|2|1` it meets the walkover `South|1|2`'s double walkover produced, so that matchUp converges too
   expect(find('South|1|1').matchUpStatus).toEqual(BYE);
   expect(find('South|1|1').sideExitProvenance?.[2]).toMatchObject({ matchUpStatus: WALKOVER });
@@ -89,7 +89,7 @@ it("the convergence's produced walkover travels on past the BYE beside it and co
   expect(find('West|2|1').matchUpStatus).toEqual(DOUBLE_WALKOVER);
   expect(find('Southwest|1|1').sideExitProvenance?.[1]).toMatchObject({ matchUpStatus: WALKOVER });
   // `South|2|1`'s produced walkover goes on and waits in `South|3|1`, pending (census S6: a held exit is sent on while
-  // the other feeder can still deliver, CA 2026-09-24)
+  // the other feeder can still deliver)
   const final = find('South|3|1');
   expect(final.matchUpStatus).toEqual(WALKOVER);
   expect(final.winningSide).toBeUndefined();

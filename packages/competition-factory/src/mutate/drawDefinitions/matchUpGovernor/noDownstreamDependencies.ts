@@ -43,7 +43,7 @@ export function noDownstreamDependencies(params) {
    * `doubleExitAdvancement`'s `existingExit` then read that survivor as a second exit ARRIVING —
    * a convergence — and wrote a DOUBLE exit where a single produced one belonged.
    *
-   * Measured on CURTIS_CONSOLATION 16/13 `nonRandom: 20000119` (CA, 2026-09-21). Main R2P4 scored
+   * Measured on CURTIS_CONSOLATION 16/13 `nonRandom: 20000119` (2026-09-21). Main R2P4 scored
    * `DOUBLE_DEFAULT` correctly produces `DEFAULTED` at `Main|3|2`; re-scoring it `DOUBLE_WALKOVER`
    * made `Main|3|2` a `DOUBLE_WALKOVER` while its own `sideExitProvenance` said `WALKOVER` — and
    * because a DOUBLE exit cascades where a single one does not, `Main|4|1` gained a produced exit

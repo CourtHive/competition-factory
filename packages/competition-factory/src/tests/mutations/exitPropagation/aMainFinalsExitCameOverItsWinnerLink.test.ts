@@ -18,7 +18,7 @@ import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
  * `arrivedOverLoserLink`, whose walk follows winner links from the source's LOSER target: in a double-elimination draw
  * `Main|3|1`'s loser target is `Backdraw|4|1`, whose winner target is `Main|4|1` itself, so the produced exit read as
  * one carried down a loser link and kept its award to nobody. The source's own winner target is where its produced
- * exit went first. "A produced exit has no winningSide until a participant arrives" (CA, 2026-09-20).
+ * exit went first. A produced exit has no winningSide until a participant arrives.
  */
 
 type Step = { structureName: string; roundNumber: number; roundPosition: number; outcome: any };

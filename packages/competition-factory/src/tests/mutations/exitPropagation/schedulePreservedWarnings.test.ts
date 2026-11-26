@@ -14,7 +14,7 @@ import {
 
 /**
  * A PRESERVED PLACEMENT IS REPORTED — on the success payload, and on the read side — for a BYE and
- * for a produced exit alike. CA, 2026-10-01:
+ * for a produced exit alike. The requirement:
  *
  * > for recoverability we have to keep the schedules, or perhaps they should imply another
  * > notification in the success payload (warning) that clients can respond to?

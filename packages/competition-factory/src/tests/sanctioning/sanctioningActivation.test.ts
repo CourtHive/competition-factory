@@ -349,8 +349,7 @@ describe('Full Lifecycle — End-to-End', () => {
 });
 
 // The sanctioned tournamentId/eventId must survive activation as the event's ORIGIN, so an
-// integration layer can address results back to the body that sanctioned them. See
-// Mentat planning/SANCTIONING_ACTIVATION_AND_EVENTID_THREADING.md Part 3d.
+// integration layer can address results back to the body that sanctioned them.
 describe('Activation — event sanctioning origin (eventOtherIds)', () => {
   beforeEach(() => {
     sanctioningEngine.reset();

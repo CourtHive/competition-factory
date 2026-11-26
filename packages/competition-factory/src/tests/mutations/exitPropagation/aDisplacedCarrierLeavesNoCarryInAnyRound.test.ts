@@ -13,8 +13,8 @@ import { expect, it } from 'vitest';
  * first-round entry stayed, naming a feeder that is now a BYE, on a BYE-vs-BYE matchUp (`Southeast|1|2`). Every rebuild
  * of the standing results leaves that side with no entry. The carry now goes from every matchUp holding the position.
  *
- * The side once kept a `byeClaims` entry (`South|1|4`'s claim on the BYE); the ledger is retired (Mentat P58, CA
- * 2026-10-21), so the BYE-vs-BYE matchUp holds no provenance at all before the probe, after it, and after its clear.
+ * The side once kept a `byeClaims` entry (`South|1|4`'s claim on the BYE); the ledger is retired, so
+ * the BYE-vs-BYE matchUp holds no provenance at all before the probe, after it, and after its clear.
  */
 
 const coordinate = (matchUp: any) => `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`;

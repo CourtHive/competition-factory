@@ -11,8 +11,7 @@ import { BYE } from '@Constants/matchUpStatusConstants';
  * Adding a playoff structure carries each source BYE into it: the BYE matchUp's LOSER target position
  * gets a BYE. The target position was read `loserMatchUp.drawPositions[loserMatchUpDrawPositionIndex]`,
  * and while one position is present the index is not the side — `[undefined, 9]` and `[9]` are one
- * matchUp, 9 on side 2, and the compacted spelling named nobody. It now asks `getSideDrawPosition`
- * (Mentat `planning/LEADING_HOLE_REMOVAL_DESIGN.md`).
+ * matchUp, 9 on side 2, and the compacted spelling named nobody. It now asks `getSideDrawPosition`.
  *
  * At generation the playoff's first round holds both positions, so the engine path never meets a lone
  * one; the spelling case is driven against the same function with the target re-spelled.

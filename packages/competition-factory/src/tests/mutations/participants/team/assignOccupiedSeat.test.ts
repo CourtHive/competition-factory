@@ -11,7 +11,7 @@ import { COMPETITOR } from '@Constants/participantRoles';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
 /**
- * Assignment fills a free seat (NOC-723, CA 2026-11-06). A SINGLES seat the line shows held by another player, or a
+ * Assignment fills a free seat (NOC-723). A SINGLES seat the line shows held by another player, or a
  * DOUBLES seat whose pair is full, is refused with EXISTING_PARTICIPANT; changing who holds a seat is
  * replaceTieMatchUpParticipantId (or a substitution). It is the rule matchUpActions applies when it offers ASSIGN.
  * Before, the SINGLES call succeeded and left two holders in the lineUp while the line still showed the first, and

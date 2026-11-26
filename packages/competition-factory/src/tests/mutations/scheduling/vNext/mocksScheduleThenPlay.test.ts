@@ -24,7 +24,7 @@ function generate(params: Record<string, unknown> = {}) {
 
 const matchUpsOf = (tournamentRecord: any) => tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps;
 
-// CA 2026-10-23: the schedulers never place a completed matchUp, and there is no override. An auto-scheduled mock
+// The schedulers never place a completed matchUp, and there is no override. An auto-scheduled mock
 // tournament is played as a real one is: scheduled first, its results applied after, so its completed matchUps carry
 // the schedules they were played to (TMX's display-settings preview reads one)
 describe('mocksEngine schedules, then plays', () => {

@@ -21,7 +21,7 @@ const FACTORY_ROOT = resolve(__dirname, '../..');
 const FIXTURE_SRC = join(FACTORY_ROOT, 'scripts/verify/fixtures/pack-test');
 
 function run(cmd, opts = {}) {
-  // a deadline on every child (punch list P62): a pack or install that hangs fails the check instead of stalling it
+  // a deadline on every child: a pack or install that hangs fails the check instead of stalling it
   return execSync(cmd, { stdio: 'pipe', encoding: 'utf8', timeout: 1_200_000, killSignal: 'SIGKILL', ...opts });
 }
 

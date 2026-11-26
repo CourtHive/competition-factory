@@ -10,8 +10,7 @@ import { BYE, DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED } from '@
 import { FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
 
 /**
- * A CLEARED BYE STAYS A BYE (CA, 2026-10-24: "a TO_BE_PLAYED matchUp with a BYE side should never occur"; punch-list
- * P26).
+ * A CLEARED BYE STAYS A BYE: a TO_BE_PLAYED matchUp with a BYE side should never occur.
  *
  * A BYE has no result to clear. Clearing one (`TO_BE_PLAYED`, an empty score) was accepted and wrote `TO_BE_PLAYED`
  * against nobody: re-witnessed on 2026-10-24 over sched-w1, both arms, on four seeds, every one this clear. Now the

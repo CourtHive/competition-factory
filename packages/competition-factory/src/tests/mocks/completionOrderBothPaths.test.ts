@@ -7,8 +7,7 @@ import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 /**
  * A draw is completed in one order whichever profile path made it: its completionGoal, then its outcomes, then every
- * matchUp left when completeAllMatchUps is set and no goal is. A goal wins: exactly that many are completed (CA
- * 2026-10-29).
+ * matchUp left when completeAllMatchUps is set and no goal is. A goal wins: exactly that many are completed.
  */
 const completedCount = () =>
   tournamentEngine.allTournamentMatchUps({ matchUpFilters: { matchUpStatuses: [COMPLETED] } }).matchUps.length;

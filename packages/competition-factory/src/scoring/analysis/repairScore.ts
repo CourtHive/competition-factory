@@ -17,11 +17,10 @@ type RepairScoreArgs = {
 /**
  * The ingestion fallback for a score a results feed recorded impossibly — never for a live entry.
  *
- * CA, 2026-10-02 (ruling V12): a person entering a score is held to it — `7-6(10-7)` with a tiebreak to
- * seven is refused, because no tiebreak ends 10-7 — *"but if it's an ingestion pipeline perhaps we can
- * somehow relax and drop the invalid tiebreak points and fall back to 7-6"*. A `7-6` with no points is a
- * recordable set (ruling V11), so dropping points the format cannot produce keeps everything the feed
- * knew for certain: who won the set, and that it went to a tiebreak.
+ * A person entering a score is held to it — `7-6(10-7)` with a tiebreak to seven is refused, because no
+ * tiebreak ends 10-7 — but an ingestion pipeline relaxes: it drops the invalid tiebreak points and falls
+ * back to 7-6. A `7-6` with no points is a recordable set, so dropping points the format cannot produce keeps
+ * everything the feed knew for certain: who won the set, and that it went to a tiebreak.
  *
  * Only that one repair, and only where it works: the games must be a tiebreak result, the points must be
  * refused, and the set without them must be accepted. Anything else is returned untouched for the write to

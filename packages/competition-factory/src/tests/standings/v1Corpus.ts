@@ -5,9 +5,9 @@ import { WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { CorpusCase } from './standingsFixtures';
 
 /**
- * The v1 characterisation corpus: Mentat `planning/STANDINGS_ENGINE_SPEC.md` § 1. Every expected row is worked by
+ * The v1 characterisation corpus. Every expected row is worked by
  * hand from the clause it pins (the working is in the description), never copied from a run. A `K` clause pins a
- * quirk exactly as v1 behaves; whether v2 keeps it is a ruling recorded in the spec (§ 5.8, § 5.10).
+ * quirk exactly as v1 behaves; whether v2 keeps it is decided separately.
  */
 
 const DEFAULT = POLICY_ROUND_ROBIN_TALLY_DEFAULT;

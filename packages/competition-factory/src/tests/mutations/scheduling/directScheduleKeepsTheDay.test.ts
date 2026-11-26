@@ -4,7 +4,7 @@ import { expect, it } from 'vitest';
 
 /**
  * A listed matchUp dated on another day is scheduled on that day: the direct scheduler for one day never moves it,
- * and reports it in noTimeMatchUpIds (scheduling-pipeline.md § 6 rule 1, CA 2026-10-28). It used to take this day's
+ * and reports it in noTimeMatchUpIds (scheduling-pipeline.md § 6 rule 1). It used to take this day's
  * time and keep its own date, landing at the new time on the old day.
  */
 const scheduleOf = (matchUpId: string) => tournamentEngine.findMatchUp({ matchUpId }).matchUp?.schedule ?? {};

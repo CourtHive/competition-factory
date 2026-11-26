@@ -11,7 +11,7 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
 /**
  * A STORED `drawPositions` holds no hole: the positions present, ascending, or `[]`.
  *
- * Step 2 of `Mentat/planning/LEADING_HOLE_REMOVAL_DESIGN.md` (CA, Q2, 2026-10-05: `tournament.schema.json` types the
+ * Step 2 of the leading-hole removal (`tournament.schema.json` types the
  * items as `number`, and a stored hole serialises as `null`). A lone survivor on side 2 used to be stored
  * `[undefined, 5]`; since every reader resolves a side structurally (#5253), it is stored `[5]`.
  *

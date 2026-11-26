@@ -6,7 +6,7 @@ import { extractDate } from '@Tools/dateTime';
 import { expect, it } from 'vitest';
 
 // Fixtures
-import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
+import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Tests/fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
 
 it('can schedule all matchUps in first round with only drawId', () => {
   const venueId = 'venueId';

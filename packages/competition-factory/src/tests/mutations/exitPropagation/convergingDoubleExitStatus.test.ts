@@ -21,7 +21,7 @@ import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, RETIRED, WALKOVER } from '@
  * `DOUBLE_DEFAULT` to `DEFAULTED`, the relabelling propagated a `WALKOVER` downstream where a
  * `DEFAULTED` belonged.
  *
- * CA, 2026-09-12: *"a DOUBLE_DEFAULT producing a side record DEF sounds right, the same as a
+ * The rule: *"a DOUBLE_DEFAULT producing a side record DEF sounds right, the same as a
  * DOUBLE_WALKOVER producing a WO / WALKOVER sounds right; my assertion was a WALKOVER and a DEFAULT
  * would produce a WALKOVER, not a DEF."* So a uniform pair keeps its flavour and any MIXTURE
  * collapses to `DOUBLE_WALKOVER`, whose production is the unattributed walkover.
@@ -70,20 +70,19 @@ it('never persists a matchUpStatusCodes array containing a hole', () => {
   // `progressExitStatus` RULE 4 assigned `sourceCode` — `undefined` for a directly-recorded exit —
   // into BOTH slots by hand, and PERSISTED the result: `[undefined, undefined]`, which serialises to
   // `[null, null]` and is not a `string[]`. It is also load-bearing in RULE 4's own `opponentEmpty`
-  // gate, which tests `statusCodes.length === 0`. CA: *"we can't be persisting
-  // [undefined, undefined]."*
+  // gate, which tests `statusCodes.length === 0`. And `[undefined, undefined]` must
+  // never be persisted.
   //
   // Driven through the sweep harness rather than by hand: a hand-built convergence did NOT reproduce
   // it, so that version of this test passed against the unfixed tree and was vacuous. Measured on
   // the unfixed tree across the first 120 seeds of the window: 14 persisted hole arrays, including
   // the mixed shape `[null, ""]` which also evidences the index-0 read this replaced.
   //
-  // P37 widened the seed list. The original three — 9000003, 9000056, 9000074 — persist NO non-empty
-  // array once the exit tenant is evicted, because every array they produced was the PROJECTION, and
-  // the control below then failed rather than passing vacuously. Measured across the first
-  // sixty seeds of the window, the seeds that still persist one are 9000010, 9000013, 9000019,
-  // 9000029, 9000036, 9000057 and 9000060. The originals are KEPT so the hole property stays asserted
-  // over the scenarios it was found in.
+  // Evicting the exit tenant widened the seed list. The original three — 9000003, 9000056, 9000074 — persist NO
+  // non-empty array once the exit tenant is evicted, because every array they produced was the PROJECTION, and the
+  // control below then failed rather than passing vacuously. Measured across the first sixty seeds of the window, the
+  // seeds that still persist one are 9000010, 9000013, 9000019, 9000029, 9000036, 9000057 and 9000060. The originals
+  // are KEPT so the hole property stays asserted over the scenarios it was found in.
   //
   // Widened again in census S6: once a withdrawn origin's kept exit is labelled from what it retains (20521366), the
   // correction path stops writing codes direct entry never writes, and only 9000012 and 9000062 of the first 120 seeds
@@ -122,11 +121,10 @@ it('never persists a matchUpStatusCodes array containing a hole', () => {
   /**
    * AND THE DESTINATION, PINNED AT THE DATA: every persisted element is a STRING.
    *
-   * **P37.** `matchUpStatusCodes` has two tenants and the exit one is evicted, so what survives is the
-   * positional string contract — `['', 'WO']`, `['WO']`, `['', 'DEF']`, measured as the only shapes the
-   * sweep persists. An OBJECT element is a projection of `sideExitProvenance` regrowing in the array,
-   * which is the regression this whole workstream exists to prevent, and it is cheaper to catch here
-   * than in a consumer.
+   * **The exit tenant's eviction.** `matchUpStatusCodes` has two tenants and the exit one is evicted, so what survives
+   * is the positional string contract — `['', 'WO']`, `['WO']`, `['', 'DEF']`, measured as the only shapes the sweep
+   * persists. An OBJECT element is a projection of `sideExitProvenance` regrowing in the array, which is the regression
+   * this whole workstream exists to prevent, and it is cheaper to catch here than in a consumer.
    *
    * Deliberately asserted over whatever the sweep persists rather than over a fixed expectation: a
    * future write site that starts projecting again fails this without anyone having to remember to

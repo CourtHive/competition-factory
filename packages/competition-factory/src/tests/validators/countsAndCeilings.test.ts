@@ -110,7 +110,7 @@ describe('V7: a tiebreak is never won past its margin, in the analysis as in the
 
   it('a TB1 decider is won 1-0 by every answerer: the margin is capped at the target', () => {
     const format = 'SET3XA-S:T10-F:TB1';
-    // the decider is set 4: the sudden death after three level bolts, never one of them (CA, 2026-10-04)
+    // the decider is set 4: the sudden death after three level bolts, never one of them
     const decider = { setNumber: 4, side1TiebreakScore: 1, side2TiebreakScore: 0, winningSide: 1 };
     expect(analyzeSet({ setObject: decider, matchUpScoringFormat: parse(format) }).isValidSetOutcome).toBe(true);
     const levelBolt = { setNumber: 3, side1Score: 20, side2Score: 20 };

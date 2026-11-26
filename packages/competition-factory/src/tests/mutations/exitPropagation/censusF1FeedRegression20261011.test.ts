@@ -13,12 +13,11 @@ import fs from 'fs';
  * FIRST_MATCH_LOSER_CONSOLATION: the end state fails `getDrawInconsistencies` with `DROPPED_PROGRESSION` (a loser
  * eligible to feed the consolation is absent from it) or `INELIGIBLE_PROGRESSION` (a loser the feed rule excludes is
  * present in it). Every one fails identically on `dev` before and after #5364, so the family predates that release; the
- * frozen anchors (P48) already failed at 564302fa85.
+ * frozen anchors already failed at 564302fa85.
  *
  * This fixture holds 45 of the 265, sized for CI: the four smallest seeds, every seed reporting
- * `INELIGIBLE_PROGRESSION`, and the earliest `DROPPED_PROGRESSION` seed at each draw size. All 265 are in
- * `Mentat/fixtures/exit-propagation-census/census-fails-s13.jsonl`; the full set is a scale run's job. The planning
- * record is `Mentat/planning/CENSUS_FAILURE_FAMILIES.md`.
+ * `INELIGIBLE_PROGRESSION`, and the earliest `DROPPED_PROGRESSION` seed at each draw size. All 265 are in the
+ * census's s13 failure set; the full set is a scale run's job.
  *
  * Each schedule was EMITTED IN THE `on` ARM and replays there: `generateSchedule` calls the engine, so a schedule
  * emitted without `allowChangePropagation` is a different schedule.

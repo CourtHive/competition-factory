@@ -41,7 +41,7 @@ import {
  *
  * DIRECTOR was absent, which meant the **tournament director** — the single person a competitor most
  * needs to reach — was excluded from the tournament's contact list by role, before any question about
- * contact details arose. SUPERVISOR joined it, and CA added the on-site service roles a competitor
+ * contact details arose. SUPERVISOR joined it, and so did the on-site service roles a competitor
  * genuinely needs to reach during an event: PHYSIO, TRAINER, STRINGER, TRANSPORT, HOSPITALITY.
  *
  * Still excluded: COACH, CAPTAIN, VOLUNTEER, SCOREKEEPER, TIMEKEEPER, OTHER. A coach or captain is

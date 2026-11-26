@@ -80,9 +80,9 @@ it('a TEAM withheld from the consolation leaves no lineUp on the BYE that replac
   };
   expect(storedSides().some((side) => side.lineUp?.length)).toEqual(true);
 
-  // CA, 2026-11-20 (class 4): the WALKOVER dual keeps its winner while its lines project none, so its first line leaves
+  // Class 4: the WALKOVER dual keeps its winner while its lines project none, so its first line leaves
   // the round 2 dual and the fed loser as they stand. The line that would complete the tally relabels the dual to a scored
-  // win with its loser already fed, and is refused as the dual's own call is (row 12). Before the ruling the first line
+  // win with its loser already fed, and is refused as the dual's own call is (row 12). Before this rule the first line
   // un-decided the dual and reset round 2, which is how the correction used to reach the withheld loser.
   const [firstLine, secondLine] = matchUps().filter((m) => m.matchUpTieId === walkoverDual.matchUpId);
   const lineOutcome = (rubber: any, winningSide: number) =>

@@ -20,7 +20,7 @@ import { afterEach, describe, expect, it } from 'vitest';
  *
  * The skip is kept to the BYE it was written for: the matchUp feeding the seat holds a BYE.
  *
- * The `byeClaims` ledger is retired (Mentat P58, CA 2026-10-21), so the BYE is no longer held by a recorded claim. What
+ * The `byeClaims` ledger is retired, so the BYE is no longer held by a recorded claim. What
  * the claim stood for is read from the draw: the seat holds the BYE, its feeder `Main|2|1` sends nobody across the link
  * (`feederSendsNobody`: its losing side holds nobody), and `Main|1|1` is the matchUp the BYE is owed to
  * (`byeSeatsOwedTo`).

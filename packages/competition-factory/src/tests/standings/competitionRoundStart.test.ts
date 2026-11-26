@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { POLICY_TYPE_COMPETITION } from '@Constants/policyConstants';
 
 /**
- * C6 (Mentat `planning/STANDINGS_ENGINE_SPEC.md` § 2, ruled 2026-11-01): under PER_ROUND every result of a round is
+ * C6: under PER_ROUND every result of a round is
  * expected from the form ratings at the START of the round, as the competition policy documents. It differs from
  * applying results one after another only for a participant who plays more than once in a round, so A plays twice.
  */

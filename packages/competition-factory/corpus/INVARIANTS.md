@@ -80,8 +80,7 @@ draw; `src/tests/testHarness/corpus/grammarSource.ts` is the authority.
 ## Scheduling step properties
 
 A scheduling step property is a statement about the matchUps ONE scheduling call placed, read against the record after
-the call. The authority is `src/tests/testHarness/scheduling/schedulingProperties.ts`; the plan is
-`Mentat/planning/SCHEDULING_PIPELINE_VNEXT.md` § 5.
+the call. The authority is `src/tests/testHarness/scheduling/schedulingProperties.ts`.
 
 They are properties and not invariants on purpose. A stored record may hold a timed BYE (`byeSchedulingPreservation`
 keeps an operator's placement when a seat becomes a BYE) or two matchUps an operator put inside one participant's
@@ -125,7 +124,7 @@ matchUps they are certain to play there. The limits are the tournament's (`sched
 scheduling policy's `defaultDailyLimits`; none when neither is set), with the participant's override from the policy's
 `matchUpDailyLimits` on top, key by key. A limit of 0 is no limit. A participant already over before the call is a
 violation only if the call adds to it. A placement is a timed one or one on the day's court grid (a date and a court
-order, no time), and both count toward the day (CA 2026-10-23: the grid applies the timed pipeline's limits). A call
+order, no time), and both count toward the day (the grid applies the timed pipeline's limits). A call
 that waived the limits (`matchUpDailyLimits: {}`) is not asked.
 
 ## Scheduling report properties

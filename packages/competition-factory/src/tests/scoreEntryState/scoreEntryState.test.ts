@@ -298,7 +298,7 @@ describe('which endings discard a typed score', () => {
     expect(resolveScoreEntry(chooseSideEnding(emptyScoreEntryState, 1, status)).clearsScore).toBe(false);
   });
 
-  it.each([CANCELLED, DEAD_RUBBER])('%s clears it — CA, 2026-09-27', (status) => {
+  it.each([CANCELLED, DEAD_RUBBER])('%s clears it', (status) => {
     expect(resolveScoreEntry(chooseMatchEnding(emptyScoreEntryState, status)).clearsScore).toBe(true);
   });
 
@@ -365,7 +365,7 @@ describe('no transition mutates the state it was given', () => {
 /**
  * Reopening a recorded outcome.
  *
- * CA, 2026-09-28: *"we need to be able to open existing outcomes!"* The dialog opened blank on a scored
+ * An existing outcome must open in the dialog. The dialog opened blank on a scored
  * matchUp, and the shipping modal does not — so swapping the card in without this would have lost the
  * display of every outcome already entered.
  *

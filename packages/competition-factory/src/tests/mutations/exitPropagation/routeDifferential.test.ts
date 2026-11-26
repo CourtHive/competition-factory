@@ -24,7 +24,7 @@ import {
  * Route A vs Route B differential over every flip in a fully played draw. INERT unless
  * `ROUTE_DIFF=1`, and wired into `pnpm verify` and `verify.yml` as `verify:route-differential`.
  *
- * ## It is a GATE now, and it asserts — 2026-09-29, punch-list P18
+ * ## It is a GATE now, and it asserts — 2026-09-29
  *
  * Until then it wrote a file and asserted nothing about it, so it was run by whoever remembered to.
  * The five divergences it had reported since 2026-09-17 were the INSTRUMENT: Route B re-entered
@@ -47,7 +47,7 @@ import {
  *
  * Flipping DOUBLE_ELIMINATION's Main final left the Decider exactly as it was under Route A — same
  * occupants, same winner — because `getDownstreamStructureIds` declines a target that BOTH sides of
- * the flipped matchUp feed. They were allowed here by name until CA ruled, 2026-09-29: a decider
+ * the flipped matchUp feed. They were allowed here by name until the rule: a decider
  * that is not needed is a `DEAD_RUBBER`, and one that was played before its final changed is
  * destroyed. `reconcileDecider` settles it by that rule on either route, so there is no allowance
  * left and the DOUBLE_ELIMINATION row above now reads 0.

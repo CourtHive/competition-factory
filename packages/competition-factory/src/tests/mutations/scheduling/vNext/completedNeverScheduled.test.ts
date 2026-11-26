@@ -4,7 +4,7 @@ import { expect, it } from 'vitest';
 
 const DAY = '2026-10-01';
 
-// CA 2026-10-23: completed matchUps are excluded from re-scheduling. The flag that once let the profile schedulers
+// Completed matchUps are excluded from re-scheduling. The flag that once let the profile schedulers
 // place them is ignored; mocksEngine's seeding, which is not an operator scheduling, keeps its own way in
 it('scheduleProfileRounds never places a completed matchUp, whatever scheduleCompletedMatchUps says', () => {
   const outcomes = [1, 2, 3, 4].map((roundPosition) => ({

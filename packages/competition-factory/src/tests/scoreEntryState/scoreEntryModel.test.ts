@@ -304,7 +304,7 @@ describe('setCell', () => {
     expect(clearCell(withPoints, G(0, 2)).sets[0]).toEqual({ side1: 7, tiebreak1: 7, tiebreak2: 3 });
   });
 
-  it("a 0-0 pair is no points — CA's gesture for declining them once a complement has filled them", () => {
+  it('a 0-0 pair is no points — the gesture for declining them once a complement has filled them', () => {
     const toLove = setCell(setCell(typed(STANDARD, [7, 6]), TB(0, 1), 7), TB(0, 2), 0);
     expect(toLove.sets[0]).toEqual({ side1: 7, side2: 6, tiebreak1: 7, tiebreak2: 0 });
     // a 0 over the derived 7: no tiebreak finishes 0-0, so the pair goes and the set is a bare 7-6
@@ -322,7 +322,7 @@ describe('setCell', () => {
   });
 
   describe('no set exists beyond the one that decides the match', () => {
-    it("CA's sequence: 6-2, 2-6, a third set, then set 2 edited to 6-2 — the third set goes", () => {
+    it('the sequence 6-2, 2-6, a third set, then set 2 edited to 6-2 — the third set goes', () => {
       const three = typed(STANDARD, [6, 2], [2, 6], [6, 3]);
       expect(three.sets[2]).toEqual({ side1: 6, side2: 3 });
 
@@ -424,7 +424,7 @@ describe('changeFormat keeps what the new format has not invalidated', () => {
     expect(changeFormat(typed(STANDARD, [6, 4], [3, 2]), 'SET1-S:6/TB7').sets).toEqual([{ side1: 6, side2: 4 }]);
   });
 
-  it("CA's example: the first two sets survive a match-tiebreak decider, a part-entered third does not", () => {
+  it('the example: the first two sets survive a match-tiebreak decider, a part-entered third does not', () => {
     const partialThird = enter(typed(STANDARD, [6, 4], [4, 6]), 2, 3);
     const next = changeFormat(partialThird, MATCH_TIEBREAK_DECIDER);
     expect(next.sets).toEqual([{ side1: 6, side2: 4 }, { side1: 4, side2: 6 }, {}]);

@@ -12,7 +12,7 @@ import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstant
 /**
  * A BYE MEETING A PRODUCED EXIT.
  *
- * CA's rule, 2026-09-20, arrived at by driving both of these in TMX:
+ * The rule, arrived at by driving both of these in TMX:
  *
  *   *"An advancing participant encountering a BYE should always be advanced; a propagated exit
  *   encountering a BYE should be advanced. In both cases the BYE remains a BYE"* — and, to be
@@ -36,19 +36,18 @@ const at = (drawId: string, stage: string, roundNumber: number, roundPosition: n
 /**
  * The EXIT FACTS a side carries, read from `sideExitProvenance` — the side-KEYED first-class record.
  *
- * **P37.** This was `codeFor`, which found the element of `matchUpStatusCodes` whose `sideNumber`
- * matched. That array is the LEGACY surface and the exit tenant is leaving it, so reading the facts
- * there pinned the projection rather than the behaviour. The facts asserted are identical: where the
- * old helper proved the side by an element's `sideNumber` property, this one proves it by the KEY it
- * reads, which is what "side-keyed" means.
+ * **The exit tenant's eviction.** This was `codeFor`, which found the element of `matchUpStatusCodes` whose
+ * `sideNumber` matched. That array is the LEGACY surface and the exit tenant is leaving it, so reading the facts there
+ * pinned the projection rather than the behaviour. The facts asserted are identical: where the old helper proved the
+ * side by an element's `sideNumber` property, this one proves it by the KEY it reads, which is what "side-keyed" means.
  *
- * `sourceMatchUpId` is deliberately not returned. The array never carried it (CA, 2026-09-09), so
+ * `sourceMatchUpId` is deliberately not returned. The array never carried it, so
  * including it would strengthen assertions that were written against the weaker record; the tests
  * that care about origin identity assert `sideExitProvenance` directly.
  *
  * Returns `undefined` for a side with no origin. The array expressed that as a RESERVED SLOT —
- * `{ sideNumber }` and nothing else — which provenance has no equivalent for, and CA ruled on
- * 2026-09-27 that it needs none: *"I was under the impression that we were going to have provenance
+ * `{ sideNumber }` and nothing else — which provenance has no equivalent for, and needs
+ * none: *"I was under the impression that we were going to have provenance
  * for these anyway"*. The stub is a legacy-array artifact; the absence of an entry is the claim. A
  * side may still hold an entry carrying only `byeClaims`, which is a BYE this cascade claims and not
  * an origin, so the test is for the exit facts rather than for the entry.
@@ -112,12 +111,12 @@ test('a converged double exit reaches the BYE, and the BYE stays a BYE', () => {
   // 3. and the exit is carried ONWARD through the BYE
   const onward = at(drawId, 'CONSOLATION', 3, 1);
   expect(onward.matchUpStatus).toEqual(WALKOVER);
-  // PENDING, 2026-09-28 (CA: *"let's go with the change"*). The exit carries no drawPosition and
+  // PENDING, 2026-09-28. The exit carries no drawPosition and
   // awards nobody until somebody arrives — the same state every other produced exit holds, and the
   // one the third test in this file pins end to end, arrival included. This read `winningSide: 2`
   // while the exit travelled WITH the seat its first arrival had advanced: which seat that was
   // depended on the ORDER the two double exits were entered in, and it occupied a position a real
-  // participant needed (punch-list P44).
+  // participant needed (ordinary play was order-dependent at a convergence's winner target).
   expect(onward.winningSide).toBeUndefined();
   expect((onward.drawPositions ?? []).filter(Boolean), 'the exit travels with no seat').toEqual([]);
 
@@ -187,7 +186,7 @@ test('a produced exit advanced through a BYE carries its origin, so the draw hol
 
   // CONTROL: the shape the rule is about must actually be present, or this asserts nothing. A
   // single produced exit that nobody played. Since 2026-09-28 it is PENDING — no winningSide and no
-  // drawPosition (punch-list P44) — so what distinguishes it from an orphan is the origin alone,
+  // drawPosition — so what distinguishes it from an orphan is the origin alone,
   // which makes this assertion carry more of the weight than it did, not less.
   const produced = getDrawMatchUps(drawId).find(
     (m: any) => m.stage === 'CONSOLATION' && m.roundNumber === 3 && m.roundPosition === 1,
@@ -245,7 +244,7 @@ test('a BYE that meets a produced exit keeps BOTH origins, and stays a BYE', () 
 
   // 3. AND THE EXIT IS CARRIED ONWARD, which is the part of the rule this scenario left undone.
   //
-  // CA, 2026-09-20, naming the expected record outright: *"the produced walkover should be
+  // The expected record, stated outright: *"the produced walkover should be
   // progressed by the BYE to R3P1 and R3P1 should be matchUpStatus: WALKOVER with winningSide: 2."*
   //
   // `match-2-1` holds exactly one drawPosition and it is the BYE, so there is no participant to
@@ -255,7 +254,7 @@ test('a BYE that meets a produced exit keeps BOTH origins, and stays a BYE', () 
 
   // AND IT WAITS FOR ITS WINNER. `match-3-1` holds no drawPosition yet, and the engine reads a
   // winningSide OFF the arriving position rather than pre-computing it — so a pending exit
-  // legitimately carries none. CA ruled this 2026-09-20 after seeing the mechanism work:
+  // legitimately carries none. That was settled after seeing the mechanism work:
   // *"that is unnecessary if the winningSide will display the checkmark once a participant
   // arrives."* An earlier revision of this test pinned `winningSide: 2` here, which held only
   // because the cascade awarded it eagerly — the one place in the engine that did.
@@ -300,7 +299,7 @@ test('a BYE that meets a produced exit keeps BOTH origins, and stays a BYE', () 
 /**
  * THE ROUND TRIP, AND WHAT HAPPENS WHEN THE MATCH IS ACTUALLY PLAYED.
  *
- * CA, 2026-09-20, after confirming the forward record in TMX:
+ * After the forward record was confirmed in TMX:
  *
  *   *"that looks perfect. let's ensure this is pinned with a named test and include undo of the
  *   R1p2 DOUBLE_WALKOVER, then enter a winner and confirm the progression."*
@@ -402,7 +401,7 @@ test('a BYE carries a produced exit onward, gives it back on undo, then carries 
   expect(matchUp('rt-2-1').matchUpStatus).toEqual(BYE);
   expect(sideOf(matchUp('rt-2-1'), 2)?.participantId).toEqual(contenderId);
 
-  // and the winner is advanced THROUGH it, which is the first half of CA's rule: *"an advancing
+  // and the winner is advanced THROUGH it, which is the first half of the rule: *"an advancing
   // participant encountering a BYE should always be advanced."* `rt-3-1` now holds them on the side
   // the exit occupied a moment ago, and holds nothing else — no walkover, no winningSide, no codes.
   expect(sideOf(matchUp('rt-3-1'), 1)?.participantId).toEqual(contenderId);
@@ -414,7 +413,7 @@ test('a BYE carries a produced exit onward, gives it back on undo, then carries 
 /**
  * THE SAME SCENARIO IN A DRAW THAT HAS A CONSOLATION.
  *
- * CA, 2026-09-20, driving FIRST_MATCH_LOSER_CONSOLATION 8 in TMX with BYEs on Main drawPositions 1
+ * Reported, driving FIRST_MATCH_LOSER_CONSOLATION 8 in TMX with BYEs on Main drawPositions 1
  * and 2 and `MAIN|1|2` a DOUBLE_WALKOVER:
  *
  *   *"what I notice is that the DOUBLE_WALKOVER from Main R1P2 does not produce a WALKOVER as the
@@ -508,7 +507,7 @@ test('a double exit records its loser slot in the consolation and the exit walks
 
   // ---- 4. AND ALL THREE COME BACK OUT when the double walkover is removed --------------------
   //
-  // CA, 2026-09-20: *"When I remove it the consolation R1P1 matchUpStatusCodes don't clear and the
+  // Reported: *"When I remove it the consolation R1P1 matchUpStatusCodes don't clear and the
   // WALKOVER remains advanced to consolation R3P1."* Measured: THREE consolation matchUps kept
   // residue, because `removeDoubleExit` had the mirror image of the forward guard and skipped a
   // BYE-held loser target on the way back.

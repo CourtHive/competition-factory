@@ -27,7 +27,7 @@ import type { HydratedMatchUp } from '@Types/hydrated';
  * seated the pair in the decider regardless, so it stood `TO_BE_PLAYED` with two participants — a
  * match a client would show as waiting to be played, and that a play-forward harness played.
  *
- * ## The rule — CA, 2026-09-29
+ * ## The rule
  *
  * *"We implement logic to set it to a DEAD_RUBBER when it is unnecessary so that clients don't see
  * TO_BE_PLAYED matchUps; changing the winningSide of the final can clear the DEAD_RUBBER if the
@@ -70,7 +70,7 @@ import type { HydratedMatchUp } from '@Types/hydrated';
  * `getDownstreamStructureIds` declines a target that both sides of the flipped matchUp feed —
  * *"exchanging two participants who are both already there is a claim about their roles"* — so the
  * decider kept its occupants, its seats and its result. Those were the only two divergences in 698
- * flips of the route differential (punch-list P18). With the seats settled here, by the rule rather
+ * flips of the route differential. With the seats settled here, by the rule rather
  * than by relabelling, both routes leave the same decider and the allowance for them is gone.
  */
 type DeciderArgs = {
@@ -271,7 +271,7 @@ export function getDeciderSnapshot(drawDefinition?: DrawDefinition): DeciderSnap
 
 /**
  * Did the cascade change a decider? Not when the mutation was OF the decider: clearing a DEAD_RUBBER to play it "just
- * for fun" is CA's third clause (2026-09-29), and this must never undo it.
+ * for fun" is the rule's third clause, and this must never undo it.
  */
 function deciderChangedByCascade({
   deciderSnapshotBefore,

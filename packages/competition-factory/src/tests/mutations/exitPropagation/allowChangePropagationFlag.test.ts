@@ -59,7 +59,7 @@ it('is OFF by default — the winner flip is refused', () => {
 /**
  * Set, the flip reaches `swapWinnerLoser` instead of the re-score guard — visible here as a
  * different refusal: the flip makes the consolation loser ineligible over a consolation result that
- * was played, which cannot be inherited (CA, 2026-09-17). Clearing that result, the flip succeeds.
+ * was played, which cannot be inherited. Clearing that result, the flip succeeds.
  */
 it('routes through swapWinnerLoser when set, so the same flip reaches its own refusal', () => {
   process.env.ALLOW_CHANGE_PROPAGATION = '1';

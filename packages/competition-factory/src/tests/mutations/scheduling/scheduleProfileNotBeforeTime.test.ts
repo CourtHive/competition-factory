@@ -3,10 +3,10 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
 // constants and fixtures
-import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
+import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Tests/fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
 
 /**
- * A profile round's `notBeforeTime` (rain-day recovery G5, CA 2026-11-23): no matchUp of the round is placed before it.
+ * A profile round's `notBeforeTime` (rain-day recovery G5): no matchUp of the round is placed before it.
  * The field was typed, stored and validated, but the timed scheduler never read it, so a round told "not before 11:30"
  * took the venue's opening slots. Rain-day recovery relies on it to hold the next day's matchUps to their imported
  * starts, while the rounds carried over from the interrupted day carry none and so start as early as their own

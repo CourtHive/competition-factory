@@ -65,7 +65,7 @@ export function scheduleProfileVNext(params: ScheduleProfileVNextArgs) {
   const view = clearScheduleDates ? buildSchedulingView({ ...params, tournamentRecords: working }) : firstView;
   if ('error' in view) return view;
 
-  // the plan, then the guard over all of it, before anything is written (CA 2026-10-23)
+  // the plan, then the guard over all of it, before anything is written
   const plan = planSchedule({ ...params, view });
   const refusal = planPlayedOrderRefusal({ plan, view });
   if (refusal) return refusal;

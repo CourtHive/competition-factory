@@ -534,7 +534,7 @@ it('handles pair dependencies across draws', () => {
   assignPairParticipants({ drawId: drawIds[1] });
 
   // --------------------------------------------------------
-  // Each team's lineUp is drawn from its own roster: one player, one team, per event (CA 2026-10-29).
+  // Each team's lineUp is drawn from its own roster: one player, one team, per event.
   // Before that rule this scenario composed each lineUp from BOTH teams' players and asserted it.
   ({
     event: { drawDefinitions },

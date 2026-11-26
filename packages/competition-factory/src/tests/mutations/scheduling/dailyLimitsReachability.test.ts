@@ -13,7 +13,7 @@ import { SINGLES } from '@Constants/matchUpTypes';
 // Fixtures
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
 
-// The daily limit rule (CA, 2026-10-16): a participant's load for a day is every matchUp they are certain to play plus
+// The daily limit rule: a participant's load for a day is every matchUp they are certain to play plus
 // the longest CHAIN of matchUps they can only potentially play. A feeder's winner path and loser path are alternatives,
 // not a sum; a run of rounds on one day is a chain and every round of it counts.
 

@@ -88,7 +88,7 @@ export function convergedChain(
 type ClearMatchUpBye = Extract<OutcomeOp, { op: 'clearMatchUpBye' }>;
 
 /**
- * The three ops every relay program opens with (Mentat assessment/2026-11-07-outcome-refactor-debates.md, ruling 2):
+ * The three ops every relay program opens with:
  * the seat's withdrawal, the BYE's home cleared and re-derived to the retained copy's status with the program's own
  * binding for the writer it hands the copy to, and the home's stamp. The programs stay apart; only this header is shared.
  */
@@ -220,7 +220,7 @@ export type UnwindRelay = { sourceId: string; cleared: Set<string>; reset: Set<s
 // `carriedBesideBye` with `carriedOpposite` and `carrierSentOn` read a participant's carried exit beside the
 // withdrawn BYE; `producedBesideBye` reads a double exit's produced copy there. They share seven predicates and the
 // kind test `isDoubleExit(entry.previousMatchUpStatus)` (as v1's `carriedEntryAt` and `awardStands` read it), which
-// is the one read to be hoisted (Mentat assessment/2026-11-07-outcome-refactor-debates.md, ruling 12). The read ends
+// is the one read to be hoisted. The read ends
 // there. `producedBesideBye`'s walls (feed round, one position, no loser link, a live origin feeding this matchUp
 // directly) belong to the five direct programs, not to the kind: `indirectProducedRelaySeatOps` owns a produced copy
 // beside a two-position BYE fed indirectly, and a loser link is tolerated here yet refused by `carrierSentOn`. The
@@ -437,8 +437,8 @@ function producedBesideBye(
 
 // Five relay programs follow (`producedRelaySeatOps`, `terminalProducedRelaySeatOps`, `awardedProducedRelaySeatOps`,
 // `convergedProducedRelaySeatOps`, `occupiedFinalRelaySeatOps`), one shared wall (`producedBesideBye`) and one shared
-// three-op header. They are kept apart on purpose (Mentat assessment/2026-11-07-outcome-refactor-debates.md, ruling
-// 2): each is distinguished by the geometry beyond the copy (a next matchUp or none, a final or a round before it, a
+// three-op header. They are kept apart on purpose: each is distinguished by the geometry beyond the copy (a next
+// matchUp or none, a final or a round before it, a
 // successor that is the final), not by what the copy holds, and each hands its copy to a different writer under a
 // different marker (`retainedOnwardMatchUpId`, `retainedCarriedAward`, `withdrawsProducedExit`) that other modules
 // key on. A classifier on the copy's content returns `occupied` for FIC_TO_SF 16 of 15 (clear Main 2/3 after

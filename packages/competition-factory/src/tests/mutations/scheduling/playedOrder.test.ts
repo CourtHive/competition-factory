@@ -8,7 +8,7 @@ import { BYE, IN_PROGRESS, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { ANACHRONISM } from '@Constants/errorConditionConstants';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
 
-// The order rule (CA 2026-10-22, SCHEDULING_PIPELINE_VNEXT.md § 5 "C2 ordering rule"; widened CA 2026-10-30): a matchUp
+// The order rule ("C2 ordering rule", since widened): a matchUp
 // may not be placed at or before a matchUp it depends on, nor after a matchUp that depends on it. It began as the PLAYED
 // order; it now binds plans too, and walkovers, defaults and double exits order like any other matchUp. Only a BYE
 // imposes nothing. Scheduled against scheduled only; asked only of a write that moves a matchUp.
@@ -126,7 +126,7 @@ describe('a matchUp is never placed at or before a played matchUp it depends on'
   });
 });
 
-describe('plans order too, not only what was played (CA 2026-10-30)', () => {
+describe('plans order too, not only what was played', () => {
   it('a walkover source orders', () => {
     const { at, write, final } = playedSemifinal({ semifinalOutcome: { matchUpStatus: WALKOVER, winningSide: 1 } });
     expect(at(2, 1).matchUpStatus).toEqual(WALKOVER);

@@ -19,8 +19,7 @@ import { PRACTICE } from '@Constants/scheduleConstants';
  * directions are asserted — a one-directional test would pass against an
  * implementation that ignored the parameter entirely.
  *
- * See `Mentat/planning/DISCONNECTED_SYNC_RECONCILIATION.md` §4.1 and the D1/D2
- * decisions recorded there.
+ * The D1/D2 decisions are stated in `suppliedOccurredAt.test.ts`.
  */
 
 const OCCURRED = '2026-06-15T14:05:00.000Z';

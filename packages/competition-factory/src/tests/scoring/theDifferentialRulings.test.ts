@@ -2,10 +2,8 @@ import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { describe, expect, it } from 'vitest';
 
 /*
- * The rulings the v1/v2 differential raised (CA 2026-10-21 and 2026-10-22; scoring-engine v2 plan § 9: SE2a-D11,
- * SE2b-D11, D17, D18, D20, D22, D24; SE3-E1, E2, E3, SE2c-D6; SE2a-D3b, D12, D13, D14, SE2c-D3; SE2b-D23, D25,
- * D26; then the record shapes). The differential held v1 and v2 to each until v1 was retired (SE4); these cases hold
- * the ScoringEngine to the spec directly.
+ * The rules the v1/v2 differential raised, then the record shapes it found. The differential held v1 and v2 to each
+ * until v1 was retired (SE4); these cases hold the ScoringEngine to the spec directly.
  */
 
 // read as plain records: the coordinates and marks under test are not all on the public types
@@ -105,7 +103,7 @@ describe('D22: a completed match has no next point, so it derives no server (§ 
   });
 });
 
-describe('SE3-E1: a correction before anything is recorded is the match’s initial server (§ 2.6)', () => {
+describe('a correction before anything is recorded is the match’s initial server (§ 2.6)', () => {
   it('kept on the record, not the timeline, so a rebuild and a reload start from it', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     engine.setServer(1, { recordEntry: false });
@@ -125,7 +123,7 @@ describe('SE3-E1: a correction before anything is recorded is the match’s init
   });
 });
 
-describe('SE3-E2: undoing or redoing no action does nothing, and says so (§ 12.3)', () => {
+describe('undoing or redoing no action does nothing, and says so (§ 12.3)', () => {
   it('undo(0) and redo(0) answer false', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     play(engine, '11');
@@ -135,7 +133,7 @@ describe('SE3-E2: undoing or redoing no action does nothing, and says so (§ 12.
   });
 });
 
-describe('SE3-E3: under WINNER_SERVES a correction names the next point’s server (§ 10.6, § 10.7)', () => {
+describe('under WINNER_SERVES a correction names the next point’s server (§ 10.6, § 10.7)', () => {
   it('the next point is served by the side named; the winner serves after it', () => {
     const engine = new ScoringEngine({
       matchUpFormat: 'SET3-S:6/TB7',
@@ -154,7 +152,7 @@ describe('SE3-E3: under WINNER_SERVES a correction names the next point’s serv
   });
 });
 
-describe('SE2c-D6: a point added to a record a removal left stale is numbered as its score counts it (§ 12.4)', () => {
+describe('a point added to a record a removal left stale is numbered as its score counts it (§ 12.4)', () => {
   it('no index repeats until the next rebuild renumbers them', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     play(engine, '1122');
@@ -172,7 +170,7 @@ describe('SE2c-D6: a point added to a record a removal left stale is numbered as
   });
 });
 
-describe('SE2a-D3b: the game that wins a set opens no next game, however it was entered', () => {
+describe('the game that wins a set opens no next game, however it was entered', () => {
   it('a set closed by addGame keeps no trailing 0-0, as one closed by a point keeps none', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     play(engine, '11');
@@ -186,7 +184,7 @@ describe('SE2a-D3b: the game that wins a set opens no next game, however it was 
   });
 });
 
-describe('SE2a-D12: a point’s number counts the points played in its game, not their values (§ 11.1)', () => {
+describe('a point’s number counts the points played in its game, not their values (§ 11.1)', () => {
   it('after an ace worth 3 the next point is number 1', () => {
     const engine = new ScoringEngine({
       matchUpFormat: 'SET1-S:T10P',
@@ -202,7 +200,7 @@ describe('SE2a-D12: a point’s number counts the points played in its game, not
   });
 });
 
-describe('SE2a-D14: a currentGameScore beside an unfinished tiebreak-only set names its race twice, and is refused', () => {
+describe('a currentGameScore beside an unfinished tiebreak-only set names its race twice, and is refused', () => {
   it('SET3-S:TB10 at 4-3 with a currentGameScore of 2-1 is refused; at 4-3 alone it plays on from 4-3', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:TB10' });
     const sets43 = [{ side1Score: 4, side2Score: 3 }];
@@ -228,7 +226,7 @@ describe('SE2a-D14: a currentGameScore beside an unfinished tiebreak-only set na
   });
 });
 
-describe('SE2c-D3: a loaded record’s timeline is authoritative over its stored score (§ 12.2)', () => {
+describe('a loaded record’s timeline is authoritative over its stored score (§ 12.2)', () => {
   it('the record shows its stored score until the next action, which is taken on the timeline', () => {
     const source = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     play(source, '1');
@@ -270,7 +268,7 @@ function viewsAfter(engine: ScoringEngine, winners: string) {
 }
 const loveGames = (side: '1' | '2', games: number) => side.repeat(4 * games);
 
-describe('SE2b-D23: gamesToSet counts the games won in a row that win the set, by its rule (§ 11.2)', () => {
+describe('gamesToSet counts the games won in a row that win the set, by its rule (§ 11.2)', () => {
   it('behind at 4-5 in a tiebreak set a side needs three; at 5-6 in an advantage set three', () => {
     const tiebreakSet = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     expect(viewsAfter(tiebreakSet, loveGames('1', 4) + loveGames('2', 5))).toMatchObject({
@@ -287,14 +285,14 @@ describe('SE2b-D23: gamesToSet counts the games won in a row that win the set, b
   });
 });
 
-describe('SE2b-D25: pointsToMatch counts a deciding set at the final format’s minimum (§ 3.2, § 11.2)', () => {
+describe('pointsToMatch counts a deciding set at the final format’s minimum (§ 3.2, § 11.2)', () => {
   it('SET3-S:4WB1-F:TB7 one set down: the second set and a seven-point decider', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:4WB1-F:TB7' });
     expect(viewsAfter(engine, loveGames('1', 4)).pointsToMatch).toEqual([16, 23]);
   });
 });
 
-describe('SE2b-D26: in an aggregate’s decider each side needs the points of the decider (§ 9.3, § 11.2)', () => {
+describe('in an aggregate’s decider each side needs the points of the decider (§ 9.3, § 11.2)', () => {
   it('SET3XA-S:T10-F:TB1 level 3-3 after three bolts, side 2 ahead two bolts to one: one point each', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3XA-S:T10-F:TB1' });
     for (const [side1Score, side2Score] of [
@@ -357,7 +355,7 @@ describe('a saved record reads back as written (§ 12.5)', () => {
     expect(entries!.at(-1)!.timestamp).toEqual('2026-10-01T12:30:00Z');
   });
 
-  it('a loaded substitution list is shown as stored until the next action writes (SE2c-D3)', () => {
+  it('a loaded substitution list is shown as stored until the next action writes', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7', isDoubles: true });
     engine.setLineUp(1, [{ participantId: 'A' }, { participantId: 'B' }]);
     engine.setLineUp(2, [{ participantId: 'C' }, { participantId: 'D' }]);
@@ -372,7 +370,7 @@ describe('a saved record reads back as written (§ 12.5)', () => {
   });
 });
 
-describe('the record shapes the full-record differential found, v2’s way (CA 2026-10-22)', () => {
+describe('the record shapes the full-record differential found, v2’s way', () => {
   const history = (engine: ScoringEngine) => engine.getState().history;
 
   it('an entry holds the caller’s facts only: endSegment writes no setNumber into its data (R2)', () => {

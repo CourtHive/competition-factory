@@ -138,7 +138,7 @@ function playedOut(): Directive[] {
 /**
  * The raw matchUp at a structure name and round coordinates holds a propagated BYE on the seat `feederMatchUpId`'s loser
  * link feeds, the feeder sends nobody for `reason` (`feederSendsNobody`, read from the draw), and no `byeClaims` ledger
- * stands on it (retired, Mentat P58)
+ * stands on it (retired)
  */
 function seatHeld(
   record: any,
@@ -174,7 +174,7 @@ function seatHeld(
 export function authoredScenarios(): Authored[] {
   const out: Authored[] = [];
 
-  // § 1 flags: the policy governs, both ways (CA, 2026-10-01)
+  // § 1 flags: the policy governs, both ways
   {
     const { tournamentRecord, at } = generate(
       { drawSize: 16, drawType: FIRST_MATCH_LOSER_CONSOLATION },
@@ -388,7 +388,7 @@ export function authoredScenarios(): Authored[] {
     });
   }
 
-  // CA, 2026-10-02: a double exit entered over a completed result. A DOUBLE_DEFAULT keeps the score (both
+  // A double exit entered over a completed result. A DOUBLE_DEFAULT keeps the score (both
   // players can be defaulted after the last ball, and the score records what was played); a
   // DOUBLE_WALKOVER says the match was not played and blanks it. Neither has a winner.
   {
@@ -503,7 +503,7 @@ export function authoredScenarios(): Authored[] {
     });
   }
 
-  // § 8: bulkMatchUpStatusUpdate's declared refusals. Every outcome is located before any is applied (CA, 2026-10-18),
+  // § 8: bulkMatchUpStatusUpdate's declared refusals. Every outcome is located before any is applied,
   // so an outcome without an eventId is refused, where it used to be skipped while the call reported 'ok'
   {
     const { tournamentRecord, at } = generate({ drawSize: 4 });
@@ -554,7 +554,7 @@ export function authoredScenarios(): Authored[] {
     });
   }
 
-  // BYE claims (Mentat P58): a claim names its claimant, and the reason is read from the claimant as it stands. One
+  // BYE claims: a claim names its claimant, and the reason is read from the claimant as it stands. One
   // scenario per reason pins the seat, the claimant and the reason, so a change to who claims, or to why, moves a hash
   {
     const { tournamentRecord, matchUps } = generate({ drawSize: 16, drawType: COMPASS });

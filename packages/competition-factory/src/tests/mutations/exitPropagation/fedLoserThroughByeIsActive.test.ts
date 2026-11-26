@@ -18,7 +18,7 @@ import { WALKOVER } from '@Constants/matchUpStatusConstants';
  * their opponent: clearing the Main result removed them from the consolation while the match they
  * had played there stood, over an empty drawPosition. Census 9000458, shrunk, both flag arms.
  *
- * **The census route to that state is now closed at its fourth step** (CA, 2026-10-03). The Main loser
+ * **The census route to that state is now closed at its fourth step**. The Main loser
  * WALKED OVER, so what they "played on" in the consolation was the walkover they carried there:
  * `Consolation|3|1` already holds it, won by their opponent. Scoring it as a played match rewrote a
  * carried exit, which is now refused; the correction belongs at `Main|2|1`. With that refused, clearing

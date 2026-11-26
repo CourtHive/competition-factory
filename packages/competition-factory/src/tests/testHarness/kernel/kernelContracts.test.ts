@@ -169,7 +169,7 @@ describe('the external protocol', () => {
     });
   });
 
-  it('a command that never answers is killed at its deadline: an exception for every request, not a stalled run (P62)', () => {
+  it('a command that never answers is killed at its deadline: an exception for every request, not a stalled run', () => {
     const [request] = requests;
     const started = Date.now();
     const results = externalAdapter('sleep 30', 'never', 500).invokeAll([request, request]);
@@ -224,7 +224,7 @@ describe('negative controls: the cases reject a wrong implementation', () => {
     ]);
   });
 
-  // since the order binds plans (CA 2026-10-30), a placed unplayed source orders too: the transit cases place a matchUp
+  // since the order binds plans, a placed unplayed source orders too: the transit cases place a matchUp
   // and its dependent on one day, so a planner that ignores the order records their slots differently
   it('a planner that ignores the order fails the cases where an order applies, and only those', () => {
     const plan = kernelOperations['kernel.scheduling.plan@2'];

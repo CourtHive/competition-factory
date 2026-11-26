@@ -5,8 +5,8 @@ import { setSubscriptions } from '@Global/state/globalState';
 import { describe, expect, it } from 'vitest';
 
 /**
- * AN UNCLAIMED BYE GOES WITH THE AWARD THAT KEPT IT (census P58 step 3b, openings: COMPASS 16/13 seeds 21048963 and
- * 21091001 policy off, 21064207 and 21092581 with `allowChangePropagation`; `LOSER_SEAT_DERIVED`).
+ * AN UNCLAIMED BYE GOES WITH THE AWARD THAT KEPT IT (census, the ledger retirement's step 3b, openings: COMPASS 16/13
+ * seeds 21048963 and 21091001 policy off, 21064207 and 21092581 with `allowChangePropagation`; `LOSER_SEAT_DERIVED`).
  *
  * `West|1|1` is a BYE matchUp while `East|1|2`'s double walkover leaves `West` dp 2 a BYE, so its loser link gives
  * `West|2|1`'s loser seat, `Southwest|1|1` dp 1, a BYE. `East|1|3` and `East|1|4` decided by exits converge `West|1|2`

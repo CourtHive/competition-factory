@@ -11,8 +11,7 @@ import {
 } from '@Constants/errorConditionConstants';
 
 /**
- * One structure's data — the drill-in tier of the payload decomposition
- * (`Mentat/planning/PUBLISH_WARMCACHE_AND_PAYLOAD_DECOMPOSITION.md`). A client lists draws with
+ * One structure's data — the drill-in tier of the payload decomposition. A client lists draws with
  * `drawsProfile: STUBS`, lists structures with `structuresProfile: STUBS`, then fetches exactly the one
  * structure it is about to render.
  *

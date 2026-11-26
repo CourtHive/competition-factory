@@ -28,7 +28,7 @@ import {
  * played. Every divergence found in September 2026 came from a correction, and that oracle was the
  * only one comparing corrections at all — so a correction in round 3, in a consolation, or with a
  * dozen unrelated results entered in between was never compared against its direct path. Coverage
- * assessment gap G6, agreed by CA 2026-09-30.
+ * assessment gap G6.
  *
  * 960 cells: the ten matrix draw types × {8, 16} × three fills × four exit statuses × both
  * `propagateExitStatus` × both `doubleExitPropagateBye` policies. Each plays twelve steps forward on
@@ -45,7 +45,7 @@ import {
  *   `DOUBLE_WALKOVER` at `Main|2|2` as `ERR_INCOMPATIBLE_MATCHUP_STATUS`. Whether that refusal is
  *   right is a separate question, and it is recorded in the punch list rather than counted here.
  * - **refused** — the correction alone is refused (`CANNOT_CHANGE_*`): a load-bearing outcome, by
- *   CA's rule of 2026-09-21. None on the first run: nothing in the cone is played after the mistake.
+ *   the load-bearing-outcome rule. None on the first run: nothing in the cone is played after the mistake.
  * - **severe** — status, winner or positions differ. THE RATCHET.
  *
  * ## The draw-type extension — 2026-10-01
@@ -83,8 +83,8 @@ import {
  *
  * Shapes 3 and 4 shared a root. Seat 2's advancement into `Consolation|3|1` came from its opponent's
  * BYE at generation; clearing the walkover's loser from seat 2 withdrew it, and whatever arrived
- * next — the double exit's BYE, or its exit — was laid out from scratch. **CLOSED** (P46, CA ruled
- * 2026-10-01 on two tournament files that differed only in route: *"A is clearly correct"*): a
+ * next — the double exit's BYE, or its exit — was laid out from scratch. **CLOSED** (on two tournament
+ * files that differed only in route, the direct one is correct): a
  * BYE-advanced seat keeps its advancement through ANY clear, and `assignDrawPositionBye` completes
  * the loser feed on a seat that is already advanced and alone — the step whose absence had broken
  * 4 of `shuffleCompletion`'s byeLimit cases the first time the rule was tried. 3 → 0.

@@ -48,7 +48,7 @@ export function processExistingDrawDefinition(params): ResultType & {
     return qualifyingResult;
   }
 
-  // explicit QUALIFYING drawEntries must fit the qualifying structures: refused before anything is written (CA 2026-11-01)
+  // explicit QUALIFYING drawEntries must fit the qualifying structures: refused before anything is written
   const fitResult = checkQualifyingEntriesFit({
     existingQualifyingPlaceholderStructureId,
     qualifyingStructures: qualifyingResult?.structures,

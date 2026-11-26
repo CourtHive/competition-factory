@@ -180,14 +180,14 @@ const structuralKey = (matchUp: any) => `${matchUp.structureName}|${matchUp.roun
 /**
  * `policyDefinitions` is OPTIONAL and nothing in the census passes it, so this cannot re-baseline a
  * frozen window: with the argument omitted the generation call is byte-identical to what emitted every
- * window in `Mentat/fixtures/exit-propagation-census/`.
+ * frozen census window.
  *
  * It exists so a POLICY can be measured over a frozen window through this same replay rather than
  * through a reimplementation of it. Measured 2026-09-27: a hand-rolled replay that omitted `replay`'s
  * relational phase reported 20 failing seeds where the census reports 23 — the three missing ones were
  * all `MONOTONIC_DECISION`, which only that phase produces. For `doubleExitPropagateBye` in particular
- * the omission would have hidden the damage rather than an unrelated slice of it, since P30 records the
- * flip breaking `doubleExitUnwindRederives`.
+ * the omission would have hidden the damage rather than an unrelated slice of it, since the recorded measurement has
+ * the flip breaking `doubleExitUnwindRederives`.
  */
 export function prepareDraw(config: ScenarioConfig, drawId: string, policyDefinitions?: any): boolean {
   const { drawIds } = mocksEngine.generateTournamentRecord({
@@ -400,7 +400,7 @@ function replayWithContext(
      * drawPosition's opponent and the later step still fires at that coordinate, now holding
      * `[8, null]`. The finding is then recorded against an input the sweep would never generate.
      *
-     * CA found this on a handed-out reproduction, 2026-09-20: *"it seems to be for setting the
+     * Found on a handed-out reproduction, 2026-09-20: *"it seems to be for setting the
      * matchUp status of main|2|2 which IS NOT READY TO BE SCORED … this raises the question about
      * whether the census is just scoring willy-nilly."* Measured over 400 findings from run
      * 20260920-192054: **80 of them (20%) score a matchUp that is not populated**, concentrated in
@@ -530,7 +530,7 @@ function replayWithContext(
        * violation needs the probe — a DOUBLE_WALKOVER on `East|1|3` — which appeared nowhere in the
        * record. A whole signal was written up against the wrong matchUp because of it.
        *
-       * Same class as the shrinker gap CA found the same day: a stored reproduction that does not
+       * Same class as the shrinker gap found the same day: a stored reproduction that does not
        * reproduce. `steps` are the setup and `probe` completes it; a reader applies steps, then
        * probe.
        */

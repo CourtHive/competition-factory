@@ -12,7 +12,7 @@ import { TO_BE_PLAYED, DEFAULTED, WALKOVER, RETIRED } from '@Constants/matchUpSt
 /**
  * The five hand-drivable exit-cascade reproductions, replayed.
  *
- * `Mentat/testing/EXIT_CASCADE_MANUAL_REPRODUCTIONS.md` records five defects a tournament director
+ * The manual reproductions record five defects a tournament director
  * could hit by entering ordinary scores — **no `propagateExitStatus`, no `allowChangePropagation`,
  * no attached policy**, which is exactly what TMX sends. They were drawn from the 480k Button sweep
  * and reduced to the few steps that matter. Two of them corrupted the draw SILENTLY.

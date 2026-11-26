@@ -192,8 +192,7 @@ assignment — a positioning-layer concept the factory does not have — plus li
 would renumber every Main drawPosition in every DOUBLE_ELIMINATION draw ever stored.
 
 **Nothing depends on the numbering.** Side resolution uses the structural prior-round test, not the
-numeric one, so DOUBLE_ELIMINATION hydrates correctly as it stands. Tracked as `P22` on the
-CourtHive design-flaws punch list.
+numeric one, so DOUBLE_ELIMINATION hydrates correctly as it stands.
 
 ### It is still a feed round for SIDE ORDERING, and never for a reserved slot
 
@@ -242,8 +241,7 @@ Two corollaries for anyone writing engine code:
 
 Since 7.7.0 `normalizeDrawPositions`, which every removal, substitution, placement and BYE-advancement writer
 routes through, stores the positions **present**, ascending: a lone survivor is `[5]` whatever its side, and a
-matchUp holding nothing is `[]`. A hole serialises as `null`, which `tournament.schema.json` rejects (CA's Q2
-ruling, 2026-10-05), so the side of a lone survivor is not carried by a hole: it is read **structurally**, through
+matchUp holding nothing is `[]`. A hole serialises as `null`, which `tournament.schema.json` rejects, so the side of a lone survivor is not carried by a hole: it is read **structurally**, through
 the round profile (§ 4), by the helpers in `getDrawPositionSides`. Every engine reader that once indexed the raw
 array was moved onto them first; `drawPositionsAreReadByStructure.test.ts` holds the rest to an exact allow-list.
 `drawPositionsNormalizationBypass.test.ts` fails on any writer that does not route through the normaliser.

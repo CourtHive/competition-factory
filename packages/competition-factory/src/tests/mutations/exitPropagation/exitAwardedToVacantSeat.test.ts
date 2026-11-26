@@ -13,7 +13,7 @@ import {
 } from '@Constants/drawDefinitionConstants';
 
 /**
- * **P29 — the player who did not appear wins the walkover.**
+ * **The player who did not appear wins the walkover.**
  *
  * A produced exit whose only occupant is on one side is awarded to the OTHER side, which is vacant. The
  * participant who is actually there loses a matchUp against nobody.

@@ -12,7 +12,7 @@ import { LINEUPS } from '@Constants/extensionConstants';
 export type TeamMemberships = Map<string, Set<string>>;
 
 /**
- * One player, one team, per event (CA 2026-10-29): an individual on one team's roster, or in one team's lineUp
+ * One player, one team, per event: an individual on one team's roster, or in one team's lineUp
  * in any of the event's draws, may not appear in another team's lineUp in the same event.
  *
  * Rosters are read from the event's TEAM entries other than WITHDRAWN. Event entries may overlap (they are a

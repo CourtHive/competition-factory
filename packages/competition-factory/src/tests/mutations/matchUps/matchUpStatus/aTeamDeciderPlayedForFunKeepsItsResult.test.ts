@@ -13,7 +13,7 @@ import { TEAM_EVENT } from '@Constants/eventConstants';
 /**
  * A TEAM DECIDER PLAYED "JUST FOR FUN" KEEPS THE RESULT ITS LINES GIVE IT.
  *
- * CA, 2026-09-29: *"If someone wanted to clear the DEAD_RUBBER and play the decider 'just for fun', there's no reason
+ * The rule: *"If someone wanted to clear the DEAD_RUBBER and play the decider 'just for fun', there's no reason
  * to prevent that."* `reconcileDeciders` exempts a mutation OF the decider, and it also settles a decider the cascade
  * changed. In a TEAM draw the decider is played through its lines, and the snapshot of the decider held only the dual:
  * a line's write moved the dual, read as the cascade moving it, and the decider was settled back to a DEAD_RUBBER,

@@ -171,7 +171,7 @@ describe('borrowed mode with a per-request provider', () => {
     expect(rb.matchUpIds).not.toContain(ra.matchUpId);
   });
 
-  it('a refused queue without rollback keeps earlier writes and notifies no one: the caller must discard', async () => {
+  it('a refused queue without rollback keeps and announces earlier writes: the caller must discard', async () => {
     const { tournamentRecord, drawId } = databaseRecord();
 
     const { result, modified, matchUpId } = await inRequest(async (engine) => {
@@ -189,7 +189,7 @@ describe('borrowed mode with a per-request provider', () => {
     expect(result.rolledBack).toEqual(false);
     // the borrowed record holds the write made before the refusal...
     expect(storedMatchUp(tournamentRecord, matchUpId).winningSide).toEqual(1);
-    // ...and no subscriber was told about it
-    expect(modified).toEqual([]);
+    // ...and subscribers are told of it, so a caller that persists from notices must discard the request's work
+    expect(modified.map(({ matchUp }) => matchUp.matchUpId)).toContain(matchUpId);
   });
 });

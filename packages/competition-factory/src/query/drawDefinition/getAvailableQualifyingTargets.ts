@@ -37,12 +37,12 @@ type GetAvailableQualifyingTargetsArgs = {
  * The rounds of a structure that qualifying structures may feed, with the room each one has.
  *
  * Several qualifying structures may feed the same round as long as the qualifiers they produce, in
- * aggregate, do not exceed the drawPositions that round has (CA, 2026-10-07). Round 1 is always a
+ * aggregate, do not exceed the drawPositions that round has. Round 1 is always a
  * candidate; a feed round is a candidate unless a LOSER link already fills it.
  *
  * `structuralCapacity` is the rule `attachQualifyingStructure` enforces. `remainingCapacity` is the room a
  * new qualifying structure actually has today: a position holding a participant or a bye is not room
- * (CA, 2026-10-09: a main whose positions are all filled has no space for qualifiers), and a qualifier
+ * (a main whose positions are all filled has no space for qualifiers), and a qualifier
  * already placed is counted once, against the promise it fulfils, not again as an occupied position.
  */
 export function getAvailableQualifyingTargets({

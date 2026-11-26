@@ -8,7 +8,7 @@ function segmentCanCloseLevel(setFormat?: { timed?: boolean; tiebreakFormat?: un
 /**
  * Whether a match played in `matchUpFormat` can end level, `COMPLETED` with no `winningSide` (scoring-engine spec
  * § 9.7). A structure that advances a winner accepts such a format: its level result names the winner and records how
- * it was decided (standings phase 2 § 1.1, CA 2026-11-04), and one with no decider is refused at entry.
+ * it was decided (standings phase 2 § 1.1), and one with no decider is refused at entry.
  *
  * - a `P{n}` combined total with an even n and no tie resolution (§ 7);
  * - an aggregate whose total can tie with no declared decider: only an exactly-N aggregate declares
@@ -28,7 +28,7 @@ export function parsedFormatCanEndTied(parsed?: ParsedFormat): boolean {
   if (format.combinedPointTotal) return format.combinedPointTotal % 2 === 0 && format.tieResolution === 'ALLOW';
 
   // unlimited overtime plays periods until one ends unequal: it cannot finish level (a match clock, which could
-  // end it level, is refused with overtime until the clock-expiry slice, Ruling 1)
+  // end it level, is refused with overtime until the clock-expiry slice)
   if (parsed.overtimeFormat?.count === 'unlimited') return false;
 
   if (parsed.aggregate)

@@ -28,7 +28,7 @@ import type { BuildViewArgs } from '../types';
 import type { OutcomeOp } from '../ops';
 
 /**
- * RECORDED (CA, 2026-11-16, option 2): a double exit's cascade the planners do not write shape by shape is read off the
+ * RECORDED: a double exit's cascade the planners do not write shape by shape is read off the
  * double-exit module itself. The call's own write (`prefix`) is folded into a COPY of the record, the module runs on that
  * copy as `attemptToSetMatchUpStatus` runs it after `scoreModification`, and what it changed is returned as ops: each
  * matchUp it wrote, each structure's and the draw's own fields, and the notices it buffered. Nothing here touches the
