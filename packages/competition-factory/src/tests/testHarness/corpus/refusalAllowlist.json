@@ -11,7 +11,8 @@
     "setStateProvider": "Synthetic throwing state provider",
     "asyncWrapperContract": "Synthetic asynchronous boom method",
     "fixtureStamp": "A raw fixture mutation left the mutation flag pending before this call. Only its inherited factory stamp changed.",
-    "oldBoundary": "Capture predates #6489. The six clean-state replays do not reproduce a refused write. The historical before/after hashes identify this observation."
+    "oldBoundary": "Capture predates #6489. The six clean-state replays do not reproduce a refused write. The historical before/after hashes identify this observation.",
+    "rollbackWithoutSnapshot": "Synthetic method that throws after writing, on a rollback that takes no snapshot: the writes stay and the result says rolledBack: false"
   },
   "tests": {
     "src/tests/engines/asyncWrapperContract.test.ts::async wrapper contract > 4. a thrown method or an unknown method leaves every other context untouched": [
@@ -19,6 +20,28 @@
         "method": "boom",
         "error": "boom",
         "reason": "asyncWrapperContract",
+        "paths": ["/tournamentName"]
+      }
+    ],
+    "src/tests/engines/rollbackSnapshot.test.ts::async engine > a throw or a rejection partway through a write is not undone without a snapshot, and the result says so": [
+      {
+        "method": "writeThenThrow",
+        "error": "a programming error",
+        "reason": "rollbackWithoutSnapshot",
+        "paths": ["/tournamentName"]
+      },
+      {
+        "method": "writeThenReject",
+        "error": "a programming error",
+        "reason": "rollbackWithoutSnapshot",
+        "paths": ["/tournamentName"]
+      }
+    ],
+    "src/tests/engines/rollbackSnapshot.test.ts::sync engine > a throw partway through a write is not undone without a snapshot, and the result says so": [
+      {
+        "method": "writeThenThrow",
+        "error": "a programming error",
+        "reason": "rollbackWithoutSnapshot",
         "paths": ["/tournamentName"]
       }
     ],

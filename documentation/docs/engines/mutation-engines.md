@@ -201,13 +201,43 @@ the persistence layer. [Borrowed records and rollback support](/docs/engines/glo
 
 Engine methods do not throw on failure: an error is **returned** as `result.error`. (Only a
 truthy [devContext](/docs/engines/engine-methods#devcontext) lets an exception escape; with
-`rollbackOnError` the state is restored before it does.) Check the result rather than wrapping the call
-in `try`/`catch`.
+`rollbackOnError` the state is restored from its snapshot before it does.) Check the result rather than wrapping the
+call in `try`/`catch`.
 
 A rollback restores more than the records: the selected tournament, the buffered notices (a refused
 write's notices are never delivered; an enclosing operation's are kept) and the modification flag.
 When the state cannot be snapshotted faithfully, a call with `rollbackOnError` is refused **before it
 writes anything**, with `ROLLBACK_UNAVAILABLE`.
+
+A restored result says so and claims no kept work. It carries `rolledBack: true` and never `committed`. A bulk call's
+per-item `results` keep one entry per input, in order: a refused item keeps its `error`, and an item that had
+succeeded is listed with `rolledBack: true` in place of `success`.
+
+```js
+tournamentEngine.deleteCourts({ courtIds: [c1, 'unknown', c3], force: true, rollbackOnError: true });
+// → { error: COURT_NOT_FOUND, rolledBack: true,
+//     results: [{ index: 0, courtId: c1, rolledBack: true }, { index: 1, courtId: 'unknown', error }, { index: 2, courtId: c3, rolledBack: true }] }
+// all three courts remain; nothing is delivered
+```
+
+#### When a rollback takes no snapshot
+
+The snapshot is a deep copy of every loaded record, so its cost grows with the size of the records, not with the work
+the call does. A call or a queue that is **one directive** of a factory method that refuses before it writes needs no
+snapshot: its refusal leaves the records as they were. Such a call takes none. On a refusal it still restores the
+selection, the buffered notices and the modification flag, and returns the same result as the snapshot path,
+`rolledBack: true` included.
+
+A snapshot is still taken for:
+
+- a queue of two or more directives;
+- a bulk method (`bulkMatchUpStatusUpdate`, `deleteCourts`, `resetAdHocMatchUps`), which commits item by item;
+- a BYE placement (`assignDrawPositionBye`, and `assignDrawPosition` with `bye: true`);
+- a custom method, whether imported with `importMethods` or passed to `execute`: the factory cannot know whether it
+  writes before refusing.
+
+Without a snapshot, nothing undoes a method that **throws** partway through a write, which is a defect rather than a
+refusal. Its writes stay, and the result carries `rolledBack: false`, never a restore that did not happen.
 
 ```js
 import { tournamentEngine } from 'tods-competition-factory';
@@ -233,13 +263,15 @@ if (result.error) {
 changes, so a failure in the third call leaves the first two applied.
 
 The same holds **inside** an `executionQueue` submitted without rollback: when a directive fails, the writes of the
-directives before it stay in the records, and **no notices are delivered** for any of them, then or on any later call. The
-record is stamped as modified at the queue's own instant, and the result carries `rolledBack: false` and `results`, the
-directives that were applied before the refusal. One exception: when the refusing directive is a bulk
-mutation that committed some of its items (it returns `committed: true` beside its `error`), the queue publishes its
-buffered notices, including those of the directives before it, so subscribers hear of every change that stayed
-written. A refused bulk directive is also listed in `results`, last, with its whole result: its own
-per-item `results` among it, as a direct call returns them. A caller that persists
+directives before it stay in the records. Committed work announces itself: the queue delivers the notices of the
+directives before the refusal, so subscribers hear of every change that stayed written, and the `mutations` notice
+names those directives. When the refusing directive is a bulk mutation that committed some of its items (it returns
+`committed: true` beside its `error`), its committed items are announced with them. A refused directive buffers no
+notices, so it is never announced, and a queue whose first directive refuses delivers nothing. A method that throws
+announces nothing. The record is stamped as modified at the queue's own instant, and the result carries
+`rolledBack: false` and `results`, the directives that were applied before the refusal. A refused bulk directive is
+also listed in `results`, last, with its whole result: its own per-item `results` among it, as a direct call returns
+them. A caller that persists
 from notices, or that lent the engine its own objects (`setDeepCopy(false)`), must then discard the in-memory records
 — for example by aborting its database transaction — because they no longer match what was announced. To make several mutations
 succeed or fail together, submit them as one `executionQueue` with rollback enabled — the second
@@ -260,7 +292,7 @@ const result = tournamentEngine.executionQueue(
 );
 
 if (result.error) {
-  // nothing in the queue was kept; result.rolledBack is true
+  // nothing in the queue was kept; result.rolledBack is true and the result carries no committed
   console.error('Transaction failed:', result.error);
 } else {
   // result is { success, results } — one entry per directive
@@ -289,7 +321,9 @@ tournamentEngine.setTournamentId(state.tournamentId);
 - A persistence layer writes the whole record after the queue and must not store a half-applied batch
 
 It is not a substitute for a method's own guarantee: a single method's error leaves the record
-unchanged without it.
+unchanged without it. A server that saves only a fully successful queue, and discards the request's records
+otherwise, needs no snapshot either: the stored record is the rollback (see
+[Hosting on a server](/docs/engines/hosting-on-a-server)).
 
 **Skip rollback when:**
 

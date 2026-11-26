@@ -1,8 +1,10 @@
 import { deleteNotices, getDevContext, getInvokeObserver, getMethods } from '@Global/state/globalState';
 import { engineBoundaryObservers } from '@Assemblies/engines/parts/boundaryObservers';
 import { ownMethod } from '@Tools/ownMethod';
-import { captureOperation, restoreOperation } from '@Assemblies/engines/parts/operationState';
-import { caughtErrorResult, executeFunction } from '@Assemblies/engines/parts/executeMethod';
+import { caughtErrorResult, executeFunction, isThrownResult } from '@Assemblies/engines/parts/executeMethod';
+import { cannotPartlyCommit, captureRollback } from '@Assemblies/engines/parts/rollbackSnapshot';
+import { restoreOperation } from '@Assemblies/engines/parts/operationState';
+import { rolledBackResult } from '@Assemblies/engines/parts/rolledBack';
 import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
 import { logMethodNotFound } from '@Assemblies/engines/parts/logMethodNotFound';
 import { isPartialCommit } from '@Assemblies/engines/parts/partialCommit';
@@ -53,9 +55,13 @@ export async function asyncEngineInvoke(engine: { [key: string]: any }, args: an
 
   // one instant for the whole call, captured before anything is written; see tools/clock.ts
   return withCapturedClockAsync(async (timeStamp) => {
-    const capture = params.rollbackOnError ? captureOperation() : undefined;
+    // a call that cannot partly commit takes no snapshot of the records (rollbackSnapshot.ts)
+    const capture = params.rollbackOnError
+      ? captureRollback(cannotPartlyCommit(methodName, method, params))
+      : undefined;
     if (capture?.error) return { error: capture.error };
     const captured = capture?.captured;
+    const snapshot = captured && !captured.atomic ? captured : undefined;
 
     let result: ReturnType<typeof executeFunction>;
     try {
@@ -64,19 +70,22 @@ export async function asyncEngineInvoke(engine: { [key: string]: any }, args: an
       );
     } catch (err) {
       // executeFunction catches a SYNC throw outside devContext, but an async method's rejection arrives after it has
-      // returned. Restore, then answer as the sync engine does: rethrow under devContext, otherwise the
-      // caught-error envelope
-      if (captured) restoreOperation(captured);
+      // returned. Restore a snapshot, then answer as the sync engine does: rethrow under devContext, otherwise the
+      // caught-error envelope. Without a snapshot the rejected method's writes stay, and the envelope says so
+      if (snapshot) restoreOperation(snapshot);
       if (getDevContext()) throw err;
-      return caughtErrorResult({ methodName, params, err });
+      const caught = caughtErrorResult({ methodName, params, err });
+      if (snapshot) return rolledBackResult(caught);
+      return captured ? { ...caught, rolledBack: false } : caught;
     }
 
-    if (result?.error && captured) {
+    // without a snapshot, only a refusal is known to have written nothing: a method that threw may have
+    if (result?.error && captured && !(captured.atomic && isThrownResult(result))) {
       // records, selection, notices and the mutation flag all return to what they were: the
       // record is not stamped, and nothing the refused write buffered is delivered
       restoreOperation(captured);
       getInvokeObserver()?.({ phase: 'after', methodName, engineType: 'async', params, result });
-      return result;
+      return rolledBackResult(result);
     }
 
     const mutationStatus = getMutationStatus({ timeStamp }); // timeStamp reaches the record via the factory extension
@@ -95,6 +104,7 @@ export async function asyncEngineInvoke(engine: { [key: string]: any }, args: an
 
     getInvokeObserver()?.({ phase: 'after', methodName, engineType: 'async', params, result });
 
-    return result;
+    // a requested rollback that restored nothing says so
+    return captured && result?.error ? { ...result, rolledBack: false } : result;
   });
 }

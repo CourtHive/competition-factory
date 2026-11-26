@@ -98,7 +98,9 @@ function checked<T>(method: string, run: () => T, queueTrace?: QueueTrace): T {
   const trace: BulkTrace = { method, items: [] };
   const finish = (result: any) => {
     if (result?.error) {
-      if (queueTrace && result.results?.length) {
+      // a restored call or queue is compared whole: its items' writes were undone with it
+      if (result.rolledBack === true) compare(method, before, snapshot(), result.error, pending);
+      else if (queueTrace && result.results?.length) {
         const last = queueTrace.last;
         if (last) compareCall(last.method, last.before, last.after, result.error, last.pending, last.items);
         else violations.add('missing final directive boundary for a refused queue');
@@ -110,14 +112,14 @@ function checked<T>(method: string, run: () => T, queueTrace?: QueueTrace): T {
   return result instanceof Promise ? (result.then(finish) as T) : finish(result);
 }
 
+// A call or queue with rollbackOnError is checked too. One that took a snapshot is restored, so it compares equal; one
+// that took none (engines/parts/rollbackSnapshot.ts) relies on the method refusing before it writes.
 function invoke<T>(args: any, run: () => T): T {
-  if ((args?.params ?? args)?.rollbackOnError) return run();
   const method = args?.method ?? Object.keys(args ?? {}).find((key) => typeof args[key] === 'function') ?? 'execute';
   return checked(method, run);
 }
 
-function queue<T>(directives: any, rollback: boolean | undefined, run: () => T): T {
-  if (rollback) return multiDirective.run(undefined, run);
+function queue<T>(directives: any, run: () => T): T {
   const multiple = Array.isArray(directives) && directives.length > 1;
   // An earlier successful directive owns its writes and the aggregate queue stamp. In that
   // case check each directive around executeFunction. With no successful prefix also check
@@ -171,8 +173,8 @@ function traceItem<T>(run: () => T): T {
 setBulkItemObserver(traceItem);
 engineBoundaryObservers.invoke = (args, run) => invoke(args, run);
 engineBoundaryObservers.asyncInvoke = (args, run) => invoke(args, run);
-engineBoundaryObservers.queue = (directives, rollbackOnError, run) => queue(directives, rollbackOnError, run);
-engineBoundaryObservers.asyncQueue = (directives, rollbackOnError, run) => queue(directives, rollbackOnError, run);
+engineBoundaryObservers.queue = (directives, _rollbackOnError, run) => queue(directives, run);
+engineBoundaryObservers.asyncQueue = (directives, _rollbackOnError, run) => queue(directives, run);
 engineBoundaryObservers.directive = (methodName, run) => traceDirective(methodName, run);
 export function assertRefusalsUnchanged() {
   const found = [...violations];

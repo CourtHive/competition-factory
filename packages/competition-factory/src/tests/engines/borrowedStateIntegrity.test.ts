@@ -148,6 +148,16 @@ describe('a mapping-library document', () => {
     expect(doc.tournamentName).toEqual('original');
     expect(doc.isModified('tournamentName')).toEqual(false);
 
+    // a factory method that takes no snapshot is refused the same way, before it writes
+    const single: any = syncEngine.executionQueue(
+      [{ method: 'setTournamentName', params: { tournamentName: 'refused' } }],
+      true,
+    );
+    expect(single.error).toEqual(ROLLBACK_UNAVAILABLE);
+    const direct: any = syncEngine.setTournamentName({ tournamentName: 'refused', rollbackOnError: true });
+    expect(direct.error).toEqual(ROLLBACK_UNAVAILABLE);
+    expect(doc.tournamentName).toEqual('original');
+
     // without rollback the write goes through the document's own setters, and it tracks it
     syncEngine.executionQueue([{ method: 'rename', params: { name: 'written' } }]);
     expect(doc.tournamentName).toEqual('written');

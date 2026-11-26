@@ -26,13 +26,16 @@ import { TournamentRecords } from '@Types/factoryTypes';
  * whenever more than one record was loaded.
  */
 export type OperationState = {
-  records: TournamentRecords;
+  /** absent for a call that cannot partly commit (`atomic`), whose refusal leaves the records as they were */
+  records?: TournamentRecords;
   tournamentId?: string;
   notices?: Notice[];
   /** deep copy disabled: the engine works on the caller's own objects, which a restore must keep */
   borrowed: boolean;
   /** the factory's own snapshot, which maps each copy back to its original object */
   clone?: StateClone<TournamentRecords>;
+  /** no snapshot was taken: a refusal puts back the selection, the notices and the flag, not the records */
+  atomic?: boolean;
 };
 
 /**
@@ -88,16 +91,21 @@ export function captureOperation(): { captured: OperationState; error?: undefine
  * regain their values; installing a copy instead left the caller holding the refused writes while
  * every later mutation went to a copy the caller never saw.
  */
-export function restoreOperation({ records, tournamentId, notices, borrowed, clone }: OperationState): void {
+export function restoreOperation(state: OperationState): void {
+  // a call that cannot partly commit wrote no record when it was refused (rollbackSnapshot.ts)
+  if (!state.atomic) restoreRecords(state);
+  setTournamentId(state.tournamentId);
+  setNoticeBuffer(state.notices);
+  clearMutationStatus(); // a refused write is not a modification
+}
+
+function restoreRecords({ records, borrowed, clone }: OperationState): void {
   if (!borrowed) {
-    setTournamentRecords(records);
+    setTournamentRecords(records as TournamentRecords);
   } else if (clone) {
     setTournamentRecords(restoreState(clone));
   } else {
     const live = getTournamentRecords();
-    setTournamentRecords(getProvider().restoreSnapshot(live, records) ?? live);
+    setTournamentRecords(getProvider().restoreSnapshot(live, records as TournamentRecords) ?? live);
   }
-  setTournamentId(tournamentId);
-  setNoticeBuffer(notices);
-  clearMutationStatus(); // a refused write is not a modification
 }
