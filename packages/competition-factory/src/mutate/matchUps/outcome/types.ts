@@ -472,8 +472,6 @@ export type MatchUpWrite = {
 };
 
 export type BuildViewArgs = {
-  /** The stamp ledger as read before the view, for a fresh two-team double-elimination line. */
-  teamLedger?: { stamps?: WeakSet<object> };
   /** Private planning mode; it grants no runtime ownership. */
   clockFree?: boolean;
   temporal?: TemporalProjection;

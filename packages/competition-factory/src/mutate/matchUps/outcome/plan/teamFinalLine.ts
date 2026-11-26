@@ -223,7 +223,9 @@ function lineCircuit(args: PlanArgs, why: 'team' | 'cascade'): Circuit | undefin
  * is built: whatever the read changes is what the view, the plan and any recorder then read, and
  * no later read can leave the plan behind it. Every other call reads nothing here.
  */
-export function readTeamLineLedger(args: BuildViewArgs): { stamps?: WeakSet<object> } | undefined {
+/** The stamp ledger as read before the view, for a fresh two-team double-elimination line. */
+export type TeamLedger = { stamps?: WeakSet<object> };
+export function readTeamLineLedger(args: BuildViewArgs): TeamLedger | undefined {
   if (args.drawDefinition?.drawType !== DOUBLE_ELIMINATION || !args.recordDraws || !args.request.winningSide) return;
   const main = args.drawDefinition.structures?.find((s) => s.stage === MAIN);
   if (positionAssignmentsOf(main)?.filter((a) => a.participantId).length !== 2) return;
