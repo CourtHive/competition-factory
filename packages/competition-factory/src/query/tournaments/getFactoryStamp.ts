@@ -13,6 +13,10 @@ export type FactoryStamp = {
   version?: string;
   /** the engine clock (`nowMs`) at that last write */
   timeStamp?: number;
+  /** the `defaultsHash` of the engine defaults the record relies on for the policy types it does not pin */
+  defaultsHash?: string;
+  /** the same hash for each policy type the stamping factory had a default for */
+  defaultsHashes?: { [policyType: string]: string };
 };
 
 /**
@@ -30,6 +34,9 @@ export function getFactoryStamp({ tournamentRecord }: { tournamentRecord?: Tourn
   if (typeof value.createdVersion === 'string') stamp.createdVersion = value.createdVersion;
   if (typeof value.version === 'string') stamp.version = value.version;
   if (typeof value.timeStamp === 'number') stamp.timeStamp = value.timeStamp;
+  if (typeof value.defaultsHash === 'string') stamp.defaultsHash = value.defaultsHash;
+  if (value.defaultsHashes && typeof value.defaultsHashes === 'object')
+    stamp.defaultsHashes = { ...value.defaultsHashes };
   return stamp;
 }
 

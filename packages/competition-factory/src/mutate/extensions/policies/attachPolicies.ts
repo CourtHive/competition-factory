@@ -5,6 +5,7 @@ import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParame
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { stampDefaultsIfAbsent } from '@Mutate/extensions/stampDefaults';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
@@ -73,6 +74,8 @@ export function attachPolicies(params: AttachPoliciesArgs): ResultType & { appli
     const result = writePolicies(element, plan);
     if (result.error) return result;
     applied.push(...plan.applied);
+    // the record now says which policies it pins; the defaults stamp says what it relies on for the rest
+    stampDefaultsIfAbsent(params.tournamentRecord);
 
     if (params.drawDefinition) {
       modifyDrawNotice({
@@ -110,6 +113,7 @@ export function attachPolicies(params: AttachPoliciesArgs): ResultType & { appli
       const result = writePolicies(tournamentRecord, plan);
       if (result.error) return result;
       applied.push(...plan.applied);
+      stampDefaultsIfAbsent(tournamentRecord);
       modifyTournamentDetailNotice({
         tournamentRecord,
         detail: {
@@ -163,6 +167,9 @@ function planPolicies(params: any, element: any): PolicyPlan {
       // attributes would read back as its name alone, which this check refuses
       const defined = Object.values(values).some((value) => value !== undefined);
       if (!defined || (policyName && !isString(policyName))) return { error: INVALID_VALUES, appliedPolicies, applied };
+      // a pinned policy keeps its provenance: `policyName` and `policyVersion` are stored with the value, as given
+      if (policy.policyVersion !== undefined && !isString(policy.policyVersion))
+        return { error: INVALID_VALUES, appliedPolicies, applied };
       // a ratings preset the competition policy's form rating names is stored by value, so reading never needs the name
       appliedPolicies[policyType] = policyType === POLICY_TYPE_COMPETITION ? pinnedCompetitionPolicy(policy) : policy;
       applied.push(policyType);

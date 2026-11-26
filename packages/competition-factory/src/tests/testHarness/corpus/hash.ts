@@ -11,7 +11,10 @@ import { createHash } from 'crypto';
  * checkpoint merging the two failed `verify:corpus-manifest` on twelve scenarios for that alone; every
  * release-please PR would have done the same. The stamp's `version` and `createdVersion` (stamped at
  * creation since 2026-10-06) are left out of the hashed text, as the corpus already pins the clock and
- * the random source. The patches still carry them: they are the record as written.
+ * the random source. So is the defaults stamp (`defaultsHash`, `defaultsHashes`): it is two build-time
+ * constants that move whenever a default policy is edited, and what an edited default changes in a
+ * scenario's behaviour is hashed where it happens. The patches still carry them: they are the record as
+ * written.
  */
 export function canonicalHash(value: unknown): string {
   return `sha256:${createHash('sha256')
@@ -33,14 +36,22 @@ export function withoutFactoryVersion(value: unknown): unknown {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
   const record: any = value;
   const stampsAVersion = (stamp: any) =>
-    !!stamp && typeof stamp === 'object' && ('version' in stamp || 'createdVersion' in stamp);
+    !!stamp &&
+    typeof stamp === 'object' &&
+    ('version' in stamp || 'createdVersion' in stamp || 'defaultsHash' in stamp || 'defaultsHashes' in stamp);
   const firstClass = stampsAVersion(record.factory);
   const extension = record.extensions?.some?.(
     (entry: any) => entry?.name === 'factory' && stampsAVersion(entry?.value),
   );
   if (!firstClass && !extension) return value;
 
-  const { version: _firstClassVersion, createdVersion: _firstClassCreated, ...factory } = record.factory ?? {};
+  const {
+    version: _firstClassVersion,
+    createdVersion: _firstClassCreated,
+    defaultsHash: _firstClassDefaults,
+    defaultsHashes: _firstClassDefaultsByType,
+    ...factory
+  } = record.factory ?? {};
   return {
     ...record,
     ...(firstClass ? { factory } : {}),
@@ -48,7 +59,13 @@ export function withoutFactoryVersion(value: unknown): unknown {
       ? {
           extensions: record.extensions.map((entry: any) => {
             if (entry?.name !== 'factory' || !entry?.value || typeof entry.value !== 'object') return entry;
-            const { version: _extensionVersion, createdVersion: _extensionCreated, ...rest } = entry.value;
+            const {
+              version: _extensionVersion,
+              createdVersion: _extensionCreated,
+              defaultsHash: _extensionDefaults,
+              defaultsHashes: _extensionDefaultsByType,
+              ...rest
+            } = entry.value;
             return { ...entry, value: rest };
           }),
         }

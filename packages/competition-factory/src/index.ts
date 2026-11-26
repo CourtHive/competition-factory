@@ -117,6 +117,8 @@ export { competitionEngineAsync, tournamentEngineAsync } from './assemblies/engi
 
 // FIXTURES --------------------------------------------------------------
 export { fixtures } from './fixtures';
+// build-time content hashes of the policies the engine falls back to; see `getDefaultsDrift`
+export { defaultsHash, defaultsHashes } from './fixtures/policies/defaultsHash';
 export type { DisciplineProfile } from './fixtures/disciplines/disciplineProfiles';
 
 // PURE STATS — usable without an engine instance.
