@@ -7,14 +7,18 @@ import { describe, expect, it } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import asyncEngine from '@Engines/asyncEngine';
+import { bulkScheduleTournamentMatchUps } from '@Mutate/matchUps/schedule/bulkScheduleTournamentMatchUps';
+import { venueModify } from '@Mutate/venues/modifyVenue';
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 
 // constants
 import { MODIFY_MATCHUP, MODIFY_VENUE } from '@Constants/topicConstants';
+import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
 import {
   INVALID_TIME,
   INVALID_VALUES,
+  MISSING_TOURNAMENT_RECORD,
   NO_VALID_ATTRIBUTES,
   SCHEDULE_CONFLICT_COURT_UNAVAILABLE,
   SCHEDULED_MATCHUPS,
@@ -106,6 +110,14 @@ const lateRefusals = () => {
     ),
     edit(
       { ...renamed, courts: [...courts(initial, ['c-1', 'c-2', 'c-3', 'c-4']), { courtId: 'c-1' }] },
+      NO_VALID_ATTRIBUTES.code,
+    ),
+    // a court added earlier in the same edit, modified with nothing it can take
+    edit(
+      {
+        ...renamed,
+        courts: [...courts(initial, ['c-1', 'c-2', 'c-3', 'c-4']), { courtId: 'n', courtName: 'N' }, { courtId: 'n' }],
+      },
       NO_VALID_ATTRIBUTES.code,
     ),
     edit({ ...renamed, defaultStartTime: '18:00', defaultEndTime: '09:00' }, INVALID_VALUES.code),
@@ -203,6 +215,95 @@ describe('F-014 venue edit', () => {
       }
     });
   }
+
+  it('an accepted edit modifies a court it has only just added, before storing it', () => {
+    const record = venueWithSchedule();
+    tournamentEngine.setState(record, false);
+    const result = tournamentEngine.modifyVenue({
+      modifications: {
+        courts: [
+          ...courts(record, ['c-1', 'c-2', 'c-3', 'c-4']),
+          { courtId: 'n', courtName: 'N' },
+          {
+            courtId: 'n',
+            courtName: 'N2',
+            dateAvailability: [
+              { startTime: '08:00', endTime: '12:00' },
+              { startTime: '11:00', endTime: '18:00' },
+            ],
+          },
+        ],
+      },
+      venueId: 'v1',
+    });
+    expect(result).toEqual({ success: true });
+    const added = record.venues[0].courts.filter(({ courtId }) => courtId === 'n');
+    expect(added).toHaveLength(1);
+    expect(added[0].courtName).toEqual('N2');
+    expect(added[0].dateAvailability).toEqual([{ startTime: '08:00', endTime: '18:00' }]);
+  });
+
+  // a stored profile with a round whose draw is gone: an accepted venue edit stores the repair, a refused one leaves it
+  const storedProfile = (record) =>
+    record.scheduling?.profile ?? record.extensions?.find(({ name }) => name === SCHEDULING_PROFILE)?.value;
+  function staleProfileRecord() {
+    tournamentEngine.setState(venueWithSchedule());
+    const [{ eventId, drawId, structureId }] = tournamentEngine.allTournamentMatchUps({ inContext: true }).matchUps;
+    const tournamentId = tournamentEngine.getTournament().tournamentRecord.tournamentId;
+    const round = { tournamentId, eventId, drawId, structureId, roundNumber: 1 };
+    expect(
+      tournamentEngine.addSchedulingProfileRound({ scheduleDate: scheduledDate, venueId: 'v1', round }).success,
+    ).toBe(true);
+    const record = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+    storedProfile(record)[0].venues[0].rounds.push({ ...round, drawId: 'gone', structureId: 'gone' });
+    return { record, drawId };
+  }
+
+  for (const writeMode of WRITE_MODES) {
+    it(`${writeMode}: a venue edit stores the repair of a stale scheduling profile; a refused one leaves it stale`, () => {
+      setSchemaWriteMode(writeMode);
+      try {
+        const { record, drawId } = staleProfileRecord();
+        tournamentEngine.setState(record, false);
+        const before = JSON.stringify(record);
+        const refused = tournamentEngine.modifyVenue({
+          modifications: { venueName: 'Refused', courts: courts(record, ['c-2', 'c-3', 'c-4']) },
+          venueId: 'v1',
+        });
+        expect(refused.error).toEqual(SCHEDULED_MATCHUPS);
+        expect(JSON.stringify(record)).toBe(before);
+
+        expect(tournamentEngine.modifyVenue({ modifications: { venueName: 'Renamed' }, venueId: 'v1' })).toEqual({
+          success: true,
+        });
+        const rounds = storedProfile(tournamentEngine.getTournament().tournamentRecord)[0].venues[0].rounds;
+        expect(rounds.map((round) => round.drawId)).toEqual([drawId]);
+      } finally {
+        setSchemaWriteMode();
+      }
+    });
+  }
+
+  it('venueModify plans one record whole: refused, it writes nothing; accepted, it returns the edited venue', () => {
+    const tournamentRecord = venueWithSchedule();
+    const before = JSON.stringify(tournamentRecord);
+    const refused = venueModify({
+      modifications: { venueName: 'Refused', courts: courts(tournamentRecord, ['c-2']) },
+      tournamentRecord,
+      venueId: 'v1',
+    });
+    expect((refused as any).error).toEqual(SCHEDULED_MATCHUPS);
+    expect(JSON.stringify(tournamentRecord)).toBe(before);
+
+    const accepted: any = venueModify({ modifications: { venueName: 'Renamed' }, tournamentRecord, venueId: 'v1' });
+    expect(accepted.success).toBe(true);
+    expect(tournamentRecord.venues[0].venueName).toEqual('Renamed');
+    expect(accepted.venue).toEqual(tournamentRecord.venues[0]);
+  });
+
+  it('bulk scheduling without a tournament record is refused before planning', () => {
+    expect(bulkScheduleTournamentMatchUps({} as any)).toEqual({ error: MISSING_TOURNAMENT_RECORD });
+  });
 
   it('isolates interleaved async requests', async () => {
     const initial = venueWithSchedule();
