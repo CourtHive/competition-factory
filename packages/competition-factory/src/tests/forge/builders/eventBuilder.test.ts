@@ -111,9 +111,14 @@ describe('engine.build.event — fluent EventBuilder', () => {
     );
   });
 
-  it('.team(tieFormatName) attaches the named tieFormat to the event payload', () => {
-    const directives: any[] = tournamentEngine.build.event({ eventName: 'CFG' }).team('TEAM_FORMAT').toDirectives();
-    expect(directives[0].params.event.tieFormatName).toEqual('TEAM_FORMAT');
+  it('.team(tieFormat) attaches the tieFormat to the event payload', () => {
+    const tieFormat = { collectionDefinitions: [{ collectionId: 'x' }] };
+    const directives: any[] = tournamentEngine.build
+      .event({ eventName: 'CFG' })
+      .team(tieFormat as any)
+      .toDirectives();
+    expect(directives[0].params.event.tieFormat).toBe(tieFormat);
+    expect(directives[0].params.event.tieFormatName).toBeUndefined();
   });
 
   it('entries opts pass enforceGender/enforceCategory through only when set', () => {
@@ -175,13 +180,10 @@ describe('engine.build.event — fluent EventBuilder', () => {
     expect(dd[0].params.event.tieFormatName).toBeUndefined();
   });
 
-  it('.tieFormat(object) attaches inline; .tieFormat(string) sets tieFormatName', () => {
+  it('.tieFormat(object) attaches inline', () => {
     const inline = { tieFormatName: 'XYZ' };
     const a: any[] = tournamentEngine.build.event().singles().tieFormat(inline).toDirectives();
     expect(a[0].params.event.tieFormat).toBe(inline);
-
-    const b: any[] = tournamentEngine.build.event().singles().tieFormat('NAMED').toDirectives();
-    expect(b[0].params.event.tieFormatName).toEqual('NAMED');
   });
 
   it('.named() / .category() / .dates() set the corresponding event payload fields', () => {

@@ -1,8 +1,7 @@
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { kOf, resolveRatingsPolicy, tierK } from '@Helpers/ratings/ratingsPolicyRules';
-import { plainRecord } from '@Tools/plainRecord';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { planEligibleScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
-import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { getParticipantScaleItem } from '@Query/participant/getParticipantScaleItem';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { calculateNewRatings } from '@Helpers/ratings/calculateNewRatings';
@@ -13,16 +12,12 @@ import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { recordMethod } from '@Mutate/simulation/scenarioRecorder';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { findStructure } from '@Acquire/findStructure';
+import { plainRecord } from '@Tools/plainRecord';
 import { findPolicy } from '@Acquire/findPolicy';
 
 // constants, fixtures and types
-import {
-  INVALID_VALUES,
-  MISSING_MATCHUP_IDS,
-  MISSING_VALUE,
-  PARTICIPANT_NOT_FOUND,
-} from '@Constants/errorConditionConstants';
 import { ARRAY, ERROR, OF_TYPE, TOURNAMENT_RECORD, VALIDATE } from '@Constants/attributeConstants';
+import { Event, EventTypeUnion, Participant, Tournament } from '@Types/tournamentTypes';
 import { completedMatchUpStatuses, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { POLICY_RATINGS_DEFAULT } from '@Fixtures/policies/POLICY_RATINGS_DEFAULT';
 import type { ExpectationRule } from '@Helpers/ratings/ratingUpdate';
@@ -31,12 +26,17 @@ import type { competitionFormat } from '@Types/competitionFormat';
 import { POLICY_TYPE_RATINGS } from '@Constants/policyConstants';
 import { HydratedMatchUp, HydratedSide } from '@Types/hydrated';
 import type { RatingsPolicy } from '@Types/ratingsPolicyTypes';
-import { Event, EventTypeUnion, Participant, Tournament } from '@Types/tournamentTypes';
 import { DYNAMIC, RATING } from '@Constants/scaleConstants';
+import { ResultType, ScaleItem } from '@Types/factoryTypes';
 import { PAIR } from '@Constants/participantConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ELO } from '@Constants/ratingConstants';
-import { ResultType, ScaleItem } from '@Types/factoryTypes';
+import {
+  INVALID_VALUES,
+  MISSING_MATCHUP_IDS,
+  MISSING_VALUE,
+  PARTICIPANT_NOT_FOUND,
+} from '@Constants/errorConditionConstants';
 
 /**
  * Rates `matchUps` (or those named by `matchUpIds`) in draw order — stage, structure sequence, round, position (see
@@ -509,8 +509,9 @@ function updateRatingsForMatchUp({
 }
 
 /**
- * The refusal for a matchUp whose competitionFormat selects no usable ratings policy. A preset name the factory does not
- * hold is named in `info` and in `context.ratingsPolicy`, with `context.matchUpId`; an incomplete inline policy says so.
+ * The refusal for a matchUp whose competitionFormat selects no usable ratings policy. A preset name (which selects
+ * nothing: the core holds no presets) is named in `info` and in `context.ratingsPolicy`, with `context.matchUpId`; an
+ * incomplete inline policy says so.
  */
 function unresolvedPolicyRefusal(tournamentRecord: Tournament, matchUp: HydratedMatchUp): ResultType {
   const event = tournamentRecord.events?.find(({ eventId }) => eventId === matchUp.eventId);
@@ -519,7 +520,7 @@ function unresolvedPolicyRefusal(tournamentRecord: Tournament, matchUp: Hydrated
   if (typeof selected === 'string') {
     return {
       error: INVALID_VALUES,
-      info: `ratingsPolicy: no ratings preset named '${selected}' (matchUp ${matchUpId}); pass the ratings policy object`,
+      info: `ratingsPolicy: '${selected}' is a preset name, which selects nothing (matchUp ${matchUpId}); pass the ratings policy object`,
       context: { ratingsPolicy: selected, matchUpId },
     };
   }

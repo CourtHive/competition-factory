@@ -71,7 +71,8 @@ const { BWF, UTR } = ratingConstants;
 
 The field is **optional** — policies that don't declare it produce awards with
 `pointsAuthority: undefined`, and downstream consumers (e.g. courthive-rankings)
-default such rows to `'UNSPECIFIED'`. The published CourtHive fixtures declare:
+default such rows to `'UNSPECIFIED'`. The published policies declare (`POLICY_RANKING_POINTS_BASIC` is the factory's;
+the others are published by the catalogue package, `@courthive/competition-catalogue`):
 
 | Policy                                  | `pointsAuthority` |
 | --------------------------------------- | ----------------- |
@@ -683,15 +684,15 @@ Policies that require a level will produce **no awards** when called without one
 The factory ships with five ranking policy fixtures covering major professional, junior, and basic systems. Import them from `fixtures.policies`:
 
 ```js
+import {
+  POLICY_RANKING_POINTS_ATP,
+  POLICY_RANKING_POINTS_ITF_JUNIOR,
+  POLICY_RANKING_POINTS_ITF_WTT,
+  POLICY_RANKING_POINTS_WTA,
+} from '@courthive/competition-catalogue';
 import { fixtures } from 'tods-competition-factory';
 
-const {
-  POLICY_RANKING_POINTS_BASIC,
-  POLICY_RANKING_POINTS_ATP,
-  POLICY_RANKING_POINTS_WTA,
-  POLICY_RANKING_POINTS_ITF_WTT,
-  POLICY_RANKING_POINTS_ITF_JUNIOR,
-} = fixtures.policies;
+const { POLICY_RANKING_POINTS_BASIC } = fixtures.policies;
 
 // Basic policy — no level needed
 const basic = scaleEngine.getEventRankingPoints({

@@ -1,8 +1,7 @@
+import { POLICY_SEEDING_ITF, policies as cataloguePolicies, ratingsPresets } from '@courthive/competition-catalogue';
 import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Tests/fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
 import { POLICY_COMPETITION_STANDARD } from '@Fixtures/policies/POLICY_COMPETITION_STANDARD';
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
-import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
-import { ratingsPolicies } from '@Fixtures/policies/ratingsPolicies';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -92,8 +91,8 @@ describe('PolicyDefinitions', () => {
     expect(schema.definitions.PolicyDefinitions.additionalProperties).toEqual(false);
   });
 
-  it('accepts every bundled policy fixture keyed by policy type', () => {
-    const keyed = Object.entries<any>(policies).filter(([, fixture]) =>
+  it('accepts every bundled and catalogue policy keyed by policy type', () => {
+    const keyed = Object.entries<any>({ ...policies, ...cataloguePolicies }).filter(([, fixture]) =>
       Object.keys(fixture).every((key) => policyTypes.includes(key)),
     );
     // CONTROL: the modelled policy types are among those checked
@@ -189,6 +188,12 @@ describe('SchedulingPolicy', () => {
 describe('RatingsPolicy', () => {
   const validateRatings = definition('RatingsPolicy');
   const validateCompetition = definition('CompetitionPolicy');
+  // the factory's two ratings policies and the catalogue's presets
+  const ratingsPolicies: Record<string, any> = {
+    POLICY_RATINGS_DEFAULT: policies.POLICY_RATINGS_DEFAULT[POLICY_TYPE_RATINGS],
+    POLICY_RATINGS_COMPETITION_FORM: policies.POLICY_RATINGS_COMPETITION_FORM[POLICY_TYPE_RATINGS],
+    ...ratingsPresets,
+  };
   const DEFAULT = ratingsPolicies.POLICY_RATINGS_DEFAULT;
 
   it('accepts every ratings preset', () => {

@@ -270,8 +270,8 @@ const flexibleDeletionPolicy = {
 ### Limit Available Formats (USTA Example)
 
 ```js
+import { POLICY_SCORING_USTA } from '@courthive/competition-catalogue';
 import { fixtures } from 'tods-competition-factory';
-const { POLICY_SCORING_USTA } = fixtures.policies;
 
 // USTA policy includes approved formats only
 const ustaPolicy = {
@@ -396,8 +396,8 @@ const stageSpecificPolicy = {
 ### USTA Status Codes (Comprehensive)
 
 ```js
+import { POLICY_SCORING_USTA } from '@courthive/competition-catalogue';
 import { fixtures } from 'tods-competition-factory';
-const { POLICY_SCORING_USTA } = fixtures.policies;
 
 // USTA policy includes detailed status codes:
 const ustaStatusCodes = {
@@ -593,8 +593,8 @@ const propagationPolicy = {
 ### USTA Tournament
 
 ```js
+import { POLICY_SCORING_USTA } from '@courthive/competition-catalogue';
 import { fixtures } from 'tods-competition-factory';
-const { POLICY_SCORING_USTA } = fixtures.policies;
 
 // Use complete USTA policy
 tournamentEngine.attachPolicies({
@@ -726,8 +726,9 @@ const processCodePolicy = {
 
 **Available Presets:**
 
-- `POLICY_SCORING_DEFAULT` - Basic policy
-- `POLICY_SCORING_USTA` - Complete USTA policy with 19 formats and comprehensive status codes
+- `POLICY_SCORING_DEFAULT` - Basic policy (`fixtures.policies`)
+- `POLICY_SCORING_USTA` - Complete USTA policy with 19 formats and comprehensive status codes (the catalogue package,
+  `@courthive/competition-catalogue`)
 
 **Custom Federations:**
 Create federation-specific policies following USTA pattern:

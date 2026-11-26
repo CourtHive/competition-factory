@@ -27,6 +27,8 @@ const VERBOSE = process.argv.includes('--verbose');
 
 const require = createRequire(import.meta.url);
 const factory = require(path.join(ROOT, 'dist/tods-competition-factory.development.cjs.js'));
+// the catalogue package's build (verify:catalogue builds it): its named formats and organisation policies
+const catalogue = require(path.join(ROOT, '../competition-catalogue/dist/index.cjs'));
 
 const AsyncFunction = Object.getPrototypeOf(async () => undefined).constructor;
 const FENCE = /^```(?:js|javascript|ts|typescript|jsx|tsx)\b/;
@@ -62,15 +64,23 @@ function fencesOf(file) {
 }
 
 const PACKAGE = 'tods-competition-factory';
+const CATALOGUE = '@courthive/competition-catalogue';
 
-// Names a page uses without importing them, as the docs do for brevity: every constant (ROUND_ROBIN, MALE,
-// COLLEGE_DEFAULT) and every policy fixture. The package's own exports win a collision.
+// Names a page uses without importing them, as the docs do for brevity: every constant (ROUND_ROBIN, MALE), every
+// policy fixture, and the catalogue package's exports (resolveTieFormat, its policies and tie format names). The
+// package's own exports win a collision.
 const constants = Object.fromEntries(
   Object.keys(factory)
     .filter((name) => /Constants$/.test(name) && factory[name] && typeof factory[name] === 'object')
     .flatMap((name) => Object.entries(factory[name])),
 );
-const implicit = { ...constants, ...factory.fixtures?.policies, ...factory };
+const implicit = {
+  ...constants,
+  ...catalogue.tieFormatConstants,
+  ...catalogue,
+  ...factory.fixtures?.policies,
+  ...factory,
+};
 
 // A fence may be written as a test: test/it/describe run their callback at once, beforeEach runs before each test, and
 // expect is vitest's own, so a documented assertion that no longer holds fails here too.
@@ -102,18 +112,19 @@ function testHarness(pending) {
   };
 }
 
-// An import from the package becomes a destructure of it; an import from anywhere else is a reader's dead end
-// (an internal alias such as @Fixtures, a relative path) and fails the fence.
+// An import from the package (or the catalogue package) becomes a destructure of it; an import from anywhere else is
+// a reader's dead end (an internal alias such as @Fixtures, a relative path) and fails the fence.
 function rewriteImports(code) {
   const outside = [];
   const rewritten = code.replace(
     /^\s*import\s+(type\s+)?([\s\S]*?)\s+from\s+['"]([^'"]+)['"];?[ \t]*$/gm,
     (_statement, typeOnly, clause, source) => {
       if (source === 'vitest') return '';
-      if (source !== PACKAGE) {
+      if (source !== PACKAGE && source !== CATALOGUE) {
         outside.push(source);
         return '';
       }
+      const from = source === CATALOGUE ? '__catalogue' : '__package';
       if (typeOnly) return '';
       const named = clause.match(/\{([\s\S]*)\}/)?.[1];
       const bindings = (named ?? '')
@@ -126,10 +137,7 @@ function rewriteImports(code) {
         .replace(/,/g, '')
         .replace(/\*\s+as\s+/, '')
         .trim();
-      return [
-        whole && `const ${whole} = __package;`,
-        bindings.length && `const { ${bindings.join(', ')} } = __package;`,
-      ]
+      return [whole && `const ${whole} = ${from};`, bindings.length && `const { ${bindings.join(', ')} } = ${from};`]
         .filter(Boolean)
         .join(' ');
     },
@@ -158,7 +166,13 @@ async function run(code) {
   };
   const pending = [];
   const recording = { mocksEngine, mocksGovernor };
-  const scope = { ...implicit, ...testHarness(pending), ...recording, __package: { ...factory, ...recording } };
+  const scope = {
+    ...implicit,
+    ...testHarness(pending),
+    ...recording,
+    __package: { ...factory, ...recording },
+    __catalogue: catalogue,
+  };
   const js = ts.transpileModule(body.replace(/^\s*export\s+(?=const|let|function|async|class)/gm, ''), {
     compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
   }).outputText;

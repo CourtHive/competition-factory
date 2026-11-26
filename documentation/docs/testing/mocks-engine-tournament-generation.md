@@ -892,8 +892,9 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
 Policies applied to a specific draw override event and tournament-level policies:
 
 ```js
+import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { fixtures } from 'tods-competition-factory';
-const { POLICY_SEEDING_ITF, POLICY_SEEDING_DEFAULT } = fixtures.policies;
+const { POLICY_SEEDING_DEFAULT } = fixtures.policies;
 
 const { tournamentRecord } = mocksEngine.generateTournamentRecord({
   // Tournament-level default
@@ -1019,6 +1020,7 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
 By default, `processTieFormat` computes per-team gender counts from the maximum gendered collection requirements. When a tieFormat requires more gendered players than the MAX-per-collection heuristic produces (e.g. collections needing 3 men and 3 women total, but the MAX only detects 2 of each), use `teamGenders` as a floor override:
 
 ```js
+import { resolveTieFormat } from '@courthive/competition-catalogue';
 import { fixtures, mocksEngine } from 'tods-competition-factory';
 
 const { tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -1028,7 +1030,7 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventType: 'TEAM',
       teamNames: ['Team Alpha', 'Team Beta'],
       teamGenders: { MALE: 3, FEMALE: 3 }, // Override: at least 3M + 3F per team
-      tieFormat: fixtures.tieFormats.INTENNSE_2026, // 2 MS, 2 WS, 1 MD, 1 WD, 1 XD, aggregate value
+      tieFormat: resolveTieFormat('INTENNSE_2026'), // 2 MS, 2 WS, 1 MD, 1 WD, 1 XD, aggregate value
     },
   ],
   completeAllMatchUps: true,

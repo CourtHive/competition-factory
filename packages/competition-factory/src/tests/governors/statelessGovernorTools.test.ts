@@ -139,7 +139,7 @@ const seasonGenerated: any = mocksEngine.generateSeason({
       { tierId: 'A1', tierValue: 'A-1', teamsCount: 3 },
       { tierId: 'B1', tierValue: 'B-1', teamsCount: 3 },
     ],
-    tieFormatName: 'DOMINANT_DUO',
+    tieFormat: resolveTieFormat('DOMINANT_DUO'),
     periods: [{}, {}],
     seasonName: 'Spring',
   },

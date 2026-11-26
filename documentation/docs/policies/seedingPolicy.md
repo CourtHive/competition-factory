@@ -8,13 +8,15 @@ The **Seeding Policy** controls how seeds are positioned in draw structures, how
 
 ## Reaching the built-in policies
 
-The policy fixtures are reached through the `fixtures` namespace. There are **no** root-level
-`POLICY_*` exports, and no default export:
+The factory's own policies are reached through the `fixtures` namespace. There are **no** root-level
+`POLICY_*` exports, and no default export. Organisation policies, such as `POLICY_SEEDING_ITF`, are published by the
+catalogue package, `@courthive/competition-catalogue`:
 
 ```javascript
 import { drawDefinitionConstants, fixtures, policyConstants, tournamentEngine } from 'tods-competition-factory';
+import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
 
-const { POLICY_SEEDING_DEFAULT, POLICY_SEEDING_ITF, POLICY_SEEDING_BYES } = fixtures.policies;
+const { POLICY_SEEDING_DEFAULT, POLICY_SEEDING_BYES } = fixtures.policies;
 const { POLICY_TYPE_SEEDING } = policyConstants;
 const { CLUSTER, SEPARATE, WATERFALL } = drawDefinitionConstants;
 ```
@@ -23,13 +25,10 @@ const { CLUSTER, SEPARATE, WATERFALL } = drawDefinitionConstants;
 
 ```javascript
 // These do NOT work — each resolves to `undefined`:
+import { POLICY_SEEDING_DEFAULT } from 'tods-competition-factory'; // ✗ no root-level POLICY_* export
 import { fixtures } from 'tods-competition-factory';
-const { POLICY_SEEDING_ITF } = fixtures.policies; // ✗
-import { policyConstants } from 'tods-competition-factory';
-const { POLICY_TYPE_SEEDING } = policyConstants; // ✗
-import { drawDefinitionConstants } from 'tods-competition-factory';
-const { CLUSTER } = drawDefinitionConstants; // ✗
-import { tournamentEngine } from 'tods-competition-factory'; // ✗ no default export
+const { POLICY_SEEDING_ITF } = fixtures.policies; // ✗ an organisation policy: import it from the catalogue package
+import tournamentEngine from 'tods-competition-factory'; // ✗ no default export
 ```
 
 An `undefined` policy fails **silently**: `policyDefinitions: undefined` reads as "no policy
@@ -361,9 +360,10 @@ confines a seed to its own block.
 **Examples:**
 
 ```javascript
+import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { fixtures } from 'tods-competition-factory';
 
-const { POLICY_SEEDING_ITF, POLICY_SEEDING_DEFAULT } = fixtures.policies;
+const { POLICY_SEEDING_DEFAULT } = fixtures.policies;
 // Both carry validSeedPositions: { ignore: true } — hand placement anywhere.
 
 // Confine hand placement to seed-block positions by OMITTING the key (see
@@ -850,8 +850,8 @@ const { POLICY_SEEDING_DEFAULT } = fixtures.policies;
 **Full Policy:**
 
 ```javascript
+import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { fixtures } from 'tods-competition-factory';
-const { POLICY_SEEDING_ITF } = fixtures.policies;
 
 // Policy structure:
 {
@@ -955,10 +955,10 @@ Express that — or any federation's rules — with [`policyComposer`](../engine
 is a root export:
 
 ```javascript
+import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { fixtures, policyComposer, policyConstants } from 'tods-competition-factory';
 
 const { POLICY_TYPE_SEEDING } = policyConstants;
-const { POLICY_SEEDING_ITF } = fixtures.policies;
 
 // ITF rules, but a seed may not be hand-placed outside a seed block.
 const positionsEnforced = policyComposer(POLICY_TYPE_SEEDING)
@@ -1266,9 +1266,9 @@ const { drawId } = tournamentEngine.generateDrawDefinition({
 ### Scenario 2: ITF World Tour Event
 
 ```javascript
+import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { drawDefinitionConstants, fixtures } from 'tods-competition-factory';
 const { SINGLE_ELIMINATION } = drawDefinitionConstants;
-const { POLICY_SEEDING_ITF } = fixtures.policies;
 
 // 98 players for main draw
 const mainDrawPlayers = [...]; // 98 players
@@ -1559,9 +1559,9 @@ Seeding policy works with:
 Example:
 
 ```javascript
+import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { fixtures, policyConstants } from 'tods-competition-factory';
 const { POLICY_TYPE_AVOIDANCE } = policyConstants;
-const { POLICY_SEEDING_ITF } = fixtures.policies;
 
 const combinedPolicies = {
   ...POLICY_SEEDING_ITF,

@@ -8,9 +8,9 @@ import { TieFormat } from '@Types/tournamentTypes';
 
 /**
  * The tieFormat a mocks league uses when its profile names none: three doubles rubbers sharing one point and six
- * singles worth a point each, first to four. A concrete object, so the mocksEngine does not reach into the tie
- * format catalogue for its default. It is the value `tieFormatDefaults({ namedFormat: COLLEGE_DEFAULT })` builds,
- * key order included, so generated records are unchanged; `src/tests/mocks/mockLeagueTieFormat.test.ts` holds the two equal.
+ * singles worth a point each, first to four. A concrete object: the factory holds no named formats. It is the value
+ * the COLLEGE_DEFAULT name built before 8.0.0, key order included, so generated records are unchanged;
+ * `src/tests/mocks/mockLeagueTieFormat.test.ts` pins it.
  */
 const MOCK_LEAGUE_TIE_FORMAT = {
   winCriteria: { valueGoal: 4 },

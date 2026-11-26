@@ -1,17 +1,16 @@
 import { modifyTournamentDetailNotice } from '@Mutate/tournaments/tournamentDetailNotice';
-import { pinnedCompetitionPolicy } from '@Helpers/ratings/pinnedRatingsPresets';
-import { validateTallyPolicy } from '@Validators/validateTallyPolicy';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
-import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { stampDefaultsIfAbsent } from '@Mutate/extensions/stampDefaults';
+import { validateTallyPolicy } from '@Validators/validateTallyPolicy';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
-import { POLICY_TYPE_COMPETITION, POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { PolicyDefinitions, TournamentRecords, ResultType } from '@Types/factoryTypes';
 import { DrawDefinition, Event, Extension, Tournament } from '@Types/tournamentTypes';
+import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { isObject, isString } from '@Tools/objects';
@@ -171,8 +170,7 @@ function planPolicies(params: any, element: any): PolicyPlan {
       // a pinned policy keeps its provenance: `policyName` and `policyVersion` are stored with the value, as given
       if (policy.policyVersion !== undefined && !isString(policy.policyVersion))
         return { error: INVALID_VALUES, appliedPolicies, applied };
-      // a ratings preset the competition policy's form rating names is stored by value, so reading never needs the name
-      appliedPolicies[policyType] = policyType === POLICY_TYPE_COMPETITION ? pinnedCompetitionPolicy(policy) : policy;
+      appliedPolicies[policyType] = params.policyDefinitions[policyType];
       applied.push(policyType);
     }
   }

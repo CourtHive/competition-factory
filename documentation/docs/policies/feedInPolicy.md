@@ -676,10 +676,10 @@ tournamentEngine.generateDrawDefinition({
 ### Using with Other Policies
 
 ```javascript
+import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { drawDefinitionConstants, fixtures, policyConstants } from 'tods-competition-factory';
 const { BOTTOM_UP, FEED_IN_CHAMPIONSHIP, TOP_DOWN } = drawDefinitionConstants;
 const { POLICY_TYPE_FEED_IN, POLICY_TYPE_SEEDING } = policyConstants;
-const { POLICY_SEEDING_ITF } = fixtures.policies;
 
 // Combine feed-in with seeding policy
 const combinedPolicies = {
@@ -1176,9 +1176,10 @@ Feed-in policy works with:
 **Example Integration:**
 
 ```javascript
+import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { drawDefinitionConstants, fixtures, policyConstants } from 'tods-competition-factory';
 const { BOTTOM_UP, FEED_IN_CHAMPIONSHIP, TOP_DOWN } = drawDefinitionConstants;
-const { POLICY_SEEDING_ITF } = fixtures.policies;
+
 const { POLICY_TYPE_FEED_IN } = policyConstants;
 
 const fullPolicies = {

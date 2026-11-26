@@ -1,6 +1,7 @@
 import { completeDrawMatchUps } from '@Generators/simulation/completeDrawMatchUps';
 import { generateTournamentRecord } from './generateTournamentRecord';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { generateRange } from '@Tools/arrays';
 
 // constants and types
@@ -31,8 +32,8 @@ export function generateSeason(params: { seasonProfile: MockSeasonProfile; rando
 
   const {
     completeAllMatchUps = true,
-    // no default name: a league that names no format gets the mocks' concrete default (processLeagueProfiles)
-    tieFormatName,
+    // no default: a league given no tieFormat gets the mocks' concrete default (processLeagueProfiles)
+    tieFormat,
     seasonId = 'mock-season',
     seriesId = 'mock-series',
     tierSystem = 'MOCK',
@@ -57,7 +58,8 @@ export function generateSeason(params: { seasonProfile: MockSeasonProfile; rando
         teamName: `${tier.name ?? tier.tierId} Team ${n + 1}`,
         teamId: `${tier.tierId}-team-${n + 1}`,
       })),
-      tieFormatName: seasonProfile.tiers[tierIndex].tieFormatName ?? tieFormatName,
+      // a copy for each league, which mints its own collectionIds
+      tieFormat: copyOf(seasonProfile.tiers[tierIndex].tieFormat ?? tieFormat),
       eventName: tier.name ?? tier.tierId,
       leagueId: `${tournamentId}-${tier.tierId}`,
       automated: true,
@@ -124,4 +126,8 @@ export function generateSeason(params: { seasonProfile: MockSeasonProfile; rando
   };
 
   return { tournamentRecords, season };
+}
+
+function copyOf<T>(value: T): T | undefined {
+  return value ? makeDeepCopy(value, false, true) : undefined;
 }

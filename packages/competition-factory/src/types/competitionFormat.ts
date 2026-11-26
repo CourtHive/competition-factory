@@ -34,16 +34,12 @@ export interface competitionFormat {
   /** Server determination rule: 'ALTERNATE_GAMES' (default) or 'WINNER_SERVES' */
   serverRule?: ServerRule;
   /**
-   * How a dynamic rating moves on this sport's results: a ratings policy inline or, deprecated, a ratings preset by
-   * name ('POLICY_RATINGS_ELO_538_NHL'), which is stored by value when attached. A ratings policy passed to
-   * generateDynamicRatings or attached to the event or tournament comes first.
+   * How a dynamic rating moves on this sport's results: a ratings policy inline. A ratings policy passed to
+   * generateDynamicRatings or attached to the event or tournament comes first. A string here (a preset name an earlier
+   * record may hold) selects nothing: a rating that reads one is refused by name.
    */
   ratingsPolicy?: string | RatingsPolicy;
-  /**
-   * The preset name a `ratingsPolicy` was attached by. When a competitionFormat naming a preset is attached
-   * (`addEvent`, `modifyEvent`), the preset's full policy is stored as `ratingsPolicy` and the name is kept here as a
-   * label only: it is never looked up.
-   */
+  /** The preset name an earlier record's `ratingsPolicy` was attached by: a label only, never looked up. */
   ratingsPolicyName?: string;
   extensions?: Extension[];
   notes?: string;

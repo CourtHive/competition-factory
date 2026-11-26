@@ -150,6 +150,7 @@ export type MockDrawProfile = Partial<
     | 'withPlayoffs'
     | 'policyDefinitions'
     | 'seedingProfile'
+    | 'tieFormatName'
   >
 > &
   DrawGeneratorPassThrough &
@@ -207,7 +208,6 @@ export type MockEventProfile = CompletionOptions & {
   eventExtensions?: Extension[];
   drawProfiles?: MockDrawProfile[];
   surfaceCategory?: string;
-  tieFormatName?: string;
   eventType?: Loose<EventTypeUnion>;
   processCodes?: string[];
   timeItems?: TimeItem[];
@@ -245,10 +245,10 @@ export type MockVenueProfile = {
 
 /** `mocksEngine.generateSeason`: one record per period, one TEAM event per tier, and the Season document. */
 export type MockSeasonProfile = {
-  tiers: { tierId?: string; tierValue?: string; teamsCount: number; tieFormatName?: string }[];
+  tiers: { tierId?: string; tierValue?: string; teamsCount: number; tieFormat?: MockTieFormat }[];
   periods?: { phase?: string; includeInStandings?: boolean }[];
   completeAllMatchUps?: boolean;
-  tieFormatName?: string;
+  tieFormat?: MockTieFormat;
   tierSystem?: string;
   seasonName?: string;
   startDate?: string;
@@ -262,7 +262,6 @@ export type MockLeagueProfile = {
   roundsCount?: number | string;
   individualParticipants?: boolean;
   pairingProfile?: GenerateDrawDefinitionArgs['pairingProfile'];
-  tieFormatName?: string;
   tieFormat?: MockTieFormat;
   leagueName?: string;
   teamsCount?: number;

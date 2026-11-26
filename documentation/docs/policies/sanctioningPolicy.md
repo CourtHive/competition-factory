@@ -104,12 +104,17 @@ interface AmendmentRules {
 
 ## Included Fixtures
 
+The factory holds the generic policy. The organisation policies below are published by the catalogue package,
+`@courthive/competition-catalogue`.
+
 ### Generic
 
 Basic 3-tier policy for any sport. Draw sizes 8-128, qualifying at Level 2+, prize money floors at Level 2+.
 
 ```js
-import { POLICY_SANCTIONING_GENERIC } from 'tods-competition-factory/fixtures/policies/POLICY_SANCTIONING_GENERIC';
+import { fixtures } from 'tods-competition-factory';
+
+const { POLICY_SANCTIONING_GENERIC } = fixtures.policies;
 ```
 
 ### ITF World Tennis Tour
@@ -117,7 +122,7 @@ import { POLICY_SANCTIONING_GENERIC } from 'tods-competition-factory/fixtures/po
 6 tiers (M15/W15 through W100). Endorsement required. Anti-corruption and safeguarding required. Lead times: 16 weeks (M15-W50), 21 weeks (W75-W100). 9-week no-change window.
 
 ```js
-import { POLICY_SANCTIONING_ITF } from 'tods-competition-factory/fixtures/policies/POLICY_SANCTIONING_ITF';
+import { POLICY_SANCTIONING_ITF } from '@courthive/competition-catalogue';
 ```
 
 ### USTA
@@ -125,7 +130,7 @@ import { POLICY_SANCTIONING_ITF } from 'tods-competition-factory/fixtures/polici
 7 levels (Level 7 local through Level 1 national). Safeguarding required. Progressive prerequisites (must run lower-tier events before advancing). TD/Referee cannot be same person at Level 5+. Minimum participant thresholds at higher levels.
 
 ```js
-import { POLICY_SANCTIONING_USTA } from 'tods-competition-factory/fixtures/policies/POLICY_SANCTIONING_USTA';
+import { POLICY_SANCTIONING_USTA } from '@courthive/competition-catalogue';
 ```
 
 ## Policy Versioning

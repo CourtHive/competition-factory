@@ -1,4 +1,3 @@
-import { tieFormatConstants } from '@courthive/competition-catalogue';
 import tournamentEngine from '@Engines/syncEngine';
 import { mocksEngine } from '../../../..';
 import { expect, test } from 'vitest';
@@ -7,43 +6,21 @@ import { expect, test } from 'vitest';
 import { MALE } from '@Constants/genderConstants';
 import { TEAM } from '@Constants/eventConstants';
 
-const { DOMINANT_DUO } = tieFormatConstants;
-
-test('it can use tieFormatName in addEvent', () => {
+test('hydrateCollections gives the default TEAM format the event category and gender', () => {
   const category = { ageCategoryCode: 'U18' };
-  const participantsCount = 8;
   const gender = MALE;
 
-  const {
-    eventIds: [eventId],
-    drawIds: [drawId],
-    tournamentRecord,
-  } = mocksEngine.generateTournamentRecord({
-    participantsProfile: { participantType: TEAM, participantsCount },
-    eventProfiles: [
-      {
-        drawProfiles: [{ drawSize: 16 }],
-        eventType: TEAM,
-        category,
-        gender,
-      },
-    ],
+  mocksEngine.generateTournamentRecord({
+    participantsProfile: { participantType: TEAM, participantsCount: 8 },
+    setState: true,
   });
-
-  let result = tournamentEngine.setState(tournamentRecord);
+  // an event with no tieFormat: its draw takes the default TEAM format, which the factory builds
+  let result: any = tournamentEngine.addEvent({ event: { eventType: TEAM, category, gender } });
   expect(result.success).toEqual(true);
+  const { eventId } = result.event;
 
-  result = tournamentEngine.deleteDrawDefinitions({
-    drawIds: [drawId],
-  });
+  result = tournamentEngine.generateDrawDefinition({ hydrateCollections: true, drawSize: 8, eventId });
   expect(result.success).toEqual(true);
-
-  result = tournamentEngine.generateDrawDefinition({
-    tieFormatName: DOMINANT_DUO,
-    hydrateCollections: true,
-    drawSize: 16,
-    eventId,
-  });
 
   for (const def of result.drawDefinition.tieFormat.collectionDefinitions) {
     expect(def.category).toEqual(category);

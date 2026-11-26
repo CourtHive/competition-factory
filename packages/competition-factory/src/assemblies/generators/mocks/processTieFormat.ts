@@ -1,4 +1,3 @@
-import { catalogueNameWarned, warnCatalogueName } from '@Tools/catalogueNameWarnings';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { coercedGender } from '@Helpers/coercedGender';
@@ -12,7 +11,7 @@ import { FEMALE, MIXED, OTHER, MALE, ANY } from '@Constants/genderConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 
 export function processTieFormat(params) {
-  const { alternatesCount = 0, tieFormatName, drawSize } = params;
+  const { alternatesCount = 0, drawSize } = params;
 
   let maxDoublesCount = 0,
     maxSinglesCount = 0;
@@ -23,9 +22,7 @@ export function processTieFormat(params) {
   const categories = {};
   const genders = { [MALE]: 0, [FEMALE]: 0, [MIXED]: 0, [OTHER]: 0, [ANY]: 0 };
 
-  if (!catalogueNameWarned.mocksProfile && !isObject(params.tieFormat) && tieFormatName)
-    warnCatalogueName('mocksProfile', tieFormatName);
-  const tieFormat = isObject(params.tieFormat) ? params.tieFormat : tieFormatDefaults({ namedFormat: tieFormatName });
+  const tieFormat = isObject(params.tieFormat) ? params.tieFormat : tieFormatDefaults();
 
   tieFormat?.collectionDefinitions?.filter(Boolean).forEach((collectionDefinition) => {
     const { category, collectionId, matchUpType, matchUpCount, gender } = collectionDefinition;

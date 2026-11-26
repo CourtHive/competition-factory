@@ -1,4 +1,5 @@
 import { CARRIED, compareUndirectedWinner, exited, retired, won } from '@Tests/testHarness/outcome/directionFixtures';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
 import { describe, it, vi } from 'vitest';
 
 // constants and types
@@ -97,7 +98,7 @@ const backdrawFinals = (eventType?: string) =>
             drawProfile: {
               drawType: DOUBLE_ELIMINATION,
               drawSize,
-              ...(eventType ? { eventType, tieFormatName: 'USTA_COLLEGE' } : {}),
+              ...(eventType ? { eventType, tieFormat: resolveTieFormat('USTA_COLLEGE') } : {}),
             },
             setup: rounds.flatMap(([structureName, roundNumber, count]) =>
               round(structureName, roundNumber, count, setupSide),
@@ -118,7 +119,7 @@ const mainFinals = (eventType?: string) =>
           drawProfile: {
             drawType: DOUBLE_ELIMINATION,
             drawSize,
-            ...(eventType ? { eventType, tieFormatName: 'USTA_COLLEGE' } : {}),
+            ...(eventType ? { eventType, tieFormat: resolveTieFormat('USTA_COLLEGE') } : {}),
           },
           setup: [
             ...rounds.flatMap(([structureName, roundNumber, count]) => round(structureName, roundNumber, count)),

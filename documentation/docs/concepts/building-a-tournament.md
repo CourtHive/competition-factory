@@ -144,9 +144,8 @@ the call writes nothing:
 1. No tournament or no `event`: `MISSING_TOURNAMENT_RECORD`, `MISSING_EVENT` (`INVALID_VALUES` when not an object).
 2. The event has entries or draws: `INVALID_VALUES`, `info: 'entries/drawDefinitions cannot exist'` (empty arrays
    pass).
-3. TEAM with a `tieFormat` that does not validate: `INVALID_TIE_FORMAT`. TEAM with a `tieFormatName` that is not a
-   named format (`fixtures.tieFormats`, which lists every `tieFormatConstants` name): `INVALID_VALUES`. `STANDARD`,
-   the builder's fallback for a name it does not know, is not a named format.
+3. TEAM with a `tieFormat` that does not validate: `INVALID_TIE_FORMAT`. TEAM with a `tieFormatName` and neither a
+   `tieFormat` nor a `tieFormatId`: `INVALID_VALUES`. The factory holds no named formats, so a name selects nothing.
 4. The `eventId` (given or minted) is already an event's: `EVENT_EXISTS`.
 
 **What is written.** A new object, appended to `events` (created on the record if absent):
@@ -160,9 +159,7 @@ the call writes nothing:
   anything else is stored as given.
 - `discipline`, when a non-empty string: trimmed, upper-cased, runs of whitespace or `-` replaced by `_`.
 - TEAM with a `tieFormat`: a copy is stored, each collection without a `collectionId` given one (from `uuids`, taken
-  from the end, else minted), in order. TEAM with only a `tieFormatName`: the named format is stored as `tieFormat` and
-  `tieFormatName` stays; each collection id is taken from `uuids` (from the end), else minted, or
-  `"<eventId>-COL-<n>"` (the event's stored id) when the tournament or event is a mock.
+  from the end, else minted), in order. A `tieFormatName` beside it is stored as given, a label.
 - `eventId`, when absent, is minted, before any collection ids.
 - No timestamps on the event. The event's draws and their matchUps (none, for an event added before its draws) are
   stamped (§1.1), and, unless `suppressNotifications`, announced, whether or not anything subscribes.
@@ -420,8 +417,7 @@ ungrouped individuals included, as an AD_HOC doubles field relies on).
 Resolved 2026-10-30: a draw entry made under the
 default `suppressDuplicateEntries` for a participant already in the draw was reported as a duplicate and written
 anyway (a probe draw then refused automated positioning); it is now skipped, as `addDrawEntry` and the flight path
-skip it. `INTENNSE_2026` had a constant, a template and a JSON but no `fixtures.tieFormats` entry, so `addEvent` alone
-refused it; it is now published, and `STANDARD` (the fallback, not a named format) is still refused.
+skip it.
 
 Resolved 2026-10-30: the factory stamp goes only to the records a call modified (it went to every loaded record,
 so a record merely loaded beside a written one claimed to have been written); a notice that only reports

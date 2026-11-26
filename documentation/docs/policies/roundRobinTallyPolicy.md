@@ -325,8 +325,8 @@ const policy = POLICY_ROUND_ROBIN_TALLY_DEFAULT[POLICY_TYPE_ROUND_ROBIN_TALLY];
 **Junior Team Tennis format:**
 
 ```javascript
+import { POLICY_ROUND_ROBIN_TALLY_JTT } from '@courthive/competition-catalogue';
 import { fixtures } from 'tods-competition-factory';
-const { POLICY_ROUND_ROBIN_TALLY_JTT } = fixtures.policies;
 
 // {
 //   policyName: 'JTT Round Robin Tally',
@@ -354,8 +354,8 @@ const { POLICY_ROUND_ROBIN_TALLY_JTT } = fixtures.policies;
 **Tournament of Champions format:**
 
 ```javascript
+import { POLICY_ROUND_ROBIN_TALLY_TOC } from '@courthive/competition-catalogue';
 import { fixtures } from 'tods-competition-factory';
-const { POLICY_ROUND_ROBIN_TALLY_TOC } = fixtures.policies;
 
 // {
 //   policyName: 'TOC Round Robin Tally',
@@ -378,6 +378,9 @@ const { POLICY_ROUND_ROBIN_TALLY_TOC } = fixtures.policies;
 ---
 
 ### USTA League Championship Policy
+
+The standings presets in this section and the ones below are published by the catalogue package, `@courthive/competition-catalogue`.
+The factory holds `POLICY_ROUND_ROBIN_TALLY_DEFAULT`.
 
 `POLICY_ROUND_ROBIN_TALLY_USTA_LEAGUE`: the USTA League championship tie procedure as copied into section regulations
 (USTA/Midwest Section 2026, Combo section M):

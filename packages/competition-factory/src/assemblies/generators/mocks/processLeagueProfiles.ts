@@ -1,8 +1,7 @@
 import { generateDrawDefinition } from '@Generators/drawDefinitions/generateDrawDefinition/generateDrawDefinition';
-import { catalogueNameWarned, warnCatalogueName } from '@Tools/catalogueNameWarnings';
-import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { generateVenues } from '@Mutate/venues/generateVenues';
 import { generateParticipants } from './generateParticipants';
+import { withMockCollectionIds } from './mockCollectionIds';
 import { mockLeagueTieFormat } from './mockLeagueTieFormat';
 import { genParticipantId } from './genParticipantId';
 import { processTieFormat } from './processTieFormat';
@@ -47,7 +46,6 @@ export function processLeagueProfiles(params) {
   for (const leagueProfile of leagueProfiles) {
     const entries: Entry[] = [];
     const {
-      tieFormatName,
       teamProfiles = [],
       teamsCount = 0,
       // weekdays,
@@ -60,19 +58,12 @@ export function processLeagueProfiles(params) {
     const eventId = leagueProfile.leagueId ?? leagueProfile.eventId ?? uuids?.pop() ?? UUID(undefined, random);
     eventIds.push(eventId);
 
-    if (!catalogueNameWarned.mocksProfile && !isObject(leagueProfile.tieFormat) && tieFormatName)
-      warnCatalogueName('mocksProfile', tieFormatName);
-    // use tieFormat or tieFormatName to generate determine number of individualParticipants per team;
-    // a profile naming neither gets the mocks' own concrete default, not a catalogue lookup
+    // the tieFormat sets the number of individualParticipants per team; a profile giving none gets the mocks' own
+    // concrete default
     const tieFormat: TieFormat =
-      (isObject(leagueProfile.tieFormat) && leagueProfile.tieFormat) ||
-      (tieFormatName === undefined
-        ? mockLeagueTieFormat({ eventId, isMock: params.isMock })
-        : tieFormatDefaults({
-            event: { eventId, category, gender },
-            namedFormat: tieFormatName,
-            isMock: params.isMock,
-          })) ||
+      (isObject(leagueProfile.tieFormat) &&
+        withMockCollectionIds(leagueProfile.tieFormat, { eventId, isMock: params.isMock })) ||
+      mockLeagueTieFormat({ eventId, isMock: params.isMock }) ||
       undefined;
 
     if (!tieFormat) return { error: MISSING_TIE_FORMAT };

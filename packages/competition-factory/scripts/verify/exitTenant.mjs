@@ -52,7 +52,6 @@ const NEEDLE = 'matchUpStatusCodes';
 const ALLOWED = {
   // the tenant that stays: the policy's code vocabulary
   'fixtures/policies/POLICY_SCORING_DEFAULT.ts': 'POLICY',
-  'fixtures/policies/POLICY_SCORING_USTA.ts': 'POLICY',
   'fixtures/scoring/outcomes/toBePlayed.ts': 'WRITE — the blanking fixture',
   'types/tournamentTypes.ts': 'POLICY — the published field and its element union',
 

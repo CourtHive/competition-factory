@@ -92,8 +92,9 @@ full semantics and how it differs from [`disableTieAutoCalc`](/docs/governors/ma
 
 ### Named Tie Formats
 
-Federation formats ship as fixtures (`fixtures.tieFormats.COLLEGE_DEFAULT`, `USTA_COLLEGE`, `COLLEGE_D3`,
-`LAVER_CUP`, …) and are also selectable by name wherever a `tieFormatName` is accepted.
+Federation and league formats (`COLLEGE_DEFAULT`, `USTA_COLLEGE`, `COLLEGE_D3`, `LAVER_CUP`, …) are published by the
+catalogue package, `@courthive/competition-catalogue`, not by the factory. The factory resolves no names: pass the
+format as a `tieFormat` object, for example `resolveTieFormat('USTA_COLLEGE')` from the catalogue package.
 
 `valueGoal` is the value at which a tie is **clinched**, so for a straightforward format it is the majority
 of the value the format can award — one more than half. The college formats show why the distinction
@@ -116,7 +117,7 @@ deliberately set a higher bar, and `TEAM_DOUBLES_3_AGGREGATION`, `USTA_TOC` and 
 
 ### Collection identity
 
-The published fixtures carry **no `collectionId`** — and cannot. A `collectionId` identifies a collection
+The published formats carry **no `collectionId`** — and cannot. A `collectionId` identifies a collection
 _instance_ within a record, and matchUps reference it; a shared fixture holding one would hand every record
 that used it the same collection identities.
 
@@ -124,8 +125,9 @@ The factory therefore **mints collectionIds when a tieFormat is attached** — o
 passed (often the shared fixture itself) is never stamped. Consuming a fixture directly is safe:
 
 ```js
+import { resolveTieFormat } from '@courthive/competition-catalogue';
 const { event } = engine.addEvent({
-  event: { eventName: 'Dual', eventType: TEAM, tieFormat: fixtures.tieFormats.USTA_COLLEGE },
+  event: { eventName: 'Dual', eventType: TEAM, tieFormat: resolveTieFormat('USTA_COLLEGE') },
 });
 // event.tieFormat.collectionDefinitions each carry a freshly minted collectionId
 ```

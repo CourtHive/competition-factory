@@ -1,8 +1,8 @@
 import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
-import { tieFormatConstants } from '@courthive/competition-catalogue';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
@@ -6027,7 +6027,7 @@ export const PLAIN_BYE_ARRIVALS: [string, Scenario][] = PLAIN_BYE_RECIPES.flatMa
                   drawType,
                   drawSize,
                   participantsCount,
-                  ...(team ? { eventType: 'TEAM', tieFormatName: 'USTA_COLLEGE' } : {}),
+                  ...(team ? { eventType: 'TEAM', tieFormat: resolveTieFormat('USTA_COLLEGE') } : {}),
                 },
                 ...(policyOff ? { policyDefinitions: POLICY_OFF } : {}),
                 steps: [
@@ -6126,7 +6126,13 @@ export const HELD_BYE_TEAMS = HELD_BYE_RECIPES.filter(
   ([1, 2] as const).flatMap((side) =>
     ['correct', 'undecide', 'clear control'].map((action) => ({
       label: `C21 TEAM ${drawType} ${participantsCount}/${drawSize} R${roundNumber}/${roundPosition} side ${side}: ${action}`,
-      drawProfile: { drawType, drawSize, participantsCount, eventType: 'TEAM', tieFormatName: 'USTA_COLLEGE' },
+      drawProfile: {
+        drawType,
+        drawSize,
+        participantsCount,
+        eventType: 'TEAM',
+        tieFormat: resolveTieFormat('USTA_COLLEGE'),
+      },
       target: { structureName: [COMPASS, OLYMPIC].includes(drawType) ? 'East' : 'Main', roundNumber, roundPosition },
       side,
       action,
@@ -6214,7 +6220,7 @@ export function prepareUnreachedWinner(
     drawType,
     drawSize,
     participantsCount,
-    ...(team ? { eventType: 'TEAM', tieFormatName: 'USTA_COLLEGE' } : {}),
+    ...(team ? { eventType: 'TEAM', tieFormat: resolveTieFormat('USTA_COLLEGE') } : {}),
   };
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
   setClock('2026-10-25T00:00:00.000Z');
@@ -6388,7 +6394,7 @@ export const TEAM_AWARD_NOTICE_CASES: TeamAwardNoticeCase[] = [
           drawSize,
           participantsCount,
           eventType: 'TEAM',
-          tieFormatName: DOMINANT_DUO,
+          tieFormat: resolveTieFormat(DOMINANT_DUO),
         },
         nonRandom,
         setup,
@@ -6406,7 +6412,7 @@ export const TEAM_AWARD_NOTICE_CASES: TeamAwardNoticeCase[] = [
       drawSize,
       participantsCount,
       eventType: 'TEAM',
-      tieFormatName: DOMINANT_DUO,
+      tieFormat: resolveTieFormat(DOMINANT_DUO),
     },
     nonRandom,
     setup,
@@ -6425,7 +6431,13 @@ export const TEAM_AWARD_NOTICE_CASES: TeamAwardNoticeCase[] = [
     ].flatMap(([drawSize, participantsCount]) =>
       [false, true].map((lineUps) => ({
         label: `C24N initial seat ${drawType} ${participantsCount}/${drawSize}, lineups ${lineUps}`,
-        drawProfile: { drawType, drawSize, participantsCount, eventType: 'TEAM', tieFormatName: USTA_COLLEGE },
+        drawProfile: {
+          drawType,
+          drawSize,
+          participantsCount,
+          eventType: 'TEAM',
+          tieFormat: resolveTieFormat(USTA_COLLEGE),
+        },
         nonRandom: 1,
         setup: [],
         lineUps,
@@ -6446,7 +6458,7 @@ export const TEAM_AWARD_NOTICE_CASES: TeamAwardNoticeCase[] = [
               drawSize,
               participantsCount: drawSize,
               eventType: 'TEAM',
-              tieFormatName: DOMINANT_DUO,
+              tieFormat: resolveTieFormat(DOMINANT_DUO),
             },
             nonRandom: 1,
             setup: [
@@ -6692,7 +6704,11 @@ export function prepareHeldCarryCorrection(
   setSubscriptions({ subscriptions: {} });
   mocksEngine.generateTournamentRecord({
     drawProfiles: [
-      { ...profile, drawId: 'd', ...(profile.eventType === 'TEAM' ? { tieFormatName: USTA_COLLEGE } : {}) },
+      {
+        ...profile,
+        drawId: 'd',
+        ...(profile.eventType === 'TEAM' ? { tieFormat: resolveTieFormat(USTA_COLLEGE) } : {}),
+      },
     ],
     nonRandom: 1,
     setState: true,
@@ -6813,7 +6829,7 @@ export function assignmentViewFixture(drawType: string, eventType: string, polic
     eventType,
     drawSize: 16,
     participantsCount: 11,
-    ...(eventType === 'TEAM' ? { tieFormatName: USTA_COLLEGE } : {}),
+    ...(eventType === 'TEAM' ? { tieFormat: resolveTieFormat(USTA_COLLEGE) } : {}),
   };
   mocksEngine.generateTournamentRecord({
     drawProfiles: [{ ...drawProfile, drawId: 'd' }],
@@ -6883,7 +6899,7 @@ export function prepareNamedByeAdvance(
     drawSize: 8,
     participantsCount,
     eventType,
-    ...(eventType === 'TEAM' ? { tieFormatName: USTA_COLLEGE } : {}),
+    ...(eventType === 'TEAM' ? { tieFormat: resolveTieFormat(USTA_COLLEGE) } : {}),
   };
   mocksEngine.generateTournamentRecord({
     drawProfiles: [{ ...drawProfile, drawId: 'd' }],
@@ -7042,7 +7058,7 @@ export function prepareC26Seat(recipe: C26SeatRecipe) {
     eventType,
     drawSize: size,
     participantsCount: size,
-    ...(eventType === 'TEAM' ? { tieFormatName: USTA_COLLEGE } : {}),
+    ...(eventType === 'TEAM' ? { tieFormat: resolveTieFormat(USTA_COLLEGE) } : {}),
   };
   mocksEngine.generateTournamentRecord({
     drawProfiles: [{ ...drawProfile, drawId: 'd' }],
@@ -7275,7 +7291,7 @@ export function prepareC26EarlierBye(eventType: string, carrierStatus: string, r
     drawSize: 8,
     participantsCount: 5,
     eventType,
-    ...(eventType === 'TEAM' ? { tieFormatName: USTA_COLLEGE } : {}),
+    ...(eventType === 'TEAM' ? { tieFormat: resolveTieFormat(USTA_COLLEGE) } : {}),
   };
   mocksEngine.generateTournamentRecord({
     drawProfiles: [{ ...drawProfile, drawId: 'd' }],

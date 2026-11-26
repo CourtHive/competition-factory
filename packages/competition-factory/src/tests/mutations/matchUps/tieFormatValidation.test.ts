@@ -1,4 +1,4 @@
-import { tieFormatConstants, tieFormats } from '@courthive/competition-catalogue';
+import { resolveTieFormat, tieFormatConstants, tieFormats } from '@courthive/competition-catalogue';
 import { namedTieFormat } from '@Tests/testHarness/namedTieFormat';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { mocksEngine } from '@Assemblies/engines/mock';
@@ -163,12 +163,12 @@ it('can validate tieFormat fixtures', () => {
   expect(result.valid).toEqual(true);
 });
 
-it('can use tieFormatName to generate TEAM events', () => {
+it('generates TEAM events from a catalogue tieFormat', () => {
   const {
     eventIds: [eventId],
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
   });
 
   tournamentEngine.setState(tournamentRecord);

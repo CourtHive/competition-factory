@@ -359,12 +359,6 @@ const {
 
 ### Competition Format Constants
 
-**tieFormatConstants** - Team match tie format values
-
-```js
-const { AGGREGATE, TEAM_TIEBREAK, WIN_RATIO } = factoryConstants.tieFormatConstants;
-```
-
 **surfaceConstants** - Court surface types
 
 ```js
@@ -522,22 +516,12 @@ default scoring format) live in the discipline profile registry, resolved with
 **competitionFormatConstants** - Competition format profiles and timing scopes
 
 ```js
-const {
-  PICKLEBALL_STANDARD,
-  INTENNSE_STANDARD,
-  TENNIS_STANDARD,
-  MATCHUP,
-  SET,
-  HALF,
-  SEGMENT,
-  BETWEEN_GAMES,
-  BETWEEN_POINTS,
-  ANY,
-} = factoryConstants.competitionFormatConstants;
+const { PICKLEBALL_STANDARD, TENNIS_STANDARD, MATCHUP, SET, HALF, SEGMENT, BETWEEN_GAMES, BETWEEN_POINTS, ANY } =
+  factoryConstants.competitionFormatConstants;
 ```
 
-`PICKLEBALL_STANDARD` / `INTENNSE_STANDARD` / `TENNIS_STANDARD` name format profiles
-(`fixtures.competitionFormats`); the remainder are the scopes a timing or interruption rule can
+`PICKLEBALL_STANDARD` / `TENNIS_STANDARD` name format profiles (`fixtures.competitionFormats`; league profiles are
+published by `@courthive/competition-catalogue`); the remainder are the scopes a timing or interruption rule can
 apply to. A profile carries what a `matchUpFormat` code cannot: server rule, timeouts, penalties and
 the sport's point vocabulary.
 

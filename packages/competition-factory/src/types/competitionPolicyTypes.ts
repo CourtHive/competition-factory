@@ -38,11 +38,11 @@ export type CompetitionPolicy = {
       /** without a ratingsPolicy: the logistic spread, else POLICY_RATINGS_COMPETITION_FORM's 400 */
       logisticScale?: number;
       /**
-       * a policy inline or, deprecated, a ratings preset by name (stored by value when the policy is attached), with a
-       * CONSTANT K; it sets the expectation, K and actual result
+       * a policy inline, with a CONSTANT K; it sets the expectation, K and actual result. A string (a preset name an
+       * earlier record may hold) selects nothing, and the form rating refuses it by name
        */
       ratingsPolicy?: string | RatingsPolicy;
-      /** the preset name `ratingsPolicy` was attached by: a label only, never looked up */
+      /** the preset name an earlier record's `ratingsPolicy` was attached by: a label only, never looked up */
       ratingsPolicyName?: string;
     };
 

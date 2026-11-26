@@ -460,36 +460,78 @@ Status reasons travel side-keyed:
 ### Packaging
 
 - **The package is `competition-factory`.** `tods-competition-factory` 7.x stays installable and is not maintained after 8.0.0.
-- **Named catalogue formats and provider policies move to a separate resource package.** Defaults the engine reads stay in the core. The resource package is named in the 8.0.0 release notes.
+- **Named catalogue formats and organisation policies move to `@courthive/competition-catalogue`.** The factory keeps its own defaults and the provider-neutral presets. See [The resource catalogue](#the-resource-catalogue).
+
+### The resource catalogue
+
+The named tie formats, the organisation policies, the ratings presets and the league competition format leave the
+factory for a separate package, `@courthive/competition-catalogue`, which versions independently (#6663). It holds plain data
+and imports nothing from the engine:
+
+```js
+import {
+  POLICY_SCORING_USTA,
+  POLICY_SEEDING_ITF,
+  ratingsPresets,
+  resolveTieFormat,
+  tieFormatConstants,
+  tieFormats,
+} from '@courthive/competition-catalogue';
+```
+
+| Removed from the factory                                                                                                                                                                                                                                                                                                                                                                         | In the catalogue package                                                      |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| `fixtures.tieFormats` (19 named tie formats)                                                                                                                                                                                                                                                                                                                                                     | `tieFormats`; `resolveTieFormat(name)` returns a copy without `collectionId`s |
+| `tieFormatConstants` (the 19 names)                                                                                                                                                                                                                                                                                                                                                              | `tieFormatConstants`                                                          |
+| the organisation members of `fixtures.policies`: ranking points (ATP, WTA, ITF), ratings presets, standings presets (FIBA, FIVB, JTT, MLS, Premier League, TOC, USTA League), `POLICY_SANCTIONING_ITF`, `POLICY_SANCTIONING_USTA`, `POLICY_SCORING_USTA`, `POLICY_SEEDING_ITF`, `POLICY_PROGRESSION_USTA`, the officiating evaluation policies and `POLICY_OFFICIATING_CONFLICT_OF_INTEREST_ITF` | each under its own name, and all of them in `policies`                        |
+| the ratings presets by name                                                                                                                                                                                                                                                                                                                                                                      | `ratingsPresets`, each a bare ratings policy                                  |
+| `INTENNSE_STANDARD` (`fixtures.competitionFormats`, `competitionFormatConstants`)                                                                                                                                                                                                                                                                                                                | `competitionFormats`, `competitionFormatConstants`                            |
+
+The factory keeps every policy it falls back to and the provider-neutral presets in `fixtures.policies`
+(`POLICY_SEEDING_DEFAULT`, `POLICY_SCORING_DEFAULT`, `POLICY_RATINGS_DEFAULT`, `POLICY_RATINGS_COMPETITION_FORM`,
+`POLICY_SANCTIONING_GENERIC`, `POLICY_RANKING_POINTS_BASIC`, `POLICY_OFFICIATING_CONFLICT_OF_INTEREST` and the others),
+`PICKLEBALL_STANDARD` and `TENNIS_STANDARD`.
 
 ### Named catalogue inputs
 
-Named catalogue entries (the named tie formats such as `COLLEGE_D3` or `USTA_GOLD_TEAM_CHALLENGE`, and the ratings
-presets such as `POLICY_RATINGS_ELO_538_NHL`) move to the resource package in 8.0.0, so the core no longer resolves a
-name to one. These inputs are deprecated in 7.x:
+The factory resolves no names: a caller passes the `tieFormat` or policy object. Each input that named a catalogue
+entry in 7.x (deprecated there, with a one-time warning) is removed:
 
 | Input                                                                                                 | 8.0.0 replacement                                           |
 | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
 | `addEvent` `event.tieFormatName`                                                                      | `event.tieFormat`, a `tieFormat` object                     |
 | `generateDrawDefinition` `tieFormatName`, when the event holds no tieFormat of that name              | `tieFormat`                                                 |
-| `generateEventsFromTieFormat` `tieFormatName`                                                         | `tieFormat`                                                 |
+| `generateEventsFromTieFormat` `tieFormatName`                                                         | `tieFormat`, now required                                   |
 | a mocksEngine profile's `tieFormatName` (draw, event, league and season profiles)                     | the profile's `tieFormat`                                   |
 | an `EventBuilder` `team(name)` or `tieFormat(name)` string                                            | `team(tieFormat)` or `tieFormat(tieFormat)` with the object |
 | a `ratingsPolicy` preset name, in a `competitionFormat` or a competition policy's `dynamicFormRating` | the ratings policy object                                   |
 
-In 7.x each name still resolves, and the behaviour is unchanged. The first use of each input in a process emits one
-warning; later uses do not. Under Node it is a `DeprecationWarning` with the code `FACTORY_CATALOGUE_NAME`, so
-`--no-deprecation`, `NODE_NO_WARNINGS` and `process.on('warning')` apply to it; elsewhere it is a `console.warn`.
-A `tieFormatName` that matches a tieFormat the event already holds is a label, not a catalogue lookup, and does not
-warn.
+A name passed where the object belongs is refused, not replaced by a default:
 
-Stored records read unchanged. Every stored TEAM tie carries its full `tieFormat`, and a `tieFormatName` on a stored
-record is a label. From 7.x, a preset name is stored by value when it is attached: a `competitionFormat` (`addEvent`,
-`modifyEvent`) and a competition policy's `dynamicFormRating` (`attachPolicies`) store the preset's full policy as
-`ratingsPolicy`, and keep the name beside it as `ratingsPolicyName`, a label. Such a record rates in 8.0.0 without the
-preset. A record stored earlier with only a preset name rates in 7.x; to rate it in 8.0.0, attach the policy object
-(`modifyEvent` with the `competitionFormat`, or `attachPolicies` with `allowReplacement`), or pass `ratingsPolicy` to
-`generateDynamicRatings`.
+- `addEvent` refuses a TEAM event that has a `tieFormatName` and neither a `tieFormat` nor a `tieFormatId`, with
+  `INVALID_VALUES`. A `tieFormatName` beside a `tieFormat` is stored as given, a label.
+- `generateDrawDefinition` still selects, by `tieFormatName`, one of the tie formats the event holds (its
+  `tieFormats[]`, then its `tieFormat`). A name the event does not hold is refused with `INVALID_VALUES`.
+- `generateEventsFromTieFormat` without a `tieFormat` is refused with `INVALID_VALUES`.
+- the mocksEngine refuses a profile carrying `tieFormatName` as an unknown key (`INVALID_VALUES`).
+- a rating that reads a preset name is refused with `INVALID_VALUES`, naming it in `info` and `context.ratingsPolicy`.
+  Attaching a `competitionFormat` or competition policy with a name stores it as given; nothing looks it up.
+
+`hydrateCollections` applies to the default TEAM format, which the factory builds. A caller that passes a `tieFormat`
+sets `category` and `gender` on its collections.
+
+**Stored records read unchanged.** Every stored TEAM tie carries its full `tieFormat`, and a `tieFormatName` on a stored
+record is a label: no reader consults a catalogue, so a record whose format the catalogue lacks reads, scores and
+rates as before. A ratings preset that 7.x stored by value (its full policy as `ratingsPolicy`, the name beside it as
+`ratingsPolicyName`) rates without the catalogue. A record stored before that with only a preset name is read
+unchanged; to rate it, attach the policy object (`modifyEvent` with the `competitionFormat`, or `attachPolicies` with
+`allowReplacement`), or pass `ratingsPolicy` to `generateDynamicRatings`.
+
+**For an application that offers named formats or policies** (a draw form that lists tie formats, a policy picker,
+a demo or mock mode): read the entries from the catalogue package, or from the host that serves your providers'
+approved formats and policies, and pass the chosen object. An application that derives a list from
+`fixtures.policies` (every `POLICY_SANCTIONING_*`, for example) finds only the factory's own entries there; add the
+catalogue's `policies` to the list where it should still offer them.
 
 ### The outcome pipeline selector is removed
 

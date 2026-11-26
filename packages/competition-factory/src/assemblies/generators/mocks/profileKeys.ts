@@ -175,7 +175,6 @@ export const DRAW_PROFILE_KEYS = [
   'teamNames',
   'tieFormat',
   'tieFormatId',
-  'tieFormatName',
   'timeItems',
   'tournamentAlternates',
   'uniqueParticipants',
@@ -210,7 +209,6 @@ export const EVENT_PROFILE_KEYS = [
   'scaledParticipantsCount',
   'surfaceCategory',
   'tieFormat',
-  'tieFormatName',
   'timeItems',
   'uuids',
 ] as const;
@@ -248,7 +246,6 @@ export const LEAGUE_PROFILE_KEYS = [
   'teamProfiles',
   'teamsCount',
   'tieFormat',
-  'tieFormatName',
 ] as const;
 export const PARTICIPANTS_PROFILE_KEYS = [
   'addressProps',

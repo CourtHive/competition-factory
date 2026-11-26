@@ -1,3 +1,4 @@
+import { resolveTieFormat } from '@courthive/competition-catalogue';
 import { getSeasonMovement } from '@Query/season/getSeasonMovement';
 import { planNextPeriod } from '@Query/season/planNextPeriod';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -66,7 +67,7 @@ describe('planNextPeriod proposal targets (SEASON-101)', () => {
           { tierId: 'box-1', tierValue: 'Box 1', teamsCount: 4 },
           { tierId: 'box-2', tierValue: 'Box 2', teamsCount: 4 },
         ],
-        tieFormatName: 'DOMINANT_DUO',
+        tieFormat: resolveTieFormat('DOMINANT_DUO'),
         periods: [{}, {}],
       },
     });

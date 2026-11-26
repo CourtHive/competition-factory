@@ -63,7 +63,7 @@ export function validateCollectionDefinition({
   } = collectionDefinition;
 
   if (checkCollectionIds && typeof collectionId !== 'string') {
-    // A published `fixtures.tieFormats.*` object carries no collectionIds — it cannot, since a
+    // A published tie format carries no collectionIds — it cannot, since a
     // collectionId identifies a collection INSTANCE within a record. Say so, rather than leaving the
     // caller to infer it from a type complaint.
     errors.push(
