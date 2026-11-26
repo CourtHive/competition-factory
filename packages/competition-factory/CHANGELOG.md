@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## [7.50.0](https://github.com/CourtHive/competition-factory/compare/v7.49.0...v7.50.0) (2026-11-26)
+
+### Highlights
+
+- **A bulk call and a queue fail differently.** A bulk call (`bulkMatchUpStatusUpdate`, `deleteCourts`, `resetAdHocMatchUps`) applies its items one by one: a refused item writes nothing, and the items before and after it are still applied. An `executionQueue` stops at a refused directive: later directives never run; without rollback the directives before it stay applied and are announced, and with `rollbackOnError: true` every directive is undone. See [A call, a bulk call's items, and a queue](https://courthive.github.io/competition-factory/docs/engines/mutation-engines#a-call-a-bulk-calls-items-and-a-queue).
 - `rollbackOnError` no longer copies the loaded records for a call, or a queue, that is one directive of a factory method that refuses before it writes: such a refusal has nothing to restore. Results are unchanged, `rolledBack: true` included. A queue of two or more directives, a bulk method (`bulkMatchUpStatusUpdate`, `deleteCourts`, `resetAdHocMatchUps`), a BYE placement (`assignDrawPositionBye`, `assignDrawPosition` with `bye: true`) and a custom method still take the snapshot. Without one, a method that throws partway through a write keeps its writes and returns `rolledBack: false`.
 - A rolled-back result claims no kept work. It carries `rolledBack: true`, on direct calls as on queues, and never `committed`; a bulk call's items that had succeeded are listed with `rolledBack: true` in place of `success`.
 - Inside an `executionQueue` without rollback, the directives that succeeded before a refusal now deliver their notices whatever the refusing directive, not only when it was a bulk call that committed some items. A queue whose first directive refuses still delivers nothing.
@@ -11,10 +16,37 @@
 - Committed work announces itself. A bulk mutation that commits some items and refuses another returns its error with `committed: true`, and with rollback off the engine now delivers the committed items' notices in the usual topic order instead of dropping them. Inside an `executionQueue` without rollback, such a directive also delivers the notices of the directives before it. Explicit rollback is unchanged: the whole call is restored and nothing is delivered.
 - Bulk mutations commit each successful item and return a result for every input in order. A refused item leaves its record unchanged, and later items are still attempted. `deleteCourts` returns `results`, one per `courtId`; its first refusal is still the call's `error`. Before, it stopped at the first refused court, so a refused court before a valid one left the valid court in place.
 - `addSchedulingProfileRound`, `deleteCourt` and `deleteCourts` decide every refusal before writing. A round naming a draw or structure the profile cannot hold no longer stays in the profile after the refusal, and a court scheduled in one linked record no longer leaves it deleted from another.
-- `scoreGovernor.ScoringEngine` accepts an optional `clock: () => string` for instance-specific ISO timestamps. Explicit action timestamps take precedence.
-- `tools.plainDate.isDateInPast(dateString, asOf?)` and `tools.generateTimeCode(index?, asOf?)` accept a Date or ISO date string. Omitted instants still use the Factory call clock in 7.x.
 
-- Forge previews run on private records. Bare and assembled sync engines keep immediate `dryRun` and `explain`. Previewing a custom method requires `registerPreviewMethod` on that engine. An unregistered custom method refuses the entire preview with `ERR_UNREGISTERED_PREVIEW_METHOD` before dispatch.
+
+### Features
+
+* **engines:** committed work in a refused bulk call delivers its notices ([a92e2ac](https://github.com/CourtHive/competition-factory/commit/a92e2ac93b6343733e6a3cdf14498a333a2dfc1a))
+* **outcome:** native double-elimination TEAM final line writes ([#6616](https://github.com/CourtHive/competition-factory/issues/6616)) ([d48b2a8](https://github.com/CourtHive/competition-factory/commit/d48b2a8faa761a7d4cae026b2decb7ede4139666))
+* **outcomes:** bulk outcomes and ad hoc resets commit per item, refusing before they write ([#6638](https://github.com/CourtHive/competition-factory/issues/6638)) ([5f0e7d3](https://github.com/CourtHive/competition-factory/commit/5f0e7d3e1e6e09da283b8441e0ac96d79e17f9d1))
+* **tools:** expose 54 stateless governor tools with per-domain subpaths ([#6624](https://github.com/CourtHive/competition-factory/issues/6624)) ([62caa81](https://github.com/CourtHive/competition-factory/commit/62caa8104688d0d847a91cd25b489fa8af5045fe))
+
+
+### Bug Fixes
+
+* **draws:** refuse an unknown tie format name in getDrawFormat; mocks use a concrete tie format ([#6642](https://github.com/CourtHive/competition-factory/issues/6642)) ([45a3613](https://github.com/CourtHive/competition-factory/commit/45a3613fe8cae5294b51af78dd1565db90136884))
+* **notices:** detect writes through read-only payloads behind a build-time flag ([#6627](https://github.com/CourtHive/competition-factory/issues/6627)) ([246b019](https://github.com/CourtHive/competition-factory/commit/246b019620aac4e1336db1bb9323aef31a84fc98))
+* **positions:** plan a public BYE placement before it writes ([0a9f367](https://github.com/CourtHive/competition-factory/commit/0a9f3676c58fe0f9e3e73c1714435aabb9bac221))
+* **scheduling, venues:** plan scheduling-profile rounds and court deletions before writing ([39316d1](https://github.com/CourtHive/competition-factory/commit/39316d1bf04e40633d7defa02c1b7d400bfdf8a3))
+* **scheduling:** one read-only schedule plan for every write mode ([2322431](https://github.com/CourtHive/competition-factory/commit/2322431d33780354ff416046607573fd7370abc6))
+* **team:** a winner on a level TEAM tie records how it was decided ([#6633](https://github.com/CourtHive/competition-factory/issues/6633)) ([2c0eeae](https://github.com/CourtHive/competition-factory/commit/2c0eeaea41fe57691cb2e2b26a4941628b1ca379))
+* **venues:** plan a venue edit whole before writing ([#6641](https://github.com/CourtHive/competition-factory/issues/6641)) ([371b61c](https://github.com/CourtHive/competition-factory/commit/371b61cf39e2e3931b751ffd88ab2a862671a40d))
+* **venues:** type modifyVenue's result as ResultType ([#6646](https://github.com/CourtHive/competition-factory/issues/6646)) ([399638c](https://github.com/CourtHive/competition-factory/commit/399638c8fe421c6e3ed6043bb772142bfdcba4f9))
+
+
+### Performance
+
+* **engines:** skip the rollback snapshot for a single directive that cannot partly commit ([#6649](https://github.com/CourtHive/competition-factory/issues/6649)) ([17db90a](https://github.com/CourtHive/competition-factory/commit/17db90ab6a58c87b0bee2e17a2c0f761ce5cdc0e))
+
+
+### Documentation
+
+* keep the agent guide self-contained and ignore CLAUDE.local.md ([#6647](https://github.com/CourtHive/competition-factory/issues/6647)) ([44768b7](https://github.com/CourtHive/competition-factory/commit/44768b7ad49bcf3aa101c7c9aaf46e1efb9b0109))
+* state rules plainly, without internal governance references; add verify:docs-provenance ([#6643](https://github.com/CourtHive/competition-factory/issues/6643)) ([c2f215a](https://github.com/CourtHive/competition-factory/commit/c2f215ab3376a7354f9f98e322fcbf0f5730c550))
 
 ## [7.49.0](https://github.com/CourtHive/competition-factory/compare/v7.48.0...v7.49.0) (2026-11-25)
 
