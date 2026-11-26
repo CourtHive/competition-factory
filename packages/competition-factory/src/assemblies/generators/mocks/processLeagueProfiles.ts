@@ -1,6 +1,6 @@
 import { generateDrawDefinition } from '@Generators/drawDefinitions/generateDrawDefinition/generateDrawDefinition';
 import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
-import { warnCatalogueName } from '@Global/catalogueNameWarnings';
+import { warnCatalogueName } from '@Tools/catalogueNameWarnings';
 import { generateVenues } from '@Mutate/venues/generateVenues';
 import { generateParticipants } from './generateParticipants';
 import { mockLeagueTieFormat } from './mockLeagueTieFormat';

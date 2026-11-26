@@ -7,7 +7,7 @@ import { eventGeneratesOwnParticipants } from './eventGeneratesOwnParticipants';
 import { generateEventParticipants } from './generateEventParticipants';
 import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { resolveCompletionOptions } from './resolveCompletionOptions';
-import { warnCatalogueName } from '@Global/catalogueNameWarnings';
+import { warnCatalogueName } from '@Tools/catalogueNameWarnings';
 import { addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { attachProfilePolicies } from './attachProfilePolicies';
 import { getParticipantId } from '@Functions/global/extractors';

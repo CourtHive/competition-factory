@@ -1,6 +1,6 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { addEventEntries } from '@Mutate/entries/addEventEntries';
-import { warnCatalogueName } from '@Global/catalogueNameWarnings';
+import { warnCatalogueName } from '@Tools/catalogueNameWarnings';
 import { withDraftWrites } from '@Global/state/withDraftWrites';
 import { coercedGender } from '@Helpers/coercedGender';
 import { isGendered } from '@Validators/isGendered';

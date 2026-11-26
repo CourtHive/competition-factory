@@ -1,7 +1,7 @@
 import { generateDrawDefinition } from '@Generators/drawDefinitions/generateDrawDefinition/generateDrawDefinition';
 import { completeDrawMatchUps } from '@Generators/simulation/completeDrawMatchUps';
+import { attributeCatalogueNames } from '@Tools/catalogueNameWarnings';
 import { resolveCompletionOptions } from './resolveCompletionOptions';
-import { attributeCatalogueNames } from '@Global/catalogueNameWarnings';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { isValidExtension } from '@Validators/isValidExtension';
 import { applyDefinedOutcomes } from './generateEventWithDraw';

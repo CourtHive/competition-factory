@@ -6,7 +6,7 @@ import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
-import { warnCatalogueName } from '@Global/catalogueNameWarnings';
+import { warnCatalogueName } from '@Tools/catalogueNameWarnings';
 import { normalizeDiscipline } from '@Tools/coercedDiscipline';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { normalizeGender } from '@Helpers/coercedGender';

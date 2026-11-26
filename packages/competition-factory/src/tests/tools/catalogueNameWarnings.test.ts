@@ -7,7 +7,7 @@ import {
   CATALOGUE_NAME_WARNING_CODE,
   resetCatalogueNameWarnings,
   warnCatalogueName,
-} from '@Global/catalogueNameWarnings';
+} from '@Tools/catalogueNameWarnings';
 
 // constants
 import { COLLEGE_D3, DOMINANT_DUO, USTA_GOLD_TEAM_CHALLENGE } from '@Constants/tieFormatConstants';

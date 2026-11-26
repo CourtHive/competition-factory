@@ -1,5 +1,5 @@
 import { ratingsPolicies } from '@Fixtures/policies/ratingsPolicies';
-import { warnCatalogueName } from '@Global/catalogueNameWarnings';
+import { warnCatalogueName } from '@Tools/catalogueNameWarnings';
 import { matchesPlayedK } from './ratingUpdate';
 
 // types

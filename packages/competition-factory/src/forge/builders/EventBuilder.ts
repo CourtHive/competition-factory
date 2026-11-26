@@ -14,7 +14,7 @@
  * executionQueue `pipe` mechanism to thread `event` and `drawDefinition`
  * results between steps without forcing the caller to materialize them.
  */
-import { attributeCatalogueNames, warnCatalogueName } from '@Global/catalogueNameWarnings';
+import { attributeCatalogueNames, warnCatalogueName } from '@Tools/catalogueNameWarnings';
 
 import { DOUBLES, HYBRID, SINGLES, TEAM } from '@Constants/eventConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';

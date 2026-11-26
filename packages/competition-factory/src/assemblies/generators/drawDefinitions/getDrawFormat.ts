@@ -1,7 +1,7 @@
 import tieFormatDefaults, { isNamedTieFormat } from '@Helpers/tieFormats/tieFormatDefaults';
 import { getObjectTieFormat } from '@Query/hierarchical/tieFormats/getObjectTieFormat';
 import { validateTieFormat } from '@Validators/validateTieFormat';
-import { warnCatalogueName } from '@Global/catalogueNameWarnings';
+import { warnCatalogueName } from '@Tools/catalogueNameWarnings';
 
 // constants and types
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';

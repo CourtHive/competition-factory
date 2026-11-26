@@ -1,12 +1,12 @@
 import { generateDrawDefinition } from '@Generators/drawDefinitions/generateDrawDefinition/generateDrawDefinition';
 import { drawMatic } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/drawMatic';
+import { attributeCatalogueNames, warnCatalogueName } from '@Tools/catalogueNameWarnings';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { completeDrawMatchUps } from '@Generators/simulation/completeDrawMatchUps';
 import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { getQualifyingEntryPlan } from '@Helpers/entries/getQualifyingEntryPlan';
 import { resolveCompletionOptions } from './resolveCompletionOptions';
-import { attributeCatalogueNames, warnCatalogueName } from '@Global/catalogueNameWarnings';
 import { addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { applyOutcomes } from '@Mutate/simulation/applyOutcomes';
 import { getParticipantId } from '@Functions/global/extractors';

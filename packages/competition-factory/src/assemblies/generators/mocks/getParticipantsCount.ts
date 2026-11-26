@@ -1,6 +1,6 @@
 import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { eventGeneratesOwnParticipants } from './eventGeneratesOwnParticipants';
-import { warnCatalogueName } from '@Global/catalogueNameWarnings';
+import { warnCatalogueName } from '@Tools/catalogueNameWarnings';
 import { processTieFormat } from './processTieFormat';
 
 // constants

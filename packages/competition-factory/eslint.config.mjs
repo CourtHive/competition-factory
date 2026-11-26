@@ -203,8 +203,8 @@ export default [
      */
     files: [
       'src/functions/global/globalLog.ts',
-      'src/global/catalogueNameWarnings.ts',
       'src/global/state/globalState.ts',
+      'src/tools/catalogueNameWarnings.ts',
       'src/examples/asyncEngine/asyncGlobalState.ts',
       'src/scoring/replay/mcpValidator.ts',
       'src/scoring/replay/pbpValidator.ts',
