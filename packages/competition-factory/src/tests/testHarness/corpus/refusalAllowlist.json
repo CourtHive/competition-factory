@@ -6,6 +6,7 @@
     "F-013": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-84c889669b97889b919b0db9782aa1f9d582c4002137ea41d036a4bd8e0c21b1",
     "F-014": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-6ca70d9c78e30736cbac87cf97189d8737db673dbcb28b24721f55386a94ce84",
     "F-007": "https://github.com/CourtHive/competition-factory/pull/6503",
+    "F-016-exit-walk": "A public BYE placement whose walk meets an exit keeps the writer: a loser seat filled ahead of its feeder, or (malformed) a repeated matchUpId past a resolved exit, refuses after the main writes (f016ExitWalkResidual.test.ts)",
     "cascadeWriteErrorsReachTheCaller": "Forced downstream write error",
     "reconcileDeciderReturnsItsError": "Injected reconciliation failure",
     "aSettleLoopAtItsBoundRefuses": "Artificially lowered settle limit",
@@ -26,6 +27,42 @@
         "error": "boom",
         "reason": "asyncWrapperContract",
         "paths": ["/tournamentName"]
+      }
+    ],
+    "src/tests/mutations/drawDefinitions/positionGovernor/f016ExitWalkResidual.test.ts::the exit walk keeps the writer, and its one well-formed late refusal > 1. a repeated matchUpId past a resolved exit: the diagnostic, after the writes, on a malformed record only": [
+      {
+        "method": "assignDrawPositionBye",
+        "error": "ERR_INVALID_MATCHUP: advancing from 13bd498b-6850-4be5-8653-2dffcfd817b4 (round 2) resolves to round 1 of the same structure; the record's matchUpIds are not unique",
+        "reason": "F-016-exit-walk",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/score",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/winningSide",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/0/bye",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
+      }
+    ],
+    "src/tests/mutations/drawDefinitions/positionGovernor/f016ExitWalkResidual.test.ts::the exit walk keeps the writer, and its one well-formed late refusal > 5. a loser seat filled through the public API is refused after the main writes": [
+      {
+        "method": "assignDrawPositionBye",
+        "error": "ERR_EXISTING_POSITION_ASSIGNMENT",
+        "reason": "F-016-exit-walk",
+        "paths": [
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
+          "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
+          "/events/0/drawDefinitions/0/structures/0/positionAssignments/0/bye",
+          "/events/0/drawDefinitions/0/structures/0/updatedAt",
+          "/events/0/drawDefinitions/0/updatedAt",
+          "/factory/timeStamp"
+        ]
       }
     ],
     "src/tests/mutations/drawDefinitions/rotatingPartnerEntries.test.ts::refuses rotating individuals in an ordinary draw in the same doubles event": [
