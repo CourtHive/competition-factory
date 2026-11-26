@@ -47,7 +47,7 @@ type ModifyVenueArgs = {
   venueId: string;
   force?: boolean;
 };
-export function modifyVenue(params: ModifyVenueArgs) {
+export function modifyVenue(params: ModifyVenueArgs): ResultType {
   const { modifications, venueId, force } = params;
 
   const tournamentRecords = resolveTournamentRecords(params);
