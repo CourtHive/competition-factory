@@ -417,27 +417,27 @@ the same array); a numeric string `flightNumber` is read as its number (it becam
 removed and the behaviour it never changed is stated (§4: every entry made with a `drawId` reaches the draw,
 ungrouped individuals included, as an AD_HOC doubles field relies on).
 
-Resolved 2026-10-30 (debate-ruled, two opposed measurements each, pending review): a draw entry made under the
+Resolved 2026-10-30: a draw entry made under the
 default `suppressDuplicateEntries` for a participant already in the draw was reported as a duplicate and written
 anyway (a probe draw then refused automated positioning); it is now skipped, as `addDrawEntry` and the flight path
 skip it. `INTENNSE_2026` had a constant, a template and a JSON but no `fixtures.tieFormats` entry, so `addEvent` alone
 refused it; it is now published, and `STANDARD` (the fallback, not a named format) is still refused.
 
-Resolved 2026-10-30 (CA): the factory stamp goes only to the records a call modified (it went to every loaded record,
+Resolved 2026-10-30: the factory stamp goes only to the records a call modified (it went to every loaded record,
 so a record merely loaded beside a written one claimed to have been written); a notice that only reports
 (`dataIssue`, `audit`) modifies nothing, and `addDrawEntries` announces only when the entries changed. A write made with
 `suppressNotifications` is stamped as an announced one is (it left its draws and matchUps unstamped and the factory
 stamp unmoved); only the engine's internal `disableNotifications`, around working copies, stamps nothing.
 
-**Decided (CA 2026-10-30): an engine call works only on the records it holds (§1.3).** A caller's own `event` object
+**Decided 2026-10-30: an engine call works only on the records it holds (§1.3).** A caller's own `event` object
 was the event the method wrote to: `addEventEntries` given a copy of the stored event (or an event in no loaded record)
 reported `success`, wrote the entries into the caller's object and left the record unchanged, even beside a correct
 `eventId`. A `tournamentRecord` and a `drawDefinition` passed through the engine behaved the same way. Now every object
 passed is resolved to the one in state, one not held refuses the call, and an object and an id that name different
 entities refuse it, with the engine or without it. A write never silently goes nowhere. (Recorded 2026-10-29 as a
-refusal at 8.0.0; CA brought it forward.)
+refusal at 8.0.0, then brought forward.)
 
-Resolved (CA 2026-10-29): a policy attribute whose value is `undefined` does not count toward a policy (§6.3). It was
+Resolved 2026-10-29: a policy attribute whose value is `undefined` does not count toward a policy (§6.3). It was
 counted, so `{ policyName, roundsToSeparate: undefined }` was accepted and stored as its name alone, which the same
 check refuses.
 

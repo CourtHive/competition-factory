@@ -3,7 +3,7 @@
   "targetVersion": "8.0.0",
   "sourceRevision": "8c2aaca6801734223ef1e0a8127872344373fbd5",
   "reachEvidence": {
-    "document": "Mentat/planning/ENGINE_REACH_2026-10-15.md",
+    "method": "dynamic dispatch count: NOTICE_COVERAGE=1 pnpm vitest run, then node scripts/noticeCoverageReport.mjs --unreached",
     "revision": "77b6060071",
     "date": "2026-10-15",
     "externalConfirmation": "confirmed 2026-10-28 (external integrator review); removal list closed 2026-11-22"

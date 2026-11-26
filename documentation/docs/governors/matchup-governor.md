@@ -1197,17 +1197,17 @@ Under `SET3-S:6/TB7` this refuses `3-7 6-4 6-4` (a 7-3 set does not exist with a
 at six) and `4-2 2-6 2-6` (the first set never finished), both of which were previously
 recorded as `COMPLETED`. A refusal returns `INVALID_SCORE` with an `info` naming the set,
 e.g. `Set 1: …`, and the matchUp is left unchanged. A score with no resolvable `matchUpFormat` is refused with `ERR_MISSING_MATCHUP_FORMAT`
-(CA, 2026-10-02): every rule above is a question about the format. A TEAM line's format is its
+(since 2026-10-02): every rule above is a question about the format. A TEAM line's format is its
 collection definition's, and is resolved from there.
 
 **To record a score the format cannot produce** — an import, a migration, a correction to
 history, an abandoned line — pass `disableScoreValidation: true`. It skips both questions.
 
-Three tiebreak records are settled (CA, 2026-10-02):
+Three tiebreak records are settled:
 
 - **`7-6` with no tiebreak points is a finished set.** It is recorded, and `validateScore` names
   the set in a `TIEBREAK_POINTS_NOT_RECORDED` warning. Since 7.33.0 the analysis agrees with the
-  record (CA, 2026-11-07): `checkSetIsComplete` calls the tiebreak games score finished with no
+  record: `checkSetIsComplete` calls the tiebreak games score finished with no
   points, `getSetWinningSide` and `analyzeSet` name the games leader, and a score-entry interface
   delegating to them can submit the score the engine records. `6-6` is a tiebreak still being
   played and names nobody; points on one side only, or a pair the set winner did not win, are
@@ -1217,7 +1217,7 @@ Three tiebreak records are settled (CA, 2026-10-02):
 - **Impossible tiebreak points are refused**, such as `7-6(10-7)` with a tiebreak to seven. An
   ingestion pipeline can call `scoreGovernor.repairScore` first, which drops such points and keeps
   `7-6`.
-- **`0` and `0` in the tiebreak-point fields are not recorded points** (CA, 2026-11-04). No
+- **`0` and `0` in the tiebreak-point fields are not recorded points**. No
   tiebreak finishes 0-0, so `setMatchUpStatus` drops the pair before validating and storing the
   set. A `6-7` sent with `0`/`0` is recorded as a bare `7-6`, with the
   `TIEBREAK_POINTS_NOT_RECORDED` warning, and its score string reads `6-7`, not `6-7(0)`. Since

@@ -520,7 +520,7 @@ MatchUp actions availability depends on matchUp state:
 
 A participant has advanced and their opponent has not; in between, the present participant falls ill, is
 injured, or is defaulted for conduct. USTA records such a walkover or default without waiting for the
-match (CA, 2026-10-04).
+match.
 
 **Available Actions:**
 

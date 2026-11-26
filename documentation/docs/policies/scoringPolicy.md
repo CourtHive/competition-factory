@@ -577,7 +577,7 @@ const propagationPolicy = {
 };
 
 // Resolution precedence, the same for allowChangePropagation, propagateExitStatus and
-// propagateRetirementAsExit (the policy governs, both ways — CA, 2026-10-01):
+// propagateRetirementAsExit (the policy governs, both ways):
 //   a policy that SPEAKS (true or false) wins over anything on the call
 //   a policy that is SILENT leaves it to setMatchUpStatus({ ..., propagateExitStatus })
 //   absent both: undefined (no propagation); propagateRetirementAsExit: false

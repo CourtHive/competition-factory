@@ -13,10 +13,10 @@ The [overtime and extra-time extension](./overtime/index.md) has its own short p
 exact extra-time halves, finite ceilings, golden goals, silver goals and shootout handoffs. Overtime codes the scoring
 engine scores are valid for tournament use in Factory releases after 7.29.0 (§ 9).
 
-First version, 2026-10-25, written from the parser's rules (`parse` refuses what `isValid` refuses, CA 2026-10-02;
-the refusals for new use, CA 2026-10-18), the existing tests (`parseIsStrict.test.ts`, `matchUpFormatCode.test.ts`,
-`crossSportFormats.test.ts`) and probes of factory `dev`. The four questions that draft left open were decided by CA
-on 2026-10-25; each rule now stands in its section, marked "(CA 2026-10-25)", and § 8 keeps the record. The kernel
+First version, 2026-10-25, written from the parser's rules (`parse` refuses what `isValid` refuses, since 2026-10-02;
+the refusals for new use, since 2026-10-18), the existing tests (`parseIsStrict.test.ts`, `matchUpFormatCode.test.ts`,
+`crossSportFormats.test.ts`) and probes of factory `dev`. The four questions that draft left open were decided
+on 2026-10-25; each rule now stands in its section, and § 8 keeps the record. The kernel
 cases (`src/tests/testHarness/kernel/cases/grammar.json`, operations `kernel.format.parse@1`,
 `kernel.format.stringify@1`, `kernel.format.canonical@1` and `kernel.format.isValid@1`) hold every rule below that a
 case can show.
@@ -33,7 +33,7 @@ A valid code is well-formed; a well-formed code may not be valid (§ 6). Every w
 canonical spelling, and `parse` and `stringify` are inverse on it: `stringify(parse(c)) === c` for every canonical
 `c`, and for every well-formed `c`, `stringify(parse(c))` is `c` with its equivalent spellings (§ 4) rewritten.
 
-**Overtime extension (CA 2026-11-03):** § 9 adds readable overtime syntax. ScoringEngine now supports the
+**Overtime extension (2026-11-03):** § 9 adds readable overtime syntax. ScoringEngine now supports the
 defined timed subset, including phase-aware records and replay. Tournament new use opened 2026-11-04 for exactly
 that subset (§ 9). The existing rules below apply to codes without `-O:`.
 
@@ -79,7 +79,7 @@ of a timed set (§ 3.4); its `G` is an equivalent spelling (§ 4).
    equivalent spelling (§ 4) before the order is read.
 4. **Exactly.** `X` makes every one of `count` segments played (`exactly: count`); without it the match is best of
    `count` (`bestOf: count`). `SET1X` is `SET1` (§ 4). **`X` is allowed on every root and every kind of segment**
-   (CA 2026-10-25): `SET3X-S:6/TB7`, `SET3X-S:T10`, `SET2X-S:TB10` and `INN3X-S:6/TB7` are codes. The `SET` root
+   (since 2026-10-25): `SET3X-S:6/TB7`, `SET3X-S:T10`, `SET2X-S:TB10` and `INN3X-S:6/TB7` are codes. The `SET` root
    used to require a timed segment.
 5. **The final segment** (`-F:`) is allowed only when `count` is more than 1: `SET1-S:6/TB7-F:TB10` is not a code. A
    final segment identical to the set segment is an equivalent spelling (§ 4). Which set it governs is the scoring
@@ -91,7 +91,7 @@ of a timed set (§ 3.4); its `G` is an equivalent spelling (§ 4).
 
 - **`-G:`**: `TN[{d}D]` (a traditional game, its d-th deuce decided by the next point) or `{n}C[{d}D]` (the first to
   win n points in a row). `TN0D`, `0C` and `3C0D` are not codes. `-G:TN` with no deuce count is the default game and
-  an equivalent spelling of no `-G:` section (§ 4; CA 2026-10-25); `-G:TN3D` is not the default.
+  an equivalent spelling of no `-G:` section (§ 4); `-G:TN3D` is not the default.
 - **`-M:`**: `T{minutes}`, a match clock.
 
 ### 3.4 Segments
@@ -116,12 +116,12 @@ A segment (`-S:` or `-F:`) is exactly one kind, recognised by how it starts, in 
 3. **Timed.** `P` builds points, `G` (the default, § 4) games. The tiebreak played when the segment ends level carries
    no `NOAD` (`T10/TB7NOAD` is not a code). `NOAD` in a timed modifier is not a code (`T10@RALLYNOAD`).
 4. **A modifier** is the text after `@` on a tiebreak-only or timed segment: **one or more upper-case letters**, not
-   containing `NOAD` (CA 2026-10-25). `TB11@rally`, `T10@rally`, `TB11@R_1` and `TB11@RALLY2` are not codes.
+   containing `NOAD`. `TB11@rally`, `T10@rally`, `TB11@R_1` and `TB11@RALLY2` are not codes.
    `RALLY` is the one modifier with a meaning (every rally scores); any other upper-case name is kept and not scored
    (`TB11@SIDEOUT`; scoring specification § 3.4).
 5. **Shootout.** `SO{rounds}`, a shootout of that many rounds, is only ever the final segment, and only after a
    level finite overtime of an aggregate (`SET2XA-S:T45P-O:2X/T15P-F:SO5`). As `-S:`, as an overtime period, with no
-   `-O:` (`SET2XA-S:T45P-F:SO5`), or after a best-of or non-aggregate match it is not a code (CA 2026-11-04: a match
+   `-O:` (`SET2XA-S:T45P-F:SO5`), or after a best-of or non-aggregate match it is not a code (a match
    that goes straight to penalties is recorded as `decidedIn: 'EXTERNAL'` until a decider without overtime is
    stamped like one with it). It is entered as its final tally, never by point or game: the tally is never level,
    above `rounds` it is sudden death, won by one (`7-6` in five rounds; never `7-5`), and within `rounds` it ends
@@ -147,11 +147,11 @@ Nothing else is an equivalent spelling. A string that is not canonical once thes
 is how leading zeros, sections out of order and modifiers out of order are refused (rule 2.4, § 3.2), and how the
 three lenient readings below stay closed.
 
-**Closed lenient readings** (CA 2026-10-02). Each was once read as `SET3-S:6/TB7` and printed canonically; each is
+**Closed lenient readings** (since 2026-10-02). Each was once read as `SET3-S:6/TB7` and printed canonically; each is
 now not a code: a trailing space (`"SET3-S:6/TB7 "`), an empty final section (`SET3-S:6/TB7-F:`) and a tiebreak with no
 number (`SET3-S:6/TB`, `SET3-S:6/TB7-F:6/TB`).
 
-**An equivalent spelling parses to its canonical form's object** (CA 2026-10-25): `parse('SET3-S:6-F:6')` has no
+**An equivalent spelling parses to its canonical form's object** (since 2026-10-25): `parse('SET3-S:6-F:6')` has no
 `finalSetFormat`, `parse('T10G')` no `based`, and `parse('SET3-S:6/TB7-G:TN')` no `gameFormat`. Two codes that say
 the same thing read the same.
 
@@ -186,8 +186,8 @@ A segment:
 ## 6. Valid for new use
 
 `isValidMatchUpFormat` is false for anything that is not well-formed, and for these kinds of well-formed code that are
-refused for a new format and still read where they are stored (scoring specification § 16, decisions 19 and 22; CA
-2026-10-18 and 2026-11-03):
+refused for a new format and still read where they are stored (scoring specification § 16, decisions 19 and 22;
+since 2026-10-18 and 2026-11-03):
 
 1. **A tiebreak below S − 1.** A standard segment, `-S:` or `-F:`, whose tiebreak is played at fewer than `setTo − 1`
    games: `SET3-S:4/TB7@2` and `SET3-S:6/TB7@4` are refused; `SET3-S:4/TB7@3`, `SET3-S:6/TB7@5` and
@@ -223,7 +223,7 @@ an object `parse` could not have returned is not specified.
 
 ## 8. Decisions
 
-The first draft left four questions open; CA decided each on 2026-10-25. The kernel cases that pin them carry the
+The first draft left four questions open; each was decided on 2026-10-25. The kernel cases that pin them carry the
 date in their notes.
 
 1. **`-G:TN` is an equivalent spelling of no `-G:` section** (§ 3.3, § 4). It was a second canonical spelling of the
@@ -232,7 +232,7 @@ date in their notes.
    `finalSetFormat`, and `T10G` kept `based: 'G'`.
 3. **A modifier is upper-case letters** (§ 3.4 rule 4). `TB11@rally`, `T10@rally` and `TB11@R_1` were well-formed and
    valid for new use; the engine switches rally scoring on only for `RALLY`, so `@rally` scored side-out, the same
-   silent reinterpretation the closed `@RALLYNOAD` reading had (validator debate G8).
+   silent reinterpretation the closed `@RALLYNOAD` reading had.
 4. **`X` is allowed on every root and every kind of segment** (§ 3.2 rule 4). `SET3X-S:6/TB7` was not a code while
    `INN3X-S:6/TB7` was; the scoring specification § 3.4 reads both alike, and the scoring conformance cases for the
    `SET`-root cells (`timedSegments`, `tiebreakSets`) hold that they score as their siblings on other roots do.
@@ -244,7 +244,7 @@ content moved; three `SET3-S:6-F:6` scoring scenarios are filed under the cell t
 
 **Measured in production 2026-10-25** (read-only, every tournament record: 49,936 tournaments, 715,482 stored
 `matchUpFormat` values, 106 distinct codes, from events, draws, structures, matchUps and tieFormat collections). Every
-one of the 106 parses, and none reads differently under these rulings: the same parse object, canonical form and
+one of the 106 parses, and none reads differently under these decisions: the same parse object, canonical form and
 validity before and after. No stored code uses `-G:TN`, a modifier that is not upper-case letters, `X` on a `SET`-root
 standard set, or a final segment identical to the set segment. Four stored codes are equivalent spellings (a redundant
 `@{at}`: `SET3-S:4/TB7@4-F:TB10`, 1,137 values in 33 tournaments, and three rarer ones), and four are refused for new
@@ -253,15 +253,15 @@ seven values in four tournaments).
 
 ## 9. Overtime extension
 
-CA approved conditional overtime repetition on 2026-11-03, and its tournament activation on 2026-11-04. Parsing,
+Conditional overtime repetition was adopted on 2026-11-03, and opened to tournament use on 2026-11-04. Parsing,
 canonical serialization and the supported ScoringEngine subset are implemented. `isValidMatchUpFormat` accepts for
 new use **exactly** the overtime codes the scoring engine scores, asking the same format resolution, so tournament
 validation and scoring cannot disagree: timed aggregate regulation, timed overtime periods without a segment-local
 tiebreak, and a decider (`-F:`) that is a tiebreak-only segment, a shootout (§ 3.4 rule 5) or a timed segment without
-a tiebreak. Refused for new use while they still read: a match clock with overtime (`-M:`; Ruling 1, CA 2026-11-04),
+a tiebreak. Refused for new use while they still read: a match clock with overtime (`-M:`),
 an untimed or tiebreak-bearing regulation or period, and a standard-set or tiebreak-bearing timed decider. The legacy
 public point mutator still refuses O. Repeating blocks (`O:2B2/T5P`) are deferred with no syntax reserved, so a
-grouping suffix is not a code. See [scoring specification § 9.8](/docs/scoring-engine/scoring-engine-spec#98-declared-overtime-ca-2026-11-03-scoringengine-integration).
+grouping suffix is not a code. See [scoring specification § 9.8](/docs/scoring-engine/scoring-engine-spec#98-declared-overtime-scoringengine-integration).
 
 ```text
 {root}{count}[X][A][{matchMods}]-S:{set}[-G:{game}][-O:{limit}[X][SD]/{set}][-F:{set}][-M:T{minutes}]

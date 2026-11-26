@@ -563,7 +563,7 @@ present only when something was skipped. `allowInactiveEventDates: true` places 
 
 When `courtIds` is provided, only courts in the set are considered as placement targets at each venue. Passing an empty array places nothing. Omitting the parameter places onto all courts at the profile's venues (the default).
 
-**Completed matchUps**: By default the pro scheduler excludes matchUps that already carry a terminal status (`COMPLETED`, `RETIRED`, `WALKOVER`, `DEFAULTED`, etc.) from the placement pool — these don't need a court slot and would otherwise occupy grid rows, pushing newly-placed matchUps down. `scheduleCompletedMatchUps` no longer changes this (CA 2026-10-23: completed matchUps are excluded from re-scheduling); it is ignored and will be removed at the next major. A venue in the profile with no courts keeps its rounds; their matchUps are not placed on other venues' courts and are reported in `notScheduledMatchUpIds`.
+**Completed matchUps**: By default the pro scheduler excludes matchUps that already carry a terminal status (`COMPLETED`, `RETIRED`, `WALKOVER`, `DEFAULTED`, etc.) from the placement pool — these don't need a court slot and would otherwise occupy grid rows, pushing newly-placed matchUps down. `scheduleCompletedMatchUps` no longer changes this (completed matchUps are excluded from re-scheduling); it is ignored and will be removed at the next major. A venue in the profile with no courts keeps its rounds; their matchUps are not placed on other venues' courts and are reported in `notScheduledMatchUpIds`.
 
 **Daily limits**: the grid applies the limits `scheduleProfileRounds` applies, so the two schedulers agree.
 
@@ -1200,7 +1200,7 @@ is scheduled. What was skipped is reported in `eventDateSkippedMatchUpIds`, `{ [
 present only when something was skipped. `allowInactiveEventDates: true` places such matchUps instead, and the result's
 `warnings` carry one `EVENT_DATE_INACTIVE` per such placement. A skipped matchUp is also listed in `notScheduled`.
 
-A completed matchUp is never placed (CA 2026-10-23): passed one, the write skips it and it is reported not scheduled.
+A completed matchUp is never placed: passed one, the write skips it and it is reported not scheduled.
 `scheduleCompletedMatchUps` is accepted and ignored until the next major.
 
 ---
@@ -1882,7 +1882,7 @@ schedule grid. When a call changes `scheduledDate` to a different day and does
 object, the engine removes them so the matchUp does not inherit the prior day's row
 on its new day.
 
-- **The venue goes with the court** (CA 2026-10-27). A matchUp that had a court
+- **The venue goes with the court.** A matchUp that had a court
   loses its `venueId` too: it came with the court. A matchUp placed at a venue
   without a court (as `scheduleProfileRounds` and `scheduleMatchUps` place one)
   keeps its `venueId`: it is where the match is played, and a moved matchUp keeps
