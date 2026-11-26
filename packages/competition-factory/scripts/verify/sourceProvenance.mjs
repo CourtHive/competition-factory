@@ -83,17 +83,6 @@ export const ALLOW = [
     line: /SET1-S:P32, P31, P4:/,
     why: 'P31 is a combined-total format code (`SET1-S:P31`), not a plan id',
   },
-  {
-    rule: 'mentat',
-    file: pkg('scripts/attr-audit.mjs'),
-    line: /Mentat\/tools\/attr-audit\//,
-    why: 'vendored byte for byte from the attr-audit template, which names its own installer; reword it at the template',
-  },
-  {
-    rule: '*',
-    file: 'CLAUDE.md',
-    why: "agent instructions for this checkout, which point agents at the orchestration repository; changing what agents are told to read is the owner's call, not a comment sweep's",
-  },
 
   // ---- TEMPORARY: files changed by open PR #6638, held back so this sweep does not conflict with it. When it
   // ---- merges, clean each file's comments and test titles in a follow-up; an entry whose file is then clean goes
