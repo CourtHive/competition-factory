@@ -7,11 +7,11 @@ set totals, the end of a timed segment, a late-start baseline, a server correcti
 substitution. This page states the rules a second implementation has to reproduce without reading
 the TypeScript: the inputs, the closed set of actions and the facts each carries, how a format
 resolves to a rule for each set, each segment kind's rules, service, completion, what is refused,
-and how a record is persisted and replayed. The questions this page first left open were decided by
-CA on 2026-10-18; each rule now stands in the section it belongs to, marked "(CA 2026-10-18)", and
-§ 16 keeps the record of each decision and of v1's divergence from it.
+and how a record is persisted and replayed. The questions this page first left open were decided on
+2026-10-18; each rule now stands in the section it belongs to, and § 16 keeps the record of each
+decision and of v1's divergence from it.
 
-First version, 2026-10-18 (SE1 of the scoring-engine v2 plan), written from the rules first and the
+First version, 2026-10-18, written from the rules first and the
 source second: the conformance suite (79 matrix cells: 75 held by independent cases written from
 rulebooks and format definitions, 4 refused), the engine tests the S1–S13 fixes added, the scoring
 corpus (72 seeded streams) and probes run against factory `dev` at `0fcd079843`. Where v1 and a
@@ -19,7 +19,7 @@ rule disagree, this page states the rule and records v1's behaviour as **a v1 de
 cutover** (the differential of v1 against v2 surfaces each one); it does not encode a v1 accident as
 the rule. A persisted record v1 wrote is still read as v1 read it (§ 12.8).
 
-**Since SE4 (CA 2026-10-22) the `ScoringEngine` is the reducer this page specifies; v1 is retired.** Every
+**Since 2026-10-22 the `ScoringEngine` is the reducer this page specifies; v1 is retired.** Every
 v1 defect recorded here was ruled and brought to the rule, by the differential of v1 against v2, before v1
 went; the notes on v1 stay as the record of what changed. The differential retired with v1.
 
@@ -53,8 +53,7 @@ An engine is built from:
 
 - `matchUpFormat`: the format code (grammar: [matchUpFormat codes](/docs/codes/matchup-format)).
   Absent, it is `competitionFormat.matchUpFormat`, and absent that, `SET3-S:6/TB7`. A code that does
-  not parse still builds an engine, and every scoring and service action is then refused (§ 2,
-  CA 2026-10-18). v1 refuses only point input there and accepts the others: a v1 defect (§ 16, 10).
+  not parse still builds an engine, and every scoring and service action is then refused (§ 2). v1 refuses only point input there and accepts the others: a v1 defect (§ 16, 10).
 - `competitionFormat`: a profile. The engine reads its `serverRule` (§ 10.7), its `pointMultipliers`
   and its `substitutionRules` (§ 2.7). Its other profiles (penalties, timers, timeouts, players,
   point results) are returned to the host and change no score.
@@ -104,7 +103,7 @@ or by the competition's rule (§ 10.7), is calculated: it is a snapshot on the m
 rebuild derives it again (`replayLossless.test.ts`, "a calculated server is still not recorded as an
 input (R2)"; `scoringAgreement.test.ts`, "a server the rule supplied is calculated"). A multiplier's
 value is not on this list: the entry records it as the point's `scoreValue`, so a point keeps the value it
-was scored at when the multipliers change (§ 12.2; CA 2026-10-27).
+was scored at when the multipliers change (§ 12.2).
 
 ## 2. The action set
 
@@ -125,19 +124,19 @@ change.
 | `challenge`       | `sideNumber`; optionally host fields                                                                                          | a `sideNumber` not 1 or 2 (§ 2.8)                                                                                                           |
 | `annotation`      | host data                                                                                                                     | none (§ 2.8)                                                                                                                                |
 
-**Every action refuses invalid facts before anything is written, as `point` does** (CA 2026-10-18):
+**Every action refuses invalid facts before anything is written, as `point` does**:
 a side out of range, a score that is not a non-negative integer, a format that does not parse (for
 every action that scores or names a server). v1 validates only `addPoint` and `editPoint` (S9):
 `addGame({ winner: 2 })` scores for side 2, and `addSet`, `endSegment` and `setInitialScore` are not
 validated, a v1 defect (§ 16, 10).
 
-**A closed segment takes no input** (CA 2026-10-18): a point, game or set total aimed at a segment
+**A closed segment takes no input**: a point, game or set total aimed at a segment
 that is closed is refused (§ 6.4). **A completed match takes no scoring input**: a point, a game and a
 set total after `COMPLETED` are ignored alike, recording nothing and returning a result flag that says
-so (CA 2026-10-18, one rule; § 9.6).
+so (one rule; § 9.6).
 
 **A recorded action clears the redo stack; an action that changes nothing records nothing and keeps
-it** (CA 2026-10-18; § 12.3). v1's `endSegment` keeps the redo stack and records an entry even when it
+it** (§ 12.3). v1's `endSegment` keeps the redo stack and records an entry even when it
 changes nothing: a v1 defect (§ 16, 1).
 
 **Refusals apply at the action boundary only** (decided 2026-10-18): a persisted timeline that already
@@ -164,9 +163,9 @@ input"; `inputLevels.test.ts`):
 5. `observedServeSide` other than `deuce` or `ad`;
 6. the set in play takes no point input (a segment of outs, § 8);
 7. a `scoreValue` other than 1 where a point is not a unit: a segment whose points build games, and a
-   combined total (§ 4.4, § 7; CA 2026-10-18);
+   combined total (§ 4.4, § 7);
 8. the segment the point is aimed at is closed: a timed segment ended level with no declared tiebreak
-   (§ 6.4; CA 2026-10-18).
+   (§ 6.4).
 
 **Ignored: accepted, and nothing is recorded** (no point, no entry, no event, the redo stack kept;
 the result says it was ignored):
@@ -186,12 +185,12 @@ the result says it was ignored):
 Adds one game (or unit) to the open set for the side `winner` names, creating the next set when the
 last one has a winner. A game in progress point by point is abandoned: its points stay on the
 history, and the set's next point opens a new game at 0-0 (a game that wins the set opens none, as a
-point that wins it opens none: SE2a-D3b, CA 2026-10-21) (`getEpisodesInterruptedGames.test.ts`,
+point that wins it opens none) (`getEpisodesInterruptedGames.test.ts`,
 "credits an interrupted game to no point"). A `tiebreakScore` is stored as the set's tiebreak points.
 The set is then judged by its segment's rule (§ 4.2) and the match by § 9. In a timed segment a game
 is a unit of its score (§ 6.2).
 
-- **Refused** (CA 2026-10-18, § 2): `winner` not 0 or 1, a `tiebreakScore` that is not two
+- **Refused** (§ 2): `winner` not 0 or 1, a `tiebreakScore` that is not two
   non-negative integers, a format that does not parse, a closed segment (§ 6.4).
 - **Ignored** after the match is `COMPLETED`, as a point is (§ 9.6).
 - **In a tiebreak-only segment** a game is the segment won 1-0, with `tiebreakScore` as its points,
@@ -203,7 +202,7 @@ already closed level, and counts a game in a tiebreak-only segment as one of its
 
 ### 2.3 set
 
-**A set total is judged by its segment's rule** (CA 2026-10-18):
+**A set total is judged by its segment's rule**:
 
 1. a total the rule calls finished is recorded with the winner the rule gives it (6-4, 7-6 with a
    tiebreak, 7-5; for outs the side with more);
@@ -215,11 +214,11 @@ already closed level, and counts a game in a tiebreak-only segment as one of its
    (3-1 in a set to six), not refused: the courthive-components inline scorer ignores refusals, so a
    refusal would lose the input. In a tiebreak-only segment that total is the race's running points,
    the game in play (§ 5 rule 1), as a baseline reads it: `SET3-S:TB11` 11-10 is `[0, 0]` with the game
-   in play at 11-10, and the next point plays on from it (SE2a-D13, CA 2026-10-21);
+   in play at 11-10, and the next point plays on from it;
 4. a timed segment's total is a finished segment: the side with more wins it, and a level one follows
    § 9.7 (or its declared tiebreak, § 6.4).
 
-**A total entered while a set is in play closes that set** (CA 2026-10-18): a scorer who scored part
+**A total entered while a set is in play closes that set**: a scorer who scored part
 of a set point by point or game by game, then lost track, declares the set's total and keeps scoring.
 The open set takes the declared total and its winner, judged by the rules above; the points and games
 already recorded in it stay on the history; scoring continues in the next set. Mixed entry (games then
@@ -236,7 +235,7 @@ complete and past N in an exactly format: v1 defects (§ 16, 5, 6, 7).
 
 ### 2.4 endSegment
 
-**`endSegment` ends timed segments only** (CA 2026-10-18): the timed segment in play, or the one
+**`endSegment` ends timed segments only**: the timed segment in play, or the one
 `setNumber` names, by § 6.4. It is refused on any other segment kind, and when there is no timed segment
 to end. Other ways to stop are not this action:
 
@@ -256,15 +255,14 @@ play's games, and the game in play's points. It replaces the score as it stands 
 alone, and `undo` removes it (`replayLossless.test.ts`, "S2: a late-start baseline survives reload and
 is part of the timeline").
 
-**The baseline's rules** (CA 2026-10-18):
+**The baseline's rules**:
 
 1. Its sets are judged by their segment rule, as `addSet` judges a total (§ 2.3): 6-5 is not won; the
    final set is the one the deciding-set rule of § 3.2 names, read from the score; a tiebreak-only set
    is read from its points (1-0 with 11-9 is won).
 2. A baseline that decides the match completes it (6-0 6-0 in a best of three is `COMPLETED`).
 3. An unfinished last set is the set in play. In a tiebreak-only segment its total is the race in play,
-   so a `currentGameScore` given beside it names that race's points twice and is refused (SE2a-D14, CA
-   2026-10-21: the cleaner rule). A stored baseline v1 took so replays as v1 replayed it, from the
+   so a `currentGameScore` given beside it names that race's points twice and is refused (the cleaner rule). A stored baseline v1 took so replays as v1 replayed it, from the
    total, flagged as a legacy shape (§ 12.8).
 4. A supplied `server` is honoured: it is recorded as a `setServer` at the baseline's position
    (§ 10.6).
@@ -282,16 +280,16 @@ whole score (including games scored since) and ignores `server`: v1 defects (§ 
 Names the side due to serve the next point; § 10.6 states what it does to the derivation. A side not
 0 or 1 is refused (§ 2).
 
-**A server correction survives undo and rebuild** (CA 2026-10-18). With `recordEntry: false` it is not
+**A server correction survives undo and rebuild**. With `recordEntry: false` it is not
 an action of its own: it is recorded **attached to the preceding entry**, replayed with it, and undone
 with it, so undoing that point removes the correction too. **With nothing before it** it is the match's
-**initial server** (CA 2026-10-21, SE3-E1): kept on the record as `history.initialServer`, not on the
+**initial server**: kept on the record as `history.initialServer`, not on the
 timeline, so every rebuild and reload starts from it, and `reset` clears it. v1 changed the orientation
 without a record, and the next rebuild lost it (`SET3-S:6/TB7`: servers 1, 1, then after one undo the surviving point's
 server is 0); INTENNSE re-applies it after every point and still shows the wrong server after an undo:
 a live v1 defect (§ 16, 16).
 
-### 2.7 substitution and the advisory rules (S6)
+### 2.7 substitution and the advisory rules
 
 Replaces `outParticipantId` with `inParticipantId` in the side's lineUp, from the next point on.
 Points already played keep the players recorded on them (§ 11.1). Refused with a result, recording
@@ -300,7 +298,7 @@ nothing and keeping the redo stack: `SAME_PARTICIPANT`, `NO_LINEUP` (the side ha
 replays as it was (`substitutionAndService.test.ts`, "S6: substitute checks who is on court and says
 what it did").
 
-**The competition's substitution rules are advisory** (CA 2026-10-17). A substitution is never refused
+**The competition's substitution rules are advisory**. A substitution is never refused
 by them: a required substitution (a player out of time, a penalty removal) is the host's to allow.
 `evaluateSubstitution()` reports what a substitution made now would break: `NOT_ALLOWED`
 (`allowed: false`), `MAX_PER_MATCHUP`, `MAX_PER_SEGMENT` (counted in the set in play; an event recorded
@@ -310,11 +308,11 @@ has points in it), and `MATCHUP_TYPE`. Roster sizes and other timings are not re
 
 ### 2.8 challenge and annotation
 
-**Challenges and annotations are versioned timeline actions that change no score** (CA 2026-10-18).
+**Challenges and annotations are versioned timeline actions that change no score**.
 A `challenge` records the side that challenged (`sideNumber`) and any host fields; an `annotation`
 records host data. Neither changes the score, the server or any view of the score; both are replayed
 in place and kept through every rebuild. **`undo` takes back whatever was recorded last**, a challenge
-or an annotation included: it does not skip them (CA 2026-10-18). v2 reads v1's raw entries,
+or an annotation included: it does not skip them. v2 reads v1's raw entries,
 `{ type: 'challenge', data: { sideNumber } }` as epixodic writes them (#404(epixodic)), unchanged, as
 `challenge` actions (§ 12.6). v1 has no such action: the host writes the entry itself, a rebuild keeps
 it without replaying it, and `undo` pops it, which is already the rule.
@@ -334,7 +332,7 @@ it without replaying it, and `undo` pops it, which is already the rule.
 
 ### 3.1 The match
 
-- **Best of N** (`SET3`, `MAP5`, …): N must be odd for new use (CA 2026-11-03); the first side to win a
+- **Best of N** (`SET3`, `MAP5`, …): N must be odd for new use; the first side to win a
   majority of N sets, ⌊N/2⌋ + 1 = ⌈N/2⌉, wins. A fixed even count that can finish level is **exactly N**,
   and requires `X`: `SET2X-S:6/TB7` may finish 1-1, while `SET2-S:6/TB7` is refused for new use.
   An explicit aggregate `A` follows aggregate completion instead of best-of completion. `SET1X` and `SET1XA` read as
@@ -349,7 +347,7 @@ it without replaying it, and `undo` pops it, which is already the rule.
 The ordinary format (`-S:`) governs every set except the one the final-segment format (`-F:`) governs:
 
 1. **best of N**: the set played with both sides one set from winning (the deciding set), read from
-   the score, **and set N whatever the count when it starts** (CA 2026-10-18): a timed segment closed
+   the score, **and set N whatever the count when it starts**: a timed segment closed
    level wins no set, so `SET3-S:T10-F:T10/TB7` can reach set three at one set to love, and set three
    still plays its declared `/TB7` (`timedSegments`, "the final set is set N"). v1 read the score only;
 2. **exactly N, not aggregate**: set N, by number, whatever the count before it
@@ -358,7 +356,7 @@ The ordinary format (`-S:`) governs every set except the one the final-segment f
    `aggregateSegments`, "the -F: format does not govern set three").
 
 Every rule below, and **every view** (§ 11), reads the format governing the set in play and the
-match's completion rule (CA 2026-10-18). Scoring, the score situation, points-to, the scoreboard, server
+match's completion rule. Scoring, the score situation, points-to, the scoreboard, server
 derivation, the events and the input levels must agree on it: one predicate decides whether a standard
 set is in its tiebreak (`tiebreakServiceOrder.test.ts`, "isStandardSetTiebreak";
 `noTiebreakIsNoTiebreak.test.ts`). v1's scoreboard reads the ordinary format instead: a v1 defect
@@ -384,7 +382,7 @@ another sport.
 ### 3.4 Roots, modifiers and the clock
 
 - **The root changes nothing about a set's rules**, with one exception: whether points build games in a
-  timed set (§ 6.2). Exactly N (`X`) is a format on every root and every kind of set (CA 2026-10-25): the
+  timed set (§ 6.2). Exactly N (`X`) is a format on every root and every kind of set: the
   grammar refused it on a `SET` root unless a segment was timed, so `SET3X-S:6/TB7` scores as `INN3X-S:6/TB7`. `FRM7-S:TB11` scores as `SET7-S:TB11`, and `INN3X-S:6/TB7`'s sets take their
   tiebreak at six all (`tiebreakSets`, "FRM7-S:TB11"; `timedSegments`, "exactly | INN | standard(tiebreak)").
 - **An unknown match modifier is kept, not scored**: `SET3Z-S:6/TB7` plays as `SET3-S:6/TB7`
@@ -402,7 +400,7 @@ another sport.
 - `-G:{n}C`: a game won by the first side to win n points in a row (§ 4.1).
 
 It never governs a tiebreak (§ 4.3, § 5). **In a timed set whose points build games** (§ 6.2 rule 2)
-the games are of the declared game format, a consecutive-points format included (CA 2026-10-18); v1
+the games are of the declared game format, a consecutive-points format included; v1
 builds traditional games there, a v1 defect (§ 16, 19).
 
 ## 4. Standard sets
@@ -439,18 +437,18 @@ default S):
    (`tiebreakSetVariants`, "short sets, tie-break at three all"). **A late tiebreak** (T > S): from S all
    the set plays on as an advantage set until T all (`tiebreakSetVariants`, "a late tie-break").
 4. **The one-game set** (`S:1/TB7`): Rule 6 at S = 1. One game won is not a set without a margin of
-   two; 2-0 is; at one game all the declared tiebreak decides, 2-1 (CA 2026-10-17: "Rule 6: margin of
-   two"; `tiebreakSetVariants`, "the one-game set by Rule 6").
+   two; 2-0 is; at one game all the declared tiebreak decides, 2-1 (Rule 6: a margin of
+   two; `tiebreakSetVariants`, "the one-game set by Rule 6").
 
-**A tiebreak below S − 1** (`@T` with T < S − 1) is refused at validation for a new format
-(CA 2026-10-18): the set would close below S without a tiebreak. v1's rule ("a side has T + 1 games")
+**A tiebreak below S − 1** (`@T` with T < S − 1) is refused at validation for a new format:
+the set would close below S without a tiebreak. v1's rule ("a side has T + 1 games")
 is the rule only when T ≥ S − 1; a persisted format with such a tiebreak replays by v1's rule
 (§ 12.8). v1's grammar accepts the code: a v1 change (§ 16, 19).
 
 ### 4.3 The tiebreak game
 
 A tiebreak to n is won by the first side to n points with the tiebreak margin: **one when it is No-Ad
-(`TB{n}NOAD`) or when its target is one (`TB1`, sudden death, CA 2026-10-17), two otherwise** (Rule
+(`TB{n}NOAD`) or when its target is one (`TB1`, sudden death), two otherwise** (Rule
 5(b); `tiebreakMargin.test.ts`). One rule decides the margin for scoring, points-to, score entry and
 the validators. It is scored point by point whatever the game format: a deuce cap or a
 consecutive-points game does not reach it (`tiebreakSetVariants`, "the cap governs games, not the
@@ -459,7 +457,7 @@ game for its winner plus both sides' tiebreak points: `[7, 6, [7, 0]]`.
 
 ### 4.4 Point values
 
-**A `scoreValue` other than 1 is refused where a point is not a unit** (CA 2026-10-18): in a segment
+**A `scoreValue` other than 1 is refused where a point is not a unit**: in a segment
 whose points build games, a point is one point of a game. A configured multiplier applies only to a
 segment scored in units (§ 5 rule 5, § 6.2 rules 1 and 3); in a game-building segment it is not
 consulted. v1 records the value on the point and ignores it (`SET3-S:6/TB7`: two points of value 2 are
@@ -494,7 +492,7 @@ The race to n is pinned for USA Pickleball Rule 4, World Squash Rule 2, ITTF Law
 (the 30-point cap is not expressible in `TB21`), FIVB Rule 6 and VALORANT maps (`tiebreakSets`).
 **A game given as game input** in a tiebreak-only segment is the segment won 1-0, with `tiebreakScore`
 as its points, checked against the race to n (11-9 is accepted for `TB11`, 11-10 is refused); the
-input levels keep offering game there (CA 2026-10-18). v1 adds one point toward the target, so
+input levels keep offering game there. v1 adds one point toward the target, so
 `SET3-S:TB11` needs eleven `addGame` calls for a set: a v1 defect (§ 16, 11).
 
 ## 6. Timed segments
@@ -511,7 +509,7 @@ host's (§ 3.4).
    value, or 1) to its side's segment score.
 2. **Games-based under the SET root, not aggregate, not standalone** (`SET3-S:T10`,
    `SET3-S:T10-G:TN3D`): a tennis-family timed set. Points build traditional games by the match's game
-   format (§ 3.5), and the segment counts games (CA 2026-10-17: "Points build games";
+   format (§ 3.5), and the segment counts games (points build games;
    `timedSegments`, "timed sets: games from points"). A point's value does not apply (§ 4.4).
 3. **Games-based anywhere else**: under another root (`HAL2A-S:T45`, `QTR4A-S:T12`), standalone
    (`T90`), or in an aggregate format (`SET2XA-S:T10`), a point is one of the sport's own units (a goal,
@@ -533,14 +531,14 @@ A game given as game input adds one game (rule 2) or one unit (rules 1 and 3).
 2. **Level, with a declared tiebreak** (`T{minutes}/TB{n}`, "a tiebreak if level at time"): the segment
    stays open and a tiebreak to n with the margin of § 4.3 is played; points go to it, `endSegment`
    during it is ignored, and its winner takes the segment by one more game (or point, or unit), with the
-   tiebreak points recorded: level 1-1 and won 7-0 is `[2, 1, [7, 0]]` (CA 2026-10-17: "Play the
-   tiebreak"; `timedSegments`, "level at time, a tiebreak to seven decides the segment";
+   tiebreak points recorded: level 1-1 and won 7-0 is `[2, 1, [7, 0]]` (the tiebreak is played;
+   `timedSegments`, "level at time, a tiebreak to seven decides the segment";
    `timedSetTiebreak.test.ts`). `TB1` is one sudden-death point.
 3. **Level, with no tiebreak**: the segment is closed without a winner. In an aggregate format its total
    still counts (§ 9.3). Elsewhere a level segment is played and counts toward the sets played, and the
-   match follows § 9.7: no segment the format did not declare is played after it (CA 2026-10-18).
+   match follows § 9.7: no segment the format did not declare is played after it.
 
-**A closed segment takes no input** (CA 2026-10-18): a point, game or set total aimed at it is refused,
+**A closed segment takes no input**: a point, game or set total aimed at it is refused,
 and a second `endSegment` on it is refused. v1's `addGame` ignores the closed mark, adds to the level
 segment and lets `endSegment` re-close it with a winner (`SET3-S:T10`: games 1-1, end, game, end gives
 set one 2-1): a v1 defect (§ 16, 4).
@@ -558,8 +556,7 @@ tiebreak at time adds tiebreak points as § 4.3 records them.
 Mexicano). The grammar admits it only as the single segment of a SET-root best of one, with no final,
 game format, modifier or clock.
 
-1. **A rally adds one point** to its winner. A `scoreValue` other than 1 is refused (CA 2026-10-18,
-   § 2.1); v1 ignores such a point silently, a v1 defect (§ 16, 9).
+1. **A rally adds one point** to its winner. A `scoreValue` other than 1 is refused (§ 2.1); v1 ignores such a point silently, a v1 defect (§ 16, 9).
 2. **Below n** the segment is open. **At n**, an unequal result is complete with a winner, under every
    variant (`combinedTotals`, "an unequal result at 32 rallies is complete with a winner").
 3. **A tie at n** (only an even n can tie):
@@ -595,10 +592,10 @@ format is parsed and not enforced (§ 3.4).
 
 The match is won by the first side to win a majority of the N sets, ⌊N/2⌋ + 1 (Rule 7; `standardSets`,
 "Rule 7"). New best-of counts are odd (§ 3.1); the majority formula still describes stored even-count
-codes when read (the former SE2a-D7 interpretation). A set without
+codes when read. A set without
 a winner (a timed segment closed level) is played and counts for neither side. **No set beyond N is
 played**: when all N sets are played and neither side has a majority, the side with more sets wins, and a
-level count ends the match by § 9.7 (CA 2026-10-18). v1 opens another set after a level timed segment,
+level count ends the match by § 9.7. v1 opens another set after a level timed segment,
 so `SET1-S:T10P` level at time takes a second set and a `SET3-S:T10` can need a fourth: a v1 defect
 (§ 16, 3).
 
@@ -610,10 +607,10 @@ so `SET1-S:T10P` level at time takes a second set and a `SET3-S:T10` can need a 
    (`tiebreakSets`, "a sweep included").
 3. A level count names no winner (fixed 2026-10-17, #5529: v1 named side 1; `tiebreakSets`,
    "a level count of halves names no winner"), and **the match is `COMPLETED` without a winner** unless
-   a decider is declared (§ 9.7; CA 2026-10-18). A set closed level counts toward the N played. The
+   a decider is declared (§ 9.7). A set closed level counts toward the N played. The
    suite pins a level `HAL2X-S:TB11` as not complete: that pin changes with v1 (§ 16, 18).
 4. **No set beyond N**: a point after N closed sets is ignored (`tiebreakSets`, "no half beyond N is
-   recorded"), and so is a game or a set total (CA 2026-10-18). v1 records a set total past N
+   recorded"), and so is a game or a set total. v1 records a set total past N
    (`HAL2X-S:TB11` takes three `addSet` halves and completes 2-1): a v1 defect (§ 16, 7).
 
 ### 9.3 Aggregate
@@ -626,11 +623,11 @@ so `SET1-S:T10P` level at time takes a second set and a `SET3-S:T10` can need a 
    tiebreak at time added), and a tiebreak-only segment's points.
 4. An unequal total after N segments wins. A level total names no winner (`aggregateSegments`, "a level
    total names no winner"); with no declared decider the match is `COMPLETED` without a winner, and
-   no further segment is played (§ 9.7; CA 2026-10-18). v1 plays further segments of the ordinary
+   no further segment is played (§ 9.7). v1 plays further segments of the ordinary
    format until the totals differ (`SET3A-S:TB11` level 24-24 takes a fourth game; `HAL2A-S:T45` a
    third half; an `XA` format without `-F:` the same at set N + 1): a v1 defect (§ 16, 12).
-5. **An aggregate of standard sets is refused at validation** (SET3A-S:6/TB7, QTR4A-S:6/TB7; CA
-   2026-10-18; written as plain text, since the conformance matrix harvests every code the scoring
+5. **An aggregate of standard sets is refused at validation** (SET3A-S:6/TB7, QTR4A-S:6/TB7;
+   written as plain text, since the conformance matrix harvests every code the scoring
    docs put in code formatting as a format to score): aggregation is defined over timed and
    tiebreak-only segments, whose scores are units. v1 sums the tiebreak points of a set that had a tiebreak and its games otherwise; a persisted
    record with such a format replays by v1's rule (§ 12.8). The courthive-components format editor's
@@ -642,12 +639,12 @@ so `SET1-S:T10P` level at time takes a second set and a `SET3-S:T10` can need a 
 ### 9.4 The aggregate decider
 
 In an exactly-N aggregate format the final-segment format (`-F:`) is the **decider, set N + 1**, played
-only when the N totals are level, and never one of the N (CA 2026-10-04, the INTENNSE format;
+only when the N totals are level, and never one of the N (the INTENNSE format;
 `aggregateDeciderIsSetNPlusOne.test.ts`; `aggregateSegments`, "-F:TB1 settles a level total"):
 
 1. an unequal total after N needs no decider, and nothing past set N is recorded;
-2. `-F:TB1` (and `-F:TB1NOAD`) is one sudden-death point: `[0, 1, [0, 1]]` (CA 2026-10-17: "TB1 is
-   sudden death"; `aggregateSegments`, "the sudden-death decider of a level aggregate");
+2. `-F:TB1` (and `-F:TB1NOAD`) is one sudden-death point: `[0, 1, [0, 1]]` (TB1 is
+   sudden death; `aggregateSegments`, "the sudden-death decider of a level aggregate");
 3. a timed decider (`-F:T10P`) is ended by `endSegment`, and the side ahead wins the match
    (`aggregateSegments`, "the -F: decider is set four, timed and points-based").
 4. the decider's point, or a shootout's goals, settles a level total and is never part of it: `analyzeMatchUp`'s
@@ -660,7 +657,7 @@ only when the N totals are level, and never one of the N (CA 2026-10-04, the INT
 
 ### 9.6 After completion
 
-**A completed match takes no scoring input** (CA 2026-10-18, one rule): a point, a game and a set total
+**A completed match takes no scoring input**: a point, a game and a set total
 after `COMPLETED` are ignored alike, recording nothing, keeping the redo stack and returning a result
 flag that says the input was ignored (§ 2.1; the corpus pins the point). v1 applies set and game input
 to a completed match (`SET3-S:6/TB7` 6-0 6-0 takes a third set by `addSet` and a fourth by `addGame`):
@@ -671,7 +668,7 @@ corrections").
 ### 9.7 A match that ends level
 
 **A timed, aggregate or exactly-N match that ends level with no declared decider is `COMPLETED` with
-no `winningSide`**, and `onMatchTie` fires, as for a combined-total tie (§ 7) (CA 2026-10-18).
+no `winningSide`**, and `onMatchTie` fires, as for a combined-total tie (§ 7).
 
 1. **The engine never plays a segment the format did not declare**: no fourth set in a best of three,
    no play-on in an aggregate, no set N + 1 in an exactly format (an exactly-N aggregate's declared
@@ -683,30 +680,30 @@ no `winningSide`**, and `onMatchTie` fires, as for a combined-total tie (§ 7) (
    a winner (§ 11.2), so a host running an elimination draw knows to ask for a decision. The scoring
    engine records none; the decision is the host's (a `matchUpStatus` and `winningSide` set outside
    scoring).
-4. **The elimination guard** (CA 2026-10-18: "yes, extend the check"). `formatCanEndTied`
+4. **The elimination guard**. `formatCanEndTied`
    (`src/validators/tiedFormatCompatibility.ts`), checked at draw generation and by
    `checkDrawFormatCompatibility`, today reports only a `P{n}` combined total that can tie, so only that
    is refused in a structure that advances a winner. It extends to every format that can end level by this rule: timed,
    aggregate and exactly-N formats with no declared decider; a historical best-of format with an even N
-   (`SET2-S:6/TB7` was previously allowed to finish 1-1, but new use is refused under the 2026-11-03 ruling);
-   and a format whose only decider can itself end level (CA 2026-10-18: a timed `-F:`
+   (`SET2-S:6/TB7` was previously allowed to finish 1-1, but new use is refused since 2026-11-03);
+   and a format whose only decider can itself end level (a timed `-F:`
    with no `/TB`, as in `SET3XA-S:T10-F:T10P`, is not a decider). A real decider is untimed (`-F:TB1`, `-F:TB10`)
    or timed with a tiebreak (`-F:T10P/TB1`). Only a format CHANGE is refused, so a stored draw is untouched and a
    score submitted with the matchUp's existing format is accepted; TEAM structures are skipped (the tieFormat
-   decides the dual). A policy may still offer such a format for round robin and team play (CA 2026-10-18:
-   `POLICY_SCORING_USTA`'s `SET1-S:T20` stays as it is). This is a v1 change (§ 16, 3).
+   decides the dual). A policy may still offer such a format for round robin and team play
+   (`POLICY_SCORING_USTA`'s `SET1-S:T20` stays as it is). This is a v1 change (§ 16, 3).
 
 v1 opens further segments after a level timed segment and after a level aggregate, and keeps a level
 exactly-N match `IN_PROGRESS`: v1 defects (§ 16, 3, 12, 18). Entries v1 recorded past a level close
 replay as v1 replayed them (§ 12.8).
 
-### 9.8 Declared overtime (CA 2026-11-03; ScoringEngine integration)
+### 9.8 Declared overtime (ScoringEngine integration)
 
 The [grammar specification](/docs/codes/matchup-format-grammar#9-overtime-extension)
 defines `-O:{limit}[X][SD]/{segment}`. This extends aggregate match completion only when O is declared;
 codes without O retain §§ 9.3–9.7. ScoringEngine supports the timed subset below directly; no caller-facing
 feature flag is needed. Tournament new-use validation (`isValidMatchUpFormat`) accepts exactly the overtime codes
-this engine scores, by asking the same format resolution, so the two cannot disagree (activation, CA 2026-11-04).
+this engine scores, by asking the same format resolution, so the two cannot disagree (activation).
 The legacy point mutator still refuses overtime. The reducer's internal `allowOvertime` option continues to
 distinguish explicit scoring support from default format resolution.
 
@@ -836,8 +833,8 @@ does not change the derivation of later points, except as the orientation of § 
    due to serve by the games of the sets before it, and within the set the rotation of § 10.1 applies
    (`tiebreakServiceOrder.test.ts`, "a match tiebreak in lieu of the final set").
 2. **A tiebreak-only format** (`S:TB{n}`: squash, table tennis, pickleball and badminton shapes)
-   **derives no server** until each sport's own rule is added (CA 2026-10-18; Mentat TASKS, "research:
-   each sport's service rule for the scoring engine"). A point records the server only when the caller
+   **derives no server** until each sport's own rule is added (research into
+   each sport's service rule is open work). A point records the server only when the caller
    supplies it, as under `@RALLY` (§ 10.4), and the server-based statistics (S/R, break points) are not
    produced (§ 10.8, § 11.3).
 
@@ -847,7 +844,7 @@ tiebreak set, both opening servers"): a v1 change (§ 16, 17).
 
 ### 10.3 Timed segments
 
-**Service alternates by unit, continuously across segments** (CA 2026-10-18): game by game where points
+**Service alternates by unit, continuously across segments**: game by game where points
 build games (§ 6.2 rule 2), point by point otherwise, and a new segment's first unit is served by the
 side that did not serve the last unit of the segment before, as games run on across sets (§ 10.1).
 **A tiebreak at time follows Rule 5(b)** (§ 10.1 rule 2), opened by the side due to serve the next
@@ -858,17 +855,17 @@ segment two) and plays the tiebreak at time with no rotation (`SET3-S:T20/TB7`: 
 
 ### 10.4 Rally scoring and combined totals
 
-**Under `@RALLY` the rally winner serves next** (CA 2026-10-18): the server of a point is the winner
+**Under `@RALLY` the rally winner serves next**: the server of a point is the winner
 of the point before it, as under `WINNER_SERVES` (§ 10.7); the first point's server follows the
 orientation (§ 10.6). **In a combined total `P{n}` no server is derived**: a point records the server
 only when the caller supplies it, and its S/R code is not derived. Nor in a tiebreak-only format
 without `@RALLY` (§ 10.2).
 
-**Whether the server is derived is its own indicator** (CA 2026-10-18). `getNextServer()` keeps
+**Whether the server is derived is its own indicator**. `getNextServer()` keeps
 returning 0 or 1 for API compatibility (epixodic computes `1 - getNextServer()`); `isServerDerived()`,
 and `serverDerived` in the score situation (§ 11.2), say whether that answer is the engine's
 derivation or only a placeholder. The placeholder is the side the last `setServer` named, and side 1
-without one. **A completed match derives no server** (CA 2026-10-21): it has no next point, so
+without one. **A completed match derives no server**: it has no next point, so
 `isServerDerived()` is `false`, and `getNextServer()` still answers the side the rotation would give. Under `@RALLY` a `setServer` names the server of the next point only, and the rule resumes
 after it, as a supplied server does under `WINNER_SERVES`. v1 derives no server under `@RALLY` and answers a side anyway
 (`SET3-S:TB11@RALLY` after two points: 1), with no indicator: a v1 defect (§ 16, 15).
@@ -877,12 +874,12 @@ after it, as a supplied server does under `WINNER_SERVES`. v1 derives no server 
 
 The expected court half (`serveSide`) is derived from the score before the point: `deuce` when the
 points played in the game (or in the tiebreak, or in a tiebreak-only set) are even, `ad` when odd; in an
-aggregate format, timed segments included, from the parity of the aggregate total so far
-(CA 2026-10-18); none in a timed segment that is not aggregate. v1 writes
+aggregate format, timed segments included, from the parity of the aggregate total so far;
+none in a timed segment that is not aggregate. v1 writes
 the aggregate rule for INTENNSE, whose segments are timed, and never reaches it for a timed segment
 (`SET7XA-S:T10P` points carry no `serveSide`): a v1 defect (§ 16, 14). A No-Ad deciding point,
-where the receiver chooses, is still reported as `deuce`. A caller that saw the half supplies `observedServeSide`, recorded beside it (S7, CA 2026-10-17;
-`substitutionAndService.test.ts`, "S7").
+where the receiver chooses, is still reported as `deuce`. A caller that saw the half supplies `observedServeSide`, recorded beside it
+(`substitutionAndService.test.ts`, "S7").
 
 ### 10.6 Orientation: the first explicit server and setServer
 
@@ -894,7 +891,7 @@ The derivations above assume side 1 serves first. The orientation is read in thi
    opened by side 2 after a setServer correction"; "survives undo, redo and reload, including a
    mid-tiebreak setServer correction"; `setServer-recordEntry.test.ts`). A correction made with
    `recordEntry: false` is recorded on the entry before it and replayed with it (§ 2.6), and a
-   baseline's `server` is a `setServer` at the baseline's position (§ 2.5) (CA 2026-10-18).
+   baseline's `server` is a `setServer` at the baseline's position (§ 2.5).
 2. **The first recorded point's supplied server**: if it differs from the base derivation at that
    point's position, every derivation is flipped. A match that starts mid-tiebreak is not placed
    correctly by this rule (a known limit of #5512).
@@ -904,8 +901,7 @@ The derivations above assume side 1 serves first. The orientation is read in thi
 
 Under `serverRule: WINNER_SERVES` the server of a point is the winner of the point before it, and side
 1 for the first point. A `setServer(side)` names the next point's server only; the rule resumes after
-that point, and a correction naming the side already named changes nothing and records nothing (CA
-2026-10-21, SE3-E3). The engine supplies that server to the scorer, so the server shown
+that point, and a correction naming the side already named changes nothing and records nothing. The engine supplies that server to the scorer, so the server shown
 (`getNextServer()`), the server recorded and the server a rebuild derives agree; it is calculated, not
 recorded (S5, #5517). A server the caller supplies is recorded as played, and the rule resumes after it
 (`scoringAgreement.test.ts`, "S5: the competition server rule decides the recorded server too").
@@ -914,12 +910,12 @@ recorded (S5, #5517). A server the caller supplies is recorded as played, and th
 
 A point with a known server and no `code` is coded `S` when the server won it and `R` when the receiver
 did. Where no server is derived (§ 10.2, § 10.4) and none is supplied, no S/R code, break point or
-other server-based statistic is produced (CA 2026-10-18).
+other server-based statistic is produced.
 
 ## 11. Views and events
 
 Views are derived from the state and never recorded as inputs. **Every view reads the format
-governing the set in play and the match's completion rule** (§ 3.2; CA 2026-10-18).
+governing the set in play and the match's completion rule** (§ 3.2).
 
 ### 11.1 The materialized point
 
@@ -946,15 +942,14 @@ Computed before each point, from the score at the serve, for the set in play's f
   games won in a row that win the set by its rule, the tiebreak counting as one more (4-5 in a
   tiebreak set: 3; the one-game set `S:1/TB7` from love: 2), and each remaining set is counted at the
   minimum of the format governing it then, a deciding set at the final format's (`SET3-S:4WB1-F:TB7`
-  one set down: 16 + 7). A timed segment, outs and a combined total add nothing (SE2b-D23, D25, D26;
-  CA 2026-10-21).
+  one set down: 16 + 7). A timed segment, outs and a combined total add nothing.
 - `isBreakpoint`: the receiver needs one point to win the game.
 - The score situation for the next point: `isGamePoint` (the server needs one), `isBreakPoint`,
   `isSetPoint`, `isMatchPoint` (either side needs one), `isGoldenPoint` (both need one, under No-Ad or a
   deuce cap outside a tiebreak), `isTiebreak`, `server`, and `serverDerived` (whether `server` is the
   engine's derivation, § 10.4).
 - `decisionRequired`: true when the match is `COMPLETED` without a winner (§ 9.7), in the situation
-  and on the scoreboard, so an elimination host knows to ask for a decision (CA 2026-10-18).
+  and on the scoreboard, so an elimination host knows to ask for a decision.
 - A timed segment has no points-to: every situation flag is false. A combined total's match point is a
   rally that would complete it with a winner, and its golden point is the `DP` rally.
 
@@ -1001,7 +996,7 @@ Handlers fire synchronously after the action, with the state and the score.
 They fire in that order on one point. Game, set, baseline and segment-end actions fire no scoring
 events, with one exception: the action that ends a match level by § 9.7 (an `endSegment` closing the
 last timed segment level, a set total completing a level count) fires `onMatchTie`, as the last rally
-of a combined-total tie does (CA 2026-10-18) (`scoringAgreement.test.ts`, "S11"; `event-handlers`
+of a combined-total tie does (`scoringAgreement.test.ts`, "S11"; `event-handlers`
 page). `onGameComplete` fires only where a point completes a game; a points-based timed segment has none. v1 fires it on every point of such a
 segment (`SET3-S:T10P`: three points, three events): a v1 defect (§ 16, 13).
 
@@ -1023,7 +1018,7 @@ score (§ 2.8).
 An entry's `data` is the caller's facts only (R2): the engine adds nothing it can derive, such as the set an
 `endSegment` closes, which the replay finds where the entry stands. Input that records nothing starts no
 history. A record that kept a substitution list keeps one, emptied when nothing is replayed into it, and a
-timeline a removal empties is still the record's timeline (CA 2026-10-22).
+timeline a removal empties is still the record's timeline.
 
 ### 12.2 What a point entry holds
 
@@ -1037,21 +1032,20 @@ rotation").
 One value is recorded: **a point keeps the value it was scored at**. Where a multiplier gives a point its
 value (§ 5 rule 5), the entry records that value as its `scoreValue`, as the point does, so a rebuild
 does not re-value it under multipliers set later. `setPointMultipliers` values the points recorded after
-it, and every rebuild, undo, redo and reload of the history scores it as it was scored (CA 2026-10-27;
-`point-multipliers.test.ts`, "a point keeps the value it was scored at").
+it, and every rebuild, undo, redo and reload of the history scores it as it was scored
+(`point-multipliers.test.ts`, "a point keeps the value it was scored at").
 
 ### 12.3 Undo and redo
 
 - `undo(n)` moves the last n entries, of any type, to the redo stack (a `point` entry takes its point
   with it, and a server correction attached to an entry goes with that entry, § 2.6) and rebuilds. It
-  takes back whatever was recorded last, a challenge or an annotation included (§ 2.8; CA 2026-10-18).
-  It returns false when there is nothing to undo, and for `n` below 1, which undoes nothing (CA
-  2026-10-21, SE3-E2).
+  takes back whatever was recorded last, a challenge or an annotation included (§ 2.8).
+  It returns false when there is nothing to undo, and for `n` below 1, which undoes nothing.
 - `redo(n)` moves the last n back onto the timeline and rebuilds; false, likewise, when there is
   nothing to redo or `n` is below 1.
 - **A recorded action clears the redo stack** (point, game, set, segment end, baseline, server
   correction, substitution, challenge, annotation); **an action that changes nothing records nothing**
-  and keeps it, as a refused or ignored one does (CA 2026-10-18). v1's `endSegment` does not clear it,
+  and keeps it, as a refused or ignored one does. v1's `endSegment` does not clear it,
   so `SET3-S:T10P` point, point, undo, `endSegment`, redo replays the undone point after the segment
   end, into set 2; and `endSegment` with no set in play records an entry (`setNumber: 0`) that `undo`
   then pops: v1 defects (§ 16, 1).
@@ -1069,7 +1063,7 @@ it, and every rebuild, undo, redo and reload of the history scores it as it was 
 - `removePoint(i)` removes the point and its entry, renumbers the later point entries, and rebuilds.
   With `recalculate: false` the score is left as it was until the next rebuild, and it still counts the
   removed point: a point added meanwhile is numbered (`index`, `pointNumber`) as that score counts it,
-  so no index repeats, and the rebuild renumbers them all (CA 2026-10-21, SE2c-D6). Its entry's
+  so no index repeats, and the rebuild renumbers them all. Its entry's
   `pointIndex` is still its position in `history.points` (§ 12.1), which a correction finds it by.
 - `decoratePoint(i, metadata)` writes the metadata to the point and its entry without a rebuild; it
   survives every later rebuild.
@@ -1094,14 +1088,14 @@ and a fresh v1 must name the next server a fresh v2 names when each loads v2's r
 
 1. **An entries-based record** (`history.entries` present): rebuilt from its entries. Its point entries
    may predate S1 (#5515) and hold fewer fields; the entry is still authoritative. **Its timeline is
-   authoritative over its stored score** (SE2c-D3, CA 2026-10-21): loaded, the record is returned as
+   authoritative over its stored score**: loaded, the record is returned as
    stored, but the next action, and every view, are taken on the score its timeline rebuilds to (with
    the configuration then loaded; `loadSupplementaryState` prepares it again). That action writes the
    timeline's score and keeps the stored points until the next rebuild.
 2. **A legacy point-only record** (points, perhaps a substitution list, no `entries`): loaded as stored.
    **The first action that changes it, undo, redo and every correction included, first gives it its
    timeline**: its points as point entries, each substitution placed before the point it preceded
-   (`beforePointIndex`), in the order recorded, one past the last point after it (CA 2026-10-22). From then on
+   (`beforePointIndex`), in the order recorded, one past the last point after it. From then on
    it is an entries-based record, so nothing it holds is lost to an undo, a redo or a rebuild, and an undo
    takes back its last action, a substitution included. A point's replay input is every field except the
    calculated ones of § 1.4, so its stored `scoreValue` (the effective value), its stored `server` and the
@@ -1123,7 +1117,7 @@ and a fresh v1 must name the next server a fresh v2 names when each loads v2's r
 7. **Host-written `challenge` entries** (epixodic's `{ type: 'challenge', data: { sideNumber } }`): read
    unchanged as `challenge` actions (§ 2.8). Any other foreign entry: kept, not replayed.
 8. **`hardBoundaries`** on a set: read and ignored; the next recorded action or rebuild discards them
-   (§ 2.9; CA 2026-10-22).
+   (§ 2.9).
 
 ### 12.7 Determinism
 
@@ -1150,8 +1144,8 @@ The reducer never produces such an entry live. **No version flag is needed**: an
 the timeline proves v1 wrote it.
 
 **The replay rule covers only entries distinguishable as v1's.** Four entries look the same whether v1
-or the current engine wrote them, and they take the current rule on rebuild (CA 2026-10-18: "Accept the
-change"; no version stamp): a game in a tiebreak-only set (§ 5), a game after a timed segment closed
+or the current engine wrote them, and they take the current rule on rebuild (the change is
+accepted; no version stamp): a game in a tiebreak-only set (§ 5), a game after a timed segment closed
 level (§ 6.4), a baseline set v1 judged by "reached setTo" (6-5 is no longer won, § 2.5), and a set total
 entered while a set is in play (§ 2.3). A stored archive holding one of them can rebuild to a different
 score.
@@ -1188,7 +1182,7 @@ an additive action, not a format change.
 
 - **Participant-level service**: the doubles service order, which player serves (`serverParticipantId`
   is host metadata only), the receiver and the receiving order, and observed versus expected server
-  participant. Deferred by CA (S7) to its own plan.
+  participant. Deferred to its own plan.
 - **ITF Rule 27 corrections**: wrong server, wrong court half, wrong receiving order, and their
   rule-specific remedies. A host corrects the side due to serve with `setServer`; `wrongSide` and
   `wrongServer` are decorations that change no score.
@@ -1201,8 +1195,7 @@ an additive action, not a format change.
   team matchUp's tieMatchUps, belongs to the team format (tieFormat `winCriteria.aggregateValue` plus a
   team-level decider), not to `-F:` on a tieMatchUp, which would fire on a level tieMatchUp when the Arc
   is not level. The grammar refuses `SET1A-S:T10-F:TB1` (the INTENNSE doubles format) in any case.
-  Tracked in Mentat TASKS ("INTENNSE: the Arc's deciding point is ignored when the last tieMatchUp is
-  uneven").
+  Open defect: the Arc's deciding point is ignored when the last tieMatchUp is uneven.
 - **Clocks**: a match clock, a segment clock, shot clocks, timeouts and changeovers are the host's.
 - **Penalties as rules**: `penaltyType` and `penaltyPoint` are recorded facts; a penalty point is a point
   the host adds.
@@ -1212,21 +1205,21 @@ an additive action, not a format change.
 
 ## 14. Standing decisions carried over
 
-| decision                                                                                                                                                  | where         |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| R2: a timeline entry records a server only when supplied; calculated values are snapshots; the entry is authoritative (2026-10-17)                        | § 1.4, § 12.2 |
-| The input-level contract: a kind with no point model refuses point input; `getInputLevels()` reports it (S4, #5518)                                       | § 3.3, § 8    |
-| Substitution rules are advisory; `substitute()` refuses only identity errors (S6, CA 2026-10-17)                                                          | § 2.7         |
-| `observedServeSide` is recorded; the participant-level model is deferred (S7, CA 2026-10-17)                                                              | § 10.5, § 13  |
-| A one-point tiebreak (`TB1`) is sudden death (CA 2026-10-17, #5529)                                                                                       | § 4.3, § 9.4  |
-| The one-game set follows Rule 6: a margin of two, the tiebreak at one all (CA 2026-10-17, #5530)                                                          | § 4.2         |
-| Timed sets: points build games under the SET root; a level set plays its declared tiebreak; an exactly format's final set is set N (CA 2026-10-17, #5533) | § 3.2, § 6    |
-| A level exactly-N count names no winner (#5529)                                                                                                           | § 9.2         |
-| An aggregate decider is set N + 1, never one of the N (CA 2026-10-04)                                                                                     | § 3.2, § 9.4  |
-| A finished match takes no more points, and an ignored point records nothing (7.5.0, 7.7.0)                                                                | § 2.1, § 9.6  |
-| The engine does not model side-out; every point given counts (2026-10-17)                                                                                 | § 5, § 13     |
-| CA's decisions of 2026-10-18 on the questions this page first left open                                                                                   | § 16          |
-| v2's reducer never mutates its input; the published pure `addPoint` keeps its in-place behaviour through 7.x and retires at 8.0.0 (plan § 8.4)            | —             |
+| decision                                                                                                                                       | where         |
+| ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| R2: a timeline entry records a server only when supplied; calculated values are snapshots; the entry is authoritative (2026-10-17)             | § 1.4, § 12.2 |
+| The input-level contract: a kind with no point model refuses point input; `getInputLevels()` reports it (S4, #5518)                            | § 3.3, § 8    |
+| Substitution rules are advisory; `substitute()` refuses only identity errors                                                                   | § 2.7         |
+| `observedServeSide` is recorded; the participant-level model is deferred                                                                       | § 10.5, § 13  |
+| A one-point tiebreak (`TB1`) is sudden death (#5529)                                                                                           | § 4.3, § 9.4  |
+| The one-game set follows Rule 6: a margin of two, the tiebreak at one all (#5530)                                                              | § 4.2         |
+| Timed sets: points build games under the SET root; a level set plays its declared tiebreak; an exactly format's final set is set N (#5533)     | § 3.2, § 6    |
+| A level exactly-N count names no winner (#5529)                                                                                                | § 9.2         |
+| An aggregate decider is set N + 1, never one of the N                                                                                          | § 3.2, § 9.4  |
+| A finished match takes no more points, and an ignored point records nothing (7.5.0, 7.7.0)                                                     | § 2.1, § 9.6  |
+| The engine does not model side-out; every point given counts (2026-10-17)                                                                      | § 5, § 13     |
+| The decisions of 2026-10-18 on the questions this page first left open                                                                         | § 16          |
+| v2's reducer never mutates its input; the published pure `addPoint` keeps its in-place behaviour through 7.x and retires at 8.0.0 (plan § 8.4) | —             |
 
 ## 15. What the suite and the corpus pin
 
@@ -1234,10 +1227,10 @@ an additive action, not a format change.
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | conformance matrix | 81 cells from the factory's harvested formats: 77 held by independent cases, 4 refused, none missing (`formatMatrix.test.ts`); every cell placed in § 17                               |
 | conformance cases  | about 300, written from rulebooks (ITF, USA Pickleball, World Squash, ITTF, BWF, FIVB, VALORANT) or from the format definitions, each held five ways (see the opening)                 |
-| v1/v2 differential | retired with v1 at SE4; until then every v1 call was made on the v2 engine too, and the outcome and the whole record compared                                                          |
+| v1/v2 differential | retired with v1 on 2026-10-22; until then every v1 call was made on the v2 engine too, and the outcome and the whole record compared                                                   |
 | engine tests       | the S1–S13 fixes (#5511–#5521), the defects the cases found (#5529, #5530, #5533) and the replay, boundary and service tests cited above                                               |
 | scoring corpus     | 72 seeded streams (8 formats × 3 biases × 3 seeds) through the pure `createMatchUp`/`addPoint`, each step's result pinned by the manifest (#5511), and one point after completion each |
-| class timeline     | undo, redo, edits, baselines, segment ends, server corrections, substitutions, save and load, as corpus scenarios, with every conformance cell (SE3, #5658)                            |
+| class timeline     | undo, redo, edits, baselines, segment ends, server corrections, substitutions, save and load, as corpus scenarios, with every conformance cell (#5658)                                 |
 
 **The reducer as a conformance contract.** `kernel.scoring.reduce@1` takes a configuration and a timeline (§ 12.1) and
 answers what each entry did (recorded; ignored, with its code; refused, with its code: the message is prose) and the
@@ -1253,14 +1246,14 @@ its reducer is graded before its undo, persistence and line-ups are.
 > **v1 since then** (2026-10-21): #5612(factory), #5614(factory) and #5618(factory) brought v1 to most of
 > these decisions on 2026-10-18, so most "v1 defect" notes below describe v1 before them; they stay as the
 > record of each decision. The v1/v2 differential (§ 15) finds no difference on standard and tiebreak-only
-> formats beyond three shape questions recorded for CA in the scoring-engine v2 plan (SE2a-D3b, D11, D12).
-> On 2026-10-21 CA ruled five of its questions for the rule, and v1 was brought to them: every set carries
-> `isTiebreakOnly` or `isTimed` by the format governing it, however it was entered (D11); a timed set scored
-> in units has no per-game counts (D17); a combined total's points carry `index`, `set`, `game` and `number`
-> (D18, § 11.1); the point that wins a tiebreak at time shows `0-0` (D20, § 11.1); and a consecutive game's
-> `pointsToGame` counts the run in progress (D24, § 11.2). A completed match derives no server (D22, § 10.4).
+> formats beyond three shape questions.
+> On 2026-10-21 five of its open questions were decided for the rule, and v1 was brought to them: every set carries
+> `isTiebreakOnly` or `isTimed` by the format governing it, however it was entered; a timed set scored
+> in units has no per-game counts; a combined total's points carry `index`, `set`, `game` and `number`
+> (§ 11.1); the point that wins a tiebreak at time shows `0-0` (§ 11.1); and a consecutive game's
+> `pointsToGame` counts the run in progress (§ 11.2). A completed match derives no server (§ 10.4).
 
-The first version of this page left 21 questions to CA. CA decided all of them on 2026-10-18; each
+The first version of this page left 21 questions open. All of them were decided on 2026-10-18; each
 rule now stands in the section named, and the v1 behaviour beside it is **a v1 defect to fix before
 cutover**, which the v1/v2 differential surfaces. v1 was probed on factory `dev` at `0fcd079843`; the
 streams are given in the sections. One rule covers every new refusal: **refusals apply at the action
@@ -1314,8 +1307,8 @@ flagged as a legacy shape, with no version flag (§ 12.8). Nothing is left open.
 16. **DECIDED: a server correction survives undo and rebuild**; `recordEntry: false` attaches it to the
     preceding entry (§ 2.6, § 10.6, § 12.3). v1 defect, live in INTENNSE: the wrong server after an
     undo.
-17. **DECIDED: tiebreak-only formats derive no server** until each sport's rule is added (Mentat TASKS,
-    "research: each sport's service rule for the scoring engine"); a tennis match tiebreak keeps Rule
+17. **DECIDED: tiebreak-only formats derive no server** until each sport's rule is added
+    (research into each sport's service rule is open work); a tennis match tiebreak keeps Rule
     5(b); no server-based statistics where no server is derived (§ 10.2, § 10.8). v1 change: Rule 5(b),
     S/R and break points on every tiebreak-only set.
 18. **DECIDED: a level exactly-N match follows decision 3** (§ 9.2, § 9.7). v1 defect: it stays
@@ -1340,7 +1333,7 @@ flagged as a legacy shape, with no version flag (§ 12.8). Nothing is left open.
     Repeated overtime periods are not introduced by this rule.
 
 **A boundary, not a rule of this engine** (decided 2026-10-18): the INTENNSE Arc decider belongs to the
-team format (§ 13), tracked separately in Mentat TASKS.
+team format (§ 13), and is tracked separately as open work.
 
 ## 17. The matrix, cell by cell
 
@@ -1384,7 +1377,7 @@ on a cited id the matrix does not hold, and on a cell line that names no section
 - `bestOf | SET | set:standard(advantage,winBy1) | final:tiebreakSet | game:traditional | noClock | knownModifiers` — § 4.2 rule 1, § 4.5, § 5; `advantageAndShortSets` (`SET3-S:4WB1-F:TB7`)
 - `bestOf | SET | set:standard(advantage,noAD,winBy1) | final:same | game:traditional | noClock | knownModifiers` — § 4.1 rule 2, § 4.2 rule 1; `advantageAndShortSets` (`SET3-S:4NOADWB1`, `SET1-S:4NOADWB1`)
 - `exactly | INN | set:standard(tiebreak) | final:same | game:traditional | noClock | knownModifiers` — § 3.4, § 4.2, § 9.2; `timedSegments` (`INN3X-S:6/TB7`)
-- `exactly | SET | set:standard(tiebreak) | final:same | game:traditional | noClock | knownModifiers` — § 3.4, § 4.2, § 9.2; `timedSegments` (`SET3X-S:6/TB7`; exactly N on every root, CA 2026-10-25)
+- `exactly | SET | set:standard(tiebreak) | final:same | game:traditional | noClock | knownModifiers` — § 3.4, § 4.2, § 9.2; `timedSegments` (`SET3X-S:6/TB7`; exactly N on every root)
 - `exactly | SET | set:standard(advantage) | final:same | game:traditional | noClock | knownModifiers` — § 3.4, § 4.2, § 9.2; `timedSegments` (`SET3X-S:6`, `SET4X-S:6`)
 
 **Tiebreak-only segments**
@@ -1444,7 +1437,7 @@ on a cited id the matrix does not hold, and on a cell line that names no section
 - `bestOf | SET | set:combined(DECIDING_POINT) | final:same | game:traditional | noClock | knownModifiers` — § 7; `combinedTotals` (`SET1-S:P32DP`, `SET1-S:P4DP`)
 - `bestOf | SET | set:combined(WIN_BY_MARGIN) | final:same | game:traditional | noClock | knownModifiers` — § 7; `combinedTotals` (`SET1-S:P32WB2`)
 
-**Overtime (activation S6)**
+**Overtime**
 
 - `bestOf+aggregate | HAL | set:timed(P) | overtime:finite/timed(P) | final:tiebreakSet | game:traditional | noClock | knownModifiers` — § 9.3, § 9.8 rule 1, rule 2, rule 6, § 5; `overtime` (`HAL2A-S:T10P-O:1/T5P-F:TB1`)
 - `bestOf+aggregate | PER | set:timed(P) | overtime:finite/timed(P) | final:tiebreakSet | game:traditional | noClock | knownModifiers` — § 9.3, § 9.8 rule 1, rule 2, rule 6, § 5; `overtime` (`PER1A-S:T20P-O:1/T5P-F:TB1`)

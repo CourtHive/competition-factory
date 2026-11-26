@@ -332,6 +332,12 @@ jobs:
           echo "verify:declarations mode: $mode"
           pnpm verify:declarations --base "origin/$BASE_REF" --mode "$mode"
 
+      # Public text (documentation/**, the READMEs, the CHANGELOG) states rules, not who decided them: no
+      # attribution to a person's rulings, no ruling, plan or finding ids, no pointers into the private planning
+      # repository. Needs no build; its self-test runs first and fails hard.
+      - name: verify:docs-provenance
+        run: pnpm verify:docs-provenance
+
       # Needs dist, so it sits after verify:build. Checks that every import the docs tell a
       # reader to write actually resolves against the BUILT package — the documentation tests
       # import by module path and so cannot see a public-surface break.

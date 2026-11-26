@@ -1521,7 +1521,7 @@ offline desk still records who was at it.
 
 _Shipped in `44042278e`, `eba5d813e`, `78b77d88c` and `d86e2f469` on the exit-propagation branch._
 
-**CA's ruling, certified in TMX 2026-09-20:** _"An advancing participant encountering a BYE should
+**The rule, certified in TMX 2026-09-20:** _"An advancing participant encountering a BYE should
 always be advanced; a propagated exit encountering a BYE should be advanced. In both cases the BYE
 remains a BYE"_ — _"the `matchUpStatus: BYE` does not change."_
 

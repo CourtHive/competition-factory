@@ -40,12 +40,12 @@ empty**: the outcome is already known, and whoever arrives there wins it.
 
 **A produced exit.** A double exit sends nobody forward, so the matchUp it feeds receives a produced
 `WALKOVER` (or `DEFAULTED`) with **no `winningSide`** while the opponent has not arrived. The award is
-made when they do. CA, 2026-09-20: _"that is unnecessary if the winningSide will display the
-checkmark once a participant arrives... so, you don't need to keep it."_ The one exception is an
+made when they do: a `winningSide` is unnecessary while nobody holds the seat, because the award shows once a
+participant arrives, so none is kept before then. The one exception is an
 opponent who is already in place: the winner is then read off their side at once, because no arrival
 is still coming to resolve it.
 
-A BYE that carries a produced exit on does not change how it lands. CA, 2026-10-03: a produced exit
+A BYE that carries a produced exit on does not change how it lands: a produced exit
 advanced past a BYE is still a produced exit, so it lands pending, as it would without the BYE. A
 seat that a feed link has reserved for a participant who has not arrived yet is not an opponent in
 place, even though it already holds a drawPosition.
@@ -195,14 +195,14 @@ while the matchUp feeding the seat across the link will never send anyone: it ho
 or loser), it is a double exit, it was won against an exit and its losing side holds nobody, it is undecided and holds
 alone the exit a double exit produced along its winner path, or it feeds a FIRST_MATCHUP link that every candidate
 loser is already ineligible to cross. Under `doubleExitPropagateBye: false` a double exit's seat shows its produced
-exit instead of a BYE (CA ruling (A), 2026-10-21), unless the seat is fed in. An exit that came over a loser link waits
+exit instead of a BYE (since 2026-10-21), unless the seat is fed in. An exit that came over a loser link waits
 for the award: the seat is owed its BYE only once the matchUp is awarded.
 
 Until 2026-10-22 each side kept a `byeClaims` ledger of the matchUps that claimed its BYE, and unwinds asked it whether
 the BYE still had a reason. The ledger depended on the order results were entered: the same draw could carry a claim
-in one order and none in another, so the census round trip had to leave such claims out (CA ruling (b), 2026-10-20).
+in one order and none in another, so the census round trip had to leave such claims out (from 2026-10-20).
 Measured before the ledger was retired, the draw-derived reading explained every propagated loser-seat BYE in
-2,493,487 census seat observations, where the ledger explained fewer (Mentat P58). The ledger is no longer written or
+2,493,487 census seat observations, where the ledger explained fewer. The ledger is no longer written or
 read; `byeClaims` on a stored record is ignored. The harness holds every step to the draw-derived reading
 (`LOSER_SEAT_DERIVED`).
 
@@ -445,7 +445,7 @@ an exit already standing and the two converged (census run 17, OLYMPIC 16/16, 20
 
 ### Two held exits meet past their own BYEs
 
-CA, 2026-10-11 (P54). A held exit is one standing beside a BYE with nobody in it, waiting to be sent on. When the two
+A held exit is one standing beside a BYE with nobody in it, waiting to be sent on. When the two
 feeders of a matchUp are both holders, their exits meet there (RULE 4) and the double exit produces onward. A
 holder's own BYE position can already stand in that matchUp, advanced there while its seat was empty. Two rules keep
 that BYE from deciding anything:
@@ -483,8 +483,7 @@ came last but held the pending exit when it came first (census run 17, COMPASS a
 `doubleExitPropagateBye: false`).
 
 More generally, a held exit goes on at once, pending, whenever the matchUp it feeds can still receive an
-opponent: its other feeder is still to be played, or is an exit awarded to a seat nobody has reached. CA,
-2026-09-24: a produced walkover that meets a BYE "SHOULD then propagate" while the opponent's feeder is
+opponent: its other feeder is still to be played, or is an exit awarded to a seat nobody has reached: a produced walkover that meets a BYE propagates on while the opponent's feeder is
 pending. This holds whichever arrived first, the exit or the BYE beside it, and whether the exit is sent on as
 it arrives or when the mutation settles; until census S6 the settle held it back until the other side was
 decided, so the same results left a pending exit in one order and a TO_BE_PLAYED matchUp with the exit held
@@ -492,8 +491,8 @@ behind a BYE in another (census s14, COMPASS 32/27, 20521366: `North|2|1`; acros
 that pin these shapes, three end states became one). Under `doubleExitPropagateBye: false` a double exit's
 loser seat receives the produced exit and never a BYE, in either order of the two exits that converged there;
 the BYE opposite stays, and the exit travels on. That holds for a double exit two exits converged into as for one
-entered directly, and a propagated BYE already on the seat gives way to the produced exit (CA ruling (A),
-2026-10-21; before it, the seat kept that BYE in some orders and showed the produced exit in others). A fed-in seat
+entered directly, and a propagated BYE already on the seat gives way to the produced exit (since
+2026-10-21; before then, the seat kept that BYE in some orders and showed the produced exit in others). A fed-in seat
 takes a BYE whatever the policy, and a BYE the draw placed at generation stays. An entry left on a side that is itself a BYE is no held
 exit: its carrier went home when the BYE took the seat (census run-17 Class B, COMPASS 32/27, 20641116:
 entered last, the probe left `Southwest|2|1` TO_BE_PLAYED with the exit held back; entered first, the loser
@@ -507,7 +506,7 @@ nobody could fill (the same seed, `East|1|13` corrected from a double walkover t
 
 ### A carry past a BYE a holder takes back comes back with it
 
-CA's rule "the BYE stays; the exit travels" lets a holder's BYE position stand one round on until the exit it holds
+The rule "the BYE stays; the exit travels" lets a holder's BYE position stand one round on until the exit it holds
 is sent there. Meanwhile a participant carrying an exit can meet that BYE and pass it (RULE 1). When the holder's
 exit is sent on and its BYE is taken back, whoever passed that BYE comes back with it, as with any BYE released from
 a matchUp. A matchUp onward that their carry alone decided, for a seat nobody occupies yet, is released with them:
@@ -547,10 +546,9 @@ exit re-derived to a single one stops producing at once rather than on the next 
 
 ### A recorded result downstream fixes the kind of a correction
 
-CA, 2026-10-11 (P52): _a result someone recorded in the consolation implies something was really played,
-and it shouldn't be removed; the person who recorded it simply didn't realise the wrong player had been
-advanced. Changing the upstream match to a different KIND of outcome is invalid; simply changing the
-winning side is not._
+A result someone recorded in the consolation implies something was really played, and it is not removed: the
+person who recorded it did not realise the wrong player had been advanced. Changing the upstream match to a
+different KIND of outcome is invalid; changing only the winning side is not.
 
 - **The kind** of an outcome is whether it carries an exit downstream under the draw's settings: WALKOVER
   and DEFAULTED do, RETIRED only under `propagateRetirementAsExit`; any other decided result is played. With
@@ -576,7 +574,7 @@ winning side is not._
 
 ### An exit arriving at a seat already decided for it is carried past
 
-CA, 2026-10-11 (P51 group 2): a participant carrying an exit into a matchUp that another exit has already
+A participant carrying an exit into a matchUp that another exit has already
 decided for the seat awaiting them is carried past it. Two exits meeting would ordinarily converge (RULE 4),
 but where a result somebody recorded stands below that matchUp, the convergence would take it back. So the
 arrival takes the seat the decided exit was awaiting, goes on to that matchUp's winner matchUp, and carries
@@ -592,12 +590,12 @@ same seed, `West|2|2` returns to a match to be played and its walkover's winner 
 
 ### Two carried exits converge over what they carried
 
-CA, 2026-10-11 (census F2, P51). A carried exit decides the matchUp it reaches for the seat still awaiting its
+A carried exit decides the matchUp it reaches for the seat still awaiting its
 opponent (RULE 2), and its carrier goes on as that matchUp's loser, carrying the exit into the next structure
 and beyond. When the awaited participant then arrives carrying an exit of their own, the two exits meet (RULE 4):
 the matchUp becomes a double exit, and what the first exit carried onward is re-derived.
 
-Whether anything downstream blocks that convergence is asked the way a clear asks it (CA, 2026-09-25: only
+Whether anything downstream blocks that convergence is asked the way a clear asks it (only
 **genuinely active** downstream blocks, never **advanced active**), with one difference: a carried exit downstream
 is inert **even when its loser carried it on further**. Only a result somebody recorded below the meeting blocks it.
 Until 2026-10-11 a carry that went one hop further read as a played match, and the second walkover, a main-draw
@@ -625,10 +623,10 @@ When the Backdraw final itself becomes a double exit, the exit it produces into 
 finalist left standing there, on the side they now hold. Taking the Backdraw finalist out leaves the Main finalist
 alone, and a lone position sits on its own bracket side, so the side can change with the release. Before this the
 award was read from the draw as it stood before the release and named the empty side: the Main final read
-`WALKOVER` won by nobody, with its only finalist on the other side, until a later result rewrote it (census F2,
+`WALKOVER` won by nobody, with its only finalist on the other side, until a later result rewrote it (census
 20506968, DOUBLE_ELIMINATION 8/6 under `doubleExitPropagateBye: false`).
 
-A carried exit follows the link too (CA ruling 2026-10-23; census 9304724, DOUBLE_ELIMINATION 8/6). When the Main
+A carried exit follows the link too (since 2026-10-23; census 9304724, DOUBLE_ELIMINATION 8/6). When the Main
 structure's final is recorded as a WALKOVER, its loser drops into the Backdraw final. If that matchUp holds a BYE, the
 loser passes it across the link into the grand final, and their exit goes with them (RULE 1): the grand final is a
 WALKOVER won by the Main final's winner. RULE 1 re-propagates onto wherever the carrier lands, and a structure's last
@@ -1147,7 +1145,7 @@ named test that fails without it.
   without a winner remain eligible because they can describe an exit pending on an empty seat. Census policy-off 30030527
   (MODIFIED_FEED_IN_CHAMPIONSHIP 32/32) pins both entry orders, the shrunk and full histories, and the
   result-dependent boundaries in `aCarriedExitFollowsItsFeederSide`. This accommodates unstable side
-  keys without changing draw-position rule 3; Mentat P59 remains open.
+  keys without changing draw-position rule 3; re-keying sides to stable keys remains open.
 - **A convergence a call dissolved is owed its BYE back.** Under `doubleExitPropagateBye: false`, a single exit that
   becomes a double exit gives up the BYE its loser seat held on its account, and its loser seat takes the produced
   exit instead. When a later call re-derives it to an awarded single exit, it again has nobody to lose, so the seat is
@@ -1157,10 +1155,10 @@ named test that fails without it.
   call and is an awarded single exit after it; a convergence that dissolves and converges again within one call is
   owed nothing (COMPASS 32/30 30004303 under `doubleExitPropagateBye: false`:
   `aConvergenceACallDissolvedIsOwedItsByeBack`).
-- **Resolved (Mentat P58, 2026-10-22): a BYE matchUp's loser-seat BYE no longer depends on a claim.** That BYE can have
+- **Resolved (2026-10-22): a BYE matchUp's loser-seat BYE no longer depends on a claim.** That BYE can have
   two reasons, the matchUp feeding the seat is a BYE matchUp and a double exit whose produced exit it relays makes its
-  loser nobody, and the retired `byeClaims` ledger kept or omitted the double exit's claim by which came first (CA
-  ruling (b), 2026-10-20, left such claims out of the census round trip). Whether the BYE stands is now read from the
+  loser nobody, and the retired `byeClaims` ledger kept or omitted the double exit's claim by which came first (from
+  2026-10-20 such claims were left out of the census round trip). Whether the BYE stands is now read from the
   draw (see "Why a loser seat's BYE is read from the draw"), the claims are gone, and the round trip compares the seat
   whole: census Phase B 30004303's schedule and probes replay clean (`aByeFedLoserSeatRoundTripsWhole`).
 

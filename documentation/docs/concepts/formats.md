@@ -49,7 +49,7 @@ of it can be expressed in the code.
 
 ## Which format owns time
 
-Time belongs to whichever format answers the question being asked (CA, 2026-11-04):
+Time belongs to whichever format answers the question being asked:
 
 | Time                                                                     | Owner                                                      | Example                                |
 | ------------------------------------------------------------------------ | ---------------------------------------------------------- | -------------------------------------- |

@@ -147,6 +147,11 @@ surprise people:
 - **`verify:docs-imports` / `verify:docs-methods`** — every import and every engine method shown in
   the documentation must resolve and exist against the built package. If you rename something public,
   the docs have to move with it.
+- **`verify:docs-provenance`** — the documentation, the READMEs and the CHANGELOG state each behaviour
+  and its reason in plain technical language. They do not attribute a rule to a person's ruling, cite
+  internal ruling, plan or finding ids, or point into private planning notes. A legitimate match (a
+  state code, say) is allowlisted, with its reason, in
+  `packages/competition-factory/scripts/verify/docsProvenance.mjs`.
 - **`verify:surface`**, **`verify:shakeable`**, **`verify:bundle-size`** — the published API surface,
   tree-shakeability and bundle size are all pinned. An unintended export or a new runtime dependency
   will show up here.

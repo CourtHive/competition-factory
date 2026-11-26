@@ -200,7 +200,7 @@ A set decided by its tiebreak with no points recorded is complete: `7-6` under `
 under `S:6/TB7@12`. The games are the one score a tiebreak produces, and the record accepts them
 alone (`TIEBREAK_POINTS_NOT_RECORDED`). `6-6` is a tiebreak still being played and is not complete.
 A `0-0` pair in the tiebreak-point fields reads as no points. Points on one side only, or a pair the
-set winner did not win, leave the set incomplete. (Since 7.33.0; CA, 2026-11-07.)
+set winner did not win, leave the set incomplete. (Since 7.33.0.)
 
 ---
 
