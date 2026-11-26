@@ -3,6 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
 // constants and fixtures
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { LAVER_CUP } from '@Constants/tieFormatConstants';
 import { tieFormats } from '@Fixtures/scoring/tieFormats';
 import { TEAM } from '@Constants/eventConstants';
@@ -72,6 +73,33 @@ test('it will provide default tieFormat for TEAM events', () => {
 
   expect(drawDefinition.tieFormat).not.toBeUndefined();
   expect(drawDefinition.matchUpType).toEqual(TEAM);
+});
+
+test('generateDrawDefinition refuses an unknown tieFormatName, as addEvent does', () => {
+  const participantsCount = 8;
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    participantsProfile: { participantType: TEAM, participantsCount },
+  });
+
+  tournamentEngine.setState(tournamentRecord);
+
+  let result: any = tournamentEngine.addEvent({ event: { eventType: TEAM, tieFormatName: 'NOT_A_TIE_FORMAT' } });
+  expect(result.error).toEqual(INVALID_VALUES);
+
+  result = tournamentEngine.addEvent({ event: { eventType: TEAM } });
+  const { eventId } = result.event;
+  const { participants } = tournamentEngine.getParticipants({ participantFilters: { participantTypes: [TEAM] } });
+  result = tournamentEngine.addEventEntries({ eventId, participantIds: participants.map((p) => p.participantId) });
+  expect(result.success).toEqual(true);
+
+  // the same name used to build a STANDARD draw silently
+  result = tournamentEngine.generateDrawDefinition({ eventId, tieFormatName: 'NOT_A_TIE_FORMAT' });
+  expect(result.error).toEqual(INVALID_VALUES);
+  expect(result.drawDefinition).toBeUndefined();
+
+  result = tournamentEngine.generateDrawDefinition({ eventId, tieFormatName: LAVER_CUP });
+  expect(result.success).toEqual(true);
+  expect(result.drawDefinition.tieFormat.tieFormatName).toEqual(tieFormats[LAVER_CUP].tieFormatName);
 });
 
 it('can generate draws with unique TEAM participants', () => {

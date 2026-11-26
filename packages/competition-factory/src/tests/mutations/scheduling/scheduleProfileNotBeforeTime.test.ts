@@ -3,7 +3,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
 // constants and fixtures
-import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
+import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Tests/fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
 
 /**
  * A profile round's `notBeforeTime` (rain-day recovery G5, CA 2026-11-23): no matchUp of the round is placed before it.

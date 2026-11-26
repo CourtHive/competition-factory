@@ -40,7 +40,7 @@ interface LeagueProfile {
 
   // Tie Format
   tieFormat?: TieFormat; // Explicit tie format object
-  tieFormatName?: string; // Named format (default: COLLEGE_DEFAULT)
+  tieFormatName?: string; // Named format (default: a built-in three-doubles, six-singles format, first to 4)
 
   // Draw Configuration
   roundsCount?: number | 'DOUBLE_ROUND_ROBIN'; // Number of rounds (default: teamsCount - 1)

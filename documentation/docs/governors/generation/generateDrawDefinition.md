@@ -116,6 +116,10 @@ larger than the entrants can pair) are returned to the caller rather than leavin
 | `tieFormatName`      | `string`    | Named tie format preset                                           |
 | `hydrateCollections` | `boolean`   | Propagate event `category` and `gender` to collection definitions |
 
+A `tieFormatName` is matched first against the event's own tie formats (`event.tieFormats[]`, then `event.tieFormat`)
+by their `tieFormatName`, and then against the named presets in `tieFormatConstants`. A name that matches neither is
+refused with `INVALID_VALUES`, as `addEvent` refuses it. Earlier releases built the STANDARD format for it silently.
+
 ## Return Value
 
 ```ts

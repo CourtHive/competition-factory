@@ -4,7 +4,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
 // constants
-import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
+import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Tests/fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
 import { MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
 import { PUBLIC } from '@Constants/timeItemConstants';
 import { Tournament } from '@Types/tournamentTypes';

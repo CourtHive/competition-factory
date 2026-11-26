@@ -1,8 +1,9 @@
+import tieFormatDefaults, { isNamedTieFormat } from '@Helpers/tieFormats/tieFormatDefaults';
 import { getObjectTieFormat } from '@Query/hierarchical/tieFormats/getObjectTieFormat';
-import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 
 // constants and types
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { TieFormat } from '@Types/tournamentTypes';
@@ -35,24 +36,23 @@ export function getDrawFormat(params): ResultType & { tieFormat?: TieFormat; mat
     // resolve event tieFormat (handles both inline and tieFormatId reference)
     const eventTieFormat = getObjectTieFormat(event);
 
-    tieFormat =
-      tieFormat ||
-      referencedTieFormat ||
-      existingMainTieFormat ||
-      // if tieFormatName is provided, check event.tieFormats[] array first, then event.tieFormat
-      (tieFormatName && event?.tieFormats?.find((tf) => tf.tieFormatName === tieFormatName)) ||
-      (tieFormatName && eventTieFormat?.tieFormatName === tieFormatName && eventTieFormat) ||
-      // if the tieFormatName is not found in the factory then will use default
-      (tieFormatName &&
-        tieFormatDefaults({
-          namedFormat: tieFormatName,
-          hydrateCollections,
-          isMock,
-          event,
-        })) ||
-      // if no tieFormat is found on event then will use default
-      eventTieFormat ||
-      tieFormatDefaults({ event, isMock, hydrateCollections });
+    // if tieFormatName is provided, check event.tieFormats[] array first, then event.tieFormat
+    const eventNamedTieFormat =
+      tieFormatName &&
+      (event?.tieFormats?.find((tf) => tf.tieFormatName === tieFormatName) ||
+        (eventTieFormat?.tieFormatName === tieFormatName && eventTieFormat));
+
+    tieFormat = tieFormat || referencedTieFormat || existingMainTieFormat || eventNamedTieFormat;
+
+    if (!tieFormat && tieFormatName) {
+      // A name the event does not carry must name a factory tie format. An unknown one is refused, as `addEvent`
+      // refuses it: it used to build STANDARD silently, which generated a draw in a format nobody asked for.
+      if (!isNamedTieFormat(tieFormatName)) return { context: { tieFormatName }, error: INVALID_VALUES };
+      tieFormat = tieFormatDefaults({ namedFormat: tieFormatName, hydrateCollections, isMock, event });
+    }
+
+    // if no tieFormat is found on event then will use default
+    tieFormat ||= eventTieFormat || tieFormatDefaults({ event, isMock, hydrateCollections });
 
     matchUpFormat = undefined;
   } else if (!matchUpFormat) {

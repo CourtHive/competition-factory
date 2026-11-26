@@ -1,14 +1,7 @@
-import {
-  POLICY_TYPE_COMPETITION,
-  POLICY_TYPE_LADDER,
-  POLICY_TYPE_RATINGS,
-  POLICY_TYPE_SCHEDULING,
-  policyConstants,
-} from '@Constants/policyConstants';
-import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
+import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Tests/fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
+import { POLICY_COMPETITION_STANDARD } from '@Fixtures/policies/POLICY_COMPETITION_STANDARD';
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
 import POLICY_SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
-import { POLICY_COMPETITION_STANDARD } from '@Fixtures/policies/POLICY_COMPETITION_STANDARD';
 import { ratingsPolicies } from '@Fixtures/policies/ratingsPolicies';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 import tournamentEngine from '@Engines/syncEngine';
@@ -19,6 +12,13 @@ import addFormats from 'ajv-formats';
 import ts from 'typescript';
 import fs from 'fs-extra';
 import Ajv from 'ajv';
+import {
+  POLICY_TYPE_COMPETITION,
+  POLICY_TYPE_LADDER,
+  POLICY_TYPE_RATINGS,
+  POLICY_TYPE_SCHEDULING,
+  policyConstants,
+} from '@Constants/policyConstants';
 
 /**
  * THE CODES SCHEMA DESCRIBES POLICIES.
