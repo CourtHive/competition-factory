@@ -1,3 +1,4 @@
+import { engineBoundaryObservers } from '@Assemblies/engines/parts/boundaryObservers';
 import allowlist from './refusalAllowlist.json';
 import { relative } from 'node:path';
 import { getTournamentRecords, readMutationStatus } from '@Global/state/globalState';
@@ -5,7 +6,7 @@ import { setBulkItemObserver } from '@Mutate/bulkItem';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { generatePatch } from '@Tools/jsonPatch';
 import { isDeepStrictEqual } from 'node:util';
-import { expect, vi } from 'vitest';
+import { expect } from 'vitest';
 
 // Inspect the public JSON record, including factory stamps. Objects can be edited in place during
 // dispatch, so a reference to the old record cannot serve as the baseline.
@@ -164,49 +165,15 @@ function traceItem<T>(run: () => T): T {
   return result instanceof Promise ? (result.then(close) as T) : close(result);
 }
 
-// installed, not mocked: a worker that shares modules across files keeps the bulkItem it first loaded
+// installed, not mocked: a worker that shares modules across files keeps the modules it first loaded, and a setup
+// file's vi.mock did not reach these once an earlier file had loaded them (the PR tier's shared project). Every entry
+// point the invariant watches is observed this way; refusalInvariantCanary.test.ts fails if one goes unseen.
 setBulkItemObserver(traceItem);
-vi.mock('@Assemblies/engines/sync/engineInvoke', async (original) => {
-  const actual = await original<typeof import('@Assemblies/engines/sync/engineInvoke')>();
-  return {
-    ...actual,
-    engineInvoke: (...args: Parameters<typeof actual.engineInvoke>) =>
-      invoke(args[1], () => actual.engineInvoke(...args)),
-  };
-});
-vi.mock('@Assemblies/engines/async/asyncEngineInvoke', async (original) => {
-  const actual = await original<typeof import('@Assemblies/engines/async/asyncEngineInvoke')>();
-  return {
-    ...actual,
-    asyncEngineInvoke: (...args: Parameters<typeof actual.asyncEngineInvoke>) =>
-      invoke(args[1], () => actual.asyncEngineInvoke(...args)),
-  };
-});
-vi.mock('@Assemblies/engines/sync/executionQueue', async (original) => {
-  const actual = await original<typeof import('@Assemblies/engines/sync/executionQueue')>();
-  return {
-    ...actual,
-    executionQueue: (...args: Parameters<typeof actual.executionQueue>) =>
-      queue(args[1], args[2], () => actual.executionQueue(...args)),
-  };
-});
-vi.mock('@Assemblies/engines/async/asyncExecutionQueue', async (original) => {
-  const actual = await original<typeof import('@Assemblies/engines/async/asyncExecutionQueue')>();
-  return {
-    ...actual,
-    asyncExecutionQueue: (...args: Parameters<typeof actual.asyncExecutionQueue>) =>
-      queue(args[1], args[2], () => actual.asyncExecutionQueue(...args)),
-  };
-});
-vi.mock('@Assemblies/engines/parts/executeMethod', async (original) => {
-  const actual = await original<typeof import('@Assemblies/engines/parts/executeMethod')>();
-  return {
-    ...actual,
-    executeFunction: (...args: Parameters<typeof actual.executeFunction>) =>
-      traceDirective(args[3], () => actual.executeFunction(...args)),
-  };
-});
-
+engineBoundaryObservers.invoke = (args, run) => invoke(args, run);
+engineBoundaryObservers.asyncInvoke = (args, run) => invoke(args, run);
+engineBoundaryObservers.queue = (directives, rollbackOnError, run) => queue(directives, rollbackOnError, run);
+engineBoundaryObservers.asyncQueue = (directives, rollbackOnError, run) => queue(directives, rollbackOnError, run);
+engineBoundaryObservers.directive = (methodName, run) => traceDirective(methodName, run);
 export function assertRefusalsUnchanged() {
   const found = [...violations];
   violations.clear();
