@@ -6,6 +6,8 @@ Subscriptions enable external methods to be called when certain events occur whi
 
 The payload for each subscription is an array of objects, with each element of the array having been produced by an `addNotice` statement within engine methods. Subscription methods are called **_after_** an engine method completes, not during execution.
 
+A call that returns an error delivers no notices, with one exception. A bulk mutation that commits some items and then refuses another returns its error with `committed: true`. Unless rollback was requested, the engine then delivers the notices of the committed items in the usual topic order. A refused item buffers no notices. The same applies inside an `executionQueue` without rollback (see [Transaction Pattern](/docs/engines/mutation-engines#transaction-pattern)).
+
 In 7.x, subscription payloads are read-only, including the array and every object reachable through it. To update a score, take the matchUp ID from the notice and use it in a subsequent `setMatchUpStatus` call. Keep display-only annotations in a separate application object.
 
 ### Auditing a provider or subscriber

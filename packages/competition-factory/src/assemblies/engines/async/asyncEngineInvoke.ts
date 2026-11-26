@@ -5,6 +5,7 @@ import { captureOperation, restoreOperation } from '@Assemblies/engines/parts/op
 import { caughtErrorResult, executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
 import { logMethodNotFound } from '@Assemblies/engines/parts/logMethodNotFound';
+import { isPartialCommit } from '@Assemblies/engines/parts/partialCommit';
 import { notifySubscribersAsync } from '@Global/state/notifySubscribers';
 import { seedCall } from '@Assemblies/engines/parts/seedRandomParam';
 import { isFunction, isObject, isString } from '@Tools/objects';
@@ -80,7 +81,9 @@ export async function asyncEngineInvoke(engine: { [key: string]: any }, args: an
 
     const mutationStatus = getMutationStatus({ timeStamp }); // timeStamp reaches the record via the factory extension
 
-    const notify = result?.success && params?.delayNotify !== true && params?.doNotNotify !== true;
+    // a bulk call that committed some items before refusing one announces what it committed (ruling 33)
+    const committed = result?.success || isPartialCommit(result);
+    const notify = committed && params?.delayNotify !== true && params?.doNotNotify !== true;
 
     if (notify)
       await notifySubscribersAsync({
@@ -88,7 +91,7 @@ export async function asyncEngineInvoke(engine: { [key: string]: any }, args: an
         mutationStatus,
         timeStamp,
       });
-    if (notify || !result?.success || params?.doNotNotify) deleteNotices();
+    if (notify || !committed || params?.doNotNotify) deleteNotices();
 
     getInvokeObserver()?.({ phase: 'after', methodName, engineType: 'async', params, result });
 

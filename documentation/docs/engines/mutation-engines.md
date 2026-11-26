@@ -235,7 +235,11 @@ changes, so a failure in the third call leaves the first two applied.
 The same holds **inside** an `executionQueue` submitted without rollback: when a directive fails, the writes of the
 directives before it stay in the records, and **no notices are delivered** for any of them, then or on any later call. The
 record is stamped as modified at the queue's own instant, and the result carries `rolledBack: false` and `results`, the
-directives that were applied before the refusal. A caller that persists
+directives that were applied before the refusal. One exception (CA, ruling 33): when the refusing directive is a bulk
+mutation that committed some of its items (it returns `committed: true` beside its `error`), the queue publishes its
+buffered notices, including those of the directives before it, so subscribers hear of every change that stayed
+written. A refused bulk directive is also listed in `results`, last, with its whole result: its own
+per-item `results` among it, as a direct call returns them. A caller that persists
 from notices, or that lent the engine its own objects (`setDeepCopy(false)`), must then discard the in-memory records
 — for example by aborting its database transaction — because they no longer match what was announced. To make several mutations
 succeed or fail together, submit them as one `executionQueue` with rollback enabled — the second

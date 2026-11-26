@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Committed work announces itself. A bulk mutation that commits some items and refuses another returns its error with `committed: true`, and with rollback off the engine now delivers the committed items' notices in the usual topic order instead of dropping them. Inside an `executionQueue` without rollback, such a directive also delivers the notices of the directives before it. Explicit rollback is unchanged: the whole call is restored and nothing is delivered.
 - `scoreGovernor.ScoringEngine` accepts an optional `clock: () => string` for instance-specific ISO timestamps. Explicit action timestamps take precedence.
 - `tools.plainDate.isDateInPast(dateString, asOf?)` and `tools.generateTimeCode(index?, asOf?)` accept a Date or ISO date string. Omitted instants still use the Factory call clock in 7.x.
 
