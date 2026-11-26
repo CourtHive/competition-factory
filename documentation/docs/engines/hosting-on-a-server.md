@@ -5,7 +5,7 @@ title: Hosting factory on a server
 A server handles many requests at once. Engine state lives in the installed state provider, and the default provider
 holds one state for the whole process, so on a server every request would read and write the same records. Install an
 async state provider, give each request its own state, run its mutations with `tournamentEngineAsync` as one
-`executionQueue` with `rollbackOnError`, and save the record only when the queue succeeds.
+`executionQueue`, and save the record only when the queue succeeds.
 
 This page covers that pattern, the methods each exported engine carries, and the bundling hazard that can leave a
 shared engine without a method TypeScript says it has.
@@ -72,14 +72,20 @@ Each mutation request follows the same steps, all inside one `runWithInstanceSta
 1. **Serialize writes per tournament.** The factory does not do this. The reference server takes a per-tournament
    lock inside the request's state scope, then fetches the record.
 2. **Load the record** with `setState`. It makes a deep copy by default, so the engine works on its own copy.
-3. **Run the mutation** as `executionQueue(methods, true)`. Every directive's method is resolved before any runs. With
-   `rollbackOnError` set, a refusal restores the engine state as it was before the queue and returns the refusal with
-   `rolledBack: true`. A queue that completes returns `{ success, results }`.
+3. **Run the mutation** as `executionQueue(methods)`. Every directive's method is resolved before any runs. A queue
+   that completes returns `{ success, results }`. A refused queue stops at the refusal and keeps the directives before
+   it in the request's records.
 4. **Save only on success.** Read the mutated record back from the engine and persist it only when the queue returned
-   `success`. The reference server saves only then.
+   `success`, and discard the request's records otherwise. The reference server saves only then.
 
-The reference server passes through the caller's `rollbackOnError` flag. A server that persists only whole successes
-should pass `true`, so a refused queue leaves nothing half-applied in the request's state.
+A server that saves only whole successes and discards a refused request's records needs no in-memory rollback: the
+stored record already is the rollback, and `executionQueue(methods, true)` would only add a deep copy of every loaded
+record to each request. The reference server runs its engine with rollback off whatever the caller sends, and reports
+a refused queue to the caller as rolled back (`rolledBack: true`, no `committed`), because nothing of it was stored.
+
+With rollback off, a refused queue delivers the notices of the directives it kept before the refusal (see
+[Transaction Pattern](/docs/engines/mutation-engines#transaction-pattern)). A server that acts on notices, by
+broadcasting them or writing audit rows for example, must do so only after the save succeeds.
 
 :::caution `error` and `success` live on the shared instance
 `setState` returns the engine itself, with `error` and `success` set on it. `tournamentEngineAsync` is one object for
@@ -111,12 +117,17 @@ export function runMutation({ tournamentId, methods }) {
       const { error } = tournamentEngineAsync.setState(tournamentRecord);
       if (error) return { error };
 
-      const result = await tournamentEngineAsync.executionQueue(methods, true);
+      // rollback off: a refused queue is never saved, so the stored record is the rollback
+      const result = await tournamentEngineAsync.executionQueue(methods);
       if (result.success) {
         await storage.save(tournamentEngineAsync.getTournament().tournamentRecord);
-        // fan out addedEvents here: they were delivered after the queue succeeded
+        // fan out addedEvents here, only after the save
+        return result;
       }
-      return result;
+      // nothing was stored: drop what a refused queue delivered, and say that nothing was kept
+      addedEvents.length = 0;
+      const { committed, results, ...refusal } = result;
+      return { ...refusal, rolledBack: true };
     }),
   );
 }
@@ -127,7 +138,9 @@ With Express or Nest, call `runMutation` from the route handler. The reference s
 
 ## Notices and fan-out
 
-Subscriptions are delivered after a queue completes. A refused queue returns before delivery. Under the async provider
+Subscriptions are delivered after a queue completes. A refused queue with rollback delivers nothing; without rollback
+it delivers the notices of the directives it kept, which a server that does not save the refused queue must drop, as
+the example does. Under the async provider
 subscriptions are part of the request's state, so set them in one of two ways:
 
 - **Per request**, with `globalState.setSubscriptions({ subscriptions })` inside the scope, as in the example.

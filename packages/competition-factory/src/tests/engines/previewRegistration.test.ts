@@ -283,19 +283,16 @@ it.each([false, true])('matches the ordinary nested queue receipt with pending n
     );
     expect(preview.results).toEqual(committed.results);
     expect(preview.patch).toEqual(generatePatch({ [id]: start }, { [id]: actual }));
-    expect(deliveries).toMatchObject(
-      refusal
-        ? []
-        : [
-            {
-              topic,
-              payloads: [
-                { tournamentId: id, tournamentName: 'pending-at-entry' },
-                { tournamentId: id, tournamentName: 'nested' },
-              ],
-            },
-          ],
-    );
+    // the nested queue's kept directive announces itself whether or not a later one refuses
+    expect(deliveries).toMatchObject([
+      {
+        topic,
+        payloads: [
+          { tournamentId: id, tournamentName: 'pending-at-entry' },
+          { tournamentId: id, tournamentName: 'nested' },
+        ],
+      },
+    ]);
     expect(preview.willEmitNotices).toEqual(deliveries);
   } finally {
     setClock();

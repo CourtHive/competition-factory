@@ -123,7 +123,17 @@ export function caughtErrorResult({
     params: params ?? {},
     err,
   });
-  if (caught?.error) return caught;
   const error = typeof err === 'string' ? err.toUpperCase() : ((err as Error)?.message ?? 'UNKNOWN_ERROR');
-  return { ...caught, error };
+  const result = caught?.error ? caught : { ...caught, error };
+  thrownResults.add(result);
+  return result;
+}
+
+// The envelopes of methods that threw. A throw can come partway through a write, so a rollback that took no snapshot
+// (rollbackSnapshot.ts) cannot claim to have restored one. Kept by identity: the envelope's shape is the provider's.
+const thrownResults = new WeakSet<object>();
+
+/** true when `result` is the envelope of a method that threw, not a refusal it returned */
+export function isThrownResult(result: unknown): boolean {
+  return typeof result === 'object' && result !== null && thrownResults.has(result);
 }

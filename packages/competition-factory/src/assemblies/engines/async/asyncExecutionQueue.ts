@@ -1,8 +1,10 @@
 import { deleteNotices, getDevContext, getInvokeObserver } from '@Global/state/globalState';
 import { engineBoundaryObservers } from '@Assemblies/engines/parts/boundaryObservers';
 import { ownMethod } from '@Tools/ownMethod';
-import { captureOperation, restoreOperation } from '@Assemblies/engines/parts/operationState';
-import { caughtErrorResult, executeFunction } from '@Assemblies/engines/parts/executeMethod';
+import { caughtErrorResult, executeFunction, isThrownResult } from '@Assemblies/engines/parts/executeMethod';
+import { captureRollback, queueCannotPartlyCommit } from '@Assemblies/engines/parts/rollbackSnapshot';
+import { restoreOperation } from '@Assemblies/engines/parts/operationState';
+import { rolledBackResult } from '@Assemblies/engines/parts/rolledBack';
 import { prepareDirective, validateDirectives } from '@Assemblies/engines/parts/directives';
 import { getQueueMethods } from '@Assemblies/engines/parts/engineMethodRegistry';
 import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
@@ -37,9 +39,11 @@ export async function asyncExecutionQueue(engine: FactoryEngine, directives: Dir
 
   // one instant for the whole queue, captured before any directive runs; see tools/clock.ts
   return withCapturedClockAsync(async (timeStamp) => {
-    const capture = rollbackOnError ? captureOperation() : undefined;
+    // a queue of one directive that cannot partly commit takes no snapshot of the records (rollbackSnapshot.ts)
+    const capture = rollbackOnError ? captureRollback(queueCannotPartlyCommit(directives, methods)) : undefined;
     if (capture?.error) return { error: capture.error, rolledBack: false };
     const captured = capture?.captured;
+    const snapshot = captured && !captured.atomic ? captured : undefined;
 
     const results: any[] = [];
     let refusal: ReturnType<typeof executeFunction> | undefined;
@@ -65,28 +69,28 @@ export async function asyncExecutionQueue(engine: FactoryEngine, directives: Dir
       }
     } catch (err) {
       // executeFunction catches a SYNC throw outside devContext, but an async method's rejection arrives after it has
-      // returned. Restore, then answer as the sync engine does: rethrow under devContext, otherwise the
-      // caught-error envelope, marked rolledBack like any other refusal
-      if (captured) restoreOperation(captured);
+      // returned. Restore a snapshot, then answer as the sync engine does: rethrow under devContext, otherwise the
+      // caught-error envelope, marked rolledBack like any other refusal. Without a snapshot the writes stay
+      if (snapshot) restoreOperation(snapshot);
       else keepWrites(timeStamp);
       if (getDevContext()) throw err;
       const caught = caughtErrorResult({ methodName: current?.methodName ?? '', params: current?.params, err });
-      return captured ? { ...caught, rolledBack: true } : { ...caught, rolledBack: false, results };
+      return snapshot ? rolledBackResult(caught) : { ...caught, rolledBack: false, results };
     }
 
     if (refusal) {
-      if (captured) {
+      // without a snapshot, only a refusal is known to have written nothing: a method that threw may have
+      if (captured && !(captured.atomic && isThrownResult(refusal))) {
         restoreOperation(captured);
-        return { ...refusal, rolledBack: true };
+        return rolledBackResult(refusal);
       }
-      // a directive that committed part of its work announces it, and the queue's buffer with it
-      if (refusal[PARTIAL_COMMIT] === true) {
+      // the writes before the refusal stay, and committed work announces itself: the directives that succeeded, and
+      // a refusing directive that committed part of its work. A method that threw announces nothing
+      const partly = refusal[PARTIAL_COMMIT] === true;
+      const ran = results.length + (partly ? 1 : 0);
+      if (ran && !isThrownResult(refusal)) {
         const mutationStatus = getMutationStatus({ timeStamp });
-        await notifySubscribersAsync({
-          directives: directives.slice(0, results.length + 1),
-          mutationStatus,
-          timeStamp,
-        });
+        await notifySubscribersAsync({ directives: directives.slice(0, ran), mutationStatus, timeStamp });
         deleteNotices();
       } else keepWrites(timeStamp);
       // a refused bulk directive is listed, last, with its whole result: its per-item results among it

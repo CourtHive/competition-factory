@@ -14,15 +14,15 @@ import { MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { MODIFY_MATCHUP } from '@Constants/topicConstants';
 
 /**
- * A REFUSED QUEUE WITHOUT ROLLBACK delivers no notices, and leaves none behind (D2).
- * mutation-engines.md § Transaction Pattern already promised that the writes before
- * the refusal stay and "no notices are delivered for any of them". The queue kept that promise only inside a
- * per-request async context, where the leftover buffer died with the request: it neither emptied the buffer nor cycled
- * the mutation flag, so on a long-lived engine the NEXT successful call delivered the refused queue's notices as its
- * own and stamped the record at its own instant.
+ * A REFUSED QUEUE WITHOUT ROLLBACK keeps the writes of the directives before the refusal, and that committed work
+ * announces itself: their notices are delivered when the queue returns, and none is left behind
+ * (mutation-engines.md § Transaction Pattern). The queue once left its buffer and mutation flag in place, so on a
+ * long-lived engine the NEXT successful call delivered the refused queue's notices as its own and stamped the record at
+ * its own instant; later it delivered nothing at all for writes that stayed.
  *
- * Now the refused queue stamps the record at its own instant (its writes are a modification), empties the buffer,
- * and returns `results`: the directives that were applied, so a caller can see what persisted.
+ * Now the refused queue stamps the record at its own instant (its writes are a modification), delivers the notices of
+ * the directives it kept, empties the buffer, and returns `results`: the directives that were applied, so a caller can
+ * see what persisted.
  */
 
 const REFUSED_AT = 1_000_000;
@@ -61,7 +61,7 @@ const stampOf = (record: any) => record.factory?.timeStamp;
 describe('sync engine', () => {
   useEngineCatch();
 
-  it('the refused queue keeps its writes, notifies nothing, stamps the record at its instant, and reports results', () => {
+  it('the refused queue keeps its writes, announces them, stamps the record at its instant, and reports results', () => {
     const { first, refused } = setup();
     const modified = watchModified();
 
@@ -71,16 +71,15 @@ describe('sync engine', () => {
     expect(result.rolledBack).toEqual(false);
     expect(result.results.map((r: any) => r.methodName)).toEqual(['setMatchUpStatus']);
     expect(tournamentEngine.findMatchUp({ matchUpId: first.matchUpId }).matchUp.winningSide).toEqual(1);
-    expect(modified).toEqual([]);
+    expect(modified).toContain(first.matchUpId);
     expect(stampOf(tournamentEngine.getTournament().tournamentRecord)).toEqual(REFUSED_AT);
   });
 
   it('the next successful call delivers only its own notices and its own stamp', () => {
     const { first, second, score, refused } = setup();
-    const modified = watchModified();
-
     setClock(REFUSED_AT);
     tournamentEngine.executionQueue(refused);
+    const modified = watchModified();
 
     // a call that writes nothing: no leftover notice to deliver, no leftover flag to stamp the record with
     setClock(LATER);
@@ -122,7 +121,8 @@ it('async engine: the same within one request context', async () => {
       expect(result.error).toEqual(MATCHUP_NOT_FOUND);
       expect(result.rolledBack).toEqual(false);
       expect(result.results.map((r: any) => r.methodName)).toEqual(['setMatchUpStatus']);
-      expect(modified).toEqual([]);
+      expect(modified).toContain(first.matchUpId);
+      modified.length = 0;
 
       setClock(LATER);
       const written: any = await asyncEngine.executionQueue([score(second.matchUpId)]);

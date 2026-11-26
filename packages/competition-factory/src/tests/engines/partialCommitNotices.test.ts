@@ -15,8 +15,8 @@ import { MUTATIONS } from '@Constants/topicConstants';
  * the first refused item as its own `error`. When it committed at least one item it also returns `committed: true`, and
  * the engine publishes the buffered notices instead of deleting them. A refused item buffers nothing. With rollback the
  * whole call is restored and nothing is published (a caller-requested rollback stays a transaction). In a queue
- * without rollback a directive that partly commits publishes the queue's buffer, the notices of the directives before
- * it included: the one deviation from D2 (mutation-engines.md § Transaction Pattern).
+ * without rollback the work kept before a refusal is published too: the notices of the directives before it, and those
+ * of a refusing directive that partly committed (mutation-engines.md § Transaction Pattern).
  *
  * `partly` stands for a bulk writer: each item names a value; `bad` is refused, writing nothing; any other is appended to
  * the tournament name and announced. Each item runs inside `bulkItem`, the boundary the refusal invariant attributes
@@ -119,7 +119,7 @@ describe('sync engine', () => {
     expect(delivered).toEqual(['next']);
   });
 
-  it('a queue without rollback publishes its buffer when a directive partly commits: the D2 deviation', () => {
+  it('a queue without rollback publishes its buffer when a directive partly commits', () => {
     const { delivered, mutations } = setup();
     const result: any = tournamentEngine.executionQueue([
       { method: 'rename', params: { name: 'R' } },
@@ -139,8 +139,8 @@ describe('sync engine', () => {
     expect(mutations).toEqual([['rename', 'partly']]);
   });
 
-  it('a queue without rollback whose refusing directive committed nothing publishes nothing, as D2 says', () => {
-    const { delivered } = setup();
+  it('a queue without rollback whose refusing directive committed nothing publishes what came before it', () => {
+    const { delivered, mutations } = setup();
     const result: any = tournamentEngine.executionQueue([
       { method: 'rename', params: { name: 'R' } },
       { method: 'refuse' },
@@ -149,7 +149,22 @@ describe('sync engine', () => {
     // a refused directive that is not a bulk call is not listed, as before
     expect(result.results).toEqual([{ success: true, methodName: 'rename' }]);
     expect(name()).toEqual('R');
+    // the kept directive announces itself; the refused one is not named
+    expect(delivered).toEqual(['R']);
+    expect(mutations).toEqual([['rename']]);
+  });
+
+  it('a queue without rollback whose first directive refuses publishes nothing', () => {
+    const { delivered, mutations } = setup();
+    const result: any = tournamentEngine.executionQueue([
+      { method: 'refuse' },
+      { method: 'rename', params: { name: 'R' } },
+    ]);
+    expect(result.error).toEqual(REFUSAL);
+    expect(result.results).toEqual([]);
+    expect(name()).toEqual('T');
     expect(delivered).toEqual([]);
+    expect(mutations).toEqual([]);
   });
 
   it('a queue with rollback is restored whole and publishes nothing', () => {

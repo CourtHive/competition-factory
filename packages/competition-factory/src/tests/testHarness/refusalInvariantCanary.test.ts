@@ -1,6 +1,7 @@
 import { assertRefusalsUnchanged } from '@Tests/testHarness/corpus/refusalInvariant';
 import asyncGlobalState from '@Server/providers/factory/engines/asyncGlobalState';
 import syncGlobalState from '@Global/state/syncGlobalState';
+import { setBuiltinPreviewMethods } from '@Forge/previewBindings';
 import { setStateProvider } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -24,6 +25,10 @@ const methods = {
   },
   succeed: () => ({ ...SUCCESS }),
 };
+// the same late refusal as one of the factory's own methods: with rollbackOnError it takes no snapshot
+// (engines/parts/rollbackSnapshot.ts), so nothing restores its write and the invariant must see it
+const atomic = { atomicLateRefusal: methods.lateRefusal.bind(null) };
+setBuiltinPreviewMethods(atomic);
 
 const reported = () => {
   try {
@@ -46,6 +51,16 @@ describe('refusal invariant canary', () => {
     mocksEngine.generateTournamentRecord({ setState: true });
     tournamentEngine.importMethods(methods);
     expect(tournamentEngine.executionQueue([{ method: 'lateRefusal' }]).error).toEqual(INVALID_VALUES);
+    expect(reported()).toBe(true);
+  });
+
+  it('engineInvoke and executionQueue: one directive with rollback that takes no snapshot', () => {
+    mocksEngine.generateTournamentRecord({ setState: true });
+    tournamentEngine.importMethods(atomic);
+    expect(tournamentEngine.atomicLateRefusal({ rollbackOnError: true }).rolledBack).toEqual(true);
+    expect(reported()).toBe(true);
+    mocksEngine.generateTournamentRecord({ setState: true });
+    expect(tournamentEngine.executionQueue([{ method: 'atomicLateRefusal' }], true).rolledBack).toEqual(true);
     expect(reported()).toBe(true);
   });
 
@@ -75,6 +90,14 @@ describe('refusal invariant canary', () => {
     });
   asyncCase('asyncEngineInvoke: a direct call', () => asyncEngine.lateRefusal());
   asyncCase('asyncExecutionQueue: one directive', () => asyncEngine.executionQueue([{ method: 'lateRefusal' }]));
+  asyncCase('asyncEngineInvoke: one directive with rollback that takes no snapshot', () => {
+    asyncEngine.importMethods(atomic);
+    return asyncEngine.atomicLateRefusal({ rollbackOnError: true });
+  });
+  asyncCase('asyncExecutionQueue: one directive with rollback that takes no snapshot', () => {
+    asyncEngine.importMethods(atomic);
+    return asyncEngine.executionQueue([{ method: 'atomicLateRefusal' }], true);
+  });
   asyncCase('asyncExecutionQueue: the refusing directive after a successful one', () =>
     asyncEngine.executionQueue([{ method: 'succeed' }, { method: 'lateRefusal' }]),
   );

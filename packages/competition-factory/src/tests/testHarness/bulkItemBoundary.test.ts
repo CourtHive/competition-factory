@@ -113,13 +113,19 @@ describe('bulk item boundary', () => {
     }
   }
 
-  it('a rollback queue is not traced', () => {
+  it('a rollback queue is checked too: its restore is no violation, a refused item that wrote still is', () => {
     mocksEngine.generateTournamentRecord({ setState: true });
     tournamentEngine.importMethods(methods);
-    const args = { items: [{ write: 'kept' }, { refuse: true, refusedWrite: 'leaked' }] };
-    const result = tournamentEngine.executionQueue([{ method: 'bulkWrite', params: args }], true);
-    expect(result.error).toEqual(INVALID_VALUES);
+    const queue = (items: Item[]) =>
+      tournamentEngine.executionQueue([{ method: 'bulkWrite', params: { items } }], true);
+    // the committed item's write is undone by the restore, and the restored queue compares equal
+    const restored = queue([{ write: 'kept' }, { refuse: true }]);
+    expect(restored.error).toEqual(INVALID_VALUES);
+    expect(restored.rolledBack).toEqual(true);
     expect(detected()).toEqual(false);
+    // a refused item is compared at its own boundary whatever the rollback
+    expect(queue([{ write: 'kept' }, { refuse: true, refusedWrite: 'leaked' }]).rolledBack).toEqual(true);
+    expect(detected()).toEqual(true);
   });
 
   it('async requests keep their own item boundaries', async () => {
