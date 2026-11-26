@@ -37,8 +37,8 @@
 //
 // This file is the CANONICAL source. It is:
 //   - installed into each repo as `scripts/attr-audit.mjs` + a `pnpm attr-audit` script
-//     (see Mentat/tools/attr-audit/install.mjs), and
-//   - invoked cross-repo by Mentat/tools/attr-audit/run.mjs.
+//     by the shared CourtHive tooling's installer, and
+//   - invoked cross-repo by that tooling's runner.
 // Zero dependencies beyond the target repo's own `typescript`.
 //
 // Usage:

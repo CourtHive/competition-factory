@@ -2,16 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Mentat Orchestration (READ FIRST)
-
-Before doing anything else, read `../Mentat/CLAUDE.md`, `../Mentat/TASKS.md`, `../Mentat/standards/coding-standards.md`, and every file in `../Mentat/in-flight/`. Mentat is the orchestration layer for the entire CourtHive ecosystem; its standards override per-repo conventions when they conflict. If you are about to start **building** (not just planning), you must claim a surface in `../Mentat/in-flight/` and run the air-traffic-control conflict check first. See the parent `../CLAUDE.md` "Mentat Orchestration" section for the full protocol.
-
-## Branching — cut from `dev`, not `master` (CA, 2026-09-12)
+## Branching — cut from `dev`, not `master` (2026-09-12)
 
 `dev` is this repo's integration branch. **Branch from `origin/dev` and open PRs against `dev`.**
 `master` advances only at checkpoints, by merging `dev` into it.
 
-**A checkpoint merge does NOT cut or publish a release** (CA, 2026-09-18, correcting this line).
+**A checkpoint merge does NOT cut or publish a release** (2026-09-18, correcting this line).
 `release-please.yml` does run on `push` to `master`, but all it does is refresh the perpetual
 `chore: release X.Y.Z` PR it keeps open against `master`. A release exists only if that PR is
 merged, which is a separate and deliberate act. So a checkpoint is routine: merge it, and do not
@@ -20,11 +16,11 @@ raise releases, publication or the release PR as a consequence of it.
 `verify.yml` uses a bare `pull_request:` trigger, so a PR into `dev` still runs the full verify
 gate. Land work by PR: a direct push to `dev` gets no push-triggered run.
 
-**After a release PR merges, merge `master` back into `dev`** (CA, 2026-10-02). release-please's
+**After a release PR merges, merge `master` back into `dev`** (2026-10-02). release-please's
 `chore(master): release X.Y.Z` commit lands on `master` only (version in `package.json`, `CHANGELOG.md`,
 `.release-please-manifest.json`), so without the back-merge `dev` drifts: by 2026-10-02 it read 7.1.0
 while `master` was 7.4.0, and anything built from `dev` reported the wrong version.
-**`.github/workflows/back-merge.yml` opens that PR automatically** (CA, 2026-10-05) on
+**`.github/workflows/back-merge.yml` opens that PR automatically** (2026-10-05) on
 `release: published` (`chore: merge master back into dev after vX.Y.Z`), with the
 `courthive-release-bot` App token so CI runs on it, and skips when `dev` already contains the tag or
 the PR is already open. It is never auto-merged: **merge it with a merge commit, never a squash**, so
@@ -34,13 +30,10 @@ of past checkpoints. If a release's run was missed:
 only once it is on `master`, so it takes effect after the next checkpoint carries it there; until
 then open the PR by hand. `verify.yml` runs the light path on it (`.github/scripts/release-scope.sh`).
 
-**Then re-anchor the consumer bundle on the release** (CA, 2026-11-03): `verify:consumer-bundle` fails a
+**Then re-anchor the consumer bundle on the release** (2026-11-03): `verify:consumer-bundle` fails a
 fixture more than +15 % past its size at the last release, and that anchor moves only by
 `--set-anchor` on a built checkout of the new tag, in its own PR. Steps:
 `packages/competition-factory/scripts/verify/README.md` § "Resetting the consumer-bundle anchor".
-
-Full rationale and the CI/release compatibility table:
-`../Mentat/standards/coding-standards.md` § "Branch off `dev`, not `master`".
 
 ## Project Overview
 
@@ -96,4 +89,4 @@ pnpm check-types          # tsc --noEmit
 
 ## Package Installation
 
-**Never run `npm install`** (it corrupts the pnpm-managed store). `pnpm install` is allowed — e.g. to sync the lockfile after editing deps. Keep dependency additions deliberate. Mentat standards apply.
+**Never run `npm install`** (it corrupts the pnpm-managed store). `pnpm install` is allowed — e.g. to sync the lockfile after editing deps. Keep dependency additions deliberate.
