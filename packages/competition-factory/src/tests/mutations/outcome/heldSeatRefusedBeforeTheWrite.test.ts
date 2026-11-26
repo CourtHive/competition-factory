@@ -29,7 +29,7 @@ const MODES: OutcomePipelineMode[] = [OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2, 
 
 /**
  * A WINNER OR A LOSER WHOSE SEAT IS HELD BY SOMEBODY ELSE IS REFUSED BEFORE THE FIRST WRITE (record soak 2026-11-18,
- * class D4; CA, 2026-10-22: an error leaves the record unchanged, and no mutation relies on rollback).
+ * class D4: an error leaves the record unchanged, and no mutation relies on rollback).
  *
  * `directParticipants` writes the result and then places the winner and the loser. On a record converted from elsewhere
  * a seat can be held where the factory would have left it free:

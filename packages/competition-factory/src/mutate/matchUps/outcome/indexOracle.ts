@@ -5,8 +5,8 @@ import type { HydratedMatchUp } from '@Types/hydrated';
 
 /**
  * THE INDEX ORACLE (executor plan § 3.1.1; S2). Test-only, `differential` only: the structural index of the draw as the
- * call found it, against the call's full hydration of it, on every field the outcome logic reads (Mentat report
- * 2026-10-24 `outcome-v2-s2-structural-index-fields`). A difference is a field the index derives wrongly, found before
+ * call found it, against the call's full hydration of it, on every field the outcome logic reads. A difference is a
+ * field the index derives wrongly, found before
  * any reader moves onto it.
  */
 const SIDE_FIELDS = ['sideNumber', 'participantId', 'bye', 'qualifier', 'drawPosition'] as const;

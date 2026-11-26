@@ -1,6 +1,6 @@
 /**
- * Legacy penalty types, rewritten to their `PenaltyTypeEnum` code. The factory stores penalty CODES (CA,
- * 2026-10-15); saved records and existing callers may hold an older value, so each is still ACCEPTED and rewritten
+ * Legacy penalty types, rewritten to their `PenaltyTypeEnum` code. The factory stores penalty CODES;
+ * saved records and existing callers may hold an older value, so each is still ACCEPTED and rewritten
  * to its code on every write (`addPenalty`, `modifyPenalty`) and by `migrateTournamentRecord`. 8.0.0 stops
  * accepting them. Anything else passes through untouched: a caller may use a vocabulary of its own.
  *

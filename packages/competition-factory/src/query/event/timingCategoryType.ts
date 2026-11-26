@@ -9,7 +9,7 @@ const UNDER_AGE = /^(?:U(\d{1,2})|(\d{1,2})U)$/i;
 /**
  * The category type scheduling timing reads (recovery, average and overnight times by `categoryTypes`): the stated
  * `categoryType`, else the legacy `subType`, else JUNIOR detected from an under-age `ageCategoryCode` of 18 or younger
- * (`U14`, `18U`). A category stating a type keeps it; detection only fills a type nobody stated (CA 2026-10-25), since
+ * (`U14`, `18U`). A category stating a type keeps it; detection only fills a type nobody stated, since
  * the clients write `ageCategoryCode` alone. Anything else states no type.
  */
 export function timingCategoryType(category?: Category | null): string | undefined {

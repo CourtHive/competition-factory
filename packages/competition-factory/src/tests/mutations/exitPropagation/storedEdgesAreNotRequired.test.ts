@@ -131,8 +131,8 @@ it.each([
 /**
  * A REFUSED CALL STORES NONE OF THE MISSING EDGES.
  *
- * CA, 2026-10-18: "no, a refused call does not store a draw's missing edges. v1 should no longer do so." A case of
- * CA's earlier ruling the same day: "In setMatchUpStatus there should be nothing changed if an error is returned".
+ * A refused call does not store a draw's missing edges, and v1 no longer does so. A case of the broader rule:
+ * in setMatchUpStatus nothing is changed if an error is returned.
  *
  * v1 writes a draw's missing edges once, before anything is decided on them (#5086), because the cascade decides on
  * the STORED ids. What that write touched is held, and written back on any error the call returns, so a refusal

@@ -11,7 +11,7 @@ import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstant
 import { DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
- * A FLIP RE-FEEDS THE LATER LOSS IT RELABELS (census family F1, P48).
+ * A FLIP RE-FEEDS THE LATER LOSS IT RELABELS (census family F1).
  *
  * FIRST_MATCH_LOSER_CONSOLATION feeds every round-1 loser, and a round-2 loser only when round 2 was their first match:
  * zero prior SCORED wins (a BYE, a walkover or an unscored default in round 1). Only the round-2 link carries that
@@ -174,7 +174,7 @@ describe('a flip re-asks the FIRST_MATCHUP feed of the round-2 loss it relabels'
     const { at, integrity, last, lastMutated } = play('reFeed-departing-active', config(20460410, 7), steps);
     expect(sideOf(at('Consolation|2|2'), 'Turing')).toBeDefined(); // control: the refusal is about Turing's slot
     // a walkover corrected to a scored retirement is also a change of KIND over Turing's recorded consolation win, so
-    // P52's guard (CA, 2026-10-11) refuses it first, before the swap is reached
+    // the guard that keeps the kind a recorded result fixed refuses it first, before the swap is reached
     expect(last.error?.code).toEqual(CANNOT_CHANGE_OUTCOME.code);
     expect(lastMutated).toEqual(false);
     expect(integrity.valid).toEqual(true);
@@ -187,8 +187,8 @@ describe('a flip re-asks the FIRST_MATCHUP feed of the round-2 loss it relabels'
       ['Main|1|3', { winningSide: 1 }],
       ['Main|2|2', { winningSide: 1 }],
       ['Consolation|2|2', { winningSide: 1 }],
-      // still an exit (P52 lets the kind stand), but a SCORED default is a win: the Main|2|2 loss is no longer a
-      // first-match loss, and Turing's played slot would have to be taken back
+      // still an exit (the kind guard lets the kind stand), but a SCORED default is a win: the Main|2|2 loss is no
+      // longer a first-match loss, and Turing's played slot would have to be taken back
       ['Main|1|4', { matchUpStatus: DEFAULTED, winningSide: 1, score: { sets: [{ side1Score: 6, side2Score: 3 }] } }],
     ];
     const { at, integrity, last, lastMutated } = play('reFeed-departing-scored-default', config(20460410, 7), steps);

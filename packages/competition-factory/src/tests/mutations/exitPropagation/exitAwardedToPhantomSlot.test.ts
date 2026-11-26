@@ -126,7 +126,7 @@ it.each([WALKOVER, DEFAULTED])('a %s cannot be awarded to a claimed-but-vacant s
  * pending exit, where the present participant withdrew and the empty side wins — so a walkover
  * awarded to the present participant produced two winners of one matchUp once the opponent arrived:
  * both advanced and the entered winner never reached the loser structure (a two-step
- * DROPPED_PROGRESSION on DOUBLE_ELIMINATION). CA: refuse it. Against a BYE it is refused too — see the
+ * DROPPED_PROGRESSION on DOUBLE_ELIMINATION). So it is refused. Against a BYE it is refused too — see the
  * last case in this file.
  */
 it.each([WALKOVER, DEFAULTED])(
@@ -223,7 +223,7 @@ it.each([WALKOVER, DEFAULTED])('a %s on a half-filled matchUp is refused without
  *    it** — *"the BYE cascade has already moved them forward […] NOT a WALKOVER"* — and the exit is
  *    re-propagated onto wherever they landed.
  *
- * CA, 2026-09-13, independently and before being shown either: *"A player that encounters a BYE gets
+ * Stated independently, before either was shown: *"A player that encounters a BYE gets
  * advanced; a player being advanced by a WALKOVER hits a BYE and continues advancing […] if they are
  * propagating their WALKOVER status all the way through then their WALKOVER occurs AFTER their
  * fall-through position is advanced by the BYE."*
@@ -277,7 +277,7 @@ it.each([WALKOVER, DEFAULTED])('a %s cannot be awarded to a BYE side', (matchUpS
 
 /**
  * Nor to the present player: a matchUp containing a BYE cannot have a winningSide, in either
- * direction. The BYE always advances its opponent (CA, 2026-09-17).
+ * direction. The BYE always advances its opponent.
  *
  * This case read "IS still accepted on a bye matchUp for the present player" until then, on the
  * reasoning that refusing the bye as a WINNER must not become a refusal to record anything on a

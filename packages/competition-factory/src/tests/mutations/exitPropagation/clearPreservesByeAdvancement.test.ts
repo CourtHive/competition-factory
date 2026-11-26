@@ -14,7 +14,7 @@ import { DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants
  * forward at generation therefore looked identical to one a result had delivered, and clearing an
  * unrelated result in the feeding structure took it away.
  *
- * This is CA's ruling of 2026-09-21, the same one `resetDrawDefinition` was corrected under in
+ * This is the rule, the same one `resetDrawDefinition` was corrected under in
  * #4944: reset and clear both undo RESULTS, and a BYE advancement is a consequence of the
  * POSITIONING, which neither of them touches.
  *

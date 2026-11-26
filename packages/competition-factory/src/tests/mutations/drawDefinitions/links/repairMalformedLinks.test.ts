@@ -33,7 +33,7 @@ import {
 } from '@Constants/drawDefinitionConstants';
 
 /**
- * A DRAW'S MALFORMED LINKS ARE REPAIRED, OR REMOVED AND REPORTED (CA, 2026-10-22).
+ * A DRAW'S MALFORMED LINKS ARE REPAIRED, OR REMOVED AND REPORTED.
  *
  * Each draw is generated well-formed and its links are then corrupted: a WINNER or LOSER link loses its
  * `source.roundNumber`, an entry is replaced by `null`, or a link is pointed at a structure the draw does not have.

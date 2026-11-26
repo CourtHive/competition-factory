@@ -68,7 +68,7 @@ describe('addGoesTo inContextOnly', () => {
 });
 
 /**
- * The case the view-equivalence probe found (S0, 2026-10-23): the P52 correction of
+ * The case the view-equivalence probe found (S0, 2026-10-23): the kind-changing correction of
  * `aResultPastAConvergencesByeFixesTheKind.test.ts` (census 21027128, COMPASS 32/27), made as the FIRST call on a
  * record that holds those results but stores no edges, as an imported record may. v1 writes the edges, then refuses
  * the change of kind (`CANNOT_CHANGE_OUTCOME`). A view without them misses the recorded result past the convergence's

@@ -19,7 +19,7 @@ import { SUCCESS } from '@Constants/resultConstants';
  *   code is read and never refused on read (`isValidMatchUpFormat.ts`), so this is a warning: legacy codes are
  *   expected here and are not defects.
  *
- * Locations (Mentat/planning/TOURNAMENT_RECORD_FORMAT_VALIDATION.md, swept 2026-11-04):
+ * Locations (swept 2026-11-04):
  *
  * - `matchUpFormat` on an event, drawDefinition, structure (nested round robin groups included) and matchUp
  *   (`tieMatchUps` included), and the record-level and drawDefinition-level `matchUps` arrays;

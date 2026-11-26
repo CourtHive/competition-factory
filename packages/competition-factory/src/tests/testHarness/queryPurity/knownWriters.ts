@@ -1,6 +1,6 @@
 /**
- * Generators that write engine state when the caller asks them to attach what they generate. CA ruled 2026-11-05 that
- * such a call is a mutation: the write is allowed only under the option that asks for it, so the check stays active
+ * Generators that write engine state when the caller asks them to attach what they generate. Such a call
+ * is a mutation: the write is allowed only under the option that asks for it, so the check stays active
  * (any other method that writes fails its test, and so does a listed method writing outside its gate). 8.0.0 splits
  * each into a pure generator and an attach mutation, and the table empties.
  *
@@ -11,8 +11,8 @@
  * set `attach`, `{ addEvents: false }` only when the caller set `addEvents: false`, and `{ addEvents: undefined }` unless
  * the caller set `addEvents: false`. No `when`: every call. A method with two kinds of write lists one allowance each.
  *
- * An entry leaves this table in the PR that splits or reclassifies its method (Mentat/planning/FACTORY_LAYERING_PLAN.md,
- * step Q).
+ * An entry leaves this table in the PR that splits or reclassifies its method (the
+ * layering plan's step Q).
  */
 export type KnownWriter = {
   when?: Record<string, boolean | undefined>;
@@ -32,7 +32,7 @@ export const KNOWN_WRITERS: Record<string, KnownWriter | KnownWriter[]> = {
   },
   // Found by the purity sweep (queryPuritySweep.test.ts, 2026-11-08): on a record without stored edges it writes
   // `winnerMatchUpId` / `loserMatchUpId` and finishing ranges onto stored matchUps, with no notice. A query in name only
-  // (CA 2026-11-08: "add" says it modifies); retired at 8.0.0 in favour of the migration and read-projection routes.
+  // ("add" says it modifies); retired at 8.0.0 in favour of the migration and read-projection routes.
   addGoesTo: { disposition: 'a writer placed in query; retired at 8.0.0 (role inventory, CA 2026-11-08)' },
   generateTournamentRecord: {
     disposition:

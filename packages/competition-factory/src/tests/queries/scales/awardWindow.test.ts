@@ -9,7 +9,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { setClock } from '@Tools/clock';
 
 /**
- * THE ROLLING AWARD WINDOW (CA 2026-11-08): inclusive [asOfDate - rollingPeriodDays, asOfDate] in calendar days, 365 days
+ * THE ROLLING AWARD WINDOW: inclusive [asOfDate - rollingPeriodDays, asOfDate] in calendar days, 365 days
  * by default, the competition clock's date when asOfDate is omitted. Factory's window had no upper bound, so a list dated
  * in the past counted results that had not happened yet.
  */

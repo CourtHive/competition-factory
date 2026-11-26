@@ -2,7 +2,7 @@ import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { describe, expect, it } from 'vitest';
 
 /*
- * A set total entered while a set is in play closes that set (scoring-engine spec § 2.3, CA 2026-10-18):
+ * A set total entered while a set is in play closes that set (scoring-engine spec § 2.3):
  * "someone casually scoring may only score part of a set, get distracted ... and when they refocus the
  * prior set is over and they need to declare the winner and keep scoring." The open set takes the declared
  * total and winner, judged by its segment's rule; the points and games already recorded in it stay on the
@@ -13,7 +13,7 @@ function setScores(engine: ScoringEngine) {
   return engine.getState().score.sets.map((set) => [set.side1Score, set.side2Score, set.winningSide]);
 }
 
-describe('§ 2.3 a set total closes the set in play (CA 2026-10-18)', () => {
+describe('§ 2.3 a set total closes the set in play', () => {
   it('partial points, then addSet: the open set takes the total, its points stay', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     for (let i = 0; i < 6; i++) engine.addPoint({ winner: 0 }); // 1-0, 30-0

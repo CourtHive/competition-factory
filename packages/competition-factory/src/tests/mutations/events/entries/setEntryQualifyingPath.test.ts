@@ -101,7 +101,7 @@ describe('setEntryQualifyingPath', () => {
     expect(paths(eventEntries(eventId), qualifyingIds)).toEqual(qualifyingIds.map(() => [undefined, undefined]));
   });
 
-  it('paths set after entry seat the qualifiers where they lead (CA, 2026-11-18)', () => {
+  it('paths set after entry seat the qualifiers where they lead', () => {
     // a staggered qualifying event (generated): 24 MAIN entries, a stronger 16 qualifying for R3 and a weaker 32 for R1,
     // their paths set after entry as the topology builder will set them
     const { eventId, qualifyingIds } = setup({ main: 24, qualifying: 48 });

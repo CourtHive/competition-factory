@@ -151,7 +151,7 @@ function resolvePointGames(matchUp: MatchUp, points: PlacedPoint[], gaps: Marker
     const set = sets?.[point.set ?? 0];
     if (!set) return { completesGame: !!next, completesSet: false };
     // A set total entered while this set was in play closed it with the declared score (scoring-engine spec
-    // § 2.3, CA 2026-10-18): the point won its game only if it scored one ('0-0' after it), and the total,
+    // § 2.3): the point won its game only if it scored one ('0-0' after it), and the total,
     // not the point, closed the set.
     if (firstSet !== -1 && closedByTotal(point, set, awards))
       return { completesGame: point.score === '0-0', completesSet: false };

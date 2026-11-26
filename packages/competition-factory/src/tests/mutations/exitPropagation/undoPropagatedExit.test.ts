@@ -19,7 +19,7 @@ import {
 /**
  * An exit a matchUp PRODUCED must come back when that matchUp's own result is removed.
  *
- * CA's ruling, 2026-09-13: *"A retiree is out of a MATCH but not out of the EVENT unless the
+ * The rule: *"A retiree is out of a MATCH but not out of the EVENT unless the
  * governing policy says so."* The policy half of that shipped as `propagateRetirementAsExit`. This
  * is the other half — a TD who enters a retirement under a policy that propagates it must be able
  * to un-enter it.

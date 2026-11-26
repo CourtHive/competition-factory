@@ -8,7 +8,7 @@ import { setClock } from '@Tools/clock';
 import { CURTIS } from '@Constants/drawDefinitionConstants';
 
 /**
- * ONE `updatedAt` PER TOUCHED ENTITY PER CALL (F2 (i), CA 2026-10-19; outcome v2 executor plan, Phase C).
+ * ONE `updatedAt` PER TOUCHED ENTITY PER CALL (F2 (i); outcome v2 executor plan, Phase C).
  *
  * A stamp means "changed in this call". v1 used to stamp at each notice, so one first-round score moved the draw's
  * stamp on by 2 ms in a single call (a notice for the matchUp scored and one for the matchUp its winner went to). The

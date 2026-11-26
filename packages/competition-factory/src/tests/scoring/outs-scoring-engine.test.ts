@@ -83,7 +83,7 @@ describe('ScoringEngine with INN4XA-S:O3-M:T50', () => {
     engine.addSet({ side1Score: 1, side2Score: 1 });
 
     // Aggregate: 7 vs 7 — tied. A level inning is a played inning (spec § 2.3), and a level aggregate with no
-    // declared decider is COMPLETED without a winner (§ 9.3, § 9.7; CA 2026-10-18, decision 12)
+    // declared decider is COMPLETED without a winner (§ 9.3, § 9.7, decision 12)
     expect(engine.getState().score.sets).toHaveLength(4);
     expect(engine.getState().matchUpStatus).toBe(COMPLETED);
     expect(engine.getState().winningSide).toBeUndefined();

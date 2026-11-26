@@ -357,8 +357,8 @@ export function setCapturedCompetitionClock(timeStamp?: number) {
 }
 
 /**
- * The entities an outer engine call has stamped `updatedAt` on, so each is stamped once per call (F2 (i), CA
- * 2026-10-19). Opened and released with the captured clock. Optional hooks like it: a provider without them has no
+ * The entities an outer engine call has stamped `updatedAt` on, so each is stamped once per call.
+ * Opened and released with the captured clock. Optional hooks like it: a provider without them has no
  * ledger, and an entity is then stamped at each notice, as before.
  */
 export function getCapturedStamps(): WeakSet<object> | undefined {
@@ -644,8 +644,8 @@ export function getPayloads(params: GetNoticesArgs): any[] {
 /**
  * A notice's payload may be DEFERRED: built only when the notices are read, which the engine does once a call has
  * succeeded (a call that errors deletes its notices unread). So a payload that costs a hydration, the in-context
- * matchUp of `UPDATE_INCONTEXT_MATCHUP`, is never built for a refused call, nor for a topic no one subscribes to
- * (CA, 2026-10-24). A deferred payload that builds nothing is dropped. Provider-agnostic: a provider stores the
+ * matchUp of `UPDATE_INCONTEXT_MATCHUP`, is never built for a refused call, nor for a topic no one subscribes to.
+ * A deferred payload that builds nothing is dropped. Provider-agnostic: a provider stores the
  * payload as it is given.
  */
 export const DEFERRED_PAYLOAD = '__deferredPayload';

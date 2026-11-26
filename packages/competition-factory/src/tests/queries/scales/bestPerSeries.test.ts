@@ -13,8 +13,8 @@ import { POLICY_RANKING_POINTS_BASIC } from '@Fixtures/policies/POLICY_RANKING_P
 import { SINGLES, DOUBLES } from '@Constants/eventConstants';
 
 /**
- * A tournament series is the same tournament across its editions (CODES Tournament.tournamentSeriesId, CA
- * 2026-10-25). The ITF Junior combined ranking counts only the best result from up to two editions of the same J100
+ * A tournament series is the same tournament across its editions (CODES Tournament.tournamentSeriesId).
+ * The ITF Junior combined ranking counts only the best result from up to two editions of the same J100
  * or higher graded tournament (Reg. 10): CountingBucket.bestPerSeries.
  */
 

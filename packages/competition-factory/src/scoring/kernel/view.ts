@@ -159,7 +159,7 @@ export function pointsTo(state: ScoringState, position: ServicePosition): Points
 
 /**
  * A break point: the receiver needs one point to win the game (§ 11.2). Where the server is not known none is
- * produced, so it is false (§ 10.8, decision 17; reading SE2c-D2); a segment with no points-to has none at all.
+ * produced, so it is false (§ 10.8); a segment with no points-to has none at all.
  */
 export function isBreakpoint(view: PointsTo | undefined, server: Side | undefined): boolean | undefined {
   if (!view) return undefined;

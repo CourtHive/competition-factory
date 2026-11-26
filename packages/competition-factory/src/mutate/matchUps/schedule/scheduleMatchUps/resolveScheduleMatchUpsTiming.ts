@@ -28,8 +28,8 @@ function statesTiming(tournamentRecord?: Tournament, event?: Event, drawDefiniti
 
 /**
  * The minutes `scheduleMatchUps` schedules with. Minutes the caller states win, as they always did. When the caller
- * states none, a timing found in the tournament or the matchUp's event decides (Q1, CA 2026-10-22,
- * SCHEDULING_PIPELINE_VNEXT.md § 5): each matchUp's recovery comes from its own format and event, and the slots are
+ * states none, a timing found in the tournament or the matchUp's event decides: each matchUp's recovery comes from
+ * its own format and event, and the slots are
  * sized by the greatest average among them, as the profile scheduler sizes them. With neither, the legacy 90 minutes
  * and no recovery stand, so a tournament that never stated timing schedules exactly as before.
  */

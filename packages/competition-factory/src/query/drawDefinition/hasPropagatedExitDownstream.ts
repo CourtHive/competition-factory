@@ -61,7 +61,7 @@ export function hasPropagatedExitDownstream(params) {
 
   // An exit this matchUp produced is unwound BY the clear, so it is not a reason to refuse it. In a
   // CONVERGENCE the other origin's exit stands alone afterwards, and `settleRederivedDoubleExits` puts
-  // the draw where that origin alone puts it (CA, 2026-10-03; see `exitCarriedFrom`).
+  // the draw where that origin alone puts it (see `exitCarriedFrom`).
   if (exitCarriedFrom({ sourceMatchUpId: targetData?.matchUp?.matchUpId, matchUp: loserMatchUp })) return false;
 
   const isLoserMatchUpWO = isExit(loserMatchUp?.matchUpStatus);

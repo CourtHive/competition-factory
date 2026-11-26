@@ -35,7 +35,7 @@ import { SUCCESS } from '@Constants/resultConstants';
  * A structure's last round has nowhere further in its own structure, but a link can take its winner on. In
  * DOUBLE_ELIMINATION the Backdraw final's winner goes on into the grand final. A participant who lost the Main
  * structure's final by walkover and dropped into a Backdraw final holding a BYE passes the BYE across that link, and
- * the walkover goes with them: the grand final is a WALKOVER won by the opponent (CA ruling 2026-10-23, census
+ * the walkover goes with them: the grand final is a WALKOVER won by the opponent (census
  * 9304724, DOUBLE_ELIMINATION 8/6). Searching the holder's structure alone stopped the carry at the BYE, and the grand
  * final stood TO_BE_PLAYED.
  */
@@ -119,8 +119,8 @@ export function progressExitStatus({
    * THE ARRAY, DERIVED FROM PROVENANCE. See {@link deriveStatusCodes}, which is also
    * `removeDirectedParticipants`' answer to the same question.
    *
-   * **P37.** This was `(updatedLoserMatchUp.matchUpStatusCodes ?? []).map(exitOutcomeCode)` over an
-   * array that held the PROJECTION of provenance, so the bare exit outcome codes the array
+   * **The exit tenant's eviction.** This was `(updatedLoserMatchUp.matchUpStatusCodes ?? []).map(exitOutcomeCode)`
+   * over an array that held the PROJECTION of provenance, so the bare exit outcome codes the array
    * legitimately carries — `WO`, `DEF`, the `['WO', 'W1']` contract — existed only as a side effect of
    * the projection being written. Evicting the exit tenant took them with it: measured as `['', 'W1']`
    * where `['WO', 'W1']` belongs, five tests across two files.
@@ -172,8 +172,7 @@ export function progressExitStatus({
      *    `modifyMatchUpScore` writes at the scoring boundary. Only that. A source's positional array may be
      *    a DERIVED one — a matchUp the cascade itself wrote, holding `['WO']` or `['', 'DEF']` from
      *    provenance — and a bare outcome code read from it is not a reason anybody gave; filed as one it was
-     *    the order-dependent `sideStatusCodes` of F1b. CA, 2026-10-15: no new logic may depend on
-     *    `matchUpStatusCodes`.
+     *    the order-dependent `sideStatusCodes` of F1b. No new logic may depend on `matchUpStatusCodes`.
      *  - The DISPLAY code placed at the arriving side's index still falls back to the positional array, same
      *    side index first, then index 0 for a double exit. It is display, and changes nothing a reader
      *    attributes.
@@ -186,7 +185,7 @@ export function progressExitStatus({
     carriedReason = sourceReason;
 
     /**
-     * A CARRY PAST A BYE IS RECORDED BESIDE THE BYE, in every round (P51; F2, measured 2026-10-17).
+     * A CARRY PAST A BYE IS RECORDED BESIDE THE BYE, in every round (measured 2026-10-17).
      *
      * RULE 1 re-propagates the exit onto wherever the carrier lands. In a structure's last round there is nowhere
      * further, and nothing was written: the BYE matchUp kept no entry for the exit its carrier held. A BYE placed by a
@@ -288,7 +287,7 @@ export function progressExitStatus({
     // `ERR_EXISTING_POSITION_ASSIGNMENT` returned over an already-mutated draw. Reading the right
     // object with the right predicate is the whole correction.
     /**
-     * P37. THE OPPONENT'S OWN EXIT, read from side-keyed provenance rather than from the LEGACY array's
+     * THE OPPONENT'S OWN EXIT, read from side-keyed provenance rather than from the LEGACY array's
      * LENGTH.
      *
      * This was `statusCodes.length === 0` — "no exit code is recorded anywhere on this matchUp" — used as
@@ -317,7 +316,7 @@ export function progressExitStatus({
       winningSide = opponentSideNumber;
       placeCodeAtSide(statusCodes, loserParticipantSide.sideNumber, sourceCode);
     } else {
-      // RULE 4, CARRIED PAST (CA's (b), 2026-10-11): see `carryPastDecidedMatchUp`
+      // RULE 4, CARRIED PAST: see `carryPastDecidedMatchUp`
       const carried = carryPastDecidedMatchUp({
         arrivingSideNumber: loserParticipantSide.sideNumber,
         matchUp: updatedLoserMatchUp,
@@ -346,8 +345,7 @@ export function progressExitStatus({
       // slots and PERSISTED `[undefined, undefined]`, which is not a `string[]`, serialises to
       // `[null, null]`, and is load-bearing in this rule's own `opponentEmpty` gate because that
       // tests `statusCodes.length === 0`. `placeCodeAtSide` returns early on an undefined code, so
-      // the array is simply left alone. CA ruled 2026-09-12: "we can't be persisting
-      // [undefined, undefined]".
+      // the array is simply left alone: `[undefined, undefined]` is never persisted.
       placeCodeAtSide(statusCodes, loserParticipantSide.sideNumber, sourceCode);
       // WHICH double exit is derived from what each side carried, not hardcoded. This always wrote
       // DOUBLE_WALKOVER, which relabelled a default-on-default convergence as a walkover and so
@@ -418,13 +416,13 @@ export function progressExitStatus({
 }
 
 /**
- * RULE 4, CARRIED PAST (CA, 2026-10-11; census F2, P51 group 2).
+ * RULE 4, CARRIED PAST (census F2).
  *
  * An exit decided this matchUp while it awaited its second participant: the seat still to be filled was awarded it.
  * The awaited participant now arrives carrying an exit of their own. RULE 4 would collapse the two into a double
  * exit — but where a match recorded with two participants stands below this matchUp, that convergence would take
- * back a result somebody played, and it is refused. CA: *"is the 'carried exit' a participant carrying an exit
- * into an exit that was awaiting the 2nd participant in which case carry it past makes sense."*
+ * back a result somebody played, and it is refused. The 'carried exit' here is a participant carrying an exit
+ * into an exit that was awaiting the 2nd participant, and in that case carrying it past makes sense.
  *
  * So the arrival takes what was awaiting them: they win this matchUp by the exit already decided here, advance
  * into its winner target, and carry their own exit on from there — as an exit is carried past a BYE (RULE 1). The

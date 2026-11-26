@@ -15,11 +15,11 @@ import type { DrawLink } from '@Types/tournamentTypes';
  *  - an entry that is not an object at all (`null`, a string, an array): nothing can be read from it, and a reader
  *    that dereferences it throws;
  *  - a link that traverses BY ROUND (`traversesByRound`, linkTraversal.ts) with no `source.roundNumber` (missing, 0, or
- *    no `source`): it cannot say which round it directs (CA, 2026-10-06: an error, never a link quietly not followed).
+ *    no `source`): it cannot say which round it directs (an error, never a link quietly not followed).
  *
  * A link that traverses BY FINISHING POSITION is never malformed for want of a round: a round robin decides who leaves
- * it by tally, and its link names `finishingPositions`, labelled `POSITION` or `WINNER` (CA, 2026-10-23). The 2026-10-06
- * ruling was about elimination links; it was widened to the whole draw (#5692) before round robin links were checked
+ * it by tally, and its link names `finishingPositions`, labelled `POSITION` or `WINNER`. The 2026-10-06
+ * rule was about elimination links; it was widened to the whole draw (#5692) before round robin links were checked
  * against it, and 294 prod draws carrying a `WINNER` link out of a round robin refused every outcome on dev until this
  * distinction was drawn. Pass the draw: without it the source cannot be seen, and a `WINNER` link is read as a round
  * link.

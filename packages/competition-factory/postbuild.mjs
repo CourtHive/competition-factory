@@ -88,7 +88,7 @@ if (fs.existsSync(constantsDts)) {
   fs.copyFileSync(constantsDts, './dist/constants.d.cts');
 }
 
-// The `tods-competition-factory/tools/<domain>` subpaths (CA 2026-11-25): one per tools domain, so a consumer that needs
+// The `tods-competition-factory/tools/<domain>` subpaths: one per tools domain, so a consumer that needs
 // one domain never loads the others. The aggregate `tools` export stays as it is in 7.x. As for `/governors`, the ESM
 // target is the domain's module in the preserveModules tree (`dist/esm/assemblies/tools/<domain>.mjs`), which a bundler
 // shakes to that domain's own closure. The CJS shim reads the domain from the root bundle rather than shipping a bundle

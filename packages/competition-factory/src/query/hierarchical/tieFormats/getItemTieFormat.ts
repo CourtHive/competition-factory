@@ -11,8 +11,8 @@ export function getItemTieFormat({ item, drawDefinition, structure, event }) {
   // caller that hydrated without threading `event` therefore worked fine until a
   // tournament was aggregated and then threw
   // `Cannot read properties of undefined (reading 'tieFormat')`.
-  // the referenced tieFormat first, the draw's then the event's own after it (CA 2026-10-26, hydration OPEN-4: the
-  // draw's inline tieFormat was returned before the reference was looked up)
+  // the referenced tieFormat first, the draw's then the event's own after it (the draw's inline
+  // tieFormat was returned before the reference was looked up)
   if (item.tieFormatId) {
     const referenced =
       drawDefinition?.tieFormats?.find((tf) => item.tieFormatId === tf.tieFormatId) ??

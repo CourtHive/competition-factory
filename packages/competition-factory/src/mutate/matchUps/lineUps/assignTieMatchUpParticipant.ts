@@ -160,7 +160,7 @@ export function assignTieMatchUpParticipantId(
   // the seat on the line: a mixed pair's second player, and whether the seat is free. Assignment fills a free seat; a
   // seat someone else holds is changed by replaceTieMatchUpParticipantId (or a substitution), the rule matchUpActions
   // applies when it offers ASSIGN. Without it a SINGLES line kept two holders and a full DOUBLES pair was broken up
-  // (NOC-723, CA 2026-11-06)
+  // (NOC-723)
   const seatRefusal = targetSeatRefusal({
     gender: inContextTieMatchUp?.gender,
     incomingIds: relevantParticipantIds,

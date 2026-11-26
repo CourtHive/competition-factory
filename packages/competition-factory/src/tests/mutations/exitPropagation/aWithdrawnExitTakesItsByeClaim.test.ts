@@ -20,7 +20,7 @@ import fs from 'fs';
  * WALKOVER withdrew the exit and left `West|2|2` undecided between two participants, yet the BYE stood where forward
  * play has a seat waiting on `West|2|2`'s loser. A later result then took it back (MONOTONIC_DECISION).
  *
- * `West|2|2` once recorded a claim on that BYE (`byeClaims`); the ledger is retired (Mentat P58, CA 2026-10-21), so
+ * `West|2|2` once recorded a claim on that BYE (`byeClaims`); the ledger is retired, so
  * what the claim stood for is read from the draw: before the correction the seat holds the BYE and `West|2|2` sends
  * nobody across its loser link (`feederSendsNobody`: `NOBODY_LOST`); after it, `West|2|2` sends somebody, and the
  * corrected draw, derived readings included, is the draw forward play leaves.

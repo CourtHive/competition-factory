@@ -25,7 +25,7 @@ allowBuilds:
 #   our own packages within hours of publishing them.
 # verifyDepsBeforeRun: false suppresses the deps-status check that fires
 #   before every `pnpm <script>` invocation. Lockfiles are routinely
-#   briefly stale (mentat-pull-all.sh deletes lockfiles before each
+#   briefly stale (the ecosystem's pull-all script deletes lockfiles before each
 #   build cycle), so the check is noise.
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:

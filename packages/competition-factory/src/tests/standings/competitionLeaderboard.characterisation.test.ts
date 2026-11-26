@@ -10,7 +10,7 @@ import { AD_HOC } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 /**
- * The competition leaderboard's defects (Mentat `planning/STANDINGS_ENGINE_SPEC.md` § 2), each pinned before the
+ * The competition leaderboard's defects, each pinned before the
  * leaderboard moved onto the derived standings core (S5) and flipped deliberately as it did: C1 and C2 by S5a (the state
  * derived from the results); C4 and C5 by S5b (the ordering through the standings core).
  */

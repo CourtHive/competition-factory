@@ -264,7 +264,7 @@ describe('§ 12.4 corrections', () => {
     play(engine, '11');
     const { entries, points } = engine.getState().history!;
     expect(entries!.map((entry) => entry.pointIndex)).toEqual([0, 1, 2, 3, 4]);
-    // the score's count numbers the points (SE2c-D6); the entry's link is the position
+    // the score's count numbers the points; the entry's link is the position
     expect(points.map((point) => (point as { index?: number }).index)).toEqual([0, 1, 2, 4, 5]);
     engine.decoratePoint(3, { shot: 'A' });
     engine.decoratePoint(4, { shot: 'B' });
@@ -444,7 +444,7 @@ describe('§ 2.6, § 10.6 server corrections', () => {
     expect(() => engineFor('NOT-A-FORMAT').setServer(1)).toThrow(/Invalid matchUpFormat/);
   });
 
-  it('with nothing on the timeline, a correction is the initial server, kept through a rebuild (SE3-E1)', () => {
+  it('with nothing on the timeline, a correction is the initial server, kept through a rebuild', () => {
     const engine = engineFor('SET3-S:6/TB7');
     engine.setServer(1, { recordEntry: false });
     expect(engine.getNextServer()).toEqual(1);

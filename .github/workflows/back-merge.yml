@@ -3,8 +3,8 @@ name: back-merge
 # After a release publishes, release-please's `chore(master): release X.Y.Z` commit (version,
 # CHANGELOG, manifest) exists on `master` only. Left there, `dev` drifts behind: by 2026-10-02 it
 # read 7.1.0 while `master` was 7.4.0, and everything built from `dev` reported the wrong version.
-# This opens the PR that merges `master` back into `dev` (CA, 2026-10-05: the back-merge after a
-# publish is automatic on every repo that publishes; mirrors courthive-components #644).
+# This opens the PR that merges `master` back into `dev`. The back-merge after a publish is automatic on
+# every repo that publishes; this mirrors courthive-components #644.
 #
 # MERGE IT WITH A MERGE COMMIT, never squash: squash leaves `master`'s commits unreachable from
 # `dev`, so the next checkpoint and every later back-merge carry them again. The PR is never

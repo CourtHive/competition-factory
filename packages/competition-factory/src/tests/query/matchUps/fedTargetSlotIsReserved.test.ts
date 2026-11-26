@@ -30,8 +30,6 @@ import { DOUBLE_ELIMINATION, FEED_IN_CHAMPIONSHIP_TO_SF, COMPASS } from '@Consta
  * `hasFedDrawPosition` is the reserved-slot fact (`getRoundMatchUps`, landed in #4928). Reading it
  * here makes `Math.min` sound rather than merely usually-right: the one case where the minimum did
  * not name a reserved slot is the one case where no reserved slot exists.
- *
- * Tracked as **P25** on the CourtHive design-flaws punch list.
  */
 
 type Probe = { label: string; targetDrawPosition: any; targetKey?: string };

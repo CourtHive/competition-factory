@@ -2,7 +2,7 @@ import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { describe, expect, it } from 'vitest';
 
 /*
- * The redo stack (scoring-engine spec § 2, § 12.3; § 16 decision 1, CA 2026-10-18): "A recorded action
+ * The redo stack (scoring-engine spec § 2, § 12.3; § 16 decision 1): "A recorded action
  * clears the redo stack; an action that changes nothing records nothing and keeps it." v1's endSegment
  * kept the redo stack, so SET3-S:T10P point, point, undo, endSegment, redo replayed the undone point
  * after the segment end, into set 2; and endSegment with no set in play recorded an entry that undo
@@ -13,7 +13,7 @@ function entryTypes(engine: ScoringEngine) {
   return (engine.getState().history?.entries ?? []).map((entry) => entry.type);
 }
 
-describe('§ 12.3 a recorded segment end clears the redo stack (CA 2026-10-18, decision 1)', () => {
+describe('§ 12.3 a recorded segment end clears the redo stack (decision 1)', () => {
   it('SET3-S:T10P point, point, undo, endSegment: nothing is left to redo into set 2', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:T10P' });
     engine.addPoint({ winner: 0 });

@@ -1,8 +1,7 @@
 // Build a TODS tournamentRecord from CFS public-API responses.
 //
 // Pure-ESM core. No node:fs / process — safe to import from a browser
-// bundle (used by `dev.build` in TMX) and from a Node CLI
-// (Mentat/tools/cfs-to-tournament-record.mjs is a thin wrapper around it).
+// bundle (used by `dev.build` in TMX) and from a Node CLI.
 //
 // Public API
 //   classifySource(raw)            -> { kind: 'event-data'|'matchups'|'participants'|'unknown', value }

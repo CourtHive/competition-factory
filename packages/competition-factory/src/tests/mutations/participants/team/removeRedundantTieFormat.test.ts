@@ -111,7 +111,7 @@ it('will remove redundant tieFormat on matchUp with no results', () => {
     expect(matchUpStatus).toEqual(TO_BE_PLAYED);
     expect(tieMatchUps.length).toEqual(9);
     expect(winningSide).toBeUndefined();
-    // a dual with no rubber result holds no score (CA, 2026-10-05); it held a derived 0-0 before
+    // a dual with no rubber result holds no score; it held a derived 0-0 before
     expect(score).toBeUndefined();
   });
 

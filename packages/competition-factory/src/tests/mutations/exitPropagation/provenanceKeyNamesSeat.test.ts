@@ -10,12 +10,12 @@ import fs from 'node:fs';
 /**
  * A CARRIED EXIT IS KEYED TO THE SIDE ITS CARRIER SITS ON, AT EVERY STEP OF EVERY FROZEN CENSUS SCHEDULE.
  *
- * INERT unless `KEY_SCAN=1`. The detector from `Mentat/planning/EXIT_CASCADE_DE_GRAND_FINAL_AND_SIDE_KEY_DESIGN.md`
- * § 2.1: after each step, a provenance entry carrying a single exit whose SOURCE's loser sits on the OTHER side of
- * the matchUp. Measured on `dev` before `setMatchUpDrawPositions` (CA, 2026-10-05: option R): 8 first occurrences
+ * INERT unless `KEY_SCAN=1`. The detector from the double-elimination grand-final
+ * and side-key design, § 2.1: after each step, a provenance entry carrying a single exit whose SOURCE's loser sits on
+ * the OTHER side of the matchUp. Measured on `dev` before `setMatchUpDrawPositions` (option R): 8 first occurrences
  * over the three windows, every one in a paired round of a feed-in structure. The ratchet is zero.
  *
- *   KEY_SCAN=1 TZ=UTC SCHEDULES_DIR=../Mentat/fixtures/exit-propagation-census \
+ *   KEY_SCAN=1 TZ=UTC SCHEDULES_DIR=path/to/exit-propagation-census \
  *     npx vitest run src/tests/mutations/exitPropagation/provenanceKeyNamesSeat.test.ts
  *
  * The census's own rule applies: a step whose matchUp does not hold two participants is skipped.

@@ -11,8 +11,7 @@ import * as topicConstants from '@Constants/topicConstants';
 
 /**
  * Notices must carry enough identity on the ENVELOPE for a subscriber to route a change without
- * resolving the entity it describes — cache eviction, data fan-out. See
- * Mentat/planning/FACTORY_NOTICE_IDENTITY_AUDIT.md.
+ * resolving the entity it describes — cache eviction, data fan-out.
  */
 describe('notice identity envelope', () => {
   it('MODIFY_MATCHUP carries eventId and drawId, not only the matchUp', () => {

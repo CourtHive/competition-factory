@@ -84,7 +84,7 @@ it.each([
       { structureName: 'East', roundNumber: 1, roundPosition: 6, outcome: { matchUpStatus: WALKOVER, winningSide: 1 } },
       { structureName: 'East', roundNumber: 1, roundPosition: 8, outcome: { matchUpStatus: WALKOVER, winningSide: 2 } },
       // `West|1|3` is now the DOUBLE_WALKOVER the two carried walkovers converged into: scoring it as a
-      // played match rewrites a carried exit and is refused (CA, 2026-10-03), changing nothing
+      // played match rewrites a carried exit and is refused, changing nothing
       {
         structureName: 'West',
         roundNumber: 1,

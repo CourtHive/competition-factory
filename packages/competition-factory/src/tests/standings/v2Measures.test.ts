@@ -8,7 +8,7 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
- * The measures and conventions of S3c (Mentat `planning/STANDINGS_ENGINE_SPEC.md` § 5.2, § 5.10): precision EXACT,
+ * The measures and conventions of S3c: precision EXACT,
  * differences and ratios, a ratio's zero rule, the expected denominator. Expected values are worked by hand.
  */
 

@@ -21,7 +21,7 @@ import {
  *
  * Not a corpus scenario: every draw with a BYE stores a trailing hole in a second-round `drawPositions`
  * (`[1, undefined]`, serialised `[1, null]`), which fails tournament.schema.json, so the corpus cannot
- * hold its starting record (Mentat punch list P37, half 2).
+ * hold its starting record.
  */
 const DRAW_ID = 'past-a-bye';
 
@@ -71,7 +71,7 @@ it('sends a carried exit on past a BYE: the holder stays a BYE and the next roun
   expect(tally('winner:loser-exit-past-bye').compared).toEqual(1);
 });
 
-it('a completed result relabelled as a WALKOVER carries the exit to the loser already directed (CA, 2026-10-02)', () => {
+it('a completed result relabelled as a WALKOVER carries the exit to the loser already directed', () => {
   setup();
   const matchUpId = at(MAIN, 1, 3).matchUpId;
   let result: any = tournamentEngine.setMatchUpStatus({

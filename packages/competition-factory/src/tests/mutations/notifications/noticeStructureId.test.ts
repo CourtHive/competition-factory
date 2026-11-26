@@ -20,7 +20,6 @@ import {
  * MODIFY_MATCHUP must carry the structure a change happened in, so a subscriber can route it without
  * resolving the matchUp. CFS uses this for structure-grain cache eviction; before it was populated,
  * a score could not name the structure it changed and the whole tier had to be swept.
- * See Mentat/planning/FACTORY_NOTICE_IDENTITY_AUDIT.md.
  */
 describe('MODIFY_MATCHUP structureId', () => {
   function capture(topics: string[]) {

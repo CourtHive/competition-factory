@@ -22,7 +22,7 @@ export type FindingProvenance = {
 };
 
 /**
- * The arm, from the variables the Mentat workers set for it (`scripts/stall-census/worker.mjs`): `on` sets
+ * The arm, from the variables the census workers set for it: `on` sets
  * `ALLOW_CHANGE_PROPAGATION=1`, `policyoff` sets `PROPAGATE_BYE=0`, `off` sets neither. `CENSUS_ARM` overrides.
  */
 export function censusArm(env: Record<string, string | undefined> = process.env): string {

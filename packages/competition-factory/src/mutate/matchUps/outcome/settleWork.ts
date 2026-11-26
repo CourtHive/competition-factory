@@ -26,7 +26,7 @@ import type { WorkingView } from './overlay';
 import type { OutcomeOp } from './ops';
 
 /**
- * THE SETTLE PASSES' HAS-WORK PREDICATES (executor plan § 6 S2; F5 (a), CA 2026-10-19: mirror v1's passes, each skipped
+ * THE SETTLE PASSES' HAS-WORK PREDICATES (executor plan § 6 S2: mirror v1's passes, each skipped
  * when it has no work). Asked of the working view, the draw as the plan's ops leave it, after v1's write and before its
  * settle passes would run. In S2, v2 owns a call only if every predicate is false.
  *

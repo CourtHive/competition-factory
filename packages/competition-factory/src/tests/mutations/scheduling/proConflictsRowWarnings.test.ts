@@ -7,7 +7,7 @@ import { CONFLICT_MATCHUP_ORDER, CONFLICT_PARTICIPANTS, SCHEDULE_CONFLICT } from
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 
 /**
- * Two corrections to the row issues of `proConflicts` (CA 2026-10-18).
+ * Two corrections to the row issues of `proConflicts`.
  *
  * 1. An issue cites only the matchUps it clashes with. A participant issue used to cite every matchUp of the clashing
  *    set: a second-round matchUp named the other second-round matchUps and their sources, which none of its

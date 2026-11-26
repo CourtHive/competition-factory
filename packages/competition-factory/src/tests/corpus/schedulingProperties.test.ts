@@ -40,7 +40,7 @@ function setup(drawProfile: any = { drawSize: 16 }) {
         (m: any) => m.stage === MAIN && m.roundNumber === roundNumber && m.roundPosition === roundPosition,
       );
   // the properties are asked of placements the writes may refuse (a dependent before its source), so the write keeps
-  // the played order only: the checker, not the write, is what these cases test (CA 2026-10-30 made the order bind plans)
+  // the played order only: the checker, not the write, is what these cases test (the played order binds plans)
   const place = (matchUp: any, scheduledDate: string, scheduledTime: string) => {
     let result: any = tournamentEngine.addMatchUpScheduleItems({
       schedule: { scheduledDate, scheduledTime },

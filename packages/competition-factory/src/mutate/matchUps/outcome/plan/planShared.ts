@@ -88,8 +88,7 @@ export function heldInTarget(view: OutcomeView, winningSide: 1 | 2): boolean {
 
 /**
  * Both sides of a correction are directed results: the write names a winner with a played or single-exit status, over
- * a stored one. The frame every correction detector opens with, S4 and S6 alike (Mentat
- * assessment/2026-11-07-outcome-refactor-debates.md, ruling 8).
+ * a stored one. The frame every correction detector opens with, S4 and S6 alike.
  */
 export const directedBothSides = (
   view: OutcomeView,
@@ -101,19 +100,19 @@ export const directedBothSides = (
 
 /**
  * An exit write that stays v1's: the request names a status other than the write's, or the write is a DEFAULTED under a
- * scoring policy's `incompleteAssignmentsOnDefault` (v1 writes the process codes). Ruling 8.
+ * scoring policy's `incompleteAssignmentsOnDefault` (v1 writes the process codes).
  */
 export const exitWriteIsV1s = (request: OutcomeRequest, view: OutcomeView, write: MatchUpWrite): boolean =>
   (!!request.matchUpStatus && request.matchUpStatus !== write.matchUpStatus) ||
   (write.matchUpStatus === DEFAULTED && !!view.draw.defaultProcessCodes);
 
-/** the direction names a decider, a produced exit or a convergence: more than a winner and a loser to place. Ruling 8. */
+/** the direction names a decider, a produced exit or a convergence: more than a winner and a loser to place. */
 export const directsElsewhere = (direction?: DirectionPlan): boolean =>
   !!direction?.decider || !!direction?.produced || !!direction?.converged;
 
 /**
  * The winner's target as a clean next matchUp of the same structure holding the winning side's position: the reason it
- * is not, or undefined. Shared by the removal and the re-entered winner (ruling 8); each caller reads the missing target
+ * is not, or undefined. Shared by the removal and the re-entered winner; each caller reads the missing target
  * its own way first.
  */
 export function cleanWinnerTarget(
@@ -467,8 +466,8 @@ export const scoreless = (matchUp: HydratedMatchUp) =>
 export const unplaced = (matchUp: HydratedMatchUp) => !(matchUp.drawPositions ?? []).some(Boolean);
 /**
  * a loser's home that is a BYE holding nothing else of a result: no winner, score, codes, side provenance or loser
- * link. The seven conjuncts `unwoundKeptOutOps` and `standingReservationSeat` share (Mentat
- * assessment/2026-11-07-outcome-refactor-debates.md, ruling 9); each keeps its own seat and structure walls
+ * link. The seven conjuncts `unwoundKeptOutOps` and `standingReservationSeat` share; each keeps its own seat and
+ * structure walls
  */
 export const cleanByeHome = (home: HydratedMatchUp | undefined): home is HydratedMatchUp =>
   !!home &&
@@ -480,7 +479,7 @@ export const cleanByeHome = (home: HydratedMatchUp | undefined): home is Hydrate
   !home.loserMatchUpId;
 /**
  * a settle write v1's `reconcileScoredTimes` pass makes, announced after everything else: the one predicate the plan
- * modules share for it (Mentat assessment/2026-11-07-outcome-refactor-debates.md, ruling 7)
+ * modules share for it
  */
 export const isSettleWrite = (op: OutcomeOp): op is Extract<OutcomeOp, { op: 'setMatchUpResult' }> =>
   op.op === 'setMatchUpResult' && op.announcedAs === 'reconcileScoredTimes';

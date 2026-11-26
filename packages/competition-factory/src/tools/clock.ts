@@ -188,7 +188,7 @@ function readOwnSource(): ClockValue {
 /**
  * Competition time — "now" at the competition, for the reads that DECIDE something against it
  * (live duration, embargoes, publication windows, "today" for eligibility), as opposed to the
- * stamps written into records above. Slice 0-d.1 of Mentat/planning/COMPETITION_CLOCK_INSTRUMENTATION.md.
+ * stamps written into records above.
  *
  * With no provider installed (the default, and every run today) competition time IS record time:
  * `competitionNow()` returns exactly what `now()` returns, captured instant included. A host that

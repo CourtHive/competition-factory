@@ -9,7 +9,7 @@ import { SINGLES } from '@Constants/eventConstants';
 import { ELO, WTN } from '@Constants/ratingConstants';
 
 /**
- * getEvents({ withScaleValues }) for an event with a flight whose draw is not generated yet (CA 2026-11-08, a
+ * getEvents({ withScaleValues }) for an event with a flight whose draw is not generated yet (a
  * production record): TMX's events table threw "Cannot read properties of undefined (reading 'ratings')". Draw
  * buckets were made for generated draws only, so a flight without one added its entries' ratings to nothing. The
  * refactor that split the aggregation (first stable release v3.0.0) dropped the guard the old code had.

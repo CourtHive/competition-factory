@@ -430,7 +430,7 @@ export function validateSetScore(
       ? { isValid: true }
       : { isValid: false, error: 'Invalid or unfinished combined-point score' };
   }
-  // a shootout is entered as its final tally, never in progress (Ruling 3)
+  // a shootout is entered as its final tally, never in progress
   if (setFormat.shootout) {
     const refusal = shootoutTallyRefusal(setFormat.shootout, [set.side1Score ?? 0, set.side2Score ?? 0]);
     return refusal ? { isValid: false, error: refusal } : { isValid: true };
@@ -443,7 +443,7 @@ export function validateSetScore(
   const tiebreakSetTo = tiebreakSet?.tiebreakTo;
   const isTiebreakOnlyFormat = !!tiebreakSetTo && !setTo;
 
-  // The 1-0 marker alone records a finished tiebreak set whose points were not kept (CA, V11)
+  // The 1-0 marker alone records a finished tiebreak set whose points were not kept
   if (isTiebreakOnlyFormat && isTiebreakMarker(set, setFormat)) return validateTiebreakMarker(set);
 
   const hasTiebreakScores = set.side1TiebreakScore !== undefined && set.side2TiebreakScore !== undefined;

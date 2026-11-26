@@ -7,11 +7,10 @@ import fs from 'node:fs';
  *
  * In 2026-10 the factory had 26 declarations typing a matchUpStatus as `string`, which erased the union
  * the model and every status constant carry: a misspelled status compared against a constant compiled
- * and was never true. They were narrowed in three passes (#5147, #5150 and this one; plan:
- * Mentat/planning/MATCHUP_STATUS_STRING_ERASURES.md).
+ * and was never true. They were narrowed in three passes (#5147, #5150 and this one).
  *
  * The three that remain are deliberate. A validator's job is to check a status a caller hands it, so its
- * parameter is `string` and it refuses an unknown value itself (CA, 2026-10-03).
+ * parameter is `string` and it refuses an unknown value itself.
  */
 
 const SRC = path.resolve(__dirname, '../..');

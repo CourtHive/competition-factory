@@ -309,7 +309,7 @@ function isUnderWay(matchUp: HydratedMatchUp, times: NormalizedTimes, asOfMs: nu
   const evidence = times.startMs ?? times.calledMs;
   if (evidence !== null) return evidence <= asOfMs;
   // Placed by its scheduled time alone, a matchUp can be on court only if it holds a court: one that is on no
-  // grid cell is not being played (CA, 2026-10-11, from a production report: two unplaced R16s read as "on court now").
+  // grid cell is not being played (from a production report, 2026-10-11: two unplaced R16s read as "on court now").
   if (!matchUp.schedule?.courtId) return false;
   return times.scheduledMs !== null && times.scheduledMs <= asOfMs;
 }
@@ -321,7 +321,7 @@ function isUnderWay(matchUp: HydratedMatchUp, times: NormalizedTimes, asOfMs: nu
  * toward "on court" for a venue that does not call matches (the August choice, kept). But the schedule is then
  * the only evidence of order, and it says this matchUp comes after the one being inspected, so it is not load
  * already spent before it. A production report, 2026-10-11: two R16s scheduled 15:30, never called, read as "on court now —
- * ready 18:00" against the 14:30 doubles quarterfinal the same players were waiting for (CA chose this rule).
+ * ready 18:00" against the 14:30 doubles quarterfinal the same players were waiting for.
  * A call or a start is evidence the matchUp is really under way, and keeps it whatever its scheduled time.
  */
 function placedOnlyAfter(matchUp: HydratedMatchUp, times: NormalizedTimes, targetScheduledMs: number | null): boolean {

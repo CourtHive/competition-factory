@@ -57,7 +57,7 @@ export function withdrawAwardsToEmptiedSeats({
     });
     if (stands) continue;
     matchUp.winningSide = undefined;
-    // ...and so does the BYE the award sent over its loser link for a loser who is nobody (P39): a pending exit sends
+    // ...and so does the BYE the award sent over its loser link for a loser who is nobody: a pending exit sends
     // nothing there (census A1 wave 4, COMPASS 32/27 21081040: `anUndoneAwardTakesBackItsLoserSeatBye`)
     if (resolvedMap)
       withdrawByeSeats({

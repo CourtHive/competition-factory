@@ -1,5 +1,5 @@
 // Ratings policy — how a dynamic rating moves on a result, attached via POLICY_TYPE_RATINGS.
-// Every rule encodes a published method; the policy's `source` names it (Mentat planning/RATINGS_POLICY_PLAN.md).
+// Every rule encodes a published method; the policy's `source` names it.
 
 export type ExpectationRule =
   | {

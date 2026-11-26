@@ -17,7 +17,7 @@ import { FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
  * carrying the WALKOVER. A DOUBLE_WALKOVER at `Consolation|2|2` then converges there, and nobody wins it. The
  * convergence stamps provenance as a pair, the other side taken from the PAIRED PREVIOUS matchUp — `Consolation|2|1`,
  * a BYE — which replaced the occupant's carried exit with `{ BYE }`. With the exit erased, `STALLED_POSITION` read a
- * player who had exited as stranded (CA, 2026-09-29: an occupant who exited is not waiting).
+ * player who had exited as stranded (an occupant who exited is not waiting).
  */
 
 const DRAW_ID = 'convergence-keeps-carry';

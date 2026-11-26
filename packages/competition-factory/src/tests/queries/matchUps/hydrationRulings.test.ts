@@ -9,8 +9,7 @@ import { TEAM_EVENT } from '@Constants/eventConstants';
 import { TEAM } from '@Constants/matchUpTypes';
 
 /**
- * What hydration derives, as CA ruled it on 2026-10-26 (Mentat planning/HYDRATION_DERIVATIONS_SCHEDULING_FIELDS.md
- * § 9). Each case states one ruling, written from the ruling, not recorded from the engine.
+ * What hydration derives. Each case states one rule, written from the rule, not recorded from the engine.
  */
 const inContext = (drawId: string) =>
   tournamentEngine.allDrawMatchUps({ drawId, inContext: true, nextMatchUps: true }).matchUps;
@@ -22,7 +21,7 @@ const storedMatchUps = (record: any, drawId: string) =>
 const ids = (potentials: any[] = []) =>
   potentials.flat().map((entry: any) => entry.participantId ?? (entry.bye ? 'BYE' : '?'));
 
-describe('a BYE dual: its lines hydrate as BYE (OPEN-1)', () => {
+describe('a BYE dual: its lines hydrate as BYE', () => {
   it('every line of a BYE dual is BYE in context, while stored TO_BE_PLAYED', () => {
     const {
       drawIds: [drawId],
@@ -51,7 +50,7 @@ describe('a BYE dual: its lines hydrate as BYE (OPEN-1)', () => {
   });
 });
 
-describe('potentials in a first-match-loser consolation (OPEN-2, OPEN-3)', () => {
+describe('potentials in a first-match-loser consolation', () => {
   function fmlc() {
     const {
       drawIds: [drawId],
@@ -97,7 +96,7 @@ describe('potentials in a first-match-loser consolation (OPEN-2, OPEN-3)', () =>
   });
 });
 
-describe('a stored edge does not stop the other being derived (OPEN-10)', () => {
+describe('a stored edge does not stop the other being derived', () => {
   it('with only loserMatchUpId stored, winnerTo is still derived from the links', () => {
     const {
       drawIds: [drawId],
@@ -127,7 +126,7 @@ describe('a stored edge does not stop the other being derived (OPEN-10)', () => 
   });
 });
 
-describe('a dual without drawPositions finds its sides’ lineUps on the draw (OPEN-12)', () => {
+describe('a dual without drawPositions finds its sides’ lineUps on the draw', () => {
   it('an ad hoc dual’s line takes its player from the draw-level lineUp', () => {
     const {
       drawIds: [drawId],

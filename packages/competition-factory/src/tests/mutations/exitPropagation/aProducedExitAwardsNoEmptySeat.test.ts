@@ -10,7 +10,7 @@ import { DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants'
 import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 /**
- * Q3, a second path (CA 2026-10-03 "land pending", 2026-10-04 "BYE holder, exit sent on"): a produced exit
+ * Q3, a second path ("land pending"; "BYE holder, exit sent on"): a produced exit
  * is awarded only to an opponent IN PLACE. A seat a BYE advanced forward, still waiting for the loser fed
  * into it from another structure, holds a drawPosition and nobody.
  *

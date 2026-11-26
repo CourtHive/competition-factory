@@ -168,7 +168,7 @@ function settleDraw({
   );
   if (crossed?.error) return crossed;
 
-  // a provenance entry follows its feeder's side as the seats settle (CA ruling (1), 2026-10-20)
+  // a provenance entry follows its feeder's side as the seats settle
   observePass('reconcileProvenanceSides', drawDefinition, () =>
     reconcileProvenanceSides({ tournamentRecord, drawDefinition, event }),
   );
@@ -189,7 +189,7 @@ function settleDraw({
 /**
  * EVERYTHING A CALL SETTLES once its own write, its directions and its exit propagation are done: `setMatchUpStatus`
  * runs it on the stored draw, and outcome v2 runs the same passes on its working copy for a cascade it records
- * (`outcome/plan/recordedCascade.ts`; CA, 2026-11-16), so the two cannot drift. The first error is returned as the pass
+ * (`outcome/plan/recordedCascade.ts`), so the two cannot drift. The first error is returned as the pass
  * returned it; `exhausted` names the matchUp the forward settle stopped at.
  */
 export function settleAfterWrite({

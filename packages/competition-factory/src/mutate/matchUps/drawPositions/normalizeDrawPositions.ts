@@ -1,13 +1,12 @@
 /**
  * The single place a `matchUp.drawPositions` array is settled before it is stored: the positions PRESENT, ascending.
  *
- * NO HOLE IS STORED (CA, 2026-10-05, Q2: `tournament.schema.json` admits no `null` in `drawPositions`). A lone
+ * NO HOLE IS STORED (`tournament.schema.json` admits no `null` in `drawPositions`). A lone
  * survivor is stored `[5]` whatever its side; its side is read STRUCTURALLY, through the round profile, by the helpers
  * in `getDrawPositionSides.ts` (`getSideDrawPosition`, `getDrawPositionSideNumber`, `getWinningSideDrawPosition`).
  * The leading hole that used to hold a side-2 survivor at index 1 (`[undefined, 5]`) is gone; every reader that
  * indexed the raw array was moved onto those helpers first (step 1, #5253) and
- * `src/tests/mutations/drawPositionsAreReadByStructure.test.ts` holds the rest to an exact allow-list
- * (`Mentat/planning/LEADING_HOLE_REMOVAL_DESIGN.md`, step 2).
+ * `src/tests/mutations/drawPositionsAreReadByStructure.test.ts` holds the rest to an exact allow-list (step 2).
  *
  * Two positions are stored ascending, and side 1 is the lower: the binding `getOrderedDrawPositions` states.
  *

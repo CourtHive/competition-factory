@@ -7,8 +7,8 @@ import { describe, expect, it } from 'vitest';
 import { BALL_ABUSE, EQUIPMENT_VIOLATION, NO_SHOW, PUNCTUALITY } from '@Constants/penaltyConstants';
 
 /**
- * THE PENALTY QUERIES RETURN CODES (CA, 2026-10-18: "getTournamentPenalties is @query so it shouldn't change the
- * source - but I don't see a problem normalizing the output"). Migration is opt-in, so an unmigrated record can still
+ * THE PENALTY QUERIES RETURN CODES. getTournamentPenalties is a query, so it does not change the source, but it may
+ * normalise its output. Migration is opt-in, so an unmigrated record can still
  * store a pre-7.x display label; the query normalises it in its result and leaves the record as it is.
  *
  * And a penalty issued to two participants is returned once with both `participantIds`: the query pushed the second

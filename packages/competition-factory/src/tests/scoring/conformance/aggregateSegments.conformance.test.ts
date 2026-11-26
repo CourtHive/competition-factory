@@ -26,7 +26,7 @@ import { describe, it } from 'vitest';
  * decider", so one point decides it with or without NOAD.
  *
  * A level total with no declared decider is COMPLETED without a winner, and no further segment is
- * played (scoring-engine spec § 9.3 rule 4, § 9.7; CA 2026-10-18, decision 12). Until then these cases
+ * played (scoring-engine spec § 9.3 rule 4, § 9.7, decision 12). Until then these cases
  * pinned it as not complete, which is how v1 played on.
  */
 
@@ -57,7 +57,7 @@ function aggregateCases(code: string, count: number, close: (winners: string) =>
   const { win, unfinished, level } = aggregateStreams(count, close);
   segmentConforms(code, win.spec, { sets: win.sets, winningSide: 1, complete: true });
   if (count > 1) segmentConforms(code, unfinished.spec, { sets: unfinished.sets, complete: false });
-  // level, with no declared decider: complete, and no winner (§ 9.7; CA 2026-10-18)
+  // level, with no declared decider: complete, and no winner (§ 9.7)
   segmentConforms(code, level.spec, { sets: level.sets, complete: true });
 }
 
@@ -199,7 +199,7 @@ describe('-F:TB1 — the sudden-death decider of a level aggregate', () => {
   // totals (SET3XA-S:T10-F:TB1)" (matchup-format.mdx), and "a tied total names no winner until a
   // deciding point breaks it" (format-support.md). So one point after a level total decides the match.
   // Found by these cases on 2026-10-17: the engine read `TB1` by the generic rule (first to 1, win by
-  // two), so a single point did not decide. A one-point target is sudden death (CA 2026-10-17); fixed.
+  // two), so a single point did not decide. A one-point target is sudden death; fixed.
   it.each([
     ['SET3XA-S:T10-F:TB1', 3],
     ['SET2XA-S:T20-F:TB1', 2],

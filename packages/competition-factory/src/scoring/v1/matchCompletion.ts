@@ -55,7 +55,7 @@ export function aggregateTotals(sets: SetScore[]): [number, number] {
 }
 
 /**
- * The completion rule (spec § 9, CA 2026-10-18). A match that ends level with no declared decider is
+ * The completion rule (spec § 9). A match that ends level with no declared decider is
  * complete with no winner (§ 9.7): the engine never plays a segment the format did not declare.
  *
  * - best of N (§ 9.1): the first to ⌈N/2⌉ sets wins; once all N sets are closed (a timed segment closed

@@ -22,7 +22,7 @@ import { DOUBLE_ELIMINATION, MODIFIED_FEED_IN_CHAMPIONSHIP } from '@Constants/dr
  * The BYE path resolved that arrival as the empty winning slot of a pending exit and advanced her onward as its winner,
  * into the `Consolation|3|1` seat that `Consolation|2|1` owes. The participant `Consolation|2|1`'s BYE then sent there
  * found it taken and stayed behind; the draw stalled. She is that matchUp's loser: she carries her own exit past the BYE
- * (CA, 2026-10-02), and the walkover stands as it was awarded.
+ * and the walkover stands as it was awarded.
  *
  * Pinned against the rule, not against forward play: entering `Main|1|3`'s double walkover first leaves
  * `Consolation|2|2` TO_BE_PLAYED, because an exit carried past a BYE into a matchUp nobody has reached yet is not
@@ -159,7 +159,7 @@ it('census de 9300487: the defaulted side of a Backdraw matchUp is not advanced 
   expect(issues).not.toContain('WINNING_SIDE_ADVANCEMENT_MISMATCH');
   expect(issues).toEqual([]);
 
-  // P53 (CA, 2026-10-11, approved change of assertion). This used to assert `Backdraw|3|1` DEFAULTED: that default was
+  // An approved change of assertion. This used to assert `Backdraw|3|1` DEFAULTED: that default was
   // Hedges', stranded there when `Main|1|6`'s double walkover was re-scored and he went back to `Backdraw|1|2` without
   // it, and it then decided `3|1` against Ahern, who never defaulted. The carry now comes home with its carrier
   // (`aCarryPastTwoByesComesHomeWhenOneGoes`): it decides `1|2`, and the two participants who reached `3|1` meet there.

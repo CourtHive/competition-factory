@@ -7,7 +7,7 @@ import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 /**
- * S7 of the standings engine (Mentat `planning/STANDINGS_ENGINE_SPEC.md` § 3, A7; § 5.2, external values). Worked by
+ * S7 of the standings engine (A7; external values). Worked by
  * hand from the results below.
  */
 

@@ -2,7 +2,7 @@ import { matchUpFormatCode, matchUpFormatGovernor } from '../../index';
 import { describe, expect, it } from 'vitest';
 
 /**
- * The aggregate decider's set number is public (CA, 2026-10-04), so a consumer that picks a set's
+ * The aggregate decider's set number is public, so a consumer that picks a set's
  * format — courthive-components' score entry, first of all — reads the rule from the factory instead
  * of keeping a copy. An aggregate format's sudden-death decider (`-F:TB1`) is set N + 1, never one of
  * the N; every other format keeps its own reading of which set is the final one.

@@ -12,7 +12,7 @@ import fs from 'fs';
 /**
  * WHERE an error-over-a-mutated-draw comes from, and WHAT it changed. INERT unless `ORIGINS=1`.
  *
- *   ORIGINS=1 TZ=UTC SCHEDULES_IN=../Mentat/fixtures/exit-propagation-census/sched-w1.jsonl \
+ *   ORIGINS=1 TZ=UTC SCHEDULES_IN=path/to/sched-w1.jsonl \
  *     OUT=/tmp/origins.jsonl npx vitest run \
  *     src/tests/mutations/exitPropagation/errorAtomicityOrigins.test.ts
  *   (add ALLOW_CHANGE_PROPAGATION=1 for the second arm)

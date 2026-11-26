@@ -13,7 +13,7 @@ import { COMPLETED, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstant
  * `FIRST_MATCH_LOSER_CONSOLATION` admits a loser only with zero prior SCORED wins, and a walkover or
  * unscored default is not a scored win. So re-scoring an EARLIER matchUp can move a participant
  * across that line after the feed decision was made, in either direction — `DROPPED_PROGRESSION` one
- * way, `INELIGIBLE_PROGRESSION` the other. Both are refused now, per CA 2026-09-14: a TD correcting
+ * way, `INELIGIBLE_PROGRESSION` the other. Both are refused now: a TD correcting
  * a result with active downstream dependencies is refused rather than silently re-fed.
  *
  * THE REFUSAL HAD TO BE MADE NARROW, and an earlier attempt shows why. Refusing on any

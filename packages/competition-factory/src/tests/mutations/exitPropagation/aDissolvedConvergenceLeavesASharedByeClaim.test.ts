@@ -15,7 +15,7 @@ import { expect, it } from 'vitest';
  * convergence's claim goes and the BYE stays with the others'. It stood, and the ledger read differently from every
  * rebuild of the standing results.
  *
- * The `byeClaims` ledger is retired (Mentat P58, CA 2026-10-21), so there is no claim to withdraw and the seat carries
+ * The `byeClaims` ledger is retired, so there is no claim to withdraw and the seat carries
  * no provenance. What the shared claim stood for is read from the draw: the seat's feeder `West|1|2` sends nobody
  * across its loser link (`feederSendsNobody`: `NOBODY_LOST`), and the seat is among those `East|1|3` is the reason for
  * (`byeSeatsOwedTo`), before the probe and after its clear alike.

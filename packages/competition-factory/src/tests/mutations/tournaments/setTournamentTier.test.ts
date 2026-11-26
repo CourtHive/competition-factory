@@ -107,7 +107,7 @@ describe('setTournamentTier', () => {
     expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
   });
 
-  // Phase 3 of Mentat/planning/TOURNAMENT_LEVEL_AND_TIER.md: surface the tier
+  // Surface the tier
   // on the tournaments list / card. The list goes through getTournamentInfo
   // → getCalendarEntry (server-side spread) → courthive-components mapper.
   // Propagation through getTournamentInfo is the load-bearing piece here —

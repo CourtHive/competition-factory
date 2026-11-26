@@ -281,7 +281,7 @@ it('ranks participant-stage pairs independently and preserves an existing qualif
 });
 
 it('leaves a qualifying-first MAIN shell to explicit positioning instead of claiming a fit', () => {
-  // prepareStage retains CA's 2026-10-09 rule: without MAIN entries its linked seats remain a shell.
+  // prepareStage retains the rule that without MAIN entries its linked seats remain a shell.
   const args = fixture(0, 4);
   const before = structuredClone(args);
   expect(qualify(args)).toEqual([]);

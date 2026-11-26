@@ -307,9 +307,9 @@ function applyScoreAndStatus({
     // (`isActiveDownstream`, `hasPropagatedExitDownstream`), which then refuse a mutation a director
     // is entitled to make. That is the load. Do not remove this on the strength of the parity test
     // passing.
-    // P41. BYE IS RESCUED TOO, because the guard on the very next line already decided that question
-    // the other way. `clearResolvedSideExitProvenance` excludes BYE from clearing ON PURPOSE — CA's
-    // ruling that "a BYE is never won" and that "in both cases the BYE remains a BYE", applied to the
+    // BYE IS RESCUED TOO, because the guard on the very next line already decided that question
+    // the other way. `clearResolvedSideExitProvenance` excludes BYE from clearing ON PURPOSE — the
+    // rule that a BYE is never won and that in both cases the BYE remains a BYE, applied to the
     // record rather than the status — while `isAnyExit` excludes BYE, so this rescue destroyed exactly
     // what that one protects. Two adjacent guards disagreeing about one status.
     //
@@ -317,9 +317,9 @@ function applyScoreAndStatus({
     // On the BYE branch provenance was blanked and not rescued, and what carried the facts through the
     // call was the LEGACY `matchUpStatusCodes` array, which this function does not blank — so
     // `getSideExitProvenance`'s fallback resurrected them afterwards. That is why the array is not a
-    // projection of the record inside this one call: it IS the record. See punch-list P41.
+    // projection of the record inside this one call: it IS the record.
     const survivingProvenance = isAnyExit(matchUpStatus) ? matchUp.sideExitProvenance : undefined;
-    // A matchUp-level `matchUpFormat` SURVIVES the blank (CA, 2026-10-01): the format is a property
+    // A matchUp-level `matchUpFormat` SURVIVES the blank: the format is a property
     // of the match, not of its result. The fixture carries `matchUpFormat: undefined` because it is
     // the unwound-matchUp shape, and until this line a clear erased a format a director had set on
     // one match. Measured by the corpus on real records before it was decided.

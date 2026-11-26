@@ -30,7 +30,7 @@ const TARGET = 'Consolation|3|4';
  * A CARRIED EXIT FOLLOWS ITS FEEDER'S CURRENT SIDE (Phase B policy-off 30030527, shrunk 30 -> 6).
  * Rule 3 remains unchanged: with both drawPositions 8 and 21, the feeder carrying 21 is side 2;
  * after 21 leaves, the remaining feeder puts 8 on side 2 and the carried exit belongs on side 1.
- * The entry must not retain the side it occupied when written. CA ruling (1), 2026-10-20; Mentat P59.
+ * The entry must not retain the side it occupied when written: provenance is re-keyed by the feeder's current side.
  * Reconciliation is restricted to unscored targets with one carried entry and two winner feeders.
  */
 const SCHEDULE: Step[] = [

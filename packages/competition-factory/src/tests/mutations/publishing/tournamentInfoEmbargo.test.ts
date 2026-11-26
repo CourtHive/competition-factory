@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 /**
- * The read-time information EMBARGO — punch list P23, D4(b).
+ * The read-time information EMBARGO.
  *
  * "Announce on a date." The publish is recorded immediately (intent) and readers withhold the
  * tournament until the embargo lifts, so nothing has to run at midnight to make it appear.

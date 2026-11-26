@@ -60,7 +60,7 @@ function fixture(status: typeof WALKOVER | typeof RETIRED | typeof DEFAULTED, wi
 }
 
 describe.each(['v1', 'v2', 'differential'] as const)(
-  '%s respects an independently recorded consolation result (F-032)',
+  '%s respects an independently recorded consolation result',
   (mode) => {
     it.each([WALKOVER, DEFAULTED, RETIRED] as const)('preserves a %s award on a linked loser replacement', (status) => {
       const params = fixture(status, 1);

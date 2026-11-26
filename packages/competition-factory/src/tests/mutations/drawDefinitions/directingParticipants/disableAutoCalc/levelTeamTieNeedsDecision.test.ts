@@ -12,7 +12,7 @@ import { TEAM_EVENT } from '@Constants/eventConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 
 /**
- * A winner on a level TEAM tie records how it was decided (CA ruling 2026-11-07, TEAM results item 3), as a single
+ * A winner on a level TEAM tie records how it was decided, as a single
  * matchUp's does: `score.overtime` with `decidedIn: 'EXTERNAL'` and `decidedBy`. INTENNSE 2026 decides a tie by
  * `aggregateValue`; every segment is scored level, so the tie stands 140-140. Each case starts from a fresh record and
  * asserts the stored tie, not only the result.

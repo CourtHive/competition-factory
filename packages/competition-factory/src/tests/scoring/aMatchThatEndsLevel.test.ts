@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 
 /*
- * A match that ends level (scoring-engine spec § 9.7; § 16 decisions 3, 12 and 18, CA 2026-10-18):
+ * A match that ends level (scoring-engine spec § 9.7; § 16 decisions 3, 12 and 18):
  * "A timed, aggregate or exactly-N match that ends level with no declared decider is COMPLETED with no
  * winningSide, and onMatchTie fires, as for a combined-total tie." The engine never plays a segment the
  * format did not declare, a decider exists only when declared (`/TB`, `-F:` of an exactly-N
@@ -68,7 +68,7 @@ function expectNothingMorePlayed(engine: ScoringEngine) {
   expect(after.winningSide).toBeUndefined();
 }
 
-describe('§ 9.1 best of N: no set beyond N (CA 2026-10-18, decision 3)', () => {
+describe('§ 9.1 best of N: no set beyond N (decision 3)', () => {
   it('SET1-S:T10P level at time is COMPLETED without a winner; no second set', () => {
     const { engine, counts } = engineFor('SET1-S:T10P');
     play(engine, '1122');
@@ -122,7 +122,7 @@ describe('§ 9.1 best of N: no set beyond N (CA 2026-10-18, decision 3)', () => 
   });
 });
 
-describe('§ 9.2 exactly N: a level count is complete without a winner (CA 2026-10-18, decision 18)', () => {
+describe('§ 9.2 exactly N: a level count is complete without a winner (decision 18)', () => {
   it('HAL2X-S:TB11 one half each: the last point completes the match level and fires onMatchTie', () => {
     const { engine, counts } = engineFor('HAL2X-S:TB11');
     play(engine, '1'.repeat(11) + '2'.repeat(11));
@@ -175,7 +175,7 @@ describe('§ 9.2 exactly N: a level count is complete without a winner (CA 2026-
   });
 });
 
-describe('§ 9.3 aggregate: a level total with no declared decider (CA 2026-10-18, decision 12)', () => {
+describe('§ 9.3 aggregate: a level total with no declared decider (decision 12)', () => {
   it('HAL2A-S:T45 level after two halves is a tie; no third half', () => {
     // a point is one of the sport's units under the HAL root (§ 6.2 rule 3)
     const { engine, counts } = engineFor('HAL2A-S:T45');

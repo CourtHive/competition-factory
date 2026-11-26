@@ -11,7 +11,7 @@ import { EVENT_NOT_FOUND, INVALID_VALUES } from '@Constants/errorConditionConsta
 import { DOUBLES_EVENT } from '@Constants/eventConstants';
 
 /**
- * Publishing a tournament's INFORMATION — punch list P23, option A.
+ * Publishing a tournament's INFORMATION.
  *
  * Before this, a tournament with no draw could not be public: every published component needed a draw
  * (events) or a schedule/roster (order of play, participants). These tests seed tournaments whose

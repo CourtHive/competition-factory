@@ -50,7 +50,7 @@ import {
 } from '@Constants/errorConditionConstants';
 
 /**
- * F-016: ONE PUBLIC BYE PLACEMENT, PLANNED BEFORE IT WRITES (rulings 8, 9 and 30).
+ * ONE PUBLIC BYE PLACEMENT, PLANNED BEFORE IT WRITES.
  *
  * `assignDrawPositionBye` decides as it writes. It sets the BYE, writes the matchUp it lands in, and only then walks
  * the advancement, so a refusal found on the walk (a forward edge that resolves to an earlier round because the

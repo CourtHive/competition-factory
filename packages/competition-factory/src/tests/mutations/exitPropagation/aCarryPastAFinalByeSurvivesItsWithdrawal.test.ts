@@ -10,7 +10,7 @@ import { DEFAULTED, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusCo
 import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 /**
- * A CARRY PAST A BYE IN A STRUCTURE'S LAST ROUND SURVIVES THE BYE'S WITHDRAWAL (P51).
+ * A CARRY PAST A BYE IN A STRUCTURE'S LAST ROUND SURVIVES THE BYE'S WITHDRAWAL.
  *
  * The ninth at-scale run's only stall, census seed 20318646 (COMPASS 8/8, `propagateExitStatus`, every arm), shrunk to
  * nine steps. Zoe defaults out of `East|1|3` and carries it into `West|1|2`, then on as its loser into `South|1|1` —

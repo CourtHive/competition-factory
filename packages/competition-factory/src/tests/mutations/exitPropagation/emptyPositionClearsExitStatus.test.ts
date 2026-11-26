@@ -21,17 +21,15 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  * ## The cause, and why it appeared when it did
  *
  * `drawPositionPlacement` kept a propagated exit's status only when `isExit(status) && winningSide`.
- * CA's Migration §20 ruling of 2026-09-20 — *a pending exit has no `winningSide` until a participant
+ * The Migration §20 rule — *a pending exit has no `winningSide` until a participant
  * arrives* — removed the very field that test keyed on, so from that day a PENDING propagated exit
  * answered false and had its status cleared. The durable record is the provenance, and the gate now
  * asks that instead; the AWARD stays gated on a participant actually arriving, because *"awarding
- * against an empty slot asserts a winner over an opponent who does not exist"* (CA, 2026-09-20).
+ * against an empty slot asserts a winner over an opponent who does not exist"*.
  *
  * This file was written as a CHARACTERISATION with a tripwire — *"WHEN THIS IS FIXED the next line
  * fails"* — and the tripwire did its job: it failed on `matchUpStatus`, at the line it named, and
  * the framing below is rewritten rather than the assertion loosened.
- *
- * See `Mentat/statuses/2026-09-20-overnight-census-on-a-corrected-harness.md`, "SIGNAL 1".
  */
 
 const seed = {
@@ -95,7 +93,7 @@ it('an empty drawPosition arriving at West|2|1 leaves the produced exit exactly 
   // the exit's records SURVIVE, on the side that exited
   expect(target.sideExitProvenance?.[1]?.matchUpStatus).toEqual(DEFAULTED);
   expect(target.sideExitProvenance?.[1]?.previousMatchUpStatus).toEqual(DOUBLE_DEFAULT);
-  // P37. The legacy array's positional restatement of the two lines above is gone.
+  // The legacy array's positional restatement of the two lines above is gone.
 
   // ...and so does the status those records describe. Before the fix this read TO_BE_PLAYED: a
   // matchUp asserting that side 1 had already defaulted out of a contest still to be played.

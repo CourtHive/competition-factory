@@ -8,7 +8,7 @@ import type { ResultType, TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
 /*
- * Transit between venues (scheduling-pipeline.md § 3.4; CA 2026-10-25): stored once per pair in
+ * Transit between venues (scheduling-pipeline.md § 3.4): stored once per pair in
  * `tournamentRecord.scheduling.venueTransits`, pruned by the venue mutations as the scheduling profile is. A pair is
  * symmetric unless `oneWay`, when it runs from `venueIds[0]` to `venueIds[1]` only. A sanctioned value is a floor: a
  * director may never set less, or remove the pair.

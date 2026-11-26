@@ -18,7 +18,7 @@ const MODES: OutcomePipelineMode[] = [OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2, 
 
 /**
  * A GROUP'S TALLY READS EACH MATCHUP UNDER THE FORMAT ITS CONTAINER GIVES IT (record soak 2026-11-18, class D8: 24
- * calls of the nest-audited set, TMX-authored records, consistent as loaded). Ruled by CA, 2026-11-19: v1's tally was
+ * calls of the nest-audited set, TMX-authored records, consistent as loaded). v1's tally was
  * the one at fault, and is fixed.
  *
  * A round robin whose CONTAINER stores one matchUpFormat (a match tiebreak for the final set) and whose DRAW stores

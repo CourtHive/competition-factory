@@ -19,10 +19,11 @@ import { WALKOVER } from '@Constants/matchUpStatusConstants';
  * not played, and withdrew the carry, releasing the winner from `Consolation|4|1`, a round they had reached by
  * that result (WINNER_NOT_ADVANCED). It now follows the winner past BYEs to their next real matchUp.
  *
- * Since P52 (CA, 2026-10-11) the relabel itself is refused: a walkover re-entered as a bare win for the same winner is
- * a played result, a change of kind, and the carry's winner recorded a result onward (`correctionKindChange`). It was
- * accepted until the guard read a bare win as keeping its status; the write recorded COMPLETED while the walkover
- * stayed carried. Refused over an untouched draw, the winner stays where the result took them, as before.
+ * Since a correction keeps the kind a recorded result fixed, the relabel itself is refused: a walkover re-entered as a
+ * bare win for the same winner is a played result, a change of kind, and the carry's winner recorded a result onward
+ * (`correctionKindChange`). It was accepted until the guard read a bare win as keeping its status; the write recorded
+ * COMPLETED while the walkover stayed carried. Refused over an untouched draw, the winner stays where the result took
+ * them, as before.
  */
 
 type Step = { structureName: string; roundNumber: number; roundPosition: number; outcome: any };

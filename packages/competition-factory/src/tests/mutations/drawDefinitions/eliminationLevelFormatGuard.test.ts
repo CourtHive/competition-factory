@@ -9,9 +9,9 @@ import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { INTENNSE_2026 } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
-// Scoring-engine spec § 9.7 rule 4 (CA 2026-10-18: "yes, extend the check"): a timed, aggregate or
+// Scoring-engine spec § 9.7 rule 4: a timed, aggregate or
 // exactly-N format that declares no decider can end COMPLETED with no winner. Where a structure advances
-// a winner, that level result needs a decision made outside the score (CA 2026-11-04).
+// a winner, that level result needs a decision made outside the score.
 const CAN_END_LEVEL = [
   'SET1-S:P16', // combined total, even n (the guard before the extension)
   'SET3-S:T10', // timed sets, no tiebreak at time
@@ -88,7 +88,7 @@ function setup(eventMatchUpFormat?: string) {
   return eventId;
 }
 
-// Standings phase 2 § 1.1 (CA 2026-11-04, "allow, decider required"): an elimination structure accepts a format that
+// Standings phase 2 § 1.1 (allow, decider required): an elimination structure accepts a format that
 // can end level. A level result there names its winner and how it was decided, and is refused without one
 // (`decidedResults.test.ts`), so generation and a format change no longer refuse the format itself.
 describe('elimination accepts a format that can end level', () => {

@@ -1,5 +1,5 @@
 /**
- * One item of a bulk mutation, planned and applied as its own unit (per-item atomicity, ruling 7). A refused item
+ * One item of a bulk mutation, planned and applied as its own unit (per-item atomicity). A refused item
  * leaves the record as it found it; an item that succeeds stays written whatever later items do.
  *
  * Returns `run()` unchanged. The boundary exists so the refusal invariant can attribute each write to the item that

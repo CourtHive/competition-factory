@@ -43,8 +43,8 @@ it('can bulkSchedule matchUps using matchUpDetails', () => {
 
   const matchUps = competitionEngine.allCompetitionMatchUps().matchUps;
 
-  // each matchUp timed after every matchUp it depends on: the order binds plans as well as what was played
-  // (CA 2026-10-30), so arbitrary times across rounds would be refused whole
+  // each matchUp timed after every matchUp it depends on: the order binds plans as well as what was played,
+  // so arbitrary times across rounds would be refused whole
   const { matchUpDependencies } = competitionEngine.getMatchUpDependencies();
   const depths: { [matchUpId: string]: number } = {};
   const depthOf = (matchUpId: string): number =>

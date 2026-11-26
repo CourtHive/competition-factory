@@ -207,7 +207,7 @@ export function planWrite(request: OutcomeRequest, view: OutcomeView, route: Rou
       return applyScoreAndStatus({ ...asIs, removeScore: true }, request, view);
     // a decided matchUp turned into a double exit: what it directed is taken back (the winner goes),
     // then the double exit is written and advanced as a fresh one
-    // CA, 2026-10-02: a DOUBLE_DEFAULT KEEPS the score the matchUp had, finished or not, unless the call
+    // A DOUBLE_DEFAULT KEEPS the score the matchUp had, finished or not, unless the call
     // brings one: both players can be defaulted after the last ball, and the score is the record of
     // what was played. A DOUBLE_WALKOVER says the match was not played, so it blanks the score; one
     // entered over a completed result is the director's to correct.

@@ -11,7 +11,7 @@ import { EXISTING_POLICY_TYPE } from '@Constants/errorConditionConstants';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 
 /**
- * attachPolicies WRITES ONLY THE POLICIES IT IS GIVEN (CA 2026-10-18: "fix the attachPolicies bug"). It read the
+ * attachPolicies WRITES ONLY THE POLICIES IT IS GIVEN. It read the
  * merged tournament + event + draw policies and wrote them back as the element's own, so attaching one policy to a
  * draw copied every inherited policy onto it, and a policy inherited from the tournament refused a draw- or
  * event-level attach with EXISTING_POLICY_TYPE. Now the element's own policies decide: one attached here overrides an

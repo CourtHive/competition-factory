@@ -1,4 +1,4 @@
-# Vendored dev tool — single source of truth in Mentat/tools/attr-audit
+# Vendored dev tool — its single source of truth is a template maintained outside this repository
 # (installed via `node install.mjs`; do not reformat or it drifts from the template)
 packages/competition-factory/scripts/attr-audit.mjs
 

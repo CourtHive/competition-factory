@@ -190,7 +190,7 @@ export function addDrawDefinition(
   const eventId: string = event.eventId;
 
   // A draw built outside the factory may carry no `winnerMatchUpId` / `loserMatchUpId`. It is stored with the edges
-  // the factory would have generated (CA, 2026-10-18), before the notices, so they announce the draw as stored.
+  // the factory would have generated, before the notices, so they announce the draw as stored.
   storeGoesTo(drawDefinition);
 
   if (existingDrawDefinition) {

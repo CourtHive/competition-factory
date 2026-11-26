@@ -11,7 +11,7 @@ import { STANDINGS_PURPOSE_MOVEMENT, SUBJECT_PERSON } from '@Constants/seasonCon
 import type { Season } from '@Types/seasonTypes';
 
 /**
- * Season standings on the standings engine (Mentat `planning/STANDINGS_ENGINE_SPEC.md` § 7, S2). Every expected order
+ * Season standings on the standings engine (S2). Every expected order
  * is worked by hand from the results below.
  *
  *   P1: A beat B 6-4 6-4; B beat C 6-0 6-0

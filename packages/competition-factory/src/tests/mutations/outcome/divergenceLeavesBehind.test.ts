@@ -13,9 +13,9 @@ import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Constants/outcomePipelineConstan
 import { MODIFY_MATCHUP } from '@Constants/topicConstants';
 
 /**
- * WHAT A DIVERGENCE LEAVES BEHIND (CA, 2026-10-15: "after a divergence throws, is the record left with v1's writes,
- * partially written, or rolled back?"; CA, 2026-10-18: "In setMatchUpStatus there should be nothing changed if an
- * error is returned"). Stated in outcome-pipeline.md § 7.1.
+ * WHAT A DIVERGENCE LEAVES BEHIND: after a divergence throws, is the record left with v1's writes, partially
+ * written, or rolled back? In setMatchUpStatus nothing should be changed if an error is returned. Stated in
+ * outcome-pipeline.md § 7.1.
  *
  * Under `differential`, v2 plans and never writes. v1 runs and writes, and only then does `compare` throw
  * `OutcomePipelineDivergence`. Before it throws, `compare` writes back what the call touched (the tournament, the

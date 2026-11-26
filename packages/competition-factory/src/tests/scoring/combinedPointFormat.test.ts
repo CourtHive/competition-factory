@@ -281,7 +281,7 @@ it('whole-segment entry infers a winner or a completed tie and takes no second s
   expect(engine.getState()).toMatchObject({ matchUpStatus: COMPLETED });
   expect(engine.getState().winningSide).toBeUndefined();
   const before = engine.getState();
-  // a set total after COMPLETED is ignored, recording nothing (scoring-engine spec § 9.6, CA 2026-10-18)
+  // a set total after COMPLETED is ignored, recording nothing (scoring-engine spec § 9.6)
   expect(engine.addSet({ side1Score: 17, side2Score: 15 })).toEqual({ recorded: false, ignored: 'MATCH_COMPLETED' });
   expect(engine.getState()).toEqual(before);
   engine.undo();

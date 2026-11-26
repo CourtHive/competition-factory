@@ -631,7 +631,7 @@ describe('luckyDrawAdvancement — placeDiscardedLosers branches', () => {
       },
     ];
 
-    // CA, 2026-10-22: refused before any write — no longer advanced-and-logged
+    // refused before any write — no longer advanced-and-logged
     const before = makeDeepCopy(drawDefinition, false, true);
     const result: any = luckyDrawAdvancement({
       drawDefinition,

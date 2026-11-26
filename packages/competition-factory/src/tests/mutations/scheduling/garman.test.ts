@@ -40,7 +40,7 @@ it('replcates revised garman spreadsheet funcationality', () => {
   });
   expect(timingProfile.length).toEqual(23);
   // Brian Garman, "The Revised Garman System" (2009), 10 Courts, Table 3 "1 hr 30 min", the Total column from 8:00 AM
-  // (period 0) to 7:00 PM (period 22): the published table rounds to the nearest match (CA 2026-10-24)
+  // (period 0) to 7:00 PM (period 22): the published table rounds to the nearest match
   // prettier-ignore
   expect(timingProfile.map(({ totalMatchUps }) => totalMatchUps)).toEqual([
     10, 10, 13, 17, 20, 23, 27, 30, 33, 37, 40, 43, 47, 50, 53, 57, 60, 63, 67, 70, 73, 77, 80,

@@ -25,7 +25,7 @@ import { HydratedMatchUp } from '@Types/hydrated';
  *     gained that direction.
  *
  * One cause: eligibility is evaluated when the loser is directed and never re-evaluated when the
- * facts underneath it change. CA ruled 2026-09-14 that a TD correcting a result with active
+ * facts underneath it change. A TD correcting a result with active
  * downstream dependencies is REFUSED rather than silently re-fed — the rule
  * `CANNOT_CHANGE_WINNING_SIDE` already applies one branch away.
  *
@@ -163,7 +163,7 @@ export function feedEligibilityChange({
  * (`reconcileConsolationReservations`), by the same winner or, under `allowChangePropagation`, by a swapped one. Where
  * the participant that BYE advanced has already played on, the withdrawal takes them back out of a decided consolation
  * matchUp and leaves its result standing on an undecided one — a main-draw change percolating into a backdraw that has
- * started, which is refused (CA 2026-09-22). Census run-17 baseline, FIRST_MATCH_LOSER_CONSOLATION 8/8 seed 20624031,
+ * started, which is refused. Census run-17 baseline, FIRST_MATCH_LOSER_CONSOLATION 8/8 seed 20624031,
  * every arm: `Main|1|2` re-scored from a played win to a WALKOVER by the same winner left `Consolation|3|1` TO_BE_PLAYED
  * holding its RETIRED 6-3; seeds 20701220 (8/8) and 20750479 (8/7), `allowChangePropagation`: the same with the winner
  * swapped.
@@ -214,7 +214,7 @@ function reservationPlayedOn({
 }
 
 /**
- * A LINE WHOSE TALLY RELABELS ITS DUAL ASKS THE DUAL'S QUESTION (§ 2 row 12; CA, 2026-11-20, class 4).
+ * A LINE WHOSE TALLY RELABELS ITS DUAL ASKS THE DUAL'S QUESTION (§ 2 row 12, class 4).
  *
  * A dual decided by its own exit keeps it while its lines project no winner (`dualKeepsOwnDecision`). Once they project
  * that same winner the tally takes over and writes the dual COMPLETED: a WALKOVER corrected to a scored win by the same

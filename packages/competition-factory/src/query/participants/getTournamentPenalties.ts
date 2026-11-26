@@ -11,7 +11,7 @@ type GetTournamentPenaltiesArgs = {
 /**
  * Every penalty issued in the tournament, once each, with the `participantIds` it was issued to.
  *
- * `penaltyType` is returned as its CODE (CA, 2026-10-18): a record written before 7.x may still store a display label
+ * `penaltyType` is returned as its CODE: a record written before 7.x may still store a display label
  * (`'Ball Abuse'`), and migration is opt-in, so a legacy label is normalised in the RESULT. The record is not
  * changed; a query does not write. A value outside the legacy map is returned as stored.
  */

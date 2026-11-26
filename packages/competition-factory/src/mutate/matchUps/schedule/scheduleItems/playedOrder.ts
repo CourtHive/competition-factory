@@ -38,12 +38,12 @@ export {
 
 /**
  * A matchUp may not be placed at or before a matchUp it depends on, nor after a matchUp that depends on it. This was the
- * PLAYED order (CA 2026-10-22, the C2 ordering rule in SCHEDULING_PIPELINE_VNEXT.md § 5): only a played matchUp imposed
- * anything. It now binds plans as well as history (CA 2026-10-30): an impossible order is impossible whether or not the
+ * PLAYED order (the C2 ordering rule): only a played matchUp imposed
+ * anything. It now binds plans as well as history: an impossible order is impossible whether or not the
  * earlier matchUp has been played.
  *
  * - **Imposes order**: every matchUp but a BYE, which is never played and carries no placement of its own. Walkovers,
- *   defaults and double exits impose order like any other matchUp (CA 2026-10-30). **Played** (COMPLETED, RETIRED or
+ *   defaults and double exits impose order like any other matchUp. **Played** (COMPLETED, RETIRED or
  *   DEFAULTED, with a score) is still recorded, so a refusal can say whether the matchUp in the way was played.
  * - **Depends on**: the dependency graph's links (winner, loser, feed, qualifying to main, group to playoff). AD_HOC
  *   rounds and the rounds of a round robin carry no links, so they impose no order.
@@ -67,7 +67,7 @@ type BlockingMatchUp = {
 type PlayedOrderGraph = { matchUpDependencies?: MatchUpDependencies; inContextMatchUps?: HydratedMatchUp[] };
 
 type PlayedOrderArgs = {
-  /** false: only a played matchUp orders, as before CA 2026-10-30 (default true: plans order too) */
+  /** false: only a played matchUp orders, as before plans ordered too (default true: plans order too) */
   plannedOrder?: boolean;
   pendingPlacements?: PendingPlacements;
   matchUpDependencies?: MatchUpDependencies;
@@ -96,7 +96,7 @@ export function checkPlayedOrder(params: PlayedOrderArgs): ResultType | undefine
 }
 
 type PlayedOrderRefusalArgs = {
-  /** false: only a played matchUp orders, as before CA 2026-10-30 (default true: plans order too) */
+  /** false: only a played matchUp orders, as before plans ordered too (default true: plans order too) */
   plannedOrder?: boolean;
   pendingPlacements?: PendingPlacements;
   /** the dependency graph and the in-context matchUps, asked for only when the write moves a matchUp */
@@ -188,7 +188,7 @@ export function checkBatchPlayedOrder({
   allRefusals,
   placements,
 }: {
-  /** false: only a played matchUp orders, as before CA 2026-10-30 (default true: plans order too) */
+  /** false: only a played matchUp orders, as before plans ordered too (default true: plans order too) */
   plannedOrder?: boolean;
   matchUpDependencies?: MatchUpDependencies;
   inContextMatchUps?: HydratedMatchUp[];

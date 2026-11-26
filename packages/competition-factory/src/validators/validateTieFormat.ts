@@ -17,7 +17,7 @@ type ValidateTieFormatArgs = {
   /**
    * The tieFormat is being SAVED (added to an event or draw, or modified): refuse negative values and a
    * valueGoal no side can reach. Off when a stored tieFormat is read for scoring or line-ups, so a record
-   * saved before these rules still scores (CA 2026-10-31: "refuse on save, but not on calculation").
+   * saved before these rules still scores (refuse on save, but not on calculation).
    */
   enforceValues?: boolean;
   allowResolvedMatchUpTypeOptions?: boolean;

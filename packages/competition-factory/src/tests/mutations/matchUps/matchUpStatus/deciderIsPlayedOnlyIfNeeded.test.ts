@@ -17,7 +17,7 @@ import {
 /**
  * A DECIDER IS PLAYED ONLY IF IT IS NEEDED.
  *
- * CA, 2026-09-29: *"set it to a DEAD_RUBBER when it is unnecessary so that clients don't see
+ * The rule: *"set it to a DEAD_RUBBER when it is unnecessary so that clients don't see
  * TO_BE_PLAYED matchUps; changing the winningSide of the final can clear the DEAD_RUBBER if the
  * decider becomes necessary. If someone wanted to clear the DEAD_RUBBER and play the decider 'just
  * for fun', there's no reason to prevent that."* And of a decider played before its final changed:
@@ -97,7 +97,7 @@ it('is a DEAD_RUBBER when the undefeated finalist wins the final', () => {
 
   expect(decider().matchUpStatus).toEqual(DEAD_RUBBER);
   expect(decider().winningSide).toBeUndefined();
-  // not played, so never stamped as scored (CA, 2026-10-24)
+  // not played, so never stamped as scored
   expect(decider().schedule?.scoredTime).toBeUndefined();
   // they are still seated there: the decider is not needed, it has not vanished
   expect(occupants(decider())).toEqual([winnerId, loserId]);
@@ -152,7 +152,7 @@ it('destroys a decider result when the final it followed from is changed', () =>
   expect(decider().matchUpStatus).toEqual(DEAD_RUBBER);
   expect(decider().winningSide).toBeUndefined();
   expect(decider().score?.sets ?? []).toEqual([]);
-  // the stamp of the result it held goes with that result: a DEAD_RUBBER was not played (CA, 2026-10-24)
+  // the stamp of the result it held goes with that result: a DEAD_RUBBER was not played
   expect(decider().schedule?.scoredTime).toBeUndefined();
 });
 

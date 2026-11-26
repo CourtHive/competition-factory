@@ -2,8 +2,8 @@ import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 
 /**
  * USTA League championship tie procedure, as copied into section regulations: USTA/Midwest Section 2026 League Rules and
- * Regulations, Combo section M, "Procedures in the Event of a Tie" (verified at source, Mentat
- * `reports/season-tiebreak-research-2026-11-01.md` § 1.1). The tie is broken by the first of these that does:
+ * Regulations, Combo section M, "Procedures in the Event of a Tie" (verified at source). The tie is broken by the
+ * first of these that does:
  *
  *   1. the most individual matches (lines) won in the entire competition
  *   2. the winner of the head-to-head match

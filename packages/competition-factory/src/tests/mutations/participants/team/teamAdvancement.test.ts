@@ -828,8 +828,8 @@ it('can set score of TEAM matchUps', () => {
     },
   }).matchUps[0];
 
-  // CA, 2026-11-20 (class 4): the dual was decided by its own call, and its lines (two singles won by side 1) do not
-  // yet project a winner, so it keeps its winner (before the ruling the line un-decided it, IN_PROGRESS)
+  // Class 4: the dual was decided by its own call, and its lines (two singles won by side 1) do not
+  // yet project a winner, so it keeps its winner (before this rule the line un-decided it, IN_PROGRESS)
   expect(targetMatchUp.matchUpStatus).toEqual(COMPLETED);
   expect(targetMatchUp.winningSide).toEqual(1);
 });

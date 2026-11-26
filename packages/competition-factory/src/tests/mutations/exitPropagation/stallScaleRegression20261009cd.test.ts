@@ -10,9 +10,8 @@ import fs from 'fs';
  * 20,100,001–20,140,000 and 20,140,001–20,180,000; 40,000 per arm each) counted `STALLED_POSITION` directly in three
  * arms and found 13 and 15 stalling instances: 4 with `allowChangePropagation` off, 4 with it on, and 20 under
  * `doubleExitPropagateBye: false`. By the time the ratchet was written (dev 59a40e00cd, #5327–#5331 merged) every
- * default-arm instance replayed clean; the 8 policy-off seeds below did not. CA, 2026-10-08: that policy arm must ALSO
- * reach zero before `STALLED_POSITION` is promoted to `error`. The planning record is
- * `Mentat/planning/STALLED_POSITION_AT_SCALE.md`.
+ * default-arm instance replayed clean; the 8 policy-off seeds below did not. That policy arm must ALSO
+ * reach zero before `STALLED_POSITION` is promoted to `error`.
  *
  * Each seed replays in the arm it was found in, from the schedule EMITTED IN THAT ARM (`generateSchedule` calls the
  * engine, so the arm changes the schedule itself). A `policyoff` line carries the `policyDefinitions` it was emitted

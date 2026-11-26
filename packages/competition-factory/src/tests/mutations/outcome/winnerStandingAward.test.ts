@@ -16,7 +16,7 @@ import {
 
 /**
  * C20: A STANDING AWARD THE ARRIVING WINNER TAKES, the winner's twin of C18. `Main|1|1`'s winner waits alone in
- * `Main|2|1` and exits there before the opponent arrives (CA, 2026-10-04): the empty side is awarded the WALKOVER or
+ * `Main|2|1` and exits there before the opponent arrives: the empty side is awarded the WALKOVER or
  * DEFAULTED, its provenance on the exiting side. `Main|1|2`'s winner then arrives on that empty side and takes the award:
  * v1's `assignMatchUpDrawPosition` adds the position, writes the award back with its codes re-derived, announces it as
  * the assignment, and sends the position on into `Main|3|1` (`advanceIntoWinnerMatchUp`).

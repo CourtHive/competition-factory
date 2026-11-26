@@ -60,7 +60,7 @@ export function addMatchUpScheduledDate({
   });
   if (result.error) return result;
 
-  // a day the matchUp's event does not play: written, and warned about, never refused (CA 2026-11-01)
+  // a day the matchUp's event does not play: written, and warned about, never refused
   const warning = eventDateWarning({ tournamentRecord, drawDefinition, scheduledDate, matchUpId, event });
   return warning ? { ...result, warnings: [warning] } : result;
 }

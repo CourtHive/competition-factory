@@ -44,7 +44,7 @@ export type QuarantineEntry = {
  * links, and now asks by participant — see `removeLinkedWinner`), and 2 lost `matchUpStatusCodes`.
  *
  * THE LAST TWO CLOSED 2026-09-19, and they closed the way the entry said they would. Their
- * reference recorded CA's decision of 2026-09-09: *"RE-DERIVE the codes on unwind from the current
+ * reference recorded the decision of 2026-09-09: *"RE-DERIVE the codes on unwind from the current
  * upstream state instead of writing []"*. `removeDoubleExit`'s unwind now does exactly that — it
  * retains the provenance whose origin is not going away and projects the codes from it, instead of
  * writing `matchUpStatusCodes: []` over a matchUp that is still an exit. FIRST_ROUND_LOSER_CONSOLATION

@@ -11,7 +11,7 @@ import { DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Consta
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 /**
- * NOBODY STANDS ACROSS A LINK OUT OF A MATCHUP THAT HAS NO RESULT (CA, 2026-10-05: design § 7, question 2).
+ * NOBODY STANDS ACROSS A LINK OUT OF A MATCHUP THAT HAS NO RESULT (design § 7, question 2).
  *
  * A WINNER or LOSER link moves a participant who decided the source round. `ADVANCED_FROM_UNDECIDED` reads within
  * a structure, so an advancement left behind across a link was invisible: clearing the Backdraw semifinal once

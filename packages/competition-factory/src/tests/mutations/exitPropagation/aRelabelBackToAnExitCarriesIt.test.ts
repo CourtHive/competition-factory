@@ -10,7 +10,7 @@ import { MODIFIED_FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstant
 import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Constants/outcomePipelineConstants';
 
 /**
- * The round trip F2 left open (CA, 2026-10-07: "fix that one finding now"). Census w2 9100377 (MFIC 16/11): the
+ * The round trip F2 left open. Census w2 9100377 (MFIC 16/11): the
  * `Main|2|1` loser goes to the consolation, passes a BYE, and arrives at `Consolation|3|2` where the WALKOVER that
  * `Consolation|2|3`'s double walkover produced stands pending; by RULE 2 they win it and go on to `4|1`. Then `Main|2|1`
  * is relabelled a WALKOVER: the loser now exits at the origin, and the exit has to be carried in, where it converges

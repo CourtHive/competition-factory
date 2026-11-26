@@ -40,7 +40,7 @@ describe('parse — matchUpFormat codes at the edge of the grammar', () => {
 
   it('reads what a timed set is counted in', () => {
     expect(parse('SET1-S:T20P')?.setFormat).toEqual({ timed: true, minutes: 20, based: 'P' });
-    // games are the default: `T20G` is an equivalent spelling of `T20` and parses to its object (CA 2026-10-25)
+    // games are the default: `T20G` is an equivalent spelling of `T20` and parses to its object
     expect(parse('SET1-S:T20G')?.setFormat).toEqual({ timed: true, minutes: 20 });
   });
 

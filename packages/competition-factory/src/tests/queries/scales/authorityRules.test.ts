@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { ATP, ITF, TENNIS_EUROPE, UNSPECIFIED, USTA } from '@Constants/pointsAuthorityConstants';
 
 /**
- * A rank list's authority rules (CA 2026-11-08), moved into factory from courthive-rankings: which issuing authorities'
+ * A rank list's authority rules, moved into factory from courthive-rankings: which issuing authorities'
  * awards a list admits, and how much each one's points count. Same semantics as that service, which stores an award with
  * no authority as UNSPECIFIED and weights an unlisted authority at 1.
  */

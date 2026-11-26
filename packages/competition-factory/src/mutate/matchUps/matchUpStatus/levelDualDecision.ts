@@ -20,7 +20,7 @@ type LevelDualDecisionArgs = {
 };
 
 /**
- * A WINNER ON A LEVEL TEAM TIE NAMES HOW IT WAS DECIDED (CA ruling, 2026-11-07; TEAM results item 3). A single matchUp
+ * A WINNER ON A LEVEL TEAM TIE NAMES HOW IT WAS DECIDED (TEAM results item 3). A single matchUp
  * refuses a winner on a level score unless the score records how it was decided outside it (`decidedResultRefusal`):
  * `score.overtime` with `decidedIn: 'EXTERNAL'` and `decidedBy`. A TEAM dual has no `matchUpFormat` for that check to
  * read, so validation skipped it and a level tie took any winner it was given, with or without auto-calc.

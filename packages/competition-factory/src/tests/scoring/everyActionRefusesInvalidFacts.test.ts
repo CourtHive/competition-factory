@@ -3,8 +3,8 @@ import { LEGACY_REFUSED_INPUT } from '@Scoring/kernel/legacy';
 import { describe, expect, it } from 'vitest';
 
 /*
- * Every action refuses invalid facts before writing (scoring-engine spec § 1.1, § 2; § 16 decision 10,
- * CA 2026-10-18): "a side out of range, a score that is not a non-negative integer, a format that does not
+ * Every action refuses invalid facts before writing (scoring-engine spec § 1.1, § 2; § 16 decision 10):
+ * "a side out of range, a score that is not a non-negative integer, a format that does not
  * parse (for every action that scores or names a server)." v1 validated only addPoint and editPoint:
  * addGame({ winner: 2 }) scored for side 2, and addSet, endSegment and setInitialScore were not validated;
  * an unparseable format refused only point input.
@@ -18,7 +18,7 @@ function expectNothingWritten(engine: ScoringEngine, act: () => unknown) {
   expect(engine.getState()).toEqual(before);
 }
 
-describe('§ 2 every action refuses invalid facts before writing (CA 2026-10-18, decision 10)', () => {
+describe('§ 2 every action refuses invalid facts before writing (decision 10)', () => {
   it('addGame: a winner not 0 or 1, a tiebreakScore that is not two counts', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     expectNothingWritten(engine, () => engine.addGame({ winner: 2 as any }));

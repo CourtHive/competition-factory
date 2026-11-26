@@ -23,7 +23,7 @@ import { DOUBLES, TEAM } from '@Constants/matchUpTypes';
  * by its score; a walkover has none. DOMINANT_DUO never showed it, because there every rubber is
  * worth a point and the dual's own score is non-zero.
  *
- * ## A dual with no rubber result holds no score (CA, 2026-10-05)
+ * ## A dual with no rubber result holds no score
  *
  * Measured the same day: in every format, clearing a dual's only rubber result left the dual
  * TO_BE_PLAYED with a STORED `0-0` score, where a dual nobody had touched holds none. Clearing a rubber

@@ -14,7 +14,7 @@ import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 /**
  * `POLICY_PROGRESSION_USTA`: a double walkover produces a WALKOVER in BOTH structures.
  *
- * CA, 2026-10-22, confirmed with USTA: *"USTA requires a double walkover to produce a walkover in both
+ * Confirmed with USTA, 2026-10-22: *"USTA requires a double walkover to produce a walkover in both
  * the same structure and the connected structure where the loser would have appeared. This is because
  * of ranking points … it is what is currently supported in ustatournamentdesk.com which is on factory
  * 2.2.32."* The default is the other way round (`doubleExitPropagateBye: true` since 2026-09-29), so a

@@ -36,7 +36,7 @@ export function getScheduleTiming({
   // throughout the generators. This is what lets a report answer "what would
   // this tournament look like under a *different* policy" without mutating it;
   // every existing caller omits it and resolves exactly as before.
-  // the draw's policy, else the event's, else the tournament's (CA 2026-10-26, hydration OPEN-11)
+  // the draw's policy, else the event's, else the tournament's
   const { policy: attachedPolicy } = findPolicy({
     policyType: POLICY_TYPE_SCHEDULING,
     tournamentRecord,

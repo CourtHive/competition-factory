@@ -77,7 +77,7 @@ describe('getMatchUpUpset — seeding (the default basis)', () => {
   });
 });
 
-describe('getMatchUpUpset — only a fully scored result counts (CA, 2026-10-26)', () => {
+describe('getMatchUpUpset — only a fully scored result counts', () => {
   it.each([RETIRED, WALKOVER, DEFAULTED])('%s is never an upset', (matchUpStatus) => {
     const result: any = getMatchUpUpset({ matchUp: matchUp({ seeds: [1, undefined], matchUpStatus }) });
     expect(result).toEqual({ isUpset: false, basis: SEEDING, info: NOT_SCORED });

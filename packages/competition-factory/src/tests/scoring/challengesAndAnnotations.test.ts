@@ -2,14 +2,14 @@ import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { describe, expect, it } from 'vitest';
 
 /*
- * Challenges and annotations (scoring-engine spec § 2.8, § 12.3, § 12.6 item 7; § 16 decision 20,
- * CA 2026-10-18): "versioned timeline actions that change no score ... both are replayed in place and kept
+ * Challenges and annotations (scoring-engine spec § 2.8, § 12.3, § 12.6 item 7; § 16 decision 20):
+ * "versioned timeline actions that change no score ... both are replayed in place and kept
  * through every rebuild. undo takes back whatever was recorded last, a challenge or an annotation
  * included." v2 and v1 read v1's raw entries, { type: 'challenge', data: { sideNumber } } as epixodic writes
  * them itself, unchanged. v1 had no such action.
  */
 
-describe('§ 2.8 challenge and annotation actions (CA 2026-10-18, decision 20)', () => {
+describe('§ 2.8 challenge and annotation actions (decision 20)', () => {
   it('addChallenge records the side and host fields, changing no score', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     engine.addPoint({ winner: 0 });

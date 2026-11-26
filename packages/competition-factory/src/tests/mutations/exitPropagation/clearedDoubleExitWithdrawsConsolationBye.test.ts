@@ -11,7 +11,7 @@ import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 /**
  * CLEARING A SECOND-ROUND DOUBLE EXIT IN AN FMLC WITHDRAWS THE BYE IT PROPAGATED — all the way.
  *
- * CA, 2026-09-30, in TMX on this exact draw: *"in A I removed the DOUBLE_WALKOVER in MAIN|2|1 and the
+ * Reported in TMX on this exact draw: *"in A I removed the DOUBLE_WALKOVER in MAIN|2|1 and the
  * consolation structure did not change.. the BYE propagated to dp1 / CONSOLATION|2|1 should have been
  * withdrawn as well as its advance to the consolation final and Marshall Yeats should have been left
  * as the sole participant in a TO_BE_PLAYED matchUp."*

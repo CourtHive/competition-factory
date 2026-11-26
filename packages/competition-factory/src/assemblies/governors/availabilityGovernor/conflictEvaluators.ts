@@ -501,7 +501,7 @@ export const createFollowByEvaluator = (
     _ctx: EngineContext, // eslint-disable-line @typescript-eslint/no-unused-vars
     _mutations: BlockMutation[], // eslint-disable-line @typescript-eslint/no-unused-vars
   ): EngineConflict[] => {
-    // Competition Factory integration (tracked in Mentat TASKS.md)
+    // Competition Factory integration (not yet implemented)
     return [];
   },
 });

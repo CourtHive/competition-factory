@@ -16,7 +16,7 @@ import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
  * position (dp 4) is advanced into it structurally while still empty, ahead of the BYE that `Main|1|2`'s double
  * default then places on it. The generic advance treated that empty position as the walkover's winner and moved it
  * on into `Backdraw|4|1`, so the BYE landed there while the carrier who met it stayed behind
- * (BYE_ADVANCEMENT_MISSING). An empty position takes its seat and the exit stands (CA 2026-09-20; #5158 for the
+ * (BYE_ADVANCEMENT_MISSING). An empty position takes its seat and the exit stands (#5158 for the
  * arrival path); when the BYE arrives, the carrier passes it.
  */
 

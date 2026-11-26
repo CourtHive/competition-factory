@@ -4,12 +4,11 @@
  * A governor export becomes an engine method, and an engine calls every method with one params object. A function
  * written with positional parameters (`validateMatchUpScore(sets, matchUpFormat)`) gets that object as its first
  * argument and loses the rest, so it cannot be called correctly through an engine. Such a function is a tool: it
- * belongs in `tools` (by domain), or on the standalone `availability` export, not in a governor (CA 2026-11-07).
+ * belongs in `tools` (by domain), or on the standalone `availability` export, not in a governor.
  *
  * This list is a RATCHET. `positionalGovernorFunctions.test.ts` fails on a positional function that is not listed
  * here (export it from `tools` instead) and on an entry that is no longer positional or no longer in a governor
- * (remove it). The list only shrinks, and at 8.0.0 it is empty. Grouped by destination:
- * Mentat `planning/FACTORY_8_0_0_REPOSITORY_AND_DELIVERY_PLAN.md` § Engine surface and method kinds.
+ * (remove it). The list only shrinks, and at 8.0.0 it is empty. Grouped by destination.
  */
 export const POSITIONAL_GOVERNOR_FUNCTIONS = {
   /** already exported from the standalone `availability` namespace; leave the engines at 8.0.0 */

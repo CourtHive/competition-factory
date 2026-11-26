@@ -167,7 +167,7 @@ it('a swap through allowChangePropagation does not place a participant the feed 
 });
 
 /**
- * CA, 2026-09-17: with the consolation result standing the override is REFUSED — the new loser is
+ * With the consolation result standing the override is REFUSED — the new loser is
  * ineligible, so that result cannot be inherited. Once it is cleared nothing downstream is active, and
  * the override reaches exactly the state of the legitimate clear-and-redo sequence.
  */

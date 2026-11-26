@@ -9,10 +9,10 @@ import { CONSOLATION, COMPASS, FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Cons
 import { CANNOT_CHANGE_OUTCOME } from '@Constants/errorConditionConstants';
 
 /**
- * A RELABEL CARRIES THE EXIT, BOTH WAYS (CA, 2026-10-02).
+ * A RELABEL CARRIES THE EXIT, BOTH WAYS.
  *
  * A relabel keeps the winner and changes what the result says about the loser, after the loser was
- * already directed. CA: under exit propagation, a COMPLETED result re-entered as a WALKOVER carries the
+ * already directed. Under exit propagation, a COMPLETED result re-entered as a WALKOVER carries the
  * exit to the loser's next matchUp, *"except when there is already a result in the loser's next
  * matchUp"*, and the reverse case (an exit re-entered as COMPLETED) withdraws it, on the same terms.
  * Before this, v1 changed the status alone in both directions: the loser's consolation matchUp stayed
@@ -93,7 +93,7 @@ it('a DEFAULTED re-entered as COMPLETED withdraws it too', () => {
   expect(at(CONSOLATION, 1, 1).matchUpStatus).toEqual(TO_BE_PLAYED);
 });
 
-// P52 (CA, 2026-10-11, approved change of assertion): this relabel used to be ACCEPTED, carrying nothing. A result
+// An approved change of assertion: this relabel used to be ACCEPTED, carrying nothing. A result
 // recorded where the loser went means they really played, so a played result may not become an exit: REFUSED.
 it('refuses relabelling to an exit where the loser has already played their next matchUp', () => {
   setup();

@@ -167,7 +167,7 @@ function targetByRoundOutcome({
 
     // the stored ids answer alone when they cover every edge the matchUp has: its winner's, and its loser's wherever a
     // loser link exists. A matchUp storing only one keeps it, and the other is derived below from the links, as if
-    // none were stored (CA 2026-10-26, hydration OPEN-10)
+    // none were stored
     const covered = !!winnerMatchUpId && (!!loserMatchUpId || !loserTargetLink);
     if (covered && (winnerMatchUp || loserMatchUp)) {
       return {
@@ -271,7 +271,7 @@ function targetByRoundOutcome({
 const isLinkError = (link?: DrawLink | TargetLinkError): link is TargetLinkError => !!link && 'error' in link;
 
 /**
- * A MALFORMED ROUND LINK IS AN ERROR (CA, 2026-10-06). A WINNER or LOSER link with no
+ * A MALFORMED ROUND LINK IS AN ERROR. A WINNER or LOSER link with no
  * `source.roundNumber` cannot say which round it directs, and `getTargetLink` answers it with an
  * error in place of the link. Passed on as a link it reached `getTargetMatchUp`, which read
  * `.target` off it and threw. It is returned here, and `positionTargets` returns it naming the

@@ -979,7 +979,7 @@ describe('bulkMatchUpStatusUpdate branch coverage', () => {
       outcomes: [{ tournamentId: 't1', eventId: 'e1', drawId: 'd1', matchUpId: 'm1' }],
       tournamentRecord: { tournamentId: 't1', events: [] } as any,
     });
-    // an event that is not there is refused before anything is applied (CA, 2026-10-18), no longer skipped
+    // an event that is not there is refused before anything is applied, no longer skipped
     expect(result.error).toEqual(EVENT_NOT_FOUND);
   });
 

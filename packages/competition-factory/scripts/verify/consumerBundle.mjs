@@ -131,7 +131,7 @@ const toolsSubpath = (domain) => (root) => {
   return target ? join(root, target) : undefined;
 };
 
-// The per-domain tools subpaths (CA 2026-11-25), each alone with every member kept live: the most a consumer of one
+// The per-domain tools subpaths, each alone with every member kept live: the most a consumer of one
 // domain loads. A domain's fixture growing means its own closure grew, never that another domain joined it.
 const TOOLS_DOMAINS = [
   'draws',

@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 const REGULATION = 'SET3XA-S:T12P';
 const OVERTIME = `${REGULATION}-O:3/T5P`;
 
-describe('overtime grammar foundation (CA 2026-11-03)', () => {
+describe('overtime grammar foundation', () => {
   it.each([
     [OVERTIME, { count: 3, setFormat: { timed: true, minutes: 5, based: 'P' } }],
     ['QTR4XA-S:T12P-O:3/T5P', { count: 3, setFormat: { timed: true, minutes: 5, based: 'P' } }],

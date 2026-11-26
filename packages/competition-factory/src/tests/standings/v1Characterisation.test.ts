@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { V1_CORPUS } from './v1Corpus';
 
 /**
- * Pins round-robin tally v1 exactly as built (Mentat `planning/STANDINGS_ENGINE_SPEC.md` § 1) before the standings
+ * Pins round-robin tally v1 exactly as built before the standings
  * engine is restructured. A failure here after a refactor is a behaviour change: either a bug in the refactor or a
  * ruled difference that must be recorded on the case, never an expectation edited to match.
  */

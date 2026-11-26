@@ -23,7 +23,7 @@ export function isFactoryUuid(id?: string | null): boolean {
 }
 
 /**
- * Person-resolution rule (CA-locked; revised 2026-07-29). Populate `person_id`
+ * Person-resolution rule (locked; revised 2026-07-29). Populate `person_id`
  * whenever the participant's `personId` is NOT a factory `tools.UUID()` value —
  * i.e. it is a real provider/federation id (e.g. a UTR id):
  *   1. `personId` absent → skip.

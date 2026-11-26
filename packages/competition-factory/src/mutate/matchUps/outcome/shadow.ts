@@ -29,7 +29,7 @@ import { originalNoticeValue } from '@Global/state/noticePayloadAudit';
  * state.
  *
  * STAMPS ARE COMPARED BY VALUE. v1 stamps each entity once per call, and only the structure holding the matchUp, as
- * v2 does (F2 (i), CA 2026-10-19).
+ * v2 does.
  */
 
 type Json = Record<string, unknown>;

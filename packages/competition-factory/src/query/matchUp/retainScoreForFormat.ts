@@ -11,7 +11,7 @@ import type { Set } from '@Types/tournamentTypes';
  * ── Why this exists ──
  *
  * A scoring interface that clears the whole score whenever the format changes throws away work the
- * change did not touch. CA, 2026-09-28: *"There are situations where someone starts entering sets and
+ * change did not touch. The case: *"There are situations where someone starts entering sets and
  * then realizes that the third set is a tiebreak set and changes from SET3-S:6/TB7 to
  * SET3-S:6NOAD/TB7-F:TB10 => obviously the first two sets don't need to change at all in this
  * scenario! But if a partial 3rd set was entered it would need to be trimmed away."*
@@ -26,13 +26,13 @@ import type { Set } from '@Types/tournamentTypes';
  * and then: **everything after the first casualty goes with it.** A score is a sequence — keeping the
  * third set having dropped the second would renumber it into a claim nobody made.
  *
- * ── Three decisions CA took, recorded because each has a tempting alternative ──
+ * ── Three decisions, recorded because each has a tempting alternative ──
  *
  * **Only what the new format invalidates is trimmed** (rule 2). The obvious simplification is to drop
- * every part-entered trailing set, which would also satisfy CA's example — and would throw away a
+ * every part-entered trailing set, which would also satisfy the example above — and would throw away a
  * half-typed set when the operator corrected something that had nothing to do with it.
  *
- * **A set is kept or dropped WHOLE.** CA, 2026-09-29, asked directly: a 7-6 whose tiebreak the new
+ * **A set is kept or dropped WHOLE.** A 7-6 whose tiebreak the new
  * format has resized keeps neither half. Trimming to the games alone would leave a 7-6 with unknown
  * points, which is exactly the unfinished state, and would reopen an interface mid-tiebreak.
  *

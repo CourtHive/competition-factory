@@ -5,7 +5,7 @@ import type { MatchUp, MatchUpStatusUnion } from '@Types/tournamentTypes';
 import type { DecidedByMethod, DecidedIn } from '@Types/scoring/types';
 
 /**
- * Classification points by result (the E1 proposal, Mentat `planning/ROUND_ROBIN_RESULT_POINTS.md`; spec § 5.2): FIBA's
+ * Classification points by result: FIBA's
  * 2 for a win, 1 for a played or defaulted loss and 0 for a forfeit; volleyball's 3 for a 3-0 or 3-1 win and 2 for a
  * 3-2. Rules are matched in order and the first that matches decides. A rule names statuses explicitly; the factory
  * never infers a sport's "forfeit" or "default" from a status it was not told about.

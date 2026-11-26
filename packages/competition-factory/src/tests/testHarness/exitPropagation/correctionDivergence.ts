@@ -10,7 +10,7 @@ import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 /**
  * An intermediate result that is later CORRECTED must leave no trace.
  *
- * This is CA's re-score invariant generalised past a single matchUp: *how you got here must not
+ * This is the re-score invariant generalised past a single matchUp: *how you got here must not
  * change where you are*. Score a double exit, score a second one, then correct the first — and the
  * draw must be indistinguishable from one that reached the same two final outcomes directly,
  * without the intermediate state ever existing.
@@ -20,9 +20,8 @@ import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
  * The double-exit unwind defect (2026-09-19) was shrunk onto a single seed, `nonRandom: 9000230`.
  * Six fix attempts were made against it. On 2026-09-21 that seed was found to reach identical states
  * on both paths — fixed by unrelated work — **while the class was still alive on other draws**. A
- * single seed cannot tell you that; a sweep can. Trap #3 of
- * `Mentat/planning/DOUBLE_EXIT_UNWIND_REDERIVE_SESSION_PROMPT.md` warned about exactly this, and
- * then it happened.
+ * single seed cannot tell you that; a sweep can. The unwind
+ * re-derivation's plan warned about exactly this, and then it happened.
  *
  * ## What the signature deliberately excludes
  *
@@ -105,7 +104,7 @@ const coordinate = (matchUp: any) => `${matchUp.structureName}|${matchUp.roundNu
  * Reporting the lone spelling as a divergence cost this sweep eight `severe` cells that were the same
  * draw, the same way the trailing hole once cost it eight.
  *
- * ## A BYE's drawPosition is rendered `BYE`, not as its number — CA, 2026-09-29
+ * ## A BYE's drawPosition is rendered `BYE`, not as its number
  *
  * When two BYEs meet, a BYE advances, and WHICH of the two seats it is depends on the order they
  * were placed in. That is not information. Both seats hold nobody and render identically; the draw

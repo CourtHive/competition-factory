@@ -84,8 +84,8 @@ function standingReservationFeeders(view: OutcomeView, source: HydratedMatchUp):
   });
 }
 
-// Four sites read the FIRST_MATCHUP reservation and they are kept separate on purpose (Mentat
-// assessment/2026-11-07-outcome-refactor-debates.md, ruling 9). `reservationReason` reads the winner target's fed
+// Four sites read the FIRST_MATCHUP reservation and they are kept separate on purpose. `reservationReason` reads the
+// winner target's fed
 // seat with this call's result projected; `keptOutReason` and `recordedPlanOps` read this call's fed seat and treat
 // any BYE as nothing to place, as v1's `assignDrawPositionBye` no-ops on any BYE; this reader requires the BYE to
 // carry `byeFromPropagation`, as v1's `removeDoubleExit` withdraws only a marked BYE; `unwoundKeptOutOps` reads the

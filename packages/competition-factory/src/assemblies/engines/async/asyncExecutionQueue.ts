@@ -79,7 +79,7 @@ export async function asyncExecutionQueue(engine: FactoryEngine, directives: Dir
         restoreOperation(captured);
         return { ...refusal, rolledBack: true };
       }
-      // a directive that committed part of its work announces it, and the queue's buffer with it (ruling 33)
+      // a directive that committed part of its work announces it, and the queue's buffer with it
       if (refusal[PARTIAL_COMMIT] === true) {
         const mutationStatus = getMutationStatus({ timeStamp });
         await notifySubscribersAsync({

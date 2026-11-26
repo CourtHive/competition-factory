@@ -87,7 +87,7 @@ export function getStageSpace({
 
   // every entry taking a place left to direct entries: direct-entry statuses and lucky losers. A sequence's places are
   // taken by its own entries only: counting every sequence's, pre-qualifying's 32 positions less qualifying's 24 entries
-  // left 8 places, and 24 pre-qualifiers were left out of the draw (CA, 2026-11-17)
+  // left 8 places, and 24 pre-qualifiers were left out of the draw
   const wildcardEntriesCount = getStageEntryTypeCount({ entryStatus: WILDCARD, drawDefinition, stageSequence, stage });
   const totalEntriesCount = getStagePlaceTakingEntriesCount({ drawDefinition, stageSequence, stage });
   const stageFull = stageDrawPositionsAvailable > 0 && totalEntriesCount >= stageDrawPositionsAvailable;

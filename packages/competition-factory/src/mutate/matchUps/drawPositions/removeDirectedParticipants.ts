@@ -526,9 +526,9 @@ function removeDirectedLoser({
      * THE CODES ARE DERIVED FROM WHAT PROVENANCE STILL SAYS — after the clear, so they describe the
      * exits that REMAIN.
      *
-     * **P37.** This line was `sourceMatchUpStatus === DOUBLE_WALKOVER ? ['WO', 'WO'] : []`, and CA
-     * named it on 2026-09-11: *"a hardcoded legacy string pair, written positionally, and asymmetric
-     * … this is propagation logic expressed in the legacy array."* It was wrong three ways at once:
+     * **The exit tenant's eviction.** This line was `sourceMatchUpStatus === DOUBLE_WALKOVER ? ['WO', 'WO'] : []`:
+     * a hardcoded legacy string pair, written positionally, and asymmetric — propagation logic expressed in
+     * the legacy array. It was wrong three ways at once:
      *
      *  - a `DOUBLE_DEFAULT` source fell through to `[]`, so the surviving exit lost its code entirely;
      *  - `['WO', 'WO']` claims BOTH sides exited whatever provenance says, so a matchUp with one

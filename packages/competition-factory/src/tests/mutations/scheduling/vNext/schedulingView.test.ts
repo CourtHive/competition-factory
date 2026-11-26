@@ -174,7 +174,7 @@ describe('the vNext view resolves a profile as v1 does', () => {
     ]);
   });
 
-  it('completed matchUps are left out (CA 2026-10-23: no override)', () => {
+  it('completed matchUps are left out (no override)', () => {
     const { round } = setup([{ drawSize: 8 }], true);
     const profile = [
       { scheduleDate: DAYS[0], venues: [{ venueId: 'venue-1', rounds: [round(0, 0, 1), round(0, 0, 2)] }] },
@@ -210,7 +210,7 @@ describe('the vNext view resolves a profile as v1 does', () => {
     expect(formatted.matchUpIds.length).toEqual(4);
     expect(formatted.noFormatMatchUpIds).toBeUndefined();
 
-    // a run places the formatted round and reports the other (CA 2026-10-23: report it)
+    // a run places the formatted round and reports the other
     const result: any = tournamentEngine.scheduleProfileRounds({ scheduleDates: [DAYS[0]] });
     expect(result.scheduledMatchUpIds[DAYS[0]].length).toEqual(4);
     expect(result.noFormatMatchUpIds[DAYS[0]].toSorted()).toEqual(unformatted.noFormatMatchUpIds.toSorted());

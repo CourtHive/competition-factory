@@ -9,7 +9,7 @@ import type { ParsedFormat } from './parse';
  *
  * A format decided by AGGREGATE points over EXACTLY N sets settles a level total with a sudden-death
  * tiebreak (`SET3XA-S:T10-F:TB1`), and that tiebreak is NOT one of the N sets: it is set N + 1, played
- * only when the totals are level (CA, 2026-10-04, the INTENNSE format). So its final-set format governs
+ * only when the totals are level (the INTENNSE format). So its final-set format governs
  * set N + 1, never set N. Every other format keeps its own reading of which set is the final one.
  */
 export function aggregateDeciderSetNumber(parsed: any): number | undefined {

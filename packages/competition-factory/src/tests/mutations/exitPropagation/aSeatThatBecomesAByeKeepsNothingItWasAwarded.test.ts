@@ -19,7 +19,7 @@ import { MODIFIED_FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstant
  * advancement: `3|4` read BYE, the opponent's seat dp 23 was never advanced, and once `Main|1|15` was cleared and
  * re-entered the arriving loser took `3|4` back from the BYE, un-deciding it.
  *
- * The rule: a BYE is never won (CA, 2026-09-27), so a seat that becomes a BYE keeps no advancement an award gave it.
+ * The rule: a BYE is never won, so a seat that becomes a BYE keeps no advancement an award gave it.
  * Before the BYE is placed, its position is taken back out of the rounds after the fed matchUp; the BYE lands in the fed
  * matchUp beside the exit it holds. Clearing `Main|1|15` then leaves the draw the two remaining results leave on their
  * own.

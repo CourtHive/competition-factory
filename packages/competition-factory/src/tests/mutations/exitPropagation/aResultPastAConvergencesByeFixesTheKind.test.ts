@@ -16,7 +16,7 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  * `East|1|13`'s walkover and `East|1|14`'s default carry into `West|1|7`, where the two exits converge. The convergence
  * has nobody to lose, so it claims a BYE on `South|1|4`; that BYE passes on through `South|2|2`, and the participant
  * opposite it there reaches `South|3|1`, recorded RETIRED 6-3. Re-entering `East|1|13` as a bare win for the same
- * winner changes its kind, from an exit to a played result (P52). The guard looked for a recorded result where the
+ * winner changes its kind, from an exit to a played result. The guard looked for a recorded result where the
  * walkover's loser stands and where the convergence's produced exit went, found none, and accepted it. The
  * convergence dissolved, its BYE claim was withdrawn, and clearing the BYE took the participant back out of
  * `South|3|1`, which was left TO_BE_PLAYED holding its score.

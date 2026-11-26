@@ -78,7 +78,7 @@ test.for([
     outcome,
     propagateExitStatus: true,
     // A RETIREMENT only carries onward when the governing policy says a retiree is out of the EVENT
-    // rather than merely out of the MATCH (CA, 2026-09-13). This table includes a RETIRED row, and
+    // rather than merely out of the MATCH. This table includes a RETIRED row, and
     // it is exercising the propagating arm, so it asks for it explicitly. The default arm — a
     // retiring player directed as an ordinary loser — is covered by
     // `retirementPropagationPolicy.test.ts`, in both directions with two-way controls.
@@ -1168,7 +1168,7 @@ test('COMPASS: a pending exit on a non-feed back-draw round does not block scori
     outcome: { matchUpStatus: RETIRED, winningSide: 1, matchUpStatusCodes: ['RJ'] },
     // the subject here is the PENDING EXIT on a non-feed back-draw round, not the retirement default
     // — the retirement is only the vehicle that deposits one. Retirement propagation is policy-gated
-    // (CA, 2026-09-13) and defaults OFF, so this asks for it to keep testing what it was written for.
+    // and defaults OFF, so this asks for it to keep testing what it was written for.
     propagateRetirementAsExit: true,
     matchUpId: exitMatchUp.matchUpId,
     propagateExitStatus: true,
@@ -1212,9 +1212,9 @@ test('COMPASS: a pending exit on a non-feed back-draw round does not block scori
  *
  * Asserted as "introduces no NEW inconsistency" rather than "the draw is clean", because this
  * fixture is ALREADY dirty before either operation — it reports `EXIT_CODE_ON_WINNER_SIDE`, which is
- * punch-list P29 (a produced WALKOVER awarded to the side that carries the exit) and is unrelated to
+ * a known design flaw (a produced WALKOVER awarded to the side that carries the exit) and is unrelated to
  * this change. Measured before and after: the issue set is identical. Asserting `[]` here would fail
- * for P29's reasons and hide what this test is actually about.
+ * for that flaw's reasons and hide what this test is actually about.
  */
 test('COMPASS: once the back-draw exit has RESOLVED, the fall-through source may still be reset', () => {
   const drawId = 'drawId';
@@ -1234,7 +1234,7 @@ test('COMPASS: once the back-draw exit has RESOLVED, the fall-through source may
     outcome: { matchUpStatus: RETIRED, winningSide: 1, matchUpStatusCodes: ['RJ'] },
     // the subject here is the PENDING EXIT on a non-feed back-draw round, not the retirement default
     // — the retirement is only the vehicle that deposits one. Retirement propagation is policy-gated
-    // (CA, 2026-09-13) and defaults OFF, so this asks for it to keep testing what it was written for.
+    // and defaults OFF, so this asks for it to keep testing what it was written for.
     propagateRetirementAsExit: true,
     matchUpId: exitMatchUp.matchUpId,
     propagateExitStatus: true,

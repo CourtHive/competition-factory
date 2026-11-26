@@ -25,7 +25,7 @@ import {
 } from '@Constants/drawDefinitionConstants';
 
 /**
- * A LINK OUT OF A ROUND ROBIN TRAVERSES BY FINISHING POSITION, whatever its label (CA, 2026-10-23).
+ * A LINK OUT OF A ROUND ROBIN TRAVERSES BY FINISHING POSITION, whatever its label.
  *
  * A round robin decides who leaves it by TALLY, once its groups are complete, so its link names
  * `source.finishingPositions`, the group places that cross it. The factory writes such a link as POSITION (with the

@@ -3,7 +3,7 @@ import { expect, it } from 'vitest';
 import path from 'node:path';
 
 /**
- * NO CHILD PROCESS WITHOUT A DEADLINE (punch list P62). A blocking child process (`spawnSync`, `execSync`,
+ * NO CHILD PROCESS WITHOUT A DEADLINE. A blocking child process (`spawnSync`, `execSync`,
  * `execFileSync`) holds its caller's event loop until the child exits. Inside a vitest worker that means no test or
  * hook timeout can fire, so a child that never exits stalls the whole run (gate s6b's `full` arm: ~2.5 h, the kernel
  * stdio adapter waiting on an end of input that never came). In a verify script it stalls the gate that runs it.

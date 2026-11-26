@@ -16,12 +16,12 @@ import {
 } from '@Constants/drawDefinitionConstants';
 
 /**
- * A FACT KEYED BY SIDE FOLLOWS THE PARTICIPANT WHEN THEIR SIDE CHANGES (CA, 2026-10-05: option R, and reason-code
+ * A FACT KEYED BY SIDE FOLLOWS THE PARTICIPANT WHEN THEIR SIDE CHANGES (option R, and reason-code
  * badges follow too).
  *
  * A lone position sits on its bracket side; two positions sort ascending. In every paired round of a feed-in
  * structure those disagree, so the participant already in a matchUp can change side when the other seat fills or
- * empties (`Mentat/planning/EXIT_CASCADE_DE_GRAND_FINAL_AND_SIDE_KEY_DESIGN.md` § 1). `winningSide` was re-keyed on
+ * empties (the double-elimination grand-final and side-key design, § 1). `winningSide` was re-keyed on
  * arrival; `sideExitProvenance` and `sideStatusCodes` were not, so they went on naming a side that now held the
  * other participant. The census found eight such keys in 1,800 seeds. In each case below, shrunk from the census, a
  * relabel at the exit's SOURCE did not reach the carry and a re-score to a played win did not withdraw it; with the

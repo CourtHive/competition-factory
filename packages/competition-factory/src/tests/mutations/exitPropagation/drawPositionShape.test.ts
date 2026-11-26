@@ -11,12 +11,12 @@ import fs from 'fs';
  *     npx vitest run src/tests/mutations/exitPropagation/drawPositionShape.test.ts
  *
  * Replay a frozen window instead of generating, exactly as the census does:
- *   SHAPE_SCAN=1 SCHEDULES_IN=../Mentat/fixtures/exit-propagation-census/sched-w1.jsonl …
+ *   SHAPE_SCAN=1 SCHEDULES_IN=path/to/sched-w1.jsonl …
  * and add `ALLOW_CHANGE_PROPAGATION=1` for the second arm.
  *
  * ## The rule this asserts
  *
- * No hole is stored (CA, Q2, 2026-10-05: `tournament.schema.json` types the items as `number`). Until 2026-10 a
+ * No hole is stored (Q2: `tournament.schema.json` types the items as `number`). Until 2026-10 a
  * leading hole was kept, `[undefined, 5]`, to put a lone survivor on side 2; every reader now resolves the side
  * structurally (#5253), so it is stored `[5]`. Measured on dev `8439ed95c1` before the change, census w1: 74 of 600
  * seeds stored a leading hole at some step (e.g. 9000016 COMPASS 32/30, step 12: `North|2|2` `[null, 7]`). This

@@ -96,7 +96,7 @@ describe('notice conformance harness (D-core scaffold)', () => {
   // A green conformance run is only evidence if the oracle can also report DIRTY.
   // These three prove `fidelityViolations` fails for the right reasons rather than
   // being vacuously empty — otherwise a broken oracle reads exactly like a clean
-  // read model. (Mentat standards: verification discipline / falsify the detector.)
+  // read model. (Verification discipline: falsify the detector.)
 
   it('FIDELITY: reports CLEAN with the real notice stream, DIRTY when the covering notice is dropped', () => {
     // UNSCORED seed: scoring a first-round matchUp genuinely moves match_ups rows

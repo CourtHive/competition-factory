@@ -10,7 +10,7 @@ import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstant
 import { DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
- * F-016, THE DOMAIN THE PLANNER LEAVES TO THE WRITER. A public BYE placement whose walk meets an exit (a produced exit
+ * THE DOMAIN THE PLANNER LEAVES TO THE WRITER. A public BYE placement whose walk meets an exit (a produced exit
  * where the position advances, or exit provenance on a matchUp it makes a BYE) keeps `assignDrawPositionBye`. Its
  * remaining late refusals, each found after the writer has written:
  *
@@ -22,7 +22,7 @@ import { DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
  *     Malformed only;
  *  5. the loser seat already ASSIGNED: reachable on a WELL-FORMED record, because a linked structure's seat can be
  *     filled through the public API before its feeder is decided. Witnessed here and allowlisted under the narrowed
- *     reason `F-016-exit-walk` until the exit walk is planned (Mentat TASKS, 8.0 outcome work);
+ *     exit-walk reason until the exit walk is planned (8.0 outcome work);
  *  6. the loser seat ACTIVE: never late on a well-formed record. A played loser seat makes the main matchUp feeding it
  *     an active dependency, so the placement's own seat is refused ACTIVE before anything is written (witnessed).
  */

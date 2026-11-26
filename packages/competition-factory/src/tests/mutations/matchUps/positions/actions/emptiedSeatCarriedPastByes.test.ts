@@ -12,7 +12,7 @@ import {
 import { FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
 
 /**
- * A DIRECTOR'S REMOVAL LEAVES THE DRAW GENERATION WOULD HAVE BUILT — punch-list P47.
+ * A DIRECTOR'S REMOVAL LEAVES THE DRAW GENERATION WOULD HAVE BUILT.
  *
  * Two routes to one occupancy of a FEED_IN_CHAMPIONSHIP 8: Main seats 1, 2, 5, 6 and 8 are BYEs,
  * participants sit on 3 and 7, and seat 4 is empty.
@@ -23,7 +23,7 @@ import { FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
  *
  * On the removal route consolation seat 5 is a BYE that LOST its BYE-meets-BYE pairing — seat 2
  * advanced over it. Removing Main seat 4's BYE empties seat 5; it keeps its advancement into round
- * 2 over seat 4's BYE (P46), and it now faces BYEs in rounds 2 and 3. Generation carries such a
+ * 2 over seat 4's BYE, and it now faces BYEs in rounds 2 and 3. Generation carries such a
  * seat through both. The removal used to leave it in round 2.
  */
 
@@ -79,8 +79,8 @@ const pairs = (structureId: string) => getOrderedDrawPositionPairs({ structureId
 
 /**
  * The pairs with every BYE seat rendered `BYE`. When two BYEs meet, which seat number advances
- * depends on the order they were placed and carries no information (CA, 2026-09-29) — the deep
- * correction oracle renders them the same way. An EMPTY seat keeps its number, so the seat P47 is
+ * depends on the order they were placed and carries no information — the deep
+ * correction oracle renders them the same way. An EMPTY seat keeps its number, so the emptied seat this is
  * about stays fully visible.
  */
 const byeBlindPairs = (drawId: string, structureIndex: number) => {
@@ -119,7 +119,7 @@ it('removing a BYE leaves the draw generation builds for the same occupancy', ()
   expect(byeBlindPairs(removed.drawId, 0)).toEqual(generatedMain);
   expect(byeBlindPairs(removed.drawId, 1)).toEqual(generatedConsolation);
   expect(consolationByes(removed.drawId)).toEqual(generatedByes);
-  // the seat P47 names: emptied, and carried through rounds 2 and 3 — to meet seat 1, which waits
+  // the seat this is about: emptied, and carried through rounds 2 and 3 — to meet seat 1, which waits
   // for the Main final's loser
   expect(generatedConsolation.slice(4)).toEqual([
     [5, 'BYE'],

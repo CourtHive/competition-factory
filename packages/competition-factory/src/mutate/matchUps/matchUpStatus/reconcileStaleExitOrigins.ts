@@ -37,7 +37,7 @@ import type { HydratedMatchUp } from '@Types/hydrated';
  *  - `byeAdvancesIntoPendingDoubleExit` §"the exiting side arriving through a BYE leaves the walkover
  *    pending for the other side": the seat is occupied when the withdrawal runs and is EMPTIED later
  *    in the same mutation, becoming a BYE. Deciding early withdrew a walkover that was still true.
- *  - `crossStructureWinnerPositions` DE window seed 9301605 (punch-list P40): the seat is empty when
+ *  - `crossStructureWinnerPositions` DE window seed 9301605: the seat is empty when
  *    the withdrawal runs and is FILLED later, by the new result being directed. Deciding early — even
  *    after the removals — left `Main|4|1` holding an entry claiming a `DOUBLE_WALKOVER` at
  *    `Backdraw|4|1` while that matchUp was `DEFAULTED` with a winner, and the stale answer advanced
@@ -64,7 +64,7 @@ export function reconcileStaleExitOrigins({
 }): (ResultType & { rederived?: string[] }) | undefined {
   if (!drawDefinition) return undefined;
   // `setMatchUpStatus` only carries a `matchUpsMap` in its result context on the exit-propagation
-  // path — measured absent on four of five submissions of the P40 sequence, including the one that
+  // path — measured absent on four of five submissions of the seed 9301605 sequence, including the one that
   // matters. Building it here rather than trusting the context is what makes the reconciliation run
   // on every mutation; the map is a view over the same stored matchUps, so writes through it land.
   const resolvedMap = matchUpsMap?.drawMatchUps?.length ? matchUpsMap : getMatchUpsMap({ drawDefinition });
@@ -196,7 +196,7 @@ type Relay = { matchUp: MatchUp; structureId: string; sourceMatchUpId: string };
  *
  * A double exit's produced exit lands on its winner target, or its loser target, and travels on from there only
  * through BYEs (`doubleExitAdvancement`'s `carryExitOnward`: "a propagated exit encountering a BYE should be
- * advanced", CA 2026-09-20). Every hop keeps the ORIGIN's id, so `getStaleOrigins` cannot see a broken hop: the
+ * advanced"). Every hop keeps the ORIGIN's id, so `getStaleOrigins` cannot see a broken hop: the
  * origin is still a double exit. When the BYE a hop passed through is withdrawn, the exit comes to rest there,
  * and the entry beyond it describes an exit that never reached it. Census de 9300866 (DE 16/15): `Backdraw|1|3`'s
  * walkover passed the BYE on `Backdraw|2|3` into `Backdraw|3|2`; re-scoring `Main|1|6` from a double walkover took
@@ -317,7 +317,7 @@ function strandedCarries({
  * through it, carrying the exit with them, so what was stamped downstream still describes them
  * (`byeAdvancesIntoPendingDoubleExit`). Any other state voids those entries:
  *
- *  - a seated winner receives an ADVANCEMENT, not an exit (P40, census DE 9301605);
+ *  - a seated winner receives an ADVANCEMENT, not an exit (census DE 9301605);
  *  - an EMPTY winning seat, or no winner at all — a pending single exit, or a matchUp that reverted to
  *    undecided — sends nothing downstream until somebody arrives. These were read as "delivers nobody"
  *    and kept, so a convergence that lost an origin, or reverted, left the exit it had produced standing

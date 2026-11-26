@@ -77,7 +77,7 @@ function planLoser(
   // the carried exit meets one already there (its status, or carried in on the other side): they converge
   const standing = view.targets.loserMatchUpCarriedStatuses; // this matchUp's own product excluded
   // ...unless the exit standing there decided the seat awaiting the loser, over a result recorded below: the
-  // arrival takes that seat and carries their exit past it (P51 group 2)
+  // arrival takes that seat and carries their exit past it
   const carriedPast = carried && view.targets.loserMatchUpDecidedForArrival ? carried : undefined;
   const meets = !carriedPast && standing.length > 0;
   const exit = carriedPast || meets ? undefined : carried;
@@ -187,7 +187,7 @@ function carriedExit(request: OutcomeRequest, view: OutcomeView, relabelled: boo
   if (!propagating.includes(matchUpStatus as string)) return undefined;
   if (isDoubleExit(view.targets.loserMatchUpStatus)) return undefined; // a third arrival: not modelled
   // a RELABEL, the winner unchanged (a COMPLETED result re-entered as a WALKOVER): the exit is carried to the
-  // loser already directed, except where their next matchUp has a result of its own (CA, 2026-10-02): but the carry
+  // loser already directed, except where their next matchUp has a result of its own: but the carry
   // this matchUp made there, standing alone, which the relabel rewrites in place (`relabelsTheCarry`) or leaves as it
   // is (S6 tail, `loserMatchUpCarryHeld`). C24 reads a clean passage past a held BYE for a played
   // result relabelled where its winner stands; other BYE corrections remain unplanned
@@ -327,10 +327,10 @@ export function convergence(statuses: string[]): MatchUpStatusUnion {
 
 /**
  * S2c (exit-propagation § "What a double exit produces downstream keeps its flavour"): in its own
- * structure a double exit ALWAYS produces an exit in the matchUp it feeds (CA, 2026-09-27; the
+ * structure a double exit ALWAYS produces an exit in the matchUp it feeds (the
  * `doubleExitPropagateBye` policy governs only the connected structure). A DOUBLE_WALKOVER produces
  * a WALKOVER, a DOUBLE_DEFAULT a DEFAULTED, awarded to the side the double exit does not feed: at once
- * when that side is occupied, and otherwise when someone arrives there (CA, 2026-09-20 and 09-25).
+ * when that side is occupied, and otherwise when someone arrives there.
  *
  * Which side it feeds is read from the structure, planned only where that is unambiguous: the next
  * round in the same structure holds half as many matchUps, so roundPosition n feeds side 1 when odd

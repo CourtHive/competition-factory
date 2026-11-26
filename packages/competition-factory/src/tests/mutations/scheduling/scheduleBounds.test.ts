@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 // constants
 import { MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
 
-// getMatchUpScheduleBounds (CA 2026-10-30): where a matchUp may be scheduled, and when its recorded times may fall,
+// getMatchUpScheduleBounds: where a matchUp may be scheduled, and when its recorded times may fall,
 // read from the same neighbours the schedule writes judge. A client limits its pickers to the bounds, so the bounds and
 // the refusals must agree on every placement.
 

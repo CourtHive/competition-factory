@@ -19,7 +19,7 @@ const PAYLOADS: { [methodName: string]: string } = {
 };
 
 /**
- * An engine call works only on the records the engine holds (CA 2026-10-30: a write never silently goes nowhere). Before
+ * An engine call works only on the records the engine holds (a write never silently goes nowhere). Before
  * every method, the tournament record, the draw and the event it names are resolved to the ones in state, whether
  * they are named by id or passed as objects (an object is resolved by its own id); a caller's own copy is never the
  * one written to or read. One that is not held refuses the call, and an object whose own id is not the id it is given

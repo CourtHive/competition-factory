@@ -13,7 +13,7 @@ import { TEAM, DOUBLES } from '@Constants/eventConstants';
  *
  * The write path resolved a format from the matchUp, structure, draw and event — never the collection a
  * line belongs to — so every line score was validated against no format, which answered "valid" to
- * anything. CA's ruling X1 (2026-10-02): *"If there is no matchUpFormat I would … throw an error"*.
+ * anything. A score with no matchUpFormat is now refused (X1, 2026-10-02).
  */
 const line = (s1: number, s2: number, setNumber: number) => ({
   setNumber,

@@ -18,7 +18,7 @@ import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import type { TimelineEntry } from '@Scoring/kernel/types';
 
 /**
- * `-F:SO{n}`, a shootout of n rounds (overtime activation S5, Ruling 3, CA 2026-11-04). Every `F:TB` race is wrong
+ * `-F:SO{n}`, a shootout of n rounds (overtime activation S5). Every `F:TB` race is wrong
  * for a shootout under point entry, so a shootout is its own final segment: entered as a tally only, never level,
  * past its n rounds sudden death (won by one), and never counted in the sporting aggregate. `F:TB1` is unchanged.
  */

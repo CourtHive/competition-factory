@@ -27,7 +27,7 @@ export function isDecidedOutsideScore(score?: Score): boolean {
 }
 
 /**
- * Standings phase 2 § 1.1 (CA 2026-11-04), the decided result: a level sporting score, kept as played, plus the
+ * Standings phase 2 § 1.1, the decided result: a level sporting score, kept as played, plus the
  * `winningSide` and a record of how the winner was decided (`decidedIn: 'EXTERNAL'` and `decidedBy`). Refuses a record
  * that does not describe one; `undefined` when the score carries no such record, or a sound one.
  *

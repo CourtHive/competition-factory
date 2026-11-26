@@ -24,9 +24,10 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  * it waits pending for the loser of `East|1|5`. Forward play places no BYE at `West|2|2`'s loser seat, `Southwest` dp 2:
  * only an exit a double exit produces STRAIGHT into a matchUp makes that matchUp's seat a BYE while it is pending
  * (`conditionallyAdvanceDrawPosition`). The probe makes `East|1|5` a double walkover too; its walkover, relayed past
- * `West|1|3`'s BYE, converges `West|2|2`, whose seat shows the produced exit (CA ruling (A), 2026-10-21). Clearing it
- * dissolves `West|2|2` back to the pending exit, and the dissolution re-owed the seat a BYE as though the exit had been
- * produced straight into it, so the round trip left `Southwest|1|1` a BYE where the schedule had it TO_BE_PLAYED.
+ * `West|1|3`'s BYE, converges `West|2|2`, whose seat shows the produced exit (under the policy off, never a BYE).
+ * Clearing it dissolves `West|2|2` back to the pending exit, and the dissolution re-owed the seat a BYE as though the
+ * exit had been produced straight into it, so the round trip left `Southwest|1|1` a BYE where the schedule had it
+ * TO_BE_PLAYED.
  */
 
 type Step = { structureName: string; roundNumber: number; roundPosition: number; outcome: any };

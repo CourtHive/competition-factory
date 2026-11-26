@@ -73,7 +73,7 @@ export type ParsedFormat = {
 /**
  * A matchUpFormat code, parsed — or `undefined` when the code is not WELL-FORMED.
  *
- * ── parse refuses what isValid refuses (CA, 2026-10-02) ──
+ * ── parse refuses what isValid refuses ──
  *
  * The parser read what it recognised and ignored the rest, so `SET3-S:6/TB7;DROP` and a trailing space
  * parsed as `SET3-S:6/TB7`, `@6.5` became a tiebreak at 6.5, `SET5-S:6/TB7-F:S:6` silently lost its
@@ -91,7 +91,7 @@ export type ParsedFormat = {
  * - a games-based timed set's `G` suffix (`T10G` is `T10`);
  * - a `-G:TN` section, the default traditional game, with no deuce count (`SET3-S:6/TB7-G:TN` is `SET3-S:6/TB7`).
  *
- * An equivalent spelling parses to the same object as its canonical form (CA 2026-10-25): the redundant final set, the
+ * An equivalent spelling parses to the same object as its canonical form: the redundant final set, the
  * timed `G` and the default game format are not kept.
  *
  * Section order is the documented canonical one. The verdict is cached per code string, so the hot path
@@ -371,7 +371,7 @@ function buildParsedFormat({
   exactly,
 }): ParsedFormat | undefined {
   if (finalSetFormat?.combinedPointTotal) return undefined;
-  // a shootout decides a level overtime: only as -F:, and only after -O: (Ruling 3; narrowed, CA 2026-11-04)
+  // a shootout decides a level overtime: only as -F:, and only after -O:
   if (setFormat?.shootout || overtimeFormat?.setFormat?.shootout) return undefined;
   if (finalSetFormat?.shootout && !(aggregate && overtimeFormat)) return undefined;
   if (overtimeFormat && (!aggregate || (overtimeFormat.count === 'unlimited' && finalSetFormat))) return undefined;
@@ -388,8 +388,8 @@ function buildParsedFormat({
   )
     return undefined;
   // Any best-of count is a format: best of seven is table tennis's, best of nine is played too. This
-  // capped it below six (CA, 2026-10-02: "I don't see why best of 7 or 9 would be rejected"). Exactly N
-  // is a format on every root and every kind of set (CA 2026-10-25); it required a timed set on SET only.
+  // capped it below six, with no reason to refuse a best of seven or nine. Exactly N
+  // is a format on every root and every kind of set; it required a timed set on SET only.
   if (!bestOf && !exactly) return undefined;
 
   const validFinalSet = !finalSetFormat || finalSetFormat;
@@ -567,7 +567,7 @@ function parseTimedSet(formatstring: string): SetFormat | undefined {
   // If no suffix, leave 'based' undefined (games is default)
 
   // Parse set-level tiebreak (if present)
-  // A timed set level at time plays this tiebreak (CA 2026-10-17)
+  // A timed set level at time plays this tiebreak
   const setTiebreakTo = parts?.[3];
   if (setTiebreakTo) {
     const tiebreakToNumber = getNumber(setTiebreakTo);
@@ -604,7 +604,7 @@ function parseMatchUpConstraint(value: string): { timed: boolean; minutes: numbe
 }
 
 /**
- * A modifier is a name of upper-case letters (CA 2026-10-25), and `NOAD` is not part of one. The engine
+ * A modifier is a name of upper-case letters, and `NOAD` is not part of one. The engine
  * switches rally scoring on for `modifier === 'RALLY'` only, so a modifier it cannot read is a format
  * silently scored another way: `@rally` scored side-out, and `@R_1` was kept as written. `NOAD` is
  * written BEFORE the modifier (`TB11NOAD@RALLY`); after it, `TB11@RALLYNOAD` was read as a modifier named

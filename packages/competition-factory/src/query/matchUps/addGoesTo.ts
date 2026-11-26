@@ -208,7 +208,7 @@ export function ensureGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMa
 /**
  * What `ensureGoesTo` will write on a draw, held so that a call which is then refused can write it back.
  *
- * CA, 2026-10-18: "no, a refused call does not store a draw's missing edges. v1 should no longer do so." The edges are
+ * A refused call does not store a draw's missing edges, and v1 no longer does. The edges are
  * still written once, before anything is decided on them, because the cascade decides on the STORED ids (#5086); what
  * that write touches is held here, before it, and the function returned puts it back on an error. A call that
  * succeeds keeps what was written, and the draw stores its edges from then on.
@@ -220,7 +220,7 @@ export function ensureGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMa
  * path writes back what a divergence touched.
  *
  * `written` says whether any of what was held has changed since: a call that succeeds announces the draw once when it
- * did (CA, 2026-10-18: "Option 2"), with a `MODIFY_DRAW_DEFINITION` rather than a `MODIFY_MATCHUP` per matchUp.
+ * did, with a `MODIFY_DRAW_DEFINITION` rather than a `MODIFY_MATCHUP` per matchUp.
  */
 export function holdGoesTo({
   drawDefinition,
@@ -277,9 +277,9 @@ export type GoesToHold = { release: () => void; written: () => boolean };
 const GOES_TO_FIELDS = ['winnerMatchUpId', 'loserMatchUpId', 'finishingRound'] as const;
 
 /**
- * A draw that does not store its edges is given them (CA, 2026-10-16: a one-time backfill of stored converted records,
- * and this migration a standard requirement of ingest). `migrateTournamentRecord` runs it on every draw, and
- * `addDrawDefinition` on the draw it adds (CA, 2026-10-18): a draw built outside the factory is stored with its edges.
+ * A draw that does not store its edges is given them (a one-time backfill of stored converted records, and this
+ * migration a standard requirement of ingest). `migrateTournamentRecord` runs it on every draw, and
+ * `addDrawDefinition` on the draw it adds: a draw built outside the factory is stored with its edges.
  *
  * The factory stores `winnerMatchUpId` / `loserMatchUpId` on every draw it generates, and `finishingPositionRange` on
  * every matchUp; a record converted from elsewhere may hold neither. A query used to write them as a side effect, which
@@ -288,7 +288,7 @@ const GOES_TO_FIELDS = ['winnerMatchUpId', 'loserMatchUpId', 'finishingRound'] a
  * ranges widened over the loser target, and a lone foreign structure's finishing rounds.
  *
  * Unconditional, like `compactDrawPositions`: an edge is never a legacy fact worth keeping out. A draw with a MALFORMED
- * ROUND LINK (CA, 2026-10-06: it is an error) is left as it was: `addGoesTo` stops where it meets the link, so the
+ * ROUND LINK (it is an error) is left as it was: `addGoesTo` stops where it meets the link, so the
  * derivation is tried on a copy first and the draw is never half given its edges. An AD_HOC draw has no positions to
  * derive from (its rounds are paired, not linked), so it is skipped, as the query's write always skipped it.
  */
@@ -347,7 +347,7 @@ export function drawWithDerivedGoesTo(drawDefinition: DrawDefinition): DrawDefin
 }
 
 /**
- * The edges for a READ that must still refuse a MALFORMED ROUND LINK (CA, 2026-10-06: it is an error):
+ * The edges for a READ that must still refuse a MALFORMED ROUND LINK (it is an error):
  * `getMatchUpDependencies`. It never writes. A draw that does not store its edges has them derived on a copy and
  * handed back as the `goesToMap`; the stored draw is left as it was. It used to be repaired here, the edges, a widened
  * `finishingPositionRange.loser` and a lone foreign structure's finishing rounds all written by a query.
@@ -402,7 +402,7 @@ export function needsFinishingRounds(drawDefinition: DrawDefinition): boolean {
 
 /**
  * The event as a READ should see it, without writing to it: a draw that does not store what `addGoesTo` derives is
- * read from a copy that carries it (P54). `getParticipants({ withMatchUps | withRankingProfile })` used to repair the
+ * read from a copy that carries it. `getParticipants({ withMatchUps | withRankingProfile })` used to repair the
  * STORED draw for this (`getMatchUpDependencies`, result discarded), a query that wrote. Measured 2026-10-15 on
  * Button's ingest corpus: it wrote on 40 of 414 records with draws (all converted outside the factory), never on a
  * draw the factory made.

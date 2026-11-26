@@ -53,8 +53,8 @@ export const rootExtensionsFingerprint = (tournamentRecord?: Tournament): string
   JSON.stringify(tournamentRecord?.extensions ?? []);
 
 /**
- * MODIFY_TOURNAMENT_DETAIL with the record's root `extensions` when a write changed them (CA 2026-10-18: root-extension
- * writes are announced). Tournament-scope mutation locks, the lock feature gate and `addTournamentExtension` live
+ * MODIFY_TOURNAMENT_DETAIL with the record's root `extensions` when a write changed them (root-extension writes are
+ * announced). Tournament-scope mutation locks, the lock feature gate and `addTournamentExtension` live
  * there, and an integrator persisting only from notices lost them.
  */
 export function rootExtensionsNotice({ tournamentRecord, before }: { tournamentRecord?: Tournament; before: string }) {

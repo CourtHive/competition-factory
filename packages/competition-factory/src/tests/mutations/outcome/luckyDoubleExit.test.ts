@@ -31,7 +31,7 @@ import {
 } from '@Constants/outcomePipelineConstants';
 
 /**
- * A LUCKY DRAW'S DOUBLE EXIT ADVANCES NOBODY (CA, 2026-11-17). It is written on its own matchUp and produces nothing
+ * A LUCKY DRAW'S DOUBLE EXIT ADVANCES NOBODY. It is written on its own matchUp and produces nothing
  * in the next round, in a round of even size (whose winners go on as in any elimination draw) as in one of odd size
  * (whose advancement is chosen, `luckyDrawAdvancement`). A lucky draw's later rounds store no drawPositions until
  * somebody reaches them, and nothing reads them as though they did.

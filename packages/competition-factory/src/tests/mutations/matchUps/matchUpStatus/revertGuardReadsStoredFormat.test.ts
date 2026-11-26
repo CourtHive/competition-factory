@@ -24,8 +24,8 @@ import { IN_PROGRESS, COMPLETED } from '@Constants/matchUpStatusConstants';
  * CALLER just sent?" That was never intended; it was a side effect of the write ordering.
  *
  * #4964 removed that write, so the guard now reads the genuinely stored format. **That is a
- * behaviour change, and nothing in a 13469-test suite pinned either side of it** — which is why CA
- * asked for these. Sibling precedence, deliberately opposite, is pinned in
+ * behaviour change, and nothing in a 13469-test suite pinned either side of it** — which is why
+ * these were added. Sibling precedence, deliberately opposite, is pinned in
  * `rejectedOutcomeKeepsMatchUpFormat.test.ts`: the two guards that analyze the INCOMING score
  * (`validateScore`, `checkImpliedCompletionGuard`) DO prefer the incoming format.
  */

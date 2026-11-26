@@ -1,5 +1,5 @@
 /**
- * Ladder vocabulary. See Mentat `planning/LADDER_COMPETITION_MODEL.md`.
+ * Ladder vocabulary.
  *
  * Every value here varies by club, which is why they are policy data rather than behaviour: a
  * ladder implementation that hardcodes any of them is wrong for the next club.

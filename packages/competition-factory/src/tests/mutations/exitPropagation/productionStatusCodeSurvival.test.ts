@@ -100,9 +100,9 @@ it('does not confuse a production code with exit provenance', () => {
   expect(getSideExitProvenance({ matchUp: codesOnly })).toBeUndefined();
 
   /**
-   * P37. This half read provenance OUT of a hybrid element — `{ code: 'DQ', previousMatchUpStatus:
-   * DOUBLE_WALKOVER, … }` — which the legacy fallback in `getSideExitProvenance` made possible. That
-   * fallback is removed, so provenance comes from the native field and the array is consulted for the
+   * Before the exit tenant's eviction, this half read provenance OUT of a hybrid element — `{ code: 'DQ',
+   * previousMatchUpStatus: DOUBLE_WALKOVER, … }` — which the legacy fallback in `getSideExitProvenance` made
+   * possible. That fallback is removed, so provenance comes from the native field and the array is consulted for the
    * CODE alone. Both halves of the original claim survive; they now come from the surface that owns each.
    */
   const withProvenance: any = {

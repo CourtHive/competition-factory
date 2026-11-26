@@ -1,9 +1,9 @@
 /**
- * Draw-type predicates over a drawType (or `{ drawType }`) the caller holds: stateless and positional (CA 2026-11-07).
+ * Draw-type predicates over a drawType (or `{ drawType }`) the caller holds: stateless and positional.
  * Their home is `tools.draws`; `drawsGovernor` also exports them in 7.x, and that placement goes at 8.0.0.
  *
- * Below them, draw queries that take one params object and read no state (confirmed stateless, Mentat
- * FACTORY_ENGINE_API_MIGRATION_PREP_PLAN slice A): draw-type coercion, feed-in qualifying positions, seeding thresholds,
+ * Below them, draw queries that take one params object and read no state (confirmed stateless by the
+ * statelessGovernorTools test): draw-type coercion, feed-in qualifying positions, seeding thresholds,
  * round robin group sizes and tallies, and playoff group validation. `drawsGovernor` keeps them in 7.x; their engine
  * routes are unchanged.
  */

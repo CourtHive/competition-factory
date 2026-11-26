@@ -40,7 +40,7 @@ type ExistingEventArgs = EventPolicyArgs & { allUniqueParticipantIds: string[]; 
 
 /**
  * An existing event's eventProfile `policyDefinitions` replace the event's own policies of those types, but only while
- * nothing has happened under them (CA 2026-10-21): replacing a policy after results would lose the record of the
+ * nothing has happened under them: replacing a policy after results would lose the record of the
  * policy the results were produced under. A type the event does not hold yet is attached; the policy it inherited
  * stays recorded where it is. Attached before any new draws, so they are generated under it.
  */

@@ -396,7 +396,7 @@ export const schedulingCaseSources: Source[] = [
   {
     caseId: 'scheduling.plan.timed-without-a-venue-at-the-only-venue.v1',
     note:
-      'In a tournament with exactly one venue, a matchUp timed at 10:00 with no venue is at that venue (CA 2026-10-25): ' +
+      'In a tournament with exactly one venue, a matchUp timed at 10:00 with no venue is at that venue: ' +
       'it holds the only court until 11:30, so the profiled matchUp is timed at 11:30.',
     build: () => {
       twoEvents({});
@@ -446,7 +446,7 @@ export const schedulingCaseSources: Source[] = [
     note:
       'The short-format semifinals (SET1-S:6/TB7: 30 minutes, 30 recovery) are timed at 10:00; a 90 minute round of ' +
       'another event is profiled at the same venue, with the final. A stored matchUp holds its participants for its own ' +
-      "minutes (CA 2026-10-25), not the venue's greatest average: the finalists are free at 11:00.",
+      "minutes, not the venue's greatest average: the finalists are free at 11:00.",
     build: () => {
       twoEvents({ format: SHORT_FORMAT, courtsCount: 3 });
       for (const semifinal of eventMatchUps(1, 1)) timeMatchUp(semifinal, { scheduledTime: '10:00', venueId: VENUE });
@@ -461,8 +461,8 @@ export const schedulingCaseSources: Source[] = [
     caseId: 'scheduling.plan.placed-matchup-holds-its-own-minutes.v1',
     note:
       'Short-format semifinals and their final (SET1-S:6/TB7: 30 minutes, 30 recovery) are profiled with a 90 minute ' +
-      "round of another event at the same venue. A placed matchUp holds its participants for its round's own average " +
-      "(CA 2026-10-25), the figure its recovery is checked with, not the venue's greatest.",
+      "round of another event at the same venue. A placed matchUp holds its participants for its round's own average, " +
+      "the figure its recovery is checked with, not the venue's greatest.",
     build: () => {
       twoEvents({ format: SHORT_FORMAT, courtsCount: 3 });
       profileEventRound(0, 1);
@@ -478,7 +478,7 @@ export const schedulingCaseSources: Source[] = [
     caseId: 'scheduling.plan.request-window-is-the-matchup-minutes.v1',
     note:
       'A DO_NOT_SCHEDULE request from 10:45 for a participant of a short-format semifinal (30 minutes), profiled with a ' +
-      "90 minute round at the same venue. The request is checked against the matchUp's own minutes (CA 2026-10-25): " +
+      "90 minute round at the same venue. The request is checked against the matchUp's own minutes: " +
       '10:00 to 10:30 does not reach it, so the semifinal is timed at 10:00.',
     build: () => {
       twoEvents({ format: SHORT_FORMAT, courtsCount: 3 });
@@ -499,7 +499,7 @@ export const schedulingCaseSources: Source[] = [
     caseId: 'scheduling.plan.replanned-matchup-forgets-its-old-time.v1',
     note:
       'A first-round matchUp timed at 18:00 on day 1 is profiled again on day 2 with the final. It is placed at 10:00, and ' +
-      'its targets wait only for where it is placed now (CA 2026-10-25): its day-1 recovery end (20:30) is no not-before time.',
+      'its targets wait only for where it is placed now: its day-1 recovery end (20:30) is no not-before time.',
     build: () => {
       tournament({ drawSize: 4, courtsCount: 2 });
       const firstRound = tournamentEngine
@@ -516,7 +516,7 @@ export const schedulingCaseSources: Source[] = [
     caseId: 'scheduling.plan.venue-turn-is-its-open-courts.v1',
     note:
       'Two venues (6 courts and 1) share one field of 16 players across two draws, their rounds profiled at both. A ' +
-      "venue's turn ends once it has placed as many matchUps as it has courts open on the date (CA 2026-10-25); it ran " +
+      "venue's turn ends once it has placed as many matchUps as it has courts open on the date; it ran " +
       'to one more, counting every court of the venue. The turns decide which venue reaches a shared player first: ' +
       '17 matchUps are timed, not 16.',
     build: () => {
@@ -566,7 +566,7 @@ export const schedulingCaseSources: Source[] = [
     caseId: 'scheduling.plan.transit-longer-than-recovery-holds.v1',
     note:
       'The semifinals (30 minutes, 30 recovery) end at 10:30 at one venue; the final is profiled at another, 60 minutes ' +
-      'away. Recovery counts toward transit, so the finalists are free at the greater: 10:30 + 60 = 11:30 (CA 2026-10-25).',
+      'away. Recovery counts toward transit, so the finalists are free at the greater: 10:30 + 60 = 11:30.',
     build: () => semifinalsAtOneVenue(),
     amendView: (view) => (view.transit = { pairs: { [VENUE]: { [OTHER_VENUE]: 60 } } }),
     claims: (plan) => expectEqual(timesOf(plan, eventMatchUps(0, 2)), ['11:30'], 'after the transit'),

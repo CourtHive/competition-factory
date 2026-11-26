@@ -33,7 +33,7 @@ type AddPracticeRegistrationArgs = {
   /**
    * ISO string recording when the registration was actually made, rather than
    * when this instance wrote it. Defaults to now, so existing callers are
-   * unaffected. See `Mentat/planning/DISCONNECTED_SYNC_RECONCILIATION.md` §4.1.
+   * unaffected.
    */
   occurredAt?: string;
 };

@@ -188,7 +188,7 @@ export function isStandardSetTiebreak(
 
 /**
  * The margin a tiebreak is won by: one when it is no-ad, or when its target is one (an `F:TB1` decider is
- * a single sudden-death point, CA 2026-10-17); otherwise two. Scoring, points-to, score entry, the
+ * a single sudden-death point); otherwise two. Scoring, points-to, score entry, the
  * complement and the validators all read this one rule.
  */
 export function tiebreakMargin(tiebreakTo: number | undefined, NoAD?: boolean): number {
@@ -206,7 +206,7 @@ export type InputLevels = { point: boolean; game: boolean; set: boolean };
  * refusals read this, so what it reports and what it accepts cannot disagree.
  */
 export function inputLevels(setFormat?: SetFormatStructure): InputLevels {
-  // a shootout is entered as its final tally (Ruling 3, CA 2026-11-04)
+  // a shootout is entered as its final tally
   if (setFormat?.outs || setFormat?.shootout) return { point: false, game: false, set: true };
   if (setFormat?.combinedPointTotal) return { point: true, game: false, set: true };
   return { point: true, game: true, set: true };
@@ -221,7 +221,7 @@ export function inputLevelError(level: 'point' | 'game'): Error {
  * Whether the set in play is the one the final-set format governs (spec § 3.2). In a best of N that is the
  * set played with both sides one set from winning, and set N whatever the count when it starts: a timed
  * segment closed level wins no set, so `SET3-S:T10-F:T10/TB7` can reach set three at 1-0, and set three
- * still plays its declared `/TB7` (CA 2026-10-18). An exactly format's final set is set N, and an
+ * still plays its declared `/TB7`. An exactly format's final set is set N, and an
  * aggregate format's sudden-death decider is set N + 1 by number and never one of the N
  * (`aggregateDeciderSetNumber`).
  */

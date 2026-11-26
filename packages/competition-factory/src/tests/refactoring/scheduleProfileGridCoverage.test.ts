@@ -308,7 +308,7 @@ describe('scheduleProfileGrid multiple venues', () => {
       ],
     });
 
-    // a venue with no courts keeps its rounds and places nothing (CA 2026-10-23): the profile needs no repair, round 1
+    // a venue with no courts keeps its rounds and places nothing: the profile needs no repair, round 1
     // (profiled at the courtless venue) is reported not scheduled, and round 2 is placed at the venue with courts
     expect(tournamentEngine.getSchedulingProfile().modifications).toEqual(0);
     let result: any = tournamentEngine.scheduleProfileGrid({ scheduleDates: [startDate] });
@@ -321,7 +321,7 @@ describe('scheduleProfileGrid multiple venues', () => {
     expect(result.scheduledMatchUpIds[startDate].toSorted()).toEqual(roundOf(2).toSorted());
 
     // and the timed scheduler likewise places nothing there. Round 2, on the grid without a time, is to be timed too
-    // (CA 2026-10-28): it waits for round 1, which is never placed, so it is reported rather than skipped in silence
+    // as well: it waits for round 1, which is never placed, so it is reported rather than skipped in silence
     result = tournamentEngine.scheduleProfileRounds({ scheduleDates: [startDate] });
     expect(result.success).toBe(true);
     expect(result.noTimeMatchUpIds[startDate].toSorted()).toEqual([...roundOf(1), ...roundOf(2)].toSorted());
@@ -709,7 +709,7 @@ describe('scheduleProfileGrid edge cases', () => {
   });
 });
 
-// ===== scheduleCompletedMatchUps (retired, CA 2026-10-23: accepted and ignored) =====
+// ===== scheduleCompletedMatchUps (retired: accepted and ignored) =====
 describe('scheduleProfileGrid scheduleCompletedMatchUps', () => {
   it('is accepted and changes nothing for a draw with no completed matchUp', () => {
     const { tournamentId, eventId, drawId, structureId, startDate } = setupTournament();

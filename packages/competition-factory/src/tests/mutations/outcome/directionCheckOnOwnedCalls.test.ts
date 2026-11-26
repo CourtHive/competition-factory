@@ -14,7 +14,7 @@ import { TEAM } from '@Constants/eventConstants';
 
 /**
  * THE DIFFERENTIAL'S DIRECTION CHECK (§ 5 rule 1) IS THE PLANNERS': it holds a call the planners write to the direction
- * they state, and is not asked of a call recorded whole (CA, 2026-11-19), whose ops are v1's own write read off a copy
+ * they state, and is not asked of a call recorded whole, whose ops are v1's own write read off a copy
  * and compared with the record entire by the shadow.
  *
  * The planners' direction is made wrong here on purpose, after the plan is made and before the comparison: the winner

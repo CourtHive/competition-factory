@@ -53,7 +53,7 @@ export function calculatePointsTo(
   const currentSet = getCurrentSet(matchUp);
   const setsWon = getSetsWon(matchUp);
   const bestOf = formatStructure.exactly || formatStructure.bestOf || 3;
-  // a majority of the sets (§ 9.1; SE2a-D7)
+  // a majority of the sets (§ 9.1)
   const setsToWin = Math.floor(bestOf / 2) + 1;
 
   // Get current game point scores
@@ -158,7 +158,7 @@ function calcPointsToGame(
     return calcTiebreakPointsTo(side1Points, side2Points, tbTo, isNoAD);
   }
 
-  // Consecutive game format: the side on the run needs the rest of it, the other side a whole run (CA 2026-10-21)
+  // Consecutive game format: the side on the run needs the rest of it, the other side a whole run
   if (formatStructure.gameFormat?.type === 'CONSECUTIVE') {
     const count = formatStructure.gameFormat.count || 3;
     const streak = currentSet?.currentStreak;
@@ -223,8 +223,8 @@ function sidePointsUntilWon(
 
 /**
  * `gamesToSet` (§ 11.2): the games each side must win in a row to win the set, the game in play included, counted
- * against the predicate that completes the set, so a margin, an advantage set and a tiebreak (one more game) agree
- * (SE2b-D23, CA 2026-10-21). A tiebreak-only set is one game.
+ * against the predicate that completes the set, so a margin, an advantage set and a tiebreak (one more game) agree.
+ * A tiebreak-only set is one game.
  */
 function calcGamesToSet(
   currentSet: SetScore | undefined,
@@ -288,7 +288,7 @@ export const NO_POINTS_TO_MATCH = -1;
 
 /**
  * Calculate minimum points each side needs to win the match, by the match's completion rule (spec § 9,
- * § 11.2; CA 2026-10-18): the sets to win in a best of N; all N sets in an exactly format, the side
+ * § 11.2): the sets to win in a best of N; all N sets in an exactly format, the side
  * then needing more sets than the other; and in an aggregate of tiebreak-only segments, every segment, the
  * side then needing the greater total (or a level one and the declared decider).
  */
@@ -313,7 +313,7 @@ function calcPointsToMatch(
 
 /**
  * The points of the `count` sets after the one in play that `side` must win in a row, each at the minimum of the
- * format governing it then (§ 3.2, § 11.2): a deciding set at the final format's (SE2b-D25, CA 2026-10-21).
+ * format governing it then (§ 3.2, § 11.2): a deciding set at the final format's.
  */
 function laterSetsInARow(matchUp: MatchUp, formatStructure: FormatStructure, side: 0 | 1, count: number): number {
   const sets: SetScore[] = matchUp.score.sets.filter(isClosedSet);

@@ -856,7 +856,7 @@ export class AvailabilityEngine {
       };
     }
 
-    // Template operations → block mutations expansion (tracked in Mentat TASKS.md)
+    // Template operations → block mutations expansion (not yet implemented)
     /*
                                                                                                                                                                                                                                       
     A TemplateOperation specifies:                                                                                                                                                                                                  

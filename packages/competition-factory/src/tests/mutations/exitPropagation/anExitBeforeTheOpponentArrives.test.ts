@@ -21,7 +21,7 @@ import {
 } from '@Constants/drawDefinitionConstants';
 
 /**
- * **A WALKOVER or DEFAULTED can be recorded before the second opponent arrives** (CA, 2026-10-04).
+ * **A WALKOVER or DEFAULTED can be recorded before the second opponent arrives**.
  *
  * A participant has advanced and the other has not yet arrived; in between, the present participant falls
  * ill, is injured, or is defaulted for conduct. USTA's own codes contemplate it (*Friend at Court* Table
@@ -176,7 +176,7 @@ describe('refused', () => {
 
 /**
  * **Until the opponent arrives the director may change it** — WALKOVER <-> DEFAULTED and its reason — **or
- * clear it; once they arrive it is a decided walkover like any other** (CA, 2026-10-04). Under propagation
+ * clear it; once they arrive it is a decided walkover like any other**. Under propagation
  * the exit carried to the present participant's next matchUp follows the label.
  */
 describe('changed before the opponent arrives', () => {

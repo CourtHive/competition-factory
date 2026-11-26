@@ -18,8 +18,8 @@ import fs from 'fs';
  *
  * 2026-10-11, THE NINTH RUN (dev 777de4ebdc, seeds 20,300,001–20,340,000): one seed in every arm — 20318646 COMPASS 8/8
  * — appended here. A carried default met a BYE in the South FINAL; with nowhere further to carry it, nothing was
- * written, so when the BYE was withdrawn the carrier stood as an ordinary participant (P51,
- * `aCarryPastAFinalByeSurvivesItsWithdrawal`).
+ * written, so when the BYE was withdrawn the carrier stood as an ordinary participant
+ * (`aCarryPastAFinalByeSurvivesItsWithdrawal`).
  *
  * 2026-10-11, THE TENTH RUN (dev 8ed7117f0f, seeds 20,340,001–20,380,000): the default arms read zero; three seeds under
  * `doubleExitPropagateBye: false` — 20346401 DOUBLE_ELIMINATION 8/8, 20349817 COMPASS 16/11, 20352232
@@ -32,8 +32,7 @@ import fs from 'fs';
  * (`anExitPastAByeConvergesWithAStandingExit`).
  *
  * Each seed replays in the arm it was found in, from the schedule EMITTED IN THAT ARM; a `policyoff` line carries the
- * `policyDefinitions` it was emitted under, and the replay attaches them. The planning record is
- * `Mentat/planning/STALLED_POSITION_AT_SCALE.md`.
+ * `policyDefinitions` it was emitted under, and the replay attaches them.
  *
  * ## OPEN — the seeds that still stall, by arm
  *

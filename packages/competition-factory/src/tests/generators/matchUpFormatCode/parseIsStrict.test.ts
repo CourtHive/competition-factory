@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { RALLY } from '@Constants/matchUpFormatConstants';
 
 /**
- * `parse` refuses what `isValidMatchUpFormat` refuses (CA, 2026-10-02).
+ * `parse` refuses what `isValidMatchUpFormat` refuses.
  *
  * The parser read what it recognised and ignored the rest, while `isValid` refused the same codes — and
  * fifteen modules call `parse` without asking `isValid`, so a malformed stored format was quietly
@@ -27,7 +27,7 @@ describe('junk is refused by parse and isValid alike', () => {
     // NOAD goes before a modifier; after it, the modifier read as `RALLYNOAD` and rally scoring was lost
     ['NOAD swallowed by a tiebreak modifier', 'SET3-S:TB11@RALLYNOAD'],
     ['NOAD swallowed by a timed modifier', 'SET3-S:T10@RALLYNOAD'],
-    // a modifier is upper-case letters (CA 2026-10-25): `@rally` scored side-out
+    // a modifier is upper-case letters: `@rally` scored side-out
     ['a lower-case tiebreak modifier', 'SET3-S:TB11@rally'],
     ['a lower-case timed modifier', 'SET3-S:T10@rally'],
     ['a modifier that is not letters', 'SET3-S:TB11@R_1'],
@@ -55,7 +55,7 @@ describe('well-formed codes are accepted by both, including equivalent spellings
 
   it('an equivalent spelling parses to the same thing as its canonical form', () => {
     expect(parse('SET3-S:6NOAD/TB7@6')).toEqual(parse('SET3-S:6NOAD/TB7'));
-    // the identical final set, the timed G and the default game are not kept (CA 2026-10-25)
+    // the identical final set, the timed G and the default game are not kept
     expect(parse('SET3-S:6-F:6')).toEqual(parse('SET3-S:6'));
     expect(parse('SET3-S:6/TB7-F:6/TB7@6')).toEqual(parse('SET3-S:6/TB7'));
     expect(parse('SET1-S:T20G')).toEqual(parse('SET1-S:T20'));

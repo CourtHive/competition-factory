@@ -8,7 +8,7 @@
  *
  * The ITF Junior Finals row is NOT the 2025 Regulations' (published 13 December 2024: 850/600/480/420/370/320/280/
  * 240). The 2025 Finals awarded the winners 1000 points, "for the first time" (ITF, 2025 Finals media page and line-up
- * article), which is the 2026 table's value, so the 2026 row is used (CA, 2026-10-25). Only the winner's value is
+ * article), which is the 2026 table's value, so the 2026 row is used. Only the winner's value is
  * confirmed for 2025; the 2025 Finals Special Regulations (published 28 March 2025) were not retrievable.
  *
  * Tournament Levels (mapped to factory levels):
@@ -37,7 +37,7 @@
  *
  *   - International Team Competitions (level 3): a #1 singles, #2 singles or doubles win in the quarterfinal, semifinal
  *     or final earns points; a player keeps one result only, their best, and it counts among their six best singles
- *     results (CA, 2026-10-25). Only the best 8 teams reach those rounds; a 5th–8th classification tie earns nothing
+ *     results. Only the best 8 teams reach those rounds; a 5th–8th classification tie earns nothing
  */
 
 import { MAIN, QUALIFYING, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';

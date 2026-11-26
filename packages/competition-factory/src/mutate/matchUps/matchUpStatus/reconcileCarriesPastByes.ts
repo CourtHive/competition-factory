@@ -13,8 +13,8 @@ import { BYE } from '@Constants/matchUpStatusConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
 
 /**
- * AN EXIT CARRIED PAST A LATE BYE IS WRITTEN WHERE THE CARRIER LANDS — CA, 2026-10-02: *"a propagated exit encountering
- * a BYE should be advanced. In both cases the BYE remains a BYE."*
+ * AN EXIT CARRIED PAST A LATE BYE IS WRITTEN WHERE THE CARRIER LANDS: a propagated exit encountering a BYE is
+ * advanced, and in both cases the BYE remains a BYE.
  *
  * When the BYE is in the seat first, a carrier arriving opposite it is carried past by `progressExitStatus` RULE 1 and
  * the exit is written where it lands (RULE 2, 3 or 4). When the carrier is seated first and the BYE arrives LATER, the
@@ -172,8 +172,8 @@ function owedCarry({
 }
 
 /**
- * THE BYE OPPOSITE IS A HOLDER'S, AND ITS EXIT IS STILL TO COME (P54, CA 2026-10-11: "the BYE stays; the exit
- * travels"). A pending exit can advance its empty seat ahead of it as a reservation; when that seat then becomes a BYE
+ * THE BYE OPPOSITE IS A HOLDER'S, AND ITS EXIT IS STILL TO COME (the BYE stays; the exit
+ * travels). A pending exit can advance its empty seat ahead of it as a reservation; when that seat then becomes a BYE
  * nobody can fill, the matchUp a round on holds the holder's BYE beside the carrier. It is not a BYE the carrier passes:
  * the held exit is sent on to that seat when the draw settles (`settleHeldExits`), and the two exits meet there (RULE
  * 4). Carried past it first, the carrier decided the matchUp beyond as well, and the convergence that followed left both

@@ -40,7 +40,7 @@ export function resolveRotatingPartnerOutcome(params: {
     );
     const matchUp = (matchUpsOf(structure) ?? []).find((candidate) => candidate.matchUpId === matchUpId);
     if (structure && advancesMatchWinner(drawDefinition, structure) && (score || !matchUp?.winningSide)) {
-      // standings phase 2 § 1.1 (CA 2026-11-04), needs a decision: a level result where a winner must advance names
+      // needs a decision: a level result where a winner must advance names
       // the winner and how it was decided; there is no status for a result awaiting that decision
       const format = resolveScoringFormat({ incoming: matchUpFormat, matchUp, structure, drawDefinition, event });
       if (isLevelScore(score, format))

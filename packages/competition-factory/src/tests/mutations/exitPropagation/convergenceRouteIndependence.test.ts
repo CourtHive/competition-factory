@@ -14,12 +14,12 @@ import {
 /**
  * A CONVERGENCE IS THE SAME DRAW WHICHEVER ROUTE REACHED IT.
  *
- * **Punch-list P42, the propagation half.** Two exits delivered into one matchUp are a double exit.
- * Ordinary play reaches that through `handleEmptyExitLoser`; a single exit RE-SCORED UP to a double
- * reaches it through `advanceFromTarget`, at a matchUp whose occupant the same mutation has just
- * removed. The two routes left different draws at 52 of 192 cells of `correctionDivergence`'s UPGRADE
- * arm, and it took two changes to close them. Each consequence is pinned here on the smallest draw
- * that shows it, because the sweep says THAT a cell diverged and these say WHY.
+ * **A single exit re-scored up to a double, the propagation half.** Two exits delivered into one matchUp are a double
+ * exit. Ordinary play reaches that through `handleEmptyExitLoser`; a single exit RE-SCORED UP to a double reaches it
+ * through `advanceFromTarget`, at a matchUp whose occupant the same mutation has just removed. The two routes left
+ * different draws at 52 of 192 cells of `correctionDivergence`'s UPGRADE arm, and it took two changes to close them.
+ * Each consequence is pinned here on the smallest draw that shows it, because the sweep says THAT a cell diverged and
+ * these say WHY.
  *
  * Compared by the harness's coordinate signature, so a difference in status, winningSide,
  * drawPositions or provenance at ANY matchUp fails — not only at the coordinate each test names.
@@ -138,7 +138,7 @@ it('a convergence serves its own loser link once, the same draw on either route'
   );
 
   // CONTROL: the convergence is in West, and South is what its loser link feeds. Under the policy off its loser seat
-  // shows the walkover it produced, not the BYE its first exit left there (CA ruling (A), 2026-10-21); that walkover
+  // shows the walkover it produced, not the BYE its first exit left there; that walkover
   // awaits whoever West|1|2 sends, and goes no further
   expect(direct['West|1|1']).toMatch(/^DOUBLE_WALKOVER /);
   expect(direct['South|1|1']).toEqual('WALKOVER ws=2 dp=1.2 prov=1:DOUBLE_WALKOVER->WALKOVER');
@@ -149,7 +149,7 @@ it('a convergence serves its own loser link once, the same draw on either route'
 });
 
 it('a pending exit is awarded when its opponent arrives, to the side that arrived', () => {
-  // P44. The convergence awards nobody and holds no seat; this is what makes that safe.
+  // The convergence awards nobody and holds no seat; this is what makes that safe.
   const drawId = 'arrival';
   const before = signatures(
     FIRST_ROUND_LOSER_CONSOLATION,

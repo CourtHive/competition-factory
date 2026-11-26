@@ -43,21 +43,19 @@ import {
  * `matchUpStatusCodes` write is deliberately NOT gated on `writeLegacyEnabled()` yet: the global
  * default is NATIVE, so gating it would stop writing the legacy array immediately and that is a
  * breaking change. Retiring the legacy write is the 8.0 step; until then this is a pure addition.
- *
- * See Mentat/planning/MATCHUP_STATUS_CODES_PER_SIDE.md.
  */
 
 /**
  * What a matchUp PRODUCES downstream, given the status that produced it.
  *
  * A UNIFORM double exit produces its own flavour: `DOUBLE_WALKOVER` produces `WALKOVER`,
- * `DOUBLE_DEFAULT` produces `DEFAULTED`. CA, 2026-09-12: *"a DOUBLE_DEFAULT producing a side record
- * DEF sounds right, the same as a DOUBLE_WALKOVER producing a WO / WALKOVER sounds right."*
+ * `DOUBLE_DEFAULT` produces `DEFAULTED`: a DOUBLE_DEFAULT produces a side record DEF, just as a
+ * DOUBLE_WALKOVER produces a WO / WALKOVER.
  *
  * The unattributed case is a MIXED convergence, and it is decided upstream of this function by
  * `collapseDoubleExitStatus` — when two exits of differing origin meet, the converged matchUp is a
- * `DOUBLE_WALKOVER`, so what it produces here is a `WALKOVER`. CA: *"a WALKOVER and a DEFAULT would
- * produce a WALKOVER, not a DEF."* That is where the "not attributable to any upstream individual"
+ * `DOUBLE_WALKOVER`, so what it produces here is a `WALKOVER`: a WALKOVER and a DEFAULT produce a
+ * WALKOVER, not a DEF. That is where the "not attributable to any upstream individual"
  * rule lives; this mapping stays a faithful per-flavour projection.
  */
 export function producedExitStatus(previousMatchUpStatus?: MatchUpStatusUnion): MatchUpStatusUnion | undefined {
@@ -71,8 +69,8 @@ export function producedExitStatus(previousMatchUpStatus?: MatchUpStatusUnion): 
  *
  * A double exit does: nobody arrives, and the exit it produced stands pending on that side. A BYE does: the side
  * holds a BYE. A played result or a single exit does NOT: its winner arrived and is waiting, so the entry records
- * the origin (`previousMatchUpStatus`) and no `matchUpStatus` (CA, 2026-10-07: "nothing was decided when they
- * arrived, they were just waiting"; OUTCOME_PIPELINE_OPEN_QUESTIONS F9).
+ * the origin (`previousMatchUpStatus`) and no `matchUpStatus`: nothing was decided when they arrived, they were
+ * just waiting.
  */
 export function decidesForTheSide(previousMatchUpStatus?: MatchUpStatusUnion): boolean {
   return isDoubleExit(previousMatchUpStatus) || previousMatchUpStatus === BYE;
@@ -81,9 +79,9 @@ export function decidesForTheSide(previousMatchUpStatus?: MatchUpStatusUnion): b
 /**
  * The status for a matchUp where two exits MEET, from the exits each side carried.
  *
- * CA, 2026-09-12: *"a WALKOVER and a DEFAULT would produce a WALKOVER, not a DEF… and a
- * DOUBLE_WALKOVER and a DOUBLE_DEFAULT producing a WALKOVER and a DEFAULT would produce a
- * WALKOVER."* So a convergence is `DOUBLE_DEFAULT` only when EVERY side's exit is default-flavoured;
+ * A WALKOVER and a DEFAULT produce a WALKOVER, not a DEF, and a DOUBLE_WALKOVER and a DOUBLE_DEFAULT,
+ * producing a WALKOVER and a DEFAULT, produce a WALKOVER. So a convergence is `DOUBLE_DEFAULT` only
+ * when EVERY side's exit is default-flavoured;
  * any mixture collapses to `DOUBLE_WALKOVER`.
  *
  * The asymmetry is deliberate and is about not attributing a ruling to someone it was not made
@@ -142,7 +140,7 @@ export function buildSideExitProvenance(params: BuildArgs): SideExitProvenance |
   //
   // `matchUpStatus` is what was decided on the side (`decidesForTheSide`). A side whose origin was a played or
   // single-exit result ARRIVED: its participant won that matchUp and is waiting here, so the entry carries the
-  // origin and no status (CA, 2026-10-07; F9). Writing `producedExitStatus(origin)` for an arrival made "won a
+  // origin and no status. Writing `producedExitStatus(origin)` for an arrival made "won a
   // DEFAULTED" the same entry as "lost a DEFAULTED and carried the exit", and `carriedExitStatus` read both as
   // an exit.
   const isDecided = (status?: string) => !!status && status !== TO_BE_PLAYED;
@@ -243,9 +241,9 @@ export function mergeSideExitProvenance({
 /**
  * What a BYE may record about how a side got there — and an ARRIVAL BY RESULT is not among it.
  *
- * **Punch-list P19.** CA, 2026-09-29: *"a BYE should not carry COMPLETED provenance"*, and of the
- * other kind of arrival, agreeing that `BYE -> BYE` *"is legitimate and should stay"* — it records
- * that a BYE arrived from a BYE, which is the rule that two BYEs meeting produce one.
+ * A BYE does not carry COMPLETED provenance. The other kind of arrival, `BYE -> BYE`, is legitimate
+ * and stays — it records that a BYE arrived from a BYE, which is the rule that two BYEs meeting
+ * produce one.
  *
  * So on a BYE an entry is kept when it is a CARRIED EXIT, a BYE arriving through a BYE, or a claim
  * ledger, and dropped when it says the side's occupant got there by winning. That participant
@@ -357,7 +355,7 @@ export function clearSideExitProvenance(matchUp?: MatchUp): void {
   delete matchUp.sideExitProvenance;
 
   /**
-   * P37, ASYMMETRY 2. The clear has to take the PROJECTION with it, or it does not hold.
+   * ASYMMETRY 2 OF THE EXIT TENANT'S EVICTION. The clear has to take the PROJECTION with it, or it does not hold.
    *
    * This used to delete the native field alone. `getSideExitProvenance` falls back to the provenance
    * shape inside `matchUpStatusCodes`, so the very next reader RESURRECTED what was just deliberately
@@ -440,12 +438,10 @@ export function blankSideExitCode(matchUp: MatchUp, sideNumber: number): void {
  * is not: the 600-seed census opens three seeds and the per-step scan starts seven findings. A suite
  * that stays green is not evidence that a propagation compensation is inert — the census is the
  * instrument that answers this, and it disagreed.
- *
- * See Mentat/planning/SWEEP_20260911_DISCOVERY.md.
  */
 export function clearResolvedSideExitProvenance(matchUp?: MatchUp): void {
-  // A BYE is not a RESOLVED result, so its record is not stale — CA's ruling that "a BYE is never
-  // won" and "in both cases the BYE remains a BYE" (2026-09-20), applied to the record rather than
+  // A BYE is not a RESOLVED result, so its record is not stale — the rule that a BYE is never
+  // won and that in both cases the BYE remains a BYE, applied to the record rather than
   // the status. `isAnyExit` excludes BYE, so without this the BYE claim ledger below is wiped by the
   // next placement or score to touch the matchUp, and the unwind is blind again.
   if (!matchUp || isAnyExit(matchUp.matchUpStatus) || matchUp.matchUpStatus === BYE) return;
@@ -537,7 +533,7 @@ export function retainForeignProvenance(
 /**
  * Is this matchUp already part of the exit cascade, and so a place a late-learned origin belongs?
  *
- * **P37's last legacy-array decision read, converted.** Two sites — `drawPositionPlacement` and
+ * **The exit tenant's last legacy-array decision read, converted.** Two sites — `drawPositionPlacement` and
  * `removeSubsequentRoundsParticipant` — gated `recordSourceSideProvenance` on
  * `matchUp.matchUpStatusCodes` being truthy. That is the LEGACY array deciding whether the NATIVE record
  * gets written, the inversion class `MATCHUP_STATUS_CODES_PER_SIDE.md` names, and the last one standing.
@@ -547,7 +543,7 @@ export function retainForeignProvenance(
  * already touched this matchUp"*. Measured over 30 sweep seeds, 854 matchUps: with the gate simply
  * REMOVED, matchUps carrying `sideExitProvenance` went 162 → 202 and those on a matchUp that is neither an
  * exit nor a BYE went 14 → 53. An ordinary advancement was getting an origin stamped on it, and
- * `sideExitProvenance` is PRESENCE-read (**P19**: *"one bad writer silently flips every exclusion"*), so
+ * `sideExitProvenance` is PRESENCE-read (*"one bad writer silently flips every exclusion"*), so
  * every rule exempting "a matchUp with provenance" began exempting matchUps that were simply played — 58
  * test failures, 54 of them `transitionProperties` cells, none of them about codes.
  *
@@ -563,10 +559,10 @@ export function retainForeignProvenance(
  * `provenanceOnly` **120 → 0** and `identical` **44 → 164**, with `severe` unchanged at 28. Those 120 cells
  * were ones where the corrected path left a STALE provenance entry the direct path did not have — the
  * array gate was permitting exactly the writes that produced them. So converting this read does not merely
- * remove the last array dependence; it closes 120 cells of CA's re-score invariant.
+ * remove the last array dependence; it closes 120 cells of the re-score invariant.
  *
  * `BYE` is included deliberately: `attemptToSetMatchUpStatusBYE` writes `matchUpStatusCodes = []`, so a BYE
- * matchUp passed the old gate, and CA's rule is that a BYE legitimately carries a claim ledger.
+ * matchUp passed the old gate, and a BYE legitimately carries a claim ledger.
  */
 export function participatesInExitCascade({ matchUp }: { matchUp?: MatchUp }): boolean {
   if (getSideExitProvenance({ matchUp })) return true;
@@ -593,7 +589,7 @@ export function placeCodeAtSide(statusCodes: string[], sideNumber: number, code?
  * The `matchUpStatusCodes` a propagation write should store: the POLICY tenant retained, plus one
  * exit OUTCOME code per side that CARRIES an exit, at that side's index.
  *
- * **P37. This is what replaces the projection.** `projectExitStatusCodes` wrote provenance-shaped
+ * **This is what replaces the projection.** `projectExitStatusCodes` wrote provenance-shaped
  * OBJECTS into the array, which made the array a second copy of provenance and made every reader of
  * it a reader of provenance. What the array is actually FOR is the positional string contract
  * clients consume and `EXIT_CODE_ON_WINNER_SIDE` polices — `['WO', 'W1']`: the exiting side's outcome
@@ -605,8 +601,8 @@ export function placeCodeAtSide(statusCodes: string[], sideNumber: number, code?
  *    PROJECTED elements, so the strings existed only as a side effect of the projection being there.
  *  - `removeDirectedParticipants` wrote the hardcoded pair `['WO', 'WO']` for a `DOUBLE_WALKOVER`
  *    source and `[]` for anything else — positional, asymmetric (a `DOUBLE_DEFAULT` fell through to
- *    `[]`), and blind to which side had actually exited. CA named it on 2026-09-11: *"a hardcoded
- *    legacy string pair… this is propagation logic expressed in the legacy array."* Measured
+ *    `[]`), and blind to which side had actually exited: a hardcoded legacy string pair, propagation
+ *    logic expressed in the legacy array. Measured
  *    2026-09-27, it is what `EXIT_CODE_ON_WINNER_SIDE` catches once the projection stops masking it:
  *    `['WO', 'WO']` on a matchUp whose provenance records ONE exiting side, so the winner's slot
  *    carried a walkover code.
@@ -694,8 +690,9 @@ export function unchangedExitArrivalCodes(matchUp: MatchUp, exitSide: number): s
 /**
  * The string value of a POLICY `matchUpStatusCodes` element.
  *
- * **P37 narrowed this from three shapes to one.** It used to end `?? code?.matchUpStatus`, which made
- * it read the EXIT tenant too — the projection of `sideExitProvenance` — so the branch below re-sited
+ * **The exit tenant's eviction narrowed this from three shapes to one.** It used to end
+ * `?? code?.matchUpStatus`, which made it read the EXIT tenant too — the projection of `sideExitProvenance` — so
+ * the branch below re-sited
  * a carried exit's status positionally in an array that is not where side identity lives.
  *
  * Measured at that branch over the exit-propagation and matchUpStatus suites (2026-09-27, 113
@@ -727,7 +724,7 @@ export function policyCodeString(code: any): string | undefined {
  * Whether a `matchUpStatusCodes` element is the EXIT tenant — a projection of provenance, or the
  * reserved slot that stands in for a side whose origin is not known yet.
  *
- * **P37's eviction needs one predicate, in one place.** The array has two tenants and the exit one is
+ * **The exit tenant's eviction needs one predicate, in one place.** The array has two tenants and the exit one is
  * leaving: every site that used to rewrite the whole array now has to remove the exit elements and
  * leave the policy vocabulary (`matchUpStatusCode`, and codes `updateMatchUpStatusCodes` wrapped as
  * `{ code }`) untouched. Policy-code survival is a guarded property — see
@@ -749,7 +746,7 @@ export function isProjectedExitCode(code: any): boolean {
 /**
  * Whether a DIRECT write would change a matchUp that holds a carried or produced exit.
  *
- * CA, 2026-10-03: such an exit is not a result anybody recorded at this matchUp, so it cannot be
+ * Such an exit is not a result anybody recorded at this matchUp, so it cannot be
  * re-scored into another result here (a produced WALKOVER recorded as RETIRED 6-3, say) and it cannot be
  * removed here; the correction is made at its ORIGIN, whose clear or re-score re-derives this matchUp.
  * Left open, the re-score was accepted and kept the carried provenance, and clearing the origin later
@@ -931,11 +928,11 @@ function holdsBye({
  * The entries that record an EXIT on their side, leaving out a participant's own ORIGIN.
  *
  * An entry is also written for a participant who WON their way here from a matchUp decided by an exit, and it
- * carries that matchUp's status: the winner of a DEFAULTED match arrives with `DEFAULTED>DEFAULTED` (P19:
- * provenance records arrivals as well as exits). By status alone it reads as an exit THEY carried, so re-deriving
+ * carries that matchUp's status: the winner of a DEFAULTED match arrives with `DEFAULTED>DEFAULTED` (provenance
+ * records arrivals as well as exits). By status alone it reads as an exit THEY carried, so re-deriving
  * from it after another entry was withdrawn made the winner the defaulter and awarded the match to whoever stood
  * opposite (census w2 9100303, DE 16/11 `Backdraw|3|1`; reached once the entry was keyed to its participant's
- * real side, CA 2026-10-05). Read by identity: a source in this structure whose WINNING position is the position
+ * real side). Read by identity: a source in this structure whose WINNING position is the position
  * on the entry's side delivered a winner, not an exit.
  */
 export function withoutWinnersOrigins({
@@ -1022,7 +1019,7 @@ function withdrawFromMatchUp(
   if (!removedAny) return undefined;
 
   /**
-   * What remains must still CARRY AN EXIT for the matchUp to remain one (P19: provenance also records
+   * What remains must still CARRY AN EXIT for the matchUp to remain one (provenance also records
    * arrivals and BYE claims, which are not exits). This tested only that something remained, so a
    * WALKOVER whose one carried exit was withdrawn kept its status and winningSide on the strength of a
    * `BYE` arrival entry beside it — and the next participant to arrive took the walkover. Census seed
@@ -1058,8 +1055,8 @@ function withdrawFromMatchUp(
     setSideExitProvenance({ provenance: retained, matchUp });
     // A matchUp holding a BYE stays a BYE whatever provenance survives: `deriveExitStateFromProvenance`
     // leaves that to the caller, which has the structure. Re-deriving it to an exit labelled a BYE
-    // matchUp WALKOVER beside the BYE with nobody opposite (CA, 2026-09-20 and 2026-10-02, "the BYE
-    // remains a BYE"; caught by v2's held-exit invariant on sweep seed 6161873, where clearing a West
+    // matchUp WALKOVER beside the BYE with nobody opposite (the BYE remains a BYE;
+    // caught by v2's held-exit invariant on sweep seed 6161873, where clearing a West
     // result withdrew one side's entry from a South BYE matchUp whose BYE side still carried an exit).
     //
     // It stays a BYE, and when nothing retained carries an exit the withdrawal is still REPORTED: a pending produced
@@ -1082,7 +1079,7 @@ function withdrawFromMatchUp(
     // into `Backdraw|4|2` was refused ERR_EXISTING_POSITION_ASSIGNMENT after the correction had written).
     const derived = deriveExitStateFromProvenance(exitsRetained);
     // Only an award that STOOD is re-read: a pending exit (no winningSide) is left pending, as forward play leaves it;
-    // whether one waiting exit should have two representations is not this function's to settle (S4, CA 2026-10-12).
+    // whether one waiting exit should have two representations is not this function's to settle.
     //
     // ...and only when an EXIT was withdrawn. Withdrawing an arrival record (the side a result now being taken back sent
     // somebody to) changes no exit here: that result's own withdrawal releases the position it sent. Re-read anyway, the

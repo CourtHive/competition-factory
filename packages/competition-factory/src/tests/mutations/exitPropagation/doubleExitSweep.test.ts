@@ -30,7 +30,7 @@ import {
  * is about 4,900 calls per policy, a few minutes.
  *
  * Gated (`DOUBLE_EXIT_SWEEP=1`), as `routeDifferential.test.ts` is, and run per outcome slice (`pnpm
- * verify:double-exit-sweep`, Mentat `scripts/outcome-v2-suites.sh`). The seed is the exit matrix's.
+ * verify:double-exit-sweep`). The seed is the exit matrix's.
  */
 
 const enabled = process.env.DOUBLE_EXIT_SWEEP === '1';

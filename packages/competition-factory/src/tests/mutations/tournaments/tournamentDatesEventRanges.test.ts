@@ -7,7 +7,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { MATCHUPS_SCHEDULED_OUTSIDE_DATES } from '@Constants/errorConditionConstants';
 import { MODIFY_EVENT } from '@Constants/topicConstants';
 
-// R1 (CA ruling 2026-11-01): setTournamentDates carries events whose range tracked the tournament's,
+// R1: setTournamentDates carries events whose range tracked the tournament's,
 // clamps narrower event ranges into the new range, and never leaves an event range outside it.
 
 const startDate = '2025-06-02';

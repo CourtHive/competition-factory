@@ -17,8 +17,8 @@ import {
 } from '@Constants/outcomePipelineConstants';
 
 /**
- * A TEAM DUAL'S EXIT AGAINST AN EMPTY SEAT IS REFUSED AS A SINGLES MATCHUP'S IS (option D narrowed, CA's ruling
- * 2026-11-20). § 2 row 6, its participants clause (§ 2.1).
+ * A TEAM DUAL'S EXIT AGAINST AN EMPTY SEAT IS REFUSED AS A SINGLES MATCHUP'S IS (option D narrowed).
+ * § 2 row 6, its participants clause (§ 2.1).
  *
  * FIRST_MATCH_LOSER_CONSOLATION 8, DOMINANT_DUO. `Main|1|1`'s loser reaches `Consolation|1|1` dp 3; dp 4 is claimed and
  * empty until `Main|1|2` is decided. A single exit entered there before then is waived only when it awards the exit to

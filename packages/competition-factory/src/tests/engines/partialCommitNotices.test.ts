@@ -11,12 +11,12 @@ import { bulkItem } from '@Mutate/bulkItem';
 import { MUTATIONS } from '@Constants/topicConstants';
 
 /**
- * COMMITTED WORK ANNOUNCES ITSELF (CA, ruling 33, 2026-11-25). A bulk mutation commits each item on its own and returns
+ * COMMITTED WORK ANNOUNCES ITSELF. A bulk mutation commits each item on its own and returns
  * the first refused item as its own `error`. When it committed at least one item it also returns `committed: true`, and
  * the engine publishes the buffered notices instead of deleting them. A refused item buffers nothing. With rollback the
- * whole call is restored and nothing is published (ruling 9, condition 3). In a queue without rollback a directive that
- * partly commits publishes the queue's buffer, the notices of the directives before it included: the one deviation
- * from D2 (mutation-engines.md § Transaction Pattern).
+ * whole call is restored and nothing is published (a caller-requested rollback stays a transaction). In a queue
+ * without rollback a directive that partly commits publishes the queue's buffer, the notices of the directives before
+ * it included: the one deviation from D2 (mutation-engines.md § Transaction Pattern).
  *
  * `partly` stands for a bulk writer: each item names a value; `bad` is refused, writing nothing; any other is appended to
  * the tournament name and announced. Each item runs inside `bulkItem`, the boundary the refusal invariant attributes
@@ -133,7 +133,7 @@ describe('sync engine', () => {
     expect(result.results[1].results).toEqual([{ success: true }, { error: REFUSAL }]);
     expect(result.results[1].committed).toEqual(true);
     expect(name()).toEqual('R+a');
-    // the earlier directive's notice is published with the partly committed directive's (ruling 33)
+    // committed work announces itself: the earlier directive's notice is published with the partly committed one's
     expect(delivered).toEqual(['R', 'a']);
     // and the mutation notice names the directives that ran, not the one after the refusal
     expect(mutations).toEqual([['rename', 'partly']]);

@@ -4,8 +4,8 @@ import { generateScoreString } from '@Scoring/views/generateScoreString';
 import type { ScoreEntrySet } from './types';
 
 /**
- * The score line, formatted by the factory's `generateScoreString` (CA, 2026-09-28: *"you should use
- * generateScoreString and not invent something new for the modal"*). A match tiebreak reads `[10-8]`.
+ * The score line, formatted by the factory's `generateScoreString` (the modal uses
+ * `generateScoreString` rather than inventing its own). A match tiebreak reads `[10-8]`.
  *
  * `setTBlast` stays at its default (the tiebreak last): when side 2 wins a set, `false` gives `6(3)-7`, the default
  * `6-7(3)`. `winningSide` is not passed, because `winnerFirst` would reorder the sides, and this line is in SIDE

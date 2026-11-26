@@ -9,7 +9,7 @@ import fs from 'node:fs';
  * side, two sort ascending), and everything a matchUp records by side has to move with them: `sideExitProvenance`,
  * `sideStatusCodes`, the positional `matchUpStatusCodes`, `winningSide`. `setMatchUpDrawPositions` (or its re-keying
  * half, `rekeySideFacts`) does that. A writer that bypasses it re-opens the class silently: the census found the
- * keys stale eight times in 1,800 seeds before it existed (CA, 2026-10-05: option R).
+ * keys stale eight times in 1,800 seeds before it existed.
  *
  * So the direct writers in `src/mutate` are an EXACT list. A new one fails this test until it is routed through the
  * setter or added below with the reason it cannot move a participant between sides.

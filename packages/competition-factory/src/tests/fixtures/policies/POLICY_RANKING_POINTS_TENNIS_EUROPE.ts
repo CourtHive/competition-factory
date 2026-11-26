@@ -4,8 +4,7 @@
  * Authoritative sources:
  *   - 2026_Tennis_Europe_Junior_Tour_Regulations.pdf
  *     https://www.tennisireland.ie/wp-content/uploads/2026/03/2026_Tennis_Europe_Junior_Tour_Regulations.pdf
- *   - Mentat/planning/RANKING_LISTS_PIPELINE_TE2026_REGS.txt
- *     (offline extracted text, point tables at lines ~3395-3705)
+ *   - the same regulations as offline extracted text, point tables at lines ~3395-3705)
  *   - 2026 Major Rule Changes
  *     https://www.supervisor.lv/wp-content/uploads/2025/12/2026-Major-rule-changes_Tennis-Europe-Junior-Tour.pdf
  *

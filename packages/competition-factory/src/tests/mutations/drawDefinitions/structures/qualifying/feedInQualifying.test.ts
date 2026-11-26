@@ -13,7 +13,7 @@ import { SEEDING } from '@Constants/scaleConstants';
 import { SINGLES } from '@Constants/eventConstants';
 
 /**
- * CA (2026-10-09): "If I have 12 entries at stage qualifying I should be able to create a drawSize of 12, for
+ * The requirement: "If I have 12 entries at stage qualifying I should be able to create a drawSize of 12, for
  * instance, which has 8 in the first round of qualifying and 4 fed participants in the second round of qualifying,
  * producing 4 qualifiers; but if I had a qualifying draw of size 13 then it would only be possible to produce 1
  * qualiier because the final round of qualifying has to be at least the last fed round."
@@ -86,11 +86,11 @@ it.each([
 );
 
 it.each([
-  // CA: 12 → 4 is 8 in round 1 and 4 fed into round 2
+  // 12 → 4 is 8 in round 1 and 4 fed into round 2
   { drawSize: 12, qualifyingPositions: 4, rounds: { 1: 4, 2: 4 }, fed: { 2: [1, 2, 3, 4] } },
-  // CA: 13 produces only 1 qualifier; the final qualifying round is the last fed round
+  // 13 produces only 1 qualifier; the final qualifying round is the last fed round
   { drawSize: 13, qualifyingPositions: 1, rounds: { 1: 4, 2: 4, 3: 2, 4: 1, 5: 1 }, fed: { 2: [2, 3, 4, 5], 5: [1] } },
-  // CA: 10 → 5 is one round of 5 matchUps
+  // 10 → 5 is one round of 5 matchUps
   { drawSize: 10, qualifyingPositions: 5, rounds: { 1: 5 }, fed: {} },
   { drawSize: 15, qualifyingPositions: 5, rounds: { 1: 5, 2: 5 }, fed: { 2: [1, 2, 3, 4, 5] } },
   { drawSize: 12, qualifyingPositions: 2, rounds: { 1: 4, 2: 4, 3: 2 }, fed: { 2: [1, 2, 3, 4] } },

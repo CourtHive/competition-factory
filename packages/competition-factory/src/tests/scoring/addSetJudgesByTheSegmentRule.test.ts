@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 
 /*
- * A set total is judged by its segment's rule (scoring-engine spec § 2.3; § 16 decision 6, CA 2026-10-18):
+ * A set total is judged by its segment's rule (scoring-engine spec § 2.3; § 16 decision 6):
  * 1. a total the rule calls finished is recorded with the winner the rule gives it;
  * 2. an explicit winningSide that contradicts the rule is refused: one naming the loser of a finished total,
  *    or a side that is behind; on an unfinished total an explicit winningSide for the side ahead is a
@@ -21,7 +21,7 @@ function lastSet(engine: ScoringEngine) {
   return [set.side1Score, set.side2Score, set.winningSide];
 }
 
-describe('§ 2.3 rule 1 a finished total gets the rule winner (CA 2026-10-18, decision 6)', () => {
+describe('§ 2.3 rule 1 a finished total gets the rule winner (decision 6)', () => {
   it.each([
     [6, 4, 1],
     [5, 7, 2],
@@ -38,7 +38,7 @@ describe('§ 2.3 rule 1 a finished total gets the rule winner (CA 2026-10-18, de
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:TB11' });
     engine.addSet({ side1Score: 11, side2Score: 9 });
     expect(lastSet(engine)).toEqual([11, 9, 1]);
-    // an unfinished total is the race in play, as a baseline reads it (§ 5 rule 1; SE2a-D13, CA 2026-10-21)
+    // an unfinished total is the race in play, as a baseline reads it (§ 5 rule 1)
     engine.addSet({ side1Score: 11, side2Score: 10 });
     expect(lastSet(engine)).toEqual([0, 0, undefined]);
     expect(engine.getState().score.sets[1]).toMatchObject({ side1GameScores: [11], side2GameScores: [10] });

@@ -119,7 +119,7 @@ export function removeAssignment(params): ResultType & { participantId?: string 
     if (result.error) return decorateResult({ result, stack });
   }
 
-  // P47: an emptied seat now facing a BYE is carried on as generation would carry it
+  // an emptied seat now facing a BYE is carried on as generation would carry it
   const carried = carryEmptiedSeatsPastByes({ tournamentRecord, drawDefinition, event });
   if (carried.error) return decorateResult({ result: carried, stack });
 

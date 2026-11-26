@@ -21,9 +21,9 @@ import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
 
 /**
- * THE STATELESS GOVERNOR TOOLS, CONFIRMED (Mentat planning/FACTORY_ENGINE_API_MIGRATION_PREP_PLAN.md, slice A).
+ * THE STATELESS GOVERNOR TOOLS, CONFIRMED (slice A of the engine API migration).
  *
- * The candidates are the 99 governor exports the role inventory (Mentat assessment/2026-11-08-factory-role-inventory.csv)
+ * The candidates are the 99 governor exports a role inventory of the governors
  * lists as a query taking one params object and naming no state key in its signature. A candidate is CONFIRMED when, for
  * every input below, three calls give deep-equal results: through the engine with no record loaded, through the engine
  * with a realistic record loaded (the input taken from that record where it has one, so a function that started reading

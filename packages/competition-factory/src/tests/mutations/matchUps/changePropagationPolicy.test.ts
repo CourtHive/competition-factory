@@ -14,7 +14,7 @@ import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 /**
  * The tournament director who entered a score backwards.
  *
- * CA's scenario, 2026-09-13: *"tournament director entered a score backwards and didn't catch it
+ * The scenario: *"tournament director entered a score backwards and didn't catch it
  * until the next day — they go to enter a score and see the wrong participant progressed."*
  *
  * `changeWinningSide.test.ts` already covers the mechanism well: a COMPASS draw with all 72 matchUps

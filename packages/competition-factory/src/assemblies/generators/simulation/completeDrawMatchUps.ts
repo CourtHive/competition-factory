@@ -42,7 +42,7 @@ import {
  * one singles position each, and never a player who belongs to another team of the event. The lineUps are written
  * to the draw (with its change notice) and the pairs they need are added.
  *
- * Before, a draw without a category assigned players per first-round tieMatchUp instead (CA 2026-10-29: through
+ * Before, a draw without a category assigned players per first-round tieMatchUp instead (through
  * the public method; the record changes shape, part of the one regeneration of seeded records).
  */
 function assignDrawLineUps({ event, tournamentRecord, drawDefinition }) {

@@ -9,7 +9,7 @@ import { COMPLETED, RETIRED, validMatchUpStatuses } from '@Constants/matchUpStat
 import { INVALID_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
 
 /**
- * A validator refuses a matchUpStatus the engine does not know (CA, 2026-10-03).
+ * A validator refuses a matchUpStatus the engine does not know.
  *
  * The validators took the status as `string` and compared it against constants, so an unknown status was
  * never an error, only a comparison that never matched: `'COMPLETD'` read as an open match, and a score

@@ -9,12 +9,12 @@ import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, RETIRED, WALKOVER } from '@
 import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 /**
- * A BYE-MATCHUP-FED LOSER SEAT ROUND-TRIPS WHOLE (Mentat P58; census Phase B, COMPASS 32/30 policy-off, seed 30004303).
+ * A BYE-MATCHUP-FED LOSER SEAT ROUND-TRIPS WHOLE (census Phase B, COMPASS 32/30 policy-off, seed 30004303).
  *
  * The seat's BYE had two possible reasons: the feeder is a BYE matchUp, and a double exit whose produced exit the feeder
  * relays leaves its loser nobody. While the `byeClaims` ledger recorded who claimed it, whether the claim existed
- * depended on which reason came first, so CA ruling (b) (2026-10-20) left those claims out of the round trip. The
- * ledger is retired (CA, 2026-10-21): whether a loser seat's BYE stands is read from the draw (`feederSendsNobody`,
+ * depended on which reason came first, those claims were left out of the round trip as history-dependent by design. The
+ * ledger is retired: whether a loser seat's BYE stands is read from the draw (`feederSendsNobody`,
  * held at every step by LOSER_SEAT_DERIVED), so the exclusion is gone and the census schedule and its probes return
  * the draw they found with nothing left out.
  */

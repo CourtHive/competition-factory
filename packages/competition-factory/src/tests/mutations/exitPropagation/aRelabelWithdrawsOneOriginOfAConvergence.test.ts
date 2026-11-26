@@ -101,7 +101,7 @@ it('re-derives the convergence to the kept exit, which the relabelled loser wins
   expect(next.matchUpStatus).toEqual(TO_BE_PLAYED);
   expect(occupants(next)).toEqual([relabelled]);
   expect(errors()).toEqual([]);
-  // the call is recorded whole: its direction is deferred, not checked (CA, 2026-11-19)
+  // the call is recorded whole: its direction is deferred, not checked
   expect(getDifferentialTally()['winner:loser-withdrawn-converged']).toBeUndefined();
   expect(getDifferentialTally()['winner:direction']).toEqual({ compared: 2, deferred: 1 });
 });
@@ -121,9 +121,10 @@ it('the reverse label follows on a convergence: DOUBLE_DEFAULT becomes a DOUBLE_
   expect(errors()).toEqual([]);
 });
 
-// P52 (CA, 2026-10-11, approved change of assertion): this relabel used to be ACCEPTED and leave the convergence
-// standing. A result recorded downstream of the exit (the produced walkover's winner has played the final) fixes the
-// kind of Main|1|1's outcome, so turning its walkover into a played result is now REFUSED over an untouched draw.
+// An approved change of assertion (a correction keeps the kind a recorded result fixed): this relabel used to be
+// ACCEPTED and leave the convergence standing. A result recorded downstream of the exit (the produced walkover's winner
+// has played the final) fixes the kind of Main|1|1's outcome, so turning its walkover into a played result is now
+// REFUSED over an untouched draw.
 it('refuses relabelling the origin where the winner of what the convergence produced has played on', () => {
   setup();
   enter(at(MAIN, 1, 1), { matchUpStatus: WALKOVER, winningSide: 1 });
@@ -232,7 +233,7 @@ it('a convergence whose other exit was PRODUCED by a double exit re-runs that pr
 
   step('Main|2|1', { winningSide: 1 });
   // The relabelled loser is a participant standing opposite a PRODUCED exit, pending: by RULE 2 they win it and go on.
-  // The settle replays the kept origin's production rather than a carry (F2, CA 2026-10-07). Until then this
+  // The settle replays the kept origin's production rather than a carry (F2). Until then this
   // convergence stood, because a produced exit has no carrier for the settle to direct.
   const settled = byKey('Consolation|3|2');
   expect(settled.matchUpStatus).toEqual(WALKOVER);

@@ -165,7 +165,7 @@ describe('C4: scheduleProfileGrid reports as scheduled only what it wrote', () =
     );
     const reported = result.scheduledMatchUpIds[day1] ?? [];
     // was (C4): the four completed R1 matchUps reported scheduled and never written; then, with the flag honoured,
-    // written. Since CA 2026-10-23 the profile schedulers never place a completed matchUp: only R2's unlocked matchUp
+    // written. Now the profile schedulers never place a completed matchUp: only R2's unlocked matchUp
     expect(reported.length).toEqual(1);
     const completed = tournamentEngine.allTournamentMatchUps().matchUps.filter((m: any) => m.roundNumber === 1);
     expect(completed.every((m: any) => !reported.includes(m.matchUpId) && !m.schedule?.scheduledDate)).toEqual(true);

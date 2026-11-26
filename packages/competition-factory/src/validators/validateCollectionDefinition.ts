@@ -108,7 +108,7 @@ export function validateCollectionDefinition({
   }
 
   // a stored tieFormat is validated when it is read (team scoring, line-ups), so a format v1 accepted and
-  // new use now refuses stays readable there (CA 2026-10-18, scoring engine spec § 12.8)
+  // new use now refuses stays readable there (scoring engine spec § 12.8)
   if (matchUpFormat) errors.push(...matchUpFormatErrors(matchUpFormat, newUse));
 
   if (checkGender) {

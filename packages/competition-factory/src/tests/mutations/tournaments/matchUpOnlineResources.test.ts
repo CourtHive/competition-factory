@@ -14,8 +14,8 @@ import { TEAM_EVENT } from '@Constants/eventConstants';
 
 /**
  * A matchUp's recording, stream or stats page is a resource of the matchUp, and `onlineResources` is where CODES
- * puts resources on every other element (CA, 2026-10-14: recordings go in "each matchUp's onlineResources (as
- * they should)"). The ingest already writes them there (courthive-ingest b818f2a), so the shape below is the one
+ * puts resources on every other element, so recordings go in each matchUp's onlineResources.
+ * The ingest already writes them there (courthive-ingest b818f2a), so the shape below is the one
  * in use and must need no change.
  */
 const matchVideo = {

@@ -10,7 +10,7 @@ import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { MALE } from '@Constants/genderConstants';
 
 /*
- * A sanctioning body states transit between the places played at, keyed by facilityId (CA 2026-10-25): a proposal's own
+ * A sanctioning body states transit between the places played at, keyed by facilityId: a proposal's own
  * venueIds do not survive activation, since the canonical venues replace them. Activation states it for every pair of
  * the two facilities' venues, as a sanctioned floor a director may not undercut; a facility no venue carries is
  * reported, not dropped.

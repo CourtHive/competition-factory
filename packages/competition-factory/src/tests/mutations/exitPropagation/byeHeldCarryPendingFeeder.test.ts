@@ -13,7 +13,7 @@ import { COMPASS, OLYMPIC } from '@Constants/drawDefinitionConstants';
  * A produced exit must carry past a BYE-held loser target when the OPPONENT'S FEEDER IS STILL
  * PENDING.
  *
- * CA, 2026-09-24, driving OLYMPIC 8 with 6 participants in TMX: *"the produced WALKOVER propagates
+ * Reported, driving OLYMPIC 8 with 6 participants in TMX: *"the produced WALKOVER propagates
  * to WEST|1|1 and encounters a BYE and SHOULD then propagate to WEST|2|1, but it does not."*
  *
  * At `nonRandom: 1` the draw places East BYEs at drawPositions 2 and 7, West BYEs at 1 and 4:
@@ -42,7 +42,7 @@ import { COMPASS, OLYMPIC } from '@Constants/drawDefinitionConstants';
  *
  * ## What this file asserts, and what it deliberately does not
  *
- * `carryExitOnward` never awards a `winningSide` (CA, 2026-09-20), on the understanding that the
+ * `carryExitOnward` never awards a `winningSide`, on the understanding that the
  * side is read off the arriving drawPosition once the opponent's match is played. **Measured
  * 2026-09-24: for this shape it never is** — so the carry is asserted by the STATUS and the
  * provenance codes, and the two behaviours that remain broken are declared as `it.todo` with their
@@ -117,8 +117,9 @@ describe('a produced exit carries past a BYE-held target when the opponent feede
     // THE FIX: the exit does not stop at the BYE
     const west21 = find(drawId, 'West|2|1');
     expect(west21.matchUpStatus).toEqual(WALKOVER);
-    // P37. The claim was `matchUpStatusCodes?.length > 0` — "something records an exit here" — which
-    // is the LEGACY surface and cannot say WHICH side, or what the exit was. Provenance says both.
+    // Before the exit tenant left `matchUpStatusCodes`, the claim was `matchUpStatusCodes?.length > 0` — "something
+    // records an exit here" — which is the LEGACY surface and cannot say WHICH side, or what the exit was. Provenance
+    // says both.
     expect(west21.sideExitProvenance?.[1]).toMatchObject({
       previousMatchUpStatus: DOUBLE_WALKOVER,
       matchUpStatus: WALKOVER,
@@ -134,7 +135,7 @@ describe('a produced exit carries past a BYE-held target when the opponent feede
   /**
    * REMAINING GAP 1 — the deferred winner is never awarded.
    *
-   * `carryExitOnward` writes `winningSide: undefined` deliberately (CA, 2026-09-20: *"that is
+   * `carryExitOnward` writes `winningSide: undefined` deliberately (*"that is
    * unnecessary if the winningSide will display the checkmark once a participant arrives"*). For
    * this shape it never arrives. `advanceWinner` in `assignDrawPositionBye.ts` has two resolution
    * branches and both miss it: `arrivalIntoProvenanceOnlyExit` requires
@@ -169,7 +170,7 @@ describe('a produced exit carries past a BYE-held target when the opponent feede
 
   /**
    * The same resolution on a draw with a round AFTER the resolved matchUp, so the onward advancement
-   * is observable. COMPASS 16/14 is CA's own reproduction; here the exit is entered FIRST and the
+   * is observable. COMPASS 16/14 is the original reproduction; here the exit is entered FIRST and the
    * opponent arrives later, which is the gap-1 order.
    */
   it('COMPASS 16/14 — the resolved winner advances onward', () => {

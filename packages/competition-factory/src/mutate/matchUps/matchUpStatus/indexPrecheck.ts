@@ -10,11 +10,10 @@ import type { DrawDefinition } from '@Types/tournamentTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 
 /**
- * A SETTLE PASS ASKS ITS DETECTOR OF THE STRUCTURAL INDEX BEFORE IT HYDRATES (outcome executor plan § 3.1.1, the v1
- * win CA agreed 2026-10-24). Most of v1's settle passes hydrate the whole draw on every call only to run a detector that
- * finds nothing; v1 hydrates 7 to 10 times a call, and hydration is ~82% of pipeline time. The index answers every
- * field those detectors read (a probe of every read, Mentat report 2026-10-24 `outcome-v2-s2-structural-index-fields`;
- * the index oracle holds the two equal on every call in `differential`) at 11–13% of a hydration.
+ * A SETTLE PASS ASKS ITS DETECTOR OF THE STRUCTURAL INDEX BEFORE IT HYDRATES. Most of v1's settle passes hydrate the
+ * whole draw on every call only to run a detector that finds nothing; v1 hydrates 7 to 10 times a call, and hydration
+ * is ~82% of pipeline time. The index answers every field those detectors read (a probe of every read; the index
+ * oracle holds the two equal on every call in `differential`) at 11–13% of a hydration.
  *
  * `settleUnlessIdle` runs the pass unless the index says it is IDLE: the index answers and the pass's own detector
  * finds no work there. Idle, it returns `idle`, what the pass returns when its first hydration finds nothing. The index

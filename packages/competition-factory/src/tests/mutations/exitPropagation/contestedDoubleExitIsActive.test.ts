@@ -171,8 +171,8 @@ it.each([
 it('a double exit with only one occupant is refused at entry, and the arrival it would block is not', () => {
   // The boundary against condition 1. The single-occupant double exit is the PENDING shape the
   // CASCADE deposits ahead of an arrival, and it stays transparent: `pendingDoubleExitNotActive.test.ts`.
-  // This test used to fabricate that shape with a DIRECT entry beside an unreached seat. CA, 2026-10-04,
-  // ruled the direct entry out: a double exit is one exit per seat, so a director's needs both seats
+  // This test used to fabricate that shape with a DIRECT entry beside an unreached seat. The direct
+  // entry is ruled out: a double exit is one exit per seat, so a director's needs both seats
   // reached (*"How can three entities arrive in one matchUp which can only hold two drawPositions?"*).
   setSubscriptions({});
   mocksEngine.generateTournamentRecord({

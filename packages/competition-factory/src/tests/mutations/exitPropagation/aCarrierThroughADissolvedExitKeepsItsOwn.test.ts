@@ -14,8 +14,8 @@ import { OLYMPIC } from '@Constants/drawDefinitionConstants';
  *
  * `South|1|1` holds two defaulted participants and is a DOUBLE_DEFAULT, whose produced exit decides `South|2|1` for the
  * participant opposite. `East|1|4`'s double walkover then converges `West|1|2`, and `South|1|1` loses that matchUp's
- * loser. Under the policy off a double exit's loser seat shows the exit it produced, never a BYE (CA ruling (A),
- * 2026-10-21), so the double default dissolves into a new convergence: the defaulted participant from `West|1|1` stays,
+ * loser. Under the policy off a double exit's loser seat shows the exit it produced, never a BYE, so
+ * the double default dissolves into a new convergence: the defaulted participant from `West|1|1` stays,
  * opposite `West|1|2`'s produced walkover, and `South|1|1` is a DOUBLE_WALKOVER (a mixture takes the weaker label).
  * Its produced walkover decides `South|2|1` for the participant opposite, as the double default did. Before the ruling
  * the seat took a BYE, the carrier passed it onto the side the double default had decided, and the census found

@@ -103,7 +103,7 @@ function getSetFormat(matchUpFormatObject, preserveRedundant?: boolean) {
   const gameFormatValue = matchUpFormatObject.gameFormat && stringifyGameFormat(matchUpFormatObject.gameFormat);
   // a game format it cannot write is not written as `G:undefined` (validator debate G8)
   if (matchUpFormatObject.gameFormat && !gameFormatValue) return undefined;
-  // the default traditional game is not written (CA 2026-10-25): `-G:TN` is an equivalent spelling of no `-G:`
+  // the default traditional game is not written: `-G:TN` is an equivalent spelling of no `-G:`
   const gameCode = gameFormatValue && gameFormatValue !== 'TN' ? `G:${gameFormatValue}` : '';
 
   const matchUpConstraintCode = matchUpFormatObject.matchUpConstraint?.timed
@@ -169,7 +169,7 @@ function tiebreakFormat(tieobject) {
   return undefined;
 }
 
-/** A modifier `parse` reads: upper-case letters, not containing `NOAD` (CA 2026-10-25). */
+/** A modifier `parse` reads: upper-case letters, not containing `NOAD`. */
 function isModifierName(modifier: unknown): boolean {
   return typeof modifier === 'string' && /^[A-Z]+$/.test(modifier) && !modifier.includes(NOAD);
 }

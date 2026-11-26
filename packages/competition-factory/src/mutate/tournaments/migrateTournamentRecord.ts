@@ -315,7 +315,7 @@ function promoteParticipantPresence(participant: Participant, clearLegacy: boole
 }
 
 /**
- * A stored legacy `penaltyType` is rewritten to its `PenaltyTypeEnum` code (CA, 2026-10-15: the factory stores codes).
+ * A stored legacy `penaltyType` is rewritten to its `PenaltyTypeEnum` code (the factory stores codes).
  *
  * Records written before hold display labels (`'Ball Abuse'`) or a misspelled code, which `tournament.schema.json`
  * rejects. `normalizePenaltyType` is the same map `addPenalty` and `modifyPenalty` apply on write. Unconditional,
@@ -342,7 +342,7 @@ function migrateMatchUpSchedule(matchUp: MatchUp, counts: MigrationCounts, clear
 }
 
 /**
- * A stored `drawPositions` hole is compacted (leading-hole removal step 3; CA's Q2 ruling, 2026-10-05).
+ * A stored `drawPositions` hole is compacted (leading-hole removal step 3).
  *
  * Since 7.7.0 no writer stores a hole: `normalizeDrawPositions` keeps the positions present, ascending, and a lone
  * survivor's side is read structurally. Records written before may hold `[undefined, 5]`, `[5, null]` or `[null]`,

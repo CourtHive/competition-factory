@@ -58,8 +58,7 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  * dispatch alike. Asking the cascade to clear and replay a subtree from inside its own traversal is
  * re-entrant, and measurably wrong.
  *
- * Carried from the parallel structural workstream, which wrote and shrank it; see
- * `Mentat/planning/SWAP_WINNER_LOSER_TWO_ROUTES.md`.
+ * Carried from the parallel structural workstream, which wrote and shrank it.
  */
 
 const coordinates = (item: any) => `${item.structureName}|${item.roundNumber}|${item.roundPosition}`;

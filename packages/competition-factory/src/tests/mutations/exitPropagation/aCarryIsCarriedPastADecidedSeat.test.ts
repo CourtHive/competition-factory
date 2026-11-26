@@ -11,7 +11,7 @@ import { CANNOT_CHANGE_OUTCOME } from '@Constants/errorConditionConstants';
 import { OLYMPIC } from '@Constants/drawDefinitionConstants';
 
 /**
- * AN EXIT ARRIVING AT A SEAT ALREADY DECIDED FOR IT IS CARRIED PAST (census F2, P51 group 2; CA, 2026-10-11).
+ * AN EXIT ARRIVING AT A SEAT ALREADY DECIDED FOR IT IS CARRIED PAST (census F2, group 2).
  *
  * OLYMPIC 16/16, `allowChangePropagation`, census seed 20496362. Italo walks over in `East|1|7` and carries the
  * walkover into `West|1|4`, which is decided for the seat still awaiting its second participant (RULE 2). His loss
@@ -20,14 +20,15 @@ import { OLYMPIC } from '@Constants/drawDefinitionConstants';
  *
  * Then America walks over in `East|1|8` and arrives at `West|1|4` carrying a walkover of her own. RULE 4 would
  * converge the two into a double exit, taking back the award below and the result recorded on from it, so it was
- * refused, after the draw had been written (`ERR_INCOMPATIBLE_MATCHUP_STATUS`). CA: *"a participant carrying an exit
- * into an exit that was awaiting the 2nd participant ... carry it past makes sense."* America takes the seat that was
- * awaiting her, advances, and carries her walkover on from `West|2|2`; `West|1|4` and the South results stand.
+ * refused, after the draw had been written (`ERR_INCOMPATIBLE_MATCHUP_STATUS`). The rule: a participant carrying an
+ * exit into an exit that was awaiting the second participant is carried past. America takes the seat that was awaiting
+ * her, advances, and carries her walkover on from `West|2|2`; `West|1|4` and the South results stand.
  *
- * Behind it, the P52 rule (`correctionKindChange`) missed that recorded result. Relabelling `East|1|7`'s walkover as a
- * played win withdraws Italo's carry, which takes back Uhura's award, and Uhura was left in the recorded `South|2|1`
- * over an undecided `South|1|2`. The result recorded by the winner of the loser's carried award, one structure on,
- * blocks a change of kind exactly as one recorded where the loser stands does: refused, over an untouched draw.
+ * Behind it, the rule that a correction keeps the kind a recorded result fixed (`correctionKindChange`) missed that
+ * recorded result. Relabelling `East|1|7`'s walkover as a played win withdraws Italo's carry, which takes back Uhura's
+ * award, and Uhura was left in the recorded `South|2|1` over an undecided `South|1|2`. The result recorded by the
+ * winner of the loser's carried award, one structure on, blocks a change of kind exactly as one recorded where the
+ * loser stands does: refused, over an untouched draw.
  *
  * And the carry past comes back with its origin. Re-entering America's `East|1|8` walkover as a played loss withdraws
  * her carry, and it was written where she carried it, in `West|2|2`, not in `West|1|4`, which she passed. Looked for

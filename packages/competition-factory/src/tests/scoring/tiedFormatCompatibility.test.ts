@@ -25,7 +25,7 @@ function setup() {
   return { tournamentRecord, drawId, eventId: event.eventId, structureId, matchUpId };
 }
 
-// Standings phase 2 § 1.1 (CA 2026-11-04, "allow, decider required"): an elimination draw accepts a format that can
+// Standings phase 2 § 1.1 ("allow, decider required"): an elimination draw accepts a format that can
 // end level; a level result there is refused until it names its winner and how it was decided.
 it('generates an elimination draw with a tie-capable format', () => {
   const { eventId } = setup();

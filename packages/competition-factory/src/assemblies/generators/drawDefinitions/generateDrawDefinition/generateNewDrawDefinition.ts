@@ -151,7 +151,7 @@ function addEntries(params): ResultType & { entriesNotPlaced?: EntryNotPlaced[] 
   const { ignoreStageSpace, tournamentRecord, drawDefinition, drawEntries, drawType, qualifyingOnly, entries, event } =
     params;
   // explicit QUALIFYING drawEntries that overfill the qualifying structures generated with the main are refused,
-  // never trimmed (CA 2026-11-01). They default to ignoring stage space (see isCrossStage below), so unless
+  // never trimmed. They default to ignoring stage space (see isCrossStage below), so unless
   // ignoreStageSpace is explicitly false the draw positions refuse them: INSUFFICIENT_DRAW_POSITIONS. A qualifying-only
   // draw needs no check here: its QUALIFYING drawEntries are not cross-stage, so addDrawEntry refuses them.
   if (drawEntries && !qualifyingOnly && drawDefinition) {

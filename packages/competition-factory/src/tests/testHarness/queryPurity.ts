@@ -5,7 +5,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 
 /**
- * Query purity over the whole suite (Mentat/planning/FACTORY_LAYERING_PLAN.md, step Q): every engine call to a query
+ * Query purity over the whole suite (the layering plan's step Q): every engine call to a query
  * or generator (queryPurity/methodKinds.json) is checked for a write to engine state (queryPurity/checker.ts). A test
  * whose calls wrote fails, naming the method and the write, unless queryPurity/knownWriters.ts allows that write.
  *

@@ -53,8 +53,8 @@ type CarriedExit = {
 
 /**
  * Settle every matchUp that was a double exit when this call began and has since RE-DERIVED to a single
- * carried exit — the shape a convergence takes when one of its two origins is taken back (CA,
- * 2026-10-03: clearing either origin of a converged double exit cannot be refused while nothing
+ * carried exit — the shape a convergence takes when one of its two origins is taken back (clearing
+ * either origin of a converged double exit cannot be refused while nothing
  * downstream is active), whichever correction took it back: a clear of the origin, a relabel of it
  * (F2), or a re-score.
  *
@@ -143,7 +143,7 @@ export function settleRederivedDoubleExit({
     // The kept origin is a DOUBLE EXIT: nothing was carried here, an exit was PRODUCED onto this matchUp, and the
     // participant who stands here (the withdrawn origin's relabelled loser) is simply present opposite it. The
     // re-derivation has already awarded it to them (RULE 2: the side without the exit wins); what a carry's replay
-    // would do for a carrier, the forward path does for a winner: they go on. (F2, CA 2026-10-07; census w2 9100377,
+    // would do for a carrier, the forward path does for a winner: they go on. (F2; census w2 9100377,
     // MFIC 16/11 `Consolation|3|2`, which stood as a double exit until then, then stood won and unadvanced.)
     //
     // Only where someone stands here: two double exits producing into one empty matchUp (adjacent double walkovers in
@@ -295,7 +295,7 @@ export function settleRederivedDoubleExit({
   return carryExitOnward({
     context: {
       // the origin's reason is read from its own `sideStatusCodes` by `progressExitStatus`; the legacy
-      // positional array is not this function's to read (P37, `verify:exit-tenant`)
+      // positional array is not this function's to read (`verify:exit-tenant`)
       sourceMatchUpStatusCodes: [],
       sourceMatchUpStatus: origin.matchUpStatus,
       sourceWinningSide: origin.winningSide,
@@ -342,9 +342,9 @@ function carriedOnAlready({
 /**
  * A re-derived produced exit reads as the kept double exit alone would have produced it. The withdrawn side's code goes
  * with its exit, the kept side's stays (`aWithdrawnExitTakesItsCode`). And a produced exit RELAYED PAST A BYE, with
- * nobody standing on the side it would be awarded to, lands PENDING until somebody arrives (CA 2026-10-03, Q3), as on
+ * nobody standing on the side it would be awarded to, lands PENDING until somebody arrives, as on
  * the direct path; one that arrived straight down its link keeps the award to the seat that will receive the next
- * arrival (`exitStatusClearing` 2.3, CA 2026-09-19). Left as the re-derivation wrote it, a relabel to a played result
+ * arrival (`exitStatusClearing` 2.3). Left as the re-derivation wrote it, a relabel to a played result
  * kept the converged codes on the winner's side and awarded a relayed exit to an empty seat: census policy-off 20466254
  * (COMPASS 32/27, `South|3|1`) and 20488568 (OLYMPIC 32/29, `South|2|1`), and the codes alone in 20520641
  * (CURTIS_CONSOLATION 16/11, `Consolation 1|3|1`); each an exit code on the winning side.

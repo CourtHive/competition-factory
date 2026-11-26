@@ -9,9 +9,9 @@ import { DOUBLE_WALKOVER, TO_BE_PLAYED, BYE } from '@Constants/matchUpStatusCons
 import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 /**
- * **P39 — the seat a produced exit feeds can never be filled, so it is a BYE.**
+ * **The seat a produced exit feeds can never be filled, so it is a BYE.**
  *
- * CA's originally filed report, and the last stranded participant in it. COMPASS 16/14, ONE
+ * The originally filed report, and the last stranded participant in it. COMPASS 16/14, ONE
  * `DOUBLE_WALKOVER` at `East|1|2`, played to exhaustion: `West|2|1` ends `WALKOVER ws=2` holding one
  * participant, and its loser target `Southwest|1|1` dp1 received **nothing** — so a real participant
  * sat on dp2 of that matchUp facing an opponent who could never arrive.
@@ -26,7 +26,7 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  * this draw advances a BYE — because a produced exit resolves through the ARRIVAL path instead.
  *
  * `propagateConsolationBye`, which does sit on the arrival path, is gated on
- * `linkCondition === FIRST_MATCHUP`. Per CA 2026-09-26 that constant names a link TRAVERSAL that
+ * `linkCondition === FIRST_MATCHUP`. That constant names a link TRAVERSAL that
  * never occurs in COMPASS, so nothing was missing from the draw definition — the gate asks an
  * unrelated question.
  *

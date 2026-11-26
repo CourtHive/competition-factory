@@ -13,7 +13,7 @@ import { SINGLES, TEAM } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
 /**
- * DEAD_RUBBER IS SCOPED (CA, 2026-10-13, option (a) of TASKS.md § "`DEAD_RUBBER` is scoped by convention"): it marks a
+ * DEAD_RUBBER IS SCOPED: it marks a
  * rubber of a decided team tie, or a DOUBLE_ELIMINATION Decider that is not needed — the factory writes the second
  * itself (`reconcileDecider`). Anywhere else it is refused as MATCHUP_STATUS_OUT_OF_SCOPE.
  */
@@ -44,7 +44,7 @@ describe('DEAD_RUBBER scope', () => {
     expect(result.success).toEqual(true);
     result = tournamentEngine.findMatchUp({ drawId, matchUpId: rubber.matchUpId });
     expect(result.matchUp.matchUpStatus).toEqual(DEAD_RUBBER);
-    // a rubber's DEAD_RUBBER is a result, stamped like an ABANDONED line: only a decider's is not (CA, 2026-10-24)
+    // a rubber's DEAD_RUBBER is a result, stamped like an ABANDONED line: only a decider's is not
     expect(result.matchUp.schedule?.scoredTime).toBeDefined();
   });
 

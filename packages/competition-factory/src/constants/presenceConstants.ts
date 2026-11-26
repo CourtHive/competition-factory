@@ -6,8 +6,6 @@
  * the matchUp. They are deliberately distinct words on one enum rather than a shared boolean: D4a
  * settled that an operator control must never offer both, and a shared value would make the two
  * indistinguishable once promoted onto a common `PresenceAttestation`.
- *
- * See Mentat/planning/PRESENCE_ATTESTATION_FIRST_CLASS.md.
  */
 export const CHECKED_IN = 'CHECKED_IN';
 export const CHECKED_OUT = 'CHECKED_OUT';

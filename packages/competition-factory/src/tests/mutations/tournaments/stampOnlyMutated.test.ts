@@ -7,7 +7,7 @@ const LATER = '2030-01-01T00:00:00.000Z';
 const STAMPED = new Date(LATER).getTime();
 
 /**
- * A record takes the factory stamp only when a call modified it (CA 2026-10-30), and a write made with
+ * A record takes the factory stamp only when a call modified it, and a write made with
  * suppressNotifications is stamped as an announced one is (building-a-tournament.md § 1.1, § 8).
  */
 function twoRecords() {

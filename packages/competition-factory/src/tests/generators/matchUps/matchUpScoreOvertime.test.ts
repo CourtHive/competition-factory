@@ -95,7 +95,7 @@ it('keeps a result decided externally: decidedIn EXTERNAL and its decidedBy surv
   expect(score.overtime.scoreString).toEqual('1-1 (Shootout: 4-3)');
 });
 
-it('the stored per-period string still round-trips through parseScoreString (CA ruling: the stored string is lossless)', () => {
+it('the stored per-period string still round-trips through parseScoreString (the stored string is lossless)', () => {
   for (const [f, sets, w] of [
     [F1, [t(1, 1, 0, 1), t(2, 0, 1, 2), t(3, 0, 0), t(4, 0, 0), tb(5, 4, 3, 1)], 1],
     [F2, [t(1, 25, 25), t(2, 25, 25), t(3, 25, 25), t(4, 25, 25), t(5, 10, 10), t(6, 12, 8, 1)], 1],

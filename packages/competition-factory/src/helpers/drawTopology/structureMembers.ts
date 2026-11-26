@@ -5,7 +5,7 @@ import type { MatchUp, PositionAssignment, Structure } from '@Types/tournamentTy
  *
  * `Structure` is a discriminated union (`ItemStructure | ContainerStructure`). In its soft form every reader
  * may still write `structure.matchUps`; in the 8.0.0 form that read does not compile until the code has
- * narrowed (Mentat/planning/FACTORY_STRUCTURE_UNIONS_8_0_0.md). These accessors are the bridge: each returns
+ * narrowed. These accessors are the bridge: each returns
  * EXACTLY what the property read returns today, on every record, so a site converted to them changes no
  * behaviour, and each narrows through `in`, which compiles under both forms.
  *

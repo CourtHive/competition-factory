@@ -347,7 +347,7 @@ export function compareRoutes({
     // A coordinate that no longer names a playable matchUp is legitimately unplayable after the
     // flip — the flip changed who progresses there. Skipping it is correct, not a shortfall.
     if (!matchUp) continue;
-    // A DECIDER'S RESULT DOES NOT SURVIVE ITS FINAL BEING CHANGED — CA, 2026-09-29: *"it should be
+    // A DECIDER'S RESULT DOES NOT SURVIVE ITS FINAL BEING CHANGED — *"it should be
     // destroyed."* Re-entering it here would replay a match the ruling says was never owed, and
     // report the engine's obedience as a divergence. Whether it is now to be played or a dead rubber
     // is `reconcileDecider`'s to say, on both routes.

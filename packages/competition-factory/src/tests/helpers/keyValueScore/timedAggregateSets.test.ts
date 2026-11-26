@@ -40,7 +40,7 @@ it('names no winner from a lead before every period is in', () => {
   expect(matchUp?.winningSide).toBeUndefined();
 });
 
-it('refuses an overtime format: overtime is entered in the dialog only (CA 2026-11-04)', () => {
+it('refuses an overtime format: overtime is entered in the dialog only', () => {
   const matchUpFormat = 'HAL2XA-S:T45P-O:2X/T15P-F:TB1';
   const result = keyValueScore({ value: 1, sets: [], scoreString: '', matchUpFormat });
   expect(result.updated).toEqual(false);

@@ -1,11 +1,11 @@
 /**
- * Scoring functions: stateless, positional, no engine (CA 2026-11-07). Score validators, readers of a scoring-engine
+ * Scoring functions: stateless, positional, no engine. Score validators, readers of a scoring-engine
  * matchUp state, and point and statistics parsers. Their home is `tools.scoring`, the planned `scoring` package. They are
  * also exported by `scoreGovernor`, which mounts them on engines that cannot call them correctly; that placement goes
  * at 8.0.0.
  *
- * Below them, the score governor's stateless queries that take one params object (confirmed stateless, Mentat
- * FACTORY_ENGINE_API_MIGRATION_PREP_PLAN slice A): set and score readers, score repair and entry, and the point-by-point
+ * Below them, the score governor's stateless queries that take one params object (confirmed stateless by the
+ * statelessGovernorTools test): set and score readers, score repair and entry, and the point-by-point
  * and MCP validators. `scoreGovernor` keeps them in 7.x and their engine routes are unchanged. The governor's
  * `parseScoreString` is not among them: `tools.scoring.parseScoreString` is the positional, strict-capable reader whose
  * default answers as the governor's does.

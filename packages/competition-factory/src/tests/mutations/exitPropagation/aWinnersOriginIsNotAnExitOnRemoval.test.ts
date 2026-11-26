@@ -13,7 +13,7 @@ import { FIRST_ROUND_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstant
  *
  * Census w2 9100115 (FRLC 16/16, propagation on), shrunk to seven steps and traced by factory-d3. A participant wins
  * `Consolation|1|3` against an opponent who carried a walkover in, passes a BYE, and arrives in `Consolation|2|2`
- * carrying the record of where they came from: `WALKOVER>WALKOVER`, the winner's origin (P19: provenance records
+ * carrying the record of where they came from: `WALKOVER>WALKOVER`, the winner's origin (provenance records
  * arrivals as well as exits). Re-scoring `Main|1|7` from a double walkover takes the BYE back and a removal reaches
  * `updateMatchUpStatusAfterRemoval`, which re-derived the matchUp from what it retained. Read by status alone, the
  * winner's origin is an exit they carried, so `Consolation|2|2` became a WALKOVER won by the newcomer opposite, who
@@ -71,10 +71,10 @@ it('the census replay holds every property', () => {
 it("the removal leaves the matchUp undecided, and the winner's origin goes with the decision", () => {
   const before = play('winners-origin-before', steps.slice(0, 4))('Consolation|2|2');
   // CONTROL: before the removal, side 1's participant won Consolation|1|3 by walkover and advanced into a BYE.
-  // That is an arrival by result, and a BYE records none (CA, 2026-09-29: "a BYE should not carry COMPLETED
-  // provenance"). It used to record `{ WALKOVER, WALKOVER }` here, which `admissibleOn` admitted because it was
-  // indistinguishable from a carried exit; an arrival now carries no `matchUpStatus` (CA, 2026-10-07: "nothing was
-  // decided when they arrived, they were just waiting"; F9), so the BYE filter sees it for what it is.
+  // That is an arrival by result, and a BYE records none (a BYE should not carry COMPLETED
+  // provenance). It used to record `{ WALKOVER, WALKOVER }` here, which `admissibleOn` admitted because it was
+  // indistinguishable from a carried exit; an arrival now carries no `matchUpStatus` (nothing was
+  // decided when they arrived, they were just waiting; F9), so the BYE filter sees it for what it is.
   expect(before.matchUpStatus).toEqual(BYE);
   expect(before.sides.find((side: any) => side.sideNumber === 1)?.participantId).toBeDefined();
   expect(before.sideExitProvenance?.[1]).toBeUndefined();

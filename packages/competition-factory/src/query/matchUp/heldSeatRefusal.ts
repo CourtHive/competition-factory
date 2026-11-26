@@ -40,8 +40,8 @@ const CARRIED_EXITS = new Set<string>([WALKOVER, DEFAULTED]);
 const COMPLETED_OR_BYE = new Set<string>([COMPLETED, BYE]);
 
 /**
- * A WINNER OR A LOSER WITH NO SEAT TO TAKE IS REFUSED BEFORE THE FIRST WRITE (CA, 2026-10-22: an error leaves the record
- * unchanged, and no mutation relies on rollback; record soak 2026-11-18, class D4).
+ * A WINNER OR A LOSER WITH NO SEAT TO TAKE IS REFUSED BEFORE THE FIRST WRITE (an error leaves the record unchanged, and
+ * no mutation relies on rollback; record soak 2026-11-18, class D4).
  *
  * `directParticipants` writes the matchUp's result (`attemptToModifyScore`) and then places the winner and the loser.
  * Two placements refuse where a seat is held by somebody else, after that write:

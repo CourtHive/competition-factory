@@ -40,7 +40,7 @@ export const liveNoticeEffects: NoticeEffects = { readClock: nowMs, addNotice, g
  * stamp always moves on (an ordering value, not an event instant). Under a fixed or backward clock an equality-only
  * bump gave T, T+1, T.
  *
- * ONCE PER CALL (F2 (i), CA 2026-10-19): inside an engine call, an entity already stamped in that call keeps its stamp,
+ * ONCE PER CALL: inside an engine call, an entity already stamped in that call keeps its stamp,
  * so a stamp means "changed in this call" however many notices the call raised for it. v2 writes the same value
  * (`outcome/ops.ts` `nextStamp`). Outside an engine call, or with a state provider that keeps no ledger, every
  * stamp moves on, as before.
@@ -244,7 +244,7 @@ export function modifyMatchUpNotice(
   const resolvedEventId = eventId ?? event?.eventId;
 
   if (drawDefinition) {
-    // the draw and the ONE top-level structure that holds the matchUp are stamped (F2 (i), CA 2026-10-19): a stamp
+    // the draw and the ONE top-level structure that holds the matchUp are stamped: a stamp
     // means "changed in this call", and the other structures did not change. Until 2026-10-24 every top-level
     // structure was stamped unless the caller named one; nothing in the factory or its consumers reads a structure's
     // stamp. A matchUp no top-level structure is found to hold still stamps every structure, as before.

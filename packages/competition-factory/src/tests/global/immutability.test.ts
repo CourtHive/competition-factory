@@ -55,7 +55,7 @@ test('setting deepCopy option to false will allow source objects to be modified'
     attribute: 'factory',
     name: FACTORY,
   }).timeStamp;
-  // a root extension is a modification of the record (announced since CA 2026-10-18), so it is stamped like any other
+  // a root extension is a modification of the record (and announced), so it is stamped like any other
   expect(latestFactoryTimeStamp).toBeGreaterThanOrEqual(factoryTimeStamp);
 
   // awaited, so the assertions below run inside this test: a bare setTimeout fired after the test had ended, where a

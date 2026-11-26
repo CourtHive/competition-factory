@@ -1,10 +1,10 @@
 import fs from 'fs';
 
 /**
- * The core method set the corpus harvests (plan § 6, draft pending CA's decision § 9.3): the
+ * The core method set the corpus harvests (plan § 6, draft pending the decision of § 9.3): the
  * mutation and generation exports of the scoring, matchUp, draws, entries and schedule governors,
  * plus the generation and matchUpFormat governors. The schedule governor joined for the scheduling
- * pipeline's corpus (CA 2026-10-22, `SCHEDULING_PIPELINE_VNEXT.md` § 5). Queries are excluded: only
+ * pipeline's corpus. Queries are excluded: only
  * `mutate` and `generate` barrels are read, the two governors read whole export nothing but
  * mutations and a pure grammar, and the read-only exports a `mutate` barrel carries anyway are
  * listed in READ_ONLY_EXPORTS.

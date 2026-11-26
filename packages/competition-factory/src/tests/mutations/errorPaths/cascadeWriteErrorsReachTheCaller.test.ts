@@ -38,20 +38,18 @@ import {
  *
  * ## What it pins, and what it does not
  *
- * The rule (CA, 2026-10-22, clarifying 2026-09-30): a method that returns an error leaves the record
+ * The rule: a method that returns an error leaves the record
  * unchanged on a DIRECT call, and the cascade must deliver that by itself. It builds in no snapshot
  * or restore, and `rollbackOnError` is never the answer to it. So each case is one of two kinds:
  *
  * - **the call's first write** (`firstWrite: true`): nothing was written before the forced failure,
  *   and the case asserts the record is exactly as it was. That is the rule, held.
- * - **a KNOWN V1 RESIDUAL**: the forced write comes after earlier writes of the same call, so v1
- *   leaves those writes behind. That is a refusal-after-write the rule forbids, NOT the design. Each
- *   such site is on the outcome v2 executor plan's "v1 errors handed to v2" list (Mentat
- *   `planning/OUTCOME_V2_EXECUTOR_PLAN.md`): it can arise only from a cascade write whose failure
- *   depends on the draw the cascade has left, so v1 cannot ask it before its first write, and v2 must
- *   plan it as a refusal. These cases do not assert the record, because v1 cannot yet provide it; they
- *   pin only that the error is never swallowed behind a success. When v2 plans a site, its case gains
- *   the record assertion.
+ * - **a KNOWN V1 RESIDUAL**: the forced write comes after earlier writes of the same call, so v1 leaves those writes
+ *   behind. That is a refusal-after-write the rule forbids, NOT the design. Each such site is on the outcome v2
+ *   executor plan's "v1 errors handed to v2" list: it can arise only from a cascade write whose failure depends on the
+ *   draw the cascade has left, so v1 cannot ask it before its first write, and v2 must plan it as a refusal. These
+ *   cases do not assert the record, because v1 cannot yet provide it; they pin only that the error is never swallowed
+ *   behind a success. When v2 plans a site, its case gains the record assertion.
  *
  * ## How each site is reached
  *

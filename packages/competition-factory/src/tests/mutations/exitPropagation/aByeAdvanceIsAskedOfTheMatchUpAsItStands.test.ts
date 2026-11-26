@@ -21,11 +21,11 @@ import { OLYMPIC } from '@Constants/drawDefinitionConstants';
  *
  * `South|1|3` holds two propagated BYEs, so `South|2|2` holds the BYE it advanced on dp 6, and dp 7 has gone on past it
  * into `South|3|1`. `East|1|10`'s double walkover then converges the matchUp whose loser seat is `South` dp 5, which
- * shows the exit it produced (CA ruling (A), 2026-10-21): dp 5's BYE gives way, `South|2|2` loses dp 6's BYE, and the
- * walkover is relayed past dp 6 into `South|2|2`, pending opposite dp 7. Serving that walkover read `South|2|2` from the
- * view the cascade started from, where dp 6's BYE was still there, and advanced dp 7 into `South|3|1` again. Entered
- * with `East|1|10` first, nothing advances dp 7 past the pending walkover, and the probe's round trip (`East|1|11`'s
- * walkover converging `South|1|3` and its clear) settles there too.
+ * shows the exit it produced (under the policy off, never a BYE): dp 5's BYE gives way, `South|2|2` loses dp 6's BYE,
+ * and the walkover is relayed past dp 6 into `South|2|2`, pending opposite dp 7. Serving that walkover read `South|2|2`
+ * from the view the cascade started from, where dp 6's BYE was still there, and advanced dp 7 into `South|3|1` again.
+ * Entered with `East|1|10` first, nothing advances dp 7 past the pending walkover, and the probe's round trip
+ * (`East|1|11`'s walkover converging `South|1|3` and its clear) settles there too.
  */
 
 type Step = [string, any];

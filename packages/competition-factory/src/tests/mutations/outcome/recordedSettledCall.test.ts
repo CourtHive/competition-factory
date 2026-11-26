@@ -221,10 +221,10 @@ describe('a recording a settle predicate finds work on, where the passes themsel
     ['a qualifier whose removal play downstream holds back', 'link', qualifierHeldBack],
   ];
 
-  // CA, 2026-11-20 (class 4): a dual decided by its own exit keeps its winner while its lines project none. The line no
+  // Class 4: a dual decided by its own exit keeps its winner while its lines project none. The line no
   // longer un-decides the WALKOVER dual, so nothing is taken back from the consolation, no settle predicate finds work on
-  // v1's write, and the recording is kept without the proof: v1's own settle is the only run on a copy. (Before the
-  // ruling this row stood in PROVED, and in the FAULT rows below, as the TEAM line in a FIRST_MATCH_LOSER_CONSOLATION.)
+  // v1's write, and the recording is kept without the proof: v1's own settle is the only run on a copy. (Before this
+  // rule this row stood in PROVED, and in the FAULT rows below, as the TEAM line in a FIRST_MATCH_LOSER_CONSOLATION.)
   it('a line scored in a dual won by WALKOVER, its winner already fed on, keeps the dual and needs no proof (team)', () => {
     const call = prepareCall(walkoverDualLine);
     expectRecordedWhole(call, 'team', recorder);

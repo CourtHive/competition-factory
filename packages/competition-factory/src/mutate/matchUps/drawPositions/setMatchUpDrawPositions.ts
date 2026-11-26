@@ -14,11 +14,11 @@ type SetMatchUpDrawPositionsArgs = {
 };
 
 /**
- * THE ONE WRITER OF A MATCHUP'S `drawPositions`, AND WHAT IT CARRIES WITH IT (CA, 2026-10-05: option R).
+ * THE ONE WRITER OF A MATCHUP'S `drawPositions`, AND WHAT IT CARRIES WITH IT.
  *
  * A lone position sits on its BRACKET side; two positions sort ASCENDING. In every paired round of a feed-in
  * structure those disagree, so the participant already in a matchUp changes side when the other seat fills or
- * empties (`draw-positions.md` § 2; `Mentat/planning/EXIT_CASCADE_DE_GRAND_FINAL_AND_SIDE_KEY_DESIGN.md` § 1).
+ * empties (`draw-positions.md` § 2).
  * Everything a matchUp records BY SIDE must change side with them, or it goes on naming a side that now holds the
  * other participant:
  *

@@ -11,7 +11,7 @@ import { COMPETITOR } from '@Constants/participantRoles';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
 /**
- * One player, one team, per event (CA 2026-10-29): a player who belongs to one team of an event, by its roster or
+ * One player, one team, per event: a player who belongs to one team of an event, by its roster or
  * by a lineUp in any of the event's draws, may not appear in another team's lineUp in that event. A player who
  * belongs to no team may join a lineUp, and the result says so with a NOT_ON_TEAM_ROSTER warning. Event entries
  * may still overlap (they are a pool); every method that writes a lineUp enforces the rule.

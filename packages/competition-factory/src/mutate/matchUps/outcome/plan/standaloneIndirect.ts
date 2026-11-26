@@ -68,7 +68,7 @@ function standaloneIndirectRemoval(args: PlanArgs) {
 type StandaloneRemoval = NonNullable<ReturnType<typeof standaloneIndirectRemoval>>;
 
 /**
- * The certified original relay both standalone winner rules read (ruling 1): the matchUp the removal clears, the
+ * The certified original relay both standalone winner rules read: the matchUp the removal clears, the
  * loser target's position on it, the side holding that position, no winner, no score, and the status the clear
  * re-derives it to. Each caller keeps its own further walls (the onward reset, the loser link, the next matchUp).
  */
@@ -85,7 +85,7 @@ function standaloneRelay(
 }
 
 /**
- * The ops both standalone winner rules emit around their arrival (ruling 1): the removal, the source result, the
+ * The ops both standalone winner rules emit around their arrival: the removal, the source result, the
  * winner's placement, the arrival, the removal's re-announcements and after-ops, then the stamps.
  */
 function standaloneTail(
@@ -109,7 +109,7 @@ function standaloneTail(
   ];
 }
 
-// Two rules, not one with a flag (Mentat assessment/2026-11-07-outcome-refactor-debates.md, ruling 1). The bare
+// Two rules, not one with a flag. The bare
 // arrival mirrors v1's assignment path (`resolvePropagatedExitOnAdvance`: the standing exit awarded to the arriver,
 // score absent, no `setMatchUpState`); the carried arrival below mirrors `progressExitStatus` RULE 4 (a nested
 // `setMatchUpState`, score blanked, then `doubleExitAdvancement`). Each admits by the literal request status, not by

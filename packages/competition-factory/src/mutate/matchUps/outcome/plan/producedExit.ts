@@ -25,7 +25,7 @@ import type { OutcomeOp } from '../ops';
  * receives the exit it produces (`doubleExitAdvancement`: a DOUBLE_WALKOVER produces a WALKOVER, a DOUBLE_DEFAULT a
  * DEFAULTED, on the side the double exit feeds). Planned where the next matchUp is to be played and holds no result,
  * BYE, exit, codes or provenance, and links no loser on, in two shapes:
- *  - PENDING: nobody stands on the side it would be awarded to, so it is written with no winner (CA, 2026-09-20) and
+ *  - PENDING: nobody stands on the side it would be awarded to, so it is written with no winner and
  *    directs nothing, and the matchUp beside this one is still to be played, so its provenance records this side alone;
  *  - AWARDED: the winner of the matchUp beside this one stands there, so it is theirs at once and they go on into a clean
  *    next matchUp (`directWinner`), and their origin is recorded beside this one's (`buildSideExitProvenance`).

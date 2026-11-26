@@ -10,7 +10,7 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { UNRECOGNIZED_DRAW_TYPE } from '@Constants/errorConditionConstants';
 
 /**
- * `modifyTournamentRecord` with `recordMethods` returns the engine calls that make its modifications (CA 2026-10-29).
+ * `modifyTournamentRecord` with `recordMethods` returns the engine calls that make its modifications.
  * Replayed onto the record as it was passed they must make the same record, apart from the times each write stamps.
  * There is no `newTournamentRecord`: the list starts from the record the caller already has.
  */

@@ -8,8 +8,7 @@ import fs from 'fs';
  *
  * 2026-10-08, a live census of 120,000 seeds on Button (seeds 20,000,001–20,060,000, both `allowChangePropagation`
  * arms, `dev` `cf4c6aff2`) with `STALLED_POSITION` counted, found 53 stall instances on 41 seeds: 23 with the flag
- * off and 30 with it on. Every one reproduces from the schedule frozen here at that commit. #5288 cleared 48; the
- * planning record is `Mentat/planning/STALLED_POSITION_AT_SCALE.md`.
+ * off and 30 with it on. Every one reproduces from the schedule frozen here at that commit. #5288 cleared 48.
  *
  * Each instance replays in the arm it was found in, from the schedule EMITTED IN THAT ARM: `generateSchedule` calls
  * the engine, so the flag changes the schedule itself, and 15 of the 30 flag-on schedules differ from the same seed's

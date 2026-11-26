@@ -159,7 +159,7 @@ describe('getMatchUpsToSchedule', () => {
     expect(matchUpsToSchedule![0].matchUpId).toBe('m2');
   });
 
-  it('never includes a completed matchUp (CA 2026-10-23: no override)', () => {
+  it('never includes a completed matchUp (no override)', () => {
     const matchUps = [{ matchUpId: 'm1', matchUpStatus: COMPLETED }, { matchUpId: 'm2' }];
     const orderedMatchUpIds = ['m1', 'm2'];
 

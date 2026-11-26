@@ -5,7 +5,7 @@ import { expect, it } from 'vitest';
 // constants
 import { UNRECOGNIZED_MATCHUP_FORMAT } from '@Constants/errorConditionConstants';
 
-// Refused for new use: overtime the scoring engine does not score (a match clock, Ruling 1); an aggregate of standard
+// Refused for new use: overtime the scoring engine does not score (a match clock); an aggregate of standard
 // sets is refused outright. Overtime the engine scores is accepted (activation S6).
 const OVERTIME = 'HAL2XA-S:T45P-O:2X/T15P-F:TB1-M:T130';
 const SCORED_OVERTIME = 'HAL2XA-S:T45P-O:2X/T15P-F:TB1';

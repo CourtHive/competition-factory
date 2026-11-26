@@ -26,7 +26,7 @@ import {
  *
  * ## What it found, 2026-09-28
  *
- * | | before | after P44 | after this guard |
+ * | | before | after the winner-target fix | after this guard |
  * |---|---|---|---|
  * | participants stranded with no opponent and no award | 36 | 12 | **0** |
  * | scores refused | 16 | 12 | **0** |

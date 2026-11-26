@@ -38,7 +38,7 @@ export function findVenue({ tournamentRecords, tournamentRecord, venueId }: Find
 
     // if there are linked tournaments search for the venue in all linked tournaments. A QUERY: it used to add a
     // copy of what it found to tournamentRecord (with an ADD_VENUE notice); the one caller that needs the copy,
-    // assignMatchUpVenue, now adds it itself (P54)
+    // assignMatchUpVenue, now adds it itself
     for (const tournamentId of relevantIds) {
       const record = tournamentRecords[tournamentId];
       const result = findVenue({ tournamentRecord: record, venueId });

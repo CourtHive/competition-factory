@@ -7,7 +7,7 @@ const isNode = (value: unknown): value is Node =>
   typeof value === 'object' && value !== null && !(value instanceof Date);
 
 /**
- * RECORDED (CA, 2026-11-16): the object graph a recorded cascade left on v2's working copy, so apply can leave the
+ * RECORDED: the object graph a recorded cascade left on v2's working copy, so apply can leave the
  * SAME graph on the stored draw, not only the same values. v1 writes through the stored objects: an object it kept is
  * the object that was there, one object it wrote in two places is one object in both, and a key it set late comes
  * late. A value-only replacement loses all three, and the exact-graph qualification compares them.

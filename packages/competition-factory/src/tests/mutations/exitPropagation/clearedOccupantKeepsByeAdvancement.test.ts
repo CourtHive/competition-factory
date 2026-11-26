@@ -9,9 +9,9 @@ import { DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 
 /**
- * A SEAT ADVANCED BY ITS OPPONENT'S BYE KEEPS THAT ADVANCEMENT WHEN ITS OCCUPANT IS CLEARED — P46.
+ * A SEAT ADVANCED BY ITS OPPONENT'S BYE KEEPS THAT ADVANCEMENT WHEN ITS OCCUPANT IS CLEARED.
  *
- * CA, 2026-10-01, on two tournament files generated identically (FIRST_MATCH_LOSER_CONSOLATION 8/5,
+ * Reported on two tournament files generated identically (FIRST_MATCH_LOSER_CONSOLATION 8/5,
  * seed 7000118) and differing only in route — A the double walkover entered directly, B a walkover
  * entered and then corrected to the double walkover: *"A is clearly correct and the logic needs to
  * support the same result with the path described for B."*

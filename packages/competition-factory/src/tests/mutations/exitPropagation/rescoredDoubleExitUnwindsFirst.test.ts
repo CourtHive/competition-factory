@@ -13,14 +13,14 @@ import { CURTIS_CONSOLATION, DOUBLE_ELIMINATION } from '@Constants/drawDefinitio
  * target, and `doubleExitAdvancement`'s `existingExit` read that survivor as a second exit ARRIVING
  * — a convergence — and wrote a DOUBLE exit where a single produced one belonged.
  *
- * Found by CA 2026-09-21 without looking at the consolation at all, and identified by CA's own
+ * Found without looking at the consolation at all, and identified by a direct
  * probe: CLEARING the matchUp and then scoring the second double exit was always correct, so the
  * fault lay in the residue the re-score left behind rather than in the write that followed.
  *
  * The damage ran two rounds, because a DOUBLE exit cascades where a single produced one does not.
  */
 
-/** The draw CA measured, with positional accessors for its MAIN structure. */
+/** The draw measured, with positional accessors for its MAIN structure. */
 function curtisDraw() {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawType: CURTIS_CONSOLATION, drawSize: 16, participantsCount: 13, drawId: 'A' }],
@@ -64,7 +64,7 @@ it('a re-scored double exit produces a SINGLE exit, and does not cascade as a co
   expect(onward.sideExitProvenance).toBeUndefined();
 });
 
-it('CA CONTROL: re-scoring and clear-then-scoring must reach the SAME state', () => {
+it('CONTROL: re-scoring and clear-then-scoring must reach the SAME state', () => {
   const state = (clearFirst: boolean) => {
     const { find, put } = curtisDraw();
     put(1, 7, { winningSide: 1 });
@@ -78,7 +78,7 @@ it('CA CONTROL: re-scoring and clear-then-scoring must reach the SAME state', ()
     };
   };
 
-  // CA's probe, turned into the invariant it implies: how you got here must not change where you are
+  // The probe, turned into the invariant it implies: how you got here must not change where you are
   expect(state(false)).toEqual(state(true));
 });
 

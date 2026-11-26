@@ -58,8 +58,8 @@ it('can advance participants when double BYEs are created', () => {
   });
 
   ({ filteredOrderedPairs } = getOrderedDrawPositionPairs({ structureId }));
-  // seat 4 advanced over seat 3's BYE and KEEPS that advancement on becoming a BYE itself (P46);
-  // which of two BYE seats sits here is not information (CA, 2026-09-29)
+  // seat 4 advanced over seat 3's BYE and KEEPS that advancement on becoming a BYE itself;
+  // which of two BYE seats sits here is not information
   expect(filteredOrderedPairs).toEqual([
     [1, 2],
     [3, 4],

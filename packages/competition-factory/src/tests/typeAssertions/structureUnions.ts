@@ -60,7 +60,7 @@ export type DrawLinkUnionAssertions = [
     >
   >,
 
-  // a link out of a round robin names finishing positions, labelled POSITION or WINNER (CA, 2026-10-23); a round on
+  // a link out of a round robin names finishing positions, labelled POSITION or WINNER; a round on
   // it is allowed and decides nothing (the factory writes the groups' final round on a qualifying POSITION link)
   Expect<
     Assignable<

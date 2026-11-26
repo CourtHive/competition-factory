@@ -18,7 +18,7 @@ import { OLYMPIC } from '@Constants/drawDefinitionConstants';
  * for the empty seats there, and on as losers into `South|1|3`, where the two carried exits converge. `East|1|10`'s
  * double walkover then converges `West|1|5` too, and a double exit has no loser: its carrier leaves `South|1|3`, taking
  * their walkover with them. Under the policy off the seat they leave shows the walkover `West|1|5`'s convergence
- * produced, never a BYE (CA ruling (A), 2026-10-21), so `South|1|3` is a double walkover of that produced exit and
+ * produced, never a BYE, so `South|1|3` is a double walkover of that produced exit and
  * `West|1|6`'s carrier, and its produced walkover waits in `South|2|2`, pending, for the seat a BYE advanced there
  * (a reserved seat is not an opponent in place). Before the ruling the seat took a BYE, and the census found the
  * displaced carrier's walkover still recorded beside it, holding `West|1|6`'s carrier TO_BE_PLAYED in `South|2|2` in

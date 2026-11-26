@@ -177,7 +177,7 @@ export function addMatchUpContext({
 }: AddMatchUpContextArgs) {
   additionalContext = additionalContext ?? {};
   // a line resolves its tieFormat through its dual: its own, else the dual's (which already fell back to the structure,
-  // the draw and the event), so a tieFormat set on the dual reaches its lines (CA 2026-10-26, hydration OPEN-4)
+  // the draw and the event), so a tieFormat set on the dual reaches its lines
   const ownTieFormat = !!(matchUp.tieFormat ?? matchUp.tieFormatId);
   const throughDual = !!matchUpTieId && !ownTieFormat && !!dualTieFormat;
   const tieFormat = throughDual
@@ -366,7 +366,7 @@ export function addMatchUpContext({
     ...sourceMatchUp,
   };
   // a line of a BYE dual is a BYE: the dual carries the BYE, the line is stored TO_BE_PLAYED, and the stored status
-  // must not win here as every other stored attribute does (CA 2026-10-26, hydration OPEN-1)
+  // must not win here as every other stored attribute does
   if (isCollectionBye) matchUpWithContext.matchUpStatus = BYE;
 
   if (matchUpFormat && matchUp.score?.scoreStringSide1) {

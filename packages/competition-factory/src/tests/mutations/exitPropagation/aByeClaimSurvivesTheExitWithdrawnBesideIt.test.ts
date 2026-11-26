@@ -22,7 +22,7 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  * the side's whole record: the claim went with the exit. When a relabel of `East|1|7` later brought `West|2|2` a real
  * opponent, nothing recorded the BYE as `West|2|2`'s, so it stood, and `West|2|2`'s loser replaced it a result later.
  *
- * The `byeClaims` ledger is retired (Mentat P58, CA 2026-10-21): nothing records the BYE as anyone's, and no withdrawal
+ * The `byeClaims` ledger is retired: nothing records the BYE as anyone's, and no withdrawal
  * can clear a claim. The BYE's reason is read from the draw: after the convergence dissolves, `West|2|2` sends nobody
  * across its loser link (`feederSendsNobody`: `NOBODY_LOST`), and the seat is among those `West|2|2` is the reason for
  * (`byeSeatsOwedTo`).

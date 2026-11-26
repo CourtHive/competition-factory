@@ -8,7 +8,7 @@ import { OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
 import { UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
 
 /**
- * THE IN-CONTEXT MATCHUP IS BUILT AFTER THE CALL SUCCEEDS, FOR A SUBSCRIBER ONLY (CA, 2026-10-24): *"even when
+ * THE IN-CONTEXT MATCHUP IS BUILT AFTER THE CALL SUCCEEDS, FOR A SUBSCRIBER ONLY: *"even when
  * hydration is required for the subscriptions/notifications, it should happen AFTER the mutation succeeds so that it
  * NEVER happens when an ERROR is being returned."*
  *

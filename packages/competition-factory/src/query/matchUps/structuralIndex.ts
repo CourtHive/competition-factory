@@ -29,14 +29,14 @@ import type {
 } from '@Types/tournamentTypes';
 
 /**
- * THE STRUCTURAL INDEX (outcome executor plan § 3.1.1, CA 2026-10-24: v2 decides on stored data and a structural
- * index, never on a hydration).
+ * THE STRUCTURAL INDEX (v2 decides on stored data and a structural index, never on a
+ * hydration).
  *
  * One entry per matchUp of the draw, in the hydrated shape, carrying only what the outcome logic reads: the stored
  * matchUp, the context a structure gives it (`structureId`, `containerStructureId`, the round profile's `feedRound` and
  * `hasFedDrawPosition`, the inherited `matchUpType` and `matchUpFormat`), and its sides from the drawPosition →
- * positionAssignments join. Measured on a probe of every read v2 makes (Mentat report 2026-10-24
- * `outcome-v2-s2-structural-index-fields`): no participant record, name, schedule detail, round name or policy is read.
+ * positionAssignments join. Measured on a probe of every read v2 makes (2026-10-24): no participant record, name,
+ * schedule detail, round name or policy is read.
  *
  * NOT A SECOND DERIVATION. The sides are built by `buildMatchUpSides` and the round profile by `getRoundMatchUps`, the
  * functions hydration calls, so the two cannot drift; only the orchestration is the index's own. A side's `participant`
@@ -384,7 +384,7 @@ function indexMatchUp({
       roundNumber,
     }),
     ...onlyDefined(matchUp),
-    // a line of a BYE dual is a BYE, over the TO_BE_PLAYED it is stored as (hydration OPEN-1)
+    // a line of a BYE dual is a BYE, over the TO_BE_PLAYED it is stored as
     ...(line?.collectionBye ? { matchUpStatus: BYE } : {}),
     // Hydration filters nested score fields only in deep-copy mode; borrowed records retain empty score strings.
     ...(matchUp.score

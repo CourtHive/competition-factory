@@ -1,5 +1,5 @@
 /**
- * The standings engine's own policy shape (Mentat `planning/STANDINGS_ENGINE_SPEC.md` § 5). The stored policy stays the
+ * The standings engine's own policy shape. The stored policy stays the
  * `roundRobinTally` policy; `fromV1` normalises it into this, so every rule v1 applied implicitly is a visible field
  * here. The core reads only this shape.
  */

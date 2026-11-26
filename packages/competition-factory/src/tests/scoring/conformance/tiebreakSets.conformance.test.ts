@@ -443,7 +443,7 @@ describe('SET3A-S:TB11 — aggregate: every game played, the most points wins (f
 
   it('A: a level total names no winner', () => {
     // 13-11, 0-11, 11-2: side 1 won two games, points 24-24. No decider is declared, so the match is
-    // complete without a winner and no fourth game is played (spec § 9.3, § 9.7; CA 2026-10-18).
+    // complete without a winner and no fourth game is played (spec § 9.3, § 9.7).
     conforms(format, `${level(11)} 11 ${run('2', 11)} ${run('2', 2)}${run('1', 11)}`, {
       sets: [
         [1, 0, [13, 11]],
@@ -559,7 +559,7 @@ describe('MAP3-S:TB13, MAP5-S:TB13 — esports maps first to 13 rounds (VALORANT
   });
 });
 
-// Exactly N is a format on every root and every kind of set (CA 2026-10-25): the SET root reads as HAL does.
+// Exactly N is a format on every root and every kind of set: the SET root reads as HAL does.
 describe('SET3X-S:TB11, SET2X-S:TB10 — exactly N tiebreak sets on the SET root', () => {
   it('X: a two-set lead is not a win while a set remains', () => {
     conforms('SET3X-S:TB11', `${run('1', 11)} ${run('1', 11)}`, {
@@ -626,7 +626,7 @@ describe('HAL2X-S:TB11 — a level count of halves (format-support "Exactly N Se
    * A non-aggregate exactly format is decided on sets won once all N are recorded; a level count names
    * no winner, and no set beyond N is recorded. Found by these cases on 2026-10-17: the engine named
    * side 1 the winner of a level match (both sides had reached setsToWin); fixed. A level count is
-   * COMPLETED without a winner, with no declared decider (spec § 9.2 rule 3, § 9.7; CA 2026-10-18,
+   * COMPLETED without a winner, with no declared decider (spec § 9.2 rule 3, § 9.7,
    * decision 18); these pinned it as not complete until then.
    */
   it('X: a level count of halves names no winner', () => {

@@ -32,7 +32,7 @@ export function eventOfDraw(tournamentRecord?: Tournament, drawDefinition?: Draw
 /**
  * The `EVENT_DATE_INACTIVE` warning for a manual placement on a day its event does not play, or undefined when the
  * event plays that day (or there is no day to judge). A manual placement always lands: this is a warning, never a
- * refusal (CA 2026-11-01).
+ * refusal.
  */
 export function eventDateWarning({
   tournamentRecord,

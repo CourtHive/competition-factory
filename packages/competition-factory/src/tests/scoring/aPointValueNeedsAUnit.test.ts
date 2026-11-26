@@ -3,7 +3,7 @@ import { LEGACY_REFUSED_INPUT } from '@Scoring/kernel/legacy';
 import { describe, expect, it } from 'vitest';
 
 /*
- * Point values (scoring-engine spec § 2.1 rule 7, § 4.4, § 7; § 16 decision 9, CA 2026-10-18): "A
+ * Point values (scoring-engine spec § 2.1 rule 7, § 4.4, § 7; § 16 decision 9): "A
  * scoreValue other than 1 is refused where a point is not a unit": a segment whose points build games, and
  * a combined total. "A configured multiplier applies only to a segment scored in units; in a game-building
  * segment it is not consulted." v1 recorded the value on the point and ignored it (SET3-S:6/TB7: two points
@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest';
  * The replay rule (§ 12.8): a stored point v1 accepted with such a value replays as v1 replayed it.
  */
 
-describe('§ 4.4 a scoreValue other than 1 is refused where a point is not a unit (CA 2026-10-18, decision 9)', () => {
+describe('§ 4.4 a scoreValue other than 1 is refused where a point is not a unit (decision 9)', () => {
   it.each(['SET3-S:6/TB7', 'SET3-S:T10', 'SET1-S:P32'])('%s refuses a point of value 2, writing nothing', (format) => {
     const engine = new ScoringEngine({ matchUpFormat: format });
     expect(() => engine.addPoint({ winner: 0, scoreValue: 2 })).toThrow(/not a unit/);

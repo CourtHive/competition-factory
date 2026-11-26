@@ -12,7 +12,7 @@ import {
 } from '@Constants/errorConditionConstants';
 
 /**
- * An engine call works only on the records the engine holds (CA 2026-10-30: a write never silently goes nowhere;
+ * An engine call works only on the records the engine holds (a write never silently goes nowhere;
  * building-a-tournament.md §1.3). An object passed in is resolved to the one in state by its own id; one not held is
  * refused; an object and an id that name different entities are refused, with the engine or without it.
  */

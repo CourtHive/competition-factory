@@ -20,7 +20,7 @@ import {
   START,
 } from '@Constants/matchUpActionConstants';
 
-// The ⋮ popover's scheduling and staffing actions, decided by the factory (CA 2026-10-30): presence is the permission,
+// The ⋮ popover's scheduling and staffing actions, decided by the factory: presence is the permission,
 // each is switchable by policy, and the date and time actions carry the bounds the write accepts.
 
 const day1 = '2026-10-01';

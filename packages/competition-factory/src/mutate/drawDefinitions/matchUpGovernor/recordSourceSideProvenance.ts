@@ -65,12 +65,12 @@ export function recordSourceSideProvenance({
     // or, before the guard in `buildSideExitProvenance`, held `TO_BE_PLAYED`, which is not an
     // origin at all.
     //
-    // **P37 removed the array write entirely, and with it this function's last reason to be named after
-    // the array.** It mapped every element, wrapping a bare value as `{ code }` and stamping the origin
-    // onto the element whose `sideNumber` matched the source's. The exit tenant is evicted, so no element
-    // carries a `sideNumber` and the stamp could never land: the map's only surviving effect was turning
-    // `'WO'` into `{ code: 'WO' }` — one more element shape in an array whose whole problem was having
-    // four. `convergingDoubleExitStatus` now pins that every persisted element is a string.
+    // **Moving the exit provenance out of `matchUpStatusCodes` removed the array write entirely, and with it this
+    // function's last reason to be named after the array.** It mapped every element, wrapping a bare value as `{ code
+    // }` and stamping the origin onto the element whose `sideNumber` matched the source's. The exit tenant is evicted,
+    // so no element carries a `sideNumber` and the stamp could never land: the map's only surviving effect was turning
+    // `'WO'` into `{ code: 'WO' }` — one more element shape in an array whose whole problem was having four.
+    // `convergingDoubleExitStatus` now pins that every persisted element is a string.
     //
     // Merged, not set: the other side's origin may already be recorded, and may have arrived first.
     // An UNDECIDED source is not recorded — provenance can never be TO_BE_PLAYED.
@@ -84,8 +84,8 @@ export function recordSourceSideProvenance({
     // This wrote `producedExitStatus(source status)` for every source, so a participant who won a DEFAULTED
     // carried `{ matchUpStatus: DEFAULTED, previousMatchUpStatus: DEFAULTED }` into the next round: byte for
     // byte the entry the LOSER of that DEFAULTED carries over the loser link, which does mean "this side is
-    // exiting". `carriedExitStatus` read both as an exit (OUTCOME_PIPELINE_OPEN_QUESTIONS F9, census w2
-    // 9100389: v2 planned a convergence where a present participant wins the produced exit). CA, 2026-10-07:
+    // exiting". `carriedExitStatus` read both as an exit (census w2 9100389: v2 planned a
+    // convergence where a present participant wins the produced exit). The rule:
     // "there should be no matchUpStatus on the provenance for A, because nothing was decided when they
     // arrived, they were just waiting."
     //

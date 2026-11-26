@@ -4,7 +4,7 @@
  * The test-side twin of `scripts/lib/repoRoot.mjs` (same rules; `repoRoot.test.ts` holds the two to the same
  * answers). A test that reads `documentation/` reads it from REPO_ROOT, not from the current directory, so it
  * passes both today, with the package at the repository root, and after the move to
- * `packages/competition-factory` (Mentat/planning/FACTORY_LAYOUT_MOVE_PLAN.md).
+ * `packages/competition-factory`.
  *
  *   REPO_ROOT     the nearest ancestor holding `.release-please-manifest.json`
  *   PACKAGE_ROOT  the nearest ancestor holding a `package.json` named `tods-competition-factory`

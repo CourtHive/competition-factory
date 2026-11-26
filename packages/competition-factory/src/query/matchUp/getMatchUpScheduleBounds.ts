@@ -53,7 +53,7 @@ type GetMatchUpScheduleBoundsArgs = {
 
 /**
  * Where a matchUp may be scheduled, and when its recorded times may fall, without breaking the order of the matchUps
- * linked to it (CA 2026-10-30). A client limits its date and time pickers to these; the schedule writes refuse what
+ * linked to it. A client limits its date and time pickers to these; the schedule writes refuse what
  * falls outside them with `ANACHRONISM`. The bounds read the same neighbours the writes judge (`orderingNeighbours`)
  * and follow the same comparison: a date on `earliestDate` or `latestDate` without a time proves nothing, and is
  * allowed.

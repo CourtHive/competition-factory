@@ -11,7 +11,7 @@ import { FIRST_ROUND_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstant
 
 /**
  * A PENDING CARRY COMES HOME WITH ITS CARRIER — census 20057285 (FIRST_ROUND_LOSER_CONSOLATION 8/8,
- * `allowChangePropagation`), P50; found by the checkpoint differential (#5341).
+ * `allowChangePropagation`); found by the checkpoint differential (#5341).
  *
  * Waterhouse loses `Main|1|2` by walkover and carries it into `Consolation|1|1`. `Main|1|1`'s double default has
  * already placed a BYE on the other seat, so he is BYE-advanced to `Consolation|2|1`, and his carry stands there,

@@ -14,18 +14,19 @@ import {
  * `doubleExitPropagateBye` ON, over a frozen census window. INERT unless `POLICY_CENSUS=1`.
  *
  *   POLICY_CENSUS=1 PROPAGATE_BYE=1 TZ=UTC \
- *     SCHEDULES_IN=../Mentat/fixtures/exit-propagation-census/sched-w2.jsonl \
+ *     SCHEDULES_IN=path/to/sched-w2.jsonl \
  *     OUT=/tmp/policy-w2-on.jsonl \
  *     npx vitest run src/tests/mutations/exitPropagation/censusProgressionPolicy.test.ts
  *
  * Add `ALLOW_CHANGE_PROPAGATION=1` for that arm, exactly as the census takes it. Omit
  * `PROPAGATE_BYE` for the control described below.
  *
- * ## Why this exists: P30's number is stale and the obvious way to refresh it is barred
+ * ## Why this exists: the recorded number is stale and the obvious way to refresh it is barred
  *
- * Punch-list **P30** records the default flip as not shippable — 34 → 48 failing census seeds, 34 suite
+ * The recorded measurement had the default flip as not shippable — 34 → 48 failing census seeds, 34 suite
  * failures across 12 files — measured **2026-09-19**, which predates #4983, #4985, #4987, #4988 and the
- * P39 work. The standing rule is to re-measure before trusting a recorded number.
+ * consolation-BYE work for links that carry no condition. The standing rule is to re-measure before trusting a recorded
+ * number.
  *
  * The obvious way to re-measure is to set the two policy reads in `doubleExitAdvancement` to `?? true`
  * and run the suite. That edits shared source to measure it, and it also measures the wrong thing for
@@ -38,7 +39,7 @@ import {
  *
  * ## What the policy actually governs, which narrows the question
  *
- * CA, 2026-09-20, recorded in that test's docblock: *"doubleExitPropagateBye: true is ONLY referring to
+ * Recorded in that test's docblock: *"doubleExitPropagateBye: true is ONLY referring to
  * connected structure propagation … because in the structure in which the doubleExit occurs there still
  * should be a produced exit."* Restated 2026-09-27. So the flag is a choice at ONE coordinate — the
  * loser target in the connected structure — between a **BYE** and a **second produced exit**. The

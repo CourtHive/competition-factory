@@ -40,7 +40,7 @@ export type CombinedRule = {
 
 /** outs (§ 8): no point or game model; scored by set totals */
 export type OutsRule = { kind: 'outs' };
-/** a shootout of `rounds` rounds, entered as a final tally only (Ruling 3, CA 2026-11-04) */
+/** a shootout of `rounds` rounds, entered as a final tally only */
 export type ShootoutRule = { kind: 'shootout'; rounds: number };
 
 export type SegmentRule = StandardRule | TiebreakOnlyRule | TimedRule | CombinedRule | OutsRule | ShootoutRule;
@@ -157,7 +157,7 @@ function segmentRule(
  * and every scoring and service action is refused (§ 1.1, § 2).
  *
  * Best of N needs a majority of the N, ⌊N/2⌋ + 1 sets. For odd N that is § 9.1's ⌈N/2⌉; for even N it is what
- * § 9.7 rule 4 requires (`SET2-S:6/TB7` can end 1-1), which ⌈N/2⌉ would not allow (decision SE2a-D7).
+ * § 9.7 rule 4 requires (`SET2-S:6/TB7` can end 1-1), which ⌈N/2⌉ would not allow.
  */
 /** Internal staging option, not a ScoringEngine/public format-editor option. */
 export type FormatResolutionOptions = { allowOvertime?: boolean };
@@ -220,7 +220,7 @@ function supportsOvertime(
  * 3. exactly N, aggregate: set N + 1, the decider (§ 9.4).
  *
  * Best of N with aggregate (`SET3A`) is not named by § 3.2: sets won are never consulted there (§ 9.3), so only
- * "set N" of rule 1 applies (decision SE2a-D1).
+ * "set N" of rule 1 applies.
  */
 export function finalGoverns(match: MatchRule, setNumber: number, setsWon: Pair): boolean {
   if (match.overtime) return setNumber === overtimeFinalNumber(match);

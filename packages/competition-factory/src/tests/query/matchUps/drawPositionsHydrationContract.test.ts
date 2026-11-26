@@ -29,7 +29,7 @@ import {
  *
  * The other tests pin the rest: a LEADING hole beside a survivor is NOT collapsed. `drawPositions` is
  * positional, and `[undefined, 5]` keeping its hole is what holds 5 on side 2. An array of nothing but
- * holes settles to `[]`, and a TRAILING hole is trimmed (CA, 2026-10-02); see `normalizeDrawPositions`.
+ * holes settles to `[]`, and a TRAILING hole is trimmed; see `normalizeDrawPositions`.
  */
 
 function collectStructures(structures: any[], collected: any[] = []): any[] {
@@ -127,7 +127,7 @@ it('a cleared double exit stores no all-hole and no TRAILING-hole array, and an 
     for (const matchUp of structure.matchUps ?? []) {
       const drawPositions = matchUp.drawPositions ?? [];
       expect(drawPositions.length && !drawPositions.some(Boolean)).toBeFalsy();
-      // CA, 2026-10-02: a trailing hole is trimmed on the way in; `[5, undefined]` is stored as `[5]`
+      // a trailing hole is trimmed on the way in; `[5, undefined]` is stored as `[5]`
       expect(drawPositions.length > 1 && !drawPositions.at(-1)).toEqual(false);
       if (drawPositions.filter(Boolean).length === 1) loneIds.add(matchUp.matchUpId);
       if (Array.isArray(matchUp.drawPositions) && !matchUp.drawPositions.length) emptiedIds.add(matchUp.matchUpId);

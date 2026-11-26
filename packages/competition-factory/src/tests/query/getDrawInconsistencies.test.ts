@@ -114,7 +114,7 @@ test('fans out structure-level inconsistencies with drawId + fingerprint stamped
   expect(typeof mismatch.fingerprint).toEqual('string');
 });
 
-// the link checks, each on a draw generated well-formed and then corrupted (CA, 2026-10-22: none asserted
+// the link checks, each on a draw generated well-formed and then corrupted (none asserted
 // LINK_MISSING_SOURCE_ROUND until now)
 function linkedDraw(drawId: string) {
   setSubscriptions({});

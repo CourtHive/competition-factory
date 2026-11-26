@@ -14,7 +14,7 @@ import { INDIVIDUAL } from '@Constants/participantConstants';
  * Measured motivation: participants are 52%–78.6% of an event payload, the same 412 KB block is
  * byte-identical across all five events of a slam-shaped tournament (5x duplication), and
  * `getEventData` returns ALL tournament participants regardless of event — 86.4% of them irrelevant
- * to the smallest event. See Mentat/planning/PUBLISH_WARMCACHE_AND_PAYLOAD_DECOMPOSITION.md.
+ * to the smallest event.
  *
  * The handshake exists so a client can PROVE what it holds rather than ASSERT it. Assertion fails
  * silently — every bracket side renders TBD.

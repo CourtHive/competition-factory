@@ -13,7 +13,7 @@ import type { SegmentPoint, SegmentStep } from './segment';
  * plays a race to n, and the winner takes the segment by one more unit with the tiebreak points recorded (§ 6.4).
  *
  * The tiebreak at time keeps its running points in the set's tiebreak scores from 0-0, so a set in that state says
- * so itself (decision SE2b-D19): `inTiebreakAtTime` reads it, and the reducer keeps no flag of its own.
+ * so itself: `inTiebreakAtTime` reads it, and the reducer keeps no flag of its own.
  */
 
 /** whether a timed set in play is playing its tiebreak at time */

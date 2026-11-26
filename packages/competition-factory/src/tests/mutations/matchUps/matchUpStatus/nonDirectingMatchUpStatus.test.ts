@@ -163,7 +163,7 @@ it('supports entering SUSPENDED matchUpStatus with incomplete score', () => {
   expect(matchUp.matchUpStatus).toEqual(SUSPENDED);
 });
 
-// CA, 2026-10-13: DEAD_RUBBER belongs to a rubber of a team tie or a DOUBLE_ELIMINATION Decider (deadRubberScope.test.ts);
+// DEAD_RUBBER belongs to a rubber of a team tie or a DOUBLE_ELIMINATION Decider (deadRubberScope.test.ts);
 // on a singles elimination matchUp it is refused, where before this it was accepted
 it('refuses DEAD_RUBBER matchUpStatus outside a tie or a Decider', () => {
   const drawProfiles = [{ drawSize: 8 }];

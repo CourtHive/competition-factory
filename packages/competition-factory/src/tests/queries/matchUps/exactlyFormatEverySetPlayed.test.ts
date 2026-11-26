@@ -8,7 +8,7 @@ import { COMPLETED } from '@Constants/matchUpStatusConstants';
 /**
  * AN `exactly` FORMAT IS DECIDED ONLY ONCE EVERY SET IS PLAYED.
  *
- * CA, 2026-10-05, on `SET9X-S:T10`: *"All nine must be played."* `analyzeMatchUp` resolved a winner as
+ * Under `SET9X-S:T10` all nine must be played. `analyzeMatchUp` resolved a winner as
  * soon as one side reached `setsToWin` — five straight bolts read as side 1 — while `validateScore`
  * refused that same score. courthive-components gates Submit on `calculatedWinningSide`, so the card
  * offered a result the engine then refused. Reaching `setsToWin` early is a lead, not a win.

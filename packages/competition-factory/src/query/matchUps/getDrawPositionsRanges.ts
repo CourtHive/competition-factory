@@ -16,7 +16,7 @@ import { DrawDefinition } from '@Types/tournamentTypes';
  * `drawPositions` (see `shapeKey`). The same key always gives the same ranges, so a hit is exact, not approximate.
  *
  * WHY: every hydration of a structure recomputed them, and one `setMatchUpStatus` hydrates the whole draw six to eight
- * times (Mentat reports/2026-10-18-completion-cost-profile.md): ~35% of a hydration with the round profile, for a
+ * times (profiled 2026-10-18): ~35% of a hydration with the round profile, for a
  * draw whose shape the call does not change. A result moves one drawPosition into a later round, so a call misses
  * once and its other hydrations hit.
  *

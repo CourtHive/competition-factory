@@ -158,7 +158,7 @@ function write(
 const won = () => generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 1 }).outcome;
 
 /**
- * CA, 2026-11-20 (class 4): a line on a dual decided by its own exit or call that keeps its winner (its lines projecting none). v1
+ * Class 4: a line on a dual decided by its own exit or call that keeps its winner (its lines projecting none). v1
  * writes the line and leaves the dual as it stands; v2 records v1's whole write, run on a copy (so v1's writer is
  * called once there, never on the stored record). The dual's own keys and values are compared before and after.
  */
@@ -712,8 +712,8 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
 );
 
 it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
-  // CA, 2026-11-20 (class 4): the line's double default no longer un-decides the dual, so nothing clears the line's winner explicitly
-  // (before the ruling v1's removal wrote it an own undefined `winningSide`)
+  // Class 4: the line's double default no longer un-decides the dual, so nothing clears the line's winner explicitly
+  // (before this rule v1's removal wrote it an own undefined `winningSide`)
   '%s leaves a dual decided by its own call as it stands when a line takes a double default',
   (mode) => {
     const { drawId, matchUps } = fresh({
@@ -769,8 +769,8 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
 );
 
 it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
-  // CA, 2026-11-20 (class 4): the fresh line no longer un-decides the dual, so there is no withdrawal to announce: only the line and its
-  // dual are named (before the ruling the line's callback followed the withdrawal's modifications)
+  // Class 4: the fresh line no longer un-decides the dual, so there is no withdrawal to announce: only the line and its
+  // dual are named (before this rule the line's callback followed the withdrawal's modifications)
   '%s announces a fresh line on a dual decided by its own call with no withdrawal',
   (mode) => {
     const { drawId, record } = fresh({
@@ -1019,7 +1019,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
 );
 
 it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
-  // CA, 2026-11-20 (class 4): the line no longer un-decides the dual, so there is no empty tally to write it an own undefined
+  // Class 4: the line no longer un-decides the dual, so there is no empty tally to write it an own undefined
   // `tieFormatId`: the dual keeps its keys as they stood
   '%s leaves the keys of a dual decided by its own call as they stood when its first line is won',
   (mode) => {
@@ -1102,7 +1102,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     });
     const dual = matchUps.find((matchUp) => matchUp.tieMatchUps?.length && matchUp.matchUpStatus === TO_BE_PLAYED)!;
     write(OUTCOME_PIPELINE_V1, drawId, dual.matchUpId, { winningSide: 1 });
-    // CA, 2026-11-20 (class 4): the dual decided by its own call keeps its winner, and v2 records v1's write
+    // Class 4: the dual decided by its own call keeps its winner, and v2 records v1's write
     writeKeepingDual(mode, drawId, dual, dual.tieMatchUps![0].matchUpId, { winningSide: 1, matchUpStatus: DEFAULTED });
     expect(Object.hasOwn(dual, 'tieFormatId')).toBe(false);
   },
@@ -1488,7 +1488,7 @@ it.each(
     [false, true].map((custom) => [mode, custom] as const),
   ),
 )('%s leaves a dual decided by its own RETIRED as it stands when its first line is won, custom=%s', (mode, custom) => {
-  // CA, 2026-11-20 (class 4): the line no longer un-decides the dual, so its score is not deleted and tallied afresh (before the ruling
+  // Class 4: the line no longer un-decides the dual, so its score is not deleted and tallied afresh (before this rule
   // it was rewritten 1-0 with its tieFormat keys before its score)
   const { drawId, matchUps, record } = fresh({
     drawType: ROUND_ROBIN,

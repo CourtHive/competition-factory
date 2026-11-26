@@ -7,7 +7,7 @@ import path from 'path';
 import fs from 'fs';
 
 /**
- * DEFAULTED AND DEFAULTED 6-3 ARE DIFFERENT RESULTS, AND THE UNWIND KNOWS IT (CA, 2026-10-13; FIRST_MATCH_LOSER_CONSOLATION,
+ * DEFAULTED AND DEFAULTED 6-3 ARE DIFFERENT RESULTS, AND THE UNWIND KNOWS IT (FIRST_MATCH_LOSER_CONSOLATION,
  * following USTA Reg. II.B.5.a: a first-round win by default is a bye for first-match purposes).
  *
  * *"For FMLC we follow the USTA Rule and we differentiate DEFAULTED from DEFAULTED 6-3... the forward logic treats them

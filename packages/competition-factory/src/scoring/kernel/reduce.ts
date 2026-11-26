@@ -96,7 +96,7 @@ export function initialState(): ScoringState {
 
 /**
  * Where the next point would be played, for service (§ 10): the set in play, or the next one. A completed match, or
- * one past its N sets, answers for the set that would come next, a placeholder only (`serverOf`, SE2b-D22).
+ * one past its N sets, answers for the set that would come next, a placeholder only (`serverOf`).
  */
 export function positionOf(match: MatchRule, state: ScoringState): ServicePosition {
   const at = target(match, state);
@@ -109,7 +109,7 @@ export function positionOf(match: MatchRule, state: ScoringState): ServicePositi
 export function serverOf(context: ReducerContext, state: ScoringState): { side: Side; derived: boolean } {
   const position = context.match && positionOf(context.match, state);
   const next = nextServer(context.rules, state.service, state, position);
-  // a completed match has no next point, so no server is derived; the side stays a placeholder (CA 2026-10-21, D22)
+  // a completed match has no next point, so no server is derived; the side stays a placeholder
   return state.matchUpStatus === COMPLETED ? { ...next, derived: false } : next;
 }
 
@@ -276,7 +276,7 @@ function set(match: MatchRule, state: ScoringState, entry: TimelineEntry): Step 
 
 /**
  * An unfinished tiebreak-only total records no set won: it is the race's running points, the game in play, as a
- * baseline reads it (§ 5 rule 1; SE2a-D13, CA 2026-10-21), so the next point plays on from it.
+ * baseline reads it (§ 5 rule 1), so the next point plays on from it.
  */
 function raceInPlay(rule: SegmentRule, result: SegmentStep): SegmentStep {
   const { set } = result;
@@ -344,7 +344,7 @@ const isPair = (pair: Pair) => pair.every((value) => Number.isInteger(value) && 
 /**
  * The set in play's games and the game in play's points (§ 2.5 rule 3). An unfinished last set is the set in play;
  * otherwise `currentSetScore` and `currentGameScore` open one. The set in play counts its game in play point by
- * point from the baseline on (`[0]` when no points are given; decision SE2a-D3). An unfinished tiebreak-only set
+ * point from the baseline on (`[0]` when no points are given). An unfinished tiebreak-only set
  * records no game won: its total is the race's running points, the game in play (§ 5 rule 1).
  */
 type BaselineInPlay = {
@@ -374,7 +374,7 @@ function baselineInPlay(match: MatchRule, sets: ScoredSet[], data: EntryData): B
   const rule = ruleForSet(match, setNumber, setsWon(closed));
   const raceInPlay = open && rule.kind === 'tiebreakOnly';
   // an unfinished tiebreak-only set's total is its race's points, so a currentGameScore would name them twice
-  // (SE2a-D14, CA 2026-10-21: refused, the cleaner rule)
+  // (refused, as the cleaner rule)
   if (given && raceInPlay) return { refused: raceNamedTwice(setNumber) };
   const base: ScoredSet = open && !raceInPlay ? last : openSet(rule, setNumber);
   const checked = overtimeBaselineSet(

@@ -534,7 +534,7 @@ test('DOUBLE_WALKOVER cannot be removed when active downstream matchUps', () => 
     drawId,
     matchUpId: targetMatchUp.matchUpId,
   });
-  // a double exit keeps its official and its date and time, but records no start or end (CA, 2026-10-30)
+  // a double exit keeps its official and its date and time, but records no start or end
   expect(result.validActions.map(({ type }) => type)).toEqual([REFEREE, PENALTY, SCHEDULE_DATE, SCHEDULE_TIME]);
 
   // a produced WALKOVER matchUp will not have SCORE option if { activeDownstream: true }
@@ -543,7 +543,7 @@ test('DOUBLE_WALKOVER cannot be removed when active downstream matchUps', () => 
     drawId,
     matchUpId: targetMatchUp.matchUpId,
   });
-  // nothing is played at a produced exit, so it is neither scheduled nor staffed (CA, 2026-10-30)
+  // nothing is played at a produced exit, so it is neither scheduled nor staffed
   expect(result.validActions.map(({ type }) => type)).toEqual([PENALTY]);
 
   // attempting to score an active DOUBLE_WALKOVER matchUp will return an error

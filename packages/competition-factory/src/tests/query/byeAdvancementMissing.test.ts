@@ -13,7 +13,7 @@ import { BYE } from '@Constants/matchUpStatusConstants';
  * rated it `valid: true`.
  *
  * Every other advancement check in `getStructureInconsistencies` starts from a `winningSide`. A BYE
- * has none — *"a BYE is never won"* (CA, 2026-09-20) — so none of them could ever see it.
+ * has none — a BYE is never won — so none of them could ever see it.
  *
  * These tests break a draw BY HAND rather than by calling reset, so they fail for the right reason
  * and stay meaningful no matter what reset does. The reset fix and this check are independent, and

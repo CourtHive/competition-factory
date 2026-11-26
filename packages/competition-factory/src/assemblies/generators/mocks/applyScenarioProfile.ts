@@ -247,7 +247,7 @@ function anchorSchedule({ tournamentRecord, scenarioProfile, anchorDate }: Ancho
   // That was the original order here and it was wrong: the shift then moves matchUps underneath the
   // assignment, and a court closed for maintenance can end up holding a matchUp that was placed
   // when it was somewhere else in the day. Assigning after the shift means the grid sees the final
-  // times and its closure check (punch list P33) applies to the times that will actually stand.
+  // times and its closure check applies to the times that will actually stand.
   if (assignCourts) {
     const tournamentRecords = { [tournamentRecord.tournamentId]: tournamentRecord };
     const scheduleDates = [

@@ -26,7 +26,7 @@ import type { ResultType, ResultWarning } from '@Types/factoryTypes';
  *   array or object for a list or object attribute.
  * - A value equal to the stored one is never refused: consumers send the whole person on every save.
  * - Every refusal happens before anything is written. The one exception to refusal is `nationalityCode`: an
- *   unrecognised code is written and the result carries a NATIONALITY_CODE_UNRECOGNIZED warning (CA 2026-11-02).
+ *   unrecognised code is written and the result carries a NATIONALITY_CODE_UNRECOGNIZED warning.
  * - `isMock`, `createdAt` and `updatedAt` are metadata and are ignored.
  */
 

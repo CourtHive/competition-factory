@@ -148,12 +148,12 @@ export function removedOps(
   if (changesWinner(view, route, write) || !removesDirection(view, route, write)) return [];
   // A cleared final (no winner matchUp) takes back its loser's fed seat alone (C17, decision 5 of the refactor status):
   // `removalOps` emits no winner leg for it. The guard that returned nothing here until then left the fed seat
-  // occupied, which is what the settle check abstained on (ruling 10's amendment).
+  // occupied, which is what the settle check abstained on.
   return withPendingCarry(view, carry, (rederived) => removalOps(view, matchUpStatus, rederived));
 }
 
 /**
- * S4's removal of the stored result's direction, whatever the route (ruling 10): the winner's position out of the next
+ * S4's removal of the stored result's direction, whatever the route: the winner's position out of the next
  * matchUp, if there is one, then the loser's seat. The two reasons in front of it (`removalReason` on a cleared result,
  * `resultRemovalReason` on a result turned double exit) stay apart; this is only what they both take back. A final's
  * loser leg alone is emitted on both routes (the cleared route since C17).

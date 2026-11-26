@@ -11,9 +11,9 @@ import {
 } from '@Constants/errorConditionConstants';
 
 /**
- * A MATCHUP IN PLAY DOWNSTREAM IS ACTIVE (P57).
+ * A MATCHUP IN PLAY DOWNSTREAM IS ACTIVE.
  *
- * CA, 2026-10-18: *"downstream matchUps e.g. "the match it feeds" should be considered active and a source matchUp
+ * The rule: *"downstream matchUps e.g. "the match it feeds" should be considered active and a source matchUp
  * (a matchUp earler in the dependency chain) should not be able to be re-scored as unfinished! a downstream matchUp
  * AWAITING_RESULT should be considered an active matchUp also"*
  *

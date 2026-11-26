@@ -54,9 +54,9 @@ it('stamps per-side provenance on a matchUp fed by a double exit, attributed to 
   // the identity the unwind lacks in matchUpStatusCodes
   expect(doubleExitSide.sourceMatchUpId).toEqual(source.matchUpId);
 
-  // P37. `expect(Array.isArray(target.matchUpStatusCodes)).toEqual(true)` stood here, pinning that
+  // `expect(Array.isArray(target.matchUpStatusCodes)).toEqual(true)` stood here, pinning that
   // the legacy array is still written beside the native field. That is the property being RETIRED —
-  // CA, 2026-09-27: *"we don't need to carry forward legacy equivalence at this point"* — so this
+  // *"we don't need to carry forward legacy equivalence at this point"* — so this
   // test asserts the first-class record and says nothing about the array.
 });
 
@@ -66,7 +66,7 @@ it('stamps per-side provenance on a matchUp fed by a double exit, attributed to 
  * It read `reads provenance from the legacy array when the native field is absent` and pinned the
  * fallback: provenance-shaped elements of `matchUpStatusCodes` derived a `SideExitProvenance`.
  *
- * P37 removed it, on CA's ruling of 2026-09-27: *"we don't need to carry forward legacy equivalence at
+ * The exit tenant's eviction removed it: *"we don't need to carry forward legacy equivalence at
  * this point, and not supporting LEGACY for bugs we are closing with provenance should not be considered
  * a breaking change. Any client that wants the resolutions should be moving to full NATIVE support."*
  *

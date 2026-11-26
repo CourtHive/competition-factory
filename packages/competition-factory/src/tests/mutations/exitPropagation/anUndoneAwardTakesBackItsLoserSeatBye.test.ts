@@ -10,14 +10,14 @@ import { expect, it } from 'vitest';
  * `doubleExitPropagateBye: false`).
  *
  * A produced exit awarded to the participant who arrives opposite it has nobody for a loser, so its loser seat is given
- * a BYE (P39, `propagateUnfillableLoserBye`). When that participant leaves again, because the result that sent them is
+ * a BYE (`propagateUnfillableLoserBye`). When that participant leaves again, because the result that sent them is
  * cleared, the award goes and the exit stands pending; a pending exit sends nothing over its loser link, so the BYE
  * goes with the award, as it does where a double exit is unwound. It stood, and the loser seat read BYE in a draw where
  * no rebuild of the standing results places one. Two paths take an award back: the loser direction
  * (`withdrawAwardsToEmptiedSeats`, 32/27 seed 21081040) and the winner direction (`removeSubsequentRoundsParticipant`,
  * 16/14 seed 21086952).
  *
- * The award once recorded a claim on the BYE (`byeClaims`); the ledger is retired (Mentat P58, CA 2026-10-21), so the
+ * The award once recorded a claim on the BYE (`byeClaims`); the ledger is retired, so the
  * seat carries no provenance and the BYE stands on what the claim stood for, read from the draw: the award's loser is
  * nobody (`feederSendsNobody`: `NOBODY_LOST`). Once the award is taken back its feeder no longer reads that way.
  */

@@ -50,7 +50,7 @@ export function scoreAssignmentRefusal(params) {
     drawPositionsAssignedParticipantIds({ structure, matchUp, inContextMatchUp }) ||
     params.appliedPolicies?.[POLICY_TYPE_SCORING]?.requireParticipantsForScoring === false ||
     // a single exit before the second opponent arrives, whether recorded or carried; checkParticipants has
-    // already decided whose side may be awarded it (CA, 2026-10-04: not a propagateExitStatus question)
+    // already decided whose side may be awarded it (not a propagateExitStatus question)
     (isExit(matchUpStatus) && participantsCount === 1);
   if (!validToScore) return decorateResult({ result: { error: MISSING_ASSIGNMENTS }, stack: 'attemptToModifyScore' });
   return undefined;

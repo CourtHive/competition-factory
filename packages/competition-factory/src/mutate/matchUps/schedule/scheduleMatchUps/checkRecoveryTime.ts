@@ -74,7 +74,7 @@ export function checkRecoveryTime({
         ? { ...booking, timeAfterRecovery: booking.typeChangeTimeAfterRecovery ?? booking.timeAfterRecovery }
         : { ...booking };
       // at another venue each side is held until its play ends plus the transit to the other, when that is the later:
-      // recovery counts toward transit (§ 3.4; CA 2026-10-25)
+      // recovery counts toward transit (§ 3.4)
       if (booking.venueId && venueId && booking.venueId !== venueId) {
         const fromBooking = transitMinutes(transit, booking.venueId, venueId);
         const toBooking = transitMinutes(transit, venueId, booking.venueId);

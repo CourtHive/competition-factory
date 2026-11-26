@@ -1,7 +1,7 @@
 import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { describe, expect, it } from 'vitest';
 
-// A timed set level at time plays its declared tiebreak (CA 2026-10-17). The clock does not decide a
+// A timed set level at time plays its declared tiebreak. The clock does not decide a
 // tiebreak under way: only its points do.
 describe('a timed set level at time', () => {
   it('ignores endSegment while its tiebreak is under way, and the tiebreak decides the set', () => {

@@ -216,7 +216,7 @@ function generateDrawDefinitionDraft(params: GenerateDrawDefinitionArgs): Result
   });
   if (limitsResult.error) return limitsResult;
 
-  // the entries generation left out because their stage was full: generation goes on, and says so (CA 2026-11-01)
+  // the entries generation left out because their stage was full: generation goes on, and says so
   const warnings = entriesNotPlacedWarnings({ entriesNotPlaced, drawDefinition });
 
   return {

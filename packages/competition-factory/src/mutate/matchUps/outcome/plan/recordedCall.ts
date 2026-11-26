@@ -38,7 +38,7 @@ import type { OutcomeOp } from '../ops';
  * apply could not raise again; or its result holds an object of the copy whose stored counterpart is not known to
  * read as it does (`returnedOnStored`).
  *
- * A run whose forward settle STOPPED AT ITS BOUND is recorded as it stopped (CA, 2026-11-18): v1 succeeds there,
+ * A run whose forward settle STOPPED AT ITS BOUND is recorded as it stopped: v1 succeeds there,
  * leaves what the pass did not reach for the next call, and says so in its `FORWARD_SETTLE_EXHAUSTED` warning, which
  * is in what the call returns. The program says so too (`forwardExhausted`), and is asked for no proof.
  *

@@ -215,7 +215,7 @@ test('tournamentEngine can bulkScheduleMatchUps', () => {
     venueId,
   };
   // round 2 at the same time as its round 1 sources is refused whether or not anachronism is an error: the order binds
-  // plans, not only what was played (CA 2026-10-30)
+  // plans, not only what was played
   result = tournamentEngine.bulkScheduleMatchUps({
     errorOnAnachronism: false,
     matchUpContextIds,

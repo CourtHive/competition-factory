@@ -59,8 +59,8 @@ type ReleaseAdvancedDrawPositionArgs = {
  *     assignment is still vacant, and releasing it would break the arrival path. Measured over the
  *     600-seed sweep window: of the vacant slots seen at a refusal, 38 were exactly this case.
  *
- *  3. **A position advanced by a BYE is never released.** A BYE advancement is not a result — CA,
- *     2026-09-21, the same ruling `resetDrawDefinition` was corrected under in #4944 — so undoing a
+ *  3. **A position advanced by a BYE is never released.** A BYE advancement is not a result — the
+ *     same rule `resetDrawDefinition` was corrected under in #4944 — so undoing a
  *     result must leave it exactly where the POSITIONING put it. Without this, clearing a result
  *     that fed a participant into a structure also destroyed the BYE advancement that had been
  *     there since generation: measured on COMPASS 16/14 `nonRandom: 20223109`, where `West|2|1`
@@ -101,7 +101,7 @@ export function releaseAdvancedDrawPosition({
   const { initialRoundNumber } = getInitialRoundNumber({ drawPosition, matchUps });
 
   // BYE-ness is read from the positionAssignment, never from matchUpStatus, which a cascade may
-  // already have overwritten — CA's ruling of 2026-09-20, and the trap named in #4944.
+  // already have overwritten — the trap named in #4944.
   const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId });
   const byeDrawPositions = new Set(
     (positionAssignments ?? []).filter(({ bye }) => bye).map(({ drawPosition: position }) => position),
@@ -162,7 +162,7 @@ export function releaseAdvancedDrawPosition({
       (withdrawingExit || occupantLeaving) &&
       (awaitsArrivalOnSide({ drawDefinition, structureId, drawPosition, matchUp, matchUps }) ||
         (heldOpen.has(matchUp.matchUpId) && !getWinningSideDrawPosition({ drawDefinition, structureId, matchUp })));
-    // A PENDING exit is undecided: "a produced exit has no winningSide until a participant arrives" (CA, 2026-09-20).
+    // A PENDING exit is undecided: a produced exit has no winningSide until a participant arrives.
     // Scope 2 read its exit status as a recorded result and kept the array, so a reservation advanced into it past a
     // BYE stayed when the exit that made it was withdrawn: census 20278127 (FIRST_MATCH_LOSER_CONSOLATION 16/16,
     // `doubleExitPropagateBye: false`), dp 7 — an empty fed seat RULE 2 had awarded `Consolation|1|2` — left `2|2` and
@@ -253,7 +253,7 @@ export function releaseAdvancedDrawPosition({
       }
     }
 
-    // A PRODUCED exit has no winningSide until a participant arrives (CA, 2026-09-20). Its award was read off the
+    // A PRODUCED exit has no winningSide until a participant arrives. Its award was read off the
     // participant who stood in this seat, so with the seat empty again the award goes with them; the exit stands,
     // pending. A CARRIED exit keeps its winningSide on an empty seat by design (exit-propagation.md).
     if (heldOpenForArrival && awardedByProducedExit({ drawPosition, matchUps, matchUp })) {
@@ -262,12 +262,12 @@ export function releaseAdvancedDrawPosition({
     }
 
     /**
-     * A CARRY GOES HOME WITH ITS CARRIER (P53). An exit carried past BYEs is written where the carrier lands; when a
+     * A CARRY GOES HOME WITH ITS CARRIER. An exit carried past BYEs is written where the carrier lands; when a
      * BYE they passed is withdrawn, this release takes them back out of the rounds the BYE had moved them through — and
      * the carry stayed behind, a decided exit over an empty seat that the next arrival "lost" (census de 9300487:
      * Hedges' default, carried past two BYEs into `Backdraw|3|1`, stayed there when `Main|1|6`'s double walkover was
      * re-scored and he went back to `Backdraw|1|2`). `removeSubsequentRoundsParticipant` brings a carry home on the
-     * removal path (P50); this is the release path. The carrier's own side only: an exit carried by the OPPONENT keeps
+     * removal path; this is the release path. The carrier's own side only: an exit carried by the OPPONENT keeps
      * its winningSide on the emptied seat, as above.
      */
     if (carry?.sourceMatchUpId) {
@@ -285,7 +285,7 @@ export function releaseAdvancedDrawPosition({
     });
   }
 
-  // ...and so does the BYE the award sent over its loser link for a loser who is nobody (P39): a pending exit sends
+  // ...and so does the BYE the award sent over its loser link for a loser who is nobody: a pending exit sends
   // nothing there, as on the other paths that take an award back (`anUndoneAwardTakesBackItsLoserSeatBye`). Census run
   // 19, COMPASS 16/13 20849541 policy off: re-scoring `East|1|3` from a walkover took `West|1|2`'s winner out of
   // `West|2|1`, whose award over `East|1|2`'s produced walkover went and left `Southwest|1|1` dp 1 a BYE nothing owed

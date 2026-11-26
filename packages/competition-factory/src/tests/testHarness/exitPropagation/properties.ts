@@ -133,7 +133,8 @@ const PROVENANCE = 6;
  * Promote it back into the round trip once a settle step derives it.
  */
 function projectForRoundTrip(drawDefinition: any): any[] {
-  // an exit-bearing entry is kept whole; of an arrival only its BYE claims, if any (none are written since P58 4.2)
+  // an exit-bearing entry is kept whole; of an arrival only its BYE claims, if any (none are written since the ledger's
+  // retirement)
   const roundTripEntry = (entry: any) => {
     // a BYE origin (`{ BYE, BYE }`) is arrival-class too: "may record", policed by checkArrivalsTrue (F5)
     if (entry?.matchUpStatus && !isByeOrigin(entry)) return entry;
@@ -157,7 +158,7 @@ function projectForRoundTrip(drawDefinition: any): any[] {
 }
 
 /**
- * LOSER_SEAT_DERIVED — every loser seat holds what its feeder says it must (Mentat P58, CA 2026-10-21).
+ * LOSER_SEAT_DERIVED — every loser seat holds what its feeder says it must (the `byeClaims` ledger is retired).
  *
  * The `byeClaims` ledger is being retired in favour of a reading of the draw (`feederSendsNobody`): a loser seat's BYE
  * is owed exactly while the matchUp feeding it across the link will never send anyone. This holds every replay step to
@@ -421,10 +422,10 @@ export function checkIdempotence(params: RelationalParams): PropertyFailure[] {
 /**
  * A PROVISIONAL decision — one that exists only because of what happened upstream.
  *
- * CA, 2026-09-21: *propagated, holding nobody, awarded to nobody.* It holds a propagation record and nothing of its
+ * The definition: *propagated, holding nobody, awarded to nobody.* It holds a propagation record and nothing of its
  * own. Its entire claim to being "decided" is that an exit was carried into it.
  *
- * "Awarded to nobody" is read as written, not as "no `winningSide`" (CA, 2026-10-12). A produced walkover is awarded
+ * "Awarded to nobody" is read as written, not as "no `winningSide`". A produced walkover is awarded
  * to the side without the exit even while that side is still EMPTY (exit-propagation RULE 2), so it carries a
  * `winningSide` and nobody to receive it; relayed past a BYE, the SAME waiting walkover is written pending, with no
  * `winningSide`. Both mean "a produced exit waiting for an arrival", and both are provisional. An award to a side
@@ -447,7 +448,7 @@ export function isProvisionalDecision(matchUp: any): boolean {
  * resolving onto whoever falls through), so the property is about the decided SET shrinking, not
  * about statuses being immutable.
  *
- * ## A provisional decision may vanish — CA, 2026-09-21
+ * ## A provisional decision may vanish
  *
  * *"It is entirely acceptable to see a propagated default vanish if it is provisional and it is
  * valid to change the source matchUp outcome."*
@@ -455,7 +456,7 @@ export function isProvisionalDecision(matchUp: any): boolean {
  * Both halves of that are load-bearing, and both are enforced:
  *
  * 1. **provisional** — {@link isProvisionalDecision}: propagated, holding nobody, awarded to nobody. "Awarded to
- *    nobody" includes an award to a side that holds nobody (CA, 2026-10-12): RULE 2's produced walkover awarded to an
+ *    nobody" includes an award to a side that holds nobody: RULE 2's produced walkover awarded to an
  *    empty seat is the same waiting exit as one written pending, so both may vanish.
  * 2. **valid to change the source** — a source change that is NOT valid is now refused outright by
  *    `isActiveDownstream` -> `CANNOT_CHANGE_OUTCOME`, and this function returns early on
@@ -520,7 +521,7 @@ export function checkMonotonicity(params: RelationalParams): PropertyFailure[] {
    * provenance, no winningSide, nobody there, so provisional by the BEFORE test — was cleared to
    * `TO_BE_PLAYED` when a participant ARRIVED through a BYE, instead of resolving onto them.
    *
-   * That is not the case CA ruled on. CA's licence is for *"a propagated default [vanishing] if it
+   * That is not the case the rule covers. The licence is for *"a propagated default [vanishing] if it
    * is provisional **and it is valid to change the source matchUp outcome**"* — a SOURCE CHANGE
    * withdrawing something nobody can see. An ARRIVAL is the opposite: somebody has turned up, the
    * placeholder's opponent now exists, and clearing it destroys the exit that was waiting for them.
@@ -541,7 +542,7 @@ export function checkMonotonicity(params: RelationalParams): PropertyFailure[] {
   /**
    * ...or its producer stopped producing it. A pending exit a DOUBLE exit produced is withdrawn when that source is
    * re-scored as anything else, and the same re-score can send its new winner on into the seat: that is the source
-   * change CA's licence covers, not an arrival clearing an exit still owed. Census w1 policy-off 9000249 (OLYMPIC 32):
+   * change the licence covers, not an arrival clearing an exit still owed. Census w1 policy-off 9000249 (OLYMPIC 32):
    * `West|1|3`'s convergence produced a WALKOVER, pending, into `West|2|2`; re-scoring `East|1|6` as a played win
    * dissolved the convergence, its loser won `West|1|3` on the carried walkover and came through to `West|2|2`, which
    * read TO_BE_PLAYED against the pending `West|1|4` — the draw the same results entered directly reach. Where the

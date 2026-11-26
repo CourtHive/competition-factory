@@ -203,7 +203,7 @@ function withoutV2Measures(result: any) {
 }
 
 /**
- * K2 (CA 2026-11-01): a complete group whose participants do not each have participantsCount - 1 results (a double
+ * K2: a complete group whose participants do not each have participantsCount - 1 results (a double
  * round robin, an excluded status) now completes. v1 wrote the SAME positions as provisionalOrder; the live engine
  * writes groupOrder and rankOrder. Read back into v1's shape, so every other field is still compared, and counted.
  */

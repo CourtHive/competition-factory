@@ -6,7 +6,7 @@
  *
  * The card already had a pure engine for the ENDING — `ending.ts`, folded in here unchanged
  * as `model.ending`. The SCORE did not have one: it lived in each region's private array and in the
- * DOM inputs, reachable only through the `ScoreRegion` contract, and three of CA's open notes
+ * DOM inputs, reachable only through the `ScoreRegion` contract, and three open notes
  * (2026-09-30) were all on that half with nowhere to live:
  *
  *   - 9    clearing set 1 of `6-2 6-2` removed the set-2 column while its score survived — two
@@ -194,7 +194,7 @@ export type TypeDigitIntent = {
    * the same set is the caller's policy. For an ordinary tiebreak it derives the
    * winner's points from the loser's, and fires only from the games LOSER's cell, because a winner's 7
    * could have beaten anything. For a tiebreak-only set it derives the other side from the one typed —
-   * CA's rule for the Dial Pad, which always asks; Dynamic Sets asks while its Smart toggle is on.
+   * the rule for the Dial Pad, which always asks; Dynamic Sets asks while its Smart toggle is on.
    */
   complement?: boolean;
 };
@@ -237,7 +237,7 @@ export function typeDigit(model: ScoreEntryModel, intent: TypeDigitIntent): Scor
  *
  * Which row holds the typed number is the row with the LOWER points, since the derivation always puts
  * the other row ahead; so a digit on that row extends it, and a digit on the other row starts a new low
- * THERE (CA: `Shift` chooses which row the lower score belongs to). No refusal is needed for typing on
+ * THERE (`Shift` chooses which row the lower score belongs to). No refusal is needed for typing on
  * the derived row — it is a statement about which side lost, and is honoured as one.
  */
 function typeTiebreakOnlyDigit(
@@ -257,7 +257,7 @@ function typeTiebreakOnlyDigit(
   const low = appendDigit(extendsTyped ? mine : undefined, digit, undefined);
   if (low === undefined) return model;
 
-  // Derived only when asked, like every other complement: the Dial Pad always asks, because CA's rule
+  // Derived only when asked, like every other complement: the Dial Pad always asks, because the rule
   // there is that the operator types ONE number; Dynamic Sets asks only while its Smart toggle is on.
   // No target to complete against: keep what was typed and leave the other side alone rather than
   // inventing it. `completeTiebreakOnly` declines in exactly that case.
@@ -334,8 +334,8 @@ export function clearCell(model: ScoreEntryModel, cell: CellRef): ScoreEntryMode
 /**
  * Empty every set and keep the ending: what a score-clearing ending does to the cells.
  *
- * CA, 2026-09-30: *"when I enter set score(s) and then select (Walkover) the set score(s) should
- * clear."* The card calls this when the chosen ending carries no score, having first read `scoreString`
+ * Entering set scores and then choosing Walkover clears them.
+ * The card calls this when the chosen ending carries no score, having first read `scoreString`
  * for the band. Final, like `[Clear]`: un-choosing the walkover does not bring the score back, because a
  * remembered score that silently reappears on an approach switch was the worse bug.
  */
@@ -475,7 +475,7 @@ function unlimitedOvertime(config: MatchUpConfig): boolean {
 
 /**
  * A `0-0` tiebreak pair is no points — the factory's rule (7.30.0: `setMatchUpStatus`; 7.33.0: every reader), and
- * CA's gesture for declining the points once a complement has filled them (2026-11-07): type a `0` over the
+ * the gesture for declining the points once a complement has filled them: type a `0` over the
  * derived `7` and the pair reads `0-0`, which no tiebreak ever finishes on. Dropped here so the cells, the band and
  * the submitted set all say the same thing: a bare `7-6`. A lone `0` — `7-0`, a tiebreak to love — is points.
  */
@@ -675,7 +675,7 @@ export function isEmptyEntry(entry: SetEntry): boolean {
 /**
  * How many sets the format can hold: every set of an `exactly` format, otherwise the best-of. An
  * aggregate format with a final tiebreak holds one more, its sudden-death decider, which is set N + 1
- * and never one of the N (factory #5166; CA, 2026-10-04). It opens only on a level total.
+ * and never one of the N (factory #5166). It opens only on a level total.
  *
  * An overtime format holds regulation, its overtime ceiling and its decider; under unlimited overtime
  * this is regulation's count, and the array grows one set at a time (`withOvertimeRoom`).

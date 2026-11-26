@@ -9,7 +9,7 @@ import fs from 'fs';
  * EVERY `getDrawInconsistencies` issueType at EVERY step of a frozen window. INERT unless
  * `INCONSISTENCY_SCAN=1`.
  *
- *   INCONSISTENCY_SCAN=1 TZ=UTC SCHEDULES_IN=../Mentat/fixtures/exit-propagation-census/sched-w1.jsonl \
+ *   INCONSISTENCY_SCAN=1 TZ=UTC SCHEDULES_IN=path/to/sched-w1.jsonl \
  *     OUT=/tmp/inconsistency-w1-off.jsonl \
  *     npx vitest run src/tests/mutations/exitPropagation/inconsistencyScan.test.ts
  *
