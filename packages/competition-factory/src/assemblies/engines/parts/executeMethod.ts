@@ -1,6 +1,7 @@
 import { checkMutationLock } from '@Mutate/tournaments/mutationLocks/checkMutationLock';
 import { engineLogging, paramsMayBeLogged } from '@Global/state/engineLogging';
 import { withContextExclusion } from '@Query/matchUps/contextExclusion';
+import { engineBoundaryObservers } from './boundaryObservers';
 import { checkLoadedFootprint } from './loadedFootprintGuard';
 import { paramsMiddleware } from './paramsMiddleware';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
@@ -17,6 +18,8 @@ import {
 import { FactoryEngine } from '@Types/factoryTypes';
 import { Tournament } from '@Types/tournamentTypes';
 
+let directiveReentry = false;
+
 export function executeFunction(
   engine: FactoryEngine,
   method: any,
@@ -27,6 +30,16 @@ export function executeFunction(
   // that sets it (`forge/dryRun`) owns snapshotting and restoring the state.
   options?: { dryRun?: boolean },
 ) {
+  const observe = engineBoundaryObservers.directive;
+  if (observe) {
+    // an installed observer (a test harness) is handed the call; it re-enters once, past this check
+    if (!directiveReentry)
+      return observe(methodName, (): unknown => {
+        directiveReentry = true;
+        return executeFunction(engine, method, params, methodName, engineType, options);
+      }) as never;
+    directiveReentry = false;
+  }
   delete engine.success;
   delete engine.error;
 

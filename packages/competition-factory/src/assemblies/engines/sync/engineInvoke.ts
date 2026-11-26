@@ -1,4 +1,5 @@
 import { captureOperation, restoreOperation } from '@Assemblies/engines/parts/operationState';
+import { engineBoundaryObservers } from '@Assemblies/engines/parts/boundaryObservers';
 import { ownMethod } from '@Tools/ownMethod';
 import { deleteNotices, getFactoryBackend, getInvokeObserver, getMethods } from '@Global/state/globalState';
 import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
@@ -13,7 +14,19 @@ import { withCapturedClock } from '@Tools/clock';
 // constants
 import { INVALID_VALUES, METHOD_NOT_FOUND } from '@Constants/errorConditionConstants';
 
+let invokeReentry = false;
+
 export function engineInvoke(engine: { [key: string]: any }, args: any) {
+  const observe = engineBoundaryObservers.invoke;
+  if (observe) {
+    // an installed observer (a test harness) is handed the call; it re-enters once, past this check
+    if (!invokeReentry)
+      return observe(args, (): unknown => {
+        invokeReentry = true;
+        return engineInvoke(engine, args);
+      }) as never;
+    invokeReentry = false;
+  }
   if (!isObject(args)) return { error: INVALID_VALUES, message: 'args must be an object' };
   const methodsCount = Object.values(args).filter(isFunction).length;
   if (methodsCount > 1)

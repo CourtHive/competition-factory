@@ -275,6 +275,11 @@ describe('globalState', () => {
         subscriptions: { TEST_TOPIC: mockCallback },
       });
       expect(result.success).toBe(true);
+      // A global subscription survives the per-file reset (resetGlobalState.ts), so in a shared worker it reached
+      // every later file: getTopics() then listed TEST_TOPIC beside a file's own topics, and a provider that answers
+      // getPayloads without reading the topic (readonlyNoticePayloads.test.ts) was delivered its payload twice.
+      // Unset, it is no longer a topic.
+      setGlobalSubscriptions({ subscriptions: { TEST_TOPIC: undefined } });
     });
 
     it('returns error when subscriptions missing', () => {

@@ -1,4 +1,5 @@
 import { captureOperation, restoreOperation } from '@Assemblies/engines/parts/operationState';
+import { engineBoundaryObservers } from '@Assemblies/engines/parts/boundaryObservers';
 import { ownMethod } from '@Tools/ownMethod';
 import { prepareDirective, validateDirectives } from '@Assemblies/engines/parts/directives';
 import { getQueueMethods } from '@Assemblies/engines/parts/engineMethodRegistry';
@@ -13,7 +14,19 @@ import { withCapturedClock } from '@Tools/clock';
 // types
 import { Directives, FactoryEngine } from '@Types/factoryTypes';
 
+let queueReentry = false;
+
 export function executionQueue(engine: FactoryEngine, directives: Directives, rollbackOnError?: boolean) {
+  const observe = engineBoundaryObservers.queue;
+  if (observe) {
+    // an installed observer (a test harness) is handed the call; it re-enters once, past this check
+    if (!queueReentry)
+      return observe(directives, rollbackOnError, (): unknown => {
+        queueReentry = true;
+        return executionQueue(engine, directives, rollbackOnError);
+      }) as never;
+    queueReentry = false;
+  }
   const methods = getQueueMethods(engine, directives);
   const start = Date.now();
 

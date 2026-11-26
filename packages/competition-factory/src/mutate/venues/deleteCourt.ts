@@ -6,6 +6,7 @@ import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { deletionMessage } from '@Mutate/venues/deletionMessage';
 import { addNotice } from '@Global/state/globalState';
 import { findCourt } from '@Query/venues/findCourt';
+import { bulkItem } from '@Mutate/bulkItem';
 
 // constants and types
 import { COURT_ID, TOURNAMENT_RECORDS } from '@Constants/attributeConstants';
@@ -113,7 +114,7 @@ export function deleteCourts(params: DeleteCourtsArgs): {
   if (!Array.isArray(courtIds)) return { error: INVALID_VALUES };
 
   for (const courtId of courtIds) {
-    const result = courtDeletion({ tournamentRecord, courtId, force });
+    const result = bulkItem(() => courtDeletion({ tournamentRecord, courtId, force }));
     if (result.error) return result;
   }
 

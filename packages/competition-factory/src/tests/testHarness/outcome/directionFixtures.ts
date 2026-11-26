@@ -5803,6 +5803,8 @@ export function play(
     };
   } finally {
     if (previousRandom) Math.random = previousRandom;
+    // the clock this play fixed is put back: one left behind reaches the next file of a shared worker
+    setClock();
   }
 }
 

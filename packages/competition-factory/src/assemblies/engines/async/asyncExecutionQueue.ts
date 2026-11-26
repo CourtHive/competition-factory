@@ -1,4 +1,5 @@
 import { deleteNotices, getDevContext, getInvokeObserver } from '@Global/state/globalState';
+import { engineBoundaryObservers } from '@Assemblies/engines/parts/boundaryObservers';
 import { ownMethod } from '@Tools/ownMethod';
 import { captureOperation, restoreOperation } from '@Assemblies/engines/parts/operationState';
 import { caughtErrorResult, executeFunction } from '@Assemblies/engines/parts/executeMethod';
@@ -13,7 +14,19 @@ import { withCapturedClockAsync } from '@Tools/clock';
 // types
 import { Directives, FactoryEngine } from '@Types/factoryTypes';
 
+let asyncQueueReentry = false;
+
 export async function asyncExecutionQueue(engine: FactoryEngine, directives: Directives, rollbackOnError?: boolean) {
+  const observe = engineBoundaryObservers.asyncQueue;
+  if (observe) {
+    // an installed observer (a test harness) is handed the call; it re-enters once, past this check
+    if (!asyncQueueReentry)
+      return observe(directives, rollbackOnError, (): unknown => {
+        asyncQueueReentry = true;
+        return asyncExecutionQueue(engine, directives, rollbackOnError);
+      }) as never;
+    asyncQueueReentry = false;
+  }
   const methods = getQueueMethods(engine, directives);
   const start = Date.now();
 
