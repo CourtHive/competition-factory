@@ -3,8 +3,8 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
 // constants and fixtures
+import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Tests/fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
 import { AUTO_SCHEDULING_AUDIT } from '@Constants/auditConstants';
-import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
 
 /**
  * A dry run of the profile scheduler as a preview (CA 2026-11-22, rain-day recovery R0): it writes nothing, it says

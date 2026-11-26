@@ -4,7 +4,7 @@ import { mocksEngine } from '../../..';
 import { expect, test } from 'vitest';
 
 // Fixtures
-import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
+import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Tests/fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
 
 const startTime = '08:00';
 const endTime = '20:00';

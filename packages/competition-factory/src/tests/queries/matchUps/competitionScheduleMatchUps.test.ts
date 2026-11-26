@@ -9,7 +9,7 @@ import { addDays } from '@Tools/dateTime';
 import { expect, test } from 'vitest';
 
 // constants and fixtures
-import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
+import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Tests/fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
 import { MAIN, QUALIFYING, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { MISSING_EVENT, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';

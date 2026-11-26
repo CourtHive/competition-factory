@@ -5,7 +5,7 @@ import { intersection } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
 // constants and fixtures
-import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
+import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Tests/fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
