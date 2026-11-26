@@ -21,7 +21,7 @@ import {
 
 // types
 import type { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
-import type { DrawDefinition, Tournament } from '@Types/tournamentTypes';
+import type { DrawDefinition, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
 
 // The per-call options of setMatchUpStatus that a bulk entry carries, each settable on the call (every outcome) or
 // on one outcome (that outcome only). Forwarding none of them made a result entered in bulk propagate differently
@@ -47,7 +47,7 @@ type BulkOutcome = ForwardedOptions & {
   notes?: string;
   schedule?: object;
   // the outcome itself, as `setMatchUpStatus` takes it
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
   winningSide?: number;
   score?: unknown;
 };
