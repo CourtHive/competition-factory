@@ -133,6 +133,8 @@ Bulk delete multiple courts. A court with scheduled matchUps is refused unless `
 
 Each court is its own item, deleted in order. A refused court leaves the record unchanged and the courts after it are still attempted; a court that is deleted stays deleted. `results` holds one entry per `courtId`, in order: `{ index, courtId, success: true }` or `{ index, courtId, error, info? }`. When any court is refused, the first refusal is also the call's own `error`, as before, with `committed: true` if any court was deleted, so the deleted courts' notices are still delivered.
 
+This item-by-item behaviour applies **within this one call**. Inside an `executionQueue`, a refused directive stops the queue instead: see [A call, a bulk call's items, and a queue](/docs/engines/mutation-engines#a-call-a-bulk-calls-items-and-a-queue).
+
 ```js
 const { success, error, committed, results } = engine.deleteCourts({
   courtIds: ['court-uuid-1', 'court-uuid-2'],
