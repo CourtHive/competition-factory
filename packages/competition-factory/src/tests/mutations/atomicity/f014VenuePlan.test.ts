@@ -8,7 +8,6 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import asyncEngine from '@Engines/asyncEngine';
 import { bulkScheduleTournamentMatchUps } from '@Mutate/matchUps/schedule/bulkScheduleTournamentMatchUps';
-import { venueModify } from '@Mutate/venues/modifyVenue';
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 
@@ -283,23 +282,6 @@ describe('a venue edit is planned whole before it writes', () => {
       }
     });
   }
-
-  it('venueModify plans one record whole: refused, it writes nothing; accepted, it returns the edited venue', () => {
-    const tournamentRecord = venueWithSchedule();
-    const before = JSON.stringify(tournamentRecord);
-    const refused = venueModify({
-      modifications: { venueName: 'Refused', courts: courts(tournamentRecord, ['c-2']) },
-      tournamentRecord,
-      venueId: 'v1',
-    });
-    expect((refused as any).error).toEqual(SCHEDULED_MATCHUPS);
-    expect(JSON.stringify(tournamentRecord)).toBe(before);
-
-    const accepted: any = venueModify({ modifications: { venueName: 'Renamed' }, tournamentRecord, venueId: 'v1' });
-    expect(accepted.success).toBe(true);
-    expect(tournamentRecord.venues[0].venueName).toEqual('Renamed');
-    expect(accepted.venue).toEqual(tournamentRecord.venues[0]);
-  });
 
   it('bulk scheduling without a tournament record is refused before planning', () => {
     expect(bulkScheduleTournamentMatchUps({} as any)).toEqual({ error: MISSING_TOURNAMENT_RECORD });

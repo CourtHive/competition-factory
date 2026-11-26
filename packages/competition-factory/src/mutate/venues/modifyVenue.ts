@@ -15,7 +15,6 @@ import { canonicalTime } from '@Tools/canonicalClock';
 import { addNotice } from '@Global/state/globalState';
 import { findVenue } from '@Query/venues/findVenue';
 import { modifyVenueNotice } from './venueNotices';
-import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { validTimePeriod } from '@Validators/time';
 import { buildCourt } from './addCourt';
 
@@ -82,13 +81,6 @@ export function modifyVenue(params: ModifyVenueArgs) {
   competitionRepair?.commit();
 
   return plans.length ? { ...SUCCESS } : { error };
-}
-
-export function venueModify(params: ModifyVenueArgs) {
-  const plan = planVenueModify(params);
-  if (!('commit' in plan)) return plan;
-  plan.commit();
-  return { ...SUCCESS, venue: makeDeepCopy(plan.venue) };
 }
 
 type VenuePlan = {
