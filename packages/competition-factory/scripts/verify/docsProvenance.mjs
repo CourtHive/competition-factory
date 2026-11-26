@@ -106,7 +106,11 @@ const SKIP = [/(^|\/)pnpm-lock\.yaml$/, /(^|\/)package-lock\.json$/];
 
 /** The files the gate reads, repo-relative: tracked text under documentation/, the READMEs and the CHANGELOG. */
 function targets() {
-  const out = execFileSync('git', ['ls-files', '-z', '--', 'documentation'], { cwd: REPO_ROOT, encoding: 'utf8' });
+  const out = execFileSync('git', ['ls-files', '-z', '--', 'documentation'], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+    timeout: 30_000,
+  });
   const docs = out
     .split('\0')
     .filter(Boolean)
