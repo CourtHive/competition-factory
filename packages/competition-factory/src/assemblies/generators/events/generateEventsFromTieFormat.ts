@@ -1,4 +1,5 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { catalogueNameWarned, warnCatalogueName } from '@Tools/catalogueNameWarnings';
 import { addEventEntries } from '@Mutate/entries/addEventEntries';
 import { withDraftWrites } from '@Global/state/withDraftWrites';
 import { coercedGender } from '@Helpers/coercedGender';
@@ -35,6 +36,8 @@ export function generateEventsFromTieFormat(params: GenerateEventsFromTieFormatA
   ]);
   if (paramsCheck.error) return paramsCheck;
 
+  if (!catalogueNameWarned.generateEventsFromTieFormat && !params.tieFormat && params.tieFormatName)
+    warnCatalogueName('generateEventsFromTieFormat', params.tieFormatName);
   const tieFormat = params.tieFormat ?? tieFormatDefaults({ namedFormat: params.tieFormatName });
   const uuids = params.uuids ?? [UUIDS(tieFormat.collectionDefinitions.length)];
 

@@ -37,8 +37,13 @@ export type CompetitionPolicy = {
       kFactor?: number;
       /** without a ratingsPolicy: the logistic spread, else POLICY_RATINGS_COMPETITION_FORM's 400 */
       logisticScale?: number;
-      /** a ratings preset by name or a policy inline, with a CONSTANT K; it sets the expectation, K and actual result */
+      /**
+       * a policy inline or, deprecated, a ratings preset by name (stored by value when the policy is attached), with a
+       * CONSTANT K; it sets the expectation, K and actual result
+       */
       ratingsPolicy?: string | RatingsPolicy;
+      /** the preset name `ratingsPolicy` was attached by: a label only, never looked up */
+      ratingsPolicyName?: string;
     };
 
     pressureRating?: {

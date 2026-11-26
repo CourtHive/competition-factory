@@ -134,6 +134,35 @@ and earlier carry no tags at all.
 - **The package is `competition-factory`.** `tods-competition-factory` 7.x stays installable and is not maintained after 8.0.0.
 - **Named catalogue formats and provider policies move to a separate resource package.** Defaults the engine reads stay in the core. The resource package is named in the 8.0.0 release notes.
 
+### Named catalogue inputs
+
+Named catalogue entries (the named tie formats such as `COLLEGE_D3` or `USTA_GOLD_TEAM_CHALLENGE`, and the ratings
+presets such as `POLICY_RATINGS_ELO_538_NHL`) move to the resource package in 8.0.0, so the core no longer resolves a
+name to one. These inputs are deprecated in 7.x:
+
+| Input                                                                                                 | 8.0.0 replacement                                           |
+| ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `addEvent` `event.tieFormatName`                                                                      | `event.tieFormat`, a `tieFormat` object                     |
+| `generateDrawDefinition` `tieFormatName`, when the event holds no tieFormat of that name              | `tieFormat`                                                 |
+| `generateEventsFromTieFormat` `tieFormatName`                                                         | `tieFormat`                                                 |
+| a mocksEngine profile's `tieFormatName` (draw, event, league and season profiles)                     | the profile's `tieFormat`                                   |
+| an `EventBuilder` `team(name)` or `tieFormat(name)` string                                            | `team(tieFormat)` or `tieFormat(tieFormat)` with the object |
+| a `ratingsPolicy` preset name, in a `competitionFormat` or a competition policy's `dynamicFormRating` | the ratings policy object                                   |
+
+In 7.x each name still resolves, and the behaviour is unchanged. The first use of each input in a process emits one
+warning; later uses do not. Under Node it is a `DeprecationWarning` with the code `FACTORY_CATALOGUE_NAME`, so
+`--no-deprecation`, `NODE_NO_WARNINGS` and `process.on('warning')` apply to it; elsewhere it is a `console.warn`.
+A `tieFormatName` that matches a tieFormat the event already holds is a label, not a catalogue lookup, and does not
+warn.
+
+Stored records read unchanged. Every stored TEAM tie carries its full `tieFormat`, and a `tieFormatName` on a stored
+record is a label. From 7.x, a preset name is stored by value when it is attached: a `competitionFormat` (`addEvent`,
+`modifyEvent`) and a competition policy's `dynamicFormRating` (`attachPolicies`) store the preset's full policy as
+`ratingsPolicy`, and keep the name beside it as `ratingsPolicyName`, a label. Such a record rates in 8.0.0 without the
+preset. A record stored earlier with only a preset name rates in 7.x; to rate it in 8.0.0, attach the policy object
+(`modifyEvent` with the `competitionFormat`, or `attachPolicies` with `allowReplacement`), or pass `ratingsPolicy` to
+`generateDynamicRatings`.
+
 ### The outcome pipeline selector is removed
 
 v2 is the outcome pipeline's default in 7.x, and `v1` stays selectable as a fallback through 7.x (see

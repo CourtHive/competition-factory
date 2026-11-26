@@ -35,7 +35,9 @@ For each matchUp, the first found:
 3. the `ratingsPolicy` of the matchUp's `competitionFormat` (its structure's, then its drawDefinition's, then its event's): a preset by name, such as `'POLICY_RATINGS_ELO_538_NHL'`, or a policy inline;
 4. `POLICY_RATINGS_DEFAULT`.
 
-A preset name the factory does not know, or an inline policy without `expectation`, `k` and `actual`, refuses the run with `INVALID_VALUES` before anything is written.
+A preset name the factory does not know, or an inline policy without `expectation`, `k` and `actual`, refuses the run with `INVALID_VALUES` before anything is written. For an unknown name, `info` names the preset and `context` carries it as `ratingsPolicy`, with the `matchUpId`.
+
+When a `competitionFormat` that names a preset is attached (`addEvent`, `modifyEvent`), the preset's full policy is stored as its `ratingsPolicy`, and the name is kept as `ratingsPolicyName`, a label that is never looked up. A stored record therefore rates without the preset catalogue. A record stored with only a name still rates by that preset in 7.x. Selecting a preset by name is deprecated: presets leave the core in 8.0.0, so pass the policy object (see [Migration to 8.0.0](../migration-8.0.0.md#named-catalogue-inputs)).
 
 ```js
 tournamentEngine.modifyEvent({

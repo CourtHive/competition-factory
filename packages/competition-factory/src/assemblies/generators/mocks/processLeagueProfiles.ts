@@ -1,4 +1,5 @@
 import { generateDrawDefinition } from '@Generators/drawDefinitions/generateDrawDefinition/generateDrawDefinition';
+import { catalogueNameWarned, warnCatalogueName } from '@Tools/catalogueNameWarnings';
 import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { generateVenues } from '@Mutate/venues/generateVenues';
 import { generateParticipants } from './generateParticipants';
@@ -59,6 +60,8 @@ export function processLeagueProfiles(params) {
     const eventId = leagueProfile.leagueId ?? leagueProfile.eventId ?? uuids?.pop() ?? UUID(undefined, random);
     eventIds.push(eventId);
 
+    if (!catalogueNameWarned.mocksProfile && !isObject(leagueProfile.tieFormat) && tieFormatName)
+      warnCatalogueName('mocksProfile', tieFormatName);
     // use tieFormat or tieFormatName to generate determine number of individualParticipants per team;
     // a profile naming neither gets the mocks' own concrete default, not a catalogue lookup
     const tieFormat: TieFormat =

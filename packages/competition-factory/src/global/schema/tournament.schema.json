@@ -6749,6 +6749,10 @@
                 "logisticScale": {
                   "type": "number"
                 },
+                "ratingsPolicyName": {
+                  "description": "The preset name ratingsPolicy was attached by: a label only, never looked up.",
+                  "type": "string"
+                },
                 "ratingsPolicy": {
                   "description": "A ratings preset by name, or a ratings policy inline with a CONSTANT K: the form rating's expectation, K and actual result. Without one, kFactor and logisticScale, else POLICY_RATINGS_COMPETITION_FORM's 24 and 400.",
                   "oneOf": [

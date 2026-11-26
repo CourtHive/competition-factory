@@ -1,3 +1,4 @@
+import { catalogueNameWarned, warnCatalogueName } from '@Tools/catalogueNameWarnings';
 import { ratingsPolicies } from '@Fixtures/policies/ratingsPolicies';
 import { matchesPlayedK } from './ratingUpdate';
 
@@ -82,8 +83,14 @@ export function isRatingsPolicy(policy?: RatingsPolicy): policy is RatingsPolicy
   return !!policy?.expectation && !!policy?.k && !!policy?.actual;
 }
 
-/** A ratings policy selected by preset name or given inline; `undefined` for an unknown name or an incomplete policy. */
+/**
+ * A ratings policy selected by preset name or given inline; `undefined` for an unknown name or an incomplete policy. A
+ * preset name is deprecated (presets leave the core in 8.0.0), and warns once per process the first time it resolves.
+ */
 export function resolveRatingsPolicy(selected: string | RatingsPolicy): RatingsPolicy | undefined {
-  const policy = typeof selected === 'string' ? ratingsPolicies[selected] : selected;
-  return isRatingsPolicy(policy) ? policy : undefined;
+  if (typeof selected !== 'string') return isRatingsPolicy(selected) ? selected : undefined;
+  const policy = ratingsPolicies[selected];
+  if (!isRatingsPolicy(policy)) return undefined;
+  if (!catalogueNameWarned.ratingsPreset) warnCatalogueName('ratingsPreset', selected);
+  return policy;
 }
