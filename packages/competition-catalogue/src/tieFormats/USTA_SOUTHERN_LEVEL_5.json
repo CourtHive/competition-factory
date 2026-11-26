@@ -1,0 +1,32 @@
+{
+  "collectionDefinitions": [
+    {
+      "collectionName": "Male Singles",
+      "gender": "MALE",
+      "matchUpCount": 6,
+      "matchUpFormat": "SET3-S:6/TB7-F:TB10",
+      "matchUpType": "SINGLES",
+      "matchUpValue": 1
+    },
+    {
+      "collectionName": "Female Singles",
+      "gender": "FEMALE",
+      "matchUpCount": 6,
+      "matchUpFormat": "SET3-S:6/TB7-F:TB10",
+      "matchUpType": "SINGLES",
+      "matchUpValue": 1
+    },
+    {
+      "collectionName": "Mixed Doubles",
+      "gender": "MIXED",
+      "matchUpCount": 3,
+      "matchUpFormat": "SET1-S:8/TB7",
+      "matchUpType": "DOUBLES",
+      "matchUpValue": 1
+    }
+  ],
+  "tieFormatName": "USTA Southern Level 5",
+  "winCriteria": {
+    "valueGoal": 8
+  }
+}

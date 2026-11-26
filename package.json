@@ -15,8 +15,8 @@
     "verify:hard-union": "pnpm --dir packages/competition-factory verify:hard-union",
     "verify:exit-tenant": "pnpm --dir packages/competition-factory verify:exit-tenant",
     "verify:layers": "pnpm --dir packages/competition-factory verify:layers",
-    "format": "prettier --write \"packages/competition-factory/src/**/*.{ts,mts,cts,js,mjs,cjs,json}\" \"documentation/**/*.{md,mdx,ts,tsx,js,jsx,mjs,cjs,css,json}\"",
-    "format:check": "prettier --check \"packages/competition-factory/src/**/*.{ts,mts,cts,js,mjs,cjs,json}\" \"documentation/**/*.{md,mdx,ts,tsx,js,jsx,mjs,cjs,css,json}\"",
+    "format": "prettier --write \"packages/competition-factory/src/**/*.{ts,mts,cts,js,mjs,cjs,json}\" \"packages/competition-catalogue/{src,scripts}/**/*.{ts,mjs,json}\" \"packages/competition-catalogue/*.{mjs,json}\" \"documentation/**/*.{md,mdx,ts,tsx,js,jsx,mjs,cjs,css,json}\"",
+    "format:check": "prettier --check \"packages/competition-factory/src/**/*.{ts,mts,cts,js,mjs,cjs,json}\" \"packages/competition-catalogue/{src,scripts}/**/*.{ts,mjs,json}\" \"packages/competition-catalogue/*.{mjs,json}\" \"documentation/**/*.{md,mdx,ts,tsx,js,jsx,mjs,cjs,css,json}\"",
     "lint:md": "markdownlint-cli2 \"**/*.md\"",
     "lint:md:fix": "markdownlint-cli2 --fix \"**/*.md\"",
     "lint:staged": "TZ=UTC lint-staged"

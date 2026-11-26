@@ -25,10 +25,12 @@ RELEASE_BRANCH=master
 # Exactly the files release-please writes in this repo; scripts/verify/verified-release.mjs checks the
 # release commit against the same three.
 # Paths are repo-root relative (the package lives in packages/competition-factory).
+# Each package has its own release PR (separate-pull-requests), so a release PR touches one package's two files.
 VERSION_FILES=(packages/competition-factory/package.json packages/competition-factory/CHANGELOG.md
+  packages/competition-catalogue/package.json packages/competition-catalogue/CHANGELOG.md
   .release-please-manifest.json)
 # Of those, the package manifests, in which only the "version" line may change.
-PACKAGE_JSONS=(packages/competition-factory/package.json)
+PACKAGE_JSONS=(packages/competition-factory/package.json packages/competition-catalogue/package.json)
 
 FROM=${FROM:-HEAD^1}
 TO=${TO:-HEAD}

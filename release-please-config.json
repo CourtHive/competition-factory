@@ -19,9 +19,15 @@
     { "type": "build", "section": "Build", "hidden": true },
     { "type": "ci", "section": "CI", "hidden": true }
   ],
+  "separate-pull-requests": true,
   "packages": {
     "packages/competition-factory": {
       "package-name": "tods-competition-factory"
+    },
+    "packages/competition-catalogue": {
+      "package-name": "@courthive/competition-catalogue",
+      "component": "competition-catalogue",
+      "include-component-in-tag": true
     }
   }
 }

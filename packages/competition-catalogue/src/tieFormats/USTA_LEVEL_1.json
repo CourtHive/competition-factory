@@ -1,0 +1,36 @@
+{
+  "collectionDefinitions": [
+    {
+      "collectionName": "Male Singles",
+      "matchUpCount": 6,
+      "matchUpFormat": "SET3-S:6/TB7",
+      "matchUpType": "SINGLES",
+      "matchUpValue": 1
+    },
+    {
+      "collectionName": "Female Singles",
+      "matchUpCount": 6,
+      "matchUpFormat": "SET3-S:6/TB7",
+      "matchUpType": "SINGLES",
+      "matchUpValue": 1
+    },
+    {
+      "collectionName": "Male Doubles",
+      "matchUpCount": 3,
+      "matchUpFormat": "SET1-S:8/TB7",
+      "matchUpType": "DOUBLES",
+      "matchUpValue": 1
+    },
+    {
+      "collectionName": "Female Doubles",
+      "matchUpCount": 3,
+      "matchUpFormat": "SET1-S:8/TB7",
+      "matchUpType": "DOUBLES",
+      "matchUpValue": 1
+    }
+  ],
+  "tieFormatName": "USTA Level 1",
+  "winCriteria": {
+    "valueGoal": 10
+  }
+}

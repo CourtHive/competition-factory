@@ -1,3 +1,4 @@
 {
-  "packages/competition-factory": "7.50.0"
+  "packages/competition-factory": "7.50.0",
+  "packages/competition-catalogue": "0.0.0"
 }

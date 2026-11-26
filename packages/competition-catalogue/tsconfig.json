@@ -1,0 +1,12 @@
+{
+  // The entries are plain data, typed against the factory's own type definitions: `@Types/*` resolves through the
+  // factory package's paths. Only types cross that line (`import type`), so the built package imports nothing.
+  "extends": "../competition-factory/tsconfig.base.json",
+  "include": ["src/**/*.ts"],
+  "exclude": ["dist"],
+  "compilerOptions": {
+    "noEmit": true,
+    // the factory's type files are part of this program, so the root spans both packages
+    "rootDir": ".."
+  }
+}
