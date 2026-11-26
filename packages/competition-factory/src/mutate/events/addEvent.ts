@@ -1,10 +1,12 @@
 import { addDrawNotice, addMatchUpsNotice, stampUnannounced } from '@Mutate/notifications/drawNotifications';
+import { pinnedCompetitionFormat } from '@Helpers/ratings/pinnedCompetitionFormat';
 import { addEventNotice } from '@Mutate/notifications/eventNotifications';
 import { matchUpFormatRefusal } from '@Validators/isValidMatchUpFormat';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
+import { warnCatalogueName } from '@Global/catalogueNameWarnings';
 import { normalizeDiscipline } from '@Tools/coercedDiscipline';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { normalizeGender } from '@Helpers/coercedGender';
@@ -82,6 +84,11 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
   // 'beach volleyball' and 'BEACH_VOLLEYBALL' are stored identically
   if (eventRecord.discipline) eventRecord.discipline = normalizeDiscipline(eventRecord.discipline);
 
+  // a ratings preset named by the competitionFormat is stored by value, so reading the record never needs the name
+  if (typeof event.competitionFormat?.ratingsPolicy === 'string') {
+    eventRecord.competitionFormat = pinnedCompetitionFormat(event.competitionFormat);
+  }
+
   // minted before the tieFormat, whose mock collection ids are built from it (they were `undefined-COL-n`)
   eventRecord.eventId ??= UUID();
 
@@ -106,6 +113,7 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
           error: INVALID_VALUES,
         };
       }
+      warnCatalogueName('addEvent', event.tieFormatName);
       const tieFormat = tieFormatDefaults({
         isMock: tournamentRecord?.isMock,
         namedFormat: event.tieFormatName,

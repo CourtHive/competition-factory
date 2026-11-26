@@ -1,5 +1,6 @@
 import { getObjectTieFormat } from '@Query/hierarchical/tieFormats/getObjectTieFormat';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { pinnedCompetitionFormat } from '@Helpers/ratings/pinnedCompetitionFormat';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { categoryCanContain } from '@Helpers/categories/categoryCanContain';
 import { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';
@@ -119,7 +120,8 @@ export function modifyEvent(params: ModifyEventArgs): ResultType {
     if (eventUpdates.competitionFormat === null) {
       delete event.competitionFormat;
     } else {
-      event.competitionFormat = eventUpdates.competitionFormat;
+      // a ratings preset named here is stored by value, so reading the record never needs the name
+      event.competitionFormat = pinnedCompetitionFormat(eventUpdates.competitionFormat);
     }
   }
 

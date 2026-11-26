@@ -1,6 +1,7 @@
 import { generateDrawDefinition } from '@Generators/drawDefinitions/generateDrawDefinition/generateDrawDefinition';
 import { completeDrawMatchUps } from '@Generators/simulation/completeDrawMatchUps';
 import { resolveCompletionOptions } from './resolveCompletionOptions';
+import { attributeCatalogueNames } from '@Global/catalogueNameWarnings';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { isValidExtension } from '@Validators/isValidExtension';
 import { applyDefinedOutcomes } from './generateEventWithDraw';
@@ -176,19 +177,22 @@ function generateAndAddDraw({
   event,
   stage,
 }) {
-  let result = generateDrawDefinition({
-    ...drawProfile,
-    matchUpType: eventType,
-    seedingScaleName,
-    tournamentRecord,
-    drawEntries,
-    drawName,
-    drawId,
-    isMock,
-    random,
-    event,
-    stage,
-  });
+  // the profile's tieFormatName reaches generateDrawDefinition: a warning for it names the mocks profile
+  let result = attributeCatalogueNames('mocksProfile', () =>
+    generateDrawDefinition({
+      ...drawProfile,
+      matchUpType: eventType,
+      seedingScaleName,
+      tournamentRecord,
+      drawEntries,
+      drawName,
+      drawId,
+      isMock,
+      random,
+      event,
+      stage,
+    }),
+  );
   if (result.error) return { error: result.error };
   const { drawDefinition } = result;
   if (!drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };

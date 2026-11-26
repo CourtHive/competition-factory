@@ -7,6 +7,7 @@ import { eventGeneratesOwnParticipants } from './eventGeneratesOwnParticipants';
 import { generateEventParticipants } from './generateEventParticipants';
 import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { resolveCompletionOptions } from './resolveCompletionOptions';
+import { warnCatalogueName } from '@Global/catalogueNameWarnings';
 import { addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { attachProfilePolicies } from './attachProfilePolicies';
 import { getParticipantId } from '@Functions/global/extractors';
@@ -58,6 +59,7 @@ export function generateEventWithFlights(params) {
   } = eventProfile;
 
   const eventId = eventProfile.eventId || UUID(undefined, random);
+  if (eventType === TEAM && !eventProfile.tieFormat && tieFormatName) warnCatalogueName('mocksProfile', tieFormatName);
   const tieFormat =
     eventProfile.tieFormat ||
     (eventType === TEAM

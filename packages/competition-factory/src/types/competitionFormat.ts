@@ -34,10 +34,17 @@ export interface competitionFormat {
   /** Server determination rule: 'ALTERNATE_GAMES' (default) or 'WINNER_SERVES' */
   serverRule?: ServerRule;
   /**
-   * How a dynamic rating moves on this sport's results: a ratings preset by name ('POLICY_RATINGS_ELO_538_NHL') or a
-   * policy inline. A ratings policy passed to generateDynamicRatings or attached to the event or tournament comes first.
+   * How a dynamic rating moves on this sport's results: a ratings policy inline or, deprecated, a ratings preset by
+   * name ('POLICY_RATINGS_ELO_538_NHL'), which is stored by value when attached. A ratings policy passed to
+   * generateDynamicRatings or attached to the event or tournament comes first.
    */
   ratingsPolicy?: string | RatingsPolicy;
+  /**
+   * The preset name a `ratingsPolicy` was attached by. When a competitionFormat naming a preset is attached
+   * (`addEvent`, `modifyEvent`), the preset's full policy is stored as `ratingsPolicy` and the name is kept here as a
+   * label only: it is never looked up.
+   */
+  ratingsPolicyName?: string;
   extensions?: Extension[];
   notes?: string;
 }

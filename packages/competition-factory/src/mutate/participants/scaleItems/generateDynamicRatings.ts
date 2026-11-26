@@ -126,12 +126,7 @@ export function generateDynamicRatings(params): ResultType & {
   };
   const withPolicies = matchUps.map((matchUp) => ({ matchUp, policy: policyOf(matchUp) }));
   const unresolved = withPolicies.find(({ policy }) => !policy);
-  if (unresolved) {
-    return {
-      error: INVALID_VALUES,
-      info: `ratingsPolicy: no ratings policy for matchUp ${unresolved.matchUp.matchUpId}`,
-    };
-  }
+  if (unresolved) return unresolvedPolicyRefusal(tournamentRecord, unresolved.matchUp);
   const rated = (withPolicies as { matchUp: HydratedMatchUp; policy: RatingsPolicy }[]).filter(
     ({ matchUp, policy }) => !(matchUp.matchUpStatus === WALKOVER && policy.walkovers === 'EXCLUDE'),
   );
@@ -511,6 +506,28 @@ function updateRatingsForMatchUp({
   rate(winnerIds, true);
   rate(loserIds, false);
   return true;
+}
+
+/**
+ * The refusal for a matchUp whose competitionFormat selects no usable ratings policy. A preset name the factory does not
+ * hold is named in `info` and in `context.ratingsPolicy`, with `context.matchUpId`; an incomplete inline policy says so.
+ */
+function unresolvedPolicyRefusal(tournamentRecord: Tournament, matchUp: HydratedMatchUp): ResultType {
+  const event = tournamentRecord.events?.find(({ eventId }) => eventId === matchUp.eventId);
+  const selected = competitionFormatOf(event, matchUp)?.ratingsPolicy;
+  const { matchUpId } = matchUp;
+  if (typeof selected === 'string') {
+    return {
+      error: INVALID_VALUES,
+      info: `ratingsPolicy: no ratings preset named '${selected}' (matchUp ${matchUpId}); pass the ratings policy object`,
+      context: { ratingsPolicy: selected, matchUpId },
+    };
+  }
+  return {
+    error: INVALID_VALUES,
+    info: `ratingsPolicy: an inline ratings policy needs expectation, k and actual (matchUp ${matchUpId})`,
+    context: { matchUpId },
+  };
 }
 
 /** The competitionFormat a matchUp is played under: its structure's, then its drawDefinition's, then its event's. */

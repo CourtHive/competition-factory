@@ -14,6 +14,7 @@
  * executionQueue `pipe` mechanism to thread `event` and `drawDefinition`
  * results between steps without forcing the caller to materialize them.
  */
+import { attributeCatalogueNames, warnCatalogueName } from '@Global/catalogueNameWarnings';
 
 import { DOUBLES, HYBRID, SINGLES, TEAM } from '@Constants/eventConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
@@ -50,7 +51,7 @@ export class EventBuilder {
   }
   team(tieFormat?: any | string): this {
     this.eventState.eventType = TEAM;
-    if (typeof tieFormat === 'string') this.eventState.tieFormatName = tieFormat;
+    if (typeof tieFormat === 'string') this.namedTieFormat(tieFormat);
     else if (tieFormat) this.eventState.tieFormat = tieFormat;
     return this;
   }
@@ -79,9 +80,14 @@ export class EventBuilder {
     return this;
   }
   tieFormat(tieFormat: any | string): this {
-    if (typeof tieFormat === 'string') this.eventState.tieFormatName = tieFormat;
+    if (typeof tieFormat === 'string') this.namedTieFormat(tieFormat);
     else this.eventState.tieFormat = tieFormat;
     return this;
+  }
+  /** A string names a catalogue tie format, sent as addEvent's `tieFormatName`: deprecated, pass a tieFormat object */
+  private namedTieFormat(tieFormatName: string): void {
+    warnCatalogueName('eventBuilder', tieFormatName);
+    this.eventState.tieFormatName = tieFormatName;
   }
 
   // ---- entries ----
@@ -157,7 +163,10 @@ export class EventBuilder {
 
   create(opts?: { rollbackOnError?: boolean }): BuildResult {
     const directives = this.toDirectives();
-    const queueResult = this.engine.executionQueue(directives, opts?.rollbackOnError);
+    // a team() / tieFormat() string reaches addEvent as its tieFormatName: a warning for it names the builder
+    const queueResult = attributeCatalogueNames('eventBuilder', () =>
+      this.engine.executionQueue(directives, opts?.rollbackOnError),
+    );
     if (queueResult?.error) {
       return {
         success: false,
