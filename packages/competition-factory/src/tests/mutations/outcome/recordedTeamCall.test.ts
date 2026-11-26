@@ -242,7 +242,7 @@ describe("a recorded line's result holds its dual's stored score, the very objec
   });
 });
 
-describe("a TEAM call v1 refuses on the copy is not recorded, and is v1's", () => {
+describe("a TEAM call v1 refuses on the copy is refused with v1's answer, and not run again", () => {
   // a line with no line-up assigned can be made a double exit, and v1 refuses the result entered over it
   it('a result entered over a double exit on a line with no line-up assigned (ERR_MISSING_ASSIGNMENTS)', () => {
     generate({ drawSize: 4, drawType: SINGLE_ELIMINATION, tieFormatName: USTA_COLLEGE }, { bare: true });
@@ -257,9 +257,10 @@ describe("a TEAM call v1 refuses on the copy is not recorded, and is v1's", () =
     expect(JSON.parse(v1.results)[0].error.code).toEqual(MISSING_ASSIGNMENTS.code);
     for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
       const actual = play(mode, prepared, calls);
-      // asked for (the planners abstain), and not made: v1's error on the copy is v1's answer, made on the stored record
-      expect([actual.asked, actual.made]).toEqual([1, 0]);
-      expect(actual.v1Writes).toEqual(v1.v1Writes);
+      // asked for (the planners abstain): v1's error on the copy is the answer, and v1 is not run on the stored record
+      // again (step 4, CA 2026-11-26). v1 refuses this before its first write, so the record is v1's either way
+      expect([actual.asked, actual.made]).toEqual([1, 1]);
+      expect(actual.v1Writes).toEqual(0);
       expect(actual.results).toEqual(v1.results);
       expect(actual.record).toEqual(v1.record);
       expect(actual.notices).toEqual(v1.notices);
@@ -279,7 +280,7 @@ describe("a TEAM call v1 refuses on the copy is not recorded, and is v1's", () =
     const v1 = play(OUTCOME_PIPELINE_V1, prepared, calls);
     for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
       const actual = play(mode, prepared, calls);
-      expect([actual.asked, actual.made]).toEqual([1, 0]);
+      expect([actual.asked, actual.made]).toEqual([1, 1]);
       expect(JSON.parse(actual.results)[0].error.code).toEqual(MISSING_ASSIGNMENTS.code);
       expect(actual.results).toEqual(v1.results);
       expect(actual.record).toEqual(v1.record);

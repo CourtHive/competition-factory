@@ -108,9 +108,10 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
       const v2 = play(OUTCOME_PIPELINE_V2, scenario);
       // CONTROL: East's carry goes West then South, two levels, so a bound of one stops it
       expect(v1.results[0].error?.code).toEqual(SETTLE_BOUND_REACHED.code);
-      expect(v2.v1Writes).toBeGreaterThan(0);
+      // v1 refuses on the recorder's copy, and that refusal is v2's answer: nothing is written (step 4, CA 2026-11-26)
+      expect(v2.v1Writes).toEqual(0);
       expect(v2.results).toEqual(v1.results);
-      expect(v2.record).toEqual(v1.record);
+      expect(v2.record).toEqual(v2.recordBefore);
     } finally {
       SETTLE_PASS_LIMITS.exitLevels = saved;
     }
@@ -129,9 +130,10 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
       const v2 = play(OUTCOME_PIPELINE_V2, scenario);
       // CONTROL: v1 refuses at the bound
       expect(v1.results[0].error?.code).toEqual(SETTLE_BOUND_REACHED.code);
-      expect(v2.v1Writes).toBeGreaterThan(0);
+      // refused on the recorder's copy, with nothing written (step 4, CA 2026-11-26)
+      expect(v2.v1Writes).toEqual(0);
       expect(v2.results).toEqual(v1.results);
-      expect(v2.record).toEqual(v1.record);
+      expect(v2.record).toEqual(v2.recordBefore);
     } finally {
       SETTLE_PASS_LIMITS.exitLevels = saved;
     }

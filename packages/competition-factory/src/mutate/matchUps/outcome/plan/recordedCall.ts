@@ -46,12 +46,25 @@ import type { OutcomeOp } from '../ops';
  * (`updateTieMatchUpScore`), the dual's own direction where the line decides or un-decides it, and the line-ups it
  * carries onto the next duals' sides and the draw's `lineUps` extension: all of it in the draw, so all of it ops.
  */
-export type RecordedCall = {
-  ops: OutcomeOp[];
-  written: ResultType;
-  /** asked only where a settle predicate finds work on `ops`: whether the passes themselves do (`settledOnCopy`) */
-  provesSettled?: () => boolean;
-};
+export type RecordedCall =
+  | {
+      ops: OutcomeOp[];
+      written: ResultType;
+      /** asked only where a settle predicate finds work on `ops`: whether the passes themselves do (`settledOnCopy`) */
+      provesSettled?: () => boolean;
+      refused?: undefined;
+    }
+  | {
+      /**
+       * REFUSED ON THE COPY (step 4, CA 2026-11-26): v1's own run returned this error, its objects of the copy given
+       * their stored counterparts. It is the call's answer, and v1 is not run again on the stored record, where it would
+       * write before refusing
+       */
+      refused: ResultType;
+      ops?: undefined;
+      written?: undefined;
+      provesSettled?: undefined;
+    };
 
 /**
  * every structure and matchUp of the draw, where it stands; and the list each dual holds its lines in, which a recorded
@@ -166,7 +179,10 @@ export function recordWholeCall(args: BuildViewArgs, sampledStamps?: Set<string>
           outside: outside(),
         };
         const ran = runOnCopy(args, { tournamentRecord, drawDefinition, event });
-        if (!ran || ran.error) return undefined;
+        if (!ran) return undefined;
+        // v1 refused on the copy: that is the call's answer, read with the stored objects where it names any; one that
+        // names an object the stored record cannot stand for stays v1's, on the stored record, as before
+        if (ran.error) return returnedOnStored(ran, originals, drawDefinition) ? { refused: ran } : undefined;
         const after = placed(drawDefinition);
         const moved = after.length !== before.placed.length || after.some((entity, at) => entity !== before.placed[at]);
         if (moved || outside() !== before.outside) return undefined;

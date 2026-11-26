@@ -493,6 +493,7 @@ function recordedWhole(args: PlanArgs, plan: OutcomePlan): OutcomePlan {
   }
   const recorded = args.recordWhole?.();
   if (!recorded) return plan;
+  if (recorded.refused) return { abstain: plan.abstain ?? 'settle', refusedOnCopy: recorded.refused };
   // a predicate that finds work on v1's own write is answered by the passes themselves (`settledOnCopy`): only where
   // they change nothing at all is the program marked settled, and no predicate is asked of it again
   const settled = args.settles?.(recorded.ops)

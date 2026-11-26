@@ -47,8 +47,8 @@ vi.mock('@Mutate/matchUps/score/modifyMatchUpScore', async (importOriginal) => {
     ...actual,
     modifyMatchUpScore: (params: any) => {
       if (forced.context && params?.context === forced.context) {
-        // v2 reads v1's write on a copy first, where the same write fails and the recording is refused: the call
-        // stays v1's, and the hit counted is the one on the stored record
+        // v2 reads v1's write on a copy first, where the same write fails: that refusal is the call's answer, and v1 is
+        // not run on the stored record (step 4, CA 2026-11-26). The hit counted is one on the stored record
         if (!inDraftWrites()) forced.hits += 1;
         return { error: FORCED_ERROR };
       }
@@ -147,13 +147,17 @@ it('returns the error when the write to the decider fails (v1 residual: the fina
     drawId: DRAW_ID,
   });
 
-  // CONTROL: the write was attempted, and it was the one made to fail
-  expect(forced.hits).toEqual(1);
+  // CONTROL: the write was attempted, and it was the one made to fail: on the stored record under v1; under v2 and
+  // differential on the recorder's copy only, the refusal there being the answer
+  const v1 = getOutcomePipeline() === OUTCOME_PIPELINE_V1;
+  expect(forced.hits).toEqual(v1 ? 1 : 0);
   expect(result.success).toBeUndefined();
   expect(result.error).toEqual(FORCED_ERROR);
   // v2 met its own failure first, on the copy, and never wrote the stored draw
   expect(fold.working).toEqual(getOutcomePipeline() === OUTCOME_PIPELINE_V1 ? 0 : 1);
   expect(fold.stored).toEqual(0);
+  // and under v2 and differential the final is not scored: nothing was written
+  if (!v1) expect(final().winningSide).toBeUndefined();
 });
 
 it('v2: a settle op that cannot be folded is met on the working copy, and the stored draw is written whole', () => {

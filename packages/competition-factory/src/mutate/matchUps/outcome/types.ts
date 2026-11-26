@@ -694,7 +694,13 @@ export type OutcomePlan =
       /** The public return from a native sequence that writes a line and keeps or decides its dual. */
       phaseResult?: ResultType;
     }
-  | { abstain: AbstainReason; ops?: undefined; shape?: undefined };
+  | {
+      abstain: AbstainReason;
+      ops?: undefined;
+      shape?: undefined;
+      /** RECORDED: v1 refused the whole call on a copy; the refusal is the call's answer (`recordedCall.ts`) */
+      refusedOnCopy?: ResultType;
+    };
 
 /**
  * The view of the draw as `ops` leave it, with the direction a route plans on it: the working view (§ 3.2) folded and
@@ -754,7 +760,10 @@ export type PlanArgs = {
   /** RECORDED: the double-exit module's cascade after `prefix`, read on a copy of the record. */
   record?: (prefix: OutcomeOp[]) => OutcomeOp[] | undefined;
   /** RECORDED: v1's whole write for the call, read on a copy of the record (`plan/recordedCall.ts`). */
-  recordWhole?: () => { ops: OutcomeOp[]; written: ResultType; provesSettled?: () => boolean } | undefined;
+  recordWhole?: () =>
+    | { ops: OutcomeOp[]; written: ResultType; provesSettled?: () => boolean; refused?: undefined }
+    | { refused: ResultType; ops?: undefined; written?: undefined; provesSettled?: undefined }
+    | undefined;
   /** with no captured instant: whether `ops` is a program the ordered temporal executor certifies (`compileTemporalPhases`) */
   certifiesPhases?: (ops: OutcomeOp[]) => boolean;
   /** S7: the dual's call a deciding line makes */

@@ -55,8 +55,8 @@ vi.mock('@Mutate/matchUps/outcome/plan/recordedCall', async (original) => {
   const actual = await original<typeof import('@Mutate/matchUps/outcome/plan/recordedCall')>();
   const recordWholeCall: typeof actual.recordWholeCall = (args) => {
     const recorded = recorder.refuse ? undefined : actual.recordWholeCall(args);
-    if (recorded) recorder.ops = recorded.ops;
-    if (recorded) recorder.made.push(recorded.ops);
+    if (recorded?.ops) recorder.ops = recorded.ops;
+    if (recorded?.ops) recorder.made.push(recorded.ops);
     return recorded;
   };
   return { ...actual, recordWholeCall };

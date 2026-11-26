@@ -336,7 +336,7 @@ it.each([true, false])('tally composes with final scored-time cleanup with deepC
   }
 });
 
-it('invalid tally preserves the score and rebuilt assignment prefix through v1', () => {
+it('invalid tally: v1 keeps the score and rebuilt assignment prefix; v2 refuses on the copy with nothing written', () => {
   const fixture = prepare(singles);
   const structure = fixture.prepared.events[0].drawDefinitions[0].structures[0];
   const other = structure.matchUps.find((matchUp) => matchUp.matchUpId !== fixture.matchUpId);
@@ -349,9 +349,10 @@ it('invalid tally preserves the score and rebuilt assignment prefix through v1',
   const v2 = play(OUTCOME_PIPELINE_V2, fixture, NATIVE, 'draw-only');
   expect(v1.result.error).toBeDefined();
   expect(v2.result).toEqual(v1.result);
-  expect(JSON.parse(v2.record)).toEqual(JSON.parse(v1.record));
-  expect(v2.notices).toEqual(v1.notices);
-  expect(v2.writes, JSON.stringify(v1.result)).toEqual(v1.writes);
+  // v1's refusal on the recorder's copy is v2's answer: the stored record is as it was (step 4, CA 2026-11-26)
+  expect(JSON.parse(v2.record)).toEqual(JSON.parse(canonicalJson(fixture.prepared)));
+  expect(v2.notices).toEqual([]);
+  expect(v2.writes).toEqual(0);
   const written = JSON.parse(v1.record).events[0].drawDefinitions[0].structures[0];
   expect(written.positionAssignments).not.toEqual(structure.positionAssignments);
   expect(written.matchUps.find((matchUp) => matchUp.matchUpId === fixture.matchUpId).winningSide).toEqual(1);

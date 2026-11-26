@@ -48,7 +48,13 @@ const first = (copy: RecordCopy): MatchUp => matchUpsOf(copy.drawDefinition.stru
 type Writer = (copy: RecordCopy, args: BuildViewArgs) => unknown;
 const refused: [string, Writer][] = [
   ['the call cannot be run on a copy', () => undefined],
-  ['v1 returns an error', () => ({ error: { code: 'ERR', message: 'refused' } })],
+  [
+    'v1 returns an error naming an object of the copy that the stored record cannot stand for',
+    (copy) => {
+      first(copy).notes = 'written';
+      return { error: { code: 'ERR', message: 'refused' }, context: { event: copy.event } };
+    },
+  ],
   [
     'v1 throws',
     () => {
@@ -104,6 +110,30 @@ const refused: [string, Writer][] = [
   ],
 ];
 
+/**
+ * STEP 4 (CA, 2026-11-26): v1's refusal on the copy is the call's answer, with the stored objects where it names any of
+ * the copy's; v1 is not run again on the stored record. The record is untouched.
+ */
+it('returns the refusal where v1 refuses on the copy, naming the stored objects', () => {
+  const { args, before } = prepare();
+  const refusal = { error: { code: 'ERR', message: 'refused' } };
+  let named: object | undefined;
+  const recorded = recordWholeCall({
+    ...args,
+    writeOnCopy: (copy) => {
+      first(copy).notes = 'written';
+      named = first(copy);
+      return { ...refusal, context: { matchUp: first(copy) } };
+    },
+  });
+  expect(recorded?.refused?.error).toEqual(refusal.error);
+  expect(recorded?.ops).toBeUndefined();
+  const storedMatchUp = matchUpsOf(args.drawDefinition?.structures?.[0])?.[0];
+  expect(recorded?.refused?.context?.matchUp).toBe(storedMatchUp);
+  expect(recorded?.refused?.context?.matchUp).not.toBe(named);
+  expect(canonicalJson(args.tournamentRecord)).toEqual(before);
+});
+
 it.each(refused)('is not made where %s', (_label, writer) => {
   const { args, before } = prepare();
   const writeOnCopy = (copy: RecordCopy) => writer(copy, args) as ReturnType<NonNullable<BuildViewArgs['writeOnCopy']>>;
@@ -133,7 +163,7 @@ it('is made where v1 stops its forward settle at the bound, and says so', () => 
     ...args,
     writeOnCopy: (copy) => ((first(copy).notes = 'written'), { ...SUCCESS }),
   });
-  expect(settled?.ops.some((op) => op.op === 'announceRecorded' && op.forwardExhausted)).toEqual(false);
+  expect(settled?.ops?.some((op) => op.op === 'announceRecorded' && op.forwardExhausted)).toEqual(false);
   expect(settled?.provesSettled).toBeDefined();
 });
 
@@ -249,7 +279,7 @@ it("returns the stored objects where v1's result holds objects of the copy", () 
   const storedMatchUp = first({ drawDefinition: storedDraw } as RecordCopy);
   const about = context.about;
   // the result is the object v1 returned, and the objects the run made are themselves
-  expect(recorded?.written.context).toBe(context);
+  expect(recorded?.written?.context).toBe(context);
   expect(context.about).toBe(about);
   expect(context.score).toBe(made);
   // the objects of the copy are the stored ones
@@ -289,6 +319,6 @@ it('returns what v1 changed in the draw as recorded ops, with what it returned, 
   };
   const recorded = recordWholeCall({ ...args, writeOnCopy });
   expect(recorded?.written).toBe(written);
-  expect(recorded?.ops.map((op) => op.op)).toEqual(['replaceMatchUp', 'announceRecorded']);
+  expect(recorded?.ops?.map((op) => op.op)).toEqual(['replaceMatchUp', 'announceRecorded']);
   expect(canonicalJson(args.tournamentRecord)).toEqual(before);
 });
