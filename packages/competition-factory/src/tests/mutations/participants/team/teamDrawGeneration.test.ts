@@ -1,12 +1,13 @@
+import { tieFormatConstants, tieFormats } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
 // constants and fixtures
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
-import { LAVER_CUP } from '@Constants/tieFormatConstants';
-import { tieFormats } from '@Fixtures/scoring/tieFormats';
 import { TEAM } from '@Constants/eventConstants';
+
+const { LAVER_CUP } = tieFormatConstants;
 
 test('it can use tieFormatName in addEvent', () => {
   const participantsCount = 8;

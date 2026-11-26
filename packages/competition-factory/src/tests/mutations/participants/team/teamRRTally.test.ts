@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -7,10 +8,11 @@ import { expect, it } from 'vitest';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TALLY } from '@Constants/extensionConstants';
 import { SINGLES } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/eventConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 /*
 Geneate a ROUND_ROBIN in a TEAM event and complete singles tieMatchUps such that all teams are tied in all TEAM matchUps at 1-1
@@ -26,7 +28,7 @@ it('handles TEAM ROUND_ROBIN tallyParticipants', () => {
     policyDefinitions,
     drawProfiles: [
       {
-        tieFormatName: DOMINANT_DUO,
+        tieFormat: resolveTieFormat(DOMINANT_DUO),
         drawType: ROUND_ROBIN,
         eventType: TEAM,
         drawSize: 4,

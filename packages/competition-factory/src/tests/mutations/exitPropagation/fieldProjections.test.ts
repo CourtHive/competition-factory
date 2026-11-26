@@ -1,5 +1,6 @@
 import { compareRoutes, generateDraw, playForward } from '@Tests/testHarness/exitPropagation/routeComparison';
 import { compareCorrection } from '@Tests/testHarness/exitPropagation/correctionDivergence';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -14,8 +15,9 @@ import {
 
 // constants
 import { FIRST_MATCH_LOSER_CONSOLATION, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 /**
  * G14: EACH FIELD PROJECTION, AND ITS WIRING INTO BOTH ORACLES, REPORTS A PLANTED DIVERGENCE.
@@ -39,7 +41,9 @@ const drawId = 'g14';
 const generateTeam = (seedAsFunction?: boolean) => {
   setSubscriptions({});
   mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawId, drawType: SINGLE_ELIMINATION, drawSize: 4, eventType: TEAM, tieFormatName: DOMINANT_DUO }],
+    drawProfiles: [
+      { drawId, drawType: SINGLE_ELIMINATION, drawSize: 4, eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO) },
+    ],
     ...(seedAsFunction ? { random: createSeededRandom(1405) } : { nonRandom: 1405 }),
     setState: true,
   });

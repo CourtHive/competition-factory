@@ -1,5 +1,6 @@
 import { sumAgainstBound, describeAmount } from '@Helpers/sanctioning/comparePrizeMoney';
 import { activateFromSanctioning } from '@Mutate/sanctioning/activateFromSanctioning';
+import { POLICY_RANKING_POINTS_ATP } from '@courthive/competition-catalogue';
 import { validateProposal } from '@Validators/sanctioning/validateProposal';
 import { expect, it, describe } from 'vitest';
 
@@ -10,7 +11,6 @@ import { APPROVED } from '@Constants/sanctioningConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 // Fixtures
-import { POLICY_RANKING_POINTS_ATP } from '@Fixtures/policies/POLICY_RANKING_POINTS_ATP';
 
 /**
  * Prize money.

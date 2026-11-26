@@ -1,4 +1,18 @@
 import { prepareCall, playCall, expectPlayedParity } from '@Tests/testHarness/outcome/recordedCallHarness';
+import { findTarget, POLICY_OFF, won } from '@Tests/testHarness/outcome/directionFixtures';
+import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
+import * as legacy from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
+import * as nested from '@Mutate/matchUps/outcome/plan/recordedCascade';
+import * as lineUps from '@Mutate/matchUps/lineUps/ensureSideLineUps';
+import * as family from '@Mutate/matchUps/outcome/plan/teamFinalLine';
+import { storedRecord } from '@Tests/testHarness/outcome/objectGraph';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
+import * as whole from '@Mutate/matchUps/outcome/plan/recordedCall';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { inDraftWrites } from '@Global/state/withDraftWrites';
+import mocks from '@Assemblies/engines/mock';
+import engine from '@Engines/syncEngine';
+import { setClock } from '@Tools/clock';
 import {
   getOutcomePipeline,
   getProvider,
@@ -6,23 +20,10 @@ import {
   setStateProvider,
   setSubscriptions,
 } from '@Global/state/globalState';
-import { findTarget, POLICY_OFF, won } from '@Tests/testHarness/outcome/directionFixtures';
-import * as nested from '@Mutate/matchUps/outcome/plan/recordedCascade';
-import * as legacy from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
-import * as lineUps from '@Mutate/matchUps/lineUps/ensureSideLineUps';
-import * as whole from '@Mutate/matchUps/outcome/plan/recordedCall';
-import * as family from '@Mutate/matchUps/outcome/plan/teamFinalLine';
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { storedRecord } from '@Tests/testHarness/outcome/objectGraph';
-import { inDraftWrites } from '@Global/state/withDraftWrites';
-import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
-import { setClock } from '@Tools/clock';
-import mocks from '@Assemblies/engines/mock';
-import engine from '@Engines/syncEngine';
 
 import { CONSOLATION, DOUBLE_ELIMINATION, LOSER, MAIN } from '@Constants/drawDefinitionConstants';
-import { TEAM } from '@Constants/matchUpTypes';
 import type { Tournament } from '@Types/tournamentTypes';
+import { TEAM } from '@Constants/matchUpTypes';
 
 const drawId = 'd';
 const target = { structureName: 'Main', roundNumber: 3, roundPosition: 1 };
@@ -47,7 +48,7 @@ function prepare(side: 1 | 2, policyOff = false, held = false) {
           drawSize: 8,
           participantsCount: 2,
           eventType: TEAM,
-          tieFormatName: 'USTA_COLLEGE',
+          tieFormat: resolveTieFormat('USTA_COLLEGE'),
         },
       ],
       nonRandom: 1,

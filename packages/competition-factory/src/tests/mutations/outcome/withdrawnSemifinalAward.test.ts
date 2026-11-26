@@ -1,5 +1,10 @@
-import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { getTournamentRecords, setOutcomePipeline } from '@Global/state/globalState';
+import type { MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
+import { afterEach, expect, it } from 'vitest';
+import mocks from '@Assemblies/engines/mock';
+import engine from '@Engines/syncEngine';
 import {
   BYE,
   DEFAULTED,
@@ -8,10 +13,6 @@ import {
   TO_BE_PLAYED,
   WALKOVER,
 } from '@Constants/matchUpStatusConstants';
-import type { MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
-import mocks from '@Assemblies/engines/mock';
-import engine from '@Engines/syncEngine';
-import { afterEach, expect, it } from 'vitest';
 
 const drawId = 'withdrawn-semifinal-award';
 const record = () => Object.values(getTournamentRecords())[0] as Tournament;
@@ -32,7 +33,7 @@ function setup(scoredLine: boolean) {
         participantsCount: 6,
         eventType: 'TEAM',
         drawType: 'FIRST_MATCH_LOSER_CONSOLATION',
-        tieFormatName: 'DOMINANT_DUO',
+        tieFormat: resolveTieFormat('DOMINANT_DUO'),
       },
     ],
     nonRandom: 326,

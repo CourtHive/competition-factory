@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { addGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
@@ -9,7 +10,6 @@ import { mocksEngine } from '../../..';
 import { expect, it } from 'vitest';
 
 // constants
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
   COMPASS,
@@ -29,6 +29,8 @@ import {
   ROUND_ROBIN_WITH_PLAYOFF,
   SINGLE_ELIMINATION,
 } from '@Constants/drawDefinitionConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 /**
  * `addGoesTo` and `addUpcomingMatchUps` hand `positionTargets` an index built once per call, in place of
@@ -150,7 +152,12 @@ it.each(cases)('indexed targets equal scanned targets: $drawType $drawSize, $com
 it('indexed targets equal scanned targets on a TEAM draw and on playoff structures', () => {
   mocksEngine.generateTournamentRecord({
     drawProfiles: [
-      { drawSize: 16, eventType: TEAM_EVENT, tieFormatName: DOMINANT_DUO, drawType: FEED_IN_CHAMPIONSHIP },
+      {
+        drawSize: 16,
+        eventType: TEAM_EVENT,
+        tieFormat: resolveTieFormat(DOMINANT_DUO),
+        drawType: FEED_IN_CHAMPIONSHIP,
+      },
       { drawSize: 32, drawType: SINGLE_ELIMINATION, idPrefix: 'po' },
     ],
     completeAllMatchUps: true,

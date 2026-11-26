@@ -1,4 +1,4 @@
-import { ratingsPolicies } from '@Fixtures/policies/ratingsPolicies';
+import { ratingsPresets } from '@courthive/competition-catalogue';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';
@@ -61,7 +61,7 @@ function replay(fixture: SeasonFixture) {
     });
   }
 
-  const ratingsPolicy = { ...ratingsPolicies[fixture.policy], ...(fixture.kByTier && { kByTier: fixture.kByTier }) };
+  const ratingsPolicy = { ...ratingsPresets[fixture.policy], ...(fixture.kByTier && { kByTier: fixture.kByTier }) };
   const current: Record<string, number> = Object.fromEntries(fixture.teams.map((team) => [team, startOf(team)]));
   const winnerChanges: number[] = [];
 

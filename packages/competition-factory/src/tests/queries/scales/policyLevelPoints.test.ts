@@ -9,13 +9,15 @@
 import { expect, it, describe, beforeEach } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import {
+  POLICY_RANKING_POINTS_ATP,
+  POLICY_RANKING_POINTS_ITF_WTT,
+  POLICY_RANKING_POINTS_WTA,
+} from '@courthive/competition-catalogue';
 
 // constants and fixtures
 import { POLICY_RANKING_POINTS_USTA_JUNIOR } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_USTA_JUNIOR';
-import { POLICY_RANKING_POINTS_ITF_WTT } from '@Fixtures/policies/POLICY_RANKING_POINTS_ITF_WTT';
 import { POLICY_RANKING_POINTS_BASIC } from '@Fixtures/policies/POLICY_RANKING_POINTS_BASIC';
-import { POLICY_RANKING_POINTS_ATP } from '@Fixtures/policies/POLICY_RANKING_POINTS_ATP';
-import { POLICY_RANKING_POINTS_WTA } from '@Fixtures/policies/POLICY_RANKING_POINTS_WTA';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { SINGLES } from '@Constants/eventConstants';
 

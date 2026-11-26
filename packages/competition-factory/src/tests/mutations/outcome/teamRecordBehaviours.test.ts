@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { setSubscriptions } from '@Global/state/globalState';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -7,7 +8,6 @@ import mocksEngine from '@Assemblies/engines/mock';
 // constants
 import { FEED_IN_CHAMPIONSHIP, FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { CANNOT_CHANGE_WINNING_SIDE, INVALID_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
-import { DOMINANT_DUO, LAVER_CUP, USTA_COLLEGE } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
 import {
   COMPLETED,
@@ -18,6 +18,8 @@ import {
   TO_BE_PLAYED,
   WALKOVER,
 } from '@Constants/matchUpStatusConstants';
+
+const { DOMINANT_DUO, LAVER_CUP, USTA_COLLEGE } = tieFormatConstants;
 
 /**
  * WHAT A TEAM CALL LEAVES IN THE RECORD, stated of the record alone. Each case is played through the engine under
@@ -37,7 +39,7 @@ const won = (winningSide: number) => generateOutcomeFromScoreString({ scoreStrin
 
 function generate(drawProfile: Record<string, unknown> = { drawSize: 4 }, nonRandom = 1) {
   mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ eventType: TEAM, tieFormatName: DOMINANT_DUO, ...drawProfile, drawId: DRAW_ID }],
+    drawProfiles: [{ eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO), ...drawProfile, drawId: DRAW_ID }],
     setState: true,
     nonRandom,
   });
@@ -284,7 +286,7 @@ describe('a dual tallied by games: a line whose winner is named with no score ke
   ])(
     '%s named alone on a line of a decided dual: the dual keeps its score, its winner and where it sent them',
     (_label, winningSide) => {
-      generate({ drawSize: 4, tieFormat, tieFormatName: undefined });
+      generate({ drawSize: 4, tieFormat });
       const first = dual(1, 1);
       const [doubles, singles1, singles2] = first.tieMatchUps.map((tieMatchUp: any) => tieMatchUp.matchUpId);
       enter(doubles, games(2, '6-3'));
@@ -500,7 +502,12 @@ describe("a losing team's line-up where its loser link seats it, after the dual'
     const college = seed === 30;
     generate(
       college
-        ? { drawSize: 8, participantsCount: 7, drawType: FEED_IN_CHAMPIONSHIP, tieFormatName: USTA_COLLEGE }
+        ? {
+            drawSize: 8,
+            participantsCount: 7,
+            drawType: FEED_IN_CHAMPIONSHIP,
+            tieFormat: resolveTieFormat(USTA_COLLEGE),
+          }
         : { drawSize: 8, participantsCount: 6, drawType: FIRST_MATCH_LOSER_CONSOLATION },
       seed,
     );
@@ -568,7 +575,7 @@ describe('a team an award sends on into a dual that still sides its position is 
   afterEach(() => setSubscriptions({ subscriptions: {} }));
 
   it('a double exit entered again on a dual its line undid: the final names the line-up write, quietly', () => {
-    generate({ drawSize: 8, participantsCount: 7, tieFormatName: LAVER_CUP }, 40);
+    generate({ drawSize: 8, participantsCount: 7, tieFormat: resolveTieFormat(LAVER_CUP) }, 40);
     const exited = dual(1, 2);
     const final = dual(3, 1);
     enter(exited.matchUpId, { matchUpStatus: DOUBLE_WALKOVER });
@@ -592,7 +599,7 @@ describe('a dual holding the walkover a double exit produced keeps it, and its p
     ['cleared', { matchUpStatus: TO_BE_PLAYED }],
     ['cleared with an empty score', CLEARED],
   ])('a line %s: the walkover stands, and the team arriving there takes it and goes on', (_label, outcome) => {
-    generate({ drawSize: 8, tieFormatName: USTA_COLLEGE });
+    generate({ drawSize: 8, tieFormat: resolveTieFormat(USTA_COLLEGE) });
     const exited = dual(1, 4);
     enter(exited.matchUpId, { matchUpStatus: DOUBLE_WALKOVER });
     const produced = () => stored(exited.winnerMatchUpId);

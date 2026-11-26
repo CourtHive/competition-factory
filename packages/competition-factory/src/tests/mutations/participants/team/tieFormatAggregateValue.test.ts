@@ -1,14 +1,16 @@
+import { tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 // constants
 import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
-import { DOMINANT_DUO_MIXED } from '@Constants/tieFormatConstants';
 import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/eventConstants';
+
+const { DOMINANT_DUO_MIXED } = tieFormatConstants;
 
 const SET1T20 = 'SET1-S:T20';
 const tieFormats = {

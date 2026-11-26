@@ -1,12 +1,14 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { COLLEGE_JUCO, USTA_BREWER_CUP, USTA_COLLEGE, USTA_TOC } from '@Constants/tieFormatConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
+
+const { COLLEGE_JUCO, USTA_BREWER_CUP, USTA_COLLEGE, USTA_TOC } = tieFormatConstants;
 
 it('can aggregate tieFormats found in drawDefinitions to event.tieFormats', () => {
   const policyDefinitions = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };
@@ -14,9 +16,9 @@ it('can aggregate tieFormats found in drawDefinitions to event.tieFormats', () =
     completeAllMatchUps: true,
     policyDefinitions,
     drawProfiles: [
-      { drawSize: 4, eventType: TEAM_EVENT, tieFormatName: USTA_BREWER_CUP },
+      { drawSize: 4, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(USTA_BREWER_CUP) },
       {
-        tieFormatName: USTA_COLLEGE,
+        tieFormat: resolveTieFormat(USTA_COLLEGE),
         eventType: TEAM_EVENT,
         drawSize: 4,
       },
@@ -32,7 +34,7 @@ it('can aggregate tieFormats found in drawDefinitions to event.tieFormats', () =
   expect(matchUpsResult.pendingMatchUps.length).toEqual(0);
 
   const d1 = tournamentEngine.generateDrawDefinition({
-    tieFormatName: USTA_TOC,
+    tieFormat: resolveTieFormat(USTA_TOC),
     eventId: eventIds[0],
   });
 
@@ -52,7 +54,7 @@ it('can aggregate tieFormats found in drawDefinitions to event.tieFormats', () =
   expect(a1.success).toEqual(true);
 
   const d2 = tournamentEngine.generateDrawDefinition({
-    tieFormatName: COLLEGE_JUCO,
+    tieFormat: resolveTieFormat(COLLEGE_JUCO),
     eventId: eventIds[1],
   });
 

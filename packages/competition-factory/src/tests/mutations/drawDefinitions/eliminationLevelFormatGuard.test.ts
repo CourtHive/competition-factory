@@ -1,4 +1,5 @@
 import { formatCanEndTied, parsedFormatCanEndTied } from '@Helpers/matchUpFormatCode/tiedFormat';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
@@ -6,8 +7,9 @@ import { describe, expect, it } from 'vitest';
 // constants
 import { FEED_IN_CHAMPIONSHIP, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
-import { INTENNSE_2026 } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
+
+const { INTENNSE_2026 } = tieFormatConstants;
 
 // Scoring-engine spec § 9.7 rule 4: a timed, aggregate or
 // exactly-N format that declares no decider can end COMPLETED with no winner. Where a structure advances
@@ -163,7 +165,12 @@ describe('TEAM: the tieFormat decides the dual', () => {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [
-        { drawSize: 4, eventType: TEAM_EVENT, drawType: SINGLE_ELIMINATION, tieFormatName: INTENNSE_2026 },
+        {
+          drawSize: 4,
+          eventType: TEAM_EVENT,
+          drawType: SINGLE_ELIMINATION,
+          tieFormat: resolveTieFormat(INTENNSE_2026),
+        },
       ],
     });
     tournamentEngine.setState(tournamentRecord);

@@ -1,10 +1,12 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 /**
  * `allocatedCourts` round-trip.
@@ -23,7 +25,7 @@ const SCHEDULED_DATE = '2026-06-22';
 function seed() {
   mocksEngine.generateTournamentRecord({
     venueProfiles: [{ courtsCount: 4, startTime: '08:00', endTime: '21:00', venueId: VENUE_ID }],
-    drawProfiles: [{ drawId: DRAW_ID, drawSize: 4, eventType: TEAM, tieFormatName: DOMINANT_DUO }],
+    drawProfiles: [{ drawId: DRAW_ID, drawSize: 4, eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO) }],
     startDate: SCHEDULED_DATE,
     endDate: '2026-06-28',
     setState: true,

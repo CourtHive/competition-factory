@@ -1,3 +1,12 @@
+import { BRIDGE, LEGACY, NATIVE, type SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
+import { IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
+import { canonicalJson } from '@Tools/canonicalJson';
+import { afterEach, expect, it, vi } from 'vitest';
+import tournamentEngine from '@Engines/syncEngine';
+import mocksEngine from '@Assemblies/engines/mock';
+import { setClock } from '@Tools/clock';
 import {
   deleteNotices,
   getTournamentRecord,
@@ -16,14 +25,6 @@ import {
   MODIFY_POSITION_ASSIGNMENTS,
   UPDATE_INCONTEXT_MATCHUP,
 } from '@Constants/topicConstants';
-import { BRIDGE, LEGACY, NATIVE, type SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
-import { IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
-import { afterEach, expect, it, vi } from 'vitest';
-import { canonicalJson } from '@Tools/canonicalJson';
-import tournamentEngine from '@Engines/syncEngine';
-import mocksEngine from '@Assemblies/engines/mock';
-import { setClock } from '@Tools/clock';
 
 const observed = vi.hoisted(() => ({ calls: [] as any[] }));
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpStatus', async (original) => {
@@ -83,7 +84,7 @@ function play(
         automated: true,
         roundsCount: 2,
         eventType: c.type ?? 'SINGLES',
-        ...(c.type === 'TEAM' ? { tieFormatName: 'DOMINANT_DUO' } : {}),
+        ...(c.type === 'TEAM' ? { tieFormat: resolveTieFormat('DOMINANT_DUO') } : {}),
       },
     ],
     completeAllMatchUps: !c.partial,

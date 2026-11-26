@@ -1,13 +1,15 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { validateCollectionDefinition } from '@Validators/validateCollectionDefinition';
 import { compareTieFormats } from '@Query/hierarchical/tieFormats/compareTieFormats';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { DOUBLES, HYBRID, SINGLES, TEAM } from '@Constants/matchUpTypes';
 import { INVALID_GENDER } from '@Constants/errorConditionConstants';
 import { validateTieFormat } from '@Validators/validateTieFormat';
-import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
+
+const { COLLEGE_D3 } = tieFormatConstants;
 
 function collection(overrides: Record<string, unknown> = {}): any {
   return {
@@ -126,7 +128,7 @@ it('adds an unresolved choice collection to an existing draw', () => {
   const {
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+    drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
     setState: true,
   });
   const before = tournamentEngine.getTieFormat({ drawId }).tieFormat.collectionDefinitions.length;
@@ -141,7 +143,7 @@ it('generates untyped placeholders from an unresolved choice template', () => {
   const {
     eventIds: [eventId],
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+    drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
     setState: true,
   });
   let result: any = tournamentEngine.generateDrawDefinition({ drawSize: 4, eventId, tieFormat: format(collection()) });

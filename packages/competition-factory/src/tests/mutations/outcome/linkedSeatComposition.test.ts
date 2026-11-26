@@ -1,6 +1,7 @@
 import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
 import { canonicalJson } from '@Tools/canonicalJson';
 import { afterEach, expect, it, vi } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
@@ -295,7 +296,7 @@ function prepare(recipe: Recipe) {
         drawSize: recipe.size,
         participantsCount: recipe.count,
         drawId: 'd',
-        ...(recipe.team ? { eventType: 'TEAM', tieFormatName: 'USTA_COLLEGE' } : {}),
+        ...(recipe.team ? { eventType: 'TEAM', tieFormat: resolveTieFormat('USTA_COLLEGE') } : {}),
       },
     ],
     nonRandom: recipe.seed ?? 1,

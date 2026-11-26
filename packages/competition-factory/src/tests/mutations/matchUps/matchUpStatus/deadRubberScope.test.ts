@@ -1,4 +1,5 @@
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
@@ -8,9 +9,10 @@ import { DOUBLE_ELIMINATION, SINGLE_ELIMINATION, WINNER, LOSER } from '@Constant
 import { MATCHUP_STATUS_OUT_OF_SCOPE } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DEAD_RUBBER } from '@Constants/matchUpStatusConstants';
-import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
 import { SINGLES, TEAM } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
+
+const { COLLEGE_D3 } = tieFormatConstants;
 
 /**
  * DEAD_RUBBER IS SCOPED: it marks a
@@ -30,7 +32,7 @@ describe('DEAD_RUBBER scope', () => {
       drawIds: [drawId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT, tieFormatName: COLLEGE_D3 }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(COLLEGE_D3) }],
       policyDefinitions,
     });
     tournamentEngine.setState(tournamentRecord);
@@ -53,7 +55,7 @@ describe('DEAD_RUBBER scope', () => {
       drawIds: [drawId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT, tieFormatName: COLLEGE_D3 }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(COLLEGE_D3) }],
       policyDefinitions,
     });
     tournamentEngine.setState(tournamentRecord);

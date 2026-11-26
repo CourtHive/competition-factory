@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -13,7 +14,6 @@ import {
 
 // constants and types
 import { FEED_IN_CHAMPIONSHIP, FIRST_MATCH_LOSER_CONSOLATION, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
-import { DOMINANT_DUO, USTA_COLLEGE } from '@Constants/tieFormatConstants';
 import { NO_VALID_ACTIONS } from '@Constants/errorConditionConstants';
 import { TEAM } from '@Constants/eventConstants';
 import {
@@ -31,6 +31,8 @@ import {
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
 } from '@Constants/outcomePipelineConstants';
+
+const { DOMINANT_DUO, USTA_COLLEGE } = tieFormatConstants;
 
 /**
  * WHAT THE SEEDED TEAM WALKS STILL FOUND BETWEEN v1 AND v2 (close-out, 2026-11-18): each difference as its smallest
@@ -50,7 +52,7 @@ const won = (winningSide: number) => generateOutcomeFromScoreString({ scoreStrin
 
 function generate(drawProfile: Record<string, unknown>) {
   mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ eventType: TEAM, tieFormatName: DOMINANT_DUO, ...drawProfile, drawId: DRAW_ID }],
+    drawProfiles: [{ eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO), ...drawProfile, drawId: DRAW_ID }],
     setState: true,
     nonRandom: 1,
   });
@@ -225,7 +227,7 @@ describe("a team's line-up written on a dual whose sides are stored", () => {
   // rebuilt both sides, numbering a side stored without a number
   it('a winner entered again: the next dual keeps its other side as stored', () => {
     const prepared = prepareCall(() => {
-      generate({ drawSize: 8, tieFormatName: USTA_COLLEGE });
+      generate({ drawSize: 8, tieFormat: resolveTieFormat(USTA_COLLEGE) });
       const first = dual('Main', 1, 3);
       enter(first.matchUpId, { winningSide: 1 });
       // a call on the next dual stores its sides: the arrived team's, and one for the seat nobody holds
@@ -249,7 +251,7 @@ describe("a round robin's tally keeps the score of a line whose winner is entere
     ['the other winner', 1],
   ])('%s, named alone', (_label, winningSide) => {
     const prepared = prepareCall(() => {
-      generate({ drawSize: 4, drawType: ROUND_ROBIN, tieFormatName: USTA_COLLEGE });
+      generate({ drawSize: 4, drawType: ROUND_ROBIN, tieFormat: resolveTieFormat(USTA_COLLEGE) });
       const [first] = duals();
       const singles = first.tieMatchUps.find((tieMatchUp: any) => tieMatchUp.matchUpType === 'SINGLES').matchUpId;
       enter(singles, won(2));
@@ -274,7 +276,12 @@ describe("a team's line-up notice keeps the event an earlier notice of the call 
   // matchUp. v2 marked the line-up's notice eventless wherever the assignment wrote it
   it('a changed winner: the dual its loser link feeds was announced when the first loser was taken back', () => {
     const prepared = prepareCall(() => {
-      generate({ drawSize: 8, participantsCount: 7, drawType: FEED_IN_CHAMPIONSHIP, tieFormatName: USTA_COLLEGE });
+      generate({
+        drawSize: 8,
+        participantsCount: 7,
+        drawType: FEED_IN_CHAMPIONSHIP,
+        tieFormat: resolveTieFormat(USTA_COLLEGE),
+      });
       const first = dual('Main', 1, 3);
       enter(first.matchUpId, { matchUpStatus: DEFAULTED, winningSide: 2 });
       const retired = generateOutcomeFromScoreString({ scoreString: '6-1 2-1', winningSide: 1 }).outcome;
@@ -296,7 +303,7 @@ describe('a line on a dual decided by its own call leaves the dual decided', () 
     ['an elimination draw', { drawSize: 8 }],
   ])('%s: a doubles line won on a dual decided by its own call', (_label, profile) => {
     const prepared = prepareCall(() => {
-      generate({ ...profile, tieFormatName: USTA_COLLEGE });
+      generate({ ...profile, tieFormat: resolveTieFormat(USTA_COLLEGE) });
       const [first] = duals();
       enter(first.matchUpId, { winningSide: 2 });
       const doubles = first.tieMatchUps.find((tieMatchUp: any) => tieMatchUp.matchUpType === 'DOUBLES').matchUpId;

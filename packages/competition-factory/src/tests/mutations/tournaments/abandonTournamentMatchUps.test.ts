@@ -1,4 +1,5 @@
 import { abandonTournamentMatchUps } from '@Mutate/tournaments/abandonTournamentMatchUps';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
@@ -6,8 +7,9 @@ import { expect, it, describe } from 'vitest';
 // constants
 import { ABANDONED, BYE, COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/matchUpTypes';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 const getTarget = ({ matchUps, roundNumber, roundPosition }) =>
   matchUps.find((matchUp) => matchUp.roundNumber === roundNumber && matchUp.roundPosition === roundPosition);
@@ -158,7 +160,7 @@ describe('abandonTournamentMatchUps', () => {
   it('skips TEAM container and tie collection matchUps', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       policyDefinitions: { scoring: { requireParticipantsForScoring: false } },
-      drawProfiles: [{ tieFormatName: DOMINANT_DUO, eventType: TEAM, drawSize: 4 }],
+      drawProfiles: [{ tieFormat: resolveTieFormat(DOMINANT_DUO), eventType: TEAM, drawSize: 4 }],
     });
     tournamentEngine.setState(tournamentRecord);
 

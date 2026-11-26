@@ -1,4 +1,4 @@
-import { POLICY_RANKING_POINTS_ITF_WTT } from '@Fixtures/policies/POLICY_RANKING_POINTS_ITF_WTT';
+import { POLICY_RANKING_POINTS_ITF_WTT } from '@courthive/competition-catalogue';
 import { getAwardProfile } from '@Query/scales/getAwardProfile';
 import { describe, expect, it } from 'vitest';
 

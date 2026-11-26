@@ -1,14 +1,15 @@
 import { deleteNotices, getOutcomePipeline, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
-import { captureReturn, expectReturnParity } from '@Tests/testHarness/outcome/returnParity';
 import { prepareCall, type RecordedCall } from '@Tests/testHarness/outcome/recordedCallHarness';
+import { captureReturn, expectReturnParity } from '@Tests/testHarness/outcome/returnParity';
 import { objectGraph, storedGraph } from '@Tests/testHarness/outcome/objectGraph';
-import { TOPICS } from '@Tests/testHarness/outcome/directionFixtures';
 import * as recording from '@Mutate/matchUps/outcome/plan/recordedCall';
+import { TOPICS } from '@Tests/testHarness/outcome/directionFixtures';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { createSeededRandom } from '@Tools/prng';
-import { setClock } from '@Tools/clock';
 import mocks from '@Assemblies/engines/mock';
 import engine from '@Engines/syncEngine';
+import { setClock } from '@Tools/clock';
 import { expect, it, vi } from 'vitest';
 
 const drawId = 'through-bye';
@@ -25,7 +26,7 @@ function prepare() {
           drawSize: 8,
           participantsCount: 6,
           eventType: 'TEAM',
-          tieFormatName: 'DOMINANT_DUO',
+          tieFormat: resolveTieFormat('DOMINANT_DUO'),
         },
       ],
       nonRandom: 187,

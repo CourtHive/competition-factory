@@ -1,6 +1,7 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { initializeStructureSeedAssignments } from '@Mutate/drawDefinitions/positionGovernor/initializeSeedAssignments';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
+import { POLICY_SEEDING_ITF as SEEDING_POLICY } from '@courthive/competition-catalogue';
 import { addDrawEntries } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
 import { automatedPositioning } from '@Mutate/drawDefinitions/automatedPositioning';
 import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';
@@ -14,7 +15,6 @@ import { expect, it } from 'vitest';
 
 // constants and fixtures
 import { MAIN, PLAY_OFF, COMPASS } from '@Constants/drawDefinitionConstants';
-import SEEDING_POLICY from '@Fixtures/policies/POLICY_SEEDING_ITF';
 import { BYE } from '@Constants/matchUpStatusConstants';
 
 it('can generate COMPASS and fill all drawPositions', () => {

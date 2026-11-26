@@ -1,4 +1,5 @@
 import { POLICY_MATCHUP_ACTIONS_DEFAULT } from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { xa } from '@Tools/extractAttributes';
@@ -7,12 +8,13 @@ import { expect, it } from 'vitest';
 
 // constants
 import { INVALID_PARTICIPANT } from '@Constants/errorConditionConstants';
-import { USTA_GOLD_TEAM_CHALLENGE } from '@Constants/tieFormatConstants';
 import { SINGLES_MATCHUP, TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { ASSIGN_PARTICIPANT } from '@Constants/positionActionConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { FEMALE, MALE } from '@Constants/genderConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
+
+const { USTA_GOLD_TEAM_CHALLENGE } = tieFormatConstants;
 
 it('can enforce collection gender', () => {
   // 1. generate gendered tieFormat
@@ -30,7 +32,7 @@ it('can enforce collection gender', () => {
     nonRandom: 1,
     drawProfiles: [
       {
-        tieFormatName: USTA_GOLD_TEAM_CHALLENGE,
+        tieFormat: resolveTieFormat(USTA_GOLD_TEAM_CHALLENGE),
         eventType: TEAM_EVENT,
         drawSize: 2,
       },

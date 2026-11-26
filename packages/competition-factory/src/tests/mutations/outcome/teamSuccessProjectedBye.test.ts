@@ -1,7 +1,8 @@
 import { getTournamentRecords, setOutcomePipeline } from '@Global/state/globalState';
-import engine from '@Engines/syncEngine';
-import mocks from '@Assemblies/engines/mock';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
 import { afterEach, expect, it } from 'vitest';
+import mocks from '@Assemblies/engines/mock';
+import engine from '@Engines/syncEngine';
 
 afterEach(() => setOutcomePipeline('v1'));
 it.each(['v1', 'v2', 'differential'] as const)('a collection line cannot clinch for a BYE in %s', (mode) => {
@@ -17,7 +18,7 @@ it.each(['v1', 'v2', 'differential'] as const)('a collection line cannot clinch 
             drawSize: 8,
             participantsCount: 6,
             eventType: 'TEAM',
-            tieFormatName: 'DOMINANT_DUO',
+            tieFormat: resolveTieFormat('DOMINANT_DUO'),
             drawType: 'FIRST_MATCH_LOSER_CONSOLATION',
           },
         ],

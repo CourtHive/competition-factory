@@ -1,12 +1,13 @@
 import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
-import { expect } from 'vitest';
+import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
+import { getTournamentRecords, setOutcomePipeline } from '@Global/state/globalState';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
+import { createSeededRandom } from '@Tools/prng';
+import mocks from '@Assemblies/engines/mock';
 import { createHash } from 'node:crypto';
 import engine from '@Engines/syncEngine';
-import mocks from '@Assemblies/engines/mock';
-import { getTournamentRecords, setOutcomePipeline } from '@Global/state/globalState';
-import { createSeededRandom } from '@Tools/prng';
 import { setClock } from '@Tools/clock';
-import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
+import { expect } from 'vitest';
 
 import type { Tournament } from '@Types/tournamentTypes';
 
@@ -46,7 +47,13 @@ function fixture(played: boolean) {
     Math.random = createSeededRandom(145);
     mocks.generateTournamentRecord({
       drawProfiles: [
-        { drawId, drawType: 'DOUBLE_ELIMINATION', drawSize: 8, eventType: 'TEAM', tieFormatName: 'DOMINANT_DUO' },
+        {
+          drawId,
+          drawType: 'DOUBLE_ELIMINATION',
+          drawSize: 8,
+          eventType: 'TEAM',
+          tieFormat: resolveTieFormat('DOMINANT_DUO'),
+        },
       ],
       nonRandom: 145,
       setState: true,

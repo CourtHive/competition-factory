@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
@@ -5,8 +6,9 @@ import { describe, expect, it } from 'vitest';
 // constants
 import { INVALID_SCORE, MISSING_MATCHUP_FORMAT } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
-import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
 import { TEAM, DOUBLES } from '@Constants/eventConstants';
+
+const { COLLEGE_D3 } = tieFormatConstants;
 
 /**
  * A TEAM line is scored to its COLLECTION's format, and a score with no format is refused.
@@ -26,7 +28,7 @@ function collegeD3Line(matchUpType: string) {
   const {
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+    drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
     // lines without lineUps can still be scored, so the only question asked is the score's
     policyDefinitions: { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } },
     setState: true,

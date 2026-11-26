@@ -17,14 +17,16 @@
  * which is exactly where a silent precedence change would do damage.
  */
 import { getDrawFormat } from '@Generators/drawDefinitions/getDrawFormat';
+import { tieFormatConstants } from '@courthive/competition-catalogue';
 import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { describe, expect, it } from 'vitest';
 
 // constants
 import { INVALID_TIE_FORMAT, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
-import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
+
+const { COLLEGE_D3 } = tieFormatConstants;
 
 describe('getDrawFormat — TEAM tieFormat resolution', () => {
   it('uses the existing MAIN structure tieFormat when params carry none', () => {

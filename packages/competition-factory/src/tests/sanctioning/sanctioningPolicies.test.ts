@@ -1,10 +1,9 @@
+import { POLICY_SANCTIONING_ITF, POLICY_SANCTIONING_USTA } from '@courthive/competition-catalogue';
 import { sanctioningEngine } from '@Assemblies/engines/sanctioning';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 // Fixtures
 import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONING_GENERIC';
-import { POLICY_SANCTIONING_USTA } from '@Fixtures/policies/POLICY_SANCTIONING_USTA';
-import { POLICY_SANCTIONING_ITF } from '@Fixtures/policies/POLICY_SANCTIONING_ITF';
 
 // types
 import type { Applicant, TournamentProposal } from '@Types/sanctioningTypes';

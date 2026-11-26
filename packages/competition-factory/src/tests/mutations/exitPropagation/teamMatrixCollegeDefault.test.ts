@@ -1,8 +1,10 @@
 import { TEAM_FORMAT_CELLS } from '@Tests/testHarness/exitPropagation/matrixCells';
+import { tieFormatConstants } from '@courthive/competition-catalogue';
 import { expect, test } from 'vitest';
 
+const { COLLEGE_DEFAULT } = tieFormatConstants;
+
 // constants
-import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
 
 /**
  * THE TEAM ARM IN COLLEGE_DEFAULT: the four TEAM draw types at drawSize 8, dual and line level.

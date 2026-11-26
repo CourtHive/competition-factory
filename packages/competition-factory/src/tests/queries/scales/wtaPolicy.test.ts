@@ -1,4 +1,4 @@
-import { POLICY_RANKING_POINTS_WTA } from '@Fixtures/policies/POLICY_RANKING_POINTS_WTA';
+import { POLICY_RANKING_POINTS_WTA } from '@courthive/competition-catalogue';
 import { getAwardProfile } from '@Query/scales/getAwardProfile';
 import { defined } from '@Tests/helpers/defined';
 import scaleEngine from '@Engines/scaleEngine';

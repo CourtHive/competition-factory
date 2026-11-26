@@ -1,10 +1,12 @@
 import { TEAM_EXTENSION_LINE_CELLS, TEAM_FORMAT_CELLS, runMatrixCell } from './matrixCells';
 import { registerTestSeedIdentity } from '@Tests/testHarness/seedMathRandom';
+import { tieFormatConstants } from '@courthive/competition-catalogue';
 import { expect, test } from 'vitest';
 
 // constants and types
-import { COLLEGE_DEFAULT, LAVER_CUP } from '@Constants/tieFormatConstants';
 import type { MatrixCell } from './matrixCells';
+
+const { COLLEGE_DEFAULT, LAVER_CUP } = tieFormatConstants;
 
 type TeamArm = 'ExtensionLine' | 'CollegeDefault' | 'LaverCup';
 const title =

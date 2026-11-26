@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { addMinutesToTimeString, extractTime } from '@Tools/dateTime';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -5,8 +6,9 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { SINGLES_EVENT, TEAM } from '@Constants/eventConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 /**
  * `modifyEventMatchUpFormatTiming` keys a TEAM event's override by the event's type (`minutes: { TEAM: n }`), while
@@ -23,7 +25,7 @@ function teamEventTournament({ minutes }: { minutes?: number } = {}) {
     venueIds: [venueId],
     eventIds: [eventId],
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: DOMINANT_DUO }],
+    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO) }],
     venueProfiles: [{ courtsCount: 1 }],
     endDate: startDate,
     startDate,

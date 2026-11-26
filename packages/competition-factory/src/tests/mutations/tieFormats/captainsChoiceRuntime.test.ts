@@ -1,10 +1,10 @@
 import { CANNOT_MODIFY_TIEFORMAT, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 import { buildStructuralIndex } from '@Query/matchUps/structuralIndex';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/matchUpTypes';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { setSubscriptions } from '@Global/state/globalState';
-import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
 import { MODIFY_MATCHUP } from '@Constants/topicConstants';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -13,13 +13,15 @@ import { readFileSync } from 'node:fs';
 import addFormats from 'ajv-formats';
 import Ajv from 'ajv';
 
+const { COLLEGE_D3 } = tieFormatConstants;
+
 function fixture() {
   const {
     tournamentRecord: record,
     drawIds: [drawId],
     eventIds: [eventId],
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+    drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
     policyDefinitions: { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } },
   });
   const event = record.events![0];

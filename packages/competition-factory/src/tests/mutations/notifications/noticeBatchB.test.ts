@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { captureNotices, conformanceViolations } from './noticeConformance/harness';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -10,7 +11,6 @@ import { ASSIGN_BYE, MODIFY_PAIR_ASSIGNMENT } from '@Constants/positionActionCon
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DOUBLES_EVENT, TEAM } from '@Constants/eventConstants';
 import { FLIGHT_PROFILE } from '@Constants/extensionConstants';
-import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
 import { PAIR } from '@Constants/participantConstants';
 import { FEMALE } from '@Constants/genderConstants';
 import { DOUBLES } from '@Constants/matchUpTypes';
@@ -31,6 +31,8 @@ import {
   PUBLISH_EVENT_SEEDING,
   UNPUBLISH_EVENT_SEEDING,
 } from '@Constants/topicConstants';
+
+const { COLLEGE_D3 } = tieFormatConstants;
 
 /**
  * Notice completeness for the event and entries writers (batch B of "every mutation fires a notice").
@@ -86,7 +88,7 @@ function teamEvent() {
     eventIds: [eventId],
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
     setState: true,
   });
   const { event } = tournamentEngine.getEvent({ eventId });
@@ -245,7 +247,7 @@ describe('tieFormat writers announce the event whose tieFormats they change', ()
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
     });
     // a draw carrying its own inline tieFormat, as a record from before aggregation would
     const event = tournamentRecord.events[0];
@@ -314,7 +316,7 @@ describe('tieFormat writers announce the event whose tieFormats they change', ()
     const {
       eventIds: [eventId],
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: 'USTA_BREWER_CUP' }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat('USTA_BREWER_CUP') }],
       setState: true,
     });
 

@@ -1,15 +1,18 @@
+import { tieFormatConstants } from '@courthive/competition-catalogue';
+import { namedTieFormat } from '@Tests/testHarness/namedTieFormat';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // Constants
-import tieFormatDefaults, { isNamedTieFormat } from '@Helpers/tieFormats/tieFormatDefaults';
-import { USTA_GOLD_TEAM_CHALLENGE } from '@Constants/tieFormatConstants';
+import { isNamedTieFormat } from '@Helpers/tieFormats/tieFormatDefaults';
 import { ALTERNATE, UNGROUPED } from '@Constants/entryStatusConstants';
 import { SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
+
+const { USTA_GOLD_TEAM_CHALLENGE } = tieFormatConstants;
 
 it('can generate singles/doubles events from tieFormats', () => {
   const drawSize = 8;
@@ -47,7 +50,7 @@ it('can generate singles/doubles events from tieFormats', () => {
   result = tournamentEngine.generateEventsFromTieFormat({ tieFormatName: '' });
   expect(result.error).toEqual(INVALID_VALUES);
 
-  const tieFormat = tieFormatDefaults({ namedFormat: USTA_GOLD_TEAM_CHALLENGE });
+  const tieFormat = namedTieFormat(USTA_GOLD_TEAM_CHALLENGE);
 
   const entryStatus = ALTERNATE;
   result = tournamentEngine.generateEventsFromTieFormat({

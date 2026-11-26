@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
@@ -6,7 +7,6 @@ import fs from 'fs-extra';
 import Ajv from 'ajv';
 
 // constants
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { NOT_BEFORE } from '@Constants/timeItemConstants';
 import { OFFICIAL } from '@Constants/participantRoles';
@@ -22,6 +22,8 @@ import {
   ROUND_ROBIN,
   ROUND_ROBIN_WITH_PLAYOFF,
 } from '@Constants/drawDefinitionConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 const ajv = new Ajv({ allowUnionTypes: true, verbose: true, allErrors: true });
 ajv.addFormat('date-time', (dateTime: any) => {
@@ -137,7 +139,7 @@ describe('first-class schedule attributes validate against the schema', () => {
       venueProfiles: [{ courtsCount: 4, startTime: '08:00', endTime: '21:00', venueId: VENUE_ID }],
       drawProfiles: [
         { drawId: SINGLES_DRAW, drawSize: 8 },
-        { drawId: TEAM_DRAW, drawSize: 4, eventType: TEAM, tieFormatName: DOMINANT_DUO },
+        { drawId: TEAM_DRAW, drawSize: 4, eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO) },
       ],
       startDate: START_DATE,
       endDate: '2026-10-03',

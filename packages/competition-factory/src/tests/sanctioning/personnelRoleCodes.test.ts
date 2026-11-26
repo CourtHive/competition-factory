@@ -1,9 +1,9 @@
 import { validateProposal } from '@Validators/sanctioning/validateProposal';
+import { POLICY_SANCTIONING_ITF } from '@courthive/competition-catalogue';
 import { describe, expect, it } from 'vitest';
 
 // Fixtures
 import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONING_GENERIC';
-import { POLICY_SANCTIONING_ITF } from '@Fixtures/policies/POLICY_SANCTIONING_ITF';
 
 // types
 import type { PersonnelRole, SanctioningPolicy, TournamentProposal } from '@Types/sanctioningTypes';

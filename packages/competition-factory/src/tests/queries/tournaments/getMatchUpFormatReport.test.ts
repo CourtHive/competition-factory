@@ -1,4 +1,5 @@
 import { FORMAT_LOCATION, FORMAT_VERDICT, getMatchUpFormatReport } from '@Query/tournaments/getMatchUpFormatReport';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
@@ -12,8 +13,9 @@ import { POLICY_TYPE_SANCTIONING, POLICY_TYPE_SCHEDULING, POLICY_TYPE_SCORING } 
 import { APPLIED_POLICIES, SCHEDULE_TIMING } from '@Constants/extensionConstants';
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 const VALID_CODE = 'SET3-S:6/TB7';
 // well-formed, refused for new use: an implicit best-of with an even count
@@ -25,7 +27,7 @@ function generate() {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     eventProfiles: [
       { drawProfiles: [{ drawSize: 8, drawType: ROUND_ROBIN }] },
-      { eventType: TEAM_EVENT, tieFormatName: DOMINANT_DUO, drawProfiles: [{ drawSize: 4 }] },
+      { eventType: TEAM_EVENT, tieFormat: resolveTieFormat(DOMINANT_DUO), drawProfiles: [{ drawSize: 4 }] },
     ],
   });
   return tournamentRecord;

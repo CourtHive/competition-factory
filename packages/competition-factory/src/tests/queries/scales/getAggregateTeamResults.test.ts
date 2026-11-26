@@ -1,20 +1,29 @@
+import { tieFormatConstants } from '@courthive/competition-catalogue';
+import { namedTieFormat } from '@Tests/testHarness/namedTieFormat';
 import { tournamentEngine } from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { defined } from '@Tests/helpers/defined';
 import { expect, it } from 'vitest';
 
 // Constants
-import { USTA_GOLD_TEAM_CHALLENGE } from '@Constants/tieFormatConstants';
 import { SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { isNumeric } from '@Tools/math';
+
+const { USTA_GOLD_TEAM_CHALLENGE } = tieFormatConstants;
 
 it('can aggregate team scores across SINGLES/DOUBLES events', () => {
   const drawSize = 8;
   mocksEngine.generateTournamentRecord({
     participantsProfile: { participantsCount: 0 }, // required to force generation of tieFormat-specific participants
     drawProfiles: [
-      { generate: false, addEvent: false, eventType: TEAM_EVENT, drawSize, tieFormatName: USTA_GOLD_TEAM_CHALLENGE },
+      {
+        generate: false,
+        addEvent: false,
+        eventType: TEAM_EVENT,
+        drawSize,
+        tieFormat: namedTieFormat(USTA_GOLD_TEAM_CHALLENGE),
+      },
     ],
     setState: true,
   });
@@ -24,7 +33,7 @@ it('can aggregate team scores across SINGLES/DOUBLES events', () => {
 
   const entryStatus = DIRECT_ACCEPTANCE;
   const result = tournamentEngine.generateEventsFromTieFormat({
-    tieFormatName: USTA_GOLD_TEAM_CHALLENGE,
+    tieFormat: namedTieFormat(USTA_GOLD_TEAM_CHALLENGE),
     addEntriesFromTeams: true,
     addEvents: true,
     entryStatus,

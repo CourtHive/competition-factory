@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -6,9 +7,10 @@ import { expect, it } from 'vitest';
 // constants
 import { COMPLETED, DEAD_RUBBER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 /**
  * A TEAM DECIDER PLAYED "JUST FOR FUN" KEEPS THE RESULT ITS LINES GIVE IT.
@@ -54,7 +56,7 @@ it('a TEAM decider cleared from DEAD_RUBBER and played through its lines keeps i
     drawProfiles: [
       {
         drawType: DOUBLE_ELIMINATION,
-        tieFormatName: DOMINANT_DUO,
+        tieFormat: resolveTieFormat(DOMINANT_DUO),
         eventType: TEAM_EVENT,
         drawSize: 4,
         drawId: DRAW_ID,

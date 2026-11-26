@@ -2,8 +2,8 @@ import { CARRIED, compareUndirectedWinner, exited, retired, won } from '@Tests/t
 import { describe, it, vi } from 'vitest';
 
 // constants and types
-import type { Scenario, Step, Target } from '@Tests/testHarness/outcome/directionFixtures';
 import { DOUBLE_ELIMINATION, FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import type { Scenario, Step, Target } from '@Tests/testHarness/outcome/directionFixtures';
 import { DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 // counts v1's matchUp writes, so `compareUndirectedWinner` can assert v2 left none (`v2.v1Writes === 0`)

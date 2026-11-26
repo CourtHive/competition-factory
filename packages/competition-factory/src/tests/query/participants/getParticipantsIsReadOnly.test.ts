@@ -1,12 +1,14 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { setDeepCopy } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
-import { mocksEngine } from '../../..';
 import { afterEach, expect, it } from 'vitest';
+import { mocksEngine } from '../../..';
 
 // constants
 import { FEED_IN_CHAMPIONSHIP, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 /**
  * getParticipants({ withMatchUps | withRankingProfile }) is a QUERY. It used to repair the STORED draw when the draw
@@ -102,7 +104,9 @@ it('returns what a record that stores its edges returns', () => {
 // edges were never derived for the query. Reading from a copy keeps that, and still writes nothing.
 it('leaves a TEAM draw that does not store its edges as the repair left it', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 8, eventType: TEAM_EVENT, tieFormatName: DOMINANT_DUO, drawType: FEED_IN_CHAMPIONSHIP }],
+    drawProfiles: [
+      { drawSize: 8, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(DOMINANT_DUO), drawType: FEED_IN_CHAMPIONSHIP },
+    ],
     completeAllMatchUps: true,
   });
   const record = deepFreeze(stripEdges(tournamentRecord));

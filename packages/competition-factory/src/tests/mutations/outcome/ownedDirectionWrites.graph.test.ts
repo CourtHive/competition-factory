@@ -2,6 +2,7 @@ import { getProvider, getTournamentRecords, setOutcomePipeline, setSubscriptions
 import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { playForward as prepareForward } from '@Tests/testHarness/exitPropagation/driver';
 import { prepareHeldCarryCorrection } from '@Tests/testHarness/outcome/directionFixtures';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { HELD_BYE_REMOVALS } from '@Tests/testHarness/outcome/directionFixtures';
 import { registerTestSeedIdentity } from '@Tests/testHarness/seedMathRandom';
@@ -30,7 +31,6 @@ import {
 } from '@Tests/testHarness/outcome/directionFixtures';
 
 // constants and types
-import { USTA_COLLEGE, DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { TEAM, SINGLES, DOUBLES } from '@Constants/eventConstants';
 import type { Tournament } from '@Types/tournamentTypes';
@@ -76,6 +76,8 @@ import {
   TO_BE_PLAYED,
   BYE,
 } from '@Constants/matchUpStatusConstants';
+
+const { DOMINANT_DUO, USTA_COLLEGE } = tieFormatConstants;
 
 const counter = vi.hoisted(() => ({
   active: false,
@@ -257,7 +259,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
 it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
   '%s returns the undecided dual tally with explicit undefined fields',
   (mode) => {
-    const { drawId, matchUps } = fresh({ drawSize: 4, eventType: TEAM, tieFormatName: USTA_COLLEGE });
+    const { drawId, matchUps } = fresh({ drawSize: 4, eventType: TEAM, tieFormat: resolveTieFormat(USTA_COLLEGE) });
     const dual = matchUps.find((m) => m.tieMatchUps?.length && m.roundNumber === 1 && m.roundPosition === 1)!;
     const result = write(mode, drawId, dual.tieMatchUps![0].matchUpId, { winningSide: 1 });
     expect(Object.keys(result)).toEqual(['success', 'tieMatchUpResult', 'context']);
@@ -308,7 +310,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
 it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
   '%s writes a TEAM line finishing order before its scored-time schedule and interleaves its notices',
   (mode) => {
-    const { drawId, matchUps } = fresh({ drawSize: 4, eventType: TEAM, tieFormatName: USTA_COLLEGE });
+    const { drawId, matchUps } = fresh({ drawSize: 4, eventType: TEAM, tieFormat: resolveTieFormat(USTA_COLLEGE) });
     const dual = matchUps.find((m) => m.tieMatchUps?.length && m.roundNumber === 1 && m.roundPosition === 1)!;
     const line = dual.tieMatchUps![0];
     const buffers: { topic: string; key?: string }[][] = [];
@@ -404,7 +406,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
       drawSize: 4,
       drawType: ROUND_ROBIN,
       eventType: TEAM,
-      tieFormatName: DOMINANT_DUO,
+      tieFormat: resolveTieFormat(DOMINANT_DUO),
     });
     const dual = matchUps.find((m) => m.tieMatchUps?.length)!;
     const observed: string[][] = [];
@@ -468,7 +470,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
 it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
   '%s writes a manual dual override before ensuring its sides',
   (mode) => {
-    const { drawId, matchUps } = fresh({ eventType: TEAM, tieFormatName: USTA_COLLEGE });
+    const { drawId, matchUps } = fresh({ eventType: TEAM, tieFormat: resolveTieFormat(USTA_COLLEGE) });
     const dual = matchUps.find((m) => m.tieMatchUps?.length && m.roundNumber === 1 && m.roundPosition === 1)!;
     delete dual.sides;
     write(mode, drawId, dual.matchUpId, { winningSide: 1 }, { disableAutoCalc: true });
@@ -570,7 +572,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     const { drawId, record } = fresh({
       drawType: FIRST_MATCH_LOSER_CONSOLATION,
       eventType: TEAM,
-      tieFormatName: USTA_COLLEGE,
+      tieFormat: resolveTieFormat(USTA_COLLEGE),
     });
     const structures = record.events![0].drawDefinitions![0].structures!;
     const source = structures
@@ -638,7 +640,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
       drawSize: 4,
       drawType: ROUND_ROBIN,
       eventType: TEAM,
-      tieFormatName: DOMINANT_DUO,
+      tieFormat: resolveTieFormat(DOMINANT_DUO),
     });
     const dual = matchUps.find((m) => m.tieMatchUps?.length)!;
     write(OUTCOME_PIPELINE_V1, drawId, dual.tieMatchUps![0].matchUpId, { winningSide: 1 });
@@ -720,7 +722,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
       drawSize: 4,
       drawType: ROUND_ROBIN,
       eventType: TEAM,
-      tieFormatName: DOMINANT_DUO,
+      tieFormat: resolveTieFormat(DOMINANT_DUO),
     });
     const dual = matchUps.find((m) => m.tieMatchUps?.length)!;
     write(OUTCOME_PIPELINE_V1, drawId, dual.matchUpId, { winningSide: 1 });
@@ -778,7 +780,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
       participantsCount: 3,
       drawType: COMPASS,
       eventType: TEAM,
-      tieFormatName: USTA_COLLEGE,
+      tieFormat: resolveTieFormat(USTA_COLLEGE),
     });
     const dual = record
       .events![0].drawDefinitions![0].structures!.find((s) => s.structureName === 'East')!
@@ -1027,7 +1029,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
       drawType: ROUND_ROBIN,
       eventType: TEAM,
       drawSize: 8,
-      tieFormatName: DOMINANT_DUO,
+      tieFormat: resolveTieFormat(DOMINANT_DUO),
     });
     const dual = matchUps.find((matchUp) => matchUp.tieMatchUps?.length && matchUp.matchUpStatus === TO_BE_PLAYED)!;
     write(OUTCOME_PIPELINE_V1, drawId, dual.matchUpId, { winningSide: 1 });
@@ -1098,7 +1100,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
       drawType: ROUND_ROBIN,
       eventType: TEAM,
       drawSize: 8,
-      tieFormatName: DOMINANT_DUO,
+      tieFormat: resolveTieFormat(DOMINANT_DUO),
     });
     const dual = matchUps.find((matchUp) => matchUp.tieMatchUps?.length && matchUp.matchUpStatus === TO_BE_PLAYED)!;
     write(OUTCOME_PIPELINE_V1, drawId, dual.matchUpId, { winningSide: 1 });
@@ -1299,7 +1301,13 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
   '%s ensures the BYE relay team sides before recording the carried exit',
   (mode) => {
     const { drawId, record } = fresh(
-      { drawType: COMPASS, drawSize: 8, participantsCount: 5, eventType: TEAM, tieFormatName: DOMINANT_DUO },
+      {
+        drawType: COMPASS,
+        drawSize: 8,
+        participantsCount: 5,
+        eventType: TEAM,
+        tieFormat: resolveTieFormat(DOMINANT_DUO),
+      },
       {},
       200203,
       false,
@@ -1424,7 +1432,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
       drawSize: 8,
       participantsCount: 5,
       eventType: TEAM,
-      tieFormatName: USTA_COLLEGE,
+      tieFormat: resolveTieFormat(USTA_COLLEGE),
     });
     const target = { structureName: 'East', roundNumber: 1, roundPosition: 3 };
     const outcome = generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 1 }).outcome!;
@@ -1494,7 +1502,7 @@ it.each(
     drawType: ROUND_ROBIN,
     eventType: TEAM,
     drawSize: 8,
-    tieFormatName: DOMINANT_DUO,
+    tieFormat: resolveTieFormat(DOMINANT_DUO),
   });
   const dual = matchUps.find((entry) => entry.tieMatchUps?.length && entry.matchUpStatus === TO_BE_PLAYED)!;
   write(OUTCOME_PIPELINE_V1, drawId, dual.matchUpId, {

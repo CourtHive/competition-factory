@@ -1,5 +1,4 @@
-import { POLICY_RATINGS_WORLD_RUGBY } from '@Fixtures/policies/POLICY_RATINGS_WORLD_RUGBY';
-import { POLICY_RATINGS_FIVB } from '@Fixtures/policies/POLICY_RATINGS_FIVB';
+import { POLICY_RATINGS_FIVB, POLICY_RATINGS_WORLD_RUGBY } from '@courthive/competition-catalogue';
 import { calculateNewRatings } from '@Helpers/ratings/calculateNewRatings';
 import { expectedResult, normalCdf } from '@Helpers/ratings/ratingUpdate';
 import { describe, expect, it } from 'vitest';

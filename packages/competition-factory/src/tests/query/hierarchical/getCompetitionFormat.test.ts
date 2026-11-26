@@ -1,4 +1,5 @@
 import { getCompetitionFormat } from '@Query/hierarchical/getCompetitionFormat';
+import { competitionFormats } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
@@ -13,8 +14,9 @@ import {
 } from '@Constants/errorConditionConstants';
 
 // Fixtures
-import INTENNSE_STANDARD from '@Fixtures/scoring/competitionFormats/INTENNSE_STANDARD.json';
 import TENNIS_STANDARD from '@Fixtures/scoring/competitionFormats/TENNIS_STANDARD.json';
+
+const { INTENNSE_STANDARD } = competitionFormats;
 
 describe('getCompetitionFormat', () => {
   it('resolves competitionFormat from event level', () => {

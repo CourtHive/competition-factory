@@ -1,13 +1,15 @@
 import { generateTieMatchUpScore } from '@Query/matchUp/tieMatchUpScore/generateTieMatchUpScore';
-import tieFormat from '@Fixtures/scoring/tieFormats/INTENNSE_2026.json';
 import { drawTypes, setupTimedPlayoff } from './timedTeamPlayoff';
 import { setOutcomePipeline } from '@Global/state/globalState';
+import { tieFormats } from '@courthive/competition-catalogue';
 import { afterEach, describe, expect, it } from 'vitest';
 import mocks from '@Assemblies/engines/mock';
 import engine from '@Engines/syncEngine';
 
 // constants and types
 import type { MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
+
+const tieFormat = tieFormats.INTENNSE_2026;
 
 const drawId = 'bolts';
 const modes = ['v1', 'v2', 'differential'] as const;

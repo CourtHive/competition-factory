@@ -1,5 +1,4 @@
-import { POLICY_RATINGS_ELO_538_NFL } from '@Fixtures/policies/POLICY_RATINGS_ELO_538_NFL';
-import { POLICY_RATINGS_ELO_538_NBA } from '@Fixtures/policies/POLICY_RATINGS_ELO_538_NBA';
+import { POLICY_RATINGS_ELO_538_NBA, POLICY_RATINGS_ELO_538_NFL } from '@courthive/competition-catalogue';
 import { marginMultiplier } from '@Helpers/ratings/ratingsPolicyRules';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';

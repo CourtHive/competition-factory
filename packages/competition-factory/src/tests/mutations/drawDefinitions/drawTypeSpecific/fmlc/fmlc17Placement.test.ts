@@ -1,5 +1,6 @@
 import { generateFMLC } from '@Tests/mutations/drawDefinitions/primitives/firstMatchLoserConsolation';
 import { completeMatchUp } from '@Tests/mutations/drawDefinitions/primitives/verifyMatchUps';
+import { POLICY_SEEDING_ITF as SEEDING_ITF } from '@courthive/competition-catalogue';
 import { getDrawStructures } from '@Acquire/findStructure';
 import { chunkArray } from '@Tools/arrays';
 import { expect, it } from 'vitest';
@@ -7,7 +8,6 @@ import { expect, it } from 'vitest';
 // constants and fixtures
 import { CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
 import SEEDING_USTA from '@Fixtures/policies/POLICY_SEEDING_DEFAULT';
-import SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
 
 it('can support ITF Consolation BYE placement', () => {
   const participantsCount = 17;

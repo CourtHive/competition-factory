@@ -1,7 +1,7 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/matchUpTypes';
 import { setSubscriptions } from '@Global/state/globalState';
-import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
 import { MODIFY_MATCHUP } from '@Constants/topicConstants';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -13,12 +13,14 @@ import {
   NOT_IMPLEMENTED,
 } from '@Constants/errorConditionConstants';
 
+const { COLLEGE_D3 } = tieFormatConstants;
+
 function fixture(type = SINGLES) {
   const {
     tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+    drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
   });
   const event = tournamentRecord.events![0];
   const draw = event.drawDefinitions![0];

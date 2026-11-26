@@ -1,4 +1,5 @@
 import { getTournamentInconsistencies } from '@Query/tournaments/getTournamentInconsistencies';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import * as mocksGovernor from '@Assemblies/governors/mocksGovernor';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -14,8 +15,9 @@ import { INDIVIDUAL, PAIR, TEAM as TEAM_PARTICIPANT } from '@Constants/participa
 import { LINKED_TOURNAMENTS, MUTATION_LOCKS } from '@Constants/extensionConstants';
 import { FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/eventConstants';
-import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
 import { ASSIGN_COURT } from '@Constants/timeItemConstants';
+
+const { COLLEGE_DEFAULT } = tieFormatConstants;
 
 /**
  * anonymizeTournamentRecord, end to end through mocksEngine, on a record that has everything a real one has:
@@ -142,7 +144,7 @@ function buildRichRecord() {
       {
         eventType: TEAM,
         eventName: 'Real Teams',
-        tieFormatName: COLLEGE_DEFAULT,
+        tieFormat: resolveTieFormat(COLLEGE_DEFAULT),
         completeAllMatchUps: true,
         drawProfiles: [{ drawSize: 4 }],
       },

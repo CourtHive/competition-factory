@@ -1,19 +1,21 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 // constants
 import { SCORES_PRESENT } from '@Constants/errorConditionConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
 import { TEAM } from '@Constants/eventConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 test('participantResults recalculated when manually scored TEAM matchUps deleted', async () => {
   const drawId = 'did';
   mocksEngine.generateTournamentRecord({
     drawProfiles: [
       {
-        tieFormatName: DOMINANT_DUO,
+        tieFormat: resolveTieFormat(DOMINANT_DUO),
         drawType: AD_HOC,
         eventType: TEAM,
         automated: true,

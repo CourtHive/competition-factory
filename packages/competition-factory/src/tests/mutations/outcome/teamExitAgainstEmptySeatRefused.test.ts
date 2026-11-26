@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { setOutcomePipeline } from '@Global/state/globalState';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -8,13 +9,14 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { DEFAULTED, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { INVALID_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
 } from '@Constants/outcomePipelineConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 /**
  * A TEAM DUAL'S EXIT AGAINST AN EMPTY SEAT IS REFUSED AS A SINGLES MATCHUP'S IS (option D narrowed).
@@ -62,7 +64,7 @@ const inconsistencies = () =>
 function setup(team: boolean) {
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
   const drawProfile: any = { drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 8, drawId: DRAW_ID };
-  if (team) Object.assign(drawProfile, { tieFormatName: DOMINANT_DUO, eventType: TEAM_EVENT });
+  if (team) Object.assign(drawProfile, { tieFormat: resolveTieFormat(DOMINANT_DUO), eventType: TEAM_EVENT });
   mocksEngine.generateTournamentRecord({ drawProfiles: [drawProfile], nonRandom: 1, setState: true });
 }
 

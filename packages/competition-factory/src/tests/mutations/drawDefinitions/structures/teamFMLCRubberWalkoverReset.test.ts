@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -6,10 +7,11 @@ import { expect, it } from 'vitest';
 // constants
 import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
 import { COMPLETED, WALKOVER, BYE } from '@Constants/matchUpStatusConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import { RANKING } from '@Constants/scaleConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 /**
  * A TEAM FIRST_MATCH_LOSER_CONSOLATION draw of 8 with DOMINANT_DUO (two singles and a doubles; two rubbers win the
@@ -25,7 +27,12 @@ function clearRoundTwo({ walkoverRubber }: { walkoverRubber: boolean }) {
     eventIds: [eventId],
   } = mocksEngine.generateTournamentRecord({
     drawProfiles: [
-      { drawType: FIRST_MATCH_LOSER_CONSOLATION, tieFormatName: DOMINANT_DUO, eventType: TEAM_EVENT, drawSize: 8 },
+      {
+        drawType: FIRST_MATCH_LOSER_CONSOLATION,
+        tieFormat: resolveTieFormat(DOMINANT_DUO),
+        eventType: TEAM_EVENT,
+        drawSize: 8,
+      },
     ],
     setState: true,
   });

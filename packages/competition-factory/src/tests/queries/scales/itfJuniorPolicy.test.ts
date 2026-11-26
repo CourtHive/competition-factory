@@ -1,5 +1,3 @@
-import { POLICY_RANKING_POINTS_ITF_JUNIOR_2025 } from '@Fixtures/policies/POLICY_RANKING_POINTS_ITF_JUNIOR_2025';
-import { POLICY_RANKING_POINTS_ITF_JUNIOR } from '@Fixtures/policies/POLICY_RANKING_POINTS_ITF_JUNIOR';
 import { getParticipantPoints } from '@Query/scales/getParticipantPoints';
 import { validateRankingPolicy } from './policyEncoding/validatePolicy';
 import { generateRankingList } from '@Query/scales/generateRankingList';
@@ -7,8 +5,14 @@ import type { AggregationRules } from '@Types/rankingTypes';
 import { mocksEngine, tournamentEngine } from '../../..';
 import { defined } from '@Tests/helpers/defined';
 import { describe, expect, it } from 'vitest';
+import {
+  POLICY_RANKING_POINTS_ITF_JUNIOR,
+  POLICY_RANKING_POINTS_ITF_JUNIOR_2025,
+} from '@courthive/competition-catalogue';
 
 // constants
+import { SINGLES, DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
+import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import {
   MAIN,
   PLAYOFF,
@@ -17,8 +21,6 @@ import {
   ROUND_ROBIN_WITH_PLAYOFF,
   SINGLE_ELIMINATION,
 } from '@Constants/drawDefinitionConstants';
-import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
-import { SINGLES, DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
 
 // Ground truth: the points tables of Regulation 31, 2025 and 2026 ITF World Tennis Tour Juniors Regulations.
 // Columns W, F, SF, QF, R16, R32; a missing column awards nothing.

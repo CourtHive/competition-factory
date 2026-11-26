@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { setOutcomePipeline } from '@Global/state/globalState';
 import { afterEach, describe, expect, it } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
@@ -7,7 +8,6 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { COMPLETED, DEFAULTED, IN_PROGRESS, RETIRED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { CONSOLATION, FEED_IN_CHAMPIONSHIP, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { CANNOT_CHANGE_WINNING_SIDE } from '@Constants/errorConditionConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
@@ -15,6 +15,8 @@ import {
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
 } from '@Constants/outcomePipelineConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 /**
  * CLASS 4, both rules, in every pipeline mode.
@@ -50,7 +52,13 @@ function setup(mode: (typeof MODES)[number]) {
     eventIds: [eventId],
   } = mocksEngine.generateTournamentRecord({
     drawProfiles: [
-      { drawType: SINGLE_ELIMINATION, tieFormatName: DOMINANT_DUO, eventType: TEAM_EVENT, drawSize: 4, drawId: 'd' },
+      {
+        drawType: SINGLE_ELIMINATION,
+        tieFormat: resolveTieFormat(DOMINANT_DUO),
+        eventType: TEAM_EVENT,
+        drawSize: 4,
+        drawId: 'd',
+      },
     ],
     nonRandom: 1,
     setState: true,
@@ -213,7 +221,7 @@ describe("a line whose tally relabels its dual's carried exit settles the carry"
       drawProfiles: [
         {
           drawType: FEED_IN_CHAMPIONSHIP,
-          tieFormatName: DOMINANT_DUO,
+          tieFormat: resolveTieFormat(DOMINANT_DUO),
           eventType: TEAM_EVENT,
           drawSize: 8,
           drawId: 'd',

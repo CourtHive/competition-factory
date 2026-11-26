@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -5,7 +6,6 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { MAIN, QUALIFYING, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
-import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
   INVALID_VALUES,
@@ -13,6 +13,8 @@ import {
   MISSING_DRAW_SIZE,
   STRUCTURE_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
+
+const { COLLEGE_DEFAULT } = tieFormatConstants;
 
 describe('generateQualifyingStructure - uncovered branches', () => {
   it('returns error when drawDefinition is missing', () => {
@@ -285,7 +287,7 @@ describe('generateQualifyingStructure - uncovered branches', () => {
         {
           drawSize: 8,
           eventType: TEAM_EVENT,
-          tieFormatName: COLLEGE_DEFAULT,
+          tieFormat: resolveTieFormat(COLLEGE_DEFAULT),
         },
       ],
       setState: true,

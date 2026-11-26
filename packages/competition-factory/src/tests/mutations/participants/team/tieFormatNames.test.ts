@@ -1,13 +1,14 @@
+import { tieFormatConstants, tieFormats } from '@courthive/competition-catalogue';
 import tournamentEngine from '@Engines/syncEngine';
 import { mocksEngine } from '../../../..';
 import { expect, test } from 'vitest';
 
 // constants and fixtures
-import { COLLEGE_JUCO, DOMINANT_DUO, LAVER_CUP } from '@Constants/tieFormatConstants';
 import { COMPASS } from '@Constants/drawDefinitionConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
-import { tieFormats } from '@Fixtures/scoring/tieFormats';
 import { TEAM } from '@Constants/eventConstants';
+
+const { COLLEGE_JUCO, DOMINANT_DUO, LAVER_CUP } = tieFormatConstants;
 
 // prettier-ignore
 const scenarios = [

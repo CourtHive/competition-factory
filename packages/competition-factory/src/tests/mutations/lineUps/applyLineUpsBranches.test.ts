@@ -1,9 +1,9 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
@@ -12,6 +12,8 @@ import {
   PARTICIPANT_NOT_FOUND,
   INVALID_VALUES,
 } from '@Constants/errorConditionConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 /**
  * `applyLineUps` refuses a malformed lineUp before writing anything, and places a well-formed one on
@@ -23,7 +25,7 @@ import {
 function setup() {
   const drawId = 'lineUps';
   mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawId, drawSize: 4, eventType: TEAM_EVENT, tieFormatName: DOMINANT_DUO }],
+    drawProfiles: [{ drawId, drawSize: 4, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(DOMINANT_DUO) }],
     setState: true,
   });
   const matchUps: any[] = tournamentEngine.allDrawMatchUps({ drawId, inContext: true }).matchUps ?? [];

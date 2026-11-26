@@ -1,5 +1,5 @@
 import { getDrawDefinition, projectDraw, stableHash } from '@Tests/testHarness/exitPropagation/transitions';
-import { POLICY_SCORING_USTA } from '@Fixtures/policies/POLICY_SCORING_USTA';
+import { POLICY_SCORING_USTA } from '@courthive/competition-catalogue';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';

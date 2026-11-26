@@ -1,4 +1,5 @@
 import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import POLICY_SCORING_DEFAULT from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
 import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
@@ -13,7 +14,6 @@ import { setClock } from '@Tools/clock';
 // constants
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { RETIRED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { LAVER_CUP, USTA_COLLEGE } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
 import {
   COMPASS,
@@ -35,6 +35,8 @@ import {
   MODIFY_POSITION_ASSIGNMENTS,
   UPDATE_INCONTEXT_MATCHUP,
 } from '@Constants/topicConstants';
+
+const { LAVER_CUP, USTA_COLLEGE } = tieFormatConstants;
 
 /**
  * S7: V2 OWNS A TEAM LINE'S RESULT (outcome v2 executor plan § 6 S7). A line that leaves its dual undecided: v1 writes
@@ -431,7 +433,7 @@ const OWNED: [string, Scenario][] = [
   [
     'SINGLE_ELIMINATION at LAVER_CUP: a line of a collection valued differently',
     {
-      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION, tieFormatName: LAVER_CUP },
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION, tieFormat: resolveTieFormat(LAVER_CUP) },
       setup: [{ target: R1(1, 0), winningSide: 2 }],
       step: { target: R1(1, 4), winningSide: 1 },
     },
@@ -1197,7 +1199,12 @@ const OWNED: [string, Scenario][] = [
     'ROUND_ROBIN: a line won in a match tiebreak, the group tallied under the dual tally format as hydration reads it',
     {
       // USTA_COLLEGE's singles lines (3 to 8) end in a match tiebreak; the draw's own format is not the dual tally's
-      drawProfile: { drawSize: 4, drawType: ROUND_ROBIN, tieFormatName: USTA_COLLEGE, matchUpFormat: 'SET3-S:6/TB7' },
+      drawProfile: {
+        drawSize: 4,
+        drawType: ROUND_ROBIN,
+        tieFormat: resolveTieFormat(USTA_COLLEGE),
+        matchUpFormat: 'SET3-S:6/TB7',
+      },
       setup: [{ target: R1(0, 4, 'Group 1'), winningSide: 1 }],
       step: { target: R1(0, 3, 'Group 1'), winningSide: 2, outcome: 'matchTiebreak' },
     },

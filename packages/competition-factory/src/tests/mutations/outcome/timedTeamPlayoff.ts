@@ -1,4 +1,5 @@
 import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { getTournamentRecords, setOutcomePipeline } from '@Global/state/globalState';
 import mocks from '@Assemblies/engines/mock';
 import engine from '@Engines/syncEngine';
@@ -7,7 +8,8 @@ import { expect } from 'vitest';
 // constants and types
 import { MAIN, PLAY_OFF, ROUND_ROBIN_WITH_PLAYOFF, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import type { MatchUp, Tournament } from '@Types/tournamentTypes';
-import { INTENNSE_2026 } from '@Constants/tieFormatConstants';
+
+const { INTENNSE_2026 } = tieFormatConstants;
 
 export const drawTypes = [SINGLE_ELIMINATION, ROUND_ROBIN_WITH_PLAYOFF] as const;
 
@@ -41,7 +43,7 @@ export function setupTimedPlayoff(drawType: (typeof drawTypes)[number]) {
         drawSize: linked ? 6 : 4,
         eventType: 'TEAM',
         teamGenders: { MALE: 3, FEMALE: 3 },
-        tieFormatName: INTENNSE_2026,
+        tieFormat: resolveTieFormat(INTENNSE_2026),
         ...(linked && {
           structureOptions: { groupSize: 3, playoffGroups: [{ finishingPositions: [1, 2], structureName: 'Playoff' }] },
         }),

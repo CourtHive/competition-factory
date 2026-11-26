@@ -1,6 +1,5 @@
-import { POLICY_SANCTIONING_USTA } from '@Fixtures/policies/POLICY_SANCTIONING_USTA';
+import { POLICY_SANCTIONING_USTA, POLICY_SCORING_USTA } from '@courthive/competition-catalogue';
 import POLICY_DRAWS_DEFAULT from '@Fixtures/policies/POLICY_DRAWS_DEFAULT';
-import POLICY_SCORING_USTA from '@Fixtures/policies/POLICY_SCORING_USTA';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';

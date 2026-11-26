@@ -1,3 +1,4 @@
+import { POLICY_SEEDING_ITF as SEEDING_ITF } from '@courthive/competition-catalogue';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect } from 'vitest';
@@ -6,7 +7,6 @@ import { expect } from 'vitest';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
-import SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { RANKING } from '@Constants/scaleConstants';
 

@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -8,8 +9,9 @@ import { FIRST_ROUND_LOSER_CONSOLATION, MAIN, ROUND_ROBIN } from '@Constants/dra
 import { DOUBLES, SINGLES, TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { INVALID_CATEGORY } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
-import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
+
+const { COLLEGE_D3 } = tieFormatConstants;
 
 const policyDefinitions = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };
 
@@ -21,7 +23,7 @@ it('can add collectionDefinitions to tieFormat in a drawDefinition', () => {
     drawIds: [drawId],
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
   });
 
   tournamentEngine.setState(tournamentRecord);
@@ -148,7 +150,7 @@ it('can add collectionDefinitions to tieFormat in a structure', () => {
     drawProfiles: [
       {
         drawType: FIRST_ROUND_LOSER_CONSOLATION,
-        tieFormatName: COLLEGE_D3,
+        tieFormat: resolveTieFormat(COLLEGE_D3),
         eventType: TEAM,
         drawSize: 4,
       },
@@ -373,7 +375,7 @@ it('added collectionDefinitions do not appear in inProgress matchUps', () => {
     drawIds: [drawId],
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+    drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
     policyDefinitions,
   });
 
@@ -608,7 +610,7 @@ it('can validate collectionDefinition.category when adding collectionDefinitions
   } = mocksEngine.generateTournamentRecord({
     eventProfiles: [
       {
-        drawProfiles: [{ drawSize: 2, tieFormatName: COLLEGE_D3 }],
+        drawProfiles: [{ drawSize: 2, tieFormat: resolveTieFormat(COLLEGE_D3) }],
         category: { ageCategoryCode },
         eventType: TEAM,
       },

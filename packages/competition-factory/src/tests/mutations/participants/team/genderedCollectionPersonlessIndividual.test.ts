@@ -1,20 +1,22 @@
 import { POLICY_MATCHUP_ACTIONS_DEFAULT } from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { USTA_GOLD_TEAM_CHALLENGE } from '@Constants/tieFormatConstants';
 import { ASSIGN_PARTICIPANT } from '@Constants/positionActionConstants';
 import { SINGLES_MATCHUP, TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import { MALE } from '@Constants/genderConstants';
 
+const { USTA_GOLD_TEAM_CHALLENGE } = tieFormatConstants;
+
 it('matchUpActions on a gendered collection leaves out a team member with no person instead of throwing', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     nonRandom: 1,
-    drawProfiles: [{ tieFormatName: USTA_GOLD_TEAM_CHALLENGE, eventType: TEAM_EVENT, drawSize: 2 }],
+    drawProfiles: [{ tieFormat: resolveTieFormat(USTA_GOLD_TEAM_CHALLENGE), eventType: TEAM_EVENT, drawSize: 2 }],
   });
 
   // one team member is recorded without a person (and so without a sex)

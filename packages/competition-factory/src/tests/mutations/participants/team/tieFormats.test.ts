@@ -1,5 +1,5 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { validateTieFormat } from '@Validators/validateTieFormat';
-import tieFormatConstants from '@Constants/tieFormatConstants';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
@@ -36,7 +36,7 @@ const tieKeys = [
 it.each(tieKeys)('can generate all exported tieFormatConstants', (tieKey) => {
   const { key, collectionsCount, tieFormatName } = tieKey;
   const { eventIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ eventType: TEAM, drawSize: 2, tieFormatName: key }],
+    drawProfiles: [{ eventType: TEAM, drawSize: 2, tieFormat: resolveTieFormat(key) }],
     eventProfiles: [{ eventType: TEAM }],
   });
 
@@ -62,7 +62,7 @@ it.each(tieKeys)('can generate all exported tieFormatConstants', (tieKey) => {
   expect(result.success).toEqual(true);
 
   result = tournamentEngine.generateDrawDefinition({
-    tieFormatName: key,
+    tieFormat: resolveTieFormat(key),
     eventId,
   });
   expect(result.success).toEqual(true);
@@ -89,7 +89,7 @@ test('timed sets can be COMPLETED with tied score', () => {
   } = mocksEngine.generateTournamentRecord({
     drawProfiles: [
       {
-        tieFormatName: tieFormatConstants.USTA_TOC,
+        tieFormat: resolveTieFormat(tieFormatConstants.USTA_TOC),
         eventType: TEAM,
         drawSize: 2,
       },

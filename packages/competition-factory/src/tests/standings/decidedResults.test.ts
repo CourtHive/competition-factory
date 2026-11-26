@@ -1,4 +1,5 @@
 import { getParticipantResults } from '@Query/matchUps/roundRobinTally/getParticipantResults';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { validateTallyPolicy } from '@Validators/validateTallyPolicy';
 import { validateScore } from '@Scoring/analysis/validateScore';
 import { setOutcomePipeline } from '@Global/state/globalState';
@@ -12,8 +13,9 @@ import { INVALID_SCORE, UNDECIDED_LEVEL_RESULT } from '@Constants/errorCondition
 import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
-import { INTENNSE_2026 } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
+
+const { INTENNSE_2026 } = tieFormatConstants;
 
 /*
  * Standings phase 2 § 1.1, slice 2. A level result where a winner must advance is decided outside the
@@ -247,7 +249,12 @@ describe('TEAM: a dual is decided by its tieFormat', () => {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [
-        { drawSize: 4, eventType: TEAM_EVENT, drawType: SINGLE_ELIMINATION, tieFormatName: INTENNSE_2026 },
+        {
+          drawSize: 4,
+          eventType: TEAM_EVENT,
+          drawType: SINGLE_ELIMINATION,
+          tieFormat: resolveTieFormat(INTENNSE_2026),
+        },
       ],
       setState: true,
     });

@@ -1,4 +1,5 @@
-import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
+import { tieFormatConstants, tieFormats } from '@courthive/competition-catalogue';
+import { namedTieFormat } from '@Tests/testHarness/namedTieFormat';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -9,16 +10,9 @@ import { INVALID_TIE_FORMAT } from '@Constants/errorConditionConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { FEMALE, MALE } from '@Constants/genderConstants';
-import { tieFormats } from '@Fixtures/scoring/tieFormats';
 import { TEAM } from '@Constants/eventConstants';
-import { fixtures } from '@Fixtures/index';
-import {
-  COLLEGE_D3,
-  DOMINANT_DUO,
-  TEAM_DOUBLES_3_AGGREGATION,
-  COLLEGE_DEFAULT,
-  COLLEGE_JUCO,
-} from '@Constants/tieFormatConstants';
+
+const { COLLEGE_D3, COLLEGE_DEFAULT, COLLEGE_JUCO, DOMINANT_DUO, TEAM_DOUBLES_3_AGGREGATION } = tieFormatConstants;
 
 const matchUpFormat = FORMAT_STANDARD;
 
@@ -69,9 +63,7 @@ const successConditions = [
 ];
 
 it('validates fixture tieFormats', () => {
-  const tieFormat = tieFormatDefaults({
-    namedFormat: TEAM_DOUBLES_3_AGGREGATION,
-  });
+  const tieFormat = namedTieFormat(TEAM_DOUBLES_3_AGGREGATION);
   expect(tieFormat.winCriteria.aggregateValue).toEqual(true);
   const result = validateTieFormat({ tieFormat });
   expect(result.valid).toEqual(true);
@@ -85,7 +77,7 @@ it.each(successConditions)('can validate tieFormats', (errorCondition: any) => {
 });
 
 test('various tieFormat defaults', () => {
-  let format = tieFormatDefaults({ namedFormat: COLLEGE_DEFAULT });
+  let format = namedTieFormat(COLLEGE_DEFAULT);
   expect(format.winCriteria.valueGoal).toEqual(4);
   let result = validateTieFormat({ tieFormat: format });
   expect(result.valid).toEqual(true);
@@ -105,7 +97,7 @@ test('various tieFormat defaults', () => {
     }),
   ).toEqual(true);
 
-  format = tieFormatDefaults({ namedFormat: COLLEGE_JUCO });
+  format = namedTieFormat(COLLEGE_JUCO);
   expect(format.winCriteria.valueGoal).toEqual(5);
   result = validateTieFormat({ tieFormat: format });
   expect(result.valid).toEqual(true);
@@ -124,7 +116,7 @@ test('various tieFormat defaults', () => {
     }),
   ).toEqual(true);
 
-  format = tieFormatDefaults({ namedFormat: COLLEGE_D3 });
+  format = namedTieFormat(COLLEGE_D3);
   expect(format.winCriteria.valueGoal).toEqual(5);
   result = validateTieFormat({ tieFormat: format });
   expect(result.valid).toEqual(true);
@@ -147,25 +139,25 @@ test('various tieFormat defaults', () => {
 
 it('can validate tieFormat fixtures', () => {
   let result = validateTieFormat({
-    tieFormat: fixtures.tieFormats.USTA_SECTION_BATTLE,
+    tieFormat: tieFormats.USTA_SECTION_BATTLE,
     checkCollectionIds: false,
   });
   expect(result.valid).toEqual(true);
 
   result = validateTieFormat({
-    tieFormat: fixtures.tieFormats.COLLEGE_D3,
+    tieFormat: tieFormats.COLLEGE_D3,
     checkCollectionIds: false,
   });
   expect(result.valid).toEqual(true);
 
   result = validateTieFormat({
-    tieFormat: fixtures.tieFormats.COLLEGE_DEFAULT,
+    tieFormat: tieFormats.COLLEGE_DEFAULT,
     checkCollectionIds: false,
   });
   expect(result.valid).toEqual(true);
 
   result = validateTieFormat({
-    tieFormat: fixtures.tieFormats.COLLEGE_JUCO,
+    tieFormat: tieFormats.COLLEGE_JUCO,
     checkCollectionIds: false,
   });
   expect(result.valid).toEqual(true);
@@ -187,9 +179,7 @@ it('can use tieFormatName to generate TEAM events', () => {
 });
 
 it('cal enforce gender in collectionDefinitions', () => {
-  const tieFormat = tieFormatDefaults({
-    namedFormat: DOMINANT_DUO,
-  });
+  const tieFormat = namedTieFormat(DOMINANT_DUO);
   let result = validateTieFormat({ tieFormat });
   expect(result.valid).toEqual(true);
 

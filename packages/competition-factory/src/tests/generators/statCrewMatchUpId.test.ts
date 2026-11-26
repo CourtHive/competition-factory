@@ -1,12 +1,14 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
 import { INVALID_MATCHUP, MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
-import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
 import { SINGLES, TEAM } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
+
+const { COLLEGE_D3 } = tieFormatConstants;
 
 /**
  * Two duals between the SAME two teams, in two TEAM events: the first completed, the second not yet played. Without
@@ -15,7 +17,9 @@ import { TEAM_EVENT } from '@Constants/eventConstants';
  */
 function setup() {
   mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawId: 'firstDraw', drawSize: 2, eventType: TEAM_EVENT, tieFormatName: COLLEGE_D3 }],
+    drawProfiles: [
+      { drawId: 'firstDraw', drawSize: 2, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(COLLEGE_D3) },
+    ],
     completeAllMatchUps: true,
     setState: true,
   });
@@ -23,7 +27,7 @@ function setup() {
   const teamIds = firstDual.sides.map((side) => side.participantId);
 
   let result: any = tournamentEngine.addEvent({
-    event: { eventName: 'Rematch', eventType: TEAM_EVENT, tieFormatName: COLLEGE_D3 },
+    event: { eventName: 'Rematch', eventType: TEAM_EVENT, tieFormat: resolveTieFormat(COLLEGE_D3) },
   });
   expect(result.success).toEqual(true);
   const eventId = result.event.eventId;
@@ -115,7 +119,7 @@ describe('generateStatCrew matchUpId', () => {
 
   it('a stand-alone dual is not a tournament game and carries no tournament name', () => {
     mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT, tieFormatName: COLLEGE_D3 }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(COLLEGE_D3) }],
       completeAllMatchUps: true,
       setState: true,
     });

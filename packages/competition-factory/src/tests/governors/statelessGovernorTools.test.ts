@@ -1,24 +1,24 @@
-import { POLICY_RANKING_POINTS_WTA } from '@Fixtures/policies/POLICY_RANKING_POINTS_WTA';
+import { POLICY_RANKING_POINTS_WTA, resolveTieFormat } from '@courthive/competition-catalogue';
 import { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
+import * as availabilityExport from '@Assemblies/engines/availability';
 import { officiatingEngine } from '@Assemblies/engines/officiating';
 import { sanctioningEngine } from '@Assemblies/engines/sanctioning';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
-import * as availabilityExport from '@Assemblies/engines/availability';
+import ratchet from './statelessGovernorTools.json';
 import * as governors from '@Assemblies/governors';
-import * as tools from '@Assemblies/tools';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
-import ratchet from './statelessGovernorTools.json';
 import { describe, expect, it } from 'vitest';
+import * as tools from '@Assemblies/tools';
 
 // constants
 import { POLICY_TYPE_LADDER, POLICY_TYPE_RANKING_POINTS, POLICY_TYPE_SANCTIONING } from '@Constants/policyConstants';
+import { INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { CHALLENGE_ISSUED, INSERTION, RATING } from '@Constants/ladderConstants';
 import { MAIN, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { SINGLES, TEAM_EVENT } from '@Constants/eventConstants';
-import { ADVANCE_TOP_N } from '@Constants/seasonConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
-import { INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import { ADVANCE_TOP_N } from '@Constants/seasonConstants';
 
 /**
  * THE STATELESS GOVERNOR TOOLS, CONFIRMED (slice A of the engine API migration).
@@ -68,7 +68,7 @@ const generated = mocksEngine.generateTournamentRecord({
   drawProfiles: [
     { drawSize: 8, seedsCount: 2 },
     { drawSize: 4, drawType: ROUND_ROBIN },
-    { drawSize: 4, eventType: TEAM_EVENT, tieFormatName: 'DOMINANT_DUO' },
+    { drawSize: 4, eventType: TEAM_EVENT, tieFormat: resolveTieFormat('DOMINANT_DUO') },
   ],
   venueProfiles: [{ courtsCount: 2 }],
   policyDefinitions: {

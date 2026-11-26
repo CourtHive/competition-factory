@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { getParticipantId } from '@Functions/global/extractors';
 import { instanceCount, unique } from '@Tools/arrays';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -5,7 +6,6 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants and types
-import { DOMINANT_DUO_MIXED, USTA_GOLD_TEAM_CHALLENGE } from '@Constants/tieFormatConstants';
 import { INDIVIDUAL, PAIR, TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { INVALID_VALUES, SCORES_PRESENT } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
@@ -14,6 +14,8 @@ import { TEAM_EVENT } from '@Constants/eventConstants';
 import { RANKING } from '@Constants/scaleConstants';
 import { ASC } from '@Constants/sortingConstants';
 import { LineUp } from '@Types/factoryTypes';
+
+const { DOMINANT_DUO_MIXED, USTA_GOLD_TEAM_CHALLENGE } = tieFormatConstants;
 
 const policyDefinitions = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };
 
@@ -32,7 +34,7 @@ it('can generate lineUps for TEAM events', () => {
     drawProfiles: [
       {
         category: { ageCategoryCode: categoryName },
-        tieFormatName: DOMINANT_DUO_MIXED,
+        tieFormat: resolveTieFormat(DOMINANT_DUO_MIXED),
         eventType: TEAM_EVENT,
         drawSize: 8,
       },
@@ -109,7 +111,7 @@ it('will assign TEAM positions based on ranking', () => {
     drawProfiles: [
       {
         category: { ageCategoryCode: categoryName },
-        tieFormatName: USTA_GOLD_TEAM_CHALLENGE,
+        tieFormat: resolveTieFormat(USTA_GOLD_TEAM_CHALLENGE),
         eventType: TEAM_EVENT,
         drawSize: 8,
       },
@@ -208,7 +210,7 @@ it('can generate lineUps for TEAM events', () => {
     drawProfiles: [
       {
         category: { ageCategoryCode: categoryName },
-        tieFormatName: USTA_GOLD_TEAM_CHALLENGE,
+        tieFormat: resolveTieFormat(USTA_GOLD_TEAM_CHALLENGE),
         eventType: TEAM_EVENT,
         drawSize: 8,
       },

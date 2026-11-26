@@ -1,3 +1,4 @@
+import { tieFormatConstants } from '@courthive/competition-catalogue';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { generateDateRange } from '@Tools/dateTime';
 import { queryEngine } from '@Engines/queryEngine';
@@ -6,16 +7,17 @@ import { hav } from '@Tools/objects';
 import { expect, it } from 'vitest';
 
 // constants
-import { SHARED_INDIVIDUAL_PARTICIPANT } from '@Constants/errorConditionConstants';
 import { INDIVIDUAL, TEAM as TEAM_PARTICIPANT } from '@Constants/participantConstants';
+import { SHARED_INDIVIDUAL_PARTICIPANT } from '@Constants/errorConditionConstants';
 import { ASSIGN_PARTICIPANT } from '@Constants/positionActionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
 import { SINGLES, TEAM } from '@Constants/eventConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { UTR } from '@Constants/ratingConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 const policyDefinitions = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };
 

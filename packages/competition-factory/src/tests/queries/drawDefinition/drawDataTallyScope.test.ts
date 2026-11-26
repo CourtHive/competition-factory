@@ -1,4 +1,4 @@
-import { POLICY_ROUND_ROBIN_TALLY_TOC } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_TOC';
+import { POLICY_ROUND_ROBIN_TALLY_TOC } from '@courthive/competition-catalogue';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';

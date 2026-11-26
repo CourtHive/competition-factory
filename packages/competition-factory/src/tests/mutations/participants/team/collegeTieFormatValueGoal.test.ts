@@ -1,15 +1,16 @@
+import { tieFormatConstants, tieFormats } from '@courthive/competition-catalogue';
 import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
-import { tieFormats } from '@Fixtures/scoring/tieFormats';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { COLLEGE_D3, COLLEGE_JUCO } from '@Constants/tieFormatConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { DOUBLES } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/eventConstants';
+
+const { COLLEGE_D3, COLLEGE_JUCO } = tieFormatConstants;
 
 // scoring lines without assigning individuals to collection positions — the dual's VALUE is what
 // is under test, not its lineUps (the same policy the team-advancement scenarios use)

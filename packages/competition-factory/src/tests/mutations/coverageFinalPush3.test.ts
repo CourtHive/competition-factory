@@ -4,8 +4,9 @@
  */
 import { anonymizeTournamentRecord } from '@Generators/tournamentRecords/anonymizeTournamentRecord';
 import { processPlayoffGroups } from '@Generators/drawDefinitions/drawTypes/processPlayoffGroups';
-import { validateSetScore } from '@Scoring/analysis/validateMatchUpScore';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { keyValueScore } from '@Scoring/entry/keyValueScore/keyValueScore';
+import { validateSetScore } from '@Scoring/analysis/validateMatchUpScore';
 import { analyzeSet } from '@Query/matchUp/analyzeSet';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
@@ -13,10 +14,11 @@ import { expect, it, describe } from 'vitest';
 // constants
 import { FIRST_ROUND_LOSER_CONSOLATION, AD_HOC, ROUND_OUTCOME } from '@Constants/drawDefinitionConstants';
 import { INVALID_CONFIGURATION } from '@Constants/errorConditionConstants';
-import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
+
+const { COLLEGE_DEFAULT } = tieFormatConstants;
 
 // ----------------------------------------------------------------
 // 1. keyValueScore — uncovered lines 153, 180-184, 187, 202, 268, 281
@@ -354,7 +356,7 @@ describe('anonymizeTournamentRecord uncovered branches', () => {
 
   it('covers lineUp mapping in matchUp sides (L158) and birthDate (L283-285)', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT, tieFormatName: COLLEGE_DEFAULT }],
+      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(COLLEGE_DEFAULT) }],
     });
 
     // Add lineUp to a matchUp side to trigger L158

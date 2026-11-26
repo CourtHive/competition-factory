@@ -1,5 +1,6 @@
 import { getMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
 import { generateBookings } from '@Query/scheduling/generateBookings';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
 import { timeStringMinutes } from '@Tools/dateTime';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -151,7 +152,7 @@ describe('a line of a TEAM event is timed and booked by its own type', () => {
         },
       },
       venueProfiles: [{ venueId: 'v1', courtsCount: 2, startTime: '08:00', endTime: '23:00' }],
-      drawProfiles: [{ drawSize: 4, eventType: 'TEAM', tieFormatName: 'COLLEGE_D3' as any }],
+      drawProfiles: [{ drawSize: 4, eventType: 'TEAM', tieFormat: resolveTieFormat('COLLEGE_D3') as any }],
       startDate: DATE,
       endDate: DATE,
       setState: true,
@@ -191,7 +192,7 @@ describe("a TEAM event's own format timing override", () => {
     const {
       eventIds: [eventId],
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: 'TEAM', tieFormatName: 'DOMINANT_DUO' as any }],
+      drawProfiles: [{ drawSize: 2, eventType: 'TEAM', tieFormat: resolveTieFormat('DOMINANT_DUO') as any }],
       startDate: DATE,
       endDate: DATE,
       setState: true,

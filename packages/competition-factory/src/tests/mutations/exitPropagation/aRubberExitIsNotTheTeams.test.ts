@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -7,7 +8,8 @@ import { describe, expect, it } from 'vitest';
 import { DOUBLE_ELIMINATION, FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { COMPLETED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/matchUpTypes';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 /**
  * A RUBBER'S EXIT IS NOT THE TEAM'S.
@@ -30,7 +32,7 @@ const drawId = 'rubberExit';
 const generate = (drawType: string) => {
   setSubscriptions({});
   mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawId, drawType, drawSize: 8, eventType: TEAM, tieFormatName: DOMINANT_DUO }],
+    drawProfiles: [{ drawId, drawType, drawSize: 8, eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO) }],
     nonRandom: 1,
     setState: true,
   });

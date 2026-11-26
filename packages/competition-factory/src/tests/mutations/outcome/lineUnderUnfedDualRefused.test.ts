@@ -1,4 +1,5 @@
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
 import { setOutcomePipeline } from '@Global/state/globalState';
 import { afterEach, describe, expect, it } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
@@ -38,7 +39,7 @@ const won = (winningSide: number) => generateOutcomeFromScoreString({ scoreStrin
 function teamDraw(drawSize: number, tieFormatName: string) {
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
   mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawId: 'd', drawSize, eventType: TEAM, tieFormatName }],
+    drawProfiles: [{ drawId: 'd', drawSize, eventType: TEAM, tieFormat: resolveTieFormat(tieFormatName) }],
     setState: true,
   });
   tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: 'd' });

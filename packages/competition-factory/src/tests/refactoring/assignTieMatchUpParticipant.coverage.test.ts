@@ -3,6 +3,7 @@
  * Targets uncovered branches: gender enforcement, invalid side number,
  * missing participant, team resolution, PAIR assignment to doubles.
  */
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
@@ -10,12 +11,13 @@ import { expect, it, describe } from 'vitest';
 // constants
 import { INVALID_SIDE_NUMBER, MISSING_PARTICIPANT_ID, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DOUBLES, SINGLES_MATCHUP, TEAM_MATCHUP } from '@Constants/matchUpTypes';
-import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
+
+const { COLLEGE_DEFAULT } = tieFormatConstants;
 
 describe('assignTieMatchUpParticipant coverage', () => {
   function generateTeamTournament() {
-    const drawProfiles = [{ drawSize: 4, tieFormatName: COLLEGE_DEFAULT }];
+    const drawProfiles = [{ drawSize: 4, tieFormat: resolveTieFormat(COLLEGE_DEFAULT) }];
     const eventProfiles = [{ eventType: TEAM_EVENT, drawProfiles }];
 
     return mocksEngine.generateTournamentRecord({

@@ -1,8 +1,10 @@
 import { TEAM_FORMAT_CELLS } from '@Tests/testHarness/exitPropagation/matrixCells';
+import { tieFormatConstants } from '@courthive/competition-catalogue';
 import { expect, test } from 'vitest';
 
+const { LAVER_CUP } = tieFormatConstants;
+
 // constants
-import { LAVER_CUP } from '@Constants/tieFormatConstants';
 
 /**
  * THE TEAM ARM IN LAVER_CUP: the four TEAM draw types at drawSize 8, dual and line level.

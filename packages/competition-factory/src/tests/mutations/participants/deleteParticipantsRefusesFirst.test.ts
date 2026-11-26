@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { deleteParticipants } from '@Mutate/participants/deleteParticipants';
 import { destroyGroupEntry } from '@Mutate/entries/destroyGroupEntry';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -8,7 +9,6 @@ import { expect, it } from 'vitest';
 // constants and types
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { Event, Tournament } from '@Types/tournamentTypes';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { TEAM } from '@Constants/eventConstants';
@@ -17,6 +17,8 @@ import {
   EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT,
   MISSING_EVENT,
 } from '@Constants/errorConditionConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 /**
  * A mutation that refuses must leave the record as it was. `deleteParticipants` removed a participant's
@@ -32,7 +34,7 @@ function teamParticipantPositionedInALaterEvent(unpositionedEventsCount = 1) {
     tournamentRecord: generated,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormatName: DOMINANT_DUO }],
+    drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO) }],
   });
   tournamentEngine.setState(generated);
 
@@ -42,7 +44,7 @@ function teamParticipantPositionedInALaterEvent(unpositionedEventsCount = 1) {
   const unpositionedEventIds: string[] = [];
   for (let i = 0; i < unpositionedEventsCount; i++) {
     const added = tournamentEngine.addEvent({
-      event: { eventType: TEAM, eventName: `Unpositioned ${i}`, tieFormatName: DOMINANT_DUO },
+      event: { eventType: TEAM, eventName: `Unpositioned ${i}`, tieFormat: resolveTieFormat(DOMINANT_DUO) },
     });
     expect(added.success).toEqual(true);
     const entered = tournamentEngine.addEventEntries({
@@ -65,14 +67,14 @@ function teamParticipantPositionedInALaterEvent(unpositionedEventsCount = 1) {
 // TEAM participants entered in two undrawn TEAM events: no drawPosition anywhere
 function teamParticipantEnteredInTwoEvents() {
   const { tournamentRecord: generated } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormatName: DOMINANT_DUO, generate: false }],
+    drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO), generate: false }],
   });
   tournamentEngine.setState(generated);
   const teamParticipantIds = (tournamentEngine.getTournament().tournamentRecord.events[0].entries ?? []).map(
     ({ participantId }) => participantId,
   );
   const added = tournamentEngine.addEvent({
-    event: { eventType: TEAM, eventName: 'Second', tieFormatName: DOMINANT_DUO },
+    event: { eventType: TEAM, eventName: 'Second', tieFormat: resolveTieFormat(DOMINANT_DUO) },
   });
   const entered = tournamentEngine.addEventEntries({
     participantIds: teamParticipantIds,
@@ -122,7 +124,7 @@ it('destroyGroupEntry keeps the TEAM participant and touches no other event when
 
 it('refuses ids that name no participant without first removing their entries or grouping memberships', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormatName: DOMINANT_DUO, generate: false }],
+    drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO), generate: false }],
   });
   const ghostId = 'not-a-participant';
   const team = (tournamentRecord.participants ?? []).find(

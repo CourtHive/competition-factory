@@ -1,3 +1,4 @@
+import { POLICY_ROUND_ROBIN_TALLY_JTT, POLICY_ROUND_ROBIN_TALLY_TOC } from '@courthive/competition-catalogue';
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
 import tournamentEngine from '@Engines/syncEngine';
 import { xa } from '@Tools/extractAttributes';
@@ -5,8 +6,6 @@ import { expect, it } from 'vitest';
 
 // constants and fixtures
 import { POLICY_ROUND_ROBIN_TALLY_DEFAULT } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_DEFAULT';
-import { POLICY_ROUND_ROBIN_TALLY_JTT } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_JTT';
-import { POLICY_ROUND_ROBIN_TALLY_TOC } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_TOC';
 import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 
 import tournamentRecord from './dominantDuo.codes.json';

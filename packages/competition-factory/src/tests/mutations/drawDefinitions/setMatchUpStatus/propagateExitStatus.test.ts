@@ -1,7 +1,7 @@
 import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { removeAssignment } from '@Tests/mutations/drawDefinitions/testingUtilities';
 import POLICY_SCORING_DEFAULT from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
-import POLICY_SCORING_USTA from '@Fixtures/policies/POLICY_SCORING_USTA';
+import { POLICY_SCORING_USTA } from '@courthive/competition-catalogue';
 import { setSubscriptions } from '@Global/state/globalState';
 import type { PolicyDefinitions } from '@Types/factoryTypes';
 import tournamentEngine from '@Engines/syncEngine';

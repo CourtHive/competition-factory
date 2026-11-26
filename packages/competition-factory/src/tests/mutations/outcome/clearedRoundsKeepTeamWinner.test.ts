@@ -1,7 +1,8 @@
-import { afterAll, beforeAll, expect, it } from 'vitest';
 import { getOutcomePipeline, getTournamentRecords, setOutcomePipeline } from '@Global/state/globalState';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import type { MatchUp, Tournament } from '@Types/tournamentTypes';
+import { afterAll, beforeAll, expect, it } from 'vitest';
 import mocks from '@Assemblies/engines/mock';
 import engine from '@Engines/syncEngine';
 
@@ -18,7 +19,7 @@ let initialRecipientSeats: number[];
 
 beforeAll(() => {
   mocks.generateTournamentRecord({
-    drawProfiles: [{ drawId, drawSize: 128, eventType: 'TEAM', tieFormatName: 'DOMINANT_DUO' }],
+    drawProfiles: [{ drawId, drawSize: 128, eventType: 'TEAM', tieFormat: resolveTieFormat('DOMINANT_DUO') }],
     nonRandom: 21,
     setState: true,
   });

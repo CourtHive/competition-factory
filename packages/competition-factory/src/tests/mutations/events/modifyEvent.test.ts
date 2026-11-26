@@ -1,3 +1,4 @@
+import { competitionFormats as catalogueFormats } from '@courthive/competition-catalogue';
 import { stringSort } from '@Functions/sorters/stringSort';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -130,13 +131,13 @@ it('supports attaching, replacing, and clearing competitionFormat on an event', 
 
   // Attach INTENNSE_STANDARD
   let result = tournamentEngine.modifyEvent({
-    eventUpdates: { competitionFormat: competitionFormats.INTENNSE_STANDARD as any },
+    eventUpdates: { competitionFormat: catalogueFormats.INTENNSE_STANDARD as any },
     eventId,
   });
   expect(result.success).toEqual(true);
   event = tournamentEngine.getEvent({ eventId }).event;
   expect(event.competitionFormat?.competitionFormatName).toEqual(
-    competitionFormats.INTENNSE_STANDARD.competitionFormatName,
+    catalogueFormats.INTENNSE_STANDARD.competitionFormatName,
   );
 
   // Replace with TENNIS_STANDARD

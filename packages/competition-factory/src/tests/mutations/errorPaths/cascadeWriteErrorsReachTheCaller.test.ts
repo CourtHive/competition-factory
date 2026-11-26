@@ -2,6 +2,7 @@ import { getOutcomePipeline, setOutcomePipeline, setSubscriptions } from '@Globa
 import { deepCorrectionScenario } from '@Tests/testHarness/exitPropagation/correctionDivergence';
 import { MATRIX_CELLS, cellExitOutcome } from '@Tests/testHarness/exitPropagation/matrixCells';
 import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { nextPlayable } from '@Tests/testHarness/exitPropagation/driver';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
@@ -11,13 +12,14 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { COMPLETED, DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
 import {
   FIRST_MATCH_LOSER_CONSOLATION,
   SINGLE_ELIMINATION,
   DOUBLE_ELIMINATION,
 } from '@Constants/drawDefinitionConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 /**
  * EVERY WRITE THE CASCADE MAKES, IF IT FAILS, FAILS THE CALL — assessment gap G9.
@@ -310,7 +312,9 @@ it("a failed write of a TEAM dual's status fails the line score that caused it (
   setSubscriptions({});
   const drawId = 'fault-dual';
   mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawId, drawType: SINGLE_ELIMINATION, drawSize: 8, eventType: TEAM, tieFormatName: DOMINANT_DUO }],
+    drawProfiles: [
+      { drawId, drawType: SINGLE_ELIMINATION, drawSize: 8, eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO) },
+    ],
     nonRandom: 300001,
     setState: true,
   });

@@ -1,8 +1,10 @@
 import { setOutcomePipeline } from '@Global/state/globalState';
-import format from '@Fixtures/scoring/tieFormats/INTENNSE_2026.json';
+import { tieFormats } from '@courthive/competition-catalogue';
+import { afterEach, expect, it } from 'vitest';
 import mocks from '@Assemblies/engines/mock';
 import engine from '@Engines/syncEngine';
-import { afterEach, expect, it } from 'vitest';
+
+const format = tieFormats.INTENNSE_2026;
 
 afterEach(() => setOutcomePipeline('v1'));
 

@@ -1,11 +1,13 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/eventConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 it('can return participant scheduled matchUps', () => {
   const startDate = '2023-06-26';
@@ -16,7 +18,7 @@ it('can return participant scheduled matchUps', () => {
     tournamentRecord,
     venueIds: [venueId],
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 8, eventType: TEAM, tieFormatName: DOMINANT_DUO }],
+    drawProfiles: [{ drawSize: 8, eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO) }],
     venueProfiles,
     startDate,
     endDate,

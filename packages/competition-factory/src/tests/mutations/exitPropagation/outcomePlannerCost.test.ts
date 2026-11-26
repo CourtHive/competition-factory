@@ -1,4 +1,5 @@
 import { plannerIndexCounts, selectPlannerIndex, tracePlannerDecisions } from '@Tests/testHarness/outcomePlannerIndex';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { firstPlayable, nextPlayable } from '@Tests/testHarness/exitPropagation/driver';
 import { TOPICS } from '@Tests/testHarness/outcome/directionFixtures';
 import { canonicalHash } from '@Tests/testHarness/corpus/hash';
@@ -15,9 +16,10 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, expect, it } from 'vitest';
 // constants and types
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
-import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
 import { WALKOVER } from '@Constants/matchUpStatusConstants';
 import { SINGLES, TEAM } from '@Constants/eventConstants';
+
+const { COLLEGE_DEFAULT } = tieFormatConstants;
 const drawId = 'external-cost';
 const scored = {
   winningSide: 1,
@@ -78,7 +80,7 @@ function measure(drawSize: number, eventType: typeof SINGLES | typeof TEAM, work
         drawSize,
         eventType,
         drawType: SINGLE_ELIMINATION,
-        ...(eventType === TEAM ? { tieFormatName: COLLEGE_DEFAULT } : {}),
+        ...(eventType === TEAM ? { tieFormat: resolveTieFormat(COLLEGE_DEFAULT) } : {}),
       },
     ],
     nonRandom: seed,
@@ -291,7 +293,7 @@ it.skipIf(!process.env.PLANNER_PAIRED_OUTPUT)(
                 drawId,
                 drawSize: size,
                 eventType: field,
-                ...(field === TEAM ? { tieFormatName: COLLEGE_DEFAULT } : {}),
+                ...(field === TEAM ? { tieFormat: resolveTieFormat(COLLEGE_DEFAULT) } : {}),
               },
             ],
             nonRandom: seed,

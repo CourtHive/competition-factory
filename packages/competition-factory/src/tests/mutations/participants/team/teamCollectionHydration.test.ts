@@ -1,11 +1,13 @@
+import { tieFormatConstants } from '@courthive/competition-catalogue';
 import tournamentEngine from '@Engines/syncEngine';
 import { mocksEngine } from '../../../..';
 import { expect, test } from 'vitest';
 
 // constants
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { MALE } from '@Constants/genderConstants';
 import { TEAM } from '@Constants/eventConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 test('it can use tieFormatName in addEvent', () => {
   const category = { ageCategoryCode: 'U18' };

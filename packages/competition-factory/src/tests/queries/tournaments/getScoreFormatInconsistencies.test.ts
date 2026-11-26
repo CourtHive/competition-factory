@@ -1,14 +1,16 @@
 import { MATCHUP_SCORE_INVALID_FOR_FORMAT } from '@Query/tournaments/getTournamentInconsistencies';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
-import { TEAM_EVENT } from '@Constants/eventConstants';
 import { SINGLES, TEAM } from '@Constants/matchUpTypes';
+import { TEAM_EVENT } from '@Constants/eventConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 /**
  * Plan step 4 (TOURNAMENT_RECORD_FORMAT_VALIDATION): a stored score its matchUp's effective format cannot produce is
@@ -21,7 +23,7 @@ function generate() {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     eventProfiles: [
       { drawProfiles: [{ drawSize: 8, matchUpFormat: FORMAT }] },
-      { eventType: TEAM_EVENT, tieFormatName: DOMINANT_DUO, drawProfiles: [{ drawSize: 4 }] },
+      { eventType: TEAM_EVENT, tieFormat: resolveTieFormat(DOMINANT_DUO), drawProfiles: [{ drawSize: 4 }] },
     ],
     completeAllMatchUps: true,
     setState: true,
