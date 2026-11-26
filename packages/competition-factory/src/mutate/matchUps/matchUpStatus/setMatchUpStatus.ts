@@ -72,6 +72,8 @@ type SetMatchUpStatusArgs = {
   notes?: string;
   event?: Event;
   outcome?: any;
+  /** private to the bulk writers: what to return, unwritten, for a call v2 neither refuses nor owns */
+  bound?: { unowned: ResultType };
 };
 /**
  * Find the draw from a `drawId` when no `drawDefinition` was passed.
@@ -297,6 +299,9 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     return v2.recorded || v2.finished
       ? v2.owned
       : ownedResult({ owned: v2.owned, params, matchUpsMap, neverPlayedBefore, stack });
+  // ONE UNIT OF A BULK CALL: a call v2 neither refuses nor owns is handed back unwritten, and the bulk
+  // writer plans it whole on a copy (`outcome/plan/recordedUnit.ts`), so v1 never writes the stored record here
+  if (params.bound) return params.bound.unowned;
 
   const stored: V1Target = {
     deciderSnapshotBefore,

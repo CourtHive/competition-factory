@@ -464,8 +464,10 @@ it('returns the first error from the outcome selector', async () => {
       matchUpIds,
       drawId,
     });
-    expect(spy).toHaveBeenCalledTimes(1);
+    // every selected matchUp is attempted, each refused with nothing written
+    expect(spy).toHaveBeenCalledTimes(matchUpIds.length);
     expect(resetResult.error).toEqual(INCOMPATIBLE_MATCHUP_STATUS);
+    expect((resetResult as any).committed).toBeUndefined();
   } finally {
     spy.mockRestore();
   }

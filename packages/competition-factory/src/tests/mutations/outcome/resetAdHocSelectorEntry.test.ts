@@ -155,17 +155,19 @@ it.each(cases)('routes the outer reset through the selector with the existing pu
   // Entry routing is separate from v2 executor ownership: a selector may still delegate internally to v1.
   const v1 = play(c, OUTCOME_PIPELINE_V1);
   for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) expect(play(c, mode)).toEqual(v1);
-  const attempted = c.ids === 'unknown-valid' ? ['unknown'] : v1.ids;
-  expect(v1.requests.map((request) => request.id)).toEqual(attempted);
+  // every selected matchUp is attempted, a refused one included
+  expect(v1.requests.map((request) => request.id)).toEqual(v1.ids);
   expect(v1.requests.every((request) => !request.privateRemoveScore)).toBe(true);
   if (c.ids === 'valid-unknown' || c.ids === 'unknown-valid') {
     expect(v1.result.error).toEqual(MATCHUP_NOT_FOUND);
-    expect(v1.notices).toEqual([]);
-    if (c.ids === 'unknown-valid') expect(v1.after).toEqual(v1.before);
-    else {
-      expect(v1.after).not.toEqual(v1.before);
-      expect(v1.firstHasWinner).toBe(false);
-    }
+    // the valid matchUp is reset whichever side of the unknown ID it is on, and announced
+    expect(v1.result.committed).toBe(true);
+    expect(v1.result.results.map((entry: any) => entry.success ?? entry.error)).toEqual(
+      c.ids === 'unknown-valid' ? [MATCHUP_NOT_FOUND, true] : [true, MATCHUP_NOT_FOUND],
+    );
+    expect(v1.after).not.toEqual(v1.before);
+    expect(v1.firstHasWinner).toBe(false);
+    expect(v1.notices.length).toBeGreaterThan(0);
   } else {
     expect(v1.result.success).toBe(true);
     expect(v1.after).not.toEqual(v1.before);

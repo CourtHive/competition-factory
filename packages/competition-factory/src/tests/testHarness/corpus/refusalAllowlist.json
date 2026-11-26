@@ -1,7 +1,5 @@
 {
   "reasons": {
-    "F-008": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-0b8ef85b5d4aa8db9b085f1d1e019de0a73c30248cc29089e82caaf0ac55bdc1",
-    "F-009": "https://github.com/CourtHive/competition-factory/pull/6515/files#diff-b467984b227aa55a3dcdfec53ffc92b110b657eb1253862d74c58bf7c918dadb",
     "F-016-exit-walk": "A public BYE placement whose walk meets an exit keeps the writer: a loser seat filled ahead of its feeder, or (malformed) a repeated matchUpId past a resolved exit, refuses after the main writes (f016ExitWalkResidual.test.ts)",
     "cascadeWriteErrorsReachTheCaller": "Forced downstream write error",
     "reconcileDeciderReturnsItsError": "Injected reconciliation failure",
@@ -10,7 +8,6 @@
     "ownedDirectionWrites": "Artificial settle bound",
     "aLateRefusalIsCompared": "Injected legacy writer refusal",
     "inContextNoticeAfterSuccess": "Injected failure after notice-producing operations",
-    "resetAdHocMatchUps": "Mock resetMatchUpLineUps refusal",
     "setStateProvider": "Synthetic throwing state provider",
     "asyncWrapperContract": "Synthetic asynchronous boom method",
     "fixtureStamp": "A raw fixture mutation left the mutation flag pending before this call. Only its inherited factory stamp changed.",
@@ -286,26 +283,6 @@
         ]
       }
     ],
-    "src/tests/mutations/events/bulkMatchUpStatusUpdateRefusals.test.ts::bulkMatchUpStatusUpdate locates every outcome before applying any > a later outcome refused by setMatchUpStatus, rollbackOnError false": [
-      {
-        "method": "bulkMatchUpStatusUpdate",
-        "error": "ERR_INVALID_MATCHUP_STATUS",
-        "reason": "F-008",
-        "paths": [
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/4/drawPositions/0",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/4/updatedAt",
-          "/events/0/drawDefinitions/0/structures/0/updatedAt",
-          "/events/0/drawDefinitions/0/updatedAt",
-          "/factory/timeStamp"
-        ]
-      }
-    ],
     "src/tests/mutations/exitPropagation/aSettleLoopAtItsBoundRefuses.test.ts::crossLinksThroughByes > refuses with SETTLE_BOUND_REACHED, naming itself, when its bound is reached with work left": [
       {
         "method": "setMatchUpStatus",
@@ -488,34 +465,6 @@
           "/events/0/drawDefinitions/0/structures/0/updatedAt",
           "/events/0/drawDefinitions/0/structures/1/positionAssignments/5/participantId",
           "/events/0/drawDefinitions/0/structures/1/updatedAt",
-          "/events/0/drawDefinitions/0/updatedAt",
-          "/factory/timeStamp"
-        ]
-      }
-    ],
-    "src/tests/mutations/matchUps/resetAdHocMatchUps.test.ts::returns error when resetMatchUpLineUps fails for TEAM matchUps with removeAssignments": [
-      {
-        "method": "resetAdHocMatchUps",
-        "error": "ERR_INVALID_MATCHUP",
-        "reason": "resetAdHocMatchUps",
-        "paths": [
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatusCodes",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/score",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/matchUpStatusCodes",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/score",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/0/updatedAt",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/1/matchUpStatusCodes",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/1/score",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/1/updatedAt",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/2/matchUpStatusCodes",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/2/score",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/tieMatchUps/2/updatedAt",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/0",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/3",
-          "/events/0/drawDefinitions/0/structures/0/updatedAt",
           "/events/0/drawDefinitions/0/updatedAt",
           "/factory/timeStamp"
         ]
@@ -707,71 +656,6 @@
           "/events/0/drawDefinitions/0/structures/1/updatedAt",
           "/events/0/drawDefinitions/0/structures/3/positionAssignments/0/participantId",
           "/events/0/drawDefinitions/0/structures/3/updatedAt",
-          "/events/0/drawDefinitions/0/updatedAt",
-          "/factory/timeStamp"
-        ]
-      }
-    ],
-    "src/tests/mutations/outcome/resetAdHocSelectorEntry.test.ts::routes the outer reset through the selector with the existing public contract: valid then unknown": [
-      {
-        "method": "resetAdHocMatchUps",
-        "error": "ERR_NOT_FOUND_MATCHUP",
-        "reason": "F-009",
-        "paths": [
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/matchUpStatus",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/schedule/scoredTime",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/score/scoreStringSide1",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/score/scoreStringSide2",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/score/sets",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/updatedAt",
-          "/events/0/drawDefinitions/0/structures/0/matchUps/0/winningSide",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/0/tally/groupOrder",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/0/tally/provisionalOrder",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/0/tally/rankOrder",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/GEMscore",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/defeats/0",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/defeats/1",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/gamesDiff",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/gamesLost",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/gamesPct",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/gamesWon",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/groupOrder",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/matchUpsLost",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/provisionalOrder",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/rankOrder",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/result",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/setsDiff",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/1/tally/setsLost",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/GEMscore",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/gamesDiff",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/gamesLost",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/gamesPct",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/gamesWon",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/groupOrder",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/matchUpsWon",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/provisionalOrder",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/rankOrder",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/result",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/setsDiff",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/setsWon",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/victories/0",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/2/tally/victories/1",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/3/tally/groupOrder",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/3/tally/provisionalOrder",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/3/tally/rankOrder",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/4/tally/groupOrder",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/4/tally/provisionalOrder",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/4/tally/rankOrder",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/5/tally/groupOrder",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/5/tally/provisionalOrder",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/5/tally/rankOrder",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/6/tally/groupOrder",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/6/tally/provisionalOrder",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/6/tally/rankOrder",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/7/tally/groupOrder",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/7/tally/provisionalOrder",
-          "/events/0/drawDefinitions/0/structures/0/positionAssignments/7/tally/rankOrder",
-          "/events/0/drawDefinitions/0/structures/0/updatedAt",
           "/events/0/drawDefinitions/0/updatedAt",
           "/factory/timeStamp"
         ]

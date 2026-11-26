@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- `bulkMatchUpStatusUpdate` and `resetAdHocMatchUps` follow the same bulk contract. `bulkMatchUpStatusUpdate` returns `results`, one per outcome, and a valid outcome followed by an invalid ID now commits the valid one. `resetAdHocMatchUps` applies each matchUp's reset whole or not at all, attempts every selected matchUp, and returns per-matchUp `results`.
 - `addMatchUpScheduleItems` plans a schedule request before writing it, against the stored draw and a working copy of the one matchUp, in every schema write mode, instead of rehearsing the request on a copied draw and then running it again. Results, stored values and notices are unchanged; `validateOnly` and the outcome calls' schedule preflight use the same plan and write nothing.
 - `modifyVenue` decides every refusal before writing, in every record that holds the venue: a refused court deletion, court availability or new court no longer leaves the venue's new name, abbreviation, primary flag or earlier courts behind. `bulkScheduleTournamentMatchUps` plans its matchUps before writing them, with the same results.
 - Committed work announces itself. A bulk mutation that commits some items and refuses another returns its error with `committed: true`, and with rollback off the engine now delivers the committed items' notices in the usual topic order instead of dropping them. Inside an `executionQueue` without rollback, such a directive also delivers the notices of the directives before it. Explicit rollback is unchanged: the whole call is restored and nothing is delivered.
