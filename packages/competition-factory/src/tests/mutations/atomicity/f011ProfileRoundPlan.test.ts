@@ -147,7 +147,8 @@ describe('F-011 scheduling-profile round', () => {
         expect(stored[0].venues.map(({ venueId }) => venueId)).toEqual(venueIds);
         expect(stored[0].venues[1].rounds).toEqual([round(other)]);
         expect(notices.map(({ topic }) => topic)).toEqual([MODIFY_SCHEDULING_PROFILE, MUTATIONS]);
-        expect(notices[0].payload.schedulingProfile).toBe(stored);
+        // the payload carries the stored profile (a read-only view of it when the notice payload detector is on)
+        expect(notices[0].payload.schedulingProfile).toEqual(stored);
       } finally {
         setSchemaWriteMode();
       }
