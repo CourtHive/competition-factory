@@ -10,13 +10,18 @@ import { expect, vi } from 'vitest';
 // dispatch, so a reference to the old record cannot serve as the baseline.
 const snapshot = () => JSON.stringify(getTournamentRecords() ?? {});
 const violations = new Set<string>();
-type DirectiveBoundary = { method: string; before: string; after: string; pending: boolean };
+// One bulk item's boundary (src/mutate/bulkItem.ts): the record before and after it, and whether it succeeded.
+type ItemBoundary = { before: string; after: string; committed: boolean };
+type BulkTrace = { method: string; items: ItemBoundary[] };
+type DirectiveBoundary = { method: string; before: string; after: string; pending: boolean; items: ItemBoundary[] };
 type QueueTrace = { last?: DirectiveBoundary };
 const multiDirective = new AsyncLocalStorage<QueueTrace | undefined>();
+const bulkTrace = new AsyncLocalStorage<BulkTrace | undefined>();
 
-function compare(method: string, before: string, after: string, error: any, pending: boolean) {
+function compare(method: string, before: string, after: string, error: any, pending: boolean, unstamped?: boolean) {
   if (after === before) return;
   const [oldRecord, newRecord] = [before, after].map((value) => JSON.parse(value));
+  if (unstamped) [oldRecord, newRecord].forEach(removeStamps);
   if (isDeepStrictEqual(oldRecord, newRecord)) return;
   const paths = generatePatch(oldRecord, newRecord).map(({ path }) => path);
   const { testPath, currentTestName } = expect.getState();
@@ -35,22 +40,71 @@ function compare(method: string, before: string, after: string, error: any, pend
   if (!allowed) violations.add(`${method} returned ${code} and changed ${paths.join(', ')}`);
 }
 
+// The engine's stamp of a modified record (and, under stampScope('modified'), of each modified draw): first-class
+// `factory` or the legacy `factory` extension. Owned by a call that committed something.
+const FACTORY = 'factory';
+function unstamp(element: any) {
+  if (!element || typeof element !== 'object') return;
+  delete element[FACTORY];
+  if (Array.isArray(element.extensions))
+    element.extensions = element.extensions.filter((extension: any) => extension?.name !== FACTORY);
+}
+function removeStamps(records: any) {
+  for (const record of Object.values(records ?? {}) as any[]) {
+    unstamp(record);
+    for (const event of record?.events ?? []) for (const draw of event?.drawDefinitions ?? []) unstamp(draw);
+  }
+}
+
+// A refused bulk call: each refused item was compared at its own boundary. Here every write made OUTSIDE an item, from
+// the call's entry to the first item, between items and after the last, is compared. Once an item has committed, the
+// engine's stamp is its write too.
+function compareItemized(
+  method: string,
+  before: string,
+  after: string,
+  error: any,
+  pending: boolean,
+  items: ItemBoundary[],
+) {
+  const committed = items.some((item) => item.committed);
+  let previous = before;
+  for (const item of items) {
+    compare(method, previous, item.before, error, pending, committed);
+    previous = item.after;
+  }
+  compare(method, previous, after, error, pending, committed);
+}
+
+function compareCall(
+  method: string,
+  before: string,
+  after: string,
+  error: any,
+  pending: boolean,
+  items: ItemBoundary[],
+) {
+  if (items.length) compareItemized(method, before, after, error, pending, items);
+  else compare(method, before, after, error, pending);
+}
+
 // Keep sync results synchronous and wait for async results. Report at the test boundary so the
 // engine cannot translate an assertion failure into an ordinary refusal.
 function checked<T>(method: string, run: () => T, queueTrace?: QueueTrace): T {
   const pending = readMutationStatus() === true;
   const before = snapshot();
+  const trace: BulkTrace = { method, items: [] };
   const finish = (result: any) => {
     if (result?.error) {
       if (queueTrace && result.results?.length) {
         const last = queueTrace.last;
-        if (last) compare(last.method, last.before, last.after, result.error, last.pending);
+        if (last) compareCall(last.method, last.before, last.after, result.error, last.pending, last.items);
         else violations.add('missing final directive boundary for a refused queue');
-      } else compare(method, before, snapshot(), result.error, pending);
+      } else compareCall(method, before, snapshot(), result.error, pending, trace.items);
     }
     return result;
   };
-  const result = run();
+  const result = bulkTrace.run(trace, run);
   return result instanceof Promise ? (result.then(finish) as T) : finish(result);
 }
 
@@ -77,11 +131,12 @@ function traceDirective<T>(method: string, run: () => T): T {
   if (!trace) return run();
   const pending = readMutationStatus() === true;
   const before = snapshot();
+  const directive: BulkTrace = { method, items: [] };
   const close = () => {
-    trace.last = { method, before, after: snapshot(), pending };
+    trace.last = { method, before, after: snapshot(), pending, items: directive.items };
   };
   try {
-    const result = run();
+    const result = bulkTrace.run(directive, run);
     if (result instanceof Promise) return result.finally(close) as T;
     close();
     return result;
@@ -91,6 +146,27 @@ function traceDirective<T>(method: string, run: () => T): T {
   }
 }
 
+// Record each bulk item's boundary for the call or directive that runs it. A refused item must leave the record
+// unchanged; a committed item owns what it wrote.
+function traceItem<T>(run: () => T): T {
+  const trace = bulkTrace.getStore();
+  if (!trace) return run();
+  const pending = readMutationStatus() === true;
+  const before = snapshot();
+  const close = (result: any) => {
+    const after = snapshot();
+    if (result?.error) compare(trace.method, before, after, result.error, pending);
+    trace.items.push({ before, after, committed: !result?.error });
+    return result;
+  };
+  const result = run();
+  return result instanceof Promise ? (result.then(close) as T) : close(result);
+}
+
+vi.mock('@Mutate/bulkItem', async (original) => {
+  const actual = await original<typeof import('@Mutate/bulkItem')>();
+  return { ...actual, bulkItem: (run: () => unknown) => traceItem(() => actual.bulkItem(run)) };
+});
 vi.mock('@Assemblies/engines/sync/engineInvoke', async (original) => {
   const actual = await original<typeof import('@Assemblies/engines/sync/engineInvoke')>();
   return {

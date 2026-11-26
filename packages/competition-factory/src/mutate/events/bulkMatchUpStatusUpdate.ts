@@ -2,6 +2,7 @@ import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatu
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findEvent } from '@Acquire/findEvent';
+import { bulkItem } from '@Mutate/bulkItem';
 
 // constants
 import { SUCCESS } from '@Constants/resultConstants';
@@ -65,20 +66,22 @@ export function bulkMatchUpStatusUpdate(params) {
 
   for (const { outcome, tournamentRecord, event, drawDefinition } of located.targets) {
     const { matchUpFormat, matchUpId, drawId, notes } = outcome;
-    const result = setMatchUpStatus({
-      ...forwardedOptions(params, outcome),
-      policyDefinitions: params.policyDefinitions,
-      schedule: outcome?.schedule,
-      tournamentRecords,
-      tournamentRecord,
-      drawDefinition,
-      matchUpFormat,
-      matchUpId,
-      outcome,
-      drawId,
-      notes,
-      event,
-    });
+    const result = bulkItem(() =>
+      setMatchUpStatus({
+        ...forwardedOptions(params, outcome),
+        policyDefinitions: params.policyDefinitions,
+        schedule: outcome?.schedule,
+        tournamentRecords,
+        tournamentRecord,
+        drawDefinition,
+        matchUpFormat,
+        matchUpId,
+        outcome,
+        drawId,
+        notes,
+        event,
+      }),
+    );
     if (result.error) return result;
   }
 
