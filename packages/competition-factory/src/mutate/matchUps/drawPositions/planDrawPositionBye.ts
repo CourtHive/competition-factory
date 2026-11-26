@@ -277,7 +277,7 @@ function planBye(plan: Plan, params: PlanByeArgs & { drawDefinition: DrawDefinit
   }
 
   // the seat's BYE: the first write
-  planSeatBye(plan, workingStructure, seat.positionAssignments, seat.created, drawPosition);
+  planSeatBye(plan, workingStructure, seat.positionAssignments, seat.appended, drawPosition);
 
   const realStructure = draft.original(workingStructure);
   const finish = () => {
@@ -323,7 +323,7 @@ function seatRefusal(
   plan: Plan,
   params: PlanByeArgs & { drawDefinition: DrawDefinition; structureId: string },
   workingStructure: Structure,
-): { done?: ResultType; positionAssignments: PositionAssignment[]; created?: PositionAssignment } {
+): { done?: ResultType; positionAssignments: PositionAssignment[]; appended?: PositionAssignment } {
   const { drawDefinition, drawPosition, structureId } = params;
   const { positionAssignments } = getPositionAssignments({ structure: workingStructure });
 
@@ -359,7 +359,7 @@ function seatRefusal(
   if (containsBye) return { done: { ...SUCCESS }, positionAssignments };
   if (filled)
     return { done: decorateResult({ result: { error: DRAW_POSITION_ASSIGNED }, stack: STACK }), positionAssignments };
-  return { positionAssignments, created };
+  return { positionAssignments, appended: created };
 }
 
 /** the seat's assignment takes the BYE (no propagation marker); an absent one is appended to the stored array first */
