@@ -8,7 +8,7 @@ import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 
 /**
  * A combined-point total that allows a tie (`SET1-S:P32`) can end 16–16: COMPLETED, with no winningSide
- * (CA, 2026-10-11: ties are valid). `readyToScore` meant "has two participants and no winner", so the
+ * (ties are valid). `readyToScore` meant "has two participants and no winner", so the
  * finished tie read as ready to score and consumers offered to score it again. A completed tie is
  * finished; the same predicate the round-robin tally uses (`isCompletedCombinedPointTie`) now decides it.
  */

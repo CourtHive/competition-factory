@@ -16,7 +16,7 @@ import { INTENNSE_2026 } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
 /*
- * Standings phase 2 § 1.1, slice 2 (CA 2026-11-04). A level result where a winner must advance is decided outside the
+ * Standings phase 2 § 1.1, slice 2. A level result where a winner must advance is decided outside the
  * score: the level sporting score is kept, the winner is named, and `score.overtime` records how it was decided
  * (`decidedIn: 'EXTERNAL'`, `decidedBy`, the overtime workstream's record). Without that record it is refused with a
  * specific error, and no status is added for a result awaiting a decision. Elimination accepts a format that can end

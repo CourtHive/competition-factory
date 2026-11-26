@@ -9,7 +9,7 @@ import { BYE } from '@Constants/matchUpStatusConstants';
 /**
  * `resetDrawDefinition` used to strand every BYE advancement in the draw.
  *
- * CA hit it in TMX on 2026-09-21: a 16 draw whose round-1 BYEs survived a reset while the players
+ * Reproduced in TMX: a 16 draw whose round-1 BYEs survived a reset while the players
  * those BYEs had advanced vanished from round 2, leaving the two halves of the draw disagreeing —
  * `positionAssignments` saying three players had byes, the matchUps saying nobody advanced.
  *
@@ -34,7 +34,7 @@ function getStructureMatchUps(drawId: string, stage?: string) {
 }
 
 it('preserves the drawPositions a BYE advanced when a draw is reset', () => {
-  // 13 of 16 entered, so three byes — CA's reproduction shape
+  // 13 of 16 entered, so three byes — the reproduction shape
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawType: SINGLE_ELIMINATION, drawSize: 16, participantsCount: 13, drawId: DRAW_ID }],
   });
@@ -192,7 +192,7 @@ it('preserves the reserved FED slot as well as the BYE advancement beside it', (
 });
 
 it('stores a lone survivor without a hole, and still reads the side its feeder gives it', () => {
-  // No hole is stored (CA, 2026-10-05, Q2; leading-hole removal step 2): a lone survivor is `[16]` whatever its
+  // No hole is stored (leading-hole removal step 2): a lone survivor is `[16]` whatever its
   // side, and its side is read structurally. This used to pin `[<hole>, 16]`, the hole keeping 16 on side 2.
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     drawProfiles: [

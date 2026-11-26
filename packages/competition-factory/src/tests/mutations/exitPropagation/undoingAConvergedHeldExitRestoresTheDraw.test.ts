@@ -22,7 +22,7 @@ import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstant
  * pending WALKOVER on side 1, nobody on either side. A DOUBLE_WALKOVER at `Consolation|1|2` makes its loser target a BYE
  * holder, whose held exit is sent on into `3|1`, where the two exits converge (DOUBLE_WALKOVER). Clearing `1|2`
  * withdraws that exit again, and `3|1` is re-derived to the pending WALKOVER it was. The re-derivation used to award
- * side 2, a seat nobody had reached: a PRODUCED exit has no winner until a participant arrives (CA, 2026-09-20).
+ * side 2, a seat nobody had reached: a PRODUCED exit has no winner until a participant arrives.
  */
 const key = (m: any) => `${m.structureName}|${m.roundNumber}|${m.roundPosition}`;
 

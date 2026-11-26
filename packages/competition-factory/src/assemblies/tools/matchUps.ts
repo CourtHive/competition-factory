@@ -1,10 +1,10 @@
 /**
- * MatchUp shape validators over a matchUp the caller holds: stateless and positional (CA 2026-11-07). Their home is
+ * MatchUp shape validators over a matchUp the caller holds: stateless and positional. Their home is
  * `tools.matchUps` (the `contracts` package at 8.0.0); `matchUpGovernor` also exports them in 7.x, and that placement
  * goes at 8.0.0.
  *
  * Below them, readers of matchUps the caller holds that take one params object and read no state (confirmed
- * stateless, Mentat FACTORY_ENGINE_API_MIGRATION_PREP_PLAN slice A): analysis, margins and upsets, check-in, home
+ * stateless by the statelessGovernorTools test): analysis, margins and upsets, check-in, home
  * participant, round grouping and filtering, schedule locks and the court grid. `matchUpGovernor` (and
  * `scheduleGovernor` for `matchUpScheduleLocked` and `courtGridRows`) keeps them in 7.x; their engine routes are
  * unchanged.

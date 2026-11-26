@@ -63,14 +63,14 @@ test('Consolation WO/WO advancing fed BYE', () => {
    * which cannot tell you where any of them sits. Naming the coordinates is why the change is
    * legible: `Consolation|2|1` was the `WALKOVER` and is now a `BYE`.
    *
-   * It is BYE-held: drawPositions [1, 5], and drawPosition 1 carries a draw BYE. CA, 2026-09-20:
+   * It is BYE-held: drawPositions [1, 5], and drawPosition 1 carries a draw BYE. The rule:
    * *"a propagated exit encountering a BYE should be advanced. In both cases the BYE remains a
    * BYE."* The exit no longer overwrites it.
    *
    * THE ADVANCEMENT IS UNCHANGED, which is the point of this test and the reason the rule costs
    * nothing here: drawPosition 5 holds a real participant alongside that BYE, and they advance
    * THROUGH it — `Consolation|3|1` is their walkover, and round 4 below still finds them at
-   * drawPosition 5. That is CA's other half — *"an advancing participant encountering a BYE should
+   * drawPosition 5. That is the rule's other half — *"an advancing participant encountering a BYE should
    * always be advanced"* — and it was never in question.
    */
   const statusAt = (roundNumber: number, roundPosition: number) =>

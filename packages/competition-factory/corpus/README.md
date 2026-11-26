@@ -3,7 +3,7 @@
 The language-neutral specification of the engine's behaviour, as data: for each scenario an
 initial CODES tournament record, a sequence of directives, and after each directive the result the
 engine returned and the state it left. A second implementation, in any language, replays the
-directives and compares. Plan and rationale: `Mentat/planning/CORPUS_SPEC_AND_PORTS_PLAN.md`.
+directives and compares.
 
 ## Files
 
@@ -163,8 +163,8 @@ pnpm corpus:scheduling     # .corpus-out/scheduling/scheduling.jsonl
 SCHEDULING_PROPERTIES=/tmp/sp.jsonl pnpm vitest run   # check every scheduling call the suite makes
 ```
 
-`src/tests/testHarness/corpus/schedulingSources.ts` holds one scenario per scheduling rule
-(`Mentat/planning/SCHEDULING_PIPELINE_VNEXT.md` § 5): a generated record, the directives that build a
+`src/tests/testHarness/corpus/schedulingSources.ts` holds one scenario per scheduling rule:
+a generated record, the directives that build a
 scheduling profile and run a scheduler, and claims on the record the patches rebuild. Every scenario
 claims the four scheduling step properties (`INVARIANTS.md`), and the writer checks them after each
 step and refuses a scenario that breaks one. A scheduling call's step records its **deferral report**

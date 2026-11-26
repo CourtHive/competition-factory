@@ -5,7 +5,7 @@ import {
 } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 
 /**
- * THE PUBLIC BYE PLACEMENT (F-016): planned against a draft of the draw, every rule asked before the first write, then
+ * THE PUBLIC BYE PLACEMENT: planned against a draft of the draw, every rule asked before the first write, then
  * committed as a finite list of bound writes (`planDrawPositionBye`).
  *
  * The engine's own placements (draw generation, a loser's BYE during scoring, a swap, a propagated BYE) keep calling the

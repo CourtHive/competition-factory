@@ -337,7 +337,7 @@ describe('matchUpFormatGovernor - Documentation Examples', () => {
         setFormat: { timed: true, minutes: 10 },
       });
 
-      // SET3X with standard game sets works too: exactly N on every kind of set (CA 2026-10-25)
+      // SET3X with standard game sets works too: exactly N on every kind of set
       const gameResult = matchUpFormatGovernor.isValidMatchUpFormat({
         matchUpFormat: 'SET3X-S:6/TB7',
       });
@@ -360,7 +360,7 @@ describe('matchUpFormatGovernor - Documentation Examples', () => {
         setFormat: { timed: true, minutes: 20, based: 'P' },
       });
 
-      // SET4X with standard game sets works too (CA 2026-10-25)
+      // SET4X with standard game sets works too
       const gameResult = matchUpFormatGovernor.isValidMatchUpFormat({
         matchUpFormat: 'SET4X-S:6',
       });

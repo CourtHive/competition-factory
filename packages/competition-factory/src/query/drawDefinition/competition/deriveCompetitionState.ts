@@ -16,11 +16,11 @@ import type { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
 import type { RatingsActualRule } from '@Types/ratingsPolicyTypes';
 
 /**
- * The competition state as a pure function of the draw's results (Mentat `planning/STANDINGS_ENGINE_SPEC.md` § 3,
- * D6 option C). The stored state contributes only its INPUTS: each participant's baseline rating, and, for PER_ROUND,
- * which rounds an organiser has processed. Everything results decide (wins, points, form and pressure ratings, the
- * rating history) is replayed from the results in canonical order, round by round and in structure order within a
- * round, through the same per-result rating step the stored state was built with.
+ * The competition state as a pure function of the draw's results. The stored state contributes only its INPUTS: each
+ * participant's baseline rating, and, for PER_ROUND, which rounds an organiser has processed. Everything results decide
+ * (wins, points, form and pressure ratings, the rating history) is replayed from the results in canonical order, round
+ * by round and in structure order within a round, through the same per-result rating step the stored state was built
+ * with.
  *
  * So a corrected result counts once, as corrected, and a removed result does not count at all, whatever the stored
  * copy says (C1, C2: the v1 fold added every result it was given and reversed nothing).

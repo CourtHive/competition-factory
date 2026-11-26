@@ -109,7 +109,7 @@ function withElementNotice<T extends { error?: unknown }>(params: ElementParams 
  * The engine's `addExtension`: `addExtension`, plus the notice for the element when it is stored in a
  * loaded record and the write changed its extensions: MODIFY_TOURNAMENT_DETAIL for the record itself,
  * MODIFY_EVENT, MODIFY_DRAW_DEFINITION (a structure too, named in `structureIds`), MODIFY_MATCHUP, MODIFY_VENUE or
- * MODIFY_PARTICIPANTS (CA 2026-10-18: a stored matchUp or structure is announced). Internal callers use
+ * MODIFY_PARTICIPANTS (a stored matchUp or structure is announced). Internal callers use
  * `addExtension` directly and announce in their own terms.
  *
  * Any other element (a copy, an object in no loaded record) is written as before, with no notice.

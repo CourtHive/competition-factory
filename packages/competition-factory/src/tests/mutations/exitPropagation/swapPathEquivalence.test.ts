@@ -8,7 +8,7 @@ import fs from 'fs';
 /**
  * A winner flip is a RELABEL of paths. INERT unless `SWAP_PATH=1` (run with ALLOW_CHANGE_PROPAGATION=1).
  *
- * CA, 2026-09-17: every downstream outcome — within the structure and through linked structures — is
+ * The rule: every downstream outcome — within the structure and through linked structures — is
  * experienced after a flip by whoever now occupies the path, exactly as the previous occupant
  * experienced it. With A and B the flipped matchUp's two participants and σ exchanging them, every
  * OTHER matchUp decided before the flip must, after it, have winner σ(winner), loser σ(loser), the

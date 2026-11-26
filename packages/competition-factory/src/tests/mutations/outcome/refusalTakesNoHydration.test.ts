@@ -14,9 +14,9 @@ import {
 } from '@Constants/outcomePipelineConstants';
 
 /**
- * A REFUSED CALL TAKES NO HYDRATION (outcome v2 executor plan § 3.1.1 and § 3.6, CA 2026-10-24: "even when hydration is
- * required for the subscriptions/notifications, it should happen AFTER the mutation succeeds so that it NEVER happens
- * when an ERROR is being returned"). Under `v2` the view decides on the structural index, so a refusal the draw decides
+ * A REFUSED CALL TAKES NO HYDRATION (outcome v2 executor plan § 3.1.1 and § 3.6: even when hydration is
+ * required for the subscriptions/notifications, it happens AFTER the mutation succeeds, so that it NEVER happens
+ * when an ERROR is being returned). Under `v2` the view decides on the structural index, so a refusal the draw decides
  * is returned having asked for no in-context matchUp at all. Counted on the hydration exports, as the cost curve counts.
  */
 const hydrations = vi.hoisted(() => ({ count: 0 }));

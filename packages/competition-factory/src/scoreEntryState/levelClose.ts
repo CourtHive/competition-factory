@@ -6,8 +6,8 @@ import { replaySets } from '@Scoring/kernel/setReplay';
 import type { ScoreEntrySet } from './types';
 
 /**
- * A combined-point total that allows a tie (`SET1-S:P32`) can end level, 16–16: COMPLETED with no winner (CA,
- * 2026-10-11: ties are valid). The factory decides whether the set is over (`checkSetIsComplete` hands a
+ * A combined-point total that allows a tie (`SET1-S:P32`) can end level, 16–16: COMPLETED with no winner (ties
+ * are valid). The factory decides whether the set is over (`checkSetIsComplete` hands a
  * combined-point set to `analyzeCombinedPointSet`); this adds only that the format lets a tie stand and the totals are
  * level. A deciding-point or win-by format (`P32DP`, `P32WB2`) never ends level.
  */

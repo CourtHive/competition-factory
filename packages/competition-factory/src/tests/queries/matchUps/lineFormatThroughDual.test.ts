@@ -7,7 +7,7 @@ import { TEAM_EVENT } from '@Constants/eventConstants';
 import { TEAM } from '@Constants/matchUpTypes';
 
 /**
- * A TEAM line's format resolves through its dual (CA 2026-10-26, hydration OPEN-4): the line's own tieFormat, else
+ * A TEAM line's format resolves through its dual: the line's own tieFormat, else
  * the dual's, which falls back to the structure, the draw and the event; a collection with no format falls back along
  * the same chain; and a tieFormatId is looked up before any inline default.
  */

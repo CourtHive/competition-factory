@@ -82,7 +82,7 @@ function advanceMissed({
       matchUpsMap,
       event,
     });
-    // returned, not dropped (Phase C prerequisite 2, CA 2026-10-24): never reached on ~97,000 census schedules, and
+    // returned, not dropped: never reached on ~97,000 census schedules, and
     // still recorded for the census when it is
     if (directed?.error) {
       recordSettleEvent({

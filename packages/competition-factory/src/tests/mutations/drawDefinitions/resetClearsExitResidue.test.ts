@@ -10,16 +10,16 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
 /**
  * `resetDrawDefinition` left exit-propagation residue on every BYE matchUp.
  *
- * CA hit it in TMX on 2026-09-24: a COMPASS 16 with 14 participants, a `DOUBLE_WALKOVER` entered at
+ * Reproduced in TMX: a COMPASS 16 with 14 participants, a `DOUBLE_WALKOVER` entered at
  * `East|1|2`, then a reset. `West|1|1` — a BYE — still carried
  * `matchUpStatusCodes: [{ sideNumber: 1 }, { previousMatchUpStatus: DOUBLE_WALKOVER, matchUpStatus:
  * WALKOVER, sideNumber: 2 }]` and the matching `sideExitProvenance`, describing a walkover that had
- * just been undone. `North|1|1` kept a `byeClaims` ledger entry for the same vanished exit (a ledger retired since,
- * Mentat P58).
+ * just been undone. `North|1|1` kept a `byeClaims` ledger entry for the same vanished exit (a ledger since
+ * retired).
  *
  * **The cause is the BYE skip, not a missing clear.** `toBePlayed` does clear both fields, and
  * `resetMatchUpScore` reached it only for `matchUpStatus !== BYE`. Skipping the overwrite is correct
- * — a BYE is POSITIONING, which reset keeps, and CA's ruling is that "the BYE remains a BYE" — but
+ * — a BYE is POSITIONING, which reset keeps, and the rule is that "the BYE remains a BYE" — but
  * it took the residue clear with it. So the two are separated: the status survives, the record of a
  * result does not.
  *
@@ -62,7 +62,7 @@ const at = (matchUps: any[], structureName: string, roundNumber: number, roundPo
   );
 
 it('removes exit-propagation residue from a BYE matchUp when a draw is reset', () => {
-  // CA's reproduction shape: two byes in a COMPASS 16, and a double exit in the first round
+  // the reproduction shape: two byes in a COMPASS 16, and a double exit in the first round
   mocksEngine.generateTournamentRecord({
     policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawType: COMPASS, drawSize: 16, participantsCount: 14, drawId: DRAW_ID }],
@@ -85,13 +85,13 @@ it('removes exit-propagation residue from a BYE matchUp when a draw is reset', (
   expect(stampedBefore.length).toBeGreaterThan(0);
   expect(stampedBefore.some((m) => m.matchUpStatus === BYE)).toBe(true);
 
-  // the two BYE matchUps CA reported, by coordinate
+  // the two BYE matchUps reported, by coordinate
   const westBefore = at(rawMatchUps(), 'West', 1, 1);
   expect(westBefore.matchUpStatus).toEqual(BYE);
-  // P37. The legacy-array half of this control is gone; the line below is the same claim on the
+  // The legacy-array half of this control is gone; the line below is the same claim on the
   // surface that survives, and it names the SIDE, which a length could not.
   expect(westBefore.sideExitProvenance?.[2]?.previousMatchUpStatus).toEqual(DOUBLE_WALKOVER);
-  // the BYE the double walkover sent on: since the byeClaims ledger retired (Mentat P58) no claim records it, and the
+  // the BYE the double walkover sent on: since the byeClaims ledger retired no claim records it, and the
   // reset must still leave North|1|1 with nothing describing the undone exit
   const northBefore = at(rawMatchUps(), 'North', 1, 1);
   expect(northBefore.matchUpStatus).toEqual(BYE);
@@ -103,7 +103,7 @@ it('removes exit-propagation residue from a BYE matchUp when a draw is reset', (
   expect(residue(rawMatchUps())).toEqual([]);
   expect(residue(contextMatchUps())).toEqual([]);
 
-  // each part of the rule separately, on the matchUp CA pasted
+  // each part of the rule separately, on the reported matchUp
   const west = at(rawMatchUps(), 'West', 1, 1);
   expect(west.matchUpStatusCodes ?? []).toEqual([]);
   expect(west.sideExitProvenance).toBeUndefined();

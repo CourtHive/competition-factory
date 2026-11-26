@@ -15,8 +15,8 @@ import {
 } from '@Constants/drawDefinitionConstants';
 
 /**
- * A DRAW THAT DOES NOT STORE ITS EDGES IS GIVEN THEM BY `migrateTournamentRecord` (CA, 2026-10-16: a one-time backfill of
- * stored converted records, and the migration a standard requirement of ingest).
+ * A DRAW THAT DOES NOT STORE ITS EDGES IS GIVEN THEM BY `migrateTournamentRecord`: a one-time backfill of
+ * stored converted records, and the migration a standard requirement of ingest.
  *
  * A record the factory did not produce may store no `winnerMatchUpId` / `loserMatchUpId`, and a lone structure of one
  * may carry no `finishingPositionRange`. A query used to write them as a side effect, which the server then saved; no
@@ -100,7 +100,7 @@ it('leaves an AD_HOC draw as it is', () => {
   expect(record).toEqual(before);
 });
 
-// a malformed round link is an error (CA, 2026-10-06): the draw is left as it was, never half given its edges
+// a malformed round link is an error: the draw is left as it was, never half given its edges
 it('leaves a draw with a malformed round link untouched', () => {
   const record = stripped(generate({ drawType: FEED_IN_CHAMPIONSHIP, drawSize: 16 }), { ranges: false });
   const link = record.events[0].drawDefinitions[0].links.find(({ linkType }) => linkType === LOSER);

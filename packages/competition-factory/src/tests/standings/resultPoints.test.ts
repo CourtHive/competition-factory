@@ -9,7 +9,7 @@ import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 /**
- * Classification points by result (S4b; the E1 acceptance fixtures in Mentat `planning/ROUND_ROBIN_RESULT_POINTS.md`).
+ * Classification points by result (S4b; the E1 acceptance fixtures).
  * Statuses are mapped explicitly by each rule: here a FIBA "forfeit" is a WALKOVER and a "default" a DEFAULTED.
  */
 

@@ -36,7 +36,7 @@ type ScheduleMatchUpActionsArgs = {
 };
 
 /**
- * The scheduling and staffing actions of a matchUp, each switchable by the matchUp actions policy (CA, 2026-10-30).
+ * The scheduling and staffing actions of a matchUp, each switchable by the matchUp actions policy.
  *
  * - A BYE (never reaches here) and a carried or produced exit are offered none (nor an official: `matchUpActions`).
  * - A decided matchUp keeps its date, time, official, and start and end, which may be corrected after the fact, but not

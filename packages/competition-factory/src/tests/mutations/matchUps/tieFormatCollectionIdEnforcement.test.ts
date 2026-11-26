@@ -16,7 +16,7 @@ import { SINGLES } from '@Constants/matchUpTypes';
  * all-clear while every generated line carried `collectionId: null` and the tie never scored. The
  * detector existed and was switched off.
  *
- * CA chose reject-and-tell-them-to-mint over mint-then-validate, so the mint is published as
+ * Reject-and-tell-them-to-mint was chosen over mint-then-validate, so the mint is published as
  * `mintCollectionIds` — an instruction a consumer cannot follow is not an instruction.
  */
 

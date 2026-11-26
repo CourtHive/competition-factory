@@ -15,7 +15,7 @@ import { DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
  *
  * `East|1|13`'s walkover sent its loser into `West|1|7`, which a produced walkover decided for the empty seat (RULE 2).
  * A result was then recorded below it (`South|3|1`, among others). `East|1|14` DEFAULTED sends its loser into the awaited seat:
- * CA, 2026-10-11, the arrival is carried past — it takes the seat, advances to `West|2|4`, and carries its DEFAULTED
+ * the arrival is carried past — it takes the seat, advances to `West|2|4`, and carries its DEFAULTED
  * on from there — because a convergence would take back the result recorded below.
  *
  * `progressExitStatus` asked that question on a view built without the tournament record. The downstream walk reads

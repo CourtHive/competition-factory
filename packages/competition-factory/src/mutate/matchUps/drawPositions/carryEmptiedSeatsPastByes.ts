@@ -9,12 +9,12 @@ import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 
 /**
- * AN EMPTIED SEAT BESIDE A BYE IS CARRIED ON AS FAR AS GENERATION WOULD CARRY IT — punch-list P47.
+ * AN EMPTIED SEAT BESIDE A BYE IS CARRIED ON AS FAR AS GENERATION WOULD CARRY IT.
  *
  * Generation advances a seat through every BYE it faces: a seat whose opponent is a BYE is in the
  * next round, and if its opponent THERE is a BYE it is in the round after. A director's removal
  * empties seats — the one named, and loser-fed seats in a connected structure whose BYE went with
- * it — and since P46 (#5053) an emptied seat keeps the advancement it already had. But it was not
+ * it — and since #5053 an emptied seat keeps the advancement it already had. But it was not
  * carried FURTHER: when the removal took away the BYE a seat had been advancing past, and that seat
  * now faces a different BYE, it stayed where it was.
  *

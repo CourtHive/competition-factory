@@ -26,7 +26,7 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  * award in either entry order: `East|1|7` first, or `East|1|7`'s walkover carried in, converging `West|2|2`, then
  * re-scored as a played result.
  *
- * History: while the `byeClaims` ledger existed (retired in P58 4.2) the second order named `East|1|5` as the BYE's
+ * History: while the `byeClaims` ledger existed (it is retired) the second order named `East|1|5` as the BYE's
  * claimant, as though its exit had been produced straight into `West|2|2`. Clearing `East|1|5` then withdrew the award but
  * left the BYE, so `Southwest|1|1` dp 2 held a propagated BYE while its feeder, now TO_BE_PLAYED, sends somebody. With the
  * BYE read from the draw, this guards that both orders reach the same draw and that the clear withdraws the BYE.

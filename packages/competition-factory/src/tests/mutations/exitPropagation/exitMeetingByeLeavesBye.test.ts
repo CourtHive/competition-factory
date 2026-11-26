@@ -12,7 +12,7 @@ import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants
 /**
  * AN EXIT THAT MEETS A BYE LEAVES A BYE BEHIND, NOT AN EXIT LABEL.
  *
- * CA, 2026-10-02, confirming 2026-09-20 (*"a propagated exit encountering a BYE should be advanced. In
+ * The rule (*"a propagated exit encountering a BYE should be advanced. In
  * both cases the BYE remains a BYE."*): the settled holder reads BYE. `advanceByeAdvancedDrawPosition`
  * wrote EXIT over a matchUp whose advancing position was itself a BYE with nobody present, so 26 draws
  * of the exit-propagation suite ended with a matchUp labelled WALKOVER or DEFAULTED, a BYE on one side

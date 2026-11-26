@@ -154,7 +154,7 @@ function tryScheduleMatchUp({
     return false;
   }
 
-  // a slot at or before a played source, or at or after a played dependent, is never taken (CA 2026-10-23): the plan
+  // a slot at or before a played source, or at or after a played dependent, is never taken: the plan
   // holds the rule the writer's guard asks, so the guard does not fire on a plan made here
   const blockingMatchUps = playedOrderRefusal(matchUp, scheduleTime);
   if (blockingMatchUps) {
@@ -210,7 +210,7 @@ function tryScheduleMatchUp({
   }
 
   // a placed matchUp holds its participants, and checks their requests, for its own minutes: its round's average, the
-  // same figure its recovery is checked with (§ 3.4, § 3.6; CA 2026-10-25), never the venue's greatest
+  // same figure its recovery is checked with (§ 3.4, § 3.6), never the venue's greatest
   const averageMatchUpMinutes = details.minutesMap?.[matchUpId]?.averageMinutes ?? details.greatestAverageMinutes;
 
   const { conflicts } = checkRequestConflicts({
@@ -335,7 +335,7 @@ export function scheduleVenueRounds({
         );
 
         // a matchUp over a daily limit stays over it for the rest of the date (a participant's day only gains
-        // matchUps while slots are filled), so it is asked once and reported once (CA 2026-10-23), not at every slot
+        // matchUps while slots are filled), so it is asked once and reported once, not at every slot
         const overLimit = overLimitMatchUpIds[scheduleDate];
         details.matchUpsToSchedule = details.matchUpsToSchedule.filter(
           ({ matchUpId }) => matchUpId !== scheduledMatchUp?.matchUpId && !overLimit.includes(matchUpId),

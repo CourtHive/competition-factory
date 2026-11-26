@@ -79,7 +79,7 @@ export function getTargetLink({
  * where the cascade will meet one is known only once it has written. A draw with none cannot raise it at all, from
  * `positionTargets` or anything that calls it: nothing that sets a matchUp's outcome writes a link. So an outcome is
  * refused on a draw that has one, before the first write (outcome-pipeline.md § 2 row 21), and every `positionTargets`
- * error after that point is impossible by construction (CA, 2026-10-22: no mutation relies on rollback).
+ * error after that point is impossible by construction (no mutation relies on rollback).
  *
  * The draw is passed so a link out of a round robin is seen for what it is: it traverses by finishing position
  * (`traversesByFinishingPosition`), labelled `POSITION` or `WINNER`, needs no round, and never refuses the draw.

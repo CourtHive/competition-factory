@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { ANACHRONISM } from '@Constants/errorConditionConstants';
 
 /**
- * The write shape (CA 2026-10-23, SCHEDULING_PIPELINE_VNEXT.md § 7.A): the planner never takes a slot the played order
+ * The write shape: the planner never takes a slot the played order
  * refuses, and reports the matchUp under its own reason; the writer's guard judges the whole plan before any write.
  */
 describe('the played order in the profile scheduler', () => {

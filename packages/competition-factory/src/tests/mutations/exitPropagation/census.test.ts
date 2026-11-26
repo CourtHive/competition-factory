@@ -63,7 +63,7 @@ const schedulesIn = process.env.SCHEDULES_IN;
 /**
  * THE POLICY ARM, live. `PROPAGATE_BYE=0` attaches `doubleExitPropagateBye: false`, `PROPAGATE_BYE=1` attaches `true`,
  * unset attaches nothing — the same contract as `censusProgressionPolicy.test.ts`, which replays frozen windows only.
- * CA, 2026-10-08: the `doubleExitPropagateBye: false` arm must reach zero `STALLED_POSITION` before it is promoted, and
+ * The `doubleExitPropagateBye: false` arm must reach zero `STALLED_POSITION` before it is promoted, and
  * measuring that at scale needs schedules GENERATED under the policy: `generateSchedule` calls the engine, so a schedule
  * emitted without the policy is not the policy arm's schedule. Attached at generation and at replay alike, and recorded
  * on each emitted scenario so a frozen policy window replays under the policy it was emitted under.

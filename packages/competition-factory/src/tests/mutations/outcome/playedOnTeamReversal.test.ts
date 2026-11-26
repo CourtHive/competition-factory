@@ -70,7 +70,7 @@ function expectPreflightRefusal(cell: Cell, code: string) {
   }
 }
 
-describe('F-031 played-on winner reversal', () => {
+describe('played-on winner reversal', () => {
   for (const competingSeat of [false, true]) {
     it.each(cells)(
       `preserves the played retirement in $mode/$route (competing assignment ${competingSeat})`,
@@ -82,7 +82,7 @@ describe('F-031 played-on winner reversal', () => {
   }
 });
 
-describe('F-031 independent duplicate-assignment preflight', () => {
+describe('independent duplicate-assignment preflight', () => {
   it.each(cells)('refuses before writing on an unplayed semifinal in $mode/$route', (cell) => {
     loadState(cell, false, true);
     expectPreflightRefusal(cell, 'ERR_EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT');

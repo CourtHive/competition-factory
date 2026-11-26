@@ -11,10 +11,10 @@ import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFA
 
 // SCHEDULING_PIPELINE_VNEXT.md § 5, found while building the scheduling corpus (2026-10-22). Under the default policy a
 // SET3-S:6/TB7 singles matchUp averages 90 minutes and its participants recover for 60.
-//   C1 (CA: recovery is calculated): a matchUp already timed on the date holds its participants for its recovery even
+//   C1 (recovery is calculated): a matchUp already timed on the date holds its participants for its recovery even
 //      when the profile is not scheduling it: a COMPLETED matchUp, or one timed outside the profile.
-//   Q1 (CA: look for a timing in the tournament or the event): scheduleMatchUps, given no minutes, reads them there.
-//   C3 (CA: a default fallback is desirable): with no policy attached, the hydrated `timeAfterRecovery` falls back to
+//   Q1 (look for a timing in the tournament or the event): scheduleMatchUps, given no minutes, reads them there.
+//   C3 (a default fallback is desirable): with no policy attached, the hydrated `timeAfterRecovery` falls back to
 //      the default policy, as the scheduler's round timing always did.
 
 const venueId = 'venue1';

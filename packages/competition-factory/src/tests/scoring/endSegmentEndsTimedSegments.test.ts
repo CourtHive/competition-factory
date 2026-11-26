@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 
 /*
- * endSegment and closed segments (scoring-engine spec § 2.4, § 6.4; § 16 decisions 2 and 4, CA 2026-10-18).
+ * endSegment and closed segments (scoring-engine spec § 2.4, § 6.4; § 16 decisions 2 and 4).
  *
  * "endSegment ends timed segments only ... It is refused on any other segment kind, and when there is no
  * timed segment to end." "reason is a free host string, recorded and never interpreted (epixodic sends
@@ -22,7 +22,7 @@ function setScores(engine: ScoringEngine) {
   return engine.getState().score.sets.map((set) => [set.side1Score, set.side2Score, set.winningSide]);
 }
 
-describe('§ 2.4 endSegment ends timed segments only (CA 2026-10-18, decision 2)', () => {
+describe('§ 2.4 endSegment ends timed segments only (decision 2)', () => {
   it('SET3-S:6/TB7 at 2-1 is refused, and nothing is written', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     engine.addGame({ winner: 0 });
@@ -71,7 +71,7 @@ describe('§ 2.4 endSegment ends timed segments only (CA 2026-10-18, decision 2)
   });
 });
 
-describe('§ 6.4 a closed segment takes no input (CA 2026-10-18, decision 4)', () => {
+describe('§ 6.4 a closed segment takes no input (decision 4)', () => {
   it('SET3-S:T10: games 1-1, end, game: the game opens set two; set one stays level and closed', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:T10' });
     engine.addGame({ winner: 0 });

@@ -148,7 +148,7 @@ export function analyzeMatchUp(params?): ResultType &
   //
   // ── ...and it is decided only once EVERY set is played ──
   //
-  // CA, 2026-10-05, on `SET9X-S:T10`: *"All nine must be played."* Reaching `setsToWin` early is a lead,
+  // On `SET9X-S:T10`: *"All nine must be played."* Reaching `setsToWin` early is a lead,
   // not a win: five bolts to side 1 resolved side 1 here while `validateScore` refused the same score
   // (`analyzeScore`'s `isExactlyComplete`), and `courthive-components` gates Submit on this, so the card
   // offered a result the engine then refused. The aggregate branch below already waits for every set.
@@ -159,7 +159,7 @@ export function analyzeMatchUp(params?): ResultType &
 
   // ── An AGGREGATE format is decided on POINTS, and sets won are not the question ──
   //
-  // CA, 2026-09-29: *"Sets to win is not a consideration when the format is INTENNSE ... INTENNSE
+  // The rule: *"Sets to win is not a consideration when the format is INTENNSE ... INTENNSE
   // requires all sets recorded to be included in the aggregate total; there is not a bestOf construct
   // ... INTENNSE doesn't have games, so the aggregate is across all bolts."*
   //
@@ -169,13 +169,13 @@ export function analyzeMatchUp(params?): ResultType &
   //
   // ── A tied aggregate is UNDECIDED, not a draw ──
   //
-  // CA: *"if the aggregate across ALL played sets/bolts is a tied score, the decider must determine a
+  // And: *"if the aggregate across ALL played sets/bolts is a tied score, the decider must determine a
   // winner ... it must be understood to be implicit when competitionFormat is INTENNSE that a sudden
   // death point is the decider and that this needn't actually be in the matchUpFormat."*
   //
   // So `undefined` here means a decider is owed, not that the match ended level — and nothing about
   // that decider needs modelling. When the sudden-death point is recorded the totals stop being equal
-  // and the winner falls out of the same sum. CA: *"The only case where `SET2XA-S:T10` never resolves
+  // and the winner falls out of the same sum: *"The only case where `SET2XA-S:T10` never resolves
   // a winner is if both sides score the same exact number of points."*
   const deciderSetNumber = deciderSetNumberOf(matchUpScoringFormat);
   const isDecider = (set: SetType, index: number) => (set?.setNumber ?? index + 1) === deciderSetNumber;
@@ -241,7 +241,7 @@ function hasSetValues(set: SetType): boolean {
 /**
  * Both sides' points, summed across every set that was played.
  *
- * `undefined` where the format expects more sets than have been recorded. CA, 2026-09-29: *"INTENNSE
+ * `undefined` where the format expects more sets than have been recorded: *"INTENNSE
  * requires all sets recorded to be included in the aggregate total"* — a running total taken before
  * the last bolt is in would name a leader, and a leader is not a winner.
  *
@@ -278,7 +278,7 @@ function sidePoints(sets: SetType[], matchUpScoringFormat: ParsedFormat | undefi
 /**
  * The decider is set N + 1 of an aggregate format with a final-set format (`SET3XA-S:T10-F:TB1`), or the decider after
  * a finite overtime (`-O:1SD/T5P-F:SO5`). Its point or shootout goals settle a level aggregate and are never part of it
- * (scoring spec § 9.8, Ruling 3, CA 2026-11-04). Without an `-F:` there is no decider set: INTENNSE's implicit
+ * (scoring spec § 9.8). Without an `-F:` there is no decider set: INTENNSE's implicit
  * sudden-death point is scored in the last bolt, and is part of the sum.
  */
 function deciderSetNumberOf(matchUpScoringFormat: ParsedFormat | undefined): number | undefined {

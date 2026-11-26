@@ -150,8 +150,8 @@ const MS_PER_MINUTE = 60_000;
  *
  * Adjacent rows of a grid are an order of play, not a clock: a matchUp in the row after another can start hours
  * later. Back to back is worth a warning only when the time between them is short of recovery, so this reads the
- * times (CA 2026-10-18: "when the scheduled time leaves enough time for recovery (average matchUp time plus
- * recovery) then the warning should go away entirely").
+ * times: when the scheduled time leaves enough time for recovery (average matchUp time plus recovery), there is no
+ * warning at all.
  *
  * What actually happened wins over the plan, on both sides:
  * - the earlier matchUp is free at the strongest plausible rung of the rest ladder (`resolveAnchors`: endTime,

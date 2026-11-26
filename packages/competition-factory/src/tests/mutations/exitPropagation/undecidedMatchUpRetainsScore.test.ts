@@ -10,7 +10,7 @@ import { CANNOT_CHANGE_OUTCOME } from '@Constants/errorConditionConstants';
  * A result whose propagation is LOAD-BEARING for a decided downstream outcome cannot be re-scored.
  *
  * This began as a characterisation of the census's second-largest group — 224 findings reported as
- * `UNDECIDED_WITH_SCORE`, a matchUp reading TO_BE_PLAYED while still showing 6-3. CA re-diagnosed it
+ * `UNDECIDED_WITH_SCORE`, a matchUp reading TO_BE_PLAYED while still showing 6-3. It was re-diagnosed
  * 2026-09-21: *"the consolation structure is completed and the outcome of R2P1 should not be allowed
  * to be rescored since the propagation was load bearing to outcomes that had already been decided.
  * Seems like this is a fail in downstream active status."*
@@ -57,7 +57,7 @@ it('refuses a re-score whose propagation is load-bearing, and leaves the decided
   const result: any = put('Main', 2, 1, { winningSide: 2 });
   expect(result.success).toBeUndefined();
 
-  // A double exit has NO winningSide, so the refusal must not name one — CA, 2026-09-21.
+  // A double exit has NO winningSide, so the refusal must not name one.
   expect(result.error).toEqual(CANNOT_CHANGE_OUTCOME);
 
   // and the decided consolation result is untouched — no TO_BE_PLAYED carrying a 6-3

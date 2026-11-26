@@ -10,7 +10,7 @@ import { FEED_IN_CHAMPIONSHIP, MODIFIED_FEED_IN_CHAMPIONSHIP } from '@Constants/
 /**
  * AN EXIT CARRIED PAST A LATE BYE IS WRITTEN — forward play, MODIFIED_FEED_IN_CHAMPIONSHIP 8/8 (census 20037222's draw).
  *
- * CA, 2026-10-02: *"a propagated exit encountering a BYE should be advanced. In both cases the BYE remains a BYE."*
+ * The rule: *"a propagated exit encountering a BYE should be advanced. In both cases the BYE remains a BYE."*
  *
  * `Main|1|4`'s loser walked over and reaches `Consolation|1|2` carrying that exit. When the BYE is ALREADY in the other
  * seat, `progressExitStatus` carries her past it (RULE 1) and writes the walkover where she lands (RULE 2): whoever

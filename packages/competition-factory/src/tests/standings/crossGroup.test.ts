@@ -8,8 +8,8 @@ import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 /**
- * Best finishers across groups by the tally policy's `crossGroup` (Mentat `planning/STANDINGS_ENGINE_SPEC.md` § 5.7,
- * K7): FIFA's "best third-placed teams" problem, compared as a tuple rather than the packed GEMscore float.
+ * Best finishers across groups by the tally policy's `crossGroup` (K7):
+ * FIFA's "best third-placed teams" problem, compared as a tuple rather than the packed GEMscore float.
  */
 
 /** games A 42-30, B 53-52, C 47-40, D 23-43 */

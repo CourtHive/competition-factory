@@ -77,7 +77,8 @@ const detectorWouldSee = (matchUp: any) =>
   !matchUp.winningSide && (!matchUp.matchUpStatus || matchUp.matchUpStatus === TO_BE_PLAYED_STATUS);
 
 /**
- * A SECOND, separate question this scan can answer for free, and it belongs to **P29**.
+ * A SECOND, separate question this scan can answer for free: whether a produced WALKOVER went to the side that
+ * carries the exit.
  *
  * A one-occupant matchUp with a `winningSide` is NOT stranded — somebody advanced out of it — so the
  * stall oracle above excludes it, correctly. But WHICH side won decides whether that is a resolution
@@ -86,8 +87,8 @@ const detectorWouldSee = (matchUp: any) =>
  *  - `winningSide === the occupant's sideNumber` — the participant who was there wins the produced
  *    walkover and moves on. Correct.
  *  - `winningSide !== the occupant's sideNumber` — the award went to the EMPTY seat. The player who
- *    did not appear won. That is P29's shape, stated in the punch list as *"a produced WALKOVER is
- *    awarded to the side that CARRIES the exit"*.
+ *    did not appear won: a produced WALKOVER
+ *    awarded to the side that CARRIES the exit.
  *
  * Measured here because the distinction was nearly banked as a resolution: `West|2|1` in the named
  * COMPASS case reads `WALKOVER ws=2 occupants=1`, which is indistinguishable from the defect until
@@ -184,7 +185,7 @@ function recordStalls(cell: Cell, key: string, stalls: any[], structureNameOf: (
   }
 }
 
-/** P29's question over the same terminal draws — see `awardedToVacantSeat` */
+/** The walkover-award question over the same terminal draws — see `awardedToVacantSeat` */
 function recordAwards(
   cell: Cell,
   key: string,
@@ -294,10 +295,10 @@ test.skipIf(!enabled)(
 );
 
 /**
- * The same two definitions over CA's OWN reproductions, which the matrix does not contain — it
+ * The same two definitions over the reported reproductions, which the matrix does not contain — it
  * generates at its own seeds, and the named COMPASS cases use `nonRandom: 20223109`.
  *
- * 16/14 is the P39 case (one participant stranded at `Southwest|1|1`); 16/12 is the one that stranded
+ * 16/14 is the unfillable loser BYE case (one participant stranded at `Southwest|1|1`); 16/12 is the one that stranded
  * THREE and whose named test now expects 3 and receives 1. Printed rather than asserted: this is the
  * measurement behind the widening recommendation, kept so it can be re-measured rather than re-argued.
  */

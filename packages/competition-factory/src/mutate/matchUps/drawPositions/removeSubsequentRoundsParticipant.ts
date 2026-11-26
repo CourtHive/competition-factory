@@ -244,7 +244,7 @@ function removeDrawPosition({
   // A LEGACY-ARRAY GATE ON A NATIVE WRITE. Kept: removing it is measured wrong — see the long note at the
   // twin site in `drawPositionPlacement`, where the pair of removals costs 58 tests across 5 files and the
   // measurement names what the truthy array stands in for ("this matchUp is already part of the exit
-  // cascade"), why it matters (provenance is PRESENCE-read — P19), and what a replacement has to test.
+  // cascade"), why it matters (provenance is PRESENCE-read), and what a replacement has to test.
   //
   // ONLY THE SOURCE'S OWN TARGET. The loop above reaches every later round holding the position; the source feeds
   // just the first of them (`roundNumber`, the winner matchUp's round). Stamping the rest recorded an origin from a

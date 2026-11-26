@@ -13,7 +13,7 @@ import { COMPASS, FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitio
 import { DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
- * A LOSER SEAT HOLDS WHAT ITS FEEDER SENDS (Mentat P58, CA 2026-10-21: retire the `byeClaims` ledger).
+ * A LOSER SEAT HOLDS WHAT ITS FEEDER SENDS (the `byeClaims` ledger is retired).
  *
  * `feederSendsNobody` reads, from the draw as it stands, whether the matchUp feeding a loser seat will ever send anyone
  * across the link, and why not. Every replay step holds the draw to it (`LOSER_SEAT_DERIVED`): a propagated BYE on a
@@ -93,7 +93,7 @@ describe('feederSendsNobody reads the feeder as it stands', () => {
       feederSendsNobody({ inContextDrawMatchUps: [feeder, origin], drawDefinition, feeder });
     // the double exit's own structure: its produced exit came along the winner path, and its loser is nobody
     expect(reason(pending('East'), doubleExit('East'))).toEqual('EXIT_PENDING');
-    // another structure: it came over a loser link, and only the award (P39) owes the seat a BYE
+    // another structure: it came over a loser link, and only the unfillable-loser award owes the seat a BYE
     expect(reason(pending('West'), doubleExit('East'))).toBeUndefined();
   });
   it('a first-match-loser link that carries none of the matchUp’s possible losers', () => {
@@ -149,7 +149,7 @@ describe('byeSeatsOwedTo reads the BYEs a matchUp is the reason for', () => {
   });
 });
 
-describe('seatShowsBye: CA ruling (A), a policy-off double exit shows its produced exit', () => {
+describe('seatShowsBye: a policy-off double exit shows its produced exit', () => {
   it('a BYE shows every reason but a double exit under the policy off, unless the seat is fed in', () => {
     const off = { progression: { doubleExitPropagateBye: false } };
     expect(seatShowsBye({ reason: 'DOUBLE_EXIT' })).toEqual(true);

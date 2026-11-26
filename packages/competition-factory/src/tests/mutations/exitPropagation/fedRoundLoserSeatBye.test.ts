@@ -10,7 +10,7 @@ import { FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
 /**
  * **A DOUBLE_WALKOVER IN MAIN ROUND 2 LEAVES ITS CONNECTED FEED SEAT AS A BYE.**
  *
- * CA, 2026-09-27, naming the shape: *"It would be a DOUBLE_WALKOVER in a main second round that feeds a
+ * The shape, named: *"It would be a DOUBLE_WALKOVER in a main second round that feeds a
  * connected structure's 2nd round."*
  *
  * A double walkover produces no loser, so the seat its loser would have been fed into can never fill.
@@ -19,7 +19,7 @@ import { FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
  *
  * ## Why this test exists, and what it is NOT evidence of
  *
- * It was written to answer CA asking why nothing pinned this. Measuring first changed what the test
+ * It was written to answer why nothing pinned this. Measuring first changed what the test
  * should say, twice:
  *
  * 1. **The behaviour is already correct**, on `dev` at `9c732e033`, with no source change. So this is a
@@ -35,7 +35,7 @@ import { FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
  * ## The shape, `FEED_IN_CHAMPIONSHIP` 16
  *
  * Main round 1 losers feed `Consolation` round 1; Main round 2 losers feed `Consolation` round 2, which
- * is a FEED round of a CONNECTED structure — the exact shape CA named. The feed mapping is not the
+ * is a FEED round of a CONNECTED structure — the exact shape named above. The feed mapping is not the
  * identity: the double walkover at `Main|2|1` targets `Consolation|2|4`, which is why this test locates
  * the affected matchUp by its EMPTY FED SEAT rather than by assuming a roundPosition.
  */

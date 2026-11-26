@@ -2,7 +2,7 @@ import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { describe, expect, it } from 'vitest';
 
 /*
- * Findings S6 and S7 of the 2026-10-17 scoring-engine assessment. CA 2026-10-17: substitution rules
+ * Findings S6 and S7 of the 2026-10-17 scoring-engine assessment. Substitution rules
  * stay advisory (the engine reports violations, the host decides), and an observed court half is a
  * recorded input now; the participant-level service model is deferred.
  */

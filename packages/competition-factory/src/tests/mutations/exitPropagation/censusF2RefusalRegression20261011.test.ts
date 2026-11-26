@@ -23,16 +23,17 @@ import fs from 'fs';
  * - **OTHER** (12, DOUBLE_ELIMINATION 10, FEED_IN_CHAMPIONSHIP_TO_SF 2): the direction writes, and a position
  *   assignment refuses after it (`ERR_EXISTING_POSITION_ASSIGNMENT`, `ERR_OCCUPIED_DRAW_POSITION`).
  *
- * The other 25 (11 seeds) are P51's RULE 4 meeting: `progressExitStatus` refusing a convergence onto a matchUp an exit
- * already decided, with active downstream. CA, 2026-10-11, in two groups:
+ * The other 25 (11 seeds) are a RULE 4 meeting at a structure's last-round BYE: `progressExitStatus` refusing a
+ * convergence onto a matchUp an exit already decided, with active downstream, in two groups (the fixture's `group`
+ * field names each):
  *
- * - **P51-CONVERGENCE** (10 seeds, 24 instances, one per seed held here): nothing below the convergence was played;
+ * - **CONVERGENCE** (10 seeds, 24 instances, one per seed held here): nothing below the convergence was played;
  *   only carried exits stood there. Closed by the 2026-09-25 rule applied to convergence
  *   (`aConvergenceIsNotBlockedByWhatItCarried`).
- * - **P51-PLAYED** (1 seed, OLYMPIC `on`:20496362): a match recorded with two participants stands below. Held here
- *   since CA's (b) landed in v1 and v2 alike: the arrival is carried past the matchUp the exit decided while
- *   awaiting it (`aCarryIsCarriedPastADecidedSeat`), and the P52 guard behind it reads a result recorded by the
- *   winner of the loser's carried award, one structure on. It replays clean.
+ * - **PLAYED** (1 seed, OLYMPIC `on`:20496362): a match recorded with two participants stands below. Held here
+ *   since the carry-past rule landed in v1 and v2 alike: the arrival is carried past the matchUp the exit decided while
+ *   awaiting it (`aCarryIsCarriedPastADecidedSeat`), and the correction-kind guard behind it reads a result recorded by
+ *   the winner of the loser's carried award, one structure on. It replays clean.
  * - **RUN16-INCOMPATIBLE** (COMPASS 20599089, `off` and `policyoff`) and **RUN16-ASSIGNMENT** (DOUBLE_ELIMINATION
  *   `on`:20617910, COMPASS `policyoff`:20586104): the sixteenth at-scale run's four instances (census S4, 2026-10-13),
  *   outside the s13/s14 range. `ERR_INCOMPATIBLE_MATCHUP_STATUS` and `ERR_EXISTING_POSITION_ASSIGNMENT` after writing.
@@ -49,9 +50,8 @@ import fs from 'fs';
  *
  * This fixture holds 53: these two, the four run-16 instances, and 47 from s13/s14 sized for CI: every SETTLE-B and OTHER
  * instance, up to three SETTLE-A instances per draw type
- * (the smallest), seeds 20504956 and 20523724, one instance of each P51-CONVERGENCE seed, and the P51-PLAYED instance.
- * All 92 are in `Mentat/fixtures/exit-propagation-census/census-fails-s1{3,4}.jsonl`; the planning record is
- * `Mentat/planning/CENSUS_FAILURE_FAMILIES.md`. Each schedule replays in the arm it was emitted in.
+ * (the smallest), seeds 20504956 and 20523724, one instance of each CONVERGENCE seed, and the PLAYED instance.
+ * All 92 are in the census's s13 and s14 failure sets. Each schedule replays in the arm it was emitted in.
  *
  * **SETTLE-A and SETTLE-B closed, all 24 here** (and all 55 of the two runs): `setMatchUpStatus` runs nothing after
  * a refusal, the settle step reads the draw rather than a map carried in the context, and `decorateResult` no longer

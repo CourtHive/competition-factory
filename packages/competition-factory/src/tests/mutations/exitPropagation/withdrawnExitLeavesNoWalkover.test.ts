@@ -21,7 +21,7 @@ import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
  *
  * `Backdraw|2|2` is no longer a double exit, so the exit it produced in `Backdraw|3|1` is stale and
  * `reconcileStaleExitOrigins` withdraws it. That matchUp's provenance also held a BYE ARRIVAL on side 1,
- * which is a fact, not an exit (P19), and `withdrawFromMatchUp` kept the matchUp a WALKOVER because
+ * which is a fact, not an exit, and `withdrawFromMatchUp` kept the matchUp a WALKOVER because
  * SOMETHING remained. The new loser then won their way into side 2 and was recorded as the winner of a
  * walkover nobody gave (EXIT_WITHOUT_LOSER, WINNER_NOT_ADVANCED).
  *

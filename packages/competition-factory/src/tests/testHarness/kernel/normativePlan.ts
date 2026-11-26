@@ -6,7 +6,7 @@ type ByDate<T> = { [scheduleDate: string]: T };
  * The part of a plan that is a rule (scheduling-pipeline.md § 7, "The plan"): what is placed where and when, what is
  * left unplaced, and why — each refused matchUp's FIRST refusal, with its facts. How the slot loop got there (the
  * attempts per slot, the slots skipped or left over, every later refusal of the same matchUp) is one implementation's
- * trace, informative only (CA 2026-10-25), so `kernel.scheduling.plan@2` compares this projection and nothing more.
+ * trace, informative only, so `kernel.scheduling.plan@2` compares this projection and nothing more.
  */
 export function normativePlan(plan: SchedulePlan) {
   return {

@@ -14,7 +14,7 @@ import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { INVALID_SCORE } from '@Constants/errorConditionConstants';
 
 /**
- * CA's rulings of 2026-10-02 on tiebreak records.
+ * The rules for tiebreak records (2026-10-02).
  *
  * V11 — *"only accept 1-0 as completed if it's in games"*: a match-tiebreak decider holding `1-0` in its
  * GAME fields and no points is a finished set (the marker); `1-0` in the tiebreak fields is points, and no
@@ -89,7 +89,7 @@ describe('V11: the 1-0 marker in the GAME fields is a finished match tiebreak', 
 
   it('under TB1 the target is one, so 1-0 in the game fields is still the point, not a marker', () => {
     const tb1 = 'SET3XA-S:T10-F:TB1';
-    // the decider is set 4, after the three bolts (CA, 2026-10-04)
+    // the decider is set 4, after the three bolts
     const decider = { setNumber: 4, side1Score: 1, side2Score: 0, winningSide: 1 };
     expect(analyzeSet({ setObject: decider, matchUpScoringFormat: parse(tb1) }).sideTiebreakScores).toEqual([1, 0]);
   });
@@ -147,7 +147,7 @@ describe('V11: a 7-6 with no tiebreak points is a finished set, accepted with a 
     expect(result.warnings).toEqual([{ code: TIEBREAK_POINTS_NOT_RECORDED, setNumbers: [1] }]);
   });
 
-  it('the completeness check agrees with the record: a bare 7-6 is finished (CA, 2026-11-07)', () => {
+  it('the completeness check agrees with the record: a bare 7-6 is finished', () => {
     // This read FALSE until 7.33.0, so the score card, which asks it as the operator types, could never submit
     // the set the engine records. A 7-6 now means "finished, points not recorded"; the key-value helper keeps
     // its own "now the tiebreak" convention while its bracket is open (`keyValueScore/winningSide.ts`).

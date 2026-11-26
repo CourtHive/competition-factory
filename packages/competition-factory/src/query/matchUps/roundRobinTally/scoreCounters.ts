@@ -160,7 +160,7 @@ export function countPoints({ matchUpFormat, score }: { matchUpFormat?: string; 
   score?.sets?.forEach((set, i) => {
     const setNumber = set.setNumber || i + 1;
     const setFormat = formatOf(parsedMatchUpFormat, setNumber);
-    // a shootout's goals are its own tally, never the sporting aggregate (Ruling 3, CA 2026-11-04)
+    // a shootout's goals are its own tally, never the sporting aggregate
     if (setFormat?.shootout) return;
 
     if (isPointsBased(setFormat?.based) || setFormat?.combinedPointTotal) {

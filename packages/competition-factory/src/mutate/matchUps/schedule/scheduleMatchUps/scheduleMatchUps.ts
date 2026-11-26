@@ -229,7 +229,7 @@ export function scheduleMatchUps(params) {
     if (alreadyScheduled || matchUp.winningSide || doNotSchedule || hasByeSide(matchUp)) return false;
 
     // a matchUp dated on another day is scheduled on that day: a call for this one never moves it, and reports it
-    // (§ 6 rule 1, CA 2026-10-28)
+    // (§ 6 rule 1)
     const datedDay = extractDate(matchUp.schedule?.scheduledDate);
     if (datedDay && !sameDay(scheduleDate, datedDay)) {
       otherDayMatchUpIds.push(matchUp.matchUpId);

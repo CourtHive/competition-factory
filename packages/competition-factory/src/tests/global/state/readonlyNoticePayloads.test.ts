@@ -19,8 +19,9 @@ import asyncProvider from '../../../examples/asyncEngine/asyncGlobalState';
 import syncGlobalState from '@Global/state/syncGlobalState';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
-// The read-only notice payload detector (CA ruling 27; cases from factory #6614). Write checks run where the detector
-// is compiled in (NOTICE_PAYLOAD_WRITE_CHECK=1); passive cases run in every suite, with it compiled in or out.
+// The read-only notice payload detector (notice payloads are read-only; cases from factory #6614). Write checks run
+// where the detector is compiled in (NOTICE_PAYLOAD_WRITE_CHECK=1); passive cases run in every suite, with it
+// compiled in or out.
 const audit = __NOTICE_PAYLOAD_DIAGNOSTICS__;
 const setOutcomePipeline = selectPipeline as AuditedOutcomePipelineSelector;
 const previousProvider = getProvider();

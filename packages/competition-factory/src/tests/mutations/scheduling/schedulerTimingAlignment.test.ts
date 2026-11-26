@@ -14,7 +14,7 @@ import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
  *
  * - A draw's own scheduling policy (draw > event > tournament) was read by hydration but not by the schedulers.
  * - A line of a TEAM event was booked under the TEAM key. A team matchUp holds no court of its own, and a line is
- *   timed by its own type, SINGLES or DOUBLES, never by a TEAM figure (CA 2026-11-20).
+ *   timed by its own type, SINGLES or DOUBLES, never by a TEAM figure.
  */
 
 const DATE = '2026-03-02';

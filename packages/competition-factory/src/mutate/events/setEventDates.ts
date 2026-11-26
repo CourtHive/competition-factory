@@ -170,7 +170,7 @@ export function setEventDates(params: SetEventDatesArgs): ResultType {
   modifyEventNotice({ event, tournamentId: tournamentRecord?.tournamentId });
 
   // the new dates still land when scheduled matchUps now sit on days the event does not play: each is warned about
-  // (CA 2026-11-01, warning only; setTournamentDates refuses the same thing for the tournament's own range)
+  // (a warning only; setTournamentDates refuses the same thing for the tournament's own range)
   const warnings = (
     getEventDateIssues({
       tournamentRecords: { [tournamentRecord.tournamentId]: tournamentRecord },

@@ -9,7 +9,7 @@ import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
 /**
- * P54: getParticipants({ withMatchUps | withRankingProfile }) is a QUERY. It used to repair the STORED draw when the draw
+ * getParticipants({ withMatchUps | withRankingProfile }) is a QUERY. It used to repair the STORED draw when the draw
  * did not store its edges (getMatchUpDependencies, its result discarded), writing winnerMatchUpId, loserMatchUpId and a
  * widened finishingPositionRange onto stored matchUps. Measured 2026-10-15 on Button's ingest corpus: it wrote on 40 of
  * 414 records with draws, every one converted outside the factory. It now reads such a draw from a copy carrying the

@@ -372,7 +372,7 @@ export function swapWinnerLoser(params) {
   if (pathReconciliation?.error) return pathReconciliation;
 
   /**
-   * The new loser's carried exit, re-derived from the corrected result (P52; CA, 2026-10-11).
+   * The new loser's carried exit, re-derived from the corrected result.
    *
    * A flip relabels the old loser's place in the target structure onto the new loser, and nothing re-asked what that
    * place should hold for HOW the new loser lost: a default was not carried, and an old walkover carry decided a

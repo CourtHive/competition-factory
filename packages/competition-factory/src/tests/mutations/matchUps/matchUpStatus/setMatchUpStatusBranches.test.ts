@@ -32,7 +32,7 @@ describe('setMatchUpStatus branch coverage', () => {
 
   // ─── INVALID_WINNING_SIDE branches ───────────────────────────────────
 
-  // CA, 2026-10-01: "there should never be { winningSide: 0 }". It used to pass as absent, because the
+  // There should never be { winningSide: 0 }. It used to pass as absent, because the
   // check tested truthiness; this test pinned that. A side is 1 or 2, or there is no winner.
   test('a winningSide of 0 is refused, never read as absent', () => {
     const drawId = 'drawId';

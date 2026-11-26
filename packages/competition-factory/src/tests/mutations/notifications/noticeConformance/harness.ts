@@ -438,12 +438,12 @@ export function noticedEntityKeys(captured: CapturedNotice[]): Set<string> {
 
 /**
  * The fields of a stored matchUp that say where it leads and what it finishes: its edges. A draw stored without them
- * (hand assembled, CA 2026-10-18) has them written by the first call that needs them (`ensureGoesTo`).
+ * (hand assembled) has them written by the first call that needs them (`ensureGoesTo`).
  */
 const EDGE_FIELDS = ['winnerMatchUpId', 'loserMatchUpId', 'finishingRound', 'finishingPositionRange'];
 
 /**
- * A matchUp whose ONLY change is its edges is covered by a notice for its draw (CA, 2026-10-18: a call that repairs a
+ * A matchUp whose ONLY change is its edges is covered by a notice for its draw (a call that repairs a
  * draw's missing edges announces the draw once, not each matchUp): a consumer told "this draw changed" re-projects the
  * draw's subtree, which is the record-hierarchy rule `ancestorScopeCovers` already applies to a removal.
  *

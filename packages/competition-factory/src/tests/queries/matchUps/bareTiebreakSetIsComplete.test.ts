@@ -1,11 +1,11 @@
 /**
  * A set decided by its tiebreak with no points recorded is a finished set, on the READ surface too.
  *
- * `setMatchUpStatus` has recorded a bare `7-6` since ruling V11 (CA, 2026-10-02), with the
+ * `setMatchUpStatus` has recorded a bare `7-6` since 2026-10-02, with the
  * TIEBREAK_POINTS_NOT_RECORDED warning, and since 2026-11-04 a `0-0` pair is the same unrecorded result. Measured
  * on 7.32.0, the analysis disagreed with the record: `checkSetIsComplete` called a bare `7-6` unfinished, so
  * `getSetWinningSide` and `analyzeSet` named no winner and `analyzeMatchUp` found none; `validateSetScore` refused a
- * `0-0` pair ("Tiebreak winner must reach 7 points, got 0"); `generateScoreString` printed `7-6(0)`. CA, 2026-11-07:
+ * `0-0` pair ("Tiebreak winner must reach 7 points, got 0"); `generateScoreString` printed `7-6(0)`. Now
  * one rule, everywhere — a score-entry interface that delegates to the analysis must be able to submit the score the
  * engine records.
  */

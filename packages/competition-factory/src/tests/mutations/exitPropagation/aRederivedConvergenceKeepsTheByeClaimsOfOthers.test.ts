@@ -21,7 +21,7 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  * leaves when its claimant withdraws it (`positionClear`), and with it gone nothing could: re-entering `East|1|2` as a
  * played result gave `West|2|1` a real loser again, the BYE stood, and that loser later arrived onto it.
  *
- * The `byeClaims` ledger is retired (Mentat P58, CA 2026-10-21): no claim is recorded, so none can be dropped, and the
+ * The `byeClaims` ledger is retired: no claim is recorded, so none can be dropped, and the
  * BYE's reason is read from the draw. After the re-derivation the seat still holds the BYE, `West|2|1` sends nobody
  * across its loser link (`feederSendsNobody`: `NOBODY_LOST`), and the seat is among those `West|2|1` is the reason for
  * (`byeSeatsOwedTo`).

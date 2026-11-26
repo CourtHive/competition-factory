@@ -11,7 +11,7 @@ import { MatchUp } from '@Types/tournamentTypes';
  * nobody arriving to contest it. A walkover a director RECORDED between two participants is not in
  * this set: that is the director's own act, and they know what the court is doing.
  *
- * The two are treated the same way everywhere scheduling is concerned (CA, 2026-10-01): the
+ * The two are treated the same way everywhere scheduling is concerned: the
  * placement is preserved, shown rather than hidden, and the mutation that left it reports it.
  */
 export function matchUpWillNeverBePlayed({ matchUp }: { matchUp?: MatchUp }): boolean {

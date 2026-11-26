@@ -227,7 +227,7 @@ export type EventDateChange = {
 const dayOf = (date?: string) => (date ? extractDate(date) : undefined);
 
 /**
- * Keeps every event's range consistent with the tournament's new range (CA ruling R1, 2026-11-01):
+ * Keeps every event's range consistent with the tournament's new range:
  *
  * - TRACKED: an event whose range equalled the previous tournament range takes the new range, so
  *   extending, shrinking or shifting the tournament carries the events that were never narrowed.

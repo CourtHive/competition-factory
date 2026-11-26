@@ -79,7 +79,7 @@ function matchSpec(parsed: FormatStructure): string {
 export function segmentCell(set?: SetFormatStructure): string {
   if (!set) return 'none';
   if (set.outs) return 'outs';
-  // its own coordinate (Ruling 3): a tally-only final, harvested since overtime opened for new use (S6)
+  // its own coordinate: a tally-only final, harvested since overtime opened for new use (S6)
   if (set.shootout) return 'shootout';
   if (set.combinedPointTotal) return `combined(${set.tieResolution ?? 'ALLOW'})`;
   if (set.timed) {

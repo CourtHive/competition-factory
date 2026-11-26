@@ -9,7 +9,7 @@ import { FIRST_MATCH_LOSER_CONSOLATION, ROUND_ROBIN_WITH_PLAYOFF } from '@Consta
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { TEAM } from '@Constants/eventConstants';
 
-// P56: `contextProfile.exclude` was applied inside addMatchUpContext, so every query that read a hydrated
+// `contextProfile.exclude` was applied inside addMatchUpContext, so every query that read a hydrated
 // matchUp after that point read it without the excluded fields. A completed draw reported drawCompleted: false
 // under `exclude: ['matchUpStatus']`. The exclusion is now a redaction of what the caller receives.
 

@@ -11,7 +11,7 @@ import { BYE, COMPLETED, WALKOVER } from '@Constants/matchUpStatusConstants';
 /**
  * AN EXIT HELD IN A MATCHUP THAT CAN PRODUCE NOBODY IS SENT ON.
  *
- * CA, 2026-09-29, of `doubleExitPropagateBye: false`: *"why aren't produced exits meeting BYEs being
+ * Reported of `doubleExitPropagateBye: false`: *"why aren't produced exits meeting BYEs being
  * advanced? I think [the] repair should be done!"*
  *
  * They are advanced when the BYE is already there as the exit arrives. They were not when the facts

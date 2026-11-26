@@ -43,7 +43,7 @@ export const PARTICIPANT_ROLE_INVALID = 'PARTICIPANT_ROLE_INVALID';
 //  - MATCHUP_FORMAT_MALFORMED: a stored matchUpFormat code nothing can read (`getMatchUpFormatReport` verdict
 //    MALFORMED), anywhere in the record: event, draw, structure, matchUp, collection definition, competitionFormat,
 //    schedule timing or an applied policy. One entry per element, listing every malformed code it holds with its
-//    `location` and `path`. (error — CA 2026-11-04)
+//    `location` and `path`. (error)
 export const MATCHUP_FORMAT_MALFORMED = 'MATCHUP_FORMAT_MALFORMED';
 //
 //  - MATCHUP_FORMAT_REFUSED_FOR_NEW_USE: a well-formed stored code that would be refused if it were being set now.

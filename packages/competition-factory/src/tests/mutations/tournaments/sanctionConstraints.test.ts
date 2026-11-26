@@ -18,7 +18,7 @@ import { WILDCARD } from '@Constants/entryStatusConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 /**
- * SANCTION CONSTRAINTS LIVE ON THE SANCTION, AND A PROVIDER DEFINES THEM (CA, 2026-11-02).
+ * SANCTION CONSTRAINTS LIVE ON THE SANCTION, AND A PROVIDER DEFINES THEM.
  *
  * The limits a sanctioning provider's rules set for a tournament (`drawSize`, `maxWildcards`, `maxAlternates`,
  * `maxQualifiers` per matched event) were a free-standing `sanctioningConstraints` extension that said nothing about

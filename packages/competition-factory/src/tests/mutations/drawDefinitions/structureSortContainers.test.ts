@@ -46,7 +46,7 @@ test('deprioritizeCompleted sorts a completed structure after one still in play'
 });
 
 test('a structure whose only unplayed matchUps will never be played reads as completed', () => {
-  // CA 2026-10-06: a BYE, an ABANDONED, a CANCELLED or a DEAD_RUBBER matchUp will never be played
+  // a BYE, an ABANDONED, a CANCELLED or a DEAD_RUBBER matchUp will never be played
   const neverPlayed = item('neverPlayed', [
     matchUp('m1', COMPLETED),
     matchUp('m2', BYE),

@@ -126,7 +126,7 @@ export function checkMatchUpFormatApplication(params: {
   const result = findDrawMatchUp({ drawDefinition, matchUpId, event });
   if (result.error) return { error: result.error };
 
-  // A format refused for new use (CA 2026-10-18, scoring engine spec § 16 decision 19) is refused when it
+  // A format refused for new use (scoring engine spec § 16 decision 19) is refused when it
   // would CHANGE the matchUp's format. The one it already plays under is not a new use: `setMatchUpStatus`
   // callers send the stored format back with a score, and a persisted format keeps scoring as v1 scored it.
   const storedFormat =

@@ -52,7 +52,7 @@ import {
  *
  * So no oracle in this repo currently discriminates that guard. It is left in place — it is cheap,
  * and one 600-seed window is not proof of unreachability — but nothing here should be read as
- * testing it. See `Mentat/planning/DESIGN_FLAWS_PUNCH_LIST.md`.
+ * testing it.
  *
  * Gated on `propagateExitStatus`, which nothing in the ecosystem currently sets; the policy is
  * attached here so the scenario is reachable at all.

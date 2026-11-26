@@ -80,8 +80,8 @@ function compass(participantsCount: number) {
  * COMPASS 16/14 NO LONGER STRANDS ANYBODY — and this test is now the regression guard for that.
  *
  * It was the rule's motivating case: `Southwest|1|1` ended `(empty) vs <participant>` and
- * `getDrawInconsistencies` rated the draw `valid: true`. `propagateUnfillableLoserBye` (punch-list
- * **P39**) resolves that seat as a BYE, because the matchUp feeding it produced an exit and can never
+ * `getDrawInconsistencies` rated the draw `valid: true`. `propagateUnfillableLoserBye`
+ * resolves that seat as a BYE, because the matchUp feeding it produced an exit and can never
  * produce a loser, so the detector correctly reports **nothing** here.
  *
  * Kept rather than deleted, and inverted rather than relaxed: a count that went 1 -> 0 because a defect
@@ -116,8 +116,8 @@ it('reports nothing on COMPASS 16/14, because the seat that stranded a player is
  * unblocking rather than the detector going quiet.
  *
  * When this was written, COMPASS 16/12 stranded THREE players on a single `DOUBLE_WALKOVER` and this
- * test asserted 3. Two of the three have since been resolved by the P34 arc — #4983, #4985, #4987 —
- * and the measured answer is now 1.
+ * test asserted 3. Two of the three have since been resolved by the BYE-held exit carry fixes — #4983, #4985,
+ * #4987 — and the measured answer is now 1.
  *
  * A falling count is exactly what a weakened detector also produces, so it was checked against a
  * definition that does NOT consult the detector: a real non-BYE participant, no `winningSide`, in a
@@ -127,9 +127,9 @@ it('reports nothing on COMPASS 16/14, because the seat that stranded a player is
  *
  *   West|3|1        COMPLETED ws=1, 2 occupants     resolved
  *   West|2|1        WALKOVER  ws=2, 1 occupant      resolved -- #4985 awarded the carried exit
- *   Southwest|1|1   BYE (byeFromPropagation)        resolved -- P39, 2026-09-27
+ *   Southwest|1|1   BYE (byeFromPropagation)        resolved -- unfillable loser BYE, 2026-09-27
  *
- * **All three are now resolved, and the count is 0.** The last of them was P39: the seat is fed by a
+ * **All three are now resolved, and the count is 0.** The last of them: the seat is fed by a
  * matchUp that produced an exit and can never produce a loser, so it resolves as a BYE. This test now
  * asserts the FIXED STATE rather than a count, for the reason the test above states — a detector that
  * was weakened would also report zero.
@@ -151,7 +151,7 @@ it('reports nothing on COMPASS 16/12 either, where the same seat is resolved', (
   const southwest: any = at('Southwest', 1, 1);
   expect(southwest.matchUpStatus).toEqual(BYE);
 
-  // and the two that P34's arc resolved, each asserted separately so a regression names itself
+  // and the two that the exit carry fixes resolved, each asserted separately so a regression names itself
   const westThree: any = at('West', 3, 1);
   expect(westThree.matchUpStatus).toEqual(COMPLETED);
   expect(westThree.winningSide).toEqual(1);
@@ -192,7 +192,8 @@ it('reports nothing on a draw that completes cleanly', () => {
 });
 
 /**
- * THE DETECTOR MUST STILL BE ABLE TO FIRE, and after P39 nothing in the default suite proved it.
+ * THE DETECTOR MUST STILL BE ABLE TO FIRE, and after the unfillable loser BYE fix nothing in the default suite
+ * proved it.
  *
  * Both COMPASS cases above now report zero, which is the right answer and leaves a hole: a rule that
  * reports nothing anywhere is indistinguishable from a rule that has been switched off. The stall budget

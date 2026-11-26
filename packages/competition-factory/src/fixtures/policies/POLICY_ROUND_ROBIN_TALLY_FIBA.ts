@@ -2,8 +2,7 @@ import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
- * FIBA Official Basketball Rules 2026, Appendix D "Classification of Teams" (verified at source, Mentat
- * `reports/season-tiebreak-research-2026-11-01.md` § 8):
+ * FIBA Official Basketball Rules 2026, Appendix D "Classification of Teams" (verified at source):
  *
  *   D.1.1  2 classification points for a win, 1 for a loss (including a loss by default), 0 for a loss by forfeit
  *   D.1.3  level teams: the games between them decide; then, in those games, game-points difference and game points

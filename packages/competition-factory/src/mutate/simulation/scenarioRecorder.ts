@@ -6,7 +6,7 @@ export type RecordedMethod = { method: string; params: Record<string, unknown> }
 let recording: RecordedMethod[] | undefined;
 
 /**
- * The method list of a generated scenario (CA 2026-10-29): every write scenario generation makes to the record,
+ * The method list of a generated scenario: every write scenario generation makes to the record,
  * also logged as the engine call a client would make for it, with params by id (drawId, eventId, matchUpId), so the
  * list replays through any engine. Random steps are logged as their results (the draw that was generated, each
  * outcome that was set), so a replay is deterministic. The first entry is `newTournamentRecord`, an engine method;

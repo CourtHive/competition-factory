@@ -158,7 +158,7 @@ export const FORMAT_MATRIX: Record<string, MatrixEntry> = {
     AGGREGATE_SEGMENTS,
   'exactly | HAL | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers': TIEBREAK_SETS,
   'exactly | INN | set:standard(tiebreak) | final:same | game:traditional | noClock | knownModifiers': FINAL_SEGMENTS,
-  // exactly N on every root and every kind of set (CA 2026-10-25)
+  // exactly N on every root and every kind of set
   'exactly | SET | set:standard(advantage) | final:same | game:traditional | noClock | knownModifiers': TIMED_SEGMENTS,
   'exactly | SET | set:standard(tiebreak) | final:same | game:traditional | noClock | knownModifiers': TIMED_SEGMENTS,
   'exactly | SET | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers': TIEBREAK_SETS,

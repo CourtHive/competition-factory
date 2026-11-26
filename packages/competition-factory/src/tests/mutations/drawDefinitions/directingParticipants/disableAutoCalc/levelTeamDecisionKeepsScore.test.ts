@@ -53,7 +53,7 @@ function readTie({ drawId, matchUpId }) {
 
 describe.each([ROUND_ROBIN, SINGLE_ELIMINATION])('%s: a decision on a level TEAM tie', (drawType) => {
   // a level round robin tie is a draw, COMPLETED with no winner; in elimination a winner must advance, so it stays in
-  // progress (CA ruling 2026-11-07, TEAM results item 2; levelRoundRobinTeamTieIsDrawn.test.ts)
+  // progress (levelRoundRobinTeamTieIsDrawn.test.ts)
   it('starts from a level aggregate', () => {
     const tie = levelTie(drawType);
     const before = readTie(tie);

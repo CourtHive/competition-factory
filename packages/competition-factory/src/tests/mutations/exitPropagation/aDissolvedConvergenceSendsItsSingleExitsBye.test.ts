@@ -10,13 +10,13 @@ import { expect, it } from 'vitest';
  * `doubleExitPropagateBye: false`).
  *
  * A single exit awarded to a seat, with the exit on its losing side, has nobody for a loser and gives its loser seat a
- * BYE (P39). When a double exit converged with it and is cleared, the unwind re-derives the matchUp to that single exit,
+ * BYE. When a double exit converged with it and is cleared, the unwind re-derives the matchUp to that single exit,
  * and took its loser-seat BYE away with the convergence's claim. The re-derived exit now sends its BYE over its loser
  * link as forward play does (`propagateUnfillableLoserBye`), and the BYE-vs-BYE matchUp there and the rounds after it
  * stand as they did.
  *
- * The scheduled draw once recorded `East|1|8`'s claim on that BYE (`byeClaims`); the ledger is retired (Mentat P58, CA
- * 2026-10-21), so the seat carries no provenance, and what the claim stood for is read from the draw: the seat's feeder
+ * The scheduled draw once recorded `East|1|8`'s claim on that BYE (`byeClaims`); the ledger is retired, so
+ * the seat carries no provenance, and what the claim stood for is read from the draw: the seat's feeder
  * `West|1|4` sends nobody across its loser link (`feederSendsNobody`: `NOBODY_LOST`), and the seat is among those
  * `East|1|8` is the reason for (`byeSeatsOwedTo`), before the probe and after its clear alike.
  */

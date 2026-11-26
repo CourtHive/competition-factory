@@ -132,7 +132,7 @@ describe('SET3X-S:T10, recorded COMPLETED', () => {
 });
 
 /**
- * CA, 2026-10-04: `-F:TB1` is a sudden-death tiebreak, and it occurs only where the match is decided by
+ * `-F:TB1` is a sudden-death tiebreak, and it occurs only where the match is decided by
  * AGGREGATE points; in INTENNSE it is not one of the N sets. So an aggregate `exactly` format records at
  * most N + 1 sets, and one decided by sets records N.
  */

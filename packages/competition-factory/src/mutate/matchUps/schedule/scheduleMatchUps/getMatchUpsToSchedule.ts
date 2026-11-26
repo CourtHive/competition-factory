@@ -64,7 +64,7 @@ export function getMatchUpsToSchedule(params: GetMatchUpsToScheduleArgs): {
         DOUBLE_DEFAULT,
       ].includes(matchUp?.matchUpStatus);
 
-      // a completed matchUp is never scheduled again (CA 2026-10-23); nor is a line of a BYE dual, which has a BYE side
+      // a completed matchUp is never scheduled again; nor is a line of a BYE dual, which has a BYE side
       return !alreadyScheduled && !matchUp.winningSide && !doNotSchedule && !hasByeSide(matchUp);
     });
 

@@ -1,5 +1,5 @@
 /**
- * The read-only notice payload detector (CA ruling 27): testing and diagnostic builds only.
+ * The read-only notice payload detector: testing and diagnostic builds only.
  *
  * Notice and callback payloads are read-only in 7.x. This module hands enqueue and subscriber delivery a read-only
  * view of each payload, so a write through one throws. Production delivers the payload itself: in v1 it is the live

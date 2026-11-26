@@ -27,7 +27,7 @@ type ScheduleProfileGridArgs = {
   allowInactiveEventDates?: boolean;
   matchUpDailyLimits?: { [key: string]: number };
   /**
-   * @deprecated ignored: completed matchUps are never scheduled (CA 2026-10-23). Removed in 8.0.0.
+   * @deprecated ignored: completed matchUps are never scheduled. Removed in 8.0.0.
    */
   scheduleCompletedMatchUps?: boolean;
   clearScheduleDates?: boolean | string[];
@@ -87,7 +87,7 @@ function findRoundMatchUps(
 
   return allMatchUps.filter((m: any) => {
     if (hasByeSide(m)) return false;
-    // a completed matchUp is never placed (CA 2026-10-23): it needs no court, and would push new placements down
+    // a completed matchUp is never placed: it needs no court, and would push new placements down
     if (completedMatchUpStatuses.includes(m.matchUpStatus)) return false;
     if (m.schedule?.courtId) return false;
     if (m.schedule?.courtOrder) return false;
@@ -121,7 +121,7 @@ function collectVenuePlan(
     const venueCourtIds = courtIdsFilter ? allVenueCourtIds.filter((id) => courtIdsFilter.has(id)) : allVenueCourtIds;
     dateCourtIds.push(...venueCourtIds);
 
-    // a venue with no courts keeps its rounds and places nothing (CA 2026-10-23): its matchUps are not offered to the
+    // a venue with no courts keeps its rounds and places nothing: its matchUps are not offered to the
     // date's other courts, and are reported not scheduled
     const target = allVenueCourtIds.length ? dateMatchUps : courtlessMatchUps;
     for (const roundProfile of venueProfile.rounds ?? []) {
@@ -133,7 +133,7 @@ function collectVenuePlan(
 }
 
 /**
- * The limits the grid applies (CA 2026-10-23: the schedulers agree on the policies applied). None given: those the
+ * The limits the grid applies (the schedulers agree on the policies applied). None given: those the
  * timed pipeline resolves (the policy's, the tournament's, each participant's override), enforced. `{}` given: the
  * caller opted out, and the same limits are asked only to warn. Limits given: those, enforced.
  */
@@ -182,7 +182,7 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
 
   const result = getSchedulingProfile({ tournamentRecords });
   if (result.error) return result;
-  // a profile that needs repair is refused before anything is written, the repaired profile offered (CA 2026-10-23)
+  // a profile that needs repair is refused before anything is written, the repaired profile offered
   if (result.modifications) return schedulingProfileRepairRefusal(result);
 
   if (!result.schedulingProfile.length) return { ...SUCCESS };

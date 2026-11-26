@@ -170,7 +170,7 @@ export function applyTemporalPhases(
  * own top-level structure stamped, `modifyMatchUpNotice`), a `modifyPositionAssignments` for each structure a loser is
  * placed in (S3: the direction shape), and for each matchUp given a result (the call's, and a carried exit's landing,
  * S5) the `updateInContextMatchUp` a subscriber receives, built when the notices are read, after the call has succeeded, and only for a subscriber
- * (CA, 2026-10-24: projection bounded to the changed node, never on an error).
+ * (the projection bounded to the changed node, never on an error).
  */
 export function applyOwnedPlan({
   shape,
@@ -333,7 +333,7 @@ function recordedEntity(topic: string, key: string, drawDefinition: DrawDefiniti
 }
 
 /**
- * RECORDED (CA, 2026-11-16): the notices the double-exit module and the settle passes buffered on the working copy,
+ * RECORDED: the notices the double-exit module and the settle passes buffered on the working copy,
  * raised again in their order on the stored record: each payload as recorded, carrying the stored entity. The stamps
  * are among the ops, so nothing is stamped here.
  */

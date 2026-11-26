@@ -1,7 +1,7 @@
 /**
  * Draw, event and structure views cannot break when `seedings` is filtered out.
  *
- * CA, 2026-08-21: if a view depends on a filtered attribute, the view is wrong, not the policy. So
+ * If a view depends on a filtered attribute, the view is wrong, not the policy. So
  * this asserts equivalence of everything a bracket needs in order to render — structures, position
  * assignments, seed assignments, matchUps, sides — between a policy that permits `seedings` and one
  * that denies it, while proving the attribute really did disappear.

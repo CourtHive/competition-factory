@@ -86,8 +86,8 @@ it('20609643: the held exit goes on pending, whichever order the walkover comes 
   const between = drawAfter([...schedule, walkover, ...later], 'pending-delivers-between');
   expect(first).toEqual(last);
   expect(between).toEqual(last);
-  // ruling (A): West|1|2 converged, so South dp 2 holds its produced default, not a BYE; carried past South|1|1's BYE it
-  // meets South|1|2's produced walkover and South|2|1 converges
+  // a policy-off double exit's loser seat shows its produced exit: West|1|2 converged, so South dp 2 holds its produced
+  // default, not a BYE; carried past South|1|1's BYE it meets South|1|2's produced walkover and South|2|1 converges
   expect(last['South|2|1']).toEqual({
     matchUpStatus: DOUBLE_WALKOVER,
     winningSide: undefined,

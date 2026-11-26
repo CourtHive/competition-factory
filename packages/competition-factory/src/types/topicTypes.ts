@@ -30,8 +30,7 @@ import type { MatchUp, Event, DrawDefinition } from '@Types/tournamentTypes';
  *
  * Topics touching events / draws / structures / matchUps carry as much of this as applies, on the
  * payload itself rather than only nested inside `event`, `matchUp` or `eventData`. That distinction is
- * what lets a subscriber drive cache eviction and data fan-out from the notice alone — see
- * `Mentat/planning/FACTORY_NOTICE_IDENTITY_AUDIT.md`.
+ * what lets a subscriber drive cache eviction and data fan-out from the notice alone.
  *
  * Fields are optional because scope genuinely differs: a venue change has no `eventId`, and forcing one
  * would invent precision that does not exist.

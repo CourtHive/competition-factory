@@ -40,7 +40,7 @@ it('a line whose score is cleared loses its order of finish; the later lines mov
   const { matchUp } = tournamentEngine.findMatchUp({ drawId, matchUpId: cleared.matchUpId });
   expect(matchUp?.matchUpStatus).toEqual(TO_BE_PLAYED);
   expect(matchUp?.orderOfFinish).toBeUndefined();
-  // a dual's collection is compacted (CA 2026-11-01, order-of-finish D1): 2, 3 become 1, 2
+  // a dual's collection is compacted: 2, 3 become 1, 2
   others.forEach(({ matchUpId }, index) => expect(orderOf(drawId, matchUpId)).toEqual(index + 1));
 });
 

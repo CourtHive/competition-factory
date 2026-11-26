@@ -13,7 +13,7 @@ import type { OutcomeOp } from '@Mutate/matchUps/outcome/ops';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 /**
- * THE WORKING VIEW (outcome v2 executor plan § 3.2; S2, CA 2026-10-24): the draw as a plan's ops will leave it, read
+ * THE WORKING VIEW (outcome v2 executor plan § 3.2; S2): the draw as a plan's ops will leave it, read
  * without writing the record. Copy on write, folded by the one reducer, re-derived locally by projection.
  *
  * Its correctness over the suite is the view oracle's (`differential`: every complete plan's working view against a

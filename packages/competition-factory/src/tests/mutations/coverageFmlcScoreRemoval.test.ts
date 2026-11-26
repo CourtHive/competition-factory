@@ -133,7 +133,7 @@ describe('FMLC score removal coverage for removeDirectedParticipants branches', 
        *
        * This removed the Main round-2 outcome while the consolation still stood, and was permitted
        * because `isActiveDownstream` declared a fed FMLC BYE inert even when the matchUp beyond it
-       * was decided. That is the defect CA identified 2026-09-21: an outcome whose propagation is
+       * was decided. That is the defect: an outcome whose propagation is
        * load-bearing for decided downstream results must not be re-scorable. It is now refused.
        *
        * The branch this test exists to cover is reached the same way by unwinding in dependency

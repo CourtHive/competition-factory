@@ -10,7 +10,7 @@ import fs from 'fs';
  * Full-state dump around ONE step of ONE census seed. INERT unless `TRACE=1`.
  *
  *   TRACE=1 SEED=9000402 STEP=27 OUT=/tmp/trace.txt \
- *     SCHEDULES_IN=../Mentat/fixtures/exit-propagation-census/sched-w1.jsonl \
+ *     SCHEDULES_IN=path/to/sched-w1.jsonl \
  *     npx vitest run src/tests/mutations/exitPropagation/refusalTrace.test.ts
  *
  * Writes to `OUT`, because the vitest config swallows console output. Before and after `STEP` it

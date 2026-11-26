@@ -14,7 +14,7 @@ import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
  * `bulkMatchUpStatusUpdate` forwarded only `schedule`, `matchUpFormat` and the outcome to each `setMatchUpStatus`,
  * and dropped even the `policyDefinitions` it was given. So `allowChangePropagation`, `propagateExitStatus` and
  * `propagateRetirementAsExit` never reached it: a walkover entered in bulk carried nowhere while the same walkover
- * entered singly carried into the consolation (TASKS, found 2026-10-15). No CourtHive app calls the bulk method;
+ * entered singly carried into the consolation (found 2026-10-15). No CourtHive app calls the bulk method;
  * the exposure is external integrators.
  *
  * Each case runs one tournament record three ways: singly, in bulk with the options on the call, and in bulk with

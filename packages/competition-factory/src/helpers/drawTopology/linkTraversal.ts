@@ -6,7 +6,7 @@ import type { Structure } from '@Types/tournamentTypes';
 
 /**
  * HOW A LINK TRAVERSES: BY FINISHING POSITION OR BY ROUND. Every reader of `drawDefinition.links` that needs to know
- * which kind of link it holds asks here, never `linkType` alone (CA, 2026-10-23).
+ * which kind of link it holds asks here, never `linkType` alone.
  *
  *  - BY FINISHING POSITION: the link names `source.finishingPositions`, the places in its source that cross it. A ROUND
  *    ROBIN decides who leaves it by tally, once its groups are complete, so a link out of a round robin is directed by

@@ -14,7 +14,7 @@ import { TEAM } from '@Constants/eventConstants';
  * line-ups there, and the loser's was reckoned as a consolation feed's is (`propagateLoserLineUp`: a first-round target
  * takes the side its source's round position gives), which for the final is side 1: the winner's side. Rendered, the
  * winning team stood on side 1 holding the losing team's line-up, and each line of the Decider showed the same pair on
- * both sides. CA, 2026-11-15: fixed in v1 and in the outcome pipeline v2 together; the loser of a final sits second.
+ * both sides. Fixed in v1 and in the outcome pipeline v2 together; the loser of a final sits second.
  *
  * Asserted on the hydrated Decider, for the final won by either side: the undefeated finalist winning leaves the
  * Decider a DEAD_RUBBER; the Backdraw champion winning leaves it to be played, with the line-ups a director would see.

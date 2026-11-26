@@ -9,10 +9,9 @@ import { SET } from '@Constants/matchUpFormatConstants';
 
 /**
  * Whether a matchUpFormat code is valid FOR NEW USE: well-formed (see `isWellFormedMatchUpFormat`),
- * and not one of the formats the scoring engine specification refuses for a new format (§ 16,
- * decision 19; CA 2026-10-18):
+ * and not one of the formats the scoring engine specification refuses for a new format (§ 16):
  *
- * - an implicit best-of with an even count (CA 2026-11-03): exactly-N play requires X, and aggregate
+ * - an implicit best-of with an even count: exactly-N play requires X, and aggregate
  *   scoring requires A; a level exactly-two result remains valid;
  * - a standard set whose tiebreak comes below S − 1 (`@T` with T < S − 1, § 4.2): the set would close
  *   below S without its tiebreak;
@@ -67,7 +66,7 @@ export function validateMatchUpFormat({ matchUpFormat }: { matchUpFormat: string
 
 /**
  * Whether a matchUpFormat code is well-formed: what `parse` reads. `parse` refuses exactly what this
- * refuses (CA, 2026-10-02), so this is that question asked of `parse` — see its comment for what
+ * refuses, so this is that question asked of `parse` — see its comment for what
  * well-formed means. Use it where a STORED format is read (scoring, timing, a stored tieFormat).
  */
 export function isWellFormedMatchUpFormat({ matchUpFormat }: { matchUpFormat: string }): boolean {

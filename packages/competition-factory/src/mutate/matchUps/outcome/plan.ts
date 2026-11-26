@@ -125,7 +125,7 @@ import type {
  */
 
 /**
- * A lucky draw's double exit produces no downstream entrant (`doubleExitAdvancement`, CA 2026-11-17).
+ * A lucky draw's double exit produces no downstream entrant (`doubleExitAdvancement`).
  */
 const luckyDoubleExit = ({ view, request }: Pick<PlanArgs, 'view' | 'request'>): boolean =>
   !!view.draw.luckyBased && (isDoubleExit(request.matchUpStatus) || isDoubleExit(view.existing.matchUpStatus));
@@ -223,7 +223,7 @@ function convertedShapeReason({ request, view, write, route }: PlanArgs): Abstai
 }
 
 /**
- * A line on a dual decided by its own exit or call that keeps its winner (CA, 2026-11-20, class 4): v1 writes the line
+ * A line on a dual decided by its own exit or call that keeps its winner (class 4): v1 writes the line
  * and leaves the dual as it stands, which no planner plans. Asked last, so a call another reason already abstains from
  * keeps that reason: only a call the planners would otherwise plan is handed to v1's whole write (`team`). So is a line
  * whose tally relabels the dual's own exit a played result, which settles the exit's carry (`relabelDualExitByTally`).
@@ -323,7 +323,7 @@ function shapeReason(
  * as the call found it (`resultRemovalReason`), then S5's double exit, planned on the draw as the removal leaves it: the
  * removal and the matchUp left with no result are folded into the working view, which is read again (`rebuild`), and the
  * double exit is planned there as on a matchUp holding no result. The write is the route's own: a DOUBLE_WALKOVER blanks
- * the score, a DOUBLE_DEFAULT keeps it (CA, 2026-10-02).
+ * the score, a DOUBLE_DEFAULT keeps it.
  */
 function resultToDoubleExit(args: PlanArgs): OutcomePlan {
   const { view, request, rebuild } = args;
@@ -1097,8 +1097,8 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   // v1's `reconcileScoredTimes` runs last and skips any matchUp `matchUpIsScored` finds scored, so a reconcile write is
   // faithful only where the matchUp's LAST result write leaves it unscored. A convergence's write is always a double
   // exit in `completedMatchUpStatuses`, stamping by default, so `convergedWrites` is a proof of "scored at the end"
-  // without reading the end state. Keyed on the convergence rather than on "any later result write of the same matchUp"
-  // (Mentat assessment/2026-11-07-outcome-refactor-debates.md, ruling 7): a later write that stamps or is scored agrees
+  // without reading the end state. Keyed on the convergence rather than on "any later result write of the same
+  // matchUp": a later write that stamps or is scored agrees
   // with that rule, but a later unscored write carrying `stampsScoredTime: false` would need the reconcile write kept
   // and moved after it, and position alone cannot tell the two apart. Before widening this to one end-of-plan pass,
   // assert over the census that no candidate's matchUp takes a non-convergence result write later in the plan.
@@ -1118,7 +1118,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
 }
 
 /**
- * RECORDED (CA, 2026-11-16): a first double exit whose seats or produced exit the planners do not write is read off the
+ * RECORDED: a first double exit whose seats or produced exit the planners do not write is read off the
  * double-exit module on a copy of the record (`plan/recordedCascade.ts`), after the call's own write and nothing else
  */
 function recordedCascade(

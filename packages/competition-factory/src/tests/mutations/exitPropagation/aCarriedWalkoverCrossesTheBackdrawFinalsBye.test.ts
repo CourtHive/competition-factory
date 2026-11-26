@@ -10,7 +10,7 @@ import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 /**
  * A CARRIED WALKOVER CROSSES THE BACKDRAW FINAL'S BYE INTO THE GRAND FINAL (census de 9304724, DOUBLE_ELIMINATION 8/6,
- * both arms; found by the outcome v2 S0 census replay under `differential`; CA ruling 2026-10-23).
+ * both arms; found by the outcome v2 S0 census replay under `differential`).
  *
  * Three first-round matchUps are double walkovers or BYEs, so the whole Backdraw is BYEs. `Main|3|1`, the Main
  * structure's final, is recorded WALKOVER won by P5. P6, who lost by walkover, drops into the Backdraw final, which holds

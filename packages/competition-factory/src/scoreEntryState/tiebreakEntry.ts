@@ -7,8 +7,8 @@ import type { SetFormat, SideNumber } from './types';
 /**
  * Entering a set that IS a tiebreak — a match tiebreak.
  *
- * CA, 2026-09-28: *"For tiebreaks the lower score should always be entered first ... if the lower score is equal to
- * or greater than the tiebreakTo value, the complement is +2."* The operator types ONE number, the lower score, and
+ * For a tiebreak the lower score is always entered first; when it is equal to or greater than the
+ * tiebreakTo value, the complement is +2. The operator types ONE number, the lower score, and
  * the winner's is derived, which removes the ambiguity of a keypad alternating between two cells (`1` then `0` as a
  * ten, or as a one and a nothing). The derivation is the factory's `getTiebreakComplement`, which computes exactly
  * `max(tiebreakTo, lowValue + 2)` (measured across TB7 and TB10); it is not restated here.

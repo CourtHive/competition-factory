@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 /*
- * A game in a tiebreak-only segment (scoring-engine spec § 2.2, § 5; § 16 decision 11, CA 2026-10-18): "A
+ * A game in a tiebreak-only segment (scoring-engine spec § 2.2, § 5; § 16 decision 11): "A
  * game given as game input in a tiebreak-only segment is the segment won 1-0, with tiebreakScore as its
  * points, checked against the race to n (11-9 is accepted for TB11, 11-10 is refused); the input levels keep
  * offering game there." v1 added one point toward the target, so SET3-S:TB11 needed eleven addGame calls for
@@ -24,7 +24,7 @@ function setScores(engine: ScoringEngine) {
     ]);
 }
 
-describe('§ 5 a game in a tiebreak-only segment is the segment won 1-0 (CA 2026-10-18, decision 11)', () => {
+describe('§ 5 a game in a tiebreak-only segment is the segment won 1-0 (decision 11)', () => {
   it('SET3-S:TB11: one addGame wins a set, and two win the match', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:TB11' });
     engine.addGame({ winner: 0 });

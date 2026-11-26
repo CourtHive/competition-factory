@@ -5,7 +5,7 @@
  * WHY THIS EXISTS
  * Measured 2026-11-05 on dev `8f5eb05a9e`: 94 of the factory's 119 source directory groups formed one import
  * cycle, held together by 181 runtime imports into higher layers. Nothing can become a package while that holds.
- * Mentat/planning/FACTORY_LAYERING_PLAN.md moves each of those imports' code to its best home; this ratchet stops
+ * The layering work moves each of those imports' code to its best home; this ratchet stops
  * new ones landing while it does, and holds the result at 0 afterwards.
  *
  * THE LAYERS (lowest first; the plan's table, as data in LAYERS below)
@@ -35,8 +35,7 @@
  * The type-only forms excluded above are counted separately: `import type`, `export type`, a statement whose
  * every named binding is `type`-qualified, and every `import('...')` type node (`typeof import('...')` included).
  * A type edge into a higher layer drags that layer into every type-check program that loads the file, so it
- * breaks the type-graph split (Mentat/planning/FACTORY_TYPE_GRAPH_SPLIT_PLAN.md, decision 6: ratchet type edges
- * everywhere). They have their own baseline, `baseline/layers-types.json`, keyed and ratcheted the same way.
+ * breaks the type-graph split, which ratchets type edges everywhere. They have their own baseline, `baseline/layers-types.json`, keyed and ratcheted the same way.
  *
  * THE RULE
  * Each baseline holds every violating edge as `from -> to` with its multiplicity. A key whose count RISES above

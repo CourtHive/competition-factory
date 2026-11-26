@@ -71,7 +71,7 @@ export function getScoreboard(matchUp: MatchUp, options?: GetScoreboardOptions):
 
   if (!inPlay) return setStrings.join(', ');
 
-  // The game in play, read by the format governing the set in play (spec § 3.2, § 11.3; CA 2026-10-18)
+  // The game in play, read by the format governing the set in play (spec § 3.2, § 11.3)
   let p1: number;
   let p2: number;
   if (tiebreakAtTime) {

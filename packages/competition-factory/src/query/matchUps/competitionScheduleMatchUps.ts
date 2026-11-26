@@ -158,7 +158,7 @@ function competitionScheduleMatchUpsUnredacted(
     const onDate = (matchUp: HydratedMatchUp) =>
       matchUp.schedule?.courtId && (!scheduledDate || matchUp.schedule?.scheduledDate === scheduledDate);
     // and the exits the cascade produced that hold a court — decided, never played, the same
-    // invisible occupant a BYE is (CA, 2026-10-01); they sit in the completed bucket by status
+    // invisible occupant a BYE is; they sit in the completed bucket by status
     const producedExits = (completedMatchUps ?? []).filter(
       (matchUp) => matchUp.matchUpStatus !== BYE && matchUpWillNeverBePlayed({ matchUp }),
     );

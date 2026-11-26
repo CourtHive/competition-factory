@@ -19,7 +19,7 @@ import {
 import { CONFLICTING_TIME_ZONES, INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 /**
- * Competition time (slice 0-d.1 of Mentat/planning/COMPETITION_CLOCK_INSTRUMENTATION.md): the reads that
+ * Competition time: the reads that
  * DECIDE against "now" (embargoes, live duration, eligibility "today") follow `setCompetitionClock` when one
  * is installed, while record stamps stay on `setClock`. With none installed, nothing changes.
  */

@@ -11,7 +11,7 @@ import { TEAM_EVENT } from '@Constants/eventConstants';
 
 /**
  * `drawPlayedOrderFacts` reads the stored matchUps before it builds the draw's: a draw with nothing placed has no
- * facts (since CA 2026-10-30 an unplayed placement orders too, so "placed", not "played", is what the scan looks for).
+ * facts (an unplayed placement orders too, so "placed", not "played", is what the scan looks for).
  * The stored scan must agree with the built one on every draw shape: a round robin's groups are nested structures, and
  * a TEAM draw's placed matchUps may be its tie matchUps only.
  */

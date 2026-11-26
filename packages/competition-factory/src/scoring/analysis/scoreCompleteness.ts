@@ -22,7 +22,7 @@ type ScoreCompletenessArgs = {
  * `validateScore` → `analyzeScore` asks whether any set EXCEEDS what the format allows, and whether the
  * winner named is the winner the set counts produce. It never asked whether a set was finished, so under
  * `SET3-S:6/TB7` the engine recorded `3-7 6-4 6-4` and `4-2 2-6 2-6` as COMPLETED (measured 2026-10-01).
- * CA: *"accepting 3-7 6-4 6-4 for a standard SET3-S:6/TB7 is unacceptable behavior!"* — ruled a fix to
+ * Accepting `3-7 6-4 6-4` for a standard `SET3-S:6/TB7` was a defect, and closing it is a fix to
  * validation, not a major release.
  *
  * ── The rule ──

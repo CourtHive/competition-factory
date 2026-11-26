@@ -20,7 +20,7 @@ export type ConvergedContext = { drawDefinition?: DrawDefinition; landing?: Land
 
 /**
  * A convergence's write and what it produces on, the one writer of both RULE 4 cells that `modifyMatchUpScore` writes
- * (ruling 3 keeps their decisions apart). The defaults are the produced arrival's; a pending exit converged under the
+ * (their decisions stay apart). The defaults are the produced arrival's; a pending exit converged under the
  * policy off (`handleEmptyExitLoser`) states its own provenance, retained codes, score removal and withdrawals.
  */
 export type ConvergedWrite = {

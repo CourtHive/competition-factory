@@ -141,8 +141,8 @@ export function updateTieMatchUpScore(params: UpdateTieMatchUpScoreArgs): {
   // `unwindDualDoubleExit`). The dual keeps its exit until its lines decide it.
   if (keepsPendingCascadeExit(matchUp, winningSide, heldTieFormat)) return { ...SUCCESS, score: matchUp.score };
 
-  // A DUAL DECIDED BY ITS OWN EXIT OR ITS OWN CALL KEEPS ITS WINNER WHILE ITS LINES PROJECT NONE (CA, 2026-11-20,
-  // class 4; `dualKeepsOwnDecision`). Tallied afresh, it was un-decided by its first line: its winner taken back out of
+  // A DUAL DECIDED BY ITS OWN EXIT OR ITS OWN CALL KEEPS ITS WINNER WHILE ITS LINES PROJECT NONE (class 4;
+  // `dualKeepsOwnDecision`). Tallied afresh, it was un-decided by its first line: its winner taken back out of
   // the next dual and the result there reset. It stands as it is until its lines name a winner of their own.
   if (params.keepsDecision && !winningSide) {
     restoreTieFormat(matchUp, heldTieFormat);
@@ -182,7 +182,7 @@ export function updateTieMatchUpScore(params: UpdateTieMatchUpScoreArgs): {
       winningSide,
   );
 
-  // A DUAL WITH NO RUBBER RESULT HOLDS NO SCORE (CA, 2026-10-05). The generator derives 0-0 whenever no
+  // A DUAL WITH NO RUBBER RESULT HOLDS NO SCORE. The generator derives 0-0 whenever no
   // point is won, so clearing a dual's only result (or "clearing" a rubber that never had one) used to
   // store a 0-0 score on a TO_BE_PLAYED dual. The dual then differed from one that was never touched, and
   // read as UNDECIDED_WITH_SCORE. With no winner and no rubber holding anything, the score is removed.

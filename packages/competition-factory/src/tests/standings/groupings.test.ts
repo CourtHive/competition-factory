@@ -9,7 +9,7 @@ import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 /**
- * Groupings (Mentat `planning/STANDINGS_PHASE_2_PLAN.md` § 1.3, as corrected 2026-11-04): divisions and conferences
+ * Groupings (standings phase 2): divisions and conferences
  * supplied by the caller, with each participant's place in its own group's table. Every expected order is worked by
  * hand from the rule it cites (research report § 4.1 NFL, § 4.2 NBA, § 16 A5).
  */

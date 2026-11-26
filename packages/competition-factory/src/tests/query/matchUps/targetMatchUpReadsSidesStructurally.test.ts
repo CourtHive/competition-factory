@@ -11,8 +11,8 @@ import { DOUBLE_ELIMINATION, WINNER } from '@Constants/drawDefinitionConstants';
  * `getTargetMatchUp` names the drawPosition on the side a link's source feeds, for a target round that
  * reserves no fed slot. It read that position as `drawPositions.length === 2 && drawPositions[index]`,
  * which answers by ARRAY SHAPE: a lone side-2 position held as `[undefined, 1]` was named, the same
- * position held compacted as `[1]` was not (`false`). The leading hole is about to stop being written
- * (Mentat `planning/LEADING_HOLE_REMOVAL_DESIGN.md`), so the reader now asks `getSideDrawPosition`, and
+ * position held compacted as `[1]` was not (`false`). The leading hole is about to stop being written,
+ * so the reader now asks `getSideDrawPosition`, and
  * the two shapes are one matchUp.
  *
  * The shape that reaches it: `DOUBLE_ELIMINATION`'s Main final, the target of the Backdraw's WINNER

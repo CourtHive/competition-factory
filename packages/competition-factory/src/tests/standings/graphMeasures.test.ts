@@ -7,7 +7,7 @@ import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 /**
- * Graph measures (Mentat `planning/STANDINGS_ENGINE_SPEC.md` § 5.2, S4a): read from the whole table, each opponent
+ * Graph measures (S4a): read from the whole table, each opponent
  * scored by the policy's primary measure. Worked by hand on two Swiss-style rounds:
  *
  *   R1: A beat B, C beat D        R2: A beat C, D beat B        wins: A 2, C 1, D 1, B 0

@@ -16,8 +16,8 @@ import type { MatchUpConfig, ScoreEntrySet, SetFormat, SideNumber } from './type
 /**
  * The format questions score entry asks, each DELEGATED to the factory's scoring rules.
  *
- * CA, 2026-09-27: *"why would we hand roll something? The factory should export all the logic we'd need for scoring
- * interfaces"*. Every answer here is `analyzeSet`, `analyzeMatchUp`, `checkSetIsComplete`, the set and tiebreak
+ * Nothing is hand-rolled: the factory exports all the logic a scoring interface needs.
+ * Every answer here is `analyzeSet`, `analyzeMatchUp`, `checkSetIsComplete`, the set and tiebreak
  * complements or the set ceiling; this module only assembles their arguments from a parsed format. Moved here from
  * courthive-components' `dynamicSetsLogic.ts`, which re-exports it unchanged.
  */

@@ -253,7 +253,7 @@ function getEventDataUnredacted(params: GetEventDataArgs): EventDataResult {
   // competitionFormat carries timers/multipliers/penalties that may not yet
   // be public — strip it when consumers are honoring publish state and the
   // event is not yet published. Other eventInfo fields are public metadata
-  // and stay regardless. See Mentat/planning/COMPETITION_FORMAT_HYDRATION.md.
+  // and stay regardless.
   if (usePublishState && !eventPublished) {
     delete eventInfo.competitionFormat;
   }

@@ -31,7 +31,7 @@ import {
 } from '@Constants/drawDefinitionConstants';
 
 /**
- * P53: `addGoesTo` and `addUpcomingMatchUps` hand `positionTargets` an index built once per call, in place of
+ * `addGoesTo` and `addUpcomingMatchUps` hand `positionTargets` an index built once per call, in place of
  * scanning `inContextDrawMatchUps` several times per matchUp. The index claims to answer exactly what the scans
  * answer. Asked here of every matchUp of every draw shape, fresh and part-played, both ways round: the targets
  * with and without the index, with and without `useTargetMatchUpIds`, and the edges `addGoesTo` writes against

@@ -14,7 +14,7 @@ import type { Applicant, EventProposal, TournamentProposal, SanctioningPolicy } 
  * engine-minted UUID.
  *
  * This is not a cosmetic API nicety. A site server mirrors `{ method, params }`
- * upstream (see `Mentat/planning/DISCONNECTED_SYNC_RECONCILIATION.md`), so a
+ * upstream, so a
  * mutation that mints its id engine-side produces a DIFFERENT id on the cloud
  * than it did locally, and every later mirrored mutation that references that id
  * fails to resolve upstream. Identity has to be minted once, at the origin, and

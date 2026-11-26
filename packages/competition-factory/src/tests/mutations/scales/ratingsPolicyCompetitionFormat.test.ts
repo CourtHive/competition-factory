@@ -10,7 +10,7 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_RATINGS } from '@Constants/policyConstants';
 
-// ratings policy S3 (Mentat planning/RATINGS_POLICY_PLAN.md § 3.2; CA 2026-11-05 Q4 "both"): a competitionFormat
+// ratings policy S3: a competitionFormat
 // selects a ratings policy by preset name or inline, after a passed policy and one attached to the event or tournament
 
 const HOCKEY = 'PER3XA-S:T20P-O:1SD/T5P-F:SO5';

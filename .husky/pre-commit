@@ -3,7 +3,7 @@ set -e
 pnpm lint-staged
 pnpm check-types
 # The cheap gates CI's `gates` job runs, so a ratchet rise is refused here and not twenty minutes into a CI run
-# (CA, 2026-10-07; #5269 lost a run to implicit-any, #5270 to any-count). About 20s on top of check-types.
+# (#5269 lost a run to implicit-any, #5270 to any-count). About 20s on top of check-types.
 pnpm verify:generated
 pnpm verify:implicit-any
 pnpm verify:hard-union

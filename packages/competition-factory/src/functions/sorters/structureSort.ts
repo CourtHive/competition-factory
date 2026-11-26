@@ -38,7 +38,7 @@ export function structureSort(a: Structure | undefined, b: Structure | undefined
   };
 
   // a matchUp that will never be played (a BYE; completedMatchUpStatuses already holds ABANDONED, CANCELLED and
-  // DEAD_RUBBER) does not keep a structure from reading as completed (CA 2026-10-06)
+  // DEAD_RUBBER) does not keep a structure from reading as completed
   const isCompleted = ({ matchUpStatus }: MatchUp) =>
     !!matchUpStatus && (matchUpStatus === BYE || completedMatchUpStatuses.includes(matchUpStatus));
   const completedStructure = (s?: Structure): number => (structureMatchUps(s).every(isCompleted) ? 1 : 0);

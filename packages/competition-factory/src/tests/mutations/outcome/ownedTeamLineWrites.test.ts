@@ -1849,7 +1849,7 @@ const RECORDED: [string, Scenario][] = [
     },
   ],
   [
-    // the title is the fixed corpus's identity for these calls, so it stands: since CA's 2026-11-20 class 4 ruling the
+    // the title is the fixed corpus's identity for these calls, so it stands: since the class 4 rule the
     // line no longer un-decides the dual (decided by its own call, it keeps its winner)
     "a line DEFAULTED under a scoring policy's processCodes un-deciding its dual: v1's (the codes on the line, exitReason)",
     {

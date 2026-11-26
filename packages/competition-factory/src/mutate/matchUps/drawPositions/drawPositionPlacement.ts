@@ -228,7 +228,7 @@ export function assignMatchUpDrawPosition({
    * `holdsPropagatedExit` while only one of them had anything to do with propagation:
    *
    *  - the cascade DELIVERED an exit here — asked of provenance, because a pending exit has no
-   *    `winningSide` until somebody arrives (CA, Migration §20, 2026-09-20);
+   *    `winningSide` until somebody arrives (Migration §20);
    *  - a director RECORDED one here, with a `winningSide`, before the opponent was known.
    *
    * The second is not a propagated exit and must not be dropped on the grounds that it is not one.
@@ -242,7 +242,7 @@ export function assignMatchUpDrawPosition({
    * `participantArrivesAtExit` is the narrower question the award and advancement paths need: is
    * the drawPosition arriving here occupied by a participant? An EMPTY position arriving resolves
    * nothing — *"awarding against an empty slot asserts a winner over an opponent who does not
-   * exist"*, CA 2026-09-20 — so it must not award a winningSide, must not rewrite the carried
+   * exist"* — so it must not award a winningSide, must not rewrite the carried
    * codes, and must not advance anyone onward. It must still leave the exit's STATUS alone, which
    * is what `holdsStandingExit` governs below.
    */
@@ -254,8 +254,8 @@ export function assignMatchUpDrawPosition({
     (assignment) => assignment.drawPosition === drawPosition,
   )?.participantId;
   /**
-   * AN ARRIVAL THAT CARRIES AN EXIT DOES NOT WIN THE EXIT STANDING HERE — it CONVERGES with it (F3, CA
-   * 2026-10-04: fix the arrival itself). A loser carrying a WALKOVER or DEFAULTED under propagation can reach
+   * AN ARRIVAL THAT CARRIES AN EXIT DOES NOT WIN THE EXIT STANDING HERE — it CONVERGES with it (the fix is in
+   * the arrival itself). A loser carrying a WALKOVER or DEFAULTED under propagation can reach
    * a matchUp holding a pending exit before `progressExitStatus` has recorded the exit they carry: `directLoser`
    * places them, and a BYE opposite them advances them here at once (`advanceIntoWinnerMatchUp`). Read as an
    * ordinary arrival they were awarded the standing exit and advanced, even into a recorded exit's vacant side
@@ -311,7 +311,7 @@ export function assignMatchUpDrawPosition({
    * `West|2|1` stayed `WALKOVER` with a participant and no winner.
    *
    * That state is worse than it looks: it is stuck AND invisible to `getStructureInconsistencies`,
-   * whose stall test requires `TO_BE_PLAYED`. CA, 2026-09-25, named the distinction it turns on — a
+   * whose stall test requires `TO_BE_PLAYED`. The distinction it turns on — a
    * position is *genuinely* active only when something was played there, as opposed to *advanced*
    * active.
    *
@@ -342,7 +342,7 @@ export function assignMatchUpDrawPosition({
    * stall in the matrix that carried a single exit status.
    */
   // A correction can replace the team at a seat that has already played this dual. A director's
-  // recorded award stays with its seat (P52). Only an actual pending exit is resolved on arrival.
+  // recorded award stays with its seat. Only an actual pending exit is resolved on arrival.
   const replacesTeamAtRecordedExit =
     matchUp?.matchUpType === TEAM &&
     !!matchUp.winningSide &&
@@ -463,7 +463,7 @@ export function assignMatchUpDrawPosition({
       });
   if (byeResult?.error) return byeResult;
 
-  // P39 — a loser target that can never be filled, because the side that would lose has exited.
+  // A loser target that can never be filled, because the side that would lose has exited.
   // Must also run from `carryExitOnward`; see the module docblock on why one site is not enough.
   const unfillableResult = propagateUnfillableLoserBye({
     matchUpId: matchUp?.matchUpId,
@@ -545,7 +545,7 @@ function applyPositionToMatchUp({
       })
     : undefined;
   // a produced exit is awarded to the arriving side only when somebody ARRIVES: an empty position reaching it
-  // resolves nothing (CA 2026-09-20; Q3, 2026-10-04: census w1 9000477 `South|3|1`, awarded to an empty dp 7)
+  // resolves nothing (census w1 9000477 `South|3|1`, awarded to an empty dp 7)
   //
   // THE STRUCTURAL SIDE FIRST. `getExitWinningSide` reads the hydrated view, and here that view predates this
   // placement: the arriving drawPosition is on no side yet, so on a fed round it falls back to side 1 whatever the
@@ -566,7 +566,7 @@ function applyPositionToMatchUp({
 
   // The arrival can move the participant already here to the other side (a lone position sits on its bracket side,
   // two sort ascending). Everything recorded by side moves with them; `winningSide` is assigned below from the side
-  // the arrival takes, so it is left to that (CA, 2026-10-05: `setMatchUpDrawPositions`).
+  // the arrival takes, so it is left to that (`setMatchUpDrawPositions`).
   const { sideChanged } = rekeySideFacts({
     structureId: inContextMatchUp?.structureId,
     drawPositions: updatedDrawPositions,
@@ -579,7 +579,7 @@ function applyPositionToMatchUp({
   // exit code must follow the EXITING participant to its new side (opposite the advancing
   // winner) — otherwise it mislabels the winner. Mirrors resolvePropagatedExitOnAdvance.
   if (advancedExitWinningSide && !isDoubleExitExit) {
-    // P37. The carried exit's SIDE is a fact about provenance, which is side-keyed and already holds
+    // The carried exit's SIDE is a fact about provenance, which is side-keyed and already holds
     // it; the legacy array carried the same fact positionally and this branch used to re-site it
     // there. Measured at this exact site over the exit-propagation and matchUpStatus suites
     // (2026-09-27, 113 arrivals): where the array held a code it was the projected shape and its
@@ -596,8 +596,8 @@ function applyPositionToMatchUp({
     /**
      * A LEGACY-ARRAY GATE ON A NATIVE WRITE — still here, and REMOVING IT IS MEASURED WRONG.
      *
-     * `MATCHUP_STATUS_CODES_PER_SIDE.md` lists this inversion class among its decision sites, and P37's
-     * destination is that no behaviour derives from `matchUpStatusCodes`. This one does: the array decides
+     * `MATCHUP_STATUS_CODES_PER_SIDE.md` lists this inversion class among its decision sites, and the exit
+     * tenant's eviction aims for no behaviour deriving from `matchUpStatusCodes`. This one does: the array decides
      * whether the late-learned origin is recorded natively.
      *
      * Calling `recordSourceSideProvenance` unconditionally instead — on the reasoning that it refuses to
@@ -616,7 +616,7 @@ function applyPositionToMatchUp({
      * | matchUps that ARE an exit | 218 | **209** |
      *
      * Without the gate an ORDINARY advancement gets an origin stamped on it — provenance on non-exit
-     * matchUps almost QUADRUPLES — and `sideExitProvenance` is PRESENCE-read (punch-list **P19**: *"one
+     * matchUps almost QUADRUPLES — and `sideExitProvenance` is PRESENCE-read (*"one
      * bad writer silently flips every exclusion"*). Every rule that exempts "a matchUp with provenance"
      * then exempts matchUps that were simply played, which is why the failures land in
      * `transitionProperties` rather than in anything about codes. The exit count MOVING (218 → 209) says
@@ -691,7 +691,7 @@ function applyPositionToMatchUp({
  *
  * ## It does not fire, and until 2026-09-29 half the time it COULD not
  *
- * CA asked, 2026-09-13, whether this guard should ever fire once the upstream errors were resolved.
+ * The question was whether this guard should ever fire once the upstream errors were resolved.
  * Measured over the full suite with a file trace, because the reporter swallows output from passing
  * files and a silent trace reads exactly like a dead path: **1,581 calls, 0 firings**, and forcing it
  * to `false` changes no test.
@@ -700,7 +700,7 @@ function applyPositionToMatchUp({
  * `drawPositions[winningSide - 1]`, which is only sound while both positions are present, and **801
  * of the 1,581 calls hold a LONE position**. With `winningSide: 2` and one position held that reads
  * index 1, finds nothing, and the guard cannot fire whatever arrived. `getWinningSideDrawPosition`
- * resolves the side structurally; with it the count is still 0 of 1,582, so the answer to CA's
+ * resolves the side structurally; with it the count is still 0 of 1,582, so the answer to that
  * question is yes — but now it is an answer, where before it was a blind spot agreeing with one.
  *
  * Kept rather than deleted. It costs nothing, the hazard it names is real, and a guard that is able
@@ -904,7 +904,7 @@ function advanceDrawPosition(params) {
       : advanceIntoWinnerMatchUp(params);
   }
 
-  // a lucky draw's double exit advances nobody (CA, 2026-11-17): whoever arrives beside its empty seat waits there
+  // a lucky draw's double exit advances nobody: whoever arrives beside its empty seat waits there
   if (inContextMatchUp && !inContextMatchUp.feedRound && !isLuckyBasedDraw(params.drawDefinition?.drawType)) {
     const { pairedPreviousMatchUpIsDoubleExit } = getPairedPreviousMatchUpIsDoubleExit({
       targetMatchUp: matchUp,
@@ -1040,7 +1040,7 @@ export function propagateConsolationBye({
    * correction only while the consolation is UNPLAYED. Once a consolation result exists the
    * correction is REFUSED outright by the active-downstream guard
    * (`ERR_UNCHANGED_CANNOT_CHANGE_WINNING_SIDE`) — a main-draw change may not percolate into a
-   * backdraw that has started, CA 2026-09-22 — so there is no stale reservation left to withdraw.
+   * backdraw that has started — so there is no stale reservation left to withdraw.
    * `consolationByeWithdrawnOnCorrection.test.ts` pins both halves.
    */
   if (!byePropagation && loserMatchUp) {
@@ -1234,7 +1234,7 @@ export function directWinner({
 /**
  * A PLACEMENT ACROSS A LINK THAT FAILS IS LOGGED, NOT RETURNED. It runs mid-cascade, after the call has written the source
  * matchUp's result, and a refusal from here would leave that write behind (an error must change nothing, with no
- * rollback by the caller; CA 2026-10-22). Of `assignDrawPosition`'s refusals, the only ones these branches can meet are
+ * rollback by the caller). Of `assignDrawPosition`'s refusals, the only ones these branches can meet are
  * the participant already holding a position in the target structure (the seated case is skipped above) and a seeded
  * participant on a drawPosition the seeding policy does not allow. Measured 2026-10-22: neither is reached over the
  * suite and the frozen census windows once the seated case is skipped.
@@ -1581,7 +1581,7 @@ export function assignDrawPosition({
       event,
     });
   } else {
-    // A REFUSAL PLACING THE POSITION INTO ITS MATCHUPS IS THE ASSIGNMENT'S REFUSAL (CA, 2026-11-20, with option D). It
+    // A REFUSAL PLACING THE POSITION INTO ITS MATCHUPS IS THE ASSIGNMENT'S REFUSAL. It
     // was dropped here, so a placement whose onward advance was refused (ERR_EXISTING_POSITION_ASSIGNMENT) reported
     // success over a draw it had left inconsistent. The one known path to it, an exit on a TEAM dual awarded to its
     // present team opposite an empty seat, is now refused upstream (`teamExitAgainstEmptySeatRefused.test.ts`).

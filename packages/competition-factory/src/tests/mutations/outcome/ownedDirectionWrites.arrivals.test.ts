@@ -50,7 +50,7 @@ afterEach(() => {
   setClock();
 });
 
-describe('C17 a cleared Main final whose loser a link fed is v2s (decision 5; ruling 10 found the shape)', () => {
+describe('C17 a cleared Main final whose loser a link fed is v2s (decision 5)', () => {
   // `removalOps` emits a final's loser leg alone, as `resultToDoubleExit` needs; until C17 `removedOps` guarded a final
   // out before it, and that empty plan left the fed seat occupied, which the settle check abstained on. The guard is
   // gone: v1's `removeDirectedLoser` clears the seat and announces the consolation matchUp, and v2 plans the same.

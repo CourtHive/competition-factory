@@ -7,7 +7,7 @@ import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 /**
- * commonOpponents (Mentat `planning/STANDINGS_PHASE_2_PLAN.md` § 1.2): NFL Tie-Breaking Procedures, "won-lost-tied
+ * commonOpponents (standings phase 2): NFL Tie-Breaking Procedures, "won-lost-tied
  * percentage in common games", a tie worth half a win, with a minimum of four common games for a wild card. Worked by
  * hand on an unbalanced schedule, where not everyone meets everyone (a season's shape):
  *

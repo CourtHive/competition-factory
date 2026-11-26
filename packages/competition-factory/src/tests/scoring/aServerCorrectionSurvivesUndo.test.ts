@@ -2,8 +2,8 @@ import { ScoringEngine } from '@Scoring/engine/ScoringEngine';
 import { describe, expect, it } from 'vitest';
 
 /*
- * A server correction survives undo and rebuild (scoring-engine spec § 2.6, § 10.6, § 12.3; § 16 decision 16,
- * CA 2026-10-18): "With recordEntry: false it is not an action of its own: it is recorded attached to the
+ * A server correction survives undo and rebuild (scoring-engine spec § 2.6, § 10.6, § 12.3; § 16 decision 16):
+ * "With recordEntry: false it is not an action of its own: it is recorded attached to the
  * preceding entry, replayed with it, and undone with it, so undoing that point removes the correction too."
  * v1 changed the orientation without a record, and the next rebuild lost it (SET3-S:6/TB7: servers 1, 1,
  * then after one undo the surviving point's server was 0); INTENNSE re-applies it after every point and
@@ -14,7 +14,7 @@ function servers(engine: ScoringEngine) {
   return engine.getState().history!.points.map((point) => point.server);
 }
 
-describe('§ 2.6 a recordEntry: false correction is attached to the entry before it (CA 2026-10-18, decision 16)', () => {
+describe('§ 2.6 a recordEntry: false correction is attached to the entry before it (decision 16)', () => {
   it('SET3-S:6/TB7: servers 1, 1; after one undo the surviving point keeps server 1', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     engine.addPoint({ winner: 0 });

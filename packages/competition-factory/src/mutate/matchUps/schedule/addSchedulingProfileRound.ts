@@ -93,7 +93,7 @@ export function addSchedulingProfileRound({ tournamentRecords, scheduleDate, ven
   });
   if (!('commit' in planned)) return planned;
 
-  // a round profiled on a day its event does not play is added, and warned about (CA 2026-11-01), beside whatever
+  // a round profiled on a day its event does not play is added, and warned about, beside whatever
   // setSchedulingProfile warns of the profile's other dates
   const warnings = [...(planned.result.warnings ?? [])];
   const verdict =

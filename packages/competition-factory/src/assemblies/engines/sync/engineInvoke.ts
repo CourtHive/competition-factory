@@ -86,7 +86,7 @@ export function engineInvoke(engine: { [key: string]: any }, args: any) {
 
     const mutationStatus = getMutationStatus({ timeStamp }); // timeStamp reaches the record via the factory extension
 
-    // a bulk call that committed some items before refusing one announces what it committed (ruling 33)
+    // a bulk call that committed some items before refusing one announces what it committed
     const committed = result?.success || isPartialCommit(result);
     const notify = committed && params?.delayNotify !== true && params?.doNotNotify !== true;
     if (notify)

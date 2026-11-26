@@ -517,7 +517,7 @@ describe('Phase 2: FMLC cross-structure exit status clearing', () => {
     // DOUBLE_WALKOVER — and the consolation matchUp is re-derived from what remains: the single
     // exit that origin carries, awarded to the side still waiting for R1P1's loser.
     //
-    // ASSERTION CHANGED, 2026-09-19 (CA approved). It read `TO_BE_PLAYED`, and its own comment
+    // ASSERTION CHANGED, 2026-09-19. It read `TO_BE_PLAYED`, and its own comment
     // called that "actual engine behavior" while flagging it as surprising. The play-out is the
     // oracle and it disagrees. Measured on this exact scenario, at `25c0d3466` and with the fix:
     //
@@ -1448,7 +1448,7 @@ describe('Phase 5: Edge cases', () => {
     // a DEFAULTED — not a WALKOVER. That is the point of this MIXED cell: the re-derivation reads
     // what the remaining side actually carries rather than defaulting to the walkover flavour.
     //
-    // ASSERTION CHANGED, 2026-09-19 (CA approved), from `TO_BE_PLAYED`. Same reason as test 2.3,
+    // ASSERTION CHANGED, 2026-09-19, from `TO_BE_PLAYED`. Same reason as test 2.3,
     // which carries the play-out measurement.
     matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
     expect(getTarget({ matchUps, roundNumber: 1, roundPosition: 1, stage: MAIN }).matchUpStatus).toEqual(TO_BE_PLAYED);

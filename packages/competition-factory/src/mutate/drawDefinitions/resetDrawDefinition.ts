@@ -166,7 +166,7 @@ function resetLuckyDrawAssignments({ structure, positionAssignments, isMainOrQua
  *
  * **BYE-ness is read from `positionAssignment`, never from `matchUpStatus`.** The assignment is a
  * fact about the DRAW and is precisely what a reset keeps; the status is not, and a cascade may
- * already have overwritten it (CA, 2026-09-20 — *"in both cases the BYE remains a BYE"*). A feeder
+ * already have overwritten it (*"in both cases the BYE remains a BYE"*). A feeder
  * holding a bye on either of its own positions therefore delivered an advancement nobody played for,
  * whatever its status now says.
  *
@@ -248,8 +248,8 @@ export function resetStructureMatchUps({
  *
  * `toBePlayed` clears `matchUpStatusCodes` and `sideExitProvenance` on every matchUp it overwrites,
  * and a BYE matchUp is deliberately NOT overwritten — the BYE is POSITIONING, which reset keeps, and
- * CA's ruling is that "the BYE remains a BYE" (2026-09-20). The skip took the clear with it: CA hit
- * it on 2026-09-24 in a COMPASS 16 where a `DOUBLE_WALKOVER` at `East|1|2` left `West|1|1` reading
+ * the rule is that "the BYE remains a BYE". The skip took the clear with it: it was hit
+ * on 2026-09-24 in a COMPASS 16 where a `DOUBLE_WALKOVER` at `East|1|2` left `West|1|1` reading
  * `matchUpStatus: BYE` beside `matchUpStatusCodes` describing a WALKOVER that no longer existed, and
  * `North|1|1` holding a `byeClaims` entry for the same vanished exit.
  *

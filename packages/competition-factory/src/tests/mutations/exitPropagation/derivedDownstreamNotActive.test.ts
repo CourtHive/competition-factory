@@ -12,7 +12,7 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
 /**
  * A DERIVED DOWNSTREAM RESULT MUST NOT BLOCK UNWINDING THE THING THAT DERIVED IT.
  *
- * CA, 2026-09-25, unable to clear a `DOUBLE_WALKOVER` in TMX: *"we can see that it is an advanced
+ * Reported, unable to clear a `DOUBLE_WALKOVER` in TMX: *"we can see that it is an advanced
  * propagated WALKOVER where there is no participant that walkedover so the fact that there is a
  * winningSide there and not one further downstream means it should be clearable"* — and, on the
  * mechanism: *"I don't think `{ allowChangePropagation: true }` should be relevant in the case of
@@ -97,7 +97,7 @@ describe('a propagated exit downstream does not make the source unclearable', ()
   });
 
   /**
-   * `allowChangePropagation` is NOT the mechanism — CA ruled that explicitly. The clear must succeed
+   * `allowChangePropagation` is NOT the mechanism, explicitly. The clear must succeed
    * without it, so this asserts the same thing with the flag absent, which the test above already
    * does, AND that passing it changes nothing.
    */

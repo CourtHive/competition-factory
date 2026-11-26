@@ -74,7 +74,7 @@ jobs:
       - run: npm run build
         working-directory: packages/competition-factory
 
-      # The tag-time gate PROVES the tree was verified instead of re-testing it (CA, 2026-10-04).
+      # The tag-time gate PROVES the tree was verified instead of re-testing it.
       # `prepublishOnly` (= `pinst --disable && pnpm verify`) re-ran the whole chain here, ~45 min on
       # one runner, on a tree the checkpoint into master had just verified. A release commit changes
       # only the version files, so verify:verified-release checks exactly that, and that a `Verify`

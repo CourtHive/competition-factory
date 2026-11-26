@@ -89,7 +89,7 @@ const isClear = (request: OutcomeRequest): boolean =>
 function refuseCall(request: OutcomeRequest, view: OutcomeView): Refusal | undefined {
   if (!request.matchUpId) return refuse(1, MISSING_MATCHUP_ID);
   if (!view.hasDrawDefinition) return refuse(2, MISSING_DRAW_DEFINITION);
-  // a winningSide is 1 or 2, or absent; 0 is refused (CA, 2026-10-01)
+  // a winningSide is 1 or 2, or absent; 0 is refused
   if (request.winningSide != null && ![1, 2].includes(request.winningSide)) return refuse(3, INVALID_WINNING_SIDE);
   if (!view.formatRecognized) return refuse(4, UNRECOGNIZED_MATCHUP_FORMAT);
   return undefined;
@@ -146,7 +146,7 @@ function refuseAgainstExisting(request: OutcomeRequest, view: OutcomeView): Refu
       });
   }
 
-  // row 20, checked here: a carried or produced exit is changed at its ORIGIN (CA, 2026-10-03)
+  // row 20, checked here: a carried or produced exit is changed at its ORIGIN
   const rewrite = rewritesCarriedExit({
     existingWinningSide: existing.winningSide,
     existingStatus: existing.matchUpStatus,
@@ -161,7 +161,7 @@ function refuseAgainstExisting(request: OutcomeRequest, view: OutcomeView): Refu
       context: { matchUpStatus: existing.matchUpStatus },
     });
 
-  // row 21, checked here: a malformed round link, the matchUp's own or downstream (CA, 2026-10-06)
+  // row 21, checked here: a malformed round link, the matchUp's own or downstream
   const unreadable = view.unreadableLink;
   if (unreadable) return refuse(21, unreadable.error, { info: unreadable.info, context: unreadable.context });
 
@@ -207,7 +207,7 @@ function refuseAgainstDraw(request: OutcomeRequest, view: OutcomeView): Refusal 
       EXITS.has(matchUpStatus) &&
       participants.count === 1 &&
       (!!flags.propagatingExit || !winningSide || participants.exitAwardable) &&
-      // a direct double exit needs both seats reached (CA 2026-10-04); only the cascade's own write is waived
+      // a direct double exit needs both seats reached; only the cascade's own write is waived
       (!!flags.propagatingExit || !isDoubleExit(matchUpStatus));
     const directing = matchUpStatus ? participantsRequiredMatchUpStatuses.includes(matchUpStatus) : !!winningSide;
     if (!exitWithOne && directing && !participants.required)
@@ -217,7 +217,7 @@ function refuseAgainstDraw(request: OutcomeRequest, view: OutcomeView): Refusal 
       });
   }
 
-  // row 22, asked where v1 asks it: just before row 12 (P52; CA, 2026-10-11)
+  // row 22, asked where v1 asks it: just before row 12
   if (view.correctionKindBlockedBy)
     return refuse(22, CANNOT_CHANGE_OUTCOME, {
       info: 'a result recorded downstream fixes whether this outcome is an exit or a played result',
@@ -302,7 +302,7 @@ function refuseDispatch(request: OutcomeRequest, view: OutcomeView): Refusal | u
       context: { dualMatchUpId: line.dualMatchUpId, dualMatchUpStatus: line.dualMatchUpStatus },
     });
 
-  // row 14 (CA, 2026-11-19; line-decided duals, 2026-11-20): a line whose tally would take away its dual's winner, sent on
+  // row 14 (and line-decided duals): a line whose tally would take away its dual's winner, sent on
   // to a played-on downstream
   if (
     lineTakesPlayedOnDualWinner({
@@ -368,8 +368,8 @@ function refuseRoute(given: OutcomeRequest, view: OutcomeView): Refusal | undefi
     ? { ...given, winningSide: projection.projectedWinningSide, score: projection.score }
     : given;
   // a TEAM dual's single exit entered with a winner by a call that turns auto-calc on, the lines projecting no winner:
-  // an exit with no winner, or beside a winner it does not name; refused before anything is written (CA, 2026-11-18 and
-  // 2026-11-19), whether the dual is decided or not and whether the exit carries or not. A dual scored by hand (the call
+  // an exit with no winner, or beside a winner it does not name; refused before anything is written,
+  // whether the dual is decided or not and whether the exit carries or not. A dual scored by hand (the call
   // disables auto-calc, or names neither flag) is not projected and keeps the winner it names
   if (projection && !projection.projectedWinningSide && isExit(given.matchUpStatus) && !!given.winningSide)
     return refuse(6, INVALID_MATCHUP_STATUS, { info: 'matchUpStatus: ' + given.matchUpStatus });

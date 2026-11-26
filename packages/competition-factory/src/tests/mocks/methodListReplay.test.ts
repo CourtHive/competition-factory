@@ -6,7 +6,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { differences } from './recordDifferences';
 
 /**
- * A generated scenario's method list replays to the same record (CA 2026-10-29). `generateTournamentRecord` with
+ * A generated scenario's method list replays to the same record. `generateTournamentRecord` with
  * `recordMethods` returns the engine calls a client would make to build what it built; replayed through a fresh
  * engine they must produce the same record, apart from the times each write stamps. A write scenario generation
  * makes WITHOUT logging it shows up here as the first difference.

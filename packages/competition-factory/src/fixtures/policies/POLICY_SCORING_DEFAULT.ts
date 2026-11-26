@@ -21,7 +21,7 @@ export const POLICY_SCORING_DEFAULT = {
      */
     requireAllPositionsAssigned: undefined, // default is true; NOT required when value is false
     /**
-     * The three propagation flags are SILENT here on purpose (CA, 2026-10-01: the policy governs,
+     * The three propagation flags are SILENT here on purpose (the policy governs,
      * both ways). A policy that says `true` or `false` on one of these overrules the call; a policy
      * that is silent leaves it to the call, and the engine's own default applies when neither
      * speaks (`undefined` for the two below, `false` for `propagateRetirementAsExit`). The DEFAULT
@@ -39,8 +39,8 @@ export const POLICY_SCORING_DEFAULT = {
      * match is a walkover for the opponent — or as an ordinary loser who may still play, differs by
      * governing body and by event.
      *
-     * **A retiree is out of a MATCH, not out of the EVENT, unless the governing policy says so** —
-     * CA's ruling, 2026-09-13. So the ENGINE default is `false`: the retiring player is directed to
+     * **A retiree is out of a MATCH, not out of the EVENT, unless the governing policy says so**.
+     * So the ENGINE default is `false`: the retiring player is directed to
      * the linked structure as an ordinary loser and their matchUp there is left `TO_BE_PLAYED`. A
      * governing body whose rules end a retiree's participation sets this `true`, and their
      * opponent in the connected structure then receives a walkover; since 2026-10-01 a policy that

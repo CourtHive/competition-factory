@@ -21,8 +21,8 @@ import { HydratedMatchUp } from '@Types/hydrated';
  *
  * Asked once the call has settled, of the matchUps that were double exits before it and are single exits now, awarded
  * or still pending, never mid-call: a convergence can be re-derived and converge again within one call, and a BYE placed
- * in between kept the transient single exit's claim (census 20551581, `aLoserSeatHoldingAByeIsNotConverged`). Since CA
- * ruling (A) (2026-10-21) every policy-off convergence gives its seat's BYE way to the produced exit, so a pending single
+ * in between kept the transient single exit's claim (census 20551581, `aLoserSeatHoldingAByeIsNotConverged`). Since
+ * every policy-off convergence gives its seat's BYE way to the produced exit (`seatShowsBye`), a pending single
  * exit is owed it too where forward play gives a pending exit one: where a double exit produced the exit straight into
  * the matchUp (`conditionallyAdvanceDrawPosition`). An exit relayed past a BYE leaves its pending matchUp's seat empty
  * until the exit is awarded, so a convergence it dissolves back to is owed nothing (census openings policy-off, COMPASS

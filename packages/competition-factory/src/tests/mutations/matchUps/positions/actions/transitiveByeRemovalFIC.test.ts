@@ -80,8 +80,8 @@ it('can remove transitive BYEs in consolation of FIC', () => {
   }));
 
   // every seat is a BYE; which of each pair sits in the later rounds is the one that was already
-  // advanced when its partner became a BYE, and it keeps that advancement (P46) — not information
-  // (CA, 2026-09-29), but pinned so the convention does not drift silently
+  // advanced when its partner became a BYE, and it keeps that advancement — not information,
+  // but pinned so the convention does not drift silently
   expect(filteredOrderedPairs).toEqual([
     [1, 2],
     [3, 4],
@@ -186,10 +186,10 @@ it('can remove transitive BYEs in consolation of FIC', () => {
     structureId: consolationStructure.structureId,
   }));
   // consolation seat 5 (fed by Main 3-4's loser) lost its BYE with Main seat 4 and is EMPTY beside
-  // seat 4's BYE — the generated shape of such a seat is advanced, and it stays advanced (P46).
+  // seat 4's BYE — the generated shape of such a seat is advanced, and it stays advanced.
   // Seat 2's advancement over seat 5 goes with the BYE: seat 5 is no longer one. And seat 5 now
   // faces BYEs in rounds 2 and 3, so it is carried on to round 4 — where generation of the same
-  // occupancy puts it (P47; `emptiedSeatCarriedPastByes.test.ts` compares the two routes).
+  // occupancy puts it (`emptiedSeatCarriedPastByes.test.ts` compares the two routes).
   expect(filteredOrderedPairs).toEqual([
     [4, 5],
     [6, 7],

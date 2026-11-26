@@ -11,7 +11,7 @@ import { DOUBLE_DEFAULT, DOUBLE_WALKOVER, DEFAULTED, RETIRED, WALKOVER } from '@
 import { COMPASS, CURTIS_CONSOLATION, OLYMPIC } from '@Constants/drawDefinitionConstants';
 
 /**
- * A CONVERGENCE DISSOLVED BY A CORRECTION SETTLES WHERE ENTERING THE RESULT DIRECTLY PUTS IT (census P51 carry-past
+ * A CONVERGENCE DISSOLVED BY A CORRECTION SETTLES WHERE ENTERING THE RESULT DIRECTLY PUTS IT (census carry-past
  * family, correction side; policy-off seeds failing EXIT_CODE_ON_WINNER_SIDE, 2026-10-12).
  *
  * Each case enters an exit, then corrects it to a bare win for the same winner. Withdrawing the loser's carry
@@ -19,7 +19,7 @@ import { COMPASS, CURTIS_CONSOLATION, OLYMPIC } from '@Constants/drawDefinitionC
  * status, winner and participants alike, with no exit code on the winning side.
  *
  * - **Pending** (20466254 COMPASS 32/27, 20488568 OLYMPIC 32/29): the kept exit is a double exit's produced walkover
- *   with nobody standing opposite. It lands pending (CA 2026-10-03, Q3); it was awarded to the empty seat, carrying the
+ *   with nobody standing opposite. It lands pending (Q3); it was awarded to the empty seat, carrying the
  *   convergence's codes.
  * - **Codes** (20520641 CURTIS_CONSOLATION 16/11): the winner stands and is right; the withdrawn side's code went with
  *   its exit only in part, leaving one on the winner's side.

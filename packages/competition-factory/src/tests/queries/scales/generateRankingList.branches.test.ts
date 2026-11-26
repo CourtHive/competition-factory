@@ -175,7 +175,7 @@ describe('generateRankingList — branch coverage', () => {
   });
 
   describe('rolling period branches', () => {
-    // CA 2026-11-08: an award with no end date cannot be placed in time, so it is outside every window
+    // an award with no end date cannot be placed in time, so it is outside every window
     it('excludes awards without endDate when a rolling window applies', () => {
       const awards = [
         makeAward({ personId: 'p1', points: 100, endDate: undefined }),
@@ -195,7 +195,7 @@ describe('generateRankingList — branch coverage', () => {
       expect(p1?.countingResults.length).toEqual(1);
     });
 
-    // CA 2026-11-08: a clock is an input; without asOfDate the window ends at the competition clock's date (pinned above)
+    // a clock is an input; without asOfDate the window ends at the competition clock's date (pinned above)
     it('without asOfDate, ends the window at the competition clock date', () => {
       const awards = [
         makeAward({ personId: 'p1', points: 100, endDate: '2020-01-01' }),
@@ -212,7 +212,7 @@ describe('generateRankingList — branch coverage', () => {
       expect(p1?.totalPoints).toEqual(200);
     });
 
-    // CA 2026-11-08: a list that declares no rolling period gets 365 days
+    // a list that declares no rolling period gets 365 days
     it('without rollingPeriodDays, defaults the window to 365 days', () => {
       const awards = [
         makeAward({ personId: 'p1', points: 100, endDate: '2020-01-01' }),

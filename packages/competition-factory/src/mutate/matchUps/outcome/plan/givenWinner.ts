@@ -104,8 +104,7 @@ export function givenWinnerReason(args: ExitReasonArgs): AbstainReason | undefin
   );
 }
 
-// This rule reads the unwind's ops, not a rebuilt view, by design (Mentat
-// assessment/2026-11-07-outcome-refactor-debates.md, ruling 4). `unwoundCarryReason` folds the unwind and asks
+// This rule reads the unwind's ops, not a rebuilt view, by design. `unwoundCarryReason` folds the unwind and asks
 // `plainLoserReason` because the carry needs the rebuilt view anyway and walls every conditioned link; this path
 // keeps FIRST_MATCHUP round two, whose kept-out and standing programs (`unwoundKeptOutOps`,
 // `standingReservationPrograms`) are certified from the exact withdrawal and clear, which the fold erases (a freed
@@ -151,7 +150,7 @@ function unwoundLoserReason(
   return undefined;
 }
 
-// One of the four FIRST_MATCHUP reservation readers kept apart by ruling 9 (see `standingReservationSeat`): this one
+// One of the four FIRST_MATCHUP reservation readers kept apart on purpose (see `standingReservationSeat`): this one
 // reads the seat on the unwound view and consumes the own program's withdrawal and clear.
 /** A FIRST_MATCHUP loser kept out by a qualifying win restores the BYE its own unwind withdrew. */
 export function unwoundKeptOutOps(

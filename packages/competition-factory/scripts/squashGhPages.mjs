@@ -18,7 +18,7 @@ import { execFileSync } from 'node:child_process';
 
 const BRANCH = 'gh-pages';
 const dry = process.argv.includes('--dry');
-// a deadline on every child (punch list P62): a fetch or push that hangs fails the script instead of stalling it
+// a deadline on every child: a fetch or push that hangs fails the script instead of stalling it
 const git = (...args) =>
   execFileSync('git', args, { encoding: 'utf8', timeout: 300_000, killSignal: 'SIGKILL' }).trim();
 

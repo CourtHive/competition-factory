@@ -12,7 +12,7 @@ import fs from 'node:fs';
  * competition profiles, the grammar corpus's edge codes, and every literal in its tests and scoring
  * docs. A format a test or a doc uses is a format someone expects to score, so each one lands in a
  * matrix cell that must be classified. A code that parses but is refused for new use (a tiebreak below
- * S − 1, an aggregate of standard sets; CA 2026-10-18, scoring engine spec § 16 decision 19) is only
+ * S − 1, an aggregate of standard sets; scoring engine spec § 16 decision 19) is only
  * replayed, never scored live, so it is no cell's (the tests that pin the refusal name such codes).
  * Returns code → the first source it was seen in (a path from the repository root, for a file).
  */

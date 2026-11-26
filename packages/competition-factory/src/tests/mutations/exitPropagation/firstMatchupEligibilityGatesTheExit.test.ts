@@ -72,11 +72,11 @@ it('a double exit whose players have both already won does NOT feed the consolat
   expect(inconsistencies ?? []).toEqual([]);
 });
 
-it("CONTROL: a ROUND 1 double exit still reaches the consolation as BYEs on its seats — CA's 2026-09-20 ruling", () => {
+it('CONTROL: a ROUND 1 double exit still reaches the consolation as BYEs on its seats', () => {
   const { find, put } = draw(20324524);
 
   /**
-   * The case CA certified in TMX: *"the missing WALKOVER is not advanced past the [...] BYE in
+   * The case certified in TMX: *"the missing WALKOVER is not advanced past the [...] BYE in
    * consolation R2P1 which should produce a matchUpStatus: WALKOVER in consolation R3P1"*.
    *
    * A ROUND 1 double walkover's players have zero prior wins, so they ARE first-match losers and the
@@ -85,7 +85,7 @@ it("CONTROL: a ROUND 1 double exit still reaches the consolation as BYEs on its 
    *
    * This control once counted the consolation matchUps carrying any `sideExitProvenance`; with exit
    * status not propagated here, the only entries were the double walkover's `byeClaims` on the BYE it
-   * sent over. The ledger is retired (Mentat P58, CA 2026-10-21), so what reached the consolation is
+   * sent over. The ledger is retired, so what reached the consolation is
    * asserted from the draw instead: the seat the double walkover's loser link feeds holds a BYE, so
    * does the seat fed by the second-round matchUp its produced walkover went on into, and those two
    * seats are the BYEs the double walkover is the reason for (`byeSeatsOwedTo`), as its claims were.

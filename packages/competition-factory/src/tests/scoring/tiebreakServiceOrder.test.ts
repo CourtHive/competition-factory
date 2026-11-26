@@ -69,7 +69,7 @@ describe('tiebreak service order (ITF Rule 5(b))', () => {
   });
 
   // Rule 5(b) is tennis's: a tiebreak-only format (squash, table tennis, pickleball and badminton shapes)
-  // derives no server until each sport's own rule is added (spec § 10.2 rule 2; CA 2026-10-18, decision 17).
+  // derives no server until each sport's own rule is added (spec § 10.2 rule 2, decision 17).
   // Pinned in serviceTiebreakOnlyFormats.test.ts; this rotation used to be applied to `SET1-S:TB7` here.
   it('a standalone tiebreak set derives no server, whichever side a setServer names', () => {
     const played = playTiebreak(engineFor('SET1-S:TB7'), alternating(6));

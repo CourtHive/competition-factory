@@ -2,8 +2,8 @@
   "$comment": [
     "Ratchet of the stateless governor tools: statelessGovernorTools.test.ts confirms each name in `confirmed` answers alike",
     "through the engine without a record, with a record loaded, and called directly; and checks each exclusion still holds.",
-    "Candidates: the query/object/no-state rows of Mentat assessment/2026-11-08-factory-role-inventory.csv.",
-    "Plan: Mentat planning/FACTORY_ENGINE_API_MIGRATION_PREP_PLAN.md, slice A; slice C exposes `confirmed` as tools.",
+    "Candidates: the governor exports a role inventory lists as queries taking one params object and no state.",
+    "Slice A confirmed them; slice C exposes `confirmed` as tools.",
     "`exposed` names each confirmed tool's standalone home, the same function (slice C); `unexposed` gives why one has none.",
     "`throwsOnEmptyInput` was five confirmed tools at slice A; slice C made them refuse, so it stays empty."
   ],

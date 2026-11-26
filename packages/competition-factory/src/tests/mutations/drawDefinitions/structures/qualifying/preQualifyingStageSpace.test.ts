@@ -6,7 +6,7 @@ import { expect, it } from 'vitest';
 import { MAIN, QUALIFYING, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 /**
- * A pre-qualifying structure (stageSequence 1) feeding a qualifying structure (stageSequence 2) (CA, 2026-11-17).
+ * A pre-qualifying structure (stageSequence 1) feeding a qualifying structure (stageSequence 2).
  *
  * A stage's space was its sequence's draw positions less the entries of EVERY sequence of the stage: pre-qualifying's
  * 32 positions less qualifying's 24 entries left 8 places, and 24 pre-qualifiers were left out of the draw without an

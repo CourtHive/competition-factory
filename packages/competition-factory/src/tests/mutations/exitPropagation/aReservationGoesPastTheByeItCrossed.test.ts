@@ -26,7 +26,7 @@ import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
  * reservation stayed, `1|2`'s converged walkover arrived opposite it and could not converge with the one already
  * standing, and `4|1`'s Constantine waited on a matchUp that would never produce: STALLED_POSITION.
  *
- * A pending exit is undecided — "a produced exit has no winningSide until a participant arrives" (CA, 2026-09-20) — and
+ * A pending exit is undecided — a produced exit has no winningSide until a participant arrives — and
  * while an exit is being withdrawn a reservation in it is released like any position an undecided matchUp holds. The
  * exit itself stands, for whoever arrives. Falsified before the change: `3|1` WALKOVER with dp 7 alone, `4|1` TO_BE_PLAYED
  * with Constantine alone, one stall.

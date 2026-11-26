@@ -326,9 +326,9 @@ describe("a TEAM call v1 refuses on the copy is not recorded, and is v1's", () =
 
 /**
  * A line's double exit names no winner, so it is never routed `line-score`. On a dual decided by its own call (an exit,
- * or a winner alone) the lines then project no winner, and the dual keeps its winner (CA, 2026-11-20, class 4): v1
+ * or a winner alone) the lines then project no winner, and the dual keeps its winner (class 4): v1
  * writes the line and leaves the dual, and what it directed, as they stand. The planners abstain (`team`); the call is
- * recorded whole. (Before the ruling v1 took the dual's winner back out of the next dual and tallied it in progress.)
+ * recorded whole. (Before this rule v1 took the dual's winner back out of the next dual and tallied it in progress.)
  */
 describe("a line's double exit on a dual decided by its own call is recorded, and the dual keeps its winner", () => {
   const nextDual = (record: string, matchUpId: string) =>
@@ -462,7 +462,7 @@ describe("along a seeded walk of a TEAM draw, a call a recording is asked for le
     let record = stored();
     const total = { asked: 0, made: 0, owned: 0 };
     // 160 steps (was 120): a dual's exit awarded to its present team against a claimed empty seat is now refused
-    // (option D, CA 2026-11-20), which shortened the DOUBLE_ELIMINATION 8 walk to 19 recordings made, under its floor of 20
+    // (option D), which shortened the DOUBLE_ELIMINATION 8 walk to 19 recordings made, under its floor of 20
     for (let step = 0; step < 160; step++) {
       tournamentEngine.setState(structuredClone(record));
       const call = nextCall(random);
@@ -486,7 +486,7 @@ describe("along a seeded walk of a TEAM draw, a call a recording is asked for le
   });
 });
 
-describe.each([DEFAULTED, WALKOVER, RETIRED])('F-006: replacing a stored %s', (matchUpStatus) => {
+describe.each([DEFAULTED, WALKOVER, RETIRED])('replacing a stored %s', (matchUpStatus) => {
   for (const matchUpType of ['SINGLES', 'DOUBLES']) {
     for (const winningSide of [1, 2]) {
       it.each([true, false])(`on a ${matchUpType} line with side ${winningSide} winning, decisive=%s`, (decisive) => {

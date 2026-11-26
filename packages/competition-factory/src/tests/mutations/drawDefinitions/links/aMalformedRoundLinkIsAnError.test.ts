@@ -19,7 +19,7 @@ import {
 } from '@Constants/drawDefinitionConstants';
 
 /**
- * A MALFORMED ROUND LINK IS AN ERROR (CA, 2026-10-06, decision 1 of FACTORY_LATENT_BUG_FIXES).
+ * A MALFORMED ROUND LINK IS AN ERROR.
  *
  * A WINNER or LOSER link with no `source.roundNumber` cannot say which round it directs. `getTargetLink` answered
  * it with an `INVALID_VALUES` error in place of the link, `positionTargets` passed that on as a target link, and
@@ -136,7 +136,7 @@ it('a double exit across a malformed LOSER link is refused, and the draw is unch
 it('a malformed link in a structure DOWNSTREAM is refused before the first write, with no rollback', () => {
   // COMPASS: East's round-1 losers go to West, and West's own LOSER link is the malformed one. The cascade met it only
   // after it had written, so this once needed `rollbackOnError`; it is now asked of the whole draw before the first write
-  // (`getMalformedRoundLink`; CA, 2026-10-22: no mutation relies on rollback), and the call is DIRECT
+  // (`getMalformedRoundLink`; no mutation relies on rollback), and the call is DIRECT
   const { drawId } = corruptedDraw({ drawType: COMPASS, structureName: 'West', linkType: LOSER });
   const eastId = getDrawDefinition(drawId).structures.find((s) => s.structureName === 'East').structureId;
   const matchUpId = matchUpIn(drawId, eastId).matchUpId;

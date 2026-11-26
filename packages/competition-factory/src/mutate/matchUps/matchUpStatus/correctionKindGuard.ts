@@ -12,7 +12,7 @@ import { COMPLETED, DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatu
 import type { HydratedMatchUp } from '@Types/hydrated';
 
 /**
- * # A recorded result downstream fixes the KIND of the outcome that sent the loser there (P52; CA, 2026-10-11)
+ * # A recorded result downstream fixes the KIND of the outcome that sent the loser there
  *
  * > if there is a result someone recorded in the consolation then it implies something was really played and it
  * > shouldn't be removed. the assumption is that the person who recorded the score simply didn't realize that the

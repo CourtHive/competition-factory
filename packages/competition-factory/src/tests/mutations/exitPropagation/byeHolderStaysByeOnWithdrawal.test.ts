@@ -8,8 +8,8 @@ import { expect, it } from 'vitest';
 import { BYE } from '@Constants/matchUpStatusConstants';
 
 /**
- * **A matchUp holding a BYE stays a BYE when a withdrawal re-derives it** (CA, 2026-09-20 and
- * 2026-10-02: the BYE remains a BYE).
+ * **A matchUp holding a BYE stays a BYE when a withdrawal re-derives it** (the BYE
+ * remains a BYE).
  *
  * Sweep seed 6161873 (COMPASS): a South first-round BYE matchUp held a carried exit's provenance on its
  * BYE side and another on the side its loser occupied. Clearing the West result that had sent that loser

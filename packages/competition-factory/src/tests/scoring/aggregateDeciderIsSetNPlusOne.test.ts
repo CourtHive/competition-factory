@@ -9,9 +9,8 @@ import { describe, expect, it } from 'vitest';
 import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 
 /**
- * CA, 2026-10-04: *"-F:TB1 is a 'sudden death' tiebreak which only occurs in matchUps which are decided by
- * aggregate point scoring. In the INTENNSE competition format that is not to be considered one of the N
- * sets."*
+ * `-F:TB1` is a sudden-death tiebreak, which only occurs in matchUps decided by aggregate point scoring. In
+ * the INTENNSE competition format it is not one of the N sets.
  *
  * So in `SET3XA-S:T10-F:TB1` all three bolts are timed, and the tiebreak is set 4, played only when the
  * totals are level. Every layer read it as set 3 instead (measured 2026-10-04):

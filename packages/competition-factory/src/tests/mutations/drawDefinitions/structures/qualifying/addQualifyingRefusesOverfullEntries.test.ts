@@ -12,7 +12,7 @@ import {
 
 /*
  * Adding qualifying to an existing draw with explicit drawEntries: the director chose those entries, so entries that
- * overfill the qualifying structure are refused before anything is written, never trimmed (CA 2026-11-01). The error
+ * overfill the qualifying structure are refused before anything is written, never trimmed. The error
  * is the one a new qualifying-only draw returns: NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS, or
  * INSUFFICIENT_DRAW_POSITIONS with ignoreStageSpace. Generation from the event's entries still takes the first N and
  * warns (ENTRIES_NOT_PLACED).

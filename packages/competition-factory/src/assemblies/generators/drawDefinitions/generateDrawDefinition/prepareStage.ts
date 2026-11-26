@@ -42,8 +42,8 @@ export function prepareStage(params): ResultType & {
   }
 
   // a MAIN generated before its entries is a shell: nothing is placed, qualifier seats included, until its
-  // positioning is generated (CA, 2026-10-09: "the slots for qualifiers shouldn't be reserved in advance at all,
-  // those qualifying placeholders or the qualifiers themselves get placed when the draw positioning is generated")
+  // positioning is generated: qualifier slots are never reserved in advance; the qualifying placeholders, or the
+  // qualifiers themselves, are placed when the draw positioning is generated
   const awaitingEntries = params.stage === MAIN && !stageEntries.length;
   // a bare qualifiersCount, with no qualifying structure or placeholder link to record it, is recorded only by the
   // qualifier seats it places: those are placed, and nothing else

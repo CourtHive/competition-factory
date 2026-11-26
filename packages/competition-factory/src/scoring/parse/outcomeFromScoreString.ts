@@ -11,8 +11,8 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 type ParsedSets = ReturnType<typeof parseScoreString>;
 
-// An aggregate is the points of EVERY set, and a tiebreak-only decider's point is one of them (CA,
-// 2026-09-29: "INTENNSE requires all sets recorded to be included in the aggregate total"). This read
+// An aggregate is the points of EVERY set, and a tiebreak-only decider's point is one of them (INTENNSE
+// includes every recorded set in the aggregate total). This read
 // the game fields alone, which counted that point only while the parser put it there (G3, 2026-10-02).
 function inferWinningSideFromAggregate(neutralParsedSets: ParsedSets, matchUpFormat?: string) {
   const parsedFormat = matchUpFormat ? parse(matchUpFormat) : undefined;

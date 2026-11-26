@@ -56,7 +56,7 @@ export type PresenceFactRule = {
 };
 
 /**
- * Presence expectation per (role × fact) — D4h option B, chosen by CA 2026-08-24.
+ * Presence expectation per (role × fact).
  *
  * Two axes, both forced:
  *

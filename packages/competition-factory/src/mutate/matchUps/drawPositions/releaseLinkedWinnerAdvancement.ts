@@ -62,7 +62,7 @@ type ReleaseLinkedWinnerAdvancementArgs = {
  * ## The four paths that stopped at the link — 2026-10-05
  *
  * Traced on the DOUBLE_ELIMINATION grand-final family of the frozen census (nine seeds failing
- * `ERR_EXISTING_POSITION_ASSIGNMENT` after mutating; `Mentat/planning/EXIT_CASCADE_DE_GRAND_FINAL_AND_SIDE_KEY_DESIGN.md`):
+ * `ERR_EXISTING_POSITION_ASSIGNMENT` after mutating):
  *
  *  - **A**: the target round was decided by a produced exit awarded to the leaving participant's seat, and the
  *    release keeps a decided matchUp's array. The release is told the occupant left (`occupantLeaving`), so it
@@ -229,7 +229,7 @@ export function releaseAdvancedDrawPositionAcrossLinks({
 /**
  * A participant has left a structure: release whatever any WINNER link out of it carried for them.
  *
- * For a removal that runs no round release at all, because the seat keeps its BYE advancement (P46): the
+ * For a removal that runs no round release at all, because the seat keeps its BYE advancement: the
  * participant leaves, the seat stays advanced, and nothing asked the link (mode D, census de 9304251). The
  * participant is named by the caller, which has already emptied their assignment. Each link releases only
  * what it fed (see `releaseLinkedWinnerAdvancement`), so asking a link that carried nothing is a no-op.

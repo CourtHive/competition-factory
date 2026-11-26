@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest';
  * - documentation/docs/codes/matchup-format.mdx, "Combined Rally Totals": "SET1-S:P32 represents one
  *   segment ending when both sides' rally scores total 32. P32DP adds a deciding rally only after a
  *   tied base segment; P32WB2 continues from that tie until a two-point margin. An unequal result at
- *   the base total is complete under every variant. Plain P32 permits a completed 16–16 without a
+ *   the base total is complete under every variant. Plain `P32` permits a completed 16–16 without a
  *   winner."
  * - documentation/docs/scoring-engine/format-support.md, "Rotating-Partner Rally Totals": "Each rally
  *   increments side1Score or side2Score … A tied result uses COMPLETED without winningSide"; "Input

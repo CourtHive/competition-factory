@@ -12,7 +12,7 @@ import { TALLY } from '@Constants/extensionConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 
 /**
- * A ROUND ROBIN TEAM TIE WHOSE LINES ALL FINISH LEVEL IS A DRAW (CA ruling, 2026-11-07; TEAM results item 2): COMPLETED,
+ * A ROUND ROBIN TEAM TIE WHOSE LINES ALL FINISH LEVEL IS A DRAW: COMPLETED,
  * no winner, the aggregate kept, and the group tally counts it drawn for both teams. A single matchUp that ends level in
  * a format that can end level is the same. In elimination a winner must advance, so the tie stays in progress until a
  * decider or a recorded decision names one.

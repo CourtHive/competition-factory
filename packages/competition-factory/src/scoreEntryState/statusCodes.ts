@@ -9,7 +9,7 @@ import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
  * policy's codes; it never invents them, and a status with no code group simply has no reason to choose.
  */
 
-/** One entry of a policy's code group. The OBJECT form is canonical (CA, 2026-09-19). */
+/** One entry of a policy's code group. The OBJECT form is canonical. */
 export type StatusCodeEntry = {
   matchUpStatusCode: string;
   matchUpStatusCodeDisplay?: string;

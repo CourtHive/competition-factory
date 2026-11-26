@@ -20,12 +20,12 @@ import type { HydratedMatchUp } from '@Types/hydrated';
 
 /**
  * THE BYE STAYS; THE EXIT TRAVELS. A seat that advanced structurally while EMPTY, and then became a propagated BYE,
- * left its position one round on, where the target recorded a BYE arriving from the holder. A BYE goes nowhere (CA,
- * 2026-09-20: "the BYE remains a BYE"; 2026-10-04: "BYE holder, exit sent on"), so when the exit the holder held is
- * sent on, the holder's BYE position is taken back out of the target first, and the target reads again as what the
- * other side left it: a pending exit, or nothing. Matrix cell 337 (FEED_IN_CHAMPIONSHIP_TO_SF 16/16): `Consolation|4|2`'s
- * dp2 stood in `5|1` as a BYE arrival; the WALKOVER sent on then met the WALKOVER `4|1`'s double exit produced there,
- * instead of being lost, and the convergence produced onward with no phantom seat to award.
+ * left its position one round on, where the target recorded a BYE arriving from the holder. A BYE goes nowhere ("the
+ * BYE remains a BYE"; "BYE holder, exit sent on"), so when the exit the holder held is sent on, the holder's BYE
+ * position is taken back out of the target first, and the target reads again as what the other side left it: a pending
+ * exit, or nothing. Matrix cell 337 (FEED_IN_CHAMPIONSHIP_TO_SF 16/16): `Consolation|4|2`'s dp2 stood in `5|1` as a BYE
+ * arrival; the WALKOVER sent on then met the WALKOVER `4|1`'s double exit produced there, instead of being lost, and
+ * the convergence produced onward with no phantom seat to award.
  *
  * Returns the target as it stands afterwards (the stored matchUp), or undefined when there was nothing to release.
  */

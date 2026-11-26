@@ -33,7 +33,7 @@ const STEPS = [
     roundPosition: 6,
     outcome: { matchUpStatus: WALKOVER, winningSide: 2 },
   },
-  // Cleared before the flip. With it standing the flip is REFUSED (CA, 2026-09-17): the flip makes the
+  // Cleared before the flip. With it standing the flip is REFUSED: the flip makes the
   // consolation loser ineligible, and a played consolation result cannot be inherited.
   { structureName: 'Consolation', roundNumber: 2, roundPosition: 6, outcome: clearOutcome },
   { structureName: 'Main', roundNumber: 2, roundPosition: 6, outcome: { matchUpStatus: WALKOVER, winningSide: 2 } },

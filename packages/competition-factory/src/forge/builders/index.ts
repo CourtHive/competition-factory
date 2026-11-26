@@ -6,8 +6,7 @@
  *   - `engine.build.participant()`      → ParticipantBuilder
  *
  * Deferred to v2: playoffs builder, full tieFormat chain, multi-flight draws
- * within one EventBuilder, separate person registry. See
- * `Mentat/planning/FACTORY_DEVELOPER_JOY_6_FLUENT_BUILDERS_DESIGN.md`.
+ * within one EventBuilder, separate person registry.
  *
  * Mounted on the engine in `assemblies/engines/parts/engineStart.ts` after
  * the other forge facades; takes an `engine` reference so terminal verbs

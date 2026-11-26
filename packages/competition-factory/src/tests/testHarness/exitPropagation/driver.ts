@@ -70,7 +70,7 @@ function isUndecidableDual(matchUp: any): boolean {
 }
 
 /**
- * A director's winner on a LEVEL dual records how it was decided (CA ruling 2026-11-07, TEAM results item 3): the factory
+ * A director's winner on a LEVEL dual records how it was decided (TEAM results item 3): the factory
  * refuses a winner on a level tie without `score.overtime` (`decidedIn: 'EXTERNAL'`, `decidedBy`). The decision is an
  * official's, the one a director makes when no rubber can decide the dual.
  */

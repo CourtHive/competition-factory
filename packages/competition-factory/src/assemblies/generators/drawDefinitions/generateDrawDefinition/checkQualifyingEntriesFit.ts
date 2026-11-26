@@ -22,7 +22,7 @@ type CheckQualifyingEntriesFitArgs = {
 };
 
 /**
- * Explicit QUALIFYING drawEntries are the entries the caller chose: they are never trimmed to fit (CA 2026-11-01).
+ * Explicit QUALIFYING drawEntries are the entries the caller chose: they are never trimmed to fit.
  * Entries that overfill the qualifying structures are refused before anything is written:
  * NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS, or INSUFFICIENT_DRAW_POSITIONS with `ignoreStageSpace` (which skips the
  * per-entry stage-space check, and leaves the draw positions to refuse what does not fit).

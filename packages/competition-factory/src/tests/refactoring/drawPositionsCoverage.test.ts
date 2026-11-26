@@ -1295,7 +1295,7 @@ describe('positionClear bye propagation', () => {
 
         // verify participant removed from round 2. THE SEAT STAYS: it was advanced by its
         // opponent's BYE at generation, and that advancement never depended on who sat on it
-        // (P46, CA 2026-10-01). What leaves is the participant, so the property is asserted on
+        // (since 2026-10-01). What leaves is the participant, so the property is asserted on
         // the sides, not on the seat number.
         const { matchUps: updated } = tournamentEngine.allTournamentMatchUps();
         const updatedR2 = updated.find((m) => m.matchUpId === r2MatchUp.matchUpId);

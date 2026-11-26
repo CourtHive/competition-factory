@@ -15,7 +15,7 @@ import {
 } from '@Constants/errorConditionConstants';
 
 /**
- * `modifyParticipant` WRITES or REFUSES every attribute it is given; none is accepted and dropped (CA 2026-11-02).
+ * `modifyParticipant` WRITES or REFUSES every attribute it is given; none is accepted and dropped.
  * A value equal to the stored one is never refused, because consumers send the whole participant on every save.
  */
 

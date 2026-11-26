@@ -14,8 +14,8 @@ import { MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { MODIFY_MATCHUP } from '@Constants/topicConstants';
 
 /**
- * A REFUSED QUEUE WITHOUT ROLLBACK delivers no notices, and leaves none behind (CA's D2, 2026-10-18; decided by two
- * opposed agents, who converged). mutation-engines.md § Transaction Pattern already promised that the writes before
+ * A REFUSED QUEUE WITHOUT ROLLBACK delivers no notices, and leaves none behind (D2).
+ * mutation-engines.md § Transaction Pattern already promised that the writes before
  * the refusal stay and "no notices are delivered for any of them". The queue kept that promise only inside a
  * per-request async context, where the leftover buffer died with the request: it neither emptied the buffer nor cycled
  * the mutation flag, so on a long-lived engine the NEXT successful call delivered the refused queue's notices as its

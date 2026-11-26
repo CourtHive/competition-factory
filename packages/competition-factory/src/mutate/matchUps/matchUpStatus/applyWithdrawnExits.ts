@@ -168,7 +168,7 @@ export function applyWithdrawnExits({
     /**
      * A PENDING produced exit has no winner, and its lone seat may still have been ADVANCED: an empty position
      * moves forward structurally, as a BYE placeholder does, and is what carries the exit on past a BYE (seed 397,
-     * #5148). Since a produced exit awards no empty seat (Q3, CA 2026-10-03), the release above, keyed on a
+     * #5148). Since a produced exit awards no empty seat, the release above, keyed on a
      * winner, finds nothing to take back, and the empty position stayed one round on after its exit was gone
      * (census w1 9000562 on #5155: `Consolation|5|1`, later read as a BYE advanced out of an undecided matchUp).
      * Released here instead: every position of the withdrawn matchUp that holds nobody, from the round after it.

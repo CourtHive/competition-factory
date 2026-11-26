@@ -1269,7 +1269,7 @@ describe('addMatchUpScheduleItems additional coverage', () => {
     const secondRoundMatchUp: any = allMatchUps.find((m) => m.roundNumber === 2);
     const source: any = allMatchUps.find((m) => m.winnerMatchUpId === secondRoundMatchUp.matchUpId);
 
-    // the source timed late, its dependent earlier: refused whatever the chronology switches say (CA 2026-10-30)
+    // the source timed late, its dependent earlier: refused whatever the chronology switches say
     let result: any = tournamentEngine.addMatchUpScheduleItems({
       matchUpId: source.matchUpId,
       drawId,

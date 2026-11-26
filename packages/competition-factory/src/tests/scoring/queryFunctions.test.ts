@@ -24,7 +24,7 @@ describe('Query Functions', () => {
     test('should return winner for completed match', () => {
       let matchUp = createMatchUp({ matchUpFormat: 'SET1-S:1/TB7' });
 
-      // Win 2 games to love: a set to one game still needs a margin of two (ITF Rule 6, CA 2026-10-17)
+      // Win 2 games to love: a set to one game still needs a margin of two (ITF Rule 6)
       for (let i = 0; i < 8; i++) {
         matchUp = addPoint(matchUp, { winner: 0 });
       }

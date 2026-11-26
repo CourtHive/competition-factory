@@ -73,8 +73,8 @@ import type {
 } from '@Types/tournamentTypes';
 
 /**
- * A DOUBLE EXIT'S LOSER SEAT SHOWS THE EXIT IT PRODUCED under `doubleExitPropagateBye: false`, never a BYE (CA ruling (A),
- * 2026-10-21), whether the double exit was entered or two exits converged into it.
+ * A DOUBLE EXIT'S LOSER SEAT SHOWS THE EXIT IT PRODUCED under `doubleExitPropagateBye: false`, never a BYE,
+ * whether the double exit was entered or two exits converged into it.
  *
  * A matchUp won over a produced exit has nobody to lose, so its loser seat in the connected structure becomes a BYE
  * nobody can fill (`propagateUnfillableLoserBye`). When it then becomes a double exit, its loser target receives a
@@ -128,7 +128,7 @@ function logAdvancement(method, details) {
 
 /**
  * Where a double exit sends nobody on. A round robin group's matchUp (a container's) has no next matchUp. And A LUCKY
- * DRAW'S DOUBLE EXIT ADVANCES NOBODY (CA, 2026-11-17): it is written on its own matchUp and produces nothing in the next
+ * DRAW'S DOUBLE EXIT ADVANCES NOBODY: it is written on its own matchUp and produces nothing in the next
  * round, no exit awarded to whoever stands or arrives there, no position sent on, no advance withdrawn. Who goes on
  * from a lucky draw's round is chosen (`luckyDrawAdvancement`), and a double exit chooses nobody.
  */
@@ -211,7 +211,7 @@ export function doubleExitAdvancement(args) {
    * vacant, and nobody could ever fill it. A matchUp is `BYE` as soon as ONE of its positions is a
    * draw BYE; the OTHER can still be that vacant slot, and that combination is the whole defect.
    *
-   * CA's rule, 2026-09-18: *a DOUBLE_WALKOVER in a source structure can logically only produce a BYE
+   * The rule: *a DOUBLE_WALKOVER in a source structure can logically only produce a BYE
    * in a target structure* — a double exit removes BOTH competitors, so nobody will ever arrive, and
    * a position that will receive nobody is a BYE.
    *
@@ -221,7 +221,7 @@ export function doubleExitAdvancement(args) {
    *
    * 1. **Route this case through `handleLoserMatchUp` with the policy off** — it takes the
    *    produced-WALKOVER branch and writes a `winningSide` onto a matchUp that contains a BYE,
-   *    AWARDING IT TO THE BYE, which `exitAwardable` forbids outright (CA, 2026-09-17). It also
+   *    AWARDING IT TO THE BYE, which `exitAwardable` forbids outright. It also
    *    leaves the downstream slot unclaimable, so it fixes nothing.
    * 2. **Place the BYE unconditionally** — census over six arms: **2 closed, 11 OPENED.** Three
    *    `ERR_EXISTING_POSITION_ASSIGNMENT` after mutating, three `WINNING_SIDE_ADVANCEMENT_MISMATCH`,
@@ -280,7 +280,7 @@ export function doubleExitAdvancement(args) {
    * is how the engine came to contradict its own integrity check: the check knew the rule and the
    * propagation did not.
    *
-   * **This does not narrow CA's ruling of 2026-09-20** — *"the missing WALKOVER [must be] advanced
+   * **This does not narrow the 2026-09-20 rule** — *"the missing WALKOVER [must be] advanced
    * past the BYE in consolation R2P1"* — which was driven on a MAIN ROUND 1 double walkover. A
    * round-1 loser has zero prior wins, is eligible, and still carries onward exactly as certified.
    * What changes is only the case the rule was never true of.
@@ -353,10 +353,10 @@ export function doubleExitAdvancement(args) {
      * The guard above reads `matchUpStatus !== BYE` as "there is nothing to do here", and for the
      * two things `handleLoserMatchUp` offers — placing a BYE, or awarding a produced WALKOVER —
      * that is right: a matchUp holding a BYE needs neither, and awarding it would hand the match to
-     * the BYE, which `exitAwardable` forbids outright (CA, 2026-09-17). But there is a third thing
+     * the BYE, which `exitAwardable` forbids outright. But there is a third thing
      * the target is owed, and it was getting nothing at all: THE RECORD OF THE EXIT THAT ARRIVED.
      *
-     * CA, 2026-09-20, driving FIRST_MATCH_LOSER_CONSOLATION 8 in TMX with BYEs on Main
+     * Reported 2026-09-20, driving FIRST_MATCH_LOSER_CONSOLATION 8 in TMX with BYEs on Main
      * drawPositions 1 and 2 and `MAIN|1|2` a DOUBLE_WALKOVER: *"the DOUBLE_WALKOVER from Main R1P2
      * does not produce a WALKOVER as the matchUpStatusCode provenance for consolation dp4 as it
      * should, and also that the missing WALKOVER is not advanced past the [...] BYE in consolation
@@ -493,10 +493,10 @@ function handleLoserMatchUp({
   /**
    * A LOSER SEAT THAT STILL HOLDS A BYE HERE IS SETTLED: nothing is produced onto it. Under the policy off, a BYE this
    * matchUp's own cascade propagated there has already given way to the produced exit by now (`reclaimSingleExitBye`
-   * for a double exit entered, `serveConvergedLoserLink` for one converged; CA ruling (A), 2026-10-21), so what stays is
+   * for a double exit entered, `serveConvergedLoserLink` for one converged), so what stays is
    * a BYE the draw placed at generation, or one a fed-in seat takes whatever the policy.
    *
-   * Before (A) a propagated BYE was settled here too: two opposed debate agents had concluded it stays (census S6 Class B
+   * Before that a propagated BYE was settled here too: two opposed debate agents had concluded it stays (census S6 Class B
    * 20694910, COMPASS 32/30 policy-off: `South|1|2` dp 3), and the same double exit then left a BYE or the produced exit
    * on its seat depending on the order the results were entered (COMPASS 8/8 20853116, `South|1|1`).
    *
@@ -569,7 +569,7 @@ function handleLoserMatchUp({
  * from where `loserTargetDrawPosition` sits in the target's ascending `drawPositions`, and side 1
  * on a feed round because a fed position IS side 1 (`draw-positions.md` rule 4).
  *
- * This is NOT the derivation CA rejected on 2026-09-20. That one asked which of two positions had
+ * This is NOT the derivation rejected on 2026-09-20. That one asked which of two positions had
  * ADVANCED, a question the array genuinely cannot answer. This one is handed the drawPosition by
  * the loser link itself and only has to locate it.
  *
@@ -757,7 +757,7 @@ function handleEmptyExitLoser({
     // DOUBLE_WALKOVER: `Consolation|1|1` collapses to DOUBLE_WALKOVER correctly, and
     // `Consolation|2|1` — which holds a propagated BYE on one side and the slot fed from `1|1` on
     // the other — stayed `BYE` with NO `matchUpStatusCodes` at all, so nothing reached
-    // `Consolation|3|1`. CA: *"we're just missing that produced WALKOVER in r2p1 that encounters
+    // `Consolation|3|1`. As reported: *"we're just missing that produced WALKOVER in r2p1 that encounters
     // the BYE."*
     //
     // The winner target is re-derived from FRESH in-context matchUps: the write above has just
@@ -773,7 +773,7 @@ function handleEmptyExitLoser({
     if (onward?.error) return onward;
 
     // ...and under the policy off its loser seat shows the exit it produced, not a BYE placed there while it was a single
-    // exit (CA ruling (A), 2026-10-21; census S8 COMPASS 8/8 20853116: `South|1|1` kept `West|1|1`'s BYE when its two
+    // exit (census S8 COMPASS 8/8 20853116: `South|1|1` kept `West|1|1`'s BYE when its two
     // produced exits converged, where the re-scored order left the produced walkover)
     if (!propagatesByeOnDoubleExit(params.appliedPolicies)) {
       const converged = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps?.find(
@@ -840,7 +840,7 @@ function advanceConvergedWinner({ convergedMatchUp, drawDefinition, matchUpsMap,
   });
 }
 
-/** a double exit's own position, found in its target, is taken back across the links it was advanced over (P44) */
+/** a double exit's own position, found in its target, is taken back across the links it was advanced over */
 function withdrawOwnAdvancement({
   targetMatchUpDrawPositions,
   sourceDrawPositions,
@@ -963,10 +963,10 @@ function conditionallyAdvanceDrawPosition(params) {
     /**
      * A DOUBLE EXIT ADVANCES NOBODY, so a position of its own found downstream is taken back.
      *
-     * **Punch-list P44.** The filter below has always known such a position can be here — *"this
-     * covers the case where a pre-existing advancement was made"* — and removed it from a LOCAL
-     * copy. The matchUp kept it, and `hasDrawPosition` and `walkoverWinningSide` further down are
-     * read from the matchUp. Two defects followed, measured 2026-09-28 on the 192-cell matrix:
+     * **Order-dependent play at a convergence's winner target.** The filter below has always known such a position can
+     * be here — *"this covers the case where a pre-existing advancement was made"* — and removed it from a LOCAL copy.
+     * The matchUp kept it, and `hasDrawPosition` and `walkoverWinningSide` further down are read from the matchUp. Two
+     * defects followed, measured 2026-09-28 on the 192-cell matrix:
      *
      *  - ORDER DEPENDENCE, 52 cells. The position is the seat the FIRST exit's arrival advanced as
      *    the pending winner, so which seat it is depends on which double exit was entered first.
@@ -979,8 +979,7 @@ function conditionallyAdvanceDrawPosition(params) {
      *
      * What the target holds instead is a PENDING exit — the produced status, the origin on its
      * side, no position and no winner — which is what a later-round target (`Main|3|1`) always
-     * held. The award is made when an opponent arrives. CA, 2026-09-28: *"let's go with the
-     * change."*
+     * held. The award is made when an opponent arrives.
      *
      * `withdrawingExit` because this IS the produced exit's own advancement being taken back, which
      * is the one case `releaseAdvancedDrawPosition`'s produced-exit guard must not protect.
@@ -1080,7 +1079,7 @@ function conditionallyAdvanceDrawPosition(params) {
   // the one position present, when it is alone: not a side read, so it holds for either stored shape
   const [lonePosition] = drawPositions;
   /**
-   * A PRODUCED EXIT IS AWARDED ONLY TO AN OPPONENT IN PLACE — CA 2026-09-20, and 2026-10-03 (Q3): it lands
+   * A PRODUCED EXIT IS AWARDED ONLY TO AN OPPONENT IN PLACE: it lands
    * pending until the opponent arrives. The lone drawPosition here can be a seat nobody occupies yet: one a
    * BYE advanced forward, still waiting for the loser fed into it from another structure. Census w1 9000477
    * (COMPASS 32/29): `South|1|3`'s double walkover produced into `South|2|2`, whose dp 7 had been BYE-advanced
@@ -1106,16 +1105,16 @@ function conditionallyAdvanceDrawPosition(params) {
    *
    *     carriedExitStatus(prov?.[side]) && isDoubleExit(prov?.[side]?.previousMatchUpStatus)
    *
-   * **Do not.** It was built and run under P37's eviction and took the suite from 4 failures to 21 —
-   * `exitPropagationMatrix` alone lost 13 cells across COMPASS and FIRST_ROUND_LOSER_CONSOLATION,
-   * plus three census replays. It re-routes convergences this rule has nothing to do with, which is
-   * the same result P41 records for the analogous stronger form of `progressExitStatus`' RULE 4 gate.
+   * **Do not.** It was built and run when the exit provenance moved out of `matchUpStatusCodes` and took the suite from
+   * 4 failures to 21 — `exitPropagationMatrix` alone lost 13 cells across COMPASS and FIRST_ROUND_LOSER_CONSOLATION,
+   * plus three census replays. It re-routes convergences this rule has nothing to do with, which is the same result
+   * recorded for the analogous stronger form of `progressExitStatus`' RULE 4 gate.
    *
    * The state this gate MISSES is real and is tracked separately: a target holding two DELIVERED
    * double-walkover origins with `dps=[5, 6]` fails `!drawPositions.length`, so it settles as a single
    * `WALKOVER` with a `winningSide` while its own provenance describes a convergence. That is
-   * pre-existing — measured identical on clean `dev` — and it wants the convergence PR and census arm
-   * P41 asks for, not a rider on the eviction.
+   * pre-existing — measured identical on clean `dev` — and it wants a convergence PR and census arm of
+   * its own, not a rider on the eviction.
    */
   /**
    * A RECORDED exit is an exit too. A director may record a WALKOVER or DEFAULTED before the opponent arrives
@@ -1249,7 +1248,7 @@ function conditionallyAdvanceDrawPosition(params) {
   // `{ BYE }` only when the BYE was placed before this exit, never when it came after (census A1 case 26,
   // FIRST_MATCH_LOSER_CONSOLATION 8/7, `propagateExitStatus: false`, seed 20498521: `Consolation|3|1` side 2 in 8 of
   // 12 entry orders).
-  // The same pending-not-dead reading `opponentFeederCanDeliver` makes of a BYE feeder (CA, 2026-09-24).
+  // The same pending-not-dead reading `opponentFeederCanDeliver` makes of a BYE feeder.
   const pairedMatchUpStatus = deliveredStatus({
     structureId: inContextPairedPreviousMatchUp?.structureId,
     matchUp: pairedPreviousMatchUp,
@@ -1269,7 +1268,7 @@ function conditionallyAdvanceDrawPosition(params) {
     sourceSideNumber,
   });
 
-  // P37 MEASUREMENT: the projection is gone; the array keeps only the POLICY tenant.
+  // the exit-provenance projection is gone; the array keeps only the POLICY tenant.
   const matchUpStatusCodes = retainPolicyCodes(noContextTargetMatchUp);
 
   logAdvancement(stack, {
@@ -1297,7 +1296,7 @@ function conditionallyAdvanceDrawPosition(params) {
   if (result.error) return decorateResult({ result, stack });
 
   // ACCUMULATE, not replace: one side's origin can arrive before the other's, so a write that knows
-  // only its own side must not wipe an origin recorded earlier. CA, 2026-09-12: *"provenance is
+  // only its own side must not wipe an origin recorded earlier: *"provenance is
   // provenance… where did the sides come from. One origin can arrive before the other."*
   mergeSideExitProvenance({ matchUp: noContextTargetMatchUp, provenance: newProvenance });
 
@@ -1305,12 +1304,12 @@ function conditionallyAdvanceDrawPosition(params) {
    * TWO DELIVERED EXITS ARE A DOUBLE EXIT — reconciled AFTER the merge, because that is when both are
    * known.
    *
-   * **Punch-list P42.** `existingExit` above decides whether this write produces a DOUBLE_EXIT or a
-   * single one, and it decides it BEFORE `newProvenance` is merged in. On a RE-SCORE that is too early:
-   * the target can already hold one side's delivered exit from an earlier propagation while this write
-   * delivers the other, and `existingExit`'s `!drawPositions.length` half is false because the target
-   * holds positions. So it settled as a single exit WITH a winningSide — a matchUp nobody played showing
-   * a winner — while its own provenance recorded an exit delivered into both sides.
+   * **A single exit re-scored up to a double.** `existingExit` above decides whether this write produces a DOUBLE_EXIT
+   * or a single one, and it decides it BEFORE `newProvenance` is merged in. On a RE-SCORE that is too early: the target
+   * can already hold one side's delivered exit from an earlier propagation while this write delivers the other, and
+   * `existingExit`'s `!drawPositions.length` half is false because the target holds positions. So it settled as a
+   * single exit WITH a winningSide — a matchUp nobody played showing a winner — while its own provenance recorded an
+   * exit delivered into both sides.
    *
    * Measured before the fix: **52 of 192 cells** across seven draw types, independent of
    * `propagateExitStatus`, and reported by `UNCOLLAPSED_CONVERGENCE` at every one. Zero on the 600-cell
@@ -1339,8 +1338,8 @@ function conditionallyAdvanceDrawPosition(params) {
    *
    * The status is corrected; the ONWARD PROPAGATION that should follow from it is not. The re-scored path
    * still diverges from the direct one at the next round — `correctionDivergence`'s UPGRADE arm still
-   * reports **52 severe**, now on the consequence rather than the status. That is the same missing half
-   * P40 names as *"cross-structure re-advancement"*, and it is why that arm's baseline is not lowered
+   * reports **52 severe**, now on the consequence rather than the status. That is the same missing half,
+   * *"cross-structure re-advancement"*, and it is why that arm's baseline is not lowered
    * here.
    */
   const merged = getSideExitProvenance({ matchUp: noContextTargetMatchUp });
@@ -1350,7 +1349,7 @@ function conditionallyAdvanceDrawPosition(params) {
   /**
    * A CONVERGENCE AWARDS NOBODY, so `advanceFromTarget` must not treat one of its seats as a winner.
    *
-   * **Punch-list P42, the propagation half.** The reconciliation below corrects the STATUS of a
+   * **A single exit re-scored up to a double, the propagation half.** The reconciliation below corrects the STATUS of a
    * convergence. It does not stop the advancement that runs immediately afterwards.
    *
    * `advanceFromTarget` picks its drawPosition as
@@ -1514,7 +1513,7 @@ function inferSourceSideNumber({
 
 /**
  * A convergence written by the merge produces onward, and under the policy off its loser seat shows the exit it produced,
- * as one written by `handleEmptyExitLoser` does (CA ruling (A), 2026-10-21; census RUN16-ASSIGNMENT policyoff 20586104,
+ * as one written by `handleEmptyExitLoser` does (census RUN16-ASSIGNMENT policyoff 20586104,
  * COMPASS 16/14: `West|1|2` converged by `East|1|4`'s walkover produced into `West|2|1`, which converged there and kept
  * the BYE `Southwest|1|1` dp 1 was given while it held a single exit).
  */
@@ -1585,7 +1584,7 @@ function advanceFromTarget({
       matchUpStatus,
     });
     /**
-     * THE NEXT HOP IS DECIDED ON THE DRAW THIS HOP LEFT, as `advanceConvergedWinner` decides it (punch-list P60).
+     * THE NEXT HOP IS DECIDED ON THE DRAW THIS HOP LEFT, as `advanceConvergedWinner` decides it.
      *
      * This hop wrote the convergence and may have released positions on the way (`withdrawOwnAdvancement` follows a
      * released position across its winner link), so the in-context view in `params` and the targets read from it
@@ -1730,7 +1729,7 @@ function advanceFromTarget({
  * `Consolation|2|1` and passes its BYE into `Consolation|3|1` carrying the WALKOVER. A DOUBLE_WALKOVER at
  * `Consolation|2|2` then converges there, and the pair stamp wrote side 1 as `{ BYE }` from `Consolation|2|1` — the
  * walked-over occupant's exit was erased, and `STALLED_POSITION` reported somebody who had exited as stranded
- * (CA, 2026-09-29: *"an occupant who exited is not waiting"*).
+ * (*"an occupant who exited is not waiting"*).
  *
  * So the paired side's entry yields to an existing entry that carries an exit, unless it carries one itself.
  */
@@ -1754,7 +1753,7 @@ function keepCarriedExitOnPairedSide({
 /**
  * The side a drawPosition occupies in a matchUp, read from the STORED matchUp and its structure's assignments — never
  * from a hydrated view, which a cascade can have outrun. A BYE position occupies no side: `advanceByeAdvancedDrawPosition`
- * relies on that to refuse an award to a BYE (CA, 2026-09-27: a BYE is never won).
+ * relies on that to refuse an award to a BYE (a BYE is never won).
  */
 function getStructuralOccupiedSide({
   drawDefinition,
@@ -1850,7 +1849,7 @@ function occupantOppositeCarriesExit({
  * The lone position in the next winner matchUp is read as the opponent the produced exit is awarded to, and moved on.
  * When it is the target's OWN position (its BYE, sent on before the exit arrived), the exit would be awarded to the
  * seat it is travelling from, and that BYE carried a round further over a side still owed to its other feeder. The
- * BYE stays; the exit travels (CA, 2026-09-20 and 2026-10-04): it is carried on as onto an empty target, and
+ * BYE stays; the exit travels: it is carried on as onto an empty target, and
  * `carryExitOnward` takes the holder's BYE back out first (`releaseHoldersByeFromTarget`). Census run 18,
  * DOUBLE_ELIMINATION 16/14 (20625526): `Backdraw|4|1`'s BYE stood alone in `Backdraw|5|1` when `Backdraw|3|1`'s
  * convergence produced its exit into `4|1`; the BYE went on into the Backdraw final and the Main final's loser across
@@ -2018,7 +2017,7 @@ function advanceByeAdvancedDrawPosition({
     // which is `progressExitStatus` RULE 2: *the side WITHOUT the exit wins, and it wins even while
     // still empty, because it is the side that will receive the eventual opponent.*
     //
-    // CA, 2026-09-20: *"dp4's provenance was the double walkover propagated by the bye and it should
+    // The rule, 2026-09-20: *"dp4's provenance was the double walkover propagated by the bye and it should
     // not be the winning side; the winningSide should be 2, the side yet to arrive."*
     //
     // A position holding a real PARTICIPANT genuinely advanced and keeps the old behaviour — that is
@@ -2028,13 +2027,13 @@ function advanceByeAdvancedDrawPosition({
       ?.sides?.find((side) => side.drawPosition === nextDrawPositionToAdvance)?.participantId;
 
     /**
-     * WHICH SIDE THE EXIT ARRIVES ON IS A QUESTION ABOUT THE FEEDER, NOT ABOUT A DRAWPOSITION — P29.
+     * WHICH SIDE THE EXIT ARRIVES ON IS A QUESTION ABOUT THE FEEDER, NOT ABOUT A DRAWPOSITION.
      *
      * `occupiedSide` above is read off `nextWinnerMatchUpDrawPositions.find(Boolean)`, i.e. THE FIRST
      * DRAWPOSITION ALREADY SITTING IN THE TARGET. That is only the exit's own slot while the target
      * holds no other position — and a fed matchUp routinely does, because a feed link RESERVES its
      * drawPosition before the participant arrives. When it does, the exit is attributed to the side
-     * that will be filled and the award goes to the side that can never be, which is the P29 shape:
+     * that will be filled and the award goes to the side that can never be, which is the defect:
      * *a produced WALKOVER awarded to the side that carries the exit*, so the participant who does
      * turn up loses a matchUp against nobody.
      *
@@ -2052,7 +2051,7 @@ function advanceByeAdvancedDrawPosition({
      * advanced from the prior round of the SAME structure is side 2. For the cell above that is 2 —
      * the exit — so the winner is side 1, the fed slot, which is where the participant does arrive.
      *
-     * RULE 2 is unchanged and so is CA's 2026-09-20 direction that the side yet to arrive wins while
+     * RULE 2 is unchanged and so is the 2026-09-20 rule that the side yet to arrive wins while
      * still empty: *"dp4's provenance was the double walkover propagated by the bye and it should not
      * be the winning side; the winningSide should be 2, the side yet to arrive."* Only the
      * identification of WHICH side carries the exit changes. The positional derivation is kept as the
@@ -2080,12 +2079,12 @@ function advanceByeAdvancedDrawPosition({
      * BYE (drawPosition 7)"* at `Backdraw|3|2`, a matchUp holding a hole and a propagated BYE and no
      * participant at all.
      *
-     * CA, 2026-09-27: *"there can never be { winningSide } with a value in a matchUp with
+     * The rule: *"there can never be { winningSide } with a value in a matchUp with
      * matchUpStatus: BYE. If two BYEs encounter each other then a BYE is produced for the next matchUp,
      * rinse and repeat."*
      *
      * So the gate is restored and `arrivalSideNumber` is used only to choose WHICH side, once an award
-     * is owed at all. P29's correction is untouched: at `FEED_IN_CHAMPIONSHIP 16/16 Consolation|6|1`
+     * is owed at all. The side correction is untouched: at `FEED_IN_CHAMPIONSHIP 16/16 Consolation|6|1`
      * `occupiedSide` is 1 (a real fed position, not a BYE) and `arrivalSideNumber` is 2, so the winner
      * is still side 1 — the slot the participant arrives into.
      */
@@ -2095,14 +2094,13 @@ function advanceByeAdvancedDrawPosition({
     );
 
     /**
-     * A PRODUCED EXIT LANDS PENDING UNTIL ITS OPPONENT ARRIVES, past a BYE as anywhere else — CA,
-     * 2026-10-03 (Q3, `Mentat/planning/OUTCOME_PIPELINE_OPEN_QUESTIONS.md`): *"Yes, land pending"*.
+     * A PRODUCED EXIT LANDS PENDING UNTIL ITS OPPONENT ARRIVES, past a BYE as anywhere else.
      *
      * The 2026-09-20 rule (`carryExitOnward`: no winningSide until the opponent arrives, unless the
      * opponent is already in place) was never applied here, so an exit carried on past a BYE was
      * awarded to the side yet to arrive. At `FEED_IN_CHAMPIONSHIP 16/16 Consolation|6|1` (seeds 397-400)
      * that is drawPosition 1, RESERVED by the feed link for the loser of the Main final, with nobody in
-     * it. P29 had moved the award onto the right side; the award itself was the defect. Pending, the
+     * it. The side correction had moved the award onto the right side; the award itself was the defect. Pending, the
      * arrival resolves it, as it does on the direct path, and nothing is advanced from here: there is no
      * winner to advance yet.
      */
@@ -2171,7 +2169,7 @@ function advanceByeAdvancedDrawPosition({
     };
 
     /**
-     * AN EXIT MEETING A BYE LEAVES A BYE, NOT AN EXIT LABEL — CA, 2026-10-02, confirming 2026-09-20:
+     * AN EXIT MEETING A BYE LEAVES A BYE, NOT AN EXIT LABEL:
      * *"a propagated exit encountering a BYE should be advanced. In both cases the BYE remains a BYE."*
      *
      * When the position advancing out of this matchUp is itself a BYE and nobody is here, the BYE is
@@ -2183,7 +2181,7 @@ function advanceByeAdvancedDrawPosition({
      * that follows is unchanged.
      */
     // asked of the STORED matchUp: the hydrated one is the view this cascade started from, and a BYE taken out of it
-    // since (a propagated BYE giving way to a produced exit, CA ruling (A)) still reads there as holding it, so the
+    // since (a propagated BYE giving way to a produced exit) still reads there as holding it, so the
     // position opposite advanced past a BYE that had gone and stayed a round on (census policy-off OLYMPIC 32/32
     // 21036479: `South|2|2` lost dp 6's BYE to `South|1|3`'s relayed walkover and dp 7 stayed in `South|3|1`)
     const byeAdvances =
@@ -2258,7 +2256,7 @@ function advanceByeAdvancedDrawPosition({
     // onto drawPosition 1, `MAIN|2|1` correctly became a BYE carrying the produced WALKOVER on side
     // 2 and `MAIN|3|1` received NOTHING — `TO_BE_PLAYED`, no winningSide, no codes.
     //
-    // CA's rule, 2026-09-20: *"a propagated exit encountering a BYE should be advanced. In both
+    // The rule: *"a propagated exit encountering a BYE should be advanced. In both
     // cases the BYE remains a BYE."* What must carry forward is the EXIT, not a participant — and a
     // BYE-held matchUp has no participant to offer, which is precisely why `getExitWinningSide`
     // refuses its drawPosition and why nothing moved.
@@ -2378,7 +2376,7 @@ function opponentFeederCanDeliver({ inContextDrawMatchUps, nextWinnerMatchUp, so
      * unassigned and awaiting its own arrival, and such a feeder does deliver — the BYE advances
      * whoever lands there.
      *
-     * CA, 2026-09-24, OLYMPIC 8/6: `West|2|1`'s opponent feeder `West|1|2` is `BYE` on drawPosition
+     * Measured 2026-09-24, OLYMPIC 8/6: `West|2|1`'s opponent feeder `West|1|2` is `BYE` on drawPosition
      * 4 with drawPosition 3 still empty, waiting for `East|1|3`'s loser. Reading its status alone
      * said "no live opponent", so a `DOUBLE_WALKOVER` at `East|1|2` stamped the exit onto `West|1|1`
      * and then stopped. `West|2|1` stayed `TO_BE_PLAYED` with no record, in both entry orders.
@@ -2490,7 +2488,7 @@ function opponentFeederAwaitsArrival({
  * Carry a produced exit onward from a matchUp that can advance nobody, through as many BYEs as it
  * takes, and write it where it comes to rest.
  *
- * CA's rule, 2026-09-20: *"a propagated exit encountering a BYE should be advanced. In both cases
+ * The rule: *"a propagated exit encountering a BYE should be advanced. In both cases
  * the BYE remains a BYE."* The exit lands on the side the dead matchUp feeds, and the side YET TO
  * ARRIVE wins it — `progressExitStatus` RULE 2: *the side WITHOUT the exit wins, and it wins even
  * while still empty, because it is the side that will receive the eventual opponent.* Awarding it
@@ -2611,7 +2609,7 @@ function carryExitOnward({
    * the previous round of the same structure and has nothing to do with this cascade. `arrivalSideNumber`
    * is computed immediately above and was not consulted.
    *
-   * Measured 2026-09-25 on CA's COMPASS 16/14 with the `DOUBLE_WALKOVER` entered LAST: `West|2|1`
+   * Measured 2026-09-25 on a COMPASS 16/14 with the `DOUBLE_WALKOVER` entered LAST: `West|2|1`
    * holds the `West|1|2` winner on drawPosition 3 (side 2) while the exit travels to drawPosition 2
    * (side 1). The exit stopped at `West|1|1` and `West|2|1` stayed `TO_BE_PLAYED` forever. The same
    * guard refused OLYMPIC 8/6 with the opponent advanced first, and refused every clear-and-re-enter
@@ -2635,7 +2633,7 @@ function carryExitOnward({
       params,
     });
     if (released) {
-      // THE TARGET IS READ AGAIN ONCE THE HOLDER'S BYE HAS GONE (P54): its side, who stands opposite and the award are
+      // THE TARGET IS READ AGAIN ONCE THE HOLDER'S BYE HAS GONE: its side, who stands opposite and the award are
       // all read off the draw as the release left it. With both positions present the side was read from that BYE's
       // seat (`draw-positions.md` rule 3: side 1 is the lower drawPosition); with it released, the position that
       // stays reads its own side and what it carries moves with it. Read before the release, the arrival took the side
@@ -2693,7 +2691,7 @@ function carryExitOnward({
   // the record says where the exit went; the status is not touched, because a BYE is a fact about
   // the DRAW rather than about this cascade.
   /**
-   * A BYE THE OTHER HOLDER LEFT HERE IS NOT ONE THIS EXIT PASSES (P54, CA 2026-10-11). The other feeder is a holder too —
+   * A BYE THE OTHER HOLDER LEFT HERE IS NOT ONE THIS EXIT PASSES. The other feeder is a holder too —
    * a BYE with nobody in it and an exit on record — and the BYE position standing opposite is its own, advanced while
    * it was empty. Its exit is coming to that seat (the BYE stays; the exit travels), so this one lands PENDING and the
    * two meet when it arrives (RULE 4; `opponentFeederHoldsAnExit`, `twoHeldExitsMeet`). Read as a BYE, this exit was
@@ -2775,10 +2773,9 @@ function carryExitOnward({
     //   after the double walkover   MAIN|3|1  WALKOVER  ws=-   dps=null
     //   after MAIN|2|2 is played    MAIN|3|1  WALKOVER  ws=2   dps=[5]
     //
-    // The arrival mechanism reaches the same answer unaided. CA ruled on 2026-09-20, having
-    // recalled that the factory once did set a winningSide for a produced WALKOVER with the
-    // drawPosition unknown and that it caused side-determination bugs around fed rounds and
-    // drawPosition sorting: *"that is unnecessary if the winningSide will display the checkmark
+    // The arrival mechanism reaches the same answer unaided. The 2026-09-20 rule, given that the factory once did set a
+    // winningSide for a produced WALKOVER with the drawPosition unknown and that it caused side-determination bugs
+    // around fed rounds and drawPosition sorting: *"that is unnecessary if the winningSide will display the checkmark
     // once a participant arrives... so, you don't need to keep it."*
     //
     // A pending exit with no winningSide is a STATE, not an incomplete one: it resolves when the
@@ -2791,7 +2788,7 @@ function carryExitOnward({
     // an arrival is still coming to resolve this. When they are already in place there is no future
     // arrival, and leaving it unresolved produces a `WALKOVER` holding a real participant with no
     // winner: a matchUp that is still stuck AND invisible to `getStructureInconsistencies`, whose
-    // stall test requires `TO_BE_PLAYED`. Measured on CA's COMPASS 16/14 with the exit entered last.
+    // stall test requires `TO_BE_PLAYED`. Measured on a COMPASS 16/14 with the exit entered last.
     //
     // The side is not pre-computed here, it is READ OFF the occupied side — the same thing the
     // arrival mechanism would have read — so the objection above does not apply. RULE 2: the side
@@ -2813,7 +2810,7 @@ function carryExitOnward({
    *
    * Only when the opponent was already in place — that is the one case this function awards a
    * `winningSide` at all (see the write above). Without this the target reads `WALKOVER ws=2` and the
-   * participant never reaches the next round, which is the state CA reported: *"an advanced propagated
+   * participant never reaches the next round, which is the state reported: *"an advanced propagated
    * WALKOVER … encountering a participant at WEST|2|1 SHOULD advance the encountered participant to
    * WEST|3|1."*
    *
@@ -2841,7 +2838,7 @@ function carryExitOnward({
     if (advanced?.error) return decorateResult({ result: advanced, stack });
 
     /**
-     * P39 — and this site is REQUIRED, not belt-and-braces.
+     * The unfillable loser seat's BYE — and this site is REQUIRED, not belt-and-braces.
      *
      * The exit has just resolved against an opponent who was already in place, so this matchUp will
      * never produce a loser and the first-round seat its loser link feeds can never be filled. The
@@ -2902,7 +2899,7 @@ function carryExitOnward({
  * the exit standing on the other side waited for an opponent who could never arrive, and everything downstream
  * stalled. With `doubleExitPropagateBye` on, a BYE fills such seats; with it off, this was the whole of the second
  * stall budget: 11 cells, 17 findings, in COMPASS, PLAYOFF, FIRST_MATCH_LOSER_CONSOLATION and DOUBLE_ELIMINATION
- * 16/13 (CA, 2026-10-06: "build the convergence"). Settling held exits after the fact was tried for this family
+ * 16/13. Settling held exits after the fact was tried for this family
  * and taken out on 2026-09-29; converging where the carry arrives is RULE 4 applied where it was skipped.
  *
  * Converges only a single exit recorded on the OPPONENT's side, with nothing recorded as an exit on the arriving
@@ -3077,7 +3074,7 @@ function serveConvergedLoserLink({
    * order leaves the convergence's produced exit).
    */
   // under the policy off a double exit's loser seat shows the exit it produced, so a propagated BYE there gives way to it,
-  // as it does for a double exit entered directly (`reclaimSingleExitBye`; CA ruling (A), 2026-10-21). A fed-in seat
+  // as it does for a double exit entered directly (`reclaimSingleExitBye`). A fed-in seat
   // keeps its BYE, and a BYE the draw placed at generation is settled.
   const byeGivesWay =
     !!seat?.bye &&
@@ -3293,7 +3290,7 @@ function advanceByeToLoserMatchUp(params) {
   );
 
   /**
-   * A SEAT THAT BECOMES A BYE KEEPS NOTHING IT WAS AWARDED. A BYE is never won (CA, 2026-09-27), yet a seat its occupant
+   * A SEAT THAT BECOMES A BYE KEEPS NOTHING IT WAS AWARDED. A BYE is never won, yet a seat its occupant
    * has just left can still stand a round on, advanced there by a produced exit awarded to it, and `assignDrawPositionBye`
    * places the BYE at the position's furthest advancement: that matchUp read BYE in front of the seat owed to its other
    * feeder, and the fed matchUp kept the award. So the advancement goes first, as an exit's own does (`withdrawingExit`),
@@ -3360,8 +3357,8 @@ function advanceByeToLoserMatchUp(params) {
  * the 600 matrix cells with the policy off, 69 were fed by a matchUp in that state and 58 more by
  * one of those.
  *
- * CA, 2026-09-20: *"a propagated exit encountering a BYE should be advanced. In both cases the BYE
- * remains a BYE."* And of these, 2026-09-29: *"repair should be done"*.
+ * The rule: *"a propagated exit encountering a BYE should be advanced. In both cases the BYE
+ * remains a BYE."* And of these: *"repair should be done"*.
  *
  * So the question is asked of the STATE rather than of the events that led to it, which is the
  * shape `reconcileDeciders` takes for the same reason. The carrier is unchanged and so is every
@@ -3414,7 +3411,7 @@ function settleHeldExitsPass({
 }): ResultType & { produced?: boolean } {
   const stack = 'settleHeldExits';
   // under EITHER policy: a produced exit can come to rest beside a seat that becomes a BYE only later, whichever policy
-  // placed it (CA, 2026-10-04, "BYE holder, exit sent on"; matrix cell 337)
+  // placed it ("BYE holder, exit sent on"; matrix cell 337)
   const sent = sendHeldExitsOn({ tournamentRecord, appliedPolicies, drawDefinition, matchUpsMap, event, stack });
   if (sent.error) return sent;
 
@@ -3494,7 +3491,7 @@ function produceStrandedConvergences({
     });
     if (result?.error) return result;
   }
-  // at the bound: refused only if a convergence is still stranded (F9 (i), CA 2026-10-24), and recorded for the census
+  // at the bound: refused only if a convergence is still stranded, and recorded for the census
   if (!nextStranded().stranded) return done();
   recordSettleEvent({ kind: 'bound', site: 'produceStrandedConvergences', detail: `${produced.size} produced` });
   return { error: SETTLE_BOUND_REACHED, info: 'produceStrandedConvergences' };
@@ -3734,8 +3731,8 @@ function sendHeldExitsOn({
     });
     if (result?.error) return decorateResult({ result, stack });
   }
-  // a `break` leaves the counter short of the bound. At it, refused only if a held exit is still found (F9 (i), CA
-  // 2026-10-24), and recorded for the census; the view asked is then the settled one the crossing below reads
+  // a `break` leaves the counter short of the bound. At it, refused only if a held exit is still found, and
+  // recorded for the census; the view asked is then the settled one the crossing below reads
   if (pass === SETTLE_PASS_LIMITS.heldExits) {
     const last = nextHeld();
     if (last.held) {
@@ -3843,8 +3840,8 @@ function crossLinksThroughByes({
     // derived after this pass's write, and nothing is written before the next pass reads it
     currentDrawMatchUps = after;
   }
-  // a `break` leaves the counter short of the bound. At it, refused only if a crossing is still found (F9 (i), CA
-  // 2026-10-24), and recorded for the census
+  // a `break` leaves the counter short of the bound. At it, refused only if a crossing is still found, and
+  // recorded for the census
   if (pass === SETTLE_PASS_LIMITS.linkCrossings && nextCrossing().crossing) {
     recordSettleEvent({ kind: 'bound', site: 'crossLinksThroughByes' });
     return { error: SETTLE_BOUND_REACHED, info: 'crossLinksThroughByes' };
@@ -3870,8 +3867,8 @@ function crossLinksThroughByes({
  * playing out, because an exit on a fed seat does not mean nobody can still arrive there.
  */
 /**
- * THE HOLDER IS A BYE once its exit is sent on — CA, 2026-09-29: *"a propagated exit encountering a BYE should
- * be advanced … the BYE remains a BYE"*; 2026-10-04 (Q3, a second path): *"BYE holder, exit sent on"*.
+ * THE HOLDER IS A BYE once its exit is sent on: *"a propagated exit encountering a BYE should be advanced … the
+ * BYE remains a BYE"*; and on a second path: *"BYE holder, exit sent on"*.
  *
  * The exit can come to rest beside a seat that becomes a BYE only later: a produced exit lands PENDING opposite
  * a reserved seat nobody has reached, and the seat is then given a BYE. `carryExitOnward` sends the exit on, as
@@ -4072,7 +4069,7 @@ function getHeldExit({
   if (!arrivalSideNumber) return undefined;
   const seated = target.sides?.find((side) => side.sideNumber === arrivalSideNumber)?.participantId;
   // A participant who has already passed the BYE carrying no exit of their own takes the held exit with them: the BYE
-  // stays and the exit travels to the seat, whoever reaches it first (CA, "the BYE stays; the exit travels"). Declined,
+  // stays and the exit travels to the seat, whoever reaches it first ("the BYE stays; the exit travels"). Declined,
   // the order of arrival decided the draw: a carry that passed the BYE and was later withdrawn took the held exit's
   // place at the seat, and the exit never travelled (census policy-off 20500008, COMPASS 16/16 `South|1|2`: River's
   // default relabelled as played left `South|2|1` a single WALKOVER where entering the win directly converges it).

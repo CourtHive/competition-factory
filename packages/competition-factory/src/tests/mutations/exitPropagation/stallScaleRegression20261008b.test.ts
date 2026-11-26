@@ -9,8 +9,7 @@ import fs from 'fs';
  * 2026-10-08, after `stallScaleRegression`'s 53 instances were cleared, a fresh live census on Button (seeds
  * 20,060,001–20,100,000, 40,000 per arm) counted `STALLED_POSITION` directly in three arms and found 43 stalling
  * seeds: 4 with `allowChangePropagation` off, 3 with it on, and 36 under `doubleExitPropagateBye: false` (60
- * instances). CA, 2026-10-08: that policy arm must ALSO reach zero before `STALLED_POSITION` is promoted to `error`.
- * The planning record is `Mentat/planning/STALLED_POSITION_AT_SCALE.md`.
+ * instances). That policy arm must ALSO reach zero before `STALLED_POSITION` is promoted to `error`.
  *
  * Each seed replays in the arm it was found in, from the schedule EMITTED IN THAT ARM (`generateSchedule` calls the
  * engine, so the arm changes the schedule itself). A `policyoff` line carries the `policyDefinitions` it was emitted

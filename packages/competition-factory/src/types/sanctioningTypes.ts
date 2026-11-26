@@ -244,7 +244,7 @@ export interface TournamentProposal {
   /**
    * Transit between the places played at, as the sanctioning body states it (scheduling-pipeline.md § 3.4): keyed by
    * `facilityId`, the identity that survives activation (a proposal's own venueIds are replaced by the canonical venues).
-   * Activation states it for every pair of the two facilities' venues as a sanctioned floor (CA 2026-10-25).
+   * Activation states it for every pair of the two facilities' venues as a sanctioned floor.
    */
   venueTransits?: FacilityTransitProposal[];
   indoorOutdoor?: IndoorOutdoorUnion;

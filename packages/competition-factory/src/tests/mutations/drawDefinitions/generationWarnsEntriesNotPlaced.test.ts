@@ -147,7 +147,7 @@ describe('draw generation warns of the entries it leaves out', () => {
     result = tournamentEngine.addDrawDefinition({ eventId, drawDefinition: result.drawDefinition });
     expect(result.success).toEqual(true);
 
-    // processExistingDrawDefinition: explicit drawEntries are never trimmed (CA 2026-11-01)
+    // processExistingDrawDefinition: explicit drawEntries are never trimmed
     result = tournamentEngine.generateDrawDefinition({
       qualifyingProfiles: [{ structureProfiles: [{ qualifyingPositions: 4, drawSize: 8 }] }],
       drawEntries: qualifyingEntries,

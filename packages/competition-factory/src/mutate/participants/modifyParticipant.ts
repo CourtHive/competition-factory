@@ -35,8 +35,8 @@ import { ParticipantStatusEnum, type Participant, type Tournament } from '@Types
 import type { ResultType, ScaleItem } from '@Types/factoryTypes';
 
 /**
- * Every attribute of the supplied participant is WRITTEN or the call is REFUSED; none is accepted and dropped
- * (CA 2026-11-02). The rules, which keep "consumers send the whole participant on every save" working:
+ * Every attribute of the supplied participant is WRITTEN or the call is REFUSED; none is accepted and dropped.
+ * The rules, which keep "consumers send the whole participant on every save" working:
  *
  * - `undefined` and `null` leave an attribute untouched; '' clears an optional scalar (see isClearRequest).
  * - A value equal to the stored one is never refused, whatever it is (a home venue since deleted, a legacy code).

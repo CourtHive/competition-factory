@@ -41,10 +41,9 @@ import type { HydratedMatchUp } from '@Types/hydrated';
  *    "the BYE cascade has already moved them forward […] **NOT a WALKOVER**" — and the exit is
  *    re-propagated onto wherever they landed.
  *
- * CA, 2026-09-13, independently and before being shown either: *"A player that encounters a BYE gets
- * advanced; a player being advanced by a WALKOVER hits a BYE and continues advancing […] if they are
- * propagating their WALKOVER status all the way through then their WALKOVER occurs AFTER their
- * fall-through position is advanced by the BYE."* That is RULE 1 restated.
+ * In a director's terms: a player who meets a BYE is advanced; a player advanced by a WALKOVER who meets
+ * a BYE keeps advancing, and when the WALKOVER status propagates all the way through, the WALKOVER occurs
+ * AFTER the fall-through position is advanced by the BYE. That is RULE 1 restated.
  *
  * So the propagation path never produces this state. Only a DIRECT entry could, and now cannot.
  *
@@ -80,14 +79,14 @@ export function exitAwardable({
    * withdrew and the empty side wins. Accepted, it produced two winners of one matchUp, both advanced,
    * and the entered winner never reached the loser structure: a two-step DROPPED_PROGRESSION on
    * DOUBLE_ELIMINATION (census 9100555 and 9301605, shrunk). With `propagateExitStatus` off the same
-   * entry was always refused. CA, 2026-09-17: refuse it.
+   * entry was always refused, and it stays refused.
    *
-   * The OTHER direction is the one a director records before the opponent arrives (CA, 2026-10-04): the
+   * The OTHER direction is the one a director records before the opponent arrives: the
    * participant already there walks over or is defaulted, and the EMPTY side is awarded — accepted with or
    * without `propagateExitStatus`, and offered by `matchUpActions` as `EXIT`. This refuses only the reverse.
    *
    * Nor against a BYE. A matchUp containing a BYE cannot have a winningSide — the BYE always
-   * advances its opponent (CA, 2026-09-17). A walkover entered BEFORE a BYE arrives is a different
+   * advances its opponent. A walkover entered BEFORE a BYE arrives is a different
    * thing: the player and their walkover are advanced through the BYE and the exit occurs where they
    * land (`progressExitStatus` RULE 1), never on the BYE matchUp itself.
    */
@@ -121,7 +120,7 @@ export function exitAwardable({
  *
  * A TEAM dual stores its own sides, and was not read against the draw's assignments at all: the empty list it was
  * asked against held every assignment vacuously, so a dual read as two participants opposite a BYE (2026-11-19) and
- * opposite a claimed EMPTY seat (option D narrowed, CA's ruling 2026-11-20: TEAM FIRST_MATCH_LOSER_CONSOLATION 8,
+ * opposite a claimed EMPTY seat (TEAM FIRST_MATCH_LOSER_CONSOLATION 8,
  * `Consolation|1|1` DEFAULTED to its present team before the main loser arrived). A singles matchUp refuses both. The
  * dual is now read against the assignments as a singles matchUp is, so the one-participant waiver and `exitAwardable`
  * decide it: an exit awarded to the team already present is refused, one awarded to the awaited seat is kept. A LINE (a matchUp with a `collectionId`) carries its dual's drawPositions and is not asked here.

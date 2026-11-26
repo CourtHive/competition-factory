@@ -8,8 +8,7 @@ import { isDoubleExit } from '@Validators/isExit';
 import { expect, it } from 'vitest';
 
 /**
- * A CARRIED EXIT THAT MEETS AN EXIT CONVERGES, AND THE DOUBLE EXIT PRODUCES ONWARD (CA, 2026-10-06: "build the
- * convergence").
+ * A CARRIED EXIT THAT MEETS AN EXIT CONVERGES, AND THE DOUBLE EXIT PRODUCES ONWARD.
  *
  * With `doubleExitPropagateBye` off, the second stall budget held 11 cells and 17 findings, every one a produced exit
  * carried past a BYE into a matchUp that already held an exit on its other side. `carryExitOnward` stopped there and

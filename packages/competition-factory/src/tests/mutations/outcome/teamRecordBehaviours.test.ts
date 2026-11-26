@@ -26,8 +26,8 @@ import {
  *
  *  - a line's double exit produces nothing, and leaving it changes nothing beyond the line and its dual;
  *  - a refused call leaves the record exactly as it was, a TEAM dual's included;
- *  - a decided dual's exit carried on by a call that turns auto-calc on, where its lines project no winner, is refused
- *    (CA, 2026-11-18), while a dual scored by hand keeps the winner the call names;
+ *  - a decided dual's exit carried on by a call that turns auto-calc on, where its lines project no winner, is refused,
+ *    while a dual scored by hand keeps the winner the call names;
  *  - a dual decided by its own call stays directed as its lines are played: its winner stands in the next dual, and a
  *    winner its lines hand to the other side replaces the first there.
  */
@@ -174,7 +174,7 @@ describe('a decided dual given an exit that carries, by a call that turns auto-c
 describe('a dual given an exit with a winner by a call that turns auto-calc on, its lines projecting no winner', () => {
   const exit = { matchUpStatus: DEFAULTED, winningSide: 2 };
 
-  // CA, 2026-11-19: refused whether the dual is decided or not, and whether the exit carries or not
+  // refused whether the dual is decided or not, and whether the exit carries or not
   it.each([
     ['a fresh dual, the exit carried', false, { enableAutoCalc: true, propagateExitStatus: true }],
     ['a fresh dual, the exit not carried', false, { enableAutoCalc: true }],

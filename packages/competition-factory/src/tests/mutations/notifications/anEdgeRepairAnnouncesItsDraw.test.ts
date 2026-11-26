@@ -15,8 +15,8 @@ import { COMPLETED } from '@Constants/matchUpStatusConstants';
 /**
  * A CALL THAT REPAIRS A DRAW'S MISSING EDGES ANNOUNCES THE DRAW ONCE, NOT EACH MATCHUP.
  *
- * CA, 2026-10-18: "Option 2 and document the decision in tasks. Missing edges are most likely from hand assembled
- * draws and themselves an edge case."
+ * Missing edges are most likely from hand-assembled draws and are themselves an edge case, so a repair is announced
+ * at the draw's grain.
  *
  * A draw stored without `winnerMatchUpId` / `loserMatchUpId` is given them by the first `setMatchUpStatus` that reads
  * it (#5086), and a refused call writes them back (#5606). A call that succeeds sends one `MODIFY_DRAW_DEFINITION` for

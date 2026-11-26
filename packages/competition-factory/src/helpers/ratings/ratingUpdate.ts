@@ -1,7 +1,6 @@
 /**
  * The one Elo-family update in the factory: each side moves by `k × (actual − expected)` from the ratings before the
- * result. `generateDynamicRatings` and the competition policy's dynamic form rating both call it; the policy that
- * chooses each part is planned in Mentat `planning/RATINGS_POLICY_PLAN.md`.
+ * result. `generateDynamicRatings` and the competition policy's dynamic form rating both call it.
  */
 
 import type { ExpectationRule } from '@Types/ratingsPolicyTypes';

@@ -11,7 +11,7 @@ import {
 } from '@Constants/errorConditionConstants';
 
 /*
- * The rule for draw entries (CA 2026-11-01): explicit drawEntries that overfill a structure are refused before any
+ * The rule for draw entries: explicit drawEntries that overfill a structure are refused before any
  * write; entries taken from the event (no drawEntries) are trimmed to the first N with an ENTRIES_NOT_PLACED warning;
  * never silent. Two paths did not follow it:
  * - adding qualifying to an existing draw with no drawEntries attached no qualifying entries at all;

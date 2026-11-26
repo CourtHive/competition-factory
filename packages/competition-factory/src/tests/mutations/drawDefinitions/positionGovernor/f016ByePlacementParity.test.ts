@@ -28,10 +28,10 @@ import {
 } from '@Constants/drawDefinitionConstants';
 
 /**
- * F-016 positive control. Each accepted or refused public BYE placement is made twice from the same record: through
- * the writer it replaces (imported as `legacyAssignDrawPositionBye`, and its `assignDrawPosition` spelling) and through
- * the planned public method. Both must return the same material result, store the same record key for key, stamps
- * included, and send the same ordered notices with the same payloads.
+ * The BYE placement plan's positive control. Each accepted or refused public BYE placement is made twice from the same
+ * record: through the writer it replaces (imported as `legacyAssignDrawPositionBye`, and its `assignDrawPosition`
+ * spelling) and through the planned public method. Both must return the same material result, store the same record key
+ * for key, stamps included, and send the same ordered notices with the same payloads.
  *
  * Walks the planner leaves to the writer (an exit on the path) are counted, so the planned share is visible.
  */

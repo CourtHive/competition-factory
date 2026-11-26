@@ -125,7 +125,7 @@ export function attachPolicies(params: AttachPoliciesArgs): ResultType & { appli
 }
 
 /**
- * The ELEMENT's own policies, never the merged tournament + event + draw view (CA 2026-10-18: a bug). Reading the
+ * The ELEMENT's own policies, never the merged tournament + event + draw view (reading it was a bug). Reading the
  * merged view wrote every inherited policy onto the element with the one attached, and let a policy inherited from
  * the tournament refuse a draw- or event-level attach (EXISTING_POLICY_TYPE). Only a policy already attached to this
  * element refuses, unless `allowReplacement`; one attached here overrides an inherited one, as readers resolve it.

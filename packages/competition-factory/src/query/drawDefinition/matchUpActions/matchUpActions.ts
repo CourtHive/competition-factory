@@ -301,9 +301,9 @@ function addStandardActions({
   drawDefinition,
   side,
 }): ResultType & { readyToScore?: boolean; carriedExit?: boolean } {
-  // A carried or produced exit is changed at its ORIGIN, never here (CA, 2026-10-03): neither SCORE nor
+  // A carried or produced exit is changed at its ORIGIN, never here: neither SCORE nor
   // CLEAR_SCORE is offered on it, as `setMatchUpState` refuses both (`rewritesCarriedExit`). Nothing is played there,
-  // so it is not staffed either: no official (CA, 2026-10-30).
+  // so it is not staffed either: no official.
   const carriedExit = isPropagatedExit({ matchUp });
 
   if (!carriedExit && isAvailableAction({ policyActions, action: REFEREE })) {
@@ -319,7 +319,7 @@ function addStandardActions({
   const scoringActive = isScoringActive({ appliedPolicies, allPositionsAssigned, structure });
   const hasParticipants = matchUp.sides?.filter((s) => s?.participantId).length === 2;
 
-  // a malformed round link is an error (CA, 2026-10-06): the matchUp's actions are not offered over it
+  // a malformed round link is an error: the matchUp's actions are not offered over it
   const targets = getTargetsDownstream({ inContextDrawMatchUps, drawDefinition, matchUpId });
   if (targets.error) return decorateResult({ result: targets, stack: 'matchUpActions' });
   const { targetData, activeDownstream } = targets;
@@ -413,14 +413,14 @@ function addStandardActions({
     });
   }
 
-  // EXIT — a WALKOVER or DEFAULTED recorded before the second opponent arrives (CA, 2026-10-04). The
+  // EXIT — a WALKOVER or DEFAULTED recorded before the second opponent arrives. The
   // participant already here is ill, injured, or defaulted for conduct between matches; the EMPTY side is
   // awarded the matchUp and whoever arrives there takes the walkover. SCORE cannot express it, as it needs
   // two participants. Offered exactly where `setMatchUpState` accepts it: an undecided matchUp holding one
   // participant whose empty side `exitAwardable` allows (never a BYE, never a seat claimed by nobody).
   // Offered again while one it recorded is still pending: until the opponent arrives the director may
   // change WALKOVER <-> DEFAULTED and its reason, or clear it (CLEAR_SCORE); once they arrive it is a decided
-  // walkover like any other (CA, 2026-10-04). `recorded` names what stands, so a form can start from it.
+  // walkover like any other. `recorded` names what stands, so a form can start from it.
   const loneExit =
     scoringActive && !isCollectionMatchUp && !carriedExit
       ? exitBeforeTheOpponentArrives({ inContextMatchUp, structure, drawDefinition, hasOutcomeToRemove })

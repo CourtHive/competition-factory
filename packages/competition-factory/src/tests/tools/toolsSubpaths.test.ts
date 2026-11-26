@@ -3,7 +3,7 @@ import * as tools from '@Assemblies/tools';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Each tools domain is also its own package subpath, `tods-competition-factory/tools/<domain>` (CA 2026-11-25), so a
+ * Each tools domain is also its own package subpath, `tods-competition-factory/tools/<domain>`, so a
  * consumer of one domain loads no other. postbuild.mjs generates the CJS shims and declarations from the tools barrel;
  * package.json maps the subpaths, and verify:consumer-bundle measures each alone. This keeps the three in step: a new
  * domain without a subpath, or a subpath without a domain, fails here before a build.

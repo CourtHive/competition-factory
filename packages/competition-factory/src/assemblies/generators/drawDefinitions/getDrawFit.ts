@@ -79,7 +79,7 @@ type GetDrawFitArgs = Partial<GenerateDrawDefinitionArgs>;
  * Takes the draw generator's own parameters (size, type, qualifying profiles, seeds, and `drawEntries` to try a
  * different acceptance) and runs the generator, attaching nothing: the counts are the generator's own placements,
  * never a second copy of its arithmetic. Generators write nothing (they are held to the query-purity check), so this
- * reads like a query. For the topology's Fit mode and the Format Wizard (CA, 2026-11-08).
+ * reads like a query. For the topology's Fit mode and the Format Wizard.
  *
  * The ledger counts the event's entries — or `drawEntries` when given — by stage: who takes a position, who waits as
  * an alternate, who has withdrawn. A structure's `notPlaced` and the top-level `notPlaced` come from the generator's

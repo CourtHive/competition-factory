@@ -23,7 +23,7 @@ import {
 } from '@Constants/errorConditionConstants';
 
 /**
- * F-016: a public BYE placement is planned before it writes (`planDrawPositionBye`). Every refusal its walk can meet
+ * A public BYE placement is planned before it writes (`planDrawPositionBye`). Every refusal its walk can meet
  * leaves the record, its stamps and the notice stream exactly as they were, with rollback off, directly and through
  * the queue, under every outcome pipeline. An accepted placement stores, returns and announces what the writer did.
  */
@@ -51,7 +51,7 @@ function unpositioned(drawType?: string, drawSize = 8) {
   return { tournamentRecord, drawId, drawDefinition };
 }
 
-/** a record whose round-2 matchUp repeats a round-1 matchUpId (the archived F-016 finding) */
+/** a record whose round-2 matchUp repeats a round-1 matchUpId (the archived finding) */
 function repeatedIdRecord() {
   const { tournamentRecord, drawId, drawDefinition } = unpositioned();
   const [structure] = drawDefinition.structures;

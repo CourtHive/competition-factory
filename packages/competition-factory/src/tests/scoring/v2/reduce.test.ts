@@ -59,7 +59,7 @@ describe('§ 1.1, § 3 the configuration and format resolution', () => {
     expect(verdicts.map((outcome) => outcome.recorded)).toEqual([false, false, false, false, false, false, true, true]);
   });
 
-  it('best of N needs a majority; an even N can end level (§ 9.7 rule 4; decision SE2a-D7)', () => {
+  it('best of N needs a majority; an even N can end level (§ 9.7 rule 4)', () => {
     expect(resolveFormat('SET5-S:6/TB7')?.setsToWin).toEqual(3);
     const level: any = reduce({ matchUpFormat: 'SET2-S:6/TB7' }, pts(love('1', 6) + love('2', 6)));
     expect(level.state.matchUpStatus).toEqual('COMPLETED');

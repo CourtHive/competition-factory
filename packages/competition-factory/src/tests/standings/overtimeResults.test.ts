@@ -15,7 +15,7 @@ import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 
 /*
- * Standings phase 2, once overtime opened for new use (activation S6, factory #6185; CA 2026-11-05):
+ * Standings phase 2, once overtime opened for new use (activation S6, factory #6185):
  * - a period of an aggregate format that finished 0-0 is recorded, not dropped as an empty set;
  * - hockey's 3-2-1-0 is scored from the result's own record of how it was decided (`decidedIn`);
  * - a result decided outside its score in an overtime format is refused where the score already decides the match;

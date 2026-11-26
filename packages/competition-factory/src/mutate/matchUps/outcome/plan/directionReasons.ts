@@ -80,7 +80,7 @@ export function plainLoserReason(
   return undefined;
 }
 
-// One of the four FIRST_MATCHUP reservation readers kept apart by ruling 9 (see `standingReservationSeat` in
+// One of the four FIRST_MATCHUP reservation readers kept apart on purpose (see `standingReservationSeat` in
 // `standingReservation.ts`): any BYE on the fed seat is nothing to place, as v1's `assignDrawPositionBye` no-ops on
 // any BYE.
 /**
@@ -122,8 +122,7 @@ function reservationReason(view: OutcomeView, winningSide: 1 | 2): boolean {
   );
 }
 
-// Three "a direction taken back" rules are kept apart on purpose (Mentat
-// assessment/2026-11-07-outcome-refactor-debates.md, ruling 10). This one and `resultRemovalReason` (`plan.ts`) will
+// Three "a direction taken back" rules are kept apart on purpose. This one and `resultRemovalReason` (`plan.ts`) will
 // share the op builder but not their walls: this route walls `tallied` as `tallied && !group` with a dual exempt from
 // `link`, the other as `group || tallied` with no exemption, and the two name `link` and `tallied` in opposite order,
 // so one reason would move the `abstain:<reason>` tally. `pendingAwardRemoval` (`unwindPath.ts`) is v1's

@@ -6,7 +6,7 @@ import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { SINGLES } from '@Constants/matchUpTypes';
 
 // a tieMatchUp's aggregate decider (set N + 1, or the decider after a finite overtime) settles that tieMatchUp and is
-// not part of the team's score: scoreValue sums the sporting aggregate only (overtime S6 follow-up, Ruling 3)
+// not part of the team's score: scoreValue sums the sporting aggregate only (overtime S6 follow-up)
 
 const BOLTS_WITH_DECIDER = 'SET3XA-S:T10-F:TB1';
 const SHOOTOUT_FORMAT = 'PER3XA-S:T20P-O:1SD/T5P-F:SO5';

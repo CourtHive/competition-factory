@@ -15,11 +15,11 @@ import { COURT_NOT_FOUND, SCHEDULED_MATCHUPS } from '@Constants/errorConditionCo
 import { MODIFY_MATCHUP, MODIFY_VENUE } from '@Constants/topicConstants';
 
 /**
- * F-013: a court deletion is planned (court, venue, scheduled matchUps, force or policy, every assignment removal)
- * before it writes. deleteCourts is a bulk writer (ruling 7): each court is its own item, a refused court leaves the
+ * A court deletion is planned (court, venue, scheduled matchUps, force or policy, every assignment removal)
+ * before it writes. deleteCourts is a bulk writer: each court is its own item, a refused court leaves the
  * record unchanged, the courts around it are still deleted, and `results` carries one entry per courtId. The first
  * refusal stays at the top level, with `committed: true` once any court was deleted, so that court's notices are
- * published (ruling 33).
+ * published.
  */
 const findings = JSON.parse(gunzipSync(readFileSync(new URL('./fixtures/f013.json.gz', import.meta.url))).toString());
 const startDate = '2026-11-25';
@@ -52,7 +52,7 @@ const refusal = (initial, method: string, params: any, code: string) => ({
   code,
 });
 
-describe('F-013 court deletion', () => {
+describe('court deletion', () => {
   for (const mode of OUTCOME_MODES) {
     for (const borrowed of [false, true]) {
       for (const writeMode of ['native', 'legacy'] as const) {

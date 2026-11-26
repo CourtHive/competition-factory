@@ -3,12 +3,12 @@ import { describe, expect, it } from 'vitest';
 import * as tools from '@Assemblies/tools';
 
 /**
- * Stateless positional functions have a home in `tools`, by domain (CA 2026-11-07), rather than in a governor that
+ * Stateless positional functions have a home in `tools`, by domain, rather than in a governor that
  * mounts them on engines which call every method with one params object. `tools.formats` and `tools.scoring` match the
  * planned `formats` and `scoring` packages. In 7.x the governors still export the shared functions; each shared entry is
  * the governor's own function, so the two homes cannot drift before 8.0.0 removes the governor placements.
  *
- * Slice C (Mentat FACTORY_ENGINE_API_MIGRATION_PREP_PLAN) added the confirmed stateless governor queries, which take one
+ * Slice C of the engine API migration added the confirmed stateless governor queries, which take one
  * params object, to their domains (`QUERIES` below): `statelessGovernorTools.json` lists each one's home and
  * `statelessGovernorTools.test.ts` checks it is the governor function. Their engine routes are unchanged in 7.x.
  */

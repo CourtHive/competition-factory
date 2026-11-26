@@ -81,7 +81,7 @@ export function getDrawMatchUps(params): GroupsMatchUpsResult {
 
   // Every draw, event, tournament and competition query reaches here, and not all of them derive these first:
   // a recovery time needs the scheduling policy's timing, and the published view needs the event's publish status.
-  // a draw with its own scheduling policy times its matchUps by it, not by its event's (CA 2026-10-26, hydration OPEN-11)
+  // a draw with its own scheduling policy times its matchUps by it, not by its event's
   const drawSchedulingPolicy =
     afterRecoveryTimes && getAppliedPolicies({ drawDefinition }).appliedPolicies?.[POLICY_TYPE_SCHEDULING];
   if (afterRecoveryTimes && (!scheduleTiming || drawSchedulingPolicy)) {

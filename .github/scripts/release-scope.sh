@@ -4,7 +4,7 @@
 # Two PRs make up the release path, and neither carries code:
 #   (a) release-please's PR into `master` (head `release-please--*`);
 #   (b) the back-merge PR, `master` -> `dev`, which merges the release commit back after a publish
-#       (factory/CLAUDE.md; CA, 2026-10-02).
+#       (factory/CLAUDE.md).
 # Both change only the files release-please writes. The tree under them was verified when it
 # landed, so a version-only diff skips the heavy gates while every job still reports its check.
 # Decided by the DIFF, not the branch name: either PR touching anything else gets the full run.

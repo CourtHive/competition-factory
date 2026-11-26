@@ -88,7 +88,7 @@ export function noWinnerNeeded(view: OutcomeView): boolean {
 export function chooseRoute(request: OutcomeRequest, view: OutcomeView): Route {
   const { winningSide, matchUpStatus, flags } = request;
   const { existing, line } = view;
-  // a BYE has no result to clear: the call leaves it the BYE it is (`clearsABye`, P26)
+  // a BYE has no result to clear: the call leaves it the BYE it is (`clearsABye`)
   if (clearsABye({ storedMatchUpStatus: existing.matchUpStatus, matchUpStatus, winningSide, score: request.score }))
     return 'noop';
   if (

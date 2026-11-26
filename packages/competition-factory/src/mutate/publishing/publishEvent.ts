@@ -128,8 +128,7 @@ export function publishEvent(params: PublishEventType): ResultType & { eventData
   addNotice({
     // eventId is carried on the envelope, NOT only inside eventData.eventInfo. Consumers that need
     // just the id (cache eviction, fan-out routing) previously had to reach through the whole
-    // payload for it — which is what keeps `eventData` mandatory. See
-    // Mentat/planning/FACTORY_NOTICE_IDENTITY_AUDIT.md.
+    // payload for it — which is what keeps `eventData` mandatory.
     payload: { eventData, eventId: event?.eventId, tournamentId: tournamentRecord.tournamentId },
     topic: PUBLISH_EVENT,
   });

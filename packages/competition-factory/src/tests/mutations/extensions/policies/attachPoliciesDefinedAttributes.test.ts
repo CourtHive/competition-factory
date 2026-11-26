@@ -5,7 +5,7 @@ import { expect, test } from 'vitest';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 /**
- * A policy must hold a defined attribute besides its policyName (building-a-tournament.md § 6.3, CA 2026-10-29): an
+ * A policy must hold a defined attribute besides its policyName (building-a-tournament.md § 6.3): an
  * attribute whose value is undefined is not stored, so a policy holding only such attributes would read back as its
  * name alone, which is refused.
  */

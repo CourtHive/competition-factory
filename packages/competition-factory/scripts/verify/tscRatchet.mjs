@@ -25,7 +25,7 @@
  *
  *   hard-union    every tsc error, per DIRECTORY, compiling non-test `src` against a temporary copy of
  *                 `src/types` in which `Structure` and `DrawLink` are the 8.0.0 HARD unions (the `never`
- *                 fields deleted). It holds stage 1 of Mentat/planning/FACTORY_STRUCTURE_UNIONS_8_0_0.md:
+ *                 fields deleted). It holds stage 1 of the 8.0.0 structure-unions plan:
  *                 a site converted to read through `matchUpsOf`/`positionAssignmentsOf`/`structuresOf` cannot
  *                 quietly go back. `src/tests/typeAssertions` is not counted (its soft-form assertions fail
  *                 under the hard form by design). At 0 everywhere, 8.0.0 can delete the `never` fields.
@@ -63,7 +63,7 @@ const COUNTS = {
 
 /**
  * The `never` fields the 8.0.0 hard form deletes. Each must be present exactly once, or the count is meaningless.
- * A position link's `roundNumber` is not among them: it is a real optional field (CA, 2026-10-23), since a link out of a
+ * A position link's `roundNumber` is not among them: it is a real optional field, since a link out of a
  * round robin may record the groups' final round, and the factory writes one on a qualifying link.
  */
 export const SOFT_ONLY_LINES = [

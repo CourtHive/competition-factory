@@ -28,7 +28,7 @@
  * Modes:
  *   --update-baseline   overwrite the baseline with current headroom
  *   --budget=N          items of margin a change may spend (default 25)
- *   --report            CI mode (CA, 2026-10-05): print the headroom (and write it to the GitHub job
+ *   --report            CI mode: print the headroom (and write it to the GitHub job
  *                       summary when $GITHUB_STEP_SUMMARY is set) WITHOUT comparing to the baseline —
  *                       a PR into dev has no prior run on dev to compare against, and the committed
  *                       baseline goes stale between refreshes

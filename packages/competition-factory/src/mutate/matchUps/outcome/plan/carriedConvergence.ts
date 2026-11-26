@@ -89,14 +89,14 @@ export type Convergence = {
   serves?: true;
 };
 
-// Two RULE 4 rules, kept apart on purpose (Mentat assessment/2026-11-07-outcome-refactor-debates.md, ruling 3).
+// Two RULE 4 rules, kept apart on purpose.
 // `convergenceAt` mirrors `progressExitStatus`: a CARRIED exit arriving where a single exit is AWARDED to the
 // carrier's seat, any carried origin standing opposite, written as `setMatchUpState` writes it (`deriveStatusCodes`,
 // `scoredTime` stamped). `producedConvergedReason` mirrors `conditionallyAdvanceDrawPosition`'s `existingExit`: a
 // PRODUCED exit arriving where a PENDING exit a double exit produced stands with no winner and no positions, written
 // as `modifyMatchUpScore` writes it (codes `[]`, no `scoredTime`). A merge parameterised by the arrival would branch at
 // the award, the standing origin, the positions, the seats, the codes, the stamp and the score guard.
-// THE WRITER FOLLOWS THE CALLER, NOT THE CELL (Mentat assessment/2026-11-12-outcome-v2-after-1c-ruling.md): a carried
+// THE WRITER FOLLOWS THE CALLER, NOT THE CELL: a carried
 // exit onto a pending produced exit is written by `progressExitStatus` RULE 4 through `setMatchUpState` when the
 // loser's direction reaches it (no winner there, so nothing directed is taken back), and by `convergeCarriedExit`
 // through `modifyMatchUpScore` only on DEA's own carry (`carryExitOnward`). The off-diagonal cells refused by both
@@ -166,7 +166,7 @@ export function convergenceAt(
   if (targetLinked && (!ownSeat || !walk?.unfillable)) return undefined;
   const unfillable = targetLinked && walk?.unfillable ? walkChain(walk.unfillable) : undefined;
   // 2a: a pending landing's own position stands there as the reservation its produced exit made: v1 takes it back before
-  // the double exit produces there (`withdrawOwnAdvancement`, DEA:976, P44), as 1b's `convergedWinner` plans it
+  // the double exit produces there (`withdrawOwnAdvancement`, DEA:976), as 1b's `convergedWinner` plans it
   const released =
     advanced && pending && target
       ? withdrawReservation(

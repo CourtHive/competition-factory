@@ -31,7 +31,7 @@ export function inferServeSide(
 ): 'deuce' | 'ad' | undefined {
   const currentSet = getActiveSet(matchUp);
 
-  // Aggregate scoring (INTENNSE, soccer, etc.), timed segments included (§ 10.5, CA 2026-10-18)
+  // Aggregate scoring (INTENNSE, soccer, etc.), timed segments included (§ 10.5)
   // Rule: deuce when aggregate total is even, ad when odd
   if (isAggregateFormat(formatStructure)) {
     return inferAggregateSide(matchUp, currentSet);

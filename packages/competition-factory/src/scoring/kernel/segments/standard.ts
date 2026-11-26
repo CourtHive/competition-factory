@@ -64,7 +64,7 @@ export function standardPoint(
     ...(tiebreak ? { side1TiebreakScore: played.game.score[0], side2TiebreakScore: played.game.score[1] } : {}),
     ...(setWinner === undefined ? {} : { winningSide: (setWinner + 1) as 1 | 2 }),
   };
-  // a game won short of the set opens the next game at 0-0 in the per-game counts (decision SE2a-D3)
+  // a game won short of the set opens the next game at 0-0 in the per-game counts
   if (setWinner !== undefined) return { set: next, game: undefined, coordinates, score };
   const opened = gameScoresAfter(next, undefined, [0, 0]);
   return { set: { ...next, ...opened }, game: NEW_GAME, coordinates, score };
@@ -108,7 +108,7 @@ export function standardGame(
     ...(tiebreakScore ? { side1TiebreakScore: tiebreakScore[0], side2TiebreakScore: tiebreakScore[1] } : {}),
     ...(setWinner === undefined ? {} : { winningSide: (setWinner + 1) as 1 | 2 }),
   };
-  // a set already counting games point by point opens the next game at 0-0, as a game won by a point does (SE2a-D3)
+  // a set already counting games point by point opens the next game at 0-0, as a game won by a point does
   if (setWinner !== undefined || !set.side1GameScores) return { set: next };
   return { set: { ...next, ...gameScoresAfter(next, undefined, [0, 0]) }, game: NEW_GAME };
 }

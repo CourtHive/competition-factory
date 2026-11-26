@@ -362,7 +362,7 @@ export type GenerateTournamentRecordArgs = MockEngineCall &
     ratingsParameters?: Record<string, unknown>;
     policyDefinitions?: MockPolicyDefinitions;
     /**
-     * @deprecated ignored: completed matchUps are never scheduled (CA 2026-10-23). An auto-scheduled tournament has its
+     * @deprecated ignored: completed matchUps are never scheduled. An auto-scheduled tournament has its
      * results applied after it is scheduled, so its completed matchUps carry schedules. Removed in 8.0.0.
      */
     scheduleCompletedMatchUps?: boolean;

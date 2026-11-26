@@ -52,8 +52,8 @@ import type {
  * first-round result after its winner has lost round 2.
  *
  * Both halves follow the flipped matchUp's own: a question asked BEFORE anything is written, which refuses when
- * the slot the reconciliation would write is ACTIVE (CA, 2026-09-17: refuse the swap when propagation cannot
- * proceed with equivalence), and the state reconciliation AFTER the result is applied.
+ * the slot the reconciliation would write is ACTIVE (refuse the swap when propagation cannot proceed with
+ * equivalence), and the state reconciliation AFTER the result is applied.
  */
 
 export type PathFeed = {

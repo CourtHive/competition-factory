@@ -36,7 +36,7 @@ type GetOvernightRestWarningsArgs = {
 };
 
 /**
- * Overnight rest is WARNED, not held (CA 2026-10-25): a guideline a player may waive (USTA Friend at Court: juniors
+ * Overnight rest is WARNED, not held: a guideline a player may waive (USTA Friend at Court: juniors
  * "should" have 12 hours from the completion of their last match to their first of the next day). For each date, each
  * participant placed in a matchUp of the date whose last matchUp of the day before ended less than its overnight minutes
  * earlier is reported. A matchUp of the day before that is not yet decided warns for the matchUp its winner (or loser)

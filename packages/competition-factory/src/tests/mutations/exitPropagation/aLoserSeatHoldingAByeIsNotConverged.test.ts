@@ -17,7 +17,7 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  * seat, `Southeast|1|2` dp 4, holds a produced walkover and `Southeast|1|2` is a double walkover. `East|1|16`'s default
  * then makes `West|1|8` a double default: its carrier leaves `South|1|4`, the convergence is re-derived to a single
  * exit and withdrawn from dp 4, and `South|1|4`, now a carrier beside a produced exit, converges again. Under the policy
- * off a double exit's loser seat shows the exit it produced, never a BYE (CA ruling (A), 2026-10-21), so dp 4 holds the
+ * off a double exit's loser seat shows the exit it produced, never a BYE, so dp 4 holds the
  * produced walkover and `Southeast|1|2` is a double walkover whichever of `East|1|13` and `East|1|16` comes first. (Before
  * the ruling the seat that already held a BYE was settled, and this file pinned `Southeast|1|2` as a BYE in both orders.)
  *
@@ -95,8 +95,8 @@ it('the census schedule un-decides nothing', () => {
 it('a converged loser seat shows the exit its convergence produced, so the matchUp it feeds converges', () => {
   const draw = drawAfter(CONVERGE_THEN_BYE, 'bye-held-loser-seat-converged');
   expect(draw['South|1|4'].matchUpStatus).toEqual(DOUBLE_WALKOVER);
-  // under the policy off `South|1|4`'s loser seat, `Southeast|1|2` dp 4, shows the walkover it produced, never a BYE (CA
-  // ruling (A), 2026-10-21), so the two produced walkovers meet there
+  // under the policy off `South|1|4`'s loser seat, `Southeast|1|2` dp 4, shows the walkover it produced, never a BYE,
+  // so the two produced walkovers meet there
   expect(draw['Southeast|1|2'].occupants).toEqual([undefined, undefined]);
   expect(draw['Southeast|1|2'].matchUpStatus).toEqual(DOUBLE_WALKOVER);
   // and that convergence's produced walkover waits, unawarded, in the next round

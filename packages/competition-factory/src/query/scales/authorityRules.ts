@@ -3,7 +3,7 @@ import { UNSPECIFIED } from '@Constants/pointsAuthorityConstants';
 import type { RankingListAward } from '@Types/rankingTypes';
 
 /**
- * A RANK LIST'S AUTHORITY RULES (CA 2026-11-08): which issuing authorities' awards it admits, and how much each one's
+ * A RANK LIST'S AUTHORITY RULES: which issuing authorities' awards it admits, and how much each one's
  * points count. A property of the consuming rank list, not of the policy that produced the awards
  * (docs: policies/rankingPolicy § Authority weighting at aggregation time). For example, a Tennis Europe hybrid list
  * admits ATP, ITF and Tennis Europe awards, and a federation's internal list might weight external authorities at 0.5.

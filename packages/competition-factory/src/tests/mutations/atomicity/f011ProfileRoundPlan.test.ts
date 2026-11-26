@@ -16,7 +16,7 @@ import { MODIFY_SCHEDULING_PROFILE, MUTATIONS } from '@Constants/topicConstants'
 import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
 
 /**
- * F-011: addSchedulingProfileRound decides the date, the venue, the round and the validity of the whole proposed
+ * addSchedulingProfileRound decides the date, the venue, the round and the validity of the whole proposed
  * profile before writing. Before the fix it appended the round to the stored venue and only then validated the
  * profile, so a round naming a draw that is not there stayed in the profile though the call was refused.
  */
@@ -75,7 +75,7 @@ const lateRefusals = (writeMode?: string) => {
   }));
 };
 
-describe('F-011 scheduling-profile round', () => {
+describe('scheduling-profile round', () => {
   for (const mode of OUTCOME_MODES) {
     for (const borrowed of [false, true]) {
       it(`${mode}, borrowed=${borrowed}: the finding fixture leaves the record unchanged`, () => {

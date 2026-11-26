@@ -24,7 +24,7 @@ const ENTITIES: ['tournamentRecord' | 'drawDefinition' | 'event', 'tournamentId'
 ];
 
 /**
- * An entity given both as an object and by its id must be one entity (CA 2026-10-30): a call given an event whose own
+ * An entity given both as an object and by its id must be one entity: a call given an event whose own
  * eventId is not the eventId it is also given is refused, with the engine or without it, rather than writing to one
  * and reporting the other.
  */

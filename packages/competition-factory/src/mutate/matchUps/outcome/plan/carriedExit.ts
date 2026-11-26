@@ -484,7 +484,7 @@ function passedLanding(
 
 // The carry's landing (`landingAt`, `passedLanding`, `levelLanding`) and the held exit's landing (`heldLoser`,
 // `heldLanding`, `heldAward`, `heldBeyond` in `byeChain.ts`) read the same geometry through `indexed`, `sideOf` and
-// `onwardFrom`, and the sharing ends there (Mentat assessment/2026-11-07-outcome-refactor-debates.md, ruling 11).
+// `onwardFrom`, and the sharing ends there.
 // They mirror two v1 paths with different rules: the carry reads the carrier's side off the hydrated matchUp and
 // awards an empty side (`progressExitStatus` RULE 2); the held exit reads `feedRound ? 1 : side`, leaves an empty
 // side pending and asks the other feeder (`carryExitOnward`). The carry admits a BYE relay on its shape alone

@@ -82,7 +82,7 @@ const METHOD_LABELS: Record<string, string> = {
 };
 
 /**
- * A completed result's legible string, side 1 first unless `perspective` is 1 (CA, 2026-11-04): the aggregate, then
+ * A completed result's legible string, side 1 first unless `perspective` is 1: the aggregate, then
  * how it was decided. Decided in regulation reads as the plain aggregate, as every sport writes it; a level finish
  * says so; a result decided externally names its method. A result in progress reads as the live scoreboard.
  */

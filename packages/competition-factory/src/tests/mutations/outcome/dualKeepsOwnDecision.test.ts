@@ -17,15 +17,15 @@ import {
 } from '@Constants/outcomePipelineConstants';
 
 /**
- * CLASS 4 (CA, 2026-11-20), both rules, in every pipeline mode.
+ * CLASS 4, both rules, in every pipeline mode.
  *
  * 1. A TEAM dual decided by its own exit (WALKOVER, DEFAULTED, ...) or by its own call keeps its winner while its lines
  *    project none (`dualKeepsOwnDecision`): the line is written, the dual is not un-decided, its team stays in the next
  *    dual and the result there stands. It used to go IN_PROGRESS with no winner, its team taken back out of a decided
  *    next dual and that dual's result reset.
  * 2. A LINE-DECIDED dual whose winner a line write would change or remove, with the dual's downstream active, is
- *    refused before any write (§ 2 row 14, `lineTakesPlayedOnDualWinner`). A dual scored by hand is exempt. CA rejected
- *    the alternative of accepting such a line by turning the dual into a manually declared winner.
+ *    refused before any write (§ 2 row 14, `lineTakesPlayedOnDualWinner`). A dual scored by hand is exempt. The
+ *    alternative, accepting such a line by turning the dual into a manually declared winner, was rejected.
  *
  * SINGLE_ELIMINATION 4, DOMINANT_DUO (two singles and a doubles, two rubbers win the dual), line-ups attached.
  */

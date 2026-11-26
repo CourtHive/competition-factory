@@ -11,7 +11,7 @@ import { TEAM } from '@Constants/eventConstants';
  * `tieFormatUuids` threading — the pool reaching `writeTieFormat`'s
  * copy-on-write fork from the mutations that own it.
  *
- * TWO POOLS, not one (decision CA 2026-08-15). `addCollectionDefinition` already
+ * TWO POOLS, not one. `addCollectionDefinition` already
  * carries a `uuids` pool feeding **matchUp id** minting; sharing it with
  * tieFormat forks would couple unrelated id streams, and an `INSUFFICIENT_UUIDS`
  * error could not say which one ran short. `tieFormatUuids` is separate.

@@ -8,7 +8,7 @@ import { afterEach, expect, it } from 'vitest';
 import { setClock } from '@Tools/clock';
 
 /**
- * A TOURNAMENT RECORD CARRIES THE FACTORY VERSIONS THAT CREATED AND LAST WROTE IT (CA, 2026-10-06).
+ * A TOURNAMENT RECORD CARRIES THE FACTORY VERSIONS THAT CREATED AND LAST WROTE IT.
  *
  * `factory = { createdVersion, version, timeStamp }`: `createdVersion` is written once, at creation; every write
  * refreshes `version` and `timeStamp` and keeps `createdVersion`. Records created before the stamp have no creator on

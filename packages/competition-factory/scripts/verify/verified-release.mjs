@@ -2,7 +2,7 @@
 /**
  * verify:verified-release — the publish gate: the code being published is code a full `verify` passed.
  *
- * WHY (CA, 2026-10-04): `prepublishOnly` re-ran the whole `pnpm verify` chain at tag time, ~45 minutes on
+ * WHY: `prepublishOnly` re-ran the whole `pnpm verify` chain at tag time, ~45 minutes on
  * one runner, on a commit whose code the checkpoint into `master` had just verified. With the release PR's
  * own ~55 minute run, a publish trailed a green checkpoint by about 100 minutes and tested the same tree
  * twice more. A release commit is release-please's: it changes the version and the changelog and nothing

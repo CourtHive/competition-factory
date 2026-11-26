@@ -7,8 +7,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 /*
- * Transit between venues, stored once per pair in `scheduling.venueTransits` (scheduling-pipeline.md § 3.4;
- * CA 2026-10-25): symmetric unless one-way, a sanctioned value a floor, pruned with a deleted venue, carried by a copy,
+ * Transit between venues, stored once per pair in `scheduling.venueTransits` (scheduling-pipeline.md § 3.4):
+ * symmetric unless one-way, a sanctioned value a floor, pruned with a deleted venue, carried by a copy,
  * and read by the planner.
  */
 
@@ -56,7 +56,7 @@ describe('setVenueTransit', () => {
   });
 });
 
-describe('a sanctioned value is a floor (CA 2026-10-25)', () => {
+describe('a sanctioned value is a floor', () => {
   it('keeps the sanctioned value beside the minutes, refuses less, and refuses removal', () => {
     threeVenues();
     let result: any = tournamentEngine.setVenueTransits({

@@ -7,8 +7,8 @@ import { INVALID_DATE } from '@Constants/errorConditionConstants';
 
 /**
  * A scheduled time given as a date-time names its day. It gives a matchUp with no date that date; one naming another
- * day than the matchUp's scheduledDate is refused, never stored against it (scheduling-pipeline.md § 9.9,
- * CA 2026-10-28). A date given beside it in a schedule write is the matchUp's date.
+ * day than the matchUp's scheduledDate is refused, never stored against it (scheduling-pipeline.md § 9.9).
+ * A date given beside it in a schedule write is the matchUp's date.
  */
 const scheduleOf = (matchUpId: string) => tournamentEngine.findMatchUp({ matchUpId }).matchUp?.schedule ?? {};
 

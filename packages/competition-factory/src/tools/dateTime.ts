@@ -151,7 +151,7 @@ export function addMinutes(startDate, minutes): Date {
 
 /**
  * A wall-clock `HH:MM` plus minutes, modulo a day: plain arithmetic on minutes past midnight, with no Date, no clock and
- * no zone, so a daylight-saving change on the day the code runs cannot move it (CA 2026-10-26, hydration OPEN-7). A
+ * no zone, so a daylight-saving change on the day the code runs cannot move it. A
  * fraction of a minute is dropped, as the time is whole minutes; a value that is not a time gives '00:00'.
  */
 export function addMinutesToTimeString(timeString?, minutes?): string {

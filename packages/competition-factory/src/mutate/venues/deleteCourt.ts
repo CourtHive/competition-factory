@@ -133,10 +133,11 @@ type DeleteCourtsArgs = {
 type CourtDeletionItem = { index: number; courtId: string; success?: boolean; error?: ErrorType; info?: unknown };
 
 /**
- * A bulk deletion: each court is planned against what the courts before it left and committed on its own (ruling 7).
- * A refused court leaves the record as it found it, and the courts after it are still deleted. `results` holds one
- * entry per courtId, in order; the first refusal is also returned at the top level, as before, with `committed: true`
- * when any court was deleted, so the engine announces what was (ruling 33, see engines/parts/partialCommit).
+ * A bulk deletion: each court is planned against what the courts before it left and committed on its own (per-item
+ * atomicity). A refused court leaves the record as it found it, and the courts after it are still deleted. `results`
+ * holds one entry per courtId, in order; the first refusal is also returned at the top level, as before, with
+ * `committed: true` when any court was deleted, so the engine announces the committed work (see
+ * engines/parts/partialCommit).
  */
 export function deleteCourts(params: DeleteCourtsArgs): {
   results?: CourtDeletionItem[];

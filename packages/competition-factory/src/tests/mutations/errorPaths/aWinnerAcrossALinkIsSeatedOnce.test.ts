@@ -35,7 +35,7 @@ import { EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT } from '@Constants/errorC
  *
  * A direction runs after the call has written the source matchUp's result, and nothing in the cascade restores it: a
  * refusal from here would leave that write behind, and an error must change nothing with no rollback by the caller
- * (CA, 2026-10-22). So a placement that fails, and a winner with no position to take, are logged and not returned. For
+ * So a placement that fails, and a winner with no position to take, are logged and not returned. For
  * the Decider, `reconcileDeciders` seats it from the final that stands later in the same call; the last two cases pin
  * that, the second by fault injection (no placement failure other than the seated case is reached in play).
  */

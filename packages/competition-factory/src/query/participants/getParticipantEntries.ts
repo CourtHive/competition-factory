@@ -279,7 +279,7 @@ function processEvent({
   const eventPublishedSeeding = eventsPublishStatuses?.[eventId]?.publishedSeeding;
 
   // Draw entries are read with each draw's structures in `structureSort` order, and everything after them reads that
-  // order too. It was the STORED array, sorted in place: a query that reordered the record (P54). Sorted here on a
+  // order too. It was the STORED array, sorted in place: a query that reordered the record. Sorted here on a
   // view of the draw, so what follows reads the same order and the record keeps its own.
   const readsDrawEntries = withDraws || withRankingProfile || withSeeding;
   const drawDefinitions = readsDrawEntries

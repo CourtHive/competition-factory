@@ -32,14 +32,14 @@ import type { Set as SetType } from '@Types/tournamentTypes';
 const isNumber = (value: unknown): value is number => typeof value === 'number' && !Number.isNaN(value);
 
 /**
- * 0-0 TIEBREAK POINTS ARE NOT RECORDED POINTS (CA, 2026-11-04). No tiebreak finishes 0-0, and the engine refuses
+ * 0-0 TIEBREAK POINTS ARE NOT RECORDED POINTS. No tiebreak finishes 0-0, and the engine refuses
  * tiebreak points on a set that has not finished, so a set whose tiebreak fields both read 0 carries no tiebreak
  * result: a feed's empty default. Prod 2026-11-04: an integration sent `6-7` with `0`/`0` and was refused ("Tiebreak
  * winner must reach 7 points, got 0"). Dropping the pair records it as a bare `7-6`, accepted with
  * TIEBREAK_POINTS_NOT_RECORDED (ruling V11), and the score string no longer reads `7-6(0)`, which says the loser won
  * no points. Any other impossible tiebreak (`0-3`, `7-7`) is still refused.
  *
- * One rule for the whole engine (CA, 2026-11-07). This lived in `setMatchUpStatus` alone, so the write path recorded
+ * One rule for the whole engine. This lived in `setMatchUpStatus` alone, so the write path recorded
  * a `0-0` pair as no points while `validateSetScore` refused it, `checkSetIsComplete` called the set unfinished and
  * `generateScoreString` printed `7-6(0)`: a score-entry interface that asks the analysis as the operator types was
  * told the opposite of what the record would say. Every reader of a set's tiebreak points goes through here.
@@ -68,8 +68,8 @@ type SideValues = [number | undefined, number | undefined];
 
 /**
  * The 1-0 MARKER on its own: a tiebreak-only set whose game fields hold `1-0` (or `0-1`) and which carries
- * no tiebreak points. CA, 2026-10-02 (ruling V11): *"if a tiebreak set is required to complete the matchUp
- * and there is 1-0 in games that is acceptable"* — the points were not recorded, the winner was. A `1-0`
+ * no tiebreak points. When a tiebreak set is required to complete the matchUp, `1-0` in its games is
+ * acceptable: the points were not recorded, the winner was. A `1-0`
  * in the tiebreak FIELDS is points, and under a target above one it is no finished tiebreak; under `TB1`
  * the target is one, so `1-0` there is the points and never the marker.
  */

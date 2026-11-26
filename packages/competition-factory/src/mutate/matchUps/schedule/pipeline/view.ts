@@ -49,7 +49,7 @@ import type { VenueTransit } from './transit';
 export type ProfileRound = {
   roundSegment?: { segmentNumber: number; segmentsCount: number };
   matchUpIds?: string[];
-  /** `HH:MM`: no matchUp of the round is placed before it (G5, CA 2026-11-23) */
+  /** `HH:MM`: no matchUp of the round is placed before it */
   notBeforeTime?: string;
   periodLength?: number;
   tournamentId: string;
@@ -150,7 +150,7 @@ type BuildSchedulingViewArgs = {
   courtIds?: string[];
   /**
    * this run's daily limits, in place of those the records resolve (the policy's, the tournament's, each participant's
-   * override): a what-if, never stored. `{}` enforces none. Omitted: the records' limits (CA 2026-11-22)
+   * override): a what-if, never stored. `{}` enforces none. Omitted: the records' limits
    */
   matchUpDailyLimits?: { [matchUpType: string]: number };
 };
@@ -248,7 +248,7 @@ export function buildSchedulingView({
   courtIds,
 }: BuildSchedulingViewArgs): SchedulingView | { error: ErrorType; context?: Record<string, unknown> } {
   // a stored profile that needs repair (a round whose venue, event or draw is gone) is refused, with the repaired profile
-  // offered for the caller to save: the view writes nothing (CA 2026-10-23)
+  // offered for the caller to save: the view writes nothing
   const profileResult = getSchedulingProfile({ tournamentRecords });
   if (profileResult.error) return { error: profileResult.error };
   if (profileResult.modifications) return schedulingProfileRepairRefusal(profileResult) as { error: ErrorType };
@@ -277,7 +277,7 @@ export function buildSchedulingView({
       (tournamentRecord) => getContainedStructures({ tournamentRecord }).containedStructures,
     ),
   );
-  // a completed matchUp is never scheduled again (CA 2026-10-23)
+  // a completed matchUp is never scheduled again
   const schedulable = (matchUp: HydratedMatchUp) =>
     !hasByeSide(matchUp) && (!matchUp.matchUpStatus || !completedMatchUpStatuses.includes(matchUp.matchUpStatus));
 
@@ -325,7 +325,7 @@ export function buildSchedulingView({
           }
           if (error) return { ...unscheduled, error };
           // a round none of whose matchUps has a format is not timed, and so schedules nothing; its matchUps not yet
-          // timed are reported (CA 2026-10-23)
+          // timed are reported
           if (!roundTiming) {
             const noFormatMatchUpIds = inRound
               .filter((matchUp) => schedulable(matchUp) && !matchUp.schedule?.scheduledTime)

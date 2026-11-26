@@ -6,7 +6,7 @@ import * as sanctioningConstants from '@Constants/sanctioningConstants';
 import * as officiatingConstants from '@Constants/officiatingConstants';
 
 /**
- * EVERY ERROR CODE IS A MEMBER OF ONE CLOSED UNION, `ErrorCode` (CA, 2026-10-04).
+ * EVERY ERROR CODE IS A MEMBER OF ONE CLOSED UNION, `ErrorCode`.
  *
  * The codes were 264 unique strings typed `string`, so a consumer recognising an error by its code
  * (the only key that survives the CFS socket) wrote the code by hand and a typo compiled. The factory

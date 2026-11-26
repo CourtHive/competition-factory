@@ -34,7 +34,7 @@ import {
  * THE COST CURVE — outcome v2 executor plan § 6.0, G4 (S0 commits it).
  *
  * What one `setMatchUpStatus` costs as a draw grows, per pipeline mode: every matchUp completed `6-1 6-1`, timing
- * only that call, the method of `Mentat/reports/2026-10-18-completion-cost-profile.md` (which ran in a throwaway
+ * only that call, the method of the 2026-10-18 completion cost profile (which ran in a throwaway
  * worktree). G4's draws: SINGLE_ELIMINATION 32/64/128/256, FEED_IN_CHAMPIONSHIP 64, ROUND_ROBIN 32,
  * DOUBLE_ELIMINATION 64, COMPASS 64 and TEAM SINGLE_ELIMINATION 16/32/64 (lines scored, with lineups), plus TEAM SE 16
  * at a larger tieFormat (LAVER_CUP: 12 lines in 6 collections, against the default's 9 in 2).
@@ -55,7 +55,7 @@ import {
  * Inert by default (`COST_CURVE=1`; `COST_CURVE_REPEATS`, default 4; `COST_CURVE_ONLY`, a label substring; `OUT` for
  * JSON + markdown). The control below
  * runs on every `pnpm test`: a small draw, asserting the harness times calls and sees hydrations. G4 is run on
- * Button and its table recorded in `Mentat/reports/`.
+ * a dedicated machine and its table recorded with the project's reports.
  *
  *   COST_CURVE=1 OUT=/tmp/cost-curve.json TZ=UTC npx vitest run src/tests/mutations/exitPropagation/costCurve.test.ts
  */

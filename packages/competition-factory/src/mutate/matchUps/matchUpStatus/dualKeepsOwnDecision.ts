@@ -6,7 +6,7 @@ import type { HydratedMatchUp } from '@Types/hydrated';
 import type { MatchUpsMap } from '@Types/factoryTypes';
 
 /**
- * A DUAL DECIDED BY ITS OWN EXIT OR ITS OWN CALL KEEPS ITS WINNER WHILE ITS LINES PROJECT NONE (CA, 2026-11-20, class 4).
+ * A DUAL DECIDED BY ITS OWN EXIT OR ITS OWN CALL KEEPS ITS WINNER WHILE ITS LINES PROJECT NONE (class 4).
  *
  * A dual's winner comes from its lines (the tally) or from the dual itself: an exit (WALKOVER, DEFAULTED, ...) or a
  * winner named on it. A line write tallied the dual afresh either way, so the first line entered on a dual decided by

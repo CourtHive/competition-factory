@@ -326,7 +326,7 @@ type DiscardedLoserTargets = {
 };
 
 // pure: the structures that receive the losers not selected as lucky losers; an error when a LOSER link's target
-// structure does not exist (CA, 2026-10-22: refused before any write, never placed-and-logged)
+// structure does not exist (refused before any write, never placed-and-logged)
 function resolveDiscardedLoserTargets({
   drawDefinition,
   luckyLoserIds,

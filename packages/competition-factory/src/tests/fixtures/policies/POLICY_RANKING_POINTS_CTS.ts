@@ -2,7 +2,6 @@
  * Czech Tennis Association (Český tenisový svaz, ČTS) — Klasifikační řád 2025
  *
  * Source: ČTS Klasifikační řád ("Classification Order"), 2025 edition.
- *         Mentat/planning/RANKING_LISTS_PIPELINE_CTS2025_KLASIFIKACE.txt
  *         (offline extracted text — lines 423-443 carry the full Tabulka IV;
  *         the earlier policy comment claiming the table was truncated was
  *         mistaken, the table is intact in the extract).

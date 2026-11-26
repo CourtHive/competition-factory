@@ -10,9 +10,9 @@ import { AD_HOC, FIRST_MATCH_LOSER_CONSOLATION, SINGLE_ELIMINATION } from '@Cons
 /**
  * A draw built outside the factory (an integrator report, 2026-10-18) stored no `winnerMatchUpId` / `loserMatchUpId`, so
  * `getEventData` returned no progression links and the bracket could not be drawn until the first scored matchUp
- * stored them. `addDrawDefinition` now stores them with the draw (CA, 2026-10-18). `getDrawData`, and through it
+ * stored them. `addDrawDefinition` now stores them with the draw. `getDrawData`, and through it
  * `getEventData` and `getStructureData`, derives them onto a copy of a draw already stored without them: they reach the
- * returned data and never the record (CA, 2026-10-18: "confirming that only the return data is getting the goesTo").
+ * returned data and never the record: only the returned data gets the goesTo.
  */
 const stripEdges = (drawDefinition: any) => {
   for (const structure of drawDefinition.structures)

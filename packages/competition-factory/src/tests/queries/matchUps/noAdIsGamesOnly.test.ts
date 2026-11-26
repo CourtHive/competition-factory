@@ -10,14 +10,14 @@ import { COMPLETED } from '@Constants/matchUpStatusConstants';
 /**
  * `NOAD` on a set is a GAMES property. It never shortens the set.
  *
- * Settled by CA, 2026-10-01, on the grammar: `S:6NOAD` is no-advantage game scoring (a deciding point
+ * In the grammar `S:6NOAD` is no-advantage game scoring (a deciding point
  * at deuce), `TB7NOAD` is a tiebreak won by one at the target, `S:TB15NOAD` a tiebreak set won by one,
  * and a one-game SET margin is a different token, `WB1`. The ITF's short sets keep "a margin of two
  * games" however the games are scored; the one format where a set really ends at a one-game margin
  * with no tiebreak is TYPTI, which the code spells `S:5WB1`. Five readers in this repo had read set-level
  * `NoAD` as that margin, so the same `6-5` was complete to `checkSetIsComplete`, won to `analyzeSet`,
  * and refused by `validateSetScore` — one score, two answers, and the components card was asking the
- * wrong one. Research and sources: `Mentat/statuses/2026-10-01-noad-at-three-levels-and-the-one-game-set.md`.
+ * wrong one.
  */
 const NOAD_GAMES = 'SET3-S:6NOAD/TB7-F:TB10';
 const NOAD_ADVANTAGE = 'SET1-S:6NOAD';
@@ -52,7 +52,7 @@ describe('a set with no-advantage games still needs two clear games or its tiebr
     expect(checkSetIsComplete({ set: set(7, 5), matchUpFormat: NOAD_ADVANTAGE })).toBe(true);
     // Not asserted here: an `8-6` in an advantage set. `checkSetIsComplete` reports it incomplete with or
     // without `NOAD` — `requiresTiebreak` fires on both sides at `setTo` even where the format declares
-    // `noTiebreak` — which is a separate defect, measured 2026-10-01 and tracked in Mentat TASKS.md.
+    // `noTiebreak` — which is a separate defect, measured 2026-10-01 and tracked separately.
   });
 
   it('analyzeSet names no winner for a 6-5 under no-ad games', () => {
@@ -63,7 +63,7 @@ describe('a set with no-advantage games still needs two clear games or its tiebr
 
     // `winningSide` only: `analyzeSet` also reports `isValidSetOutcome: false` for a 7-5 under the plain
     // `SET3-S:6/TB7` ("invalid winning game scoreString (2)"), with or without `NOAD` — a separate
-    // defect in `validateTiebreakCondition`, measured 2026-10-01 and tracked in Mentat TASKS.md.
+    // defect in `validateTiebreakCondition`, measured 2026-10-01 and tracked separately.
     const seven = analyzeSet({ setObject: set(7, 5), matchUpScoringFormat });
     expect(seven.winningSide).toBe(1);
   });

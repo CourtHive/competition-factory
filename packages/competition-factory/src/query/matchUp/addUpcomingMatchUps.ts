@@ -91,7 +91,7 @@ function addEliminationUpcomingInfo({
     matchUpId,
   });
   /**
-   * A MALFORMED ROUND LINK LEAVES THIS MATCHUP UNDECORATED (CA, 2026-10-06: it is an error). This is
+   * A MALFORMED ROUND LINK LEAVES THIS MATCHUP UNDECORATED (it is an error). This is
    * hydration, with no error channel: every `nextMatchUps` read takes it, `modifyMatchUpScore`,
    * scheduling and the outcome view among them. Failing it would replace the error the directing call
    * returns with an unrelated one. The error is returned wherever the link is followed.
@@ -110,7 +110,7 @@ function addEliminationUpcomingInfo({
   const winnerTo = getUpcomingInfo({ upcomingMatchUp: winnerMatchUp });
   let loserTo = getUpcomingInfo({ upcomingMatchUp: loserMatchUp });
 
-  // the matchUp a loser actually reaches: past a BYE, the next one to be played (CA 2026-10-26, hydration OPEN-3)
+  // the matchUp a loser actually reaches: past a BYE, the next one to be played
   let loserReached = loserMatchUp;
   if (inContextMatchUp.matchUpStatus !== BYE && loserMatchUp?.matchUpStatus === BYE) {
     const { matchUp: nextMatchUp } =
@@ -144,7 +144,7 @@ function addEliminationUpcomingInfo({
 function checkScheduleConflict({ scheduleConflictMatchUpIds, inContextMatchUp, timeAfterRecovery, upcomingTo }) {
   if (upcomingTo?.schedule?.scheduledTime) {
     // date and time together where both dates are known: the next day's morning is not before tonight's recovery
-    // (CA 2026-10-26, hydration OPEN-8); a target with no date is compared by the clock, as it always was
+    // a target with no date is compared by the clock, as it always was
     const afterDate = inContextMatchUp.schedule?.dateAfterRecovery;
     const targetDate = upcomingTo.schedule.scheduledDate ?? extractDate(upcomingTo.schedule.scheduledTime);
     const earlierClock = timeStringMinutes(upcomingTo.schedule.scheduledTime) < timeStringMinutes(timeAfterRecovery);
@@ -185,7 +185,7 @@ function addPotentialParticipants({
   const winnerParticipantIds = getParticipantIds(winnerMatchUp?.sides);
   const loserParticipantIds = getParticipantIds(loserMatchUp?.sides);
   const winnerDetermined = participants.find(({ participantId }) => winnerParticipantIds.includes(participantId));
-  // each target gets its own list: the FMLC marker below is the loser target's only (CA 2026-10-26, hydration OPEN-2)
+  // each target gets its own list: the FMLC marker below is the loser target's only
   const winnerPotentials = !winnerDetermined ? [...participants] : [];
   const loserDetermined = participants.find(({ participantId }) => loserParticipantIds.includes(participantId));
   const loserPotentials = !loserDetermined ? [...participants] : [];
@@ -198,7 +198,7 @@ function addPotentialParticipants({
   // which a target is: the stored-id shortcut returns references without setting it, the full path copies with it set
   const inContextTarget = (target) => targetIndex.byMatchUpId.get(target.matchUpId) ?? target;
 
-  // a BYE is never played: nobody is a potential participant of it (CA 2026-10-26, hydration OPEN-3)
+  // a BYE is never played: nobody is a potential participant of it
   if (winnerPotentials.length && winnerMatchUp && winnerMatchUp.matchUpStatus !== BYE) {
     const target = inContextTarget(winnerMatchUp);
     target.potentialParticipants ??= [];

@@ -187,13 +187,13 @@ export function structureMatchUpsInContext({
  * cannot be inherited, and would have to be undone.
  *
  * A flip is a relabel: whoever takes over a path downstream experiences exactly what the previous
- * occupant did (CA, 2026-09-17). `FIRST_MATCHUP` is the one place that cannot hold, because entry
+ * occupant did. `FIRST_MATCHUP` is the one place that cannot hold, because entry
  * depends on the ARRIVING participant's first match. If the new loser won a match before the flipped
  * one, they may not enter, and `reconcileFedLoserEligibility` then strips everything the departing
  * loser won there and reverts the slot to a BYE — results recorded in the consolation silently
  * disappear.
  *
- * CA's ruling: refuse the swap when propagation cannot proceed with equivalence; allow it when nothing
+ * The rule: refuse the swap when propagation cannot proceed with equivalence; allow it when nothing
  * downstream is active. So this refuses exactly when the departing loser's target drawPosition is
  * ACTIVE — they, or the participant paired with them, have played on — and returns nothing otherwise,
  * leaving the reconciliation to revert a slot nobody has played from. Measured with

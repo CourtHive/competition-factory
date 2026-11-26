@@ -10,13 +10,13 @@ import { CONSOLATION, FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionCons
 import { DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
- * Q3, CA 2026-10-03: *"Yes, land pending"*. A produced exit advanced past a BYE is still a produced
+ * Q3: land pending. A produced exit advanced past a BYE is still a produced
  * exit, so it lands pending (no winningSide) until its opponent arrives, as it does without the BYE.
  *
  * FEED_IN_CHAMPIONSHIP 16/16, the matrix's own schedule at seeds 397-400: a double exit at
  * `Consolation|4|1` produces an exit, the BYE at `Consolation|5|1` carries it on to `Consolation|6|1`,
  * whose side 1 is drawPosition 1, reserved by a feed link for the loser of the Main final. v1 awarded
- * that seat while nobody was in it. `exitAwardedToVacantSeat.test.ts` (P29) pins which side wins once
+ * that seat while nobody was in it. `exitAwardedToVacantSeat.test.ts` pins which side wins once
  * somebody arrives; this pins that nothing is awarded before.
  */
 const CELLS = [

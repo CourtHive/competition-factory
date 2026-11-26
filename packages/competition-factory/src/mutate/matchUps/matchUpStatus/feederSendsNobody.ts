@@ -18,7 +18,7 @@ import { HydratedMatchUp } from '@Types/hydrated';
 export type FeederSendsNobody = 'FEEDER_HOLDS_BYE' | 'DOUBLE_EXIT' | 'NOBODY_LOST' | 'EXIT_PENDING' | 'LINK_EXCLUDES';
 
 /**
- * WILL THE MATCHUP FEEDING A LOSER SEAT EVER SEND ANYONE ACROSS THE LINK? Read from the draw as it stands (Mentat P58).
+ * WILL THE MATCHUP FEEDING A LOSER SEAT EVER SEND ANYONE ACROSS THE LINK? Read from the draw as it stands.
  *
  * It sends nobody, and the reason is returned, when it
  *
@@ -26,7 +26,7 @@ export type FeederSendsNobody = 'FEEDER_HOLDS_BYE' | 'DOUBLE_EXIT' | 'NOBODY_LOS
  *  - is a double exit (`DOUBLE_EXIT`);
  *  - is decided and its losing side holds nobody: it was won against a produced or carried exit (`NOBODY_LOST`);
  *  - is undecided and one side holds, alone, the exit a double exit produced along its winner path, which is the side that
- *    will lose (`EXIT_PENDING`; an exit that came over a loser link waits for the award, P39);
+ *    will lose (`EXIT_PENDING`; an exit that came over a loser link waits for the award);
  *  - feeds a FIRST_MATCHUP link and every participant who could lose it already has a scored win, so none crosses
  *    (`getDrawPositionWinCount`, the engine's own eligibility rule; `LINK_EXCLUDES`).
  *
@@ -61,7 +61,7 @@ export function feederSendsNobody({
     !!withdrawn?.has(feeder.sideExitProvenance?.[sideNumber]?.sourceMatchUpId ?? '');
   // an exit a double exit produced and sent along its WINNER path, standing alone on its side: nobody will ever stand
   // there, so the side loses, and forward play owes the loser seat its BYE at once (`advanceByeToLoserMatchUp`). An exit
-  // that arrived over a LOSER link waits for the award, and P39 owes the seat a BYE only then
+  // that arrived over a LOSER link waits for the award, and the seat is owed a BYE only then
   // (`anUndoneAwardTakesBackItsLoserSeatBye`)
   const pendingProducedExit = (sideNumber: number) => {
     const entry = feeder.sideExitProvenance?.[sideNumber];
@@ -99,7 +99,7 @@ export function feederSendsNobody({
 }
 
 /**
- * The loser seats holding a propagated BYE that a matchUp is the reason for, read from the draw (Mentat P58): seats it
+ * The loser seats holding a propagated BYE that a matchUp is the reason for, read from the draw: seats it
  * feeds across its loser link; seats fed by a matchUp that carries an exit it produced; and, transitively, seats fed by
  * a matchUp that holds one of those BYEs, since a BYE matchUp sends nobody either. Each is returned as the matchUp the
  * seat belongs to. This is what the `byeClaims` ledger recorded as the matchUp's claims, without depending on the order
@@ -165,10 +165,10 @@ export function byeSeatPositionsOwedTo({
 }
 
 /**
- * Does a loser seat whose feeder sends nobody show that with a BYE? CA ruling (A), 2026-10-21: yes, except that a double
+ * Does a loser seat whose feeder sends nobody show that with a BYE? Yes, except that a double
  * exit's loser seat shows the exit it produced when `doubleExitPropagateBye` is false, whether the double exit was
  * entered or two exits converged into it, unless the seat is a fed-in position (`hasFedDrawPosition`), which takes a BYE
- * whatever the policy. Before the ruling a converged double exit's seat held a BYE or the produced exit depending on the
+ * whatever the policy. Before this rule a converged double exit's seat held a BYE or the produced exit depending on the
  * order the results were entered (`reclaimSingleExitBye` against the settled-seat rule of census S6 20694910).
  */
 export function seatShowsBye({
@@ -186,10 +186,10 @@ export function seatShowsBye({
 }
 
 /**
- * DOES THE BYE ON THIS LOSER SEAT STILL STAND? Read from the draw, not from the `byeClaims` ledger (Mentat P58).
+ * DOES THE BYE ON THIS LOSER SEAT STILL STAND? Read from the draw, not from the retired `byeClaims` ledger.
  *
  * It stands while the matchUp feeding the seat across a link sends nobody (`feederSendsNobody`) and a BYE is how the
- * seat shows that (`seatShowsBye`, CA ruling (A)). The seat is a drawPosition in its structure, so a BYE that has
+ * seat shows that (`seatShowsBye`). The seat is a drawPosition in its structure, so a BYE that has
  * advanced is judged by the seat it started from. `withdrawn` names matchUps being unwound, judged as they will stand.
  */
 export function byeSeatStands({

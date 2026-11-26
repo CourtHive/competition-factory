@@ -11,8 +11,8 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  * AN EXIT RE-ENTERED AS THE OTHER EXIT RELABELS ITS CARRY, EVEN AFTER ITS WINNER HAS PLAYED ON (census 6141627,
  * COMPASS 16/14, found by the independent do/undo probe).
  *
- * A walkover re-entered as a default for the same winner relabels the exit its loser carries (CA, 2026-10-04: "the
- * carry follows the label"). Once that winner had played on, the re-entry took `relabelWithoutDirection`, which called
+ * A walkover re-entered as a default for the same winner relabels the exit its loser carries: the
+ * carry follows the label. Once that winner had played on, the re-entry took `relabelWithoutDirection`, which called
  * `relabelLoserExit` without the status being entered, so `relabelsTheCarry` never fired and the carry kept saying
  * WALKOVER. The draw then differed from the one the default entered directly reaches.
  */

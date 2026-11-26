@@ -175,7 +175,7 @@ describe('Phase 2 - addSet() aggregate + exactly formats', () => {
     engine.addSet({ side1Score: 10, side2Score: 10 });
 
     // Aggregate: 30 vs 30 — tied, no winner. A timed total is a finished segment (spec § 2.3 rule 4) and a
-    // level aggregate with no declared decider is COMPLETED without a winner (§ 9.3, § 9.7; CA 2026-10-18)
+    // level aggregate with no declared decider is COMPLETED without a winner (§ 9.3, § 9.7)
     expect(engine.getState().matchUpStatus).toBe(COMPLETED);
     expect(engine.getState().winningSide).toBeUndefined();
     expect(engine.getScore().decisionRequired).toBe(true);
@@ -298,7 +298,7 @@ describe('Phase 2 - addGame()', () => {
   });
 
   test('tiebreak-only set completion via addGame', () => {
-    // Pickleball: best of 3, games to 11, win by 2. A game is the set won 1-0 (spec § 2.2, § 5; CA 2026-10-18)
+    // Pickleball: best of 3, games to 11, win by 2. A game is the set won 1-0 (spec § 2.2, § 5)
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:TB11' });
     engine.addGame({ winner: 0, tiebreakScore: [11, 4] });
 

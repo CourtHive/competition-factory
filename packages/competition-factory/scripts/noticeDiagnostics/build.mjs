@@ -1,5 +1,5 @@
-// `pnpm build:notice-diagnostics`: a standalone engine with the read-only notice payload detector compiled in (CA
-// ruling 27), for auditing a custom state provider or subscriber. It is the ordinary source with
+// `pnpm build:notice-diagnostics`: a standalone engine with the read-only notice payload detector compiled in,
+// for auditing a custom state provider or subscriber. It is the ordinary source with
 // `__NOTICE_PAYLOAD_DIAGNOSTICS__` defined true (src/global/state/compileTimeConstants.d.ts); the published build
 // defines it false. Not published: it writes .diagnostics/notice-payloads/index.{mjs,cjs}.
 import { build } from 'esbuild';

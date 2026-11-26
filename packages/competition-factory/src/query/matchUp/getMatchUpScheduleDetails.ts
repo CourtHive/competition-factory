@@ -297,7 +297,7 @@ function buildFullSchedule({
 }
 
 /**
- * The wall-clock time and the date a recovery ends (CA 2026-10-26, hydration OPEN-8): from the recorded end of play, else
+ * The wall-clock time and the date a recovery ends: from the recorded end of play, else
  * the start plus the average minutes, on the matchUp's date. An end of play recorded as a time earlier than the start was
  * after midnight. Past midnight the date is the next day's; an unparseable time gives neither, not '00:00'.
  */

@@ -27,7 +27,7 @@ import { CANNOT_CHANGE_WINNING_SIDE } from '@Constants/errorConditionConstants';
  * The withdrawal runs on the winner-advancement path, so it reaches a correction only while the
  * consolation is UNPLAYED. That is not a gap. Once a consolation result exists, the correction is
  * REFUSED outright — *"changes that percolate to the backdraw where the start has occurred should
- * not be allowed"*, CA 2026-09-22 — so no stale reservation is ever created to withdraw.
+ * not be allowed"* — so no stale reservation is ever created to withdraw.
  *
  * Both halves are asserted here. An earlier reading of this had the fix "going blind once the
  * consolation is played"; it was measuring a REFUSED correction and reporting the unchanged draw as

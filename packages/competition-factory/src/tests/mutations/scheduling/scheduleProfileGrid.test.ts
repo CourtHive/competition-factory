@@ -231,7 +231,7 @@ describe('scheduleProfileGrid', () => {
     expect(Math.max(...courtOrders)).toBeLessThanOrEqual(1);
   });
 
-  it('never places a completed matchUp, whatever scheduleCompletedMatchUps says (CA 2026-10-23)', () => {
+  it('never places a completed matchUp, whatever scheduleCompletedMatchUps says', () => {
     const venueId = 'venue-include-completed';
     const drawId = 'draw-include-completed';
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -447,7 +447,7 @@ describe('scheduleProfileGrid', () => {
     for (const id of scheduledIds) expect(overLimitIds).not.toContain(id);
   });
 
-  // CA 2026-10-23: the schedulers agree on the limits applied. Omitted, the grid resolves them as the timed pipeline
+  // The schedulers agree on the limits applied. Omitted, the grid resolves them as the timed pipeline
   // does (the policy's, the tournament's, each participant's override) and enforces them; `{}` opts out, and the same
   // limits are asked only to warn
   describe('daily limits the tournament carries', () => {

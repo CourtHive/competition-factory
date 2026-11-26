@@ -17,9 +17,9 @@ import {
 /**
  * A SEAT LEFT OPEN BEHIND A LUCKY DRAW'S DOUBLE EXIT IS NOT A STALL.
  *
- * CA, 2026-11-17: in a lucky draw a double exit advances nobody; nothing is produced downstream. CA, 2026-11-18: "yes
- * to lucky exempt" (the open seat is the intended state, not a `STALLED_POSITION`) and "adaptive same" (ADAPTIVE draws
- * follow the rule; both are `isLuckyBasedDraw`).
+ * In a lucky draw a double exit advances nobody; nothing is produced downstream. A lucky draw is exempt (the open seat
+ * is the intended state, not a `STALLED_POSITION`), and ADAPTIVE draws follow the same rule (both are
+ * `isLuckyBasedDraw`).
  *
  * The exemption is as narrow as the ruling. It covers the matchUps a lucky double exit feeds and what those feed in
  * turn while they hold no winner, in a lucky-based draw. The controls below hold the rest: the same record read as

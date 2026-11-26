@@ -16,10 +16,11 @@ import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
  *
  * With the policy off, `Main|1|7`'s double walkover produces a WALKOVER into the consolation instead of a BYE. It is
  * relayed past the structural BYE in `Consolation|1|4` into `2|4`, where it rests on a seat nobody will ever fill; the
- * BYE that P39 then puts in `2|4`'s other seat makes `2|4` a holder, and its exit is owed to `3|2`. Before the settle
- * sends it on, `Main|2|3`'s walkover loser comes through `2|3`'s BYE into `3|2` carrying their own walkover, which
- * awards the empty seat opposite: `3|2` reads WALKOVER, won by nobody. `getHeldExit` declined a target with a
- * `winningSide`, so the held exit stayed in `2|4`, and the final waited on the empty seat's "winner" (STALLED_POSITION).
+ * BYE the unfillable-loser award then puts in `2|4`'s other seat makes `2|4` a holder, and its exit is owed to `3|2`.
+ * Before the settle sends it on, `Main|2|3`'s walkover loser comes through `2|3`'s BYE into `3|2` carrying their own
+ * walkover, which awards the empty seat opposite: `3|2` reads WALKOVER, won by nobody. `getHeldExit` declined a target
+ * with a `winningSide`, so the held exit stayed in `2|4`, and the final waited on the empty seat's "winner"
+ * (STALLED_POSITION).
  *
  * A target decided only by awarding the seat the held exit travels to is the one case a decided target is still the
  * exit's: arriving there, it meets the carrier's exit and the two converge (RULE 4). The double walkover produces

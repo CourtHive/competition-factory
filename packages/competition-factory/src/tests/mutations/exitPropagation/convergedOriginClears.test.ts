@@ -15,7 +15,7 @@ import {
 
 /**
  * **Either origin of a converged double exit can be cleared while nothing downstream is active**
- * (CA, 2026-10-03: *"clearing either origin of a converged DOUBLE_EXIT cannot be refused if there is no
+ * (*"clearing either origin of a converged DOUBLE_EXIT cannot be refused if there is no
  * downstream active matchUp"*).
  *
  * Two first-round exits whose losers are fed into the same consolation matchUp converge there into a

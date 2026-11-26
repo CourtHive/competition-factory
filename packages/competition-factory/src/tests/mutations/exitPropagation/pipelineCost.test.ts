@@ -36,7 +36,7 @@ import { LUCKY_DRAW, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstan
 /**
  * WHAT ONE `setMatchUpStatus` ASKS OF THE DRAW, AND WHO ASKS — assessment gap G15.
  *
- * CA, 2026-10-01, on the first cut of the scheduled-exit warning walking the draw twice per score:
+ * On the first cut of the scheduled-exit warning walking the draw twice per score:
  * *"ensure we're not doubling work that is done elsewhere in the pipeline"*, and *"add to our
  * workstream a pass to detect any other similar performance considerations."* This is that pass's
  * instrument. It changes nothing; it counts.
@@ -165,7 +165,7 @@ const viewOracleRead: Selector = (site) =>
   getOutcomePipeline() === OUTCOME_PIPELINE_DIFFERENTIAL &&
   /^(hydrateShadow@viewOracle|apply@overlay|indexOracle@decide|precheckOracle@indexPrecheck)/.test(site.caller);
 /**
- * A RECORDED CASCADE'S READS UNDER `differential` (CA, 2026-11-16: a declared allowance): v2 runs v1's double-exit module
+ * A RECORDED CASCADE'S READS UNDER `differential` (a declared allowance): v2 runs v1's double-exit module
  * and settle passes on its working copy, and `differential` then runs v1 on the stored draw as well, so the same reads
  * are made twice. The copy's are kept out of the ceiling there and reported apart. Under `v2` they are the call's own
  * cost and count: v1 is not asked.
@@ -497,7 +497,7 @@ const GATED: {
   },
   {
     allowance: () => 0,
-    // A RECORDED CASCADE'S OWN MAP (CA, 2026-11-16: declared): under `v2` a recorded call builds the map of its working
+    // A RECORDED CASCADE'S OWN MAP (declared): under `v2` a recorded call builds the map of its working
     // copy besides the call's own, so its worst call may cost one more build than v1's. The total stays v1's.
     worstAllowance: (mode) => (mode === OUTCOME_PIPELINE_V2 ? 1 : 0),
     selector: pipelineMap,

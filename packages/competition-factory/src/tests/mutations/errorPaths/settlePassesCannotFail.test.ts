@@ -10,7 +10,7 @@ import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
  * TWO SETTLE PASSES CANNOT FAIL, BY CONSTRUCTION — outcome v2 executor plan, Phase C prerequisite 2.
  *
  * A settle pass runs after the cascade has written. An error found there could not be refused without leaving those
- * writes behind, and an error changes nothing with no caller rollback to lean on (CA, 2026-10-18 and 2026-10-22). So a
+ * writes behind, and an error changes nothing with no caller rollback to lean on. So a
  * pass may not have a failure to report: its inner call must be unable to fail.
  *
  * - `reconcileLinkAdvancements`: `releaseLinkedWinnerAdvancement` declares no `error`, and the pass assigns its result

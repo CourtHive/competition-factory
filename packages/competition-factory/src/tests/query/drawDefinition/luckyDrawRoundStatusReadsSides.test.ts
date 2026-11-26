@@ -12,7 +12,7 @@ import { WALKOVER } from '@Constants/matchUpStatusConstants';
  * participant from `drawPositions`. It read `drawPositions[sideNumber - 1]`, and while one position is
  * present the index is not the side: `[undefined, 3]` and `[3]` are one matchUp, 3 on side 2, and the
  * compacted spelling put 3 on side 1. The reader now asks `getSideDrawPosition`, which resolves a lone
- * position through the round profile (Mentat `planning/LEADING_HOLE_REMOVAL_DESIGN.md`).
+ * position through the round profile.
  *
  * LUCKY_DRAW 11: round 1 has six matchUps (one a BYE), round 2 three, so round 2 is a pre-feed round
  * and reports its advancing winners and its eligible losers.

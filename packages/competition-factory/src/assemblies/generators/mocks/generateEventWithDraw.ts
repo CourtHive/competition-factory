@@ -438,7 +438,7 @@ function processOutcomes({
   }
 
   // NOTE: do this last => complete any matchUps which have not already been completed; a completionGoal wins over
-  // completeAllMatchUps: exactly that many are completed (CA 2026-10-29), as on the eventProfiles path
+  // completeAllMatchUps: exactly that many are completed, as on the eventProfiles path
   if (completeAllMatchUps && !completionGoal) {
     const completeResult = goComplete({ completeAllMatchUps });
     if (completeResult?.error) return completeResult;
@@ -690,7 +690,7 @@ function generateAndAttachDraw({
 
     const manual = drawProfile.automated === false;
     // a tournament auto-scheduled after generation has its draws' results applied once it is scheduled, as a real
-    // tournament is played: the schedulers never place a completed matchUp (CA 2026-10-23). An iterative AD_HOC draw
+    // tournament is played: the schedulers never place a completed matchUp. An iterative AD_HOC draw
     // generates its rounds from results, and a draw not added to the event is never scheduled: both complete now
     const defer = deferredOutcomes && !iterativeAdHoc && drawProfile?.addEvent !== false;
     if (isMock && !manual && defer) {

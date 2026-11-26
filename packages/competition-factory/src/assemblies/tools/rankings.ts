@@ -1,15 +1,15 @@
 /**
- * Ranking functions over values the caller holds: stateless (CA 2026-11-08). The rolling award window is the one
+ * Ranking functions over values the caller holds: stateless. The rolling award window is the one
  * definition factory's `generateRankingList` applies, exported so a service that pre-filters its own store uses the
  * same bounds. `deriveRankingList` is the ranking governor's `applyDerivedRankings` under a name that says what it does:
  * it derives a sub-list (an age or category cut) from ranked entries and renumbers it. The governor name goes at 8.0.0.
  * `getParticipantPoints` (one person's bucketed total from point awards) and `getQualityWinPoints` (quality-win bonuses
  * from won matchUps and opponents' rankings) read only what they are passed; their ranking-governor engine routes go at
- * 8.0.0 and this is where an integrator calls them (CA 2026-11-25).
+ * 8.0.0 and this is where an integrator calls them.
  * Their home is `tools.rankings`, the planned `ratings` package.
  *
- * Below them, the ranking governor's stateless queries that take one params object (confirmed stateless, Mentat
- * FACTORY_ENGINE_API_MIGRATION_PREP_PLAN slice A), and the participant governor's scale readers over a participant the
+ * Below them, the ranking governor's stateless queries that take one params object (confirmed stateless by the
+ * statelessGovernorTools test), and the participant governor's scale readers over a participant the
  * caller holds. Each refuses a missing input rather than throwing. The governors keep them in 7.x; their engine routes
  * are unchanged.
  */

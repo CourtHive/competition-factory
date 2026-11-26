@@ -158,7 +158,7 @@ it('uses default TB7 when no matchUpFormat provided', () => {
 describe('TB1 NoAD support', () => {
   it('should set NoAD=true for TB1 tiebreak-only final set', () => {
     const format = 'SET3XA-S:T10-F:TB1';
-    // three level bolts, then the sudden-death decider as set 4 (CA, 2026-10-04: never one of the three)
+    // three level bolts, then the sudden-death decider as set 4 (never one of the three)
     const scoreString = '30-25 25-30 20-20 [1-0]';
     const result = parseScoreString({ scoreString, matchUpFormat: format });
 

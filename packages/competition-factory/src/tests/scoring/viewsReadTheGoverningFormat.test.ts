@@ -7,18 +7,18 @@ import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 
 /*
  * Every view reads the format governing the set in play and the match's completion rule (scoring-engine spec
- * § 3.2, § 11; § 16 decision 13, CA 2026-10-18). v1's defects, each pinned below:
+ * § 3.2, § 11; § 16 decision 13). v1's defects, each pinned below:
  * (a) getScoreboard() read the ordinary format and tennis points: SET3-S:TB11 at 5-3 showed `0-0 (G-40)`,
  *     and a -F:4/TB7 final-set tiebreak showed tennis points;
  * (b) points-to-match counted by best-of sets in exactly and aggregate formats (HAL3X-S:TB11 at one half to
  *     love and 10-0 reported a match point; SET3A-S:TB11 at two games to love and 9-0 gave [0, 22]);
  * (c) onGameComplete fired on every point of a points-based timed segment (SET3-S:T10P: three events);
  * (d) getInputMode() counted a server correction and a substitution as inputs.
- * And the ruling on the final set (CA 2026-10-18): in SET3-S:T10-F:T10/TB7 the final set's declared /TB7
+ * And the rule for the final set: in SET3-S:T10-F:T10/TB7 the final set's declared /TB7
  * applies to set N whatever the count when set N starts.
  */
 
-describe('§ 11.3 the scoreboard reads the format governing the set in play (CA 2026-10-18, decision 13a)', () => {
+describe('§ 11.3 the scoreboard reads the format governing the set in play (decision 13a)', () => {
   it('SET3-S:TB11 at 5-3 shows tiebreak points', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:TB11' });
     for (const winner of [0, 0, 0, 0, 0, 1, 1, 1] as const) engine.addPoint({ winner });
@@ -52,7 +52,7 @@ describe('§ 11.3 the scoreboard reads the format governing the set in play (CA 
   });
 });
 
-describe('§ 11.2 points-to-match counts by the completion rule (CA 2026-10-18, decision 13b)', () => {
+describe('§ 11.2 points-to-match counts by the completion rule (decision 13b)', () => {
   it('HAL3X-S:TB11 at one half to love and 10-0: not a match point; the third half must be played', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'HAL3X-S:TB11' });
     for (let i = 0; i < 21; i++) engine.addPoint({ winner: 0 });
@@ -79,7 +79,7 @@ describe('§ 11.2 points-to-match counts by the completion rule (CA 2026-10-18, 
   });
 });
 
-describe('§ 11.5 onGameComplete fires only where a point completes a game (CA 2026-10-18, decision 13c)', () => {
+describe('§ 11.5 onGameComplete fires only where a point completes a game (decision 13c)', () => {
   it('SET3-S:T10P: three points, no game events; SET3-S:T10 still reports its games', () => {
     const fired: string[] = [];
     const handlers = { onGameComplete: () => fired.push('game') };
@@ -103,7 +103,7 @@ describe('§ 11.5 onGameComplete fires only where a point completes a game (CA 2
   });
 });
 
-describe('§ 11.4 getInputMode counts scoring inputs only (CA 2026-10-18, decision 13d)', () => {
+describe('§ 11.4 getInputMode counts scoring inputs only (decision 13d)', () => {
   it('a point-only match with a server correction, a challenge and an annotation is points', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     engine.setServer(1);
@@ -124,7 +124,7 @@ describe('§ 11.4 getInputMode counts scoring inputs only (CA 2026-10-18, decisi
   });
 });
 
-describe('§ 3.2 the final set of a best of N is set N whatever the count (CA 2026-10-18 ruling)', () => {
+describe('§ 3.2 the final set of a best of N is set N whatever the count', () => {
   it('isLiveDecidingSet: SET3-S:T10-F:T10/TB7 at one set to love, set three is the final set', () => {
     const formatStructure = parse('SET3-S:T10-F:T10/TB7')!;
     expect(isLiveDecidingSet(formatStructure, [1, 0], 3)).toBe(true);

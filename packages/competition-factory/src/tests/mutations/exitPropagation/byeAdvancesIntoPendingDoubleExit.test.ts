@@ -80,11 +80,11 @@ it('a participant arriving through a BYE wins the pending walkover a consolation
 });
 
 /**
- * A DOUBLE EXIT'S WALKOVER CARRIED THROUGH A BYE CONVERGES WITH THE PENDING WALKOVER (CA, 2026-10-06).
+ * A DOUBLE EXIT'S WALKOVER CARRIED THROUGH A BYE CONVERGES WITH THE PENDING WALKOVER.
  *
  * This case said `Main|1|2`'s double exit "feeds NOBODY to the consolation", so the empty position arriving through
  * the BYE resolved nothing and the walkover stayed pending. With `doubleExitPropagateBye` off it feeds a WALKOVER:
- * the exit meets the BYE on `Consolation|1|1` and is carried on (CA 2026-09-20, the held exit sent on 2026-09-29),
+ * the exit meets the BYE on `Consolation|1|1` and is carried on (and a held exit is sent on),
  * and reaches the pending walkover's other side. Two exits meeting are a double exit nobody wins (RULE 4), which
  * produces its own walkover onward. Asserting "pending" pinned the carried walkover being dropped.
  */

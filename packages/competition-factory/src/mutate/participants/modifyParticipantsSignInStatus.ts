@@ -31,7 +31,7 @@ import {
  * instance wrote it. Defaults to now, so existing callers are unaffected. Before the promotion this
  * parameter had to OVERWRITE the timeItem's `createdAt`, which was simultaneously the value's timestamp
  * and the ordering key; `occurredAt` and `recordedAt` are now separate fields and only the first
- * resolves presence. See `Mentat/planning/DISCONNECTED_SYNC_RECONCILIATION.md` §4.1.
+ * resolves presence.
  *
  * `attributedTo` — who attested it. A desk operator, or a declared name and number for somebody not in
  * the record at all. ⚠️ Refused under `schemaWriteMode: 'legacy'`, which has nowhere to put it.

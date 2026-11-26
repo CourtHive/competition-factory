@@ -12,7 +12,7 @@ import fs from 'fs';
  *
  * With `Main|1|5` played and `Main|1|6` RETIRED 6-3, both feeders of `Main|2|3` had scored wins, so whoever loses there
  * cannot enter the consolation and its fed seat, `Consolation|2|3`, was reserved as a BYE. Then `Main|1|5` was cleared
- * and `Main|1|6` corrected to a WALKOVER — an unscored win (CA, 2026-10-13: DEFAULTED/WALKOVER without play is a bye for
+ * and `Main|1|6` corrected to a WALKOVER — an unscored win (DEFAULTED/WALKOVER without play is a bye for
  * first-match purposes). Either takes the reservation away, but `Main|2|3` now held one drawPosition, and the
  * reconciliation asked only round-2 matchUps holding two: the BYE stood. Forward play never places it, and the next
  * result on `Main|1|5` took it back as an un-decided BYE (MONOTONIC_DECISION).

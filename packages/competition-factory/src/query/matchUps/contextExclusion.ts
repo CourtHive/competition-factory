@@ -4,7 +4,7 @@ import type { ContextProfile } from '@Types/factoryTypes';
  * `contextProfile.exclude` names attributes the caller does not want on the hydrated matchUps it receives. It is a
  * redaction of the result, never of the work: completion, bucketing, filtering and schedule order all read
  * hydrated matchUps, and when the attributes were deleted during hydration a completed draw reported
- * `drawCompleted: false` under `exclude: ['matchUpStatus']` (punch list P56).
+ * `drawCompleted: false` under `exclude: ['matchUpStatus']`.
  *
  * So the outermost caller takes `exclude` off the profile it hands down and redacts what comes back. Every
  * inner layer then sees no `exclude` and redacts nothing, whichever layer the caller entered at: the engine's

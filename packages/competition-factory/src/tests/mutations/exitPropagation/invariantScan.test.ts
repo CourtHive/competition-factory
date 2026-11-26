@@ -8,7 +8,7 @@ import fs from 'fs';
 /**
  * EVERY harness invariant violation at EVERY step of a frozen window. INERT unless `INVARIANT_SCAN=1`.
  *
- *   INVARIANT_SCAN=1 TZ=UTC SCHEDULES_IN=../Mentat/fixtures/exit-propagation-census/sched-w1.jsonl \
+ *   INVARIANT_SCAN=1 TZ=UTC SCHEDULES_IN=path/to/sched-w1.jsonl \
  *     OUT=/tmp/scan-w1-off.jsonl npx vitest run src/tests/mutations/exitPropagation/invariantScan.test.ts
  *
  * `ALLOW_CHANGE_PROPAGATION=1` selects the flag-ON arm, exactly as it does for the census.

@@ -135,7 +135,7 @@ export class ScoringEngine {
   private stale = false;
   /** the timeline holds input v1 accepted past a close, so the match plays on as v1 played it (§ 12.8) */
   private pastClose = false;
-  /** the match's initial server, set before anything was recorded; every replay starts from it (SE3-E1) */
+  /** the match's initial server, set before anything was recorded; every replay starts from it */
   private initialServer?: Side;
 
   readonly #clock: () => string;
@@ -409,7 +409,7 @@ export class ScoringEngine {
   /**
    * A server correction (§ 2.6, § 10.6). Recorded as its own action by default; with `recordEntry: false` it is
    * attached to the entry before it and replayed and undone with it. With nothing on the timeline it is the match's
-   * initial server, kept on the record and not on the timeline (SE3-E1). A correction that changes nothing records
+   * initial server, kept on the record and not on the timeline. A correction that changes nothing records
    * nothing (§ 12.3).
    */
   setServer(side: 0 | 1, options?: { recordEntry?: boolean }): void {
@@ -429,7 +429,7 @@ export class ScoringEngine {
     const entries = this.entries as ScoreEntry[];
     const last = entries.at(-1);
     if (!last) {
-      // the match's initial server: kept on the record, so every rebuild and reload starts from it (SE3-E1)
+      // the match's initial server: kept on the record, so every rebuild and reload starts from it
       this.initialServer = side;
       this.state = corrected;
       this.write(entries);
@@ -687,7 +687,7 @@ export class ScoringEngine {
     return copy(scoreOf(this.context(), this.state, this.record.score.sets));
   }
 
-  /** a record view over the saved shape, shared with every engine (decision SE2c-D1) */
+  /** a record view over the saved shape, shared with every engine */
   getScoreboard(options?: GetScoreboardOptions): string {
     return getScoreboard(this.record, options);
   }

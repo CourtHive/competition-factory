@@ -441,7 +441,7 @@ describe('setMatchUpState resolveAndApplyOutcome NO_VALID_ACTIONS', () => {
     expect(finalBefore.matchUpStatus).toEqual(IN_PROGRESS);
 
     // Re-score the first round match with a score and no winner (the final it feeds is in play, so downstream is
-    // active — CA, 2026-10-18, P57). Score validation is disabled so the outcome reaches the dispatch: validated,
+    // active). Score validation is disabled so the outcome reaches the dispatch: validated,
     // a 4-3 score with no status is refused earlier as INVALID_SCORE, which is how this test used to pass.
     result = tournamentEngine.setMatchUpStatus({
       outcome: {

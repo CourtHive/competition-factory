@@ -2,7 +2,7 @@
  * The scoring kernel test seam (pilot): versioned, serializable operations over stable internal contracts, so a
  * case written as data can run against this implementation and, later, against a second implementation through
  * its own adapter. Test infrastructure only: nothing here is exported from the package, registered on an engine or
- * reachable from server dispatch. Plan: Mentat/planning/FACTORY_TEST_INFRASTRUCTURE_PLAN.md (item E).
+ * reachable from server dispatch.
  *
  * An operation names a CONTRACT, not a TypeScript function: `kernel.scoring.pointsToGame@1` is "the minimum points
  * each side needs to win the current game", which a port may compute however it likes. The adapter owns the
@@ -304,7 +304,7 @@ export const kernelOperations: Readonly<Record<string, KernelOperation>> = Objec
   },
   // the profile scheduler's plan: from a planning view (`viewCodec.ts`) and the call's options, the placements and the
   // reasons for every matchUp left unplaced (scheduling-pipeline.md § 4)
-  // the whole plan, retry traces included: superseded by @2 (CA 2026-10-25), kept while a second implementation moves
+  // the whole plan, retry traces included: superseded by @2, kept while a second implementation moves
   'kernel.scheduling.plan@1': {
     capability: 'scheduling',
     validate: validatePlanInput,

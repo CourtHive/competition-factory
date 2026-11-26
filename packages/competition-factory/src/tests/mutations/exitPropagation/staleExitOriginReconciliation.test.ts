@@ -7,7 +7,7 @@ import { expect, it, describe } from 'vitest';
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 /**
- * Punch-list **P40**: a carried exit whose ORIGIN has stopped being a double exit and now delivers a
+ * A carried exit whose ORIGIN has stopped being a double exit and now delivers a
  * winner is no longer describing anything. `reconcileStaleExitOrigins` withdraws it at the end of the
  * mutation, which is the only point at which the question can be answered — see its docblock for the
  * two corrections whose timings pull in opposite directions.
@@ -49,9 +49,9 @@ describe('a carried exit is withdrawn when its origin stops being a double exit 
   // `Backdraw|4|1` holds a COMPACTED single drawPosition here, so this also pins
   // `getWinningSideDrawPosition` resolving a side structurally rather than by array index.
   //
-  // REFUSED AT ITS SECOND STEP since CA's 2026-10-04 ruling: `Backdraw|3|1` holds one participant and a
+  // REFUSED AT ITS SECOND STEP: `Backdraw|3|1` holds one participant and a
   // seat `Main|3|1`'s loser has not reached, and a DIRECT double exit needs both seats reached (*"How can
-  // three entities arrive in one matchUp which can only hold two drawPositions?"*). P40 was measured on
+  // three entities arrive in one matchUp which can only hold two drawPositions?"*). The defect was measured on
   // Main|2|1 ws1, Backdraw|3|1 DOUBLE_DEFAULT, Main|2|2 ws2, Main|3|1 WALKOVER ws1, Main|3|1 ws2; that
   // sequence is now unreachable, and the refusal is what is asserted. It can arise from legal steps: see the next case.
   it('a re-derived origin that seats a real winner voids the exit it stamped downstream', () => {
@@ -77,10 +77,10 @@ describe('a carried exit is withdrawn when its origin stops being a double exit 
     expect(refused.error?.code).toEqual('ERR_INVALID_MATCHUP_STATUS');
   });
 
-  // P40 on LEGAL steps (2026-10-06): the same seed with `Main|2|2` played before the double default, so `Backdraw|3|1`
-  // holds both seats when it is entered. The Main semifinal's walkover loser carries a WALKOVER into `Backdraw|4|1`,
-  // which converges with the DEFAULTED the double default produced; that convergence produces a WALKOVER on
-  // `Main|4|1`, awarded to the Main-draw winner. Re-scoring the semifinal takes the carried origin back:
+  // The same defect on LEGAL steps (2026-10-06): the same seed with `Main|2|2` played before the double default, so
+  // `Backdraw|3|1` holds both seats when it is entered. The Main semifinal's walkover loser carries a WALKOVER into
+  // `Backdraw|4|1`, which converges with the DEFAULTED the double default produced; that convergence produces a
+  // WALKOVER on `Main|4|1`, awarded to the Main-draw winner. Re-scoring the semifinal takes the carried origin back:
   // `Backdraw|4|1` re-derives to the produced DEFAULTED, won by its new, seated loser, so what it delivers is an
   // advancement and the WALKOVER it stamped on `Main|4|1` is void.
   it('on legal steps: the re-derived origin seats its winner, and the exit it stamped downstream is withdrawn', () => {

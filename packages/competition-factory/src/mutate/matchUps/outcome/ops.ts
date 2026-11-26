@@ -435,7 +435,7 @@ export type OutcomeOp =
   | {
       op: 'replaceMatchUp';
       /**
-       * RECORDED (CA, 2026-11-16): the stored matchUp as the double-exit module left it on a copy of the draw
+       * RECORDED: the stored matchUp as the double-exit module left it on a copy of the draw
        * (`plan/recordedCascade.ts`), written whole: its own fields. A dual's lines (`tieMatchUps`) are not among them:
        * the dual keeps the lines it holds, and a line that changed has an op of its own
        */
@@ -550,7 +550,7 @@ export function splitScoredTimeCleanup(ops: OutcomeOp[]) {
 }
 
 /**
- * F2 (i), CA 2026-10-19: one stamp per touched entity per call. The call's captured instant T (`nowIso()` reads it
+ * One stamp per touched entity per call. The call's captured instant T (`nowIso()` reads it
  * inside an engine call), or the previous stamp + 1 ms when that is already T or later, so a stamp always moves on.
  */
 export function nextStamp(previous: string | Date | undefined, now: string = nowIso()): string {

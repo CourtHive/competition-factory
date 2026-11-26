@@ -154,8 +154,8 @@ describe('bestOf | timed(G) | final:timed(G) — a timed final segment of anothe
 });
 
 /*
- * The final set of a best of N is set N whatever the count when it starts (scoring-engine spec § 3.2 rule 1;
- * CA 2026-10-18): a timed segment closed level wins no set, so a best of three can reach set three at one set
+ * The final set of a best of N is set N whatever the count when it starts (scoring-engine spec § 3.2 rule 1):
+ * a timed segment closed level wins no set, so a best of three can reach set three at one set
  * to love, and set three still plays the final format's declared tiebreak at time.
  */
 describe('bestOf | timed(G) | final:timed(G,tiebreak) — SET3-S:T10-F:T10/TB7: the final set is set N', () => {
@@ -489,7 +489,7 @@ describe('exactly | INN | standard(tiebreak) — INN3X-S:6/TB7: exactly three in
   });
 });
 
-// Exactly N is a format on every root and every kind of set (CA 2026-10-25): SET3X-S:6/TB7 is INN3X-S:6/TB7
+// Exactly N is a format on every root and every kind of set: SET3X-S:6/TB7 is INN3X-S:6/TB7
 // on the SET root, and the root changes nothing about a set (scoring specification § 3.4).
 describe('exactly | SET | standard(tiebreak) — SET3X-S:6/TB7: exactly three tie-break sets', () => {
   const format = 'SET3X-S:6/TB7';
@@ -557,7 +557,7 @@ describe('exactly | SET | standard(advantage) — SET3X-S:6: exactly three advan
  * Each case below is derived from the definition and FAILS against the engine. The expectation is the
  * definition's, kept unchanged and skipped for review; the comment records what the engine did.
  */
-// Found by these cases on 2026-10-17 and fixed (CA: points build games in a SET-root timed set; a
+// Found by these cases on 2026-10-17 and fixed (points build games in a SET-root timed set; a
 // level timed set plays its declared tiebreak; an exactly format's final set is set N).
 describe('timed sets: games from points, the tiebreak at time, the final set of an exactly format', () => {
   // Definition: `T{minutes}` is a "Timed set (games-based)" (matchup-format.mdx), and a game is
@@ -586,7 +586,7 @@ describe('timed sets: games from points, the tiebreak at time, the final set of 
   });
 
   // Definition: -G:{n}C "a game won by the first side to win n points in a row" (§ 3.5, § 4.1 rule 4),
-  // and -G: governs every game built from points, a timed set's included (CA 2026-10-18).
+  // and -G: governs every game built from points, a timed set's included.
   // Observed before: traditional games, so three points to love were 40-0, [0, 0].
   it('SET3-S:T10-G:3C — three points in a row are a game; a point to the other side starts again', () => {
     segmentConforms('SET3-S:T10-G:3C', '111 11211212 222', { sets: [[1, 1]], complete: false });

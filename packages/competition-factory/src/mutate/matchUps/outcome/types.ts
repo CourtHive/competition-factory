@@ -123,7 +123,7 @@ export type OutcomeView = {
   declaredWinnerPlayedOn?: boolean;
   /**
    * a WINNER/LOSER link with no source roundNumber, met reading this matchUp's targets or what depends on
-   * it (§ 2 row 21; CA, 2026-10-06: a malformed round link is an error)
+   * it (§ 2 row 21: a malformed round link is an error)
    */
   unreadableLink?: { error: ErrorType; info?: string; context?: Record<string, unknown> };
   participants: {
@@ -135,7 +135,7 @@ export type OutcomeView = {
   };
   /** § 2 row 12: the loser of the linked round has already been directed under the previous outcome */
   feedEligibilityBlockedBy?: string;
-  /** § 2 row 22: a result recorded downstream fixes whether this outcome is an exit or a played result (P52) */
+  /** § 2 row 22: a result recorded downstream fixes whether this outcome is an exit or a played result */
   correctionKindBlockedBy?: string;
   /**
    * § 2 row 26: a swap over a FIRST_MATCHUP link would have to place a loser on, or take one off, a fed seat that has
@@ -335,7 +335,7 @@ export type OutcomeView = {
       relabels?: { structureId: string; drawPosition: number; participantId: string }[];
     };
     /**
-     * P51 group 2: the loserMatchUp is a single exit already decided for the seat the loser arrives in, with a result
+     * The loserMatchUp is a single exit already decided for the seat the loser arrives in, with a result
      * recorded below it. A carried exit arriving there is carried past it, as past a BYE, rather than converging.
      */
     loserMatchUpDecidedForArrival: boolean;
@@ -411,7 +411,7 @@ export type OutcomeView = {
     defaultProcessCodes?: boolean;
     /**
      * the progression policy's `doubleExitPropagateBye` as v1 reads it (`propagatesByeOnDoubleExit`): off, a double
-     * exit's loser seat shows its produced exit instead of a BYE (CA ruling (A), 2026-10-21)
+     * exit's loser seat shows its produced exit instead of a BYE (`seatShowsBye`)
      */
     propagatesByeOnDoubleExit?: boolean;
     /** Clearing a qualifying final whose winner link feeds no DRAW still returns qualifierRemoved. */
@@ -541,7 +541,7 @@ export type DirectionPlan = {
     exit?: MatchUpStatusUnion;
     /** S2c: the double exit the carried exit makes where an exit already stands */
     converged?: MatchUpStatusUnion;
-    /** P51 group 2: the exit the loser carries past a matchUp already decided for their seat, onward */
+    /** the exit the loser carries past a matchUp already decided for their seat, onward */
     carriedPast?: MatchUpStatusUnion;
     /**
      * F2: a relabel to a played result withdraws the exit this matchUp carried there. Alone, the target is left

@@ -21,9 +21,10 @@ import { FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
  * converged it there as well, so both stood. The next result, `Consolation|2|2`, was refused placing its winner one round
  * on after it had already written (ERR_EXISTING_POSITION_ASSIGNMENT).
  *
- * The rule (exit-propagation.md, P54): a BYE the other holder left is not one an exit passes; the exit behind it is coming
- * to the same seat. So d5222c's default waits in `3|2` and meets the held walkover there, the double walkover produces
- * into `4|2`, where it meets the carried default and converges again, and `5|1` waits pending.
+ * The rule (exit-propagation.md; two held exits sent into one empty matchUp converge): a BYE the other holder left is
+ * not one an exit passes; the exit behind it is coming to the same seat. So d5222c's default waits in `3|2` and meets
+ * the held walkover there, the double walkover produces into `4|2`, where it meets the carried default and converges
+ * again, and `5|1` waits pending.
  */
 
 const CONFIG = {

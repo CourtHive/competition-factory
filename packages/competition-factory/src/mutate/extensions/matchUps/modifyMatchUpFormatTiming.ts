@@ -36,7 +36,7 @@ export function modifyMatchUpFormatTiming(params) {
 
   // With an `eventId` only the records that hold the event are written, and the event is found before anything is.
   // Each record was written on its own: with several loaded, every record lacking the event had its TOURNAMENT-level
-  // timing changed, and an event found in none returned EVENT_NOT_FOUND after those writes (CA 2026-10-18: a bug).
+  // timing changed, and an event found in none returned EVENT_NOT_FOUND after those writes (a bug).
   const targets = tournamentIds
     .map((currentTournamentId) => {
       const tournamentRecord = tournamentRecords[currentTournamentId];

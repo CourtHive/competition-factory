@@ -314,10 +314,10 @@ function aggregateIsLevel(model: ScoreEntryModel, count: number): boolean {
  * Whether a set is finished: both principal cells in, no tiebreak half-typed, and the factory accepts
  * it as a COMPLETE legal set.
  *
- * ── A `7-6` with no points is settled (CA, 2026-11-07) ──
+ * ── A `7-6` with no points is settled ──
  *
  * It read unsettled until then: the next set did not open and Submit stayed dead until the points were
- * in, while the engine had recorded a bare `7-6` since ruling V11 (`TIEBREAK_POINTS_NOT_RECORDED`) and,
+ * in, while the engine had recorded a bare `7-6` (`TIEBREAK_POINTS_NOT_RECORDED`) and,
  * since 7.33.0, calls it complete on the read surface too. The points are OFFERED, not owed: the column
  * opens and takes focus, and the operator types them or moves on. A pair half-typed — one side's points
  * and not the other's — is still unsettled, as it is mid-keystroke. `unrecordedTiebreakNote` says what

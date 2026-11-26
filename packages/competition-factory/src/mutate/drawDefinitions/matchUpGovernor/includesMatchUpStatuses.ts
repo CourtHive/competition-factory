@@ -23,8 +23,8 @@ const holdsDrawPosition = (matchUp: HydratedMatchUp, drawPosition?: number) =>
   !!matchUp.drawPositions?.some((position) => position === drawPosition);
 
 /**
- * A DEFAULTED is a bye only when nothing was played: DEFAULTED and DEFAULTED 6-3 are different results (CA,
- * 2026-10-13, for FIRST_MATCH_LOSER_CONSOLATION, following USTA Reg. II.B.5.a). Forward play already asks
+ * A DEFAULTED is a bye only when nothing was played: DEFAULTED and DEFAULTED 6-3 are different results (for
+ * FIRST_MATCH_LOSER_CONSOLATION, following USTA Reg. II.B.5.a). Forward play already asks
  * `isUnscoredOutcome` — `directLoser` through `getDrawPositionWinCount`, and the reservation through
  * `firstRoundFeedersWon` — so the unwind asks it too. Read by status alone, a scored DEFAULTED looked like a free pass,
  * and withdrawing a round-2 result took back the reservation BYE that the scored win had placed, which nothing then

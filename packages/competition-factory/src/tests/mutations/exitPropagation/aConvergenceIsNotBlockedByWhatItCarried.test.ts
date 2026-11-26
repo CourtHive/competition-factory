@@ -10,7 +10,7 @@ import { DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 /**
- * A CONVERGENCE IS NOT BLOCKED BY WHAT ITS OWN CARRIED EXITS DECIDED (CA, 2026-10-11; census F2, P51's group 1).
+ * A CONVERGENCE IS NOT BLOCKED BY WHAT ITS OWN CARRIED EXITS DECIDED (census F2, group 1).
  *
  * COMPASS 16, census seed 20469892 shrunk to five steps. Cimorene walks over `East|1|3` and carries the walkover into
  * `West|1|2`, which is decided for the seat still awaiting `East|1|4`'s loser; she goes on as its loser, carrying it
@@ -19,8 +19,8 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  *
  * It was refused, `INCOMPATIBLE_MATCHUP_STATUS`, after the direction had written: `South|1|1` read as ACTIVE
  * downstream because Cimorene had carried the walkover one hop further, although nobody had played anything below
- * `West|1|2`. CA's rule of 2026-09-25 — only GENUINELY active downstream blocks, never ADVANCED active — now governs
- * the cascade's convergence too. 24 of the 25 P51 instances in the thirteenth and fourteenth runs were this shape.
+ * `West|1|2`. The rule — only GENUINELY active downstream blocks, never ADVANCED active — now governs
+ * the cascade's convergence too. 24 of the 25 instances in the thirteenth and fourteenth runs were this shape.
  *
  * The oracle is order: recorded the other way round, the same two walkovers leave the same draw. Falsified on `dev`
  * before the change: the convergence is refused, and the draw differs from the other order.

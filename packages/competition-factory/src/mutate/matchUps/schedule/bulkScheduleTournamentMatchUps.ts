@@ -37,7 +37,7 @@ type BulkScheduleMachUpsArgs = {
   playedOrderChecked?: boolean;
   /** check the batch's played order and write nothing (the caller's first pass over several tournaments) */
   playedOrderOnly?: boolean;
-  /** false: only a played matchUp orders, as before CA 2026-10-30 (default true: plans order too) */
+  /** false: only a played matchUp orders, as before 2026-10-30 (default true: plans order too) */
   plannedOrder?: boolean;
 };
 

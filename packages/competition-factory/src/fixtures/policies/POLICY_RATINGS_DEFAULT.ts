@@ -5,7 +5,7 @@ import { POLICY_TYPE_RATINGS } from '@Constants/policyConstants';
 import type { RatingsPolicy } from '@Types/ratingsPolicyTypes';
 
 /**
- * The default for `generateDynamicRatings` (CA 2026-11-05). Huang 2014, "Elo Ratings and the ATP" (Berkeley STAT 157):
+ * The default for `generateDynamicRatings`. Huang 2014, "Elo Ratings and the ATP" (Berkeley STAT 157):
  * one K for both players, so the update is zero-sum; the actual result by sets played; a walkover rated as a
  * straight-sets win. Huang's K is 30 at Grand Slams and 20 at Masters 1000; with no event level to read, this uses the
  * paper's own flat-K run, K = 25.

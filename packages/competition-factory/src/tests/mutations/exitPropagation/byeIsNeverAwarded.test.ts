@@ -13,7 +13,7 @@ import { FIRST_MATCH_LOSER_CONSOLATION, DOUBLE_ELIMINATION } from '@Constants/dr
 /**
  * **A BYE IS NEVER AWARDED THE MATCH**, with `doubleExitPropagateBye` attached.
  *
- * CA, 2026-09-27: *"there can never be `{ winningSide }` with a value in a matchUp with
+ * The rule: *"there can never be `{ winningSide }` with a value in a matchUp with
  * `matchUpStatus: BYE`. If two BYEs encounter each other then a BYE is produced for the next matchUp,
  * rinse and repeat."*
  *
@@ -37,7 +37,7 @@ import { FIRST_MATCH_LOSER_CONSOLATION, DOUBLE_ELIMINATION } from '@Constants/dr
  * regression would stay invisible until somebody tried the flip again.
  *
  * The assertion is a PROPERTY over the whole draw rather than one coordinate: no decided matchUp may
- * award a side that holds a BYE. Stated that way it also covers the BYE-versus-BYE case CA describes,
+ * award a side that holds a BYE. Stated that way it also covers the BYE-versus-BYE case the rule describes,
  * where the answer is a BYE onward rather than a winner.
  */
 

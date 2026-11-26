@@ -5,7 +5,7 @@ import fs from 'node:fs';
 /**
  * A MATCHUP'S `drawPositions` IS READ BY STRUCTURE, NOT BY INDEX, OR IS LISTED HERE WITH WHY NOT.
  *
- * Step 1 of `Mentat/planning/LEADING_HOLE_REMOVAL_DESIGN.md` (CA, 2026-10-06). A lone position is stored at index 0
+ * Step 1 of the leading-hole removal. A lone position is stored at index 0
  * whatever its side once the leading hole is gone (`[5]`, not `[undefined, 5]`), so `drawPositions[side - 1]`,
  * `indexOf(position) + 1` and `[index]` by roundPosition misread it. The side helpers in `getDrawPositionSides.ts`
  * (`getSideDrawPosition`, `getDrawPositionSideNumber`, `getWinningSideDrawPosition`) resolve a lone position through

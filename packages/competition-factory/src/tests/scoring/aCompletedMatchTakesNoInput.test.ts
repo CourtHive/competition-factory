@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 /*
- * A completed match takes no scoring input (scoring-engine spec § 2, § 9.6; § 16 decision 5, CA 2026-10-18):
+ * A completed match takes no scoring input (scoring-engine spec § 2, § 9.6; § 16 decision 5):
  * "a point, a game and a set total after COMPLETED are ignored alike, recording nothing, keeping the redo
  * stack and returning a result flag that says the input was ignored." v1 applied set and game input to a
  * completed match (SET3-S:6/TB7 6-0 6-0 took a third set by addSet and a fourth by addGame).
@@ -25,7 +25,7 @@ function decided(): ScoringEngine {
   return engine;
 }
 
-describe('§ 9.6 a completed match takes no scoring input (CA 2026-10-18, decision 5)', () => {
+describe('§ 9.6 a completed match takes no scoring input (decision 5)', () => {
   it('SET3-S:6/TB7 6-0 6-0: a third set by addSet and a game by addGame are ignored with a flag', () => {
     const engine = decided();
     expect(engine.getState().matchUpStatus).toEqual(COMPLETED);
@@ -67,7 +67,7 @@ describe('§ 9.6 a completed match takes no scoring input (CA 2026-10-18, decisi
   });
 });
 
-describe('§ 9.2 rule 4 no set beyond N in an exactly format (CA 2026-10-18, decision 7)', () => {
+describe('§ 9.2 rule 4 no set beyond N in an exactly format (decision 7)', () => {
   it('HAL2X-S:TB11: a third addSet half is ignored, not recorded as 2-1', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'HAL2X-S:TB11' });
     engine.addSet({ side1Score: 11, side2Score: 5 });

@@ -11,13 +11,13 @@ import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { MUTATION_LOCKS } from '@Constants/extensionConstants';
 
 /**
- * ROOT-EXTENSION WRITES ARE ANNOUNCED (CA 2026-10-18: "yes"). A tournament's own extensions held writes no notice
+ * ROOT-EXTENSION WRITES ARE ANNOUNCED. A tournament's own extensions held writes no notice
  * described: `addTournamentExtension` / `removeTournamentExtension`, the engine's `addExtension` with `discover`, a
  * tournament-scope mutation lock and the lock feature gate any lock enables. Each now sends MODIFY_TOURNAMENT_DETAIL
  * with the record's root `extensions`, only when they changed.
  *
- * And `modifyMatchUpFormatTiming` with an `eventId` writes only the records that hold the event (CA 2026-10-18: "yes
- * it's a bug"): with several records loaded, every record lacking the event had its tournament-level timing changed,
+ * And `modifyMatchUpFormatTiming` with an `eventId` writes only the records that hold the event (it was a
+ * bug): with several records loaded, every record lacking the event had its tournament-level timing changed,
  * and an event found in none was refused only after those writes.
  */
 

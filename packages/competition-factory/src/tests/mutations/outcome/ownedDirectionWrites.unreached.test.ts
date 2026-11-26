@@ -117,7 +117,7 @@ describe('C22 the TEAM refusal prefix remains owed, while the scoring-policy ove
       expect(compareUndirectedWinner(scenario, true, prepared).v1.results[0].success).toEqual(true);
       return;
     }
-    // option D (CA, 2026-11-20): a winner named for the present team against a claimed empty seat is refused row 6 before any
+    // option D: a winner named for the present team against a claimed empty seat is refused row 6 before any
     // write, in both pipelines (it was ERR_MISSING_ASSIGNMENTS, raised by v1 after its writes and owed by v2)
     const v1 = play(OUTCOME_PIPELINE_V1, scenario, { prepared });
     expect(v1.results[0].error?.code).toEqual(INVALID_MATCHUP_STATUS.code);

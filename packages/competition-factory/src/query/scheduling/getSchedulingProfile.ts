@@ -48,7 +48,7 @@ export function getSchedulingProfile({ tournamentRecords, tournamentRecord }: Ge
 
   if (schedulingProfile.length) {
     // a venue with no courts (none added yet, or all removed) is still a venue: its rounds are kept and place nothing
-    // (CA 2026-10-23); only a venue, event or draw that is gone needs repair
+    // only a venue, event or draw that is gone needs repair
     const { venueIds } = getCompetitionVenues({ tournamentRecords });
     const { eventIds, drawIds } = getEventIdsAndDrawIds({ tournamentRecords });
 
@@ -60,7 +60,7 @@ export function getSchedulingProfile({ tournamentRecords, tournamentRecord }: Ge
     });
 
     // the repaired profile is returned, never saved: this is a query, run on one side only, and a save here parted
-    // the client's record from the server's (CA 2026-10-23). A scheduler refuses until it is repaired, and
+    // the client's record from the server's. A scheduler refuses until it is repaired, and
     // checkAndUpdateSchedulingProfile (inside the mutations that orphan a round) or setSchedulingProfile saves it
     if (modifications) {
       schedulingProfile = updatedSchedulingProfile;

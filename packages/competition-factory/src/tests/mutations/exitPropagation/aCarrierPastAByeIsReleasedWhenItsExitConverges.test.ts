@@ -18,8 +18,8 @@ import { expect, it } from 'vitest';
  * as a carrier, so the release takes the whole carry back, and the seat is served as a double exit's loser seat is.
  * Every entry order of the standing results leaves the carrier out of `Southwest`.
  *
- * The seat once recorded the convergence's claim on its BYE (`byeClaims`); the ledger is retired (Mentat P58, CA
- * 2026-10-21), so the seat holds no provenance, and what the claim stood for is read from the draw: the convergence at
+ * The seat once recorded the convergence's claim on its BYE (`byeClaims`); the ledger is retired, so
+ * the seat holds no provenance, and what the claim stood for is read from the draw: the convergence at
  * `West|2|4` is a double exit and sends nobody across its loser link (`feederSendsNobody`: `DOUBLE_EXIT`).
  */
 

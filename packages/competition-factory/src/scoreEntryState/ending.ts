@@ -101,8 +101,8 @@ export function chooseReasonCode(state: ScoreEntryState, code: string | undefine
 }
 
 /**
- * The ending of a matchUp that ALREADY has an outcome (CA, 2026-09-28: *"we need to be able to open existing
- * outcomes!"*). A stored matchUp names the WINNER; the score state records the side the ending happened to, so
+ * The ending of a matchUp that ALREADY has an outcome (an existing outcome can be
+ * opened). A stored matchUp names the WINNER; the score state records the side the ending happened to, so
  * hydration runs that mapping backwards. A double exit records `bothSidesOut` (its `sideNumber: 1` decides nothing); an
  * ending that resolves nobody is a match ending; a single exit is recorded against `3 - winningSide`; and a
  * winner-requiring status with no winning side is a corrupt record, refused with the empty state rather than a guessed

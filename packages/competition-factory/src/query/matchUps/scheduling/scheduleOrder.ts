@@ -11,7 +11,7 @@ import { BYE, COMPLETED, DEFAULTED, RETIRED } from '@Constants/matchUpStatusCons
 import { HydratedMatchUp } from '@Types/hydrated';
 
 /**
- * What the schedule order reads (CA 2026-10-22, widened CA 2026-10-30): read-only, so the order's refusals
+ * What the schedule order reads (widened 2026-10-30): read-only, so the order's refusals
  * (`@Mutate/matchUps/schedule/scheduleItems/playedOrder`) and `getMatchUpScheduleBounds` read the same facts and the same
  * neighbours, and the bounds a client offers cannot disagree with the writes the engine refuses.
  */
@@ -25,7 +25,7 @@ export function wasPlayed(matchUp?: { matchUpStatus?: MatchUpStatusUnion; score?
   return !!matchUp?.matchUpStatus && PLAYED_STATUSES.has(matchUp.matchUpStatus) && checkScoreHasValue(matchUp);
 }
 
-/** every matchUp but a BYE imposes order on the matchUps linked to it (CA 2026-10-30) */
+/** every matchUp but a BYE imposes order on the matchUps linked to it */
 export function imposesOrder(matchUp?: { matchUpStatus?: MatchUpStatusUnion }): boolean {
   return matchUp?.matchUpStatus !== BYE;
 }
@@ -173,7 +173,7 @@ export function orderingNeighbours({
   const played = playedOf(facts, inContext);
   const ordersAtAll = (id: string) => imposesOrder(facts[id] ?? inContext.get(id));
   const dependencies = matchUpDependencies?.[matchUpId] ?? {};
-  // with `plannedOrder: false` only a played matchUp orders: the rule as it stood before CA 2026-10-30
+  // with `plannedOrder: false` only a played matchUp orders: the rule as it stood before 2026-10-30
   const sources = (dependencies.matchUpIds ?? []).filter((id) => ordersAtAll(id) && (plannedOrder || played(id)));
   // the target orders its dependents in the same way, whether or not a dependent was played
   // the graph's dependents are direct only; every matchUp downstream orders the target

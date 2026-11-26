@@ -21,7 +21,7 @@ import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
  * final; and its rule read a final with no loser as a decider still needed. The winner sat alone in
  * a `TO_BE_PLAYED` decider that nobody could ever join.
  *
- * CA's rule, 2026-09-29, is about the client: *"set it to a DEAD_RUBBER when it is unnecessary so
+ * The rule is about the client: *"set it to a DEAD_RUBBER when it is unnecessary so
  * that clients don't see TO_BE_PLAYED matchUps"*. A final with no loser has nobody to send.
  *
  * Swept under both policies, because which of them a draw runs under changes how the Backdraw's

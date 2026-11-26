@@ -11,7 +11,7 @@ import type { HydratedMatchUp } from '@Types/hydrated';
 import type { OutcomeOp } from '../ops';
 
 /**
- * 2c-1 (Mentat assessment/2026-11-13-outcome-v2-2c-carried-landing-ruling.md): a carried exit converging (RULE 4) at a
+ * 2c-1: a carried exit converging (RULE 4) at a
  * landing that links its loser on, under `doubleExitPropagateBye: false`. v1's `setMatchUpState` removes the landing's
  * directed participants (`removeDirectedParticipants`, RDP) before `doubleExitAdvancement` re-reads its targets
  * (attemptToSetMatchUpStatus.ts:149–153): the score reset (row 1, the convergence's own result write), the exit the

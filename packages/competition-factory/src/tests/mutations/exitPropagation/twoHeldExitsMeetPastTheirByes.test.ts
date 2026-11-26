@@ -12,7 +12,7 @@ import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstant
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 
 /**
- * TWO HELD EXITS MEET PAST THEIR OWN BYES (P54; census F2 SETTLE-B, 2026-10-11).
+ * TWO HELD EXITS MEET PAST THEIR OWN BYES (census F2 SETTLE-B, 2026-10-11).
  *
  * FIRST_MATCH_LOSER_CONSOLATION 16/14 under `doubleExitPropagateBye: false`, census seed 20515211 shrunk to five steps.
  * `Consolation|1|2`'s double walkover produces a walkover that waits at `Consolation|2|2`; `Main|1|2`'s double default

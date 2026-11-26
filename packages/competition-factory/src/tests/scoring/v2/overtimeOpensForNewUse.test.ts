@@ -43,7 +43,7 @@ describe('overtime for new use', () => {
     expect(isValidMatchUpFormat({ matchUpFormat })).toBe(false);
   });
 
-  it('a grouping suffix is not a code (Ruling 4: repeating blocks are deferred, no syntax reserved)', () => {
+  it('a grouping suffix is not a code (repeating blocks are deferred, no syntax reserved)', () => {
     for (const matchUpFormat of ['HAL2XA-S:T30P-O:2B2/T10P', 'HAL2XA-S:T30P-O:2/T10PB2']) {
       expect(parse(matchUpFormat)).toBeUndefined();
       expect(isValidMatchUpFormat({ matchUpFormat })).toBe(false);

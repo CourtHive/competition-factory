@@ -21,7 +21,7 @@ test('stringify with non-object returns undefined', () => {
   expect(stringify('string')).toBeUndefined();
 });
 
-// Exactly N is a format on every root and every kind of set (CA 2026-10-25), so both stringify with their `X`.
+// Exactly N is a format on every root and every kind of set, so both stringify with their `X`.
 test('stringify with exactly sets', () => {
   expect(stringify({ exactly: 3, setFormat: { setTo: 6, tiebreakFormat: { tiebreakTo: 7 } } })).toEqual(
     'SET3X-S:6/TB7',
@@ -81,7 +81,7 @@ test('stringify with tiebreakAt', () => {
   expect(result).toContain('@5');
 });
 
-// A modifier is upper-case letters (CA 2026-10-25): `6/TB7@2` reads back as a tiebreak at two games, not a modifier.
+// A modifier is upper-case letters: `6/TB7@2` reads back as a tiebreak at two games, not a modifier.
 test('stringify with modifier on tiebreak', () => {
   const result = stringify({
     bestOf: 1,

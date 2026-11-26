@@ -158,7 +158,7 @@ export interface OvertimeScoreContext extends ScoringPeriod {
   decidedIn?: DecidedIn;
   decidedBy?: DecidedBy;
   /**
-   * The legible result, side 1 first, derived from the record at write time (CA, 2026-11-04): renderers show it
+   * The legible result, side 1 first, derived from the record at write time: renderers show it
    * in place of the per-period `scoreStringSide1`, which stays the lossless encoding of the sets.
    */
   scoreString?: string;
@@ -489,7 +489,7 @@ export interface CreateMatchUpOptions {
   /**
    * ISO string recording when the matchUp was created at its ORIGIN, rather than
    * when this instance wrote it. Defaults to now, so existing callers are
-   * unaffected. See `Mentat/planning/DISCONNECTED_SYNC_RECONCILIATION.md` §4.1.
+   * unaffected.
    */
   occurredAt?: string;
 }
@@ -775,7 +775,7 @@ export interface PointSituation {
   /** Who serves next: 0 = side 1, 1 = side 2 (a placeholder when `serverDerived` is false) */
   server?: 0 | 1;
   /**
-   * Whether `server` is the engine's derivation (spec § 10.4, § 11.2; CA 2026-10-18). False where no
+   * Whether `server` is the engine's derivation (spec § 10.4, § 11.2). False where no
    * server is derived (a combined total `P{n}`, a tiebreak-only format): `server` is then only a
    * placeholder, and no game point or break point is reported.
    */

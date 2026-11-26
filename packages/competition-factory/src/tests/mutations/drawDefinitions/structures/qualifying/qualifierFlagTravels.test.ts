@@ -7,7 +7,7 @@ import { MAIN, QUALIFYING, SINGLE_ELIMINATION } from '@Constants/drawDefinitionC
 import { BYE } from '@Constants/matchUpStatusConstants';
 
 /**
- * `qualifier: true` MARKS A QUALIFIER, AND TRAVELS WITH IT (CA, 2026-10-15).
+ * `qualifier: true` MARKS A QUALIFIER, AND TRAVELS WITH IT.
  *
  * A main-draw seat reserved for a qualifier carries `qualifier: true`. Placing the qualifier there keeps the flag:
  * it is how a consumer shows 'Q' beside the participant. Clearing the position removes it, and swapping positions

@@ -67,7 +67,7 @@ vi.mock('@Tools/replayedInstants', async (original) => {
 });
 
 /**
- * A CALL WITH NO CAPTURED INSTANT IS RECORDED WITH THE INSTANTS IT READ (CA, 2026-11-18, `tools/replayedInstants.ts`).
+ * A CALL WITH NO CAPTURED INSTANT IS RECORDED WITH THE INSTANTS IT READ (`tools/replayedInstants.ts`).
  *
  * Outside an engine call nothing captures the clock: every stamp v1 writes reads the source where it is written, so
  * a source that advances gives each entity its own instant, and a source that fails leaves the writes made before it.

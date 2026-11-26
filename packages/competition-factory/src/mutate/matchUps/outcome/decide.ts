@@ -252,7 +252,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   // stored one v1 then writes
   const viewAfter = shadowBefore ? folded : undefined;
 
-  // AN ERROR CHANGES NOTHING (CA, 2026-10-18), and a divergence is an error raised after v1 has written: what the
+  // AN ERROR CHANGES NOTHING, and a divergence is an error raised after v1 has written: what the
   // call touches is captured here, before v1 runs, and written back into the same objects before the divergence leaves
   const before = cloneState({
     tournamentRecord: args.tournamentRecord,
@@ -344,13 +344,13 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     checkShadow();
 
     // § 5 rule 1: the winner stands in the matchUp direction names, and the loser where its link says
-    // A CALL RECORDED WHOLE IS NOT CHECKED AGAINST THE DUAL THE PLANNERS STATE EITHER (CA, 2026-11-19): neither the
+    // A CALL RECORDED WHOLE IS NOT CHECKED AGAINST THE DUAL THE PLANNERS STATE EITHER: neither the
     // dual's winner they project nor its direction; the shadow has compared the whole record with v1's own write
     if (dual) checkDual({ args, after, route, dual, recorded: !!(outcome.ops && outcome.recordedResult) });
     if (route === 'winner' && isExit(planned.matchUpStatus) && isRelabel(planned, view))
       differentialTally('winner:relabel-exit', direction?.loser?.exit ? 'compared' : 'deferred');
     if (!direction) return differentialTally(`${route}:direction`, 'deferred');
-    // A CALL RECORDED WHOLE IS NOT CHECKED AGAINST THE PLANNERS' DIRECTION (CA, 2026-11-19). Its ops are v1's own write
+    // A CALL RECORDED WHOLE IS NOT CHECKED AGAINST THE PLANNERS' DIRECTION. Its ops are v1's own write
     // read off a copy, and the shadow above has compared the whole record with them; the direction stated here is the
     // planners', which they abstained from writing, and it need not describe what v1 does. A call the planners write
     // keeps the check.
@@ -692,8 +692,8 @@ function checkCarriedPastBye({
 }
 
 /**
- * A carried exit arriving at a seat an exit already decided, over a result recorded below (P51 group 2; CA,
- * 2026-10-11): the holder stands as it was, an exit won by the seat the loser now occupies, and the loser goes on to
+ * A carried exit arriving at a seat an exit already decided, over a result recorded below: the holder stands as it
+ * was, an exit won by the seat the loser now occupies, and the loser goes on to
  * its winner matchUp carrying their exit, which is then checked as an exit carried past a BYE is.
  */
 function checkCarriedPastDecided({
@@ -800,10 +800,10 @@ function onwardMatchUp({ args, after }: CheckArgs, holder: HydratedMatchUp): Hyd
 }
 
 /**
- * A produced exit that meets a BYE (CA 2026-09-29, `heldExitIsSentOn.test.ts`): the holder stays a BYE
+ * A produced exit that meets a BYE (`heldExitIsSentOn.test.ts`): the holder stays a BYE
  * with no winner and the exit is sent on, keeping its flavour, to the holder's winner matchUp. There it
  * is a produced exit like any other: awarded to an opponent already in place, pending (no winningSide)
- * while the other side is empty (a fed slot nobody has reached yet included: CA 2026-10-03, Q3),
+ * while the other side is empty (a fed slot nobody has reached yet included),
  * converged with an exit standing there. Deferred: a second BYE onward.
  */
 function checkProducedPastBye({
@@ -867,11 +867,11 @@ function checkProducedExit({
   const opponent = target?.sides?.find((side) => side?.sideNumber === produced.winningSide);
   if (opponent?.bye) return checkProducedPastBye({ args, after, route, produced, holder: target });
   // the opponent's seat is fed by a BYE holder holding an exit nobody can take: v1 sends that exit on at the end of
-  // the call (CA, 2026-10-04, "BYE holder, exit sent on"), and the two exits converge here. Not planned: deferred
+  // the call ("BYE holder, exit sent on"), and the two exits converge here. Not planned: deferred
   if (target && opponentFeederHoldsAnExit({ args, after, route }, target, produced.matchUpId))
     return differentialTally(`${route}:produced-meets-held-exit`, 'deferred');
-  // CA, 2026-09-20: a produced exit holds NO winningSide until the opponent arrives; the exception
-  // (2026-09-25) is an opponent already in place, whose side the winner is read off
+  // a produced exit holds NO winningSide until the opponent arrives; the exception
+  // is an opponent already in place, whose side the winner is read off
   const expectedWinner = opponent?.participantId ? produced.winningSide : undefined;
   if (target?.matchUpStatus !== produced.matchUpStatus || target?.winningSide !== expectedWinner)
     diverge(
@@ -883,7 +883,7 @@ function checkProducedExit({
 }
 
 /**
- * An invariant, asked after every accepted call (CA, 2026-10-02; fixed in v1 by #5118): an exit that
+ * An invariant, asked after every accepted call (fixed in v1 by #5118): an exit that
  * meets a BYE leaves a BYE behind. No matchUp may end labelled WALKOVER or DEFAULTED with a BYE on one
  * side and nobody on the other; the exit has always moved on from such a matchUp, and the label is a
  * defect wherever it comes from. Checked across the whole draw, not only what this call planned.

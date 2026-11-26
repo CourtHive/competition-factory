@@ -29,8 +29,8 @@ import {
  *   nothing is produced onto it: the correction route recorded the produced exit on the BYE's own seat and sent it on,
  *   so `South|2|1` read a pending walkover in that order alone. Also closed here: the BYE a single exit claimed,
  *   withdrawn when a correction makes that matchUp a double exit (`South|1|3` dp 6).
- * - 20521366 (s14 policy-off, COMPASS 32/27): a held exit is sent on while its target's other feeder can still deliver
- *   (CA, 2026-09-24); the settle held it until that feeder was decided, so `North|2|1` read a pending DEFAULTED when the
+ * - 20521366 (s14 policy-off, COMPASS 32/27): a held exit is sent on while its target's other feeder can still deliver;
+ *   the settle held it until that feeder was decided, so `North|2|1` read a pending DEFAULTED when the
  *   BYE came first and TO_BE_PLAYED when the exit did. And a withdrawn origin leaves the kept exit its own label
  *   (`East|2|4` DEFAULTED, not the mixed convergence's WALKOVER).
  */

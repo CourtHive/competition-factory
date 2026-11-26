@@ -179,8 +179,8 @@ describe("a line's double exit produced nothing, and leaving it touches nothing 
   });
 });
 
-// CA, 2026-11-20 (class 4): a dual decided by its own call keeps its winner while its lines project none, so these lines no longer un-decide
-// it. The line-ups it sent on stay where they were sent (before the ruling they left with the un-deciding; the walk found
+// Class 4: a dual decided by its own call keeps its winner while its lines project none, so these lines no longer un-decide
+// it. The line-ups it sent on stay where they were sent (before this rule they left with the un-deciding; the walk found
 // the planners' removal leaving them behind, which is why the cases stand here)
 describe('a line on a dual decided by its own call leaves the line-ups the dual sent on', () => {
   it('the winner: its line-up stays in the next dual, where a call on that dual had stored its sides', () => {
@@ -288,7 +288,7 @@ describe("a team's line-up notice keeps the event an earlier notice of the call 
   });
 });
 
-// CA, 2026-11-20 (class 4): the line no longer un-decides the dual. Before the ruling the dual went IN_PROGRESS at 0-0 (a doubles line
+// Class 4: the line no longer un-decides the dual. Before this rule the dual went IN_PROGRESS at 0-0 (a doubles line
 // that does not yet win its collection's point), where the planners wrote the removal's status, to be played
 describe('a line on a dual decided by its own call leaves the dual decided', () => {
   it.each([

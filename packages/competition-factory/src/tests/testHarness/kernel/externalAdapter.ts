@@ -17,7 +17,7 @@ import type { KernelAdapter, KernelResult } from './kernel';
  * fewer lines than it was sent, or answers a line that is not JSON gives an `exception` for every request it did not
  * answer: never a value.
  *
- * NO HANG (punch list P62). `spawnSync` holds the vitest worker's event loop, so no test timeout can interrupt a child
+ * NO HANG. `spawnSync` holds the vitest worker's event loop, so no test timeout can interrupt a child
  * that never exits; one did, for ~2.5 h, blocked reading a stdin whose end never came. So the batch is written to a
  * file and redirected in (`< file`): the child's input ends by construction, and the protocol on its side is still
  * stdin. And the child is killed after `KERNEL_ADAPTER_TIMEOUT_MS` (default two minutes; the suite's batch takes ~3 s),

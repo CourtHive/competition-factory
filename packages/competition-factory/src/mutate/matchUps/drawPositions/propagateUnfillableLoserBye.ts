@@ -13,20 +13,20 @@ import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
 
 /**
- * P39 — THE LOSER OF A PRODUCED EXIT IS NOBODY, SO THE FIRST-ROUND SEAT IT FEEDS IS A BYE.
+ * THE LOSER OF A PRODUCED EXIT IS NOBODY, SO THE FIRST-ROUND SEAT IT FEEDS IS A BYE.
  *
  * A produced exit has just resolved: one side holds a participant and won, the other carries the exit.
  * That provenance is the engine's own record that **nobody will ever arrive** on the losing side — so
  * this matchUp will never produce a loser, and the seat its loser link feeds can never be filled.
  *
- * Measured on CA's COMPASS 16/14, one `DOUBLE_WALKOVER` at `East|1|2`, played out: `West|2|1` ends
+ * Measured on a COMPASS 16/14 draw, one `DOUBLE_WALKOVER` at `East|1|2`, played out: `West|2|1` ends
  * `WALKOVER ws=2` with `drawPositions [2, 3]` where **dp2 is EMPTY** — not a BYE and not a participant,
  * because the double walkover meant nobody was ever placed there — and its loser target
  * `Southwest|1|1` dp1 received nothing, stranding a real participant opposite it forever.
  *
  * ## Why the two existing paths miss it
  *
- *  - `propagateConsolationBye` is gated on `linkCondition === FIRST_MATCHUP`. Per CA 2026-09-26 that
+ *  - `propagateConsolationBye` is gated on `linkCondition === FIRST_MATCHUP`. That
  *    constant names a link TRAVERSAL — a participant crosses only if their first matchUp in the source
  *    structure did not happen — and that traversal never occurs in COMPASS. Nothing is missing from the
  *    draw definition; the gate asks an unrelated question.
@@ -37,14 +37,14 @@ import { BYE } from '@Constants/matchUpStatusConstants';
  * ## DEAD versus PENDING, which is the entire difficulty
  *
  * "One side empty" also describes a matchUp still waiting for an ordinary arrival, and treating those
- * as dead is what makes the `doubleExitPropagateBye` policy unshippable (**P30**, measured twice at
+ * as dead is what makes the `doubleExitPropagateBye` policy unshippable (measured twice at
  * 34 -> 48 failing census seeds). The discriminator here is the side's own **provenance**, never its
  * emptiness and never its status: `carriedExitStatus` is written only when an exit was carried INTO
  * that side, i.e. when its feeder resolved and delivered nothing. A side still awaiting an arrival has
  * no provenance at all.
  *
- * Deliberately NOT read from `drawPositions` by index — `draw-positions.md` rule 2 and punch-list
- * **P24** and **P37**: those idioms answer confidently with the wrong side when a position is absent.
+ * Deliberately NOT read from `drawPositions` by index — `draw-positions.md` rule 2: those idioms answer
+ * confidently with the wrong side when a position is absent.
  * Provenance is keyed by `sideNumber`.
  *
  * ## IT MUST BE CALLED FROM EVERY PATH THAT RESOLVES A PRODUCED EXIT
@@ -63,10 +63,9 @@ import { BYE } from '@Constants/matchUpStatusConstants';
  *
  * ## SCOPE: the connected structure, at any round — and never the same structure
  *
- * CA, 2026-09-27, correcting an earlier round-1-only gate: *"it should be able to produce a BYE for feed
- * rounds in connected structures as well."*
+ * An earlier gate was round-1-only; a BYE is produced for feed rounds in connected structures as well.
  *
- * The exclusion that remains is the SAME structure, and it is the distinction CA drew about
+ * The exclusion that remains is the SAME structure, and it is the distinction drawn about
  * `doubleExitPropagateBye`: when a double exit occurs, **a produced exit in its own structure ALWAYS
  * follows**, and no BYE belongs there. `propagate` was never about that exit. A BYE is only ever the
  * answer at the connected structure the loser would have travelled to — which is also why this function
@@ -76,7 +75,7 @@ import { BYE } from '@Constants/matchUpStatusConstants';
  *
  * `propagateConsolationBye`'s docblock records the defect that follows a reservation nobody revisits —
  * *"Correct when placed — and never revisited."* So a withdrawal was written, and then found to be
- * unreachable. Measured on CA's COMPASS 16/14 by playing N steps and then attempting to clear the
+ * unreachable. Measured on a COMPASS 16/14 draw by playing N steps and then attempting to clear the
  * originating `DOUBLE_WALKOVER`:
  *
  *   steps  1..8    BYE not yet placed    clear PERMITTED
@@ -94,8 +93,8 @@ import { BYE } from '@Constants/matchUpStatusConstants';
  * and tells the next reader that a withdrawal has become necessary.
  *
  * Whether the BYE still stands is read from the draw by the unwinds that might take it back (`byeSeatStands`, in
- * `removeDoubleExit`, `positionClear` and `withdrawByeSeats`); nothing records who placed it (Mentat P58 retired the
- * `byeClaims` ledger). The measurement above holds for correcting the ORIGINATING exit; a BYE a dissolved convergence
+ * `removeDoubleExit`, `positionClear` and `withdrawByeSeats`); nothing records who placed it (the `byeClaims` ledger
+ * is retired). The measurement above holds for correcting the ORIGINATING exit; a BYE a dissolved convergence
  * no longer owes is withdrawn by `withdrawByeSeats`, not here, and only while nothing else beside it still sends nobody
  * (census S7, 20964176: `aByeClaimSurvivesTheExitWithdrawnBesideIt.test.ts`).
  */
@@ -189,15 +188,15 @@ export function propagateUnfillableLoserBye({
   if (targetData.targetMatchUps?.winnerMatchUp?.matchUpId === loserMatchUp.matchUpId) return undefined;
 
   /**
-   * A CONNECTED structure, at ANY round — corrected by CA 2026-09-27.
+   * A CONNECTED structure, at ANY round.
    *
-   * This was gated on `roundNumber === 1`. CA: *"it should be able to produce a BYE for feed rounds in
-   * connected structures as well."* A feed round's target is reached through `assignFedDrawPositionBye`,
+   * This was gated on `roundNumber === 1`; it must produce a BYE for feed rounds in connected structures
+   * as well. A feed round's target is reached through `assignFedDrawPositionBye`,
    * which is the same dispatch the ordinary BYE cascade makes, and which decides for itself whether the
    * fed drawPosition's own initial round is the one being fed.
    *
    * What the structure test still excludes is the SAME structure, and that exclusion is the whole
-   * distinction CA drew about `doubleExitPropagateBye`: when a double exit occurs, a produced exit in its
+   * distinction drawn about `doubleExitPropagateBye`: when a double exit occurs, a produced exit in its
    * own structure ALWAYS follows, and no BYE belongs there. A BYE is only ever the answer at the
    * connected structure the loser would have travelled to.
    */

@@ -93,7 +93,7 @@ describe('a call that carries notes the planners do not write is recorded whole'
 });
 
 /**
- * NOTES THAT ARE NOT DATA (CA, 2026-11-18: recorded). `addNotes` stores the object a test hands it (`testing: true`) as
+ * NOTES THAT ARE NOT DATA (recorded). `addNotes` stores the object a test hands it (`testing: true`) as
  * it is: the stored matchUp holds the caller's very object, a function among its fields included. A function cannot be
  * copied, so the recorded op's own copy of the matchUp holds the notes copied as far as they can be and the function
  * by reference (`cloneData`), and apply leaves on the stored matchUp what the copy's run left on the copy: the caller's

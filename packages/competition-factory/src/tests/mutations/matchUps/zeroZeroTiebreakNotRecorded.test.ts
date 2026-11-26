@@ -8,7 +8,7 @@ import { TIEBREAK_POINTS_NOT_RECORDED } from '@Constants/scoreWarningConstants';
 import { INVALID_SCORE } from '@Constants/errorConditionConstants';
 
 /**
- * CA, 2026-11-04: 0-0 tiebreak points on a set whose games are not level are not recorded points. Prod that day: an
+ * 0-0 tiebreak points on a set whose games are not level are not recorded points. Prod that day: an
  * integration sent `3-6 6-7` with `side1TiebreakScore: 0, side2TiebreakScore: 0` on the second set and was refused
  * ("Tiebreak winner must reach 7 points, got 0"). No tiebreak finishes 0-0, so the pair is the feed's empty default.
  */

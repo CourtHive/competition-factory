@@ -15,7 +15,7 @@ import { FIRST_ROUND_LOSER_CONSOLATION, DOUBLE_ELIMINATION } from '@Constants/dr
  * Two frozen-census seeds failing ORIGIN_ON_UNDECIDED_MATCHUP with PROPAGATED_EXIT_LOST, one shape. A double exit
  * produces an exit into one seat of a consolation matchUp. Then a participant who exited elsewhere, carrying their
  * exit, meets a BYE (another double exit's produced BYE) and is advanced through it, as a propagated exit meeting a
- * BYE is (CA, 2026-09-20). They arrive in the matchUp holding the produced exit: two exits on two sides, a
+ * BYE is. They arrive in the matchUp holding the produced exit: two exits on two sides, a
  * convergence, and nobody wins (RULE 4; #5161, "an arrival carrying an exit converges, never takes"). The BYE path's
  * generic advance wrote TO_BE_PLAYED over it, and the matchUp read undecided while its provenance recorded both
  * exits. Each case is the census seed shrunk to its fewest steps, replayed through the census's own `replay`.

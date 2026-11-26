@@ -21,7 +21,7 @@ import {
 } from '@Constants/errorConditionConstants';
 
 /**
- * F-007: one read-only schedule plan for addMatchUpScheduleItems, in every schema write mode. The rules run in their
+ * One read-only schedule plan for addMatchUpScheduleItems, in every schema write mode. The rules run in their
  * public order against the stored draw and a working copy of the target matchUp; nothing is copied but that matchUp's
  * own schedule and timeItems, and nothing is written until the whole request is accepted. The commit installs the
  * changed fields on the stored matchUp, keeping its schedule object and appending to its timeItems.
@@ -48,7 +48,7 @@ function scheduled({ assigned = 0 } = {}) {
   return { initial, target };
 }
 
-// valid attributes first, then the one the plan refuses: before F-007 each valid one was written as it was reached
+// valid attributes first, then the one the plan refuses: before the plan each valid one was written as it was reached
 const lateRefusals = () => {
   const { initial, target } = scheduled({ assigned: 1 });
   const call = (schedule: any, code: string, extra = {}) => ({
@@ -77,7 +77,7 @@ const lateRefusals = () => {
   ];
 };
 
-describe('F-007 read-only schedule plan', () => {
+describe('read-only schedule plan', () => {
   for (const mode of OUTCOME_MODES) {
     for (const borrowed of [false, true]) {
       for (const writeMode of WRITE_MODES) {

@@ -7,7 +7,7 @@ import { COMPLETED, IN_PROGRESS, RETIRED } from '@Constants/matchUpStatusConstan
 import type { InitialScoreOptions } from '@Types/scoring/types';
 
 /*
- * The late-start baseline (scoring-engine spec § 2.5; § 16 decision 8, CA 2026-10-18):
+ * The late-start baseline (scoring-engine spec § 2.5; § 16 decision 8):
  * 1. its sets are judged by their segment rule, as addSet judges a total: 6-5 is not won; the final set is
  *    the one the deciding-set rule of § 3.2 names, read from the score; a tiebreak-only set is read from
  *    its points (1-0 with 11-9 is won);
@@ -26,7 +26,7 @@ function setScores(engine: ScoringEngine) {
   return engine.getState().score.sets.map((set) => [set.side1Score, set.side2Score, set.winningSide]);
 }
 
-describe('§ 2.5 rule 1 the sets are judged by their segment rule (CA 2026-10-18, decision 8)', () => {
+describe('§ 2.5 rule 1 the sets are judged by their segment rule (decision 8)', () => {
   it('SET3-S:6/TB7: 6-5 is not won; it is the set in play', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     engine.setInitialScore({ sets: [{ side1Score: 6, side2Score: 5 }] });

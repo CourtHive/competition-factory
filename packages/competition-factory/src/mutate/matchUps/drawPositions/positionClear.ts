@@ -240,7 +240,7 @@ export function drawPositionRemovals({
   // was taken out of `2|2` first; `3|1` then lost the walkover too, and the next arrival passed it with nothing recorded).
   const sidesBefore = readSidesBefore({ matchUps: structureMatchUps, drawDefinition, structureId });
 
-  // a removal that fails is returned, not dropped: a malformed round link refuses the clear (CA, 2026-10-06)
+  // a removal that fails is returned, not dropped: a malformed round link refuses the clear
   for (const { roundNumber, targetDrawPosition, relevantPair } of tasks ?? []) {
     const targetMatchUp = roundMatchUps?.[roundNumber].find((matchUp) =>
       overlap(matchUp.drawPositions?.filter(Boolean), relevantPair.filter(Boolean)),
@@ -440,8 +440,8 @@ function removeDrawPosition({
    *
    * WHATEVER is withdrawn — a propagated BYE, a participant, a director's BYE. The first version of
    * this rule (2026-09-29) kept the advancement only for a propagated BYE, on the theory that
-   * clearing a participant is followed by a position action that re-derives it. CA ruled otherwise
-   * on 2026-10-01 (P46), on two FIRST_MATCH_LOSER_CONSOLATION 8/5 files that differed only in route:
+   * clearing a participant is followed by a position action that re-derives it. That was reversed
+   * on 2026-10-01, on two FIRST_MATCH_LOSER_CONSOLATION 8/5 files that differed only in route:
    *
    *     generated          Consolation|3|1  [2, _]     seat 2's opponent, seat 5, is a BYE
    *     walkover entered   Consolation|3|1  [2, 4]     the loser arrives on seat 2, already advanced
@@ -758,7 +758,7 @@ function handleTeamPositionRemoval({
  *  - past a BYE the removal took away. Census de 9301695 (DOUBLE_ELIMINATION 16/15): undoing a double exit cleared the
  *    propagated BYE opposite `Backdraw|2|3`'s occupant, who had passed it into `3|2` and `4|2` and stayed there.
  *
- * A matchUp left a BYE keeps its advancement: a BYE advancement is structural (P46, `advancedByOpponentsBye`).
+ * A matchUp left a BYE keeps its advancement: a BYE advancement is structural (`advancedByOpponentsBye`).
  */
 function releaseUndecidedAdvancements({
   initialMatchUpStatus,

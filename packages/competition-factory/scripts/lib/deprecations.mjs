@@ -5,7 +5,7 @@
  * comment written in `src/` reaches a consumer's editor. Keeping comments would double the gzipped declarations, and
  * TypeScript ignores a tag on a source function when the name is reached through `export { x } from` (every governor
  * member and engine method is). So the tags are INJECTED into the built declarations by `postbuild.mjs`, at the
- * places a consumer meets each name (Mentat planning/FACTORY_ENGINE_API_MIGRATION_PREP_PLAN.md, decision 1):
+ * places a consumer meets each name:
  *
  *   governor   the export specifier of a governor namespace member (`drawsGovernor.addGoesTo`,
  *              `drawsGovernor.query.addGoesTo`, `governors.drawsGovernor.addGoesTo`, the governors subpath)

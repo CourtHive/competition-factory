@@ -19,8 +19,7 @@ type ModifyParticipantsPaymentStatusArgs = {
    * ISO string recording when the payment status actually CHANGED, as opposed to
    * when this instance wrote it. Defaults to now, so existing callers are
    * unaffected. Payment status is stored as a timeItem, whose `createdAt` is the
-   * ordering key used to resolve the CURRENT status — see
-   * `Mentat/planning/DISCONNECTED_SYNC_RECONCILIATION.md` §4.1.
+   * ordering key used to resolve the CURRENT status.
    */
   occurredAt?: string;
 };

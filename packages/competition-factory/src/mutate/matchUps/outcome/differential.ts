@@ -12,7 +12,7 @@ import type { MatchUpWrite, Refusal } from './types';
  * plan for the call it is a divergence (`compareDecisions`, `planned`).
  *
  * The direction check (`decide.ts` `checkDirection`, § 5 rule 1) is asked of the calls the planners write. A call
- * recorded whole is compared by its shadow, the whole record, and not against the planners' direction (CA, 2026-11-19).
+ * recorded whole is compared by its shadow, the whole record, and not against the planners' direction.
  */
 export const APPLY_STAGE_CODES: ReadonlySet<string> = new Set([
   // INVALID_TIME, INVALID_DATE and ANACHRONISM are not: v2 refuses a schedule as v1's writer refuses it, rows 16, 25
@@ -39,7 +39,7 @@ export const APPLY_STAGE_CODES: ReadonlySet<string> = new Set([
   // MISSING_DRAW_POSITIONS is not: v2 refuses it as v1 does, row 24, both clauses (v1's `missingDrawPositionsRefusal`
   // before the dispatch; `removeDirectedParticipants`' check after it, S7)
   // DRAW_POSITION_ASSIGNED and DRAW_POSITION_OCCUPIED are not (S7, O13): the refusals raised INSIDE the exit cascade
-  // (F3, CA 2026-10-04: `assignDrawPositionBye`, `doubleExitAdvancement`, `directLoser` on a seat another participant
+  // (F3: `assignDrawPositionBye`, `doubleExitAdvancement`, `directLoser` on a seat another participant
   // holds) come after v1's first write. Their census cases (F2, policy-off DOUBLE_ELIMINATION 8: 20477784, 20537779)
   // were fixed in v1 (`doubleEliminationRefusalsThatWrote.test.ts`), and neither code was deferred once over the full
   // suite or the TEAM arms under differential (2026-11-02). A v1 that raises one now refuses after writing: the

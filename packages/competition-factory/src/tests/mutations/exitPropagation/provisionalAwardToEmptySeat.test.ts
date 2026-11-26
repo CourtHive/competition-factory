@@ -7,9 +7,9 @@ import path from 'path';
 import fs from 'fs';
 
 /**
- * A PRODUCED WALKOVER AWARDED TO AN EMPTY SEAT IS PROVISIONAL — CA, 2026-10-12.
+ * A PRODUCED WALKOVER AWARDED TO AN EMPTY SEAT IS PROVISIONAL.
  *
- * CA's 2026-09-21 definition of a provisional decision is "propagated, holding nobody, awarded to nobody". The census
+ * The definition of a provisional decision is "propagated, holding nobody, awarded to nobody". The census
  * read "awarded to nobody" as "no `winningSide`", so RULE 2's produced walkover — awarded to the side without the exit
  * even while that side is still empty — failed it, while the SAME waiting walkover written pending (relayed past a
  * BYE, no `winningSide`) passed. Both are a produced exit waiting for an arrival. An award to a seated participant is

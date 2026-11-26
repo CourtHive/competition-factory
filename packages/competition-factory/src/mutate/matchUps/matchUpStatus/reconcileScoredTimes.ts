@@ -12,7 +12,7 @@ import type { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tourname
  *
  * A DOUBLE_ELIMINATION decider made a DEAD_RUBBER was not played, so it is never scored and keeps no stamp from a
  * result it held before. A rubber of a team tie (a `collectionId`) is not affected: its DEAD_RUBBER keeps its score
- * and stamp like an ABANDONED line (CA, 2026-10-24; the decider is the only other place a DEAD_RUBBER is in scope).
+ * and stamp like an ABANDONED line (the decider is the only other place a DEAD_RUBBER is in scope).
  */
 export function matchUpIsScored(matchUp?: MatchUp): boolean {
   if (matchUp?.matchUpStatus === DEAD_RUBBER && !matchUp.collectionId) return false;
@@ -53,7 +53,7 @@ export function scoredTimeAction(matchUp: MatchUp, pending = false): 'retain' | 
  * ## It cannot fail, by construction
  *
  * It runs after the cascade has written, so a failure here could not be refused without leaving those writes behind,
- * and an error changes nothing (CA, 2026-10-18) with no caller rollback to lean on (CA, 2026-10-22). Its one inner
+ * and an error changes nothing with no caller rollback to lean on. Its one inner
  * call is `modifyMatchUpNotice`, whose only error is a missing matchUp (`MISSING_MATCHUP`): its `matchUp` is required
  * in the type, and the guard below reads `matchUp?.schedule?.scoredTime` before the notice is reached, so a missing
  * matchUp never gets there. Nothing is dropped (outcome v2 executor plan, Phase C prerequisite 2). Measured

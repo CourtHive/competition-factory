@@ -9,13 +9,13 @@ import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 
 /**
  * An unfinished matchUp nobody has called or started is placed in time by its schedule alone. It is under way
- * only if it holds a court (CA: a player on no grid cell is not on court), and it counts as load before the
+ * only if it holds a court (a player on no grid cell is not on court), and it counts as load before the
  * inspected matchUp only if it is scheduled before it.
  *
  * Reported from production (2026-10-11): two players finished their R32s at
  * 15:33 and 15:53, and were waiting for a doubles quarterfinal scheduled 14:30. Their R16 singles, scheduled
  * 15:30, had not been called and were on no court. Rest read each R16 as under way from its scheduled time and
- * showed both players "On court now — ready 18:00". CA chose schedule order, then added the court rule; the
+ * showed both players "On court now — ready 18:00". Schedule order was chosen, then the court rule added; the
  * scheduled-time fallback stays for a matchUp on a court, which protects a venue that does not call matches.
  */
 

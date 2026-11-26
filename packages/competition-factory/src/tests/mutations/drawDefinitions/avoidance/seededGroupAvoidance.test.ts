@@ -79,6 +79,6 @@ it('resolves a GROUP directive only when idCollections is supplied — the omitt
  * whole avoidance branch in `positionSeeds` never executes.
  *
  * So seeded directive-avoidance is dead for a second, independent reason, and this fix is a
- * prerequisite rather than a cure. See TASKS.md — "factory: seeded avoidance is dead twice over".
+ * prerequisite rather than a cure: seeded avoidance is dead twice over.
  * Do not add an end-to-end test here until that is resolved: it can only be vacuous.
  */

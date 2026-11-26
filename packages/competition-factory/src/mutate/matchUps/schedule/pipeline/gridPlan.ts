@@ -43,7 +43,7 @@ export type GridDateView = {
   gridRows: GridRow[];
   matchUpDependencies: GridDependencies;
   reachability: ParticipantReachability;
-  /** courts closed for part of the day (punch list P33), by courtId */
+  /** courts closed for part of the day, by courtId */
   courtClosures: Record<string, ClosureWindow[]>;
   matchUpDailyLimits?: { [key: string]: number };
   dailyLimitOverrides?: DailyLimitOverrides;
@@ -84,7 +84,7 @@ function timeToMinutes(value?: string): number | undefined {
 }
 
 /**
- * Courts closed for part of the day, keyed by courtId (punch list P33).
+ * Courts closed for part of the day, keyed by courtId (without them the pro grid assigned matchUps to closed courts).
  *
  * `getGridBookings` splits a court's bookings into those keyed by `courtOrder` — a cell blocked by
  * hand, already honoured through `isBlocked` — and those carrying only `startTime`/`endTime`. Only

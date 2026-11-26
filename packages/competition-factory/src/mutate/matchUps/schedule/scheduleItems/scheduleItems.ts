@@ -375,7 +375,7 @@ function applyScheduleAssignments({
 // matchUp is re-dated they no longer apply and are removed, so the match does not
 // inherit the prior day's row on the new day. The venue goes with them when it came
 // with a court (`clearVenue`); a venue placed without a court, as the timed
-// schedulers place one, is where the match is played and stays (CA 2026-10-27).
+// schedulers place one, is where the match is played and stays.
 // The court is removed, not written as '' (it was until 2026-10-27).
 //
 // `calledAt` is the fourth of those, and was the one left behind. It asserts
@@ -557,7 +557,7 @@ type AddMatchUpScheduleItemsArgs = {
   pendingPlacements?: PendingPlacements;
   /** set by a bulk caller that asked `checkPlayedOrder` of the whole batch before writing any of it */
   playedOrderChecked?: boolean;
-  /** false: only a played matchUp orders, as before CA 2026-10-30 (default true: plans order too) */
+  /** false: only a played matchUp orders, as before 2026-10-30 (default true: plans order too) */
   plannedOrder?: boolean;
   /** plan the request, every refusal included, and commit none of it */
   validateOnly?: boolean;
@@ -582,7 +582,7 @@ type ScheduleResult = { error?: ErrorType; success?: boolean; warnings?: any[]; 
 type SchedulePlan = { result: ScheduleResult; commit: () => void };
 
 /**
- * One schedule request, planned and then committed (F-007). Every rule is evaluated, in its public order, against the
+ * One schedule request, planned and then committed. Every rule is evaluated, in its public order, against the
  * record as it stands and a working copy of the target matchUp (its own `schedule` and `timeItems`); the draw is never
  * copied and never written while planning. The commit then installs the working matchUp's changed fields on the stored
  * matchUp, stores any linked venue copy and announces the matchUp. `validateOnly` plans and commits nothing.
@@ -736,7 +736,7 @@ export function planScheduleItems(params: AddMatchUpScheduleItemsArgs): Schedule
     courtId === undefined &&
     venueId === undefined;
 
-  // a venue that came with a court goes with it; one placed without a court (a timed scheduler's) stays (CA 2026-10-27)
+  // a venue that came with a court goes with it; one placed without a court (a timed scheduler's) stays
   const hadCourt = !!matchUpAssignedCourtId({ matchUp }).courtId;
 
   const dateWarning = scheduleDateWarning({ tournamentRecord, drawDefinition, schedule, matchUpId, event });
@@ -900,7 +900,7 @@ function withGridPositionCleared({ matchUp, schedule }: { matchUp?: MatchUp; sch
   return { ...schedule, courtOrder: undefined, courtId: undefined, ...(hadCourt ? { venueId: undefined } : {}) };
 }
 
-/** the recorded-order refusal for a write's START_TIME and END_TIME together (CA 2026-10-30); undefined when it states neither */
+/** the recorded-order refusal for a write's START_TIME and END_TIME together; undefined when it states neither */
 function recordedTimesRefusal({
   drawDefinition,
   matchUpId,
@@ -981,7 +981,7 @@ function checkScheduleRefusals({
   }
 
   // the recorded times of linked matchUps, judged once against the start and the end the whole write leaves, before
-  // anything is written: a schedule given with an outcome is validated here before the outcome lands (CA 2026-10-30)
+  // anything is written: a schedule given with an outcome is validated here before the outcome lands
   const recordedRefusal = recordedTimesRefusal({ drawDefinition, matchUpId: matchUp?.matchUpId, schedule });
   if (recordedRefusal)
     return { error: decorateResult({ result: recordedRefusal, stack }), unwritable: unwritable ?? [] };
@@ -1288,7 +1288,7 @@ export function addMatchUpStartTime({
   // START_TIME must be prior to any STOP_TIMEs, RESUME_TIMEs and STOP_TIME
   if (!earliestRelevantTimeValue || timeDate(startTime, scheduledDate) < earliestRelevantTimeValue) {
     const militaryTime = convertTime(startTime, true, true);
-    // nor may it conflict with the recorded times of a linked matchUp (CA 2026-10-30)
+    // nor may it conflict with the recorded times of a linked matchUp
     if (!recordedOrderChecked) {
       const refusal = recordedOrderRefusal({ drawDefinition, matchUpId, override: { startTime: militaryTime } });
       if (refusal) return refusal;
@@ -1390,7 +1390,7 @@ export function addMatchUpEndTime({
   // All times stored as military time; END_TIME stays a bare HH:MM value
   const militaryTime = convertTime(endTime, true, true);
 
-  // nor may the end conflict with the recorded times of a linked matchUp (CA 2026-10-30)
+  // nor may the end conflict with the recorded times of a linked matchUp
   if (validateTimeSeries && !recordedOrderChecked) {
     const override = { endTime: militaryTime, endDate: placement.endDate };
     const refusal = recordedOrderRefusal({ drawDefinition, matchUpId, override });

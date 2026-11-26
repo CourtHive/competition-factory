@@ -14,7 +14,8 @@
  * ## What it checks
  *
  * Every tracked text file under `documentation/` (the lockfile and binaries aside), the repository README, and the
- * package README and CHANGELOG, line by line, against `RULES`. Each rule uses word boundaries so an identifier that
+ * package README and CHANGELOG, line by line, against `RULES` (`scripts/lib/provenanceRules.mjs`, which
+ * `verify:source-provenance` shares for comments and test titles everywhere else). Each rule uses word boundaries so an identifier that
  * merely contains the letters (`CAPS`, `documentation`, the `P32` of `SET1-S:P32`) is not a hit.
  *
  * ## Why the whole CHANGELOG, with no marker or baseline
@@ -33,54 +34,21 @@
  * Self-test:  node scripts/verify/docsProvenance.mjs --self-test   (fires on each rule, quiet on the near misses)
  */
 import { REPO_ROOT, repoPath } from '../lib/repoRoot.mjs';
+import { RULES } from '../lib/provenanceRules.mjs';
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const TAG = '[verify:docs-provenance]';
 
-/** Each governance reference, by name. Case-sensitive unless flagged. */
-export const RULES = [
-  { name: 'ca', pattern: /\bCA\b/, what: 'names CA, or attributes a decision to CA' },
-  {
-    name: 'ruling-id',
-    pattern: /\b[Rr]ulings? (?:\d|OPEN-\d|\([A-Za-z]\))/,
-    what: 'cites a ruling by number or letter',
-  },
-  { name: 'open-id', pattern: /\bOPEN-\d+\b/, what: 'cites an OPEN-n decision id' },
-  { name: 'mentat', pattern: /\bmentat\b/i, what: 'names the private planning repository' },
-  { name: 'controlling-session', pattern: /\bcontrolling session\b/i, what: 'names the controlling session' },
-  { name: 'tasks', pattern: /\bTASKS\b/, what: "points at the planning repository's task list" },
-  // P10–P99, not after `:`, a backtick, a word character or `-`, so the `P32` of `SET1-S:P32` / `` `P32` `` is not one
-  { name: 'plan-id', pattern: /(?<![\w:`-])P[1-9]\d\b/, what: 'cites a plan id (P58, P59, …)' },
-  { name: 'finding-id', pattern: /\bF-\d{3}\b/, what: 'cites a finding id (F-0xx)' },
-  {
-    name: 'decision-id',
-    pattern: /\bSE\d[a-z]?-[A-Z]\d+/,
-    what: 'cites a scoring-engine plan decision id (SE2a-D3b, …)',
-  },
-];
+/** Each governance reference, by name; shared with `verify:source-provenance`. */
+export { RULES };
 
 /**
  * Legitimate lines a rule would otherwise flag. `file` is repo-relative; `line` must match the whole line's text.
  * Two-letter `CA` is also California, as a mock nationality or state code.
  */
 export const ALLOW = [
-  // TEMPORARY. typedefs.mdx is generated from the JSDoc of src/types/tournamentTypes.ts (verify:docs-model), so these
-  // two lines can only change at their source, which the separate src/ comment sweep rewrites. When it does, these
-  // entries go STALE and fail: delete them then.
-  {
-    rule: 'mentat',
-    file: 'documentation/docs/types/typedefs.mdx',
-    line: /FACTORY_STRUCTURE_UNIONS_8_0_0/,
-    why: 'generated from src/types/tournamentTypes.ts JSDoc; cleaned by the src/ comment sweep',
-  },
-  {
-    rule: 'ca',
-    file: 'documentation/docs/types/typedefs.mdx',
-    line: /permanently: CA, 2026-10-23/,
-    why: 'generated from src/types/tournamentTypes.ts JSDoc; cleaned by the src/ comment sweep',
-  },
   {
     rule: 'ca',
     file: 'documentation/docs/policies/avoidance.md',
@@ -168,6 +136,7 @@ function selfTest() {
     ['P59 remains open', 'plan-id'],
     ['under a standing dual award (F-042)', 'finding-id'],
     ['opens none: SE2a-D3b', 'decision-id'],
+    ['the order is debate-ruled', 'debate-ruled'],
     ['renumbers them all (SE2c-D6)', 'decision-id'],
   ];
   for (const [text, rule] of positives) assert(fires(text, rule), `${rule} should fire on: ${text}`);

@@ -68,7 +68,7 @@ test('positionActions work when team score is 0-0', () => {
   validActions = result.validActions.map(({ type }) => type);
   expect(validActions.includes('SWAP')).toEqual(false);
 
-  // remove outcome: a dual with no rubber result holds no score (CA, 2026-10-05); it held 0-0 before
+  // remove outcome: a dual with no rubber result holds no score; it held 0-0 before
   processOutcome({
     dualMatchUp: firstDualMatchUp,
     expectedScore: undefined,

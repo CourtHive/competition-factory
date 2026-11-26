@@ -11,7 +11,7 @@ import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { SINGLES } from '@Constants/matchUpTypes';
 
 /**
- * The scoring engine specification's decision 19 (CA 2026-10-18), the v1 changes it names:
+ * The scoring engine specification's decision 19, the v1 changes it names:
  *
  * - § 4.2: a tiebreak below S − 1 (`@T` with T < S − 1) is refused at validation for a new format;
  * - § 9.3 rule 5: an aggregate of standard sets is refused at validation for a new format;
@@ -26,7 +26,7 @@ import { SINGLES } from '@Constants/matchUpTypes';
 
 const { isValid, parse } = matchUpFormatCode;
 
-describe('§ 4.2: a tiebreak below S − 1 is refused for new use (CA 2026-10-18)', () => {
+describe('§ 4.2: a tiebreak below S − 1 is refused for new use', () => {
   it.each(['SET3-S:6/TB7@4', 'SET3-S:6/TB7@3', 'SET3-S:8/TB7@6', 'SET3-S:6/TB7-F:6/TB10@4', 'SET5-S:6NOAD/TB7@1'])(
     '%s is refused, and still parses for replay',
     (code) => {
@@ -48,7 +48,7 @@ describe('§ 4.2: a tiebreak below S − 1 is refused for new use (CA 2026-10-18
   });
 });
 
-describe('§ 9.3 rule 5: an aggregate of standard sets is refused for new use (CA 2026-10-18: "refuse")', () => {
+describe('§ 9.3 rule 5: an aggregate of standard sets is refused for new use', () => {
   it.each(['SET3A-S:6/TB7', 'QTR4A-S:6/TB7', 'INN5A-S:6', 'INN3XA-S:6/TB7', 'SET3A-S:T10-F:6/TB7'])(
     '%s is refused, and still parses for replay',
     (code) => {
@@ -147,7 +147,7 @@ describe('§ 12.8: a persisted refused format replays by v1’s rule', () => {
   });
 });
 
-describe('§ 3.5: a timed set builds games of the declared game format (CA 2026-10-18)', () => {
+describe('§ 3.5: a timed set builds games of the declared game format', () => {
   const FORMAT = 'SET3-S:T10-G:3C';
   const play = (winners: string) => {
     let matchUp = createMatchUp({ matchUpFormat: FORMAT });

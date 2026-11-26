@@ -148,7 +148,7 @@ it('can update a schedulingProfile when venues change', () => {
   });
   expect(result.issues.length).toEqual(1);
 
-  // reading the profile never saves its repair (CA 2026-10-23: a query runs on one side only): the stored profile still
+  // reading the profile never saves its repair (a query runs on one side only): the stored profile still
   // needs it, and the profile scheduler refuses, offering the repaired profile
   result = tournamentEngine.getSchedulingProfile();
   expect(result.modifications).toEqual(1);

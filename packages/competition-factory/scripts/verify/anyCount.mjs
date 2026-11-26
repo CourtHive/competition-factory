@@ -5,8 +5,8 @@
  * WHY THIS EXISTS
  * `@typescript-eslint/no-explicit-any` is off in this repo, so nothing stops `any` from spreading, and it
  * had: measured 2026-10-05 on dev `474e9fb4bd`, 2,141 `: any` in non-test `src`, and three of the four
- * directories CA named in the tightening note had grown since the note was written. The domain types
- * already exist (see Mentat/planning/FACTORY_ANY_TIGHTENING.md); what was missing was a ratchet.
+ * directories the tightening note named had grown since the note was written. The domain types
+ * already exist; what was missing was a ratchet.
  *
  * WHAT IT COUNTS
  * Per DIRECTORY, non-recursively (a directory's own `.ts` files), across non-test `src/`:

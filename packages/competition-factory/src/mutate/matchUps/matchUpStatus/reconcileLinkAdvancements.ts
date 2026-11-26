@@ -36,14 +36,14 @@ type ReleaseCannotFail = void | { error?: never };
  * ## It cannot fail, by construction
  *
  * It runs after the cascade has written, so a failure here could not be refused without leaving those writes behind,
- * and an error changes nothing (CA, 2026-10-18) with no caller rollback to lean on (CA, 2026-10-22). So the release it
+ * and an error changes nothing with no caller rollback to lean on. So the release it
  * makes has no error to return: `releaseLinkedWinnerAdvancement` returns nothing or `releaseAdvancedDrawPosition`'s
  * success, and its declared result carries no `error`. `ReleaseCannotFail` holds it there: a release that one day
  * declares an error stops this file compiling, rather than having it dropped here (outcome v2 executor plan, Phase C
  * prerequisite 2). Measured 2026-10-22: reached 4 times over the suite, never with an error.
  *
  * Its loop bound is the one way it reports anything: each pass releases at least one placement, so the bound is not
- * reached on a finite draw, and if it were the call is refused (F9 (i), CA 2026-10-24) rather than stopping silently.
+ * reached on a finite draw, and if it were the call is refused rather than stopping silently.
  * Not reached on ~97,000 census schedules (settle telemetry, 2026-10-24).
  */
 export function reconcileLinkAdvancements({
@@ -111,7 +111,7 @@ function releaseUnearned({
     if (after >= before) return undefined;
     remaining = after;
   }
-  // at the bound: refused only if a placement is still unearned (F9 (i), CA 2026-10-24), and recorded for the census
+  // at the bound: refused only if a placement is still unearned, and recorded for the census
   if (!remaining) return undefined;
   recordSettleEvent({ kind: 'bound', site: 'reconcileLinkAdvancements' });
   return { error: SETTLE_BOUND_REACHED, info: 'reconcileLinkAdvancements' };

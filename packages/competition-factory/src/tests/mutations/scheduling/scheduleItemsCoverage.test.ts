@@ -148,7 +148,7 @@ describe('addMatchUpScheduleItems coverage', () => {
     expect(result.success).toBe(true);
   });
 
-  it('refuses scheduling a matchUp before a source it depends on, played or not (CA 2026-10-30)', () => {
+  it('refuses scheduling a matchUp before a source it depends on, played or not', () => {
     const { startDate, matchUps } = setupTournament();
     const drawId = matchUps[0].drawId;
     const { matchUps: allMatchUps } = tournamentEngine.allTournamentMatchUps();

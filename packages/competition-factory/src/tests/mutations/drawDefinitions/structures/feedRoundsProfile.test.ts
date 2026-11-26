@@ -31,7 +31,7 @@ function eventWith(participantsCount: number) {
   return { eventId: event.eventId, participantIds };
 }
 
-it('a FEED_IN draw enters its fed positions in the rounds the profile names (CA, 2026-11-18)', () => {
+it('a FEED_IN draw enters its fed positions in the rounds the profile names', () => {
   const { eventId, participantIds } = eventWith(40);
   tournamentEngine.addEventEntries({ eventId, participantIds });
 

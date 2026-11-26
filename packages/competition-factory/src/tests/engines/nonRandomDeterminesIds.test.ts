@@ -9,7 +9,7 @@ import asyncEngine from '@Engines/asyncEngine';
 import { UUID } from '@Tools/UUID';
 
 /**
- * An engine call's `nonRandom: <seed>` determines its ids, not only its placements (pre-8.x fix, CA 2026-10-18).
+ * An engine call's `nonRandom: <seed>` determines its ids, not only its placements (a pre-8.x fix).
  *
  * The seed reached only the code that takes the call's `random`; ids come from `UUID()`, which reads the configured
  * source, so a seeded `generateDrawDefinition` placed the same participants every time and minted different ids

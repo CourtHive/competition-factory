@@ -15,7 +15,7 @@ import {
 } from '@Constants/drawDefinitionConstants';
 
 /**
- * The downstream effect of a RETIREMENT is decided by policy. CA's ruling, 2026-09-13.
+ * The downstream effect of a RETIREMENT is decided by policy.
  *
  * A retirement is a completed match: both participants took the court and there is a score. What
  * happens next is a RULES question, not an engineering one. Treat the retiring player as unable to

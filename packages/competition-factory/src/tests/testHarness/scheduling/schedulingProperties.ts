@@ -8,7 +8,7 @@ import { BYE, DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusCo
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 
 /**
- * Golden corpus § 5 (`Mentat/planning/SCHEDULING_PIPELINE_VNEXT.md`): what a scheduling STEP must never do, checked
+ * Golden scheduling corpus: what a scheduling STEP must never do, checked
  * against the record before and after it.
  *
  * These are relational properties, not single-state invariants, and deliberately so. A stored record may legitimately
@@ -300,7 +300,7 @@ function recoveryRespected(
 /**
  * a placement never takes a participant over a limit; one already over before the step (an operator's doing) is not
  * the step's fault unless the step added to it. A day's load counts every matchUp placed on it, timed or on its court
- * grid (CA 2026-10-23: the grid applies the limits the timed pipeline does)
+ * grid (the grid applies the limits the timed pipeline does)
  */
 function dailyLimitsRespected(
   booking: { matchUpId: string; date: string },

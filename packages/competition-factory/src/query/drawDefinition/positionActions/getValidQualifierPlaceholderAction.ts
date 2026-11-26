@@ -19,7 +19,7 @@ type GetValidQualifierPlaceholderActionArgs = {
  *
  * Offered only where it means something: the position is empty (no participant, bye or placeholder) and
  * the round it enters is fed by qualifying that still owes more qualifiers than it has seats marked for
- * them. A position freed in a full main can then be handed to the qualifying that feeds it (CA, 2026-10-09).
+ * them. A position freed in a full main can then be handed to the qualifying that feeds it.
  */
 export function getValidQualifierPlaceholderAction({
   drawPositionInitialRounds,

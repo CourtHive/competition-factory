@@ -86,7 +86,7 @@ it('handles potential BYES for FMLC consolation structures', () => {
     matchUps: consolationMatchUps,
   }).roundMatchUps;
   // a group's order follows the sources: the marker is one group's, wherever it stands (a loser skipping a BYE in the
-  // first round now reaches this matchUp too, CA 2026-10-26)
+  // first round now reaches this matchUp too)
   const groups = roundMatchUps[2][0].potentialParticipants;
   expect(groups.some((group: any[]) => group.some((entry) => entry.bye))).toEqual(true);
   // and no BYE matchUp of the consolation holds potentials

@@ -46,7 +46,7 @@ afterEach(() => {
 });
 
 /**
- * A CALL WHOSE FORWARD SETTLE STOPS AT ITS BOUND IS RECORDED WHOLE, AS IT STOPPED (CA, 2026-11-18;
+ * A CALL WHOSE FORWARD SETTLE STOPS AT ITS BOUND IS RECORDED WHOLE, AS IT STOPPED (
  * `outcome/plan/recordedCall.ts`, `announceRecorded.forwardExhausted`).
  *
  * v1's forward settle acts on one owed answer per pass and stops after 64 passes (`settleForwardConsequences`,

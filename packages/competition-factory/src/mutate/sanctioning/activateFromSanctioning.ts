@@ -426,7 +426,7 @@ export function activateFromSanctioning({
 
 /**
  * The proposal's transit, keyed by facility, as venue pairs (scheduling-pipeline.md § 3.4): every pair of a venue of the
- * one facility and a venue of the other, each a sanctioned floor (CA 2026-10-25). A facility no activated venue carries
+ * one facility and a venue of the other, each a sanctioned floor. A facility no activated venue carries
  * resolves to nothing and is reported, never dropped silently; a pair within one facility needs no transit.
  */
 function sanctionedTransits(

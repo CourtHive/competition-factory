@@ -18,7 +18,7 @@ import { asOfTime } from './asOfTime';
  * and an embargoed information page is public *because of the draw*; that predicate excludes it. From
  * the publish flag and the embargo alone a reader cannot tell whether information was the ONLY reason
  * the tournament was public, and the reader is the wrong place to re-derive the roll-up anyway — that is
- * how three different definitions of "published" came to exist (P23).
+ * how three different definitions of "published" came to exist.
  *
  * So the question is answered once, here, and the answer is a single nullable instant:
  *
@@ -55,7 +55,7 @@ function futureEmbargo(embargo: any, at: number): string | undefined {
  * Is the tournament published for a reason OTHER than its information page?
  *
  * Derived by asking the roll-up what it says with `info` removed, rather than by restating the roll-up's
- * conditions — restating it is the mistake P23 documents.
+ * conditions — restating it is how the definitions diverged.
  */
 function publishedWithoutInfo(tournamentRecord: any): boolean {
   const status: any = getTournamentPublishStatus({ tournamentRecord });

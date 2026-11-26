@@ -22,8 +22,8 @@ import type { OutcomeOp } from './ops';
  * participant cleared, a carry brought home, a TEAM line-up, a hole's carry, a round robin, a write v1 makes without a
  * notice, a BYE advance owed after it (`reconcileByeAdvancements`), or a walk longer than v1's own bound allows.
  *
- * Mentat planning/OUTCOME_V2_UNWIND_BYE_RECURSION.md holds v1's recursion distilled and the notice rule: a visit is
- * announced unless the matchUp's positions at that visit include the removed one and nothing else of it changed.
+ * The notice rule: a visit is announced unless the matchUp's positions at that visit include the removed one and
+ * nothing else of it changed.
  */
 
 type SimMatchUp = {

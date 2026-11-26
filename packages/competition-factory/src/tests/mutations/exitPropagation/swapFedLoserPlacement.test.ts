@@ -207,7 +207,7 @@ describe('a BYE is never recorded as a winner', () => {
     );
 
   /**
-   * CA, 2026-09-17: a flip is refused when propagation cannot proceed with equivalence. The flip makes
+   * A flip is refused when propagation cannot proceed with equivalence. The flip makes
    * the consolation loser INELIGIBLE, so the results they recorded there cannot be inherited by the
    * new loser — and they were played. Until then the flip succeeded and withdrew those results; it is
    * now refused, over an untouched draw. With nothing played there, see the next case.

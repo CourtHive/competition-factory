@@ -15,7 +15,7 @@ import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
 
 /**
- * A SETTLE LOOP AT ITS BOUND REFUSES (F9 (i), CA 2026-10-19 and 2026-10-24).
+ * A SETTLE LOOP AT ITS BOUND REFUSES (F9 (i)).
  *
  * Four bounded loops used to stop at their pass limit and report success. Each now asks once more whether work is left
  * and, only if it is, refuses with `SETTLE_BOUND_REACHED` naming itself. None was reached on ~97,000 census schedules
@@ -25,7 +25,7 @@ import { SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
  * recheck working (measured: of 358 exitPropagation files at each limit 0, 133 to 332 still pass).
  *
  * The forward settle keeps its `FORWARD_SETTLE_EXHAUSTED` warning (`aForwardSettleStoppedAtItsBoundSaysSo`), F9's one
- * exception (CA, 2026-10-24).
+ * exception.
  */
 type Site = keyof typeof SETTLE_PASS_LIMITS;
 

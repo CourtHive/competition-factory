@@ -18,7 +18,7 @@ import { BYE, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/match
  * walkover and `5|1` converges its produced exit with `4|2`'s. Re-scoring `Main|1|2` as a walkover sends its loser,
  * carrying the walkover, into dp 9. Forward placement advances them through `3|1`, whose other side is a double exit's,
  * and past `4|1`'s BYE into `5|1`; the exit pass then converges `3|1` again and takes dp 9 back as the double exit's
- * own advance (P44). The release took it out of `4|1` but not out of `5|1`: a double exit read as a recorded result,
+ * own advance. The release took it out of `4|1` but not out of `5|1`: a double exit read as a recorded result,
  * so dp 9 stayed there with no feeder holding it, and `5|1` was awarded to it. Forward play later sent `3|2`'s winner
  * through `4|2`'s walkover into `5|1`, now full, and the call refused ERR_EXISTING_POSITION_ASSIGNMENT after writing.
  *

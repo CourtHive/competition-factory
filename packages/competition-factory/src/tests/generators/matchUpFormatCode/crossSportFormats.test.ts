@@ -752,8 +752,8 @@ describe('Non-SET root high segment counts', () => {
     expectRoundTrip('RND10A-S:T3'); // boxing 10 rounds
   });
 
-  // CA, 2026-10-02: "I don't see why best of 7 or 9 would be rejected" — the SET root capped best-of below six
-  it('SET root parses any best-of count; an even implicit best-of is refused for new use (CA 2026-11-03)', () => {
+  // best of 7 or 9 is a format like any other — the SET root capped best-of below six
+  it('SET root parses any best-of count; an even implicit best-of is refused for new use', () => {
     expect(matchUpFormatCode.parse('SET7-S:TB11')).toEqual({
       bestOf: 7,
       setFormat: { tiebreakSet: { tiebreakTo: 11 } },

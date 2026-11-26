@@ -152,7 +152,7 @@ weights retain the existing calibration. Both four-shard assignments remain dete
 disjoint and exhaustive. The largest full estimate falls from 851.6 seconds to the remaining
 FMLC line matrix's 338.1 seconds; this is a smaller scheduling unit, not a measured CI speedup.
 
-The maintained Mentat `outcome-v2-runner.py` pins these matrices by exact filename/count.
+The maintained census runner `outcome-v2-runner.py` pins these matrices by exact filename/count.
 Its companion `perf/matrix-runtime-validator` branch must accompany this change: it accepts
 either the original C26 layout or the complete new layout, with exact per-file counts, unchanged
 family totals (601 / 62 / 62), and no duplicate case names across partitions. Missing, unknown,

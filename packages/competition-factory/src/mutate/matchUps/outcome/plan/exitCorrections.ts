@@ -26,7 +26,7 @@ import type { OutcomeOp } from '../ops';
  */
 
 // These three functions are admission gates run before the S4 detectors (`exitReason`, then `shapeReason`), and the
-// order is load-bearing (Mentat assessment/2026-11-07-outcome-refactor-debates.md, ruling 8): `reenteredReason` takes
+// order is load-bearing: `reenteredReason` takes
 // `loser.withdrawn` straight to `withdrawnReason` and has no label guard of its own, so `correctedSingleExit`
 // refusing a withdrawal whose write is a single exit is what keeps a same-label re-entry over a standing carry v1's.
 // The guard lives here because `withdrawnCarry` reports a withdrawal whenever the direction carries nothing, which is

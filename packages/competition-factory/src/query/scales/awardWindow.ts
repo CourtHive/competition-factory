@@ -2,7 +2,7 @@ import { competitionNow } from '@Tools/clock';
 import { extractDate } from '@Tools/plainDate';
 
 /**
- * THE ROLLING AWARD WINDOW: the span of award end dates a ranking list is computed over (CA 2026-11-08).
+ * THE ROLLING AWARD WINDOW: the span of award end dates a ranking list is computed over.
  *
  * One definition, for factory's own filter and for any service that pre-filters its store before calling
  * `generateRankingList` (courthive-rankings did, with its own copy, because factory's window counted results dated after

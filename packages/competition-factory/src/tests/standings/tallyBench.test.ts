@@ -12,7 +12,7 @@ import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 /**
- * The standings performance baseline (Mentat `planning/STANDINGS_ENGINE_SPEC.md` § 6). Skipped unless
+ * The standings performance baseline. Skipped unless
  * STANDINGS_BENCH names an output file: `STANDINGS_BENCH=/tmp/bench.out pnpm vitest run src/tests/standings/tallyBench`.
  * Compare implementations from paired runs on one machine, never absolute milliseconds across machines.
  */

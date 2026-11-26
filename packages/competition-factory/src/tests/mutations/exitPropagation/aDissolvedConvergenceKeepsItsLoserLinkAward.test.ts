@@ -16,7 +16,7 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  * `East|1|9` and `East|1|10` default into `West|1|5`, a double default whose produced DEFAULTED comes straight down
  * its loser link into `South|1|3` dp 5. Opposite it, dp 6 waits for `West|1|6`'s loser, and direct entry awards the
  * exit to that seat (ws 2) and reserves dp 6 in `South|2|2` ("A produced exit awards no empty seat, on any path" keeps
- * a carried exit's award, and one that came straight down its loser link: `exitStatusClearing` 2.3, CA 2026-09-19).
+ * a carried exit's award, and one that came straight down its loser link: `exitStatusClearing` 2.3).
  * When `West|1|6` is first won over `East|1|11`'s carried walkover, its loser carries that walkover into dp 6 and
  * `South|1|3` converges to a double walkover. Correcting `East|1|11` to a played win withdraws the carry: the loser
  * leaves dp 6 and the convergence dissolves to the kept DEFAULTED. "A convergence a correction dissolves settles as the

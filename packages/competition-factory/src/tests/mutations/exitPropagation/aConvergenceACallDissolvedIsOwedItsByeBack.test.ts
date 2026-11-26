@@ -31,8 +31,8 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  * (`oweDissolvedConvergencesTheirByes`), so a convergence that dissolves and converges again within one call is left
  * alone (`aLoserSeatHoldingAByeIsNotConverged`).
  *
- * The scheduled draw once recorded the BYE as `East|1|8`'s claim (`byeClaims`); the ledger is retired (Mentat P58, CA
- * 2026-10-21), so what the claim stood for is read from the draw: `West|1|4` sends nobody across its loser link
+ * The scheduled draw once recorded the BYE as `East|1|8`'s claim (`byeClaims`); the ledger is retired, so
+ * what the claim stood for is read from the draw: `West|1|4` sends nobody across its loser link
  * (`feederSendsNobody`: `NOBODY_LOST`), and `South|1|2` is among the seats `East|1|8` is the reason for
  * (`byeSeatsOwedTo`). The round trip holds that reading too.
  */

@@ -15,7 +15,7 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  * walkover upstream, pending, beside a BYE's claim on the other seat (`BYE>BYE` in provenance). A position then
  * advances into it past a BYE in `South|2|2`: here an EMPTY one, structurally, as a BYE placeholder does.
  * `arrivalIntoProvenanceOnlyExit` is the rule that places the arrival beside a pending exit (a participant takes it;
- * an empty position leaves it pending, since a produced exit awards no empty seat, CA 2026-10-03). It counted every
+ * an empty position leaves it pending, since a produced exit awards no empty seat). It counted every
  * provenance entry as an exit, so the BYE's claim made the lone pending exit look like a convergence, the rule
  * declined, and the generic advance overwrote the matchUp TO_BE_PLAYED while its provenance still recorded the
  * walkover (ORIGIN_ON_UNDECIDED_MATCHUP, PROPAGATED_EXIT_LOST). It counts exits only.

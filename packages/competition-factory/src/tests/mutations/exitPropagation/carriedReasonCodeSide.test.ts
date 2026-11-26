@@ -10,7 +10,7 @@ import { ABANDONED, CANCELLED, DEFAULTED, DOUBLE_WALKOVER, INCOMPLETE } from '@C
 /**
  * A SCORING REASON CODE BELONGS TO A SIDE, and it must reach the carried exit whichever side exited.
  *
- * CA asked what the mechanism is for a client to tell which reason code goes with which side once the
+ * The question: what is the mechanism for a client to tell which reason code goes with which side once the
  * exit tenant has left `matchUpStatusCodes` — *"for instance when a participant's WALKOVER progresses with
  * them through a connected structure"*. This is that question as a test.
  *

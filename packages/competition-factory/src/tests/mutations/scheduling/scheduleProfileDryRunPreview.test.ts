@@ -7,7 +7,7 @@ import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Tests/fixtures/policies/POLICY_S
 import { AUTO_SCHEDULING_AUDIT } from '@Constants/auditConstants';
 
 /**
- * A dry run of the profile scheduler as a preview (CA 2026-11-22, rain-day recovery R0): it writes nothing, it says
+ * A dry run of the profile scheduler as a preview (rain-day recovery R0): it writes nothing, it says
  * where each matchUp would go, and it can be asked under other daily limits. A wet run is unchanged.
  */
 const venueId = 'venue1';

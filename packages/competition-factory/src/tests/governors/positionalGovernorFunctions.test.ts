@@ -3,7 +3,7 @@ import * as governors from '@Assemblies/governors';
 import { describe, expect, it } from 'vitest';
 
 /**
- * NO NEW POSITIONAL FUNCTION IN A GOVERNOR (CA 2026-11-07). A governor export is mounted on the engines, which call it
+ * NO NEW POSITIONAL FUNCTION IN A GOVERNOR. A governor export is mounted on the engines, which call it
  * with one params object; a positional function there cannot be called correctly through an engine. It belongs in
  * `tools`. The functions already there are listed, by destination, in `positionalGovernorFunctions.ts`, and that list
  * may only shrink.

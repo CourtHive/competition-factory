@@ -7,7 +7,7 @@ import { expect, it } from 'vitest';
 import { COMPLETED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
- * A matchUp-level `matchUpFormat` survives a clear and a walkover (CA, 2026-10-01: the format is a
+ * A matchUp-level `matchUpFormat` survives a clear and a walkover (the format is a
  * property of the match, not of its result). The blank in `applyScoreAndStatus` goes through the
  * `toBePlayed` fixture, which carries `matchUpFormat: undefined`; until this was decided, a director
  * who set F:TB10 on one match and then cleared a mis-entered score lost the format with it. The

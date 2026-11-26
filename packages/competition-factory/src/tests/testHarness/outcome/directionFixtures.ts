@@ -107,7 +107,7 @@ export const SWAP = { allowChangePropagation: true };
 
 export const SWAP_CARRIED = { ...SWAP, ...CARRIED };
 
-// a double exit's loser seat shows the exit it produced, not a BYE (USTA's policy; CA ruling (A), 2026-10-21)
+// a double exit's loser seat shows the exit it produced, not a BYE (USTA's policy)
 export const POLICY_OFF = { [POLICY_TYPE_PROGRESSION]: { doubleExitPropagateBye: false } };
 
 export const R1 = (roundPosition: number, structureName?: string): Target => ({
@@ -116,7 +116,7 @@ export const R1 = (roundPosition: number, structureName?: string): Target => ({
   structureName,
 });
 
-/** a Main structure matchUp by round and position (the ruling 2 and ruling 10 pins) */
+/** a Main structure matchUp by round and position */
 export const MAIN = (roundNumber: number, roundPosition: number): Target => ({
   roundNumber,
   roundPosition,
@@ -7005,7 +7005,7 @@ export function c26SeatRecipes([drawType, size]: (typeof C26_SEAT_PROFILES)[numb
         status,
         policyOff: false,
         carry: !!entered,
-        // a seat the planners do not serve is recorded off the double-exit module (CA, 2026-11-16), and DOUBLE_ELIMINATION
+        // a seat the planners do not serve is recorded off the double-exit module, and DOUBLE_ELIMINATION
         // 4's planned ops, which leave settle work, off v1's whole write (`plan/recordedCall.ts`), a TEAM draw's too
         // (batch 4b)
         owned: true,

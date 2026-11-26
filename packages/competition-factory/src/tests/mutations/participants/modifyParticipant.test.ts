@@ -87,7 +87,7 @@ it('can modify PAIR participants', () => {
   result = tournamentEngine.modifyParticipant({
     participant: modifiedSecondIndividual,
   });
-  // an unrecognised nationalityCode is written, and the result warns of it (CA 2026-11-02)
+  // an unrecognised nationalityCode is written, and the result warns of it
   expect(nationalityCode).not.toEqual('XXX');
   expect(result.participant.person.nationalityCode).toEqual('XXX');
   expect(result.warnings?.map(({ code }) => code)).toEqual([NATIONALITY_CODE_UNRECOGNIZED.code]);

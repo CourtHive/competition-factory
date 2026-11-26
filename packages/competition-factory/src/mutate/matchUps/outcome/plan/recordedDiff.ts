@@ -13,7 +13,7 @@ import type { OutcomeOp, RecordedNotice } from '../ops';
 import type { Recording } from '../recording';
 
 /**
- * RECORDED (CA, 2026-11-16): what the two recorders share (`recordedCascade.ts`, `recordedCall.ts`). v1's writers run on
+ * RECORDED: what the two recorders share (`recordedCascade.ts`, `recordedCall.ts`). v1's writers run on
  * a COPY of the record; what the copy held before is read here, and what the run changed is returned as the recorded
  * ops: each matchUp it wrote (a dual's own fields, and each line's), each structure's own fields (a round robin's groups
  * are structures of their own, and a group's tally is among its fields), the draw's own fields, and the notices it
