@@ -37,16 +37,17 @@ export function deleteCourt(params: DeleteCourtArgs) {
 
   // the court is planned in every record before it is deleted from any: a refusal in a later record leaves the earlier
   // ones as they were; a record that does not hold the court is passed over, as before
-  const commits: (() => void)[] = [];
+  let commits: (() => void)[] | undefined;
   let result;
   for (const tournamentRecord of Object.values(tournamentRecords)) {
     result = planCourtDeletion({ tournamentRecord, disableNotice, courtId, force });
-    if ('commit' in result) commits.push(result.commit);
-    else if (result.error !== COURT_NOT_FOUND) return result;
+    if (result.error) {
+      if (result.error !== COURT_NOT_FOUND) return result;
+    } else (commits ??= []).push(result.commit);
   }
+  if (!commits) return result;
   for (const commit of commits) commit();
-
-  return commits.length ? { ...SUCCESS } : result;
+  return { ...SUCCESS };
 }
 
 type CourtDeletionArgs = {
@@ -75,7 +76,7 @@ export function planCourtDeletion({
   disableNotice,
   courtId,
   force,
-}: CourtDeletionArgs): CourtDeletionRefusal | { commit: () => void } {
+}: CourtDeletionArgs): CourtDeletionRefusal | { commit: () => void; error?: undefined } {
   const result = findCourt({ tournamentRecord, courtId });
   if (result.error) return result as CourtDeletionRefusal;
   const venue = result.venue;
