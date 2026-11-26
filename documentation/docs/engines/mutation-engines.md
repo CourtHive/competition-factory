@@ -169,6 +169,41 @@ See [Subscriptions](/docs/engines/subscriptions) for complete notification docum
 
 ---
 
+## A Call, a Bulk Call's Items, and a Queue
+
+Three different units can succeed or fail, and they behave differently. Keep them apart:
+
+| Unit                                                                                      | When part of it is refused                                                               | Without rollback                                                                                                       | With `rollbackOnError: true`                            |
+| ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| **One call** (any mutation)                                                               | The call writes nothing                                                                  | Nothing to undo: a refused call leaves the record unchanged                                                            | Same; nothing to undo                                   |
+| **A bulk call's items** (`bulkMatchUpStatusUpdate`, `deleteCourts`, `resetAdHocMatchUps`) | The refused **item** writes nothing; the items before **and after** it are still applied | The applied items stay, and the call returns its first refusal with `committed: true` and one `results` entry per item | Every item is undone; nothing is kept or announced      |
+| **A queue's directives** (`executionQueue`)                                               | The queue **stops** at the refused directive; later directives never run                 | The directives before it stay and are announced; the refused one wrote nothing                                         | Every directive is undone; nothing is kept or announced |
+
+"Skip the refused one and carry on" happens **only inside a single bulk call**, among its own items. A queue never
+skips a refused directive and carries on.
+
+**A bulk call.** One call with four outcomes, where the second is invalid:
+
+```js
+engine.bulkMatchUpStatusUpdate({ outcomes: [a, b, c, d] }); // b is invalid
+// a, c and d are applied; b is refused and its matchUp is untouched
+// → { error, committed: true, results: [{ …a, success }, { …b, error }, { …c, success }, { …d, success }] }
+```
+
+**A queue.** Four directives, where the second is refused:
+
+```js
+engine.executionQueue([A, B, C, D]); // B is refused, rollback off
+// A stays applied and is announced; B wrote nothing; C and D never run
+
+engine.executionQueue([A, B, C, D], true); // B is refused, rollback on
+// A is undone too: the records are as they were before the queue, and nothing is announced
+```
+
+**Both at once.** When the refused directive is itself a bulk call that applied some of its items, those items count
+as part of that directive: with rollback off they stay and are announced along with A, and the queue still stops
+there; with rollback on they are undone with everything else.
+
 ## Rollback on Error
 
 The factory validates a mutation before writing to the record. A factory validation error must leave the record,
@@ -329,7 +364,7 @@ otherwise, needs no snapshot either: the stored record is the rollback (see
 
 - In test suites (let failures be visible)
 - Debugging (you want to see the failed state)
-- Bulk operations where partial success is acceptable
+- A single bulk call where keeping the items that succeeded is acceptable (see [A call, a bulk call's items, and a queue](#a-call-a-bulk-calls-items-and-a-queue))
 - Performance is critical and errors are rare
 
 ---
