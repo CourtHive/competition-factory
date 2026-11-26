@@ -26,6 +26,7 @@ import type { DrawDefinition, MatchUp, Score, Structure } from '@Types/tournamen
 import type { OutcomeOp } from '../ops';
 import { CONSOLATION, DOUBLE_ELIMINATION, LOSER, MAIN, PLAY_OFF, WINNER } from '@Constants/drawDefinitionConstants';
 import { BYE, COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { TEAM } from '@Constants/eventConstants';
 
 type Circuit = { dualId: string; lineId: string; mainId: string; winnerId?: string; loserId?: string; backId?: string };
 
@@ -226,14 +227,22 @@ function lineCircuit(args: PlanArgs, why: 'team' | 'cascade'): Circuit | undefin
 /** The stamp ledger as read before the view, for a fresh two-team double-elimination line. */
 export type TeamLedger = { stamps?: WeakSet<object> };
 export function readTeamLineLedger(args: BuildViewArgs): TeamLedger | undefined {
-  if (args.drawDefinition?.drawType !== DOUBLE_ELIMINATION || !args.recordDraws || !args.request.winningSide) return;
-  const main = args.drawDefinition.structures?.find((s) => s.stage === MAIN);
-  if (positionAssignmentsOf(main)?.filter((a) => a.participantId).length !== 2) return;
-  const dual = matchUpsOf(main)?.find((m) =>
-    m.tieMatchUps?.some((line) => line.matchUpId === args.request.matchUpId && line.matchUpStatus === TO_BE_PLAYED),
-  );
-  if (!dual || (dual.matchUpStatus !== COMPLETED && dual.matchUpStatus !== IN_PROGRESS)) return;
-  return { stamps: getCapturedStamps() };
+  // cheapest first, nothing allocated before the last check: only a TEAM double-elimination line with a winner
+  // reaches the seat count, and only a fresh line of a decided or in-progress two-team dual reads the ledger
+  const { drawDefinition, request } = args;
+  if (drawDefinition?.drawType !== DOUBLE_ELIMINATION || args.event?.eventType !== TEAM) return;
+  if (!request.winningSide || !request.matchUpId || !args.recordDraws) return;
+  const main = drawDefinition.structures?.find((s) => s.stage === MAIN);
+  let occupied = 0;
+  for (const assignment of positionAssignmentsOf(main) ?? []) if (assignment.participantId && ++occupied > 2) return;
+  if (occupied !== 2) return;
+  for (const dual of matchUpsOf(main) ?? []) {
+    if (dual.matchUpStatus !== COMPLETED && dual.matchUpStatus !== IN_PROGRESS) continue;
+    for (const line of dual.tieMatchUps ?? [])
+      if (line.matchUpId === request.matchUpId)
+        return line.matchUpStatus === TO_BE_PLAYED ? { stamps: getCapturedStamps() } : undefined;
+  }
+  return undefined;
 }
 
 function playPhases(
