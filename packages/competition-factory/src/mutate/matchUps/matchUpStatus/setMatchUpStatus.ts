@@ -151,10 +151,9 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     event,
   });
 
-  // THE POLICY GOVERNS, both ways (CA, 2026-10-01). An applied scoring policy that SPEAKS on a flag,
-  // true or false, wins over anything on the call; the call decides only where the policy is silent.
-  // "If a governance policy is someone who retires can no longer continue playing, a tournament
-  // director under that policy shouldn't be able to allow a participant to continue in the draw."
+  // THE POLICY GOVERNS, both ways. An applied scoring policy that SPEAKS on a flag, true or false, wins
+  // over anything on the call; the call decides only where the policy is silent. Under a policy that says a
+  // retiree cannot continue, a tournament director cannot let that participant continue in the draw.
   // Before this, params won (`propagateRetirementAsExit`) or a truthy param won (`||`, the other
   // two), so a caller could override its federation's rule. The same rule for all three:
   // `policy ?? param ?? default`. `POLICY_SCORING_DEFAULT` is SILENT on all three, so a provider
@@ -169,14 +168,14 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // DECISION: Validate winningSide is 1 or 2 (or undefined)
   // WHY: winningSide represents which side won - only 1 (side 1) or 2 (side 2) are valid
   // Catching invalid values here prevents downstream errors
-  // a winningSide is 1 or 2, or it is absent: 0 is refused, never read as absent (CA, 2026-10-01)
+  // a winningSide is 1 or 2, or it is absent: 0 is refused, never read as absent
   if (outcome?.winningSide != null && ![1, 2].includes(outcome.winningSide)) {
     return { error: INVALID_WINNING_SIDE };
   }
 
   // NOTES ARE VALIDATED BEFORE THE FIRST WRITE. They are written last, onto the matchUp, after `modifyMatchUpScore` has
   // already written its score and status, and `addNotes` refused `notes: 123` there: an error over a result that had
-  // landed (CA, 2026-10-22: an error leaves the record unchanged, and no mutation relies on rollback). Asked here with
+  // landed (an error leaves the record unchanged, and no mutation relies on rollback). Asked here with
   // `addNotes`' own rule, so that write cannot fail (`refusedBeforeTheFirstWrite.test.ts`).
   if (notes && !isString(notes) && !(notes as { testing?: boolean })?.testing) {
     return decorateResult({ result: { error: INVALID_VALUES }, info: 'notes must be a string', stack });
@@ -375,8 +374,8 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     const { tournamentRecord, drawDefinition, event } = params;
     // a copy's write is compared with nothing: it is what v2 plans from
     const compare = target.onCopy ? undefined : v2.compare;
-    // A REFUSED CALL STORES NONE OF THE MISSING EDGES (CA, 2026-10-18: "no, a refused call does not store a draw's
-    // missing edges. v1 should no longer do so."). `setMatchUpState` writes them before deciding anything, and takes
+    // A REFUSED CALL STORES NONE OF THE MISSING EDGES: a refused call does not store a draw's missing edges, in v1
+    // either. `setMatchUpState` writes them before deciding anything, and takes
     // them back on its own refusal; what it held is held here too, for a refusal met after it returned.
     const heldEdges = holdGoesTo({ drawDefinition, matchUpsMap });
     const refuse = (refusal: ResultType) => {
@@ -571,8 +570,8 @@ const isZero = (value: unknown) => value !== null && value !== '' && value !== u
 
 /**
  * A WARNING IN THE SUCCESS PAYLOAD: the score was recorded, and a set in it was decided by its tiebreak
- * with no tiebreak points (`7-6` alone) — accepted because results feeds record it so often (CA,
- * 2026-10-02, ruling V11). Read off the RECORDED matchUp in context, so the format is the one the score
+ * with no tiebreak points (`7-6` alone) — accepted because results feeds record it so often. Read off
+ * the RECORDED matchUp in context, so the format is the one the score
  * was validated against — a TEAM line's comes from its collection — and a dual's tally is never asked.
  */
 function recordedScoreWarnings({
@@ -599,9 +598,8 @@ function recordedScoreWarnings({
  * (`CONFLICT_BYE_SCHEDULED`, `CONFLICT_EXIT_SCHEDULED`). What the read side cannot do is tell the
  * client that just made the mutation, at the moment it can offer "release these slots?". This does.
  * Additive and state-free: `executionQueue` passes it through like any other result field, and
- * nothing here snapshots or restores. CA, 2026-10-01: *"for recoverability we have to keep the
- * schedules, or perhaps they should imply another notification in the success payload (warning)
- * that clients can respond to"* — both.
+ * nothing here snapshots or restores. For recoverability the schedules are kept, and the success
+ * payload carries a warning that clients can respond to: both.
  *
  * Only matchUps that became unplayable IN THIS CALL are named: a BYE that held a court before the
  * call was reported when it was placed, and repeating it on every later score would be noise.
@@ -700,7 +698,7 @@ function propagateExitFrom({
       iterate = true;
     }
   }
-  // stopped at the bound with a level still to propagate to: refused (F9 (i), CA 2026-10-24), and recorded for the census
+  // stopped at the bound with a level still to propagate to: refused, and recorded for the census
   if (iterate) {
     recordSettleEvent({ kind: 'bound', site: 'propagateExitFrom', detail: context.loserMatchUp?.matchUpId });
     return { error: SETTLE_BOUND_REACHED, info: 'propagateExitFrom' };
