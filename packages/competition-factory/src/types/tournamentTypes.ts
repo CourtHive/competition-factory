@@ -26,8 +26,6 @@ export interface Tournament {
     timeStamp?: number;
     /** the engine defaults the record relies on for the policy types it does not pin (`defaultsHash`) */
     defaultsHash?: string;
-    /** the same hash for each policy type the stamping factory had a default for */
-    defaultsHashes?: { [policyType: string]: string };
     [key: string]: any;
   };
   formalName?: string;

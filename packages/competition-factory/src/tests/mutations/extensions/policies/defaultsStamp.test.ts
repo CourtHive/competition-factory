@@ -2,9 +2,9 @@ import { ENGINE_DEFAULT_POLICIES, engineDefaultHashInput } from '@Fixtures/polic
 import { createTournamentRecord } from '@Generators/tournamentRecords/createTournamentRecord';
 import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONING_GENERIC';
 import { POLICY_SCHEDULING_DEFAULT } from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
-import { defaultsHash, defaultsHashes } from '@Fixtures/policies/defaultsHash';
+import { DEFAULTS_HISTORY, defaultsHash, defaultsHashes } from '@Fixtures/policies/defaultsHash';
 import { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
-import { getDefaultsDrift } from '@Query/tournaments/getDefaultsDrift';
+import { defaultsDriftAgainst, getDefaultsDrift } from '@Query/tournaments/getDefaultsDrift';
 import { getFactoryStamp } from '@Query/tournaments/getFactoryStamp';
 import { sanctioningEngine } from '@Assemblies/engines/sanctioning';
 import { factoryVersion } from '@Functions/global/factoryVersion';
@@ -27,7 +27,8 @@ import { SINGLES_EVENT } from '@Constants/eventConstants';
  *
  * A policy that differs from the engine default is pinned onto the record by its full value. A policy type the
  * record leaves to the engine follows the running factory's default, which a later release may change. The defaults
- * stamp (`factory.defaultsHash`, `factory.defaultsHashes`: build-time content hashes) makes that change detectable:
+ * stamp (`factory.defaultsHash`, a build-time content hash) makes that change detectable, and the factory's
+ * `DEFAULTS_HISTORY` says which per-type hashes a stamp stands for:
  * `getDefaultsDrift` names the unpinned policy types whose defaults differ from the ones stamped.
  */
 
@@ -44,6 +45,11 @@ describe('the build-time hash', () => {
     expect(defaultsHashes).toEqual(recomputed);
     expect(defaultsHash).toEqual(hash(recomputed));
     expect(defaultsHash).toMatch(/^[0-9a-f]{16}$/);
+  });
+
+  it('keeps the current set in the history of every set a build has stamped', () => {
+    expect(DEFAULTS_HISTORY[defaultsHash]).toEqual(defaultsHashes);
+    for (const [hashOfSet, hashes] of Object.entries(DEFAULTS_HISTORY)) expect(hash(hashes)).toEqual(hashOfSet);
   });
 
   it('hashes a single-default type over its bare definition, so a holder of a policy can compare it', () => {
@@ -63,19 +69,17 @@ describe('creation stamps the defaults', () => {
   it('a new tournament carries the stamp beside the creating factory', () => {
     tournamentEngine.newTournamentRecord({ startDate: '2026-11-26', endDate: '2026-11-27' });
     const { tournamentRecord } = tournamentEngine.getTournament();
-    expect(tournamentRecord.factory).toMatchObject({ createdVersion: factoryVersion(), defaultsHash, defaultsHashes });
+    expect(tournamentRecord.factory).toMatchObject({ createdVersion: factoryVersion(), defaultsHash });
   });
 
-  it('the per-type hashes are the frozen build-time object, and a copy of the record is plain data', () => {
-    const tournamentRecord = createTournamentRecord({ tournamentName: 'Shared' });
-    expect(tournamentRecord.factory.defaultsHashes).toBe(defaultsHashes);
-    expect(Object.isFrozen(tournamentRecord.factory.defaultsHashes)).toEqual(true);
-    // a record read back is a copy: the stamp is ordinary data there
-    tournamentEngine.setState(tournamentRecord);
-    const copied = tournamentEngine.getTournament().tournamentRecord;
-    expect(copied.factory.defaultsHashes).toEqual(defaultsHashes);
-    expect(Object.isFrozen(copied.factory.defaultsHashes)).toEqual(false);
-    expect(structuredClone(tournamentRecord).factory.defaultsHashes).toEqual(defaultsHashes);
+  it('the record stores the one string, never the per-type hashes', () => {
+    const tournamentRecord = createTournamentRecord({ tournamentName: 'One string' });
+    expect(Object.keys(tournamentRecord.factory).sort()).toEqual([
+      'createdVersion',
+      'defaultsHash',
+      'timeStamp',
+      'version',
+    ]);
   });
 
   it('a generated tournament carries it too', () => {
@@ -116,7 +120,6 @@ describe('creation stamps the defaults', () => {
     expect(stampOf(activation.tournamentRecord)).toMatchObject({
       createdVersion: factoryVersion(),
       defaultsHash,
-      defaultsHashes,
     });
   });
 
@@ -125,7 +128,7 @@ describe('creation stamps the defaults', () => {
       const tournamentRecord = createTournamentRecord({ tournamentName: 'Legacy' });
       expect(tournamentRecord.factory).toBeUndefined();
       const extension = tournamentRecord.extensions.find(({ name }) => name === 'factory');
-      expect(extension.value).toMatchObject({ defaultsHash, defaultsHashes });
+      expect(extension.value).toMatchObject({ defaultsHash });
       expect(getDefaultsDrift({ tournamentRecord })).toMatchObject({ success: true, defaultsDrift: [] });
     });
   });
@@ -140,12 +143,12 @@ describe('attachPolicies stamps a record that carries no stamp', () => {
     const tournamentRecord: any = { tournamentId: 'unstamped' };
     const result: any = attachPolicies({ tournamentRecord, policyDefinitions: seeding });
     expect(result.success).toEqual(true);
-    expect(stampOf(tournamentRecord)).toEqual({ defaultsHash, defaultsHashes });
+    expect(stampOf(tournamentRecord)).toEqual({ defaultsHash });
     expect(tournamentRecord.appliedPolicies[POLICY_TYPE_SEEDING]).toEqual(seeding[POLICY_TYPE_SEEDING]);
   });
 
   it('keeps a stamp already on file, and the rest of the factory stamp', () => {
-    const older = { version: '7.40.0', defaultsHash: '0000000000000000', defaultsHashes: { seeding: '0' } };
+    const older = { version: '7.40.0', defaultsHash: '0000000000000000' };
     const tournamentRecord: any = { tournamentId: 'stamped', factory: { ...older } };
     expect(attachPolicies({ tournamentRecord, policyDefinitions: seeding }).success).toEqual(true);
     expect(tournamentRecord.factory).toEqual(older);
@@ -161,7 +164,6 @@ describe('attachPolicies stamps a record that carries no stamp', () => {
       createdVersion: '7.40.0',
       version: '7.41.0',
       defaultsHash,
-      defaultsHashes,
     });
   });
 
@@ -204,8 +206,15 @@ describe('attachPolicies stamps a record that carries no stamp', () => {
 });
 
 describe('getDefaultsDrift', () => {
-  const stamped = (factoryStamp: any, appliedPolicies?: any) =>
-    ({ tournamentId: 'drift', factory: factoryStamp, ...(appliedPolicies ? { appliedPolicies } : {}) }) as any;
+  const stamped = (stampedHash: string, appliedPolicies?: any) =>
+    ({
+      tournamentId: 'drift',
+      factory: { defaultsHash: stampedHash },
+      ...(appliedPolicies ? { appliedPolicies } : {}),
+    }) as any;
+  // an earlier build's set, as the history would hold it
+  const earlier = { ...defaultsHashes, scheduling: 'ffffffffffffffff', seeding: 'eeeeeeeeeeeeeeee' };
+  const history = { ...DEFAULTS_HISTORY, [hash(earlier)]: earlier };
 
   it('cannot say for a record that carries no stamp', () => {
     const result = getDefaultsDrift({ tournamentRecord: { tournamentId: 'bare' } as any });
@@ -214,56 +223,54 @@ describe('getDefaultsDrift', () => {
   });
 
   it('reports nothing when the defaults are those stamped', () => {
-    const tournamentRecord = stamped({ defaultsHash, defaultsHashes });
-    expect(getDefaultsDrift({ tournamentRecord })).toEqual({
+    expect(getDefaultsDrift({ tournamentRecord: stamped(defaultsHash) })).toEqual({
       success: true,
       defaultsHash,
       stampedDefaultsHash: defaultsHash,
       defaultsDrift: [],
+      stampKnown: true,
     });
   });
 
-  it('names the policy types whose defaults changed', () => {
-    const tournamentRecord = stamped({
-      defaultsHash: 'ffffffffffffffff',
-      defaultsHashes: { ...defaultsHashes, scheduling: 'ffffffffffffffff', seeding: 'eeeeeeeeeeeeeeee' },
-    });
-    expect(getDefaultsDrift({ tournamentRecord })).toMatchObject({
-      stampedDefaultsHash: 'ffffffffffffffff',
+  it('names the policy types whose defaults changed, from the history of stamped sets', () => {
+    expect(defaultsDriftAgainst(stamped(hash(earlier)), history)).toMatchObject({
+      stampedDefaultsHash: hash(earlier),
       defaultsDrift: [POLICY_TYPE_SCHEDULING, POLICY_TYPE_SEEDING],
+      stampKnown: true,
     });
   });
 
   it('leaves out a type the tournament pins: a pinned policy is stored in full and does not drift', () => {
-    const tournamentRecord = stamped(
-      { defaultsHash: 'ffffffffffffffff', defaultsHashes: { ...defaultsHashes, scheduling: 'f', seeding: 'e' } },
-      { [POLICY_TYPE_SCHEDULING]: POLICY_SCHEDULING_DEFAULT[POLICY_TYPE_SCHEDULING] },
-    );
-    expect(getDefaultsDrift({ tournamentRecord }).defaultsDrift).toEqual([POLICY_TYPE_SEEDING]);
+    const tournamentRecord = stamped(hash(earlier), {
+      [POLICY_TYPE_SCHEDULING]: POLICY_SCHEDULING_DEFAULT[POLICY_TYPE_SCHEDULING],
+    });
+    expect(defaultsDriftAgainst(tournamentRecord, history).defaultsDrift).toEqual([POLICY_TYPE_SEEDING]);
   });
 
   it('reports a default added or retired since the stamp', () => {
     const { seeding: _seeding, ...withoutSeeding } = defaultsHashes;
-    const tournamentRecord = stamped({ defaultsHash: 'f', defaultsHashes: { ...withoutSeeding, retired: 'a' } });
-    expect(getDefaultsDrift({ tournamentRecord }).defaultsDrift).toEqual(['retired', POLICY_TYPE_SEEDING]);
+    const older = { ...withoutSeeding, retired: 'a' };
+    const result = defaultsDriftAgainst(stamped(hash(older)), { [hash(older)]: older });
+    expect(result.defaultsDrift).toEqual(['retired', POLICY_TYPE_SEEDING]);
   });
 
-  it('reports every unpinned type when the stamp has no per-type hashes', () => {
-    const tournamentRecord = stamped({ defaultsHash: 'f' }, { [POLICY_TYPE_SEEDING]: { duplicateSeedNumbers: true } });
+  it('reports every unpinned type for a stamp this build does not know', () => {
+    const tournamentRecord = stamped('0123456789abcdef', { [POLICY_TYPE_SEEDING]: { duplicateSeedNumbers: true } });
     const expected = Object.keys(defaultsHashes)
       .filter((policyType) => policyType !== POLICY_TYPE_SEEDING)
       .sort((a, b) => a.localeCompare(b));
-    expect(getDefaultsDrift({ tournamentRecord }).defaultsDrift).toEqual(expected);
+    expect(getDefaultsDrift({ tournamentRecord })).toMatchObject({ defaultsDrift: expected, stampKnown: false });
   });
 
   it('reads a legacy factory extension the same way', () => {
     const tournamentRecord: any = {
       tournamentId: 'legacy',
-      extensions: [
-        { name: 'factory', value: { defaultsHash: 'f', defaultsHashes: { ...defaultsHashes, ladder: 'x' } } },
-      ],
+      extensions: [{ name: 'factory', value: { defaultsHash: hash(earlier) } }],
     };
-    expect(getDefaultsDrift({ tournamentRecord }).defaultsDrift).toEqual(['ladder']);
+    expect(defaultsDriftAgainst(tournamentRecord, history).defaultsDrift).toEqual([
+      POLICY_TYPE_SCHEDULING,
+      POLICY_TYPE_SEEDING,
+    ]);
   });
 
   it('is an engine query that changes nothing', () => {

@@ -1,7 +1,7 @@
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { extensionConstants } from '@Constants/extensionConstants';
-import { defaultsHash, defaultsHashes } from '@Fixtures/policies/defaultsHash';
+import { defaultsHash } from '@Fixtures/policies/defaultsHash';
 import { factoryVersion } from '@Functions/global/factoryVersion';
 import { isValidExtension } from '@Validators/isValidExtension';
 import { canonicalDate } from '@Tools/canonicalClock';
@@ -53,14 +53,13 @@ export function createTournamentRecord(params): any {
   }
 
   // the creating factory is on file from the start; every later write refreshes `version` and keeps `createdVersion`.
-  // So are the engine defaults the record relies on for every policy type it does not pin (`defaultsHash`; the per-type
-  // hashes are the one frozen build-time object, shared, never copied). A `factory` the caller supplies is history and
-  // is kept as given, never backfilled.
+  // So are the engine defaults the record relies on for every policy type it does not pin: `defaultsHash`, one
+  // build-time string. A `factory` the caller supplies is history and is kept as given, never backfilled.
   const { FACTORY } = extensionConstants;
   if (!firstClassOrExtension({ element: attributes, attribute: 'factory', name: FACTORY })) {
     const version = factoryVersion();
     setFirstClassOrExtension({
-      value: { createdVersion: version, version, timeStamp: nowMs(), defaultsHash, defaultsHashes },
+      value: { createdVersion: version, version, timeStamp: nowMs(), defaultsHash },
       element: attributes,
       attribute: 'factory',
       name: FACTORY,

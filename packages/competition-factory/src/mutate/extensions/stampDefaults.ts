@@ -1,5 +1,5 @@
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
-import { defaultsHash, defaultsHashes } from '@Fixtures/policies/defaultsHash';
+import { defaultsHash } from '@Fixtures/policies/defaultsHash';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { extensionConstants } from '@Constants/extensionConstants';
 import { factoryVersion } from '@Functions/global/factoryVersion';
@@ -15,8 +15,8 @@ const { FACTORY } = extensionConstants;
  * field of the stamp. A stamp already on file is history and is never replaced: it says which defaults the record
  * first relied on, which is what `getDefaultsDrift` compares with the running factory's.
  *
- * The stamp is two build-time constants: `defaultsHash` and the frozen `defaultsHashes`, shared by reference (a copy
- * of a record copies it). Nothing is hashed here.
+ * The stamp is one build-time string, `defaultsHash`; the per-type hashes it stands for are in the factory's
+ * `DEFAULTS_HISTORY`, not on the record. Nothing is hashed here.
  */
 export function stampDefaultsIfAbsent(tournamentRecord?: Tournament): boolean {
   if (!tournamentRecord || typeof tournamentRecord !== 'object') return false;
@@ -24,10 +24,7 @@ export function stampDefaultsIfAbsent(tournamentRecord?: Tournament): boolean {
   if (typeof tournamentRecord.factory?.defaultsHash === 'string') return false;
   const existing = firstClassOrExtension({ element: tournamentRecord, attribute: 'factory', name: FACTORY });
   if (typeof existing?.defaultsHash === 'string') return false;
-  const value =
-    existing && typeof existing === 'object'
-      ? { ...existing, defaultsHash, defaultsHashes }
-      : { defaultsHash, defaultsHashes };
+  const value = existing && typeof existing === 'object' ? { ...existing, defaultsHash } : { defaultsHash };
   return !setFirstClassOrExtension({ element: tournamentRecord, attribute: 'factory', name: FACTORY, value }).error;
 }
 
@@ -40,7 +37,7 @@ export function stampCreation(record: Partial<Tournament>): void {
   if (firstClassOrExtension({ element: record, attribute: 'factory', name: FACTORY })) return;
   const version = factoryVersion();
   setFirstClassOrExtension({
-    value: { createdVersion: version, version, timeStamp: nowMs(), defaultsHash, defaultsHashes },
+    value: { createdVersion: version, version, timeStamp: nowMs(), defaultsHash },
     element: record,
     attribute: 'factory',
     name: FACTORY,

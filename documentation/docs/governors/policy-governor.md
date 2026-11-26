@@ -569,9 +569,10 @@ A policy that differs from the factory default is pinned onto the record by its 
 the factory. A policy type the record does not pin follows the running factory's default, which a later release may
 change. Every new tournament record (`newTournamentRecord`, `createTournamentRecord`, the mocks engine and
 `activateFromSanctioning`) is stamped with the defaults it relies on, and so is a record without a stamp when
-`attachPolicies` writes to it. The stamp is two build-time constants on the record's `factory` attribute (or its
-`factory` extension in legacy write mode): `defaultsHash`, a content hash over the defaults, and `defaultsHashes`, the
-same hash for each policy type. A stamp is never replaced.
+`attachPolicies` writes to it. The stamp is one build-time string on the record's `factory` attribute (or its
+`factory` extension in legacy write mode): `defaultsHash`, a content hash over the defaults. The factory keeps, for
+every default set a release has stamped, the hash of each policy type (`DEFAULTS_HISTORY`), so the record needs only the
+one string. A stamp is never replaced.
 
 **Purpose:** let a client tell a director that a tournament's unpinned behaviour comes from newer defaults than the
 ones it was created or sanctioned with.
@@ -597,14 +598,15 @@ ones it was created or sanctioned with.
   defaultsHash: string;          // the running factory's defaults
   stampedDefaultsHash?: string;  // the record's stamp; absent when it has none
   defaultsDrift?: string[];      // drifted policy types, sorted; [] when none; absent when the record has no stamp
+  stampKnown?: boolean;          // false when the stamp is from a default set this build does not know
   error?: ErrorType;             // MISSING_TOURNAMENT_RECORD
 }
 ```
 
 **What is reported:** a policy type the tournament pins at the tournament level is never reported, because its stored
 value does not drift. A type with a default in only one of the two sets (added or retired since the stamp) is
-reported. A stamp that carries `defaultsHash` without `defaultsHashes` reports every unpinned type when the hashes
-differ. The query reads only the record's `factory` stamp and its tournament-level applied policies, never the events
+reported. A stamp this build does not know (from a later or unreleased build) reports every unpinned type, with
+`stampKnown: false`. The query reads only the record's `factory` stamp and its tournament-level applied policies, never the events
 or draws, and it is never run when a record is loaded. It refuses no record and changes nothing: the engine always
 uses its current defaults.
 

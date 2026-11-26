@@ -1,7 +1,7 @@
 import { compareFactoryVersions, getFactoryStamp, recordPredatesVersion } from '@Query/tournaments/getFactoryStamp';
 import { createTournamentRecord } from '@Generators/tournamentRecords/createTournamentRecord';
 import { factoryVersion } from '@Functions/global/factoryVersion';
-import { defaultsHash, defaultsHashes } from '@Fixtures/policies/defaultsHash';
+import { defaultsHash } from '@Fixtures/policies/defaultsHash';
 import { legacyMode } from '@Tests/testHarness/legacyMode';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -29,7 +29,6 @@ it('a new record is stamped with the creating factory, on the engine clock', () 
     version: factoryVersion(),
     timeStamp: CLOCK,
     defaultsHash,
-    defaultsHashes,
   });
   expect(getFactoryStamp({ tournamentRecord })).toEqual(tournamentRecord.factory);
 });

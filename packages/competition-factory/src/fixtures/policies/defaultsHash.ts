@@ -24,3 +24,22 @@ export const defaultsHashes: { readonly [policyType: string]: string } = Object.
   scheduling: '1433bae0c31f1a0c',
   seeding: 'd4c78bec36a3d889',
 });
+
+/**
+ * Every default set a build of the factory has stamped, by its `defaultsHash`: what lets `getDefaultsDrift` name the
+ * policy types a record's stamp differs in, while the record stores the one string. Regeneration only adds to it.
+ */
+export const DEFAULTS_HISTORY: { readonly [defaultsHash: string]: { readonly [policyType: string]: string } } =
+  Object.freeze({
+    e7fc7a008591c04f: Object.freeze({
+      competitiveBands: 'fae6b4a511bed7ac',
+      ladder: 'f1913db96b092291',
+      matchUpActions: '6ed2a2c458f84a14',
+      participant: '01c470f8ace8b14d',
+      positionActions: '1118688ec8e8b53b',
+      ratings: '76e09552d7861664',
+      roundNaming: '46968e6445377d64',
+      scheduling: '1433bae0c31f1a0c',
+      seeding: 'd4c78bec36a3d889',
+    }),
+  });
