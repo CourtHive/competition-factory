@@ -1,15 +1,11 @@
 import { enableSettleTelemetry, takeSettleEvents } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
-import { deriveStatusCodes, exitOutcomeCode } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getInvariantViolations, describeViolations, type InvariantViolation } from './invariants';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import type { SettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
-import { getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
 import { auditAcceptedRecord, type ProjectionAudit } from './projectionAudit';
 import { captureRecord, compareRecord } from '@Tools/recordDiff';
-import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { getTournamentRecord } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
-import { isAnyExit } from '@Validators/isExit';
 
 // constants
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
@@ -119,15 +115,8 @@ export function projectDraw(drawDefinition: any): any {
  * The projection DO_UNDO_IDENTITY compares: {@link projectDraw} without `matchUpStatusCodes`, and with the two
  * side-keyed and singular codes that carry the same consumer-visible facts (census F1, 2026-10-17).
  *
- * WHY THE ARRAY IS NOT HERE. Its writers disagree by design history, not by draw state: the forward double-exit writers
- * in `doubleExitAdvancement` keep the policy codes and derive nothing (`retainPolicyCodes`), while the clear's writers
- * derive from provenance (`deriveStatusCodes`). So a scheduled draw holds `null` where the same draw after a result and
- * its clear holds `['', 'WO']`, and the round trip reported that as residue (census a1 cases 14, 24, 29, 32). Deriving
- * the codes at settle was measured as the alternative and refused: it closed those four but opened 20 failures in the
- * exitPropagation folder, three of them a code on the winning side (`aWithdrawnExitTakesItsCode`), and changed 4 pinned
- * expectations outside it. `matchUpStatusCodes` is legacy and 8.x removes it.
- *
- * The defect does not go unobserved: {@link checkCodesConsistent} asks it of a settled draw, as its own property.
+ * WHY THE ARRAY IS NOT HERE. 8.x never writes it: only a record written before 8.0.0 holds it, and a write removes
+ * it from the matchUps it touches, so a round trip over such a record ends without it.
  *
  * ONLY HERE. `hash()` keeps the array, so `observeMutation`'s `mutated` still sees a write that touches nothing but the
  * codes, and IDEMPOTENT_REAPPLY and ERROR_IMPLIES_NO_MUTATION still catch one.
@@ -515,45 +504,4 @@ export function checkInvariants(observation: Observation, matchUpId: string): Pr
       ...(observation.stage ? { stage: observation.stage } : {}),
     },
   ];
-}
-
-/**
- * CODES_CONSISTENT — every exit that records where it came from shows it in `matchUpStatusCodes` (census F1, 2026-10-17).
- *
- * The state-level half of what DO_UNDO_IDENTITY stopped comparing ({@link projectRoundTrip}). Stored codes are read
- * against {@link deriveStatusCodes}, the derivation the clear's writers use, on every matchUp that is an exit
- * ({@link isAnyExit}, as `codesForUnwound` gates it: a BYE deliberately holds no codes) and records provenance. A slot
- * the derivation fills and the store leaves blank is reported; so is a slot holding a different code. Blank against
- * absent is not a difference, as in {@link projectDraw}.
- *
- * A separate property because it is a known defect the forward double-exit writers carry, not residue a round trip
- * leaves: measured 2–9 matchUps per scheduled draw on census a1 cases 14, 24, 29 and 32 before any probe ran. It is not
- * wired into `replay`; a caller asks it of a settled draw.
- */
-export function checkCodesConsistent(drawId: string, matchUpId: string): PropertyFailure[] {
-  const drawDefinition = getDrawDefinition(drawId);
-  const failures: PropertyFailure[] = [];
-  const coordinates = new Map(
-    getDrawMatchUps(drawId).map((matchUp: any) => [
-      matchUp.matchUpId,
-      `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`,
-    ]),
-  );
-  for (const matchUp of getMatchUpsMap({ drawDefinition }).drawMatchUps) {
-    if (!isAnyExit(matchUp.matchUpStatus) || !getSideExitProvenance({ matchUp })) continue;
-    const stored = ((matchUp.matchUpStatusCodes as any[]) ?? []).map(exitOutcomeCode);
-    const derived = deriveStatusCodes(matchUp);
-    const length = Math.max(stored.length, derived.length);
-    const disagree = Array.from({ length }, (_, index) => index).some(
-      (index) => (stored[index] || '') !== (derived[index] || ''),
-    );
-    if (!disagree) continue;
-    const at = coordinates.get(matchUp.matchUpId) ?? matchUp.matchUpId;
-    failures.push({
-      property: 'CODES_CONSISTENT',
-      matchUpId,
-      detail: `${at}: matchUpStatusCodes ${JSON.stringify(blankToNull(matchUp.matchUpStatusCodes))} where its provenance derives ${JSON.stringify(derived)}`,
-    });
-  }
-  return failures;
 }

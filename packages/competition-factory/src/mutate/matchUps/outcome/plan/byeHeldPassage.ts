@@ -1,3 +1,4 @@
+import { holdsReasons } from '../reasons';
 import { buildSideExitProvenance, collapseDoubleExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { SINGLE_EXITS, indexed, onwardFrom } from './planShared';
@@ -57,7 +58,7 @@ type ConvergedChain = { levels: ChainLevel[]; pending?: ChainLevel };
 
 const cleanBeyond = (matchUp: HydratedMatchUp) =>
   !matchUp.loserMatchUpId &&
-  !matchUp.matchUpStatusCodes?.length &&
+  !holdsReasons(matchUp) &&
   !(matchUp.drawPositions ?? []).some(Boolean) &&
   !matchUp.sides?.some((side) => side.participantId || side.bye);
 
@@ -191,7 +192,6 @@ function chainOps({ levels, pending }: ConvergedChain): OutcomeOp[] {
       matchUpId: level.matchUpId,
       matchUpStatus: level.matchUpStatus,
       ...(isDoubleExit(level.matchUpStatus) ? { removesWinningSide: true as const } : {}),
-      matchUpStatusCodes: [],
       ...(blanked ? { resetsScore: true, score: toBePlayed.score } : {}),
       stampsScoredTime: false,
       ...(quiet ? { announcesContext: false as const } : {}),
@@ -240,7 +240,6 @@ export function byeHeldProducedOps(
       matchUpId,
       matchUpStatus: produced.matchUpStatus,
       ...(onward ? { winningSide: (3 - sideNumber) as 1 | 2 } : {}),
-      matchUpStatusCodes: [],
       // v1's writer here removes the score whatever the exit (`removeScore`), leaving it blanked
       resetsScore: true,
       ...(relays.length ? { initializesScore: true as const } : {}),
@@ -269,7 +268,6 @@ export function byeHeldProducedOps(
       op: 'setMatchUpResult',
       matchUpId: produced.matchUpId,
       matchUpStatus: BYE,
-      matchUpStatusCodes: [],
       removesWinningSide: true,
       stampsScoredTime: false,
     },
@@ -281,7 +279,6 @@ export function byeHeldProducedOps(
         op: 'setMatchUpResult',
         matchUpId,
         matchUpStatus: BYE,
-        matchUpStatusCodes: [],
         resetsScore: true,
         score: toBePlayed.score,
         stampsScoredTime: false,

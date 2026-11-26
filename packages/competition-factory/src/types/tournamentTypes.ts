@@ -818,13 +818,9 @@ export interface ScheduleScenario {
  * `sourceMatchUpId` makes an entry attributable to the exit that produced it.
  */
 /**
- * One element of `MatchUp.matchUpStatusCodes`.
- *
- * The engine persists STRINGS: the scoring policy's code for a side, at that side's position
- * (`['', 'DM']`). That is the display contract.
- *
- * The record shape is accepted so that a tournament record stored by an earlier version still
- * types. Nothing writes it and nothing reads it to decide behaviour.
+ * One element of `MatchUp.matchUpStatusCodes`, as records written before 8.0.0 hold it: a scoring policy code at a
+ * side's position (`['', 'DM']`), or the record shape some earlier versions stored. Nothing writes it and nothing
+ * reads it to decide behaviour.
  */
 export type MatchUpStatusCodeRecord = {
   code?: string | number;
@@ -879,11 +875,10 @@ export interface MatchUp {
   matchUpId: string;
   matchUpStatus?: MatchUpStatusUnion;
   /**
-   * The scoring policy's codes, one per side, positionally — the display contract.
-   *
-   * Do not index it to decide which side did something. For "which side exited, and what produced
-   * it" read {@link MatchUp.sideExitProvenance}; for "which reason belongs to which side" read
-   * {@link MatchUp.sideStatusCodes}.
+   * @deprecated Written by factory versions before 8.0.0 only. 8.x never writes it, and removes it from any matchUp a
+   * write touches. A record that still holds it is read as it is. Reasons live in {@link MatchUp.sideStatusCodes}
+   * (keyed by side) and {@link MatchUp.matchUpStatusCode} (the match); an exit's origin in
+   * {@link MatchUp.sideExitProvenance}.
    */
   matchUpStatusCodes?: MatchUpStatusCodeElement[];
   /**
@@ -894,8 +889,7 @@ export interface MatchUp {
    * nobody… asking who won an abandoned match"* is the wrong question. So a match-level reason gets a
    * match-level home, rather than an index in an array whose index means a side.
    *
-   * Side-attributed reasons live in {@link MatchUp.sideStatusCodes}. The two are disjoint by status, and
-   * {@link MatchUp.matchUpStatusCodes} is the positional projection of both, kept for display.
+   * Side-attributed reasons live in {@link MatchUp.sideStatusCodes}. The two are disjoint by status.
    */
   matchUpStatusCode?: string;
   /**
@@ -905,10 +899,8 @@ export interface MatchUp {
    * `DEFAULTED`, `WALKOVER`, `RETIRED`, and the `WITHDRAWN` label group, which is not a matchUpStatus at
    * all but arrives as a walkover reason. A double exit attributes BOTH sides.
    *
-   * **Why this exists.** The reason used to be readable only by indexing `matchUpStatusCodes`, where the
-   * index is the side — the assumption the exit tenant's eviction removed from everything else on this
-   * surface. It was also read at index 0 when carried into a connected structure, so a reason recorded
-   * against side 2 was silently dropped on the way.
+   * Submitted the same way, keyed: `outcome.sideStatusCodes`. A write that submits no reason keeps the reasons that
+   * still describe its result; `outcome.clearStatusCodes` removes them.
    *
    * **Why not on `sideExitProvenance`.** Provenance says where a side CAME FROM, and only the cascade
    * stamps it — `isPropagatedExit` is that presence, so widening it to played results would report every

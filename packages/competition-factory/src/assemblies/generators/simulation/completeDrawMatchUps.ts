@@ -415,7 +415,8 @@ function luckySelections(
 
 export function completeDrawMatchUp(params) {
   const {
-    matchUpStatusCodes,
+    matchUpStatusCode,
+    sideStatusCodes,
     policyDefinitions,
     tournamentRecord,
     drawDefinition,
@@ -438,7 +439,8 @@ export function completeDrawMatchUp(params) {
     winningSide,
   });
 
-  if (matchUpStatusCodes) outcome.matchUpStatusCodes = matchUpStatusCodes;
+  if (sideStatusCodes) outcome.sideStatusCodes = sideStatusCodes;
+  if (matchUpStatusCode) outcome.matchUpStatusCode = matchUpStatusCode;
 
   recordSetMatchUpStatus({ policyDefinitions, drawDefinition, matchUpFormat, matchUpId, outcome });
   return setMatchUpStatus({

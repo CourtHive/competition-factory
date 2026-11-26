@@ -1,3 +1,4 @@
+import { holdsReasons } from '../reasons';
 import { earlyReleasedLandings, unwoundOps, unwoundPath, unwoundView } from './unwindPath';
 import { standaloneBareWinnerOps, standaloneCarriedWinnerOps } from './standaloneIndirect';
 import { convergedOps, convergedReason, convergenceOps } from './carriedConvergence';
@@ -205,7 +206,7 @@ export function unwoundKeptOutOps(
     next.winningSide ||
     !scoreless(next) ||
     Object.keys(next.sideExitProvenance ?? {}).length ||
-    next.matchUpStatusCodes?.length
+    holdsReasons(next)
   )
     return undefined;
   const released = program.some(
@@ -300,7 +301,7 @@ function retainedRelayShape(view: OutcomeView, after: OutcomeView, ops: OutcomeO
   const successor = indexed(after, copy.successor.matchUpId);
   if (!relay || relay.matchUpStatus !== TO_BE_PLAYED || !unwoundClean(relay, new Set())) return undefined;
   if (positionsOf(relay).length !== 1 || positionsOf(relay)[0] !== clear.drawPosition) return undefined;
-  if (!onward || onward.winningSide || !scoreless(onward) || onward.matchUpStatusCodes?.length) return undefined;
+  if (!onward || onward.winningSide || !scoreless(onward) || holdsReasons(onward)) return undefined;
   if (onward.matchUpStatus !== copy.kept.matchUpStatus || positionsOf(onward).length !== 1) return undefined;
   if (!successor || successor.matchUpStatus !== TO_BE_PLAYED || !unwoundClean(successor, new Set())) return undefined;
   if (!unplaced(successor)) return undefined;
@@ -578,7 +579,6 @@ export function unwoundArrivalOps(
           matchUpId: byeMatchUp.matchUpId,
           drawPositions: positionsOf(byeMatchUp),
           placedDrawPosition: drawPosition,
-          rederivesCodes: true,
         },
         ...onward,
       ];

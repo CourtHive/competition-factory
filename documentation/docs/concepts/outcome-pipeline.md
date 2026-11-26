@@ -26,8 +26,9 @@ setMatchUpStatus                 validate params, resolve the draw, read policy,
 
 ## 1. The inputs
 
-An **outcome** carries at most `score`, `matchUpStatus`, `winningSide` and `matchUpStatusCodes`, and
-optionally a `matchUpFormat`. The call also takes `matchUpId`, a draw (`drawId` or `drawDefinition`),
+An **outcome** carries at most `score`, `matchUpStatus`, `winningSide`, the reasons (`sideStatusCodes`,
+`matchUpStatusCode`, and the explicit `clearStatusCodes`), and optionally a `matchUpFormat`. An outcome carrying the
+positional `matchUpStatusCodes` of 7.x is refused. The call also takes `matchUpId`, a draw (`drawId` or `drawDefinition`),
 a `schedule` to apply once accepted, `notes`, and the flags below.
 
 **Score strings are derived, never accepted.** When `score.sets` is present, empty sets are dropped
@@ -300,31 +301,21 @@ loser everywhere they have gone (`swapWinnerLoser`), rather than refusing.
 
 1. **A walkover, or a removal, blanks the result with the `toBePlayed` fixture**: `matchUpStatus:
 TO_BE_PLAYED`, `score` with empty `scoreStringSide1` / `scoreStringSide2` and `sets: undefined`,
-   `winningSide: undefined`, `matchUpStatusCodes: []`, **and `matchUpFormat: undefined`**, though
+   `winningSide: undefined`, **and `matchUpFormat: undefined`**, though
    since 7.5.0 a matchUp-level `matchUpFormat` is carried across the blank (below). The
    requested status is then written over the blank. Exit provenance survives the blank when the
    written status is an exit, and BYE claims survive it on a BYE; everything else in
    `sideExitProvenance` goes.
-2. **Otherwise the given `score` replaces the old one**, then `matchUpStatus`, `matchUpFormat` (only
-   if given) and `matchUpStatusCodes` are written.
-3. **Status codes are split at this boundary**: the positional array a client sends (`['', 'DM']`)
-   becomes `sideStatusCodes` keyed by side, with the exiting side taken from `winningSide`, not from
-   the index. **Only a client's array is split** (census A1 residue F1b, 2026-10-18). An engine write
-   whose array is not client input (a propagation in `progressExitStatus`; the convergence reconcile and the
-   forward writes in `doubleExitAdvancement`, which re-store the target's own, possibly derived,
-   array; the unwinds in `removeDoubleExit`) passes `derivedStatusCodes`, naming the matchUp it
-   describes. Its array is stored as given. It keeps the reasons the matchUp already holds, plus
-   the real reason it carries for the arriving side, on the sides that exited: both sides of a double
-   exit, the losing side of a single exit. A bare `WO` or `DEF` that the projection wrote is never a
-   reason. The choice is made by origin, not by value: a client's `['WO']` is still split as its
-   reason. **An array naming no reason deletes the reasons the matchUp kept**: a write handed `[]`
-   (the call's own, or the one the winner route always passes) splits to nothing, so
-   `sideStatusCodes` and `matchUpStatusCode` both go; a write handed no array (a clear, a live score
-   or a double exit entered with no codes) leaves them standing, beside whatever the display array
-   becomes. v2 plans only the requested matchUp's own write, from client input, and compares
-   `matchUpStatusCodes` as display; a call carrying codes is v1's (`status-codes`), so the one
-   `sideStatusCodes` write it plans is that deletion (`clearsStatusReasons`,
-   `clearedStatusReasons.test.ts`), and it plans no propagation write.
+2. **Otherwise the given `score` replaces the old one**, then `matchUpStatus` and `matchUpFormat` (only
+   if given) are written.
+3. **The call's reasons are written on its own matchUp, from the status and winner it now holds**
+   (`writeStatusReasons`), read against the reasons the matchUp held before the call, so a route that writes the
+   matchUp twice ends where one write would. Submitted reasons replace those held; the explicit clear removes them;
+   otherwise the matchUp keeps the reasons that still describe the result (a status that takes a reason, a side that
+   exited). An engine write on another matchUp keeps the reasons it holds there, filtered by the result it writes,
+   plus the real reason a propagation carries for the arriving side (`retainedStatusCodes`), or removes them where the
+   result they described is gone (`clearsStatusReasons`). v2 writes the call's reasons with its own result op; a call
+   that submits reasons is v1's (`status-codes`).
 4. **`scoredTime`** is stamped on `schedule` the first time the matchUp becomes scored (a score with
    value, a winner, or a completed status), kept through corrections, and deleted when the result is
    removed. One exception: a DOUBLE_ELIMINATION decider made a DEAD_RUBBER was not played, so it is

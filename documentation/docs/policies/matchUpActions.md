@@ -527,7 +527,7 @@ match.
 - `EXIT` - Record a `WALKOVER` or `DEFAULTED` against the participant already there. The payload names
   `exitingParticipantId`, `exitingSideNumber` and the `matchUpStatuses` offered, and its
   `outcome.winningSide` already awards the EMPTY side; supply `outcome.matchUpStatus` (and optionally
-  `matchUpStatusCodes`) and call `setMatchUpStatus`. Whoever later arrives takes the walkover and advances.
+  a reason in `sideStatusCodes`, keyed by the exiting side) and call `setMatchUpStatus`. Whoever later arrives takes the walkover and advances.
 
 Offered exactly where the engine accepts it, and independent of `propagateExitStatus`, which decides only
 whether the exit is carried into the loser's next matchUp. Not offered on an AD_HOC matchUp (its sides

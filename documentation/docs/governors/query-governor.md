@@ -900,9 +900,9 @@ advancement drift across the generators.
 A proposed check — a single `WALKOVER`/`DEFAULTED` with a `winningSide`, no exit status code,
 and no upstream feeder that is itself an exit (an exit that should have collapsed to
 `TO_BE_PLAYED`) — is intentionally **not** implemented. It cannot be made zero-false-positive
-from stored state: a legitimate direct walkover is stored with empty `matchUpStatusCodes`, has
+from stored state: a legitimate direct walkover is stored with no reason code, has
 a `winningSide`, and has no upstream exit — indistinguishable from the hypothesised stale exit.
-`matchUpStatusCodes` is optional metadata that legitimate walkovers routinely omit, so the
+A reason code is optional metadata that legitimate walkovers routinely omit, so the
 heuristic would flag the entire codeless-walkover population. A trustworthy version would need
 to re-derive whether the exit is still justified at the mutation boundary that produces it, not
 as a read-only post-hoc scan.

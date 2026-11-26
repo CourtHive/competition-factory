@@ -56,7 +56,10 @@ type CompletionOptions = {
 /** One authored outcome on a drawProfile, located by structure, round and position. */
 export type MockOutcome = {
   matchUpStatus?: Loose<MatchUpStatusUnion>;
-  matchUpStatusCodes?: unknown[];
+  /** the reason per side, keyed by side: `{ 2: 'DM' }` */
+  sideStatusCodes?: Record<number, string>;
+  /** the reason for a status that attributes to the match */
+  matchUpStatusCode?: string;
   drawPositions?: number[];
   structureOrder?: number;
   stageSequence?: number;

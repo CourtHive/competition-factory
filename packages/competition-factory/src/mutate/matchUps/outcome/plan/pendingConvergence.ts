@@ -10,7 +10,6 @@ import { releaseWalk } from '../unwindWalk';
 import {
   buildCarriedExitProvenance,
   collapseDoubleExitStatus,
-  retainPolicyCodes,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
@@ -60,8 +59,8 @@ export function pendingConvergence(
   if ((pending.matchUpStatus !== WALKOVER && pending.matchUpStatus !== DEFAULTED) || !empty) return undefined;
   // the request's spread (F6): a format, or a stored default's process codes, are not written here
   if (request.matchUpFormat || pending.processCodes?.length) return undefined;
-  // codes v1 attributes from what it retains: only none is certified
-  if (retainPolicyCodes(pending).length || pending.matchUpStatusCode || pending.sideStatusCodes) return undefined;
+  // reasons v1 attributes from what it retains: only none is certified
+  if (pending.matchUpStatusCode || pending.sideStatusCodes) return undefined;
   // a loser matchUp in the source's structure could be read by the landing's convergence
   if (pending.structureId === source.structureId) return undefined;
   // the arriving side, read structurally as v1 reads it (0 where the position is absent: no entry is built)
@@ -80,7 +79,6 @@ export function pendingConvergence(
       ...getSideExitProvenance({ matchUp: pending }),
       ...buildCarriedExitProvenance({ ...lineage, matchUpStatus: cascadeStatus, exitingSideNumber }),
     },
-    matchUpStatusCodes: [],
     resetsScore: true,
     touched: [pending.matchUpId],
   };

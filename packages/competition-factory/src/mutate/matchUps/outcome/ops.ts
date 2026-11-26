@@ -7,6 +7,9 @@ import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExte
 import { scoredTimeAction } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { getCapturedStamps } from '@Global/state/globalState';
+import { dropLegacyStatusCodes } from '@Helpers/drawTopology/legacyStatusCodes';
+import { writeStatusReasons } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
+import type { CallStatusReasons } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { isAnyExit } from '@Validators/isExit';
 import { cloneData } from '@Tools/cloneState';
 import { nowIso } from '@Tools/clock';
@@ -27,7 +30,6 @@ import type {
   DrawDefinition,
   MatchUp,
   MatchUpSchedule,
-  MatchUpStatusCodeElement,
   MatchUpStatusUnion,
   PositionAssignment,
   Score,
@@ -62,8 +64,11 @@ export type OutcomeOp =
       initializesScore?: true;
       /** The source writer assigns an own undefined winner. */
       removesWinningSide?: true;
-      /** The source writer was handed status codes naming no reason: the reasons the matchUp kept are deleted. */
-      clearsStatusReasons?: true;
+      /**
+       * the call's own reasons, on the call's own matchUp: written from the status and winner this op leaves
+       * (`writeStatusReasons`, as v1's `modifyMatchUpScore` writes them)
+       */
+      statusReasons?: CallStatusReasons;
       /** The pending produced exit lost its winner key in the settle pass after a retained BYE relay. */
       deletesWinningSide?: true;
       /** Settle restores the retained carrier origin and removes its old winner before replaying the result. */
@@ -78,7 +83,6 @@ export type OutcomeOp =
       score?: Score;
       /** a new format; absent keeps the one the matchUp stores */
       matchUpFormat?: string;
-      matchUpStatusCodes?: MatchUpStatusCodeElement[];
       /**
        * false where v1 writes the result outside `setMatchUpState`, so its `applyScoredTime` does not run and the
        * schedule is left as it is: a double exit's produced exit (`doubleExitAdvancement` → `modifyMatchUpScore`)
@@ -211,15 +215,8 @@ export type OutcomeOp =
        * with the event; the matchUp's score is left as it is (there is none: a result there keeps the carry)
        */
       releasedDrawPosition?: number;
-      /**
-       * the placement seats a loser beside a carried exit that decides the matchUp for them (RULE 2 on arrival, a seat an
-       * unwind freed and re-derived to the carry, S7): v1's `assignDrawPosition` re-derives its status codes with the
-       * assignment (`progressExitStatus`: `[]`, nothing carried on this side) and announces the matchUp as the assignment
-       */
-      rederivesCodes?: true;
       /** The entrant takes a receiver's supported exit as part of this placement. */
       awardedSide?: 1 | 2;
-      awardedCodes?: string[];
       placementOrigin?: SideExitProvenance;
     }
   | {
@@ -262,14 +259,6 @@ export type OutcomeOp =
       drawPosition: number;
       /** whose seat it was: their seed entry in that structure goes with them (v1's `removeDirectedLoser`) */
       participantId: string;
-    }
-  | {
-      op: 'setMatchUpStatusCodes';
-      /** An equal re-derivation allocates fresh codes but emits no notice. */
-      quiet?: true;
-      /** a matchUp's status codes re-derived from its provenance (a loser taken back out of it, S4) */
-      matchUpId: string;
-      matchUpStatusCodes: MatchUpStatusCodeElement[];
     }
   | {
       op: 'mergeSideExitProvenance';
@@ -516,7 +505,6 @@ export type OutcomeOpName =
   | 'relabelPosition'
   | 'assignPosition'
   | 'clearPosition'
-  | 'setMatchUpStatusCodes'
   | 'mergeSideExitProvenance'
   | 'setSideExitProvenance'
   | 'assignBye'
@@ -624,7 +612,6 @@ function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMat
   }
   if (op.withdrawsCarry) {
     clearSideExitProvenance(matchUp);
-    matchUp.matchUpStatusCodes = [];
     delete matchUp.winningSide;
   }
   if (op.disableAutoCalc !== undefined)
@@ -645,7 +632,7 @@ function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMat
   if (op.score) matchUp.score = ordinary || bindResultInputs ? op.score : structuredClone(op.score);
   matchUp.matchUpStatus = op.matchUpStatus;
   clearOrderOfFinishUnlessCompleted(matchUp);
-  setResultFormatAndCodes(matchUp, op, ordinary, !!bindResultInputs);
+  if (op.matchUpFormat) matchUp.matchUpFormat = op.matchUpFormat;
   clearResolvedSideExitProvenance(matchUp);
   if (op.deletesWinningSide) delete matchUp.winningSide;
   else if (op.winningSide) matchUp.winningSide = op.winningSide;
@@ -658,6 +645,7 @@ function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMat
   else if (bindResultInputs) {
     if (matchUp.winningSide) matchUp.winningSide = undefined;
   } else if (!op.resetsScore) delete matchUp.winningSide;
+  if (op.statusReasons?.matchUpId === matchUp.matchUpId) writeStatusReasons(matchUp, op.statusReasons);
   if (op.notes) matchUp.notes = op.notes;
   if (op.stampsScoredTime === false) return;
   applyResultScoredTime(matchUp, context);
@@ -697,27 +685,6 @@ function resetResult(matchUp: MatchUp, matchUpStatus: MatchUpStatusUnion, bindRe
   Object.assign(matchUp, bindResultInputs ? toBePlayed : structuredClone(toBePlayed));
   if (provenance) matchUp.sideExitProvenance = provenance;
   if (format) matchUp.matchUpFormat = format;
-}
-
-function setResultFormatAndCodes(
-  matchUp: MatchUp,
-  op: Extract<OutcomeOp, { op: 'setMatchUpResult' }>,
-  ordinary = false,
-  bindResultInputs = false,
-) {
-  if (op.matchUpFormat) matchUp.matchUpFormat = op.matchUpFormat;
-  if (op.matchUpStatusCodes) {
-    matchUp.matchUpStatusCodes =
-      ordinary || bindResultInputs ? op.matchUpStatusCodes : structuredClone(op.matchUpStatusCodes);
-    if (ordinary && !op.matchUpStatusCodes.length) {
-      delete matchUp.matchUpStatusCode;
-      delete matchUp.sideStatusCodes;
-    }
-  }
-  if (op.clearsStatusReasons) {
-    delete matchUp.matchUpStatusCode;
-    delete matchUp.sideStatusCodes;
-  }
 }
 
 /**
@@ -789,8 +756,6 @@ function foldMatchUpWrite(
       clearOrderOfFinishUnlessCompleted(matchUp);
     }
     // the arrival that decides the matchUp by the carried exit beside it: its codes re-derived (`progressExitStatus`)
-    if (op.rederivesCodes) matchUp.matchUpStatusCodes = [];
-    if (op.awardedCodes) matchUp.matchUpStatusCodes = [...op.awardedCodes];
     if (op.placementOrigin) mergeSideExitProvenance({ matchUp, provenance: structuredClone(op.placementOrigin) });
     if (op.awardedSide) matchUp.winningSide = op.awardedSide;
     // The ordinary arrival writes this own key, observable before its notice reads the caller's clock.
@@ -890,13 +855,6 @@ function foldSchedule(
     if (pendingSchedules && !Object.hasOwn(matchUp, 'schedule')) pendingSchedules.set(matchUp, schedule);
     else matchUp.schedule = schedule;
   } else if (matchUp.schedule) delete matchUp.schedule.scoredTime;
-  return {};
-}
-
-function foldStatusCodes(op: OpOf<'setMatchUpStatusCodes'>, { matchUps }: DrawIndex): Folded {
-  const matchUp = matchUps.get(op.matchUpId);
-  if (!matchUp) return { error: `setMatchUpStatusCodes: no matchUp ${op.matchUpId}` };
-  matchUp.matchUpStatusCodes = structuredClone(op.matchUpStatusCodes);
   return {};
 }
 
@@ -1004,7 +962,11 @@ function foldStamp(
   const target = op.entity === 'matchUp' ? matchUps.get(op.id) : structures.get(op.id);
   if (!target) return { error: `stampUpdatedAt: no ${op.entity} ${op.id}` };
   stamp(target as Stamped, `${op.entity}:${op.id}`, context);
-  if (op.entity === 'matchUp') flushScoredTime(target as MatchUp, context);
+  if (op.entity === 'matchUp') {
+    // as v1's stamp does: the pre-8.0.0 positional codes go from a matchUp the call touches
+    dropLegacyStatusCodes(target as MatchUp);
+    flushScoredTime(target as MatchUp, context);
+  }
   return {};
 }
 
@@ -1049,8 +1011,6 @@ function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition
       return foldExchange(op, index, drawDefinition);
     case 'clearPosition':
       return foldClearPosition(op, index);
-    case 'setMatchUpStatusCodes':
-      return foldStatusCodes(op, index);
     case 'mergeSideExitProvenance':
       return foldProvenance(op, index);
     case 'setSideExitProvenance':

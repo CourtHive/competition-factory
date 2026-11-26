@@ -33,7 +33,6 @@ vi.mock('@Mutate/matchUps/outcome/decide', async (load) => {
         matchUpStatus: 'COMPLETED',
         winningSide: 1,
         score: args.request.score,
-        matchUpStatusCodes: args.request.matchUpStatusCodes ?? [],
         ...(args.request.matchUpFormat ? { matchUpFormat: args.request.matchUpFormat } : {}),
       };
       const ops: OutcomeOp[] = [

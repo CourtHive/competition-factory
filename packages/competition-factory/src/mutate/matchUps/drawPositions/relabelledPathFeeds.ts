@@ -318,7 +318,6 @@ export function reconcileRelabelledPathFeeds({
     const { inContextMatchUp } = feed;
     const result: ResultType = reconcileFedLoserEligibility({
       loserMatchUpDrawPositionIndex: feed.loserMatchUpDrawPositionIndex,
-      sourceMatchUpStatusCodes: (inContextMatchUp.matchUpStatusCodes ?? []).map(String),
       sourceMatchUpStatus: inContextMatchUp.matchUpStatus,
       sourceMatchUpId: inContextMatchUp.matchUpId,
       winningSide: inContextMatchUp.winningSide,
@@ -339,7 +338,6 @@ export function reconcileRelabelledPathFeeds({
       // the propagation loop in `setMatchUpStatus` drives from this, so it names the later loss as its source
       context = {
         ...result.context,
-        sourceMatchUpStatusCodes: inContextMatchUp.matchUpStatusCodes ?? [],
         sourceMatchUpStatus: inContextMatchUp.matchUpStatus,
         sourceWinningSide: inContextMatchUp.winningSide,
         sourceMatchUpId: inContextMatchUp.matchUpId,

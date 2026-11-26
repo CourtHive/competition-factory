@@ -274,7 +274,8 @@ const { matchUps } = tournamentEngine.allEventMatchUps({
 
 _Clicking a player's name asks what happened to that side: **Retired**, **Walkover** or **Defaulted**. With a scoring policy that defines `matchUpStatusCodes` attached, a **Reason** row offers that policy's codes for the chosen status._
 
-In factory 7.x the chosen reason is reported as `outcome.matchUpStatusCodes`. The codes come from the scoring
+From factory 8.0.0 the chosen reason is reported keyed, as `outcome.sideStatusCodes` (or `outcome.matchUpStatusCode`
+for an ending that belongs to the match); 7.x reported it as the positional `outcome.matchUpStatusCodes`. The codes come from the scoring
 policy attached to the tournament or event; without one, the dialog draws no reason control. Try it in the
 [live demo above](#setting-scores), which uses the factory's `POLICY_SCORING_USTA` fixture.
 

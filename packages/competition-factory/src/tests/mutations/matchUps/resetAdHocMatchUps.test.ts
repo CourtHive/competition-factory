@@ -484,7 +484,7 @@ it('clears a walkover reason code and its exit provenance', () => {
   });
   const [matchUp] = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
   let result: any = tournamentEngine.setMatchUpStatus({
-    outcome: { matchUpStatus: WALKOVER, winningSide: 1, matchUpStatusCodes: ['', 'W1'] },
+    outcome: { matchUpStatus: WALKOVER, winningSide: 1, sideStatusCodes: { 2: 'W1' } },
     matchUpId: matchUp.matchUpId,
     drawId: 'codes',
   });

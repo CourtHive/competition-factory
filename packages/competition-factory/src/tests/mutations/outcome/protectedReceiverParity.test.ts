@@ -237,24 +237,14 @@ it('keeps a terminal awarded exit recorded when neither stored sides nor an onwa
   expect(at(record, 'Consolation', 3, 1)).toMatchObject({ winningSide: 2, drawPositions: terminal.drawPositions });
 });
 
-it('records a CURTIS arrival that creates the codes key on its protected receiver', () => {
+it('plans a CURTIS arrival on its protected receiver natively, with no positional codes to create', () => {
   const call = curtisAward();
-  const source = at(call.prepared, 'Main', 2, 1);
   const receiver = at(call.prepared, 'Consolation 1', 2, 4);
-  expect(source.matchUpId).toBe(call.params.matchUpId);
-  expect(source.loserMatchUpId).toBe(receiver.matchUpId);
-  expect(source.matchUpStatusCodes).toStrictEqual([]);
   expect(receiver).toMatchObject({ matchUpStatus: WALKOVER, winningSide: 1, drawPositions: [4, 11] });
-  expect(Object.hasOwn(receiver, 'matchUpStatusCodes')).toBe(false);
-  const { record } = compare(call, false);
+  const { record } = compare(call, true);
   const after = at(record, 'Consolation 1', 2, 4);
-  expect(Object.hasOwn(after, 'matchUpStatusCodes')).toBe(true);
-  expect(after.matchUpStatusCodes).toStrictEqual([]);
+  expect(Object.hasOwn(after, 'matchUpStatusCodes')).toBe(false);
   expect(after.sideExitProvenance).toStrictEqual(receiver.sideExitProvenance);
-
-  const recovered = structuredClone(call);
-  at(recovered.prepared, 'Consolation 1', 2, 4).matchUpStatusCodes = [];
-  compare(recovered, true);
 });
 
 it('stamps the Main structure when a Backdraw winner reaches the linked decider', () => {

@@ -142,7 +142,7 @@ function storedFieldsScenario() {
     {
       method: 'setMatchUpStatus',
       params: {
-        outcome: { matchUpStatus: WALKOVER, winningSide: 1, matchUpStatusCodes: ['', 'WO'] },
+        outcome: { matchUpStatus: WALKOVER, winningSide: 1, sideStatusCodes: { 2: 'WO' } },
         matchUpId: east(2).matchUpId,
         drawId: 'compass',
       },
@@ -150,7 +150,7 @@ function storedFieldsScenario() {
     {
       method: 'setMatchUpStatus',
       params: {
-        outcome: { matchUpStatus: ABANDONED, matchUpStatusCodes: ['RAIN'] },
+        outcome: { matchUpStatus: ABANDONED, matchUpStatusCode: 'RAIN' },
         matchUpId: east(3).matchUpId,
         drawId: 'compass',
       },

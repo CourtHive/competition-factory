@@ -274,7 +274,7 @@ describe("a round robin's tally keeps the score of a line whose winner is entere
 describe("a team's line-up notice keeps the event an earlier notice of the call gave its dual", () => {
   // `updateSideLineUp` announces with no event, and v1 keeps the event of a notice the same call already made for the
   // matchUp. v2 marked the line-up's notice eventless wherever the assignment wrote it
-  it('a changed winner: the dual its loser link feeds was announced when the first loser was taken back', () => {
+  it('a changed winner: the dual its loser link feeds is announced by its line-up, with no event', () => {
     const prepared = prepareCall(() => {
       generate({
         drawSize: 8,
@@ -291,7 +291,8 @@ describe("a team's line-up notice keeps the event an earlier notice of the call 
     expect(v1.result.success).toEqual(true);
     const lineUpNotices = v1.notices.filter((notice) => notice.includes('"context":"updateSidLineUp"'));
     expect(lineUpNotices.length).toEqual(1);
-    expect(lineUpNotices[0]).toContain('"eventId"');
+    // the first loser is taken back with nothing of the dual's side record changed, so no notice of it gave an event
+    expect(lineUpNotices[0]).not.toContain('"eventId"');
   });
 });
 

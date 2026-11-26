@@ -46,14 +46,14 @@ export function resultOps(
       matchUpId,
       ...(write.resetsScore ? { resetsScore: true as const } : {}),
       ...(write.removesWinningSide ? { removesWinningSide: true as const } : {}),
-      ...(write.clearsStatusReasons ? { clearsStatusReasons: true as const } : {}),
       ...(ensuredSides ? { ensuredSides } : {}),
       ...(disableAutoCalc === undefined ? {} : { disableAutoCalc }),
       matchUpStatus: write.matchUpStatus as MatchUpStatusUnion,
       ...(score ? { score } : {}),
       ...(request.matchUpFormat ? { matchUpFormat: request.matchUpFormat } : {}),
       ...(write.winningSide ? { winningSide: write.winningSide as 1 | 2 } : {}),
-      ...(write.matchUpStatusCodes ? { matchUpStatusCodes: write.matchUpStatusCodes } : {}),
+      // the call's own reasons land on its own matchUp, from the status and winner the op writes
+      ...(request.statusReasons && matchUpId === request.matchUpId ? { statusReasons: request.statusReasons } : {}),
       // the call's notes land on its own matchUp (a deciding line's dual, planned through here too, takes none)
       ...(typeof request.carries?.notes === 'string' && matchUpId === request.matchUpId
         ? { notes: request.carries.notes }

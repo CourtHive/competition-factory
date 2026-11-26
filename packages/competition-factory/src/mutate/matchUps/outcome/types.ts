@@ -4,11 +4,11 @@ import type { OutcomeOp, TemporalProjection } from './ops';
 import type { RecordDraws } from '@Tools/replayedDraws';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { WorkingView } from './overlay';
+import type { CallStatusReasons } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import type {
   DrawDefinition,
   Event,
   MatchUpSchedule,
-  MatchUpStatusCodeElement,
   MatchUpStatusUnion,
   PositionAssignment,
   Score,
@@ -43,8 +43,8 @@ export type OutcomeScore = Score;
 export type OutcomeRequest = {
   matchUpId?: string;
   matchUpStatus?: MatchUpStatusUnion;
-  /** the positional array a client sends; read by no refusal, split at the write (§ 4 rule 3) */
-  matchUpStatusCodes?: MatchUpStatusCodeElement[];
+  /** the call's reasons for its matchUp, keyed, and the reasons it held before the call (`writeStatusReasons`) */
+  statusReasons?: CallStatusReasons;
   winningSide?: number;
   score?: OutcomeScore;
   matchUpFormat?: string;
@@ -94,7 +94,8 @@ export type OutcomeView = {
   isDeciderMatchUp?: boolean;
   existing: {
     matchUpStatus?: MatchUpStatusUnion;
-    matchUpStatusCodes?: MatchUpStatusCodeElement[];
+    matchUpStatusCode?: string;
+    sideStatusCodes?: Record<number, string>;
     winningSide?: number;
     score?: OutcomeScore;
     /** the existing score carries a value (a set with games, or a tiebreak, or points) */
@@ -310,11 +311,8 @@ export type OutcomeView = {
     /** a side of the loserMatchUp already carries an exit in: a second one there makes a double exit */
     loserMatchUpCarriesExit: boolean;
     loserMatchUpCarriedStatuses: string[];
-    /**
-     * the loserMatchUp's stored side record: a loser taken back out of it has its codes re-derived from what provenance
-     * still holds (v1's `removeDirectedLoser`), so a matchUp storing none is written `[]` (S4)
-     */
-    loserMatchUpRecord?: { matchUpStatusCodes?: unknown[]; provenance: boolean };
+    /** the loserMatchUp's stored side record: whether it holds reasons and exit provenance */
+    loserMatchUpRecord?: { reasons: boolean; provenance: boolean };
     /**
      * a swap's relabel in the source structure (S4, v1's `swapWinnerLoser`): the old winner's and the old loser's
      * positions, the later-round matchUps holding either (read from the stored draw), whether any carries exit
@@ -455,19 +453,12 @@ export type MatchUpWrite = {
   resetsScore?: true;
   /** The v1 write assigns an own undefined winner. */
   removesWinningSide?: true;
-  /**
-   * The v1 write is handed a status-codes array holding no reason (`[]`, the call's own or the winner route's), so its
-   * split finds nobody to attribute and deletes the reasons the matchUp kept: `sideStatusCodes`, `matchUpStatusCode`.
-   * A write handed no array leaves them standing.
-   */
-  clearsStatusReasons?: true;
   matchUpStatus?: MatchUpStatusUnion;
   winningSide?: number;
   scoreStringSide1?: string;
   scoreStringSide2?: string;
   sets?: unknown[];
   matchUpFormat?: string;
-  matchUpStatusCodes?: MatchUpStatusCodeElement[];
   scoredTime: boolean;
 };
 
@@ -647,7 +638,7 @@ export type CarryLevel = {
   matchUpStatus?: MatchUpStatusUnion;
   hasResult: boolean;
   carriesExit: boolean;
-  record?: { matchUpStatusCodes?: unknown[]; provenance: boolean };
+  record?: { reasons: boolean; provenance: boolean };
   /** a BYE opposite the seat: the matchUp beyond it the carrier goes on into, with the positions it holds after (RULE 1) */
   through?: ThroughBye;
   /** a BYE opposite the seat with no clean matchUp beyond it: the BYEs passed after it, and where they end (S6 tail) */

@@ -11,7 +11,7 @@ import { MISSING_ASSIGNMENTS } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 
 export function attemptToModifyScore(params) {
-  const { matchUpStatusCodes, autoCalcDisabled, matchUpStatus, dualMatchUp } = params;
+  const { autoCalcDisabled, matchUpStatus, dualMatchUp } = params;
 
   const matchUpStatusIsValid =
     isDirectingMatchUpStatus({ matchUpStatus }) ||
@@ -29,7 +29,8 @@ export function attemptToModifyScore(params) {
   const result = modifyMatchUpScore({
     ...params,
     winningSide: params.winningSide,
-    matchUpStatusCodes: (matchUpStatusIsValid && matchUpStatusCodes) ?? [],
+    // a write here keeps no reason of its own: the call's own reasons are written by the call (`statusReasons`)
+    clearsStatusReasons: true,
     matchUpStatus: updatedMatchUpStatus,
     context: stack,
     removeScore,

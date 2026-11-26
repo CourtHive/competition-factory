@@ -160,7 +160,7 @@ export {
   clearHeadline,
   submission,
 } from './rules';
-export { toEngineOutcome, positionalCodes } from './engineOutcome';
+export { toEngineOutcome, keyedStatusCodes } from './engineOutcome';
 
 // the format rules a score state is judged by, all the factory's
 export {

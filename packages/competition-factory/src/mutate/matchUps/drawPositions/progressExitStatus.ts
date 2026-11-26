@@ -13,8 +13,6 @@ import {
   buildCarriedExitProvenance,
   collapseDoubleExitStatus,
   mergeSideExitProvenance,
-  deriveStatusCodes,
-  placeCodeAtSide,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
@@ -58,7 +56,6 @@ function findAdvancementMatchUp(inContextMatchUps, currentMatchUp, participantId
 }
 
 export function progressExitStatus({
-  sourceMatchUpStatusCodes,
   propagateExitStatus,
   sourceMatchUpStatus,
   loserParticipantId,
@@ -80,7 +77,6 @@ export function progressExitStatus({
     loserMatchUpId: loserMatchUp?.matchUpId,
     loserMatchUpStatus: loserMatchUp?.matchUpStatus,
     sourceMatchUpStatus,
-    sourceMatchUpStatusCodes: JSON.stringify(sourceMatchUpStatusCodes),
     loserParticipantId: loserParticipantId?.slice(0, 8),
     propagateExitStatus,
   });
@@ -112,27 +108,6 @@ export function progressExitStatus({
     return decorateResult({ result: { error: MISSING_MATCHUP }, stack });
   }
 
-  // Object-shaped codes are normalised to their OWN outcome code, not to a walkover.
-  // This previously hardcoded OUTCOME_WALKOVER for every object, which relabelled DEFAULTED and BYE
-  // provenance as walkovers and persisted the result (statusCodes is written back below).
-  /**
-   * THE ARRAY, DERIVED FROM PROVENANCE. See {@link deriveStatusCodes}, which is also
-   * `removeDirectedParticipants`' answer to the same question.
-   *
-   * **The exit tenant's eviction.** This was `(updatedLoserMatchUp.matchUpStatusCodes ?? []).map(exitOutcomeCode)`
-   * over an array that held the PROJECTION of provenance, so the bare exit outcome codes the array
-   * legitimately carries — `WO`, `DEF`, the `['WO', 'W1']` contract — existed only as a side effect of
-   * the projection being written. Evicting the exit tenant took them with it: measured as `['', 'W1']`
-   * where `['WO', 'W1']` belongs, five tests across two files.
-   *
-   * TRACED, not reasoned about, 2026-09-27, and the trace corrected the plan `P41` recorded. The
-   * missing value was NOT `sourceCode`'s. Instrumented on the four failing consolation cases,
-   * `sourceMatchUpStatusCodes` is `['W1']`, `['DM']`, `['D1']`, `['RJ']` — the SOURCE'S POLICY CODE,
-   * which belongs on the ARRIVING side and is still placed there below, unchanged. What went missing
-   * was side 1's own `'WO'`, and side 1's provenance held
-   * `{ matchUpStatus: WALKOVER, previousMatchUpStatus: DOUBLE_WALKOVER }` the whole time.
-   */
-  const statusCodes: string[] = deriveStatusCodes(updatedLoserMatchUp);
   const targetProvenance = getSideExitProvenance({ matchUp: updatedLoserMatchUp });
   const loserParticipantSide = updatedLoserMatchUp.sides?.find((s) => s.participantId === loserParticipantId);
 
@@ -152,35 +127,12 @@ export function progressExitStatus({
     const participantsCount =
       updatedLoserMatchUp.sides?.reduce((count, s) => (s?.participantId ? count + 1 : count), 0) ?? 0;
     /**
-     * THE SOURCE'S REASON CODE, READ AT THE SIDE THAT EXITED — not at index 0.
-     *
-     * `matchUpStatusCodes` is positional by side, so the reason for the side that walked over sits at
-     * that side's index. This read was `sourceMatchUpStatusCodes?.[0]`, which is right only when the
-     * exiting side happens to be side 1. Measured 2026-09-28 on a `DEFAULTED` feeding a consolation that
-     * already held a double walkover, the same scenario twice with the reason recorded against whichever
-     * side exited:
-     *
-     *   side 1 exits, reason at index 0   source ['DM']      consolation ['WO','DM']   carried
-     *   side 2 exits, reason at index 1   source ['','DM']   consolation ['WO','']     DROPPED
-     *
-     * `sideExitProvenance` was byte-identical across both runs, so nothing was unknowable — the engine
-     * had the exiting side and read the wrong slot anyway.
-     *
-     * TWO READS, TWO JOBS (census A1 residue F1b, 2026-10-18).
-     *
-     *  - The REASON the arriving side carries is the source's own `sideStatusCodes`, keyed by side, which
-     *    `modifyMatchUpScore` writes at the scoring boundary. Only that. A source's positional array may be
-     *    a DERIVED one — a matchUp the cascade itself wrote, holding `['WO']` or `['', 'DEF']` from
-     *    provenance — and a bare outcome code read from it is not a reason anybody gave; filed as one it was
-     *    the order-dependent `sideStatusCodes` of F1b. No new logic may depend on `matchUpStatusCodes`.
-     *  - The DISPLAY code placed at the arriving side's index still falls back to the positional array, same
-     *    side index first, then index 0 for a double exit. It is display, and changes nothing a reader
-     *    attributes.
+     * THE SOURCE'S REASON, READ AT THE SIDE THAT EXITED. The reason the arriving side carries is the source's own
+     * `sideStatusCodes`, keyed by side, which the scoring call wrote. Only that: a bare outcome code is not a
+     * reason anybody gave.
      */
     const sourceExitingSide = sourceWinningSide ? 3 - sourceWinningSide : 1;
     const sourceReason = getSideStatusCode({ matchUp: sourceMatchUp, sideNumber: sourceExitingSide });
-    const sourceCode =
-      sourceReason ?? sourceMatchUpStatusCodes?.[sourceExitingSide - 1] ?? sourceMatchUpStatusCodes?.[0];
     carriedReasonSide = loserParticipantSide.sideNumber;
     carriedReason = sourceReason;
 
@@ -312,9 +264,8 @@ export function progressExitStatus({
       //          (the empty side that will receive the eventual opponent) wins.
       // RULE 3 — opponent is a present, non-exited participant: WALKOVER to them.
       // Both resolve identically: the non-exit (opponent) side is the winner and
-      // the carried code sits on the exiting participant's side.
+      // the carried reason sits on the exiting participant's side.
       winningSide = opponentSideNumber;
-      placeCodeAtSide(statusCodes, loserParticipantSide.sideNumber, sourceCode);
     } else {
       // RULE 4, CARRIED PAST: see `carryPastDecidedMatchUp`
       const carried = carryPastDecidedMatchUp({
@@ -330,23 +281,8 @@ export function progressExitStatus({
       if (carried) return carried;
 
       // RULE 4 — the opponent has itself already exited: the two exits MEET and this matchUp
-      // becomes a double exit. Nobody wins it.
-      //
-      // The carried code goes at the ARRIVING participant's side index, and the opponent's code is
-      // left where the earlier propagation already put it. The previous version did neither: it read
-      // `statusCodes[0]` unconditionally and re-assigned both slots by hand. That read was correct
-      // when RULE 2 always wrote index 0, but RULE 2 now uses `placeCodeAtSide` (see above), so when
-      // the FIRST exit landed on side 2 its code sits at index 1 and the index-0 read took an empty
-      // slot — silently discarding the earlier code. The masking case (first exit on side 1) is the
-      // one the existing tests cover.
-      //
-      // Removing the hand-assignment also removes the hole array. With `sourceCode` undefined — the
-      // normal case for a directly-recorded exit — the old code assigned `undefined` into both
-      // slots and PERSISTED `[undefined, undefined]`, which is not a `string[]`, serialises to
-      // `[null, null]`, and is load-bearing in this rule's own `opponentEmpty` gate because that
-      // tests `statusCodes.length === 0`. `placeCodeAtSide` returns early on an undefined code, so
-      // the array is simply left alone: `[undefined, undefined]` is never persisted.
-      placeCodeAtSide(statusCodes, loserParticipantSide.sideNumber, sourceCode);
+      // becomes a double exit. Nobody wins it. The carried reason goes to the ARRIVING participant's side,
+      // and the opponent's reason stays where the earlier propagation put it.
       // WHICH double exit is derived from what each side carried, not hardcoded. This always wrote
       // DOUBLE_WALKOVER, which relabelled a default-on-default convergence as a walkover and so
       // propagated a WALKOVER where a DEFAULTED belonged. A mixture still collapses to
@@ -363,19 +299,16 @@ export function progressExitStatus({
     loserMatchUpId: loserMatchUp.matchUpId,
     finalStatus: loserMatchUpStatus,
     finalWinningSide: winningSide,
-    finalStatusCodes: JSON.stringify(statusCodes),
   });
 
   /**
    * THE REASON RIDES WITH THE SIDE INTO THE CONNECTED STRUCTURE.
    *
-   * `statusCodes` is DERIVED display, so it is marked as such and not split as a client's array would be: a
-   * bare `WO` / `DEF` that `deriveStatusCodes` placed for a side with no recorded reason is not a reason
-   * (census A1 residue F1b). The reasons this write keeps are the target's own, plus the source's real
-   * reason recorded on the side the exit actually arrived at. The other side may already carry its own
-   * reason from an earlier propagation, which is RULE 4's convergence, and it is retained.
+   * The reasons this write keeps are the target's own, plus the source's real reason recorded on the side the
+   * exit actually arrived at. The other side may already carry its own reason from an earlier propagation, which
+   * is RULE 4's convergence, and it is retained.
    */
-  const derivedStatusCodes = {
+  const retainedStatusCodes = {
     sideStatusCodes: carriedReasonSide && carriedReason ? { [carriedReasonSide]: carriedReason } : undefined,
     matchUpId: loserMatchUp.matchUpId,
   };
@@ -383,9 +316,8 @@ export function progressExitStatus({
   const result = setMatchUpState({
     matchUpStatus: loserMatchUpStatus,
     matchUpId: loserMatchUp.matchUpId,
-    matchUpStatusCodes: statusCodes,
     allowChangePropagation: true,
-    derivedStatusCodes,
+    retainedStatusCodes,
     // THE CASCADE IDENTIFIES ITSELF. `checkParticipants` waives the two-participant requirement for
     // a one-sided exit, and until now it waived it on `propagateExitStatus` — a REQUEST FLAG any
     // caller can set — so a directly-entered WALKOVER could be awarded to an empty side and was.

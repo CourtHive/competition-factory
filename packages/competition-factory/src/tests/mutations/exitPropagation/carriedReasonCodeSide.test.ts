@@ -37,11 +37,11 @@ import { ABANDONED, CANCELLED, DEFAULTED, DOUBLE_WALKOVER, INCOMPLETE } from '@C
  */
 
 const CASES = [
-  { label: 'side 1 exits — reason recorded at index 0', winningSide: 2, codes: ['DM'], exitingSide: 1 },
-  { label: 'side 2 exits — reason recorded at index 1', winningSide: 1, codes: ['', 'DM'], exitingSide: 2 },
+  { label: 'side 1 exits', winningSide: 2, exitingSide: 1 },
+  { label: 'side 2 exits', winningSide: 1, exitingSide: 2 },
 ] as const;
 
-it.each(CASES)('carries the reason code when $label', ({ winningSide, codes }) => {
+it.each(CASES)('carries the reason code when $label', ({ winningSide, exitingSide }) => {
   const drawId = `reason-side-${winningSide}`;
   mocksEngine.generateTournamentRecord({
     policyDefinitions: PRODUCED_EXIT_POLICY,
@@ -51,7 +51,7 @@ it.each(CASES)('carries the reason code when $label', ({ winningSide, codes }) =
 
   // an upstream double walkover already occupies one side of the consolation matchUp
   let result: any = tournamentEngine.setMatchUpStatus({
-    outcome: { matchUpStatus: DOUBLE_WALKOVER, matchUpStatusCodes: ['WOWO', 'WOWO'] },
+    outcome: { matchUpStatus: DOUBLE_WALKOVER, sideStatusCodes: { 1: 'WOWO', 2: 'WOWO' } },
     matchUpId: 'matchUp-1-1',
     drawId,
   });
@@ -59,7 +59,7 @@ it.each(CASES)('carries the reason code when $label', ({ winningSide, codes }) =
 
   // the exit under test: a DEFAULTED whose reason is recorded against the side that actually exited
   result = tournamentEngine.setMatchUpStatus({
-    outcome: { matchUpStatus: DEFAULTED, winningSide, matchUpStatusCodes: [...codes] },
+    outcome: { matchUpStatus: DEFAULTED, winningSide, sideStatusCodes: { [exitingSide]: 'DM' } },
     propagateExitStatus: true,
     matchUpId: 'matchUp-1-2',
     drawId,
@@ -70,14 +70,10 @@ it.each(CASES)('carries the reason code when $label', ({ winningSide, codes }) =
   const source = matchUps.find((matchUp: any) => matchUp.matchUpId === 'matchUp-1-2');
   const consolation = matchUps.find((matchUp: any) => matchUp.matchUpId === source?.loserMatchUpId);
 
-  // CONTROL: the arrangement under test actually happened — the source recorded the reason where the
-  // case says, and the consolation is the convergence rather than an untouched matchUp.
-  expect(source?.matchUpStatusCodes, 'source keeps the reason as submitted').toEqual([...codes]);
+  // CONTROL: the arrangement under test actually happened — the source recorded the reason on the side
+  // that exited, and the consolation is the convergence rather than an untouched matchUp.
+  expect(source?.sideStatusCodes, 'the source keys its own reason by side').toEqual({ [exitingSide]: 'DM' });
   expect(consolation?.matchUpStatus).toEqual(DOUBLE_WALKOVER);
-
-  // CONTROL: the SOURCE recorded its own reason side-keyed, from a positionally-submitted array. Without
-  // this the carry could pass by reading the array and the keyed field could be empty everywhere.
-  expect(source?.sideStatusCodes, 'the source keys its own reason by side').toEqual({ [3 - winningSide]: 'DM' });
 
   // 1. THE SIDE-KEYED SURFACE. Whichever side arrived carrying the exit holds the reason, and a client
   //    reads it by that side's key rather than by an array index.
@@ -87,18 +83,14 @@ it.each(CASES)('carries the reason code when $label', ({ winningSide, codes }) =
   expect(arrivingSide, 'the arriving exit is attributed to a side').toBeDefined();
   const [arrivingSideNumber]: any = arrivingSide as any;
   expect(consolation?.sideStatusCodes?.[Number(arrivingSideNumber)], 'the reason rides with the side').toEqual('DM');
-
-  // 2. THE DISPLAY CONTRACT. The positional array still carries it, at that same side's index.
-  expect(consolation?.matchUpStatusCodes?.[Number(arrivingSideNumber) - 1]).toEqual('DM');
+  expect(consolation?.matchUpStatusCodes).toBeUndefined();
 });
 
 /**
  * A MATCH-LEVEL REASON ATTRIBUTES TO NOBODY, and must not be filed against a side.
  *
  * `ABANDONED` / `CANCELLED` / `INCOMPLETE` are `nonDirectingMatchUpStatuses` — nobody won, so nobody is
- * attributed. The positional array could only park such a code at index 0, where the index means side 1,
- * so a reader could not tell "the match was abandoned" from "side 1 did something". These now have their
- * own home and the side-keyed field stays empty.
+ * attributed: the reason is the match's own, and the side-keyed field stays empty.
  */
 it.each([
   { status: ABANDONED, code: 'OA' },
@@ -116,7 +108,7 @@ it.each([
     .matchUps?.find((matchUp: any) => matchUp.roundNumber === 1 && matchUp.roundPosition === 1);
 
   const result: any = tournamentEngine.setMatchUpStatus({
-    outcome: { matchUpStatus: status, matchUpStatusCodes: [code] },
+    outcome: { matchUpStatus: status, matchUpStatusCode: code },
     matchUpId: target.matchUpId,
     drawId,
   });

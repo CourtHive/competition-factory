@@ -1,3 +1,4 @@
+import { holdsReasons } from './reasons';
 import { declaredWinnerPlayedOn } from '@Mutate/matchUps/matchUpStatus/lineTakesPlayedOnDualWinner';
 import { feedEligibilityChange, lineFeedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { scheduleRefusal as scheduleWriteRefusal } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
@@ -625,7 +626,7 @@ function walkable(context: WalkContext, matchUp: HydratedMatchUp): boolean {
   return (
     (status === TO_BE_PLAYED || status === BYE) &&
     !hasResult(matchUp) &&
-    !matchUp.matchUpStatusCodes?.length &&
+    !holdsReasons(matchUp) &&
     !Object.keys(matchUp.sideExitProvenance ?? {}).length
   );
 }
@@ -693,11 +694,7 @@ function displacedCarry(
   if (!isExit(landing.matchUpStatus) || landing.winningSide !== 3 - sideNumber || opposite?.participantId)
     return undefined;
   // a landing that links its loser on: the BYE it becomes sends a BYE there too, displacing the carry they took on (the walk)
-  if (
-    checkScoreHasValue({ score: landing.score }) ||
-    landing.matchUpStatusCodes?.some((code) => typeof code !== 'string')
-  )
-    return undefined;
+  if (checkScoreHasValue({ score: landing.score })) return undefined;
   const provenance = { ...(landing.sideExitProvenance ?? {}) } as Record<string, any>;
   if (!carriedExitStatus(provenance[sideNumber])) return undefined;
   delete provenance[sideNumber];
@@ -1196,12 +1193,12 @@ function swapRelabels({
   return relabels;
 }
 
-/** a stored matchUp's status codes and whether it holds exit provenance, as the write that re-derives them reads them */
+/** whether a stored matchUp holds reasons and exit provenance */
 function storedSideRecord(matchUpsMap: MatchUpsMap, matchUpId?: string): OutcomeView['targets']['loserMatchUpRecord'] {
   const stored = matchUpId ? matchUpsMap.drawMatchUps.find((m) => m.matchUpId === matchUpId) : undefined;
   if (!stored) return undefined;
   return {
-    matchUpStatusCodes: stored.matchUpStatusCodes,
+    reasons: holdsReasons(stored),
     provenance: Object.values(stored.sideExitProvenance ?? {}).some(Boolean),
   };
 }
@@ -1902,7 +1899,8 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     isDeciderMatchUp: isDeciderStructure({ drawDefinition, structureId: structure?.structureId }),
     existing: {
       matchUpStatus: matchUp.matchUpStatus,
-      matchUpStatusCodes: matchUp.matchUpStatusCodes,
+      matchUpStatusCode: matchUp.matchUpStatusCode,
+      sideStatusCodes: matchUp.sideStatusCodes,
       winningSide: matchUp.winningSide,
       score: matchUp.score,
       scoreHasValue: !!checkScoreHasValue({ score: matchUp.score }),

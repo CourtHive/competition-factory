@@ -70,7 +70,7 @@ returns the **same** object, so a caller can tell a refusal from a change by ide
 | create and change     | `createScoreEntryModel`, `typeDigit`, `setCell`, `clearCell`, `clearScore`, `clearAll`, `chooseEnding`, `changeFormat`, `switchApproach`, `replaceSets`                                                                                                                                                                       |
 | what it means         | `scoreString`, `isComplete`, `winningSide`, `matchUpStatus`, `enteredSets`, `completedSets`, `hasEntry`, `columns`, `isSettled`, `tiebreakOutstanding`, `cellValue`, `scoreEntryIssue`, `unrecordedTiebreakSets`, `discardedScore`, `resolveEnding`                                                                           |
 | what may be submitted | `submission`, `footerState`, `clearGate`, `clearHeadline`, `endingOffered`, `endingRefusal`, `scoreEntryProblem`, `statusOutOfScope`, `retractEndingContradictedByScore`, `clearScoreForEnding`, `scoreLocked`, `holdsEntry`, `scoreEntered`, `scoreIsFinished`, `resolutionInForce`                                          |
-| the outcome           | `toEngineOutcome`, `positionalCodes`                                                                                                                                                                                                                                                                                          |
+| the outcome           | `toEngineOutcome`, `keyedStatusCodes`                                                                                                                                                                                                                                                                                         |
 | endings and reasons   | `chooseSideEnding`, `chooseMatchEnding`, `toggleBothSidesOut`, `chooseReasonCode`, `hydrateScoreEntryState`, `resolveScoreEntry`, `sideEndingOptions`, `matchEndingOptions`, `codesForStatus`, `recordedStatusCode`, `resolveIrregularEnding`, `hydrateIrregularEnding`                                                       |
 | format rules          | `matchUpConfigFor`, `getSetFormatForIndex`, `isMatchComplete`, `getMatchWinner`, `getSetWinner`, `isSetComplete`, `getMaxAllowedScore`, `calculateComplement`, `shouldShowTiebreak`, `buildSetScore`, `isOvertimeFormat`, `overtimeProgress`, `overtimePhaseOf`, `isCompletedLevelClose`, `completeTiebreakOnly`, `scoreLine` |
 
@@ -93,9 +93,10 @@ scoreEntry.endingRefusal('RETIRED', view); // 'ENDING_NEEDS_SCORE'
 `toEngineOutcome` produces the shape `setMatchUpStatus` reads:
 
 - a played result carries `score.sets`, `winningSide` and `matchUpStatus`;
-- a reason code travels as a positional `matchUpStatusCodes` array: the side that did not win at its index for a single
-  exit, both for a double exit, index 0 for an ending that resolves nobody;
-- a clear is `{ score: { sets: [] }, matchUpStatusCodes: [] }`, which removes the score and the codes;
+- a reason code travels keyed (`keyedStatusCodes`): `sideStatusCodes` for the side that did not win a single exit, or
+  both sides of a double exit, and `matchUpStatusCode` for an ending that resolves nobody;
+- a result sent with no reason keeps the reason a previous edit recorded, where it still describes the result;
+- a clear is `{ score: { sets: [] }, clearStatusCodes: true }`, which removes the score and the reasons;
 - a format changed in the score state rides along as `matchUpFormat`.
 
 `setMatchUpStatus` writes the derived score strings into the outcome it is given, so pass a copy if you reuse it.

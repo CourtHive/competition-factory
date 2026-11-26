@@ -16,6 +16,9 @@ import {
 } from '@Constants/outcomePipelineConstants';
 import {
   ABANDONED,
+  CANCELLED,
+  COMPLETED,
+  INCOMPLETE,
   DEFAULTED,
   DOUBLE_DEFAULT,
   DOUBLE_WALKOVER,
@@ -26,16 +29,15 @@ import {
 } from '@Constants/matchUpStatusConstants';
 
 /**
- * THE REASONS A MATCHUP KEEPS GO WHEN ITS WRITE IS HANDED CODES NAMING NONE (spec § 4 rule 3).
+ * A WRITE THAT SUBMITS NO REASON KEEPS THE REASONS THAT STILL DESCRIBE ITS RESULT; THE EXPLICIT CLEAR REMOVES THEM.
  *
- * A result entered with status codes stores its reason where attribution is explicit: `sideStatusCodes` for a side's
- * exit, `matchUpStatusCode` for a status that attributes to nobody. v1's write splits whatever array it is handed, so an
- * array with no reason in it (`[]`, the call's own, or the one the winner route always passes) deletes both; a write
- * handed no array leaves them standing. v2 planned the display array alone and kept the reasons.
+ * A result entered with reasons stores them where attribution is explicit: `sideStatusCodes` for a side's exit,
+ * `matchUpStatusCode` for a status that attributes to nobody. A later call on the same matchUp that submits none keeps
+ * them where they still describe what it writes: the status takes a reason, and the side a reason names still exited.
+ * `clearStatusCodes` removes them whatever is written.
  *
- * The claim is equality: the same two calls from the same record leave the same record, raise the same notices and
- * return the same results under `v1` and `v2`, and `differential` finds nothing to raise. Ownership is asserted
- * separately, by counting v1's writer, for the clears, re-entries and winners v2 plans.
+ * The claim is equality as well: the same two calls from the same record leave the same record, raise the same notices
+ * and return the same results under `v1` and `v2`, and `differential` finds nothing to raise.
  */
 const v1Writes = vi.hoisted(() => ({ count: 0 }));
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
@@ -66,28 +68,64 @@ const played = {
 
 type Outcome = Record<string, unknown>;
 const ENTERED: [string, Outcome][] = [
-  ['a WALKOVER with a reason', { matchUpStatus: WALKOVER, winningSide: 1, matchUpStatusCodes: ['W1'] }],
-  ['a DEFAULTED with a reason', { matchUpStatus: DEFAULTED, winningSide: 1, matchUpStatusCodes: ['DM'] }],
-  ['a RETIRED with a reason', { matchUpStatus: RETIRED, winningSide: 1, matchUpStatusCodes: ['RJ'], score: played }],
-  ['a DOUBLE_WALKOVER with reasons', { matchUpStatus: DOUBLE_WALKOVER, matchUpStatusCodes: ['WOWO', 'WOWO'] }],
-  ['a DOUBLE_DEFAULT with reasons', { matchUpStatus: DOUBLE_DEFAULT, matchUpStatusCodes: ['DM', 'DM'] }],
-  ['an ABANDONED with a reason', { matchUpStatus: ABANDONED, matchUpStatusCodes: ['X1'] }],
+  ['a WALKOVER with a reason', { matchUpStatus: WALKOVER, winningSide: 1, sideStatusCodes: { 2: 'W1' } }],
+  ['a DEFAULTED with a reason', { matchUpStatus: DEFAULTED, winningSide: 1, sideStatusCodes: { 2: 'DM' } }],
+  ['a RETIRED with a reason', { matchUpStatus: RETIRED, winningSide: 1, sideStatusCodes: { 2: 'RJ' }, score: played }],
+  ['a DOUBLE_WALKOVER with reasons', { matchUpStatus: DOUBLE_WALKOVER, sideStatusCodes: { 1: 'WOWO', 2: 'WOWO' } }],
+  ['a DOUBLE_DEFAULT with reasons', { matchUpStatus: DOUBLE_DEFAULT, sideStatusCodes: { 1: 'DM', 2: 'DM' } }],
+  ['an ABANDONED with a reason', { matchUpStatus: ABANDONED, matchUpStatusCode: 'X1' }],
 ];
-/** the second call, and whether v1's write is handed an array (so the kept reasons go) */
-const THEN: [string, Outcome, boolean][] = [
-  ['cleared with codes []', { matchUpStatus: TO_BE_PLAYED, score: blank, matchUpStatusCodes: [] }, true],
-  ['cleared with codes omitted', { matchUpStatus: TO_BE_PLAYED, score: blank }, false],
-  ['cleared with codes undefined', { matchUpStatus: TO_BE_PLAYED, score: blank, matchUpStatusCodes: undefined }, false],
-  ['a WALKOVER re-entered with codes []', { matchUpStatus: WALKOVER, winningSide: 1, matchUpStatusCodes: [] }, true],
-  ['a WALKOVER re-entered with codes omitted', { matchUpStatus: WALKOVER, winningSide: 1 }, true],
-  ['a WALKOVER for the other side', { matchUpStatus: WALKOVER, winningSide: 2 }, true],
-  ['a DEFAULTED with codes omitted', { matchUpStatus: DEFAULTED, winningSide: 1 }, true],
-  ['a winner with codes omitted', { winningSide: 1 }, true],
-  ['the other winner with codes []', { winningSide: 2, matchUpStatusCodes: [] }, true],
-  ['a live score with codes omitted', { matchUpStatus: IN_PROGRESS, score: played }, false],
-  ['a live score with codes []', { matchUpStatus: IN_PROGRESS, score: played, matchUpStatusCodes: [] }, true],
-  ['a DOUBLE_WALKOVER with codes omitted', { matchUpStatus: DOUBLE_WALKOVER }, false],
+/** the second call, and the status and winner it leaves (what the kept reasons are read against) */
+const THEN: [string, Outcome, { matchUpStatus: string; winningSide?: number }][] = [
+  [
+    'cleared with the explicit clear',
+    { matchUpStatus: TO_BE_PLAYED, score: blank, clearStatusCodes: true },
+    { matchUpStatus: TO_BE_PLAYED },
+  ],
+  ['cleared with no reason', { matchUpStatus: TO_BE_PLAYED, score: blank }, { matchUpStatus: TO_BE_PLAYED }],
+  [
+    'a WALKOVER re-entered with the explicit clear',
+    { matchUpStatus: WALKOVER, winningSide: 1, clearStatusCodes: true },
+    { matchUpStatus: WALKOVER, winningSide: 1 },
+  ],
+  [
+    'a WALKOVER re-entered with no reason',
+    { matchUpStatus: WALKOVER, winningSide: 1 },
+    { matchUpStatus: WALKOVER, winningSide: 1 },
+  ],
+  [
+    'a WALKOVER for the other side',
+    { matchUpStatus: WALKOVER, winningSide: 2 },
+    { matchUpStatus: WALKOVER, winningSide: 2 },
+  ],
+  [
+    'a DEFAULTED with no reason',
+    { matchUpStatus: DEFAULTED, winningSide: 1 },
+    { matchUpStatus: DEFAULTED, winningSide: 1 },
+  ],
+  ['a winner with no reason', { winningSide: 1 }, { matchUpStatus: COMPLETED, winningSide: 1 }],
+  [
+    'the other winner with the explicit clear',
+    { winningSide: 2, clearStatusCodes: true },
+    { matchUpStatus: COMPLETED, winningSide: 2 },
+  ],
+  ['a live score with no reason', { matchUpStatus: IN_PROGRESS, score: played }, { matchUpStatus: IN_PROGRESS }],
+  ['a DOUBLE_WALKOVER with no reason', { matchUpStatus: DOUBLE_WALKOVER }, { matchUpStatus: DOUBLE_WALKOVER }],
 ];
+
+/** the reasons the second call leaves, by the rule stated above, independently of the engine */
+function expectedReasons(first: Outcome, second: Outcome, after: { matchUpStatus: string; winningSide?: number }) {
+  if (second.clearStatusCodes) return {};
+  const { matchUpStatus, winningSide } = after;
+  if ([ABANDONED, CANCELLED, INCOMPLETE].includes(matchUpStatus))
+    return first.matchUpStatusCode ? { matchUpStatusCode: first.matchUpStatusCode } : {};
+  let exiting: number[] = [];
+  if ([DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUpStatus)) exiting = [1, 2];
+  else if ([WALKOVER, DEFAULTED, RETIRED].includes(matchUpStatus) && winningSide) exiting = [3 - winningSide];
+  const held = (first.sideStatusCodes ?? {}) as Record<number, string>;
+  const kept = Object.fromEntries(exiting.filter((side) => held[side]).map((side) => [side, held[side]]));
+  return Object.keys(kept).length ? { sideStatusCodes: kept } : {};
+}
 
 /** the two calls on a first-round matchUp, from a fresh record, under a fixed clock */
 function play(mode: OutcomePipelineMode, outcomes: Outcome[]) {
@@ -124,7 +162,11 @@ function play(mode: OutcomePipelineMode, outcomes: Outcome[]) {
   const matchUp = tournamentEngine.findMatchUp({ drawId: 'd', matchUpId, inContext: false }).matchUp;
   return {
     record: canonicalJson(record),
-    keepsReasons: 'sideStatusCodes' in matchUp || 'matchUpStatusCode' in matchUp,
+    reasons: {
+      ...(matchUp.sideStatusCodes ? { sideStatusCodes: matchUp.sideStatusCodes } : {}),
+      ...(matchUp.matchUpStatusCode ? { matchUpStatusCode: matchUp.matchUpStatusCode } : {}),
+    },
+    positional: 'matchUpStatusCodes' in matchUp,
     v1Writes: v1Writes.count,
     results: results.map(({ stack: _stack, ...result }: any) => result),
     divergence,
@@ -133,15 +175,15 @@ function play(mode: OutcomePipelineMode, outcomes: Outcome[]) {
 }
 
 describe.each(ENTERED)('%s, then', (_entered, first) => {
-  it.each(THEN)('%s: v2 leaves what v1 leaves', (_then, second, handedCodes) => {
+  it.each(THEN)('%s: v2 leaves what v1 leaves', (_then, second, after) => {
     const v1 = play(OUTCOME_PIPELINE_V1, [first, second]);
     const v2 = play(OUTCOME_PIPELINE_V2, [first, second]);
     const differential = play(OUTCOME_PIPELINE_DIFFERENTIAL, [first, second]);
     // CONTROL: both calls succeeded, and v1 wrote each through its own writer
     expect(v1.results.map((result: any) => result.success)).toEqual([true, true]);
     expect(v1.v1Writes).toEqual(2);
-    // a write handed an array naming no reason deletes what was kept
-    if (handedCodes) expect(v1.keepsReasons).toEqual(false);
+    expect(v1.reasons).toEqual(expectedReasons(first, second, after));
+    expect(v1.positional).toEqual(false);
 
     expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
@@ -151,17 +193,20 @@ describe.each(ENTERED)('%s, then', (_entered, first) => {
   });
 });
 
-describe('the write that deletes the kept reasons is v2s own', () => {
-  const exits = ENTERED.filter(([, first]) => first.matchUpStatus !== ABANDONED);
-  const deleting = THEN.filter(([label]) =>
-    ['cleared with codes []', 'a WALKOVER re-entered with codes []', 'a winner with codes omitted'].includes(label),
-  );
+describe('a second call that submits no reason is v2s own', () => {
   it.each(
-    exits.flatMap(([entered, first]) => deleting.map(([then, second]) => [`${entered}, then ${then}`, first, second])),
-  )('%s', (_label, first, second) => {
+    // an ABANDONED re-entered as an exit is v1's for reasons of its own
+    ENTERED.filter(([, first]) => first.matchUpStatus !== ABANDONED).flatMap(([entered, first]) =>
+      THEN.filter(([label]) =>
+        ['a WALKOVER re-entered with no reason', 'a winner with no reason', 'cleared with the explicit clear'].includes(
+          label,
+        ),
+      ).map(([then, second, after]) => [`${entered}, then ${then}`, first, second, after] as const),
+    ),
+  )('%s', (_label, first, second, after) => {
     const v2 = play(OUTCOME_PIPELINE_V2, [first as Outcome, second as Outcome]);
-    // only the first call, which carries the client's codes, is v1's (`status-codes`): the second is planned
+    // only the first call, which submits reasons, is v1's (`status-codes`): the second is planned
     expect(v2.v1Writes).toEqual(1);
-    expect(v2.keepsReasons).toEqual(false);
+    expect(v2.reasons).toEqual(expectedReasons(first as Outcome, second as Outcome, after as any));
   });
 });

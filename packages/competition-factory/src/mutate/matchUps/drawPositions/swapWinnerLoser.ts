@@ -342,7 +342,6 @@ export function swapWinnerLoser(params) {
     loserTargetLink: params.targetData?.targetLinks?.loserTargetLink,
     loserMatchUp: params.targetData?.targetMatchUps?.loserMatchUp,
     propagateRetirementAsExit: params.propagateRetirementAsExit,
-    sourceMatchUpStatusCodes: matchUp?.matchUpStatusCodes ?? [],
     loserDrawPosition: existingWinnerDrawPosition,
     sourceMatchUpStatus: matchUp?.matchUpStatus,
     inContextDrawMatchUps: params.inContextDrawMatchUps,
@@ -405,7 +404,6 @@ export function swapWinnerLoser(params) {
   const carries = [
     reconciliation?.context?.progressExitStatus && {
       ...reconciliation.context,
-      sourceMatchUpStatusCodes: matchUp?.matchUpStatusCodes ?? [],
       sourceMatchUpStatus: matchUp?.matchUpStatus,
       sourceMatchUpId: inContextMatchUp.matchUpId,
       loserMatchUp: params.targetData?.targetMatchUps?.loserMatchUp,
@@ -433,8 +431,7 @@ export function swapWinnerLoser(params) {
  * WINNING_SIDE_ADVANCEMENT_MISMATCH on DOUBLE_ELIMINATION 9305122.
  *
  * Re-sided together, because each is addressed by side and would otherwise contradict the others:
- * `winningSide`, the score (`reverseScore`), `matchUpStatusCodes` (positional, and its provenance
- * elements carry their own `sideNumber`), `sideExitProvenance` (keyed by side) and TEAM `sides`.
+ * `winningSide`, the score (`reverseScore`), `sideExitProvenance` (keyed by side) and TEAM `sides`.
  */
 function followWinnerAcrossResort({
   matchUp,
@@ -473,13 +470,6 @@ function followWinnerAcrossResort({
   if (matchUp.score?.sets?.length) {
     const { reversedScore } = reverseScore({ score: matchUp.score });
     if (reversedScore) matchUp.score = { ...matchUp.score, ...reversedScore };
-  }
-
-  if (matchUp.matchUpStatusCodes?.length) {
-    const [first, second] = matchUp.matchUpStatusCodes;
-    matchUp.matchUpStatusCodes = [second ?? '', first ?? ''].map((code) =>
-      code && typeof code === 'object' && code.sideNumber ? { ...code, sideNumber: otherSide(code.sideNumber) } : code,
-    );
   }
 
   if (matchUp.sideExitProvenance) {

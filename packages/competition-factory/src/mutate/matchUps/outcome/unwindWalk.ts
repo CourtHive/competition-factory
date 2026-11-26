@@ -1,3 +1,4 @@
+import { holdsReasons } from './reasons';
 import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
@@ -90,7 +91,7 @@ function clean(matchUp: SimMatchUp): boolean {
     (matchUp.matchUpStatus === TO_BE_PLAYED || matchUp.matchUpStatus === BYE) &&
     !stored.winningSide &&
     !checkScoreHasValue({ score: stored.score }) &&
-    !stored.matchUpStatusCodes?.length &&
+    !holdsReasons(stored) &&
     !Object.keys(stored.sideExitProvenance ?? {}).length &&
     !stored.sides?.some((side) => (side as { lineUp?: unknown[] } | undefined)?.lineUp?.length)
   );

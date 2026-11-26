@@ -260,7 +260,7 @@ describe('getDualIssues', () => {
       { code: MISSING_REASON, matchUpId: singles[0], collectionId: 'S', info: RETIRED },
     ]);
 
-    score(drawId, singles[0], { ...outcome, matchUpStatusCodes: ['RJ.ILL'] });
+    score(drawId, singles[0], { ...outcome, sideStatusCodes: { 2: 'RJ.ILL' } });
     expect(issuesOf(drawId, dualId)).toEqual([]);
   });
 

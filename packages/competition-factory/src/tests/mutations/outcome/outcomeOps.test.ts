@@ -78,12 +78,10 @@ describe('applyOutcomeOps', () => {
         matchUpId: 'm',
         matchUpStatus: TO_BE_PLAYED,
         score: { scoreStringSide1: '', scoreStringSide2: '' },
-        matchUpStatusCodes: [],
       },
     ]);
     expect(matchUp.schedule.scoredTime).toBeUndefined();
     expect(matchUp.winningSide).toBeUndefined();
-    expect(matchUp.matchUpStatusCodes).toEqual([]);
   });
 
   it("carries a line-up onto a dual's side as `propagateLineUp` does: both sides made, in order, keeping what each held", () => {

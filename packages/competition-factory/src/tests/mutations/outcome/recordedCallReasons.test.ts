@@ -88,16 +88,18 @@ const ROWS: [string, AbstainReason, Scenario, SchemaWriteMode?][] = [
     },
   ],
   [
-    "a single exit with the client's positional codes",
+    "a single exit with the client's reason",
     'status-codes',
-    { drawProfile: SINGLE_8, steps: [{ target: R1(1), outcome: { ...walkover(1), matchUpStatusCodes: ['W1'] } }] },
+    { drawProfile: SINGLE_8, steps: [{ target: R1(1), outcome: { ...walkover(1), sideStatusCodes: { 2: 'W1' } } }] },
   ],
   [
-    "a double exit with the client's positional codes",
+    "a double exit with the client's reasons",
     'status-codes',
     {
       drawProfile: SINGLE_8,
-      steps: [{ target: R1(1), outcome: { matchUpStatus: DOUBLE_WALKOVER, matchUpStatusCodes: ['WOWO', 'WOWO'] } }],
+      steps: [
+        { target: R1(1), outcome: { matchUpStatus: DOUBLE_WALKOVER, sideStatusCodes: { 1: 'WOWO', 2: 'WOWO' } } },
+      ],
     },
   ],
   [

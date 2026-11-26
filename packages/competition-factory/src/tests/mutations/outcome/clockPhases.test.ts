@@ -9,7 +9,6 @@ afterEach(() => setClock());
 
 it('writes a newly supplied format before the winner at the ordinary score boundary', () => {
   const matchUp: MatchUp = { matchUpId: 'source', matchUpStatus: 'TO_BE_PLAYED' };
-  const codes: string[] = [];
   const draw: DrawDefinition = { drawId: 'draw', structures: [{ structureId: 'structure', matchUps: [matchUp] }] };
   applyOutcomeOps(
     draw,
@@ -20,21 +19,13 @@ it('writes a newly supplied format before the winner at the ordinary score bound
         matchUpStatus: 'COMPLETED',
         winningSide: 1,
         matchUpFormat: 'SET3-S:6/TB7',
-        matchUpStatusCodes: codes,
         stampsScoredTime: false,
       },
     ],
     undefined,
     { phase: 'ordinary-result' },
   );
-  expect(Object.keys(matchUp)).toEqual([
-    'matchUpId',
-    'matchUpStatus',
-    'matchUpFormat',
-    'matchUpStatusCodes',
-    'winningSide',
-  ]);
-  expect(matchUp.matchUpStatusCodes).toBe(codes);
+  expect(Object.keys(matchUp)).toEqual(['matchUpId', 'matchUpStatus', 'matchUpFormat', 'winningSide']);
 });
 
 it('projects an unknown scored time outside the record without reading the provider', () => {

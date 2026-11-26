@@ -1,6 +1,7 @@
 import { liveNoticeEffects, nextUpdatedAt } from '@Mutate/notifications/drawNotifications';
 import { addNotice } from '@Global/state/globalState';
 import { planFieldWrite } from '@Mutate/planCommit';
+import { dropLegacyStatusCodes } from '@Helpers/drawTopology/legacyStatusCodes';
 
 /** Keep the ordinary draw/match notice envelopes and once-per-engine-call stamp rules. */
 export function replacementEffects() {
@@ -14,7 +15,9 @@ export function replacementEffects() {
     addNotice: (notice: Parameters<typeof addNotice>[0]) => {
       notices.push(notice);
     },
-    planStamp(entity: { updatedAt?: string | Date }) {
+    planStamp(entity: { updatedAt?: string | Date; matchUpStatusCodes?: unknown }) {
+      // a matchUp's pre-8.0.0 positional codes go with the planned write that touches it (`dropLegacyStatusCodes`)
+      if (entity.matchUpStatusCodes !== undefined) writes.push(() => dropLegacyStatusCodes(entity));
       if (ledger && (ledger.has(entity) || stamps.has(entity))) return;
       const previous = stamps.get(entity) ?? entity.updatedAt;
       const value = nextUpdatedAt(previous, liveNoticeEffects.readClock({ kind: 'updatedAt', target: entity }));

@@ -1,7 +1,6 @@
 import { CARRIED, MAIN, R1, cleared, play, walkover, won } from '@Tests/testHarness/outcome/directionFixtures';
 import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { storedGraph, storedRecord } from '@Tests/testHarness/outcome/objectGraph';
-import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 // constants and types
@@ -132,10 +131,8 @@ const consolation = (roundPosition: number) =>
     .matchUps!.find((matchUp) => matchUp.roundNumber === 1 && matchUp.roundPosition === roundPosition) as MatchUp;
 
 describe("a call recorded whole leaves the objects v1's write leaves", () => {
-  // Consolation 1/2 is played and cleared, and the clear leaves it the cleared fixture's status codes: one empty
-  // array, shared by every matchUp so cleared (`modifyMatchUpScore`). Main 1/4 is then cleared: its loser leaves
-  // Consolation 1/2, whose codes `removeDirectedLoser` derives afresh, a NEW empty array for the shared empty one.
-  // Nothing Consolation 1/2 says is changed; the array that says it is another
+  // Consolation 1/2 is played and cleared. Main 1/4 is then cleared: its loser leaves Consolation 1/2, and nothing
+  // Consolation 1/2 says is changed
   const SHARED_CODES: Scenario = {
     drawProfile: { drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 8 },
     nonRandom: 7001,
@@ -148,18 +145,15 @@ describe("a call recorded whole leaves the objects v1's write leaves", () => {
     steps: [{ target: R1(4, 'Main'), outcome: cleared }],
   };
 
-  it('a new object that says what the old one said is the one stored', () => {
+  it('a matchUp the call leaves as it was is stored as it was', () => {
     play(OUTCOME_PIPELINE_V1, { ...SHARED_CODES, steps: [] });
     const before = JSON.stringify(consolation(2));
-    expect(consolation(2).matchUpStatusCodes).toBe(toBePlayed.matchUpStatusCodes);
 
     const v1 = play(OUTCOME_PIPELINE_V1, SHARED_CODES);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
     expect(v1.v1Writes).toBeGreaterThan(0);
     const graph = storedGraph();
     expect(JSON.stringify(consolation(2))).toEqual(before);
-    expect(consolation(2).matchUpStatusCodes).toEqual([]);
-    expect(consolation(2).matchUpStatusCodes).not.toBe(toBePlayed.matchUpStatusCodes);
 
     // CONTROL: the call is one the planners plan and a settle pass has work on, so it is recorded
     const settle = tally('shadow:abstain:settle');
@@ -178,7 +172,6 @@ describe("a call recorded whole leaves the objects v1's write leaves", () => {
       expect(actual.results).toEqual(v1.results);
       expect(actual.record).toEqual(v1.record);
       expect(actual.notices).toEqual(v1.notices);
-      expect(consolation(2).matchUpStatusCodes).not.toBe(toBePlayed.matchUpStatusCodes);
       expect(storedGraph()).toEqual(graph);
     }
   });

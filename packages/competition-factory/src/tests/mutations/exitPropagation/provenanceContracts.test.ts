@@ -10,7 +10,6 @@ import {
   withdrawProducedExits,
   clearSideExitProvenance,
   mergeSideExitProvenance,
-  policyCodeString,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants
@@ -70,24 +69,6 @@ describe('a provenance read with nothing to read answers no', () => {
 
   it('propagateUnfillableLoserBye', () => {
     expect(propagateUnfillableLoserBye({ matchUpId: undefined } as any)).toBeUndefined();
-  });
-});
-
-describe('policyCodeString reads the policy code and nothing else', () => {
-  it('returns a string as it is, and an empty one as nothing', () => {
-    expect(policyCodeString('DM')).toEqual('DM');
-    expect(policyCodeString('')).toBeUndefined();
-  });
-
-  it('reads the code out of a record an earlier version stored', () => {
-    expect(policyCodeString({ code: 'DM' })).toEqual('DM');
-    expect(policyCodeString({ matchUpStatusCode: 'OA' })).toEqual('OA');
-  });
-
-  it('does not read a carried exit as a policy code', () => {
-    expect(
-      policyCodeString({ sideNumber: 1, matchUpStatus: WALKOVER, previousMatchUpStatus: DOUBLE_WALKOVER }),
-    ).toBeUndefined();
   });
 });
 

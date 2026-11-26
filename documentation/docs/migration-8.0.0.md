@@ -420,7 +420,7 @@ and earlier carry no tags at all.
 - **Generators no longer attach.** `generateLineUps` (`attach`), `generateFlightProfile` (`attachFlightProfile`), `drawMatic` (`updateParticipantRatings`), `generateDrawTypeAndModifyDrawDefinition` (`modifyOriginal`), `generateEventsFromTieFormat` (attaching unless `addEvents: false`) and `generateTournamentRecord` through an engine return what they generate. Call the matching attach mutation to store it.
 - **Writes are native only.** The `LEGACY` and `BRIDGE` schema write modes are removed. Records written by them are still read.
 - **The `appliedPolicies` extension is no longer written** (the first-class `appliedPolicies` attribute replaces it). It is still read from older records.
-- **The positional `matchUpStatusCodes` array is no longer written or read for decisions.** See [Records written before 8.0.0](#records-written-before-800).
+- **The positional `matchUpStatusCodes` array is no longer written or accepted.** Reasons are submitted and stored keyed; see [status reason codes](#status-reason-codes-keyed-input-no-positional-array) and [records written before 8.0.0](#records-written-before-800).
 - **Penalties refuse the old label spellings and the two misspelled type values** (the deprecated aliases of `EQUIPMENT_VIOLATION` and `FAILURE_TO_SIGN_IN`). Store `PenaltyTypeEnum` codes.
 - **Date helpers need the instant.** Exported date helpers lose their implicit "now" in 8.0.0. In 7.x, pass a Date or ISO date string as the second argument to `tools.plainDate.isDateInPast(dateString, asOf)` and `tools.generateTimeCode(index, asOf)`. When omitted, both still read the call clock.
 - **`asOf` is required** on `tools.publishing` (`isEmbargoed`, `isVisiblyPublished`, `getRoundVisibilityState`).
@@ -440,8 +440,62 @@ convert it on write either:
 Status reasons travel side-keyed:
 
 - **The positional `matchUpStatusCodes` array is no longer written, and no outcome or mutation decision reads it.** On
-  an older record it stays where it is.
-- **A write that carries no reason keeps the stored ones.** Pass reasons by side to change them.
+  an older record it stays where it is until a write touches the matchUp, which removes it. It never makes a matchUp
+  count as one whose stored shape predates the side keys, so it alone causes no refusal.
+- **A write that carries no reason keeps the stored ones** that still describe its result. Pass reasons by side to
+  change them, or the explicit clear to remove them; see
+  [status reason codes](#status-reason-codes-keyed-input-no-positional-array).
+
+### Status reason codes: keyed input, no positional array
+
+A scoring policy's reason codes (`W1`, `DM`, `RJ`, ...) are stored where they are attributed: `sideStatusCodes`,
+keyed by side, for a reason a side gave (`DEFAULTED`, `WALKOVER`, `RETIRED`, and both sides of a double exit), and
+`matchUpStatusCode` for a reason that belongs to the match (`ABANDONED`, `CANCELLED`, `INCOMPLETE`). Both fields exist
+in 7.x. 8.0.0 removes the positional `matchUpStatusCodes` array that carried a copy of them.
+
+**Writing a reason.** Submit it keyed, as it is stored:
+
+```js
+// 7.x: positional, side 2 at index 1
+engine.setMatchUpStatus({
+  drawId,
+  matchUpId,
+  outcome: { matchUpStatus: DEFAULTED, winningSide: 1, matchUpStatusCodes: ['', 'DM'] },
+});
+
+// 8.0.0: keyed by side
+engine.setMatchUpStatus({
+  drawId,
+  matchUpId,
+  outcome: { matchUpStatus: DEFAULTED, winningSide: 1, sideStatusCodes: { 2: 'DM' } },
+});
+
+// a reason for the match
+engine.setMatchUpStatus({ drawId, matchUpId, outcome: { matchUpStatus: ABANDONED, matchUpStatusCode: 'OA' } });
+```
+
+- **An outcome that carries `matchUpStatusCodes` is refused** with `INVALID_VALUES`, before anything is written, so a
+  client that has not moved to the keyed input finds out at once rather than losing its reasons.
+- **Submitted reasons replace the ones the matchUp held.** A submitted reason that does not describe the result is not
+  stored: a side reason for the winner of a single exit, or a side reason on a status that belongs to the match.
+- **A write that submits no reason keeps the reasons the matchUp holds**, where they still describe the result it
+  writes: the status still takes a reason, and the side a reason names still exited. A result corrected to a played
+  win, or removed, keeps none. In 7.x an absent or empty array cleared them.
+- **Clearing is explicit.** `outcome.clearStatusCodes: true` removes the reasons. A clear of the result that should
+  also clear its reasons, as a scoring dialog's clear does, sends it: `{ score: { sets: [] }, clearStatusCodes: true }`.
+- **Mocks and simulation.** Authored outcomes (`drawProfiles[].outcomes`, `applyOutcomes`) take `sideStatusCodes` and
+  `matchUpStatusCode` in place of `matchUpStatusCodes`.
+- **Score entry state.** `toEngineOutcome` emits the keyed input and the explicit clear. `positionalCodes` is replaced
+  by `keyedStatusCodes`.
+
+**Reading a reason.** Read `sideStatusCodes[sideNumber]` and `matchUpStatusCode`. Nothing in 8.x reads the array to
+decide anything. Which side exited, and where an exit came from, is `sideExitProvenance`.
+
+**Records written before 8.0.0.** A record that holds the array is read as it is, and `matchUpStatusCodes` stays on
+the `MatchUp` type and in `tournament.schema.json`, marked deprecated, so such a record still types and validates. The
+array never makes a record count as unmigrated, and a write is not refused for it: any 8.x write removes the array from
+the matchUps it touches. A reason held only in the array of such a record is not moved into the keyed fields by the
+engine; the separate record migration does that.
 
 ### Removed options, constants and fields
 

@@ -245,7 +245,7 @@ function abstainReasonOf(args: PlanArgs): AbstainReason | ArrivalProgram | SeatO
   if (converted) return converted;
   if (scheduleReason(args)) return 'schedule';
   if (notesReason(request, view, args.route)) return 'notes';
-  if (request.matchUpStatusCodes?.length) return 'status-codes';
+  if (request.statusReasons?.input.submitted) return 'status-codes';
   if (view.draw.perMatchUpCompetition && (request.winningSide || write?.winningSide)) return 'competition';
   // S7: a TEAM line's double exit (`only-score`), written as it stands: it directs nothing of its own, its targets being
   // its dual's, and its dual is tallied without it. A line's single exit still meets `exitReason` (a DEFAULTED under a
@@ -331,7 +331,7 @@ function resultToDoubleExit(args: PlanArgs): OutcomePlan {
   const removing = resultRemovalReason(view, carry);
   if (removing) return { abstain: removing };
   // C27: a carry the result left pending is withdrawn first, as v1's removal withdraws it
-  const removal = withPendingCarry(view, carry, (rederived) => removalOps(view, request.matchUpStatus, rederived), {
+  const removal = withPendingCarry(view, carry, () => removalOps(view), {
     reproduced: true,
   });
   const undecided: OutcomeOp = {
@@ -368,14 +368,7 @@ function resultToDoubleExit(args: PlanArgs): OutcomePlan {
         index > ownResult && op.op === 'stampUpdatedAt' && op.entity === 'matchUp' && op.id === request.matchUpId,
     );
     if (ownResult < 0 || ownStamp < 0) return { abstain: 'exit' };
-    // A quiet produced write on that entry keeps the identity of its earlier removal notice in v1.
-    const tail = produced.ops
-      .slice(ownStamp + 1)
-      .map((op): OutcomeOp =>
-        op.op === 'setMatchUpResult' && op.matchUpId === entryId && op.announcesContext === false
-          ? { ...op, restoresNoticeIdentity: true }
-          : op,
-      );
+    const tail = produced.ops.slice(ownStamp + 1);
     return {
       ops: [...produced.ops.slice(0, ownStamp + 1), ...removal, ...tail],
       shape: produced.shape,
@@ -562,8 +555,8 @@ function lineDualPlan(
   if (!dualPlan.ops) return dualPlan;
   const ops = dualPlan.ops.map((op): OutcomeOp => {
     if (op.op !== 'setMatchUpResult' || op.matchUpId !== line.dualMatchUpId) return op;
-    // the tally write is handed no status codes (`updateTieMatchUpScore`): none written, no kept reason deleted
-    const { matchUpStatusCodes: _codes, clearsStatusReasons: _clears, ...result } = op;
+    // the tally write is handed no reasons (`updateTieMatchUpScore`): none written, no kept reason deleted
+    const { statusReasons: _reasons, ...result } = op;
     return {
       ...result,
       stampsScoredTime: false,
@@ -910,7 +903,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   if (!retainedAward) return { abstain: 'exit' };
   const ops: OutcomeOp[] = [
     ...swapOps(view, args.route),
-    ...replacedLoserOps(view, args.route, write, request.matchUpStatus, carryOf(args)),
+    ...replacedLoserOps(view, args.route, write, carryOf(args)),
     ...unwound,
     // a dual's own call writes its sides first (S7); for the dual a line decides they are its line's (`dualTally`), by the
     // same rule (`ensuredDualSides`)
@@ -927,7 +920,7 @@ function recordedPlanOps(args: PlanArgs, drawDefinition: DrawDefinition, seatObl
   const winner = placing?.winner;
   const placed = winnerPlacementOps(view, args.route, write, winner);
   const linkedStamp = linkedWinnerStamp(view, placed);
-  ops.push(...placed, ...removedOps(view, args.route, write, request.matchUpStatus, carryOf(args)));
+  ops.push(...placed, ...removedOps(view, args.route, write, carryOf(args)));
   // a plain loser arrival: the loser on the seat the link feeds. The matchUp they land in is not stamped: its stored
   // object does not change (the write is on the structure's assignments), so it is not a touched entity (F2 (i), and v1).
   // The structure whose assignments change is stamped below (v1's `modifyPositionAssignmentsNotice`).

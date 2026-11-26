@@ -37,11 +37,9 @@ import {
   deriveExitStateFromProvenance,
   buildCarriedExitProvenance,
   collapseDoubleExitStatus,
-  retainPolicyCodes,
   buildSideExitProvenance,
   mergeSideExitProvenance,
   withdrawProducedExits,
-  deriveStatusCodes,
   producedExitStatus,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
@@ -637,8 +635,7 @@ function stampExitOnByeHeldLoserTarget({
   });
 
   const result = modifyMatchUpScore({
-    matchUpStatusCodes: retainPolicyCodes(noContextLoserMatchUp),
-    derivedStatusCodes: { matchUpId: noContextLoserMatchUp.matchUpId },
+    retainedStatusCodes: { matchUpId: noContextLoserMatchUp.matchUpId },
     appliedPolicies: params.appliedPolicies,
     matchUpId: loserMatchUp.matchUpId,
     matchUp: noContextLoserMatchUp,
@@ -728,15 +725,13 @@ function handleEmptyExitLoser({
     // produced status, and the write replaced an array whose other entry was still true. In the mixed
     // case that stored `{ matchUpStatus: DEFAULTED, previousMatchUpStatus: DOUBLE_WALKOVER }` — a
     // walkover origin producing a default — and it stored the opposite in the opposite entry order.
-    const matchUpStatusCodes = retainPolicyCodes(noContextLoserMatchUp);
 
     const result = modifyMatchUpScore({
       ...params,
       matchUp: noContextLoserMatchUp,
       matchUpId: loserMatchUp.matchUpId,
       matchUpStatus: DOUBLE_EXIT,
-      matchUpStatusCodes,
-      derivedStatusCodes: { matchUpId: noContextLoserMatchUp.matchUpId },
+      retainedStatusCodes: { matchUpId: noContextLoserMatchUp.matchUpId },
       winningSide: undefined,
       removeScore: true,
       context: stack,
@@ -1268,9 +1263,6 @@ function conditionallyAdvanceDrawPosition(params) {
     sourceSideNumber,
   });
 
-  // the exit-provenance projection is gone; the array keeps only the POLICY tenant.
-  const matchUpStatusCodes = retainPolicyCodes(noContextTargetMatchUp);
-
   logAdvancement(stack, {
     color: 'brightgreen',
     keyColors: { matchUpStatus: 'brightcyan', winningSide: 'brightyellow' },
@@ -1278,7 +1270,6 @@ function conditionallyAdvanceDrawPosition(params) {
     targetMatchUpId: noContextTargetMatchUp.matchUpId,
     matchUpStatus,
     winningSide: awardedWinningSide,
-    matchUpStatusCodes: JSON.stringify(matchUpStatusCodes),
     sourceStatus: sourceMatchUpStatus,
     pairedStatus: pairedMatchUpStatus,
   });
@@ -1288,8 +1279,7 @@ function conditionallyAdvanceDrawPosition(params) {
     removeWinningSide: noWinner,
     winningSide: awardedWinningSide,
     matchUp: noContextTargetMatchUp,
-    matchUpStatusCodes,
-    derivedStatusCodes: { matchUpId: noContextTargetMatchUp.matchUpId },
+    retainedStatusCodes: { matchUpId: noContextTargetMatchUp.matchUpId },
     context: stack,
     matchUpStatus,
   });
@@ -1407,9 +1397,8 @@ function conditionallyAdvanceDrawPosition(params) {
         winningSide: derived.winningSide,
         matchUp: noContextTargetMatchUp,
         matchUpStatus: derived.matchUpStatus,
-        matchUpStatusCodes: deriveStatusCodes(noContextTargetMatchUp),
-        // display only: the reasons the target retains are kept, and no derived `WO`/`DEF` becomes one
-        derivedStatusCodes: { matchUpId: noContextTargetMatchUp.matchUpId },
+        // the reasons the target retains are kept, and no bare `WO`/`DEF` becomes one
+        retainedStatusCodes: { matchUpId: noContextTargetMatchUp.matchUpId },
         context: `${stack}-reconcile`,
       });
       if (reconcile.error) return decorateResult({ result: reconcile, stack });
@@ -1689,7 +1678,7 @@ function advanceFromTarget({
       appliedPolicies: params.appliedPolicies,
       matchUp: noContextNextWinnerMatchUp,
       matchUpStatus: nextMatchUpStatus,
-      matchUpStatusCodes: [],
+      clearsStatusReasons: true,
       removeScore: true,
       context: stack,
       drawDefinition,
@@ -2194,8 +2183,7 @@ function advanceByeAdvancedDrawPosition({
         drawDefinition,
       });
     const result = modifyMatchUpScore({
-      matchUpStatusCodes: retainPolicyCodes(noContextNextWinnerMatchUp),
-      derivedStatusCodes: { matchUpId: noContextNextWinnerMatchUp.matchUpId },
+      retainedStatusCodes: { matchUpId: noContextNextWinnerMatchUp.matchUpId },
       appliedPolicies: params.appliedPolicies,
       matchUpId: noContextNextWinnerMatchUp.matchUpId,
       matchUp: noContextNextWinnerMatchUp,
@@ -2756,8 +2744,7 @@ function carryExitOnward({
   });
 
   const result = modifyMatchUpScore({
-    matchUpStatusCodes: retainPolicyCodes(noContextNextWinnerMatchUp),
-    derivedStatusCodes: { matchUpId: noContextNextWinnerMatchUp.matchUpId },
+    retainedStatusCodes: { matchUpId: noContextNextWinnerMatchUp.matchUpId },
     matchUpId: noContextNextWinnerMatchUp.matchUpId,
     appliedPolicies: params.appliedPolicies,
     matchUp: noContextNextWinnerMatchUp,
@@ -2968,8 +2955,7 @@ function convergeCarriedExit({
     arrivalSideNumber,
   });
   const result = modifyMatchUpScore({
-    matchUpStatusCodes: retainPolicyCodes(stored),
-    derivedStatusCodes: { matchUpId: stored.matchUpId },
+    retainedStatusCodes: { matchUpId: stored.matchUpId },
     appliedPolicies: params.appliedPolicies,
     matchUpId: stored.matchUpId,
     matchUpStatus: DOUBLE_EXIT,
@@ -3958,8 +3944,7 @@ function settleHolderToBye({
   if (!holder || !isAnyExit(holder.matchUpStatus)) return undefined;
   const provenance = getSideExitProvenance({ matchUp: holder });
   const result = modifyMatchUpScore({
-    matchUpStatusCodes: retainPolicyCodes(holder),
-    derivedStatusCodes: { matchUpId: holder.matchUpId },
+    retainedStatusCodes: { matchUpId: holder.matchUpId },
     appliedPolicies: params.appliedPolicies,
     matchUpId: holder.matchUpId,
     context: 'settleHeldExits',

@@ -196,7 +196,11 @@ describe('changed before the opponent arrives', () => {
     // the offered change, with a reason
     const exit = actionsOf(lone.matchUpId).find((action) => action.type === EXIT);
     expect(exit.payload.recorded).toEqual({ matchUpStatus: WALKOVER });
-    const outcome = { ...exit.payload.outcome, matchUpStatus: DEFAULTED, matchUpStatusCodes: ['DM'] };
+    const outcome = {
+      ...exit.payload.outcome,
+      matchUpStatus: DEFAULTED,
+      sideStatusCodes: { [3 - exit.payload.outcome.winningSide]: 'DM' },
+    };
     expect(record(outcome).success).toEqual(true);
     expect(carried()).toEqual(propagateExitStatus ? DEFAULTED : TO_BE_PLAYED);
     expect(actionsOf(lone.matchUpId).find((action) => action.type === EXIT).payload.recorded).toEqual({

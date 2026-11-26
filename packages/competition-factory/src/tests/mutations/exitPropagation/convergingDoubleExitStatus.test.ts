@@ -66,80 +66,33 @@ it('is order-invariant for every pair', () => {
   }
 });
 
-it('never persists a matchUpStatusCodes array containing a hole', () => {
-  // `progressExitStatus` RULE 4 assigned `sourceCode` — `undefined` for a directly-recorded exit —
-  // into BOTH slots by hand, and PERSISTED the result: `[undefined, undefined]`, which serialises to
-  // `[null, null]` and is not a `string[]`. It is also load-bearing in RULE 4's own `opponentEmpty`
-  // gate, which tests `statusCodes.length === 0`. And `[undefined, undefined]` must
-  // never be persisted.
-  //
-  // Driven through the sweep harness rather than by hand: a hand-built convergence did NOT reproduce
-  // it, so that version of this test passed against the unfixed tree and was vacuous. Measured on
-  // the unfixed tree across the first 120 seeds of the window: 14 persisted hole arrays, including
-  // the mixed shape `[null, ""]` which also evidences the index-0 read this replaced.
-  //
-  // Evicting the exit tenant widened the seed list. The original three — 9000003, 9000056, 9000074 — persist NO
-  // non-empty array once the exit tenant is evicted, because every array they produced was the PROJECTION, and the
-  // control below then failed rather than passing vacuously. Measured across the first sixty seeds of the window, the
-  // seeds that still persist one are 9000010, 9000013, 9000019, 9000029, 9000036, 9000057 and 9000060. The originals
-  // are KEPT so the hole property stays asserted over the scenarios it was found in.
-  //
-  // Widened again in census S6: once a withdrawn origin's kept exit is labelled from what it retains (20521366), the
-  // correction path stops writing codes direct entry never writes, and only 9000012 and 9000062 of the first 120 seeds
-  // still persist a non-empty array. They join the list so the control keeps seeing arrays.
+it('persists no positional codes, and every reason it keeps is a string keyed by side', () => {
+  // Driven through the sweep harness over the seeds that exercised the convergences most: 8.x writes no positional
+  // `matchUpStatusCodes`, and a reason a side carries is stored keyed (`sideStatusCodes`), one string per side.
   const seeds = [9000003, 9000010, 9000012, 9000019, 9000056, 9000060, 9000062, 9000074];
-  let arraysSeen = 0;
-  const persisted: any[] = [];
+  let exitsSeen = 0;
 
   for (const seed of seeds) {
     setSubscriptions({});
     const config = randomConfig(seed);
-    const drawId = `no-hole-${seed}`;
+    const drawId = `no-codes-${seed}`;
     prepareDraw(config, drawId);
     replay(config, generateSchedule(config, drawId, 30), drawId);
 
     const drawDefinition = getDrawDefinition(drawId);
     for (const structure of drawDefinition?.structures ?? []) {
       for (const matchUp of structure.matchUps ?? []) {
-        const codes = matchUp.matchUpStatusCodes;
-        if (!Array.isArray(codes) || !codes.length) continue;
-        arraysSeen += 1;
-        persisted.push({ seed, structureName: structure.structureName, codes });
-        for (const [index, code] of codes.entries()) {
-          expect(
-            code === undefined || code === null,
-            `seed ${seed} ${structure.structureName} r${matchUp.roundNumber}p${matchUp.roundPosition} codes[${index}] is a hole: ${JSON.stringify(codes)}`,
-          ).toEqual(false);
+        const at = `seed ${seed} ${structure.structureName} r${matchUp.roundNumber}p${matchUp.roundPosition}`;
+        expect(Object.hasOwn(matchUp, 'matchUpStatusCodes'), `${at} holds positional codes`).toEqual(false);
+        if (matchUp.sideExitProvenance) exitsSeen += 1;
+        for (const [side, code] of Object.entries(matchUp.sideStatusCodes ?? {})) {
+          expect(['1', '2'].includes(side) && typeof code === 'string', `${at} reason ${side}: ${code}`).toEqual(true);
         }
       }
     }
   }
 
-  // the control: a run producing no codes at all would pass vacuously
-  expect(arraysSeen).toBeGreaterThan(0);
-
-  /**
-   * AND THE DESTINATION, PINNED AT THE DATA: every persisted element is a STRING.
-   *
-   * **The exit tenant's eviction.** `matchUpStatusCodes` has two tenants and the exit one is evicted, so what survives
-   * is the positional string contract — `['', 'WO']`, `['WO']`, `['', 'DEF']`, measured as the only shapes the sweep
-   * persists. An OBJECT element is a projection of `sideExitProvenance` regrowing in the array, which is the regression
-   * this whole workstream exists to prevent, and it is cheaper to catch here than in a consumer.
-   *
-   * Deliberately asserted over whatever the sweep persists rather than over a fixed expectation: a
-   * future write site that starts projecting again fails this without anyone having to remember to
-   * extend a list.
-   */
-  for (const { seed, structureName, codes } of persisted) {
-    for (const [index, code] of codes.entries()) {
-      expect(
-        typeof code,
-        `seed ${seed} ${structureName} codes[${index}] is not a string: ${JSON.stringify(codes)}`,
-      ).toEqual('string');
-    }
-  }
-  // AN EXPLICIT TIMEOUT, because widening the seed list made the default one too tight. Six sweep
-  // schedules take ~6s in isolation and the 30s default looks like ample headroom — but under
-  // `verify:coverage` with the full suite contending it timed out in CI while passing locally, which is
-  // the worst way for a gate to fail. `correctionDivergence` carries the same note for the same reason.
+  // the control: a run producing no exits at all would pass vacuously
+  expect(exitsSeen).toBeGreaterThan(0);
+  // AN EXPLICIT TIMEOUT: eight sweep schedules contend with the full suite under `verify:coverage`.
 }, 180_000);

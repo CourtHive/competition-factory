@@ -569,16 +569,16 @@ test('properly removes lineUps when team drawPositions are swapped', () => {
   expect(side2LineUp).toEqual(newSide2LineUp);
 });
 
-test('does not propagate matchUpStatusCodes from SINGLE/DOUBLES to TEAM matchUps on DOUBLE_WALKOVER', () => {
+test('does not propagate reasons from SINGLE/DOUBLES to TEAM matchUps on DOUBLE_WALKOVER', () => {
   const matchUpModifyNotices: any[] = [];
 
   const subscriptions = {
     modifyMatchUp: (payload) => {
       if (Array.isArray(payload)) {
         payload.forEach(({ matchUp }) => {
-          const { matchUpType, matchUpStatusCodes, score } = matchUp;
-          if (matchUpStatusCodes || score)
-            matchUpModifyNotices.push([matchUpType, matchUpStatusCodes, score].filter(Boolean));
+          const { matchUpType, sideStatusCodes, score } = matchUp;
+          if (sideStatusCodes || score)
+            matchUpModifyNotices.push([matchUpType, sideStatusCodes, score].filter(Boolean));
         });
       }
     },
@@ -619,7 +619,7 @@ test('does not propagate matchUpStatusCodes from SINGLE/DOUBLES to TEAM matchUps
       scoreStringSide2: '',
     },
     matchUpStatus: DOUBLE_WALKOVER,
-    matchUpStatusCodes: ['WOWO', 'WOWO'],
+    sideStatusCodes: { 1: 'WOWO', 2: 'WOWO' },
   };
   const result = tournamentEngine.setMatchUpStatus({
     matchUpId: singlesMatchUps[0].matchUpId,
@@ -637,9 +637,9 @@ test('does not propagate matchUpStatusCodes from SINGLE/DOUBLES to TEAM matchUps
   });
 
   expect(matchUp.matchUpStatus).toEqual(IN_PROGRESS);
-  expect(matchUp.matchUpStatusCodes).toBeUndefined();
+  expect(matchUp.sideStatusCodes).toBeUndefined();
   const targetTieMatchUp = matchUp.tieMatchUps.find(({ matchUpStatus }) => matchUpStatus === DOUBLE_WALKOVER);
-  expect(targetTieMatchUp.matchUpStatusCodes).toEqual(['WOWO', 'WOWO']);
+  expect(targetTieMatchUp.sideStatusCodes).toEqual({ 1: 'WOWO', 2: 'WOWO' });
 
   const { matchUps } = tournamentEngine.allTournamentMatchUps({
     contextFilters: {
@@ -651,13 +651,13 @@ test('does not propagate matchUpStatusCodes from SINGLE/DOUBLES to TEAM matchUps
     },
   });
 
-  expect(matchUps.map(({ matchUpStatusCodes }) => matchUpStatusCodes).filter(Boolean)).toEqual([]);
+  expect(matchUps.map(({ sideStatusCodes }) => sideStatusCodes).filter(Boolean)).toEqual([]);
   expect(matchUps.map(({ matchUpStatus }) => matchUpStatus)).toEqual([TO_BE_PLAYED, TO_BE_PLAYED]);
 
   expect(matchUpModifyNotices).toEqual([
     [
       SINGLES,
-      ['WOWO', 'WOWO'],
+      { 1: 'WOWO', 2: 'WOWO' },
       {
         scoreStringSide1: '',
         scoreStringSide2: '',
@@ -709,7 +709,7 @@ it('can set matchUpStatus of TEAM matchUps', () => {
       scoreStringSide2: '',
     },
     matchUpStatus: DOUBLE_WALKOVER,
-    matchUpStatusCodes: ['WOWO', 'WOWO'],
+    sideStatusCodes: { 1: 'WOWO', 2: 'WOWO' },
   };
 
   let result = tournamentEngine.setMatchUpStatus({

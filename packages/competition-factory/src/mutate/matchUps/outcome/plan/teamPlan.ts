@@ -396,8 +396,6 @@ function assignedLineUpOps(
   const { participantId } = loser;
   const awarded = standingAwardArrival(view, loser);
   const replacedId = view.existing.winningSide ? storedLoserId(view) : undefined;
-  // (a loser held opposite a structural BYE is taken back by the BYE's own path, C21, which announces no event)
-  const replaced = !!replacedId && view.targets.loserTargetSeat?.participantId === replacedId && !heldByeLoser(view);
   // A loser replaced on a dual that stores a line-up for them: v1 takes them back first and deletes it
   // (`removeDirectedLoser`), and whether that removal's notice, with the event, is the one the dual's notice keeps turns
   // on the path the removal takes, which the planners do not follow. The call is v1's whole write (2026-11-19, TEAM
@@ -437,9 +435,9 @@ function assignedLineUpOps(
       lineUp: lineUps[participantId],
       announcedAs: 'updateSidLineUp',
       // The own dual's lineup writer omits the event. An assignment at a standing award already
-      // announced it, and v1 retains that identity when the keyed notices coalesce (C24N). So does a changed winner:
-      // the loser it replaces there was taken back first, announced with the event (`removeDirectedLoser`)
-      ...(matchUpId === loserMatchUpId && !awarded && !replaced ? { announcesEvent: false as const } : {}),
+      // announced it, and v1 retains that identity when the keyed notices coalesce (C24N). The loser a changed winner
+      // replaces there is taken back first with nothing of its side record changed, so that removal announces nothing
+      ...(matchUpId === loserMatchUpId && !awarded ? { announcesEvent: false as const } : {}),
     });
   }
   // the dual the loser lands in is otherwise untouched (the arrival is written on its structure's assignments): its

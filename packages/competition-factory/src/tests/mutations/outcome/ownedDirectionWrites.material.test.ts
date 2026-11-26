@@ -221,7 +221,7 @@ describe('C15 superseded own relay material and notice contracts', () => {
       expect(target.matchUpStatus).toEqual(producedStatus);
       expect(target).not.toHaveProperty('winningSide');
       expect(target.score).toEqual({ scoreStringSide1: '', scoreStringSide2: '' });
-      expect(target.matchUpStatusCodes).toEqual([]);
+      expect(target).not.toHaveProperty('matchUpStatusCodes');
       expect(target.schedule ?? {}).not.toHaveProperty('scoredTime');
       expect(target.sideExitProvenance).toEqual({
         [producedSide]: {

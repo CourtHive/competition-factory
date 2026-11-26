@@ -80,7 +80,6 @@ import {
 import {
   clearResolvedSideExitProvenance,
   participatesInExitCascade,
-  exitArrivalCodes,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 import { CONSOLATION, CONTAINER, MAIN, PLAY_OFF, QUALIFYING, FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
@@ -586,11 +585,6 @@ function applyPositionToMatchUp({
     // status equalled provenance in 50 of 50 — and in the other 63 the array was ALREADY EMPTY while
     // provenance held the status. So the re-siting was redundant where it ran and silently lossy
     // where it did not, which is the divergence class a projection exists to end.
-    //
-    // The exit tenant is therefore dropped rather than re-sided. Policy codes are the array's OTHER
-    // tenant and survive: see `isProjectedExitCode`.
-    const exitSideNumber = advancedExitWinningSide === 1 ? 2 : 1;
-    matchUp.matchUpStatusCodes = exitArrivalCodes(matchUp, exitSideNumber);
     clearResolvedSideExitProvenance(matchUp);
   } else if (participatesInExitCascade({ matchUp })) {
     /**

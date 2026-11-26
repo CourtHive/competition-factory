@@ -20,7 +20,6 @@ type ReconcileFedLoserEligibilityArgs = {
   loserMatchUpDrawPositionIndex?: number;
   inContextDrawMatchUps?: HydratedMatchUp[];
   propagateRetirementAsExit?: boolean;
-  sourceMatchUpStatusCodes?: string[];
   tournamentRecord?: Tournament;
   propagateExitStatus?: boolean;
   sourceMatchUpStatus?: string;
@@ -272,7 +271,6 @@ export function departingLoserPathRefusal({
  */
 export function reconcileFedLoserEligibility({
   loserMatchUpDrawPositionIndex,
-  sourceMatchUpStatusCodes,
   propagateRetirementAsExit,
   inContextDrawMatchUps,
   sourceMatchUpStatus,
@@ -327,7 +325,6 @@ export function reconcileFedLoserEligibility({
     if (!loserMatchUp) return { ...SUCCESS };
 
     return directLoser({
-      sourceMatchUpStatusCodes: sourceMatchUpStatusCodes ?? [],
       loserMatchUpDrawPositionIndex,
       propagateRetirementAsExit,
       sourceWinningSide: winningSide,

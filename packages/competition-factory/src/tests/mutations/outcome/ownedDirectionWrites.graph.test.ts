@@ -216,7 +216,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(Object.hasOwn(source, 'matchUpFormat')).toBe(true);
     expect(Object.hasOwn(source, 'sideExitProvenance')).toBe(false);
     expect(source.score).toBe(toBePlayed.score);
-    expect(source.matchUpStatusCodes).toBe(toBePlayed.matchUpStatusCodes);
+    expect(Object.hasOwn(source, 'matchUpStatusCodes')).toBe(false);
     expect(Object.hasOwn(target, 'winningSide')).toBe(true);
     expect(Object.hasOwn(target, 'score')).toBe(true);
     expect(target.winningSide).toBeUndefined();
@@ -231,7 +231,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     const source = matchUps.find((m) => m.roundNumber === 1 && m.roundPosition === 1)!;
     write(mode, drawId, source.matchUpId, { matchUpStatus: DOUBLE_WALKOVER });
     expect(source.score).toBe(toBePlayed.score);
-    expect(source.matchUpStatusCodes).toBe(toBePlayed.matchUpStatusCodes);
+    expect(Object.hasOwn(source, 'matchUpStatusCodes')).toBe(false);
     expect(Object.hasOwn(source, 'winningSide')).toBe(true);
     expect(Object.hasOwn(source, 'sideExitProvenance')).toBe(true);
     expect(Object.hasOwn(source, 'matchUpFormat')).toBe(true);
@@ -286,8 +286,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     write(mode, drawId, second.matchUpId, { matchUpStatus: DOUBLE_WALKOVER });
     expect(target.matchUpStatus).toBe(DOUBLE_WALKOVER);
     expect(target.score).toBe(toBePlayed.score);
-    expect(target.matchUpStatusCodes).toEqual([]);
-    expect(target.matchUpStatusCodes).not.toBe(toBePlayed.matchUpStatusCodes);
+    expect(Object.hasOwn(target, 'matchUpStatusCodes')).toBe(false);
   },
 );
 
@@ -374,7 +373,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
       .matchUps!.find((matchUp) => matchUp.roundNumber === 3 && matchUp.roundPosition === 1)!;
     write(mode, drawId, source.matchUpId, toBePlayed);
     expect(released.matchUpStatus).toBe(TO_BE_PLAYED);
-    expect(Object.keys(released).slice(-4)).toEqual(['matchUpStatusCodes', 'score', 'matchUpFormat', 'winningSide']);
+    expect(Object.keys(released).slice(-3)).toEqual(['score', 'matchUpFormat', 'winningSide']);
     expect(Object.hasOwn(released, 'winningSide')).toBe(true);
     expect(released.winningSide).toBeUndefined();
     expect(released.score).toBe(toBePlayed.score);
@@ -510,21 +509,6 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(target.score).not.toBe(toBePlayed.score);
     expect(Object.keys(target.score!)).toEqual(['scoreStringSide1', 'scoreStringSide2', 'sets']);
     expect(Object.hasOwn(target, 'matchUpFormat')).toBe(false);
-  },
-);
-
-it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
-  '%s re-derives an unchanged empty loser code array without retaining the reset anchor',
-  (mode) => {
-    const { drawId, record } = fresh({ drawType: FIRST_MATCH_LOSER_CONSOLATION });
-    const structures = record.events![0].drawDefinitions![0].structures!;
-    const source = structures.find((s) => s.stage === MAIN)!.matchUps!.find((m) => m.roundNumber === 1)!;
-    const target = structures.find((s) => s.stage === CONSOLATION)!.matchUps!.find((m) => m.roundNumber === 1)!;
-    write(OUTCOME_PIPELINE_V1, drawId, source.matchUpId, { winningSide: 1 });
-    target.matchUpStatusCodes = toBePlayed.matchUpStatusCodes;
-    write(mode, drawId, source.matchUpId, { matchUpStatus: DOUBLE_WALKOVER });
-    expect(target.matchUpStatusCodes).toEqual([]);
-    expect(target.matchUpStatusCodes).not.toBe(toBePlayed.matchUpStatusCodes);
   },
 );
 
@@ -1087,9 +1071,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
       .matchUps!.find((matchUp) => matchUp.roundNumber === 2 && matchUp.roundPosition === 1)!;
     expect(target.matchUpStatus).toBe(DEFAULTED);
     expect(target.winningSide).toBe(1);
-    expect(Object.keys(target).indexOf('winningSide')).toBeGreaterThan(
-      Object.keys(target).indexOf('matchUpStatusCodes'),
-    );
+    expect(Object.hasOwn(target, 'matchUpStatusCodes')).toBe(false);
   },
 );
 
@@ -1485,9 +1467,8 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     write(mode, drawId, source.matchUpId, { matchUpStatus: DOUBLE_DEFAULT });
     const target = consolation.matchUps!.find((entry) => entry.roundNumber === 4 && entry.roundPosition === 1)!;
     expect(target.matchUpStatus).toBe(DEFAULTED);
-    const keys = Object.keys(target);
-    expect(keys).toContain('score');
-    expect(keys.indexOf('score')).toBeLessThan(keys.indexOf('matchUpStatusCodes'));
+    expect(Object.keys(target)).toContain('score');
+    expect(Object.hasOwn(target, 'matchUpStatusCodes')).toBe(false);
   },
 );
 
@@ -1551,8 +1532,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(target.matchUpStatus).toBe(DEFAULTED);
     expect(Object.hasOwn(target, 'winningSide')).toBe(true);
     expect(target.winningSide).toBeUndefined();
-    const keys = Object.keys(target);
-    expect(keys.indexOf('winningSide')).toBeLessThan(keys.indexOf('matchUpStatusCodes'));
+    expect(Object.hasOwn(target, 'matchUpStatusCodes')).toBe(false);
   },
 );
 
@@ -1748,8 +1728,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(target.matchUpStatus).toBe(TO_BE_PLAYED);
     expect(Object.hasOwn(target, 'winningSide')).toBe(true);
     expect(target.winningSide).toBeUndefined();
-    const keys = Object.keys(target);
-    expect(keys.indexOf('winningSide')).toBeLessThan(keys.indexOf('matchUpStatusCodes'));
+    expect(Object.hasOwn(target, 'matchUpStatusCodes')).toBe(false);
   },
 );
 
