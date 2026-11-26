@@ -31,7 +31,8 @@ export function generateSeason(params: { seasonProfile: MockSeasonProfile; rando
 
   const {
     completeAllMatchUps = true,
-    tieFormatName = 'COLLEGE_DEFAULT',
+    // no default name: a league that names no format gets the mocks' concrete default (processLeagueProfiles)
+    tieFormatName,
     seasonId = 'mock-season',
     seriesId = 'mock-series',
     tierSystem = 'MOCK',
