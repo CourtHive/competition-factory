@@ -6,7 +6,7 @@ import { zonedParts } from '@Tools/zonedDateTime';
 import { extractDate } from '@Tools/dateTime';
 
 // constants and types
-import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   INVALID_DATE,
@@ -28,6 +28,8 @@ type SetMatchUpCalledAtArgs = {
   calledAt?: string | null;
   matchUpId: string;
   event?: Event;
+  /** a schedule plan's working copy of the matchUp, written in its place; internal (a caller's `matchUp` is never written) */
+  workingMatchUp?: MatchUp;
 };
 
 /**
@@ -120,7 +122,7 @@ export function calledBeforeTournamentStart({
  */
 export function setMatchUpCalledAt(params: SetMatchUpCalledAtArgs) {
   const stack = 'setMatchUpCalledAt';
-  const { tournamentRecord, drawDefinition, disableNotice, calledAt, matchUpId, event } = params;
+  const { tournamentRecord, drawDefinition, disableNotice, calledAt, matchUpId, event, workingMatchUp } = params;
 
   if (!drawDefinition) return decorateResult({ result: { error: MISSING_DRAW_DEFINITION }, stack });
   if (!matchUpId) return decorateResult({ result: { error: MISSING_MATCHUP_ID }, stack });
@@ -149,7 +151,7 @@ export function setMatchUpCalledAt(params: SetMatchUpCalledAtArgs) {
     }
   }
 
-  const { matchUp } = findDrawMatchUp({ drawDefinition, event, matchUpId });
+  const matchUp = workingMatchUp ?? findDrawMatchUp({ drawDefinition, event, matchUpId }).matchUp;
   if (!matchUp) return decorateResult({ result: { error: MATCHUP_NOT_FOUND }, stack });
 
   if (calledAt === undefined || calledAt === null) {

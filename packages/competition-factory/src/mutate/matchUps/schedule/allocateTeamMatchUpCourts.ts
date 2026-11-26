@@ -3,7 +3,7 @@ import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 
 // constants and types
-import { DrawDefinition, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { ALLOCATE_COURTS } from '@Constants/timeItemConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import {
@@ -23,6 +23,8 @@ type AllocateTeamMatchUpCourtsArgs = {
   courtDayDate?: string;
   matchUpId: string;
   courtIds?: string[];
+  /** a schedule plan's working copy of the matchUp, written in its place; internal (a caller's `matchUp` is never written) */
+  workingMatchUp?: MatchUp;
 };
 export function allocateTeamMatchUpCourts({
   removePriorValues,
@@ -31,16 +33,14 @@ export function allocateTeamMatchUpCourts({
   drawDefinition,
   disableNotice,
   courtDayDate,
+  workingMatchUp,
   matchUpId,
   courtIds,
 }: AllocateTeamMatchUpCourtsArgs) {
   if (!tournamentRecord && !tournamentRecords) return { error: MISSING_TOURNAMENT_RECORD };
   if (!matchUpId) return { error: MISSING_MATCHUP_ID };
-  const result = findDrawMatchUp({
-    drawDefinition,
-    matchUpId,
-  });
-  if (result.error) return result;
+  const result = workingMatchUp ? { matchUp: workingMatchUp } : findDrawMatchUp({ drawDefinition, matchUpId });
+  if ('error' in result && result.error) return result;
   if (result?.matchUp?.matchUpType !== TEAM_MATCHUP) return { error: INVALID_MATCHUP };
 
   const validCourtIds =
@@ -78,6 +78,7 @@ export function allocateTeamMatchUpCourts({
     value: itemValue,
     removePriorValues,
     tournamentRecord,
+    workingMatchUp,
     drawDefinition,
     disableNotice,
     matchUpId,
