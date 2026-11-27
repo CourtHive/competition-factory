@@ -7,6 +7,7 @@ import fs from 'fs';
 // constants
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { FLIGHT_PROFILE } from '@Constants/extensionConstants';
+import type { FlightProfile } from '@Types/factoryTypes';
 import {
   COMPASS,
   CURTIS_CONSOLATION,
@@ -50,7 +51,7 @@ test.each(mockProfiles)('it can anonymize tournamentRecords', (mockProfile) => {
     ({ participantId }) => participantId,
   );
 
-  let { extension: flightProfile } = findExtension({
+  let { extension: flightProfile } = findExtension<FlightProfile>({
     element: tournamentRecord.events[0],
     name: FLIGHT_PROFILE,
   });
@@ -75,7 +76,7 @@ test.each(mockProfiles)('it can anonymize tournamentRecords', (mockProfile) => {
   const drawEntries = tournamentRecord.events[0].drawDefinitions[0].entries.map(({ participantId }) => participantId);
   expect(intersection(originalDrawEntries, drawEntries).length).toEqual(0);
 
-  ({ extension: flightProfile } = findExtension({
+  ({ extension: flightProfile } = findExtension<FlightProfile>({
     element: tournamentRecord.events[0],
     name: FLIGHT_PROFILE,
   }));

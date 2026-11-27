@@ -33,6 +33,8 @@ import { DISPLAY } from '@Constants/extensionConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { SINGLES } from '@Constants/matchUpTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
+
+type DisplayValue = { teamPresentation?: unknown } | undefined;
 import { TEAM } from '@Constants/eventConstants';
 import { isMixed } from '@Validators/isMixed';
 import {
@@ -480,7 +482,7 @@ export function addMatchUpContext({
   // order), so the exclusion is a redaction of the final result. See contextExclusion.ts.
 
   const presentation = normalizeTeamPresentation(
-    tournamentRecord?.extensions?.find((entry) => entry.name === DISPLAY)?.value?.teamPresentation,
+    (tournamentRecord?.extensions?.find((entry) => entry.name === DISPLAY)?.value as DisplayValue)?.teamPresentation,
   );
   if (presentation) {
     const ids = new Set<string>(

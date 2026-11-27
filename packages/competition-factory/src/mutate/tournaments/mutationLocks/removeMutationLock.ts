@@ -54,7 +54,7 @@ export function removeMutationLock(params: RemoveMutationLockArgs): {
     element = tournamentRecord;
   }
 
-  const { extension } = findExtension({ element, name: MUTATION_LOCKS });
+  const { extension } = findExtension<MutationLocksValue>({ element, name: MUTATION_LOCKS });
   const locksValue: MutationLocksValue = extension?.value ?? { locks: [] };
 
   const lockIndex = locksValue.locks.findIndex((lock) => {

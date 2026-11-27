@@ -9,6 +9,7 @@ import {
   EventTypeUnion,
   GenderUnion,
   IndoorOutdoorUnion,
+  HydratedMatchUpSchedule,
   MatchUp,
   MatchUpSchedule,
   Participant,
@@ -63,6 +64,7 @@ export interface HydratedMatchUp extends MatchUp {
   // that TEAM matchUp. Read such a list through `teamLevelMatchUps` before counting or ranging it.
   matchUpTieId?: string;
   sides?: HydratedSide[];
+  schedule?: HydratedMatchUpSchedule;
   tieMatchUps?: HydratedMatchUp[];
 
   /** the round's abbreviated name, from the round naming policy */
@@ -133,7 +135,7 @@ export interface HydratedMatchUp extends MatchUp {
 type HydratedUpcomingMatchUp = {
   matchUpId: string;
   structureId: string;
-  schedule?: MatchUpSchedule;
+  schedule?: HydratedMatchUpSchedule;
   roundNumber?: number;
   roundPosition?: number;
   structureName?: string;
@@ -143,7 +145,7 @@ type HydratedUpcomingMatchUp = {
 type HydratedSideTo = {
   matchUpId?: string;
   roundNumber: number;
-  schedule?: MatchUpSchedule;
+  schedule?: HydratedMatchUpSchedule;
   sideNumber: number;
   structureName?: string;
 };
@@ -377,7 +379,7 @@ type HydratedParticipantStatistic = {
 };
 
 /** `HydratedParticipant.scheduleItems`: a matchUp's schedule, with the matchUp it belongs to */
-type HydratedScheduleItem = MatchUpSchedule & {
+type HydratedScheduleItem = HydratedMatchUpSchedule & {
   matchUpId: string;
   drawId: string;
   structureId: string;

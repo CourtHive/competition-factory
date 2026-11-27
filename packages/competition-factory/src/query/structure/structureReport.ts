@@ -11,6 +11,7 @@ import { POSITION_ACTIONS, DRAW_DELETIONS, FLIGHT_PROFILE } from '@Constants/ext
 import { CONSOLATION, MAIN, PLAY_OFF, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { MISSING_TOURNAMENT_ID } from '@Constants/errorConditionConstants';
 import { PAIR, TEAM_PARTICIPANT } from '@Constants/participantConstants';
+import { FlightProfile } from '@Types/factoryTypes';
 import { Participant, Side, Tournament } from '@Types/tournamentTypes';
 import { ADD_SCALE_ITEMS } from '@Constants/topicConstants';
 import { HydratedParticipant } from '@Types/hydrated';
@@ -62,7 +63,7 @@ export function getStructureReports(params: GetStructureReportsArgs) {
       itemSubTypes: [SEEDING],
       element: { timeItems },
     })?.timeItem;
-    return timeItem?.itemValue?.scaleBasis;
+    return (timeItem?.itemValue as { scaleBasis?: unknown } | undefined)?.scaleBasis;
   };
 
   const updateStructureManipulations = ({ positionManipulations }) => {
@@ -85,14 +86,16 @@ export function getStructureReports(params: GetStructureReportsArgs) {
       category,
       flightProfile: firstClassFlightProfile,
     }) => {
-      const flightProfileValue = firstClassFlightProfile ?? extensions?.find((x) => x.name === FLIGHT_PROFILE)?.value;
+      const flightProfileValue =
+        firstClassFlightProfile ?? (extensions?.find((x) => x.name === FLIGHT_PROFILE)?.value as FlightProfile);
       const flightNumbers = flightProfileValue?.flights?.map((flight) => ({
         [flight.drawId]: flight.flightNumber,
       }));
       const flightMap: any = flightNumbers && Object.assign({}, ...flightNumbers);
       const drawDeletionsExtension = extensions?.find((x) => x.name === DRAW_DELETIONS);
       const drawDeletionsTimeItem = eventTimeItems?.find((x) => x.itemType === DRAW_DELETIONS);
-      const drawDeletionsCount = drawDeletionsExtension?.value?.length ?? drawDeletionsTimeItem?.itemValue ?? 0;
+      const drawDeletionsCount =
+        (drawDeletionsExtension?.value as unknown[] | undefined)?.length ?? drawDeletionsTimeItem?.itemValue ?? 0;
 
       const mapValues: number[] = Object.values(flightMap ?? {});
       const minFlightNumber = flightMap && Math.min(...mapValues);

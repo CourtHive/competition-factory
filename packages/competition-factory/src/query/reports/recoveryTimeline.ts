@@ -48,7 +48,7 @@ import {
 } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
 
 // constants and types
-import { Event, MatchUpSchedule, Tournament } from '@Types/tournamentTypes';
+import { Event, HydratedMatchUpSchedule, Tournament } from '@Types/tournamentTypes';
 import { HydratedMatchUp, HydratedSide } from '@Types/hydrated';
 import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 import { PolicyDefinitions } from '@Types/factoryTypes';
@@ -186,7 +186,7 @@ function localParts(ms: number, frame: VenueFrame): { date: string; time: string
  * When the matchUp began, strongest rung first: an operator-recorded start, the
  * moment it was called to court, then the plan.
  */
-function resolveStart(schedule: MatchUpSchedule, frame: VenueFrame): { ms: number; source: string } | null {
+function resolveStart(schedule: HydratedMatchUpSchedule, frame: VenueFrame): { ms: number; source: string } | null {
   const started = wallClockToMs(schedule?.scheduledDate, schedule?.startTime, frame);
   if (started !== null) return { ms: started, source: 'startTime' };
   const called = isoToMs(schedule?.calledAt);
@@ -206,7 +206,7 @@ function resolveStart(schedule: MatchUpSchedule, frame: VenueFrame): { ms: numbe
  * direction, since it reports a player as less rested rather than more.
  */
 function resolveFinish(
-  schedule: MatchUpSchedule,
+  schedule: HydratedMatchUpSchedule,
   averageMinutes: number,
   startMs: number | null,
   frame: VenueFrame,
@@ -238,7 +238,7 @@ function resolveFinish(
  * and why the summary counts how many rows landed there.
  */
 function resolveDuration(
-  schedule: MatchUpSchedule,
+  schedule: HydratedMatchUpSchedule,
   averageMinutes: number,
   frame: VenueFrame,
 ): { minutes: number; source: DurationSource } {

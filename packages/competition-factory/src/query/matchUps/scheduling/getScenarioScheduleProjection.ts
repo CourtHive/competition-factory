@@ -3,7 +3,7 @@ import { mergeFacilitySchedule } from '@Query/facilitySchedule/mergeFacilitySche
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 
 // constants and types
-import { MatchUpSchedule, ScheduleScenario, Tournament } from '@Types/tournamentTypes';
+import { MatchUpScheduleItems, ScheduleScenario, Tournament } from '@Types/tournamentTypes';
 import { FacilityScheduleGrid, ScheduleCell } from '@Types/facilityScheduleTypes';
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { ErrorType } from '@Constants/errorConditionConstants';
@@ -77,8 +77,8 @@ export function getScenarioScheduleProjection(params: GetScenarioScheduleProject
   };
 }
 
-function buildPlacementMap(scenario: ScheduleScenario): { [matchUpId: string]: MatchUpSchedule } {
-  const map: { [matchUpId: string]: MatchUpSchedule } = {};
+function buildPlacementMap(scenario: ScheduleScenario): { [matchUpId: string]: MatchUpScheduleItems } {
+  const map: { [matchUpId: string]: MatchUpScheduleItems } = {};
   for (const placement of scenario.placements ?? []) map[placement.matchUpId] = placement.schedule ?? {};
   return map;
 }
@@ -96,7 +96,7 @@ function buildCourtToVenueMap(tournamentRecord: Tournament): { [courtId: string]
 type ProjectMatchUpArgs = {
   matchUp: any;
   record: Tournament;
-  placementMap: { [matchUpId: string]: MatchUpSchedule };
+  placementMap: { [matchUpId: string]: MatchUpScheduleItems };
   courtToVenue: { [courtId: string]: string };
   venueFilter?: Set<string>;
   plannedMatchUpIds: string[];

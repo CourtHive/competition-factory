@@ -9,6 +9,7 @@ import { MISSING_TOURNAMENT_RECORD, MISSING_TOURNAMENT_RECORDS } from '@Constant
 import { PUBLIC, PUBLISH, STATUS } from '@Constants/timeItemConstants';
 import { UNPUBLISH_TOURNAMENT_INFO } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { TournamentPublishState } from '@Types/viewTypes';
 
 /**
  * Withdraw a tournament's information publish. The tournament stays public if any other component —
@@ -32,7 +33,7 @@ function unpublish({ removePriorValues = true, tournamentRecord, status = PUBLIC
 
   const itemType = `${PUBLISH}.${STATUS}`;
   const { timeItem } = getTimeItem({ element: tournamentRecord, itemType });
-  const itemValue = timeItem?.itemValue || { [status]: {} };
+  const itemValue = (timeItem?.itemValue as Record<string, TournamentPublishState>) || { [status]: {} };
   if (itemValue[status]) delete itemValue[status].info;
 
   addTimeItem({

@@ -35,6 +35,8 @@ export type Attestation = {
   reason?: string;
 };
 
+type AttestationValue = { participantId?: string; operator?: boolean } | undefined;
+
 const latest = (matchUp: MatchUp | undefined, itemType: string) =>
   (matchUp?.timeItems ?? [])
     .filter((item) => item.itemType === itemType)
@@ -59,9 +61,9 @@ export function getResultAttestation(params: AttestationArgs): Attestation {
   const confirmed = latest(matchUp, RESULT_CONFIRMED);
   const disputed = latest(matchUp, RESULT_DISPUTED);
 
-  const submittedBy = submitted?.itemValue?.participantId;
-  const confirmedBy = confirmed?.itemValue?.participantId;
-  const confirmedByOperator = !!confirmed?.itemValue?.operator;
+  const submittedBy = (submitted?.itemValue as AttestationValue)?.participantId;
+  const confirmedBy = (confirmed?.itemValue as AttestationValue)?.participantId;
+  const confirmedByOperator = !!(confirmed?.itemValue as AttestationValue)?.operator;
 
   // A dispute raised AFTER a confirmation does not un-confirm it — an operator resolves that. A
   // dispute standing alone leaves the result unvalidated, which is the point of tracking it.

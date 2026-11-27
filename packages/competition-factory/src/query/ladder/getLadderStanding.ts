@@ -36,7 +36,7 @@ function readScale({ participant, scaleName, scaleAccessor, eventType }: ReadSca
       scaleAttributes: { eventType: eventType ?? SINGLES_EVENT, scaleType: RATING_SCALE, scaleName },
       participant,
     });
-  const scaleValue = result?.scaleItem?.scaleValue;
+  const scaleValue = result?.scaleItem?.scaleValue as Record<string, any>;
   return scaleAccessor && isObject(scaleValue) ? scaleValue[scaleAccessor] : scaleValue;
 }
 

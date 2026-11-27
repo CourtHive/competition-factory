@@ -708,10 +708,10 @@ describe('matchUpAllocatedCourts branch coverage', () => {
 
   it('returns schedule when schedule exists and no newer timeItem', () => {
     const result = matchUpAllocatedCourts({
-      schedule: { allocatedCourts: ['c1'] },
+      schedule: { allocatedCourts: [{ courtId: 'c1' }] },
       matchUp: { timeItems: [] } as any,
     });
-    expect(result).toEqual({ allocatedCourts: ['c1'] });
+    expect(result).toEqual({ allocatedCourts: [{ courtId: 'c1' }] });
   });
 
   it('returns allocatedCourts from timeItem when newer than schedule timestamp', () => {
@@ -733,7 +733,7 @@ describe('matchUpAllocatedCourts branch coverage', () => {
 
   it('returns schedule when timeItem is older', () => {
     const result = matchUpAllocatedCourts({
-      schedule: { allocatedCourts: ['existing'] },
+      schedule: { allocatedCourts: [{ courtId: 'existing' }] },
       timeStamp: '2025-06-01T00:00:00Z',
       matchUp: {
         timeItems: [
@@ -745,7 +745,7 @@ describe('matchUpAllocatedCourts branch coverage', () => {
         ],
       } as any,
     });
-    expect(result).toEqual({ allocatedCourts: ['existing'] });
+    expect(result).toEqual({ allocatedCourts: [{ courtId: 'existing' }] });
   });
 });
 
