@@ -142,7 +142,8 @@ with `dev` says nothing about the release.
 ## `check:request-shapes` — the request-shape typing guard
 
 Part of `verify:generated`. The factory types its DOMAIN data rigorously; this asserts the same of
-its REQUEST shapes — exported types named `*Args`, plus the `*Profile` sub-objects they nest.
+its REQUEST shapes — exported types named `*Args`, plus the `*Profile` sub-objects they nest — and,
+for rule 1, of the first parameter of every engine method in `MethodSignatures`.
 
 Two rules:
 
@@ -161,11 +162,20 @@ there to `string` would take its own source of protection with it. Rule 1 still 
 `any`. Closing that gap would need a hand-maintained field-to-union list — the exact artifact whose
 drift motivated `check:enum-exports`.
 
+The engine-method pass resolves each signature through the type checker, because each entry wraps
+`typeof sourceFn` and the keys a caller passes only exist once the compiler has expanded it. A key is
+flagged when it resolves to exactly `any` or `any[]`: declared so, untyped in a destructured parameter,
+or reached through a shared Args type or an alias.
+
 **The allowlist is half the point.** `requestShapes.allow.json` enumerates every field that cannot be
 typed today with a one-line reason, so the debt is countable instead of invisible. An entry matching
-nothing **fails** the run, the same stale-waiver rule `verify:audit` applies to advisories.
+nothing **fails** the run, the same stale-waiver rule `verify:audit` applies to advisories. The
+engine-method keys still typed `any` are listed under `methodParams` (`method.key`, each with a code
+from `methodParamReasons`). That list is a ratchet: it may only shrink, since a typed key that
+regresses to `any` is not on it.
 
-`pnpm check:request-shapes:self-test` asserts that both rules and the polysemy rule actually FIRE,
+`pnpm check:request-shapes:self-test` asserts that both rules, the polysemy rule and the engine-method
+pass actually FIRE,
 and runs immediately before the real check in `verify:generated`. A guard measured at zero that has
 never been shown to fail is indistinguishable from a scan that matches nothing.
 

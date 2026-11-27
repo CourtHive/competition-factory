@@ -4,7 +4,7 @@ import { getScaledEntries } from '@Query/event/getScaledEntries';
 
 // constants and types
 import { DrawDefinition, Event, StageTypeUnion, Tournament } from '@Types/tournamentTypes';
-import { PolicyDefinitions, ScaleAttributes } from '@Types/factoryTypes';
+import { PolicyDefinitions, ScaleAttributes, ScaleSortMethod } from '@Types/factoryTypes';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 type AutoSeedingParams = {
@@ -13,7 +13,7 @@ type AutoSeedingParams = {
   tournamentRecord: Tournament;
   policyDefinitions: PolicyDefinitions;
   scaleAttributes: ScaleAttributes;
-  scaleSortMethod: any;
+  scaleSortMethod?: ScaleSortMethod;
   drawDefinition: DrawDefinition;
   scaleName: string;
   drawSize: number;

@@ -33,6 +33,8 @@ type TournamentDateBounds = {
   endDate?: string;
 };
 
+type TournamentDateArgs = Pick<SetTournamentDatesArgs, 'tournamentRecord' | 'startDate' | 'endDate' | 'force'>;
+
 type SetTournamentDatesArgs = {
   tournamentRecord: Tournament;
   weekdays?: WeekdayUnion[];
@@ -352,12 +354,12 @@ function activeDatesRemovalConflict({
   return undefined;
 }
 
-export function setTournamentStartDate({ tournamentRecord, startDate, force }) {
+export function setTournamentStartDate({ tournamentRecord, startDate, force }: TournamentDateArgs) {
   if (!startDate) return { error: INVALID_DATE };
   return setTournamentDates({ tournamentRecord, startDate, force });
 }
 
-export function setTournamentEndDate({ tournamentRecord, endDate, force }) {
+export function setTournamentEndDate({ tournamentRecord, endDate, force }: TournamentDateArgs) {
   if (!endDate) return { error: INVALID_DATE };
   return setTournamentDates({ tournamentRecord, endDate, force });
 }

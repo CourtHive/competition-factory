@@ -35,6 +35,7 @@ import {
   TRAINER,
   TRANSPORT,
 } from '@Constants/participantRoles';
+import type { PolicyDefinitions } from '@Types/factoryTypes';
 
 /**
  * Roles whose holders appear in `tournamentContacts`.
@@ -110,7 +111,7 @@ export function getTournamentInfo(params?: {
   tournamentRecord: Tournament;
   withMatchUpStats?: boolean;
   usePublishState?: boolean;
-  policyDefinitions?: any;
+  policyDefinitions?: PolicyDefinitions;
   withVenueData?: boolean;
 }): {
   tournamentInfo?: TournamentInfo;

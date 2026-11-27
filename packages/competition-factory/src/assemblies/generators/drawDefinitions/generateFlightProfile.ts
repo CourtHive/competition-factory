@@ -18,7 +18,7 @@ import { EXISTING_FLIGHT, EXISTING_PROFILE, ErrorType, MISSING_EVENT } from '@Co
 import { ENTRIES_SCOPE_UNFLIGHTED, SPLIT_SHUTTLE, SPLIT_WATERFALL } from '@Constants/flightConstants';
 import { Entry, Event, StageTypeUnion, Tournament } from '@Types/tournamentTypes';
 import { DIRECT_ENTRY_STATUSES } from '@Constants/entryStatusConstants';
-import { FlightProfile, ScaleAttributes } from '@Types/factoryTypes';
+import { FlightProfile, ScaleAttributes, ScaleSortMethod, ScaledEntry } from '@Types/factoryTypes';
 import { FLIGHT_PROFILE } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -40,10 +40,10 @@ type GenerateFlightProfileArgs = {
   sortDescending?: boolean;
   random?: () => number;
   drawNameRoot?: string;
-  scaleSortMethod?: any;
+  scaleSortMethod?: ScaleSortMethod;
   stage?: StageTypeUnion;
   drawNames?: string[];
-  scaledEntries?: any;
+  scaledEntries?: ScaledEntry[];
   flightsCount: number;
   splitMethod: string; // anything that is not SPLIT_SHUTTLE or SPLIT_WATERFALL results in SPLIT_LEVEL
   uuids?: string[];
@@ -101,7 +101,7 @@ export function generateFlightProfile(params: GenerateFlightProfileArgs): {
   // `scaledEntries` orders the split; the scope narrows it
   const scaledEntries = (
     params.scaledEntries ??
-    getScaledEntries({
+    (getScaledEntries({
       entries: scopedEntries,
       tournamentRecord,
       scaleAttributes,
@@ -109,7 +109,7 @@ export function generateFlightProfile(params: GenerateFlightProfileArgs): {
       sortDescending,
       event,
       stage,
-    }).scaledEntries
+    }).scaledEntries as ScaledEntry[])
   )
     .filter(({ participantId }: { participantId: string }) => inScope(participantId))
     .filter((entry: { scaleValue?: unknown }) => !scaleRange || inScaleRange({ entry, scaleRange, scaleAttributes }));

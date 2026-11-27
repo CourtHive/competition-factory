@@ -18,7 +18,7 @@ type AddExtensionArgs = {
   tournamentId?: string;
   extension: Extension;
   discover?: boolean;
-  element?: any;
+  element?: { extensions?: Extension[] };
 };
 
 export function addExtension(params?: AddExtensionArgs): {

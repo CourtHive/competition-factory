@@ -152,7 +152,7 @@ it('Does mark a downstream as active if we are trying to reset the score for one
   //let's set the second match in EAST as a normal score
   matchUpId = 'matchUp-East-RP-1-2';
   result = tournamentEngine.setMatchUpStatus({
-    outcome: { winningSide: 2, scoreStringSide1: '11-3', scoreStringSide2: '3-11' },
+    outcome: { winningSide: 2 },
     propagateExitStatus: false,
     matchUpId,
     drawId,
@@ -399,7 +399,7 @@ it('Does NOT mark downstream as active if the consolation match has the result o
   //because they will have no active downstream
   matchUpId = 'matchUp-East-RP-1-1';
   result = tournamentEngine.setMatchUpStatus({
-    outcome: { scoreStringSide1: '', scoreStringSide2: '', matchUpStatus: TO_BE_PLAYED },
+    outcome: { matchUpStatus: TO_BE_PLAYED },
     propagateExitStatus: false,
     matchUpId,
     drawId,

@@ -43,13 +43,21 @@
  *   - any exported `type`/`interface` under `src/` whose name ends in `Args`
  *   - any exported `type`/`interface` under `src/types/` whose name ends in `Profile`
  *     (SeedingProfile, ContextProfile, PairingProfile … the sub-objects Args types nest)
+ *   - the FIRST PARAMETER of every engine method in `MethodSignatures`
+ *     (src/assemblies/engines/types/methodSignatures.ts), rule 1 only. These are resolved
+ *     through the type checker, not read as text: each entry wraps `typeof sourceFn`, so the
+ *     keys a caller may pass are only visible once the compiler has expanded the signature.
+ *     A key is flagged when its resolved type is exactly `any` or `any[]`, which also catches
+ *     an `any` reached through an alias or a shared Args type declared elsewhere.
  * Result shapes are deliberately out of scope: a permissive return type costs a consumer
  * nothing, while a permissive argument type is how bad input reaches the engine.
  *
  * THE ALLOWLIST is the point as much as the rules are. Debt that cannot be paid today is
  * ENUMERATED in requestShapes.allow.json with a reason, so it is countable rather than
  * invisible. An allowlist entry matching nothing is itself a failure — the same
- * stale-waiver rule `verify:audit` applies to security advisories.
+ * stale-waiver rule `verify:audit` applies to security advisories. Engine-method keys have
+ * their own section (`methodParams`, keyed `method.key`), a ratchet: the list may only shrink,
+ * because a typed key that regresses to `any` is not on it and fails.
  *
  * Run:        pnpm check:request-shapes
  * Self-test:  pnpm check:request-shapes --self-test   (asserts the rules FIRE)
@@ -57,12 +65,14 @@
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '../..');
 const SRC = join(ROOT, 'src');
 const TYPES_DIR = join(SRC, 'types');
 const ALLOW = join(__dirname, 'requestShapes.allow.json');
+const METHOD_SIGNATURES = join(SRC, 'assemblies/engines/types/methodSignatures.ts');
 
 const args = new Set(process.argv.slice(2));
 const selfTest = args.has('--self-test');
@@ -214,10 +224,91 @@ function scan(files, registry) {
   return violations;
 }
 
+/** `any` or `any[]` exactly, as the checker resolves it; a union containing `any` resolves to `any`. */
+function bareAny(checker, type) {
+  if (type.flags & ts.TypeFlags.Any) return 'any';
+  if (checker.isArrayType(type)) {
+    const [element] = checker.getTypeArguments(type);
+    if (element && element.flags & ts.TypeFlags.Any) return 'any[]';
+  }
+  return undefined;
+}
+
+/**
+ * Rule 1 over the first parameter of every `MethodSignatures` member, through the checker. Pure over a
+ * program, so --self-test can hand it an in-memory one.
+ */
+function scanMethodParams(program) {
+  const checker = program.getTypeChecker();
+  const violations = [];
+  const where = (node) => {
+    const sf = node.getSourceFile();
+    return { file: relative(ROOT, sf.fileName), line: sf.getLineAndCharacterOfPosition(node.getStart()).line + 1 };
+  };
+  let methods = 0;
+  for (const fileName of program.getRootFileNames()) {
+    const sf = program.getSourceFile(fileName);
+    for (const statement of sf?.statements ?? []) {
+      const isDeclaration = ts.isTypeAliasDeclaration(statement) || ts.isInterfaceDeclaration(statement);
+      if (!isDeclaration || statement.name.text !== 'MethodSignatures') continue;
+      const signatures = checker.getTypeAtLocation(statement.name);
+      for (const method of checker.getPropertiesOfType(signatures)) {
+        methods++;
+        const methodType = checker.getNonNullableType(checker.getTypeOfSymbol(method));
+        const param = methodType.getCallSignatures()[0]?.getParameters()[0];
+        if (!param) continue;
+        const paramType = checker.getNonNullableType(checker.getTypeOfSymbol(param));
+        const selfAny = bareAny(checker, paramType);
+        const methodSite = where(method.declarations?.[0] ?? statement);
+        if (selfAny) {
+          violations.push({ key: `${method.name}(params)`, rule: 'no-bare-any', ...methodSite, annotation: selfAny });
+          continue;
+        }
+        for (const key of checker.getPropertiesOfType(paramType)) {
+          const annotation = bareAny(checker, checker.getNonNullableType(checker.getTypeOfSymbol(key)));
+          if (!annotation) continue;
+          const site = key.declarations?.[0] ? where(key.declarations[0]) : methodSite;
+          violations.push({ key: `${method.name}.${key.name}`, rule: 'no-bare-any', ...site, annotation });
+        }
+      }
+    }
+  }
+  return { violations, methods };
+}
+
+function methodSignaturesProgram() {
+  const host = { ...ts.sys, onUnRecoverableConfigFileDiagnostic: () => {} };
+  const config = ts.getParsedCommandLineOfConfigFile(join(ROOT, 'tsconfig.json'), {}, host);
+  return ts.createProgram([METHOD_SIGNATURES], { ...config.options, noEmit: true });
+}
+
+/** A one-file in-memory program for the self-test; lib checking is skipped, `Array<T>` comes from the default lib. */
+function inMemoryProgram(source) {
+  const fileName = join(SRC, 'types/__methodSignaturesFixture__.ts');
+  const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022 };
+  const host = ts.createCompilerHost(options);
+  const readFile = host.readFile;
+  const getSourceFile = host.getSourceFile;
+  host.readFile = (f) => (f === fileName ? source : readFile.call(host, f));
+  host.fileExists = (
+    (exists) => (f) =>
+      f === fileName || exists.call(host, f)
+  )(host.fileExists);
+  host.getSourceFile = (f, languageVersion, ...rest) =>
+    f === fileName
+      ? ts.createSourceFile(f, source, languageVersion, true)
+      : getSourceFile.call(host, f, languageVersion, ...rest);
+  return ts.createProgram([fileName], options, host);
+}
+
 function loadAllowlist() {
-  if (!existsSync(ALLOW)) return {};
+  if (!existsSync(ALLOW)) return { allow: {}, methodParams: {}, reasons: {} };
   const parsed = JSON.parse(readFileSync(ALLOW, 'utf8'));
-  return parsed.allow ?? {};
+  return {
+    allow: parsed.allow ?? {},
+    methodParams: parsed.methodParams ?? {},
+    reasons: parsed.methodParamReasons ?? {},
+  };
 }
 
 /**
@@ -278,9 +369,45 @@ function runSelfTest() {
     console.error(`  actual:   ${JSON.stringify(keys)}`);
     process.exit(1);
   }
+
+  // Rule 1 over engine-method parameters: an `any` key declared directly, one reached through a shared Args type,
+  // an `any[]`, a parameter that is `any` itself, and an `any` hidden behind an alias must all fire; a typed key, an
+  // `unknown` key, an open-map index signature, a later parameter and a method with no parameter must not.
+  const methodFixture = [
+    'type Loose = any;',
+    'type SharedArgs = { sharedAny?: any; sharedTyped?: string };',
+    'type Wrap<F> = F extends (p: infer P) => infer R ? (p?: Partial<P>) => R : F;',
+    'declare function source(p: SharedArgs & { aliased?: Loose }): void;',
+    'export type MethodSignatures = {',
+    '  direct: (p: { directAny?: any; anyArray?: any[]; typed?: number; open?: unknown; [k: string]: any }) => void;',
+    '  wrapped: Wrap<typeof source>;',
+    '  whole: (p: any) => void;',
+    '  later: (p: { typed: string }, second: any) => void;',
+    '  none: () => void;',
+    '};',
+  ].join('\n');
+  const { violations: methodFound, methods } = scanMethodParams(inMemoryProgram(methodFixture));
+  const methodKeys = methodFound.map((v) => `${v.key}:${v.annotation}`).sort();
+  const methodExpected = [
+    'direct.anyArray:any[]',
+    'direct.directAny:any',
+    'whole(params):any',
+    'wrapped.aliased:any',
+    'wrapped.sharedAny:any',
+  ];
+  const methodOk =
+    methods === 5 && methodKeys.length === methodExpected.length && methodKeys.every((k, i) => k === methodExpected[i]);
+  if (!methodOk) {
+    console.error('[request-shapes] SELF-TEST FAIL — rule 1 did not fire as specified over engine-method parameters.');
+    console.error(`  expected: ${JSON.stringify(methodExpected)} over 5 methods`);
+    console.error(`  actual:   ${JSON.stringify(methodKeys)} over ${methods} methods`);
+    process.exit(1);
+  }
+
   console.log(
     '[request-shapes] SELF-TEST OK — both rules fire, the polysemy rule drops a contested name, ' +
-      'and an index signature and a result shape are correctly ignored.',
+      'an index signature and a result shape are correctly ignored, and rule 1 fires through the checker on ' +
+      'engine-method parameters (direct, shared, aliased, array and whole-parameter any).',
   );
 }
 
@@ -292,11 +419,17 @@ if (selfTest) {
 const registry = closedUnionRegistry();
 const files = sourceFiles().map((file) => ({ file, src: readFileSync(file, 'utf8') }));
 const violations = scan(files, registry);
-const allow = loadAllowlist();
+const { allow, methodParams, reasons } = loadAllowlist();
 
 const unexpected = violations.filter((v) => !allow[v.key]);
 const usedAllowKeys = new Set(violations.filter((v) => allow[v.key]).map((v) => v.key));
 const staleAllowKeys = Object.keys(allow).filter((k) => !usedAllowKeys.has(k));
+
+const { violations: methodViolations, methods } = scanMethodParams(methodSignaturesProgram());
+const unexpectedMethod = methodViolations.filter((v) => !methodParams[v.key]);
+const usedMethodKeys = new Set(methodViolations.filter((v) => methodParams[v.key]).map((v) => v.key));
+const staleMethodKeys = Object.keys(methodParams).filter((k) => !usedMethodKeys.has(k));
+const unknownReasons = Object.entries(methodParams).filter(([, code]) => !reasons[code]);
 
 let failed = false;
 
@@ -320,6 +453,32 @@ if (staleAllowKeys.length) {
   console.error('  Remove them from scripts/verify/requestShapes.allow.json.');
 }
 
+if (unexpectedMethod.length) {
+  failed = true;
+  console.error(`[request-shapes] FAIL: ${unexpectedMethod.length} engine-method parameter key(s) typed bare any:`);
+  for (const v of unexpectedMethod) {
+    console.error(`  ${v.file}:${v.line}  ${v.key} — ${v.rule} (${v.annotation})`);
+  }
+  console.error('');
+  console.error('  Type the key in the source function’s parameters. The methodParams list only shrinks.');
+}
+
+if (staleMethodKeys.length) {
+  failed = true;
+  console.error(`[request-shapes] FAIL: ${staleMethodKeys.length} methodParams entr(ies) match nothing — typed:`);
+  for (const k of staleMethodKeys) console.error(`  ${k}`);
+  console.error('');
+  console.error('  Remove them from methodParams in scripts/verify/requestShapes.allow.json.');
+}
+
+if (unknownReasons.length) {
+  failed = true;
+  console.error(
+    `[request-shapes] FAIL: ${unknownReasons.length} methodParams entr(ies) name no methodParamReasons code:`,
+  );
+  for (const [k, code] of unknownReasons) console.error(`  ${k} -> ${code}`);
+}
+
 if (failed) process.exit(1);
 
 const shapes = new Set();
@@ -328,5 +487,6 @@ for (const { file, src } of files) {
 }
 console.log(
   `[request-shapes] OK — ${shapes.size} request shapes scanned, ${registry.size} closed-union fields in registry, ` +
-    `${usedAllowKeys.size} allowlisted.`,
+    `${usedAllowKeys.size} allowlisted; ${methods} engine-method parameters scanned, ` +
+    `${usedMethodKeys.size} bare-any keys allowlisted.`,
 );

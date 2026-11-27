@@ -17,7 +17,13 @@ import { findEvent } from '@Acquire/findEvent';
 // constants and types
 import { DrawDefinition, PayloadProfileEnum, PayloadProfileUnion, Event, Tournament } from '@Types/tournamentTypes';
 import type { DrawData, DrawStub, EventData, EventDataResult, EventInfo, VenueData } from '@Types/viewTypes';
-import { ParticipantsProfile, PolicyDefinitions, StructureSortConfig } from '@Types/factoryTypes';
+import {
+  ContextProfile,
+  ParticipantFilters,
+  ParticipantsProfile,
+  PolicyDefinitions,
+  StructureSortConfig,
+} from '@Types/factoryTypes';
 import { EVENT_NOT_FOUND, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { completedMatchUpStatuses, BYE } from '@Constants/matchUpStatusConstants';
 import { DISPLAY } from '@Constants/extensionConstants';
@@ -25,7 +31,7 @@ import { ANY_OF } from '@Constants/attributeConstants';
 import { PUBLIC } from '@Constants/timeItemConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-type GetEventDataArgs = {
+export type GetEventDataArgs = {
   participantsProfile?: ParticipantsProfile;
   includePositionAssignments?: boolean;
   policyDefinitions?: PolicyDefinitions;
@@ -37,10 +43,10 @@ type GetEventDataArgs = {
   refreshResults?: boolean;
   pressureRating?: boolean;
   drawsProfile?: PayloadProfileUnion;
-  participantFilters?: any;
+  participantFilters?: ParticipantFilters;
   participantsVersion?: string;
   withParticipantsVersion?: boolean;
-  contextProfile?: any;
+  contextProfile?: ContextProfile;
   eventId?: string;
   status?: string;
   event?: Event;

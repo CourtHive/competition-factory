@@ -7,32 +7,39 @@ import { INVALID_TIME_ZONE, INVALID_VALUES, TOURNAMENT_CATEGORY_IN_USE } from '@
 import { MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { Category, RegistrationProfile, Tournament } from '@Types/tournamentTypes';
 
-export function setTournamentName({ tournamentRecord, promotionalName, tournamentName, formalName }) {
+type NameArgs = {
+  tournamentRecord?: Tournament;
+  tournamentName?: string;
+  promotionalName?: string;
+  formalName?: string;
+};
+export function setTournamentName({ tournamentRecord, promotionalName, tournamentName, formalName }: NameArgs) {
   const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
   if (paramsCheck.error) return paramsCheck;
-  const tournamentId = tournamentRecord.tournamentId;
+  const tournamentId = tournamentRecord!.tournamentId;
 
   const detailUpdates: any = { tournamentId };
 
-  if (tournamentName && tournamentName !== tournamentRecord.tournamentName) {
-    tournamentRecord.tournamentName = tournamentName;
+  if (tournamentName && tournamentName !== tournamentRecord!.tournamentName) {
+    tournamentRecord!.tournamentName = tournamentName;
     detailUpdates.tournamentName = tournamentName;
   }
-  if (promotionalName && promotionalName !== tournamentRecord.promotionalName) {
-    tournamentRecord.promotionalName = promotionalName;
+  if (promotionalName && promotionalName !== tournamentRecord!.promotionalName) {
+    tournamentRecord!.promotionalName = promotionalName;
     detailUpdates.promotionalName = promotionalName;
   }
-  if (formalName && formalName !== tournamentRecord.formalName) {
-    tournamentRecord.formalName = formalName;
+  if (formalName && formalName !== tournamentRecord!.formalName) {
+    tournamentRecord!.formalName = formalName;
     detailUpdates.formalName = formalName;
   }
-  if (tournamentRecord.promotionalName === tournamentRecord.tournamentName) {
-    delete tournamentRecord.promotionalName;
+  if (tournamentRecord!.promotionalName === tournamentRecord!.tournamentName) {
+    delete tournamentRecord!.promotionalName;
     detailUpdates.promotionalName = '';
   }
-  if (tournamentRecord.formalName === tournamentRecord.tournamentName) {
-    delete tournamentRecord.formalName;
+  if (tournamentRecord!.formalName === tournamentRecord!.tournamentName) {
+    delete tournamentRecord!.formalName;
     detailUpdates.formalName = '';
   }
 
@@ -40,7 +47,7 @@ export function setTournamentName({ tournamentRecord, promotionalName, tournamen
     addNotice({
       topic: MODIFY_TOURNAMENT_DETAIL,
       payload: {
-        parentOrganisation: tournamentRecord.parentOrganisation,
+        parentOrganisation: tournamentRecord!.parentOrganisation,
         tournamentId,
         ...detailUpdates,
       },
@@ -50,7 +57,7 @@ export function setTournamentName({ tournamentRecord, promotionalName, tournamen
   return { ...SUCCESS };
 }
 
-export function setTournamentNotes({ tournamentRecord, notes }) {
+export function setTournamentNotes({ tournamentRecord, notes }: { tournamentRecord?: Tournament; notes?: string }) {
   const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
   if (paramsCheck.error) return paramsCheck;
 
@@ -60,8 +67,8 @@ export function setTournamentNotes({ tournamentRecord, notes }) {
   addNotice({
     topic: MODIFY_TOURNAMENT_DETAIL,
     payload: {
-      parentOrganisation: tournamentRecord.parentOrganisation,
-      tournamentId: tournamentRecord.tournamentId,
+      parentOrganisation: tournamentRecord!.parentOrganisation,
+      tournamentId: tournamentRecord!.tournamentId,
       notes: notes ?? '',
     },
   });
@@ -85,7 +92,12 @@ export function setTournamentNotes({ tournamentRecord, notes }) {
  *
  * No-op on unchanged value.
  */
-export function setTournamentLocalTimeZone({ tournamentRecord, localTimeZone }) {
+type TimeZoneArgs = {
+  tournamentRecord: Tournament;
+  /** an IANA zone; '', null or undefined clears it */
+  localTimeZone?: string | null;
+};
+export function setTournamentLocalTimeZone({ tournamentRecord, localTimeZone }: TimeZoneArgs) {
   const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
   if (paramsCheck.error) return paramsCheck;
 
@@ -131,7 +143,12 @@ export function setTournamentLocalTimeZone({ tournamentRecord, localTimeZone }) 
  * Ranking policies use `tierToLevel` mappings to resolve numeric levels
  * from the tier's system + value.
  */
-export function setTournamentTier({ tournamentRecord, tournamentTier }) {
+type SetTournamentTierArgs = {
+  tournamentRecord: Tournament;
+  /** null or undefined clears it; `value` and `numericRank` are stored as a string and a number */
+  tournamentTier?: { system: string; value: string | number; numericRank?: number | string } | null;
+};
+export function setTournamentTier({ tournamentRecord, tournamentTier }: SetTournamentTierArgs) {
   const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
   if (paramsCheck.error) return paramsCheck;
 
@@ -185,7 +202,12 @@ function invalidEntryFee(entryFees: unknown): boolean {
   );
 }
 
-export function setRegistrationProfile({ tournamentRecord, registrationProfile }) {
+type SetRegistrationProfileArgs = {
+  tournamentRecord: Tournament;
+  /** merged over the stored profile; null or undefined removes it */
+  registrationProfile?: Partial<RegistrationProfile> | null;
+};
+export function setRegistrationProfile({ tournamentRecord, registrationProfile }: SetRegistrationProfileArgs) {
   const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
   if (paramsCheck.error) return paramsCheck;
 
@@ -212,7 +234,12 @@ export function setRegistrationProfile({ tournamentRecord, registrationProfile }
   return { ...SUCCESS };
 }
 
-export function setTournamentCategories({ tournamentRecord, categories }) {
+type SetTournamentCategoriesArgs = {
+  tournamentRecord?: Tournament;
+  /** a category without a categoryName or a type is dropped */
+  categories?: (Omit<Category, 'type'> & { type?: string })[];
+};
+export function setTournamentCategories({ tournamentRecord, categories }: SetTournamentCategoriesArgs) {
   const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
   if (paramsCheck.error) return paramsCheck;
   categories = (categories ?? []).filter((category) => category.categoryName && category.type);
@@ -221,7 +248,7 @@ export function setTournamentCategories({ tournamentRecord, categories }) {
   // (ageCategoryCode if present, else categoryName); both are walked so a partial-shape event reference still gets
   // caught. Only a REMOVAL is refused: a reference the current list does not define is not removed by this call, and
   // refusing on it meant a tournament with two undefined event categories could define neither one at a time.
-  const keysOf = (list: any[]) => {
+  const keysOf = (list?: any[]) => {
     const keys = new Set<string>();
     for (const category of list ?? []) {
       if (category?.ageCategoryCode) keys.add(category.ageCategoryCode);
@@ -230,11 +257,11 @@ export function setTournamentCategories({ tournamentRecord, categories }) {
     return keys;
   };
   const incoming = keysOf(categories);
-  const current = keysOf(tournamentRecord.tournamentCategories);
+  const current = keysOf(tournamentRecord!.tournamentCategories);
   const isRemoved = (key: string) => current.has(key) && !incoming.has(key);
 
   const referenced: string[] = [];
-  for (const event of tournamentRecord.events ?? []) {
+  for (const event of tournamentRecord!.events ?? []) {
     const eventCategory = event?.category;
     if (!eventCategory) continue;
     const code = eventCategory.ageCategoryCode;
@@ -251,13 +278,13 @@ export function setTournamentCategories({ tournamentRecord, categories }) {
     return { error: TOURNAMENT_CATEGORY_IN_USE, referenced: [...new Set(referenced)] };
   }
 
-  tournamentRecord.tournamentCategories = categories;
+  tournamentRecord!.tournamentCategories = categories as Category[];
 
   addNotice({
     topic: MODIFY_TOURNAMENT_DETAIL,
     payload: {
-      parentOrganisation: tournamentRecord.parentOrganisation,
-      tournamentId: tournamentRecord.tournamentId,
+      parentOrganisation: tournamentRecord!.parentOrganisation,
+      tournamentId: tournamentRecord!.tournamentId,
       categories,
     },
   });

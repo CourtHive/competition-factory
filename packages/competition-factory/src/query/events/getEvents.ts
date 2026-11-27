@@ -45,7 +45,8 @@ type GetEventsArgs = {
   inContext?: boolean;
   eventIds?: string[];
   drawIds?: string[];
-  context?: any;
+  /** added to each event returned */
+  context?: { [key: string]: unknown };
 };
 
 function sumValues(values) {
