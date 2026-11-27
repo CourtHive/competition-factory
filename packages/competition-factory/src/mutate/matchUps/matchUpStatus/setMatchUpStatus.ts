@@ -147,12 +147,16 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // ONE map for the whole call. `setMatchUpState` builds this itself unless handed one; building it
   // here instead lets the preflight, the before-snapshot and the warning below read the same flat array
   // the cascade writes through, so none of them walks the draw again. Its matchUps are the live objects.
-  // a result whose loser declined the consolation (their seat replaced with a BYE) is not reversed or cleared while
-  // the decline stands: the new loser would have no seat. Asked of the stored draw, before either pipeline runs
-  const declined = declinedSeatRefusal({ drawDefinition, matchUpId, winningSide: params.outcome?.winningSide });
-  if (declined) return declined;
-
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
+  // a result whose loser declined the consolation (their seat replaced with a BYE) is not reversed or cleared while
+  // the decline stands: the new loser would have no seat. Asked of the stored matchUps, before either pipeline runs
+  const declined = declinedSeatRefusal({
+    drawDefinition,
+    matchUpsMap,
+    matchUpId,
+    winningSide: params.outcome?.winningSide,
+  });
+  if (declined) return declined;
   const rotating = preflightOutcome(params, matchUpsMap);
   if (rotating.error) return rotating;
   params = { ...params, ...rotating, outcome: params.outcome && { ...params.outcome, ...rotating } };
