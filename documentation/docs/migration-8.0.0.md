@@ -152,6 +152,7 @@ instead. Methods that stay are not listed.
 | `availabilityGovernor.courtDayKey`                            | `availability.courtDayKey`                            | Positional arguments: call it directly, not through an engine.                            |
 | `availabilityGovernor.courtKey`                               | `availability.courtKey`                               | Positional arguments: call it directly, not through an engine.                            |
 | `availabilityGovernor.createFollowByEvaluator`                | `availability.createFollowByEvaluator`                | Positional arguments: call it directly, not through an engine.                            |
+| `availabilityGovernor.dateAvailabilityToBlocks`               | None                                                  | See [its reference](/docs/implementation/scheduling/dateAvailabilityToBlocks).            |
 | `availabilityGovernor.deriveRailSegments`                     | `availability.deriveRailSegments`                     | Positional arguments: call it directly, not through an engine.                            |
 | `availabilityGovernor.diffMinutes`                            | `availability.diffMinutes`                            | Positional arguments: call it directly, not through an engine.                            |
 | `availabilityGovernor.EvaluatorRegistry`                      | None                                                  | See [its reference](/docs/implementation/scheduling/EvaluatorRegistry).                   |
@@ -181,7 +182,6 @@ instead. Methods that stay are not listed.
 | `availabilityGovernor.sortBlocksByStart`                      | `availability.sortBlocksByStart`                      | Positional arguments: call it directly, not through an engine.                            |
 | `availabilityGovernor.sortEdges`                              | `availability.sortEdges`                              | Positional arguments: call it directly, not through an engine.                            |
 | `availabilityGovernor.timeInsideBlock`                        | `availability.timeInsideBlock`                        | Positional arguments: call it directly, not through an engine.                            |
-| `availabilityGovernor.todsAvailabilityToBlocks`               | None                                                  | See [its reference](/docs/implementation/scheduling/todsAvailabilityToBlocks).            |
 | `availabilityGovernor.validateDateAvailability`               | `availability.validateDateAvailability`               | Positional arguments: call it directly, not through an engine.                            |
 | `availabilityGovernor.validateSchedulingProfileFormat`        | `availability.validateSchedulingProfileFormat`        | Positional arguments: call it directly, not through an engine.                            |
 | `availabilityGovernor.validateSegments`                       | `availability.validateSegments`                       | Positional arguments: call it directly, not through an engine.                            |
@@ -582,6 +582,7 @@ produces), whether the engine copies it (`setState(record)`, the default) or bor
 - `POLICY_PRINT_DEFAULT` and its `fixtures.policies` export.
 - `ScoringEngine.markHardBoundary`, `SetScore.hardBoundaries` and `Point.hardBoundary`.
 - The competitionFormat fixtures' `label` fields.
+- The `tods`-named availability exports, renamed with no alias (#6711): `todsAvailabilityToBlocks` is now `dateAvailabilityToBlocks`, `TodsDateAvailability` is now `VenueDateAvailability`, and `TodsVenue` is now `AvailabilityVenue`, on `availability`, `AvailabilityEngine`, `availabilityGovernor` and the package root. Import the new names; the shapes and behaviour are unchanged. The governor route, which leaves at 8.0.0, is listed under [availabilityGovernor](#availabilitygovernor) by its new name.
 
 ### Types and schema
 

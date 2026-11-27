@@ -49,6 +49,7 @@ Availability
 AvailabilityEngine
 AvailabilityPayload
 AvailabilityTimeAway
+AvailabilityVenue
 AwardProfile
 AwardProfileScope
 BLOCK_TYPES
@@ -1033,8 +1034,6 @@ TimeoutRules
 TimeoutScope
 TimerProfile
 TodsCourt
-TodsDateAvailability
-TodsVenue
 Topic
 TopicPayloadMap
 Tournament
@@ -1094,6 +1093,7 @@ ValidationResult
 ValidationSeverity
 Venue
 VenueData
+VenueDateAvailability
 VenueDayTimeline
 VenueId
 VenueProposal
@@ -1323,6 +1323,7 @@ createTournamentRecord
 credits
 cycleModifiedTournamentIds
 cycleMutationStatus
+dateAvailabilityToBlocks
 dateTime
 dayBoundaryEvaluator
 dayStateConstants
@@ -2128,7 +2129,6 @@ timeItemConstants
 timeKeeper
 timeZone
 toStatObjects
-todsAvailabilityToBlocks
 toggleParticipantCheckInState
 tools
 topicConstants

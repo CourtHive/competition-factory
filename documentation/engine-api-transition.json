@@ -2798,10 +2798,10 @@
       }
     },
     {
-      "name": "todsAvailabilityToBlocks",
+      "name": "dateAvailabilityToBlocks",
       "source": {
         "path": "src/assemblies/governors/availabilityGovernor/bridge.ts",
-        "symbol": "todsAvailabilityToBlocks",
+        "symbol": "dateAvailabilityToBlocks",
         "line": 353
       },
       "governors": ["availabilityGovernor"],
@@ -2809,7 +2809,7 @@
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
       "replacement": null,
-      "destination": "implementation/scheduling/todsAvailabilityToBlocks",
+      "destination": "implementation/scheduling/dateAvailabilityToBlocks",
       "previous": [],
       "documentationMentions": ["availability-engine/block-types-and-algorithms.md"],
       "testHarnessReach": "not product usage; does not retain a production route",

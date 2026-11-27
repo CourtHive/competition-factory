@@ -365,7 +365,7 @@ The bridge module provides bidirectional translation between AvailabilityEngine 
 railsToDateAvailability(
   timelines: VenueDayTimeline[],
   config?: BridgeConfig,
-): TodsDateAvailability[]
+): VenueDateAvailability[]
 
 // Write engine availability back into a tournament record
 applyTemporalAvailabilityToTournamentRecord(params: {
@@ -380,8 +380,8 @@ applyTemporalAvailabilityToTournamentRecord(params: {
 
 ```ts
 // Convert CODES venue availability to engine blocks
-todsAvailabilityToBlocks(params: {
-  venue: TodsVenue;
+dateAvailabilityToBlocks(params: {
+  venue: AvailabilityVenue;
   tournamentId: string;
   blockType?: BlockType;
 }): Array<{ court: CourtRef; start: string; end: string; type: BlockType }>
@@ -416,13 +416,13 @@ interface BridgeConfig {
 
 ```ts
 // Validate date availability entries
-validateDateAvailability(entries: TodsDateAvailability[]): { valid: boolean; errors: string[] }
+validateDateAvailability(entries: VenueDateAvailability[]): { valid: boolean; errors: string[] }
 
 // Merge overlapping availability entries
-mergeOverlappingAvailability(entries: TodsDateAvailability[]): TodsDateAvailability[]
+mergeOverlappingAvailability(entries: VenueDateAvailability[]): VenueDateAvailability[]
 
 // Calculate total court-hours from availability entries
-calculateCourtHours(entries: TodsDateAvailability[]): number
+calculateCourtHours(entries: VenueDateAvailability[]): number
 ```
 
 ---

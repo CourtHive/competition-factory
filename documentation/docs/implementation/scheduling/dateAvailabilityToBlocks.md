@@ -1,14 +1,17 @@
 ---
-title: todsAvailabilityToBlocks
+title: dateAvailabilityToBlocks
 ---
 
-# todsAvailabilityToBlocks
+# dateAvailabilityToBlocks
 
 :::warning 8.0.0 engine API transition
 
 This method is **scheduled for removal from production governors and engine exports at 8.0.0**. Its 7.x route still works. The removal list was confirmed with external integrators on 2026-10-28 and closed on 2026-11-22. The standalone package-export decision is made per method; see the [transition index](/docs/implementation/engine-api-transition-8).
 
 :::
+
+Renamed from `todsAvailabilityToBlocks` in 8.0.0, with no alias; its parameter type `TodsVenue` is now
+`AvailabilityVenue`. The pinned implementation link below predates the rename and shows the old names.
 
 ## Source-local contract
 
@@ -23,8 +26,8 @@ The declaration below is copied from the pinned source revision; referenced type
  * @param tournamentId - Tournament ID for block references
  * @returns Array of blocks representing availability
  */
-export function todsAvailabilityToBlocks(params: {
-  venue: TodsVenue;
+export function dateAvailabilityToBlocks(params: {
+  venue: AvailabilityVenue;
   tournamentId: string;
   blockType?: BlockType;
 }): Array<{
@@ -47,7 +50,7 @@ The refreshed source-name scan found no name mentions in the scanned product sou
 
 - **Production governor declarations:** `availabilityGovernor`.
 - **Standalone package API after 8.0.0:** decision pending; this page does not establish a supported import.
-- **Implementation:** [`src/assemblies/governors/availabilityGovernor/bridge.ts` — `todsAvailabilityToBlocks`](https://github.com/CourtHive/competition-factory/blob/8c2aaca6801734223ef1e0a8127872344373fbd5/src/assemblies/governors/availabilityGovernor/bridge.ts). Source paths and aliases are not package import paths.
+- **Implementation:** [`src/assemblies/governors/availabilityGovernor/bridge.ts` — `dateAvailabilityToBlocks`](https://github.com/CourtHive/competition-factory/blob/8c2aaca6801734223ef1e0a8127872344373fbd5/src/assemblies/governors/availabilityGovernor/bridge.ts). Source paths and aliases are not package import paths.
 - **Replacement workflow:** not yet established; no supported replacement is promised.
 - **Test-only adapters:** may exercise this implementation independently of production engine exports; this is not evidence of product use.
 

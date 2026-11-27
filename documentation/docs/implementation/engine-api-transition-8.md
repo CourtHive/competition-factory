@@ -49,6 +49,7 @@ External confirmation is complete for every entry. 81 scheduled methods are stat
 | [`courtDayKey`](/docs/implementation/scheduling/courtDayKey)                                                       | `availabilityGovernor`                   | Scheduled                     | Review required |
 | [`createFollowByEvaluator`](/docs/implementation/scheduling/createFollowByEvaluator)                               | `availabilityGovernor`                   | Scheduled                     | Review required |
 | [`createMatchUp`](/docs/implementation/scoring/createMatchUp)                                                      | `scoreGovernor`                          | Scheduled                     | Review required |
+| [`dateAvailabilityToBlocks`](/docs/implementation/scheduling/dateAvailabilityToBlocks)                             | `availabilityGovernor`                   | Scheduled                     | Review required |
 | [`deduceMatchUpFormat`](/docs/implementation/scoring/deduceMatchUpFormat)                                          | `scoreGovernor`                          | Scheduled                     | Review required |
 | [`deriveRailSegments`](/docs/implementation/scheduling/deriveRailSegments)                                         | `availabilityGovernor`                   | Scheduled                     | Review required |
 | [`diffMinutes`](/docs/implementation/scheduling/diffMinutes)                                                       | `availabilityGovernor`                   | Scheduled                     | Review required |
@@ -140,7 +141,6 @@ External confirmation is complete for every entry. 81 scheduled methods are stat
 | [`sortEdges`](/docs/implementation/scheduling/sortEdges)                                                           | `availabilityGovernor`                   | Scheduled                     | Review required |
 | [`tieFormatGenderValidityCheck`](/docs/implementation/validation/tieFormatGenderValidityCheck)                     | `queryGovernor`, `tieFormatGovernor`     | Retained                      | Review required |
 | [`timeInsideBlock`](/docs/implementation/scheduling/timeInsideBlock)                                               | `availabilityGovernor`                   | Scheduled                     | Review required |
-| [`todsAvailabilityToBlocks`](/docs/implementation/scheduling/todsAvailabilityToBlocks)                             | `availabilityGovernor`                   | Scheduled                     | Review required |
 | [`updateTeamLineUp`](/docs/implementation/draws/updateTeamLineUp)                                                  | `drawsGovernor`                          | Scheduled                     | Review required |
 | [`validMatchUp`](/docs/implementation/validation/validMatchUp)                                                     | `matchUpGovernor`, `queryGovernor`       | Scheduled                     | Review required |
 | [`validMatchUps`](/docs/implementation/validation/validMatchUps)                                                   | `matchUpGovernor`, `queryGovernor`       | Scheduled                     | Review required |

@@ -10,14 +10,14 @@ import {
   railsToDateAvailability,
   applyAvailabilityToTournamentRecord,
   buildSchedulingProfileFromUISelections,
-  todsAvailabilityToBlocks,
+  dateAvailabilityToBlocks,
   validateSchedulingProfileFormat,
   validateDateAvailability,
   mergeOverlappingAvailability,
   calculateCourtHours,
-  type TodsDateAvailability,
+  type VenueDateAvailability,
   type SchedulingSelection,
-  type TodsVenue,
+  type AvailabilityVenue,
 } from '@Assemblies/governors/availabilityGovernor/bridge';
 import {
   BLOCK_TYPES,
@@ -326,12 +326,12 @@ describe('buildSchedulingProfileFromUISelections', () => {
 });
 
 // ============================================================================
-// todsAvailabilityToBlocks Tests
+// dateAvailabilityToBlocks Tests
 // ============================================================================
 
-describe('todsAvailabilityToBlocks', () => {
+describe('dateAvailabilityToBlocks', () => {
   it('should convert TODS availability to blocks', () => {
-    const venue: TodsVenue = {
+    const venue: AvailabilityVenue = {
       venueId: 'venue-1',
       courts: [{ courtId: 'court-1' }, { courtId: 'court-2' }],
       dateAvailability: [
@@ -345,7 +345,7 @@ describe('todsAvailabilityToBlocks', () => {
       ],
     };
 
-    const blocks = todsAvailabilityToBlocks({
+    const blocks = dateAvailabilityToBlocks({
       venue,
       tournamentId: TEST_TOURNAMENT,
     });
@@ -364,7 +364,7 @@ describe('todsAvailabilityToBlocks', () => {
   });
 
   it('should apply to all courts when courtIds not specified', () => {
-    const venue: TodsVenue = {
+    const venue: AvailabilityVenue = {
       venueId: 'venue-1',
       courts: [{ courtId: 'court-1' }, { courtId: 'court-2' }],
       dateAvailability: [
@@ -377,7 +377,7 @@ describe('todsAvailabilityToBlocks', () => {
       ],
     };
 
-    const blocks = todsAvailabilityToBlocks({
+    const blocks = dateAvailabilityToBlocks({
       venue,
       tournamentId: TEST_TOURNAMENT,
     });
@@ -388,7 +388,7 @@ describe('todsAvailabilityToBlocks', () => {
   });
 
   it('should allow custom block type', () => {
-    const venue: TodsVenue = {
+    const venue: AvailabilityVenue = {
       venueId: 'venue-1',
       courts: [{ courtId: 'court-1' }],
       dateAvailability: [
@@ -402,7 +402,7 @@ describe('todsAvailabilityToBlocks', () => {
       ],
     };
 
-    const blocks = todsAvailabilityToBlocks({
+    const blocks = dateAvailabilityToBlocks({
       venue,
       tournamentId: TEST_TOURNAMENT,
       blockType: 'SOFT_BLOCK',
@@ -490,7 +490,7 @@ describe('validateSchedulingProfileFormat', () => {
 
 describe('validateDateAvailability', () => {
   it('should validate correct availability', () => {
-    const entries: TodsDateAvailability[] = [
+    const entries: VenueDateAvailability[] = [
       {
         date: TEST_DAY,
         startTime: '08:00',
@@ -505,7 +505,7 @@ describe('validateDateAvailability', () => {
   });
 
   it('should detect invalid date format', () => {
-    const entries: TodsDateAvailability[] = [
+    const entries: VenueDateAvailability[] = [
       {
         date: '06/15/2026',
         startTime: '08:00',
@@ -520,7 +520,7 @@ describe('validateDateAvailability', () => {
   });
 
   it('should detect invalid time format', () => {
-    const entries: TodsDateAvailability[] = [
+    const entries: VenueDateAvailability[] = [
       {
         date: TEST_DAY,
         startTime: '8:00',
@@ -535,7 +535,7 @@ describe('validateDateAvailability', () => {
   });
 
   it('should detect endTime before startTime', () => {
-    const entries: TodsDateAvailability[] = [
+    const entries: VenueDateAvailability[] = [
       {
         date: TEST_DAY,
         startTime: '18:00',
@@ -556,7 +556,7 @@ describe('validateDateAvailability', () => {
 
 describe('mergeOverlappingAvailability', () => {
   it('should merge overlapping entries', () => {
-    const entries: TodsDateAvailability[] = [
+    const entries: VenueDateAvailability[] = [
       {
         date: TEST_DAY,
         startTime: '08:00',
@@ -578,7 +578,7 @@ describe('mergeOverlappingAvailability', () => {
   });
 
   it('should merge adjacent entries', () => {
-    const entries: TodsDateAvailability[] = [
+    const entries: VenueDateAvailability[] = [
       {
         date: TEST_DAY,
         startTime: '08:00',
@@ -600,7 +600,7 @@ describe('mergeOverlappingAvailability', () => {
   });
 
   it('should not merge separate entries', () => {
-    const entries: TodsDateAvailability[] = [
+    const entries: VenueDateAvailability[] = [
       {
         date: TEST_DAY,
         startTime: '08:00',
@@ -620,7 +620,7 @@ describe('mergeOverlappingAvailability', () => {
   });
 
   it('should merge courtIds when merging entries', () => {
-    const entries: TodsDateAvailability[] = [
+    const entries: VenueDateAvailability[] = [
       {
         date: TEST_DAY,
         startTime: '08:00',
@@ -646,7 +646,7 @@ describe('mergeOverlappingAvailability', () => {
 
 describe('calculateCourtHours', () => {
   it('should calculate court hours correctly', () => {
-    const entries: TodsDateAvailability[] = [
+    const entries: VenueDateAvailability[] = [
       {
         date: TEST_DAY,
         startTime: '08:00',
@@ -668,7 +668,7 @@ describe('calculateCourtHours', () => {
   });
 
   it('should handle multiple courts in single entry', () => {
-    const entries: TodsDateAvailability[] = [
+    const entries: VenueDateAvailability[] = [
       {
         date: TEST_DAY,
         startTime: '08:00',
@@ -683,7 +683,7 @@ describe('calculateCourtHours', () => {
   });
 
   it('should handle entry without courtIds', () => {
-    const entries: TodsDateAvailability[] = [
+    const entries: VenueDateAvailability[] = [
       {
         date: TEST_DAY,
         startTime: '08:00',
