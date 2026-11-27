@@ -35,12 +35,14 @@ import { MatchUp } from '@Types/tournamentTypes';
 export function removeDrawPositionAssignment(params): ResultType & { participantId?: string } {
   // a seat a matchUp not yet decided still owes is not given a BYE where its arrival would then be refused
   const { drawDefinition, structureId, drawPosition, replaceWithBye } = params;
-  // a consolation or playoff participant who arrived from a result that stands is not removed until it is cleared
+  // a consolation or playoff participant who arrived from a result that stands is not removed until it is cleared;
+  // replaced with a BYE, the removal records that they declined the consolation, and is accepted
   const structure =
     drawDefinition && structureId ? findStructure({ drawDefinition, structureId }).structure : undefined;
   if (
     structure &&
     drawPosition &&
+    !replaceWithBye &&
     !(['MAIN', 'QUALIFYING'].includes(structure.stage as string) && structure.stageSequence === 1)
   ) {
     const arrived = arrivedParticipantRefusal({

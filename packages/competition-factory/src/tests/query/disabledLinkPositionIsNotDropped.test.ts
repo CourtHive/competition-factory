@@ -4,7 +4,6 @@ import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
-import { CONTRADICTORY_POSITION_ACTION } from '@Constants/errorConditionConstants';
 
 // constants and types
 import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
@@ -53,16 +52,7 @@ function declinedConsolation() {
     drawPosition,
     drawId,
   });
-  // 8.0.0 refuses removing a loser who arrived from a result that stands (ARRIVED_FROM_RESULT); a record stored
-  // earlier holds the declined consolation as the removal wrote it: a BYE, its links disabled
-  expect(result.error).toEqual(CONTRADICTORY_POSITION_ACTION);
-  const record = structuredClone(tournamentEngine.getTournament().tournamentRecord);
-  const assignment = record.events[0].drawDefinitions[0].structures
-    .find((s) => s.structureId === consolation.structureId)
-    .positionAssignments.find((a) => a.drawPosition === drawPosition);
-  delete assignment.participantId;
-  Object.assign(assignment, { bye: true, disableLinks: true });
-  tournamentEngine.setState(record);
+  expect(result.success).toEqual(true);
   return { drawId, eventId, declined, drawPosition, consolationStructureId: consolation.structureId };
 }
 

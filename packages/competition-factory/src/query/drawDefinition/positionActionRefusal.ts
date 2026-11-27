@@ -51,6 +51,7 @@ export const WINNER_DUE = 'WINNER_DUE';
 export const BYE_ADVANCEMENT_PLAYED = 'BYE_ADVANCEMENT_PLAYED';
 export const PARTICIPANT_DUE = 'PARTICIPANT_DUE';
 export const ARRIVED_FROM_RESULT = 'ARRIVED_FROM_RESULT';
+export const DECLINED_CONSOLATION = 'DECLINED_CONSOLATION';
 
 export type MustClearItem = {
   reason: string;
@@ -590,4 +591,64 @@ export function arrivedParticipantRefusal({
   }
   if (!reasons.size) return undefined;
   return refusal({ mustClear: clearingOrder({ inContextDrawMatchUps: matchUps, drawDefinition, reasons }) }, stack);
+}
+
+/**
+ * Whether entering `winningSide` on `matchUpId` (another winner, or none: a cleared result) would reverse a result whose
+ * loser declined the consolation: replaced, in the seat that result sent them to, with a BYE whose links are disabled
+ * (`removeDrawPositionAssignment` with `replaceWithBye`). The reversed result would name a new loser the declined seat no
+ * longer takes, so the reversal is refused; `mustClear` names the declined seat. Once the decline is undone (the BYE
+ * removed), the reversal is accepted.
+ *
+ * Read from the stored draw: it returns at once for a matchUp with no winner, an unchanged winner, or no loser link.
+ */
+export function declinedSeatRefusal({
+  drawDefinition,
+  winningSide,
+  matchUpId,
+}: {
+  drawDefinition: DrawDefinition;
+  winningSide?: number;
+  matchUpId: string;
+}): ResultType | undefined {
+  for (const structure of drawDefinition.structures ?? []) {
+    const matchUp = storedMatchUpsOf(structure).find((candidate) => candidate.matchUpId === matchUpId);
+    if (!matchUp) continue;
+    if (!matchUp.winningSide || winningSide === matchUp.winningSide || !matchUp.loserMatchUpId) return undefined;
+    const link = (drawDefinition.links ?? []).find(
+      (candidate) =>
+        candidate?.linkType === LOSER &&
+        candidate.source?.structureId === structure.structureId &&
+        candidate.source?.roundNumber === matchUp.roundNumber,
+    );
+    const target = link && findStructure({ drawDefinition, structureId: link.target?.structureId }).structure;
+    const loserTarget = target && storedMatchUpsOf(target).find((m) => m.matchUpId === matchUp.loserMatchUpId);
+    if (!target || !loserTarget) return undefined;
+    const targetAssignments = assignmentsOf(target);
+    const declined = targetAssignments.filter(
+      (assignment) =>
+        loserTarget.drawPositions?.includes(assignment.drawPosition) &&
+        assignment.bye &&
+        !assignment.byeFromPropagation &&
+        assignment.disableLinks,
+    );
+    if (!declined.length) return undefined;
+    // the declined loser is this result's, not a neighbour's: they are not in the consolation
+    const sorted = [...(matchUp.drawPositions ?? [])].filter(Boolean).sort((a, b) => (a as number) - (b as number));
+    const loserDrawPosition = sorted[matchUp.winningSide === 1 ? 1 : 0];
+    const loserId = assignmentsOf(structure).find((a) => a.drawPosition === loserDrawPosition)?.participantId;
+    if (!loserId || targetAssignments.some((assignment) => assignment.participantId === loserId)) return undefined;
+    return refusal(
+      {
+        mustClear: declined.map((assignment) => ({
+          reason: DECLINED_CONSOLATION,
+          structureId: target.structureId,
+          drawPosition: assignment.drawPosition,
+          participantId: loserId,
+        })),
+      },
+      'setMatchUpStatus',
+    );
+  }
+  return undefined;
 }

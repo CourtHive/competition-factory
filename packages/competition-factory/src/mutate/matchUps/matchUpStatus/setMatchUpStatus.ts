@@ -31,6 +31,7 @@ import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { holdGoesTo } from '@Query/matchUps/addGoesTo';
 import { isDoubleExit } from '@Validators/isExit';
+import { declinedSeatRefusal } from '@Query/drawDefinition/positionActionRefusal';
 import { findPolicy } from '@Acquire/findPolicy';
 import { findEvent } from '@Acquire/findEvent';
 import { isString } from '@Tools/objects';
@@ -146,6 +147,11 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // ONE map for the whole call. `setMatchUpState` builds this itself unless handed one; building it
   // here instead lets the preflight, the before-snapshot and the warning below read the same flat array
   // the cascade writes through, so none of them walks the draw again. Its matchUps are the live objects.
+  // a result whose loser declined the consolation (their seat replaced with a BYE) is not reversed or cleared while
+  // the decline stands: the new loser would have no seat. Asked of the stored draw, before either pipeline runs
+  const declined = declinedSeatRefusal({ drawDefinition, matchUpId, winningSide: params.outcome?.winningSide });
+  if (declined) return declined;
+
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
   const rotating = preflightOutcome(params, matchUpsMap);
   if (rotating.error) return rotating;
