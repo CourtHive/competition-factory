@@ -182,7 +182,7 @@
         },
         "factory": {
           "type": "object",
-          "description": "The factory versions that created and last wrote this record. Formerly the `factory` extension.",
+          "description": "The factory versions that created and last wrote this record, and the engine defaults it relies on. Formerly the `factory` extension.",
           "properties": {
             "createdVersion": {
               "type": "string",
@@ -195,6 +195,10 @@
             "timeStamp": {
               "type": "number",
               "description": "Engine clock (milliseconds since the epoch) at the last write"
+            },
+            "defaultsHash": {
+              "type": "string",
+              "description": "Content hash of the engine default policies the record relies on for every policy type it does not pin; written at creation and by attachPolicies, never replaced"
             }
           }
         },
