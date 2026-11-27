@@ -1837,13 +1837,18 @@ whose PLANNED ops leave settle work (`settle`) was not recorded in batch 3 (batc
 is not made, and the call stays v1's, for: a TEAM dual or line (batch 3 and 4a; batch 4b, below, records them); a call
 with no captured clock; a call that names more than one tournament record. Nor is it asked for where the call is
 refused: a refused call has no route, its refusal is its answer, and `differential` plans it only to set v1's refusal
-against v2's. It is discarded where v1's run on the copy returns an error, throws, or stops its forward settle at the
-bound (recorded since: batch 5, below); writes anything outside the draw; adds or moves a matchUp or a structure; writes a round robin group's own fields
+against v2's. Where v1's run on the copy returns an error, that error is the call's refusal and nothing is recorded:
+v1 on the stored record, handed the same parameters, draws and instants, would refuse the call the same way, but only
+after writing what came before the refusal (a loser seat downstream found occupied once the result and the winner's
+advance are written). Under `v2` the copy's refusal is returned as v1 returned it, each object of the copy it holds
+replaced by the stored object it was copied from, and the stored record is not touched
+(`aRefusalFoundOnTheCopyWritesNothing.test.ts`). Under `differential` v1 still runs on the stored record, and its
+refusal is compared with v2's. The recording is discarded where v1's run on the copy throws, or stops its forward
+settle at the bound (recorded since: batch 5, below); writes anything outside the draw; adds or moves a matchUp or a structure; writes a round robin group's own fields
 (batch 3 and 4a; batch 4b, below, carries them); leaves a scored time on a matchUp with no score (the plan's own cleanup
 would clear it); changes the call's own parameters (which are put back); buffers a notice apply could not raise again;
 or returns a result that holds an object of the copy (batch 4b, below, returns the stored one where that is exact). A
-call whose recording v1 refused is then run by v1 on the stored record, so v1 runs twice for it: what a v1 error leaves
-written on the stored record today is observable, and only v1's own run leaves it.
+call whose recording was discarded is then run by v1 on the stored record, so v1 runs twice for it.
 
 v1's writers stay library code until v3: a recorded call is v2's because v2 decides it, applies it and announces it,
 and v1 is not asked to write the stored record, but the write it applies is the one v1's code computed. Under

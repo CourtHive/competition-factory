@@ -6,7 +6,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 // constants
 import { DEAD_RUBBER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
-import { OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 import type { OutcomeOp } from '@Mutate/matchUps/outcome/ops';
 
 /**
@@ -31,8 +31,9 @@ import type { OutcomeOp } from '@Mutate/matchUps/outcome/ops';
  * it. The decider's write cannot be asked before the final's (what it writes depends on the final's settled result), so
  * `reconcileDeciders` is on the outcome v2 executor plan's "v1 errors handed to v2" list: v2 must plan it as a refusal.
  * Its `positionTargets` error, the other one it can return, is impossible since a malformed round link anywhere in the
- * draw is refused before the first write (outcome-pipeline.md § 2 row 21). What this test pins is only that the error
- * is never swallowed behind a success; when v2 plans the site it gains the record assertion.
+ * draw is refused before the first write (outcome-pipeline.md § 2 row 21). What this test pins is that the error is
+ * never swallowed behind a success. Under v2 the call is run whole on a copy first, the same write fails there, and
+ * the copy's refusal is the call's: v1 is not asked to write the stored record, so the record assertion holds.
  */
 
 const forced = vi.hoisted(() => ({ context: undefined as string | undefined, hits: 0 }));
@@ -45,8 +46,8 @@ vi.mock('@Mutate/matchUps/score/modifyMatchUpScore', async (importOriginal) => {
     ...actual,
     modifyMatchUpScore: (params: any) => {
       if (forced.context && params?.context === forced.context) {
-        // v2 reads v1's write on a copy first, where the same write fails and the recording is refused: the call
-        // stays v1's, and the hit counted is the one on the stored record
+        // v2 reads v1's write on a copy first, where the same write fails and its refusal is the call's (under v2);
+        // the hit counted is one on the stored record, which only v1 and differential make
         if (!inDraftWrites()) forced.hits += 1;
         return { error: FORCED_ERROR };
       }
@@ -138,6 +139,8 @@ it('returns the error when the write to the decider fails (v1 residual: the fina
   // every writer of the Decider is made to fail: v1's, and v2's fold of its settle op
   forced.context = 'reconcileDecider';
   fold.on = true;
+  const before = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+  const v2 = getOutcomePipeline() === OUTCOME_PIPELINE_V2;
 
   const result: any = tournamentEngine.setMatchUpStatus({
     matchUpId: final().matchUpId,
@@ -145,10 +148,12 @@ it('returns the error when the write to the decider fails (v1 residual: the fina
     drawId: DRAW_ID,
   });
 
-  // CONTROL: the write was attempted, and it was the one made to fail
-  expect(forced.hits).toEqual(1);
+  // CONTROL: the write was attempted, and it was the one made to fail: on the stored record by v1, on the copy by v2
+  expect(forced.hits).toEqual(v2 ? 0 : 1);
   expect(result.success).toBeUndefined();
   expect(result.error).toEqual(FORCED_ERROR);
+  // under v2 the refusal is met before any write: the final is not scored
+  if (v2) expect(tournamentEngine.getTournament().tournamentRecord).toEqual(before);
   // v2 met its own failure first, on the copy, and never wrote the stored draw
   expect(fold.working).toEqual(getOutcomePipeline() === OUTCOME_PIPELINE_V1 ? 0 : 1);
   expect(fold.stored).toEqual(0);
