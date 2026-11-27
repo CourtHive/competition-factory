@@ -6,7 +6,8 @@
  * package as `pnpm pack` would publish it, reads every declaration file in the tarball and fails when:
  *
  *   - a tag the plan expects is missing, or its text differs (the plan is derived from the transition manifest's
- *     `scheduled-for-removal` routes, the positional guard list and the alias list, applied to the packed file);
+ *     `scheduled-for-removal` routes, the positional guard list, the alias list and the untyped engine list, applied
+ *     to the packed file);
  *   - a tag appears that the plan does not expect (on another node, or attached to none);
  *   - the plan itself has a problem (a scheduled route no listed governor holds, an alias that moved, a tag that
  *     would leak into `tools`), or a replacement it names does not resolve in the packed root declarations;
@@ -34,6 +35,7 @@ import {
   readDeprecations,
   readStructure,
   resolvesPublicPath,
+  UNTYPED,
   UTILITIES_MESSAGE,
 } from '../lib/deprecations.mjs';
 import { PACKAGE_ROOT, REPO_ROOT } from '../lib/repoRoot.mjs';
@@ -261,8 +263,14 @@ interface MethodSignatures {
   c: typeof c;
   d: typeof d;
 }
-export { index$1 as governors, g1 as alphaGovernor, g2 as betaGovernor, index$2 as tools, index$2 as utilities, globalState, matchUpActionConstants, getTournamentInfo };
-export type { EntryFee, CallListenerArgs, PositionActionsArgs, MatchUpActionsArgs };
+type FactoryEngine = { [key: string]: any };
+type FactoryEngineTyped = MethodSignatures;
+declare const tournamentEngine: FactoryEngineTyped;
+declare const competitionEngine: FactoryEngineTyped;
+declare const tournamentEngineUntyped: FactoryEngine;
+declare const competitionEngineUntyped: FactoryEngine;
+export { index$1 as governors, g1 as alphaGovernor, g2 as betaGovernor, index$2 as tools, index$2 as utilities, globalState, matchUpActionConstants, getTournamentInfo, tournamentEngine, competitionEngine, tournamentEngineUntyped, competitionEngineUntyped };
+export type { EntryFee, CallListenerArgs, PositionActionsArgs, MatchUpActionsArgs, FactoryEngine, FactoryEngineTyped };
 `;
 
 function selfTest() {
@@ -310,6 +318,16 @@ function selfTest() {
     ['a', 'b', 'c'].every((n) => byAddress[`engine:${n}`]),
   );
   expect('plan: utilities', byAddress['export:utilities']?.message === UTILITIES_MESSAGE);
+  expect(
+    'plan: the untyped engines and FactoryEngine',
+    UNTYPED.every((u) => byAddress[`${u.declaration ? 'declaration' : 'export'}:${u.name}`]?.message === u.message),
+  );
+  expect(
+    'plan: the typed engines and FactoryEngineTyped untagged',
+    !['tournamentEngine', 'competitionEngine', 'FactoryEngineTyped'].some((n) =>
+      Object.keys(byAddress).some((a) => a.endsWith(`:${n}`)),
+    ),
+  );
   expect(
     'plan: aliases',
     ALIASES.every((x) => byAddress[`alias:${x.container}.${x.member ?? x.alias}`]),
@@ -362,6 +380,14 @@ function selfTest() {
       resolve: pathResolver(injectedBad),
     }).problems.some((p) => p.includes('tools.nowhere')),
   );
+  // an untyped export that is gone (or doubled) is a problem, not a silently missing tag
+  const withoutUntyped = FIXTURE.replace(', tournamentEngineUntyped, competitionEngineUntyped }', ' }');
+  expect(
+    'control: a missing untyped engine export is a problem',
+    planDeprecations(ts, withoutUntyped, deprecations, { bundle: 'root' }).problems.some((p) =>
+      p.includes('tournamentEngineUntyped'),
+    ),
+  );
   const stale = readDeprecations({
     manifest: { methods: [{ ...manifest.methods[0], governors: ['betaGovernor'] }] },
     guardText,
@@ -406,7 +432,7 @@ function selfTest() {
     for (const f of failures) process.stderr.write(`${TAG} self-test FAIL: ${f}\n`);
     process.exit(1);
   }
-  log('self-test OK: plan, injection, re-injection guard, scoped routes and eight negative controls');
+  log('self-test OK: plan, injection, re-injection guard, scoped routes and nine negative controls');
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

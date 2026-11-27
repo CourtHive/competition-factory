@@ -11,6 +11,8 @@
  *              `drawsGovernor.query.addGoesTo`, `governors.drawsGovernor.addGoesTo`, the governors subpath)
  *   engine     the `MethodSignatures` entry, which types `tournamentEngine` / `competitionEngine` methods
  *   utilities  the root export specifier of `utilities`, the deprecated alias of `tools`
+ *   untyped    the root export specifiers of the untyped engines, and the declaration of the `FactoryEngine` type they
+ *              carry (`UNTYPED` below): kept in 8.0.0, superseded by the typed `tournamentEngine` / `competitionEngine`
  *   alias      the five long-deprecated aliases tagged in source (`ALIASES` below)
  *
  * A tag on the export specifier, not on the declaration, so a function that is also exported elsewhere
@@ -19,7 +21,7 @@
  * WHAT IS TAGGED is read, never listed here: every `engineDisposition: "scheduled-for-removal"` route of
  * `documentation/engine-api-transition.json` (in the governors that row names), and every name of the positional
  * guard list `src/tests/governors/positionalGovernorFunctions.ts` (in every governor that holds it). Only the alias
- * list is fixed, because those names have no manifest.
+ * and untyped lists are fixed, because those names have no manifest.
  *
  * `verify:deprecations` counts the tags in the PACKED declarations against `planDeprecations` and runs an editor
  * probe; `generateMethodSignatures.mjs` writes the same engine messages into `src/` for in-repo editors.
@@ -33,6 +35,7 @@ export const ANCHORS = {
   positional: `${GUIDE}#stateless-functions-move-to-tools`,
   utilities: `${GUIDE}#utilities-is-removed`,
   aliases: `${GUIDE}#removed-options-constants-and-fields`,
+  untyped: `${GUIDE}#other-800-changes`,
 };
 export const MANIFEST_PATH = 'documentation/engine-api-transition.json';
 export const GUARD_PATH = 'src/tests/governors/positionalGovernorFunctions.ts';
@@ -96,6 +99,27 @@ export const ALIASES = [
     container: 'EntryFee',
     files: ['root'],
     message: `Use \`RegistrationEntryFee\`, which this aliases; removed in 8.0.0 (${ANCHORS.aliases})`,
+  },
+];
+
+/**
+ * The untyped opt-out, kept in 8.0.0: two engine exports (the same singletons as the typed engines), tagged on their
+ * root export specifiers, and the open `FactoryEngine` type they carry, tagged on its declaration (`declaration`): an
+ * editor strikes a type reference through the declaration, not through an `export type { … }` specifier.
+ */
+export const UNTYPED = [
+  {
+    name: 'tournamentEngineUntyped',
+    message: `The same engine as \`tournamentEngine\`, with every method untyped; use the typed \`tournamentEngine\` (${ANCHORS.untyped})`,
+  },
+  {
+    name: 'competitionEngineUntyped',
+    message: `The same engine as \`competitionEngine\`, with every method untyped; use the typed \`competitionEngine\` (${ANCHORS.untyped})`,
+  },
+  {
+    name: 'FactoryEngine',
+    declaration: true,
+    message: `The open type of the untyped engines; use the typed \`tournamentEngine\` / \`competitionEngine\`, typed \`FactoryEngineTyped\` (${ANCHORS.untyped})`,
   },
 ];
 
@@ -413,6 +437,24 @@ export function planDeprecations(ts, text, deprecations, { bundle = 'root', file
       node: u.node,
       message: UTILITIES_MESSAGE,
     });
+
+  // the untyped engines (root export specifiers) and their type (its declaration): exactly one host each
+  if (bundle === 'root') {
+    for (const untyped of UNTYPED) {
+      const hosts = untyped.declaration
+        ? (structure.topLevel.get(untyped.name) ?? []).filter(ts.isTypeAliasDeclaration)
+        : structure.rootExports.filter((e) => e.public === untyped.name).map((e) => e.node);
+      if (hosts.length !== 1) problems.push(`untyped ${untyped.name}: ${hosts.length} declarations found, expected 1`);
+      for (const node of hosts)
+        targets.push({
+          address: addressOf(untyped.declaration ? 'declaration' : 'export', untyped.name),
+          category: 'untyped',
+          name: untyped.name,
+          node,
+          message: untyped.message,
+        });
+    }
+  }
 
   // aliases
   for (const alias of ALIASES) {

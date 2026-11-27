@@ -447,6 +447,8 @@ shows as a strike-through with its message, on:
 - `utilities`;
 - `getNotices` and the `notices` field of `CallListenerArgs`, `SCHEDULE_METHOD`, the `restrictAdHocRoundParticipants`
   option, `getTournamentInfo`'s `eventInfo` and `EntryFee`.
+- from 8.0.0, `tournamentEngineUntyped`, `competitionEngineUntyped` and their `FactoryEngine` type. 8.0.0 keeps them
+  (the same engines, every method untyped); the message points at the typed `tournamentEngine` / `competitionEngine`.
 
 The message names the replacement where there is one, and otherwise links this guide. The asynchronous engines and the
 untyped `syncEngine` / `askEngine` show no tag, and the other symbols below are not tagged in the declarations; 7.48.0
