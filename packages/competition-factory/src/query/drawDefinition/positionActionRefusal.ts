@@ -51,7 +51,6 @@ export const WINNER_DUE = 'WINNER_DUE';
 export const BYE_ADVANCEMENT_PLAYED = 'BYE_ADVANCEMENT_PLAYED';
 export const PARTICIPANT_DUE = 'PARTICIPANT_DUE';
 export const ARRIVED_FROM_RESULT = 'ARRIVED_FROM_RESULT';
-export const DECLINED_CONSOLATION = 'DECLINED_CONSOLATION';
 
 export type MustClearItem = {
   reason: string;
@@ -701,16 +700,16 @@ export function getDeclinedSeats(drawDefinition: DrawDefinition, sourceStructure
 }
 
 /**
- * Whether entering `winningSide` on `matchUpId` (another winner, or none: a cleared result) would reverse a result whose
- * loser declined the consolation: replaced, in the seat that result sent them to, with a BYE whose links are disabled
- * (`removeDrawPositionAssignment` with `replaceWithBye`). The reversed result would name a new loser the declined seat no
- * longer takes, so the reversal is refused; `mustClear` names the declined seat. Once the decline is undone (the BYE
- * removed), the reversal is accepted.
+ * The declined consolations entering `winningSide` on `matchUpId` lapses: another winner (the declining participant no
+ * longer lost) or none (a cleared result) on a result whose loser declined the consolation, replaced in the seat that
+ * result sent them to with a BYE whose links are disabled. `setMatchUpStatus` removes those BYEs and re-enables the seats'
+ * links as part of the same call (composed, so a refusal anywhere in it writes nothing); on a reversal the new loser
+ * then arrives through normal propagation. A score correction that keeps the winner lapses nothing.
  *
  * Read from the call's map of stored matchUps: it returns after one lookup for a matchUp with no winner, an unchanged
  * winner, or no stored loser edge; only a decided result that sends its loser on and changes winner reads further.
  */
-export function declinedSeatRefusal({
+export function lapsingDeclines({
   drawDefinition,
   matchUpsMap,
   winningSide,
@@ -720,21 +719,9 @@ export function declinedSeatRefusal({
   matchUpsMap: MatchUpsMap;
   winningSide?: number;
   matchUpId: string;
-}): ResultType | undefined {
+}): DeclinedSeat[] {
   const matchUp = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === matchUpId);
-  // only a decided result whose winner changes, and which sends its loser on, can reverse a decline
-  if (!matchUp?.winningSide || winningSide === matchUp.winningSide || !matchUp.loserMatchUpId) return undefined;
-  const declined = getDeclinedSeats(drawDefinition).filter((seat) => seat.matchUpId === matchUpId);
-  if (!declined.length) return undefined;
-  return refusal(
-    {
-      mustClear: declined.map(({ structureId, drawPosition, participantId }) => ({
-        reason: DECLINED_CONSOLATION,
-        structureId,
-        drawPosition,
-        participantId,
-      })),
-    },
-    'setMatchUpStatus',
-  );
+  // only a decided result whose winner changes, and which sends its loser on, can lapse a decline
+  if (!matchUp?.winningSide || winningSide === matchUp.winningSide || !matchUp.loserMatchUpId) return [];
+  return getDeclinedSeats(drawDefinition).filter((seat) => seat.matchUpId === matchUpId);
 }

@@ -14,8 +14,10 @@ import {
 
 /**
  * A declined consolation lapses with its result. Replacing a loser a result sent to the consolation with a BYE
- * records the decline on the BYE (`declinedParticipantId`, `declinedMatchUpId`). A reset clears that result, so it
- * also removes the BYE and re-enables the seat's links: when the result is replayed, its loser arrives. A BYE placed
+ * records the decline on the BYE (`declinedParticipantId`, `declinedMatchUpId`). Clearing that result, reversing its
+ * winner or resetting the draw removes the BYE and re-enables the seat's links in the same call: a reversal's new loser
+ * arrives at once, and a replayed result's loser arrives when it is entered. A refusal elsewhere in the call writes
+ * nothing, the decline included. A score correction that keeps the winner keeps the decline. A BYE placed
  * where no participant was removed (closed before play) carries no decline and keeps its disabled links. A record
  * written by 7.x carries no decline marker; the decline is read off the draw where it is unambiguous.
  */
@@ -40,6 +42,7 @@ const played = (winningSide: 1 | 2) => ({
 });
 
 const drawId = 'd';
+const cleared = { matchUpStatus: 'TO_BE_PLAYED', score: { scoreStringSide1: '', scoreStringSide2: '' } };
 const consolation = () => tournamentEngine.getEvent({ drawId }).drawDefinition.structures[1];
 const firstRound = (roundPosition: number) =>
   tournamentEngine
@@ -98,6 +101,66 @@ describe.each(MODES)('a decline lapses with its result (%s)', (mode) => {
     expect(consolation().positionAssignments.filter((a: any) => a.participantId).length).toEqual(2);
     expect(seatOf(drawPosition).participantId).toEqual(loser);
     expect(inconsistencies()).toEqual([]);
+  });
+
+  it('clearing the result lapses the decline: the seat reopens and the replayed loser arrives', () => {
+    const { loser, drawPosition } = declined(mode);
+    expect(set(1, cleared).success).toEqual(true);
+    const reopened = seatOf(drawPosition);
+    expect([reopened.bye, reopened.disableLinks, reopened.declinedMatchUpId]).toEqual([
+      undefined,
+      undefined,
+      undefined,
+    ]);
+    expect(inconsistencies()).toEqual([]);
+    expect(set(1, played(1)).success).toEqual(true);
+    expect(seatOf(drawPosition).participantId).toEqual(loser);
+  });
+
+  it('reversing the result lapses the decline: the new loser arrives in the seat', () => {
+    const { loser, drawPosition } = declined(mode);
+    const winner = firstRound(1).sides.find((side: any) => side.sideNumber === 1).participantId;
+    expect(set(1, played(2)).success).toEqual(true);
+    expect(seatOf(drawPosition).participantId).toEqual(winner);
+    expect(consolation().positionAssignments.some((a: any) => a.participantId === loser)).toEqual(false);
+    expect(inconsistencies()).toEqual([]);
+  });
+
+  it('a reversal refused downstream writes nothing, and the decline stands', () => {
+    const { drawPosition } = declined(mode);
+    // the first-round winner has played on: their result cannot be reversed
+    const second = tournamentEngine
+      .allDrawMatchUps({ drawId, inContext: true })
+      .matchUps.find((m: any) => m.structureName === 'Main' && m.roundNumber === 2 && m.roundPosition === 1);
+    expect(
+      tournamentEngine.setMatchUpStatus({ drawId, matchUpId: second.matchUpId, outcome: played(1) }).success,
+    ).toEqual(true);
+    const before = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+    const refused = set(1, played(2));
+    expect(refused.error).toBeDefined();
+    expect(tournamentEngine.getTournament().tournamentRecord).toEqual(before);
+    expect(seatOf(drawPosition)).toMatchObject({ bye: true, disableLinks: true });
+  });
+
+  it('a reversal through bulkMatchUpStatusUpdate and an executionQueue lapses the decline the same way', () => {
+    const { drawPosition, matchUpId } = declined(mode);
+    const winner = firstRound(1).sides.find((side: any) => side.sideNumber === 1).participantId;
+    const snapshot = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+    const { tournamentId } = tournamentEngine.getTournament().tournamentRecord;
+    const eventId = tournamentEngine.getEvent({ drawId }).event.eventId;
+    const bulk = tournamentEngine.bulkMatchUpStatusUpdate({
+      outcomes: [{ tournamentId, eventId, drawId, matchUpId, matchUpStatus: 'COMPLETED', ...played(2) }],
+    });
+    expect(bulk.success).toEqual(true);
+    expect(seatOf(drawPosition).participantId).toEqual(winner);
+
+    tournamentEngine.setState(snapshot);
+    const queued = tournamentEngine.executionQueue(
+      [{ method: 'setMatchUpStatus', params: { drawId, matchUpId, outcome: played(2) } }],
+      true,
+    );
+    expect(queued.success).toEqual(true);
+    expect(seatOf(drawPosition).participantId).toEqual(winner);
   });
 
   it('a BYE closed before play (no participant removed) stays closed through a reset', () => {

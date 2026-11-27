@@ -31,7 +31,10 @@ import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { holdGoesTo } from '@Query/matchUps/addGoesTo';
 import { isDoubleExit } from '@Validators/isExit';
-import { declinedSeatRefusal } from '@Query/drawDefinition/positionActionRefusal';
+import { lapsingDeclines, type DeclinedSeat } from '@Query/drawDefinition/positionActionRefusal';
+import { removeAssignment } from '@Mutate/drawDefinitions/removeDrawPositionAssignment';
+import { composeDrawMutation } from '@Mutate/drawDefinitions/composeThenWrite';
+import { lapseDeclines } from '@Mutate/drawDefinitions/resetDrawDefinition';
 import { findPolicy } from '@Acquire/findPolicy';
 import { findEvent } from '@Acquire/findEvent';
 import { isString } from '@Tools/objects';
@@ -148,15 +151,11 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // here instead lets the preflight, the before-snapshot and the warning below read the same flat array
   // the cascade writes through, so none of them walks the draw again. Its matchUps are the live objects.
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
-  // a result whose loser declined the consolation (their seat replaced with a BYE) is not reversed or cleared while
-  // the decline stands: the new loser would have no seat. Asked of the stored matchUps, before either pipeline runs
-  const declined = declinedSeatRefusal({
-    drawDefinition,
-    matchUpsMap,
-    matchUpId,
-    winningSide: params.outcome?.winningSide,
-  });
-  if (declined) return declined;
+  // a result whose loser declined the consolation (their seat replaced with a BYE) lapses that decline when it is
+  // cleared or its winner changes: the BYE is removed and the seat's links re-enabled, then the result is entered, all
+  // composed on a working copy first, so a refusal anywhere in the call writes nothing (v1, v2 and differential alike)
+  const lapsing = lapsingDeclines({ drawDefinition, matchUpsMap, matchUpId, winningSide: params.outcome?.winningSide });
+  if (lapsing.length) return composeDrawMutation(params, (working) => lapseThenSet(working, lapsing));
   const rotating = preflightOutcome(params, matchUpsMap);
   if (rotating.error) return rotating;
   params = { ...params, ...rotating, outcome: params.outcome && { ...params.outcome, ...rotating } };
@@ -780,4 +779,15 @@ function ownedResult({ owned, params, matchUpsMap, neverPlayedBefore, stack }: O
   const { disableScoreValidation, outcome } = params;
   const warnings = callWarnings({ params, matchUpsMap, neverPlayedBefore, disableScoreValidation, outcome });
   return decorateResult({ result: warnings.length ? { ...owned, warnings } : owned, stack });
+}
+
+/** the declines `seats` lapse (each BYE removed, its seat fed again), then the call itself on the draw it is given */
+function lapseThenSet(params: SetMatchUpStatusArgs, seats: DeclinedSeat[]) {
+  const { tournamentRecord, drawDefinition, event } = params;
+  for (const { structureId, drawPosition } of seats) {
+    const removed = removeAssignment({ tournamentRecord, drawDefinition, event, structureId, drawPosition });
+    if (removed.error) return removed;
+  }
+  lapseDeclines(drawDefinition as DrawDefinition, seats);
+  return setMatchUpStatus({ ...params, matchUpsMap: undefined } as SetMatchUpStatusArgs);
 }

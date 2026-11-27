@@ -542,16 +542,15 @@ if (result.error?.code === 'ERR_CONTRADICTORY_POSITION_ACTION') {
 
 `reason` is one of:
 
-| `reason`                 | Meaning                                                                                             | How it is cleared                                |
-| ------------------------ | --------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `LOSER_DIRECTED`         | this result sent the swapped seat's occupant to a consolation or backdraw seat                      | clear the result                                 |
-| `WINNER_DIRECTED`        | this result sent the swapped seat's occupant on as a winner                                         | clear the result                                 |
-| `RESULT_ON_POSITION`     | a result of the swapped seat that would be left on an empty drawPosition                            | clear the result                                 |
-| `DEPENDS_ON_RESULT`      | a later result that depends on a result above, so it is cleared first                               | clear the result                                 |
-| `PLACED_ACROSS_LINK`     | the occupant was placed in a playoff or main draw, which no result there undoes                     | `removeDrawPositionAssignment` on that position  |
-| `BYE_ADVANCEMENT_PLAYED` | a later result of the opponent who advanced through the BYE being swapped away                      | clear the result                                 |
-| `ARRIVED_FROM_RESULT`    | the result that sent a consolation or playoff participant to the seat being removed or swapped      | clear the result                                 |
-| `DECLINED_CONSOLATION`   | (refusing `setMatchUpStatus`) the seat of a loser who declined the consolation, replaced with a BYE | remove that BYE (`removeDrawPositionAssignment`) |
+| `reason`                 | Meaning                                                                                        | How it is cleared                               |
+| ------------------------ | ---------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `LOSER_DIRECTED`         | this result sent the swapped seat's occupant to a consolation or backdraw seat                 | clear the result                                |
+| `WINNER_DIRECTED`        | this result sent the swapped seat's occupant on as a winner                                    | clear the result                                |
+| `RESULT_ON_POSITION`     | a result of the swapped seat that would be left on an empty drawPosition                       | clear the result                                |
+| `DEPENDS_ON_RESULT`      | a later result that depends on a result above, so it is cleared first                          | clear the result                                |
+| `PLACED_ACROSS_LINK`     | the occupant was placed in a playoff or main draw, which no result there undoes                | `removeDrawPositionAssignment` on that position |
+| `BYE_ADVANCEMENT_PLAYED` | a later result of the opponent who advanced through the BYE being swapped away                 | clear the result                                |
+| `ARRIVED_FROM_RESULT`    | the result that sent a consolation or playoff participant to the seat being removed or swapped | clear the result                                |
 
 When every listed item is cleared, the swap is accepted.
 
@@ -611,20 +610,20 @@ playoff participant who was sent there by a result that still stands, without a 
 reversing that result later would find someone else on the seat. `mustClear` names the result (`ARRIVED_FROM_RESULT`),
 anything depending on it first.
 
-**A declined consolation is recorded as before, and holds its result.** Replacing that participant with a BYE
+**A declined consolation is recorded as before.** Replacing that participant with a BYE
 (`removeDrawPositionAssignment` with `replaceWithBye: true`) records that they declined the consolation, and is accepted:
-the seat's links are disabled, so no later loser is sent there. While the decline is in place, reversing or clearing the
-result that sent them is refused, because its new loser would have no seat; `mustClear` names the declined seat
-(`{ structureId, drawPosition, participantId, reason: 'DECLINED_CONSOLATION' }`). A score correction that keeps the
-winner is accepted. Once the decline is undone (the BYE removed), the result can be reversed.
+the seat's links are disabled, so no later loser is sent there.
 
-**A decline lapses when its result is cleared.** The BYE that records a declined consolation carries the decline
-(`declinedParticipantId`, `declinedMatchUpId` on the seat's position assignment). `resetDrawDefinition`, and
-`resetStructure` of the structure that holds the result, clear that result, so they also remove the decline's BYE and
-re-enable the seat's links: when the result is replayed, its loser arrives. A record written before 8.0.0 carries no
-decline marker; a seat is read as a decline when it holds a hand-placed BYE with disabled links and exactly one decided
-matchUp sends its loser to that seat's matchUp without the loser being in the structure. Any other hand-placed BYE is
-closed before play: a reset keeps it and its disabled links.
+**A decline lapses when its result is cleared or reversed.** The BYE that records a declined consolation carries the
+decline (`declinedParticipantId`, `declinedMatchUpId` on the seat's position assignment). Clearing that result, or
+entering the other winner so the declining participant no longer lost (`setMatchUpStatus`, a bulk update or a queue),
+removes the decline's BYE and re-enables the seat's links in the same call: a reversal's new loser arrives in the seat
+at once, and a cleared result's loser arrives when it is entered again. The call is composed whole before it writes, so
+a refusal anywhere in it writes nothing and the decline stands. A score correction that keeps the winner keeps the
+decline. `resetDrawDefinition`, and `resetStructure` of the structure that holds the result, lapse it the same way. A
+record written before 8.0.0 carries no decline marker; a seat is read as a decline when it holds a hand-placed BYE with
+disabled links and exactly one decided matchUp sends its loser to that seat's matchUp without the loser being in the
+structure. Any other hand-placed BYE is closed before play: a reset keeps it and its disabled links.
 
 A client should present `reservedFor` as "this seat is reserved for the loser of …", and not offer to clear anything.
 

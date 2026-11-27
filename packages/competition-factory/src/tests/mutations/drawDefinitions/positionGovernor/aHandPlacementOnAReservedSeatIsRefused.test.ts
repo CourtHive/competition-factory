@@ -8,7 +8,6 @@ import { CONTRADICTORY_POSITION_ACTION } from '@Constants/errorConditionConstant
 import {
   ARRIVED_FROM_RESULT,
   BYE_ADVANCEMENT_PLAYED,
-  DECLINED_CONSOLATION,
   LOSER_DUE,
   PARTICIPANT_DUE,
 } from '@Query/drawDefinition/positionActionRefusal';
@@ -197,13 +196,12 @@ describe.each(MODES)('a hand placement on a reserved seat is refused (%s)', (mod
     expect(inconsistencies()).toEqual([]);
   });
 
-  it('a declined consolation is accepted, and its result is not reversed or cleared until the decline is undone', () => {
+  it('a declined consolation is accepted, and a same-winner score correction keeps it', () => {
     generate(FIRST_ROUND_LOSER_CONSOLATION, 8);
     setOutcomePipeline(mode);
     const r1p1 = find('Main', 1, 1);
     expect(set(r1p1.matchUpId, played(1)).success).toEqual(true);
-    const consolation = structureOf('Consolation');
-    const declined = consolation.positionAssignments.find((a: any) => a.participantId);
+    const declined = structureOf('Consolation').positionAssignments.find((a: any) => a.participantId);
     // the loser declines: replaced with a BYE, the seat's links disabled
     expect(
       tournamentEngine.removeDrawPositionAssignment({ ...seat(declined.drawPosition), replaceWithBye: true }).success,
@@ -212,24 +210,11 @@ describe.each(MODES)('a hand placement on a reserved seat is refused (%s)', (mod
       structureOf('Consolation').positionAssignments.find((a: any) => a.drawPosition === declined.drawPosition),
     ).toMatchObject({ bye: true, disableLinks: true });
     expect(inconsistencies()).toEqual([]);
-
-    for (const outcome of [played(2), cleared]) {
-      const refused = expectRefused(set(r1p1.matchUpId, outcome), recordNow());
-      expect(refused.mustClear).toEqual([
-        {
-          structureId: consolation.structureId,
-          drawPosition: declined.drawPosition,
-          participantId: declined.participantId,
-          reason: DECLINED_CONSOLATION,
-        },
-      ]);
-    }
-    // a score correction that keeps the winner is not a reversal
+    // a score correction that keeps the winner leaves the decline in place
     expect(set(r1p1.matchUpId, played(1)).success).toEqual(true);
-
-    // the decline undone (the BYE removed), the result can be reversed
-    expect(tournamentEngine.removeDrawPositionAssignment(seat(declined.drawPosition)).success).toEqual(true);
-    expect(set(r1p1.matchUpId, played(2)).success).toEqual(true);
+    expect(
+      structureOf('Consolation').positionAssignments.find((a: any) => a.drawPosition === declined.drawPosition),
+    ).toMatchObject({ bye: true, disableLinks: true });
   });
 
   it('a BYE swapped away from a seat whose opponent has played on is refused until that result is cleared', () => {
