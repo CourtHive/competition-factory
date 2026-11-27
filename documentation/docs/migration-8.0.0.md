@@ -603,6 +603,11 @@ produces), whether the engine copies it (`setState(record)`, the default) or bor
   relies on it being one of the known names (a `Record<PointsAuthority, …>` lookup, an exhaustive `switch`) narrows it
   first, for example by checking it against `POINTS_AUTHORITIES`, or types the value as `KnownPointsAuthority` itself
   (#6689).
+- **Four vocabularies that name other bodies' values are open.** `CertificationFamily`, `CertificationLevel`,
+  `AuthorityRoleUnion` and `ComplianceItemType` admit any string beside the values their enums name (the same
+  `(string & {})` arm as `DisciplineUnion`), so a certifying or sanctioning body's own terms type-check. Inputs only
+  widen; code that treats a value read back as one of the enum's members (a `Record<…>` lookup, an exhaustive `switch`)
+  narrows it first (#6695).
 
 ### Packaging
 

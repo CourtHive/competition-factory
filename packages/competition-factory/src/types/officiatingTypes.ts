@@ -54,7 +54,9 @@ export const CertificationFamilyEnum = {
   REVIEW_OFFICIAL: 'REVIEW_OFFICIAL',
 } as const;
 
-export type CertificationFamily = (typeof CertificationFamilyEnum)[keyof typeof CertificationFamilyEnum];
+/** The certification family: one the enum names, or a certifying body's own (open, like `DisciplineUnion`). */
+export type CertificationFamily =
+  (typeof CertificationFamilyEnum)[keyof typeof CertificationFamilyEnum] | (string & {});
 
 export const CertificationLevelEnum = {
   WHITE_BADGE: 'WHITE_BADGE',
@@ -63,7 +65,8 @@ export const CertificationLevelEnum = {
   GOLD_BADGE: 'GOLD_BADGE',
 } as const;
 
-export type CertificationLevel = (typeof CertificationLevelEnum)[keyof typeof CertificationLevelEnum];
+/** The certification level: one the enum names, or a certifying body's own grade. */
+export type CertificationLevel = (typeof CertificationLevelEnum)[keyof typeof CertificationLevelEnum] | (string & {});
 
 export const ScoringTypeEnum = {
   NUMERIC: 'NUMERIC',
