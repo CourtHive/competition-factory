@@ -122,6 +122,7 @@ export default defineConfig({
       './src/tests/testHarness/schedulingViewRoundTrip.ts',
       './src/tests/testHarness/rethrowCaughtErrors.ts',
       './src/tests/testHarness/queryPurity.ts',
+      './src/tests/testHarness/fixtureIntegrity.ts',
     ],
     coverage: {
       reporter: ['html', 'json-summary'],
