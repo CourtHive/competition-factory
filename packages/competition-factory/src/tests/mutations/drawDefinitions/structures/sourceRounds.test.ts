@@ -1,4 +1,5 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
+import { defined } from '@Tests/helpers/defined';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
 import { getSourceRounds } from '@Query/drawDefinition/getSourceRounds';
 import { it, expect } from 'vitest';
@@ -33,7 +34,7 @@ it('can correctly derive source rounds for final positions in SINGLE_ELIMINATION
   });
   ({ playoffSourceRounds, playoffPositionsReturned } = srResult);
 
-  expect(srResult.playoffRoundsRanges[0]).toEqual({
+  expect(defined(srResult.playoffRoundsRanges, 'playoffRoundsRanges')[0]).toEqual({
     roundNumber: 3,
     finishingPositionRange: '3-4',
     finishingPositions: [3, 4],

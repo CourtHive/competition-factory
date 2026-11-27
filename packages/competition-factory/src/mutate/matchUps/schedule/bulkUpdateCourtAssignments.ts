@@ -4,7 +4,7 @@ import { findEvent } from '@Acquire/findEvent';
 
 // constants and types
 import { ARRAY, INVALID, OF_TYPE, TOURNAMENT_RECORDS } from '@Constants/attributeConstants';
-import { TournamentRecords } from '@Types/factoryTypes';
+import { TournamentRecords, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   MISSING_DRAW_DEFINITION,
@@ -19,7 +19,7 @@ type BulkUpdateCourtAssignmentsParams = {
   courtDayDate: string;
 };
 
-export function bulkUpdateCourtAssignments(params: BulkUpdateCourtAssignmentsParams) {
+export function bulkUpdateCourtAssignments(params: BulkUpdateCourtAssignmentsParams): ResultType {
   const { courtDayDate } = params;
   const paramsCheck = checkRequiredParameters(params, [
     { courtAssignments: true, [OF_TYPE]: ARRAY, [INVALID]: MISSING_VALUE },

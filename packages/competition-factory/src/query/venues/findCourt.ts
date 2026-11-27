@@ -61,6 +61,6 @@ export function findCourt({ tournamentRecords, tournamentRecord, courtId }: Find
   return decorateResult({ result: { error: COURT_NOT_FOUND }, stack });
 }
 
-export function publicFindCourt(params) {
+export function publicFindCourt(params): ReturnType<typeof findCourt> {
   return makeDeepCopy(findCourt(params), false, true);
 }

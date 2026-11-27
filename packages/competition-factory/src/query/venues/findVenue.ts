@@ -53,7 +53,7 @@ export function findVenue({ tournamentRecords, tournamentRecord, venueId }: Find
   return { error: VENUE_NOT_FOUND };
 }
 
-export function publicFindVenue({ convertExtensions, ...params }) {
+export function publicFindVenue({ convertExtensions, ...params }): ReturnType<typeof findVenue> {
   const { tournamentRecords, tournamentRecord, venueId } = params;
   const result = findVenue({ tournamentRecords, tournamentRecord, venueId });
   return makeDeepCopy(result, convertExtensions, true);

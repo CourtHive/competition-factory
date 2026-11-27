@@ -1,4 +1,5 @@
 import { findVenue, publicFindVenue } from '@Query/venues/findVenue';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
@@ -185,13 +186,13 @@ it('publicFindVenue returns deep copy of result', () => {
   const { tournamentRecord } = tournamentEngine.getTournament();
   const result = publicFindVenue({ convertExtensions: false, tournamentRecord, venueId });
   expect(result.success).toEqual(true);
-  expect(result.venue).toBeDefined();
-  expect(result.venue.venueName).toEqual('Test Venue');
+  const foundVenue = defined(result.venue, 'venue');
+  expect(foundVenue.venueName).toEqual('Test Venue');
 
   // verify it's a deep copy: mutating the returned venue should not affect the original
-  result.venue.venueName = 'Mutated';
+  foundVenue.venueName = 'Mutated';
   const result2 = publicFindVenue({ convertExtensions: false, tournamentRecord, venueId });
-  expect(result2.venue.venueName).toEqual('Test Venue');
+  expect(defined(result2.venue, 'venue').venueName).toEqual('Test Venue');
 });
 
 it('publicFindVenue with convertExtensions parameter', () => {

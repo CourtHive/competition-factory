@@ -47,7 +47,7 @@ function isQualifierPlaceholder({ qualifier, participantId }: { qualifier?: bool
  * can refuse after the earlier ones wrote. So it is composed on a working copy first and written only if it
  * composed (`composeDrawMutation`): every refusal leaves the stored record as it was.
  */
-export function swapDrawPositionAssignments(params) {
+export function swapDrawPositionAssignments(params): ResultType {
   return composeDrawMutation(params, swapAssignments);
 }
 

@@ -12,7 +12,7 @@ import { extractDate } from '@Tools/dateTime';
 // constants and types
 import { MODIFY_SCHEDULING_PROFILE } from '@Constants/topicConstants';
 import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
-import { TournamentRecords } from '@Types/factoryTypes';
+import { TournamentRecords, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import {
@@ -77,7 +77,7 @@ type PlanSchedulingProfileArgs = SetSchedulingProfileArgs & {
   /** the records written, when they are not the records validated (a plan validates against a proposed view) */
   targets?: TournamentRecords;
 };
-export function setSchedulingProfile(params: SetSchedulingProfileArgs) {
+export function setSchedulingProfile(params: SetSchedulingProfileArgs): ResultType {
   const plan = planSchedulingProfile(params);
   if (!('commit' in plan)) return plan;
   plan.commit();

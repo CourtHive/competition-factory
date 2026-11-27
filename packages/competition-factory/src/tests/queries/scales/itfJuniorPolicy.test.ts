@@ -577,15 +577,17 @@ describe('ITF Junior ties: the Reg. 11 countback', () => {
 // mocksEngine completes qualifying but leaves the qualifiers' main draw seats empty: place each winner of the
 // final qualifying round in a qualifier seat. Returns the qualifiers in seat order.
 function placeQualifiers(drawId: string): string[] {
-  const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  const drawDefinition = defined(tournamentEngine.getEvent({ drawId }).drawDefinition, 'drawDefinition');
   const structure = (stage: string) =>
     defined(
-      drawDefinition.structures.find((s: any) => s.stage === stage),
+      drawDefinition.structures?.find((s: any) => s.stage === stage),
       `${stage} structure`,
     );
   const main = structure(MAIN);
   const qualifying = structure(QUALIFYING);
-  const seats = main.positionAssignments.filter((a: any) => a.qualifier).map((a: any) => a.drawPosition);
+  const seats = defined(main.positionAssignments, 'positionAssignments')
+    .filter((a: any) => a.qualifier)
+    .map((a: any) => a.drawPosition);
   const qualifierIds = drawMatchUps(drawId)
     .filter((m: any) => m.structureId === qualifying.structureId && m.finishingRound === 1)
     .map((m: any) => m.sides.find((side: any) => side.sideNumber === m.winningSide).participantId);
@@ -680,7 +682,10 @@ function drawWithLuckyLoser({ luckyLoserWinsQuarterfinal }: { luckyLoserWinsQuar
 
   for (const matchUp of drawMatchUps(drawId).filter((m) => m.stage !== PLAY_OFF)) scoreWith(matchUp.matchUpId, 1);
 
-  const structures = tournamentEngine.getEvent({ drawId }).drawDefinition.structures;
+  const structures = defined(
+    defined(tournamentEngine.getEvent({ drawId }).drawDefinition, 'drawDefinition').structures,
+    'structures',
+  );
   const groups = defined(
     structures.find((s: any) => s.stage !== PLAY_OFF),
     'round robin',

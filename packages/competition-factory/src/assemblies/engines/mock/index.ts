@@ -9,6 +9,8 @@ import { withCapturedClock } from '@Tools/clock';
 
 import { setState } from '@Assemblies/engines/parts/stateMethods';
 import { FactoryEngine } from '@Types/factoryTypes';
+import type { completeDrawMatchUps } from '@Generators/simulation/completeDrawMatchUps';
+import type { generateSeason } from '@Generators/mocks/generateSeason';
 import type {
   AnonymizeTournamentRecordArgs,
   GenerateTournamentRecordArgs,
@@ -23,14 +25,15 @@ let devContextSet = false;
 
 /**
  * The typed surface: each generation method's params are a closed type, so a misplaced or misspelled
- * option is a compile error at the call site. Results stay untyped for now (a result is a success or an
- * error envelope, and every existing caller destructures it directly).
+ * option is a compile error at the call site. `generateSeason` and `completeDrawMatchUps` results are typed; the
+ * others stay untyped for now (a result is a success or an error envelope, and every existing caller destructures it
+ * directly).
  */
 export type MocksEngine = FactoryEngine & {
   generateTournamentRecord: (params?: GenerateTournamentRecordArgs) => any;
-  generateSeason: (params: { seasonProfile: MockSeasonProfile }) => any;
+  generateSeason: (params: { seasonProfile: MockSeasonProfile }) => ReturnType<typeof generateSeason>;
   modifyTournamentRecord: (params?: ModifyTournamentRecordArgs) => any;
-  completeDrawMatchUps: (params: CompleteDrawMatchUpsArgs) => any;
+  completeDrawMatchUps: (params: CompleteDrawMatchUpsArgs) => ReturnType<typeof completeDrawMatchUps>;
   generateParticipants: (params?: GenerateParticipantsArgs) => any;
   generateOutcome: (params?: GenerateOutcomeArgs) => any;
   anonymizeTournamentRecord: (params?: AnonymizeTournamentRecordArgs) => any;

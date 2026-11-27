@@ -6,7 +6,7 @@ import { getDevContext } from '@Global/state/globalState';
 // constants and types
 import { DrawDefinition, Event, Tournament, PositionAssignment } from '@Types/tournamentTypes';
 import { getPositionAssignments } from '@Query/structure/getPositionAssignments';
-import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+import { MISSING_DRAW_DEFINITION, ErrorType } from '@Constants/errorConditionConstants';
 
 // Extend MatchUp to include optional containerStructureId
 import { CONTAINER, MAIN, PLAY_OFF } from '@Constants/drawDefinitionConstants';
@@ -25,7 +25,15 @@ export function getParticipantIdFinishingPositions({
   tournamentRecord,
   drawDefinition,
   event,
-}: GetParticipantIdFinishingPositionsArgs) {
+}: GetParticipantIdFinishingPositionsArgs):
+  | { error: ErrorType }
+  | {
+      [participantId: string]: {
+        finishingPositionRange: number[] | undefined;
+        relevantMatchUps: HydratedMatchUp[];
+        finishingPositionRanges: number[][];
+      };
+    } {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
   const { participantIds, participantIdMatchUps } = getParticipantIdMatchUps({

@@ -10,6 +10,7 @@ import { INVALID_VALUES, MISSING_PARTICIPANTS, MISSING_VALUE } from '@Constants/
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Participant } from '@Types/tournamentTypes';
+import type { ResultType } from '@Types/factoryTypes';
 
 type ModifyParticipantsPaymentStatusArgs = {
   tournamentRecord: any;
@@ -29,7 +30,7 @@ export function modifyParticipantsPaymentStatus({
   participantIds,
   paymentState,
   occurredAt,
-}: ModifyParticipantsPaymentStatusArgs) {
+}: ModifyParticipantsPaymentStatusArgs): ResultType & { paymentState?: string } {
   const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
   if (paramsCheck.error) return paramsCheck;
   if (!Array.isArray(participantIds)) return { error: MISSING_VALUE };

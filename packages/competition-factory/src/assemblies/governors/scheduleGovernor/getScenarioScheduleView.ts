@@ -10,6 +10,7 @@ import {
 
 // types
 import { MatchUpFilters, TournamentRecords } from '@Types/factoryTypes';
+import type { CompetitionScheduleMatchUpsResult } from '@Types/viewTypes';
 import { Tournament } from '@Types/tournamentTypes';
 
 type GetScenarioScheduleViewArgs = {
@@ -35,7 +36,10 @@ type GetScenarioScheduleViewArgs = {
  * `skippedCompletedMatchUpIds` (derived from the real state) let the client tint the
  * planned cells and warn about skips.
  */
-export function getScenarioScheduleView(params: GetScenarioScheduleViewArgs): any {
+export function getScenarioScheduleView(params: GetScenarioScheduleViewArgs): CompetitionScheduleMatchUpsResult & {
+  skippedCompletedMatchUpIds?: string[];
+  plannedMatchUpIds?: string[];
+} {
   const { scenario, error } = findScopedScenario(params);
   if (error || !scenario) return { error };
 

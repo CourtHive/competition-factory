@@ -16,6 +16,7 @@ import {
   STRUCTURE_ID,
   TOURNAMENT_RECORD,
 } from '@Constants/attributeConstants';
+import type { ResultType } from '@Types/factoryTypes';
 
 type GetMatchUpFormatArgs = {
   tournamentRecord: Tournament;
@@ -27,7 +28,12 @@ type GetMatchUpFormatArgs = {
   event?: Event;
 };
 
-export function getMatchUpFormat(params: GetMatchUpFormatArgs) {
+export function getMatchUpFormat(params: GetMatchUpFormatArgs): ResultType & {
+  structureDefaultMatchUpFormat?: string;
+  eventDefaultMatchUpFormat?: string;
+  drawDefaultMatchUpFormat?: string;
+  matchUpFormat?: string;
+} {
   const { structureId, matchUpId, event } = params;
   let drawDefinition = params.drawDefinition;
 

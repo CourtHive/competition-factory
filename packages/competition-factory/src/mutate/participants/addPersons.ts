@@ -15,10 +15,13 @@ import {
   INVALID_VALUES,
   MISSING_TOURNAMENT_RECORD,
 } from '@Constants/errorConditionConstants';
+import type { ResultType } from '@Types/factoryTypes';
+
+type AddPersonsResult = ResultType & { addedCount?: number; newPersonIds?: string[] };
 
 // add persons to a tournamentRecord and create participants in the process
 // include ability to specify a doubles partner by personId
-export function addPersons({ participantRole = COMPETITOR, tournamentRecord, persons }) {
+export function addPersons({ participantRole = COMPETITOR, tournamentRecord, persons }): AddPersonsResult {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   if (!Array.isArray(persons)) return { error: INVALID_VALUES };
   if (!Object.keys(participantRoles).includes(participantRole)) return { error: INVALID_PARTICIPANT_ROLE };

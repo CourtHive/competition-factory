@@ -10,7 +10,17 @@ type CategoryCanContainArgs = {
   category: Category;
 };
 
-export function categoryCanContain({ childCategory, withDetails, category }: CategoryCanContainArgs) {
+export function categoryCanContain({ childCategory, withDetails, category }: CategoryCanContainArgs): {
+  categoryDetails?: ReturnType<typeof validateCategory>;
+  childCategoryDetails?: ReturnType<typeof validateCategory>;
+  invalidRatingRange?: boolean;
+  invalidAgeMinDate?: boolean;
+  invalidAgeMaxDate?: boolean;
+  invalidBallType?: boolean;
+  invalidAgeMax?: boolean;
+  invalidAgeMin?: boolean;
+  valid: boolean;
+} {
   const categoryDetails = validateCategory({ category });
   const childCategoryDetails = validateCategory({
     category: childCategory,

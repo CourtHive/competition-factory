@@ -436,8 +436,11 @@ describe('Mutation Locks', () => {
 
   it('venue-level lock blocks venue-scoped mutations on that venue only', () => {
     mocksEngine.generateTournamentRecord({ setState: true });
-    const venueId = tournamentEngine.addVenue({ venue: { venueName: 'Locked Venue' } }).venue.venueId;
-    const otherVenueId = tournamentEngine.addVenue({ venue: { venueName: 'Open Venue' } }).venue.venueId;
+    const venueId = defined(tournamentEngine.addVenue({ venue: { venueName: 'Locked Venue' } }).venue, 'venue').venueId;
+    const otherVenueId = defined(
+      tournamentEngine.addVenue({ venue: { venueName: 'Open Venue' } }).venue,
+      'venue',
+    ).venueId;
 
     tournamentEngine.addMutationLock({ scope: 'VENUES', lockToken: 'venue-token', venueId });
 

@@ -121,7 +121,7 @@ it.each(scenarios.slice(1))('can aggregate team scores across SINGLES/DOUBLES ev
     addEvents: true,
     tieFormat: minted,
   });
-  expect(result.events.length).toBe(3);
+  expect(defined(result.events, 'events').length).toBe(3);
 
   const teamParticipants = defined(
     tournamentEngine.getParticipants({

@@ -37,7 +37,10 @@ type SetParticipantScaleItemArgs = {
   scaleItem?: ScaleItem;
 };
 
-export function setParticipantScaleItem(params: SetParticipantScaleItemArgs) {
+export function setParticipantScaleItem(params: SetParticipantScaleItemArgs): ResultType & {
+  existingValue?: ScaleItem['scaleValue'];
+  newValue?: ScaleItem['scaleValue'];
+} {
   const { removePriorValues, tournamentRecord, participantId, scaleItem } = params;
   let equivalentValue, participant;
   let committedValue: ScaleItem['scaleValue'];
@@ -96,7 +99,9 @@ type SetParticipantScaleItemsArgs = {
   auditData?: any;
 };
 
-export function setParticipantScaleItems(params: SetParticipantScaleItemsArgs) {
+export function setParticipantScaleItems(
+  params: SetParticipantScaleItemsArgs,
+): ResultType & { modificationsApplied?: number } {
   const { scaleItemsWithParticipantIds = [], removePriorValues, tournamentRecord, auditData, context } = params;
 
   const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);

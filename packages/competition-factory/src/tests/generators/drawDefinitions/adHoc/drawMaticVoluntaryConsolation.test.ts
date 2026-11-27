@@ -23,7 +23,10 @@ test('drawMatic works for AD_HOC voluntary consolation in a ROUND_ROBIN draw', (
   tournamentEngine.attachConsolationStructures({ structures: vcResult.structures, links: vcResult.links, drawId });
 
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
-  const vcStructure = drawDefinition.structures.find((s: any) => s.stage === VOLUNTARY_CONSOLATION);
+  const vcStructure = defined(
+    defined(drawDefinition, 'drawDefinition').structures?.find((s: any) => s.stage === VOLUNTARY_CONSOLATION),
+    'consolation structure',
+  );
   expect(vcStructure).toBeDefined();
 
   const eligible = tournamentEngine.getEligibleVoluntaryConsolationParticipants({ drawId });

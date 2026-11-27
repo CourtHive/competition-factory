@@ -24,6 +24,16 @@ function constructedDate(y: number, df: string) {
  * A category's age range as dates on `consideredDate`. Validates the category first, then resolves "today" through the
  * caller's `today` only when no date is given (`getCategoryAgeDetails` reads it in the tournament's time zone).
  */
+/** A category's age range resolved to dates on the considered date. */
+export type CategoryAgeDetails = {
+  consideredDate?: string;
+  combinedAge?: boolean;
+  ageMaxDate?: string;
+  ageMinDate?: string;
+  ageMax?: number;
+  ageMin?: number;
+};
+
 export function parseCategoryAgeDetails(params: ParseCategoryAgeDetailsArgs) {
   const category = params.category;
   if (typeof category !== 'object' || !category) return { error: INVALID_CATEGORY };

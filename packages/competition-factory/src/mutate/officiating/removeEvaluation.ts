@@ -6,15 +6,16 @@ import { nowIso } from '@Tools/clock';
 
 // types
 import type { OfficialRecord } from '@Types/officiatingTypes';
+import type { ResultType } from '@Types/factoryTypes';
 
 type RemoveEvaluationArgs = {
   officialRecord: OfficialRecord;
   evaluationId: string;
 };
 
-export function removeEvaluation({ officialRecord, evaluationId }: RemoveEvaluationArgs) {
+export function removeEvaluation({ officialRecord, evaluationId }: RemoveEvaluationArgs): ResultType {
   if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
-  if (!evaluationId) return { error: INVALID_VALUES, context: { message: 'Missing evaluationId' } } as any;
+  if (!evaluationId) return { error: INVALID_VALUES, context: { message: 'Missing evaluationId' } };
 
   const index = officialRecord.evaluations.findIndex((e) => e.evaluationId === evaluationId);
   if (index === -1) return { error: EVALUATION_NOT_FOUND, context: { evaluationId } };

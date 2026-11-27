@@ -8,7 +8,7 @@ import { checkInParticipant } from './checkInParticipant';
 import { MATCHUP_NOT_FOUND, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Tournament } from '@Types/tournamentTypes';
 import type { Attribution } from '@Types/presenceTypes';
-import { TournamentRecords } from '@Types/factoryTypes';
+import { TournamentRecords, ResultType } from '@Types/factoryTypes';
 import {
   DRAW_DEFINITION,
   ERROR,
@@ -33,7 +33,9 @@ type ToggleParticipantCheckInStateArgs = {
   matchUpId: string;
 };
 
-export function toggleParticipantCheckInState(params: ToggleParticipantCheckInStateArgs) {
+export function toggleParticipantCheckInState(
+  params: ToggleParticipantCheckInStateArgs,
+): ResultType & { checkedIn?: boolean; checkedOut?: boolean } {
   const paramCheck = checkRequiredParameters(params, [
     { [PARTICIPANT_ID]: true, [DRAW_DEFINITION]: true, [MATCHUP_ID]: true },
   ]);

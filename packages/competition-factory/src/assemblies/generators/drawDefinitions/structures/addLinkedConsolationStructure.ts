@@ -15,6 +15,8 @@ import {
   MISSING_STRUCTURE,
   UNRECOGNIZED_DRAW_TYPE,
 } from '@Constants/errorConditionConstants';
+import type { ResultType } from '@Types/factoryTypes';
+import type { Structure } from '@Types/tournamentTypes';
 
 type LoserLinkDefinition = {
   sourceRoundNumber: number;
@@ -46,7 +48,7 @@ export function generateConsolationStructure({
   drawSize = 2,
   matchUpFormat,
   matchUpType,
-}: GenerateConsolationArgs) {
+}: GenerateConsolationArgs): ResultType & { structures?: Structure[] } {
   const generatorParams = {
     stage: CONSOLATION,
     stageSequence: 1,
@@ -81,7 +83,7 @@ export function addLinkedConsolationStructure({
   matchUpFormat,
   matchUpType,
   links: linkDefs = [],
-}: AddLinkedConsolationStructureArgs) {
+}: AddLinkedConsolationStructureArgs): ResultType & { addedStructureIds?: string[] } {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
   // a tieFormat a 7.x record stored on a non-TEAM event or draw is refused, never used or silently ignored
   const storedRefusal = storedNonTeamTieFormatRefusal({ drawDefinition });

@@ -161,8 +161,10 @@ test.each(scenarios)(
       setState: true,
     });
 
-    const drawDefinition = tournamentEngine.getEvent({ drawId }).drawDefinition;
-    const mainStructure = drawDefinition.structures.find((structure) => structure.stage === MAIN);
+    const drawDefinition = defined(tournamentEngine.getEvent({ drawId }).drawDefinition, 'drawDefinition');
+    const mainStructure = defined(drawDefinition.structures, 'structures').find(
+      (structure) => structure.stage === MAIN,
+    );
     const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
     const consolationMatchUps = matchUps.filter((matchUp) => matchUp.stage === CONSOLATION);
     const positionAssignments = defined(

@@ -52,6 +52,7 @@ import { SEEDING } from '@Constants/timeItemConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Participant } from '@Types/tournamentTypes';
 import { nameMocks } from './nameMocks';
+import type { ResultType } from '@Types/factoryTypes';
 
 /** A TEAM draw's team size, and the individuals it needs, by gender (written into `gendersCount`). */
 function teamParticipantsShape({
@@ -123,7 +124,7 @@ function generateEventParticipants({
   gender,
   random,
   uuids,
-}) {
+}): ResultType & { uniqueParticipantIds?: string[]; targetParticipants?: Participant[] } {
   let individualParticipantCount = drawParticipantsCount;
   const gendersCount = { [MALE]: 0, [FEMALE]: 0 };
   let teamSize, genders;
@@ -212,7 +213,7 @@ function generateEventParticipants({
       random,
     });
     if (teamResult.error) return teamResult;
-    targetParticipants = teamResult.teamParticipants;
+    targetParticipants = teamResult.teamParticipants!;
   }
 
   if (isHybrid) {
@@ -223,7 +224,7 @@ function generateEventParticipants({
       random,
     });
     if (hybridResult.error) return hybridResult;
-    targetParticipants = hybridResult.targetParticipants;
+    targetParticipants = hybridResult.targetParticipants!;
   }
 
   return { uniqueParticipantIds, targetParticipants };
@@ -238,7 +239,7 @@ function buildTeamParticipants({
   teamSize,
   unique,
   random,
-}) {
+}): ResultType & { teamParticipants?: Participant[] } {
   const maleIndividualParticipantIds = genders[MALE]
     ? unique
         .filter(({ participantType: pt, person }) => pt === INDIVIDUAL && person?.sex === MALE)
@@ -264,7 +265,7 @@ function buildTeamParticipants({
   let fIndex = 0,
     mIndex = 0,
     rIndex = 0;
-  const teamParticipants = generateRange(0, drawParticipantsCount).map((teamIndex) => {
+  const teamParticipants: Participant[] = generateRange(0, drawParticipantsCount).map((teamIndex) => {
     const fPIDs = femaleIndividualParticipantIds.slice(fIndex, fIndex + genders[FEMALE]);
     const mPIDs = maleIndividualParticipantIds.slice(mIndex, mIndex + genders[MALE]);
     const rIDs = remainingParticipantIds.slice(rIndex, rIndex + mixedCount);
@@ -315,7 +316,9 @@ function buildTeamParticipants({
   return { teamParticipants };
 }
 
-function buildHybridParticipants({ drawParticipantsCount, tournamentRecord, unique, random }) {
+type HybridResult = ResultType & { targetParticipants?: Participant[] };
+
+function buildHybridParticipants({ drawParticipantsCount, tournamentRecord, unique, random }): HybridResult {
   const individuals = unique.filter(({ participantType: pt }) => pt === INDIVIDUAL);
   const soloCount = drawParticipantsCount - Math.floor(drawParticipantsCount / 2);
   const pairMemberIndividuals = individuals.slice(soloCount);
@@ -912,7 +915,7 @@ export function generateEventWithDraw(params) {
     });
     if (genResult.error) return genResult;
 
-    genResult.uniqueParticipantIds.forEach((id) => uniqueParticipantIds.push(id));
+    genResult.uniqueParticipantIds!.forEach((id) => uniqueParticipantIds.push(id));
     targetParticipants = genResult.targetParticipants;
   }
 

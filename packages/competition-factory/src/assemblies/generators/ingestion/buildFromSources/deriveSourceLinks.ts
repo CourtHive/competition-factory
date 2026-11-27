@@ -149,7 +149,7 @@ function templateLinks(drawType: string | undefined, sourceStructures: SourceStr
       ...link,
       source: { ...link.source, structureId: sourceStructureId },
       target: { ...link.target, structureId: targetStructureId },
-    });
+    } as DrawLink);
     derived.push({ linkType: link.linkType, sourceStructureId, targetStructureId, basis: 'drawType' });
   }
   return links;

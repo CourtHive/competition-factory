@@ -13,7 +13,7 @@ import { extractDate, sameDay } from '@Tools/dateTime';
 import { MUTUALLY_EXCLUSIVE_TIME_MODIFIERS, SCHEDULED_TIME, TIME_MODIFIERS } from '@Constants/timeItemConstants';
 import { INVALID_DATE, INVALID_TIME, INVALID_VALUES, MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
-import type { ResultWarning } from '@Types/factoryTypes';
+import type { ResultWarning, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type AddScheduleAttributeArgs = {
@@ -49,7 +49,7 @@ export function datedOnAnotherDay(matchUp: MatchUp | undefined, day: string): bo
   return !!scheduledDate && !sameDay(scheduledDate, day);
 }
 
-export function addMatchUpScheduledTime(params: AddMatchUpScheduledTimeArgs) {
+export function addMatchUpScheduledTime(params: AddMatchUpScheduledTimeArgs): ResultType {
   const stack = 'addMatchUpScheduledTime';
   const { removePriorValues, tournamentRecord, drawDefinition, disableNotice, scheduledTime, matchUpId } = params;
   const { workingMatchUp } = params;

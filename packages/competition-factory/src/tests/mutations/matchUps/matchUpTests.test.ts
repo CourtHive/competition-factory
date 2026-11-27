@@ -1,4 +1,5 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
+import { defined } from '@Tests/helpers/defined';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
 import { applyMatchUpFormat } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
@@ -236,8 +237,10 @@ it('throws error when setting matchUpFormat on TEAM events', () => {
     setState: true,
   });
 
-  const { drawDefinition, event } = tournamentEngine.getEvent({ drawId: 'did' });
-  const structureId = drawDefinition.structures[0].structureId;
+  const eventResult = tournamentEngine.getEvent({ drawId: 'did' });
+  const drawDefinition = defined(eventResult.drawDefinition, 'drawDefinition');
+  const event = defined(eventResult.event, 'event');
+  const structureId = defined(drawDefinition.structures, 'structures')[0].structureId;
 
   expect(event.eventType).toEqual(TEAM_EVENT);
 

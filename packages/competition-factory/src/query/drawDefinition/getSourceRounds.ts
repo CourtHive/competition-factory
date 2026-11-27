@@ -27,7 +27,7 @@ type SourceRoundsResult = {
   playoffPositionsReturned?: number[];
   playedOffSourceRounds?: number[];
   playoffSourceRounds?: number[];
-  playoffRoundsRanges?: any;
+  playoffRoundsRanges?: { finishingPositionRange: string; finishingPositions: number[]; roundNumber: number }[];
   roundProfile?: RoundProfile;
   sourceRounds?: number[];
   error?: ErrorType;

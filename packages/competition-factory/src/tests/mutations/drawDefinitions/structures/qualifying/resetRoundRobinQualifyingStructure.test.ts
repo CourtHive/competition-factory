@@ -1,4 +1,5 @@
 import { setSubscriptions } from '@Global/state/globalState';
+import { defined } from '@Tests/helpers/defined';
 import { tournamentEngine } from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
@@ -30,9 +31,12 @@ function generateRoundRobinQualifying({ completeAllMatchUps = false } = {}) {
   tournamentEngine.setState(tournamentRecord);
 
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
-  const qualifyingStructure = drawDefinition.structures.find(({ stage }) => stage === QUALIFYING);
-  const groupMatchUpIds = qualifyingStructure.structures
-    .flatMap((group) => group.matchUps)
+  const qualifyingStructure = defined(
+    defined(drawDefinition, 'drawDefinition').structures?.find(({ stage }) => stage === QUALIFYING),
+    'qualifying structure',
+  );
+  const groupMatchUpIds = defined(qualifyingStructure.structures, 'groups')
+    .flatMap((group) => defined(group.matchUps, 'group matchUps'))
     .map(({ matchUpId }) => matchUpId);
 
   return { drawId, structureId: qualifyingStructure.structureId, groupMatchUpIds };
@@ -53,8 +57,13 @@ describe('resetQualifyingStructure() on a round robin qualifying structure', () 
     expect(result.error).toEqual(SCORES_PRESENT);
 
     const { drawDefinition } = tournamentEngine.getEvent({ drawId });
-    const qualifyingStructure = drawDefinition.structures.find((s) => s.structureId === structureId);
-    expect(qualifyingStructure.structures.flatMap((group) => group.matchUps).length).toEqual(groupMatchUpIds.length);
+    const qualifyingStructure = defined(
+      defined(drawDefinition, 'drawDefinition').structures?.find((s) => s.structureId === structureId),
+      'qualifying structure',
+    );
+    expect(defined(qualifyingStructure.structures, 'groups').flatMap((group) => group.matchUps).length).toEqual(
+      groupMatchUpIds.length,
+    );
   });
 
   it('a qualifying round robin is reset through its groups, with a delete notice for each group matchUp', () => {
@@ -74,7 +83,10 @@ describe('resetQualifyingStructure() on a round robin qualifying structure', () 
     );
 
     const { drawDefinition } = tournamentEngine.getEvent({ drawId });
-    const qualifyingStructure = drawDefinition.structures.find((s) => s.structureId === structureId);
+    const qualifyingStructure = defined(
+      defined(drawDefinition, 'drawDefinition').structures?.find((s) => s.structureId === structureId),
+      'qualifying structure',
+    );
     expect(qualifyingStructure.structures).toEqual([]);
     expect(qualifyingStructure.matchUps).toBeUndefined();
     expect(qualifyingStructure.positionAssignments).toBeUndefined();

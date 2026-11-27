@@ -29,6 +29,7 @@ import {
   MISSING_VALUE,
   UNSUPPORTED_IN_LEGACY_MODE,
 } from '@Constants/errorConditionConstants';
+import type { ResultType } from '@Types/factoryTypes';
 
 type AddTimeItemArgs = {
   tournamentRecord?: Tournament;
@@ -42,7 +43,7 @@ type AddTimeItemArgs = {
   element: any;
 };
 
-export function addTimeItem(params: AddTimeItemArgs) {
+export function addTimeItem(params: AddTimeItemArgs): ResultType {
   // An engine call naming an event (`eventId`, resolved to `event`) writes to that event, which is an
   // event modification. Internal callers name their `element` and announce what they change themselves.
   const eventElement = !params?.element && !params?.participantId && !params?.drawDefinition && params?.event;
@@ -140,7 +141,7 @@ export function addParticipantTimeItem({
   disableNotice,
   participantId,
   timeItem,
-}: AddParticipantTimeItemArgs) {
+}: AddParticipantTimeItemArgs): ResultType {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   if (!participantId) return { error: MISSING_PARTICIPANT_ID };
 
@@ -209,7 +210,7 @@ export function addParticipantPresenceAttestation({
   return result;
 }
 
-export function addTournamentTimeItem(params) {
+export function addTournamentTimeItem(params): ResultType {
   const { removePriorValues, tournamentRecord, duplicateValues, creationTime, timeItem } = params;
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   const result = addTimeItem({
@@ -239,7 +240,7 @@ export function addTournamentTimeItem(params) {
  * it changes the event. Internal callers pass the event alone: the publishing writers announce the
  * change with their own topics, and the mock generators write to an event that is not yet in a record.
  */
-export function addEventTimeItem(params) {
+export function addEventTimeItem(params): ResultType {
   const { removePriorValues, duplicateValues, tournamentRecord, disableNotice, creationTime, timeItem, event } = params;
   if (!event) return { error: EVENT_NOT_FOUND };
   const write = () =>

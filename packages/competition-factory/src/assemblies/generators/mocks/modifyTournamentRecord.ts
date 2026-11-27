@@ -28,6 +28,7 @@ import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 import type { Event, Tournament } from '@Types/tournamentTypes';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { ResultType } from '@Types/factoryTypes';
 
 const COMPLETED_STATUSES = new Set<string | undefined>(completedMatchUpStatuses);
 
@@ -324,7 +325,10 @@ function processDrawProfiles({ drawProfiles, tournamentRecord, allUniqueParticip
   return SUCCESS;
 }
 
-function applySchedulingProfile({ schedulingProfile, autoSchedule, periodLength, tournamentRecord }) {
+function applySchedulingProfile({ schedulingProfile, autoSchedule, periodLength, tournamentRecord }): ResultType & {
+  scheduledRounds?: unknown[];
+  schedulerResult?: object;
+} {
   let scheduledRounds: any = [];
   let schedulerResult = {};
 

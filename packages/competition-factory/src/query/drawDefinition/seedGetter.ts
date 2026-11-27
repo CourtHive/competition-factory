@@ -361,7 +361,7 @@ export function isValidSeedPosition({
   drawPosition,
   structureId,
   seedNumber,
-}: IsValidSeedPositionArgs) {
+}: IsValidSeedPositionArgs): boolean {
   const { structure } = findStructure({ drawDefinition, structureId });
   appliedPolicies ??= getAppliedPolicies({ drawDefinition }).appliedPolicies;
 

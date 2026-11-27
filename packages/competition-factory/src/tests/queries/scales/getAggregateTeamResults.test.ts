@@ -40,7 +40,7 @@ it('can aggregate team scores across SINGLES/DOUBLES events', () => {
   });
   expect(result.success).toBe(true);
 
-  for (const event of result.events) {
+  for (const event of defined(result.events, 'events')) {
     const { eventId, eventType } = event;
     if (eventType === SINGLES_EVENT) {
       const result = tournamentEngine.generateDrawDefinition({

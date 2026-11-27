@@ -50,7 +50,7 @@ import type { ResultType, ScaleItem } from '@Types/factoryTypes';
  * - An unrecognised `person.nationalityCode` is written, and the result carries a NATIONALITY_CODE_UNRECOGNIZED
  *   warning.
  */
-export function modifyParticipant(params) {
+export function modifyParticipant(params): ResultType & { participant?: Participant } {
   const {
     updateParticipantName = true,
     groupingParticipantId,
