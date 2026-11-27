@@ -269,7 +269,7 @@ function tierLedger(
   tallyPolicy?: RoundRobinTallyPolicy,
   participantIds?: string[],
   groupingTotal?: string,
-): { participantResults?: ParticipantResults; error?: ErrorType; info?: string } {
+): { participantResults?: ParticipantResults; error?: ErrorType; info?: unknown } {
   const tally = buildParticipantResults({ matchUps: bucket.matchUps, tallyPolicy, participantIds, groupingTotal });
   if (tally.error) return tally;
   const participantResults = (tally.participantResults ?? {}) as ParticipantResults;

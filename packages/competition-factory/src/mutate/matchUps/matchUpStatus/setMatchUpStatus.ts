@@ -698,7 +698,8 @@ function propagateExitFrom({
   context,
   params,
 }: {
-  context: NonNullable<ResultType['context']>;
+  // the loser's consolation matchUp, which the bound below names
+  context: NonNullable<ResultType['context']> & { loserMatchUp?: { matchUpId?: string } };
   propagateExitStatus?: boolean;
   params: SetMatchUpStatusArgs;
 }): ResultType | undefined {

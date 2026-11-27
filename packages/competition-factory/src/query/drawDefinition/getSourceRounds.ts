@@ -31,7 +31,7 @@ type SourceRoundsResult = {
   roundProfile?: RoundProfile;
   sourceRounds?: number[];
   error?: ErrorType;
-  info?: string;
+  info?: unknown;
 };
 
 export function getSourceRounds({
