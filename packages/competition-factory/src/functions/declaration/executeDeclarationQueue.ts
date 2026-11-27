@@ -4,7 +4,8 @@ import { isObject } from '@Tools/objects';
 
 // constants and types
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
-import { Directives } from '@Types/factoryTypes';
+import type { OfficiatingDirective } from '@Types/officiatingTypes';
+import type { SanctioningDirective } from '@Types/sanctioningTypes';
 
 // Generic directive/pipe/rollback pipeline shared by declaration-style engines
 // (officiating, sanctioning, and a future player/declarations engine). The engine
@@ -12,7 +13,7 @@ import { Directives } from '@Types/factoryTypes';
 // logic — snapshot, method lookup, pipe, rollback-on-error — is population-agnostic.
 type ExecuteDeclarationQueueArgs<R> = {
   engine: { [method: string]: any };
-  directives: Directives;
+  directives: (OfficiatingDirective | SanctioningDirective)[];
   rollbackOnError?: boolean;
   getRecords: () => R;
   setRecords: (records: R) => unknown;
@@ -39,7 +40,7 @@ function validateDeclarationQueue(
 ): QueueResult | undefined {
   for (const [index, directive] of directives.entries()) {
     if (!isObject(directive)) return refuse('directive must be an object');
-    const { method: methodName, params, pipe } = directive as Directives[number];
+    const { method: methodName, params, pipe } = directive as OfficiatingDirective | SanctioningDirective;
     if (params != null && !isObject(params)) return refuse('params must be an object');
     if (pipe != null) {
       if (!isObject(pipe)) return refuse('pipe must be an object');

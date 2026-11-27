@@ -1,7 +1,7 @@
 import type { AsyncEngineDirectMethod } from './asyncEngineDirectMethods';
-import type { Directives, FactoryEngineMethod, ResultType } from '@Types/factoryTypes';
+import type { FactoryEngineMethod, ResultType } from '@Types/factoryTypes';
 import type { getOutcomePipeline } from '@Global/state/globalState';
-import type { EngineSetup, FactoryEngineTyped } from './engineTypes';
+import type { EngineSetup, FactoryEngineTyped, QueueDirectives } from './engineTypes';
 import type { MethodSignatures } from './methodSignatures';
 
 /** Always a Promise, even when a source signature currently returns any. */
@@ -23,7 +23,7 @@ type MaybeAsync<Result> = Result | Promise<Result>;
 export interface AsyncEngineSetup
   extends EngineSetup<AsyncFactoryEngine>, Pick<FactoryEngineTyped, 'on' | 'once' | 'off' | 'waitFor' | 'inspect'> {
   /** Await the result when a registered directive may return a Promise. */
-  dryRun(directives: Directives): MaybeAsync<PreviewResult<'dryRun'>>;
+  dryRun<Custom extends string = never>(directives: QueueDirectives<Custom>): MaybeAsync<PreviewResult<'dryRun'>>;
   explain(method: string, params?: Record<string, any>): MaybeAsync<PreviewResult<'explain'>>;
   version(): string;
   outcomePipeline(mode: ReturnType<typeof getOutcomePipeline>): AsyncFactoryEngine;
@@ -43,8 +43,8 @@ export type AsyncFactoryEngine = AsyncEngineSetup & {
 } & {
   [Name in Exclude<GovernorNames, keyof MethodSignatures>]: (...args: unknown[]) => Promise<unknown>;
 } & {
-  executionQueue(
-    directives: Directives,
+  executionQueue<Custom extends string = never>(
+    directives: QueueDirectives<Custom>,
     rollbackOnError?: boolean,
   ): Promise<ResultType & { results?: unknown[]; rolledBack?: boolean }>;
   execute(args: Record<string, unknown>): Promise<unknown>;

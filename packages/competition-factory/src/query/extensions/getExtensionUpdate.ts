@@ -29,7 +29,7 @@ export function getExtensionUpdate({
   if (typeof tournamentRecords !== 'object' || !Object.keys(tournamentRecords).length)
     return { error: MISSING_TOURNAMENT_RECORDS };
 
-  const methods: any[] = [];
+  const methods: QueueMethod[] = [];
   let tournamentExtensionAdded;
   for (const tournamentRecord of Object.values(tournamentRecords)) {
     const { extension } = findExtension({

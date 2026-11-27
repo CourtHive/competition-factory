@@ -32,6 +32,7 @@ import { dryRun, DryRunResult } from './dryRun';
 
 // types
 import type { AsyncFactoryEngine } from '@Assemblies/engines/types/asyncEngineTypes';
+import type { Directive } from '@Assemblies/engines/types/engineTypes';
 import { FactoryEngine } from '@Types/factoryTypes';
 
 export type ExplainResult = {
@@ -60,7 +61,7 @@ export function explain(
 export function explain(engine: FactoryEngine, method: string, params?: Record<string, any>): ExplainResult;
 // eslint-disable-next-line no-redeclare -- overload implementation
 export function explain(engine: FactoryEngine | AsyncFactoryEngine, method: string, params?: Record<string, any>) {
-  const detail: DryRunResult | Promise<DryRunResult> = dryRun(engine, [{ method, params }]);
+  const detail: DryRunResult | Promise<DryRunResult> = dryRun(engine, [{ method, params } as Directive]);
   return detail instanceof Promise ? detail.then(explainResult) : explainResult(detail);
 }
 

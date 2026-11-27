@@ -1,6 +1,7 @@
 import { UNREGISTERED_PREVIEW_METHOD } from '@Constants/errorConditionConstants';
 
-import type { Directives, ResultType, TournamentRecords } from '@Types/factoryTypes';
+import type { ResultType, TournamentRecords } from '@Types/factoryTypes';
+import type { Directives } from '@Assemblies/engines/types/engineTypes';
 import type { Tournament } from '@Types/tournamentTypes';
 
 type PrivateQueueResult = ResultType & {
@@ -12,7 +13,7 @@ type PrivateQueueResult = ResultType & {
 export interface PrivatePreviewEngine {
   getState(): { tournamentId: string | undefined; tournamentRecords: TournamentRecords };
   getTournament(params?: { tournamentId?: string }): { tournamentRecord?: Tournament };
-  executionQueue(directives: Directives): PrivateQueueResult | Promise<PrivateQueueResult>;
+  executionQueue(directives: Directives<string>): PrivateQueueResult | Promise<PrivateQueueResult>;
 }
 
 export type PreviewParams = Record<string, unknown> & {
@@ -55,7 +56,11 @@ export function setPreviewMethod<Params extends object = PreviewParams>(
 type PreviewBinding = { builtin: (params: PreviewParams) => unknown } | { custom: PreviewImplementation };
 
 /** Called after queue validation. Resolve every directive before the first one can execute. */
-export function resolvePreviewDirectives(engine: object, directives: Directives, liveMethods: Record<string, unknown>) {
+export function resolvePreviewDirectives(
+  engine: object,
+  directives: Directives<string>,
+  liveMethods: Record<string, unknown>,
+) {
   const methods = new Map<string, PreviewBinding>();
   const registered = registrations.get(engine);
   for (const { method } of directives) {
