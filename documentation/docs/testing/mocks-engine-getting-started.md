@@ -18,9 +18,9 @@ npm install tods-competition-factory
 
 ```js
 import { mocksEngine } from 'tods-competition-factory';
-// or
-import mocksEngine from 'tods-competition-factory/mocksEngine';
 ```
+
+The package has no `mocksEngine` subpath and no default export; import it by name from the package root.
 
 ## Your First Tournament
 
@@ -45,12 +45,13 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord();
 console.log(tournamentRecord);
 /*
 {
-  tournamentId: '...',
-  tournamentName: 'Generated Tournament',
+  tournamentName: '...', // drawn from a list of mock names unless you pass one
   startDate: '...',
   endDate: '...',
-  participants: [...],  // 32 INDIVIDUAL participants
-  isMock: true
+  isMock: true,
+  tournamentId: '...',
+  factory: { ... },      // the stamp of the factory version that wrote it
+  participants: [...],   // 32 INDIVIDUAL participants
 }
 */
 ```
@@ -68,7 +69,7 @@ const { tournamentRecord, drawIds, eventIds } = mocksEngine.generateTournamentRe
 This creates:
 
 - A **singles event** (default)
-- A **single elimination draw** with 16 positions)
+- A **single elimination draw** with 16 positions
 - **16 participants** entered in the draw
 - All **matchUps** ready to be scheduled/completed
 
