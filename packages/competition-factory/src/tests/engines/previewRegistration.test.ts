@@ -1,5 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { asyncEngine, registerPreviewMethod, tournamentEngine } from '../../index';
+import { defined } from '@Tests/helpers/defined';
 import { setClock } from '@Tools/clock';
 import { generatePatch } from '@Tools/jsonPatch';
 import {
@@ -276,7 +277,7 @@ it.each([false, true])('matches the ordinary nested queue receipt with pending n
     expect(committed.success).toBe(true);
     expect(ordinary).toHaveBeenCalledTimes(1);
     expect(actual.tournamentName).toBe('nested');
-    expect(committed.results[0].nested).toMatchObject(
+    expect((defined(committed.results, 'results')[0] as { nested?: unknown }).nested).toMatchObject(
       refusal
         ? { error: refuse().error, rolledBack: false, results: [{ methodName: 'setTournamentName', success: true }] }
         : { success: true, results: [{ methodName: 'setTournamentName', success: true }] },

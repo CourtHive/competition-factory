@@ -1,10 +1,18 @@
 import { tournamentEngine } from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import { expect, test } from 'vitest';
 
 // constants
 import { EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT } from '@Constants/errorConditionConstants';
 import { SINGLES } from '@Constants/eventConstants';
+
+// the first structure's assignments, read back from engine state
+function storedAssignments(tournamentId: string) {
+  const record = defined(tournamentEngine.getState().tournamentRecords[tournamentId], 'record');
+  const draw = defined(defined(record.events, 'events')[0].drawDefinitions, 'draws')[0];
+  return defined(defined(draw.structures, 'structures')[0].positionAssignments, 'positionAssignments');
+}
 
 // Re-asserting the SAME participant at the SAME drawPosition must be an idempotent
 // no-op success — not an error. This is what unblocks bulk re-syncs / retries (e.g.
@@ -38,9 +46,7 @@ test('assignDrawPosition is idempotent for the same participant at the same draw
   expect(result.error).toBeUndefined();
 
   // the participant is still at drawPosition 1 exactly once (no duplication)
-  const assignments: any[] =
-    tournamentEngine.getState().tournamentRecords[gen.tournamentRecord.tournamentId].events[0].drawDefinitions[0]
-      .structures[0].positionAssignments;
+  const assignments = storedAssignments(gen.tournamentRecord.tournamentId);
   const held = assignments.filter((a) => a.participantId === participantId);
   expect(held).toHaveLength(1);
   expect(held[0].drawPosition).toEqual(1);
@@ -80,10 +86,6 @@ test('a re-asserting executionQueue batch commits instead of rolling back', asyn
   expect(result.rolledBack).not.toEqual(true);
 
   // nothing rolled back — the draw is still fully assigned
-  const after: any[] = tournamentEngine
-    .getState()
-    .tournamentRecords[
-      gen.tournamentRecord.tournamentId
-    ].events[0].drawDefinitions[0].structures[0].positionAssignments.filter((a: any) => a.participantId);
+  const after = storedAssignments(gen.tournamentRecord.tournamentId).filter((a) => a.participantId);
   expect(after.length).toEqual(assigned.length);
 });

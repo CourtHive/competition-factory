@@ -1,7 +1,17 @@
-import type { FactoryEngineMethod } from '@Types/factoryEngineMethods';
+import type { Directives, FactoryEngineMethod, ResultType, TournamentRecords } from '@Types/factoryTypes';
+import type { LoadedFootprint } from '@Global/state/loadedFootprint';
+import type { setClock, setCompetitionClock } from '@Tools/clock';
 import type { MethodSignatures } from './methodSignatures';
-import type { Directives } from '@Types/factoryTypes';
+import type { Tournament } from '@Types/tournamentTypes';
+import type { setRandomSource } from '@Tools/prng';
 import type * as Forge from '../../../forge';
+import type {
+  DeepCopyAttributes,
+  DevContextType,
+  getSchemaWriteMode,
+  getStampScope,
+  setTournamentId,
+} from '@Global/state/globalState';
 
 /**
  * Hint keys consumers pass instead of the fully-resolved entities. The
@@ -65,6 +75,64 @@ export type EngineMethod<F> = F extends (firstParam: infer P, ...rest: infer R) 
  */
 type FacadeMethodNames = 'q' | 'on' | 'once' | 'off' | 'waitFor' | 'inspect' | 'build' | 'dryRun' | 'explain';
 
+type CopyArgs = [deepCopyOption?: boolean, deepCopyAttributes?: DeepCopyAttributes];
+type ReadOptions = { convertExtensions?: boolean; removeExtensions?: boolean };
+
+/**
+ * The setup and state methods `engineStart` mounts on every engine, typed once for both engines. `Engine` is what the
+ * chaining ones return: the engine itself, with `error` and `success` set from the call (`processResult`).
+ * `outcomePipeline` / `getOutcomePipeline` are typed by each engine on its own.
+ */
+export interface EngineSetup<Engine> {
+  error?: unknown;
+  success?: boolean;
+  importMethods(
+    methods: Record<string, unknown>,
+    collections?: boolean | string[],
+    depth?: number,
+    global?: boolean,
+  ): ResultType;
+  getState(params?: ReadOptions): { tournamentId: string | undefined; tournamentRecords: TournamentRecords };
+  getTournament(params?: ReadOptions & { tournamentId?: string }): { tournamentRecord?: Tournament };
+  getTournamentId(): string | undefined;
+  setTournamentId: typeof setTournamentId;
+  reset(): Engine;
+  setState(records?: Tournament | Tournament[] | TournamentRecords, ...copy: CopyArgs): Engine;
+  setTournamentRecord(record?: Tournament, ...copy: CopyArgs): Engine;
+  removeTournamentRecord(tournamentId: string): Engine;
+  removeUnlinkedTournamentRecords(): Engine;
+  newTournamentRecord(params?: Partial<Tournament>): ResultType & { tournamentId?: string };
+  devContext(criteria?: DevContextType): Engine;
+  getDevContext(criteria?: DevContextType): DevContextType;
+  schemaWriteMode(mode: ReturnType<typeof getSchemaWriteMode>): Engine;
+  getSchemaWriteMode: typeof getSchemaWriteMode;
+  stampScope(scope?: ReturnType<typeof getStampScope>): Engine;
+  getStampScope: typeof getStampScope;
+  loadedFootprint(footprint?: LoadedFootprint, tournamentId?: string): Engine;
+  getLoadedFootprint(tournamentId?: string): LoadedFootprint | undefined;
+  saveDrawDeletions(flag?: boolean): Engine;
+  getSaveDrawDeletions(): boolean;
+  auditAuthorityServer(flag?: boolean): Engine;
+  getAuditAuthorityServer(): boolean;
+  setRandomSource(source?: Parameters<typeof setRandomSource>[0]): Engine;
+  setClock(clock?: Parameters<typeof setClock>[0]): Engine;
+  setCompetitionClock(provider?: Parameters<typeof setCompetitionClock>[0]): Engine;
+}
+
+/** The synchronous engines' setup methods, returning the typed engine. */
+export type SyncEngineSetup = EngineSetup<FactoryEngineTyped> & {
+  /** Run the directives in order as one call; with `rollbackOnError`, a refusal restores the records it started from. */
+  executionQueue(
+    directives: Directives,
+    rollbackOnError?: boolean,
+  ): ResultType & { results?: unknown[]; rolledBack?: boolean };
+  /** Run one registered method by name: `{ method, params }`. */
+  execute(args: Record<string, unknown>): unknown;
+};
+
+/** Named apart from `SyncEngineSetup` so `FactoryEngineTyped` can exclude them without reading its own members. */
+type SyncEngineSetupName = keyof EngineSetup<unknown> | 'executionQueue' | 'execute';
+
 /**
  * Closed engine surface for consumers — every method name comes from
  * `factoryEngineMethods.ts`, which is regenerated from the live engine via
@@ -73,10 +141,10 @@ type FacadeMethodNames = 'q' | 'on' | 'once' | 'off' | 'waitFor' | 'inspect' | '
  * fail at compile time.
  *
  * Methods listed in `MethodSignatures` carry real param + return types lifted
- * from the source declaration via `typeof`. Methods NOT listed there fall
- * through to the `(...args: any[]) => any` fallback so the surface stays
- * complete during the incremental signature roll-out. Adding a method to
- * `MethodSignatures` is purely additive and never breaks existing callers.
+ * from the source declaration via `typeof`, and the setup methods `engineStart`
+ * mounts are typed by `SyncEngineSetup`. A method in neither falls through to
+ * the `(...args: any[]) => any` fallback: only the availability helpers that
+ * leave the engine at 8.0.0 and the outcome pipeline selectors.
  *
  * Opt in at the consumer boundary:
  *
@@ -84,7 +152,11 @@ type FacadeMethodNames = 'q' | 'on' | 'once' | 'off' | 'waitFor' | 'inspect' | '
  *   const engine = tournamentEngine as FactoryEngineTyped;
  */
 export type FactoryEngineTyped = MethodSignatures &
-  Record<Exclude<FactoryEngineMethod, keyof MethodSignatures | FacadeMethodNames>, (...args: any[]) => any> & {
+  SyncEngineSetup &
+  Record<
+    Exclude<FactoryEngineMethod, keyof MethodSignatures | FacadeMethodNames | SyncEngineSetupName>,
+    (...args: any[]) => any
+  > & {
     /**
      * Developer-JOY unwrap query facade — see `src/forge/q.ts`.
      *

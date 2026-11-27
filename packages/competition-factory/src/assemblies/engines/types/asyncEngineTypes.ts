@@ -1,19 +1,8 @@
 import type { AsyncEngineDirectMethod } from './asyncEngineDirectMethods';
-import type { LoadedFootprint } from '@Global/state/loadedFootprint';
-import type { setClock, setCompetitionClock } from '@Tools/clock';
-import type { setRandomSource } from '@Tools/prng';
-import type { Tournament } from '@Types/tournamentTypes';
-import type { Directives, FactoryEngineMethod, ResultType, TournamentRecords } from '@Types/factoryTypes';
-import type { FactoryEngineTyped } from './engineTypes';
+import type { Directives, FactoryEngineMethod, ResultType } from '@Types/factoryTypes';
+import type { getOutcomePipeline } from '@Global/state/globalState';
+import type { EngineSetup, FactoryEngineTyped } from './engineTypes';
 import type { MethodSignatures } from './methodSignatures';
-import type {
-  DeepCopyAttributes,
-  DevContextType,
-  getOutcomePipeline,
-  getSchemaWriteMode,
-  getStampScope,
-  setTournamentId,
-} from '@Global/state/globalState';
 
 /** Always a Promise, even when a source signature currently returns any. */
 export type AsyncEngineMethod<F> = F extends (...args: infer Args) => infer Result
@@ -30,50 +19,15 @@ export type AsyncEngineUnsupportedFacade = 'q' | 'build';
 type PreviewResult<Method extends 'dryRun' | 'explain'> = ReturnType<FactoryEngineTyped[Method]>;
 type MaybeAsync<Result> = Result | Promise<Result>;
 
-type CopyArgs = [deepCopyOption?: boolean, deepCopyAttributes?: DeepCopyAttributes];
-type ReadOptions = { convertExtensions?: boolean; removeExtensions?: boolean };
-
 /** Direct engineStart mounts: synchronous setup/readback, plus the existing event bus. */
-export interface AsyncEngineSetup extends Pick<FactoryEngineTyped, 'on' | 'once' | 'off' | 'waitFor' | 'inspect'> {
-  error?: unknown;
-  success?: boolean;
+export interface AsyncEngineSetup
+  extends EngineSetup<AsyncFactoryEngine>, Pick<FactoryEngineTyped, 'on' | 'once' | 'off' | 'waitFor' | 'inspect'> {
   /** Await the result when a registered directive may return a Promise. */
   dryRun(directives: Directives): MaybeAsync<PreviewResult<'dryRun'>>;
   explain(method: string, params?: Record<string, any>): MaybeAsync<PreviewResult<'explain'>>;
   version(): string;
-  importMethods(
-    methods: Record<string, unknown>,
-    collections?: boolean | string[],
-    depth?: number,
-    global?: boolean,
-  ): ResultType;
-  getState(params?: ReadOptions): { tournamentId: string | undefined; tournamentRecords: TournamentRecords };
-  getTournament(params?: ReadOptions & { tournamentId?: string }): { tournamentRecord?: Tournament };
-  getTournamentId(): string | undefined;
-  setTournamentId: typeof setTournamentId;
-  reset(): AsyncFactoryEngine;
-  setState(records?: Tournament | Tournament[] | TournamentRecords, ...copy: CopyArgs): AsyncFactoryEngine;
-  setTournamentRecord(record?: Tournament, ...copy: CopyArgs): AsyncFactoryEngine;
-  removeTournamentRecord(tournamentId: string): AsyncFactoryEngine;
-  removeUnlinkedTournamentRecords(): AsyncFactoryEngine;
-  newTournamentRecord(params?: Partial<Tournament>): ResultType & { tournamentId?: string };
-  devContext(criteria?: DevContextType): AsyncFactoryEngine;
-  getDevContext(criteria?: DevContextType): DevContextType;
-  schemaWriteMode(mode: ReturnType<typeof getSchemaWriteMode>): AsyncFactoryEngine;
-  getSchemaWriteMode: typeof getSchemaWriteMode;
   outcomePipeline(mode: ReturnType<typeof getOutcomePipeline>): AsyncFactoryEngine;
   getOutcomePipeline: typeof getOutcomePipeline;
-  stampScope(scope?: ReturnType<typeof getStampScope>): AsyncFactoryEngine;
-  getStampScope: typeof getStampScope;
-  loadedFootprint(footprint?: LoadedFootprint, tournamentId?: string): AsyncFactoryEngine;
-  getLoadedFootprint(tournamentId?: string): LoadedFootprint | undefined;
-  saveDrawDeletions(flag?: boolean): AsyncFactoryEngine;
-  getSaveDrawDeletions(): boolean;
-  auditAuthorityServer(flag?: boolean): AsyncFactoryEngine;
-  getAuditAuthorityServer(): boolean;
-  setRandomSource(source?: Parameters<typeof setRandomSource>[0]): AsyncFactoryEngine;
-  setClock(clock?: Parameters<typeof setClock>[0]): AsyncFactoryEngine;
-  setCompetitionClock(provider?: Parameters<typeof setCompetitionClock>[0]): AsyncFactoryEngine;
 }
 
 type GovernorNames = Exclude<FactoryEngineMethod, AsyncEngineDirectMethod | 'execute' | 'executionQueue'>;

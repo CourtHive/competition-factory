@@ -610,6 +610,13 @@ produces), whether the engine copies it (`setState(record)`, the default) or bor
   `(string & {})` arm as `DisciplineUnion`), so a certifying or sanctioning body's own terms type-check. Inputs only
   widen; code that treats a value read back as one of the enum's members (a `Record<…>` lookup, an exhaustive `switch`)
   narrows it first (#6695).
+- **The typed engines' setup methods are typed.** On `tournamentEngine` and `competitionEngine`, `getState`,
+  `getTournament`, `setState`, `setTournamentRecord`, `reset`, `newTournamentRecord`, `executionQueue`, `execute` and
+  the other setup and mode methods were `(...args: any[]) => any`; they now carry the signatures the asynchronous
+  engine already had (`EngineSetup`, exported with `SyncEngineSetup`). `getState().tournamentRecords[id]` and
+  `getTournament().tournamentRecord` may be `undefined`, the chaining methods return the engine, and
+  `executionQueue(...).results` is `unknown[]`. Narrow before reading. Only the availability helpers that leave the
+  engine and the outcome pipeline selectors keep the open signature (#6692).
 
 ### Packaging
 

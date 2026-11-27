@@ -19,7 +19,7 @@ describe('removeMutationLock direct coverage', () => {
 
   it('returns MISSING_VALUE when neither lockId nor scope provided', () => {
     mocksEngine.generateTournamentRecord({ setState: true });
-    const { tournamentRecord } = tournamentEngine.getTournament();
+    const tournamentRecord = defined(tournamentEngine.getTournament().tournamentRecord, 'tournamentRecord');
 
     const result = removeMutationLock({ tournamentRecord });
     expect(result.error).toEqual(MISSING_VALUE);
