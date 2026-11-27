@@ -15,8 +15,9 @@ import { afterAll, beforeAll } from 'vitest';
  */
 type Watched = Record<string, Record<string, unknown>>;
 
+// a group the fixtures no longer hold is skipped
 const watch = async (): Promise<Watched> => {
-  const { fixtures } = await import('@Fixtures/index');
+  const fixtures: Record<string, any> = (await import('@Fixtures/index')).fixtures;
   return {
     competitionFormats: fixtures.competitionFormats,
     tieFormats: fixtures.tieFormats,
@@ -27,7 +28,7 @@ const watch = async (): Promise<Watched> => {
 const serialize = (watched: Watched) =>
   Object.fromEntries(
     Object.entries(watched).flatMap(([group, entries]) =>
-      Object.entries(entries).map(([name, value]) => [`${group}.${name}`, JSON.stringify(value)]),
+      Object.entries(entries ?? {}).map(([name, value]) => [`${group}.${name}`, JSON.stringify(value)]),
     ),
   );
 
