@@ -74,7 +74,8 @@ describe('COLLEGE_DEFAULT valueGoal', () => {
 
   // the user-visible defect: with valueGoal 5 a 4-3 dual reached no goal and had NO winner
   it('produces a winner for a dual won 4-3', () => {
-    const tie: any = playDual({ tieFormat: tieFormats.COLLEGE_DEFAULT, side1Wins: 4 });
+    // the test's own copy: the published fixture is shared by every file a worker runs
+    const tie: any = playDual({ tieFormat: structuredClone(tieFormats.COLLEGE_DEFAULT), side1Wins: 4 });
 
     expect(tie.winningSide).toEqual(1);
     expect(tie.matchUpStatus).toEqual(COMPLETED);

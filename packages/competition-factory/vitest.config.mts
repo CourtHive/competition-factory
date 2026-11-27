@@ -111,6 +111,7 @@ export default defineConfig({
     setupFiles: [
       ...(auditNoticeWrites ? ['./src/tests/testHarness/noticePayloadWriteCheck.ts'] : []),
       './src/tests/testHarness/resetGlobalState.ts',
+      './src/tests/testHarness/catalogueIntegrity.ts',
       './src/tests/testHarness/setSchemaWriteModeNative.ts',
       './src/tests/testHarness/seedMathRandom.ts',
       './src/tests/testHarness/corpusRecord.ts',
@@ -122,6 +123,7 @@ export default defineConfig({
       './src/tests/testHarness/schedulingViewRoundTrip.ts',
       './src/tests/testHarness/rethrowCaughtErrors.ts',
       './src/tests/testHarness/queryPurity.ts',
+      './src/tests/testHarness/fixtureIntegrity.ts',
     ],
     coverage: {
       reporter: ['html', 'json-summary'],
