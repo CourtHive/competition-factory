@@ -92,6 +92,9 @@ type Plan = {
   steps: Step[];
   /** the walk met a shape outside the planned domain */
   unplanned?: string;
+  /** the placed seat's hydration of the draw, taken before anything was drafted (absent where an assignment was appended) */
+  seatHydration?: HydratedMatchUp[];
+  seatAsked?: boolean;
   real: { drawDefinition: DrawDefinition; tournamentRecord?: Tournament };
 };
 
@@ -202,7 +205,9 @@ type PlanByeArgs = {
 /** the planned BYE placement, or `undefined` where the walk leaves the planned domain */
 export function planDrawPositionBye(
   params: PlanByeArgs,
-): { result: ResultType; commit?: () => void; unplanned?: undefined } | { unplanned: string } {
+):
+  | { result: ResultType; commit?: () => void; unplanned?: undefined }
+  | { unplanned: string; seatHydration?: HydratedMatchUp[] } {
   const { drawDefinition, tournamentRecord } = params;
   if (!drawDefinition) return { result: { error: MISSING_DRAW_DEFINITION } };
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
@@ -212,7 +217,7 @@ export function planDrawPositionBye(
     steps: [],
   };
   const result = planBye(plan, { ...params, drawDefinition: plan.draft.drawDefinition });
-  if (plan.unplanned) return { unplanned: plan.unplanned };
+  if (plan.unplanned) return { unplanned: plan.unplanned, seatHydration: plan.seatHydration };
   if (result.error) return { result };
   const steps = plan.steps;
   return {
@@ -244,6 +249,12 @@ function planBye(plan: Plan, params: PlanByeArgs & { drawDefinition: DrawDefinit
 
   const seat = seatRefusal(plan, { ...params, structureId }, workingStructure);
   if (seat.done) return seat.done;
+  // the placed seat's own (the first asked): its hydration reads the record as it stands, for the writer the caller
+  // keeps where the walk is unplanned
+  if (!plan.seatAsked) {
+    plan.seatAsked = true;
+    plan.seatHydration = seat.inContextDrawMatchUps;
+  }
 
   const { tournamentRecord, provisionalPositioning, preserveScheduling, isPositionAction, event } = params;
   const appliedPolicies = getAppliedPolicies({ tournamentRecord, drawDefinition, event }).appliedPolicies ?? {};

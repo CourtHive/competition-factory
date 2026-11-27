@@ -467,6 +467,8 @@ export type BuildViewArgs = {
   clockFree?: boolean;
   temporal?: TemporalProjection;
   tournamentRecord?: Tournament;
+  /** every record the call names (the engine hands a call every record it holds); `tournamentRecord` is one of them */
+  tournamentRecords?: { [tournamentId: string]: Tournament };
   drawDefinition?: DrawDefinition;
   policyDefinitions?: PolicyDefinitions;
   /** the caller's map of the draw (`setMatchUpStatus` builds one for the whole call), so the view does not build its own */
@@ -494,13 +496,21 @@ export type BuildViewArgs = {
   instantsExact?: () => boolean;
 };
 
-/** the record a recorder copies: what a call is handed */
-export type RecordCopy = { tournamentRecord?: Tournament; drawDefinition: DrawDefinition; event?: Event };
+/**
+ * the record a recorder copies: what a call is handed. `tournamentRecords` is there only for a call that names more
+ * than one: every record it names, copied with the call's own, which it holds as the copy of its entry
+ */
+export type RecordCopy = {
+  tournamentRecords?: { [tournamentId: string]: Tournament };
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  event?: Event;
+};
 
 /**
  * RECORDED: `setMatchUpStatus`'s own v1 write (`runV1`) on `copy`, with the call's parameters, and what it returned:
- * the call's whole answer, warnings included. Undefined where the call cannot be run on a copy (it names more than one
- * tournament record).
+ * the call's whole answer, warnings included. Undefined where the call cannot be run on a copy (a record it names is
+ * not in the copy).
  */
 export type WriteOnCopy = (copy: RecordCopy) => ResultType | undefined;
 /** Complete a detached native write's public return on its copy, before replay onto storage. */
