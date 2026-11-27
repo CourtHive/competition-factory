@@ -561,6 +561,8 @@ Swaps that relabel nothing outside their structure are unchanged: a swap before 
 results stay inside the structure (for example two first-round winners in single elimination), and a swap of two
 seats in a consolation or playoff structure, whose links the swap disables.
 
+_Shipped in #6678._
+
 ### Records written before 8.0.0
 
 8.0.0 reads any tournament record a 7.x or earlier release wrote: every query works on it unchanged.
