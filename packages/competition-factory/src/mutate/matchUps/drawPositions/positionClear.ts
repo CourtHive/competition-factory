@@ -966,8 +966,6 @@ function updateMatchUpStatusAfterRemoval({
     })
       ? rederived.winningSide
       : undefined;
-    // the removed side's exit takes its reason with it, once the removal is complete (`collectReducedExits`)
-    reducedExits?.push(targetMatchUp);
   } else if (!matchUpContainsBye && retained) {
     // Undecided, so no origin stands on it either; a winner's origin rides only on a matchUp that is an exit or a
     // BYE (ORIGIN_ON_UNDECIDED_MATCHUP). `removeDoubleExit`'s withdrawal clears it the same way.
@@ -996,6 +994,8 @@ function updateMatchUpStatusAfterRemoval({
       drawDefinition,
       event,
     });
+    // the removed side's exit takes its reason with it, once the removal is complete (`collectReducedExits`)
+    if (rederived) reducedExits?.push(targetMatchUp);
   }
 
   return matchUpContainsBye;

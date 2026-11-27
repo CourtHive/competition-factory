@@ -8,7 +8,6 @@ import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
 import { groupEntryDestructionError } from '@Mutate/entries/destroyGroupEntry';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { composeDrawMutation } from '@Mutate/drawDefinitions/composeThenWrite';
-import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { modifyEntriesStatus } from '@Mutate/entries/modifyEntriesStatus';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
@@ -19,10 +18,10 @@ import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
 import { ErrorType, LUCKY_DRAW_BYE_LIMIT } from '@Constants/errorConditionConstants';
-import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { ALTERNATE, WITHDRAWN } from '@Constants/entryStatusConstants';
 import { PAIR } from '@Constants/participantConstants';
 import { ResultType } from '@Types/factoryTypes';
+import { MatchUp } from '@Types/tournamentTypes';
 
 /**
  * Removes the participant (or BYE) at a drawPosition, optionally withdrawing the entry and replacing it with a BYE.
@@ -37,7 +36,6 @@ export function removeDrawPositionAssignment(params): ResultType & { participant
 
 /** The removal itself, against the draw it is given. Not atomic on its own: callers compose first. */
 export function removeAssignment(params): ResultType & { participantId?: string } {
-  const { tournamentRecord, drawDefinition, event } = params;
   const stack = 'removeDrawPositionAssignment';
 
   // Everything the removal can refuse AFTER emptying the seat is asked BEFORE it: a refusal must
@@ -47,35 +45,16 @@ export function removeAssignment(params): ResultType & { participantId?: string 
 
   // the exits the removal re-derives keep only the reasons that still describe them, settled once it is complete
   const { result, reduced } = collectReducedExits(() => clearAndReplace(params, stack));
-  if (!result.error) settleReducedExitReasons({ reduced, tournamentRecord, drawDefinition, event });
+  if (!result.error) settleReducedExitReasons(reduced);
   return result;
 }
 
-/** The withdrawn side's reason goes with its exit: announced, as every write is. */
-function settleReducedExitReasons({
-  tournamentRecord,
-  drawDefinition,
-  reduced,
-  event,
-}: {
-  tournamentRecord?: Tournament;
-  drawDefinition: DrawDefinition;
-  reduced: MatchUp[];
-  event?: Event;
-}) {
-  for (const matchUp of new Set<MatchUp>(reduced)) {
-    const held = matchUp.sideStatusCodes;
-    dropWithdrawnExitReasons(matchUp);
-    if (matchUp.sideStatusCodes === held) continue;
-    modifyMatchUpNotice({
-      tournamentId: tournamentRecord?.tournamentId,
-      context: 'removeDrawPositionAssignment',
-      eventId: event?.eventId,
-      drawDefinition,
-      matchUp,
-      event,
-    });
-  }
+/**
+ * The withdrawn side's reason goes with its exit. Each matchUp here was announced by the removal that re-derived it,
+ * in this call and by reference, so its notice carries what is settled here and its stamp is already taken.
+ */
+function settleReducedExitReasons(reduced: MatchUp[]) {
+  for (const matchUp of new Set<MatchUp>(reduced)) dropWithdrawnExitReasons(matchUp);
 }
 
 function clearAndReplace(params, stack: string): ResultType & { participantId?: string } {
