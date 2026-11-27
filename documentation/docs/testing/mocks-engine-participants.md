@@ -570,14 +570,14 @@ const { participants } = mocksEngine.generateParticipants({
 
 ## Pre-built participants (ingest pipelines)
 
-`mocksEngine.generateTournamentRecord` accepts a top-level `participants` array. When supplied, factory uses the caller's participant pool as the entry source instead of synthesizing fresh mocks. This was added for ingest pipelines (e.g. `courthive-ingest`'s federation adapters) where stable provider-issued IDs need to survive through the canonical TODS shape that mocksEngine produces.
+`mocksEngine.generateTournamentRecord` accepts a top-level `participants` array. When supplied, factory uses the caller's participant pool as the entry source instead of synthesizing fresh mocks. This was added for ingest pipelines (e.g. `courthive-ingest`'s federation adapters) where stable provider-issued IDs need to survive through the canonical tournament record that mocksEngine produces.
 
 ### When to use
 
 Use preset participants when you already have a Participant[] list with stable IDs from an upstream source and want factory to lay down the canonical draw shape around them:
 
 - Federation HTML / CSV ingest where each player has a provider-issued ID.
-- Migrating real tournament data into TODS where the IDs come from a legacy system.
+- Migrating real tournament data into tournament records where the IDs come from a legacy system.
 - Property tests that need named participants for assertion clarity.
 
 For pure test fixtures with arbitrary mock data, use `participantsProfile` as before — synthesis is fine and often preferable.

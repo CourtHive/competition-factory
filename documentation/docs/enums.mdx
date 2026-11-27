@@ -66,7 +66,7 @@ full catalogue.
 ## Values are always strings
 
 Every enum is a string enum. There are no numeric members, so there is no reverse mapping (`MatchUpStatusEnum[0]` is
-`undefined`, not a member name) and values can be persisted, compared against raw TODS documents, or sent over the wire
+`undefined`, not a member name) and values can be persisted, compared against raw tournament records, or sent over the wire
 without translation.
 
 Member names and their values are identical in every enum but one: `SexEnum`'s abbreviated members carry short codes.
@@ -91,7 +91,7 @@ import { MatchUpStatusUnion } from 'tods-competition-factory'; // ❌ not a runt
 ```
 
 Use a union when a field should accept any member value without forcing callers through the enum — which is how the
-factory's own types are written, so that plain TODS data (`{ matchUpStatus: 'COMPLETED' }`) type-checks without
+factory's own types are written, so that plain tournament data (`{ matchUpStatus: 'COMPLETED' }`) type-checks without
 importing anything:
 
 ```ts

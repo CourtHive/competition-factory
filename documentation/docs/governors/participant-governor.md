@@ -165,7 +165,7 @@ engine.addPersonOtherId({
 - `INVALID_VALUES` — when the participant is not INDIVIDUAL (has no `person` object). Only INDIVIDUAL participants accept `personOtherIds`.
 - `EXISTING_PERSON_OTHER_ID` — when the organisation already has a different id on this person and `replaceExisting` is not set.
 
-**Purpose:** Establish a stable, queryable link between a TODS participant and an external identity — a federation member roster, a canonical person registry, or any other identifier-issuing system. The mutation is the write-half of the TODS `personOtherIds` shape; reads use that array directly.
+**Purpose:** Establish a stable, queryable link between a tournament participant and an external identity — a federation member roster, a canonical person registry, or any other identifier-issuing system. The mutation is the write-half of the tournament record's `personOtherIds` shape; reads use that array directly.
 
 ---
 

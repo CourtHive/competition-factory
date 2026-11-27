@@ -667,7 +667,7 @@ Qualifying profiles only produce points when the tournament has a qualifying dra
 
 The `level` parameter is a numeric tier (1, 2, 3, ...) that selects point values from level-keyed profiles. Higher-tier tournaments (lower level numbers) typically award more points.
 
-Level is **not** the same as `tournamentLevel` in the TODS schema (which describes geographic scope: CLUB, NATIONAL, INTERNATIONAL, etc.). The ranking policy `level` is a tier within a specific ranking system:
+Level is **not** the same as `tournamentLevel` in the tournament schema (which describes geographic scope: CLUB, NATIONAL, INTERNATIONAL, etc.). The ranking policy `level` is a tier within a specific ranking system:
 
 | System      | Level examples                                            |
 | ----------- | --------------------------------------------------------- |
