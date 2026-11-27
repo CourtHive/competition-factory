@@ -10,13 +10,13 @@ import { unique } from '@Tools/arrays';
 
 // constants and types
 import { ParticipantFilters } from '@Types/factoryTypes';
-import type { Tournament } from '@Types/tournamentTypes';
+import type { Participant, Tournament } from '@Types/tournamentTypes';
 import { HydratedParticipant } from '@Types/hydrated';
 import { SINGLES } from '@Constants/eventConstants';
 
 type FilterParticipantsArgs = {
   participantFilters: ParticipantFilters;
-  participants: HydratedParticipant[];
+  participants: (Participant | HydratedParticipant)[];
   tournamentRecord: Tournament;
 };
 
@@ -26,7 +26,7 @@ export function filterParticipants({
   participants = [],
 }: FilterParticipantsArgs): HydratedParticipant[] {
   if (!Object.keys(participantFilters).length) {
-    return participants;
+    return participants as HydratedParticipant[];
   }
 
   const {
@@ -158,7 +158,7 @@ export function filterParticipants({
     participants = participants?.filter((participant) => participantIds.has(participant.participantId));
   }
 
-  return participants;
+  return participants as HydratedParticipant[];
 }
 
 function isValidFilterArray(filter) {

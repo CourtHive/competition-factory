@@ -35,9 +35,6 @@ export function canPreFilter(params: { participantFilters?: ParticipantFilters; 
   );
 }
 
-// the stored participants, filtered as hydrated ones are: every filter reads stored attributes (see below)
-type FilterArgs = Parameters<typeof filterParticipants>[0];
-
 type GetPreFilteredParticipantsArgs = {
   participantFilters: ParticipantFilters;
   tournamentRecord: Tournament;
@@ -50,7 +47,7 @@ type GetPreFilteredParticipantsArgs = {
  */
 export function getPreFilteredParticipants({ participantFilters, tournamentRecord }: GetPreFilteredParticipantsArgs) {
   const participants: Participant[] = tournamentRecord.participants ?? [];
-  const kept = filterParticipants({ participants, participantFilters, tournamentRecord } as FilterArgs);
+  const kept = filterParticipants({ participants, participantFilters, tournamentRecord });
   const participantIds = new Set(kept.map(({ participantId }) => participantId));
   return withGroupings({ participants, participantIds });
 }

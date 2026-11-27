@@ -15,7 +15,7 @@ import { DrawDefinition, Event, Tournament, EventTypeUnion } from '@Types/tourna
 import { COMPETITIVE, DECISIVE, ROUTINE } from '@Constants/statsConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
+import { HydratedMatchUp } from '@Types/hydrated';
 
 type getPredictiveAccuracyArgs = {
   exclusionRule?: { valueAccessor: string; range: [number, number] };
@@ -79,7 +79,7 @@ export function getPredictiveAccuracy(params: getPredictiveAccuracyArgs) {
   const contextFilters = {
     matchUpTypes: matchUpType ? [matchUpType] : [SINGLES, DOUBLES],
   };
-  const participants = tournamentRecord?.participants as HydratedParticipant[] | undefined;
+  const participants = tournamentRecord?.participants;
 
   if (matchUps?.[0]?.hasContext) {
     if (drawId) {

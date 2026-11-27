@@ -9,7 +9,7 @@ import { intersection } from '@Tools/arrays';
 import { isString } from '@Tools/objects';
 
 // constants and types
-import { EntryStatusUnion, Event, StageTypeUnion, Tournament } from '@Types/tournamentTypes';
+import { EntryStatusUnion, Event, Participant, StageTypeUnion, Tournament } from '@Types/tournamentTypes';
 import { HydratedParticipant } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
@@ -20,7 +20,7 @@ import {
 } from '@Constants/errorConditionConstants';
 
 type RemoveEventEntriesArgs = {
-  tournamentParticipants?: HydratedParticipant[];
+  tournamentParticipants?: (Participant | HydratedParticipant)[];
   entryStatuses?: EntryStatusUnion[];
   tournamentRecord?: Tournament;
   autoEntryPositions?: boolean;

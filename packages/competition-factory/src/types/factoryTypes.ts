@@ -34,6 +34,7 @@ import {
   TieFormat,
   Structure,
   MatchUp,
+  Participant,
 } from './tournamentTypes';
 import {
   ValidPolicyTypes,
@@ -553,7 +554,7 @@ export type GetMatchUpsArgs = {
   hydrationCache?: HydrationCache;
   tournamentAppliedPolicies?: PolicyDefinitions;
   participantsProfile?: ParticipantsProfile;
-  participants?: HydratedParticipant[];
+  participants?: (Participant | HydratedParticipant)[];
   policyDefinitions?: PolicyDefinitions;
   context?: { [key: string]: any };
   contextFilters?: MatchUpFilters;
