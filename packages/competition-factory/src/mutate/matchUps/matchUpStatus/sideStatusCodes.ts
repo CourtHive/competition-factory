@@ -236,6 +236,32 @@ export function dropUndescribedStatusReasons(matchUp: MatchUp): void {
 }
 
 /**
+ * Remove the side reasons of exits that were withdrawn, where the engine re-derives an exit from what its provenance
+ * retains: an exit opposite it withdrawn (`withdrawFromMatchUp`), or a double exit losing one side's position
+ * (`updateMatchUpStatusAfterRemoval`). A decided exit keeps the reasons its status and winner describe
+ * (`dropUndescribedStatusReasons`). A pending exit, which has no winner until its opponent arrives, keeps the reason of
+ * each side whose provenance still holds that side's exit, as a BYE standing over an exit does
+ * (`dropStaleStatusReasons`): the exit stands, and when its opponent arrives or another exit converges, the write that
+ * settles it attributes the reasons it holds (`attributeRetainedStatusCodes`).
+ *
+ * Applied where the re-derived result is written, not at the stamp: a route that passes through an intermediate exit
+ * writes the matchUp again from the reasons it holds.
+ */
+export function dropWithdrawnExitReasons(matchUp: MatchUp): void {
+  if (!matchUp.matchUpStatusCode && !matchUp.sideStatusCodes) return;
+  // a removal can leave the matchUp a BYE or undecided by the time it is settled: the stamp's rule holds there
+  if (!REASON_STATUSES.has(matchUp.matchUpStatus as string)) return dropStaleStatusReasons(matchUp);
+  if (matchUp.winningSide || isDoubleExit(matchUp.matchUpStatus)) return dropUndescribedStatusReasons(matchUp);
+  const provenance = getSideExitProvenance({ matchUp });
+  const sideStatusCodes: Record<number, string> = {};
+  for (const sideNumber of [1, 2]) {
+    const code = matchUp.sideStatusCodes?.[sideNumber];
+    if (code && carriedExitStatus(provenance?.[sideNumber])) sideStatusCodes[sideNumber] = code;
+  }
+  keepOnly(matchUp, Object.keys(sideStatusCodes).length ? { sideStatusCodes } : {});
+}
+
+/**
  * Marks an ENGINE write that keeps the reasons its matchUp holds rather than taking any from the call. It
  * names the matchUp it describes, so a params object spread into a nested write on another matchUp cannot
  * carry it there. `sideStatusCodes`: real reasons the write attributes by side — the source's own keyed
