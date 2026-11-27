@@ -8,13 +8,15 @@
 // alone. Files whose base name is a renamed name are moved with `git mv`.
 //
 // Historical text is skipped by default: CHANGELOG files, and migration and what's-new pages for versions before 8.
-// Those describe the names as they were.
+// Those describe the names as they were. So are this script, which lists the old names, and the 8.0.0 migration
+// page, whose table maps each old name to its new one.
 //
 // A name that appears as a whole quoted string ('POLICY_RATINGS_FIVB') in a code file is renamed like any other, and also listed at
 // the end: if it is a label stored on a record or a name input that a test means to refuse, restore it by hand.
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { basename, dirname, join } from 'node:path';
+import { basename, dirname, join, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const OLD_NAMES = [
   'POLICY_OFFICIATING_CONFLICT_OF_INTEREST_ITF',
@@ -58,7 +60,13 @@ const OLD_NAMES = [
 export const RENAMES = Object.fromEntries(OLD_NAMES.map((name) => [name, name.replace(/^POLICY_/, 'TEMPLATE_')]));
 
 const TEXT = /\.(?:[cm]?[jt]sx?|json|jsonc|mdx?|ya?ml|sh|html|svelte|vue|txt)$/;
-const HISTORY = [/(^|\/)CHANGELOG[^/]*$/i, /(^|\/)migration-[0-7]\.[^/]*$/, /(^|\/)whats-new-[0-7]\.[^/]*$/];
+const HISTORY = [
+  /(^|\/)CHANGELOG[^/]*$/i,
+  /(^|\/)migration-[0-7]\.[^/]*$/,
+  /(^|\/)migration-8\.0\.0\.mdx?$/,
+  /(^|\/)whats-new-[0-7]\.[^/]*$/,
+];
+const SELF = relative(process.cwd(), fileURLToPath(import.meta.url));
 
 const args = process.argv.slice(2);
 const dry = args.includes('--dry');
@@ -77,7 +85,7 @@ const CODE = /\.(?:[cm]?[jt]sx?|json|jsonc|svelte|vue)$/;
 
 const files = execFileSync('git', ['ls-files', '-z', '--', ...paths], { encoding: 'utf8' })
   .split('\0')
-  .filter((file) => file && TEXT.test(file) && !excludes.some((rx) => rx.test(file)));
+  .filter((file) => file && file !== SELF && TEXT.test(file) && !excludes.some((rx) => rx.test(file)));
 
 let changedFiles = 0;
 let occurrences = 0;

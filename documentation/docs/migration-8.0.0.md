@@ -709,7 +709,7 @@ definitions are unchanged: `policyName` and `pointsAuthority` hold what they hel
 The last seven are new in the catalogue: federation ranking-points templates that 7.x did not publish.
 
 `packages/competition-catalogue/scripts/rename-to-template.mjs` in the factory repository makes the rename across a
-checkout's tracked files. It changes only these names, skips changelogs and the migration pages for earlier versions,
+checkout's tracked files. It changes only these names, and skips changelogs and the migration pages (this one included),
 and lists every name it found as a whole quoted string, since a string can be a label stored on a record that should
 keep its 7.x name.
 
