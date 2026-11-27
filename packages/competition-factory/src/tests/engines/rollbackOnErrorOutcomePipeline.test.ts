@@ -4,7 +4,10 @@ import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, expect, it } from 'vitest';
 
 // constants
-import { EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT } from '@Constants/errorConditionConstants';
+import {
+  CONTRADICTORY_POSITION_ACTION,
+  EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT,
+} from '@Constants/errorConditionConstants';
 import { FIRST_ROUND_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 
@@ -66,12 +69,23 @@ function setUp() {
 
   expect(tournamentEngine.setMatchUpStatus(params(4, 1)).success).toEqual(true);
   expect(tournamentEngine.setMatchUpStatus(params(1, 2)).success).toEqual(true);
+  // 8.0.0 refuses this swap (aContradictorySwapIsRefused.test.ts); a record stored by an earlier release can still
+  // hold its result, so the record is given that state directly
   const swapped = tournamentEngine.swapDrawPositionAssignments({
     structureId: main.structureId,
     drawPositions: [1, 7],
     drawId: 'd',
   });
-  expect(swapped.success).toEqual(true);
+  expect(swapped.error).toEqual(CONTRADICTORY_POSITION_ACTION);
+  const stored = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+  const storedMain = stored.events[0].drawDefinitions[0].structures.find(
+    (structure: any) => structure.structureId === main.structureId,
+  );
+  const [one, seven] = [1, 7].map((drawPosition) =>
+    storedMain.positionAssignments.find((assignment: any) => assignment.drawPosition === drawPosition),
+  );
+  [one.participantId, seven.participantId] = [seven.participantId, one.participantId];
+  tournamentEngine.setState(stored);
   // the refused call: reversing the first-round result at round position 4
   return params(4, 2);
 }
