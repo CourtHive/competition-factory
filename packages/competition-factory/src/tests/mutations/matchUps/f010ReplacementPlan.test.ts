@@ -150,6 +150,37 @@ it.each([
   }
 });
 
+it.each(['bridge', 'legacy'] as const)(
+  'adds the lineUps extension beside the draw’s other extensions, schema=%s',
+  (mode) => {
+    const { initial, directive } = structuredClone(fixtures[1]);
+    const draw = initial.events[0].drawDefinitions[0];
+    const template = draw.lineUps;
+    const unrelated = { name: 'unrelated', value: { keep: true } };
+    const extensions = [unrelated];
+    draw.extensions = extensions;
+    const old = initial.participants.find((p) => p.participantId === directive.params.existingParticipantId);
+    const [first] = old.individualParticipantIds;
+    const team = initial.participants.find(
+      (p) => p.participantType === 'TEAM' && p.individualParticipantIds.includes(first),
+    );
+    setClock(instant);
+    engine.setState(initial, false);
+    setSchemaWriteMode(mode);
+    const result = engine[method]({
+      ...directive.params,
+      existingParticipantId: first,
+      newParticipantId: team.individualParticipantIds[2],
+      substitution: true,
+    });
+    expect(result.success).toBe(true);
+    // the draw's own array, with the lineUps entry appended after the extension it already held
+    expect(draw.extensions).toBe(extensions);
+    expect(draw.extensions).toEqual([unrelated, { name: 'lineUps', value: template, createdAt: instant }]);
+    expect(draw.extensions[1].value).toBe(template);
+  },
+);
+
 function acceptedSubstitution() {
   const { initial, directive } = structuredClone(fixtures[1]);
   const old = initial.participants.find((p) => p.participantId === directive.params.existingParticipantId);

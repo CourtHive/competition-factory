@@ -129,6 +129,59 @@ describe('a plain record the caller owns', () => {
   });
 });
 
+describe('a plain record the caller owns, through a provider with snapshot hooks', () => {
+  it('a refused queue is restored through the provider, into the caller’s own object', () => {
+    const snapshots: unknown[] = [];
+    setStateProvider({
+      ...syncGlobalState,
+      makeDeepCopy: (source, _convert, _internal, _remove, options) => {
+        const copy = structuredClone(source);
+        if (options?.purpose === 'snapshot') snapshots.push(copy);
+        return copy;
+      },
+      // writes the snapshot back into the live records and returns nothing: the engine keeps the records it holds
+      restoreSnapshot: (live, snapshot) => {
+        for (const [id, values] of Object.entries<any>(snapshot)) {
+          for (const key of Object.keys(live[id])) if (!(key in values)) delete live[id][key];
+          Object.assign(live[id], values);
+        }
+      },
+    });
+    const doc = { tournamentId: 'T', tournamentName: 'original', events: [{ eventId: 'E1', eventName: 'first' }] };
+    syncEngine.setState(doc, false);
+
+    const result: any = syncEngine.executionQueue([{ method: 'rework' }, { method: 'refuse' }], true);
+    expect(result.rolledBack).toEqual(true);
+    expect(snapshots.length).toEqual(1);
+    expect(doc.tournamentName).toEqual('original');
+    expect(doc.events).toEqual([{ eventId: 'E1', eventName: 'first' }]);
+    expect('added' in doc).toEqual(false);
+    expect(getTournamentRecords().T).toBe(doc);
+  });
+});
+
+describe('a record that is not plain data', () => {
+  // an instance of a class: its root is not a plain object, so the factory cannot snapshot it
+  class Record {
+    tournamentId = 'T';
+    tournamentName = 'original';
+  }
+
+  it('is refused a rollback before anything is written', () => {
+    const doc = new Record();
+    syncEngine.setState(doc, false);
+
+    const direct: any = syncEngine.setTournamentName({ tournamentName: 'refused', rollbackOnError: true });
+    expect(direct.error).toEqual(ROLLBACK_UNAVAILABLE);
+    const queued: any = syncEngine.executionQueue(
+      [{ method: 'setTournamentName', params: { tournamentName: 'refused' } }],
+      true,
+    );
+    expect(queued.error).toEqual(ROLLBACK_UNAVAILABLE);
+    expect(doc.tournamentName).toEqual('original');
+  });
+});
+
 describe('a provider copy hook that predates `purpose`', () => {
   it('keeps working when the engine owns the records', () => {
     setStateProvider({ ...syncGlobalState, makeDeepCopy: (source) => structuredClone(source) });
