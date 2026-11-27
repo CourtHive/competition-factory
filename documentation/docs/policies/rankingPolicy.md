@@ -46,10 +46,11 @@ consumers — most importantly federated rank lists like Tennis Europe's, which
 mix ATP + ITF + TE-internal points into one list — can scope and weight by
 source without re-joining to policy metadata.
 
-The vocabulary is a closed enum exported from `@Constants/pointsAuthorityConstants`:
+The known authorities are exported as constants. The vocabulary is open: `PointsAuthority` admits any string, so a
+provider can stamp its own label, and `KnownPointsAuthority` is the closed union of the constants below:
 
 ```ts
-import type { PointsAuthority } from 'tods-competition-factory';
+import type { KnownPointsAuthority, PointsAuthority } from 'tods-competition-factory';
 import { pointsAuthorityConstants, ratingConstants } from 'tods-competition-factory';
 const {
   ATP,

@@ -455,6 +455,7 @@ ItemStructure
 JSON2CSV
 JsonPatch
 JsonPatchOp
+KnownPointsAuthority
 LINK_PROVIDER_ID
 LINK_UNRESOLVED
 LUCKY_DRAW_BYE_LIMIT

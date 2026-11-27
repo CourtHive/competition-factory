@@ -597,6 +597,12 @@ produces), whether the engine copies it (`setState(record)`, the default) or bor
 - **`Structure` and `DrawLink` become hard unions.** Narrow on `structureType` (or use `matchUpsOf`, `positionAssignmentsOf`, `structuresOf`) before reading `matchUps`, `structures` or `positionAssignments`. `tournament.schema.json` gains the matching `oneOf`/`if`.
 - **Declaration corrections:** `TallyResultType.report`, `automatedPositioning`'s `conflicts`, `ApplyLineUps.lineUps` and `matchUpDailyLimits` now describe what they hold.
 - **Stricter types** across the package (the `implicit-any` campaign). Some loosely typed call sites may need annotations.
+- **`PointsAuthority` is open.** It was the closed union of the `pointsAuthorityConstants` names; it is now that
+  union or any other string, so a policy can name a provider's own issuing authority. The closed union is exported as
+  `KnownPointsAuthority`. Input sites only widen. Code that reads `pointsAuthority` from a policy or an award and
+  relies on it being one of the known names (a `Record<PointsAuthority, …>` lookup, an exhaustive `switch`) narrows it
+  first, for example by checking it against `POINTS_AUTHORITIES`, or types the value as `KnownPointsAuthority` itself
+  (#6689).
 
 ### Packaging
 
