@@ -1,4 +1,4 @@
-import { positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
+import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -6,7 +6,7 @@ import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
 import { CONTRADICTORY_POSITION_ACTION } from '@Constants/errorConditionConstants';
-import { DrawDefinition, DrawLink, Structure } from '@Types/tournamentTypes';
+import { DrawDefinition, DrawLink, MatchUp, Structure } from '@Types/tournamentTypes';
 import { FIRST_MATCHUP, LOSER, QUALIFYING, WINNER } from '@Constants/drawDefinitionConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 import { ResultType } from '@Types/factoryTypes';
@@ -61,8 +61,8 @@ export type MustClearItem = {
   participantId?: string;
 };
 
-/** a matchUp that holds a result: a winner, a completed status, or a score */
-export function hasResult(matchUp: HydratedMatchUp): boolean {
+/** a matchUp, stored or hydrated, that holds a result: a winner, a completed status, or a score */
+export function hasResult(matchUp: HydratedMatchUp | MatchUp): boolean {
   if (matchUp.matchUpStatus === BYE) return false;
   return (
     !!matchUp.winningSide ||
@@ -77,6 +77,11 @@ function assignmentsOf(structure?: Structure) {
     positionAssignmentsOf(structure) ??
     (structuresOf(structure) ?? []).flatMap((group) => positionAssignmentsOf(group) ?? [])
   );
+}
+
+/** the stored matchUps of a structure, a round robin's groups included */
+function storedMatchUpsOf(structure?: Structure): MatchUp[] {
+  return matchUpsOf(structure) ?? (structuresOf(structure) ?? []).flatMap((group) => matchUpsOf(group) ?? []);
 }
 
 function inStructure(matchUp: HydratedMatchUp, structureId: string) {
@@ -110,6 +115,8 @@ export function swapRefusal({
   const assignments = assignmentsOf(structure).filter((assignment) => drawPositions.includes(assignment.drawPosition));
   const occupied = assignments.filter((assignment) => assignment.participantId);
   if (!occupied.length) return undefined;
+  // every refusal below starts from a result in this structure: with none, there is nothing to walk
+  if (!storedMatchUpsOf(structure).some(hasResult)) return undefined;
 
   const reasons = new Map<string, string>();
   const placements = carriedAcrossLinks({ inContextDrawMatchUps, drawDefinition, structure, occupied, reasons });
@@ -341,6 +348,38 @@ function reservation({ matchUp, link }: Feeder): MustClearItem {
   };
 }
 
+/**
+ * True when the stored `loserMatchUpId` / `winnerMatchUpId` edges show that every source matchUp a link sends into the
+ * seat's matchUp is decided (or a BYE, or a double exit). False when it cannot tell (edges not stored) or one is pending.
+ */
+function feedersDecidedByStoredEdges({
+  drawDefinition,
+  drawPosition,
+  structure,
+  links,
+}: {
+  drawDefinition: DrawDefinition;
+  drawPosition: number;
+  structure?: Structure;
+  links: DrawLink[];
+}): boolean {
+  const target = storedMatchUpsOf(structure)
+    .filter((matchUp) => matchUp.drawPositions?.includes(drawPosition))
+    .sort((a, b) => (a.roundNumber ?? 0) - (b.roundNumber ?? 0))[0];
+  if (!target) return false;
+  for (const link of links) {
+    const source = findStructure({ drawDefinition, structureId: link.source.structureId }).structure;
+    for (const matchUp of storedMatchUpsOf(source)) {
+      if (matchUp.roundNumber !== link.source.roundNumber || matchUp.collectionId) continue;
+      const edge = link.linkType === LOSER ? matchUp.loserMatchUpId : matchUp.winnerMatchUpId;
+      if (!edge) return false; // not stored: hydrate and ask
+      if (edge !== target.matchUpId) continue;
+      if (!matchUp.winningSide && !NOT_PENDING.includes(matchUp.matchUpStatus as string)) return false;
+    }
+  }
+  return true;
+}
+
 /** the earliest matchUp of `structureId` holding `drawPosition`: the one a feed fills it for */
 function seatMatchUp(inContextDrawMatchUps: HydratedMatchUp[], structureId: string, drawPosition: number) {
   return inContextDrawMatchUps
@@ -382,6 +421,9 @@ export function reservedSeatRefusal({
   const assignments = assignmentsOf(structure);
   const seatAssignment = assignments.find((assignment) => assignment.drawPosition === drawPosition);
   if (!vacating && (seatAssignment?.participantId || (placing === 'BYE' && seatAssignment?.bye))) return undefined;
+
+  // stored edges answer without hydrating when every matchUp sent into the seat's matchUp is decided
+  if (feedersDecidedByStoredEdges({ drawDefinition, structure, drawPosition, links })) return undefined;
 
   const matchUps = inContextDrawMatchUps();
   const target = seatMatchUp(matchUps, structureId, drawPosition);
