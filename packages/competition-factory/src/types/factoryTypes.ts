@@ -31,10 +31,12 @@ import {
   SeedingProfileUnion,
   SeedingBasisUnion,
   MatchUpSchedule,
+  MatchUpScheduleItems,
   TieFormat,
   Structure,
   MatchUp,
   Participant,
+  Score,
 } from './tournamentTypes';
 import {
   ValidPolicyTypes,
@@ -49,6 +51,7 @@ import {
   POLICY_TYPE_LADDER,
   POLICY_TYPE_RATINGS,
 } from '@Constants/policyConstants';
+import type { DrawPublishingDetails } from './publishingTypes';
 
 export type FactoryEngine = {
   [key: string]: any;
@@ -548,6 +551,80 @@ export type MappedParticipant = {
 
 export type ParticipantMap = { [key: string]: MappedParticipant };
 
+/**
+ * One status channel of an event's publish state (the `PUBLISH.STATUS` time item holds one per status, `PUBLIC` by
+ * default), as `publishEvent` and `setEventDisplay` write it and the publishing queries read it. Open: a provider may
+ * write keys of its own through the same time item.
+ */
+export type EventPublishStatus = {
+  drawDetails?: { [drawId: string]: DrawPublishingDetails };
+  /** the earlier form, read when `drawDetails` is absent: the drawIds published */
+  drawIds?: string[];
+  displaySettings?: {
+    /** keyed by drawId, with `default` for a draw that has none of its own */
+    draws?: { [drawId: string]: { scheduleDetails?: PublishedScheduleDetail[]; [key: string]: unknown } };
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+};
+
+/** Which schedule attributes a published view shows (`true`) or excises (`false`), on the dates given (all dates when none). */
+export type PublishedScheduleDetail = { attributes?: { [attribute: string]: boolean }; dates?: string[] };
+
+/**
+ * The result a call writes on a matchUp (`setMatchUpStatus`): a status, a winner, a score, the format the score is
+ * read in, and the matchUp's status reasons. `generateOutcome` and `generateOutcomeFromScoreString` return one.
+ */
+export type MatchUpOutcome = {
+  matchUpStatus?: MatchUpStatusUnion;
+  winningSide?: number;
+  score?: Score;
+  matchUpFormat?: string;
+  /** the match-level status reason */
+  matchUpStatusCode?: string;
+  /** the side-level status reasons, keyed by side */
+  sideStatusCodes?: { 1?: string; 2?: string };
+  /** clears the matchUp's status reasons; reasons given in the same outcome are written after the clear */
+  clearStatusCodes?: boolean;
+};
+
+/** The scheduling dependencies of each matchUp, keyed by matchUpId, as `getMatchUpDependencies` returns them. */
+export type MatchUpDependencies = {
+  [matchUpId: string]: {
+    /** the matchUps that must be played before this one */
+    matchUpIds?: string[];
+    /** the matchUps that follow from this one */
+    dependentMatchUpIds?: string[];
+    participantIds?: string[];
+    sources?: string[][];
+  };
+};
+
+/** A schedule as the scheduling calls take it: `courtOrder` may be a string holding an integer, which they convert. */
+export type MatchUpScheduleRequest = Omit<MatchUpScheduleItems, 'courtOrder'> & { courtOrder?: number | string };
+
+/** One matchUp's schedule in a bulk scheduling call; a detail without a `tournamentId` is found by its matchUpId. */
+export type MatchUpScheduleDetail = {
+  matchUpId: string;
+  tournamentId?: string;
+  schedule?: MatchUpScheduleRequest;
+};
+
+/** A matchUp named by the ids that locate it, as `getMatchUpContextIds` returns them. */
+export type MatchUpContextIds = {
+  matchUpId: string;
+  tournamentId: string;
+  structureId?: string;
+  eventId?: string;
+  drawId?: string;
+};
+
+/** An entry with its participant's scale item spread onto it, as `getScaledEntries` returns it. */
+export type ScaledEntry = Partial<Entry> & Partial<ScaleItem> & { participantId: string };
+
+/** Orders scaled entries, as an `Array.prototype.sort` comparator does. */
+export type ScaleSortMethod = (a: ScaledEntry, b: ScaledEntry) => number;
+
 export type GetMatchUpsArgs = {
   scheduleVisibilityFilters?: ScheduleVisibilityFilters;
   /** Internal: lookups shared within one read (see hydrationCache.ts). Never hold one across calls. */
@@ -570,7 +647,7 @@ export type GetMatchUpsArgs = {
   usePublishState?: boolean;
   nextMatchUps?: boolean;
   tournamentId?: string;
-  publishStatus?: any;
+  publishStatus?: EventPublishStatus;
   inContext?: boolean;
   event?: Event;
 };

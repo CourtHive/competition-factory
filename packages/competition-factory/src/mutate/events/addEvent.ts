@@ -32,7 +32,8 @@ type AddEventArgs = {
   suppressNotifications?: boolean;
   tournamentRecord: Tournament;
   internalUse?: boolean;
-  event: any; // any because eventId need not be present
+  /** eventId need not be present: one is minted. A `tieFormatName` without a `tieFormat` is refused. */
+  event: Partial<Event> & { tieFormatName?: string };
 };
 export function addEvent({ suppressNotifications, tournamentRecord, internalUse, uuids, event }: AddEventArgs): {
   context?: { [key: string]: any };
@@ -148,5 +149,5 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
     stampUnannounced({ tournamentId, matchUps: allEventMatchUps({ event: newEvent }).matchUps ?? [] });
   }
 
-  return { ...SUCCESS, event: eventRecord };
+  return { ...SUCCESS, event: eventRecord as Event };
 }

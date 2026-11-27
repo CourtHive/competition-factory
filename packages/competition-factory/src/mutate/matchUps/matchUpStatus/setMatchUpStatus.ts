@@ -37,9 +37,17 @@ import { isString } from '@Tools/objects';
 import { callStatusReasons, readStatusReasonsInput } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 
 // constants and types
-import { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Set as SetType, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, MatchUp, Set as SetType, Tournament } from '@Types/tournamentTypes';
 import type { CopyFinish, RecordCopy } from '@Mutate/matchUps/outcome/types';
-import { MatchUpsMap, PolicyDefinitions, ResultType, ResultWarning, TournamentRecords } from '@Types/factoryTypes';
+import {
+  MatchUpOutcome,
+  MatchUpsMap,
+  PolicyDefinitions,
+  ResultType,
+  ResultWarning,
+  TournamentRecords,
+  MatchUpScheduleRequest,
+} from '@Types/factoryTypes';
 import { INVALID_VALUES, INVALID_WINNING_SIDE, SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING, POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { DRAW_DEFINITION, MATCHUP_ID } from '@Constants/attributeConstants';
@@ -69,10 +77,10 @@ type SetMatchUpStatusArgs = {
   matchUpId: string;
   eventId?: string;
   drawId?: string;
-  schedule?: any;
+  schedule?: MatchUpScheduleRequest;
   notes?: string;
   event?: Event;
-  outcome?: any;
+  outcome?: MatchUpOutcome;
   /** private to the bulk writers: what to return, unwritten, for a call v2 neither refuses nor owns */
   bound?: { unowned: ResultType };
 };
@@ -577,11 +585,8 @@ const setHasValue = (set: SetType) =>
  * scoreless period (`1-0, 0-0, 1-0`). A 0-0 period is played when the result is complete, the period closed, or
  * play followed it; a trailing 0-0 in an unfinished match stays a placeholder.
  */
-function recordedSets(
-  outcome: { score: { sets: SetType[] }; matchUpStatus?: MatchUpStatusUnion; winningSide?: number },
-  format?: string,
-) {
-  const { sets } = outcome.score;
+function recordedSets(outcome: MatchUpOutcome, format?: string) {
+  const { sets } = outcome.score as { sets: SetType[] };
   const aggregate = isAggregateFormat(parse(format ?? ''));
   const complete = outcome.matchUpStatus === COMPLETED || (!outcome.matchUpStatus && !!outcome.winningSide);
   const goalless = (set: SetType) => isZero(set.side1Score) && isZero(set.side2Score);

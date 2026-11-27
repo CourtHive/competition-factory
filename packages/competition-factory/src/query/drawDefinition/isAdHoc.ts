@@ -1,7 +1,17 @@
 import { ITEM, VOLUNTARY_CONSOLATION, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 
+type AdHocProbeMatchUp = { roundPosition?: number; drawPositions?: unknown[] } | undefined;
+
 type IsAdHocArgs = {
-  structure?: any; // in this case support hydrated structures as well
+  /** a stored structure, or a hydrated one whose matchUps are given by round (`roundMatchUps`) */
+  structure?: {
+    matchUps?: AdHocProbeMatchUp[];
+    roundMatchUps?: { [roundNumber: string]: AdHocProbeMatchUp[] };
+    structures?: unknown[];
+    finishingPosition?: string;
+    structureType?: string;
+    stage?: string;
+  };
 };
 export function isAdHoc({ structure }: IsAdHocArgs): boolean {
   if (!structure) return false;
@@ -20,5 +30,5 @@ export function isAdHoc({ structure }: IsAdHocArgs): boolean {
     return structure?.finishingPosition === WIN_RATIO;
   }
 
-  return !structure?.structures && (!matchUps.length || (!hasRoundPosition && !hasDrawPosition));
+  return !structure?.structures && (!matchUps!.length || (!hasRoundPosition && !hasDrawPosition));
 }

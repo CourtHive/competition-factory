@@ -45,7 +45,14 @@ import {
 } from '@Mutate/matchUps/schedule/scheduledTime';
 
 // constants and types
-import { AddScheduleAttributeArgs, PolicyDefinitions, ResultType, TournamentRecords } from '@Types/factoryTypes';
+import {
+  AddScheduleAttributeArgs,
+  PolicyDefinitions,
+  ResultType,
+  TournamentRecords,
+  MatchUpDependencies,
+  MatchUpScheduleRequest,
+} from '@Types/factoryTypes';
 import { DrawDefinition, Event, MatchUp, MatchUpScheduleItems, Tournament } from '@Types/tournamentTypes';
 import { OFFICIAL_CONFLICT_OF_INTEREST } from '@Constants/officiatingConstants';
 import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
@@ -526,7 +533,7 @@ function scheduleDateWarning({
 }: {
   drawDefinition: DrawDefinition;
   tournamentRecord: Tournament;
-  schedule: MatchUpScheduleItems;
+  schedule: MatchUpScheduleRequest;
   matchUpId: string;
   event?: Event;
 }): EventDateWarning | undefined {
@@ -563,12 +570,12 @@ type AddMatchUpScheduleItemsArgs = {
   validateOnly?: boolean;
   removePriorValues?: boolean;
   checkChronology?: boolean;
-  matchUpDependencies?: any;
+  matchUpDependencies?: MatchUpDependencies;
   disableNotice?: boolean;
   tournamentRecords?: TournamentRecords;
   tournamentRecord: Tournament;
   matchUpId: string;
-  schedule: MatchUpScheduleItems;
+  schedule: MatchUpScheduleRequest;
   event?: Event;
 };
 

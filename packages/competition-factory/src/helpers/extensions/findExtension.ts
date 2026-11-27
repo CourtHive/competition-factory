@@ -11,7 +11,7 @@ type FindExtensionType = {
   tournamentRecords?: TournamentRecords;
   params?: { [key: string]: any };
   discover?: boolean | string[];
-  element?: any;
+  element?: { extensions?: Extension[] };
   name: string;
 };
 

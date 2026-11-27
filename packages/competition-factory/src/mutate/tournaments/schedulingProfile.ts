@@ -14,7 +14,7 @@ import { MODIFY_SCHEDULING_PROFILE } from '@Constants/topicConstants';
 import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
 import { TournamentRecords, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Tournament } from '@Types/tournamentTypes';
+import { Tournament, ScheduleProfileDate } from '@Types/tournamentTypes';
 import {
   SCHEDULING_PROFILE_DATES_OUT_OF_RANGE,
   SCHEDULING_PROFILE_REPAIR_REQUIRED,
@@ -69,7 +69,7 @@ function profileDatesWarning({
 type SetSchedulingProfileArgs = {
   tournamentRecords: TournamentRecords;
   tournamentRecord?: Tournament;
-  schedulingProfile?: any[];
+  schedulingProfile?: ScheduleProfileDate[];
 };
 type PlanSchedulingProfileArgs = SetSchedulingProfileArgs & {
   /** the array the commit stores and announces, when it is edited in place to equal `schedulingProfile` first */

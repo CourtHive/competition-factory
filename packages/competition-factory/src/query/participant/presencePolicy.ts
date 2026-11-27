@@ -3,7 +3,7 @@ import { participantRoleOf } from '@Helpers/participants/participantRoleOf';
 
 // constants and types
 import { POLICY_TYPE_SANCTIONING } from '@Constants/policyConstants';
-import type { Category, Participant } from '@Types/tournamentTypes';
+import type { Category, DrawDefinition, Event, Participant, Structure, Tournament } from '@Types/tournamentTypes';
 import type { SanctioningPolicy } from '@Types/sanctioningTypes';
 import type { Attribution } from '@Types/presenceTypes';
 import type {
@@ -26,10 +26,10 @@ import type {
  * `POLICY_TYPE_SANCTIONING` is optional and most tournaments will carry none indefinitely.
  */
 export function getPresenceRules(params: {
-  tournamentRecord?: any;
-  drawDefinition?: any;
-  structure?: any;
-  event?: any;
+  tournamentRecord?: Tournament;
+  drawDefinition?: DrawDefinition;
+  structure?: Structure;
+  event?: Event;
 }): PresenceRules | undefined {
   const { policyDefinitions } = getPolicyDefinitions({ ...params, policyTypes: [POLICY_TYPE_SANCTIONING] });
   const sanctioning = policyDefinitions?.[POLICY_TYPE_SANCTIONING] as SanctioningPolicy | undefined;
@@ -59,12 +59,12 @@ export function presenceRoleOf(participant?: Participant): string {
  * the two states a client's heuristic exists to tell apart.
  */
 export function getPresenceExpectation(params: {
-  tournamentRecord?: any;
-  drawDefinition?: any;
-  participant?: any;
+  tournamentRecord?: Tournament;
+  drawDefinition?: DrawDefinition;
+  participant?: Participant;
   fact: PresenceFact;
-  structure?: any;
-  event?: any;
+  structure?: Structure;
+  event?: Event;
 }): { expectation?: PresenceExpectation; declared: boolean; role: string } {
   const { fact, participant, ...resolution } = params;
   const role = presenceRoleOf(participant);
@@ -116,13 +116,13 @@ export type AttributionValidation = {
  */
 export function validatePresenceAttribution(params: {
   attributedTo?: Attribution;
-  tournamentRecord?: any;
-  drawDefinition?: any;
-  participant?: any;
+  tournamentRecord?: Tournament;
+  drawDefinition?: DrawDefinition;
+  participant?: Participant;
   fact: PresenceFact;
   category?: Category;
-  structure?: any;
-  event?: any;
+  structure?: Structure;
+  event?: Event;
 }): AttributionValidation {
   const { attributedTo, category, fact, participant, ...resolution } = params;
 

@@ -1,4 +1,4 @@
-import type { MatchUpsMap, PolicyDefinitions, ResultType } from '@Types/factoryTypes';
+import type { MatchUpScheduleRequest, MatchUpsMap, PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import type { ErrorType } from '@Constants/errorConditionConstants';
 import type { OutcomeOp, TemporalProjection } from './ops';
 import type { RecordDraws } from '@Tools/replayedDraws';
@@ -8,7 +8,6 @@ import type { CallStatusReasons } from '@Mutate/matchUps/matchUpStatus/sideStatu
 import type {
   DrawDefinition,
   Event,
-  MatchUpSchedule,
   MatchUpStatusUnion,
   PositionAssignment,
   Score,
@@ -55,7 +54,7 @@ export type OutcomeRequest = {
    * `notesReason`), as v1's `addNotes` writes them inside `modifyMatchUpScore`. Notes are a string, or the test
    * fixture `{ testing: true }` that `addNotes` also writes, which v2 does not plan (deferred, `notesReason`)
    */
-  carries?: { schedule?: MatchUpSchedule; notes?: string | { testing?: boolean } };
+  carries?: { schedule?: MatchUpScheduleRequest; notes?: string | { testing?: boolean } };
 };
 
 /** § 2: one code, the row of the table that raised it, and what a person or a client needs to see */
