@@ -530,6 +530,13 @@ engine.setMatchUpStatus({ drawId, matchUpId, outcome: { matchUpStatus: ABANDONED
 - **A write that submits no reason keeps the reasons the matchUp holds**, where they still describe the result it
   writes: the status still takes a reason, and the side a reason names still exited. A result corrected to a played
   win, or removed, keeps none. In 7.x an absent or empty array cleared them.
+- **An engine write keeps no reason its result no longer has.** When the engine moves a matchUp off the result its
+  reasons were given for, the reasons go with the result: a produced exit withdrawn because its source was corrected
+  or cleared, a matchUp collapsed to a BYE, a result removed with the position it was carried to, a draw reset. A
+  matchUp left `TO_BE_PLAYED`, a `BYE` or any other status that takes no reason keeps none, except that a BYE standing
+  over an exit its `sideExitProvenance` still records keeps that exit's reason. When a decided matchUp's sides are
+  re-sorted under its winner, a reason that now names the winner is removed. In 7.x such a matchUp could keep the
+  reasons of a result it no longer held (#6669).
 - **Clearing a result removes its reasons.** A result cleared or removed leaves the matchUp `TO_BE_PLAYED`, a status
   that takes no reason, so the matchUp keeps none, with or without `clearStatusCodes`. The same holds for a result
   corrected to a played win or to a live score. A clear does not keep the reason for a later re-entry: enter the
