@@ -1,5 +1,4 @@
 import { tieFormatConstants, tieFormats } from '@courthive/competition-catalogue';
-import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
@@ -41,10 +40,12 @@ function playDual({ tieFormat, side1Wins }: { tieFormat: any; side1Wins: number 
   // side 1 takes the doubles point (2 of 3) plus (side1Wins - 1) singles
   const winners = new Set([...doubles.slice(0, 2), ...singles.slice(0, side1Wins - 1)].map((l: any) => l.matchUpId));
 
+  // the collections as stored: the mocks engine mints their ids on its own copy of the tieFormat
+  const stored: any = tournamentEngine.getEvent({ drawId: 'drawId' }).event.tieFormat;
   for (const line of tie.tieMatchUps) {
     const winningSide = winners.has(line.matchUpId) ? 1 : 2;
     // each line is scored in its collection's format: a one-set doubles line is 6-1, a singles line 6-1 6-1
-    const { matchUpFormat } = tieFormat.collectionDefinitions.find((c: any) => c.collectionId === line.collectionId);
+    const { matchUpFormat } = stored.collectionDefinitions.find((c: any) => c.collectionId === line.collectionId);
     const { outcome } = mocksEngine.generateOutcomeFromScoreString({
       scoreString: matchUpFormat.startsWith('SET1') ? '6-1' : '6-1 6-1',
       matchUpFormat,
@@ -99,30 +100,5 @@ describe('COLLEGE_DEFAULT valueGoal', () => {
       expect(maxValue).toEqual(9);
       expect(tieFormat.winCriteria.valueGoal).toEqual(5);
     }
-  });
-});
-
-/**
- * The named tie formats have TWO independent hand-maintained sources: the JSON fixtures under
- * `fixtures/scoring/tieFormats`, and the `namedFormats` table inside `tieFormatDefaults`. Nothing
- * reconciled them, and they had drifted — `COLLEGE_DEFAULT` said 5 in one and 4 in the other, so
- * which valueGoal a consumer got depended on which door they came through.
- */
-describe('tieFormat fixture ↔ tieFormatDefaults conformance', () => {
-  const namedFixtures = Object.keys(tieFormats);
-
-  it('covers every published fixture', () => {
-    expect(namedFixtures.length).toBeGreaterThanOrEqual(18);
-  });
-
-  it.each(namedFixtures)('%s winCriteria agrees across both sources', (name) => {
-    const fixture: any = (tieFormats as any)[name];
-    const generated: any = tieFormatDefaults({ namedFormat: name });
-
-    // a fixture with no named-format twin is single-sourced — nothing to reconcile
-    if (!generated?.winCriteria) return;
-
-    expect(generated.winCriteria.valueGoal).toEqual(fixture.winCriteria?.valueGoal);
-    expect(!!generated.winCriteria.aggregateValue).toEqual(!!fixture.winCriteria?.aggregateValue);
   });
 });

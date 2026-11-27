@@ -351,7 +351,7 @@ describe('processLeagueProfiles naming and IDs', () => {
 });
 
 describe('processLeagueProfiles tieFormat resolution', () => {
-  it('resolves tieFormat from tieFormatName when tieFormat object not provided', () => {
+  it('gives a league without a tieFormat the mocks default', () => {
     const tournamentRecord = createEmptyTournamentRecord();
     const eventIds: string[] = [];
     const venueIds: string[] = [];
@@ -362,7 +362,6 @@ describe('processLeagueProfiles tieFormat resolution', () => {
       tournamentRecord,
       leagueProfiles: [
         {
-          tieFormatName: COLLEGE_DEFAULT,
           teamsCount: 2,
           gender: MALE,
         },
@@ -379,7 +378,7 @@ describe('processLeagueProfiles tieFormat resolution', () => {
     expect(event.tieFormat.collectionDefinitions.length).toBeGreaterThan(0);
   });
 
-  it('uses provided tieFormat object over tieFormatName', () => {
+  it('uses the provided tieFormat object', () => {
     const tournamentRecord = createEmptyTournamentRecord();
     const eventIds: string[] = [];
     const venueIds: string[] = [];

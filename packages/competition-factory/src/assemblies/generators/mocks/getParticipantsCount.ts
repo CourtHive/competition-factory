@@ -1,7 +1,7 @@
-import { catalogueNameWarned, warnCatalogueName } from '@Tools/catalogueNameWarnings';
-import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { eventGeneratesOwnParticipants } from './eventGeneratesOwnParticipants';
+import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { processTieFormat } from './processTieFormat';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants
 import { FEMALE, MIXED, OTHER, MALE, ANY } from '@Constants/genderConstants';
@@ -31,7 +31,6 @@ export function getParticipantsCount({ participantsProfile, eventProfiles, drawP
   const processDrawProfile = ({
     alternatesCount = 0,
     uniqueParticipants,
-    tieFormatName,
     drawSize = 0,
     eventType,
     tieFormat,
@@ -51,13 +50,11 @@ export function getParticipantsCount({ participantsProfile, eventProfiles, drawP
     if (isTeam) {
       largestTeamDraw = Math.max(largestTeamDraw, drawSize + alternatesCount);
 
-      if (!catalogueNameWarned.mocksProfile && typeof tieFormat !== 'object' && tieFormatName)
-        warnCatalogueName('mocksProfile', tieFormatName);
-      tieFormat = typeof tieFormat === 'object' ? tieFormat : tieFormatDefaults({ namedFormat: tieFormatName });
+      // a copy: counting mints ids onto the collections it reads, and the profile's tieFormat is the caller's object
+      tieFormat = typeof tieFormat === 'object' ? makeDeepCopy(tieFormat, false, true) : tieFormatDefaults();
 
       const { teamSize, maxDoublesDraw, maxSinglesDraw, genders } = processTieFormat({
         alternatesCount,
-        tieFormatName,
         tieFormat,
         drawSize,
       });
@@ -86,25 +83,17 @@ export function getParticipantsCount({ participantsProfile, eventProfiles, drawP
   };
 
   eventProfiles?.forEach((eventProfile) => {
-    const {
-      tieFormatName: eventTieFormatName,
-      tieFormat: eventTieFormat,
-      drawProfiles,
-      eventType,
-      category,
-      gender,
-    } = eventProfile;
+    const { tieFormat: eventTieFormat, drawProfiles, eventType, category, gender } = eventProfile;
 
     if (drawProfiles) {
       // an event that generates its own participants is not drawn from the tournament pool
       const eventUniqueParticipants = eventGeneratesOwnParticipants(eventProfile);
       for (const drawProfile of drawProfiles) {
-        const { tieFormatName, tieFormat } = drawProfile;
+        const { tieFormat } = drawProfile;
 
         processDrawProfile({
           ...drawProfile,
           uniqueParticipants: drawProfile.uniqueParticipants || eventUniqueParticipants,
-          tieFormatName: tieFormatName || eventTieFormatName,
           tieFormat: tieFormat || eventTieFormat,
           eventType,
           category,

@@ -1,4 +1,4 @@
-import { tieFormatConstants } from '@courthive/competition-catalogue';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { generateDateRange } from '@Tools/dateTime';
 import { queryEngine } from '@Engines/queryEngine';
@@ -29,7 +29,15 @@ it('can assign participants to SINGLES/DOUBLES matchUps in TEAM AdHoc events', (
 
   let result = mocksEngine.generateTournamentRecord({
     drawProfiles: [
-      { drawId, drawSize: 6, eventType: TEAM, drawType: AD_HOC, eventId, tieFormatName: DOMINANT_DUO, idPrefix: 'mu' },
+      {
+        drawId,
+        drawSize: 6,
+        eventType: TEAM,
+        drawType: AD_HOC,
+        eventId,
+        tieFormat: resolveTieFormat(DOMINANT_DUO),
+        idPrefix: 'mu',
+      },
     ],
     participantsProfile: { idPrefix: 'ptcpt' },
     tournamentAttributes: { tournamentId },

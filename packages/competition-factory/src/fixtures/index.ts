@@ -2,7 +2,6 @@ import { countries, countryToFlag, flagIOC } from './countryData';
 import { competitionFormats } from './scoring/competitionFormats';
 import ratingsParameters from './ratings/ratingsParameters';
 import { matchUpFormats } from './scoring/matchUpFormats';
-import { tieFormats } from './scoring/tieFormats';
 import { policies } from './policies';
 import {
   getDisciplineProfile,
@@ -18,7 +17,6 @@ export const fixtures = {
   ratingsParameters,
   matchUpFormats,
   countryToFlag,
-  tieFormats,
   countries,
   policies,
   flagIOC,

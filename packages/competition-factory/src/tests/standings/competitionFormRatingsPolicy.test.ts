@@ -3,6 +3,7 @@ import { POLICY_RATINGS_COMPETITION_FORM } from '@Fixtures/policies/POLICY_RATIN
 import { deriveCompetitionState } from '@Query/drawDefinition/competition/deriveCompetitionState';
 import { POLICY_COMPETITION_STANDARD } from '@Fixtures/policies/POLICY_COMPETITION_STANDARD';
 import { formRatingsPolicy } from '@Helpers/ratings/competition/formRatingsPolicy';
+import { ratingsPresets } from '@courthive/competition-catalogue';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';
@@ -82,24 +83,26 @@ describe('the competition form rating and its ratings policy', () => {
     expect(formOfA(withForm({ kFactor: 32, logisticScale: 400 }), SHUTOUT)).toBeCloseTo(1516, 10);
   });
 
-  it('rates by the same numbers when the policy names POLICY_RATINGS_COMPETITION_FORM', () => {
-    expect(formOfA(withForm({ ratingsPolicy: 'POLICY_RATINGS_COMPETITION_FORM' }), CLOSE)).toBeCloseTo(1502.4, 10);
+  it('rates by the same numbers when the policy is POLICY_RATINGS_COMPETITION_FORM', () => {
+    expect(
+      formOfA(withForm({ ratingsPolicy: POLICY_RATINGS_COMPETITION_FORM[POLICY_TYPE_RATINGS] }), CLOSE),
+    ).toBeCloseTo(1502.4, 10);
   });
 
-  it("rates by a named policy's K and actual rule: World Football Elo's K 30 and a plain win", () => {
-    const policy = withForm({ ratingsPolicy: 'POLICY_RATINGS_ELO_WORLD_FOOTBALL' });
+  it("rates by a given policy's K and actual rule: World Football Elo's K 30 and a plain win", () => {
+    const policy = withForm({ ratingsPolicy: ratingsPresets.POLICY_RATINGS_ELO_WORLD_FOOTBALL });
     expect(formOfA(policy, CLOSE)).toBeCloseTo(1515, 10); // 30 × (1 − 0.5)
   });
 
-  it('refuses an unknown name and a K by career matches, which a competition cannot count', () => {
+  it('refuses a preset name and a K by career matches, which a competition cannot count', () => {
     expect(formRatingsPolicy(withForm({ ratingsPolicy: 'POLICY_RATINGS_NONE' }) as any).error).toEqual(INVALID_VALUES);
-    const careerK = formRatingsPolicy(withForm({ ratingsPolicy: 'POLICY_RATINGS_ELO_538_TENNIS' }) as any);
+    const careerK = formRatingsPolicy(withForm({ ratingsPolicy: ratingsPresets.POLICY_RATINGS_ELO_538_TENNIS }) as any);
     expect(careerK.error).toEqual(INVALID_VALUES);
     expect(careerK.info).toMatch(/CONSTANT K/);
   });
 
   it('refuses to start competition state under an invalid reference', () => {
-    const competition = withForm({ ratingsPolicy: 'POLICY_RATINGS_ELO_538_TENNIS' });
+    const competition = withForm({ ratingsPolicy: ratingsPresets.POLICY_RATINGS_ELO_538_TENNIS });
     const {
       tournamentRecord,
       drawIds: [drawId],

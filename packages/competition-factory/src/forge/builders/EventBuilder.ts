@@ -14,7 +14,6 @@
  * executionQueue `pipe` mechanism to thread `event` and `drawDefinition`
  * results between steps without forcing the caller to materialize them.
  */
-import { attributeCatalogueNames, catalogueNameWarned, warnCatalogueName } from '@Tools/catalogueNameWarnings';
 
 import { DOUBLES, HYBRID, SINGLES, TEAM } from '@Constants/eventConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
@@ -23,13 +22,14 @@ import { UUID } from '@Tools/UUID';
 
 import type { DrawOpts, EntriesOpts, EventSeed, GenderInput, BuildResult } from './types';
 import type { Directives, FactoryEngine } from '@Types/factoryTypes';
+import type { TieFormat } from '@Types/tournamentTypes';
 
 type DrawSpec = { drawId: string; drawSize: number; opts: DrawOpts };
 
 export class EventBuilder {
   private readonly engine: FactoryEngine;
   private readonly _eventId: string;
-  private eventState: EventSeed & { eventType?: string; gender?: string; tieFormat?: any; tieFormatName?: string } = {};
+  private eventState: EventSeed & { eventType?: string; gender?: string; tieFormat?: TieFormat } = {};
   private drawSpec: DrawSpec | undefined;
   private entriesSpec: { participantIds: string[]; opts?: EntriesOpts } | undefined;
 
@@ -49,10 +49,9 @@ export class EventBuilder {
     this.eventState.eventType = DOUBLES;
     return this;
   }
-  team(tieFormat?: any | string): this {
+  team(tieFormat?: TieFormat): this {
     this.eventState.eventType = TEAM;
-    if (typeof tieFormat === 'string') this.namedTieFormat(tieFormat);
-    else if (tieFormat) this.eventState.tieFormat = tieFormat;
+    if (tieFormat) this.eventState.tieFormat = tieFormat;
     return this;
   }
   hybrid(): this {
@@ -79,15 +78,9 @@ export class EventBuilder {
     this.eventState.endDate = endDate;
     return this;
   }
-  tieFormat(tieFormat: any | string): this {
-    if (typeof tieFormat === 'string') this.namedTieFormat(tieFormat);
-    else this.eventState.tieFormat = tieFormat;
+  tieFormat(tieFormat: TieFormat): this {
+    this.eventState.tieFormat = tieFormat;
     return this;
-  }
-  /** A string names a catalogue tie format, sent as addEvent's `tieFormatName`: deprecated, pass a tieFormat object */
-  private namedTieFormat(tieFormatName: string): void {
-    if (!catalogueNameWarned.eventBuilder) warnCatalogueName('eventBuilder', tieFormatName);
-    this.eventState.tieFormatName = tieFormatName;
   }
 
   // ---- entries ----
@@ -163,10 +156,7 @@ export class EventBuilder {
 
   create(opts?: { rollbackOnError?: boolean }): BuildResult {
     const directives = this.toDirectives();
-    // a team() / tieFormat() string reaches addEvent as its tieFormatName: a warning for it names the builder
-    const queueResult = attributeCatalogueNames('eventBuilder', () =>
-      this.engine.executionQueue(directives, opts?.rollbackOnError),
-    );
+    const queueResult = this.engine.executionQueue(directives, opts?.rollbackOnError);
     if (queueResult?.error) {
       return {
         success: false,

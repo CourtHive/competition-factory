@@ -1,5 +1,3 @@
-import { catalogueNameWarned, warnCatalogueName } from '@Tools/catalogueNameWarnings';
-import { ratingsPolicies } from '@Fixtures/policies/ratingsPolicies';
 import { matchesPlayedK } from './ratingUpdate';
 
 // types
@@ -84,13 +82,9 @@ export function isRatingsPolicy(policy?: RatingsPolicy): policy is RatingsPolicy
 }
 
 /**
- * A ratings policy selected by preset name or given inline; `undefined` for an unknown name or an incomplete policy. A
- * preset name is deprecated (presets leave the core in 8.0.0), and warns once per process the first time it resolves.
+ * A ratings policy given inline; `undefined` for an incomplete policy or a name. The core holds no ratings presets, so a
+ * name (a label an earlier record may carry) selects nothing: the caller passes the policy object.
  */
 export function resolveRatingsPolicy(selected: string | RatingsPolicy): RatingsPolicy | undefined {
-  if (typeof selected !== 'string') return isRatingsPolicy(selected) ? selected : undefined;
-  const policy = ratingsPolicies[selected];
-  if (!isRatingsPolicy(policy)) return undefined;
-  if (!catalogueNameWarned.ratingsPreset) warnCatalogueName('ratingsPreset', selected);
-  return policy;
+  return typeof selected !== 'string' && isRatingsPolicy(selected) ? selected : undefined;
 }

@@ -1,13 +1,14 @@
 import { buildMatchUps, type CorpusResult } from '../standings/standingsFixtures';
 import { getSeasonStandings } from '@Query/season/getSeasonStandings';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants and types
 import { POLICY_ROUND_ROBIN_TALLY_DEFAULT } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_DEFAULT';
-import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { STANDINGS_PURPOSE_MOVEMENT, SUBJECT_PERSON } from '@Constants/seasonConstants';
+import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import type { Season } from '@Types/seasonTypes';
 
 /**
@@ -143,7 +144,7 @@ describe('season standings ranked by the tie-score value', () => {
     const { season: generated, tournamentRecords }: any = mocksEngine.generateSeason({
       seasonProfile: {
         tiers: [{ tierId: 'A1', tierValue: 'A-1', teamsCount: 4 }],
-        tieFormatName: 'DOMINANT_DUO',
+        tieFormat: resolveTieFormat('DOMINANT_DUO'),
         periods: [{}],
         seasonName: 'Value',
       },

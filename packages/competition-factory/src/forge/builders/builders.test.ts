@@ -31,12 +31,7 @@ describe('EventBuilder', () => {
     expect(tournamentEngine.build.event().hybrid().toDirectives()[0].params.event.eventType).toBe(HYBRID);
   });
 
-  it('team() accepts a string name (tieFormatName) and an object (tieFormat)', () => {
-    const fromString: any = tournamentEngine.build.event().team('ITA_DUAL').toDirectives()[0].params.event;
-    expect(fromString.eventType).toBe(TEAM_EVENT);
-    expect(fromString.tieFormatName).toBe('ITA_DUAL');
-    expect(fromString.tieFormat).toBeUndefined();
-
+  it('team() takes a tieFormat object', () => {
     const fmt = { collectionDefinitions: [{ collectionId: 'x' }] };
     const fromObject: any = tournamentEngine.build.event().team(fmt).toDirectives()[0].params.event;
     expect(fromObject.tieFormat).toEqual(fmt);
@@ -61,10 +56,7 @@ describe('EventBuilder', () => {
     expect(event.endDate).toBe('2026-06-07');
   });
 
-  it('tieFormat() accepts both string and object', () => {
-    const stringForm: any = tournamentEngine.build.event().team().tieFormat('USTA_DUAL').toDirectives()[0].params.event;
-    expect(stringForm.tieFormatName).toBe('USTA_DUAL');
-
+  it('tieFormat() takes a tieFormat object', () => {
     const fmt = { collectionDefinitions: [] };
     const objectForm: any = tournamentEngine.build.event().team().tieFormat(fmt).toDirectives()[0].params.event;
     expect(objectForm.tieFormat).toEqual(fmt);

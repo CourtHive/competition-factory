@@ -14,7 +14,7 @@ const { tournamentRecord, eventIds, drawIds, venueIds } = mocksEngine.generateTo
   endDate: '2024-06-30',
   leagueProfiles: [
     {
-      tieFormatName: COLLEGE_DEFAULT,
+      tieFormat: resolveTieFormat('COLLEGE_DEFAULT'), // from @courthive/competition-catalogue
       leagueName: 'NTRP 3.5 Men',
       teamsCount: 8,
       gender: MALE,
@@ -39,8 +39,7 @@ interface LeagueProfile {
   teamProfiles?: TeamProfile[]; // Explicit team definitions (see below)
 
   // Tie Format
-  tieFormat?: TieFormat; // Explicit tie format object
-  tieFormatName?: string; // Named format (default: a built-in three-doubles, six-singles format, first to 4)
+  tieFormat?: TieFormat; // Tie format object (default: a built-in three-doubles, six-singles format, first to 4)
 
   // Draw Configuration
   roundsCount?: number | 'DOUBLE_ROUND_ROBIN'; // Number of rounds (default: teamsCount - 1)
@@ -163,7 +162,9 @@ members.
 
 The tie format determines the number of individual participants per team. The factory inspects the `collectionDefinitions` in the tie format to calculate the required team roster size based on the maximum singles and doubles positions.
 
-If no `tieFormat` object is provided, the factory resolves one from `tieFormatName` (defaulting to `COLLEGE_DEFAULT`).
+If no `tieFormat` object is provided, the league uses the mocks engine's built-in format: three doubles rubbers sharing one
+point and six singles worth a point each, first to four. A named format is passed as its object, from the catalogue
+package (`resolveTieFormat` in `@courthive/competition-catalogue`).
 
 ## Venue Generation
 
@@ -200,15 +201,9 @@ mocksEngine.generateTournamentRecord({
 ## Complete Example
 
 ```js
-import {
-  participantConstants,
-  tieFormatConstants,
-  tournamentEngine,
-  genderConstants,
-  mocksEngine,
-} from 'tods-competition-factory';
+import { participantConstants, tournamentEngine, genderConstants, mocksEngine } from 'tods-competition-factory';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
 
-const { COLLEGE_DEFAULT } = tieFormatConstants;
 const { TEAM } = participantConstants;
 const { MALE } = genderConstants;
 
@@ -218,7 +213,7 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
   endDate: '2024-06-30',
   leagueProfiles: [
     {
-      tieFormatName: COLLEGE_DEFAULT,
+      tieFormat: resolveTieFormat('COLLEGE_DEFAULT'),
       leagueName: 'Spring League',
       teamsCount: 8,
       gender: MALE,

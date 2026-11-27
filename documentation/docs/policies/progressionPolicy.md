@@ -114,13 +114,13 @@ connected structure where its loser would have appeared. Ranking points are awar
 Tournament Desk (ustatournamentdesk.com, on factory 2.2.32), confirmed with USTA on 2026-10-22.
 
 The factory default changed to `doubleExitPropagateBye: true` on 2026-09-29, so a USTA tournament has
-to state the setting. `POLICY_PROGRESSION_USTA` is `POLICY_PROGRESSION_DEFAULT` with
-`doubleExitPropagateBye: false` and nothing else changed. Attach it beside `POLICY_SCORING_USTA`,
+to state the setting. `POLICY_PROGRESSION_USTA`, published by the catalogue package (`@courthive/competition-catalogue`), is
+`POLICY_PROGRESSION_DEFAULT` with `doubleExitPropagateBye: false` and nothing else changed. Attach it beside `POLICY_SCORING_USTA`,
 which turns exit propagation on:
 
 ```js
+import { POLICY_PROGRESSION_USTA, POLICY_SCORING_USTA } from '@courthive/competition-catalogue';
 import { fixtures } from 'tods-competition-factory';
-const { POLICY_PROGRESSION_USTA, POLICY_SCORING_USTA } = fixtures.policies;
 
 tournamentEngine.attachPolicies({
   policyDefinitions: { ...POLICY_SCORING_USTA, ...POLICY_PROGRESSION_USTA },

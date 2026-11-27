@@ -61,8 +61,9 @@ The `event` object may include:
 - `eventId` — optional, auto-generated UUID if not provided
 - `eventName` — display name
 - `eventType` — defaults to `SINGLES_EVENT`; use `TEAM_EVENT` for team competitions
-- `tieFormat` — required for TEAM events (validated), or use `tieFormatName` to select a preset
-- `tieFormatName` — optional — selects a built-in tieFormat by name (e.g. `'COLLEGE_DEFAULT'`)
+- `tieFormat` — the TEAM event's tie format (validated); without one, a TEAM draw takes the default format when it is
+  generated. A `tieFormatName` alone selects nothing and is refused with `INVALID_VALUES`: pass the `tieFormat` object
+  (named ones are published by `@courthive/competition-catalogue`)
 - `startDate`, `endDate` — optional, default to tournament dates
 - `category`, `gender`, `matchUpFormat` — optional event metadata
 
@@ -219,8 +220,7 @@ Generates multiple events from a tieFormat definition, typically for team compet
 
 ```js
 const { events } = engine.generateEventsFromTieFormat({
-  tieFormat, // required, or tieFormatName
-  tieFormatName, // a named tie format from tieFormatConstants, instead of tieFormat
+  tieFormat, // required
   category, // optional
   gender, // optional
 });
@@ -228,8 +228,8 @@ const { events } = engine.generateEventsFromTieFormat({
 
 **Purpose:** Automatically create event structure for team competitions from tieFormat.
 
-A `tieFormatName` the catalogue does not hold is refused with `INVALID_VALUES`. Earlier releases accepted any non-empty
-name and built the `STANDARD` tie format for one they did not know.
+A call without a `tieFormat` is refused (`INVALID_VALUES`): the factory holds no named formats, so `tieFormatName` is
+not an input. Earlier releases built a named format from it.
 
 ---
 

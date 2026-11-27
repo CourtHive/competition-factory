@@ -113,12 +113,14 @@ larger than the entrants can pair) are returned to the caller rather than leavin
 | Parameter            | Type        | Description                                                       |
 | -------------------- | ----------- | ----------------------------------------------------------------- |
 | `tieFormat`          | `TieFormat` | `{ collectionDefinitions, winCriteria }` for team/dual matchUps   |
-| `tieFormatName`      | `string`    | Named tie format preset                                           |
+| `tieFormatName`      | `string`    | Selects, by label, a tie format the event holds                   |
 | `hydrateCollections` | `boolean`   | Propagate event `category` and `gender` to collection definitions |
 
-A `tieFormatName` is matched first against the event's own tie formats (`event.tieFormats[]`, then `event.tieFormat`)
-by their `tieFormatName`, and then against the named presets in `tieFormatConstants`. A name that matches neither is
-refused with `INVALID_VALUES`, as `addEvent` refuses it. Earlier releases built the STANDARD format for it silently.
+A `tieFormatName` is matched against the event's own tie formats (`event.tieFormats[]`, then `event.tieFormat`) by
+their `tieFormatName`. The factory holds no named formats, so a name the event does not hold is refused with
+`INVALID_VALUES`; pass a `tieFormat` object instead (the catalogue package, `@courthive/competition-catalogue`,
+publishes named ones: `resolveTieFormat(name)`). Before 8.0.0 such a name was looked up among the factory's own
+named formats.
 
 ## Return Value
 

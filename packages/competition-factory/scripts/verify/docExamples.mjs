@@ -11,6 +11,17 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const require = createRequire(import.meta.url);
 const factory = require(join(root, 'dist/tods-competition-factory.development.cjs.js'));
 const packageTypes = join(root, 'dist/tods-competition-factory');
+// the catalogue package's build (verify:catalogue builds it): examples import named formats and organisation policies
+const CATALOGUE = '@courthive/competition-catalogue';
+const catalogueRoot = join(root, '../competition-catalogue/dist');
+const catalogue = require(join(catalogueRoot, 'index.cjs'));
+const catalogueNames = (code) =>
+  [...code.matchAll(/^import \{([^}]*)\} from '@courthive\/competition-catalogue';/gm)].flatMap((match) =>
+    match[1]
+      .split(',')
+      .map((name) => name.trim())
+      .filter(Boolean),
+  );
 const docs = join(REPO_ROOT, 'documentation/docs');
 const factorySetup = `
 tournamentEngine.setState({ tournamentId: 'docs', participants: [
@@ -71,7 +82,7 @@ if (JSON.stringify(creditedPoints) !== '[11,11,8,8]') throw new Error('timed ind
   },
   {
     page: RATINGS_OTHER_SPORTS,
-    contains: "ratingsPolicy: 'POLICY_RATINGS_ELO_538_NHL'",
+    contains: 'ratingsPolicy: ratingsPresets.POLICY_RATINGS_ELO_538_NHL',
     setup: recordResult,
     check: ratedAs('hockeyNames', ['Elo, FiveThirtyEight NHL']),
   },
@@ -222,7 +233,9 @@ try {
     if (fences.length !== 1)
       throw new Error(`${example.page}: expected exactly one selected fence, got ${fences.length}`);
     example.code = `${example.setup ?? ''}\n${fences[0]}\n${example.check}`;
-    const body = example.code.replaceAll("from 'tods-competition-factory'", `from ${JSON.stringify(packageTypes)}`);
+    const body = example.code
+      .replaceAll("from 'tods-competition-factory'", `from ${JSON.stringify(packageTypes)}`)
+      .replaceAll(`from '${CATALOGUE}'`, `from ${JSON.stringify(join(catalogueRoot, 'index.mjs'))}`);
     const file = join(workdir, `example-${index}.ts`);
     const imports = `import { scoreGovernor, tournamentEngine, mocksEngine, tournamentGovernor, matchUpGovernor, scaleEngine, fixtures } from ${JSON.stringify(packageTypes)};\n`;
     // The overview already imports scoreGovernor; avoid a duplicate import.
@@ -250,6 +263,7 @@ try {
     throw new Error('Documentation example typecheck failed');
   }
   for (const example of cases) {
+    const fromCatalogue = catalogueNames(example.code);
     const sourceCode = example.code.replace(/^import .* from .*;\s*$/gm, '');
     const code = ts.transpileModule(sourceCode, {
       compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
@@ -262,6 +276,7 @@ try {
       'matchUpGovernor',
       'scaleEngine',
       'fixtures',
+      ...fromCatalogue,
       code,
     )(
       factory.scoreGovernor,
@@ -271,6 +286,7 @@ try {
       factory.matchUpGovernor,
       factory.scaleEngine,
       factory.fixtures,
+      ...fromCatalogue.map((name) => catalogue[name]),
     );
     console.log(`[docs-examples] PASS ${example.page}: ${example.contains}`);
   }

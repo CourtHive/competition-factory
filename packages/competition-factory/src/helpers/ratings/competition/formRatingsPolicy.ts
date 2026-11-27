@@ -11,7 +11,7 @@ import type { RatingsPolicy } from '@Types/ratingsPolicyTypes';
 const FORM = POLICY_RATINGS_COMPETITION_FORM[POLICY_TYPE_RATINGS];
 
 /**
- * The ratings policy a competition's dynamic form rating moves by. Named in `dynamicFormRating.ratingsPolicy`, it sets
+ * The ratings policy a competition's dynamic form rating moves by. Given in `dynamicFormRating.ratingsPolicy`, it sets
  * the expectation, K (CONSTANT only: a competition holds no career counts) and the actual result. Without one, the
  * rating is today's: the policy's own `kFactor` and `logisticScale`, else POLICY_RATINGS_COMPETITION_FORM's 24 and 400,
  * with the actual output the competition policy computes (`referenced: false`).
@@ -28,7 +28,7 @@ export function formRatingsPolicy(competitionPolicy?: CompetitionPolicy): {
   const policy = resolveRatingsPolicy(form.ratingsPolicy);
   if (!policy && typeof form.ratingsPolicy === 'string') {
     return {
-      info: `dynamicFormRating.ratingsPolicy: no ratings preset named '${form.ratingsPolicy}'; pass the ratings policy object`,
+      info: `dynamicFormRating.ratingsPolicy: '${form.ratingsPolicy}' is a preset name, which selects nothing; pass the ratings policy object`,
       context: { ratingsPolicy: form.ratingsPolicy },
       error: INVALID_VALUES,
     };

@@ -1,10 +1,7 @@
 import { addDrawNotice, addMatchUpsNotice, stampUnannounced } from '@Mutate/notifications/drawNotifications';
-import { catalogueNameWarned, warnCatalogueName } from '@Tools/catalogueNameWarnings';
-import { pinnedCompetitionFormat } from '@Helpers/ratings/pinnedRatingsPresets';
 import { addEventNotice } from '@Mutate/notifications/eventNotifications';
 import { matchUpFormatRefusal } from '@Validators/isValidMatchUpFormat';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
-import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
 import { normalizeDiscipline } from '@Tools/coercedDiscipline';
@@ -18,8 +15,9 @@ import { EVENT_EXISTS, ErrorType, INVALID_VALUES } from '@Constants/errorConditi
 import { TOURNAMENT_RECORD, EVENT as EVENT_ATTR } from '@Constants/attributeConstants';
 import { SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { Event, Tournament } from '@Types/tournamentTypes';
-import { tieFormats } from '@Fixtures/scoring/tieFormats';
 import { SUCCESS } from '@Constants/resultConstants';
+
+const TIE_FORMAT_REQUIRED = 'tieFormatName names no tie format: pass a tieFormat';
 
 type AddEventArgs = {
   /**
@@ -84,18 +82,12 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
   // 'beach volleyball' and 'BEACH_VOLLEYBALL' are stored identically
   if (eventRecord.discipline) eventRecord.discipline = normalizeDiscipline(eventRecord.discipline);
 
-  // a ratings preset named by the competitionFormat is stored by value, so reading the record never needs the name
-  if (typeof event.competitionFormat?.ratingsPolicy === 'string') {
-    eventRecord.competitionFormat = pinnedCompetitionFormat(event.competitionFormat);
-  }
-
   // minted before the tieFormat, whose mock collection ids are built from it (they were `undefined-COL-n`)
   eventRecord.eventId ??= UUID();
 
   if (event.eventType === TEAM_EVENT) {
     if (event.tieFormat) {
-      // A supplied tieFormat may carry no collectionIds — the published `fixtures.tieFormats` cannot
-      // hold them, since a collectionId identifies a collection INSTANCE within a record and a shared
+      // A supplied tieFormat may carry no collectionIds — a published tie format cannot hold them, since a collectionId identifies a collection INSTANCE within a record and a shared
       // fixture would hand every record the same identities. Mint them here so the stored tieFormat is
       // usable: without ids the generated lines all carry `collectionId: null`, cannot be attributed to
       // their collection, and the tie never scores.
@@ -106,10 +98,9 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
       const result = checkTieFormat({ tieFormat: makeDeepCopy(event.tieFormat, false, true), uuids });
       if (result.error) return result;
       eventRecord.tieFormat = result.tieFormat;
-    } else if (event.tieFormatName) {
-      const named = namedTieFormat({ tieFormatName: event.tieFormatName, tournamentRecord, eventRecord, uuids });
-      if (named.error) return named;
-      eventRecord.tieFormat = named.tieFormat;
+    } else if (event.tieFormatName && !event.tieFormatId) {
+      // the core holds no named formats: a name alone selects nothing, and is refused rather than stored as a format
+      return { context: { tieFormatName: event.tieFormatName }, error: INVALID_VALUES, info: TIE_FORMAT_REQUIRED };
     }
   }
 
@@ -153,27 +144,4 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
   }
 
   return { ...SUCCESS, event: eventRecord };
-}
-
-/** The catalogue tie format `tieFormatName` names, built for the event; an unknown name is refused. */
-function namedTieFormat({
-  tournamentRecord,
-  tieFormatName,
-  eventRecord,
-  uuids,
-}: {
-  tournamentRecord: Tournament;
-  tieFormatName: string;
-  eventRecord: Event;
-  uuids?: string[];
-}) {
-  if (!tieFormats[tieFormatName]) return { context: { tieFormatName }, error: INVALID_VALUES };
-  if (!catalogueNameWarned.addEvent) warnCatalogueName('addEvent', tieFormatName);
-  const tieFormat = tieFormatDefaults({
-    isMock: tournamentRecord?.isMock,
-    namedFormat: tieFormatName,
-    event: eventRecord,
-    uuids,
-  });
-  return { tieFormat };
 }

@@ -1,11 +1,10 @@
-import { tieFormatConstants } from '@courthive/competition-catalogue';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { namedTieFormat } from '@Tests/testHarness/namedTieFormat';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // Constants
-import { isNamedTieFormat } from '@Helpers/tieFormats/tieFormatDefaults';
 import { ALTERNATE, UNGROUPED } from '@Constants/entryStatusConstants';
 import { SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
@@ -19,7 +18,13 @@ it('can generate singles/doubles events from tieFormats', () => {
   mocksEngine.generateTournamentRecord({
     participantsProfile: { participantsCount: 0 }, // required to force generation of tieFormat-specific participants
     drawProfiles: [
-      { generate: false, addEvent: false, eventType: TEAM_EVENT, drawSize, tieFormatName: USTA_GOLD_TEAM_CHALLENGE },
+      {
+        generate: false,
+        addEvent: false,
+        eventType: TEAM_EVENT,
+        drawSize,
+        tieFormat: resolveTieFormat(USTA_GOLD_TEAM_CHALLENGE),
+      },
     ],
     setState: true,
   });
@@ -42,12 +47,6 @@ it('can generate singles/doubles events from tieFormats', () => {
   expect(result.error).toEqual(INVALID_VALUES);
 
   result = tournamentEngine.generateEventsFromTieFormat({ tieFormat: {} });
-  expect(result.error).toEqual(INVALID_VALUES);
-
-  result = tournamentEngine.generateEventsFromTieFormat({ tieFormatName: {} });
-  expect(result.error).toEqual(INVALID_VALUES);
-
-  result = tournamentEngine.generateEventsFromTieFormat({ tieFormatName: '' });
   expect(result.error).toEqual(INVALID_VALUES);
 
   const tieFormat = namedTieFormat(USTA_GOLD_TEAM_CHALLENGE);
@@ -81,24 +80,20 @@ it('can generate singles/doubles events from tieFormats', () => {
   events = tournamentEngine.getEvents().events;
   expect(events.length).toBe(0);
 
-  result = tournamentEngine.generateEventsFromTieFormat({ tieFormatName: USTA_GOLD_TEAM_CHALLENGE });
+  result = tournamentEngine.generateEventsFromTieFormat({ tieFormat: namedTieFormat(USTA_GOLD_TEAM_CHALLENGE) });
   expect(result.success).toBe(true);
 
   events = tournamentEngine.getEvents().events;
   expect(events.length).toBe(5);
 });
 
-it('refuses a tieFormatName the catalogue does not hold, rather than building STANDARD for it', () => {
+it('refuses a tieFormatName without a tieFormat: the factory resolves no names', () => {
   mocksEngine.generateTournamentRecord({ setState: true });
   const eventsBefore = tournamentEngine.getEvents().events.length;
 
-  const result: any = tournamentEngine.generateEventsFromTieFormat({ tieFormatName: 'NOT_A_TIE_FORMAT' });
-  expect(result.error).toEqual(INVALID_VALUES);
+  for (const tieFormatName of [USTA_GOLD_TEAM_CHALLENGE, 'NOT_A_TIE_FORMAT']) {
+    const result: any = tournamentEngine.generateEventsFromTieFormat({ tieFormatName } as any);
+    expect(result.error).toEqual(INVALID_VALUES);
+  }
   expect(tournamentEngine.getEvents().events.length).toEqual(eventsBefore);
-
-  expect(isNamedTieFormat(USTA_GOLD_TEAM_CHALLENGE)).toEqual(true);
-  expect(isNamedTieFormat('NOT_A_TIE_FORMAT')).toEqual(false);
-  expect(isNamedTieFormat('toString')).toEqual(false); // an inherited key is not a catalogue entry
-  expect(isNamedTieFormat({})).toEqual(false);
-  expect(isNamedTieFormat('')).toEqual(false);
 });

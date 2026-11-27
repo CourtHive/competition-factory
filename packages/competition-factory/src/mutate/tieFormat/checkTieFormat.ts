@@ -22,7 +22,7 @@ type CheckTieFormatArgs = {
  * Mint any missing `collectionId`s, in place.
  *
  * Published on the tieFormat governor as `mintCollectionIds`. A `collectionId` identifies a
- * collection INSTANCE within a record, so a published `fixtures.tieFormats.*` object cannot carry
+ * collection INSTANCE within a record, so a published tie format cannot carry
  * one — and since 7.0.0 `validateTieFormat` enforces their presence by default. A caller holding a
  * hand-written or published tieFormat mints here before validating or passing it to an API that
  * validates at the door.

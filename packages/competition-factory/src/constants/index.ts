@@ -52,7 +52,6 @@ export { sortingConstants } from './sortingConstants';
 export { surfaceConstants } from './surfaceConstants';
 export { swissConstants } from './swissConstants';
 export { tallyConstants } from './tallyConstants';
-export { tieFormatConstants } from './tieFormatConstants';
 export { timeItemConstants } from './timeItemConstants';
 export { topicConstants } from './topicConstants';
 export { tournamentConstants } from './tournamentConstants';

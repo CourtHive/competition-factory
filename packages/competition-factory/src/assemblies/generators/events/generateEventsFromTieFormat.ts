@@ -1,5 +1,4 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { catalogueNameWarned, warnCatalogueName } from '@Tools/catalogueNameWarnings';
 import { addEventEntries } from '@Mutate/entries/addEventEntries';
 import { withDraftWrites } from '@Global/state/withDraftWrites';
 import { coercedGender } from '@Helpers/coercedGender';
@@ -9,10 +8,9 @@ import { isMixed } from '@Validators/isMixed';
 import { UUID, UUIDS } from '@Tools/UUID';
 
 // Constants
-import { ONE_OF, TIE_FORMAT, TIE_FORMAT_NAME, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { EntryStatusUnion, Event, TieFormat, Tournament } from '@Types/tournamentTypes';
+import { ONE_OF, TIE_FORMAT, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { DIRECT_ACCEPTANCE, UNGROUPED } from '@Constants/entryStatusConstants';
-import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { FEMALE, MALE, OTHER } from '@Constants/genderConstants';
 import { DOUBLES_EVENT } from '@Constants/eventConstants';
@@ -22,8 +20,7 @@ type GenerateEventsFromTieFormatArgs = {
   entryStatus?: EntryStatusUnion; // default to DIRECT_ACCEPTANCE
   addEntriesFromTeams?: boolean; // add team participants as entryStage entries to appropriate gender events
   tournamentRecord: Tournament;
-  tieFormatName?: string;
-  tieFormat?: TieFormat;
+  tieFormat: TieFormat;
   /** @deprecated in 8.0.0 the generator never adds events; store them with `addEvent` (see the 8.0.0 migration guide) */
   addEvents?: boolean;
   uuids?: string[];
@@ -31,14 +28,13 @@ type GenerateEventsFromTieFormatArgs = {
 
 export function generateEventsFromTieFormat(params: GenerateEventsFromTieFormatArgs) {
   const paramsCheck = checkRequiredParameters(params, [
-    { [ONE_OF]: { [TIE_FORMAT]: true, [TIE_FORMAT_NAME]: true } },
+    // a missing tieFormat is refused with INVALID_VALUES, as it was when a tieFormatName could stand in for one
+    { [ONE_OF]: { [TIE_FORMAT]: true } },
     { [TOURNAMENT_RECORD]: true },
   ]);
   if (paramsCheck.error) return paramsCheck;
 
-  if (!catalogueNameWarned.generateEventsFromTieFormat && !params.tieFormat && params.tieFormatName)
-    warnCatalogueName('generateEventsFromTieFormat', params.tieFormatName);
-  const tieFormat = params.tieFormat ?? tieFormatDefaults({ namedFormat: params.tieFormatName });
+  const tieFormat = params.tieFormat;
   const uuids = params.uuids ?? [UUIDS(tieFormat.collectionDefinitions.length)];
 
   const genderedParticipants = params.addEntriesFromTeams

@@ -31,7 +31,7 @@ export function checkFormatScopeEquivalence({
     if (!equivalentInScope) {
       if (tieFormat) {
         // on a COPY: checkTieFormat mints missing collectionIds IN PLACE, and `tieFormat` here is the
-        // caller's object — which is the shared `fixtures.tieFormats.*` object when a published fixture
+        // caller's object — which is a shared object when a published tie format
         // was passed. Stamping ids onto it would give every later record the same collection identities.
         const result = checkTieFormat({ tieFormat: makeDeepCopy(tieFormat, false, true) });
         if (result.error) return result;

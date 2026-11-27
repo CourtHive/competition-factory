@@ -30,7 +30,7 @@ const DISQUALIFYING_GROUP_ROLES = {
  * and meaningless at national ones, where every official necessarily shares the
  * players' nationality — enabling it by default would make the check noise at
  * the majority of events that use the default policy. Federations that need it
- * enable it in their own policy; see POLICY_OFFICIATING_CONFLICT_OF_INTEREST_ITF.
+ * enable it in their own policy (the catalogue package publishes an ITF variant that does).
  *
  * SAME_PERSON and DECLARED_RELATIONSHIP block: an official cannot officiate an
  * event they are entered in, and a declared relationship is a positive assertion
@@ -51,27 +51,6 @@ export const POLICY_OFFICIATING_CONFLICT_OF_INTEREST = {
       [CONFLICT_SHARED_GROUPING]: {
         enabled: true,
         severity: CONFLICT_WARN,
-        roleSeverity: DISQUALIFYING_GROUP_ROLES,
-      },
-    },
-  },
-};
-
-/**
- * ITF-oriented variant: nationality is an active, blocking consideration for
- * international events.
- */
-export const POLICY_OFFICIATING_CONFLICT_OF_INTEREST_ITF = {
-  [POLICY_TYPE_OFFICIATING_CONFLICT]: {
-    policyName: 'ITF',
-    conflictRules: {
-      [CONFLICT_SAME_PERSON]: { enabled: true, severity: CONFLICT_BLOCK },
-      [CONFLICT_DECLARED_RELATIONSHIP]: { enabled: true, severity: CONFLICT_BLOCK },
-      [CONFLICT_ORGANISATION]: { enabled: true, severity: CONFLICT_BLOCK },
-      [CONFLICT_NATIONALITY]: { enabled: true, severity: CONFLICT_BLOCK },
-      [CONFLICT_SHARED_GROUPING]: {
-        enabled: true,
-        severity: CONFLICT_BLOCK,
         roleSeverity: DISQUALIFYING_GROUP_ROLES,
       },
     },

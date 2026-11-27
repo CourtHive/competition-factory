@@ -427,7 +427,8 @@ const result = sanctioningEngine.executionQueue([
 
 ## Policy Fixtures
 
-Three sanctioning policies are included as fixtures:
+Three sanctioning policies are published: `POLICY_SANCTIONING_GENERIC` by the factory (`fixtures.policies`), the
+other two by the catalogue package (`@courthive/competition-catalogue`):
 
 | Policy                       | Governing Body | Tiers                                      |
 | ---------------------------- | -------------- | ------------------------------------------ |
@@ -438,5 +439,5 @@ Three sanctioning policies are included as fixtures:
 Each policy defines: tier constraints (draw types, sizes, formats, prize money, courts, officials), personnel rules, calendar rules, amendment rules, and post-event compliance requirements.
 
 ```js
-import { POLICY_SANCTIONING_ITF } from 'tods-competition-factory/fixtures/policies/POLICY_SANCTIONING_ITF';
+import { POLICY_SANCTIONING_ITF } from '@courthive/competition-catalogue';
 ```

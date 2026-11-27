@@ -1,11 +1,10 @@
 import { generateDrawDefinition } from '@Generators/drawDefinitions/generateDrawDefinition/generateDrawDefinition';
-import { attributeCatalogueNames, catalogueNameWarned, warnCatalogueName } from '@Tools/catalogueNameWarnings';
 import { drawMatic } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/drawMatic';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { completeDrawMatchUps } from '@Generators/simulation/completeDrawMatchUps';
-import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { getQualifyingEntryPlan } from '@Helpers/entries/getQualifyingEntryPlan';
+import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { resolveCompletionOptions } from './resolveCompletionOptions';
 import { addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { applyOutcomes } from '@Mutate/simulation/applyOutcomes';
@@ -15,6 +14,7 @@ import { addExtension } from '@Mutate/extensions/addExtension';
 import { generateParticipants } from './generateParticipants';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { rebuildPairsAsMixed } from './rebuildPairsAsMixed';
+import { withMockCollectionIds } from './mockCollectionIds';
 import { coercedGender } from '@Helpers/coercedGender';
 import { processTieFormat } from './processTieFormat';
 import { isGendered } from '@Validators/isGendered';
@@ -63,7 +63,6 @@ function teamParticipantsShape({
   drawProfileCopy: {
     teamGenders?: Record<string, number>;
     alternatesCount?: number;
-    tieFormatName?: string;
     tieFormat?: unknown;
   };
   gendersCount: Record<string, number>;
@@ -72,7 +71,6 @@ function teamParticipantsShape({
   drawSize: number;
 }) {
   let { teamSize, genders } = processTieFormat({
-    tieFormatName: drawProfileCopy.tieFormatName,
     tieFormat: drawProfileCopy.tieFormat,
     alternatesCount: drawProfileCopy.alternatesCount || 0,
     drawSize,
@@ -661,19 +659,16 @@ function generateAndAttachDraw({
     ? { ...makeDeepCopy(drawProfile, false, true), roundsCount: 1, automated: drawProfile.automated ?? true }
     : makeDeepCopy(drawProfile, false, true);
 
-  // the profile's tieFormatName reaches generateDrawDefinition: a warning for it names the mocks profile
-  const result = attributeCatalogueNames('mocksProfile', () =>
-    generateDrawDefinition({
-      ...drawProfileForGeneration,
-      tournamentRecord,
-      seedingScaleName,
-      matchUpFormat,
-      eventId,
-      isMock,
-      random,
-      event,
-    }),
-  );
+  const result = generateDrawDefinition({
+    ...drawProfileForGeneration,
+    tournamentRecord,
+    seedingScaleName,
+    matchUpFormat,
+    eventId,
+    isMock,
+    random,
+    event,
+  });
 
   if (result.error) return result;
   if (!result.drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
@@ -806,7 +801,6 @@ export function generateEventWithDraw(params) {
     eventExtensions,
     drawExtensions,
     completionGoal,
-    tieFormatName,
     buildTeams,
     seedsCount,
     timeItems,
@@ -831,7 +825,6 @@ export function generateEventWithDraw(params) {
     eventType,
     category,
     gender,
-    tieFormatName,
     hydrateCollections,
     isMock,
   });
@@ -965,6 +958,8 @@ export function generateEventWithDraw(params) {
     drawProfile.automated !== false &&
     (drawProfileCopy.roundsCount ?? 1) > 1;
 
+  // the draw takes the event's copy of a profile's tieFormat, whose mock collection ids its matchUps then carry
+  const drawProfileForDraw = isObject(drawProfile.tieFormat) ? { ...drawProfile, tieFormat } : drawProfile;
   const genResult = generateAndAttachDraw({
     deferredOutcomes: params.deferredOutcomes,
     matchUpStatusProfile,
@@ -977,7 +972,7 @@ export function generateEventWithDraw(params) {
     iterativeAdHoc,
     completionGoal,
     matchUpFormat,
-    drawProfile,
+    drawProfile: drawProfileForDraw,
     drawType,
     category,
     generate,
@@ -1057,11 +1052,10 @@ function resolveTieFormat({
   eventType,
   category,
   gender,
-  tieFormatName,
   hydrateCollections,
   isMock,
 }) {
-  if (isObject(drawProfile.tieFormat)) return drawProfile.tieFormat;
+  if (isObject(drawProfile.tieFormat)) return withMockCollectionIds(drawProfile.tieFormat, { eventId, isMock });
 
   if (drawProfile.tieFormatId) {
     const found = tournamentRecord?.events
@@ -1071,10 +1065,8 @@ function resolveTieFormat({
   }
 
   if (eventType === TEAM) {
-    if (!catalogueNameWarned.mocksProfile && tieFormatName) warnCatalogueName('mocksProfile', tieFormatName);
     return tieFormatDefaults({
       event: { eventId, category, gender },
-      namedFormat: tieFormatName,
       hydrateCollections,
       isMock,
     });

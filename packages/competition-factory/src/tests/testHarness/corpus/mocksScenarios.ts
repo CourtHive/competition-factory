@@ -1,3 +1,5 @@
+import { resolveTieFormat } from '@courthive/competition-catalogue';
+
 /**
  * Scenario shapes for `generateTournamentRecord`, each a profile whose method list (`recordMethods`) rebuilds its
  * record. The method-list replay test replays them through a fresh engine; the `mocks` corpus source writes them as
@@ -63,7 +65,10 @@ export const MOCKS_SCENARIOS: [string, Record<string, unknown>][] = [
   ],
   [
     'a team tieFormat by name',
-    { drawProfiles: [{ drawSize: 4, eventType: 'TEAM', tieFormatName: 'COLLEGE_D3' }], completeAllMatchUps: true },
+    {
+      drawProfiles: [{ drawSize: 4, eventType: 'TEAM', tieFormat: resolveTieFormat('COLLEGE_D3') }],
+      completeAllMatchUps: true,
+    },
   ],
   [
     'double elimination, completed',

@@ -4,10 +4,10 @@
  * The chain (highest precedence first) is:
  *   params.tieFormat > event.tieFormats[tieFormatId] > existing MAIN structure
  *     > event.tieFormats[tieFormatName] > inline event.tieFormat matching tieFormatName
- *     > tieFormatDefaults(tieFormatName) > event tieFormat > tieFormatDefaults()
+ *     > event tieFormat > tieFormatDefaults()
  *
- * A tieFormatName that reaches the catalogue lookup and names no factory tie format is refused with
- * INVALID_VALUES, as `addEvent` refuses it. It used to build STANDARD silently.
+ * The factory holds no named formats, so a tieFormatName that matches no tieFormat the event holds is refused with
+ * INVALID_VALUES, whatever it names.
  *
  * The two lookups in the middle of that chain — the MAIN-structure `find` and the
  * `tieFormatId` `find` — were never invoked by any spec, so both callbacks sat
@@ -17,7 +17,6 @@
  * which is exactly where a silent precedence change would do damage.
  */
 import { getDrawFormat } from '@Generators/drawDefinitions/getDrawFormat';
-import { tieFormatConstants } from '@courthive/competition-catalogue';
 import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { describe, expect, it } from 'vitest';
 
@@ -25,8 +24,6 @@ import { describe, expect, it } from 'vitest';
 import { INVALID_TIE_FORMAT, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { TEAM } from '@Constants/eventConstants';
-
-const { COLLEGE_D3 } = tieFormatConstants;
 
 describe('getDrawFormat — TEAM tieFormat resolution', () => {
   it('uses the existing MAIN structure tieFormat when params carry none', () => {
@@ -103,7 +100,7 @@ describe('getDrawFormat — TEAM tieFormat resolution', () => {
     expect(result.tieFormat).toBeUndefined();
   });
 
-  it('refuses a tieFormatName that names no factory tie format, as addEvent does', () => {
+  it('refuses a tieFormatName that names no tieFormat the event holds', () => {
     const result: any = getDrawFormat({ tieFormatName: 'NOT_A_TIE_FORMAT', matchUpType: TEAM, eventType: TEAM });
 
     expect(result.error).toEqual(INVALID_VALUES);
@@ -119,12 +116,14 @@ describe('getDrawFormat — TEAM tieFormat resolution', () => {
     expect(result.error).toEqual(INVALID_VALUES);
   });
 
-  it('still builds a catalogue tie format by name, and STANDARD', () => {
-    let result: any = getDrawFormat({ tieFormatName: COLLEGE_D3, matchUpType: TEAM, eventType: TEAM });
-    expect(result.error).toBeUndefined();
-    expect(result.tieFormat.tieFormatName).toEqual('College D3');
-
-    result = getDrawFormat({ tieFormatName: 'STANDARD', matchUpType: TEAM, eventType: TEAM });
+  it('refuses a catalogue name and STANDARD: the factory resolves no names', () => {
+    for (const tieFormatName of ['COLLEGE_D3', 'STANDARD']) {
+      const result: any = getDrawFormat({ tieFormatName, matchUpType: TEAM, eventType: TEAM });
+      expect(result.error).toEqual(INVALID_VALUES);
+      expect(result.context).toEqual({ tieFormatName });
+    }
+    // without a name, the default TEAM format
+    const result: any = getDrawFormat({ matchUpType: TEAM, eventType: TEAM });
     expect(result.error).toBeUndefined();
     expect(result.tieFormat.winCriteria.valueGoal).toEqual(5);
   });

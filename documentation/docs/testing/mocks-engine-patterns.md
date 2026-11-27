@@ -918,8 +918,9 @@ test('reproduce specific draw configuration', () => {
 Use the same seed to compare output before and after a code change:
 
 ```js
+import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { fixtures } from 'tods-competition-factory';
-const { POLICY_SEEDING_DEFAULT, POLICY_SEEDING_ITF } = fixtures.policies;
+const { POLICY_SEEDING_DEFAULT } = fixtures.policies;
 
 test('new seeding algorithm preserves draw fairness', () => {
   const seed = 42;

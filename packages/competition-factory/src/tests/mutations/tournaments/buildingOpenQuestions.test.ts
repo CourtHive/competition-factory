@@ -1,4 +1,5 @@
 import { addDrawDefinition } from '@Mutate/drawDefinitions/addDrawDefinition';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, test } from 'vitest';
@@ -10,8 +11,8 @@ import { COMPETITOR } from '@Constants/participantRoles';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
 /**
- * building-a-tournament.md § 8: a refusal writes nothing and creates no empty arrays, a named tieFormat's ids are built
- * from the event as stored, and a flight is the flight's own.
+ * building-a-tournament.md § 8: a refusal writes nothing and creates no empty arrays, a supplied tieFormat's ids come
+ * from the caller's uuids, and a flight is the flight's own.
  */
 const individual = (participantId: string) => ({
   person: { standardGivenName: 'A', standardFamilyName: participantId },
@@ -49,28 +50,27 @@ describe('a refused or empty call writes nothing', () => {
   });
 });
 
-describe('addEvent builds a named tieFormat from the event as stored', () => {
-  test("a mock event's collection ids carry its minted eventId", () => {
-    tournamentEngine.newTournamentRecord();
-    const result: any = tournamentEngine.addEvent({
-      event: { eventType: TEAM_EVENT, tieFormatName: 'COLLEGE_DEFAULT', isMock: true },
-    });
-    expect(result.success).toEqual(true);
-    const { eventId, tieFormat } = result.event;
-    const collectionIds = tieFormat.collectionDefinitions.map(({ collectionId }) => collectionId);
-    expect(collectionIds.every((collectionId) => collectionId.startsWith(`${eventId}-COL-`))).toEqual(true);
-  });
-
-  test("a named tieFormat's collection ids come from the caller's uuids", () => {
+describe("addEvent and a TEAM event's tieFormat", () => {
+  test("a supplied tieFormat's collection ids come from the caller's uuids", () => {
     tournamentEngine.newTournamentRecord();
     const uuids = ['u1', 'u2', 'u3', 'u4', 'u5', 'u6', 'u7', 'u8'];
     const result: any = tournamentEngine.addEvent({
-      event: { eventType: TEAM_EVENT, tieFormatName: 'COLLEGE_DEFAULT' },
+      event: { eventType: TEAM_EVENT, tieFormat: resolveTieFormat('COLLEGE_DEFAULT') },
       uuids: [...uuids],
     });
     expect(result.success).toEqual(true);
     const collectionIds = result.event.tieFormat.collectionDefinitions.map(({ collectionId }) => collectionId);
     expect(collectionIds.every((collectionId) => uuids.includes(collectionId))).toEqual(true);
+  });
+
+  test('a tieFormatName alone names no tie format: it is refused and writes nothing', () => {
+    tournamentEngine.newTournamentRecord();
+    const result: any = tournamentEngine.addEvent({
+      event: { eventType: TEAM_EVENT, tieFormatName: 'COLLEGE_DEFAULT' },
+    });
+    expect(result.error).toEqual(INVALID_VALUES);
+    expect(result.context).toEqual({ tieFormatName: 'COLLEGE_DEFAULT' });
+    expect(record().events).toBeUndefined();
   });
 });
 

@@ -85,7 +85,7 @@ export function generateDrawTypeAndModifyDrawDefinition(params: GenerateDrawType
 
   tieFormat = copyTieFormat(tieFormat ?? resolveTieFormat({ drawDefinition })?.tieFormat);
 
-  // mint any missing collectionIds. A published `fixtures.tieFormats.*` object carries none — it cannot,
+  // mint any missing collectionIds. A published tie format carries none — it cannot,
   // since a collectionId identifies a collection INSTANCE within a record — and without them every
   // generated line carries `collectionId: null`, cannot be attributed to its collection, and the tie
   // never scores. Safe to mint in place: `copyTieFormat` above already detached this from the caller.

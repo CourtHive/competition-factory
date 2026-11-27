@@ -2121,7 +2121,6 @@ swissConstants
 syncEngine
 tallyConstants
 tallyParticipantResults
-tieFormatConstants
 tieFormatGenderValidityCheck
 tieFormatGovernor
 timeInsideBlock

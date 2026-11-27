@@ -32,17 +32,18 @@ For each matchUp, the first found:
 
 1. a `ratingsPolicy` passed to `generateDynamicRatings`;
 2. a ratings policy attached to the matchUp's event, then to the tournament;
-3. the `ratingsPolicy` of the matchUp's `competitionFormat` (its structure's, then its drawDefinition's, then its event's): a preset by name, such as `'POLICY_RATINGS_ELO_538_NHL'`, or a policy inline;
+3. the `ratingsPolicy` of the matchUp's `competitionFormat` (its structure's, then its drawDefinition's, then its event's): a policy inline, such as the catalogue package's `ratingsPresets.POLICY_RATINGS_ELO_538_NHL`;
 4. `POLICY_RATINGS_DEFAULT`.
 
-A preset name the factory does not know, or an inline policy without `expectation`, `k` and `actual`, refuses the run with `INVALID_VALUES` before anything is written. For an unknown name, `info` names the preset and `context` carries it as `ratingsPolicy`, with the `matchUpId`.
+An inline policy without `expectation`, `k` and `actual` refuses the run with `INVALID_VALUES` before anything is written. So does a preset name: the factory holds no ratings presets, so a string selects nothing. `info` names it and `context` carries it as `ratingsPolicy`, with the `matchUpId`.
 
-When a `competitionFormat` that names a preset is attached (`addEvent`, `modifyEvent`), the preset's full policy is stored as its `ratingsPolicy`, and the name is kept as `ratingsPolicyName`, a label that is never looked up. A stored record therefore rates without the preset catalogue. A record stored with only a name still rates by that preset in 7.x. Selecting a preset by name is deprecated: presets leave the core in 8.0.0, so pass the policy object (see [Migration to 8.0.0](../migration-8.0.0.md#named-catalogue-inputs)).
+A record that 7.x stored with a preset's full policy (and the name beside it as `ratingsPolicyName`, a label) rates as it did. A record stored with only a name is read unchanged; to rate it, attach the policy object (`modifyEvent` with the `competitionFormat`) or pass `ratingsPolicy` to `generateDynamicRatings` (see [Migration to 8.0.0](../migration-8.0.0.md#named-catalogue-inputs)).
 
 ```js
+import { ratingsPresets } from '@courthive/competition-catalogue';
 tournamentEngine.modifyEvent({
   eventId,
-  eventUpdates: { competitionFormat: { sport: 'OTHER', ratingsPolicy: 'POLICY_RATINGS_ELO_538_NHL' } },
+  eventUpdates: { competitionFormat: { sport: 'OTHER', ratingsPolicy: ratingsPresets.POLICY_RATINGS_ELO_538_NHL } },
 });
 ```
 
@@ -74,6 +75,10 @@ The factory holds no player's career history, so a `MATCHES_PLAYED` K reads the 
 
 ## Presets
 
+The factory holds `POLICY_RATINGS_DEFAULT` and `POLICY_RATINGS_COMPETITION_FORM` (in `fixtures.policies`). The others
+are published by the catalogue package, `@courthive/competition-catalogue`, each as a `POLICY_RATINGS_*`
+policyDefinitions export and, as a bare ratings policy, in `ratingsPresets`.
+
 For basketball, American football, ice hockey, football, rugby union and volleyball, with runnable examples, see [Rating Other Sports](./ratingsOtherSports.md).
 
 | Preset                              | Method                                                                                                                                                                                                              |
@@ -89,8 +94,9 @@ For basketball, American football, ice hockey, football, rugby union and volleyb
 A matchUp has no home or away side, so no preset encodes home advantage.
 
 ```js
-import { fixtures, scaleEngine, tournamentEngine } from 'tods-competition-factory';
+import { scaleEngine, tournamentEngine } from 'tods-competition-factory';
+import { POLICY_RATINGS_ELO_538_TENNIS } from '@courthive/competition-catalogue';
 
-tournamentEngine.attachPolicies({ policyDefinitions: fixtures.policies.POLICY_RATINGS_ELO_538_TENNIS });
+tournamentEngine.attachPolicies({ policyDefinitions: POLICY_RATINGS_ELO_538_TENNIS });
 scaleEngine.generateDynamicRatings({ matchUpIds, matchesPlayed: { [participantId]: 42 } });
 ```

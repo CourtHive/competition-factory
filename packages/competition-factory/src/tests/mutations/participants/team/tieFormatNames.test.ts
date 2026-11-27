@@ -1,4 +1,4 @@
-import { tieFormatConstants, tieFormats } from '@courthive/competition-catalogue';
+import { resolveTieFormat, tieFormatConstants, tieFormats } from '@courthive/competition-catalogue';
 import tournamentEngine from '@Engines/syncEngine';
 import { mocksEngine } from '../../../..';
 import { expect, test } from 'vitest';
@@ -13,20 +13,20 @@ const { COLLEGE_JUCO, DOMINANT_DUO, LAVER_CUP } = tieFormatConstants;
 // prettier-ignore
 const scenarios = [
   {
-    mockProfile: { eventProfiles: [{ eventType: TEAM, tieFormatName: COLLEGE_JUCO, drawProfiles: [{ drawSize: 2}] }]},
+    mockProfile: { eventProfiles: [{ eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_JUCO), drawProfiles: [{ drawSize: 2}] }]},
     expectation: { event: tieFormats.COLLEGE_JUCO }
   },
   {
-    mockProfile: { eventProfiles: [{ eventType: TEAM, tieFormatName: LAVER_CUP, drawProfiles: [{ drawSize: 2}] }]},
+    mockProfile: { eventProfiles: [{ eventType: TEAM, tieFormat: resolveTieFormat(LAVER_CUP), drawProfiles: [{ drawSize: 2}] }]},
     expectation: { event: tieFormats.LAVER_CUP }
   },
   {
-    mockProfile: { drawProfiles: [{ eventType: TEAM, tieFormatName: COLLEGE_JUCO, drawSize: 2 }]},
+    mockProfile: { drawProfiles: [{ eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_JUCO), drawSize: 2 }]},
     // expecting it to be on draw since NOT equivalent in scope to event (because UUIDs are different - see tieFormatDefaults.js)
     expectation: { draw: tieFormats.COLLEGE_JUCO, event: tieFormats.COLLEGE_JUCO }
   },
   {
-    mockProfile: { drawProfiles: [{ eventType: TEAM, tieFormatName: DOMINANT_DUO, drawSize: 8, drawType: COMPASS }]},
+    mockProfile: { drawProfiles: [{ eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO), drawSize: 8, drawType: COMPASS }]},
     // not expecting it to be on draw since equivalent in scope to event
     expectation: { event: tieFormats.DOMINANT_DUO }
   },

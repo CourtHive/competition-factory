@@ -1,4 +1,4 @@
-import { POLICY_RATINGS_ELO_WORLD_FOOTBALL } from '@courthive/competition-catalogue';
+import { POLICY_RATINGS_ELO_WORLD_FOOTBALL, ratingsPresets } from '@courthive/competition-catalogue';
 import { POLICY_RATINGS_DEFAULT } from '@Fixtures/policies/POLICY_RATINGS_DEFAULT';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -56,28 +56,30 @@ it('rates by the default without a competitionFormat selection', () => {
   expect(rate({}).values).toEqual([1513, 1488]);
 });
 
-it("reads the preset an event's competitionFormat names", () => {
-  const { values } = rate({ eventFormat: { sport: 'OTHER', ratingsPolicy: 'POLICY_RATINGS_ELO_538_NHL' } });
+it("reads the policy an event's competitionFormat holds", () => {
+  const { values } = rate({
+    eventFormat: { sport: 'OTHER', ratingsPolicy: ratingsPresets.POLICY_RATINGS_ELO_538_NHL },
+  });
   expect(values).toEqual([1505, 1495]);
 });
 
 it("reads an inline policy on the structure's competitionFormat before the event's", () => {
   const { values } = rate({
     structureFormat: { ratingsPolicy: POLICY_RATINGS_ELO_WORLD_FOOTBALL[POLICY_TYPE_RATINGS] },
-    eventFormat: { ratingsPolicy: 'POLICY_RATINGS_ELO_538_NHL' },
+    eventFormat: { ratingsPolicy: ratingsPresets.POLICY_RATINGS_ELO_538_NHL },
   });
   expect(values).toEqual([1526, 1474]);
 });
 
 it("takes an attached policy, and a passed one, before the competitionFormat's", () => {
-  const eventFormat = { ratingsPolicy: 'POLICY_RATINGS_ELO_538_NHL' };
+  const eventFormat = { ratingsPolicy: ratingsPresets.POLICY_RATINGS_ELO_538_NHL };
   expect(rate({ eventFormat, policyDefinitions: POLICY_RATINGS_ELO_WORLD_FOOTBALL }).values).toEqual([1526, 1474]);
   const ratingsPolicy = POLICY_RATINGS_DEFAULT[POLICY_TYPE_RATINGS];
   expect(rate({ eventFormat, params: { ratingsPolicy } }).values).toEqual([1513, 1488]);
 });
 
 it.each([
-  ['an unknown preset name', 'POLICY_RATINGS_NONE'],
+  ['a preset name, which selects nothing', 'POLICY_RATINGS_NONE'],
   ['an inline policy missing its parts', { k: { rule: 'CONSTANT', value: 20 } }],
 ])('refuses %s before rating anything', (_, ratingsPolicy) => {
   const { result, values } = rate({ eventFormat: { ratingsPolicy } });
