@@ -179,7 +179,8 @@
         "types": "./dist/constants.d.cts",
         "default": "./dist/constants/index.js"
       }
-    }
+    },
+    "./package.json": "./package.json"
   },
   "types": "dist/tods-competition-factory.d.ts",
   "sideEffects": false,
