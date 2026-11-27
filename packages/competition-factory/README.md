@@ -4,13 +4,10 @@
 
 # tods-competition-factory continues as competition-factory
 
-> **Coming next:** [`competition-factory`](https://www.npmjs.com/package/competition-factory) replaces
-> `tods-competition-factory`. It is being prepared as 8.0.0; until it is published, that name holds a reserved
-> placeholder. Keep using `tods-competition-factory` until then, and read the
-> [migration guide](https://courthive.github.io/competition-factory/docs/migration-8.0.0) to prepare.
+**This package is now [`competition-factory`](https://www.npmjs.com/package/competition-factory).** This is the final
+release of `tods-competition-factory`; the same factory continues under the new name from 8.0.0.
 
-This is the final release of `tods-competition-factory`. The same factory continues under the new name from 8.0.0.
-
+- **Package:** [`competition-factory`](https://www.npmjs.com/package/competition-factory)
 - **Documentation:** <https://courthive.github.io/competition-factory/>
 - **Migration guide:** [Migration to 8.0.0](https://courthive.github.io/competition-factory/docs/migration-8.0.0)
 - **Source and issues:** <https://github.com/CourtHive/competition-factory>
@@ -53,13 +50,13 @@ same results come out wherever it runs: in a browser, on a server, or offline.
 
 ## Support for 7.x
 
-`tods-competition-factory` 7.x is not maintained after `competition-factory` 8.0.0 is published: no further 7.x
-releases, fixes or security patches. Every published 7.x version stays installable, and nothing is republished under
-this name. The old name is not repointed to 8.x.
+`tods-competition-factory` 7.x is no longer maintained: there are no further 7.x releases, fixes or security
+patches. Every published 7.x version stays installable, and nothing is republished under this name. The old name is
+not repointed to 8.x.
 
 ## Migrating
 
-Migrate in two steps. The first runs on this release, where every route that 8.0.0 removes still works.
+Migrate in two steps. The first runs on this final 7.x release, where every route that 8.0.0 removes still works.
 
 1. **Clear the deprecations on this release.** Upgrade to this version of `tods-competition-factory` and resolve:
    - every `@deprecated` tag your editor or type checker shows on a factory symbol; each message names the
@@ -70,7 +67,7 @@ Migrate in two steps. The first runs on this release, where every route that 8.0
    - the other changes the [migration guide](https://courthive.github.io/competition-factory/docs/migration-8.0.0)
      lists, including the [table by governor](https://courthive.github.io/competition-factory/docs/migration-8.0.0#by-governor)
      of every method that moves to `tools` or `availability`, is renamed or is removed.
-2. **Change the package** once 8.0.0 is published. Replace the dependency and the package name in your imports:
+2. **Change the package.** Replace the dependency and the package name in your imports:
 
    ```sh
    npm uninstall tods-competition-factory
@@ -86,14 +83,14 @@ Migrate in two steps. The first runs on this release, where every route that 8.0
 
    Then work through the guide's 8.0.0 changes that have no 7.x equivalent.
 
-## Installing this release
+## Getting started
 
 ```sh
-npm install tods-competition-factory
+npm install competition-factory
 ```
 
 ```js
-import { mocksEngine, tournamentEngine } from 'tods-competition-factory';
+import { mocksEngine, tournamentEngine } from 'competition-factory';
 
 const { tournamentRecord } = mocksEngine.generateTournamentRecord({
   drawProfiles: [{ drawSize: 32, drawType: 'FEED_IN_CHAMPIONSHIP' }],
