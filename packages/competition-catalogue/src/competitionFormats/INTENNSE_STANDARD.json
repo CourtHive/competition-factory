@@ -1,0 +1,66 @@
+{
+  "competitionFormatName": "INTENNSE_STANDARD",
+  "matchUpFormat": "SET7XA-S:T10P",
+  "sport": "INTENNSE",
+  "timerProfile": {
+    "shotClockSeconds": 14,
+    "segmentTimers": [
+      {
+        "segmentType": "set",
+        "direction": "down",
+        "minutes": 10
+      }
+    ],
+    "changeoverSeconds": 0,
+    "setBreakSeconds": 120
+  },
+  "timeoutRules": {
+    "count": 5,
+    "per": "MATCHUP",
+    "durationSeconds": 60,
+    "maxPerSide": 5
+  },
+  "substitutionRules": {
+    "allowed": true,
+    "allowedMatchUpTypes": ["SINGLES", "DOUBLES"],
+    "timing": "BETWEEN_POINTS"
+  },
+  "playerRules": {
+    "maxMinutesPerSegment": 6,
+    "matchUpTypes": ["SINGLES"]
+  },
+  "penaltyBoxProfile": {
+    "durationSeconds": 120
+  },
+  "penaltyProfile": {
+    "sport": "INTENNSE",
+    "penaltyTypes": [
+      { "penaltyType": "UNSPORTSMANLIKE_CONDUCT", "label": "Unsportsmanlike", "category": "conduct" },
+      { "penaltyType": "BALL_ABUSE", "label": "Ball Abuse", "category": "conduct" },
+      { "penaltyType": "RACKET_ABUSE", "label": "Racket Abuse", "category": "conduct" }
+    ],
+    "escalation": [
+      { "step": 1, "consequence": "warning" },
+      { "step": 2, "consequence": "point" },
+      { "step": 3, "consequence": "game" },
+      { "step": 4, "consequence": "default" }
+    ]
+  },
+  "pointProfile": {
+    "sport": "INTENNSE",
+    "pointResults": [
+      { "result": "Ace", "label": "Ace", "isServe": true },
+      { "result": "Winner", "label": "Winner" },
+      { "result": "Serve Winner", "label": "Serve Winner", "isServe": true },
+      { "result": "Forced Error", "label": "Forced Error", "isError": true },
+      { "result": "Unforced Error", "label": "Unforced Error", "isError": true },
+      { "result": "Double Fault", "label": "Double Fault", "isServe": true, "isError": true },
+      { "result": "Touch", "label": "Touch" },
+      { "result": "Penalty", "label": "Penalty" }
+    ]
+  },
+  "pointMultipliers": [
+    { "condition": { "results": ["Ace"] }, "value": 2 },
+    { "condition": { "results": ["Winner"] }, "value": 2 }
+  ]
+}

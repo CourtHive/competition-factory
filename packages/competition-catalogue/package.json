@@ -1,0 +1,62 @@
+{
+  "name": "@courthive/competition-catalogue",
+  "version": "0.0.0",
+  "description": "Named tie formats, organisation policies and competition formats for tods-competition-factory, as plain data",
+  "keywords": [
+    "TODS",
+    "CODES",
+    "tie format",
+    "policies",
+    "competition",
+    "tournament"
+  ],
+  "author": "Charles Allen <charles@CourtHive.com> (CourtHive.com)",
+  "license": "MIT",
+  "private": false,
+  "homepage": "https://courthive.github.io/competition-factory/",
+  "bugs": {
+    "url": "https://github.com/CourtHive/competition-factory/issues",
+    "email": "support@CourtHive.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CourtHive/competition-factory.git",
+    "directory": "packages/competition-catalogue"
+  },
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "verify": "pnpm check-types && pnpm build && node scripts/verify-dist.mjs",
+    "prepublishOnly": "pnpm verify"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "rollup": "4.68.7",
+    "rollup-plugin-dts": "6.5.1",
+    "typescript": "^6.0.2"
+  }
+}

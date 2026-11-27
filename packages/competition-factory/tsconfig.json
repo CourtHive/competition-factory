@@ -7,6 +7,11 @@
   //
   // When adding a new path alias, edit tsconfig.base.json — and mirror it in
   // vitest.aliases.mts, which is what the two test projects resolve against.
+  // (tsconfig.base.json is read with JSON.parse by rollup.config.mjs, so it carries no comments.)
+  //
+  // The `@courthive/competition-catalogue` path is for tests and test support only: it resolves to the catalogue
+  // package's source, which sits beside this package, hence the root one level up. Nothing the build bundles imports it.
   "extends": "./tsconfig.base.json",
-  "exclude": ["dist", "src/**/*.test.ts", "src/**/scratch/**", "**/*tsconfig*/**", "src/**/*.spec.ts"]
+  "exclude": ["dist", "src/**/*.test.ts", "src/**/scratch/**", "**/*tsconfig*/**", "src/**/*.spec.ts"],
+  "compilerOptions": { "rootDir": ".." }
 }

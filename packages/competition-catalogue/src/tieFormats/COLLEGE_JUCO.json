@@ -1,0 +1,22 @@
+{
+  "collectionDefinitions": [
+    {
+      "collectionName": "Doubles",
+      "matchUpCount": 3,
+      "matchUpFormat": "SET1-S:8/TB7",
+      "matchUpType": "DOUBLES",
+      "matchUpValue": 1
+    },
+    {
+      "collectionName": "Singles",
+      "matchUpCount": 6,
+      "matchUpFormat": "SET3-S:6/TB7",
+      "matchUpType": "SINGLES",
+      "matchUpValue": 1
+    }
+  ],
+  "tieFormatName": "College JUCO",
+  "winCriteria": {
+    "valueGoal": 5
+  }
+}

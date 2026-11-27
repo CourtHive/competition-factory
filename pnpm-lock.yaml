@@ -210,11 +210,29 @@ importers:
         specifier: 3.10.1
         version: 3.10.1
 
+  packages/competition-catalogue:
+    devDependencies:
+      esbuild:
+        specifier: 0.28.2
+        version: 0.28.2
+      rollup:
+        specifier: 4.68.7
+        version: 4.68.7
+      rollup-plugin-dts:
+        specifier: 6.5.1
+        version: 6.5.1(rollup@4.68.7)(typescript@6.0.3)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
   packages/competition-factory:
     devDependencies:
       '@babel/core':
         specifier: 8.1.2
         version: 8.1.2
+      '@courthive/competition-catalogue':
+        specifier: workspace:*
+        version: link:../competition-catalogue
       '@dep-tree/cli':
         specifier: 0.23.4
         version: 0.23.4

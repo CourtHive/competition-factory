@@ -25,4 +25,6 @@ export const testFileAliases = {
   '@Tests': new URL('./src/tests', import.meta.url).pathname,
   '@Tools': new URL('./src/tools', import.meta.url).pathname,
   '@Types': new URL('./src/types', import.meta.url).pathname,
+  // tests only: the catalogue's source (the package is a devDependency), so a test run needs no catalogue build
+  '@courthive/competition-catalogue': new URL('../competition-catalogue/src/index.ts', import.meta.url).pathname,
 };

@@ -196,6 +196,11 @@ jobs:
       - name: verify:types
         run: pnpm verify:types
 
+      # The catalogue package (packages/competition-catalogue): its types, its build, and the built package's
+      # contents. The factory's tests read the catalogue's source, so this is the only gate on its build.
+      - name: verify:catalogue
+        run: pnpm verify:catalogue
+
       - name: verify:lint
         run: pnpm verify:lint
 

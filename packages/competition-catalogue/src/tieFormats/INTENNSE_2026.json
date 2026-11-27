@@ -1,0 +1,68 @@
+{
+  "tieFormatName": "INTENNSE 2026",
+  "winCriteria": {
+    "aggregateValue": true
+  },
+  "collectionDefinitions": [
+    {
+      "collectionId": "intennse-ms",
+      "collectionName": "Men's Singles",
+      "matchUpType": "SINGLES",
+      "matchUpCount": 2,
+      "matchUpFormat": "SET2XA-S:T10",
+      "scoreValue": 1,
+      "gender": "MALE",
+      "category": {
+        "categoryName": "MS"
+      }
+    },
+    {
+      "collectionId": "intennse-ws",
+      "collectionName": "Women's Singles",
+      "matchUpType": "SINGLES",
+      "matchUpCount": 2,
+      "matchUpFormat": "SET2XA-S:T10",
+      "scoreValue": 1,
+      "gender": "FEMALE",
+      "category": {
+        "categoryName": "WS"
+      }
+    },
+    {
+      "collectionId": "intennse-md",
+      "collectionName": "Men's Doubles",
+      "matchUpType": "DOUBLES",
+      "matchUpCount": 1,
+      "matchUpFormat": "SET1A-S:T10",
+      "scoreValue": 1,
+      "gender": "MALE",
+      "category": {
+        "categoryName": "MD"
+      }
+    },
+    {
+      "collectionId": "intennse-wd",
+      "collectionName": "Women's Doubles",
+      "matchUpType": "DOUBLES",
+      "matchUpCount": 1,
+      "matchUpFormat": "SET1A-S:T10",
+      "scoreValue": 1,
+      "gender": "FEMALE",
+      "category": {
+        "categoryName": "WD"
+      }
+    },
+    {
+      "collectionId": "intennse-xd",
+      "collectionName": "Mixed Doubles",
+      "matchUpType": "DOUBLES",
+      "matchUpCount": 1,
+      "matchUpFormat": "SET1A-S:T10",
+      "scoreValue": 1,
+      "gender": "MIXED",
+      "category": {
+        "categoryName": "XD"
+      }
+    }
+  ]
+}

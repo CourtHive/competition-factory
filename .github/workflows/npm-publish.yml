@@ -9,6 +9,10 @@ name: Publish to npm
 #
 # `workflow_dispatch` is kept for manual backfill — pass a `tag`
 # input (e.g. `v3.1.5`) to publish a tag that already exists.
+#
+# Two packages release from this repository, each with its own release PR and tag:
+# tods-competition-factory as `vX.Y.Z`, and @courthive/competition-catalogue as
+# `competition-catalogue-vX.Y.Z`. The tag decides which job runs.
 
 on:
   release:
@@ -22,6 +26,7 @@ on:
 
 jobs:
   publish:
+    if: ${{ !startsWith(github.event.release.tag_name || inputs.tag, 'competition-catalogue-v') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -109,3 +114,40 @@ jobs:
 
       - run: npm publish --ignore-scripts --provenance --access public --tag ${{ steps.distTag.outputs.tag }}
         working-directory: packages/competition-factory
+
+  publish-catalogue:
+    if: ${{ startsWith(github.event.release.tag_name || inputs.tag, 'competition-catalogue-v') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Resolve tag
+        id: ref
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${{ github.event.release.tag_name }}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.ref.outputs.tag }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+
+      - run: corepack enable
+
+      # The catalogue's declarations are checked against the factory's type files, so the workspace installs whole.
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+
+      # check-types, build, and the built package's contents (scripts/verify-dist.mjs)
+      - run: pnpm verify
+        working-directory: packages/competition-catalogue
+
+      - run: npm publish --ignore-scripts --provenance --access public
+        working-directory: packages/competition-catalogue

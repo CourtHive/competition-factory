@@ -40,7 +40,8 @@
       "@Query/*": ["./src/query/*"],
       "@Tests/*": ["./src/tests/*"],
       "@Tools/*": ["./src/tools/*"],
-      "@Types/*": ["./src/types/*"]
+      "@Types/*": ["./src/types/*"],
+      "@courthive/competition-catalogue": ["../competition-catalogue/src/index.ts"]
     },
 
     "emitDecoratorMetadata": true,
