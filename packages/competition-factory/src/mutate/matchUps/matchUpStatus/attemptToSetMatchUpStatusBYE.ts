@@ -49,7 +49,6 @@ export function attemptToSetMatchUpStatusBYE({
 
   if (matchUpIncludesBye) {
     matchUp.matchUpStatus = BYE;
-    matchUp.matchUpStatusCodes = [];
     clearSideExitProvenance(matchUp);
     // Preserve by default: a director may be mid-swap and the surrounding schedule is
     // theirs. Only an explicit `preserveScheduling: false` gives the slot back.

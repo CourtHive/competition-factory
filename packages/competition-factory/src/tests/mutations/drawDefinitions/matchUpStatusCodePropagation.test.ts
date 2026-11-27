@@ -1,4 +1,3 @@
-import { isProjectedExitCode } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -6,7 +5,7 @@ import { expect, it } from 'vitest';
 // constants
 import { DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
-it('will properly clean up matchUpStatusCodes when removing DOUBLE_WALKOVERs', () => {
+it('will properly clean up reasons when removing DOUBLE_WALKOVERs', () => {
   const mockProfile = {
     // setting the participantsCount to one less than the drawSize will ensure a single BYE is produced
     drawProfiles: [{ drawSize: 4, participantsCount: 3 }],
@@ -30,7 +29,7 @@ it('will properly clean up matchUpStatusCodes when removing DOUBLE_WALKOVERs', (
       scoreStringSide2: '',
     },
     matchUpStatus: DOUBLE_WALKOVER,
-    matchUpStatusCodes: ['WD.WD', 'WD.WD'],
+    sideStatusCodes: { 1: 'WD.WD', 2: 'WD.WD' },
     matchUpFormat: 'SET1-S:8/TB7@7',
   };
 
@@ -44,7 +43,8 @@ it('will properly clean up matchUpStatusCodes when removing DOUBLE_WALKOVERs', (
   scoringMatchUp = tournamentEngine
     .allTournamentMatchUps()
     .matchUps.find(({ matchUpId }) => matchUpId === scoringMatchUp.matchUpId);
-  expect(scoringMatchUp.matchUpStatusCodes).toEqual(['WD.WD', 'WD.WD']);
+  expect(scoringMatchUp.sideStatusCodes).toEqual({ 1: 'WD.WD', 2: 'WD.WD' });
+  expect(scoringMatchUp.matchUpStatusCodes).toBeUndefined();
   expect(scoringMatchUp.matchUpStatus).toEqual(DOUBLE_WALKOVER);
 
   let finalMatchUp = tournamentEngine.allTournamentMatchUps({
@@ -53,12 +53,9 @@ it('will properly clean up matchUpStatusCodes when removing DOUBLE_WALKOVERs', (
   expect(finalMatchUp.roundNumber).toEqual(2);
   expect(finalMatchUp.winningSide).toEqual(1);
   expect(finalMatchUp.matchUpStatus).toEqual(WALKOVER);
-  // The claim is that the scored matchUp's POLICY codes (`WD.WD`) did not ride downstream onto
-  // the propagated final — so it is stated against the policy tenant, which is what survives the
-  // exit tenant's eviction. It used to read `filter((code) => !code.sideNumber)`, i.e. "keep the
-  // elements that are not the projection", which spelled the same claim in terms of the projection's
-  // own shape and so broke the moment the projection stopped being written.
-  expect((finalMatchUp.matchUpStatusCodes ?? []).filter((code: any) => !isProjectedExitCode(code))).toEqual([]);
+  // the scored matchUp's reasons (`WD.WD`) do not ride downstream onto the propagated final
+  expect(finalMatchUp.sideStatusCodes).toBeUndefined();
+  expect(finalMatchUp.matchUpStatusCodes).toBeUndefined();
 
   // outcome copied from client payload
   outcome = {
@@ -67,7 +64,7 @@ it('will properly clean up matchUpStatusCodes when removing DOUBLE_WALKOVERs', (
       scoreStringSide2: '',
     },
     matchUpStatus: WALKOVER,
-    matchUpStatusCodes: ['WD.ILL'],
+    sideStatusCodes: { 1: 'WD.ILL' },
     winningSide: 2,
     matchUpFormat: 'SET1-S:8/TB7@7',
   };
@@ -82,7 +79,7 @@ it('will properly clean up matchUpStatusCodes when removing DOUBLE_WALKOVERs', (
   scoringMatchUp = tournamentEngine
     .allTournamentMatchUps()
     .matchUps.find(({ matchUpId }) => matchUpId === scoringMatchUp.matchUpId);
-  expect(scoringMatchUp.matchUpStatusCodes).toEqual(['WD.ILL']);
+  expect(scoringMatchUp.sideStatusCodes).toEqual({ 1: 'WD.ILL' });
   expect(scoringMatchUp.matchUpStatus).toEqual(WALKOVER);
 
   // only one draw in this tournament so we expect only one final matchUp
@@ -92,5 +89,5 @@ it('will properly clean up matchUpStatusCodes when removing DOUBLE_WALKOVERs', (
 
   expect(finalMatchUp.readyToScore).toEqual(true);
   expect(finalMatchUp.matchUpStatus).toEqual(TO_BE_PLAYED);
-  expect(finalMatchUp.matchUpStatusCodes).toBeUndefined();
+  expect(finalMatchUp.sideStatusCodes).toBeUndefined();
 });

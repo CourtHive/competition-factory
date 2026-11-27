@@ -60,7 +60,7 @@ import {
 } from '@Mutate/drawDefinitions/matchUpGovernor/noDownstreamDependencies';
 
 // constants and types
-import type { DerivedStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
+import type { CallStatusReasons, RetainedStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
@@ -143,9 +143,10 @@ type SetMatchUpStateArgs = {
   /** set ONLY by `progressExitStatus` — see `checkParticipants` */
   propagatingExit?: boolean;
   propagateRetirementAsExit?: boolean;
-  matchUpStatusCodes?: string[];
-  /** set ONLY by engine writers whose `matchUpStatusCodes` are derived display — see `attributeDerivedStatusCodes` */
-  derivedStatusCodes?: DerivedStatusCodes;
+  /** the call's own reasons, set by `setMatchUpStatus` (`writeStatusReasons`) */
+  statusReasons?: CallStatusReasons;
+  /** set ONLY by engine writers that keep the reasons a matchUp holds — see `attributeRetainedStatusCodes` */
+  retainedStatusCodes?: RetainedStatusCodes;
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   autoCalcDisabled?: boolean;

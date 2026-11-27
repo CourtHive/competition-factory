@@ -1,3 +1,4 @@
+import { holdsReasons } from '../reasons';
 import { topLevelStructureId } from '@Mutate/notifications/drawNotifications';
 import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
@@ -39,7 +40,8 @@ export const RESULT_TO_DOUBLE_EXIT: Route = 'completed-to-double-exit';
 export const bareResultRequest = (request: OutcomeRequest): boolean =>
   request.score === undefined &&
   request.matchUpFormat === undefined &&
-  request.matchUpStatusCodes === undefined &&
+  !request.statusReasons?.input.submitted &&
+  !request.statusReasons?.input.clear &&
   request.carries?.notes === undefined &&
   request.carries?.schedule === undefined;
 
@@ -225,7 +227,7 @@ export function standingAwardArrival(
   if (entry.matchUpStatus !== WALKOVER && entry.matchUpStatus !== DEFAULTED) return undefined;
   const side = sideOf(entry, drawPosition);
   if (!side || entry.winningSide !== side) return undefined;
-  if (entry.score?.scoreStringSide1 || entry.matchUpStatusCodes?.length) return undefined;
+  if (entry.score?.scoreStringSide1 || holdsReasons(entry)) return undefined;
   const provenance = entry.sideExitProvenance ?? {};
   const carrier = provenance[(3 - side) as 1 | 2];
   if (Object.keys(provenance).length !== 1 || carrier?.matchUpStatus !== entry.matchUpStatus) return undefined;
@@ -270,7 +272,7 @@ export function standingWinnerAward(
   if (!entry || !drawPosition || entry.structureId !== targets.source.structureId) return undefined;
   if (entry.collectionId || entry.matchUpType === TEAM) return undefined;
   if (entry.matchUpStatus !== WALKOVER && entry.matchUpStatus !== DEFAULTED) return undefined;
-  if (!entry.winningSide || entry.score?.scoreStringSide1 || entry.matchUpStatusCodes?.length) return undefined;
+  if (!entry.winningSide || entry.score?.scoreStringSide1 || holdsReasons(entry)) return undefined;
   if (entry.sides?.some((side) => side.bye)) return undefined;
   const held = positionsOf(entry);
   if (held.length !== 1 || held.includes(drawPosition)) return undefined;
@@ -329,7 +331,7 @@ export function producedLoserArrival(
   const entry = indexed(view, loserMatchUpId);
   if (!entry || !drawPosition || !seat?.free || seat.opponentBye || seat.opponentHeld) return undefined;
   if (entry.matchUpStatus !== WALKOVER && entry.matchUpStatus !== DEFAULTED) return undefined;
-  if (entry.winningSide || !scoreless(entry) || entry.matchUpStatusCodes?.length) return undefined;
+  if (entry.winningSide || !scoreless(entry) || holdsReasons(entry)) return undefined;
   if (entry.sides?.some((side) => side.bye)) return undefined;
   const positions = positionsOf(entry);
   if (positions.some((position) => position !== drawPosition)) return undefined;
@@ -380,7 +382,7 @@ export function awardedProducedArrival(
   if (entry.matchUpStatus !== WALKOVER && entry.matchUpStatus !== DEFAULTED) return undefined;
   const side = sideOf(entry, drawPosition);
   if (!side || entry.winningSide !== side) return undefined;
-  if (!scoreless(entry) || entry.matchUpStatusCodes?.length) return undefined;
+  if (!scoreless(entry) || holdsReasons(entry)) return undefined;
   if (entry.sides?.some((entrySide) => entrySide.bye)) return undefined;
   const provenance = entry.sideExitProvenance ?? {};
   const origin = provenance[(3 - side) as 1 | 2];
@@ -418,7 +420,7 @@ export function pendingProducedArrival(view: OutcomeView, write: MatchUpWrite) {
   if (!entry || !drawPosition || !paired || !source || !sourcePosition || !paired.roundPosition) return undefined;
   if (entry.structureId !== targets.source.structureId || paired.winnerMatchUpId !== entry.matchUpId) return undefined;
   if (entry.matchUpStatus !== WALKOVER && entry.matchUpStatus !== DEFAULTED) return undefined;
-  if (entry.winningSide || !scoreless(entry) || entry.matchUpStatusCodes?.length) return undefined;
+  if (entry.winningSide || !scoreless(entry) || holdsReasons(entry)) return undefined;
   if (entry.sides?.some((side) => side.bye) || positionsOf(entry).length) return undefined;
   const side: 1 | 2 = sourcePosition < paired.roundPosition ? 1 : 2;
   const provenance = entry.sideExitProvenance ?? {};
@@ -474,7 +476,7 @@ export const cleanByeHome = (home: HydratedMatchUp | undefined): home is Hydrate
   home.matchUpStatus === BYE &&
   !home.winningSide &&
   scoreless(home) &&
-  !home.matchUpStatusCodes?.length &&
+  !holdsReasons(home) &&
   !Object.keys(home.sideExitProvenance ?? {}).length &&
   !home.loserMatchUpId;
 /**
@@ -487,7 +489,7 @@ export const undecided = (matchUp: HydratedMatchUp, loserLinked?: boolean) =>
   !matchUp.winningSide &&
   scoreless(matchUp) &&
   unplaced(matchUp) &&
-  !matchUp.matchUpStatusCodes?.length &&
+  !holdsReasons(matchUp) &&
   (loserLinked || !matchUp.loserMatchUpId) &&
   !matchUp.sides?.some((side) => side.bye);
 
@@ -515,10 +517,7 @@ export function unwoundClean(matchUp: HydratedMatchUp, withdrawn: Set<string>): 
   );
   const toBePlayed = matchUp.matchUpStatus === TO_BE_PLAYED || (matchUp.matchUpStatus === BYE && !standing);
   return (
-    toBePlayed &&
-    scoreless(matchUp) &&
-    !matchUp.matchUpStatusCodes?.length &&
-    !Object.keys(matchUp.sideExitProvenance ?? {}).length
+    toBePlayed && scoreless(matchUp) && !holdsReasons(matchUp) && !Object.keys(matchUp.sideExitProvenance ?? {}).length
   );
 }
 
@@ -622,7 +621,7 @@ export function plainByeArrival(view: OutcomeView, loser?: DirectionPlan['loser'
       entry.matchUpStatus !== BYE ||
       entry.winningSide ||
       !scoreless(entry) ||
-      entry.matchUpStatusCodes?.length ||
+      holdsReasons(entry) ||
       Object.keys(entry.sideExitProvenance ?? {}).length ||
       entry.sides?.find((s) => s.sideNumber === side)?.participantId ||
       !entry.sides?.some((s) => s.sideNumber !== side && s.bye) ||
@@ -655,7 +654,7 @@ export function heldByeLoser(view: OutcomeView) {
     targets.loserMatchUpCarriesExit ||
     !record ||
     record.provenance ||
-    record.matchUpStatusCodes?.length
+    record.reasons
   )
     return undefined;
   const passage = targets.loserThroughBye
@@ -673,7 +672,7 @@ export function heldByeLoser(view: OutcomeView) {
       matchUp.matchUpStatus !== BYE ||
       matchUp.winningSide ||
       !scoreless(matchUp) ||
-      matchUp.matchUpStatusCodes?.length ||
+      holdsReasons(matchUp) ||
       Object.keys(matchUp.sideExitProvenance ?? {}).length ||
       matchUp.sides?.find((s) => s.sideNumber === side)?.participantId !== participantId ||
       !matchUp.sides?.some((s) => s.sideNumber !== side && s.bye) ||
@@ -714,7 +713,7 @@ export function unreachedWinner(view: OutcomeView, write: MatchUpWrite, directio
     !existing.scoreHasValue &&
     !existing.carriedExit &&
     !existing.hasSideExitProvenance &&
-    !existing.matchUpStatusCodes?.length &&
+    !holdsReasons(existing) &&
     !targets.sideParticipantIds[side] &&
     !!targets.sideParticipantIds[side === 1 ? 2 : 1]
   );

@@ -1,33 +1,26 @@
 #!/usr/bin/env node
 /**
- * Fail if a NEW file in `src/` reaches for `matchUpStatusCodes`.
+ * Fail if a file in `src/` reaches for `matchUpStatusCodes`, beyond the few that must.
  *
  * ## What this guards
  *
- * `matchUpStatusCodes` carried two unrelated tenants: the scoring policy's code vocabulary, and the
- * per-side provenance of a propagated exit. The second one is evicted — `sideExitProvenance` is the
- * side-KEYED first-class record, and the array is the positional string contract clients consume.
- *
- * The destination: no dependence on any legacy array, meaning no behaviour anywhere derives from this array.
- * The eviction got there for the write path and for every read but one. Nothing stops it growing back, which is what this is.
+ * `matchUpStatusCodes` is the positional reason array records written before 8.0.0 hold. 8.x never writes it and no
+ * decision reads it: a reason lives in `sideStatusCodes` (keyed by side) or `matchUpStatusCode` (the match), and an
+ * exit's origin in `sideExitProvenance`. What may still name it is the scoring policy's own vocabulary key (a different
+ * field of the same name), the published type and the stored key list, the read-only display of a pre-8.0.0 record, the
+ * input boundary that refuses it, and the one helper that removes it from a matchUp a write touches. Nothing stops a
+ * new reader growing back, which is what this is.
  *
  * ## Why a FILE allowlist rather than a count or a line list
  *
- * Counting occurrences per file is brittle: an ordinary refactor inside an already-permitted file moves
- * the number and fails the gate for no reason, and a gate that cries wolf gets deleted. Pinning
- * `file:line` is worse — every edit above a pinned line breaks it.
- *
- * The regression this exists to catch is a **new site** reaching for the array, so the allowlist is by
- * FILE and each entry carries why it is there. Movement inside a listed file is free; a new file is a
- * failure. The complementary runtime guard is `convergingDoubleExitStatus.test.ts`, which asserts that
- * every PERSISTED element is a string — so a projection regrowing inside an allowlisted file is caught
- * there rather than here.
+ * Counting occurrences per file is brittle: an ordinary refactor inside an already-permitted file moves the number and
+ * fails the gate for no reason. Pinning `file:line` is worse. The regression this exists to catch is a **new site**
+ * reaching for the array, so the allowlist is by FILE and each entry carries why it is there.
  *
  * ## Removing an entry
  *
- * Delete the line. The gate does not require the file to still be present, so the allowlist shrinks by
- * ordinary deletion and cannot silently retain a stale permission — an entry naming a file that no
- * longer mentions the array is reported as `STALE` and fails, which is how it ratchets down.
+ * Delete the line. An entry naming a file that no longer mentions the array is reported as `STALE` and fails, which is
+ * how it ratchets down.
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -50,113 +43,25 @@ const NEEDLE = 'matchUpStatusCodes';
  * enforceable rather than aspirational: no dependence on any legacy array.
  */
 const ALLOWED = {
-  // the tenant that stays: the policy's code vocabulary
+  // the scoring policy's own vocabulary key, a different field of the same name
   'fixtures/policies/POLICY_SCORING_DEFAULT.ts': 'POLICY',
-  'fixtures/scoring/outcomes/toBePlayed.ts': 'WRITE — the blanking fixture',
-  'types/tournamentTypes.ts': 'POLICY — the published field and its element union',
 
-  // the INPUT BOUNDARY: the one place a client's positional submission is read, and the place that makes
-  // every downstream reader keyed rather than positional
-  'mutate/matchUps/matchUpStatus/sideStatusCodes.ts':
-    'BOUNDARY — splitStatusCodes reads the submitted array once and stores it keyed by attribution',
+  // the published field, deprecated, so a pre-8.0.0 record still types; the stored key list
+  'types/tournamentTypes.ts': 'TYPE — the deprecated field and its element union',
+  'mutate/tournaments/dehydrate.ts': 'TYPE — serialization key list',
 
-  // the named helpers: the one place that decides what the array holds
-  'mutate/matchUps/matchUpStatus/sideExitProvenance.ts':
-    'WRITE — deriveStatusCodes / retainPolicyCodes / policyCodeString / the symmetric clear',
+  // the one helper that removes it, and the planned writes that call it at a matchUp's stamp
+  'helpers/drawTopology/legacyStatusCodes.ts': 'DROP — removed from a matchUp a write touches',
+  'mutate/matchUps/lineUps/planReplacementEffects.ts': 'DROP — a planned stamp removes it as the live stamp does',
 
-  // writes, deriving from provenance or retaining the policy tenant
-  'mutate/drawDefinitions/positionGovernor/doubleExitAdvancement.ts': 'WRITE — retainPolicyCodes',
-  'mutate/drawDefinitions/matchUpGovernor/removeDoubleExit.ts': 'WRITE — retainPolicyCodes',
-  'mutate/drawDefinitions/resetDrawDefinition.ts': 'WRITE — blanks on reset',
-  'mutate/matchUps/drawPositions/assignDrawPositionBye.ts': 'WRITE — re-sides the policy code',
-  'mutate/matchUps/drawPositions/positionClear.ts': 'WRITE — blanks',
-  'mutate/matchUps/drawPositions/progressExitStatus.ts': 'WRITE — deriveStatusCodes',
-  'mutate/matchUps/drawPositions/setMatchUpDrawPositions.ts':
-    'WRITE — re-sides the policy codes with the participant whose side changed (option R, CA 2026-10-05)',
-  'mutate/matchUps/drawPositions/removeDirectedParticipants.ts': 'WRITE — deriveStatusCodes',
-  'mutate/matchUps/matchUpStatus/attemptToSetMatchUpStatusBYE.ts': 'WRITE — blanks',
+  // the input boundary: an outcome that still sends the array is refused
+  'mutate/matchUps/matchUpStatus/sideStatusCodes.ts': 'BOUNDARY — readStatusReasonsInput refuses the positional input',
 
-  // the score-entry state engine (`tods-competition-factory/score-entry-state`): the POLICY tenant, at the client end
-  'scoreEntryState/engineOutcome.ts':
-    "POLICY — a draft's chosen reason code, sent as the positional array a client submits (splitStatusCodes reads it); [] blanks it on a clear",
+  // read-only display of a record written before 8.0.0
   'scoreEntryState/statusCodes.ts':
-    'POLICY — the reason a recorded matchUp re-displays: sideStatusCodes and matchUpStatusCode first, [0] only for records written before them',
-
-  // plumbing: a caller-supplied value passed through
-  'assemblies/generators/simulation/completeDrawMatchUps.ts': 'PLUMBING — mock outcome',
-  'mutate/simulation/applyOutcomes.ts': 'PLUMBING — a caller-supplied outcome passed to setMatchUpStatus',
-  'types/mocksTypes.ts': 'PLUMBING — the type of the mock outcome generateEventWithDraw applies',
-  'mutate/drawDefinitions/matchUpGovernor/attemptToModifyScore.ts': 'PLUMBING',
-  'mutate/matchUps/drawPositions/directParticipants.ts': 'PLUMBING — sourceMatchUpStatusCodes',
-  'mutate/matchUps/drawPositions/relabelledPathFeeds.ts':
-    'PLUMBING — sourceMatchUpStatusCodes of the later loss it re-feeds, to directLoser and the exit context',
-  'mutate/matchUps/matchUpStatus/setMatchUpState.ts': 'PLUMBING — the param type',
-  'mutate/matchUps/matchUpStatus/setMatchUpStatus.ts': 'PLUMBING — outcome passthrough',
-  'mutate/matchUps/outcome/differential.ts':
-    'PLUMBING — compares the array v1 wrote with the array the plan carries, by value, never by position',
-  'mutate/matchUps/outcome/view.ts':
-    'PLUMBING — carries the existing array into the plan of the next write; decides nothing on it',
-  'mutate/matchUps/outcome/apply.ts':
-    'PLUMBING — the phase compiler permits the policy-code field in an op; reads no array contents',
-  'mutate/matchUps/outcome/ops.ts': 'WRITE — the reducer stores the array the plan carries, as modifyMatchUpScore does',
-  'mutate/matchUps/outcome/plan.ts':
-    'PLUMBING — abstains when a client sent the array, so v1 writes it; carries the planned array into the op; decides nothing on it',
-  'mutate/matchUps/outcome/plan/planShared.ts':
-    'PLUMBING — the clean and scoreless predicates abstain where a matchUp carries codes, so v1 writes it; decide nothing on them',
-  'mutate/matchUps/outcome/plan/teamFinalLine.ts':
-    'WRITE — a newly completed TEAM line receives the fresh empty policy-code array of attemptToModifyScore',
-  'mutate/matchUps/outcome/plan/resultOps.ts':
-    'PLUMBING — carries the planned array into the result op, as plan.ts did before the split; decides nothing on it',
-  'mutate/matchUps/outcome/plan/producedExit.ts':
-    "PLUMBING — the produced exit's writes carry the codes doubleExitAdvancement stores ([]); abstain where a target holds codes; decide nothing on them",
-  'mutate/matchUps/outcome/plan/byeHeldPassage.ts':
-    'PLUMBING — the passage past a BYE-held matchUp (moved from producedExit.ts) abstains where a matchUp beyond holds codes and writes [] where v1 writes it; decides nothing on them',
-  'mutate/matchUps/outcome/plan/producedTarget.ts':
-    "PLUMBING — the produced target's write carries [] and its reader abstains where the target holds codes; decides nothing on them",
-  'mutate/matchUps/outcome/plan/byeChain.ts':
-    'PLUMBING — the BYE chain abstains where a matchUp it would write holds codes, and writes [] where v1 writes it; decides nothing on them',
-  'mutate/matchUps/outcome/plan/carriedConvergence.ts':
-    "PLUMBING — RULE 4's convergence (split from convergence.ts) keeps the codes as they stood (deriveStatusCodes) and abstains where the client sent the array; decides nothing on them",
-  'mutate/matchUps/outcome/plan/convergedWrite.ts':
-    "PLUMBING — the converged write (split from convergence.ts) carries the codes its caller plans ([] or v1's retainPolicyCodes) into the op; decides nothing on them",
-  'mutate/matchUps/outcome/plan/pendingConvergence.ts':
-    'PLUMBING — the pending convergence (split from convergence.ts) writes [] into what it produces, as v1 does; decides nothing on them',
-  'mutate/matchUps/outcome/plan/producedConvergence.ts':
-    'PLUMBING — the produced convergence (split from convergence.ts) abstains where the landing holds codes; decides nothing on them',
-  'mutate/matchUps/outcome/plan/directionReasons.ts':
-    "PLUMBING — abstains where a loser's seat holds codes v1 would re-derive (removedLoserReason); decides nothing on them",
-  'mutate/matchUps/outcome/plan/directionOps.ts':
-    "PLUMBING — re-derives the codes as [] where v1's removeDirectedLoser writes them; decides nothing on them",
-  'mutate/matchUps/outcome/plan/carriedExit.ts':
-    "PLUMBING — a carried exit's landing writes the codes v1's progressExitStatus derives ([]) and abstains where a landing holds codes; decides nothing on them",
-  'mutate/matchUps/outcome/plan/carriedByeSeat.ts':
-    'PLUMBING — the carried BYE seat abstains where its home or landing holds codes; decides nothing on them',
-  'mutate/matchUps/outcome/plan/carriedContinuation.ts':
-    'WRITE — the shared carried landing writes [] as progressExitStatus does, relocated from carriedExit and carriedByeSeat; reads no legacy codes',
-  'mutate/matchUps/outcome/plan/unwindSeats.ts':
-    "PLUMBING — the unwind's seat programs write [] where v1's removal re-derives codes and abstain where a seat's matchUp holds codes; decide nothing on them",
-  'mutate/matchUps/outcome/plan/unwindPath.ts':
-    "PLUMBING — the unwind's path writes [] where v1's removeDoubleExit re-derives codes and abstains where a matchUp on the path holds codes; decides nothing on them",
-  'mutate/matchUps/outcome/plan/givenWinner.ts':
-    "PLUMBING — a double exit given a winner abstains where the unwound seat's matchUp holds codes; decides nothing on them",
-  'mutate/matchUps/outcome/plan/terminalAward.ts':
-    'PLUMBING — the occupied-final program certifies its relay and award by their absent codes; decides nothing on them',
-  'mutate/matchUps/outcome/plan/supersededRelay.ts':
-    'PLUMBING — the superseded relay certifies the original relay and its stale copy by their absent codes; decides nothing on them',
-  'mutate/matchUps/outcome/plan/standaloneIndirect.ts':
-    'PLUMBING — the standalone indirect programs certify the removal and the arrival seats by their absent codes; decide nothing on them',
-  'mutate/matchUps/outcome/types.ts': 'PLUMBING — the v2 request carries the submitted array to the write',
-  'mutate/matchUps/outcome/unwindWalk.ts':
-    'PLUMBING — abstains where a matchUp its removal would write carries codes, so v1 writes it; decides nothing on them',
-  'mutate/matchUps/outcome/write.ts':
-    'WRITE — plans the write as modifyMatchUpScore performs it; the split is at the write (S2b)',
-  'mutate/matchUps/score/modifyMatchUpScore.ts': 'PLUMBING — writes what its caller passed',
-  'mutate/tournaments/dehydrate.ts': 'PLUMBING — serialization key list',
-
-  // reads the POLICY tenant, which is legitimately positional by side
-  'mutate/matchUps/drawPositions/drawPositionPlacement.ts': 'POLICY read — re-sides the policy code',
-  'mutate/matchUps/drawPositions/swapWinnerLoser.ts': 'POLICY read — re-sides the policy codes on a flip',
-  'query/drawDefinition/getStructureInconsistencies.ts': 'POLICY read — EXIT_CODE_ON_WINNER_SIDE',
+    'DISPLAY — the reason a recorded matchUp re-displays: sideStatusCodes and matchUpStatusCode first, [0] only for records written before them',
+  'query/drawDefinition/getStructureInconsistencies.ts':
+    'DISPLAY — EXIT_CODE_ON_WINNER_SIDE reads sideStatusCodes, and the array a pre-8.0.0 record holds',
 };
 
 /**
@@ -201,7 +106,7 @@ for (const file of files) {
   }
 }
 
-const canary = 'mutate/matchUps/matchUpStatus/sideExitProvenance.ts';
+const canary = 'helpers/drawTopology/legacyStatusCodes.ts';
 if (!mentions.has(canary)) {
   console.error(`[verify:exit-tenant] the canary ${canary} was not matched — the detector is broken`);
   process.exit(1);
@@ -216,9 +121,15 @@ if (unlisted.length) {
   console.error(`[verify:exit-tenant] ${unlisted.length} file(s) reach for \`${NEEDLE}\` and are not allowed:`);
   for (const file of unlisted) console.error(`  src/${file}`);
   console.error('');
-  console.error('`matchUpStatusCodes` is the LEGACY array and its exit tenant was evicted (P37).');
-  console.error('Read `sideExitProvenance` for per-side exit facts. If the new site genuinely belongs');
-  console.error('to the POLICY tenant, add it to ALLOWED in scripts/verify/exitTenant.mjs with a reason.');
+  console.error(
+    '`matchUpStatusCodes` is the positional array of records written before 8.0.0: nothing writes or reads it.',
+  );
+  console.error(
+    'Read `sideStatusCodes` / `matchUpStatusCode` for reasons and `sideExitProvenance` for exit facts. If the',
+  );
+  console.error(
+    'new site genuinely belongs to the policy vocabulary, add it to ALLOWED in scripts/verify/exitTenant.mjs.',
+  );
   process.exit(1);
 }
 

@@ -193,7 +193,7 @@ first by default), in the order `allDrawMatchUps` returns them.
 | `matchUpIndex`   | which of several matches, default `0`                                                         |
 
 The result of each is given by `scoreString`, `winningSide`, `matchUpStatus` (default `COMPLETED`),
-`matchUpStatusCodes` and `matchUpFormat`, as for [generateOutcomeFromScoreString](#generateoutcomefromscorestring).
+the reasons (`sideStatusCodes` keyed by side, or `matchUpStatusCode`) and `matchUpFormat`, as for [generateOutcomeFromScoreString](#generateoutcomefromscorestring).
 
 An outcome that matches nothing, or matches a BYE, is not an error: it is reported in `skipped` and the rest are
 applied. An outcome `setMatchUpStatus` refuses stops the call with that error; the outcomes before it stay applied.

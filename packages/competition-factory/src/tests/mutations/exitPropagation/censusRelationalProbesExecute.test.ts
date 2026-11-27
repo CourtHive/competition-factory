@@ -6,7 +6,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 
 // constants
-import { BYE, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
+import { BYE } from '@Constants/matchUpStatusConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
@@ -49,30 +49,6 @@ it('every probe runs its second apply and its clear', () => {
   expect(coverage.secondApply).toEqual(3);
   expect(coverage.clear).toEqual(3);
   expect(coverage.clearRefused).toEqual(0);
-  expect(coverage.codesInconsistentDraws).toEqual(0);
-});
-
-it('a code that disagrees with its provenance is counted in the ledger, and fails nothing', () => {
-  setSubscriptions({});
-  const setMatchUpStatus = tournamentEngine.setMatchUpStatus;
-  vi.spyOn(tournamentEngine, 'setMatchUpStatus').mockImplementation((params: any) => {
-    const result = setMatchUpStatus(params);
-    // the planted defect: a writer that blanks the legacy array, as some forward writers do
-    const { tournamentRecord } = tournamentEngine.getTournament();
-    for (const structure of tournamentRecord.events[0].drawDefinitions[0].structures) {
-      for (const matchUp of structure.matchUps) delete matchUp.matchUpStatusCodes;
-    }
-    tournamentEngine.setState(tournamentRecord);
-    return result;
-  });
-
-  const coverage = emptyCoverage();
-  const steps = [
-    { structureName: 'Main', roundNumber: 1, roundPosition: 1, outcome: { matchUpStatus: DOUBLE_WALKOVER } },
-  ];
-  expect(replay(config, steps as any, 'relational-codes-ledger', undefined, coverage)).toBeNull();
-  expect(coverage.codesInconsistentDraws).toEqual(1);
-  expect(coverage.codesInconsistentMatchUps).toBeGreaterThan(0);
 });
 
 it('a clear that silently does nothing is caught through replay', () => {

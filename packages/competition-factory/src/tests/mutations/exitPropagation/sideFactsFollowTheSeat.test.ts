@@ -218,7 +218,7 @@ it('a reason code carried with the exit follows its carrier to the other side (t
   const submit = (coordinate: string, outcome: any) =>
     tournamentEngine.setMatchUpStatus({ matchUpId: find(coordinate).matchUpId, propagateExitStatus, drawId, outcome });
 
-  expect(submit('Main|2|2', { ...exit(DEFAULTED, 2), matchUpStatusCodes: ['DM'] }).success).toEqual(true);
+  expect(submit('Main|2|2', { ...exit(DEFAULTED, 2), sideStatusCodes: { 1: 'DM' } }).success).toEqual(true);
   const carrier = find('Main|2|2').sides.find((side: any) => side.sideNumber === 1).participantId;
   const reasonSide = () => Number(Object.keys(find(fmlc.carriedTo).sideStatusCodes ?? {})[0]);
   const carrierSide = () => find(fmlc.carriedTo).sides.find((side: any) => side.participantId === carrier)?.sideNumber;

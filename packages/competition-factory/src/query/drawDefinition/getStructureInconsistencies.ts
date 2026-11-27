@@ -917,7 +917,8 @@ export function getStructureInconsistencies(
   );
 
   for (const matchUp of scoped) {
-    const { winningSide, matchUpStatus, matchUpStatusCodes, sides, matchUpId, drawPositions } = matchUp;
+    const { winningSide, matchUpStatus, matchUpStatusCodes, sideStatusCodes, sides, matchUpId, drawPositions } =
+      matchUp;
 
     // DRAW_POSITIONS_NOT_SORTED — the ascending-sort invariant. Exempt round-robin group
     // structures: they store drawPositions in Berger round-pairing order (benign).
@@ -1026,8 +1027,10 @@ export function getStructureInconsistencies(
       });
     }
 
-    // EXIT_CODE_ON_WINNER_SIDE (ONE exiting side only — a convergence carries codes on both sides)
-    if (singleExit && deliveredSides < 2 && codeString(matchUpStatusCodes?.[winningSide - 1])) {
+    // EXIT_CODE_ON_WINNER_SIDE (ONE exiting side only — a convergence carries codes on both sides): the side-keyed
+    // reason, or on a record written before 8.0.0 the positional code it still holds
+    const winnerCode = codeString(sideStatusCodes?.[winningSide]) ?? codeString(matchUpStatusCodes?.[winningSide - 1]);
+    if (singleExit && deliveredSides < 2 && winnerCode) {
       inconsistencies.push({
         ...base,
         issueType: EXIT_CODE_ON_WINNER_SIDE,

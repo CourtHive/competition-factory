@@ -43,7 +43,6 @@ type SettleArgs = {
 /** What `carryExitOnward` carries from one loser matchUp to the next. */
 type CarriedExit = {
   sourceMatchUpStatus?: MatchUpStatusUnion;
-  sourceMatchUpStatusCodes?: string[];
   loserParticipantId?: string;
   matchUpsMap?: MatchUpsMap;
   sourceWinningSide?: number;
@@ -296,7 +295,6 @@ export function settleRederivedDoubleExit({
     context: {
       // the origin's reason is read from its own `sideStatusCodes` by `progressExitStatus`; the legacy
       // positional array is not this function's to read (`verify:exit-tenant`)
-      sourceMatchUpStatusCodes: [],
       sourceMatchUpStatus: origin.matchUpStatus,
       sourceWinningSide: origin.winningSide,
       sourceMatchUpId: origin.matchUpId,
@@ -476,7 +474,6 @@ export function carryExitOnward({
   let current: CarriedExit | undefined = context;
   for (let failsafe = 0; current?.loserMatchUp && failsafe < 10; failsafe += 1) {
     const progressResult = progressExitStatus({
-      sourceMatchUpStatusCodes: current.sourceMatchUpStatusCodes,
       sourceMatchUpStatus: current.sourceMatchUpStatus,
       sourceWinningSide: current.sourceWinningSide,
       loserParticipantId: current.loserParticipantId,

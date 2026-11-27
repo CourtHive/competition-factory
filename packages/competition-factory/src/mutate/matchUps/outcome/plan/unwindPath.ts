@@ -1,3 +1,4 @@
+import { holdsReasons } from '../reasons';
 import { convergedChain, convergedRelayCopy, unwoundSeatOps, pendingRelayedWinner } from './unwindSeats';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { standingReservationPrograms } from './standingReservation';
@@ -106,8 +107,7 @@ function pendingAwardRemoval(
 ): PendingRemoval | undefined {
   if (view.draw.propagatesByeOnDoubleExit || previous.structureId !== at.structureId || !at.winningSide)
     return undefined;
-  if (!scoreless(previous) || !scoreless(at) || previous.matchUpStatusCodes?.length || at.matchUpStatusCodes?.length)
-    return undefined;
+  if (!scoreless(previous) || !scoreless(at) || holdsReasons(previous) || holdsReasons(at)) return undefined;
   const held = positionsOf(at);
   const winner = at.sides?.find((side) => side.sideNumber === at.winningSide);
   if (held.length !== 1 || !winner?.participantId || winner.drawPosition !== held[0]) return undefined;
@@ -123,7 +123,7 @@ function pendingAwardRemoval(
   if (!foreign || !isDoubleExit(foreign.matchUpStatus) || foreign.winningSide || !status) return undefined;
   if (foreign.matchUpStatus !== kept[1].previousMatchUpStatus || foreign.winnerMatchUpId !== at.matchUpId)
     return undefined;
-  if (!scoreless(foreign) || foreign.matchUpStatusCodes?.length || Object.keys(foreign.sideExitProvenance ?? {}).length)
+  if (!scoreless(foreign) || holdsReasons(foreign) || Object.keys(foreign.sideExitProvenance ?? {}).length)
     return undefined;
   if (at.matchUpStatus !== status || kept[0] !== String(3 - at.winningSide)) return undefined;
   if (foreign.structureId !== at.structureId || !pendingAwardSeatStands(view, at)) return undefined;
@@ -137,7 +137,7 @@ function pendingAwardSeatStands(view: OutcomeView, source: HydratedMatchUp): boo
   const target = indexed(view, seat.matchUpId);
   if (!target || target.matchUpId !== source.loserMatchUpId || target.structureId !== seat.structureId) return false;
   if (target.matchUpStatus !== BYE || target.winningSide || target.loserMatchUpId || !scoreless(target)) return false;
-  if (target.matchUpStatusCodes?.length || Object.keys(target.sideExitProvenance ?? {}).length) return false;
+  if (holdsReasons(target) || Object.keys(target.sideExitProvenance ?? {}).length) return false;
   const positions = positionsOf(target);
   if (positions.length !== 1 || positions[0] !== seat.drawPosition) return false;
   if (target.sides?.some((side) => side.participantId || side.qualifier)) return false;
@@ -345,12 +345,7 @@ function standaloneIndirectClear(view: OutcomeView, context: UnwoundContext, pro
 /** Live source and paired result agree with the two literal origins retained by the ordinary award reader. */
 function ordinaryAwardStands(source: HydratedMatchUp, award: ProducedAward): boolean {
   const { target, paired, drawPosition, participantId } = award;
-  if (
-    !isDoubleExit(source.matchUpStatus) ||
-    source.winningSide ||
-    !scoreless(source) ||
-    source.matchUpStatusCodes?.length
-  )
+  if (!isDoubleExit(source.matchUpStatus) || source.winningSide || !scoreless(source) || holdsReasons(source))
     return false;
   if (
     Object.keys(source.sideExitProvenance ?? {}).length ||
@@ -359,8 +354,7 @@ function ordinaryAwardStands(source: HydratedMatchUp, award: ProducedAward): boo
     return false;
   if (paired.winnerMatchUpId !== target.entry.matchUpId) return false;
   if (paired.matchUpStatus !== WALKOVER && paired.matchUpStatus !== DEFAULTED) return false;
-  if (!scoreless(paired) || paired.matchUpStatusCodes?.length || Object.keys(paired.sideExitProvenance ?? {}).length)
-    return false;
+  if (!scoreless(paired) || holdsReasons(paired) || Object.keys(paired.sideExitProvenance ?? {}).length) return false;
   const produced = target.entry.sideExitProvenance?.[target.fedSide];
   const arrival = target.entry.sideExitProvenance?.[target.awardedSide];
   const winner = paired.sides?.find((side) => side.sideNumber === paired.winningSide);
@@ -531,9 +525,9 @@ function unwoundWinnerPath(
     }
     if (next.matchUpStatus !== TO_BE_PLAYED || next.winningSide || !scoreless(next)) return undefined;
     if (Object.keys(next.sideExitProvenance ?? {}).length || path.includes(next.matchUpId)) return undefined;
-    if (crossed && next.matchUpStatusCodes?.length) return undefined;
+    if (crossed && holdsReasons(next)) return undefined;
     if (!crossed) {
-      if (next.matchUpStatusCodes?.length || next.sides?.some((side) => side.bye)) return undefined;
+      if (holdsReasons(next) || next.sides?.some((side) => side.bye)) return undefined;
       // one position goes on from a matchUp; another standing here came from elsewhere and stays
       const sent = positionsOf(next).filter((position) => positionsOf(before).includes(position));
       if (sent.length) takenBack.set(next.matchUpId, sent[0]);
@@ -564,7 +558,7 @@ function awardedReason(
     if (!target.feed) return undecided(entry, true) ? undefined : false;
     // a feed round: the fed seat's structural position stands beside the pending exit (anyone on it would have won the
     // exit, the exit's own side holds no position, and a BYE there makes the matchUp a BYE, refused before this, S6 tail)
-    return scoreless(entry) && !entry.matchUpStatusCodes?.length ? undefined : false;
+    return scoreless(entry) && !holdsReasons(entry) ? undefined : false;
   }
   const awarded = entry.sides?.find((side) => side.sideNumber === awardedSide);
   const arrival = provenance[awardedSide];
@@ -577,7 +571,7 @@ function awardedReason(
   const throughBye = arrival?.matchUpStatus === BYE;
   if (origins.length !== 2 || (arrival?.matchUpStatus && !throughBye) || !paired) return false;
   if (arrival?.sourceMatchUpId !== paired.matchUpId) return false;
-  if (held.length !== 1 || !scoreless(entry) || entry.matchUpStatusCodes?.length) return false;
+  if (held.length !== 1 || !scoreless(entry) || holdsReasons(entry)) return false;
   if (entry.sides?.some((side) => side.bye)) return false;
   return { target, paired, drawPosition: awarded.drawPosition, participantId: awarded.participantId };
 }
@@ -649,7 +643,6 @@ function unwoundPassage(view: OutcomeView, loserSeat: WinnerLoserSeat, relay?: U
           matchUpStatus: TO_BE_PLAYED,
           resetsScore: true,
           score: blankScore(),
-          matchUpStatusCodes: [],
           stampsScoredTime: false,
           announcesContext: false,
         },
@@ -667,7 +660,6 @@ function unwoundPassage(view: OutcomeView, loserSeat: WinnerLoserSeat, relay?: U
       matchUpStatus: relay?.cleared.has(matchUp.matchUpId) ? TO_BE_PLAYED : BYE,
       resetsScore: true,
       score: blankScore(),
-      matchUpStatusCodes: [],
       stampsScoredTime: false,
       announcesContext: false,
     },
@@ -703,8 +695,7 @@ function unwoundOwnConvergence(view: OutcomeView, seat: WinnerLoserSeat, relay?:
   // Numeric positions are forwarded only within this structure.
   if (next.structureId !== start.structureId) return undefined;
   if (!isDoubleExit(start.matchUpStatus) || start.winningSide || !scoreless(start)) return undefined;
-  if (start.loserMatchUpId || start.matchUpStatusCodes?.length || start.sides?.some((side) => side.bye))
-    return undefined;
+  if (start.loserMatchUpId || holdsReasons(start) || start.sides?.some((side) => side.bye)) return undefined;
   const fedSide = sideOf(start, seat.drawPosition);
   if (!fedSide) return undefined;
   const own = start.sideExitProvenance?.[fedSide];
@@ -725,7 +716,6 @@ function unwoundOwnConvergence(view: OutcomeView, seat: WinnerLoserSeat, relay?:
       matchUpStatus: TO_BE_PLAYED,
       resetsScore: true,
       score: blankScore(),
-      matchUpStatusCodes: [],
       stampsScoredTime: false,
       announcesContext: false,
     },
@@ -739,7 +729,6 @@ function unwoundOwnConvergence(view: OutcomeView, seat: WinnerLoserSeat, relay?:
       retainedExitPlanned: true,
       resetsScore: true,
       score: blankScore(),
-      matchUpStatusCodes: [],
       stampsScoredTime: false,
     },
     { op: 'setSideExitProvenance', matchUpId: start.matchUpId, provenance: { [keptSide]: kept } },
@@ -783,7 +772,6 @@ function unwoundBranch(
         matchUpStatus: TO_BE_PLAYED,
         resetsScore: true,
         score: blankScore(),
-        matchUpStatusCodes: [],
         stampsScoredTime: false,
         ...(context ? {} : { announcesContext: false as const }),
       },
@@ -921,7 +909,6 @@ export function unwoundOps(
               ...(rederived.matchUpStatus === WALKOVER
                 ? { resetsScore: true as const, score: blankScore() }
                 : { score: { scoreStringSide1: '', scoreStringSide2: '', sets: undefined } }),
-              matchUpStatusCodes: [],
               stampsScoredTime: false,
               ...(retainedAward && !stored?.winnerMatchUpId && !stored?.loserMatchUpId
                 ? { retainedExitPlanned: true as const }
@@ -945,7 +932,6 @@ export function unwoundOps(
             matchUpStatus: TO_BE_PLAYED,
             resetsScore: true,
             score: blankScore(),
-            matchUpStatusCodes: [],
             stampsScoredTime: false,
             ...(produced ? {} : { announcesContext: false as const }),
           },
@@ -963,7 +949,6 @@ export function unwoundOps(
             op: 'setMatchUpResult',
             matchUpId,
             matchUpStatus: rederived.matchUpStatus,
-            matchUpStatusCodes: [],
             stampsScoredTime: false,
             announcedAs: 'settleRederivedDoubleExit',
             ...(pendingRelayedWinner(view, matchUpId, rederived) ? { deletesWinningSide: true as const } : {}),
@@ -1026,7 +1011,6 @@ export function producedRelayAfterOps(
             matchUpId: home.matchUpId,
             matchUpStatus: op.rederived.matchUpStatus,
             winningSide: sideOf(home, op.drawPosition),
-            matchUpStatusCodes: [],
             stampsScoredTime: false,
             announcedAs: 'assignMatchUpDrawPosition',
           },
@@ -1093,7 +1077,6 @@ export function withdrawnExitReset(
       op: 'setMatchUpResult',
       matchUpId,
       matchUpStatus: TO_BE_PLAYED,
-      matchUpStatusCodes: [],
       ...(keepsScoredTime ? { stampsScoredTime: false as const } : {}),
       announcedAs: 'withdrawProducedExits',
     },

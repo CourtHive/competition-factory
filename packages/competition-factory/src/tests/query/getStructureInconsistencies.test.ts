@@ -88,7 +88,7 @@ test('detects an exit code sitting on the winning side', () => {
   });
   // a normal WALKOVER: winner side has no code, loser side carries the code
   tournamentEngine.setMatchUpStatus({
-    outcome: { matchUpStatus: WALKOVER, winningSide: 1, matchUpStatusCodes: ['', 'W1'] },
+    outcome: { matchUpStatus: WALKOVER, winningSide: 1, sideStatusCodes: { 2: 'W1' } },
     matchUpId: matchUpAt(drawId, 1, 1).matchUpId,
     drawId,
   });
@@ -124,7 +124,7 @@ test('a legitimately PENDING propagated exit is NOT reported as inconsistent', (
   });
   // propagate a WALKOVER into the consolation → pending exit (empty winner slot)
   tournamentEngine.setMatchUpStatus({
-    outcome: { matchUpStatus: WALKOVER, winningSide: 2, matchUpStatusCodes: ['W1'] },
+    outcome: { matchUpStatus: WALKOVER, winningSide: 2, sideStatusCodes: { 1: 'W1' } },
     propagateExitStatus: true,
     matchUpId: matchUpInStructure(drawId, mainStructureId, 2, 2).matchUpId,
     drawId,
@@ -187,7 +187,7 @@ test('detects an exit with no participant on the losing side', () => {
   const woMatchUp = matchUpAt(drawId, 1, 1);
   const loserDrawPosition = woMatchUp.sides.find((s) => s.sideNumber === 2).drawPosition;
   tournamentEngine.setMatchUpStatus({
-    outcome: { matchUpStatus: WALKOVER, winningSide: 1, matchUpStatusCodes: ['', 'W1'] },
+    outcome: { matchUpStatus: WALKOVER, winningSide: 1, sideStatusCodes: { 2: 'W1' } },
     matchUpId: woMatchUp.matchUpId,
     drawId,
   });
@@ -258,7 +258,7 @@ test('a pending propagated exit with an empty slot is NOT flagged as a phantom p
     drawId,
   });
   tournamentEngine.setMatchUpStatus({
-    outcome: { matchUpStatus: WALKOVER, winningSide: 2, matchUpStatusCodes: ['W1'] },
+    outcome: { matchUpStatus: WALKOVER, winningSide: 2, sideStatusCodes: { 1: 'W1' } },
     propagateExitStatus: true,
     matchUpId: matchUpInStructure(drawId, mainStructureId, 2, 2).matchUpId,
     drawId,

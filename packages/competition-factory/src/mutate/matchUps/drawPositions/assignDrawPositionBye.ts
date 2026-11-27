@@ -31,8 +31,6 @@ import {
   mergeSideExitProvenance,
   setSideExitProvenance,
   blankSideExitCode,
-  retainPolicyCodes,
-  policyCodeString,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import {
   arrivalMovesOccupant,
@@ -1727,7 +1725,6 @@ function resolvePropagatedExitOnAdvance({
       drawPosition: drawPositionToAdvance,
       drawDefinition,
     });
-  const exitSideNumber = advancingSideNumber === 1 ? 2 : 1;
 
   // the participant already here can change side as the advancing position arrives; what is recorded by side goes
   // with them, and `winningSide` is assigned below from the advancing side (`setMatchUpDrawPositions`)
@@ -1739,36 +1736,9 @@ function resolvePropagatedExitOnAdvance({
     matchUp,
   });
 
-  /**
-   * THE POLICY CODE FOLLOWS THE EXITING SIDE — and the exit tenant is not here to be re-sided.
-   *
-   * **The exit tenant's move to `sideExitProvenance`.** This site is `applyPositionToMatchUp`'s twin and it never got
-   * that site's narrowing
-   * (#4996). Two things were wrong once the projection stopped being written:
-   *
-   *  - `find(Boolean)` took the first TRUTHY element, and a provenance-shaped element is an object, so
-   *    on a projected array it re-sided an OBJECT — which is why the guard below had to exist at all.
-   *  - the guard, `alreadySided`, skipped the re-siding whenever provenance named exactly the exiting
-   *    side, on the stated grounds that *"the codes are already sided by it — they are projected from
-   *    provenance"*. That is no longer true of anything in this array. Policy codes are NOT projected
-   *    from provenance, so on a matchUp whose provenance happened to name the exiting side the guard
-   *    left a policy code sitting on the wrong side.
-   *
-   * Filtering to the policy tenant removes both: there is no object to re-side, so no guard is needed,
-   * and the code that belongs to the exiting participant follows them. Same rule, same reader as
-   * `applyPositionToMatchUp`.
-   */
-  const matchUpStatusCodes: string[] = [];
-  const existingCode = retainPolicyCodes(matchUp).map(policyCodeString).find(Boolean);
-  if (existingCode) {
-    for (let i = 0; i < exitSideNumber - 1; i++) matchUpStatusCodes[i] = '';
-    matchUpStatusCodes[exitSideNumber - 1] = existingCode;
-  }
-
   Object.assign(matchUp, {
     // keep the exit status (WALKOVER / DEFAULTED) already on the matchUp
     winningSide: advancingSideNumber,
-    matchUpStatusCodes,
     score: undefined,
     drawPositions: normalizeDrawPositions(drawPositions),
   });

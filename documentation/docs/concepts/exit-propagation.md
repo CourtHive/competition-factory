@@ -161,17 +161,15 @@ Three properties follow from what provenance _is_ — a record of where each sid
 
 **A known limit, since the field is visible in stored records.** On a consolation convergence the
 stored entry can be present for only one of the two sides; the entries that _are_ there are correct.
-Completing it is the work of making `matchUpStatusCodes` a projection of this field rather than a
-parallel record — see [migration §12](/docs/migration-7.0.0#12-non-breaking-additions-worth-knowing).
 Read the field per side and treat a missing side as unknown rather than as absent-of-exit.
 
 ### Why not `matchUpStatusCodes`
 
-Because that array already holds three unrelated element shapes — the scoring policy's code
-vocabulary, this provenance, and codes wrapped as `{ code }` — and provenance was **positional**
-inside it: a side was an array _index_, padded with `''`. That made an entry impossible to address,
-impossible to attribute to the exit that produced it, and easy for any reader assuming a string to
-flatten. Keying by `sideNumber` removes the padding and the ambiguity together.
+Because that array held three unrelated element shapes — the scoring policy's code vocabulary, this
+provenance, and codes wrapped as `{ code }` — and provenance was **positional** inside it: a side was an
+array _index_, padded with `''`. Keying by `sideNumber` removes the padding and the ambiguity together.
+8.0.0 no longer writes the array at all; records written before it may still hold one, which is read as
+it is.
 
 ### Why this one carries a matchUpId when `byeFromPropagation` refuses to
 
@@ -181,7 +179,7 @@ still stands requires knowing _which_ entry belongs to the exit being removed, a
 what a boolean cannot say.
 
 The dangling risk is answered by symmetry rather than by omission: provenance is cleared at every
-site that blanks `matchUpStatusCodes`, and that clear is deliberately **not** gated on the schema
+site that unwinds an exit, and that clear is deliberately **not** gated on the schema
 write mode. The write mode decides whether the field is written; it must never decide whether stale
 state is removed.
 
@@ -998,13 +996,10 @@ named test that fails without it.
   entered the round from an earlier one is a reservation, and is not moved (COMPASS 32/30 20694910 under
   `doubleExitPropagateBye: false`: `theSeatLeftOppositeAByeGoesOn`).
 - **A reason is attributed by where it came from, not by what it says.** `sideStatusCodes` holds the scoring
-  policy's reason per side (`{ 2: 'DM' }`), split from the positional `matchUpStatusCodes` a client submits. A
-  propagation or convergence write stores the array `deriveStatusCodes` builds from provenance, where a side that
-  exited with no recorded reason shows the bare outcome code (`['DEF']`, `['WO']`), or re-stores the matchUp's own
-  array, which may be such a display. Either array is display only and is not split: the write keeps the reasons the matchUp already holds and the source's own side-keyed reason, on the side
-  it arrived at. The source's positional array is read for display only, never as a reason. Before this, a double
-  default reached in one entry order stored `{ 1: 'DEF', 2: 'DEF' }` and in the other stored nothing. A client's array
-  is split as before, and no code is reserved by value (FIRST_MATCH_LOSER_CONSOLATION 32:
+  policy's reason per side (`{ 2: 'DM' }`), as a client submits it. A propagation or convergence write keeps the
+  reasons the matchUp already holds and the source's own side-keyed reason, on the side it arrived at; a bare outcome
+  code (`DEF`, `WO`) is never a reason. Before this, a double default reached in one entry order stored
+  `{ 1: 'DEF', 2: 'DEF' }` and in the other stored nothing (FIRST_MATCH_LOSER_CONSOLATION 32:
   `aDerivedOutcomeCodeIsNeverASideReason`).
 
 - **What forward play sends on from a result is sent on from a re-derived one.** A removal re-derives the matchUp it

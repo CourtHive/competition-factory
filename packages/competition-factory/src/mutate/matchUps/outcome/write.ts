@@ -1,7 +1,6 @@
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { clearsCollectionWinner, isDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
-import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { dualWinningSideChange, noWinnerNeeded } from './route';
 
 // constants and types
@@ -27,7 +26,7 @@ import {
  * The outcome pipeline, v2: the write (§ 4 of the spec), as a plan.
  *
  * `planWrite(request, view, route)` says what the matchUp ITSELF holds once the route has written:
- * status, winner, score, format, codes, `scoredTime`. It is what every route funnels into
+ * status, winner, score, format, `scoredTime`. It is what every route funnels into
  * `applyScoreAndStatus` with, resolved from the spec's rules, so the differential can ask the
  * matchUp after v1 ran whether v1 wrote the same thing. What a route does to OTHER matchUps
  * (direction, exit propagation, the double-exit cascade) is S2c and is not planned here.
@@ -42,7 +41,6 @@ type WriteArgs = {
   removeWinningSide?: boolean;
   removeScore?: boolean;
   score?: OutcomeRequest['score'];
-  matchUpStatusCodes?: OutcomeRequest['matchUpStatusCodes'];
 };
 
 const NON_PROGRESS = new Set<string>([AWAITING_RESULT, SUSPENDED, INCOMPLETE]);
@@ -57,8 +55,6 @@ function applyScoreAndStatus(args: WriteArgs, request: OutcomeRequest, view: Out
   let matchUpStatus = args.matchUpStatus ?? (blank ? TO_BE_PLAYED : existing.matchUpStatus);
   // a write keeps the format stored on the matchUp (a clear included) and writes a new one if given
   const matchUpFormat = request.matchUpFormat ?? existing.ownMatchUpFormat;
-  const matchUpStatusCodes =
-    args.matchUpStatusCodes ?? (blank ? toBePlayed.matchUpStatusCodes : existing.matchUpStatusCodes);
   // a call's `winningSide` is 1, 2 or absent by the time it is written (row 3 refuses anything else)
   const removeWinningSide = args.removeWinningSide || clearsCollectionWinner(existing, args);
   const winningSide = removeWinningSide ? undefined : args.winningSide || (blank ? undefined : existing.winningSide);
@@ -75,17 +71,12 @@ function applyScoreAndStatus(args: WriteArgs, request: OutcomeRequest, view: Out
   return {
     ...(blank ? { resetsScore: true as const } : {}),
     ...(removeWinningSide ? { removesWinningSide: true as const } : {}),
-    // § 4 rule 3: an array given with no reason in it splits to nothing, and what the matchUp kept goes
-    ...(args.matchUpStatusCodes && !args.matchUpStatusCodes.some((code) => code && typeof code === 'string')
-      ? { clearsStatusReasons: true as const }
-      : {}),
     matchUpStatus,
     winningSide,
     scoreStringSide1: score?.scoreStringSide1,
     scoreStringSide2: score?.scoreStringSide2,
     sets: score?.sets as unknown[] | undefined,
     matchUpFormat,
-    matchUpStatusCodes,
     scoredTime: scored,
   };
 }
@@ -95,14 +86,13 @@ const decidedOrIncomplete = (winningSide?: number): MatchUpStatusUnion => (winni
 
 /** `attemptToModifyScore`: the write behind `winner` */
 function winnerWrite(request: OutcomeRequest, view: OutcomeView): WriteArgs {
-  const { matchUpStatus, winningSide, matchUpStatusCodes, score } = request;
+  const { matchUpStatus, winningSide, score } = request;
   const statusValid =
     isDirectingMatchUpStatus({ matchUpStatus }) ||
     ([CANCELLED, ABANDONED].includes(matchUpStatus as string) && !!view.line) ||
     !!view.line?.autoCalcDisabled;
   return {
     matchUpStatus: statusValid ? matchUpStatus : decidedOrIncomplete(winningSide),
-    matchUpStatusCodes: (statusValid && matchUpStatusCodes) || [],
     removeScore: matchUpStatus === WALKOVER,
     winningSide,
     score,
@@ -123,8 +113,8 @@ function removalRemovesScore(request: OutcomeRequest, view: OutcomeView): boolea
 }
 
 export function planWrite(request: OutcomeRequest, view: OutcomeView, route: Route): MatchUpWrite | undefined {
-  const { matchUpStatus, winningSide, matchUpStatusCodes, score } = request;
-  const asIs: WriteArgs = { matchUpStatus, winningSide, matchUpStatusCodes, score };
+  const { matchUpStatus, winningSide, score } = request;
+  const asIs: WriteArgs = { matchUpStatus, winningSide, score };
   switch (route) {
     case 'refused':
       return undefined;
@@ -161,7 +151,6 @@ export function planWrite(request: OutcomeRequest, view: OutcomeView, route: Rou
       if (manualLine(request, view))
         return applyScoreAndStatus(
           {
-            matchUpStatusCodes: matchUpStatusCodes ?? [],
             removeScore: matchUpStatus === WALKOVER,
             removeWinningSide: true,
             matchUpStatus,
@@ -200,7 +189,6 @@ export function planWrite(request: OutcomeRequest, view: OutcomeView, route: Rou
       return {
         ...applyScoreAndStatus({}, request, view),
         matchUpStatus: BYE,
-        matchUpStatusCodes: [],
         scoredTime: false,
       };
     case 'double-exit':
@@ -248,7 +236,6 @@ export function observeWrite(matchUp: MatchUp): MatchUpWrite {
     scoreStringSide2: matchUp.score?.scoreStringSide2,
     sets: matchUp.score?.sets,
     matchUpFormat: matchUp.matchUpFormat,
-    matchUpStatusCodes: matchUp.matchUpStatusCodes,
     scoredTime: !!matchUp.schedule?.scoredTime,
   };
 }

@@ -57,7 +57,6 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(stored.winningSide).toBe(1);
 
     const score = toBePlayed.score;
-    const codes = toBePlayed.matchUpStatusCodes;
     setOutcomePipeline(mode);
     counter.calls = 0;
     counter.active = true;
@@ -70,6 +69,6 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
     expect(counter.calls).toBe(mode === OUTCOME_PIPELINE_V2 ? 0 : 1);
     expect(stored.matchUpStatus).toBe(toBePlayed.matchUpStatus);
     expect(stored.score).toBe(score);
-    expect(stored.matchUpStatusCodes).toBe(codes);
+    expect(Object.hasOwn(stored, 'matchUpStatusCodes')).toBe(false);
   },
 );

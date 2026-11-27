@@ -66,9 +66,8 @@ export function compileTemporalPhases({
           'winningSide',
           'score',
           'matchUpFormat',
-          'matchUpStatusCodes',
-          // the ordinary fold deletes the kept reasons on an empty array already (`setResultFormatAndCodes`)
-          'clearsStatusReasons',
+          // the call's own reasons, written by the ordinary fold (`writeStatusReasons`)
+          'statusReasons',
           'notes',
         ].includes(key),
     )
@@ -218,8 +217,6 @@ export function applyOwnedPlan({
     ops.flatMap((op) => (op.op === 'setMatchUpResult' || op.op === 'setOrderOfFinish' ? [op.matchUpId] : [])),
   );
   const byes = new Set(ops.flatMap((op) => (op.op === 'setMatchUpBye' ? [op.matchUpId] : [])));
-  // a loser taken back out: their matchUp's codes re-derived, announced as v1's `removeDirectedLoser` announces it
-  const recoded = new Set(ops.flatMap((op) => (op.op === 'setMatchUpStatusCodes' && !op.quiet ? [op.matchUpId] : [])));
   // a swap's relabel in a later round: v1's `exchangePathPositions` announces each matchUp as `swapWinnerLoser`
   const exchanged = new Set(ops.flatMap((op) => (op.op === 'exchangeDrawPositions' ? [op.matchUpId] : [])));
   // a carry recorded beside a BYE it passed: the BYE matchUp's state is not rewritten, so v1's `progressExitStatus`
@@ -286,7 +283,6 @@ export function applyOwnedPlan({
         noticeContext(matchUpId, removedPosition, unbyedPosition, {
           resulted: placedLast.has(matchUpId) ? new Set<string>() : resulted,
           byes,
-          recoded,
           exchanged,
           relayed,
           advanced,
@@ -589,7 +585,6 @@ function noticeMatchUpId(op: OutcomeOp): string | undefined {
   return op.op === 'setMatchUpResult' ||
     op.op === 'setMatchUpDrawPositions' ||
     op.op === 'setMatchUpBye' ||
-    (op.op === 'setMatchUpStatusCodes' && !op.quiet) ||
     op.op === 'mergeSideExitProvenance' ||
     op.op === 'setSideExitProvenance' ||
     op.op === 'clearMatchUpBye' ||
@@ -943,7 +938,6 @@ function matchUpContext(
   written: {
     resulted: Set<string>;
     byes: Set<string>;
-    recoded: Set<string>;
     exchanged: Set<string>;
     relayed: Set<string>;
     advanced: Set<string>;
@@ -951,15 +945,12 @@ function matchUpContext(
     released: Set<string>;
   },
 ): string {
-  const { resulted, byes, recoded, exchanged, relayed, advanced, advancedLast, released } = written;
+  const { resulted, byes, exchanged, relayed, advanced, advancedLast, released } = written;
   if (resulted.has(matchUpId)) return 'modifyMatchUpScore';
   // a BYE and an advance through one: the later write's context (`byeAndAdvance`)
   if (advanced.has(matchUpId) && (!byes.has(matchUpId) || advancedLast.has(matchUpId))) return 'advanceWinner';
   if (released.has(matchUpId)) return 'releaseAdvancedDrawPosition';
   if (relayed.has(matchUpId)) return 'progressExitStatus';
-  // a loser taken back out and their seat then given a BYE (a result turned into a double exit): the BYE is the later
-  if (recoded.has(matchUpId) && byes.has(matchUpId)) return 'setMatchUpStatusBye';
-  if (recoded.has(matchUpId)) return 'removeDirectedLoser';
   if (exchanged.has(matchUpId)) return 'swapWinnerLoser';
   return byes.has(matchUpId) ? 'setMatchUpStatusBye' : 'assignMatchUpDrawPosition';
 }

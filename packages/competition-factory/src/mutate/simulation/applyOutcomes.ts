@@ -39,7 +39,10 @@ export type DrawOutcome = {
   scoreString?: string;
   winningSide?: number;
   matchUpStatus?: MatchUpStatusUnion;
-  matchUpStatusCodes?: unknown[];
+  /** the reason per side, keyed by side: `{ 2: 'DM' }` */
+  sideStatusCodes?: Record<number, string>;
+  /** the reason for a status that attributes to the match (ABANDONED, CANCELLED, INCOMPLETE) */
+  matchUpStatusCode?: string;
   matchUpFormat?: string;
 };
 
@@ -144,10 +147,18 @@ type RecordOutcomeArgs = {
 };
 
 function recordOutcome({ tournamentRecord, drawDefinition, event, outcomeDef, targetMatchUp }: RecordOutcomeArgs) {
-  const { matchUpStatus = COMPLETED, matchUpStatusCodes, matchUpFormat, scoreString, winningSide } = outcomeDef;
+  const {
+    matchUpStatus = COMPLETED,
+    matchUpStatusCode,
+    sideStatusCodes,
+    matchUpFormat,
+    scoreString,
+    winningSide,
+  } = outcomeDef;
 
   const { outcome } = generateOutcomeFromScoreString({ matchUpFormat, matchUpStatus, scoreString, winningSide });
-  if (matchUpStatusCodes) outcome.matchUpStatusCodes = matchUpStatusCodes;
+  if (sideStatusCodes) outcome.sideStatusCodes = sideStatusCodes;
+  if (matchUpStatusCode) outcome.matchUpStatusCode = matchUpStatusCode;
 
   recordSetMatchUpStatus({ matchUpId: targetMatchUp.matchUpId, drawDefinition, matchUpFormat, outcome });
   return setMatchUpStatus({

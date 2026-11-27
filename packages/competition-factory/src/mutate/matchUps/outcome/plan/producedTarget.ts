@@ -1,3 +1,4 @@
+import { holdsReasons } from '../reasons';
 import { buildSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { indexed, onwardFrom } from './planShared';
@@ -73,7 +74,7 @@ export function producedTargetReason(
 ): boolean {
   const { entry } = target;
   if (entry.matchUpStatus !== TO_BE_PLAYED || entry.winningSide || entry.score?.scoreStringSide1) return false;
-  if (entry.matchUpStatusCodes?.length || Object.keys(entry.sideExitProvenance ?? {}).length) return false;
+  if (holdsReasons(entry) || Object.keys(entry.sideExitProvenance ?? {}).length) return false;
   if ((entry.loserMatchUpId && !loserLinked) || entry.sides?.some((side) => side.bye)) return false;
   const awarded = entry.sides?.find((side) => side.sideNumber === target.awardedSide);
   if (awarded?.participantId) return false;
@@ -113,7 +114,6 @@ export function producedTargetOps(
       op: 'setMatchUpResult',
       matchUpId: entry.matchUpId,
       matchUpStatus: target.matchUpStatus,
-      matchUpStatusCodes: [],
       stampsScoredTime: false,
       ...(target.reservation ? { restoresNoticeIdentity: true as const } : {}),
       ...(target.matchUpStatus === WALKOVER ? { resetsScore: true, score: toBePlayed.score } : {}),

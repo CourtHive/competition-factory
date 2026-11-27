@@ -1,3 +1,4 @@
+import { holdsReasons } from '../reasons';
 import { buildSideExitProvenance, collapseDoubleExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { ownByeChain, sourceSeatFrame, unfillableByeChain, walkChain } from './byeChain';
 import { landingLoserLink, type LandingService } from './landingLoserLink';
@@ -79,7 +80,7 @@ export function producedConvergedReason(
   if (!target || !landing || target.feed || landing.matchUpId !== converged.matchUpId) return undefined;
   if (!SINGLE_EXITS.has(landing.matchUpStatus) || landing.matchUpStatus === RETIRED || landing.winningSide)
     return undefined;
-  if (landing.matchUpStatusCodes?.length || landing.score?.scoreStringSide1) return undefined;
+  if (holdsReasons(landing) || landing.score?.scoreStringSide1) return undefined;
   // the landing's own loser seat took its BYE when the first exit was produced there: the BYE `conditionallyAdvanceDrawPosition`
   // places again (DEA:1050) is nothing. Under `doubleExitPropagateBye: false` the landing re-enters as its double exit's
   // source (DEA:1594), where that BYE gives way to the exit it produces (`reclaimSingleExitBye`, L2 below)

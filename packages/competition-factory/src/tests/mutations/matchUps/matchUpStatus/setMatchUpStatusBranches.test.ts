@@ -368,7 +368,7 @@ describe('setMatchUpStatus branch coverage', () => {
       outcome: {
         matchUpStatus: WALKOVER,
         winningSide: 1,
-        matchUpStatusCodes: ['W1'],
+        sideStatusCodes: { 2: 'W1' },
       },
       propagateExitStatus: true,
       matchUpId: 'm-1-1',

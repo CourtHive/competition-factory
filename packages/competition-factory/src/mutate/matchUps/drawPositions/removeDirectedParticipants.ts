@@ -23,7 +23,6 @@ import { isDoubleExit } from '@Validators/isExit';
 import {
   clearResolvedSideExitProvenance,
   withdrawProducedExits,
-  deriveStatusCodes,
   sideRecordOf,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
@@ -415,7 +414,7 @@ function removeDirectedLoser({
   //
   // The loser direction takes the NARROW form deliberately: reusing
   // `removeSubsequentRoundsParticipant` here also rewrote matchUpStatus, winningSide and
-  // matchUpStatusCodes on the released matchUps, and that was measurably wider than the defect —
+  // reasons on the released matchUps, and that was measurably wider than the defect —
   // it flipped a recorded winningSide on a re-score and broke a BYE unwind. Releasing the slot is
   // the whole fix; see releaseAdvancedDrawPosition for the two scopes that keep it safe.
   //
@@ -515,32 +514,12 @@ function removeDirectedLoser({
     //exit with a player and the other participant as a produced exit from a parent double WO.
     //We then want to remove the specific WO reason for the participant as the participant
     //has been removed from the draw positions and this is now a straight double WO.
-    //In case the loser matchup was not a double WO we jsut remove the status codes.
     const targetMatchUp = matchUpsMap?.drawMatchUps?.find(({ matchUpId }) => matchUpId === loserMatchUp.matchUpId);
     const record = sideRecordOf(targetMatchUp);
     // Provenance stamped for the exit being removed is stale — but only once the status itself has
     // resolved. While the matchUp is still an exit the provenance still describes it, and clearing it
     // would leave an exit with no marker at all.
     clearResolvedSideExitProvenance(targetMatchUp);
-    /**
-     * THE CODES ARE DERIVED FROM WHAT PROVENANCE STILL SAYS — after the clear, so they describe the
-     * exits that REMAIN.
-     *
-     * **The exit tenant's eviction.** This line was `sourceMatchUpStatus === DOUBLE_WALKOVER ? ['WO', 'WO'] : []`:
-     * a hardcoded legacy string pair, written positionally, and asymmetric — propagation logic expressed in
-     * the legacy array. It was wrong three ways at once:
-     *
-     *  - a `DOUBLE_DEFAULT` source fell through to `[]`, so the surviving exit lost its code entirely;
-     *  - `['WO', 'WO']` claims BOTH sides exited whatever provenance says, so a matchUp with one
-     *    exiting side got a walkover code on the WINNER's side;
-     *  - the codes were written BEFORE the clear, so they could not reflect it.
-     *
-     * The second one is measured, not hypothetical: it is what `EXIT_CODE_ON_WINNER_SIDE` reports at
-     * severity `error` once the projection stops overwriting this array and masking it — 4 tests
-     * across 4 files, including the census replay of sweep seed 6141627. Traced 2026-09-27:
-     * `codes=['WO','WO']`, `winningSide=1`, and provenance holding side 2 alone.
-     */
-    targetMatchUp.matchUpStatusCodes = deriveStatusCodes(targetMatchUp);
     // the loser target's side record is rewritten here and by nothing else in this removal: announced when it changed
     if (record !== sideRecordOf(targetMatchUp))
       modifyMatchUpNotice({

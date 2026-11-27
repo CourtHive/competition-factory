@@ -24,7 +24,6 @@ type SetMatchUpDrawPositionsArgs = {
  *
  *  - `sideExitProvenance`: which side an exit arrived at, and from where;
  *  - `sideStatusCodes`: the reason code a side's exit carries (the badge beside the participant);
- *  - `matchUpStatusCodes`: the same reasons, positionally, for display;
  *  - `winningSide`, except where the caller assigns it itself.
  *
  * `winningSide` was the only one re-keyed, on arrival. The census found the rest stale eight times in 1,800 seeds,
@@ -118,10 +117,6 @@ const swapKeys = (record?: Record<string | number, any>) => {
 export function swapSideFacts(matchUp: MatchUp, rekeyWinningSide: boolean) {
   if (matchUp.sideExitProvenance) matchUp.sideExitProvenance = swapKeys(matchUp.sideExitProvenance);
   if (matchUp.sideStatusCodes) matchUp.sideStatusCodes = swapKeys(matchUp.sideStatusCodes);
-  if (matchUp.matchUpStatusCodes?.length) {
-    const [side1, side2] = matchUp.matchUpStatusCodes;
-    matchUp.matchUpStatusCodes = [side2 ?? '', side1 ?? ''];
-  }
   if (rekeyWinningSide && (matchUp.winningSide === 1 || matchUp.winningSide === 2)) {
     matchUp.winningSide = 3 - matchUp.winningSide;
   }

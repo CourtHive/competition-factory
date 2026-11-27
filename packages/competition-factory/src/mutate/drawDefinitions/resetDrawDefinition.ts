@@ -246,12 +246,11 @@ export function resetStructureMatchUps({
 /**
  * Remove the record of an exit that a reset has just undone.
  *
- * `toBePlayed` clears `matchUpStatusCodes` and `sideExitProvenance` on every matchUp it overwrites,
+ * `toBePlayed` clears `sideExitProvenance` on every matchUp it overwrites,
  * and a BYE matchUp is deliberately NOT overwritten — the BYE is POSITIONING, which reset keeps, and
  * the rule is that "the BYE remains a BYE". The skip took the clear with it: it was hit
  * on 2026-09-24 in a COMPASS 16 where a `DOUBLE_WALKOVER` at `East|1|2` left `West|1|1` reading
- * `matchUpStatus: BYE` beside `matchUpStatusCodes` describing a WALKOVER that no longer existed, and
- * `North|1|1` holding a `byeClaims` entry for the same vanished exit.
+ * `matchUpStatus: BYE` beside a record of a WALKOVER that no longer existed, and `North|1|1` holding a `byeClaims` entry for the same vanished exit.
  *
  * So the two are separated. The status is decided by the branches below; the residue goes from every
  * matchUp regardless, because it describes a RESULT and reset undoes results.
@@ -265,10 +264,6 @@ export function resetStructureMatchUps({
  * attribute is WRITTEN, never whether stale state is removed.
  */
 function clearExitResidue(matchUp) {
-  // guarded, so a reset does not introduce an empty array onto every matchUp in the draw that never
-  // carried codes; blanked rather than deleted where it did, matching the post-reset shape
-  // `toBePlayed` leaves on the matchUps it overwrites
-  if (matchUp.matchUpStatusCodes?.length) matchUp.matchUpStatusCodes = [];
   clearSideExitProvenance(matchUp);
 }
 

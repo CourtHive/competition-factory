@@ -27,5 +27,4 @@ export const storedRecord = () => Object.values(getTournamentRecords())[0] as To
  * the stored record as an object graph, with the cleared fixture's objects (every matchUp cleared with it shares them)
  * and whatever else is given: a call's result, which can hold objects of the record
  */
-export const storedGraph = (...besides: unknown[]) =>
-  objectGraph([toBePlayed.matchUpStatusCodes, toBePlayed.score, storedRecord(), ...besides]);
+export const storedGraph = (...besides: unknown[]) => objectGraph([toBePlayed.score, storedRecord(), ...besides]);

@@ -1,3 +1,4 @@
+import { holdsReasons } from '../reasons';
 import { findMissedLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileMissedLinkAdvancements';
 import { findReservationWork } from '@Mutate/matchUps/matchUpStatus/reconcileConsolationReservations';
 import { hasStaleExitOrigins } from '@Mutate/matchUps/matchUpStatus/reconcileStaleExitOrigins';
@@ -86,7 +87,7 @@ function replayLanding(
       origin?.sourceMatchUpId !== carry.sourceMatchUpId ||
       carriedExitStatus(origin) !== carry.matchUpStatus ||
       !scoreless(entry) ||
-      entry.matchUpStatusCodes?.length ||
+      holdsReasons(entry) ||
       Object.values(entry.sideStatusCodes ?? {}).some(Boolean)
     )
       return undefined;
@@ -99,7 +100,7 @@ function replayLanding(
     entry.matchUpStatus !== TO_BE_PLAYED ||
     entry.winningSide ||
     !scoreless(entry) ||
-    entry.matchUpStatusCodes?.length ||
+    holdsReasons(entry) ||
     entry.loserMatchUpId ||
     Object.keys(entry.sideExitProvenance ?? {}).length ||
     Object.values(entry.sideStatusCodes ?? {}).some(Boolean) ||

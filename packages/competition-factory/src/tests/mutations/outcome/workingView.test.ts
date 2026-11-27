@@ -103,10 +103,6 @@ it.each([
   ],
   ['setMatchUpBye', (f: any): OutcomeOp => ({ op: 'setMatchUpBye', matchUpId: f.first.matchUpId })],
   [
-    'setMatchUpStatusCodes',
-    (f: any): OutcomeOp => ({ op: 'setMatchUpStatusCodes', matchUpId: f.first.matchUpId, matchUpStatusCodes: [] }),
-  ],
-  [
     'setMatchUpDrawPositions',
     (f: any): OutcomeOp => ({
       op: 'setMatchUpDrawPositions',

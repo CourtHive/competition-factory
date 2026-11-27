@@ -32,8 +32,6 @@ export type ConvergedWrite = {
   onwardBye?: ByeChain;
   /** what is merged beside the provenance standing there */
   provenance?: SideExitProvenance;
-  /** v1's `retainPolicyCodes`; none by default */
-  matchUpStatusCodes?: string[];
   /** `removeScore`: the score reset whatever the double exit; by default a DOUBLE_WALKOVER's alone */
   resetsScore?: boolean;
   /** the converged matchUp's own advancement taken back before it produces on (`withdrawOwnAdvancement`) */
@@ -54,7 +52,6 @@ export function convergedWrite(view: OutcomeView, planned: ConvergedWrite): Outc
       matchUpId: landing.matchUpId,
       matchUpStatus,
       removesWinningSide: true,
-      matchUpStatusCodes: planned.matchUpStatusCodes ?? [],
       stampsScoredTime: false,
       ...(planned.resetsScore || matchUpStatus === DOUBLE_WALKOVER
         ? { resetsScore: true, score: toBePlayed.score }

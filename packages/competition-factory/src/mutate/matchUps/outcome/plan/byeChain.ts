@@ -1,3 +1,4 @@
+import { holdsReasons } from '../reasons';
 import { buildCarriedExitProvenance, buildSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { carriedExitStatus, arrivedByResult, getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
 import { getDrawPositionSideNumber, getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
@@ -428,7 +429,7 @@ function throughHeldBye(
   if (!next || next.structureId !== entry.structureId || next.matchUpStatus !== BYE || next.loserMatchUpId)
     return undefined;
   if (held.length !== 1 || held.includes(drawPosition) || !next.sides?.some((side) => side.bye)) return undefined;
-  if (Object.keys(next.sideExitProvenance ?? {}).length || next.matchUpStatusCodes?.length) return undefined;
+  if (Object.keys(next.sideExitProvenance ?? {}).length || holdsReasons(next)) return undefined;
   const beyond = onwardFrom(view, next, drawPosition);
   if (!beyond) return undefined;
   const into = { matchUpId: next.matchUpId, drawPositions: [...held, drawPosition].sort((a, b) => a - b) };
@@ -451,7 +452,7 @@ function cleanByeLevel(view: OutcomeView, level: CarryLevel): 'clean' | 'doubled
   const doubled = level.seat.opponentBye;
   if (level.seat.opponentHeld && !doubled) return false;
   if (level.matchUpStatus !== (doubled ? BYE : TO_BE_PLAYED) || level.hasResult || level.carriesExit) return false;
-  if (!level.record || level.record.provenance || level.record.matchUpStatusCodes?.length) return false;
+  if (!level.record || level.record.provenance || level.record.reasons) return false;
   if (indexed(view, level.matchUpId)?.roundNumber !== 1) return false;
   return doubled ? 'doubled' : 'clean';
 }
@@ -827,8 +828,7 @@ export function ownByeChain(view: OutcomeView): ByeChain | undefined {
   if (!seat?.free) return undefined;
   if (targets.loserMatchUpStatus !== (doubled ? BYE : TO_BE_PLAYED)) return undefined;
   if (targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit) return undefined;
-  if (!loserMatchUpRecord || loserMatchUpRecord.provenance || loserMatchUpRecord.matchUpStatusCodes?.length)
-    return undefined;
+  if (!loserMatchUpRecord || loserMatchUpRecord.provenance || loserMatchUpRecord.reasons) return undefined;
   const first = { structureId: loserStructureId, drawPosition: loserTargetDrawPosition, matchUpId: loserMatchUpId };
   return byeChain(view, first, targets.byeLevels?.own, true, doubled);
 }
@@ -849,8 +849,7 @@ export function keptOutByeChain(
   if (!loserMatchUpId || !seat?.free || seat.opponentBye) return undefined;
   if (targets.loserMatchUpStatus !== TO_BE_PLAYED) return undefined;
   if (targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit) return undefined;
-  if (!loserMatchUpRecord || loserMatchUpRecord.provenance || loserMatchUpRecord.matchUpStatusCodes?.length)
-    return undefined;
+  if (!loserMatchUpRecord || loserMatchUpRecord.provenance || loserMatchUpRecord.reasons) return undefined;
   return byeChain(view, { ...bye, matchUpId: loserMatchUpId }, undefined, true, false);
 }
 
@@ -872,8 +871,7 @@ export function unfillableByeChain(
   if (unfillable.seat.opponentBye && !standing) return undefined;
   if (unfillable.matchUpStatus !== (standing ? BYE : TO_BE_PLAYED) || unfillable.hasResult) return undefined;
   const record = indexed(view, unfillable.matchUpId);
-  if (!record || record.matchUpStatusCodes?.length || Object.keys(record.sideExitProvenance ?? {}).length)
-    return undefined;
+  if (!record || record.reasons || Object.keys(record.sideExitProvenance ?? {}).length) return undefined;
   const { structureId, drawPosition, matchUpId } = unfillable;
   const first = { structureId, drawPosition, matchUpId };
   return byeChain(view, first, from.levels, false, standing);
@@ -898,8 +896,7 @@ function heldLoser(view: OutcomeView): HeldLoser | undefined {
   if (targets.loserLink?.linkCondition || !byeMatchUp || !drawPosition || !seat?.free) return undefined;
   if (targets.loserMatchUpStatus !== BYE || targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit)
     return undefined;
-  if (!loserMatchUpRecord || loserMatchUpRecord.provenance || loserMatchUpRecord.matchUpStatusCodes?.length)
-    return undefined;
+  if (!loserMatchUpRecord || loserMatchUpRecord.provenance || loserMatchUpRecord.reasons) return undefined;
   const seatSide = byeMatchUp.feedRound ? 1 : sideOf(byeMatchUp, drawPosition);
   if (!seatSide) return undefined;
   const held = { byeMatchUpId: byeMatchUp.matchUpId, structureId: byeMatchUp.structureId, seatSide: seatSide as 1 | 2 };
@@ -912,7 +909,7 @@ function heldLoser(view: OutcomeView): HeldLoser | undefined {
     const arrivalSide = sideOf(onward, drawPosition);
     if (!arrivalSide || onward.structureId !== byeMatchUp.structureId || onward.winningSide) return undefined;
     if (onward.score?.scoreStringSide1 || Object.keys(onward.sideExitProvenance ?? {}).length) return undefined;
-    if (onward.matchUpStatusCodes?.length) return undefined;
+    if (holdsReasons(onward)) return undefined;
     const other = onward.sides?.find((side) => side.sideNumber === 3 - arrivalSide);
     if (onward.matchUpStatus === BYE) {
       // a BYE-held matchUp the position passes: the BYE stands opposite it
@@ -976,7 +973,7 @@ function heldBeyond(
   if (beyond.structureId !== landing.structureId || beyond.feedRound || beyond.winningSide) return undefined;
   if (beyond.score?.scoreStringSide1 || Object.keys(beyond.sideExitProvenance ?? {}).length) return undefined;
   // a participant standing there is awarded the exit (sides read before the advance re-orders them): v1's
-  if (beyond.matchUpStatusCodes?.length || beyond.sides?.some((side) => side.participantId)) return undefined;
+  if (holdsReasons(beyond) || beyond.sides?.some((side) => side.participantId)) return undefined;
   // the side the held position takes: beside another position, in their order (the lower side 1); alone in a round that
   // is not fed, the side its feeder's place sends it to, as the structure pairs it (`getOrderedDrawPositions`)
   const positions = unfillable.onward?.drawPositions ?? [];
@@ -1000,7 +997,6 @@ function heldBeyondOps(frame: SeatFrame, beyond: { matchUpId: string; arrivalSid
       op: 'setMatchUpResult',
       matchUpId,
       matchUpStatus: status === DOUBLE_DEFAULT ? DEFAULTED : WALKOVER,
-      matchUpStatusCodes: [],
       stampsScoredTime: false,
       inContextBare: true,
       resetsScore: true,
@@ -1034,7 +1030,6 @@ function heldLoserOps(frame: SeatFrame, held: HeldLoser): OutcomeOp[] {
         matchUpId,
         matchUpStatus,
         ...(awarded ? { winningSide: (3 - side) as 1 | 2 } : {}),
-        matchUpStatusCodes: [],
         stampsScoredTime: false,
         announcesContext: false,
         resetsScore: true,
@@ -1096,8 +1091,7 @@ export function producedLoser(view: OutcomeView): ProducedLoser | undefined {
   if (!seat?.free || seat.opponentBye) return undefined;
   if (targets.loserMatchUpStatus !== TO_BE_PLAYED || targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit)
     return undefined;
-  if (!loserMatchUpRecord || loserMatchUpRecord.provenance || loserMatchUpRecord.matchUpStatusCodes?.length)
-    return undefined;
+  if (!loserMatchUpRecord || loserMatchUpRecord.provenance || loserMatchUpRecord.reasons) return undefined;
   const seatSide = sideOf(loserMatchUp, loserTargetDrawPosition);
   const opposite = (targets.loserMatchUpDrawPositions ?? []).filter((position) => position !== loserTargetDrawPosition);
   const onward = opposite.length === 1 ? onwardFrom(view, loserMatchUp, opposite[0]) : undefined;
@@ -1143,7 +1137,6 @@ export function producedLoserOps(
       matchUpId: produced.matchUpId,
       matchUpStatus,
       winningSide: (3 - produced.seatSide) as 1 | 2,
-      matchUpStatusCodes: [],
       stampsScoredTime: false,
       ...(matchUpStatus === WALKOVER ? { resetsScore: true, score: toBePlayed.score } : {}),
     },

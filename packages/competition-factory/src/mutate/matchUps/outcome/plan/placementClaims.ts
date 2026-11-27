@@ -1,7 +1,6 @@
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
-import { unchangedExitArrivalCodes } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
 import {
   BYE,
@@ -156,7 +155,6 @@ export type PlacementClaim = {
   added: boolean;
   announce: boolean;
   awardedSide?: 1 | 2;
-  codes?: string[];
 };
 
 /** Earlier placements in this same direction may supply a position to the preceding round.
@@ -202,10 +200,6 @@ function awardOnArrival(draw: ClaimDraw, path: PlacementClaim[], claim: Placemen
     !stored.sides?.some((s) => s.sideNumber === side && 'drawPosition' in s && s.drawPosition === position)
   )
     return false;
-  if (positions.length === 2) {
-    claim.codes = unchangedExitArrivalCodes(stored, 3 - side);
-    if (!claim.codes) return false;
-  }
   claim.awardedSide = side;
   claim.announce = true;
   return true;

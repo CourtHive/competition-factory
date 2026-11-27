@@ -7,12 +7,10 @@ import {
   buildSideExitProvenance,
   producedExitStatus,
   setSideExitProvenance,
-  exitOutcomeCode,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants
-import { BYE, DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { OUTCOME_DEFAULT, OUTCOME_RETIREMENT, OUTCOME_WALKOVER } from '@Constants/keyValueConstants';
+import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';
 
 afterEach(() => setSchemaWriteMode(NATIVE));
@@ -135,38 +133,4 @@ it('refuses to guess a side, and maps produced statuses', () => {
   expect(producedExitStatus(DOUBLE_DEFAULT)).toEqual(DEFAULTED);
   // a BYE is not a double exit and must NOT be relabelled as a walkover
   expect(producedExitStatus('BYE')).toEqual('BYE');
-});
-
-/**
- * Regression for the coercion at progressExitStatus, which mapped EVERY object element to
- * OUTCOME_WALKOVER. Measured: of 50 provenance elements reaching it, 13 were BYE and 9 DEFAULTED.
- *
- * These assertions are deliberately at the element level. The only oracle that exercised the
- * surrounding path is a DOUBLE_WALKOVER/DOUBLE_DEFAULT parity test that rewrites "DEFAULTED" to
- * "WALKOVER" and "DEF" to "WO" before comparing, so it cannot distinguish a correct mapping from the
- * bug. Nothing that normalises the two statuses together can serve as a regression test here.
- */
-it('maps an exit element to its OWN outcome code, and never invents a walkover', () => {
-  expect(exitOutcomeCode({ matchUpStatus: WALKOVER, previousMatchUpStatus: DOUBLE_WALKOVER })).toEqual(
-    OUTCOME_WALKOVER,
-  );
-
-  // the 9 measured DEFAULTED elements: previously relabelled 'WO'
-  expect(exitOutcomeCode({ matchUpStatus: DEFAULTED, previousMatchUpStatus: DOUBLE_DEFAULT })).toEqual(OUTCOME_DEFAULT);
-  expect(exitOutcomeCode({ previousMatchUpStatus: DOUBLE_DEFAULT })).toEqual(OUTCOME_DEFAULT);
-
-  // the 13 measured BYE elements: a BYE is not an outcome and must contribute NO code
-  expect(exitOutcomeCode({ previousMatchUpStatus: BYE })).toEqual('');
-  expect(exitOutcomeCode({ matchUpStatus: BYE })).toEqual('');
-
-  expect(exitOutcomeCode({ previousMatchUpStatus: RETIRED })).toEqual(OUTCOME_RETIREMENT);
-
-  // strings pass through; the other two element shapes carry their own value
-  expect(exitOutcomeCode('WO')).toEqual('WO');
-  expect(exitOutcomeCode({ code: 'DEF' })).toEqual('DEF');
-  expect(exitOutcomeCode({ matchUpStatusCode: 'OA' })).toEqual('OA');
-
-  // an object with nothing to say contributes nothing, rather than a walkover
-  expect(exitOutcomeCode({ sideNumber: 1 })).toEqual('');
-  expect(exitOutcomeCode(undefined)).toEqual('');
 });

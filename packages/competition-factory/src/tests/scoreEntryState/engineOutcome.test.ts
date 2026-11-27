@@ -110,7 +110,7 @@ describe('a submitted score state is what setMatchUpStatus records', () => {
     model = chooseEnding(model, { kind: 'reasonCode', code: 'RJ' });
 
     const outcome = submitted(model);
-    expect(outcome.matchUpStatusCodes).toEqual(['', 'RJ']);
+    expect(outcome.sideStatusCodes).toEqual({ 2: 'RJ' });
     const matchUp = apply(target, outcome);
 
     expect(matchUp.matchUpStatus).toEqual(RETIRED);
@@ -136,7 +136,7 @@ describe('a submitted score state is what setMatchUpStatus records', () => {
     expect(scoreString(reopened)).toEqual(scoreString(model));
 
     const second = apply(target, submitted(reopened, { openedOnRecordedOutcome: true }));
-    for (const field of ['matchUpStatus', 'winningSide', 'matchUpStatusCodes', 'score'])
+    for (const field of ['matchUpStatus', 'winningSide', 'sideStatusCodes', 'score'])
       expect(second[field]).toEqual(first[field]);
   });
 
@@ -169,24 +169,25 @@ describe('a submitted score state is what setMatchUpStatus records', () => {
     expect(matchUp.score.scoreStringSide1).toEqual('6-4 3-2');
   });
 
-  it('a clear removes the score AND the codes', () => {
+  it('a clear removes the score AND the reasons', () => {
     const target = scoringTarget();
     let model = typed(createScoreEntryModel(), [6, 4], [2, 1]);
     model = chooseEnding(model, { kind: 'side', sideNumber: 2, status: RETIRED });
     model = chooseEnding(model, { kind: 'reasonCode', code: 'RJ' });
     const recorded = apply(target, submitted(model));
-    expect(recorded.matchUpStatusCodes?.length).toBeGreaterThan(0);
+    expect(recorded.sideStatusCodes).toEqual({ 2: 'RJ' });
 
     const reopened = createScoreEntryModel({ sets: recorded.score.sets, matchUp: recorded });
     const cleared = clearAll(reopened);
     const outcome = submitted(cleared, { openedOnRecordedOutcome: true, cleared: true });
-    expect(outcome).toEqual({ score: { sets: [] }, matchUpStatusCodes: [] });
+    expect(outcome).toEqual({ score: { sets: [] }, clearStatusCodes: true });
 
     const matchUp = apply(target, outcome);
     expect(matchUp.matchUpStatus).toEqual(TO_BE_PLAYED);
     expect(matchUp.winningSide).toBeUndefined();
     expect(matchUp.score?.sets ?? []).toEqual([]);
-    expect(matchUp.matchUpStatusCodes ?? []).toEqual([]);
+    expect(matchUp.sideStatusCodes).toBeUndefined();
+    expect(matchUp.matchUpStatusCodes).toBeUndefined();
   });
 
   it('a format changed in the score state rides along and is persisted with the result', () => {

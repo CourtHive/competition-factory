@@ -180,7 +180,7 @@ function removedLoserReason(view: OutcomeView, carry?: CarrySource): AbstainReas
   }
   if (targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit) return 'cascade';
   const record = targets.loserMatchUpRecord;
-  if (!record || record.provenance || record.matchUpStatusCodes?.length) return 'provenance';
+  if (!record || record.provenance || record.reasons) return 'provenance';
   return undefined;
 }
 

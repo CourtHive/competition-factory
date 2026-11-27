@@ -1,3 +1,4 @@
+import { holdsReasons } from '../reasons';
 import { releaseWalk } from '../unwindWalk';
 import { buildSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { producedConvergedOps, producedConvergedReason } from './producedConvergence';
@@ -46,7 +47,7 @@ export function producedReason(
   // a matchUp in progress takes the double exit as one to be played does: v1 writes over its score (a dual's tally),
   // leaving a dual's played lines as they stand (S7)
   const open = existing.matchUpStatus === TO_BE_PLAYED || existing.matchUpStatus === IN_PROGRESS;
-  if (!open || existing.winningSide || write.matchUpStatusCodes?.length) return 'exit';
+  if (!open || existing.winningSide) return 'exit';
   if (targets.byeTarget) return 'exit';
   // a round robin group's matchUp sends nobody on (`doubleExitAdvancement` returns at once in a container): its result
   // and the group's tally are all there is
@@ -67,7 +68,7 @@ export function producedReason(
   if (target.matchUpStatus !== TO_BE_PLAYED || target.holdsResult || target.hasBye || target.carriesExit) return 'exit';
   if (target.carriedStatuses.length) return 'exit';
   const entry = indexed(view, produced.matchUpId);
-  if (!entry || entry.matchUpStatusCodes?.length || Object.keys(entry.sideExitProvenance ?? {}).length) return 'exit';
+  if (!entry || holdsReasons(entry) || Object.keys(entry.sideExitProvenance ?? {}).length) return 'exit';
   const awarded = entry.sides?.find((side) => side.sideNumber === produced.winningSide);
   if (awarded?.bye) return 'exit';
   // loser links, from this matchUp or from the next: the seats they feed take BYEs, planned outside a feed round
@@ -204,7 +205,6 @@ export function producedAwardWriteOps(
       matchUpId,
       matchUpStatus,
       ...(winningSide ? { winningSide } : {}),
-      matchUpStatusCodes: [],
       stampsScoredTime: false,
       ...(matchUpStatus === WALKOVER ? { resetsScore: true, score: toBePlayed.score } : {}),
     },

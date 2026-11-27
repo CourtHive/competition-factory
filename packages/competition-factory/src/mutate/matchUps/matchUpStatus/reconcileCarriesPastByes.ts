@@ -79,7 +79,6 @@ function carryPastByes({
     const result = carryExitOnward({
       context: {
         // the origin's reason is read from its own `sideStatusCodes` by `progressExitStatus`
-        sourceMatchUpStatusCodes: [],
         sourceMatchUpStatus: carry.matchUpStatus,
         sourceWinningSide: origin?.winningSide,
         sourceMatchUpId: carry.sourceMatchUpId,

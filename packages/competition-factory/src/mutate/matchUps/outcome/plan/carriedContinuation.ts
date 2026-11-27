@@ -143,7 +143,6 @@ function carryLanding(status: MatchUpStatusUnion, frame: CarryFrame): OutcomeOp[
       matchUpId: at.matchUpId,
       matchUpStatus: status,
       winningSide: (3 - at.sideNumber) as 1 | 2,
-      matchUpStatusCodes: [],
       ...(status === WALKOVER ? { resetsScore: true, score: toBePlayed.score } : {}),
       ...('ensuredSides' in at ? { ensuredSides: at.ensuredSides } : {}),
     },

@@ -30,27 +30,27 @@ test.for([
       //outcome
       matchUpStatus: WALKOVER,
       winningSide: 2,
-      matchUpStatusCodes: ['W1'], //injury
+      sideStatusCodes: { 1: 'W1' }, //injury
     },
-    { expectedBackDrawMatchUpStatus: WALKOVER, expectedBackDrawMatchUpStatusCodes: ['W1'] },
+    { expectedBackDrawMatchUpStatus: WALKOVER, expectedBackDrawSideStatusCodes: { 1: 'W1' } },
   ],
   [
     {
       //outcome
       matchUpStatus: WALKOVER,
       winningSide: 2,
-      matchUpStatusCodes: ['W2'], //illness
+      sideStatusCodes: { 1: 'W2' }, //illness
     },
-    { expectedBackDrawMatchUpStatus: WALKOVER, expectedBackDrawMatchUpStatusCodes: ['W2'] },
+    { expectedBackDrawMatchUpStatus: WALKOVER, expectedBackDrawSideStatusCodes: { 1: 'W2' } },
   ],
   [
     {
       //outcome
       matchUpStatus: DEFAULTED,
       winningSide: 2,
-      matchUpStatusCodes: ['DM'], //misconduct
+      sideStatusCodes: { 1: 'DM' }, //misconduct
     },
-    { expectedBackDrawMatchUpStatus: DEFAULTED, expectedBackDrawMatchUpStatusCodes: ['DM'] },
+    { expectedBackDrawMatchUpStatus: DEFAULTED, expectedBackDrawSideStatusCodes: { 1: 'DM' } },
   ],
   [
     {
@@ -58,9 +58,9 @@ test.for([
       // when propagating RETIRED status, the loserMatchUp should be marked as WALKOVER
       matchUpStatus: RETIRED,
       winningSide: 2,
-      matchUpStatusCodes: ['RJ'], //Injury
+      sideStatusCodes: { 1: 'RJ' }, //Injury
     },
-    { expectedBackDrawMatchUpStatus: WALKOVER, expectedBackDrawMatchUpStatusCodes: ['RJ'] },
+    { expectedBackDrawMatchUpStatus: WALKOVER, expectedBackDrawSideStatusCodes: { 1: 'RJ' } },
   ],
 ])('can propagate an %s exit status and result in a %s', ([outcome, expected]) => {
   const idPrefix = 'matchUp';
@@ -96,7 +96,7 @@ test.for([
 
   let loserMatchUp = matchUps?.find((mU) => mU.matchUpId === matchUp?.loserMatchUpId);
   expect(loserMatchUp?.matchUpStatus).toEqual(expected.expectedBackDrawMatchUpStatus);
-  expect(loserMatchUp?.matchUpStatusCodes).toEqual(expected.expectedBackDrawMatchUpStatusCodes);
+  expect(loserMatchUp?.sideStatusCodes).toEqual(expected.expectedBackDrawSideStatusCodes);
 });
 
 test(`it sets the correct status codes in a consolation match when a WO is propagated to a match with already an opponent.`, () => {
@@ -118,7 +118,7 @@ test(`it sets the correct status codes in a consolation match when a WO is propa
         scoreStringSide2: '[3-11]',
       },
       matchUpStatus: COMPLETED,
-      matchUpStatusCodes: [],
+      clearStatusCodes: true,
       winningSide: 1,
     },
     matchUpId,
@@ -138,7 +138,7 @@ test(`it sets the correct status codes in a consolation match when a WO is propa
       //outcome
       matchUpStatus: WALKOVER,
       winningSide: 2,
-      matchUpStatusCodes: ['W2'], //illness
+      sideStatusCodes: { 1: 'W2' }, //illness
     },
     propagateExitStatus: true,
     matchUpId,
@@ -152,10 +152,8 @@ test(`it sets the correct status codes in a consolation match when a WO is propa
   //get the updated loser matchup
   let loserMatchUp = matchUps?.find((mU) => mU.matchUpId === matchUp?.loserMatchUpId);
   expect(loserMatchUp?.matchUpStatus).toEqual(WALKOVER);
-  // matchUpStatusCodes are position-dependent: the propagated WO participant feeds
-  // in on side 2 here, so the code sits at index 1 → ['', 'W2'] (not ['W2'], which
-  // would mis-map the walkover to the opponent on side 1).
-  expect(loserMatchUp?.matchUpStatusCodes).toEqual(['', 'W2']);
+  // the propagated WO participant feeds in on side 2 here, so the reason is side 2's
+  expect(loserMatchUp?.sideStatusCodes).toEqual({ 2: 'W2' });
   // the present opponent (side 1) takes the walkover win
   expect(loserMatchUp?.winningSide).toEqual(1);
 });
@@ -166,36 +164,36 @@ test.for([
       //outcome
       matchUpStatus: WALKOVER,
       winningSide: 1,
-      matchUpStatusCodes: ['W1'], //injury
+      sideStatusCodes: { 2: 'W1' }, //injury
     },
-    { expectedBackDrawMatchUpStatus: DOUBLE_WALKOVER, expectedBackDrawMatchUpStatusCodes: ['WO', 'W1'] },
+    { expectedBackDrawMatchUpStatus: DOUBLE_WALKOVER, expectedBackDrawSideStatusCodes: { 2: 'W1' } },
   ],
   [
     {
       //outcome
       matchUpStatus: WALKOVER,
       winningSide: 2,
-      matchUpStatusCodes: ['W1'], //injury
+      sideStatusCodes: { 1: 'W1' }, //injury
     },
-    { expectedBackDrawMatchUpStatus: DOUBLE_WALKOVER, expectedBackDrawMatchUpStatusCodes: ['WO', 'W1'] },
+    { expectedBackDrawMatchUpStatus: DOUBLE_WALKOVER, expectedBackDrawSideStatusCodes: { 2: 'W1' } },
   ],
   [
     {
       //outcome
       matchUpStatus: DEFAULTED,
       winningSide: 1,
-      matchUpStatusCodes: ['DM'],
+      sideStatusCodes: { 2: 'DM' },
     },
-    { expectedBackDrawMatchUpStatus: DOUBLE_WALKOVER, expectedBackDrawMatchUpStatusCodes: ['WO', 'DM'] },
+    { expectedBackDrawMatchUpStatus: DOUBLE_WALKOVER, expectedBackDrawSideStatusCodes: { 2: 'DM' } },
   ],
   [
     {
       //outcome
       matchUpStatus: DEFAULTED,
       winningSide: 2,
-      matchUpStatusCodes: ['DM'],
+      sideStatusCodes: { 1: 'DM' },
     },
-    { expectedBackDrawMatchUpStatus: DOUBLE_WALKOVER, expectedBackDrawMatchUpStatusCodes: ['WO', 'DM'] },
+    { expectedBackDrawMatchUpStatus: DOUBLE_WALKOVER, expectedBackDrawSideStatusCodes: { 2: 'DM' } },
   ],
 ])(
   'can propagate a %s to a consolation match with already the result of a double walkover, resulting in %s',
@@ -216,7 +214,7 @@ test.for([
       outcome: {
         //outcome
         matchUpStatus: DOUBLE_WALKOVER,
-        matchUpStatusCodes: ['WOWO', 'WOWO'],
+        sideStatusCodes: { 1: 'WOWO', 2: 'WOWO' },
       },
       matchUpId: firstMatchUpId,
       drawId,
@@ -241,7 +239,7 @@ test.for([
     //consolation match should result in a DOUBLE_WALKOVER
     let loserMatchUp = matchUps?.find((mU) => mU.matchUpId === matchUp?.loserMatchUpId);
     expect(loserMatchUp?.matchUpStatus).toEqual(expected.expectedBackDrawMatchUpStatus);
-    expect(loserMatchUp?.matchUpStatusCodes).toEqual(expected.expectedBackDrawMatchUpStatusCodes);
+    expect(loserMatchUp?.sideStatusCodes).toEqual(expected.expectedBackDrawSideStatusCodes);
   },
 );
 
@@ -260,7 +258,7 @@ test('can propagate a default to a consolation match with already the result of 
     outcome: {
       //outcome
       matchUpStatus: DOUBLE_DEFAULT,
-      matchUpStatusCodes: ['DD', 'DD'],
+      sideStatusCodes: { 1: 'DD', 2: 'DD' },
     },
     matchUpId: firstMatchUpId,
     drawId,
@@ -273,7 +271,7 @@ test('can propagate a default to a consolation match with already the result of 
     outcome: {
       matchUpStatus: DEFAULTED,
       winningSide: 2,
-      matchUpStatusCodes: ['DM'],
+      sideStatusCodes: { 1: 'DM' },
     },
     propagateExitStatus: true,
     matchUpId: secondMatchUpId,
@@ -303,7 +301,7 @@ test('can propagate a default to a consolation match with already the result of 
   //
   // The divergence this NOTE used to describe — matchUpStatus saying DOUBLE_WALKOVER while the
   // codes said default — is now closed: RULE 4 derives the flavour instead of hardcoding it.
-  expect(loserMatchUp?.matchUpStatusCodes).toEqual(['DEF', 'DM']);
+  expect(loserMatchUp?.sideStatusCodes).toEqual({ 2: 'DM' });
 });
 
 test('can propagate an exit status and progress the already existing opponent in the back draw match', () => {
@@ -362,7 +360,7 @@ test('can propagate an exit status and progress the already existing opponent in
       //outcome
       matchUpStatus: WALKOVER,
       winningSide: 2,
-      matchUpStatusCodes: ['W1'], //injury
+      sideStatusCodes: { 1: 'W1' }, //injury
     },
     matchUpId,
     drawId,
@@ -532,7 +530,7 @@ test('can automatically progress the winner in a feed in round that already had 
   //setting round 2 match 1 as a WO and propagating the exit to the consolation draw
   let matchUpId = 'm-2-1';
   let result = tournamentEngine.setMatchUpStatus({
-    outcome: { matchUpStatus: WALKOVER, winningSide: 2, matchUpStatusCodes: ['W0'] },
+    outcome: { matchUpStatus: WALKOVER, winningSide: 2, sideStatusCodes: { 1: 'W0' } },
     propagateExitStatus: true,
     matchUpId,
     drawId,
@@ -608,7 +606,7 @@ test('FMLC: propagated WO against a consolation BYE stays a BYE and the exit cas
   tournamentEngine.setMatchUpStatus({ matchUpId: 'm-1-4', outcome, drawId });
 
   const result = tournamentEngine.setMatchUpStatus({
-    outcome: { matchUpStatus: WALKOVER, winningSide: 2, matchUpStatusCodes: ['W1'] },
+    outcome: { matchUpStatus: WALKOVER, winningSide: 2, sideStatusCodes: { 1: 'W1' } },
     propagateExitStatus: true,
     matchUpId: 'm-2-1',
     drawId,
@@ -635,9 +633,8 @@ test('FMLC: propagated WO against a consolation BYE stays a BYE and the exit cas
   const woSideNumber = consolationR3MatchUp?.sides?.find((s) => s.participantId === woPlayerId)?.sideNumber;
   expect(consolationR3MatchUp?.winningSide).toEqual(woSideNumber === 1 ? 2 : 1);
 
-  // The carried code is position-aware: it sits on the participant's side.
-  const expectedCodes = woSideNumber === 1 ? ['W1'] : ['', 'W1'];
-  expect(consolationR3MatchUp?.matchUpStatusCodes).toEqual(expectedCodes);
+  // The carried reason sits on the participant's side.
+  expect(consolationR3MatchUp?.sideStatusCodes).toEqual({ [woSideNumber as number]: 'W1' });
 });
 
 test('FMLC: WO player advanced into a pre-seeded consolation slot fires a modifyMatchUp notice', () => {
@@ -682,7 +679,7 @@ test('FMLC: WO player advanced into a pre-seeded consolation slot fires a modify
   // Capture notices only for the propagated WALKOVER mutation under test
   noticedMatchUpIds.clear();
   const result = tournamentEngine.setMatchUpStatus({
-    outcome: { matchUpStatus: WALKOVER, winningSide: 2, matchUpStatusCodes: ['W1'] },
+    outcome: { matchUpStatus: WALKOVER, winningSide: 2, sideStatusCodes: { 1: 'W1' } },
     propagateExitStatus: true,
     matchUpId: 'm-2-1',
     drawId,
@@ -755,7 +752,7 @@ test('FMLC: propagated WO cascades through a consolation BYE, then a later fall-
   const woMatchUp = mainMatchUp(2, 2);
   const woPlayerId = woMatchUp.sides.find((s) => s.sideNumber === 1).participantId;
   const woResult = tournamentEngine.setMatchUpStatus({
-    outcome: { matchUpStatus: WALKOVER, winningSide: 2, matchUpStatusCodes: ['W1'] },
+    outcome: { matchUpStatus: WALKOVER, winningSide: 2, sideStatusCodes: { 1: 'W1' } },
     propagateExitStatus: true,
     matchUpId: woMatchUp.matchUpId,
     drawId,
@@ -770,7 +767,7 @@ test('FMLC: propagated WO cascades through a consolation BYE, then a later fall-
   const woSide = pendingWo.sides.find((s) => s.participantId === woPlayerId).sideNumber;
   // the empty (no-exit) side is the winner while it awaits the fall-through participant
   expect(pendingWo.winningSide).toEqual(woSide === 1 ? 2 : 1);
-  expect(pendingWo.matchUpStatusCodes[woSide - 1]).toEqual('W1');
+  expect(pendingWo.sideStatusCodes[woSide]).toEqual('W1');
   // only the exiting participant is present; the winning side is still an empty feed slot
   expect(pendingWo.sides.filter((s) => s.participantId).length).toEqual(1);
 
@@ -788,7 +785,7 @@ test('FMLC: propagated WO cascades through a consolation BYE, then a later fall-
   expect(winnerParticipantId).toBeDefined();
   expect(winnerParticipantId).not.toEqual(woPlayerId);
   // the exiting player keeps the position-aware code on their side
-  expect(resolvedWo.matchUpStatusCodes[resolvedWoSide - 1]).toEqual('W1');
+  expect(resolvedWo.sideStatusCodes[resolvedWoSide]).toEqual('W1');
 
   // no leak: the next consolation round holds only the walkover winner, not the WO player
   const nextRound = consolationMatchUps().find(
@@ -839,7 +836,7 @@ function buildAutoResolveCascade({ exitStatus = WALKOVER, exitCode = 'W1' } = {}
   const woMatchUp = mainMatchUp(2, 2);
   const woPlayerId = woMatchUp.sides.find((s) => s.sideNumber === 1).participantId;
   tournamentEngine.setMatchUpStatus({
-    outcome: { matchUpStatus: exitStatus, winningSide: 2, matchUpStatusCodes: [exitCode] },
+    outcome: { matchUpStatus: exitStatus, winningSide: 2, sideStatusCodes: { 1: exitCode } },
     propagateExitStatus: true,
     matchUpId: woMatchUp.matchUpId,
     drawId,
@@ -978,7 +975,7 @@ test('FMLC: resetting a source while its propagated exit is still PENDING is all
   const woPlayerId = woMatchUp.sides.find((s) => s.sideNumber === 1).participantId;
   // ONLY the WALKOVER (no later fall-through) → the consolation exit stays PENDING
   tournamentEngine.setMatchUpStatus({
-    outcome: { matchUpStatus: WALKOVER, winningSide: 2, matchUpStatusCodes: ['W1'] },
+    outcome: { matchUpStatus: WALKOVER, winningSide: 2, sideStatusCodes: { 1: 'W1' } },
     propagateExitStatus: true,
     matchUpId: woMatchUp.matchUpId,
     drawId,
@@ -999,11 +996,11 @@ test('FMLC: resetting a source while its propagated exit is still PENDING is all
   });
   expect(result.success).toEqual(true);
 
-  // the pending exit clears cleanly: no participant, no stale winningSide, no stale codes
+  // the pending exit clears cleanly: no participant, no stale winningSide, no positional codes
   const cleared = consolationMatchUps().find((m) => m.matchUpId === pending.matchUpId);
   expect(cleared.matchUpStatus).toEqual(TO_BE_PLAYED);
   expect(cleared.winningSide).toBeUndefined();
-  expect((cleared.matchUpStatusCodes ?? []).filter(Boolean).length).toEqual(0);
+  expect(cleared.matchUpStatusCodes).toBeUndefined();
   expect(cleared.sides.some((s) => s.participantId === woPlayerId)).toEqual(false);
 });
 
@@ -1037,7 +1034,7 @@ function consolationHasPropagatedExit({
 
   const woMatchUp = structureMatchUpAt(drawId, mainStructure.structureId, 2, 2);
   const params: any = {
-    outcome: { matchUpStatus: WALKOVER, winningSide: 2, matchUpStatusCodes: ['W1'] },
+    outcome: { matchUpStatus: WALKOVER, winningSide: 2, sideStatusCodes: { 1: 'W1' } },
     matchUpId: woMatchUp.matchUpId,
     drawId,
   };
@@ -1115,7 +1112,7 @@ test('FMLC real-match fall-through: winningSide and exit code follow the partici
   tournamentEngine.setMatchUpStatus({ matchUpId: mainMatchUp(1, 2).matchUpId, outcome: win1, drawId });
   const exitId = mainMatchUp(2, 2).sides.find((s) => s.sideNumber === 1).participantId; // WALKOVER loser (the exit)
   tournamentEngine.setMatchUpStatus({
-    outcome: { matchUpStatus: WALKOVER, winningSide: 2, matchUpStatusCodes: ['W1'] },
+    outcome: { matchUpStatus: WALKOVER, winningSide: 2, sideStatusCodes: { 1: 'W1' } },
     propagateExitStatus: true,
     matchUpId: mainMatchUp(2, 2).matchUpId,
     drawId,
@@ -1140,8 +1137,8 @@ test('FMLC real-match fall-through: winningSide and exit code follow the partici
   expect(loserSide?.participantId).toEqual(exitId);
   expect(nextRound.sides.find((s) => s.participantId)?.participantId).toEqual(advancingWinnerId);
   // the carried exit code sits on the exit (loser) side, never the winner
-  expect(exit.matchUpStatusCodes?.[loserSide.sideNumber - 1]).toEqual('W1');
-  expect(exit.matchUpStatusCodes?.[winnerSide.sideNumber - 1] || '').toEqual('');
+  expect(exit.sideStatusCodes?.[loserSide.sideNumber]).toEqual('W1');
+  expect(exit.sideStatusCodes?.[winnerSide.sideNumber]).toBeUndefined();
 });
 // COMPASS back draws are fed only at round 1 and halve thereafter, so no round is a
 // feedRound. A propagated exit that advances through back-draw BYEs therefore comes to
@@ -1165,7 +1162,7 @@ test('COMPASS: a pending exit on a non-feed back-draw round does not block scori
   const retiredParticipantId = exitMatchUp.sides.find((s) => s.sideNumber === 2).participantId;
 
   let result = tournamentEngine.setMatchUpStatus({
-    outcome: { matchUpStatus: RETIRED, winningSide: 1, matchUpStatusCodes: ['RJ'] },
+    outcome: { matchUpStatus: RETIRED, winningSide: 1, sideStatusCodes: { 2: 'RJ' } },
     // the subject here is the PENDING EXIT on a non-feed back-draw round, not the retirement default
     // — the retirement is only the vehicle that deposits one. Retirement propagation is policy-gated
     // and defaults OFF, so this asks for it to keep testing what it was written for.
@@ -1231,7 +1228,7 @@ test('COMPASS: once the back-draw exit has RESOLVED, the fall-through source may
   const [exitMatchUp, feederMatchUp] = contested;
 
   let result = tournamentEngine.setMatchUpStatus({
-    outcome: { matchUpStatus: RETIRED, winningSide: 1, matchUpStatusCodes: ['RJ'] },
+    outcome: { matchUpStatus: RETIRED, winningSide: 1, sideStatusCodes: { 2: 'RJ' } },
     // the subject here is the PENDING EXIT on a non-feed back-draw round, not the retirement default
     // — the retirement is only the vehicle that deposits one. Retirement propagation is policy-gated
     // and defaults OFF, so this asks for it to keep testing what it was written for.

@@ -1,3 +1,4 @@
+import { holdsReasons } from '../reasons';
 import { blankScore, CLEAR_SCORE, indexed, scoreless, sideOf, structureStamps, unplaced } from './planShared';
 import { arrivalOps, arrivalReturnOps, winnerPlacementOps } from './directionOps';
 import { unwoundOps, unwoundView } from './unwindPath';
@@ -26,7 +27,7 @@ function terminalMainAward(
   const mainId = after.view.targets.winnerMatchUpId;
   const main = indexed(after.view, mainId);
   if (!main || main.winnerMatchUpId || main.loserMatchUpId || !unplaced(main) || !scoreless(main)) return undefined;
-  if (main.matchUpStatus !== WALKOVER || main.winningSide || main.matchUpStatusCodes?.length) return undefined;
+  if (main.matchUpStatus !== WALKOVER || main.winningSide || holdsReasons(main)) return undefined;
   const [kept, ...more] = Object.entries(main.sideExitProvenance ?? {});
   if (!kept || more.length || kept[1].previousMatchUpStatus !== DOUBLE_WALKOVER) return undefined;
   const origin = indexed(after.view, kept[1].sourceMatchUpId);
@@ -48,7 +49,6 @@ function terminalMainAward(
     winningSide: side,
     resetsScore: true,
     score: blankScore(),
-    matchUpStatusCodes: [],
     stampsScoredTime: false,
     retainedExitPlanned: true,
   };
@@ -69,12 +69,7 @@ export function terminalOccupiedWinnerOps(args: PlanArgs): OutcomeOp[] | undefin
   const original = indexed(view, source?.winnerMatchUpId);
   if (!source || !original || original.structureId !== source.structureId) return undefined;
   if (original.winnerMatchUpId || original.loserMatchUpId || !isDoubleExit(original.matchUpStatus)) return undefined;
-  if (
-    !unplaced(original) ||
-    !scoreless(original) ||
-    original.matchUpStatusCodes?.length ||
-    original.schedule?.scoredTime
-  )
+  if (!unplaced(original) || !scoreless(original) || holdsReasons(original) || original.schedule?.scoredTime)
     return undefined;
   if (
     original.winningSide ||
@@ -124,7 +119,6 @@ export function terminalOccupiedWinnerOps(args: PlanArgs): OutcomeOp[] | undefin
     matchUpId: relay.matchUpId,
     matchUpStatus: relay.matchUpStatus,
     winningSide: relaySide,
-    matchUpStatusCodes: [],
     stampsScoredTime: false,
     retainedExitPlanned: true,
     announcedAs: 'assignMatchUpDrawPosition',
@@ -195,7 +189,6 @@ export function retainedCarriedAwardOps(
     resetsScore: award.matchUpStatus === WALKOVER ? true : undefined,
     replaysCarriedExit: true,
     score: blankScore(),
-    matchUpStatusCodes: [],
     stampsScoredTime: false,
     retainedExitPlanned: true,
   };

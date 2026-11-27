@@ -1080,7 +1080,9 @@ Sets either matchUpStatus or score and winningSide; values to be set are passed 
 ```js
 const outcome = {
   matchUpStatus, // optional — e.g. COMPLETED, RETIRED, WALKOVER, DEFAULTED, DOUBLE_WALKOVER
-  matchUpStatusCodes, // optional — array of status code strings
+  sideStatusCodes, // optional — reason codes keyed by side, e.g. { 2: 'DM' }; replaces the reasons held
+  matchUpStatusCode, // optional — reason code for a status that belongs to the match (ABANDONED, CANCELLED, INCOMPLETE)
+  clearStatusCodes, // optional boolean — remove the reasons held; with neither of the above, reasons that still describe the result are kept
   winningSide, // optional — 1 or 2
   score, // optional — { sets } — see note; per-side strings are derived, not accepted
   matchUpFormat, // optional — override matchUpFormat for this matchUp

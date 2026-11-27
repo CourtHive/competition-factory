@@ -71,18 +71,15 @@ export function takeAdmittedCarry(): string | undefined {
   return matchUpId;
 }
 
-/**
- * the pending carry withdrawn, ahead of the winner's and the carrier's removal (v1's order). A carry withdrawn through a
- * held BYE (C28) has already re-derived the BYE's codes, so the removal's rewrite of them is the quiet one (`rederived`).
- */
+/** the pending carry withdrawn, ahead of the winner's and the carrier's removal (v1's order) */
 export function withPendingCarry(
   view: OutcomeView,
   carry: CarrySource | undefined,
-  removal: (rederived?: boolean) => OutcomeOp[],
+  removal: () => OutcomeOp[],
   { reproduced }: { reproduced?: boolean } = {},
 ): OutcomeOp[] {
   const loserMatchUpId = pendingCarryWithdrawal(view, carry);
   if (loserMatchUpId) return [...withdrawnExitReset(loserMatchUpId, { keepsScoredTime: true }), ...removal()];
   const held = heldByeCarryWithdrawal(view, carry?.matchUpId, { reproduced });
-  return held ? [...held, ...removal(true)] : removal();
+  return held ? [...held, ...removal()] : removal();
 }

@@ -7,7 +7,6 @@ import { walkChain } from './byeChain';
 import {
   buildCarriedExitProvenance,
   collapseDoubleExitStatus,
-  deriveStatusCodes,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
@@ -42,7 +41,7 @@ import type { OutcomeOp } from '../ops';
 export function convergedReason(
   view: OutcomeView,
   request: OutcomeRequest,
-  write: MatchUpWrite,
+  _write: MatchUpWrite,
   loser: NonNullable<DirectionPlan['loser']>,
   reservation?: RetainedRelayReservation,
   drawDefinition?: DrawDefinition,
@@ -51,7 +50,7 @@ export function convergedReason(
 ): AbstainReason | undefined {
   const { targets } = view;
   const seat = targets.loserTargetSeat;
-  if (write.matchUpStatusCodes?.length || !loser.arrives) return 'exit';
+  if (!loser.arrives) return 'exit';
   if (!seat?.free || seat.opponentBye) return 'exit';
   const { loserMatchUpId, loserTargetDrawPosition } = targets;
   const convergence = convergenceAt(
@@ -72,8 +71,6 @@ export type Convergence = {
   matchUpId: string;
   sideNumber: 1 | 2;
   matchUpStatus: MatchUpStatusUnion;
-  /** the codes v1 writes there: its projection of the matchUp's provenance before the arrival (`deriveStatusCodes`) */
-  matchUpStatusCodes: string[];
   /** The pending convergence is a nested score write; an awarded convergence keeps its existing score. */
   score?: Score;
   target?: ProducedTarget;
@@ -144,7 +141,6 @@ export function convergenceAt(
   const matchUpStatus = collapseDoubleExitStatus([carried, landing.matchUpStatus]);
   const ownSeat = landing.loserMatchUpId && walk?.own ? walkChain(walk.own) : undefined;
   const convergence: Convergence = {
-    matchUpStatusCodes: deriveStatusCodes(landing),
     matchUpId: landing.matchUpId,
     matchUpStatus,
     sideNumber,
@@ -244,7 +240,7 @@ export function convergenceOps(
   /** 2c-1: the landing's removal and loser link (`servedLandingOps`), written before the winner's produced exit */
   served?: (written: OutcomeOp[]) => OutcomeOp[] | undefined,
 ): OutcomeOp[] {
-  const { matchUpId, matchUpStatus, matchUpStatusCodes, sideNumber, target } = convergence;
+  const { matchUpId, matchUpStatus, sideNumber, target } = convergence;
   const provenance = buildCarriedExitProvenance({
     exitingSideNumber: sideNumber,
     matchUpStatus: carried,
@@ -266,8 +262,6 @@ export function convergenceOps(
       matchUpId,
       matchUpStatus,
       removesWinningSide: true,
-      // a side whose standing exit a double exit delivered shows its outcome code (S6 tail)
-      matchUpStatusCodes,
       // a DOUBLE_WALKOVER says nothing was played, so its score is blanked; a DOUBLE_DEFAULT keeps what stood
       ...(score ? { score, ...(score === blankScore() ? { resetsScore: true as const } : {}) } : {}),
     },

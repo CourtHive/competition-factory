@@ -3,7 +3,6 @@ import { createProjectionAudit, mergeProjectionAudit, type ProjectionAudit } fro
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import {
-  checkCodesConsistent,
   checkErrorAtomicity,
   checkInvariants,
   checkIntegrity,
@@ -443,11 +442,6 @@ function replayWithContext(
   if (arrivals.length) return { ...arrivals[0], stage: 'final' };
   const seats = checkLoserSeatsDerived(drawId);
   if (seats.length) return { ...seats[0], stage: 'final' };
-  if (coverage) {
-    const inconsistent = checkCodesConsistent(drawId, '-');
-    coverage.codesInconsistentMatchUps += inconsistent.length;
-    if (inconsistent.length) coverage.codesInconsistentDraws += 1;
-  }
 
   if (options.relational === false) return null;
   context.phase = 'relational';

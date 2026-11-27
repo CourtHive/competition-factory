@@ -45,7 +45,7 @@ it('will reject WO/WO for an updated result on matchUp with downstream dependenc
         scoreStringSide2: '',
       },
       matchUpStatus: DOUBLE_WALKOVER,
-      matchUpStatusCodes: ['WOWO', 'WOWO'],
+      sideStatusCodes: { 1: 'WOWO', 2: 'WOWO' },
     },
     drawId,
   };

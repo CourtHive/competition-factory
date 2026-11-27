@@ -31,7 +31,7 @@ import {
 
 // constants and types
 import type { PlanArgs, DirectionPlan, MatchUpWrite, OutcomeView, Route } from '../types';
-import type { MatchUpStatusUnion, SideExitProvenance } from '@Types/tournamentTypes';
+import type { SideExitProvenance } from '@Types/tournamentTypes';
 import type { OutcomeOp } from '../ops';
 
 /**
@@ -130,26 +130,22 @@ export function replacedLoserOps(
   view: OutcomeView,
   route: Route | undefined,
   write: MatchUpWrite,
-  matchUpStatus?: MatchUpStatusUnion,
   carry?: CarrySource,
 ): OutcomeOp[] {
-  return changesWinner(view, route, write)
-    ? withPendingCarry(view, carry, (rederived) => removedLoserOps(view, matchUpStatus, rederived))
-    : [];
+  return changesWinner(view, route, write) ? withPendingCarry(view, carry, () => removedLoserOps(view)) : [];
 }
 
 export function removedOps(
   view: OutcomeView,
   route: Route | undefined,
   write: MatchUpWrite,
-  matchUpStatus?: MatchUpStatusUnion,
   carry?: CarrySource,
 ): OutcomeOp[] {
   if (changesWinner(view, route, write) || !removesDirection(view, route, write)) return [];
   // A cleared final (no winner matchUp) takes back its loser's fed seat alone (C17, decision 5 of the refactor status):
   // `removalOps` emits no winner leg for it. The guard that returned nothing here until then left the fed seat
   // occupied, which is what the settle check abstained on.
-  return withPendingCarry(view, carry, (rederived) => removalOps(view, matchUpStatus, rederived));
+  return withPendingCarry(view, carry, () => removalOps(view));
 }
 
 /**
@@ -158,7 +154,7 @@ export function removedOps(
  * `resultRemovalReason` on a result turned double exit) stay apart; this is only what they both take back. A final's
  * loser leg alone is emitted on both routes (the cleared route since C17).
  */
-export function removalOps(view: OutcomeView, matchUpStatus?: MatchUpStatusUnion, rederived?: boolean): OutcomeOp[] {
+export function removalOps(view: OutcomeView): OutcomeOp[] {
   const { targets, existing } = view;
   const position = targets.sideDrawPositions[existing.winningSide as 1 | 2];
   const winner: OutcomeOp[] =
@@ -173,46 +169,15 @@ export function removalOps(view: OutcomeView, matchUpStatus?: MatchUpStatusUnion
           { op: 'stampUpdatedAt', entity: 'matchUp', id: targets.winnerMatchUpId },
         ]
       : [];
-  return [...winner, ...removedLoserOps(view, matchUpStatus, rederived)];
+  return [...winner, ...removedLoserOps(view)];
 }
 
-/**
- * the loser's seat across the link emptied, and their matchUp's codes re-derived (`[]`) where it stored none. v1's
- * `removeDirectedLoser` re-derives them only when the call names a status (its `sourceMatchUpStatus`): a clear that names
- * none leaves them as they are. An equal empty array is still reallocated, quietly; a changed side record announces
- * the matchUp and stamps its structure. `rederived`: a withdrawal ahead of it already wrote the codes `[]` (C28), so the
- * rewrite is the quiet one.
- */
-export function removedLoserOps(
-  view: OutcomeView,
-  matchUpStatus?: MatchUpStatusUnion,
-  rederived?: boolean,
-): OutcomeOp[] {
-  const { loserMatchUpId, loserStructureId, loserTargetDrawPosition, loserMatchUpRecord } = view.targets;
+/** the loser's seat across the link emptied: v1's `removeDirectedLoser` */
+export function removedLoserOps(view: OutcomeView): OutcomeOp[] {
+  const { loserMatchUpId, loserStructureId, loserTargetDrawPosition } = view.targets;
   const participantId = storedLoserId(view);
   if (!loserMatchUpId || !loserStructureId || !loserTargetDrawPosition || !participantId) return [];
-  const storedCodes = rederived ? [] : loserMatchUpRecord?.matchUpStatusCodes;
-  const codes: OutcomeOp[] =
-    !matchUpStatus || storedCodes?.length
-      ? []
-      : [
-          {
-            op: 'setMatchUpStatusCodes',
-            matchUpId: loserMatchUpId,
-            matchUpStatusCodes: [],
-            ...(storedCodes ? { quiet: true as const } : {}),
-          },
-          ...(!storedCodes
-            ? [
-                { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: loserMatchUpId },
-                { op: 'stampUpdatedAt' as const, entity: 'structure' as const, id: loserStructureId },
-              ]
-            : []),
-        ];
-  return [
-    { op: 'clearPosition', structureId: loserStructureId, drawPosition: loserTargetDrawPosition, participantId },
-    ...codes,
-  ];
+  return [{ op: 'clearPosition', structureId: loserStructureId, drawPosition: loserTargetDrawPosition, participantId }];
 }
 
 /** a plain loser arrival: the loser on the seat the link feeds */
@@ -254,7 +219,6 @@ export function awardedArrivalOps(view: OutcomeView, loser?: DirectionPlan['lose
       matchUpId: entry.matchUpId,
       drawPositions: positionsOf(entry),
       placedDrawPosition: drawPosition,
-      rederivesCodes: true,
     },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: entry.matchUpId },
     ...(onward
@@ -288,7 +252,6 @@ function standingWinnerAwardOps({
       matchUpId: entry.matchUpId,
       drawPositions,
       placedDrawPosition: drawPosition,
-      rederivesCodes: true,
     },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: entry.matchUpId },
     ...(onward
@@ -328,7 +291,6 @@ function pendingProducedArrivalOps(
       matchUpId: entry.matchUpId,
       matchUpStatus,
       winningSide: side,
-      matchUpStatusCodes: [],
       stampsScoredTime: false,
       announcedAs: 'assignMatchUpDrawPosition',
     },
@@ -355,7 +317,6 @@ export function producedLoserArrivalOps(view: OutcomeView, loser?: DirectionPlan
       matchUpId: entry.matchUpId,
       matchUpStatus,
       winningSide: side,
-      matchUpStatusCodes: [],
       stampsScoredTime: false,
       announcedAs: 'assignMatchUpDrawPosition',
       awardsStandingExit: true,
@@ -385,7 +346,6 @@ export function awardedProducedArrivalOps(view: OutcomeView, loser?: DirectionPl
       matchUpId: entry.matchUpId,
       drawPositions: positionsOf(entry),
       placedDrawPosition: drawPosition,
-      rederivesCodes: true,
     },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: entry.matchUpId },
     ...(onward
@@ -480,7 +440,6 @@ function placementWrites(path: PlacementClaim[], sourceId?: string): OutcomeOp[]
         drawPositions: positions,
         placedDrawPosition: position,
         ...(awardedSide && { awardedSide }),
-        ...(step.codes && { awardedCodes: step.codes }),
         ...(origin && { placementOrigin: origin }),
         ...(!awardedSide && !step.added && { preservesWinningSide: true }),
       },

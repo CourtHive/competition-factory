@@ -1,3 +1,4 @@
+import { holdsReasons } from '../reasons';
 import { indirectRelayReset, producedRelayAfterOps, unwoundOps } from './unwindPath';
 import { getSideStatusCode } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { arrivalOps, arrivalReturnOps, winnerPlacementOps } from './directionOps';
@@ -20,11 +21,7 @@ import {
   structureStamps,
   unwoundClean,
 } from './planShared';
-import {
-  buildSideExitProvenance,
-  collapseDoubleExitStatus,
-  deriveStatusCodes,
-} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { buildSideExitProvenance, collapseDoubleExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
 import { COMPLETED, DEFAULTED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
@@ -166,7 +163,7 @@ export function standaloneCarriedWinnerOps(args: PlanArgs): OutcomeOp[] | undefi
     !drawDefinition
   )
     return undefined;
-  if (write.matchUpStatusCodes?.length || request.matchUpStatusCodes?.length) return undefined;
+  if (request.statusReasons?.input.submitted) return undefined;
   const removal = standaloneIndirectRemoval(args);
   if (!removal) return undefined;
   const { clear, reset, after } = removal;
@@ -232,7 +229,6 @@ function standalonePendingConvergence(
     matchUpId: relay.matchUpId,
     matchUpStatus: status,
     sideNumber: side,
-    matchUpStatusCodes: deriveStatusCodes(relay),
   };
   return { relay, status, plan };
 }
@@ -267,7 +263,7 @@ function standaloneFreshProducedAward(
     return undefined;
   const winner = paired.sides?.find((side) => side.sideNumber === paired.winningSide);
   if (winner?.participantId !== awarded.participantId || winner.drawPosition !== awarded.drawPosition) return undefined;
-  if (!scoreless(paired) || paired.matchUpStatusCodes?.length) return undefined;
+  if (!scoreless(paired) || holdsReasons(paired)) return undefined;
   const onward = onwardFrom(view, entry, awarded.drawPosition);
   if (!onward) return undefined;
   const provenance = buildSideExitProvenance({

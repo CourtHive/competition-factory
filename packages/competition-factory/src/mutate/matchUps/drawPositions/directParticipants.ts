@@ -62,7 +62,6 @@ export function directScoredParticipants(params, drawPositions, annotate, stack:
     inContextDrawMatchUps,
     projectedWinningSide,
     propagateExitStatus,
-    matchUpStatusCodes,
     tournamentRecord,
     drawDefinition,
     matchUpStatus,
@@ -97,7 +96,6 @@ export function directScoredParticipants(params, drawPositions, annotate, stack:
   return processDrawPositionDirecting({
     propagateRetirementAsExit: params.propagateRetirementAsExit,
     matchUpStatusIsValid: isCollectionMatchUp || matchUpStatusIsValid,
-    matchUpStatusCodes: isCollectionMatchUp ? [] : matchUpStatusCodes,
     inContextDrawMatchUps,
     projectedWinningSide,
     propagateExitStatus,
@@ -124,7 +122,6 @@ function processDrawPositionDirecting({
   inContextDrawMatchUps,
   projectedWinningSide,
   propagateExitStatus,
-  matchUpStatusCodes,
   tournamentRecord,
   drawDefinition,
   drawPositions,
@@ -206,7 +203,6 @@ function processDrawPositionDirecting({
   if (loserMatchUp && shouldAdvance) {
     const result = directLoser({
       sourceMatchUpStatus: sourceStatus,
-      sourceMatchUpStatusCodes: matchUpStatusCodes ?? [],
       propagateRetirementAsExit,
       sourceWinningSide: winningSide,
       loserMatchUpDrawPositionIndex,
@@ -228,7 +224,6 @@ function processDrawPositionDirecting({
     });
     if (result.context?.progressExitStatus) {
       Object.assign(context, result.context, {
-        sourceMatchUpStatusCodes: matchUpStatusCodes ?? [],
         sourceMatchUpStatus: sourceStatus,
         // WHICH SIDE OF THE SOURCE EXITED, so `progressExitStatus` can read the source's REASON CODE at
         // that side rather than at index 0. Already computed above for `directLoser`; it simply was not

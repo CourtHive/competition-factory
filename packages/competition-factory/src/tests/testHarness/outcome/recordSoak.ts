@@ -333,7 +333,7 @@ const paramsSummary = (outcome: any) => ({
   matchUpStatus: outcome.matchUpStatus,
   winningSide: outcome.winningSide,
   sets: outcome.score?.sets?.length ?? 0,
-  codes: outcome.matchUpStatusCodes?.length || undefined,
+  codes: Object.keys(outcome.sideStatusCodes ?? {}).length + (outcome.matchUpStatusCode ? 1 : 0) || undefined,
 });
 
 const levelOf = (matchUp: any) => {
@@ -420,8 +420,8 @@ function ownOutcomeArm(soak: Soak, context: DrawContext, matchUps: any[]) {
       bump(soak.summary.matchUpsSkipped, 'BYE');
       continue;
     }
-    const { matchUpStatus, winningSide, score, matchUpStatusCodes } = matchUp;
-    const stored = { matchUpStatus, winningSide, score, matchUpStatusCodes };
+    const { matchUpStatus, winningSide, score, sideStatusCodes, matchUpStatusCode } = matchUp;
+    const stored = { matchUpStatus, winningSide, score, sideStatusCodes, matchUpStatusCode };
     restore();
     give('reapply', matchUp, stored);
     restore();

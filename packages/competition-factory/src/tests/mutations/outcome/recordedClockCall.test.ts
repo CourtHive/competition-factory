@@ -263,7 +263,7 @@ function direct(
     v1Writes: v1Writes.count,
     record: canonicalJson(roots),
     // which objects are one object, the call's result among them (it can hold objects of the record)
-    graph: objectGraph([toBePlayed.matchUpStatusCodes, toBePlayed.score, roots, result]),
+    graph: objectGraph([toBePlayed.score, roots, result]),
   };
 }
 

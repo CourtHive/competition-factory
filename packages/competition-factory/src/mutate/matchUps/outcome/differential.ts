@@ -86,10 +86,9 @@ export function compareWrites(plan: MatchUpWrite, actual: MatchUpWrite): { agree
     'scoreStringSide2',
     'sets',
     'matchUpFormat',
-    'matchUpStatusCodes',
     'scoredTime',
   ];
-  const listKeys = new Set<keyof MatchUpWrite>(['sets', 'matchUpStatusCodes']);
+  const listKeys = new Set<keyof MatchUpWrite>(['sets']);
   const norm = (w: MatchUpWrite, k: keyof MatchUpWrite) =>
     listKeys.has(k) ? ((w[k] as unknown[] | undefined) ?? []) : w[k];
   const diffs = keys.filter((k) => !same(norm(plan, k), norm(actual, k)));

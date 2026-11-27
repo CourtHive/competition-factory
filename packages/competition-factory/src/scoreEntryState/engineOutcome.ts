@@ -9,22 +9,22 @@
  * Every line is a MEASURED difference between the two shapes (2026-10-01 against factory 7.4.0, re-measured
  * 2026-10-05 against 7.5.0; pinned by `src/tests/scoreEntryState/engineOutcome.test.ts` against `setMatchUpStatus`):
  *
- *   - the engine reads `outcome.score.sets`, `winningSide`, `matchUpStatus`, `matchUpStatusCodes` and
- *     `matchUpFormat`, and nothing else; the card's `score` STRING is refused outright, and `sets` at the
- *     top level are ignored (a winner is recorded with NO score);
- *   - a reason travels as a POSITIONAL `matchUpStatusCodes` array: the side that did not win, at its
- *     index, for a single exit; both for a double exit; index 0 for an ending that resolves nobody;
- *   - it is sent only when a reason was chosen, because an empty array BLANKS the codes and a played
- *     result with no reason must not erase one a previous edit recorded;
- *   - a clear is `{ score: { sets: [] }, matchUpStatusCodes: [] }`: `{}` or `{ cleared: true }` leaves the
- *     stale score standing as IN_PROGRESS, and the codes survive a clear unless blanked;
+ *   - the engine reads `outcome.score.sets`, `winningSide`, `matchUpStatus`, `sideStatusCodes`,
+ *     `matchUpStatusCode`, `clearStatusCodes` and `matchUpFormat`, and nothing else; the card's `score` STRING is
+ *     refused outright, and `sets` at the top level are ignored (a winner is recorded with NO score);
+ *   - a reason travels keyed: `sideStatusCodes` for the side that did not win a single exit, or both sides of a
+ *     double exit; `matchUpStatusCode` for an ending that resolves nobody;
+ *   - it is sent only when a reason was chosen: a result sent with no reason keeps the reason a previous edit
+ *     recorded, where it still describes the result;
+ *   - a clear is `{ score: { sets: [] }, clearStatusCodes: true }`: `{}` or `{ cleared: true }` leaves the
+ *     stale score standing as IN_PROGRESS, and the explicit clear removes the reasons with it;
  *   - a format chosen through the chip rides along as `matchUpFormat`, which the engine persists once it
  *     accepts the result; otherwise the change is lost.
  *
  * `setMatchUpStatus` MUTATES the outcome it is handed (it writes the derived score strings into it), so a
  * host that logs or reuses what it sent should pass a copy.
  */
-import { isDoubleExitStatus } from './irregularEnding';
+import { isDoubleExitStatus, requiresWinner } from './irregularEnding';
 
 // constants and types
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
@@ -46,16 +46,18 @@ export type EngineOutcome = {
   matchUpStatus?: MatchUpStatusUnion;
   winningSide?: number;
   matchUpFormat?: string;
-  matchUpStatusCodes?: string[];
+  sideStatusCodes?: Record<number, string>;
+  matchUpStatusCode?: string;
+  clearStatusCodes?: boolean;
   score: { sets: ScoreEntrySet[] };
 };
 
 export function toEngineOutcome(outcome: ReportedOutcome, matchUpFormat?: string): EngineOutcome {
   if (outcome.cleared) {
-    // Measured: `{}` leaves the stale score as IN_PROGRESS, and codes survive a clear unless blanked.
-    return { score: { sets: [] }, matchUpStatusCodes: [] };
+    // Measured: `{}` leaves the stale score as IN_PROGRESS; the explicit clear takes the reasons with the result.
+    return { score: { sets: [] }, clearStatusCodes: true };
   }
-  const codes = positionalCodes(outcome);
+  const reasons = keyedStatusCodes(outcome);
   return {
     // a played result names its winner and no ending; the engine would derive COMPLETED, and a host
     // reading what it sent should not have to know that
@@ -63,19 +65,24 @@ export function toEngineOutcome(outcome: ReportedOutcome, matchUpFormat?: string
     winningSide: outcome.winningSide,
     score: { sets: outcome.sets ?? [] },
     ...(matchUpFormat ? { matchUpFormat } : {}),
-    ...(codes ? { matchUpStatusCodes: codes } : {}),
+    ...reasons,
   };
 }
 
 /**
- * The positional array the engine reads a reason from.
+ * The keyed reason the engine reads.
  *
- * A single exit: the side that did NOT win, at its index. A double exit: both. An ending that resolves
- * nobody: index 0, since there is no side — the engine files that one as `matchUpStatusCode`.
+ * A single exit: the side that did NOT win. A double exit: both. An ending that resolves nobody: the match
+ * (`matchUpStatusCode`), since there is no side.
  */
-export function positionalCodes({ reasonCode, matchUpStatus, winningSide }: ReportedOutcome): string[] | undefined {
+export function keyedStatusCodes({
+  reasonCode,
+  matchUpStatus,
+  winningSide,
+}: ReportedOutcome): Pick<EngineOutcome, 'sideStatusCodes' | 'matchUpStatusCode'> | undefined {
   if (!reasonCode) return undefined;
-  if (isDoubleExitStatus(matchUpStatus)) return [reasonCode, reasonCode];
-  if (winningSide === 1) return ['', reasonCode];
-  return [reasonCode];
+  if (isDoubleExitStatus(matchUpStatus)) return { sideStatusCodes: { 1: reasonCode, 2: reasonCode } };
+  if (requiresWinner(matchUpStatus) && (winningSide === 1 || winningSide === 2))
+    return { sideStatusCodes: { [3 - winningSide]: reasonCode } };
+  return { matchUpStatusCode: reasonCode };
 }

@@ -3,8 +3,7 @@ import type { MatchUp } from '@Types/tournamentTypes';
 
 export const toBePlayed = {
   matchUpStatus: TO_BE_PLAYED,
-  matchUpStatusCodes: [],
-  // cleared with the codes: an unwound matchUp must not keep provenance for an exit that is gone
+  // cleared with the result: an unwound matchUp must not keep provenance for an exit that is gone
   sideExitProvenance: undefined,
   score: {
     scoreStringSide1: '',

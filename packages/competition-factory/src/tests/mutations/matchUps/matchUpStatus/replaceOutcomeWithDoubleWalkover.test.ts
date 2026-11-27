@@ -1,4 +1,3 @@
-import { isProjectedExitCode } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -118,5 +117,6 @@ test('Replacing an outcome with a DOUBLE_WALKOVER will advance paired position',
   // The claim is that no POLICY code sits on this propagated matchUp, stated against the tenant
   // that survives the exit tenant's eviction. It used to be spelled as "the elements that are not the
   // projection", i.e. in terms of the projection's own shape.
-  expect((targetMatchUp.matchUpStatusCodes ?? []).filter((code: any) => !isProjectedExitCode(code))).toEqual([]);
+  expect(targetMatchUp.matchUpStatusCodes).toBeUndefined();
+  expect(targetMatchUp.sideStatusCodes).toBeUndefined();
 });

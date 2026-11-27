@@ -263,8 +263,8 @@ Each of these cost real time and produced confident, wholly incorrect results.
   sixty while appearing to sample all ten. `sweep.ts` mixes the seed before use.
 - **Each relational property needs its own freshly generated draw.** They mutate, so running them in
   sequence makes each one's precondition the previous one's post-state.
-- **Distinguish representational from real differences.** Empty-vs-absent `matchUpStatusCodes` and
-  `score`, and `drawPositions` padding, are normalised in `projectDraw`. Each normalisation
+- **Distinguish representational from real differences.** Empty-vs-absent `score` (and the legacy
+  `matchUpStatusCodes` a record written before 8.0.0 holds), and `drawPositions` padding, are normalised in `projectDraw`. Each normalisation
   collapses empty against absent only, so genuine residue is still caught.
 - **The vitest transform cache goes stale** and starts failing to resolve `@Tests/...` for newly
   created files while committed specs still resolve. It looks exactly like a broken import; clear
@@ -324,8 +324,8 @@ seed range, replay disposition and projection when reporting a zero. Native-mode
 establish LEGACY/BRIDGE behavior. A frozen zero describes those fixtures; new seeds can find failures.
 
 `DO_UNDO_IDENTITY` compares a projection, and leaves out by design what forward play records in some entry orders and
-not others: arrival entries (F4) and the `{ BYE, BYE }` origin pair (F5), the legacy `matchUpStatusCodes` array (F1,
-counted by the `CODES_CONSISTENT` ledger), and BYE drawPositions rendered as `BYE` (R10). From 2026-10-20 to
+not others: arrival entries (F4) and the `{ BYE, BYE }` origin pair (F5), the legacy `matchUpStatusCodes` array, which 8.x
+no longer writes, and BYE drawPositions rendered as `BYE` (R10). From 2026-10-20 to
 2026-10-22 it also left out BYE claims on a loser seat a BYE matchUp feeds; the `byeClaims` ledger is
 retired, so nothing claims a BYE and that exclusion is gone. Each omission is policed for truth by
 `ARRIVAL_TRUE`: an entry that is present must be true, so an omission hides only absence, never a falsehood.

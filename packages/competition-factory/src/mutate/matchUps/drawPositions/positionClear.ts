@@ -853,7 +853,6 @@ function updateMatchUpStatusAfterRemoval({
   // decided.
   targetMatchUp.matchUpStatus = (matchUpContainsBye && BYE) || TO_BE_PLAYED;
   targetMatchUp.winningSide = undefined;
-  if (targetMatchUp.matchUpStatusCodes?.length) targetMatchUp.matchUpStatusCodes = [];
   // THE CLAIM LEDGER IS NOT PART OF WHAT IS BEING REMOVED. Clearing the origins is right — the exit
   // they described is gone — but this took the BYE claim ledger with them, and a ledger can hold
   // ANOTHER claimant's entry. Two double exits can each claim a BYE on one matchUp, on different

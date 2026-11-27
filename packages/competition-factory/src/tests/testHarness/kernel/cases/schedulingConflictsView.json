@@ -5053,7 +5053,6 @@
                             "courtOrder": 1,
                             "scoredTime": "2026-03-01T08:00:00.000Z"
                           },
-                          "matchUpStatusCodes": [],
                           "score": {
                             "scoreStringSide1": "",
                             "scoreStringSide2": ""
@@ -11660,7 +11659,6 @@
                             "scoreStringSide1": "6-1 6-1",
                             "scoreStringSide2": "1-6 1-6"
                           },
-                          "matchUpStatusCodes": [],
                           "winningSide": 1
                         }
                       ],
@@ -12595,7 +12593,6 @@
                             "scoreStringSide1": "6-1 6-1",
                             "scoreStringSide2": "1-6 1-6"
                           },
-                          "matchUpStatusCodes": [],
                           "winningSide": 1,
                           "timeItems": [
                             {
@@ -13538,7 +13535,6 @@
                             "scoreStringSide1": "6-1 6-1",
                             "scoreStringSide2": "1-6 1-6"
                           },
-                          "matchUpStatusCodes": [],
                           "winningSide": 1
                         }
                       ],
@@ -14480,7 +14476,6 @@
                             "scoreStringSide1": "6-1 6-1",
                             "scoreStringSide2": "1-6 1-6"
                           },
-                          "matchUpStatusCodes": [],
                           "winningSide": 1
                         }
                       ],

@@ -4786,7 +4786,7 @@ export const SCENARIOS: [string, Scenario][] = [
     'SINGLE_ELIMINATION (S6): a cleared walkover takes its winner back out of round 2, and its codes with it',
     {
       drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
-      setup: [{ target: R1(1), outcome: { ...walkover(1), matchUpStatusCodes: ['W1'] } }],
+      setup: [{ target: R1(1), outcome: { ...walkover(1), sideStatusCodes: { 2: 'W1' } } }],
       steps: [{ target: R1(1), outcome: cleared }],
     },
   ],

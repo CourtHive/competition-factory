@@ -1,3 +1,4 @@
+import { holdsReasons } from '../reasons';
 import { blankScore, indexed, positionsOf, scoreless, seatKey, sideOf, undecided, unwoundClean } from './planShared';
 import { collapseDoubleExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
@@ -59,7 +60,7 @@ export function convergedChain(
   while (matchUp && previous && chain.length <= (view.inContextDrawMatchUps?.length ?? 0)) {
     // a matchUp holding anyone records their arrival beside the exits (an awardee's entry carries no status), which the
     // kept side's read below refuses: the chain's matchUps hold nothing but their origins
-    if (matchUp.matchUpStatusCodes?.length) return undefined;
+    if (holdsReasons(matchUp)) return undefined;
     const provenance = matchUp.sideExitProvenance ?? {};
     const sides = ([1, 2] as const).filter((side) => provenance[side]);
     const previousId = previous.matchUpId;
@@ -117,8 +118,7 @@ function indirectProducedRelaySeatOps(
 ): OutcomeOp[] | undefined {
   if (view.draw.propagatesByeOnDoubleExit || bye.matchUpStatus !== BYE || bye.winningSide || !bye.feedRound)
     return undefined;
-  if (bye.loserMatchUpId || !scoreless(bye) || bye.matchUpStatusCodes?.length || positionsOf(bye).length !== 2)
-    return undefined;
+  if (bye.loserMatchUpId || !scoreless(bye) || holdsReasons(bye) || positionsOf(bye).length !== 2) return undefined;
   const [kept, ...more] = Object.values(bye.sideExitProvenance ?? {});
   const binding = seat.foreignProducedSeat;
   if (!kept || more.length || !binding || binding.linkCondition || binding.sourceMatchUpId !== kept.sourceMatchUpId)
@@ -127,7 +127,7 @@ function indirectProducedRelaySeatOps(
   const inter = indexed(view, binding.matchUpId);
   const status = carriedExitStatus(kept);
   if (!source || !inter || !status || !isDoubleExit(source.matchUpStatus) || source.winningSide) return undefined;
-  if (source.matchUpStatus !== kept.previousMatchUpStatus || !scoreless(source) || source.matchUpStatusCodes?.length)
+  if (source.matchUpStatus !== kept.previousMatchUpStatus || !scoreless(source) || holdsReasons(source))
     return undefined;
   if (source.winnerMatchUpId === bye.matchUpId || source.loserMatchUpId !== inter.matchUpId) return undefined;
   if (
@@ -141,7 +141,7 @@ function indirectProducedRelaySeatOps(
     inter.matchUpStatus !== BYE ||
     inter.winningSide ||
     !scoreless(inter) ||
-    inter.matchUpStatusCodes?.length
+    holdsReasons(inter)
   )
     return undefined;
   const reservation = binding.drawPosition;
@@ -170,7 +170,7 @@ function indirectProducedRelaySeatOps(
     !next.winningSide
   )
     return undefined;
-  if (!scoreless(next) || next.matchUpStatusCodes?.length || positionsOf(next).length !== 2) return undefined;
+  if (!scoreless(next) || holdsReasons(next) || positionsOf(next).length !== 2) return undefined;
   const winner = next.sides?.find((side) => side.sideNumber === next.winningSide);
   if (!winner?.participantId || !winner.drawPosition || winner.drawPosition === reservation) return undefined;
   const nextEntries = Object.values(next.sideExitProvenance ?? {});
@@ -249,7 +249,7 @@ function carriedOpposite(
   drawPosition: number,
 ): { matchUpStatus: MatchUpStatusUnion; winningSide: 1 | 2 } | undefined {
   if (byeMatchUp.matchUpStatus !== BYE || byeMatchUp.winningSide) return undefined;
-  if (!scoreless(byeMatchUp) || byeMatchUp.matchUpStatusCodes?.length) return undefined;
+  if (!scoreless(byeMatchUp) || holdsReasons(byeMatchUp)) return undefined;
   const byeSide = byeMatchUp.sides?.find((side) => side.drawPosition === drawPosition)?.sideNumber;
   if (byeSide !== 1 && byeSide !== 2) return undefined;
   const entries = Object.entries(byeMatchUp.sideExitProvenance ?? {});
@@ -293,9 +293,7 @@ function carrierSentOn(
     if (!carried || more.length || Number(carried[0]) !== sideOfCarrier(at)) return false;
     if (carried[1]?.sourceMatchUpId !== entry?.sourceMatchUpId) return false;
     if (carriedExitStatus(carried[1]) !== rederived.matchUpStatus) return false;
-    return (
-      scoreless(at) && !at.matchUpStatusCodes?.length && at.structureId === byeMatchUp.structureId && !at.loserMatchUpId
-    );
+    return scoreless(at) && !holdsReasons(at) && at.structureId === byeMatchUp.structureId && !at.loserMatchUpId;
   };
   const relays: HydratedMatchUp[] = [];
   let at = indexed(view, byeMatchUp.winnerMatchUpId);
@@ -329,7 +327,7 @@ function carrierSentOn(
   if (awardee?.participantId && !sent && beyond) return undefined;
   if (!sent) return { rederived, carrier, relays, landing: at };
   if (beyond.matchUpStatus !== TO_BE_PLAYED || beyond.winningSide || !scoreless(beyond)) return undefined;
-  if (beyond.matchUpStatusCodes?.length || Object.keys(beyond.sideExitProvenance ?? {}).length) return undefined;
+  if (holdsReasons(beyond) || Object.keys(beyond.sideExitProvenance ?? {}).length) return undefined;
   const further = indexed(view, beyond.winnerMatchUpId);
   if (further && positionsOf(further).includes(awardee.drawPosition ?? 0)) return undefined;
   return {
@@ -412,7 +410,7 @@ function ownCarryAlone(matchUp: HydratedMatchUp, sourceId: string): boolean {
   const [entry, ...more] = Object.values(matchUp.sideExitProvenance ?? {});
   if (!entry || more.length || entry.sourceMatchUpId !== sourceId) return false;
   const status = carriedExitStatus(entry);
-  if (!status || matchUp.winningSide || !scoreless(matchUp) || matchUp.matchUpStatusCodes?.length) return false;
+  if (!status || matchUp.winningSide || !scoreless(matchUp) || holdsReasons(matchUp)) return false;
   return matchUp.matchUpStatus === BYE || matchUp.matchUpStatus === status;
 }
 
@@ -422,8 +420,7 @@ function producedBesideBye(
   bye: HydratedMatchUp,
   drawPosition: number,
 ): MatchUpStatusUnion | undefined {
-  if (bye.matchUpStatus !== BYE || bye.winningSide || !scoreless(bye) || bye.matchUpStatusCodes?.length)
-    return undefined;
+  if (bye.matchUpStatus !== BYE || bye.winningSide || !scoreless(bye) || holdsReasons(bye)) return undefined;
   if (!bye.feedRound || bye.loserMatchUpId || positionsOf(bye).length !== 1) return undefined;
   const side = sideOf(bye, drawPosition);
   const entries = Object.entries(bye.sideExitProvenance ?? {});
@@ -458,7 +455,7 @@ function producedRelaySeatOps(
   if (!status || !next || next.structureId !== bye.structureId || next.loserMatchUpId) return undefined;
   if (next.matchUpStatus !== status || next.winningSide || positionsOf(next).length || !scoreless(next))
     return undefined;
-  if (next.matchUpStatusCodes?.length) return undefined;
+  if (holdsReasons(next)) return undefined;
   const [entry, ...more] = Object.values(next.sideExitProvenance ?? {});
   const [kept] = Object.values(bye.sideExitProvenance ?? {});
   if (!entry || more.length || entry.sourceMatchUpId !== kept.sourceMatchUpId) return undefined;
@@ -482,7 +479,7 @@ function terminalProducedRelaySeatOps(
   const [entry] = Object.values(bye.sideExitProvenance ?? {});
   const origin = indexed(view, entry?.sourceMatchUpId);
   if (!status || !origin || origin.structureId !== bye.structureId) return undefined;
-  if (origin.matchUpStatus !== entry.previousMatchUpStatus || origin.matchUpStatusCodes?.length) return undefined;
+  if (origin.matchUpStatus !== entry.previousMatchUpStatus || holdsReasons(origin)) return undefined;
   return retainedHomeOps(bye, drawPosition, status, withdraw);
 }
 
@@ -497,8 +494,7 @@ function awardedProducedRelaySeatOps(
   const status = producedBesideBye(view, bye, drawPosition);
   const next = indexed(view, bye.winnerMatchUpId);
   if (!status || !next || next.structureId !== bye.structureId || next.loserMatchUpId) return undefined;
-  if (next.matchUpStatus !== status || !next.winningSide || !scoreless(next) || next.matchUpStatusCodes?.length)
-    return undefined;
+  if (next.matchUpStatus !== status || !next.winningSide || !scoreless(next) || holdsReasons(next)) return undefined;
   const winner = next.sides?.find((side) => side.sideNumber === next.winningSide);
   const held = positionsOf(next);
   if (!winner?.participantId || !winner.drawPosition || held.length !== 1) return undefined;
@@ -561,7 +557,7 @@ export function convergedRelayCopy(view: OutcomeView, bye: HydratedMatchUp, draw
   const next = indexed(view, bye.winnerMatchUpId);
   if (!status || !next || next.structureId !== bye.structureId || next.loserMatchUpId) return undefined;
   if (!isDoubleExit(next.matchUpStatus) || next.winningSide || !scoreless(next)) return undefined;
-  if (positionsOf(next).length !== 1 || next.matchUpStatusCodes?.length) return undefined;
+  if (positionsOf(next).length !== 1 || holdsReasons(next)) return undefined;
   if (next.sides?.some((side) => side.participantId || side.bye)) return undefined;
   const [entry] = Object.values(bye.sideExitProvenance ?? {});
   const origin = indexed(view, entry?.sourceMatchUpId);
@@ -598,7 +594,6 @@ function convergedProducedRelaySeatOps(
       matchUpStatus: kept.matchUpStatus,
       resetsScore: true,
       score: blankScore(),
-      matchUpStatusCodes: [],
       stampsScoredTime: false,
       announcedAs: 'settleRederivedDoubleExit',
       ...(pendingRelayedWinner(view, next.matchUpId, kept) ? { deletesWinningSide: true as const } : {}),
@@ -610,7 +605,6 @@ function convergedProducedRelaySeatOps(
       matchUpId: successor.matchUpId,
       matchUpStatus: TO_BE_PLAYED,
       ...(successor.score ? { resetsScore: true, score: blankScore() } : {}),
-      matchUpStatusCodes: [],
       stampsScoredTime: false,
       announcedAs: 'withdrawProducedExits',
     },
@@ -631,8 +625,7 @@ function occupiedFinalCarrier(
   const source = indexed(view, entry.sourceMatchUpId);
   if (!source?.winningSide || source.matchUpStatus !== entry.previousMatchUpStatus) return false;
   if (source.matchUpStatus !== WALKOVER && source.matchUpStatus !== DEFAULTED) return false;
-  if (entry.matchUpStatus !== source.matchUpStatus || !scoreless(source) || source.matchUpStatusCodes?.length)
-    return false;
+  if (entry.matchUpStatus !== source.matchUpStatus || !scoreless(source) || holdsReasons(source)) return false;
   const loser = source.sides?.find((side) => side.sideNumber === 3 - (source.winningSide as number));
   if (loser?.participantId !== participantId) return false;
   const visited = new Set<string>();
@@ -642,7 +635,7 @@ function occupiedFinalCarrier(
     visited.add(at.matchUpId);
     if (at.structureId !== final.structureId || at.loserMatchUpId || at.matchUpStatus !== BYE || at.winningSide)
       return false;
-    if (!scoreless(at) || at.matchUpStatusCodes?.length) return false;
+    if (!scoreless(at) || holdsReasons(at)) return false;
     const side = sideOf(at, drawPosition);
     const carrier = at.sides?.find((candidate) => candidate.sideNumber === side);
     const bye = at.sides?.find((candidate) => candidate.bye);
@@ -670,8 +663,7 @@ function occupiedFinalRelaySeatOps(
   const next = indexed(view, bye.winnerMatchUpId);
   if (!status || !next || next.structureId !== bye.structureId || next.winnerMatchUpId || next.loserMatchUpId)
     return undefined;
-  if (!isDoubleExit(next.matchUpStatus) || next.winningSide || !scoreless(next) || next.matchUpStatusCodes?.length)
-    return undefined;
+  if (!isDoubleExit(next.matchUpStatus) || next.winningSide || !scoreless(next) || holdsReasons(next)) return undefined;
   const positions = positionsOf(next);
   const carrier = next.sides?.find((side) => side.participantId);
   if (
@@ -714,7 +706,6 @@ function occupiedFinalRelaySeatOps(
       winningSide: (3 - side) as 1 | 2,
       resetsScore: true,
       score: blankScore(),
-      matchUpStatusCodes: [],
       stampsScoredTime: false,
       retainedExitPlanned: true,
       announcedAs: 'settleRederivedDoubleExit',
@@ -733,7 +724,7 @@ function standingByeSeat(view: OutcomeView, seat: WinnerLoserSeat, withdrawn: Se
   if (!target || target.structureId !== seat.structureId || target.roundNumber !== 1 || target.loserMatchUpId)
     return false;
   if (target.matchUpStatus !== BYE || target.winningSide || !scoreless(target)) return false;
-  if (target.matchUpStatusCodes?.length || Object.keys(target.sideExitProvenance ?? {}).length) return false;
+  if (holdsReasons(target) || Object.keys(target.sideExitProvenance ?? {}).length) return false;
   const positions = positionsOf(target);
   if (positions.length !== 2 || !positions.includes(seat.drawPosition) || !positions.includes(opposite)) return false;
   if (target.sides?.some((side) => side.participantId || side.qualifier)) return false;
@@ -757,7 +748,7 @@ function standingByeRemainder(
 ): boolean {
   if (matchUp.matchUpId === target.matchUpId) return true;
   if (matchUp.matchUpStatus !== TO_BE_PLAYED || matchUp.winningSide || !scoreless(matchUp)) return false;
-  if (matchUp.matchUpStatusCodes?.length || Object.keys(matchUp.sideExitProvenance ?? {}).length) return false;
+  if (holdsReasons(matchUp) || Object.keys(matchUp.sideExitProvenance ?? {}).length) return false;
   if (matchUp.loserMatchUpId || matchUp.sides?.some((side) => side.bye || side.qualifier)) return false;
   const positions = positionsOf(matchUp);
   if (positions.includes(opposite) || (matchUp.matchUpId !== next.matchUpId && positions.includes(drawPosition)))
@@ -994,7 +985,7 @@ function doubleByeSeatOps(
   const advanced = held.find((position) => position === drawPosition || position === other);
   if (!other || more.length || !next || !advanced || held.length !== 2) return undefined;
   if (next.matchUpStatus !== BYE || next.winningSide || !scoreless(next) || next.loserMatchUpId) return undefined;
-  if (Object.keys(next.sideExitProvenance ?? {}).length || next.matchUpStatusCodes?.length) return undefined;
+  if (Object.keys(next.sideExitProvenance ?? {}).length || holdsReasons(next)) return undefined;
   const remaining = held.filter((position) => position !== advanced);
   const ownAdvanced = advanced === drawPosition;
   // the next matchUp, a BYE until now, sent its one other position on: that position comes back out of the matchUp beyond,
@@ -1002,7 +993,7 @@ function doubleByeSeatOps(
   // then goes on through it), what it sent on was a BYE and the matchUp beyond is a BYE too: v1's
   const beyond = indexed(view, next.winnerMatchUpId);
   if (!beyond || beyond.matchUpStatus !== TO_BE_PLAYED || beyond.winningSide || !scoreless(beyond)) return undefined;
-  if (Object.keys(beyond.sideExitProvenance ?? {}).length || beyond.matchUpStatusCodes?.length) return undefined;
+  if (Object.keys(beyond.sideExitProvenance ?? {}).length || holdsReasons(beyond)) return undefined;
   // the position the next matchUp, a BYE, sent on stands in the matchUp beyond; a feed round's fed seat beside it stays
   // (a plain round's other position came through a BYE this unwind takes back as well: released with it)
   const stood = beyond.feedRound ? positionsOf(beyond).filter((position) => position !== remaining[0]) : [];

@@ -1,3 +1,4 @@
+import { holdsReasons } from '../reasons';
 import { buildCarriedExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
 import { convergenceAt, convergenceOps } from './carriedConvergence';
@@ -56,10 +57,9 @@ import type {
 export function carriedReason(view: OutcomeView, write: MatchUpWrite): AbstainReason | undefined {
   const { targets } = view;
   const seat = targets.loserTargetSeat;
-  if (write.matchUpStatusCodes?.length) return 'exit';
   if (!seat?.free) return 'exit';
   const record = targets.loserMatchUpRecord;
-  if (!record || record.provenance || record.matchUpStatusCodes?.length) return 'exit';
+  if (!record || record.provenance || record.reasons) return 'exit';
   // RULE 1: a BYE opposite, which the carrier passes into a clean next matchUp (`loserThroughBye`), where the exit lands,
   // or on through the BYE-held matchUps beyond it, to a clean one or the structure's last round (`loserByePassage`)
   if (seat.opponentBye) {
@@ -89,9 +89,8 @@ export function carriedReason(view: OutcomeView, write: MatchUpWrite): AbstainRe
  */
 export function relabelCarryReason(view: OutcomeView, write: MatchUpWrite): AbstainReason | undefined {
   const { targets } = view;
-  if (write.matchUpStatusCodes?.length) return 'exit';
   const record = targets.loserMatchUpRecord;
-  if (!record || record.matchUpStatusCodes?.length) return 'exit';
+  if (!record || record.reasons) return 'exit';
   // the carry this matchUp made there, standing alone: rewritten in place, or left as it is (S6 tail)
   const held = targets.loserMatchUpCarryHeld;
   if (!held && !freshByeCarry(view) && (record.provenance || targets.loserMatchUpStatus !== TO_BE_PLAYED))
@@ -116,7 +115,7 @@ export function withdrawnReason(view: OutcomeView, withdrawn: WithdrawnCarry): A
   if (withdrawn.loserWins || withdrawn.matchUpStatus !== TO_BE_PLAYED || !entry) return 'exit';
   if (!targets.loserMatchUpCarriesSourceExit || entry.loserMatchUpId) return 'exit';
   const provenance = Object.values(entry.sideExitProvenance ?? {}).filter(Boolean);
-  if (provenance.length !== 1 || entry.matchUpStatusCodes?.some((code) => typeof code !== 'string')) return 'exit';
+  if (provenance.length !== 1) return 'exit';
   const awarded = entry.sides?.find((side) => side.sideNumber === entry.winningSide);
   if (awarded?.bye) return 'exit';
   // the awardee went on: their position comes back out of the next matchUp, planned where they stand there alone or
@@ -145,7 +144,7 @@ function releasedAward(
     next.matchUpStatus === TO_BE_PLAYED &&
     !next.winningSide &&
     scoreless(next) &&
-    !next.matchUpStatusCodes?.length &&
+    !holdsReasons(next) &&
     !Object.keys(next.sideExitProvenance ?? {}).length &&
     !next.sides?.some((side) => side.bye);
   return clean
@@ -220,7 +219,7 @@ function heldCarryAt(
     !SINGLE_EXITS.has(origin.previousMatchUpStatus) ||
     (origin.matchUpStatus !== WALKOVER && origin.matchUpStatus !== DEFAULTED) ||
     Object.keys(entry.sideExitProvenance ?? {}).length !== 1 ||
-    entry.matchUpStatusCodes?.length ||
+    holdsReasons(entry) ||
     !scoreless(entry)
   )
     return undefined;
@@ -293,14 +292,8 @@ export function heldByeCarryWithdrawal(
   const awarded = landing.entry.sides?.find((side) => side.sideNumber !== landing.sideNumber);
   if (awarded?.participantId || awarded?.bye) return undefined;
   return [
-    // v1 re-derives each relay's codes from the provenance it clears (`applyWithdrawnExits`): an equal `[]` quietly
+    // each relay's provenance cleared (`applyWithdrawnExits`)
     ...relays.flatMap(({ entry }): OutcomeOp[] => [
-      {
-        op: 'setMatchUpStatusCodes',
-        matchUpId: entry.matchUpId,
-        matchUpStatusCodes: [],
-        ...(entry.matchUpStatusCodes ? { quiet: true as const } : {}),
-      },
       { op: 'setSideExitProvenance', matchUpId: entry.matchUpId, announcedAs: 'withdrawProducedExits' },
       { op: 'stampUpdatedAt', entity: 'matchUp', id: entry.matchUpId },
     ]),
@@ -310,7 +303,6 @@ export function heldByeCarryWithdrawal(
       op: 'setMatchUpResult',
       matchUpId: landing.entry.matchUpId,
       withdrawsCarry: true,
-      matchUpStatusCodes: [],
       matchUpStatus: TO_BE_PLAYED,
       ...(reproduced
         ? { stampsScoredTime: false as const, announcedAs: 'withdrawProducedExits' as const }
@@ -412,7 +404,6 @@ export function heldByeCarryCorrectionOps(args: ExitReasonArgs): OutcomeOp[] | u
       op: 'setMatchUpResult',
       matchUpId: landing.entry.matchUpId,
       withdrawsCarry: true,
-      matchUpStatusCodes: [],
       matchUpStatus: relabel ? entered : TO_BE_PLAYED,
       ...(relabel
         ? {
@@ -501,8 +492,7 @@ function landingAt(
   const entry = indexed(view, matchUpId);
   const sideNumber = sideOf(entry, drawPosition);
   if (!entry || !sideNumber) return undefined;
-  if (beyondBye && (entry.matchUpStatusCodes?.length || Object.keys(entry.sideExitProvenance ?? {}).length))
-    return undefined;
+  if (beyondBye && (holdsReasons(entry) || Object.keys(entry.sideExitProvenance ?? {}).length)) return undefined;
   const opponent = entry.sides?.find((side) => side.sideNumber === 3 - sideNumber);
   const landing: CarriedLanding = {
     opponentHeld: !!opponent?.participantId || !!opponent?.bye,
@@ -572,17 +562,17 @@ function levelLanding(view: OutcomeView, level: CarryLevel, carried: MatchUpStat
   // on through the BYE-held matchUps past it (`passage`)
   if (level.seat.opponentBye) {
     if (level.matchUpStatus !== BYE || (!level.through && !level.passage)) return undefined;
-    if (!record || record.provenance || record.matchUpStatusCodes?.length) return undefined;
+    if (!record || record.provenance || record.reasons) return undefined;
     return passedLanding(view, matchUpId, drawPosition, level.through, level.passage);
   }
   // RULE 4 at this level: a carried exit standing there was awarded to the carrier's seat; the two converge (S6 tail)
   const converged = convergenceAt(view, matchUpId, drawPosition, carried, level.walk);
   if (converged) {
-    if (!record || record.matchUpStatusCodes?.length) return undefined;
+    if (!record || record.reasons) return undefined;
     return { ...converged, carriesOn: false, opponentHeld: false, passes: 1, converged };
   }
   if (level.matchUpStatus !== TO_BE_PLAYED || level.hasResult || level.carriesExit) return undefined;
-  if (!record || record.provenance || record.matchUpStatusCodes?.length) return undefined;
+  if (!record || record.provenance || record.reasons) return undefined;
   return landingAt(view, matchUpId, drawPosition);
 }
 

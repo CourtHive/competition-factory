@@ -1,10 +1,10 @@
 import { updateAssignmentParticipantResults } from '@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults';
 import { modifyMatchUpNotice, deferInContextMatchUp, deferredQuery } from '@Mutate/notifications/drawNotifications';
-import { attributeDerivedStatusCodes, splitStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
+import { attributeRetainedStatusCodes, writeStatusReasons } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { processCompetitionMatchUp } from '@Mutate/drawDefinitions/competition/processCompetitionMatchUp';
 import { clearResolvedSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
-import type { DerivedStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
+import type { CallStatusReasons, RetainedStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { finishingOrderUpdates, getDualLines } from '@Query/matchUp/finishingOrder';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -55,8 +55,12 @@ type ModifyMatchUpScoreArgs = {
   matchUpStatus?: MatchUpStatusUnion;
   appliedPolicies?: PolicyDefinitions;
   tournamentRecord?: Tournament;
-  matchUpStatusCodes?: string[];
-  derivedStatusCodes?: DerivedStatusCodes;
+  /** the call's own reasons, written when this is the call's matchUp (`writeStatusReasons`) */
+  statusReasons?: CallStatusReasons;
+  /** an engine write that removes the reasons the matchUp holds (an unwind, a line written with no result) */
+  clearsStatusReasons?: boolean;
+  /** an engine write that keeps the reasons the matchUp holds, filtered by the result it writes */
+  retainedStatusCodes?: RetainedStatusCodes;
   drawDefinition?: DrawDefinition;
   removeWinningSide?: boolean;
   // a winner corrected: the result taken off before the new one is written keeps the line's finishing order
@@ -78,18 +82,8 @@ export function modifyMatchUpScore(params: ModifyMatchUpScoreArgs) {
   let matchUp = params.matchUp; // matchUp without context
   let structure;
 
-  const {
-    matchUpStatusCodes,
-    tournamentRecord,
-    drawDefinition,
-    matchUpStatus,
-    removeScore,
-    winningSide,
-    matchUpId,
-    event,
-    notes,
-    score,
-  } = params;
+  const { tournamentRecord, drawDefinition, matchUpStatus, removeScore, winningSide, matchUpId, event, notes, score } =
+    params;
 
   const appliedPolicies = resolveAppliedPolicies({
     appliedPolicies: params.appliedPolicies,
@@ -119,8 +113,9 @@ export function modifyMatchUpScore(params: ModifyMatchUpScoreArgs) {
 
   applyScoreAndStatus({
     // it describes ONE matchUp: a params spread that carried it into a write elsewhere does not apply it
-    derived: params.derivedStatusCodes?.matchUpId === matchUp.matchUpId ? params.derivedStatusCodes : undefined,
-    matchUpStatusCodes,
+    retained: params.retainedStatusCodes?.matchUpId === matchUp.matchUpId ? params.retainedStatusCodes : undefined,
+    own: params.statusReasons?.matchUpId === matchUp.matchUpId ? params.statusReasons : undefined,
+    clearsStatusReasons: params.clearsStatusReasons,
     removeWinningSide: params.removeWinningSide || clearsCollectionWinner(matchUp, params),
     keepsFinishingOrder: params.keepsFinishingOrder,
     matchUpStatus,
@@ -272,9 +267,10 @@ function resolveDualMatchUpTarget({ isDualMatchUp, drawDefinition, matchUpId, ma
 
 function applyScoreAndStatus({
   keepsFinishingOrder,
-  matchUpStatusCodes,
+  clearsStatusReasons,
   removeWinningSide,
-  derived,
+  retained,
+  own,
   matchUpStatus,
   matchUpFormat,
   removeScore,
@@ -314,10 +310,6 @@ function applyScoreAndStatus({
     // what that one protects. Two adjacent guards disagreeing about one status.
     //
     // It matters because the propagation writers reach here with `matchUpStatus: holdsBye ? BYE : EXIT`.
-    // On the BYE branch provenance was blanked and not rescued, and what carried the facts through the
-    // call was the LEGACY `matchUpStatusCodes` array, which this function does not blank — so
-    // `getSideExitProvenance`'s fallback resurrected them afterwards. That is why the array is not a
-    // projection of the record inside this one call: it IS the record.
     const survivingProvenance = isAnyExit(matchUpStatus) ? matchUp.sideExitProvenance : undefined;
     // A matchUp-level `matchUpFormat` SURVIVES the blank: the format is a property
     // of the match, not of its result. The fixture carries `matchUpFormat: undefined` because it is
@@ -336,49 +328,33 @@ function applyScoreAndStatus({
   // it in the same writes (outcome/ops.ts)
   if (!keepsFinishingOrder && !completedMatchUpStatuses.includes(matchUp.matchUpStatus)) delete matchUp.orderOfFinish;
   if (matchUpFormat) matchUp.matchUpFormat = matchUpFormat;
-  if (matchUpStatusCodes) matchUp.matchUpStatusCodes = matchUpStatusCodes;
   /**
-   * THE POSITIONAL ARRAY IS READ ONCE, HERE, AND NEVER AGAIN.
-   *
-   * A client submits reason codes positionally — a scoring dialog emits `['', 'DM']` for "side 2,
-   * misconduct" — and that is the one place the shape is still the input contract. `splitStatusCodes`
-   * reads it at this boundary and stores the result where attribution is explicit:
-   * `sideStatusCodes` keyed by side, or `matchUpStatusCode` when the status attributes to nobody.
-   *
-   * Values are trusted, positions are not: the exiting side comes from `winningSide`, so `['DM']` with
-   * `winningSide: 1` records side 2 whatever index the client used. That is the defect this closes at the
-   * write, and `progressExitStatus` closes its twin at the carry.
+   * THE REASONS A WRITE KEEPS. A call's own reasons are written on its matchUp once the winner is
+   * (`writeStatusReasons`, below). An engine write on another matchUp either removes the reasons it held
+   * (`clearsStatusReasons`: the result they described is gone) or keeps those that still describe the result it
+   * writes (`retainedStatusCodes`), plus a reason a propagation carries with the arriving side. A write that says
+   * neither leaves them as they are.
    */
-  if (matchUpStatusCodes) {
-    const resolvedStatus = matchUpStatus ?? matchUp.matchUpStatus;
-    /**
-     * ATTRIBUTED BY ORIGIN, NOT BY VALUE (census A1 residue F1b, 2026-10-18). A propagation or reconcile
-     * write hands over an array `deriveStatusCodes` filled from provenance with bare outcome codes —
-     * `['', 'DEF']`, `['WO']` — for display. Sent through the client split, those became side reasons:
-     * `{ 1: 'DEF', 2: 'DEF' }` on a double default reached in one entry order and nothing in the other.
-     * Such a write says so with `derivedStatusCodes`, and its reasons come only from real reasons.
-     */
-    const attributed = derived
-      ? attributeDerivedStatusCodes({
-          // the write below removes a stale winner, so a double exit does not read one here
-          winningSide: removeWinningSide ? undefined : (winningSide ?? matchUp.winningSide),
-          carried: derived.sideStatusCodes,
-          matchUpStatus: resolvedStatus,
-          matchUp,
-        })
-      : splitStatusCodes({
-          matchUpStatusCodes: matchUpStatusCodes as any[],
-          winningSide: winningSide ?? matchUp.winningSide,
-          matchUpStatus: resolvedStatus,
-        });
+  if (!own && retained) {
+    const attributed = attributeRetainedStatusCodes({
+      // the write below removes a stale winner, so a double exit does not read one here
+      winningSide: removeWinningSide ? undefined : (winningSide ?? matchUp.winningSide),
+      matchUpStatus: matchUpStatus ?? matchUp.matchUpStatus,
+      carried: retained.sideStatusCodes,
+      matchUp,
+    });
     if (attributed.matchUpStatusCode) matchUp.matchUpStatusCode = attributed.matchUpStatusCode;
     else delete matchUp.matchUpStatusCode;
     if (attributed.sideStatusCodes) matchUp.sideStatusCodes = attributed.sideStatusCodes;
     else delete matchUp.sideStatusCodes;
+  } else if (!own && clearsStatusReasons) {
+    delete matchUp.matchUpStatusCode;
+    delete matchUp.sideStatusCodes;
   }
   clearResolvedSideExitProvenance(matchUp);
   if (winningSide) matchUp.winningSide = winningSide;
   if (removeWinningSide) matchUp.winningSide = undefined;
+  if (own) writeStatusReasons(matchUp, own);
 }
 
 function applyInProgressStatus({ matchUpStatus, matchUp }) {

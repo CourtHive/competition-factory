@@ -1,4 +1,5 @@
-import { collapseDoubleExitStatus, deriveStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { holdsReasons } from '../reasons';
+import { collapseDoubleExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { isDoubleExit } from '@Validators/isExit';
 import { producedTarget } from './producedTarget';
 import { unwoundOps } from './unwindPath';
@@ -52,7 +53,6 @@ export function supersededOwnRelayConvergence(
   if (view.isTeam || view.group) return undefined;
   if (
     !write?.winningSide ||
-    write.matchUpStatusCodes?.length ||
     !after.direction?.loser?.arrives ||
     !SINGLE_EXITS.has(request.matchUpStatus ?? '') ||
     request.matchUpStatus === RETIRED
@@ -82,7 +82,7 @@ export function supersededOwnRelayConvergence(
     landing.winningSide ||
     landing.loserMatchUpId ||
     !scoreless(landing) ||
-    landing.matchUpStatusCodes?.length ||
+    holdsReasons(landing) ||
     landing.sideStatusCodes ||
     !after.view.targets.loserTargetSeat?.free ||
     after.view.targets.loserTargetSeat.opponentBye
@@ -101,7 +101,7 @@ export function supersededOwnRelayConvergence(
   if (
     !original ||
     JSON.stringify(original.sideExitProvenance) !== JSON.stringify(entry.sideExitProvenance) ||
-    (['winningSide', 'score', 'matchUpStatusCodes', 'sideStatusCodes', 'schedule'] as const).some(
+    (['winningSide', 'score', 'sideStatusCodes', 'schedule'] as const).some(
       (key) => JSON.stringify(original[key]) !== JSON.stringify(entry[key]),
     ) ||
     original.matchUpStatus !== entry.matchUpStatus ||
@@ -116,7 +116,7 @@ export function supersededOwnRelayConvergence(
   )
     return undefined;
   if (
-    entry.matchUpStatusCodes?.length ||
+    holdsReasons(entry) ||
     entry.sideStatusCodes ||
     entry.loserMatchUpId ||
     entry.sides?.some((side) => side.bye || side.qualifier || side.participantId)
@@ -139,7 +139,6 @@ export function supersededOwnRelayConvergence(
     matchUpId: landing.matchUpId,
     sideNumber,
     matchUpStatus,
-    matchUpStatusCodes: deriveStatusCodes(landing),
     score: blankScore(),
     target,
   };

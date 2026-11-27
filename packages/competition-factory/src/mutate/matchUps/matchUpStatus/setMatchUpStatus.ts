@@ -34,6 +34,7 @@ import { isDoubleExit } from '@Validators/isExit';
 import { findPolicy } from '@Acquire/findPolicy';
 import { findEvent } from '@Acquire/findEvent';
 import { isString } from '@Tools/objects';
+import { callStatusReasons, readStatusReasonsInput } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Set as SetType, Tournament } from '@Types/tournamentTypes';
@@ -173,6 +174,11 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     return { error: INVALID_WINNING_SIDE };
   }
 
+  // REASONS ARE READ ONCE, HERE, keyed as they are stored: `sideStatusCodes`, `matchUpStatusCode`, and the explicit
+  // `clearStatusCodes`. Refused before the first write, as an invalid winner is.
+  const reasons = readStatusReasonsInput(outcome);
+  if (reasons.error) return decorateResult({ result: { error: reasons.error }, info: reasons.info, stack });
+
   // NOTES ARE VALIDATED BEFORE THE FIRST WRITE. They are written last, onto the matchUp, after `modifyMatchUpScore` has
   // already written its score and status, and `addNotes` refused `notes: 123` there: an error over a result that had
   // landed (an error leaves the record unchanged, and no mutation relies on rollback). Asked here with
@@ -231,11 +237,15 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     outcome.score = scoreObject;
   }
 
+  // the call's matchUp as stored, before anything is written
+  const callMatchUp = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === matchUpId);
   // once, here, so the v2 decision and v1's writes read the same score
-  keepDualAggregate({ enableAutoCalc, matchUpsMap, matchUpId, outcome });
+  keepDualAggregate({ enableAutoCalc, stored: callMatchUp, outcome });
   // and refused here, before either pipeline: a winner on a level TEAM tie records how it was decided
-  const levelDual = levelDualRefusal({ ...params, matchUpsMap, outcome });
+  const levelDual = levelDualRefusal({ ...params, matchUpsMap, stored: callMatchUp, outcome });
   if (levelDual) return decorateResult({ result: levelDual, stack });
+  // the reasons the call writes on its matchUp, read against those it holds now (`writeStatusReasons`)
+  const statusReasons = callStatusReasons(matchUpId, reasons.input, callMatchUp);
 
   // read BEFORE the mutation: `reconcileDeciders` acts only on a final whose winner has changed
   const finalsBefore = getDeciderFinals(drawDefinition);
@@ -265,7 +275,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   const instants = replayedInstants();
   const v2 = decideOutcomeV2({
     request: {
-      matchUpStatusCodes: outcome?.matchUpStatusCodes,
+      statusReasons,
       matchUpStatus: outcome?.matchUpStatus,
       winningSide: outcome?.winningSide,
       score: outcome?.score,
@@ -389,7 +399,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     // WHY: Separation of concerns - setMatchUpStatus handles API/validation/orchestration,
     // setMatchUpState handles actual state mutations and participant progression logic
     const result = setMatchUpState({
-      matchUpStatusCodes: outcome?.matchUpStatusCodes,
+      statusReasons,
       matchUpsMap,
       edgesHeld: !!heldEdges,
       matchUpStatus: outcome?.matchUpStatus,
@@ -460,7 +470,6 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
  * and the source's facts. They are plumbing, consumed by `propagateExitFrom` above.
  */
 const PROPAGATION_CONTEXT_KEYS = [
-  'sourceMatchUpStatusCodes',
   'sourceMatchUpStatus',
   'queuedExitContexts',
   'progressExitStatus',
@@ -484,27 +493,29 @@ type V1Target = {
 
 type LevelDualArgs = Pick<SetMatchUpStatusArgs, 'drawDefinition' | 'enableAutoCalc' | 'outcome' | 'event'> & {
   matchUpsMap: MatchUpsMap;
-  matchUpId: string;
+  stored?: MatchUp;
 };
 
-type KeepDualAggregateArgs = Pick<SetMatchUpStatusArgs, 'enableAutoCalc' | 'outcome'> & {
-  matchUpsMap: MatchUpsMap;
-  matchUpId: string;
-};
+type KeepDualAggregateArgs = Pick<SetMatchUpStatusArgs, 'enableAutoCalc' | 'outcome'> & { stored?: MatchUp };
 
 /**
  * A dual given a score without sets keeps its aggregate: the score is laid over the dual's own (`isPartialDualScore`).
  * Swapped for it, a level tie's aggregate was wiped when its decision was recorded.
  */
-function keepDualAggregate({ enableAutoCalc, matchUpsMap, matchUpId, outcome }: KeepDualAggregateArgs) {
+function keepDualAggregate({ enableAutoCalc, stored: dual, outcome }: KeepDualAggregateArgs) {
   // enabling auto-calc projects the dual's whole score from its lines (`handleTeamAutoCalc`)
   if (!outcome || enableAutoCalc || !isPartialDualScore(outcome.score)) return;
-  const dual = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === matchUpId);
   if (dual?.matchUpType === TEAM) outcome.score = { ...dual.score, ...outcome.score };
 }
 
-function levelDualRefusal({ drawDefinition, enableAutoCalc, matchUpsMap, matchUpId, outcome, event }: LevelDualArgs) {
-  const dual = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === matchUpId);
+function levelDualRefusal({
+  drawDefinition,
+  enableAutoCalc,
+  matchUpsMap,
+  stored: dual,
+  outcome,
+  event,
+}: LevelDualArgs) {
   if (dual?.matchUpType !== TEAM) return undefined;
   return levelDualDecisionRefusal({
     matchUpStatus: outcome?.matchUpStatus,
@@ -681,7 +692,6 @@ function propagateExitFrom({
     failsafe += 1;
     // set the consolation matchUp's status (e.g. WALKOVER when only one participant has arrived)
     const progressResult = progressExitStatus({
-      sourceMatchUpStatusCodes: context.sourceMatchUpStatusCodes,
       sourceMatchUpStatus: context.sourceMatchUpStatus,
       sourceWinningSide: context.sourceWinningSide,
       loserParticipantId: context.loserParticipantId,

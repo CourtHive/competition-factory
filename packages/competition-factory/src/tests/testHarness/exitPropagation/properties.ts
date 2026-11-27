@@ -60,13 +60,6 @@ export type RelationalCoverage = {
   clear: number;
   /** clears refused: a legitimate refusal, but the round trip did not complete */
   clearRefused: number;
-  /**
-   * CODES_CONSISTENT, as a ledger, not a failure: scheduled draws whose stored `matchUpStatusCodes` disagree with what
-   * provenance derives, and the matchUps that do. The round trip leaves the legacy array out (census F1, 2026-10-17:
-   * `projectRoundTrip`), so this is where a code-output defect stays visible.
-   */
-  codesInconsistentDraws: number;
-  codesInconsistentMatchUps: number;
 };
 
 export const emptyCoverage = (): RelationalCoverage => ({
@@ -77,8 +70,6 @@ export const emptyCoverage = (): RelationalCoverage => ({
   secondApply: 0,
   clear: 0,
   clearRefused: 0,
-  codesInconsistentDraws: 0,
-  codesInconsistentMatchUps: 0,
 });
 
 type RelationalParams = {
