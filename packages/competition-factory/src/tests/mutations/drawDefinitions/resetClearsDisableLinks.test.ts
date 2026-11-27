@@ -5,6 +5,7 @@ import { DISABLE_LINKS } from '@Constants/extensionConstants';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, expect, it } from 'vitest';
+import { CONTRADICTORY_POSITION_ACTION } from '@Constants/errorConditionConstants';
 
 afterEach(() => setSchemaWriteMode(NATIVE));
 
@@ -15,9 +16,9 @@ afterEach(() => setSchemaWriteMode(NATIVE));
  *
  * A reset returns the draw to its pre-play state, which makes the marker both meaningless and
  * harmful: left behind, it silently blocks progression through that position for the life of the
- * draw. These tests drive the real path — play the main round, let losers feed the consolation, then
- * clear one by hand — rather than planting the attribute, so they also pin that
- * `conditionallyDisableLinkPositioning` still applies to a CONSOLATION structure.
+ * draw. These tests play the main round and let losers feed the consolation. 8.0.0 refuses the manual
+ * clear of an arrived loser, so the clear is written into the record as the removal wrote it (a record
+ * stored earlier can hold it).
  */
 
 /** Every assignment across the draw still carrying the flag, in either representation. */
@@ -39,7 +40,7 @@ function flaggedAssignments(drawId: string) {
 }
 
 /** Generate, play the main round so the consolation fills, and clear one consolation position. */
-function drawWithAClearedConsolationPosition(drawId: string) {
+function drawWithAClearedConsolationPosition(drawId: string, bridge = false) {
   mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawId, drawSize: 16, drawType: FIRST_MATCH_LOSER_CONSOLATION }],
     setState: true,
@@ -57,12 +58,22 @@ function drawWithAClearedConsolationPosition(drawId: string) {
   // the feed must actually have happened, or the rest of the test proves nothing
   expect(occupied.length).toBeGreaterThan(0);
 
+  // 8.0.0 refuses removing a loser who arrived from a result that stands (ARRIVED_FROM_RESULT); a record stored
+  // earlier can hold the manual clear, so it is written as the removal wrote it
   const result = tournamentEngine.removeDrawPositionAssignment({
     structureId: consolation.structureId,
     drawPosition: occupied[0].drawPosition,
     drawId,
   });
-  expect(result.success).toEqual(true);
+  expect(result.error).toEqual(CONTRADICTORY_POSITION_ACTION);
+  const record = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+  const assignment = record.events[0].drawDefinitions[0].structures
+    .find((structure: any) => structure.structureId === consolation.structureId)
+    .positionAssignments.find((a: any) => a.drawPosition === occupied[0].drawPosition);
+  delete assignment.participantId;
+  assignment.disableLinks = true;
+  if (bridge) assignment.extensions = [...(assignment.extensions ?? []), { name: DISABLE_LINKS, value: true }];
+  tournamentEngine.setState(record);
 
   return { drawPosition: occupied[0].drawPosition };
 }
@@ -85,7 +96,7 @@ it('resetDrawDefinition clears disableLinks in BOTH representations under BRIDGE
   // is not gated on the write mode — stale state must go regardless of how it was recorded.
   setSchemaWriteMode(BRIDGE);
   const drawId = 'reset-disable-links-bridge';
-  const { drawPosition } = drawWithAClearedConsolationPosition(drawId);
+  const { drawPosition } = drawWithAClearedConsolationPosition(drawId, true);
 
   expect(flaggedAssignments(drawId)).toEqual([
     { structureName: 'Consolation', drawPosition, firstClass: true, extension: true },

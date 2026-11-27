@@ -50,6 +50,7 @@ export const LOSER_DUE = 'LOSER_DUE';
 export const WINNER_DUE = 'WINNER_DUE';
 export const BYE_ADVANCEMENT_PLAYED = 'BYE_ADVANCEMENT_PLAYED';
 export const PARTICIPANT_DUE = 'PARTICIPANT_DUE';
+export const ARRIVED_FROM_RESULT = 'ARRIVED_FROM_RESULT';
 
 export type MustClearItem = {
   reason: string;
@@ -531,4 +532,62 @@ export function dueParticipantRefusal({
     participantId,
   }));
   return refusal({ mustClear: [], reservedFor }, stack);
+}
+
+/**
+ * Whether removing or swapping the participants on `drawPositions` of `structure` (a consolation or playoff) would move
+ * one who arrived there from a result that still stands. That result still says they were sent to this seat, so
+ * reversing it later finds someone else there and is refused. `mustClear` names the feeding result, with anything that
+ * depends on it first; once it is cleared, the participant is no longer there by a result and may be moved.
+ */
+export function arrivedParticipantRefusal({
+  inContextDrawMatchUps,
+  drawDefinition,
+  drawPositions,
+  structure,
+  stack,
+}: {
+  inContextDrawMatchUps: () => HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  drawPositions: number[];
+  structure: Structure;
+  stack: string;
+}): ResultType | undefined {
+  const links = feedingLinks(drawDefinition, structure.structureId);
+  if (!links.length) return undefined;
+  const occupied = assignmentsOf(structure).filter(
+    (assignment) => drawPositions.includes(assignment.drawPosition) && assignment.participantId,
+  );
+  if (!occupied.length) return undefined;
+  // nobody arrives without a decided source matchUp: with none stored, there is nothing to hydrate for
+  const decidedSource = links.some((link) =>
+    storedMatchUpsOf(findStructure({ drawDefinition, structureId: link.source.structureId }).structure).some(
+      (matchUp) => matchUp.roundNumber === link.source.roundNumber && !!matchUp.winningSide,
+    ),
+  );
+  if (!decidedSource) return undefined;
+
+  const matchUps = inContextDrawMatchUps();
+  const reasons = new Map<string, string>();
+  for (const { participantId } of occupied) {
+    for (const link of links) {
+      const source = matchUps.find(
+        (matchUp) =>
+          inStructure(matchUp, link.source.structureId) &&
+          matchUp.roundNumber === link.source.roundNumber &&
+          !!matchUp.winningSide &&
+          !matchUp.collectionId &&
+          matchUp.sides?.some(
+            (side) =>
+              side?.participantId === participantId &&
+              (link.linkType === LOSER
+                ? side.sideNumber !== matchUp.winningSide
+                : side.sideNumber === matchUp.winningSide),
+          ),
+      );
+      if (source) reasons.set(source.matchUpId, ARRIVED_FROM_RESULT);
+    }
+  }
+  if (!reasons.size) return undefined;
+  return refusal({ mustClear: clearingOrder({ inContextDrawMatchUps: matchUps, drawDefinition, reasons }) }, stack);
 }

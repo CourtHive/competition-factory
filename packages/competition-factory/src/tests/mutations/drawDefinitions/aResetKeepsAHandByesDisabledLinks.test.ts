@@ -4,6 +4,7 @@ import { expect, it } from 'vitest';
 
 // constants
 import { FIRST_ROUND_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { CONTRADICTORY_POSITION_ACTION } from '@Constants/errorConditionConstants';
 
 /**
  * A consolation seat whose arrived loser is removed and replaced with a BYE is marked `disableLinks`, so its feeder's
@@ -52,7 +53,16 @@ it('a reset keeps the disabled links of a BYE placed by hand, and the draw repla
     replaceWithBye: true,
     drawId: 'd',
   });
-  expect(removed.success).toEqual(true);
+  // 8.0.0 refuses removing a loser who arrived from a result that stands (ARRIVED_FROM_RESULT); a record stored
+  // earlier holds the removal as it was written: a BYE, its links disabled
+  expect(removed.error).toEqual(CONTRADICTORY_POSITION_ACTION);
+  const record = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+  const assignment = record.events[0].drawDefinitions[0].structures[1].positionAssignments.find(
+    (a: any) => a.drawPosition === seat,
+  );
+  delete assignment.participantId;
+  Object.assign(assignment, { bye: true, disableLinks: true });
+  tournamentEngine.setState(record);
 
   expect(tournamentEngine.resetDrawDefinition({ drawId: 'd' }).success).toEqual(true);
   const byeSeat = consolation().positionAssignments.find((assignment: any) => assignment.drawPosition === seat);

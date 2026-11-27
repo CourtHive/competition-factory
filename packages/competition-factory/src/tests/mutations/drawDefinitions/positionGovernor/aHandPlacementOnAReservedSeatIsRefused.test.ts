@@ -5,7 +5,12 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 // constants
 import { CONTRADICTORY_POSITION_ACTION } from '@Constants/errorConditionConstants';
-import { BYE_ADVANCEMENT_PLAYED, LOSER_DUE, PARTICIPANT_DUE } from '@Query/drawDefinition/positionActionRefusal';
+import {
+  ARRIVED_FROM_RESULT,
+  BYE_ADVANCEMENT_PLAYED,
+  LOSER_DUE,
+  PARTICIPANT_DUE,
+} from '@Query/drawDefinition/positionActionRefusal';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
@@ -159,18 +164,41 @@ describe.each(MODES)('a hand placement on a reserved seat is refused (%s)', (mod
     ]);
   });
 
-  it('a consolation swap of seats pending losers are owed is refused; once they arrive it is accepted', () => {
+  it('a consolation swap of seats pending losers are owed is refused, and so is one of arrived losers', () => {
     generate(FIRST_ROUND_LOSER_CONSOLATION, 8);
     setOutcomePipeline(mode);
     const consolation = structureOf('Consolation').structureId;
     const swap = () =>
       tournamentEngine.swapDrawPositionAssignments({ structureId: consolation, drawPositions: [1, 3], drawId });
-    const before = recordNow();
-    const refused = expectRefused(swap(), before);
+    const refused = expectRefused(swap(), recordNow());
     expect(refused.reservedFor.length).toEqual(2);
     for (const roundPosition of [1, 2, 3, 4])
       expect(set(find('Main', 1, roundPosition).matchUpId, played(1)).success).toEqual(true);
-    expect(swap().success).toEqual(true);
+    // the losers have arrived from results that stand: moving them would leave those results pointing elsewhere
+    const arrived = expectRefused(swap(), recordNow());
+    expect(arrived.mustClear.length).toEqual(2);
+    expect(arrived.mustClear.every(({ reason }) => reason === ARRIVED_FROM_RESULT)).toEqual(true);
+  });
+
+  it('an arrived consolation loser is not removed while the result that sent them stands', () => {
+    generate(FIRST_ROUND_LOSER_CONSOLATION, 8);
+    setOutcomePipeline(mode);
+    const r1p1 = find('Main', 1, 1);
+    expect(set(r1p1.matchUpId, played(1)).success).toEqual(true);
+    const loserSeat = structureOf('Consolation').positionAssignments.find((a: any) => a.participantId).drawPosition;
+    for (const replaceWithBye of [false, true]) {
+      const refused = expectRefused(
+        tournamentEngine.removeDrawPositionAssignment({ ...seat(loserSeat), replaceWithBye }),
+        recordNow(),
+      );
+      expect(refused.mustClear).toEqual([
+        expect.objectContaining({ matchUpId: r1p1.matchUpId, reason: ARRIVED_FROM_RESULT }),
+      ]);
+    }
+    // once the result is cleared, the loser is gone and the seat can be cleared
+    expect(set(r1p1.matchUpId, cleared).success).toEqual(true);
+    expect(tournamentEngine.removeDrawPositionAssignment(seat(loserSeat)).success).toEqual(true);
+    expect(inconsistencies()).toEqual([]);
   });
 
   it('a BYE swapped away from a seat whose opponent has played on is refused until that result is cleared', () => {

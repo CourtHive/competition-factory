@@ -542,13 +542,15 @@ if (result.error?.code === 'ERR_CONTRADICTORY_POSITION_ACTION') {
 
 `reason` is one of:
 
-| `reason`             | Meaning                                                                         | How it is cleared                               |
-| -------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------- |
-| `LOSER_DIRECTED`     | this result sent the swapped seat's occupant to a consolation or backdraw seat  | clear the result                                |
-| `WINNER_DIRECTED`    | this result sent the swapped seat's occupant on as a winner                     | clear the result                                |
-| `RESULT_ON_POSITION` | a result of the swapped seat that would be left on an empty drawPosition        | clear the result                                |
-| `DEPENDS_ON_RESULT`  | a later result that depends on a result above, so it is cleared first           | clear the result                                |
-| `PLACED_ACROSS_LINK` | the occupant was placed in a playoff or main draw, which no result there undoes | `removeDrawPositionAssignment` on that position |
+| `reason`                 | Meaning                                                                                        | How it is cleared                               |
+| ------------------------ | ---------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `LOSER_DIRECTED`         | this result sent the swapped seat's occupant to a consolation or backdraw seat                 | clear the result                                |
+| `WINNER_DIRECTED`        | this result sent the swapped seat's occupant on as a winner                                    | clear the result                                |
+| `RESULT_ON_POSITION`     | a result of the swapped seat that would be left on an empty drawPosition                       | clear the result                                |
+| `DEPENDS_ON_RESULT`      | a later result that depends on a result above, so it is cleared first                          | clear the result                                |
+| `PLACED_ACROSS_LINK`     | the occupant was placed in a playoff or main draw, which no result there undoes                | `removeDrawPositionAssignment` on that position |
+| `BYE_ADVANCEMENT_PLAYED` | a later result of the opponent who advanced through the BYE being swapped away                 | clear the result                                |
+| `ARRIVED_FROM_RESULT`    | the result that sent a consolation or playoff participant to the seat being removed or swapped | clear the result                                |
 
 When every listed item is cleared, the swap is accepted.
 
@@ -594,6 +596,25 @@ Two placements are unchanged:
   takes the lowest seat of that matchUp and replaces a BYE placed there, so the placement contradicts nothing. A
   participant placed there by hand is refused like any other.
 - **A placement on a seat whose feeding matchUp is decided**, or one no result will reach (a double walkover, a BYE).
+
+`reservedFor` uses its own reasons:
+
+| `reason`          | Meaning                                                                                      |
+| ----------------- | -------------------------------------------------------------------------------------------- |
+| `LOSER_DUE`       | this matchUp, not yet decided, sends its loser to the seat                                   |
+| `WINNER_DUE`      | this matchUp, not yet decided, sends its winner to the seat                                  |
+| `PARTICIPANT_DUE` | the participant being placed still plays this matchUp, in a structure linked with the target |
+
+**A participant who arrived from a result is moved only once that result is cleared.** Removing
+(`removeDrawPositionAssignment`, with or without `replaceWithBye`) or swapping a consolation or playoff participant who
+was sent there by a result that still stands is refused: reversing that result later would find someone else on the
+seat. `mustClear` names the result (`ARRIVED_FROM_RESULT`), anything depending on it first. This includes recording a
+loser who declines the consolation by replacing them with a BYE; clear the main result first, or record the decline in
+the consolation itself (`withdrawParticipantAtDrawPosition`).
+
+**A reset keeps a hand-placed BYE's disabled links.** `resetDrawDefinition` and `resetStructure` empty the seats results
+filled and feed them again. A consolation or playoff seat that still holds a BYE placed by hand keeps its
+`disableLinks`, so the BYE and its marker survive the reset together.
 
 A client should present `reservedFor` as "this seat is reserved for the loser of …", and not offer to clear anything.
 

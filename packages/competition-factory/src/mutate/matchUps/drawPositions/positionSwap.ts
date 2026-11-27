@@ -3,7 +3,11 @@ import { addPositionActionTelemetry } from '@Mutate/drawDefinitions/positionGove
 import { modifyDrawNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { drawPositionAssignmentRefusal } from '@Query/drawDefinition/drawPositionAssignmentRefusal';
-import { swapOfReservedSeatRefusal, swapRefusal } from '@Query/drawDefinition/positionActionRefusal';
+import {
+  arrivedParticipantRefusal,
+  swapOfReservedSeatRefusal,
+  swapRefusal,
+} from '@Query/drawDefinition/positionActionRefusal';
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { removeAssignment } from '@Mutate/drawDefinitions/removeDrawPositionAssignment';
 import { assignDrawPosition } from '@Mutate/matchUps/drawPositions/positionAssignment';
@@ -78,6 +82,16 @@ function swapAssignments({ tournamentRecord, drawDefinition, drawPositions, stru
   if (contradiction) return contradiction;
   // outside a first-stage MAIN or QUALIFYING structure the swap disables both seats' links: a seat still owed is refused
   const disablesLinks = !([MAIN, QUALIFYING].includes(structure.stage as string) && structure.stageSequence === 1);
+  const arrived =
+    disablesLinks &&
+    arrivedParticipantRefusal({
+      inContextDrawMatchUps: () => inContextDrawMatchUps ?? [],
+      stack: 'swapDrawPositionAssignments',
+      drawDefinition,
+      drawPositions,
+      structure,
+    });
+  if (arrived) return arrived;
   const reserved =
     disablesLinks &&
     swapOfReservedSeatRefusal({

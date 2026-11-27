@@ -14,7 +14,7 @@ import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
 import { destroyPairEntry } from '@Mutate/entries/destroyPairEntry';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { reservedSeatRefusal } from '@Query/drawDefinition/positionActionRefusal';
+import { arrivedParticipantRefusal, reservedSeatRefusal } from '@Query/drawDefinition/positionActionRefusal';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { findStructure } from '@Acquire/findStructure';
 
@@ -35,6 +35,23 @@ import { MatchUp } from '@Types/tournamentTypes';
 export function removeDrawPositionAssignment(params): ResultType & { participantId?: string } {
   // a seat a matchUp not yet decided still owes is not given a BYE where its arrival would then be refused
   const { drawDefinition, structureId, drawPosition, replaceWithBye } = params;
+  // a consolation or playoff participant who arrived from a result that stands is not removed until it is cleared
+  const structure =
+    drawDefinition && structureId ? findStructure({ drawDefinition, structureId }).structure : undefined;
+  if (
+    structure &&
+    drawPosition &&
+    !(['MAIN', 'QUALIFYING'].includes(structure.stage as string) && structure.stageSequence === 1)
+  ) {
+    const arrived = arrivedParticipantRefusal({
+      inContextDrawMatchUps: () => getAllDrawMatchUps({ inContext: true, drawDefinition }).matchUps ?? [],
+      stack: 'removeDrawPositionAssignment',
+      drawPositions: [drawPosition],
+      drawDefinition,
+      structure,
+    });
+    if (arrived) return arrived;
+  }
   if (replaceWithBye && drawDefinition && structureId && drawPosition) {
     const reserved = reservedSeatRefusal({
       inContextDrawMatchUps: () => getAllDrawMatchUps({ inContext: true, drawDefinition }).matchUps ?? [],
