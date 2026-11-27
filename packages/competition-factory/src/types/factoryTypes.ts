@@ -522,25 +522,15 @@ export type MappedParticipant = {
     drawId: string;
   }[];
   scheduleConflicts: { [key: string]: ScheduleConflict };
-  scheduleItems: any[];
-  participant: HydratedParticipant & {
-    groupParticipantIds: string[];
-    pairParticipantIds: string[];
-    teamParticipantIds: string[];
-    groups: {
-      participantRoleResponsibilities?: string[];
-      participantOtherName?: string;
-      participantName: string;
-      participantId: string;
-    }[];
-    teams: {
-      participantRoleResponsibilities?: string[];
-      participantOtherName?: string;
-      participantName: string;
-      participantId: string;
-      teamId: string;
-    }[];
-  };
+  scheduleItems: NonNullable<HydratedParticipant['scheduleItems']>;
+  /** the participant, with its groupings always present */
+  participant: HydratedParticipant &
+    Required<
+      Pick<
+        HydratedParticipant,
+        'groupParticipantIds' | 'pairParticipantIds' | 'teamParticipantIds' | 'groups' | 'teams'
+      >
+    >;
   // NOTE: for the following an Object is used for the aggregation step and the reuslt is returned as an array
   statistics: { [key: string]: any } | any[];
   opponents: { [key: string]: any } | any[];

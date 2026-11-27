@@ -12,6 +12,10 @@ import { getMatchUpId } from '@Functions/global/extractors';
 // constants and types
 import { ErrorType, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
 import { EventTypeUnion, Tournament } from '@Types/tournamentTypes';
+import { HydratedCourt } from '@Types/hydrated';
+
+// a court's own `startTime` / `endTime`: not stored attributes, but read where a record still carries them
+type LegacyCourt = HydratedCourt & { startTime?: string; endTime?: string };
 
 type CalculateScheduleTimesArgs = {
   tournamentRecords: { [key: string]: Tournament };
@@ -67,12 +71,12 @@ export function calculateScheduleTimes({
   const courts = allCourts?.filter((court) => !venueIds || venueIds.includes(court.venueId));
 
   if (!startTime) {
-    startTime = courts?.reduce((minStartTime, court) => {
+    startTime = courts?.reduce<string | undefined>((minStartTime, court) => {
       const dateAvailability = court.dateAvailability?.find(
         // if no date is specified consider it to be default for all tournament dates
         (availability) => !availability.date || sameDay(scheduleDate, availability.date),
       );
-      const comparisonStartTime = dateAvailability?.startTime ?? court.startTime;
+      const comparisonStartTime = dateAvailability?.startTime ?? (court as LegacyCourt).startTime;
 
       return comparisonStartTime &&
         (!minStartTime || timeStringMinutes(comparisonStartTime) < timeStringMinutes(minStartTime))
@@ -82,12 +86,12 @@ export function calculateScheduleTimes({
   }
 
   if (!endTime) {
-    endTime = courts?.reduce((maxEndTime, court) => {
+    endTime = courts?.reduce<string | undefined>((maxEndTime, court) => {
       const dateAvailability = court.dateAvailability?.find(
         // if no date is specified consider it to be default for all tournament dates
         (availability) => !availability.date || sameDay(scheduleDate, availability.date),
       );
-      const comparisonEndTime = dateAvailability?.endTime ?? court.endTime;
+      const comparisonEndTime = dateAvailability?.endTime ?? (court as LegacyCourt).endTime;
 
       return comparisonEndTime && (!maxEndTime || timeStringMinutes(comparisonEndTime) > timeStringMinutes(maxEndTime))
         ? comparisonEndTime

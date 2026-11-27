@@ -8,7 +8,7 @@ import { expect, test } from 'vitest';
 import { CONTAINER, MAIN, ROUND_ROBIN, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
 import { DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 import { TALLY } from '@Constants/extensionConstants';
-import { HydratedParticipant } from '@Types/hydrated';
+import { MappedParticipant } from '@Types/factoryTypes';
 
 test('single RR group (drawSize 4), all matchUps complete: exact finishing positions', () => {
   const drawSize = 4;
@@ -27,7 +27,7 @@ test('single RR group (drawSize 4), all matchUps complete: exact finishing posit
     withRankingProfile: true,
   });
 
-  const hydratedParticipants: HydratedParticipant[] = Object.values(participantMap);
+  const hydratedParticipants: MappedParticipant[] = Object.values(participantMap);
   const drawParticipants = hydratedParticipants.filter((p) => p.draws[drawId]);
 
   // Each participant in a single RR bracket should have an exact finishing position [n, n]
@@ -61,7 +61,7 @@ test('multiple RR groups (drawSize 16), all matchUps complete, no playoff: bound
     withRankingProfile: true,
   });
 
-  const hydratedParticipants: HydratedParticipant[] = Object.values(participantMap);
+  const hydratedParticipants: MappedParticipant[] = Object.values(participantMap);
   const drawParticipants = hydratedParticipants.filter((p) => p.draws[drawId]);
 
   expect(drawParticipants.length).toEqual(drawSize);
@@ -95,7 +95,7 @@ test('ROUND_ROBIN_WITH_PLAYOFF, all matchUps complete: advancing vs non-advancin
     withRankingProfile: true,
   });
 
-  const hydratedParticipants: HydratedParticipant[] = Object.values(participantMap);
+  const hydratedParticipants: MappedParticipant[] = Object.values(participantMap);
   const drawParticipants = hydratedParticipants.filter((p) => p.draws[drawId]);
 
   expect(drawParticipants.length).toEqual(drawSize);
@@ -141,7 +141,7 @@ test('partially complete RR bracket: provisionalOrder is used', () => {
     withRankingProfile: true,
   });
 
-  const hydratedParticipants: HydratedParticipant[] = Object.values(participantMap);
+  const hydratedParticipants: MappedParticipant[] = Object.values(participantMap);
   const drawParticipants = hydratedParticipants.filter((p) => p.draws[drawId]);
 
   // With partial completion, participants involved in the completed matchUp get
@@ -323,7 +323,7 @@ test('RR_WITH_PLAYOFF drawSize 32 with DOUBLE_WALKOVER/DOUBLE_DEFAULT ties: with
     withRankingProfile: true,
   });
 
-  const hydratedParticipants: HydratedParticipant[] = Object.values(participantMap);
+  const hydratedParticipants: MappedParticipant[] = Object.values(participantMap);
   const drawParticipants = hydratedParticipants.filter((p) => p.draws[drawId]);
   expect(drawParticipants.length).toEqual(drawSize);
 
@@ -466,7 +466,7 @@ test('RR_WITH_PLAYOFF drawSize 32 with ties resolved by subOrder', () => {
   }
 
   // Verify all participants still have valid ranges
-  const hydratedParticipants: HydratedParticipant[] = Object.values(finalMap);
+  const hydratedParticipants: MappedParticipant[] = Object.values(finalMap);
   const drawParticipants = hydratedParticipants.filter((p) => p.draws[drawId]);
   for (const participant of drawParticipants) {
     const { finishingPositionRange } = participant.draws[drawId];

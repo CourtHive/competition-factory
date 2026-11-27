@@ -958,7 +958,7 @@ export function getTournamentPoints({
   const pairPoints = {};
 
   for (const participant of participantsWithOutcomes ?? []) {
-    for (const draw of participant.draws) {
+    for (const draw of participant.draws!) {
       const eventInfo = derivedEventInfo[draw.eventId];
       const drawInfo = derivedDrawInfo[draw.drawId];
 
