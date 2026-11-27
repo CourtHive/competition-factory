@@ -1,5 +1,6 @@
 import { addNotice, deleteNotice, DEFERRED_PAYLOAD, getCapturedStamps, markModified } from '@Global/state/globalState';
 import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
+import { dropStaleStatusReasons } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { dropLegacyStatusCodes } from '@Helpers/drawTopology/legacyStatusCodes';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getDrawPositionSides } from '@Query/matchUps/getDrawPositionSides';
@@ -78,8 +79,12 @@ function drawUpdatedAt(drawDefinition: DrawDefinition, structureIds?: string[], 
 
 /** Stamp a matchUp to mark that it has just been modified: `stampUpdatedAt`, so once per call. */
 function stampMatchUpUpdatedAt(matchUp?: MatchUp | null, effects = liveNoticeEffects) {
-  // a write leaves no pre-8.0.0 positional codes on a matchUp it touches (`dropLegacyStatusCodes`)
-  if (!effects.planStamp) dropLegacyStatusCodes(matchUp);
+  // a write leaves no pre-8.0.0 positional codes on a matchUp it touches (`dropLegacyStatusCodes`), and no reason
+  // that no longer describes its result (`dropStaleStatusReasons`)
+  if (!effects.planStamp) {
+    dropLegacyStatusCodes(matchUp);
+    dropStaleStatusReasons(matchUp);
+  }
   stampUpdatedAt(matchUp, effects);
 }
 

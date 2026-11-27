@@ -8,7 +8,7 @@ import { scoredTimeAction } from '@Mutate/matchUps/matchUpStatus/reconcileScored
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { getCapturedStamps } from '@Global/state/globalState';
 import { dropLegacyStatusCodes } from '@Helpers/drawTopology/legacyStatusCodes';
-import { writeStatusReasons } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
+import { dropStaleStatusReasons, writeStatusReasons } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import type { CallStatusReasons } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { isAnyExit } from '@Validators/isExit';
 import { cloneData } from '@Tools/cloneState';
@@ -963,8 +963,10 @@ function foldStamp(
   if (!target) return { error: `stampUpdatedAt: no ${op.entity} ${op.id}` };
   stamp(target as Stamped, `${op.entity}:${op.id}`, context);
   if (op.entity === 'matchUp') {
-    // as v1's stamp does: the pre-8.0.0 positional codes go from a matchUp the call touches
+    // as v1's stamp does: the pre-8.0.0 positional codes go from a matchUp the call touches, and so do reasons that no
+    // longer describe its result
     dropLegacyStatusCodes(target as MatchUp);
+    dropStaleStatusReasons(target as MatchUp);
     flushScoredTime(target as MatchUp, context);
   }
   return {};

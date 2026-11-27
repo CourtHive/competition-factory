@@ -1,6 +1,7 @@
 import { getDrawPositionSideNumber, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
 import { relabelWithoutDirection } from '@Mutate/matchUps/drawPositions/relabelLoserExit';
+import { dropUndescribedStatusReasons } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { refreshArrivalsFrom } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getDownstreamStructureIds } from '@Query/matchUps/getDownstreamStructureIds';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
@@ -431,7 +432,9 @@ export function swapWinnerLoser(params) {
  * WINNING_SIDE_ADVANCEMENT_MISMATCH on DOUBLE_ELIMINATION 9305122.
  *
  * Re-sided together, because each is addressed by side and would otherwise contradict the others:
- * `winningSide`, the score (`reverseScore`), `sideExitProvenance` (keyed by side) and TEAM `sides`.
+ * `winningSide`, the score (`reverseScore`), `sideExitProvenance` (keyed by side) and TEAM `sides`. A reason
+ * (`sideStatusCodes`) is not re-sided: one keyed to the side that exited, which the winner now holds, no longer
+ * describes the result and is removed (`dropUndescribedStatusReasons`), as a write that submits no reason removes it.
  */
 function followWinnerAcrossResort({
   matchUp,
@@ -483,6 +486,8 @@ function followWinnerAcrossResort({
   if (Array.isArray(matchUp.sides)) {
     matchUp.sides = matchUp.sides.map((side) => ({ ...side, sideNumber: otherSide(side.sideNumber) }));
   }
+
+  dropUndescribedStatusReasons(matchUp);
 }
 
 /**

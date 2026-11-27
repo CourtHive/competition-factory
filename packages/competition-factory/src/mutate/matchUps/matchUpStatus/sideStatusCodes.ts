@@ -1,3 +1,4 @@
+import { carriedExitStatus, getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
 import { nonDirectingMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { isDoubleExit } from '@Validators/isExit';
 
@@ -6,6 +7,7 @@ import { MatchUp, MatchUpStatusUnion } from '@Types/tournamentTypes';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import {
   ABANDONED,
+  BYE,
   CANCELLED,
   DEFAULTED,
   DOUBLE_DEFAULT,
@@ -181,6 +183,55 @@ export function writeStatusReasons(matchUp: MatchUp, reasons: CallStatusReasons)
   if (input.submitted) source = input.submitted;
   else if (input.clear) source = {};
   storeReasons(matchUp, attributable(source, matchUpStatus, winningSide, true));
+}
+
+/** Replace a matchUp's stored reasons with `kept`, writing nothing when they are already what it holds. */
+function keepOnly(matchUp: MatchUp, kept: StatusReasons): void {
+  if (matchUp.matchUpStatusCode && !kept.matchUpStatusCode) delete matchUp.matchUpStatusCode;
+  const held = Object.keys(matchUp.sideStatusCodes ?? {}).length;
+  const keptSides = Object.keys(kept.sideStatusCodes ?? {}).length;
+  if (keptSides === held) return;
+  if (keptSides) matchUp.sideStatusCodes = kept.sideStatusCodes;
+  else delete matchUp.sideStatusCodes;
+}
+
+/**
+ * Remove the reasons a matchUp holds once its status takes none: an ENGINE write moved it off the result they were
+ * given for (a produced exit withdrawn when its source is corrected or cleared, a collapse to BYE, a result removed
+ * with a position, a reset), and it is now `TO_BE_PLAYED`, a `BYE` or any other status no reason describes.
+ *
+ * A BYE that still holds an exit in its provenance keeps that side's reason: the BYE stands over the exit, and the
+ * exit, re-derived from the provenance when the BYE goes, is what the reason describes. A matchUp that still holds an
+ * exit or a match ending keeps its reasons: the writes that put it there attribute them (`writeStatusReasons`,
+ * `attributeRetainedStatusCodes`), and a route that passes through that status on its way to another writes them
+ * again from what it held.
+ *
+ * Applied wherever a write touches a matchUp, at its `updatedAt` stamp: in v1 at the notice stamp, in v2 at the
+ * reducer's stamp fold.
+ */
+export function dropStaleStatusReasons(matchUp?: MatchUp | null): void {
+  if (!matchUp || (!matchUp.matchUpStatusCode && !matchUp.sideStatusCodes)) return;
+  if (REASON_STATUSES.has(matchUp.matchUpStatus as string)) return;
+  const sideStatusCodes: Record<number, string> = {};
+  if (matchUp.matchUpStatus === BYE) {
+    const provenance = getSideExitProvenance({ matchUp });
+    for (const sideNumber of [1, 2]) {
+      const code = matchUp.sideStatusCodes?.[sideNumber];
+      if (code && carriedExitStatus(provenance?.[sideNumber])) sideStatusCodes[sideNumber] = code;
+    }
+  }
+  keepOnly(matchUp, Object.keys(sideStatusCodes).length ? { sideStatusCodes } : {});
+}
+
+/**
+ * Remove the side reasons a decided matchUp holds that no longer name the side that exited: its sides were re-sorted
+ * under its winner (`followWinnerAcrossResort`), and a reason keyed to the side that exited now names the winner.
+ * The rule a call that submits no reason is written with (`writeStatusReasons`).
+ */
+export function dropUndescribedStatusReasons(matchUp: MatchUp): void {
+  if (!matchUp.matchUpStatusCode && !matchUp.sideStatusCodes) return;
+  const { matchUpStatusCode, sideStatusCodes, matchUpStatus, winningSide } = matchUp;
+  keepOnly(matchUp, attributable({ matchUpStatusCode, sideStatusCodes }, matchUpStatus, winningSide, true));
 }
 
 /**
