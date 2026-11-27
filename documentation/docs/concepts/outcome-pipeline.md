@@ -1826,7 +1826,9 @@ The recording is held to the rule a recorded cascade is, whole or not at all: wh
 on what it leaves (`predictSettleWork`), it is dropped and the plan is the very abstention the planners returned. A call
 whose PLANNED ops leave settle work (`settle`) was not recorded in batch 3 (batch 4a, below, records it). The recording
 is not made, and the call stays v1's, for: a TEAM dual or line (batch 3 and 4a; batch 4b, below, records them); a call
-with no captured clock; a call that names more than one tournament record. Nor is it asked for where the call is
+with no captured clock. A call that names more than one tournament record (the engine hands a call every record it
+holds) is run on a copy of each, and whatever v1 writes outside the draw, in any of them, discards the recording, as it
+does for the call's own record. Nor is it asked for where the call is
 refused: a refused call has no route, its refusal is its answer, and `differential` plans it only to set v1's refusal
 against v2's. Where v1's run on the copy returns an error, that error is the call's refusal and nothing is recorded:
 v1 on the stored record, handed the same parameters, draws and instants, would refuse the call the same way, but only

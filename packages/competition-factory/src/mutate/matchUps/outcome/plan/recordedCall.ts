@@ -37,8 +37,7 @@ import type { OutcomeOp } from '../ops';
  * before the refusal (a loser seat downstream found occupied once the result and the winner's advance were written).
  * Answered here, the refusal is met before the stored record is touched.
  *
- * Undefined, and the call stays v1's, wherever the copy's run is not known to be carried whole by those ops: more than
- * one tournament record; v1 threw; it wrote outside the draw, changed the call's own parameters,
+ * Undefined, and the call stays v1's, wherever the copy's run is not known to be carried whole by those ops: v1 threw; it wrote outside the draw, changed the call's own parameters,
  * or added or moved a matchUp or a structure, a round robin's group or a dual's line among them; it buffered a notice
  * apply could not raise again; or its result holds an object of the copy whose stored counterpart is not known to
  * read as it does (`returnedOnStored`).
@@ -155,14 +154,21 @@ export function recordWholeCall(
   const stampedBefore = sampledStamps ?? stampedInThisCall(args.drawDefinition);
   const requested = JSON.stringify(request);
   const kept = cloneState(request);
+  // A CALL NAMING SEVERAL RECORDS (the engine hands a call every record it holds) is run on a copy of each: v1 is
+  // handed them all, and whatever it wrote outside the draw, in any of them, is a write the ops do not carry
+  const several = Object.keys(args.tournamentRecords ?? {}).length > 1 ? args.tournamentRecords : undefined;
   const { copy, originals } = cloneState({
     tournamentRecord: args.tournamentRecord,
     drawDefinition: args.drawDefinition,
     event: args.event,
+    ...(several && { tournamentRecords: several }),
   });
-  const { tournamentRecord, drawDefinition, event } = copy as RecordCopy;
+  const copied = copy as RecordCopy;
+  const { tournamentRecord, drawDefinition, event } = copied;
   const outside = () =>
-    JSON.stringify({ tournamentRecord, event }, (_key, value) => (value === drawDefinition ? 0 : value));
+    JSON.stringify({ tournamentRecord, event, tournamentRecords: copied.tournamentRecords }, (_key, value) =>
+      value === drawDefinition ? 0 : value,
+    );
   stampCopies(drawDefinition, stampedBefore);
   // v1's refusal on the copy, holding the stored objects wherever it held the copy's (`refusedOnStored`)
   let refusal: ResultType | undefined;
@@ -176,7 +182,7 @@ export function recordWholeCall(
           placed: placed(drawDefinition),
           outside: outside(),
         };
-        const ran = runOnCopy(args, { tournamentRecord, drawDefinition, event });
+        const ran = runOnCopy(args, copied);
         if (!ran) return undefined;
         if (ran.error) {
           refusal = refusedOnStored(ran, originals);
@@ -192,7 +198,7 @@ export function recordWholeCall(
         if (!ops || !returnedOnStored(ran, originals, drawDefinition)) return undefined;
         // stopped at the forward bound: what the pass left is v1's to leave, and running it again would do the rest
         if (stoppedForward(ran)) return { ops: exhaustedProgram(ops), written: ran };
-        const provesSettled = () => settledOnCopy(args, { tournamentRecord, drawDefinition, event }, outside);
+        const provesSettled = () => settledOnCopy(args, copied, outside);
         return { ops, written: ran, provesSettled };
       }),
     ),
