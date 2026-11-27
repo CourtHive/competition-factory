@@ -571,7 +571,26 @@ export function arrivedParticipantRefusal({
   const matchUps = inContextDrawMatchUps();
   const reasons = new Map<string, string>();
   for (const { participantId } of occupied) {
-    for (const link of links) {
+    const source = arrivalSource({ matchUps, links, participantId });
+    if (source) reasons.set(source.matchUpId, ARRIVED_FROM_RESULT);
+  }
+  if (!reasons.size) return undefined;
+  return refusal({ mustClear: clearingOrder({ inContextDrawMatchUps: matchUps, drawDefinition, reasons }) }, stack);
+}
+
+/** the decided source matchUp whose result sent `participantId` across one of `links` (into the links' target) */
+function arrivalSource({
+  participantId,
+  matchUps,
+  links,
+}: {
+  participantId?: string;
+  matchUps: HydratedMatchUp[];
+  links: DrawLink[];
+}): HydratedMatchUp | undefined {
+  if (!participantId) return undefined;
+  for (const link of links) {
+    {
       const source = matchUps.find(
         (matchUp) =>
           inStructure(matchUp, link.source.structureId) &&
@@ -586,11 +605,99 @@ export function arrivedParticipantRefusal({
                 : side.sideNumber === matchUp.winningSide),
           ),
       );
-      if (source) reasons.set(source.matchUpId, ARRIVED_FROM_RESULT);
+      if (source) return source;
     }
   }
-  if (!reasons.size) return undefined;
-  return refusal({ mustClear: clearingOrder({ inContextDrawMatchUps: matchUps, drawDefinition, reasons }) }, stack);
+  return undefined;
+}
+
+/**
+ * The result a removal of `drawPosition` in `structure` would record as a declined consolation: the decided matchUp
+ * whose result sent the seat's participant there. Undefined for a seat no result filled.
+ */
+export function declineSource({
+  inContextDrawMatchUps,
+  drawDefinition,
+  drawPosition,
+  structure,
+}: {
+  inContextDrawMatchUps: () => HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  drawPosition: number;
+  structure: Structure;
+}): { matchUpId: string; participantId: string } | undefined {
+  const links = feedingLinks(drawDefinition, structure.structureId);
+  const participantId = assignmentsOf(structure).find((a) => a.drawPosition === drawPosition)?.participantId;
+  if (!links.length || !participantId) return undefined;
+  const source = arrivalSource({ matchUps: inContextDrawMatchUps(), links, participantId });
+  return source ? { matchUpId: source.matchUpId, participantId } : undefined;
+}
+
+export type DeclinedSeat = {
+  structureId: string;
+  drawPosition: number;
+  participantId: string;
+  matchUpId: string;
+};
+
+/**
+ * The declined consolations of the draw: seats a participant who arrived from a result left, replaced with a BYE whose
+ * links are disabled. A seat records its decline (`declinedParticipantId`, `declinedMatchUpId`). A record written
+ * before 8.0.0 carries no such marker, and the decline is inferred from the stored draw where it is unambiguous: the
+ * seat holds a hand-placed BYE with disabled links, exactly one decided matchUp sends its loser to the seat's matchUp
+ * (its stored loser edge), and that loser is not in the structure. Anything else is a BYE closed before play.
+ * `sourceStructureIds` limits the answer to declines of results in those structures.
+ */
+export function getDeclinedSeats(drawDefinition: DrawDefinition, sourceStructureIds?: string[]): DeclinedSeat[] {
+  const seats: DeclinedSeat[] = [];
+  // built only once a candidate seat is found: a draw with no hand-placed BYE pays one pass over its assignments
+  let all: { matchUp: MatchUp; structure: Structure }[] | undefined;
+  let byId: Map<string, { matchUp: MatchUp; structure: Structure }> | undefined;
+  for (const structure of drawDefinition.structures ?? []) {
+    const assignments = assignmentsOf(structure);
+    for (const assignment of assignments) {
+      if (!assignment.bye || assignment.byeFromPropagation || !assignment.disableLinks) continue;
+      all ??= (drawDefinition.structures ?? []).flatMap((member) =>
+        storedMatchUpsOf(member).map((matchUp) => ({ matchUp, structure: member })),
+      );
+      byId ??= new Map(all.map((entry) => [entry.matchUp.matchUpId, entry]));
+      let matchUpId = assignment.declinedMatchUpId;
+      let participantId = assignment.declinedParticipantId;
+      if (!matchUpId) {
+        const seatMatch = storedMatchUpsOf(structure)
+          .filter((m) => m.drawPositions?.includes(assignment.drawPosition))
+          .sort((a, b) => (a.roundNumber ?? 0) - (b.roundNumber ?? 0))[0];
+        const absent = seatMatch
+          ? (all ?? []).filter(({ matchUp, structure: source }) => {
+              if (matchUp.loserMatchUpId !== seatMatch.matchUpId || !matchUp.winningSide) return false;
+              const positions = [...(matchUp.drawPositions ?? [])]
+                .filter(Boolean)
+                .sort((a, b) => (a as number) - (b as number));
+              const loserPosition = positions[matchUp.winningSide === 1 ? 1 : 0];
+              const loser = assignmentsOf(source).find((a) => a.drawPosition === loserPosition)?.participantId;
+              return !!loser && !assignments.some((a) => a.participantId === loser);
+            })
+          : [];
+        if (absent.length !== 1) continue; // not a decline that can be read off the draw: closed before play
+        matchUpId = absent[0].matchUp.matchUpId;
+        const positions = [...(absent[0].matchUp.drawPositions ?? [])]
+          .filter(Boolean)
+          .sort((a, b) => (a as number) - (b as number));
+        const loserPosition = positions[absent[0].matchUp.winningSide === 1 ? 1 : 0];
+        participantId = assignmentsOf(absent[0].structure).find((a) => a.drawPosition === loserPosition)?.participantId;
+      }
+      const source = byId?.get(matchUpId);
+      if (!source || !participantId) continue;
+      if (sourceStructureIds && !sourceStructureIds.includes(source.structure.structureId)) continue;
+      seats.push({
+        structureId: structure.structureId,
+        drawPosition: assignment.drawPosition,
+        participantId,
+        matchUpId,
+      });
+    }
+  }
+  return seats;
 }
 
 /**
@@ -617,36 +724,15 @@ export function declinedSeatRefusal({
   const matchUp = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === matchUpId);
   // only a decided result whose winner changes, and which sends its loser on, can reverse a decline
   if (!matchUp?.winningSide || winningSide === matchUp.winningSide || !matchUp.loserMatchUpId) return undefined;
-  const loserTarget = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === matchUp.loserMatchUpId);
-  if (!loserTarget) return undefined;
-  const mapped = Object.entries(matchUpsMap.mappedMatchUps ?? {});
-  const holding = (id: string) =>
-    mapped.find(([, entry]) => (entry.matchUps as MatchUp[] | undefined)?.some((m) => m.matchUpId === id))?.[0];
-  const [sourceId, targetId] = [holding(matchUp.matchUpId), holding(loserTarget.matchUpId)];
-  const structure = sourceId ? findStructure({ drawDefinition, structureId: sourceId }).structure : undefined;
-  const target = targetId ? findStructure({ drawDefinition, structureId: targetId }).structure : undefined;
-  if (!structure || !target) return undefined;
-  const targetAssignments = assignmentsOf(target);
-  const declined = targetAssignments.filter(
-    (assignment) =>
-      loserTarget.drawPositions?.includes(assignment.drawPosition) &&
-      assignment.bye &&
-      !assignment.byeFromPropagation &&
-      assignment.disableLinks,
-  );
+  const declined = getDeclinedSeats(drawDefinition).filter((seat) => seat.matchUpId === matchUpId);
   if (!declined.length) return undefined;
-  // the declined loser is this result's, not a neighbour's: they are not in the consolation
-  const sorted = [...(matchUp.drawPositions ?? [])].filter(Boolean).sort((a, b) => (a as number) - (b as number));
-  const loserDrawPosition = sorted[matchUp.winningSide === 1 ? 1 : 0];
-  const loserId = assignmentsOf(structure).find((a) => a.drawPosition === loserDrawPosition)?.participantId;
-  if (!loserId || targetAssignments.some((assignment) => assignment.participantId === loserId)) return undefined;
   return refusal(
     {
-      mustClear: declined.map((assignment) => ({
+      mustClear: declined.map(({ structureId, drawPosition, participantId }) => ({
         reason: DECLINED_CONSOLATION,
-        structureId: target.structureId,
-        drawPosition: assignment.drawPosition,
-        participantId: loserId,
+        structureId,
+        drawPosition,
+        participantId,
       })),
     },
     'setMatchUpStatus',

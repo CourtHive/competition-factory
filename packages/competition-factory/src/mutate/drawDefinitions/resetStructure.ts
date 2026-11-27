@@ -1,4 +1,6 @@
-import { clearDisableLinks, resetStructureMatchUps } from '@Mutate/drawDefinitions/resetDrawDefinition';
+import { clearDisableLinks, lapseDeclines, resetStructureMatchUps } from '@Mutate/drawDefinitions/resetDrawDefinition';
+import { getDeclinedSeats } from '@Query/drawDefinition/positionActionRefusal';
+import { removeAssignment } from '@Mutate/drawDefinitions/removeDrawPositionAssignment';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
@@ -62,6 +64,9 @@ export function resetStructure({
     return decorateResult({ result: { error: CANNOT_RESET_STRUCTURE }, context: { delivered }, info, stack });
   }
 
+  // a declined consolation of one of this structure's results lapses with it (read before the results are cleared)
+  const lapsed = getDeclinedSeats(drawDefinition, [structureId]);
+
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
   const getRawMatchUp = (matchUpId) => matchUpsMap?.drawMatchUps?.find((matchUp) => matchUp.matchUpId === matchUpId);
 
@@ -79,6 +84,13 @@ export function resetStructure({
 
   // a round robin is a container: its positions live on its groups
   for (const member of structuresOf(structure) ?? [structure]) clearDisableLinks(member);
+
+  // each lapsed decline's BYE is removed from its seat in the structure it was declined in, which is fed again
+  for (const seat of lapsed) {
+    const removed = removeAssignment({ tournamentRecord, drawDefinition, event, ...seat });
+    if (removed.error) return decorateResult({ result: removed, stack });
+  }
+  lapseDeclines(drawDefinition, lapsed);
 
   modifyDrawNotice({
     tournamentId: tournamentRecord?.tournamentId,

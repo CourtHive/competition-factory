@@ -55,6 +55,8 @@ export function positionQualifiers(params) {
           assignment.qualifier = true;
           delete assignment.participantId;
           delete assignment.bye;
+          delete assignment.declinedParticipantId; // a decline goes with its BYE
+          delete assignment.declinedMatchUpId;
           // the BYE is gone, so its provenance marker goes with it — see positionClear
           delete assignment.byeFromPropagation;
         }

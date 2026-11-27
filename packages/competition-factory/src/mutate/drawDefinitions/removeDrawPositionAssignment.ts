@@ -14,8 +14,13 @@ import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
 import { destroyPairEntry } from '@Mutate/entries/destroyPairEntry';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { arrivedParticipantRefusal, reservedSeatRefusal } from '@Query/drawDefinition/positionActionRefusal';
+import {
+  arrivedParticipantRefusal,
+  reservedSeatRefusal,
+  declineSource,
+} from '@Query/drawDefinition/positionActionRefusal';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
@@ -66,7 +71,26 @@ export function removeDrawPositionAssignment(params): ResultType & { participant
     });
     if (reserved) return reserved;
   }
-  return composeDrawMutation(params, removeAssignment);
+  // a removal to a BYE of a participant a result sent here is a declined consolation: the BYE records it, so the
+  // decline lapses with that result (`resetDrawDefinition`)
+  const decline =
+    replaceWithBye && structure && drawPosition
+      ? declineSource({
+          inContextDrawMatchUps: () => getAllDrawMatchUps({ inContext: true, drawDefinition }).matchUps ?? [],
+          drawDefinition,
+          drawPosition,
+          structure,
+        })
+      : undefined;
+  const result = composeDrawMutation(params, removeAssignment);
+  if (decline && !result.error) {
+    const seat = positionAssignmentsOf(findStructure({ drawDefinition, structureId }).structure)?.find(
+      (assignment) => assignment.drawPosition === drawPosition,
+    );
+    if (seat?.bye)
+      Object.assign(seat, { declinedParticipantId: decline.participantId, declinedMatchUpId: decline.matchUpId });
+  }
+  return result;
 }
 
 /** The removal itself, against the draw it is given. Not atomic on its own: callers compose first. */

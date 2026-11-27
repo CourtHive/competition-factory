@@ -618,9 +618,13 @@ result that sent them is refused, because its new loser would have no seat; `mus
 (`{ structureId, drawPosition, participantId, reason: 'DECLINED_CONSOLATION' }`). A score correction that keeps the
 winner is accepted. Once the decline is undone (the BYE removed), the result can be reversed.
 
-**A reset keeps a hand-placed BYE's disabled links.** `resetDrawDefinition` and `resetStructure` empty the seats results
-filled and feed them again. A consolation or playoff seat that still holds a BYE placed by hand keeps its
-`disableLinks`, so the BYE and its marker survive the reset together.
+**A decline lapses when its result is cleared.** The BYE that records a declined consolation carries the decline
+(`declinedParticipantId`, `declinedMatchUpId` on the seat's position assignment). `resetDrawDefinition`, and
+`resetStructure` of the structure that holds the result, clear that result, so they also remove the decline's BYE and
+re-enable the seat's links: when the result is replayed, its loser arrives. A record written before 8.0.0 carries no
+decline marker; a seat is read as a decline when it holds a hand-placed BYE with disabled links and exactly one decided
+matchUp sends its loser to that seat's matchUp without the loser being in the structure. Any other hand-placed BYE is
+closed before play: a reset keeps it and its disabled links.
 
 A client should present `reservedFor` as "this seat is reserved for the loser of …", and not offer to clear anything.
 

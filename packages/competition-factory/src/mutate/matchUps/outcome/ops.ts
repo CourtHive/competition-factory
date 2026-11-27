@@ -911,6 +911,8 @@ function foldWithdrawBye(op: OpOf<'withdrawBye'>, { structures, groups, matchUps
     matchUp.winningSide = undefined;
   }
   delete assignment.bye;
+  delete assignment.declinedParticipantId; // a decline goes with its BYE
+  delete assignment.declinedMatchUpId;
   delete assignment.byeFromPropagation;
   if (assignment.participantId === undefined) delete assignment.participantId;
   return {};

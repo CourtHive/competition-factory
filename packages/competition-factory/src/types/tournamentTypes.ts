@@ -1563,6 +1563,14 @@ export interface PositionAssignment {
    * loss would be silent, reverting removal to the inference this replaces.
    */
   byeFromPropagation?: boolean;
+  /**
+   * A declined consolation: on a BYE placed by hand where a participant a result sent to this seat was removed
+   * (`removeDrawPositionAssignment` with `replaceWithBye`), the participant who declined and the matchUp whose result
+   * sent them. The decline lapses with that result: clearing it (a reset) removes the BYE and re-enables the seat's
+   * links. Absent on a BYE closed before play. Cleared with `bye`.
+   */
+  declinedParticipantId?: string;
+  declinedMatchUpId?: string;
   timeItems?: TimeItem[];
   updatedAt?: Date | string;
 }
