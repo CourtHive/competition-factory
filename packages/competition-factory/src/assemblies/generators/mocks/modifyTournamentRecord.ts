@@ -15,6 +15,7 @@ import { attachProfilePolicies } from './attachProfilePolicies';
 import { generateVenues } from '@Mutate/venues/generateVenues';
 import { isActiveMatchUp } from '@Query/matchUp/activeMatchUp';
 import { cloneState, restoreState } from '@Tools/cloneState';
+import { withOwnTieFormats } from './withOwnTieFormats';
 import { generateFlights } from './generateFlights';
 import { isObject } from '@Tools/objects';
 
@@ -363,7 +364,9 @@ function applySchedulingProfile({ schedulingProfile, autoSchedule, periodLength,
  * the record gained, read from the record itself), for a caller who would rather inspect or keep a
  * partial build than start again.
  */
-export function modifyTournamentRecord(params) {
+export function modifyTournamentRecord(givenParams) {
+  // the generators write to the tieFormats they work from; the caller's stay as given
+  const params = withOwnTieFormats(givenParams);
   if (!params?.recordMethods) return modifyRecord(params);
 
   // the engine calls that make these modifications to the record as it was passed, with no `newTournamentRecord`:

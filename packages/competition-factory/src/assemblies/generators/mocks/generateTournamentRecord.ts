@@ -14,6 +14,7 @@ import { generateVenues } from '@Mutate/venues/generateVenues';
 import { applyScenarioProfile } from './applyScenarioProfile';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { addDays, extractDate } from '@Tools/plainDate';
+import { withOwnTieFormats } from './withOwnTieFormats';
 import { randomMember } from '@Tools/arrays';
 import { now } from '@Tools/clock';
 import {
@@ -57,7 +58,9 @@ const mockTournamentNames = [
   'Stats Fail',
 ];
 
-export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
+export function generateTournamentRecord(givenParams: GenerateTournamentRecordArgs) {
+  // the generators write to the tieFormats they work from; the caller's stay as given
+  const params = withOwnTieFormats(givenParams);
   if (!params?.recordMethods) return buildTournamentRecord(params);
 
   startRecording();
