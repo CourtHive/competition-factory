@@ -92,6 +92,8 @@ function planCall(
   teamLedger?: TeamLedger,
 ) {
   let teamStamps: Set<string> | undefined;
+  // v1's refusal of the call on a copy, where the recorder ran it whole and v1 refused
+  let refusedOnCopy: ResultType | undefined;
   args = { ...args, clockFree: getCapturedClock() === undefined };
   // TEAM auto-calc: a dual whose result is computed from its lines takes the PROJECTED winner and score in
   // place of the call's before anything is routed, as `handleTeamAutoCalc` rewrites v1's parameters
@@ -113,7 +115,11 @@ function planCall(
       teamFinalLine(args, plan, why, () => (teamStamps = stampedIn(args.drawDefinition, teamLedger.stamps))),
     // a call whose ledger was read before the view is recorded with that reading, never a second one
     recordWhole: () =>
-      recordWholeCall(args, teamStamps ?? (teamLedger && stampedIn(args.drawDefinition, teamLedger.stamps))),
+      recordWholeCall(
+        args,
+        teamStamps ?? (teamLedger && stampedIn(args.drawDefinition, teamLedger.stamps)),
+        (refusal) => (refusedOnCopy = refusal),
+      ),
     certifiesPhases: (ops) => !!compileTemporalPhases({ args, view, route, ops }),
     dual: dualCallFor(route, args, view),
     request: planned,
@@ -136,7 +142,7 @@ function planCall(
   // An uncaptured call requires a complete phase program and a replayable effect scope, in either mode.
   if (args.clockFree && !observe) outcome = { abstain: 'clock' };
   if (recorded) outcome = recorded;
-  return { planned, route, plan, direction, folded, outcome, phases, observe };
+  return { planned, route, plan, direction, folded, outcome, phases, observe, refusedOnCopy };
 }
 
 /**
@@ -211,6 +217,8 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   recorded?: boolean;
   /** A native line phase completed its warnings and return before replay. */
   finished?: boolean;
+  /** v1's refusal of the call, met on a copy before any write (`plan/recordedCall.ts`), returned as it stands */
+  refusedOnCopy?: ResultType;
   compare?: (v1Result: ResultType) => void;
   runV1?: <T>(run: () => T) => T;
 } {
@@ -227,7 +235,9 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   if (mode === OUTCOME_PIPELINE_V2) {
     if (refusal) return { refused: toResult(refusal, args) };
     // S2: a call whose complete plan is a shape v2 owns is written by v2, and v1 is not asked (F1 (a), fail-closed)
-    const { outcome, phases, route } = planCall(args, view, undefined, false, teamLedger);
+    const { outcome, phases, route, refusedOnCopy } = planCall(args, view, undefined, false, teamLedger);
+    // A REFUSAL CHANGES NOTHING: v1 on the copy refused the call, as v1 on the stored record would, after its writes
+    if (refusedOnCopy) return { refusedOnCopy };
     if (!outcome.ops || !OWNED_SHAPES.has(outcome.shape)) return {};
     const applied = phases
       ? applyTemporalPhases(args, phases, outcome.shape)

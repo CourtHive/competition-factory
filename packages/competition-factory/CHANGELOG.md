@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- `setMatchUpStatus` no longer changes the record when it refuses a result over a loser seat downstream that cannot be filled: a seat already holding that participant (`ERR_EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT`), or one held by a BYE placed there by hand (`ERR_OCCUPIED_DRAW_POSITION`), reached directly or through exit propagation. The refusal was met only after the result and the winner's advance were written, and it left both behind, with the record stamped as modified. Under the default pipeline (`v2`) the refusal is now returned before anything is written; the returned error is unchanged. Under `v1` the earlier writes are still left behind.
 ## [7.50.0](https://github.com/CourtHive/competition-factory/compare/v7.49.0...v7.50.0) (2026-11-26)
 
 ### Highlights
