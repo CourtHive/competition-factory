@@ -286,12 +286,15 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     instantsExact: instants.exact,
     recordDraws: draws.record,
     policyDefinitions,
+    tournamentRecords,
     tournamentRecord,
     drawDefinition,
     matchUpsMap,
     event,
   });
   if (v2.refused) return decorateResult({ result: v2.refused, stack });
+  // refused by v1 itself, on a copy: its result has been through `runV1`, and is returned as v1 returns it
+  if (v2.refusedOnCopy) return v2.refusedOnCopy;
   // S2: a call v2 owns has been written by it (`outcome/apply.ts`); v1 is not asked, and the warnings are v1's own
   // a call recorded whole returns what v1 returned for it on the copy, its warnings among them
   if (v2.owned)
@@ -314,14 +317,14 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
 
   /**
    * RECORDED (`outcome/plan/recordedCall.ts`): this call's v1 write on a copy of the record, with the copy's own map
-   * and the readings the settle passes are handed, taken as they are taken above. Not for a call that names more than
-   * one tournament record: only the one it is made in is copied.
+   * and the readings the settle passes are handed, taken as they are taken above. A call that names several records
+   * (every record the engine holds) is handed the copy of each, the one it is made in among them. Not for a call
+   * naming a record the copy does not hold.
    */
   function writeOnCopy(copy: RecordCopy) {
+    const records = copiedRecords(copy);
+    if (!records) return undefined;
     const copied = copy.tournamentRecord;
-    const named = Object.keys(tournamentRecords);
-    if (named.length > 1 || (named.length && named[0] !== copied?.tournamentId)) return undefined;
-    const records = copied ? { [copied.tournamentId]: copied } : tournamentRecords;
     const map = getMatchUpsMap({ drawDefinition: copy.drawDefinition });
     const target: V1Target = {
       params: { ...params, ...copy, tournamentRecord: copied as Tournament, tournamentRecords: records },
@@ -344,13 +347,12 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
    * its deciders), as the next call's settle would take them. Undefined for a copy this call did not write.
    *
    * With `finish`, a native TEAM line's detached write (`plan/teamFinalLine.ts`) completes its public return on its
-   * copy instead: the warnings v1 adds, from the copy's own map. Undefined for a call that names another tournament
-   * record, as `writeOnCopy` refuses it. It reuses this closure so the decision's arguments stay those of every call.
+   * copy instead: the warnings v1 adds, from the copy's own map. Undefined where the copy does not hold every record
+   * the call names (that copy holds only the call's own), as `writeOnCopy` refuses it. It reuses this closure so the decision's arguments stay those of every call.
    */
   function settleOnCopy(copy: RecordCopy, finish?: CopyFinish) {
     if (finish) {
-      const named = Object.keys(tournamentRecords);
-      if (named.length > 1 || (named.length && named[0] !== copy.tournamentRecord?.tournamentId)) return undefined;
+      if (!copiedRecords(copy)) return undefined;
       const { owned, matchUpsMap: map } = finish;
       return ownedResult({ owned, params: { ...params, ...copy }, matchUpsMap: map, neverPlayedBefore, stack });
     }
@@ -367,6 +369,23 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
       propagateExitStatus,
       matchUpsMap: map,
     });
+  }
+
+  /**
+   * the records v1 is handed on `copy`: the copy of every record this call names, or undefined where the copy does not
+   * hold them all. A call naming one record is handed its copy (or, made in none, the records as named).
+   */
+  function copiedRecords(copy: RecordCopy): TournamentRecords | undefined {
+    const copied = copy.tournamentRecord;
+    const named = Object.keys(tournamentRecords);
+    if (named.length > 1) {
+      const records = copy.tournamentRecords;
+      const held = !!records && named.every((tournamentId) => records[tournamentId]?.tournamentId === tournamentId);
+      // the call's own record is the copy's: v1 writes it through either name
+      return held && (!copied || records[copied.tournamentId] === copied) ? records : undefined;
+    }
+    if (named.length && named[0] !== copied?.tournamentId) return undefined;
+    return copied ? { [copied.tournamentId]: copied } : tournamentRecords;
   }
 
   function runV1(target: V1Target): ResultType {

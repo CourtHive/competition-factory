@@ -1,90 +1,79 @@
 {
-  "release": "v7.49.0",
-  "commit": "d4c996d3e7e936621335d68cd670384b176df298",
-  "measured": "2026-11-25",
+  "release": "v7.50.0",
+  "commit": "6a44786657adfc47825fa4634f94bc2affd805cc",
+  "measured": "2026-11-26",
   "fixtures": {
     "syncEngine + governors.queryGovernor": {
-      "raw": 2663452,
-      "gzip": 750013
+      "raw": 2696175,
+      "gzip": 759808
     },
     "tournamentEngine": {
-      "raw": 2663455,
-      "gzip": 749992
+      "raw": 2696178,
+      "gzip": 759846
     },
     "syncEngine": {
-      "raw": 67822,
-      "gzip": 21256
+      "raw": 69376,
+      "gzip": 21840
     },
     "syncEngine + queryGovernor": {
-      "raw": 835391,
-      "gzip": 253387
+      "raw": 839646,
+      "gzip": 254748
     },
     "scoreGovernor + tools + fixtures": {
-      "raw": 624498,
-      "gzip": 189130
+      "raw": 692513,
+      "gzip": 211315
     },
     "scoreGovernor + tools/scoring subpath + fixtures": {
-      "raw": 471869,
-      "gzip": 141561,
-      "seeded": "2026-11-25"
+      "raw": 472144,
+      "gzip": 141663
     },
     "tools/draws subpath": {
       "raw": 9879,
-      "gzip": 3937,
-      "seeded": "2026-11-25"
+      "gzip": 3937
     },
     "tools/entries subpath": {
       "raw": 10387,
-      "gzip": 3886,
-      "seeded": "2026-11-25"
+      "gzip": 3886
     },
     "tools/formats subpath": {
       "raw": 33968,
-      "gzip": 11720,
-      "seeded": "2026-11-25"
+      "gzip": 11720
     },
     "tools/matchUps subpath": {
       "raw": 277528,
-      "gzip": 83873,
-      "seeded": "2026-11-25"
+      "gzip": 83873
     },
     "tools/officiating subpath": {
       "raw": 1376,
-      "gzip": 749,
-      "seeded": "2026-11-25"
+      "gzip": 749
     },
     "tools/publishing subpath": {
       "raw": 3072,
-      "gzip": 1371,
-      "seeded": "2026-11-25"
+      "gzip": 1371
     },
     "tools/rankings subpath": {
       "raw": 76060,
-      "gzip": 23195,
-      "seeded": "2026-11-25"
+      "gzip": 23195
     },
     "tools/sanctioning subpath": {
       "raw": 2888,
-      "gzip": 1348,
-      "seeded": "2026-11-25"
+      "gzip": 1348
     },
     "tools/scoring subpath": {
-      "raw": 154413,
-      "gzip": 48847,
-      "seeded": "2026-11-25"
+      "raw": 154454,
+      "gzip": 48851
     },
     "tools/seasons subpath": {
       "raw": 124999,
-      "gzip": 39279,
-      "seeded": "2026-11-25"
+      "gzip": 39281
     },
     "TMX import union": {
-      "raw": 2810148,
-      "gzip": 792261
+      "raw": 2844428,
+      "gzip": 802603
     },
     "syncEngine + governors subpath namespace": {
-      "raw": 835391,
-      "gzip": 253386
+      "raw": 839646,
+      "gzip": 254746
     }
   }
 }

@@ -18,6 +18,7 @@ const FORM = POLICY_RATINGS_COMPETITION_FORM[POLICY_TYPE_RATINGS];
  */
 export function formRatingsPolicy(competitionPolicy?: CompetitionPolicy): {
   policy?: RatingsPolicy;
+  context?: { ratingsPolicy: string };
   referenced?: boolean;
   error?: ErrorType;
   info?: string;
@@ -25,6 +26,13 @@ export function formRatingsPolicy(competitionPolicy?: CompetitionPolicy): {
   const form = competitionPolicy?.ratingPolicy?.dynamicFormRating;
   if (form?.ratingsPolicy === undefined) return { policy: fallbackFormPolicy(competitionPolicy) };
   const policy = resolveRatingsPolicy(form.ratingsPolicy);
+  if (!policy && typeof form.ratingsPolicy === 'string') {
+    return {
+      info: `dynamicFormRating.ratingsPolicy: no ratings preset named '${form.ratingsPolicy}'; pass the ratings policy object`,
+      context: { ratingsPolicy: form.ratingsPolicy },
+      error: INVALID_VALUES,
+    };
+  }
   if (!policy) return { error: INVALID_VALUES, info: 'dynamicFormRating.ratingsPolicy: no such ratings policy' };
   if (policy.k.rule !== 'CONSTANT') {
     return {

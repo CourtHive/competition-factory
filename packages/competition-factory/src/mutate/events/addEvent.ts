@@ -1,4 +1,6 @@
 import { addDrawNotice, addMatchUpsNotice, stampUnannounced } from '@Mutate/notifications/drawNotifications';
+import { catalogueNameWarned, warnCatalogueName } from '@Tools/catalogueNameWarnings';
+import { pinnedCompetitionFormat } from '@Helpers/ratings/pinnedRatingsPresets';
 import { addEventNotice } from '@Mutate/notifications/eventNotifications';
 import { matchUpFormatRefusal } from '@Validators/isValidMatchUpFormat';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
@@ -82,6 +84,11 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
   // 'beach volleyball' and 'BEACH_VOLLEYBALL' are stored identically
   if (eventRecord.discipline) eventRecord.discipline = normalizeDiscipline(eventRecord.discipline);
 
+  // a ratings preset named by the competitionFormat is stored by value, so reading the record never needs the name
+  if (typeof event.competitionFormat?.ratingsPolicy === 'string') {
+    eventRecord.competitionFormat = pinnedCompetitionFormat(event.competitionFormat);
+  }
+
   // minted before the tieFormat, whose mock collection ids are built from it (they were `undefined-COL-n`)
   eventRecord.eventId ??= UUID();
 
@@ -100,19 +107,9 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
       if (result.error) return result;
       eventRecord.tieFormat = result.tieFormat;
     } else if (event.tieFormatName) {
-      if (!tieFormats[event.tieFormatName]) {
-        return {
-          context: { tieFormatName: event.tieFormatName },
-          error: INVALID_VALUES,
-        };
-      }
-      const tieFormat = tieFormatDefaults({
-        isMock: tournamentRecord?.isMock,
-        namedFormat: event.tieFormatName,
-        event: eventRecord,
-        uuids,
-      });
-      eventRecord.tieFormat = tieFormat;
+      const named = namedTieFormat({ tieFormatName: event.tieFormatName, tournamentRecord, eventRecord, uuids });
+      if (named.error) return named;
+      eventRecord.tieFormat = named.tieFormat;
     }
   }
 
@@ -156,4 +153,27 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
   }
 
   return { ...SUCCESS, event: eventRecord };
+}
+
+/** The catalogue tie format `tieFormatName` names, built for the event; an unknown name is refused. */
+function namedTieFormat({
+  tournamentRecord,
+  tieFormatName,
+  eventRecord,
+  uuids,
+}: {
+  tournamentRecord: Tournament;
+  tieFormatName: string;
+  eventRecord: Event;
+  uuids?: string[];
+}) {
+  if (!tieFormats[tieFormatName]) return { context: { tieFormatName }, error: INVALID_VALUES };
+  if (!catalogueNameWarned.addEvent) warnCatalogueName('addEvent', tieFormatName);
+  const tieFormat = tieFormatDefaults({
+    isMock: tournamentRecord?.isMock,
+    namedFormat: tieFormatName,
+    event: eventRecord,
+    uuids,
+  });
+  return { tieFormat };
 }

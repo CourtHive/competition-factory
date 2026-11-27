@@ -69,6 +69,13 @@ any. The change is announced on the element's topic: `modifyDrawDefinition`, `mo
 `modifyTournamentDetail`. A refused call writes nothing and announces nothing: every check, on every record, comes
 before the first write.
 
+**Pinned values keep their provenance:** a policy is stored by its full value, as given, including its `policyName`
+and `policyVersion`. Both must be strings when present (`INVALID_VALUES` otherwise).
+
+**The defaults stamp:** a tournament record that takes a policy, at any level, and carries no defaults stamp is
+stamped with the running factory's `defaultsHash` (see [getDefaultsDrift](#getdefaultsdrift)). A stamp already on the
+record is kept: it records the defaults the record first relied on.
+
 **Returns:**
 
 ```ts
@@ -550,3 +557,82 @@ if (appliedPolicies?.[SEEDING_POLICY]) {
 - Use `getPolicyDefinitions` to see what was explicitly configured
 
 ---
+
+---
+
+## getDefaultsDrift
+
+Reports whether the engine defaults a tournament record relies on have changed since the record was stamped, and for
+which policy types.
+
+A policy that differs from the factory default is pinned onto the record by its full value, so it never changes with
+the factory. A policy type the record does not pin follows the running factory's default, which a later release may
+change. Every new tournament record (`newTournamentRecord`, `createTournamentRecord`, the mocks engine and
+`activateFromSanctioning`) is stamped with the defaults it relies on, and so is a record without a stamp when
+`attachPolicies` writes to it. The stamp is one build-time string on the record's `factory` attribute (or its
+`factory` extension in legacy write mode): `defaultsHash`, a content hash over the defaults. The factory keeps, for
+every default set a release has stamped, the hash of each policy type (`DEFAULTS_HISTORY`), so the record needs only the
+one string. A stamp is never replaced.
+
+**Purpose:** let a client tell a director that a tournament's unpinned behaviour comes from newer defaults than the
+ones it was created or sanctioned with.
+
+**When to Use:**
+
+- Surfacing, when a stored tournament is opened, that its default policies have changed since it was stamped
+- Deciding whether to pin a policy by value before a factory upgrade changes its default
+
+**Parameters:**
+
+```ts
+{
+  tournamentRecord: Tournament; // supplied by the engine
+}
+```
+
+**Returns:**
+
+```ts
+{
+  success: boolean;
+  defaultsHash: string;          // the running factory's defaults
+  stampedDefaultsHash?: string;  // the record's stamp; absent when it has none
+  defaultsDrift?: string[];      // drifted policy types, sorted; [] when none; absent when the record has no stamp
+  stampKnown?: boolean;          // false when the stamp is from a default set this build does not know
+  error?: ErrorType;             // MISSING_TOURNAMENT_RECORD
+}
+```
+
+**What is reported:** a policy type the tournament pins at the tournament level is never reported, because its stored
+value does not drift. A type with a default in only one of the two sets (added or retired since the stamp) is
+reported. A stamp this build does not know (from a later or unreleased build) reports every unpinned type, with
+`stampKnown: false`. The query reads only the record's `factory` stamp and its tournament-level applied policies, never the events
+or draws, and it is never run when a record is loaded. It refuses no record and changes nothing: the engine always
+uses its current defaults.
+
+**The hashes:** each policy type's hash is the first 16 hex digits of the SHA-256 of the RFC 8785 canonical JSON
+(`tools.canonicalJson`) of its default definition; for `ratings`, which has two defaults, of the definitions keyed by
+fixture name. `defaultsHash` is the same hash over the canonical JSON of `defaultsHashes`. Both are exported:
+
+```js
+import { defaultsHash, defaultsHashes } from 'tods-competition-factory';
+```
+
+A caller holding a policy can therefore compare it with the default by hash. The policy types covered are those the
+engine itself falls back to: competitive bands, ladder, matchUp actions, position actions, staff privacy
+(`participant`), ratings, round naming, scheduling and seeding.
+
+**Examples:**
+
+```js
+import { tournamentEngine } from 'tods-competition-factory';
+
+tournamentEngine.newTournamentRecord({ tournamentName: 'Stamped' });
+let result = tournamentEngine.getDefaultsDrift();
+console.log(result.defaultsDrift); // [] — the record was stamped with these defaults
+
+// a record stored by an earlier factory whose scheduling default has since changed
+tournamentEngine.setState(storedTournamentRecord);
+result = tournamentEngine.getDefaultsDrift();
+console.log(result.defaultsDrift); // ['scheduling']
+```

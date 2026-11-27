@@ -20,7 +20,14 @@ export interface Tournament {
   events?: Event[];
   extensions?: Extension[];
   // CODES first-class: previously stored as `factory` extension (processor versioning)
-  factory?: { createdVersion?: string; version?: string; timeStamp?: number; [key: string]: any };
+  factory?: {
+    createdVersion?: string;
+    version?: string;
+    timeStamp?: number;
+    /** the engine defaults the record relies on for the policy types it does not pin (`defaultsHash`) */
+    defaultsHash?: string;
+    [key: string]: any;
+  };
   formalName?: string;
   hostCountryCode?: CountryCodeUnion;
   indoorOutdoor?: IndoorOutdoorUnion;

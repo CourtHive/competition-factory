@@ -32,8 +32,12 @@ import type { OutcomeOp } from '../ops';
  * changed in the draw is returned as the recorded ops (`recordedDiff.ts`), with what it returned. The plan has no other
  * ops. Nothing here touches the stored record or the engine's notice state.
  *
- * Undefined, and the call stays v1's, wherever the copy's run is not known to be carried whole by those ops: more than
- * one tournament record; v1 returned an error or threw; it wrote outside the draw, changed the call's own parameters,
+ * A run that RETURNS AN ERROR is the call's refusal, handed to `refused`, and nothing is recorded: v1 on the stored record
+ * would refuse it the same way, handed the same parameters, draws and instants, but only after writing what came
+ * before the refusal (a loser seat downstream found occupied once the result and the winner's advance were written).
+ * Answered here, the refusal is met before the stored record is touched.
+ *
+ * Undefined, and the call stays v1's, wherever the copy's run is not known to be carried whole by those ops: v1 threw; it wrote outside the draw, changed the call's own parameters,
  * or added or moved a matchUp or a structure, a round robin's group or a dual's line among them; it buffered a notice
  * apply could not raise again; or its result holds an object of the copy whose stored counterpart is not known to
  * read as it does (`returnedOnStored`).
@@ -140,21 +144,34 @@ export function returnedOnStored(
   return true;
 }
 
-export function recordWholeCall(args: BuildViewArgs, sampledStamps?: Set<string>): RecordedCall | undefined {
+export function recordWholeCall(
+  args: BuildViewArgs,
+  sampledStamps?: Set<string>,
+  refused?: (refusal: ResultType) => void,
+): RecordedCall | undefined {
   const { writeOnCopy, request } = args;
   if (!args.drawDefinition || !writeOnCopy) return undefined;
   const stampedBefore = sampledStamps ?? stampedInThisCall(args.drawDefinition);
   const requested = JSON.stringify(request);
   const kept = cloneState(request);
+  // A CALL NAMING SEVERAL RECORDS (the engine hands a call every record it holds) is run on a copy of each: v1 is
+  // handed them all, and whatever it wrote outside the draw, in any of them, is a write the ops do not carry
+  const several = Object.keys(args.tournamentRecords ?? {}).length > 1 ? args.tournamentRecords : undefined;
   const { copy, originals } = cloneState({
     tournamentRecord: args.tournamentRecord,
     drawDefinition: args.drawDefinition,
     event: args.event,
+    ...(several && { tournamentRecords: several }),
   });
-  const { tournamentRecord, drawDefinition, event } = copy as RecordCopy;
+  const copied = copy as RecordCopy;
+  const { tournamentRecord, drawDefinition, event } = copied;
   const outside = () =>
-    JSON.stringify({ tournamentRecord, event }, (_key, value) => (value === drawDefinition ? 0 : value));
+    JSON.stringify({ tournamentRecord, event, tournamentRecords: copied.tournamentRecords }, (_key, value) =>
+      value === drawDefinition ? 0 : value,
+    );
   stampCopies(drawDefinition, stampedBefore);
+  // v1's refusal on the copy, holding the stored objects wherever it held the copy's (`refusedOnStored`)
+  let refusal: ResultType | undefined;
   const recorded = withNoticeMarks((readMarks) =>
     withDraftWrites(() =>
       withoutSettleTelemetry(() => {
@@ -165,8 +182,12 @@ export function recordWholeCall(args: BuildViewArgs, sampledStamps?: Set<string>
           placed: placed(drawDefinition),
           outside: outside(),
         };
-        const ran = runOnCopy(args, { tournamentRecord, drawDefinition, event });
-        if (!ran || ran.error) return undefined;
+        const ran = runOnCopy(args, copied);
+        if (!ran) return undefined;
+        if (ran.error) {
+          refusal = refusedOnStored(ran, originals);
+          return undefined;
+        }
         const after = placed(drawDefinition);
         const moved = after.length !== before.placed.length || after.some((entity, at) => entity !== before.placed[at]);
         if (moved || outside() !== before.outside) return undefined;
@@ -177,15 +198,39 @@ export function recordWholeCall(args: BuildViewArgs, sampledStamps?: Set<string>
         if (!ops || !returnedOnStored(ran, originals, drawDefinition)) return undefined;
         // stopped at the forward bound: what the pass left is v1's to leave, and running it again would do the rest
         if (stoppedForward(ran)) return { ops: exhaustedProgram(ops), written: ran };
-        const provesSettled = () => settledOnCopy(args, { tournamentRecord, drawDefinition, event }, outside);
+        const provesSettled = () => settledOnCopy(args, copied, outside);
         return { ops, written: ran, provesSettled };
       }),
     ),
   );
-  if (JSON.stringify(request) === requested) return recorded;
+  if (JSON.stringify(request) === requested) {
+    if (refusal) refused?.(refusal);
+    return recorded;
+  }
   // v1 wrote into the call's own parameters, which the stored record's write is handed next: they are put back
   restoreState(kept);
   return undefined;
+}
+
+/**
+ * v1's refusal, as it is returned on the STORED record: each object of the copy it holds (a link, a matchUp in its
+ * context) is replaced by the stored object it was copied from, where the refusal's own objects hold it. The stored
+ * record is unwritten, so the stored object is the record's entity as it stands, which is what a refusal describes.
+ */
+function refusedOnStored(refusal: ResultType, originals: WeakMap<object, object>): ResultType {
+  const seen = new Set<object>();
+  const visit = (holder: Record<string, unknown>) => {
+    if (seen.has(holder)) return;
+    seen.add(holder);
+    for (const [key, held] of Object.entries(holder)) {
+      if (!held || typeof held !== 'object') continue;
+      const stored = originals.get(held);
+      if (stored) holder[key] = stored;
+      else visit(held as Record<string, unknown>);
+    }
+  };
+  visit(refusal as Record<string, unknown>);
+  return refusal;
 }
 
 /**

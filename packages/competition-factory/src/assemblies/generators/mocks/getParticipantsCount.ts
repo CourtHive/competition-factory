@@ -1,3 +1,4 @@
+import { catalogueNameWarned, warnCatalogueName } from '@Tools/catalogueNameWarnings';
 import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { eventGeneratesOwnParticipants } from './eventGeneratesOwnParticipants';
 import { processTieFormat } from './processTieFormat';
@@ -50,6 +51,8 @@ export function getParticipantsCount({ participantsProfile, eventProfiles, drawP
     if (isTeam) {
       largestTeamDraw = Math.max(largestTeamDraw, drawSize + alternatesCount);
 
+      if (!catalogueNameWarned.mocksProfile && typeof tieFormat !== 'object' && tieFormatName)
+        warnCatalogueName('mocksProfile', tieFormatName);
       tieFormat = typeof tieFormat === 'object' ? tieFormat : tieFormatDefaults({ namedFormat: tieFormatName });
 
       const { teamSize, maxDoublesDraw, maxSinglesDraw, genders } = processTieFormat({

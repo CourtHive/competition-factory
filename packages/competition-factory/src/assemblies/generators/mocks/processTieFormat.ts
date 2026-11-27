@@ -1,3 +1,4 @@
+import { catalogueNameWarned, warnCatalogueName } from '@Tools/catalogueNameWarnings';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { coercedGender } from '@Helpers/coercedGender';
@@ -22,6 +23,8 @@ export function processTieFormat(params) {
   const categories = {};
   const genders = { [MALE]: 0, [FEMALE]: 0, [MIXED]: 0, [OTHER]: 0, [ANY]: 0 };
 
+  if (!catalogueNameWarned.mocksProfile && !isObject(params.tieFormat) && tieFormatName)
+    warnCatalogueName('mocksProfile', tieFormatName);
   const tieFormat = isObject(params.tieFormat) ? params.tieFormat : tieFormatDefaults({ namedFormat: tieFormatName });
 
   tieFormat?.collectionDefinitions?.filter(Boolean).forEach((collectionDefinition) => {

@@ -12,17 +12,18 @@ import { DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 /**
  * THE DOMAIN THE PLANNER LEAVES TO THE WRITER. A public BYE placement whose walk meets an exit (a produced exit
  * where the position advances, or exit provenance on a matchUp it makes a BYE) keeps `assignDrawPositionBye`. Its
- * remaining late refusals, each found after the writer has written:
+ * late refusals, each met by the writer after it has written, and each now asked first, of the record as it stands
+ * (`byeWalkRefusal`), so a refused placement writes nothing:
  *
  *  1. the forward edge resolving to an earlier round (`refuseNonForwardAdvance`): a repeated matchUpId. Malformed only:
- *     with unique ids every same-structure winner target is a later round (the census below);
+ *     with unique ids every same-structure winner target is a later round (the census below), so a record whose ids
+ *     repeat is refused before the walk;
  *  2. a `positionTargets` error: a WINNER/LOSER link with no source round. Malformed only;
  *  3. a nested STRUCTURE_NOT_FOUND: a link to a structure the draw does not hold. Malformed only;
  *  4. a non-feed loser target with no seat (MISSING_DRAW_POSITION): such a target holds both seats from generation.
  *     Malformed only;
  *  5. the loser seat already ASSIGNED: reachable on a WELL-FORMED record, because a linked structure's seat can be
- *     filled through the public API before its feeder is decided. Witnessed here and allowlisted under the narrowed
- *     exit-walk reason until the exit walk is planned (8.0 outcome work);
+ *     filled through the public API before its feeder is decided. Witnessed here;
  *  6. the loser seat ACTIVE: never late on a well-formed record. A played loser seat makes the main matchUp feeding it
  *     an active dependency, so the placement's own seat is refused ACTIVE before anything is written (witnessed).
  */
@@ -79,7 +80,7 @@ describe('the exit walk keeps the writer, and its one well-formed late refusal',
       drawPosition: 1,
     });
     expect(result.error).toEqual(DRAW_POSITION_ASSIGNED);
-    expect(JSON.stringify(tournamentEngine.getTournament().tournamentRecord)).not.toBe(before);
+    expect(JSON.stringify(tournamentEngine.getTournament().tournamentRecord)).toBe(before);
   });
 
   it('6. a loser seat played through the public API makes its feeder active, refused before any write', () => {
@@ -141,7 +142,7 @@ describe('the exit walk keeps the writer, and its one well-formed late refusal',
     });
     expect(String(result.error)).toContain(INVALID_MATCHUP.code);
     expect(String(result.error)).toContain('not unique');
-    expect(JSON.stringify(tournamentEngine.getTournament().tournamentRecord)).not.toBe(before);
+    expect(JSON.stringify(tournamentEngine.getTournament().tournamentRecord)).toBe(before);
   });
 });
 

@@ -292,6 +292,7 @@ export type FactoryEngineMethod =
   | 'getCompleteness'
   | 'getCourtInfo'
   | 'getCourts'
+  | 'getDefaultsDrift'
   | 'getDevContext'
   | 'getDraftState'
   | 'getDrawCompleteness'
@@ -1106,6 +1107,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getCompleteness',
   'getCourtInfo',
   'getCourts',
+  'getDefaultsDrift',
   'getDevContext',
   'getDraftState',
   'getDrawCompleteness',

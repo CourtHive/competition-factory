@@ -76,8 +76,9 @@ export function resetDrawDefinition({ tournamentRecord, removeScheduling, remove
 
   // `disableLinks` marks a drawPosition whose assignment was cleared BY HAND, so link positioning
   // must not feed it again. A reset returns the draw to its pre-play state, which makes that marker
-  // both meaningless and harmful: `getTargetMatchUp` returns `disabledDrawPosition` for such a
-  // position, so a stale flag silently blocks progression through it for the life of the draw.
+  // both meaningless and harmful on a seat it empties: `getTargetMatchUp` returns `disabledDrawPosition`
+  // for such a position, so a stale flag silently blocks progression through it for the life of the draw.
+  // A seat still holding a BYE placed by hand keeps its marker (`clearDisableLinks`).
   //
   // Cleared for EVERY structure, after the per-stage branches above, because those branches reach
   // assignments by different routes — the lucky-draw playoff path replaces the array wholesale, the
@@ -94,6 +95,10 @@ export function resetDrawDefinition({ tournamentRecord, removeScheduling, remove
 
 export function clearDisableLinks(structure) {
   for (const assignment of structure.positionAssignments ?? []) {
+    // A BYE placed by hand (a removal replaced with a BYE, a swap with a BYE) survives the reset, and its marker is
+    // part of the same decision: without it the BYE would sit unmarked on a seat a link feeds, and the first loser sent
+    // there would be refused (`ERR_OCCUPIED_DRAW_POSITION`). Only a seat the reset empties is fed again.
+    if (assignment.bye && !assignment.byeFromPropagation) continue;
     // not gated on the schema write mode: the mode decides whether an attribute is WRITTEN, and
     // must never decide whether stale state is removed. Both representations go.
     delete assignment.disableLinks;

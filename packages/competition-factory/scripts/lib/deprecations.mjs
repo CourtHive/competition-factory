@@ -137,6 +137,12 @@ export function readDeprecations({ manifest, guardText }) {
       route: true,
       positional: false,
       governors: new Set(route.governors),
+      // `routes`: only these member paths leave (`tournamentGovernor.query.cleanExpiredMutationLocks`), not every
+      // member of the named governors. `retainedOn`: governors that keep the name at 8.0.0, so their members stay
+      // untagged and the engine method (which any governor holding the name provides) stays too.
+      routes: route.routes ? new Set(route.routes) : undefined,
+      retainedOn: new Set(route.retainedOn ?? []),
+      engine: !route.retainedOn?.length,
       replacement: describeReplacement(route.replacement),
     });
   }
@@ -152,7 +158,14 @@ export function readDeprecations({ manifest, guardText }) {
         entry.replacement ??= code(destination);
         entry.destination = destination;
       } else {
-        names.set(name, { route: false, positional: true, replacement: code(destination), destination });
+        names.set(name, {
+          route: false,
+          positional: true,
+          retainedOn: new Set(),
+          engine: true,
+          replacement: code(destination),
+          destination,
+        });
       }
     }
   }
@@ -326,8 +339,24 @@ export function planDeprecations(ts, text, deprecations, { bundle = 'root', file
     const entry = names.get(member.name);
     if (!entry) continue;
     const governors = member.paths.map((p) => p.governor);
-    if (entry.governors && !governors.some((g) => entry.governors.has(g))) {
-      problems.push(`${member.paths[0].path}: ${member.name} is scheduled only on ${[...entry.governors].join(', ')}`);
+    const retained = (g) => entry.retainedOn?.has(g);
+    if (entry.routes) {
+      const listed = member.paths.filter((p) => entry.routes.has(p.path));
+      if (!listed.length) {
+        // another member of a scheduled governor (the `mutate` copy that stays) or of a retaining governor
+        if (!governors.every((g) => entry.governors.has(g) || retained(g)))
+          problems.push(`${member.paths[0].path}: ${member.name} is scheduled only at ${[...entry.routes].join(', ')}`);
+        continue;
+      }
+      if (listed.length < member.paths.length) {
+        problems.push(`${member.paths[0].path}: one declaration serves a scheduled and a kept route; not tagged`);
+        continue;
+      }
+    } else if (entry.governors && !governors.some((g) => entry.governors.has(g))) {
+      if (!governors.every(retained))
+        problems.push(
+          `${member.paths[0].path}: ${member.name} is scheduled only on ${[...entry.governors].join(', ')}`,
+        );
       continue;
     }
     if (leaky.has(member.namespace)) {
@@ -353,6 +382,9 @@ export function planDeprecations(ts, text, deprecations, { bundle = 'root', file
       if (!found.size) problems.push(`${name}: in no governor of the built declarations`);
       for (const g of entry.governors ?? []) if (!found.has(g)) problems.push(`${name}: not found on ${g}`);
     }
+    const tagged = new Set(targets.flatMap((t) => t.paths ?? []));
+    for (const [name, entry] of names)
+      for (const path of entry.routes ?? []) if (!tagged.has(path)) problems.push(`${name}: route ${path} not found`);
   }
 
   // engine method signatures
@@ -360,7 +392,7 @@ export function planDeprecations(ts, text, deprecations, { bundle = 'root', file
   if (bundle === 'root' && !signatures) problems.push('no MethodSignatures interface');
   for (const m of signatures?.members ?? []) {
     const entry = names.get(nameOf(m));
-    if (!entry) continue;
+    if (!entry || entry.engine === false) continue;
     targets.push({
       address: addressOf('engine', nameOf(m)),
       category: 'engine',
