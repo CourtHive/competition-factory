@@ -28,6 +28,8 @@ import {
 useEngineCatch();
 
 afterEach(() => {
+  // the frozen copies below are the engine's own while a case runs: none is left loaded for the next file
+  tournamentEngine.reset();
   setSubscriptions({ subscriptions: {} });
   setOutcomePipeline();
 });
@@ -47,7 +49,10 @@ function delivered() {
   return notices;
 }
 
-/** every object under `value`, frozen: a write to any of them throws */
+/**
+ * every object under `value`, frozen: a write to any of them throws. Only ever handed a private `structuredClone`: a
+ * generated record can share objects with the mocks and constants other files read, and frozen they would stay frozen
+ */
 function deepFreeze<T>(value: T): T {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
     Object.freeze(value);
@@ -160,7 +165,8 @@ describe('a BYE placement refused past its first write leaves the record as it w
     setOutcomePipeline(mode);
     const { tournamentRecord, drawId, main } = exitWalk({ fillLoserSeat: true });
     const before = JSON.stringify(tournamentRecord);
-    deepFreeze(tournamentRecord);
+    const frozen = deepFreeze(structuredClone(tournamentRecord));
+    tournamentEngine.setState(frozen, false);
 
     const result: any = tournamentEngine.assignDrawPositionBye({
       drawId,
@@ -169,13 +175,13 @@ describe('a BYE placement refused past its first write leaves the record as it w
     });
 
     expect(result.error).toEqual(DRAW_POSITION_ASSIGNED);
-    expect(JSON.stringify(tournamentRecord)).toBe(before);
+    expect(JSON.stringify(frozen)).toBe(before);
   });
 
   it.each(MODES)('%s: control: a frozen record cannot take the accepted placement', (mode) => {
     setOutcomePipeline(mode);
     const { tournamentRecord, drawId, main } = exitWalk({ fillLoserSeat: false });
-    deepFreeze(tournamentRecord);
+    tournamentEngine.setState(deepFreeze(structuredClone(tournamentRecord)), false);
 
     const result: any = tournamentEngine.assignDrawPositionBye({
       drawId,
