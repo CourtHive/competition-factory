@@ -101,3 +101,17 @@ it('repairs a stored double space when the OTHER name is the one being edited', 
   const participant: any = participants.find((p: any) => p.participantId === individual.participantId);
   expect(participant.participantName).toEqual('Michael Livson');
 });
+
+it('names an individual without a person by the participantName it was given', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord();
+  tournamentEngine.setState(tournamentRecord);
+
+  const result: any = tournamentEngine.addParticipant({
+    participant: { participantType: INDIVIDUAL, participantRole: COMPETITOR, participantName: 'Unnamed Player' },
+    returnParticipant: true,
+  });
+
+  expect(result.success).toEqual(true);
+  expect(result.participant.person).toBeUndefined();
+  expect(result.participant.participantName).toEqual('Unnamed Player');
+});

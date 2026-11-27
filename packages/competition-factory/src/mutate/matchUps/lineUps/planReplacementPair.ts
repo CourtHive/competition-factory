@@ -132,7 +132,7 @@ export function planReplacementPair({
       );
     if (pruneMembers || pruneContacts) pruned.push(p);
   });
-  // An append or array replacement can install cast subdocuments. Carry those committed objects forward.
+  // The participants and memberships are filtered as committed.
   writes.push(() => {
     tournamentRecord.participants = tournamentRecord.participants!.filter((p) => !removed.has(p.participantId));
     for (const grouping of tournamentRecord.participants) {
@@ -206,20 +206,9 @@ function planRemovedPairEntries({
   }
 }
 
-/** Expose schema fields to queries that spread the view, without serializing borrowed documents. */
+/** The entity with the planned fields laid over it, for the queries that read the view. */
 function projectFields<T extends object>(entity: T, changes: Partial<T>): T {
-  if (!('$__' in entity && '_doc' in entity && entity._doc && typeof entity._doc === 'object')) {
-    return { ...entity, ...changes };
-  }
-
-  // Mongoose stores the enumerable field names in _doc. Read values through the document's getters.
-  const view = Object.create(entity, Object.getOwnPropertyDescriptors(changes));
-  for (const key of Object.keys(entity._doc)) {
-    if (!Object.hasOwn(view, key)) {
-      Object.defineProperty(view, key, { enumerable: true, get: () => Reflect.get(entity, key) });
-    }
-  }
-  return view;
+  return { ...entity, ...changes };
 }
 
 function replacementView({

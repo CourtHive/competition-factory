@@ -63,6 +63,14 @@ caller's own objects, and `getState` / `getTournament` return those same objects
 `getTournament()` returns that same object.
 :::
 
+:::caution A record is plain data
+A record handed to the engine, copied (the default) or borrowed (`deepCopy: false`), must be **plain data**: objects,
+arrays, strings, numbers, booleans and `null`, as `JSON.parse` would produce. A hydrated document from a mapping
+library (a Mongoose document, or anything with getters, setters, casts or change tracking) is not supported: convert it
+first, for example with `doc.toObject()`, and save the plain record the engine leaves. Borrowing a plain record is
+supported, and is what a server that loads, mutates and saves records without copying does.
+:::
+
 `deepCopyConfig` is an optional configuration for `makeDeepCopy`, installed process-wide through `setDeepCopy`. These are
 the only attributes it accepts:
 

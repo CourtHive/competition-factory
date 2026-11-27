@@ -304,7 +304,7 @@ function writeRatings({ tournamentRecord, modifiedScaleValues, removePriorValues
         const changed = commit() ?? valueChanged;
         if (changed) {
           // Capture this append before another participant appends to the same
-          // borrowed array. The installed subdocument may have cast the value.
+          // borrowed array.
           const entry = participant.timeItems?.at(-1);
           scaleItem.scaleValue = entry?.itemValue;
           if (scaleItem.scaleDate !== entry?.itemDate) scaleItem.scaleDate = entry?.itemDate;

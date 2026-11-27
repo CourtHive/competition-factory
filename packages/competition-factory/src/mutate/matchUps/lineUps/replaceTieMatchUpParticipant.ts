@@ -175,7 +175,7 @@ export function replaceTieMatchUpParticipantId(params: ReplaceTieMatchUpParticip
   writes.push(planFieldWrite(dualMatchUp, 'sides', sides));
   const noticeContext = { tournamentId: tournamentRecord.tournamentId, drawDefinition, event };
   modifyMatchUpNotice({ ...noticeContext, matchUp: dualMatchUp, context: 'ensureSidLineUps' }, effects);
-  // Assign to the side installed by the array setter (it may cast each side to a subdocument).
+  // Assign to the side the sides array holds once it is written.
   writes.push(() => {
     const installed = dualMatchUp.sides!.find((s) => s.sideNumber === side.sideNumber)!;
     installed.lineUp = modifiedLineUp;

@@ -30,7 +30,7 @@ export function modifyPenalty(params): ResultType & { penalty?: Penalty; modific
       return plan;
     }
     for (const write of writes) write();
-    // Reassigning a document array can cast its entries into new subdocuments.
+    // the penalty as the record holds it once written
     const penalty = plan.committedPenalty();
     modifyParticipantsNotice(plan.payload);
     return { ...SUCCESS, penalty };

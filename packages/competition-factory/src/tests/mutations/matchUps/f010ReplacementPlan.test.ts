@@ -1,14 +1,12 @@
 import { replaceTieMatchUpParticipantId } from '@Mutate/matchUps/lineUps/replaceTieMatchUpParticipant';
-import * as participantRemoval from '@Mutate/participants/deleteParticipants';
 import { getPairedParticipant } from '@Query/participant/getPairedParticipant';
 import { captureNotices } from '../notifications/noticeConformance/harness';
 import { setSchemaWriteMode } from '@Global/state/globalState';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, expect, it } from 'vitest';
 import engine from '@Engines/syncEngine';
 import { setClock } from '@Tools/clock';
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
-import mongoose from 'mongoose';
 
 const fixtures = JSON.parse(
   gunzipSync(readFileSync(new URL('../../../../scripts/ext/f010/refusals.json.gz', import.meta.url))).toString(),
@@ -106,140 +104,6 @@ it.each([true, false])(
   },
 );
 
-it.each(['native', 'bridge', 'legacy'] as const)('preserves hydrated records and dirty updates, schema=%s', (mode) => {
-  const { Mixed } = mongoose.Schema.Types;
-  const Tournament =
-    mongoose.models.F010Record ??
-    mongoose.model(
-      'F010Record',
-      new mongoose.Schema(
-        {
-          tournamentId: String,
-          events: Mixed,
-          participants: [Mixed],
-          factory: Mixed,
-        },
-        { strict: false, _id: false },
-      ),
-    );
-  for (const queue of [false, true]) {
-    const { initial, directive } = structuredClone(fixtures[1]);
-    const doc = Tournament.hydrate(initial);
-    engine.setState(doc, false);
-    setSchemaWriteMode(mode);
-    setClock(instant);
-    const call = () => (queue ? engine.executionQueue([directive], false) : engine[method](directive.params));
-    const before = JSON.stringify(doc);
-    expect(
-      captureNotices(() => {
-        expect(call().error.code).toBe('ERR_INVALID_PARTICIPANT_IDS');
-      }),
-    ).toEqual([]);
-    expect(JSON.stringify(doc)).toBe(before);
-    expect(doc.modifiedPaths()).toEqual([]);
-    expect(doc.$getChanges()).toEqual({});
-    const old = doc.participants.find((p) => p.participantId === directive.params.existingParticipantId);
-    const [first] = old.individualParticipantIds;
-    const team = doc.participants.find(
-      (p) => p.participantType === 'TEAM' && p.individualParticipantIds.includes(first),
-    );
-    Object.assign(directive.params, {
-      existingParticipantId: first,
-      newParticipantId: team.individualParticipantIds[2],
-      substitution: true,
-    });
-    const materialize = vi.spyOn(doc, 'toObject');
-    let added;
-    const notices = captureNotices(() => {
-      const result = call();
-      expect(result.success).toBe(true);
-      const material = queue ? result.results[0] : result;
-      expect(material.participantRemoved).toBe(old.participantId);
-      added = material.participantAdded;
-    });
-    expect(materialize).not.toHaveBeenCalled();
-    materialize.mockRestore();
-    expect(engine.getTournament().tournamentRecord).toBe(doc);
-    expect(doc.$getChanges().$set.participants).toEqual(doc.toObject().participants);
-    expect(doc.$getChanges().$inc).toEqual({ __v: 1 });
-    const stored = doc.participants.find((p) => p.participantId === added);
-    expect(notices.find((n) => n.topic === 'addParticipants')?.payload).toEqual({
-      tournamentId: doc.tournamentId,
-      participants: [stored],
-    });
-  }
-});
-
-it.each(['native', 'bridge', 'legacy'] as const)('reports the added pair as cast by the roster, schema=%s', (mode) => {
-  const { Mixed } = mongoose.Schema.Types;
-  const Roster =
-    mongoose.models.F010CanonicalRoster ??
-    mongoose.model(
-      'F010CanonicalRoster',
-      new mongoose.Schema(
-        {
-          tournamentId: String,
-          events: Mixed,
-          factory: Mixed,
-          participants: {
-            type: [
-              {
-                type: Mixed,
-                set(value) {
-                  if (value.participantType !== 'PAIR') return value;
-                  return {
-                    ...value,
-                    participantId: 'stored-' + value.participantId,
-                    participantName: value.participantName.toUpperCase(),
-                  };
-                },
-              },
-            ],
-            set(values) {
-              return values
-                .map((p) =>
-                  p.participantId.startsWith('stored-') ? { ...p, participantId: 'retained-' + p.participantId } : p,
-                )
-                .sort((a, b) => b.participantId.localeCompare(a.participantId));
-            },
-          },
-        },
-        { strict: false, _id: false },
-      ),
-    );
-  for (const queue of [false, true]) {
-    const { initial, directive } = structuredClone(fixtures[1]);
-    const doc = Roster.hydrate(initial);
-    engine.setState(doc, false);
-    setClock(instant);
-    setSchemaWriteMode(mode);
-    const old = doc.participants.find((p) => p.participantId === directive.params.existingParticipantId);
-    const [first, partner] = old.individualParticipantIds;
-    const team = doc.participants.find(
-      (p) => p.participantType === 'TEAM' && p.individualParticipantIds.includes(first),
-    );
-    const replacement = team.individualParticipantIds[2];
-    Object.assign(directive.params, {
-      existingParticipantId: first,
-      newParticipantId: replacement,
-      substitution: true,
-    });
-    let material;
-    const notices = captureNotices(() => {
-      const result = queue ? engine.executionQueue([directive], false) : engine[method](directive.params);
-      expect(result.success).toBe(true);
-      material = queue ? result.results[0] : result;
-    });
-    const stored = getPairedParticipant({ tournamentRecord: doc, participantIds: [partner, replacement] }).participant!;
-    const submitted = notices.find((n) => n.topic === 'addParticipants')!.payload.participants[0];
-    expect(material.participantAdded).toBe(stored.participantId);
-    expect(stored.participantId).toBe('retained-stored-' + submitted.participantId);
-    expect(stored.participantName).toBe(submitted.participantName.toUpperCase());
-    expect(doc.$getChanges().$set.participants).toContainEqual(stored);
-    expect(doc.$getChanges().$inc).toEqual({ __v: 1 });
-  }
-});
-
 it.each([
   { mode: 'native', prior: true },
   { mode: 'bridge', prior: true },
@@ -286,6 +150,37 @@ it.each([
   }
 });
 
+it.each(['bridge', 'legacy'] as const)(
+  'adds the lineUps extension beside the draw’s other extensions, schema=%s',
+  (mode) => {
+    const { initial, directive } = structuredClone(fixtures[1]);
+    const draw = initial.events[0].drawDefinitions[0];
+    const template = draw.lineUps;
+    const unrelated = { name: 'unrelated', value: { keep: true } };
+    const extensions = [unrelated];
+    draw.extensions = extensions;
+    const old = initial.participants.find((p) => p.participantId === directive.params.existingParticipantId);
+    const [first] = old.individualParticipantIds;
+    const team = initial.participants.find(
+      (p) => p.participantType === 'TEAM' && p.individualParticipantIds.includes(first),
+    );
+    setClock(instant);
+    engine.setState(initial, false);
+    setSchemaWriteMode(mode);
+    const result = engine[method]({
+      ...directive.params,
+      existingParticipantId: first,
+      newParticipantId: team.individualParticipantIds[2],
+      substitution: true,
+    });
+    expect(result.success).toBe(true);
+    // the draw's own array, with the lineUps entry appended after the extension it already held
+    expect(draw.extensions).toBe(extensions);
+    expect(draw.extensions).toEqual([unrelated, { name: 'lineUps', value: template, createdAt: instant }]);
+    expect(draw.extensions[1].value).toBe(template);
+  },
+);
+
 function acceptedSubstitution() {
   const { initial, directive } = structuredClone(fixtures[1]);
   const old = initial.participants.find((p) => p.participantId === directive.params.existingParticipantId);
@@ -300,52 +195,6 @@ function acceptedSubstitution() {
   });
   return { initial, directive, old };
 }
-
-it.each(['event', 'structure'])('uses hydrated %s fields to decide whether the old pair can retire', (kind) => {
-  const { initial, directive, old } = acceptedSubstitution();
-  const draw = initial.events[0].drawDefinitions[0];
-  const stillPlaced = kind === 'structure';
-  if (stillPlaced) {
-    for (const player of draw.structures[0].matchUps[0].sides[0].lineUp) {
-      player.collectionAssignments.push({ ...player.collectionAssignments[0], collectionPosition: 2 });
-    }
-  }
-  const collection = stillPlaced ? draw.structures : initial.events;
-  const fields = Object.fromEntries(Object.keys(collection[0]).map((key) => [key, mongoose.Schema.Types.Mixed]));
-  const modelName = 'F010Nested' + kind;
-  const Model =
-    mongoose.models[modelName] ??
-    mongoose.model(
-      modelName,
-      new mongoose.Schema({
-        nested: [new mongoose.Schema(fields, { _id: false, strict: false })],
-      }),
-    );
-  collection[0] = Model.hydrate({ nested: collection }).nested[0];
-  const retirement = vi.spyOn(participantRemoval, 'resolveParticipantRemoval');
-  const serialize = vi.spyOn(collection[0], 'toObject');
-  engine.setState(initial, false);
-  const notices = captureNotices(() => {
-    const result = engine[method](directive.params);
-    expect(result.success).toBe(true);
-    expect(result.participantRemoved).toBe(stillPlaced ? undefined : old.participantId);
-  });
-  expect(serialize).not.toHaveBeenCalled();
-  const { tournamentRecord: view } = retirement.mock.calls[0][0];
-  const event = initial.events[0];
-  const sourceStructure = event.drawDefinitions[0].structures[0];
-  const projectedEvent = view.events![0];
-  const projectedStructure = projectedEvent.drawDefinitions![0].structures![0];
-  expect(projectedEvent.tieFormat).toBe(event.tieFormat);
-  expect(projectedStructure.positionAssignments).toBe(sourceStructure.positionAssignments);
-  retirement.mockRestore();
-  serialize.mockRestore();
-  expect(initial.participants.some((p) => p.participantId === old.participantId)).toBe(stillPlaced);
-  expect(notices.filter((n) => n.topic === 'deleteParticipants').map((n) => n.payload)).toEqual(
-    stillPlaced ? [] : [{ tournamentId: initial.tournamentId, participantIds: [old.participantId] }],
-  );
-  expect(notices.filter((n) => n.topic === 'modifyEventEntries')).toHaveLength(stillPlaced ? 0 : 1);
-});
 
 it('commits the replacement to the selected side when storage reorders the sides', () => {
   const { initial, directive } = acceptedSubstitution();

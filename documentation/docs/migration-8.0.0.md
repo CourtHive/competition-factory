@@ -560,6 +560,21 @@ array never makes a record count as unmigrated, and a write is not refused for i
 the matchUps it touches. A reason held only in the array of such a record is not moved into the keyed fields by the
 engine; the separate record migration does that.
 
+### Records are plain data
+
+A record handed to the engine must be **plain data** (objects, arrays and primitive values, as `JSON.parse`
+produces), whether the engine copies it (`setState(record)`, the default) or borrows it (`setState(record, false)`) (#6665).
+
+- **Hydrated documents are not supported.** A document from a mapping library (a Mongoose document, or anything with
+  getters, setters, casts or change tracking) passed to `setState`, or installed by a state provider, is not handled
+  specially in 8.0.0: the factory no longer reads a document's `_doc` field layout, preserves its `push` or `$push`
+  operations, or reads back what its setters canonicalised. Convert it first, for example with `doc.toObject()`, and
+  persist the plain record the call leaves.
+- **Borrowed plain records stay supported**, as does the default copy. A server that loads records, mutates them in
+  place without copying and saves them keeps working unchanged.
+- **Submitted values are plain data too.** A participant or other value given to a mutation is stored as given; a
+  hydrated value is not unwrapped.
+
 ### Removed options, constants and fields
 
 - `scheduleCompletedMatchUps` on `scheduleProfileRounds`, `scheduleProfileGrid`, `proAutoSchedule` and mocks `generateTournamentRecord`; and the ignored `pro` and `useGarman` params on `scheduleProfileRounds`. The manual schedule-write methods keep their own correction flag.

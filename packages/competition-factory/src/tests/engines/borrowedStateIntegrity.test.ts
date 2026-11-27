@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import syncGlobalState from '@Global/state/syncGlobalState';
 import { Decimal128, ObjectId } from 'bson';
 import syncEngine from '@Engines/syncEngine';
-import mongoose from 'mongoose';
 import {
   cycleMutationStatus,
   deleteNotices,
@@ -21,8 +20,7 @@ import { ROLLBACK_UNAVAILABLE } from '@Constants/errorConditionConstants';
 // later mutation went to a copy the caller never saw.
 //
 // Real driver objects, built offline: `bson` value types (what a database driver puts in plain
-// results) and `mongoose` documents (what a mapping library returns). Values, object identity and
-// change tracking are asserted separately: restoring one does not establish the others.
+// results). Values and object identity are asserted separately: restoring one does not establish the other.
 
 const methods = {
   rename: ({ tournamentRecord, name }) => {
@@ -131,95 +129,56 @@ describe('a plain record the caller owns', () => {
   });
 });
 
-// a mapping-library document: fields are prototype getters/setters over internal state
-const Tournament = mongoose.model(
-  'BorrowedStateTournament',
-  new mongoose.Schema({ tournamentId: String, tournamentName: String }, { strict: false }),
-);
-
-describe('a mapping-library document', () => {
-  it('without provider hooks, rollback is refused before anything is written', () => {
-    // hydrate: a document as loaded from the database (not new, nothing modified)
-    const doc: any = Tournament.hydrate({ tournamentId: 'T', tournamentName: 'original' });
+describe('a plain record the caller owns, through a provider with snapshot hooks', () => {
+  it('a refused queue is restored through the provider, into the caller’s own object', () => {
+    const snapshots: unknown[] = [];
+    setStateProvider({
+      ...syncGlobalState,
+      makeDeepCopy: (source, _convert, _internal, _remove, options) => {
+        const copy = structuredClone(source);
+        if (options?.purpose === 'snapshot') snapshots.push(copy);
+        return copy;
+      },
+      // writes the snapshot back into the live records and returns nothing: the engine keeps the records it holds
+      restoreSnapshot: (live, snapshot) => {
+        for (const [id, values] of Object.entries<any>(snapshot)) {
+          for (const key of Object.keys(live[id])) if (!(key in values)) delete live[id][key];
+          Object.assign(live[id], values);
+        }
+      },
+    });
+    const doc = { tournamentId: 'T', tournamentName: 'original', events: [{ eventId: 'E1', eventName: 'first' }] };
     syncEngine.setState(doc, false);
 
-    const result: any = syncEngine.executionQueue([{ method: 'rename', params: { name: 'refused' } }], true);
-    expect(result.error).toEqual(ROLLBACK_UNAVAILABLE);
+    const result: any = syncEngine.executionQueue([{ method: 'rework' }, { method: 'refuse' }], true);
+    expect(result.rolledBack).toEqual(true);
+    expect(snapshots.length).toEqual(1);
     expect(doc.tournamentName).toEqual('original');
-    expect(doc.isModified('tournamentName')).toEqual(false);
+    expect(doc.events).toEqual([{ eventId: 'E1', eventName: 'first' }]);
+    expect('added' in doc).toEqual(false);
+    expect(getTournamentRecords().T).toBe(doc);
+  });
+});
 
-    // a factory method that takes no snapshot is refused the same way, before it writes
-    const single: any = syncEngine.executionQueue(
+describe('a record that is not plain data', () => {
+  // an instance of a class: its root is not a plain object, so the factory cannot snapshot it
+  class Record {
+    tournamentId = 'T';
+    tournamentName = 'original';
+  }
+
+  it('is refused a rollback before anything is written', () => {
+    const doc = new Record();
+    syncEngine.setState(doc, false);
+
+    const direct: any = syncEngine.setTournamentName({ tournamentName: 'refused', rollbackOnError: true });
+    expect(direct.error).toEqual(ROLLBACK_UNAVAILABLE);
+    const queued: any = syncEngine.executionQueue(
       [{ method: 'setTournamentName', params: { tournamentName: 'refused' } }],
       true,
     );
-    expect(single.error).toEqual(ROLLBACK_UNAVAILABLE);
-    const direct: any = syncEngine.setTournamentName({ tournamentName: 'refused', rollbackOnError: true });
-    expect(direct.error).toEqual(ROLLBACK_UNAVAILABLE);
+    expect(queued.error).toEqual(ROLLBACK_UNAVAILABLE);
     expect(doc.tournamentName).toEqual('original');
-
-    // without rollback the write goes through the document's own setters, and it tracks it
-    syncEngine.executionQueue([{ method: 'rename', params: { name: 'written' } }]);
-    expect(doc.tournamentName).toEqual('written');
-    expect(doc.isModified('tournamentName')).toEqual(true);
-  });
-
-  it('with snapshot and restore hooks, values, identity and change tracking are all restored', () => {
-    // An adapter: a snapshot is the document's plain form plus the paths it already tracked as
-    // modified; a restore writes the values back through the document and puts tracking back as it
-    // was. Assignment alone restores values and leaves the operation's paths marked modified.
-    const tracked = new WeakMap<object, string[]>();
-    const toPlain = (value) =>
-      value && typeof value === 'object' && !Array.isArray(value)
-        ? Object.fromEntries(
-            Object.entries<any>(value).map(([key, entry]) => [
-              key,
-              typeof entry?.toObject === 'function' ? entry.toObject() : structuredClone(entry),
-            ]),
-          )
-        : structuredClone(value);
-    const adapter = {
-      ...syncGlobalState,
-      makeDeepCopy: (source, _convert, _internal, _remove, options) => {
-        if (options?.purpose !== 'snapshot') return toPlain(source);
-        const snapshot = {};
-        for (const [id, document] of Object.entries<any>(source)) {
-          snapshot[id] = document.toObject();
-          tracked.set(snapshot[id], document.modifiedPaths());
-        }
-        return snapshot;
-      },
-      restoreSnapshot: (live, snapshot) => {
-        for (const [id, values] of Object.entries<any>(snapshot)) {
-          const document = live[id];
-          document.set(values);
-          const before = tracked.get(values) ?? [];
-          for (const path of document.modifiedPaths()) if (!before.includes(path)) document.unmarkModified(path);
-        }
-        // returns nothing: the engine keeps the live records it holds
-      },
-    };
-    setStateProvider(adapter);
-
-    const doc: any = Tournament.hydrate({ tournamentId: 'T', tournamentName: 'original', notes: 'a' });
-    doc.set('notes', 'edited before the operation'); // tracked BEFORE the operation; must stay tracked
-    expect(doc.isModified('notes')).toEqual(true);
-    syncEngine.setState(doc, false);
-
-    let result: any = syncEngine.executionQueue(
-      [{ method: 'rename', params: { name: 'refused' } }, { method: 'refuse' }],
-      true,
-    );
-    expect(result.rolledBack).toEqual(true);
-    expect(doc.tournamentName).toEqual('original'); // values
-    expect(getTournamentRecords().T).toBe(doc); // identity
-    expect(doc.isModified('tournamentName')).toEqual(false); // tracking: the refused write is untracked
-    expect(doc.isModified('notes')).toEqual(true); // tracking: the earlier edit is still tracked
-
-    result = syncEngine.dryRun([{ method: 'rename', params: { name: 'previewed' } }]);
-    expect(result.wouldSucceed).toEqual(true);
-    expect(doc.tournamentName).toEqual('original');
-    expect(doc.isModified('tournamentName')).toEqual(false);
   });
 });
 

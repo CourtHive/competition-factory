@@ -5,8 +5,7 @@ export function planFieldWrite<T extends object, K extends keyof T>(target: T, k
   };
 }
 
-// A property setter can install its own array. Append to the installed value so
-// document arrays retain their casting, dirty tracking and append operation.
+// Append to the array the destination holds when the plan commits.
 export function planAppend<T>(destination: () => T[], value: T): () => void {
   return () => {
     destination().push(value);

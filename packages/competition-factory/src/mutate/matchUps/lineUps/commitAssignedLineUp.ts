@@ -1,7 +1,7 @@
 import type { MatchUp, TeamCompetitor } from '@Types/tournamentTypes';
 
 // An assignment updates an existing numbered side in place. On first assignment both side
-// objects are numbered. These operations also preserve the behavior of borrowed documents.
+// objects are numbered.
 export function commitAssignedLineUp(matchUp: MatchUp, sideNumber: number | undefined, lineUp?: TeamCompetitor[]) {
   if (sideNumber && matchUp.sides?.some((side) => side.sideNumber === sideNumber)) {
     for (const side of matchUp.sides) if (side.sideNumber === sideNumber) side.lineUp = lineUp;
