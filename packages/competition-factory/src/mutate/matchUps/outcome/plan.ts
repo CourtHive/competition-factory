@@ -350,9 +350,8 @@ function resultToDoubleExit(args: PlanArgs): OutcomePlan {
     project: args.project ? (prefix) => args.project?.([...removal, undecided, ...prefix]) : undefined,
   });
   if (!produced.ops) return produced;
-  // C21: the BYE entry's code-removal notice survives the double-exit placement further on. v1 announces
-  // the source result before that notice; the source prefix and the other matchUps' removal writes commute.
-  // C28: so does the entry a carry was withdrawn from as it passed the BYE (`heldByeCarryWithdrawal`)
+  // C21: the BYE entry's removal writes are placed after the source result, as v1 announces them. C28: so are those
+  // of the entry a carry was withdrawn from as it passed the BYE (`heldByeCarryWithdrawal`)
   const held =
     heldByeLoser(view) ??
     (heldByeCarryWithdrawal(view, request.matchUpId)
@@ -368,7 +367,16 @@ function resultToDoubleExit(args: PlanArgs): OutcomePlan {
         index > ownResult && op.op === 'stampUpdatedAt' && op.entity === 'matchUp' && op.id === request.matchUpId,
     );
     if (ownResult < 0 || ownStamp < 0) return { abstain: 'exit' };
-    const tail = produced.ops.slice(ownStamp + 1);
+    // A quiet produced write on that entry keeps the identity of an earlier notice the removal gave it in v1 (the
+    // withdrawn carry's provenance); with no such notice the quiet write's identity stands
+    const announced = removal.some((op) => op.op !== 'stampUpdatedAt' && 'matchUpId' in op && op.matchUpId === entryId);
+    const tail = produced.ops
+      .slice(ownStamp + 1)
+      .map((op): OutcomeOp =>
+        announced && op.op === 'setMatchUpResult' && op.matchUpId === entryId && op.announcesContext === false
+          ? { ...op, restoresNoticeIdentity: true }
+          : op,
+      );
     return {
       ops: [...produced.ops.slice(0, ownStamp + 1), ...removal, ...tail],
       shape: produced.shape,
