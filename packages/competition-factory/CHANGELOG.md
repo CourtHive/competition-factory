@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Under the v1 outcome pipeline, and under `differential`, `setMatchUpStatus` with `rollbackOnError` takes the rollback snapshot again: v1 can refuse a result after writing it (a loser seat downstream that cannot be filled), and since 7.50.0 such a call returned `rolledBack: true` over a record that kept those writes. It is now restored. Under v2, the default, a refusal is met before any write and the call still takes no snapshot.
 - `setMatchUpStatus` no longer changes the record when it refuses a result over a loser seat downstream that cannot be filled: a seat already holding that participant (`ERR_EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT`), or one held by a BYE placed there by hand (`ERR_OCCUPIED_DRAW_POSITION`), reached directly or through exit propagation. The refusal was met only after the result and the winner's advance were written, and it left both behind, with the record stamped as modified. Under the default pipeline (`v2`) the refusal is now returned before anything is written; the returned error is unchanged. Under `v1` the earlier writes are still left behind.
 ## [7.50.0](https://github.com/CourtHive/competition-factory/compare/v7.49.0...v7.50.0) (2026-11-26)
 
