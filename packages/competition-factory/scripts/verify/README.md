@@ -93,7 +93,7 @@ Walks sibling consumer repos (TMX, courthive-components, pdf-factory, …) and r
 pnpm verify:ecosystem
 pnpm verify:all                                          # = verify + verify:ecosystem
 node scripts/verify/ecosystem.mjs --only=TMX,courthive-public
-node scripts/verify/ecosystem.mjs --skip=tidyScore
+node scripts/verify/ecosystem.mjs --skip=scoringVisualizations
 node scripts/verify/ecosystem.mjs --build-factory        # rebuild dist before sweeping
 ```
 

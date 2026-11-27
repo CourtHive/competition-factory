@@ -40,7 +40,6 @@ const CONSUMERS = [
   { name: 'courthive-persons', script: 'test' },
   { name: 'tmx-assistant', script: 'test' },
   { name: 'provider-config', script: 'test' },
-  { name: 'tidyScore', script: 'test' },
 ];
 
 function log(msg) {
