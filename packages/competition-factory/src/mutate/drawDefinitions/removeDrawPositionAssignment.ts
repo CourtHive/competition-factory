@@ -14,6 +14,8 @@ import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
 import { destroyPairEntry } from '@Mutate/entries/destroyPairEntry';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { reservedSeatRefusal } from '@Query/drawDefinition/positionActionRefusal';
+import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
@@ -31,6 +33,20 @@ import { MatchUp } from '@Types/tournamentTypes';
  * composed (`composeDrawMutation`): every refusal leaves the stored record as it was.
  */
 export function removeDrawPositionAssignment(params): ResultType & { participantId?: string } {
+  // a seat a matchUp not yet decided still owes is not given a BYE where its arrival would then be refused
+  const { drawDefinition, structureId, drawPosition, replaceWithBye } = params;
+  if (replaceWithBye && drawDefinition && structureId && drawPosition) {
+    const reserved = reservedSeatRefusal({
+      inContextDrawMatchUps: () => getAllDrawMatchUps({ inContext: true, drawDefinition }).matchUps ?? [],
+      stack: 'removeDrawPositionAssignment',
+      placing: 'BYE',
+      vacating: true,
+      drawDefinition,
+      drawPosition,
+      structureId,
+    });
+    if (reserved) return reserved;
+  }
   return composeDrawMutation(params, removeAssignment);
 }
 

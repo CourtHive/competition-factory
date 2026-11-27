@@ -3,10 +3,17 @@ import { defined } from '@Tests/helpers/defined';
 import { useEngineCatch } from '@Tests/testHarness/engineCatch';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { getOutcomePipeline, setOutcomePipeline } from '@Global/state/globalState';
+import { OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { DRAW_POSITION_ACTIVE, DRAW_POSITION_ASSIGNED, INVALID_MATCHUP } from '@Constants/errorConditionConstants';
+import {
+  CONTRADICTORY_POSITION_ACTION,
+  DRAW_POSITION_ACTIVE,
+  DRAW_POSITION_ASSIGNED,
+  INVALID_MATCHUP,
+} from '@Constants/errorConditionConstants';
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 
@@ -88,22 +95,37 @@ describe('the exit walk keeps the writer, and its one well-formed late refusal',
 
   it('6. a loser seat played through the public API makes its feeder active, refused before any write', () => {
     const { drawId, main, consolation, ids } = exitWalk();
-    for (const [drawPosition, participantId] of [
-      [3, ids[5]],
-      [4, ids[6]],
-    ])
-      expect(
-        tournamentEngine.assignDrawPosition({
-          drawId,
-          structureId: consolation.structureId,
-          drawPosition,
-          participantId,
-        }).success,
-      ).toBe(true);
+    const place = (drawPosition: number, participantId: string): any =>
+      tournamentEngine.assignDrawPosition({
+        drawId,
+        structureId: consolation.structureId,
+        drawPosition,
+        participantId,
+      });
+    expect(place(3, ids[5]).success).toBe(true);
+    // 8.0.0 refuses the second hand placement: main 1/1's loser would then have no seat in consolation 1/1. A record
+    // stored earlier can hold both, so the seat is written directly
+    expect(place(4, ids[6]).error).toEqual(CONTRADICTORY_POSITION_ACTION);
+    const held = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+    const seatFour = held.events[0].drawDefinitions[0].structures
+      .find((structure: any) => structure.structureId === consolation.structureId)
+      .positionAssignments.find((assignment: any) => assignment.drawPosition === 4);
+    delete seatFour.bye; // the placement replaced the BYE propagated there
+    delete seatFour.byeFromPropagation;
+    seatFour.participantId = ids[6];
+    const pairing = held.events[0].drawDefinitions[0].structures
+      .find((structure: any) => structure.structureId === consolation.structureId)
+      .matchUps.find((matchUp: any) => matchUp.drawPositions?.includes(3) && matchUp.drawPositions?.includes(4));
+    pairing.matchUpStatus = 'TO_BE_PLAYED'; // no longer a BYE
+    expect(tournamentEngine.setState(held).success).toBe(true);
     const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId, inContext: true });
     const seat = matchUps.find((m: any) => m.structureId === consolation.structureId && m.drawPositions?.includes(3));
     const outcome = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 1 }).outcome;
+    // setup on the written record, scored under v2: differential compares v1's stamps on a seat v1 never wrote itself
+    const mode = getOutcomePipeline();
+    setOutcomePipeline(OUTCOME_PIPELINE_V2);
     expect(tournamentEngine.setMatchUpStatus({ matchUpId: seat.matchUpId, outcome, drawId }).success).toBe(true);
+    setOutcomePipeline(mode);
     const before = JSON.stringify(tournamentEngine.getTournament().tournamentRecord);
     const result: any = tournamentEngine.assignDrawPositionBye({
       drawId,

@@ -4,7 +4,11 @@ import { readFileSync } from 'node:fs';
 import { expect, it } from 'vitest';
 
 // constants and types
-import { DRAW_POSITION_ASSIGNED, DRAW_POSITION_OCCUPIED } from '@Constants/errorConditionConstants';
+import {
+  CONTRADICTORY_POSITION_ACTION,
+  DRAW_POSITION_ASSIGNED,
+  DRAW_POSITION_OCCUPIED,
+} from '@Constants/errorConditionConstants';
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import {
   COMPLETED,
@@ -97,7 +101,14 @@ it.each(awards)('refuses a main dual award (%s) when its consolation seat is hel
     drawPosition: 1,
     participantId: winner,
   });
-  expect(placed.success).toBe(true);
+  // 8.0.0 refuses the hand placement on a seat the main final still owes; a record stored earlier can hold it
+  expect(placed.error).toEqual(CONTRADICTORY_POSITION_ACTION);
+  expect(placed.context.reservedFor.length).toBe(1);
+  const held = structuredClone(record());
+  held.events[0].drawDefinitions[0].structures
+    .find((structure: any) => structure.structureId === structureId)
+    .positionAssignments.find(({ drawPosition }: any) => drawPosition === 1).participantId = winner;
+  expect(tournamentEngine.setState(held).success).toBe(true);
   assertAtomicRefusal(directive, DRAW_POSITION_OCCUPIED.code);
 });
 

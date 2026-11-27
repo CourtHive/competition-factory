@@ -1,4 +1,5 @@
 import { positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
+import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { findStructure } from '@Acquire/findStructure';
@@ -6,10 +7,18 @@ import { findStructure } from '@Acquire/findStructure';
 // constants and types
 import { CONTRADICTORY_POSITION_ACTION } from '@Constants/errorConditionConstants';
 import { DrawDefinition, DrawLink, Structure } from '@Types/tournamentTypes';
-import { LOSER, QUALIFYING, WINNER } from '@Constants/drawDefinitionConstants';
+import { FIRST_MATCHUP, LOSER, QUALIFYING, WINNER } from '@Constants/drawDefinitionConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 import { ResultType } from '@Types/factoryTypes';
-import { completedMatchUpStatuses, BYE } from '@Constants/matchUpStatusConstants';
+import {
+  completedMatchUpStatuses,
+  DOUBLE_WALKOVER,
+  DOUBLE_DEFAULT,
+  DEAD_RUBBER,
+  CANCELLED,
+  ABANDONED,
+  BYE,
+} from '@Constants/matchUpStatusConstants';
 
 /**
  * A POSITIONAL ACTION IS REFUSED, BEFORE ANY WRITE, WHEN IT WOULD LEAVE THE DRAW CONTRADICTING ITSELF.
@@ -37,6 +46,10 @@ export const WINNER_DIRECTED = 'WINNER_DIRECTED';
 export const DEPENDS_ON_RESULT = 'DEPENDS_ON_RESULT';
 export const RESULT_ON_POSITION = 'RESULT_ON_POSITION';
 export const PLACED_ACROSS_LINK = 'PLACED_ACROSS_LINK';
+export const LOSER_DUE = 'LOSER_DUE';
+export const WINNER_DUE = 'WINNER_DUE';
+export const BYE_ADVANCEMENT_PLAYED = 'BYE_ADVANCEMENT_PLAYED';
+export const PARTICIPANT_DUE = 'PARTICIPANT_DUE';
 
 export type MustClearItem = {
   reason: string;
@@ -70,7 +83,7 @@ function inStructure(matchUp: HydratedMatchUp, structureId: string) {
   return matchUp.structureId === structureId || matchUp.containerStructureId === structureId;
 }
 
-function refusal(context: { mustClear: MustClearItem[] }, stack: string): ResultType {
+function refusal(context: { mustClear: MustClearItem[]; reservedFor?: MustClearItem[] }, stack: string): ResultType {
   return decorateResult({ result: { error: CONTRADICTORY_POSITION_ACTION }, context, stack });
 }
 
@@ -106,6 +119,21 @@ export function swapRefusal({
   if (vacant && occupied.length === 1) {
     const seat = { structureId: structure.structureId, drawPosition: occupied[0].drawPosition };
     addSeatResults({ inContextDrawMatchUps, ...seat, reasons, reason: RESULT_ON_POSITION });
+  }
+
+  // 3. a BYE swapped away from a seat whose opponent has played on through it: their later results lose the BYE
+  if (occupied.length === 1) {
+    for (const bye of assignments.filter((assignment) => assignment.bye)) {
+      const first = seatMatchUp(inContextDrawMatchUps, structure.structureId, bye.drawPosition);
+      const partner = first?.drawPositions?.find((position) => position && position !== bye.drawPosition);
+      if (!first || !partner) continue;
+      for (const matchUp of inContextDrawMatchUps) {
+        if (!inStructure(matchUp, structure.structureId) || (matchUp.roundNumber ?? 0) <= (first.roundNumber ?? 0))
+          continue;
+        if (matchUp.drawPositions?.includes(partner) && hasResult(matchUp) && !reasons.has(matchUp.matchUpId))
+          reasons.set(matchUp.matchUpId, BYE_ADVANCEMENT_PLAYED);
+      }
+    }
   }
 
   if (!reasons.size && !placements.length) return undefined;
@@ -240,4 +268,225 @@ function clearingOrder({
     roundNumber: matchUp.roundNumber,
     roundPosition: matchUp.roundPosition,
   }));
+}
+
+const NOT_PENDING: string[] = [BYE, DOUBLE_WALKOVER, DOUBLE_DEFAULT, CANCELLED, ABANDONED, DEAD_RUBBER];
+
+type Feeder = { matchUp: HydratedMatchUp; link: DrawLink; seat?: number; fmlc: boolean };
+
+/** links into `structureId` that direct a loser or winner by round; a qualifier is placed by its own action */
+function feedingLinks(drawDefinition: DrawDefinition, structureId: string): DrawLink[] {
+  return (drawDefinition.links ?? []).filter((link) => {
+    if (link?.target?.structureId !== structureId || !link.source?.roundNumber) return false;
+    if (![LOSER, WINNER].includes(link.linkType)) return false;
+    return findStructure({ drawDefinition, structureId: link.source.structureId }).structure?.stage !== QUALIFYING;
+  });
+}
+
+/**
+ * The matchUps not yet decided whose loser (or winner) a link sends into `target`, with the seat each is sent to. A
+ * FIRST_MATCHUP link owes nothing when neither side could be eligible to feed it.
+ */
+function pendingFeeders({
+  inContextDrawMatchUps,
+  drawDefinition,
+  target,
+  links,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  target: HydratedMatchUp;
+  links: DrawLink[];
+}): Feeder[] {
+  const feeders: Feeder[] = [];
+  for (const link of links) {
+    const sourceMatchUps = inContextDrawMatchUps.filter(
+      (matchUp) => inStructure(matchUp, link.source.structureId) && !matchUp.collectionId,
+    );
+    for (const matchUp of sourceMatchUps) {
+      if (matchUp.roundNumber !== link.source.roundNumber || matchUp.winningSide) continue;
+      if (NOT_PENDING.includes(matchUp.matchUpStatus as string) || matchUp.sides?.some((side) => side?.bye)) continue;
+      const targets = positionTargets({
+        matchUpId: matchUp.matchUpId,
+        inContextDrawMatchUps,
+        drawDefinition,
+      }).targetMatchUps;
+      const isLoser = link.linkType === LOSER;
+      const targetMatchUp = isLoser ? targets?.loserMatchUp : targets?.winnerMatchUp;
+      if (targetMatchUp?.matchUpId !== target.matchUpId) continue;
+      const fmlc = isLoser && link.linkCondition === FIRST_MATCHUP;
+      const drawPositions = (matchUp.drawPositions ?? []).filter(Boolean) as number[];
+      if (
+        fmlc &&
+        drawPositions.length === 2 &&
+        !drawPositions.some((loserDrawPosition) =>
+          isFedLoserEligible({ sourceMatchUps, loserDrawPosition, loserTargetLink: link }),
+        )
+      )
+        continue;
+      const seat = isLoser ? targets?.loserTargetDrawPosition : targets?.winnerTargetDrawPosition;
+      feeders.push({ matchUp, link, seat, fmlc: fmlc && target.roundNumber === 2 });
+    }
+  }
+  return feeders;
+}
+
+function reservation({ matchUp, link }: Feeder): MustClearItem {
+  return {
+    reason: link.linkType === LOSER ? LOSER_DUE : WINNER_DUE,
+    structureId: matchUp.structureId,
+    matchUpId: matchUp.matchUpId,
+    roundNumber: matchUp.roundNumber,
+    roundPosition: matchUp.roundPosition,
+  };
+}
+
+/** the earliest matchUp of `structureId` holding `drawPosition`: the one a feed fills it for */
+function seatMatchUp(inContextDrawMatchUps: HydratedMatchUp[], structureId: string, drawPosition: number) {
+  return inContextDrawMatchUps
+    .filter((matchUp) => inStructure(matchUp, structureId) && matchUp.drawPositions?.includes(drawPosition))
+    .sort((a, b) => (a.roundNumber ?? 0) - (b.roundNumber ?? 0))[0];
+}
+
+/**
+ * Whether a hand placement (a BYE, or a participant) on `drawPosition` of `structureId` would take a seat that a
+ * matchUp not yet decided still owes a loser or winner, so that its result could not be entered. It asks what the
+ * arrival would do (`directLoser`): an arrival takes any open seat of its target matchUp, so the placement is refused
+ * only when the target matchUp would be left with fewer open seats than the arrivals owed to it. A FIRST_MATCHUP
+ * round-two arrival (FIRST_MATCH_LOSER_CONSOLATION) takes the lowest seat and replaces a BYE there, so a hand-placed
+ * BYE never blocks it. `disablesSeat`: the placement disables the seat's links (an alternate or a lucky loser), so no
+ * arrival is sent to the seat itself. `vacating`: the seat's occupant is removed first (a removal replaced with a BYE).
+ */
+export function reservedSeatRefusal({
+  inContextDrawMatchUps,
+  drawDefinition,
+  drawPosition,
+  disablesSeat,
+  structureId,
+  vacating,
+  placing,
+  stack,
+}: {
+  inContextDrawMatchUps: () => HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  placing: 'BYE' | 'PARTICIPANT';
+  drawPosition: number;
+  disablesSeat?: boolean;
+  vacating?: boolean;
+  structureId: string;
+  stack: string;
+}): ResultType | undefined {
+  const links = feedingLinks(drawDefinition, structureId);
+  if (!links.length) return undefined;
+  const { structure } = findStructure({ drawDefinition, structureId });
+  const assignments = assignmentsOf(structure);
+  const seatAssignment = assignments.find((assignment) => assignment.drawPosition === drawPosition);
+  if (!vacating && (seatAssignment?.participantId || (placing === 'BYE' && seatAssignment?.bye))) return undefined;
+
+  const matchUps = inContextDrawMatchUps();
+  const target = seatMatchUp(matchUps, structureId, drawPosition);
+  if (!target) return undefined;
+  const lowest = Math.min(...((target.drawPositions ?? []).filter(Boolean) as number[]));
+  const blocking = pendingFeeders({ inContextDrawMatchUps: matchUps, drawDefinition, target, links }).filter(
+    (feeder) => {
+      if (disablesSeat && feeder.seat === drawPosition) return false; // the seat's links are disabled: not sent here
+      // the FIRST_MATCHUP round-two arrival takes the lowest seat, replacing a BYE but not a participant
+      if (feeder.fmlc) return placing === 'PARTICIPANT' && drawPosition === lowest;
+      return true;
+    },
+  );
+  if (!blocking.length) return undefined;
+
+  const general = blocking.filter((feeder) => !feeder.fmlc);
+  const open = ((target.drawPositions ?? []).filter(Boolean) as number[]).filter((position) => {
+    if (position === drawPosition) return false;
+    const assignment = assignments.find((candidate) => candidate.drawPosition === position);
+    return (
+      !assignment?.participantId && !assignment?.qualifier && (!assignment?.bye || !!assignment.byeFromPropagation)
+    );
+  }).length;
+  const refused = blocking.some((feeder) => feeder.fmlc) || general.length > open;
+  if (!refused) return undefined;
+  return refusal({ mustClear: [], reservedFor: blocking.map(reservation) }, stack);
+}
+
+/**
+ * A swap of seats in a structure links feed (not a first-stage MAIN or QUALIFYING structure) disables both seats'
+ * links. It is refused when a matchUp not yet decided still owes either seat: that arrival would be sent nowhere.
+ */
+export function swapOfReservedSeatRefusal({
+  inContextDrawMatchUps,
+  drawDefinition,
+  drawPositions,
+  structure,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  drawPositions: number[];
+  structure: Structure;
+}): ResultType | undefined {
+  const links = feedingLinks(drawDefinition, structure.structureId);
+  if (!links.length) return undefined;
+  const reservedFor: MustClearItem[] = [];
+  const asked = new Set<string>();
+  for (const drawPosition of drawPositions) {
+    const target = seatMatchUp(inContextDrawMatchUps, structure.structureId, drawPosition);
+    if (!target || asked.has(target.matchUpId)) continue;
+    asked.add(target.matchUpId);
+    for (const feeder of pendingFeeders({ inContextDrawMatchUps, drawDefinition, target, links }))
+      if (feeder.seat !== undefined && drawPositions.includes(feeder.seat)) reservedFor.push(reservation(feeder));
+  }
+  if (!reservedFor.length) return undefined;
+  return refusal({ mustClear: [], reservedFor }, 'swapDrawPositionAssignments');
+}
+
+/**
+ * Whether a hand placement of `participantId` in `structureId` would place a participant who is still playing in a
+ * structure linked with it: that structure's next result for them would send them here (or back) a second time, and be
+ * refused (`ERR_EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT`). A participant whose matchUps there are all decided is
+ * not due anywhere: placing them (a lucky loser, a qualifier who lost) is unchanged.
+ */
+export function dueParticipantRefusal({
+  inContextDrawMatchUps,
+  drawDefinition,
+  participantId,
+  structureId,
+  stack,
+}: {
+  inContextDrawMatchUps: () => HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  participantId?: string;
+  structureId: string;
+  stack: string;
+}): ResultType | undefined {
+  if (!participantId) return undefined;
+  const linked = new Set<string>();
+  for (const link of drawDefinition.links ?? []) {
+    if (link?.target?.structureId === structureId && link.source?.structureId) linked.add(link.source.structureId);
+    if (link?.source?.structureId === structureId && link.target?.structureId) linked.add(link.target.structureId);
+  }
+  linked.delete(structureId);
+  if (!linked.size) return undefined;
+  const holds = [...linked].some((linkedId) => {
+    const linkedStructure = findStructure({ drawDefinition, structureId: linkedId }).structure;
+    return assignmentsOf(linkedStructure).some((assignment) => assignment.participantId === participantId);
+  });
+  if (!holds) return undefined;
+  const pending = inContextDrawMatchUps().filter(
+    (matchUp) =>
+      [...linked].some((linkedId) => inStructure(matchUp, linkedId)) &&
+      !matchUp.winningSide &&
+      !NOT_PENDING.includes(matchUp.matchUpStatus as string) &&
+      matchUp.sides?.some((side) => side?.participantId === participantId),
+  );
+  if (!pending.length) return undefined;
+  const reservedFor = pending.map((matchUp) => ({
+    reason: PARTICIPANT_DUE,
+    structureId: matchUp.structureId,
+    matchUpId: matchUp.matchUpId,
+    roundNumber: matchUp.roundNumber,
+    roundPosition: matchUp.roundPosition,
+    participantId,
+  }));
+  return refusal({ mustClear: [], reservedFor }, stack);
 }

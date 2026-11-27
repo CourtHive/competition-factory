@@ -16,6 +16,7 @@ import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { normalizeDrawPositions } from './normalizeDrawPositions';
+import { reservedSeatRefusal } from '@Query/drawDefinition/positionActionRefusal';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { pushGlobalLog } from '@Functions/global/globalLog';
@@ -211,6 +212,20 @@ export function planDrawPositionBye(
   const { drawDefinition, tournamentRecord } = params;
   if (!drawDefinition) return { result: { error: MISSING_DRAW_DEFINITION } };
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
+  // a BYE placed by hand on a seat a matchUp not yet decided still owes, where its arrival would then be refused
+  const reserved =
+    params.structureId && params.drawPosition
+      ? reservedSeatRefusal({
+          inContextDrawMatchUps: () =>
+            getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [],
+          drawPosition: params.drawPosition,
+          structureId: params.structureId,
+          placing: 'BYE',
+          stack: STACK,
+          drawDefinition,
+        })
+      : undefined;
+  if (reserved) return { result: reserved };
   const plan: Plan = {
     draft: createDraft(drawDefinition, matchUpsMap),
     real: { drawDefinition, tournamentRecord },

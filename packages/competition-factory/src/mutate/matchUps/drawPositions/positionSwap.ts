@@ -3,7 +3,7 @@ import { addPositionActionTelemetry } from '@Mutate/drawDefinitions/positionGove
 import { modifyDrawNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { drawPositionAssignmentRefusal } from '@Query/drawDefinition/drawPositionAssignmentRefusal';
-import { swapRefusal } from '@Query/drawDefinition/positionActionRefusal';
+import { swapOfReservedSeatRefusal, swapRefusal } from '@Query/drawDefinition/positionActionRefusal';
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { removeAssignment } from '@Mutate/drawDefinitions/removeDrawPositionAssignment';
 import { assignDrawPosition } from '@Mutate/matchUps/drawPositions/positionAssignment';
@@ -19,7 +19,7 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants
 import { SWAP_PARTICIPANT_METHOD } from '@Constants/positionActionConstants';
-import { CONTAINER } from '@Constants/drawDefinitionConstants';
+import { CONTAINER, MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -76,6 +76,17 @@ function swapAssignments({ tournamentRecord, drawDefinition, drawPositions, stru
     structure,
   });
   if (contradiction) return contradiction;
+  // outside a first-stage MAIN or QUALIFYING structure the swap disables both seats' links: a seat still owed is refused
+  const disablesLinks = !([MAIN, QUALIFYING].includes(structure.stage as string) && structure.stageSequence === 1);
+  const reserved =
+    disablesLinks &&
+    swapOfReservedSeatRefusal({
+      inContextDrawMatchUps: inContextDrawMatchUps ?? [],
+      drawDefinition,
+      drawPositions,
+      structure,
+    });
+  if (reserved) return reserved;
 
   const appliedPolicies =
     getAppliedPolicies({
