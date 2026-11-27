@@ -259,4 +259,4 @@ It is **event grain for a structural reason** rather than a presentational one: 
 - **Structured + HTML fallback**: logistics sections have structured `options` for rendering in web and PDF outputs, plus an HTML `notes` field for anything unstructured.
 - **Additive merge**: `setRegistrationProfile` spreads new fields over existing ones, so consumers can update one section without resending the entire profile.
 - **Factory purity**: the factory stores and retrieves the profile. Rendering (PDF headers, web fact sheets) happens in downstream consumer applications.
-- **TODS alignment**: `RegistrationProfile` is a first-class type on the tournament record, not an extension. All new fields are optional, so existing tournament records are unaffected.
+- **Tournament record alignment**: `RegistrationProfile` is a first-class type on the tournament record, not an extension. All new fields are optional, so existing tournament records are unaffected.

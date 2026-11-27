@@ -40,8 +40,13 @@ what is imported.
 | `tods-competition-factory`                               | Engines, governors, `tools`, fixtures, constants, enums and types                  |
 | `tods-competition-factory/constants`                     | Named constants only, without loading engines, global state or fixtures            |
 | `tods-competition-factory/governors`                     | The governors alone, for assembling a [custom engine](./engines/custom-engines.md) |
+| `tods-competition-factory/tools/<domain>`                | One domain of the stateless [tools](./tools/tools-overview.md), without an engine  |
 | `tods-competition-factory/score-entry-state`             | A headless [score-entry state engine](./scoring-engine/score-entry-state.md)       |
 | `tods-competition-factory/schema/tournament.schema.json` | The JSON Schema of a tournament record                                             |
+| `tods-competition-factory/package.json`                  | The package manifest, for tools that read the installed version                    |
+
+The tools domains are `draws`, `entries`, `formats`, `matchUps`, `officiating`, `publishing`, `rankings`,
+`sanctioning`, `scoring` and `seasons`.
 
 For a constants-only consumer, use the dedicated subpath (ESM and CommonJS with their own declarations):
 
@@ -89,4 +94,4 @@ console.log(matchUps.length); // 7
 - [Mutation Engines](./engines/mutation-engines.md): which engine to use on a client and on a server.
 - [Engine Methods](./engines/engine-methods.md): how methods are called and what they return.
 - [Governors](./governors/governors-overview.md): the methods, grouped by what they act on.
-- [Migration to 8.0.0](./migration-8.0.0.md): what to change now to be ready for the next major release.
+- [Migration to 8.0.0](./migration-8.0.0.md): what changes for an upgrade from 7.x.

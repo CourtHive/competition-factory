@@ -26,7 +26,7 @@ export default function MatchUpFormatDemo() {
           description.innerHTML =
             'Configure matchUp format codes interactively. ' +
             'Choose the number of sets, scoring format, tiebreak rules, and final set variations. ' +
-            'The editor will generate the TODS-compliant matchUpFormat code.';
+            'The editor will generate the matchUpFormat code.';
 
           // Create button
           const button = document.createElement('button');

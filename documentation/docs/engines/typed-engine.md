@@ -43,7 +43,7 @@ In the 7.48.0 inventory, 727 of 812 engine method names have entries in `MethodS
 
 The build uses the TypeScript compiler to follow governor exports and aliases and read the direct mounts in `engineStart.ts`. One generator writes the signature map, the direct mount names used by the async engine, and the method kinds used by query-purity tests.
 
-`engine.q.*` also returns real TODS types (no more `any[]` / `any`):
+`engine.q.*` also returns real tournament types (no more `any[]` / `any`):
 
 ```ts
 const events: Event[] = engine.q.events();

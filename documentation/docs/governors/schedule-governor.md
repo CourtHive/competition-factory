@@ -2084,7 +2084,7 @@ Consequences worth knowing:
   and no new mutation are involved.
 - **Publishing inherits it.** Embargo and `scheduleVisibilityFilters` are applied to
   the hydrated schedule, downstream of this.
-- **The record still carries the value.** A TODS export will contain a
+- **The record still carries the value.** A tournament record export will contain a
   `timeModifiers` entry that no longer displays anywhere. That is the price of not
   destroying an operator's stated intent.
 
