@@ -1,12 +1,13 @@
 {
   "name": "@courthive/competition-catalogue",
   "version": "0.0.0",
-  "description": "Named tie formats, organisation policies and competition formats for tods-competition-factory, as plain data",
+  "description": "Starting templates for tods-competition-factory: tie formats, policies and competition formats modelled on published sources. Copy one and own it. CourtHive does not maintain them against their sources, and the bodies they are modelled on have not endorsed them.",
   "keywords": [
     "TODS",
     "CODES",
     "tie format",
     "policies",
+    "templates",
     "competition",
     "tournament"
   ],

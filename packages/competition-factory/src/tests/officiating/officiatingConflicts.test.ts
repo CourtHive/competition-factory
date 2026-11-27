@@ -1,5 +1,5 @@
 import { POLICY_OFFICIATING_CONFLICT_OF_INTEREST } from '@Fixtures/policies/POLICY_OFFICIATING_CONFLICT_OF_INTEREST';
-import { POLICY_OFFICIATING_CONFLICT_OF_INTEREST_ITF } from '@courthive/competition-catalogue';
+import { TEMPLATE_OFFICIATING_CONFLICT_OF_INTEREST_ITF } from '@courthive/competition-catalogue';
 import { removeConflictDeclaration } from '@Mutate/officiating/removeConflictDeclaration';
 import { addConflictDeclaration } from '@Mutate/officiating/addConflictDeclaration';
 import { getOfficialConflicts } from '@Query/officiating/getOfficialConflicts';
@@ -195,7 +195,7 @@ describe('getOfficialConflicts', () => {
       officialRecord: makeRecord(),
       participants: [makeParticipant()],
       nationalityCode: 'FRA',
-      policyDefinitions: POLICY_OFFICIATING_CONFLICT_OF_INTEREST_ITF,
+      policyDefinitions: TEMPLATE_OFFICIATING_CONFLICT_OF_INTEREST_ITF,
     });
     expect(result.conflicts).toHaveLength(1);
     expect(result.conflicts[0].conflictType).toEqual(CONFLICT_NATIONALITY);
@@ -208,7 +208,7 @@ describe('getOfficialConflicts', () => {
       officialRecord: makeRecord(),
       participants: [makeParticipant({ person: { personId: 'person-001' } as any, representing: 'FRA' as any })],
       nationalityCode: 'FRA',
-      policyDefinitions: POLICY_OFFICIATING_CONFLICT_OF_INTEREST_ITF,
+      policyDefinitions: TEMPLATE_OFFICIATING_CONFLICT_OF_INTEREST_ITF,
     });
     expect(result.conflicts).toHaveLength(1);
     expect(result.conflicts[0].conflictType).toEqual(CONFLICT_NATIONALITY);
@@ -218,7 +218,7 @@ describe('getOfficialConflicts', () => {
     let result: any = getOfficialConflicts({
       officialRecord: makeRecord(),
       participants: [makeParticipant()],
-      policyDefinitions: POLICY_OFFICIATING_CONFLICT_OF_INTEREST_ITF,
+      policyDefinitions: TEMPLATE_OFFICIATING_CONFLICT_OF_INTEREST_ITF,
     });
     expect(result.conflicts).toEqual([]);
   });

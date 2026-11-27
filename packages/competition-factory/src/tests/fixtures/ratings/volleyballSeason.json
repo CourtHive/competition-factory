@@ -1,6 +1,6 @@
 {
   "sport": "volleyball",
-  "policy": "POLICY_RATINGS_FIVB",
+  "policy": "TEMPLATE_RATINGS_FIVB",
   "ratingType": "FIVB",
   "k": 6.25,
   "start": 300,

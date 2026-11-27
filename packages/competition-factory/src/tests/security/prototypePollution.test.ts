@@ -1,6 +1,6 @@
 import { FEED_IN_CHAMPIONSHIP, ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONING_GENERIC';
-import { POLICY_ROUND_ROBIN_TALLY_FIBA } from '@courthive/competition-catalogue';
+import { TEMPLATE_ROUND_ROBIN_TALLY_FIBA } from '@courthive/competition-catalogue';
 import { calculateMatchStatistics } from '@Scoring/statistics/standalone';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { sanctioningEngine } from '@Assemblies/engines/sanctioning';
@@ -91,7 +91,7 @@ describe('a "__proto__" id, key or path segment cannot write onto a prototype', 
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
     const result: any = tournamentEngine.tallyParticipantResults({
       matchUps,
-      policyDefinitions: POLICY_ROUND_ROBIN_TALLY_FIBA,
+      policyDefinitions: TEMPLATE_ROUND_ROBIN_TALLY_FIBA,
     });
     expect(pollution()).toEqual([]);
     expect(Object.hasOwn(result.participantResults, '__proto__')).toBe(true);

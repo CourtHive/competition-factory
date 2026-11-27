@@ -1,4 +1,4 @@
-import { POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE } from '@courthive/competition-catalogue';
+import { TEMPLATE_OFFICIATING_EVALUATION_CHAIR_UMPIRE } from '@courthive/competition-catalogue';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { describe, expect, it } from 'vitest';
 import {
@@ -430,7 +430,7 @@ describe('getEvaluationSummary', () => {
   });
 
   it('computes section averages when policyName is provided', () => {
-    const policy = POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE;
+    const policy = TEMPLATE_OFFICIATING_EVALUATION_CHAIR_UMPIRE;
     const record = makeRecord({
       evaluationPolicies: [policy],
       evaluations: [
@@ -470,7 +470,7 @@ describe('getEvaluationSummary', () => {
   });
 
   it('meetsThreshold is false when average is below passingThreshold', () => {
-    const policy = POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE;
+    const policy = TEMPLATE_OFFICIATING_EVALUATION_CHAIR_UMPIRE;
     const record = makeRecord({
       evaluationPolicies: [policy],
       evaluations: [
@@ -534,7 +534,7 @@ describe('getEvaluationTemplate', () => {
   });
 
   it('generates template from inline evaluationPolicy without officialRecord', () => {
-    const policy = POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE;
+    const policy = TEMPLATE_OFFICIATING_EVALUATION_CHAIR_UMPIRE;
     let result: any = getEvaluationTemplate({ evaluationPolicy: policy });
     expect(result.success).toBe(true);
     expect(result.evaluationPolicy).toEqual(policy);
@@ -542,7 +542,7 @@ describe('getEvaluationTemplate', () => {
   });
 
   it('generates template from officialRecord policy by policyName', () => {
-    const policy = POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE;
+    const policy = TEMPLATE_OFFICIATING_EVALUATION_CHAIR_UMPIRE;
     const record = makeRecord({ evaluationPolicies: [policy] });
     let result: any = getEvaluationTemplate({ officialRecord: record, policyName: policy.policyName });
     expect(result.success).toBe(true);
@@ -550,7 +550,7 @@ describe('getEvaluationTemplate', () => {
   });
 
   it('produces correct field structure from policy sections', () => {
-    const policy = POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE;
+    const policy = TEMPLATE_OFFICIATING_EVALUATION_CHAIR_UMPIRE;
     let result: any = getEvaluationTemplate({ evaluationPolicy: policy });
 
     const totalCriteria = policy.sections.reduce((sum, s) => sum + s.criteria.length, 0);

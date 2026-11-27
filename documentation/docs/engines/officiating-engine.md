@@ -380,14 +380,14 @@ on `tournamentEngine`.
 
 #### addEvaluationPolicy
 
-Attaches a structured evaluation template to the official record. Two evaluation policies are published by the catalogue package (`@courthive/competition-catalogue`): `POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE` and `POLICY_OFFICIATING_EVALUATION_REFEREE`.
+Attaches a structured evaluation template to the official record. Two evaluation policies are published by the catalogue package (`@courthive/competition-catalogue`): `TEMPLATE_OFFICIATING_EVALUATION_CHAIR_UMPIRE` and `TEMPLATE_OFFICIATING_EVALUATION_REFEREE`.
 
 ```js
-import { POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE } from '@courthive/competition-catalogue';
+import { TEMPLATE_OFFICIATING_EVALUATION_CHAIR_UMPIRE } from '@courthive/competition-catalogue';
 import { fixtures } from 'tods-competition-factory';
 
 officiatingEngine.addEvaluationPolicy({
-  evaluationPolicy: POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE,
+  evaluationPolicy: TEMPLATE_OFFICIATING_EVALUATION_CHAIR_UMPIRE,
 });
 ```
 

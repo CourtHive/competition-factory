@@ -1,4 +1,4 @@
-import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { describe, expect, test } from 'vitest';
 
 import mocksEngine from '@Assemblies/engines/mock';
@@ -41,9 +41,9 @@ describe('seed-position validity is reachable through the engine', () => {
 
   test('accepts any position when the policy ignores seed positions', () => {
     const { drawDefinition, structureId } = draw32();
-    // POLICY_SEEDING_ITF carries validSeedPositions: { ignore: true } — hand placement anywhere.
+    // TEMPLATE_SEEDING_ITF carries validSeedPositions: { ignore: true } — hand placement anywhere.
     const valid = tournamentEngine.isValidSeedPosition({
-      appliedPolicies: POLICY_SEEDING_ITF,
+      appliedPolicies: TEMPLATE_SEEDING_ITF,
       drawPosition: 3,
       drawDefinition,
       structureId,
@@ -68,10 +68,10 @@ describe('seed-position validity is reachable through the engine', () => {
 
     // Asserting BOTH ends, so neither arm can pass vacuously: ignore accepts the whole draw, and
     // omitting the key restricts to seed-block positions.
-    const ignoring = accepted(POLICY_SEEDING_ITF);
+    const ignoring = accepted(TEMPLATE_SEEDING_ITF);
     expect(ignoring).toHaveLength(32);
 
-    const enforced = accepted({ seeding: { ...POLICY_SEEDING_ITF.seeding, validSeedPositions: undefined } });
+    const enforced = accepted({ seeding: { ...TEMPLATE_SEEDING_ITF.seeding, validSeedPositions: undefined } });
     expect(enforced.length).toBeGreaterThan(0);
     expect(enforced.length).toBeLessThan(32);
   });

@@ -225,7 +225,7 @@ This pattern appears universally across sports, with explicit threshold-based ru
 ### Example 1: Tournament of Champions (TOC) Policy
 
 ```javascript
-export const POLICY_ROUND_ROBIN_TALLY_TOC = {
+export const TEMPLATE_ROUND_ROBIN_TALLY_TOC = {
   [POLICY_TYPE_ROUND_ROBIN_TALLY]: {
     policyName: 'TOC Round Robin Tally',
     groupOrderKey: 'matchUpsPct',

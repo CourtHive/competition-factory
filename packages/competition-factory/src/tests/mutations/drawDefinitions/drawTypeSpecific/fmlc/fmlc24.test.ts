@@ -1,6 +1,6 @@
 import { completeMatchUp, verifyMatchUps } from '@Tests/mutations/drawDefinitions/primitives/verifyMatchUps';
 import { generateFMLC } from '@Tests/mutations/drawDefinitions/primitives/firstMatchLoserConsolation';
-import { POLICY_SEEDING_ITF as SEEDING_ITF } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF as SEEDING_ITF } from '@courthive/competition-catalogue';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getDrawStructures } from '@Acquire/findStructure';

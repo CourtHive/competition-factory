@@ -1,7 +1,7 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { initializeStructureSeedAssignments } from '@Mutate/drawDefinitions/positionGovernor/initializeSeedAssignments';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
-import { POLICY_SEEDING_ITF as SEEDING_POLICY } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF as SEEDING_POLICY } from '@courthive/competition-catalogue';
 import { addDrawEntries } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
 import { automatedPositioning } from '@Mutate/drawDefinitions/automatedPositioning';
 import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';

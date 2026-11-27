@@ -1,11 +1,11 @@
-import { POLICY_RANKING_POINTS_USTA_JUNIOR_2025 } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_USTA_JUNIOR_2025';
-import { POLICY_RANKING_POINTS_USTA_JUNIOR_2026 } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_USTA_JUNIOR_2026';
+import { TEMPLATE_RANKING_POINTS_USTA_JUNIOR_2025 } from '@courthive/competition-catalogue';
+import { TEMPLATE_RANKING_POINTS_USTA_JUNIOR_2026 } from '@courthive/competition-catalogue';
 import { POLICY_RANKING_POINTS_USTA_JUNIOR } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_USTA_JUNIOR';
 import { validateRankingPolicy } from './validatePolicy';
 import { describe, expect, it } from 'vitest';
 
 describe('USTA Junior 2025 policy encoding', () => {
-  const { policy, valid, errorsText } = validateRankingPolicy(POLICY_RANKING_POINTS_USTA_JUNIOR_2025);
+  const { policy, valid, errorsText } = validateRankingPolicy(TEMPLATE_RANKING_POINTS_USTA_JUNIOR_2025);
 
   it('validates against rankingPolicy.schema.json', () => {
     if (!valid) console.error(errorsText);
@@ -33,7 +33,7 @@ describe('USTA Junior 2025 policy encoding', () => {
 });
 
 describe('USTA Junior 2026 policy encoding', () => {
-  const { policy, valid, errorsText } = validateRankingPolicy(POLICY_RANKING_POINTS_USTA_JUNIOR_2026);
+  const { policy, valid, errorsText } = validateRankingPolicy(TEMPLATE_RANKING_POINTS_USTA_JUNIOR_2026);
 
   it('validates against rankingPolicy.schema.json', () => {
     if (!valid) console.error(errorsText);
@@ -54,6 +54,6 @@ describe('USTA Junior 2026 policy encoding', () => {
 
 describe('USTA Junior legacy re-export', () => {
   it('re-exports the 2026 policy under the legacy name', () => {
-    expect(POLICY_RANKING_POINTS_USTA_JUNIOR).toBe(POLICY_RANKING_POINTS_USTA_JUNIOR_2026);
+    expect(POLICY_RANKING_POINTS_USTA_JUNIOR).toBe(TEMPLATE_RANKING_POINTS_USTA_JUNIOR_2026);
   });
 });

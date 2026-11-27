@@ -1,6 +1,6 @@
 {
   "sport": "nfl",
-  "policy": "POLICY_RATINGS_ELO_538_NFL",
+  "policy": "TEMPLATE_RATINGS_ELO_538_NFL",
   "ratingType": "ELO",
   "k": 20,
   "start": 1500,

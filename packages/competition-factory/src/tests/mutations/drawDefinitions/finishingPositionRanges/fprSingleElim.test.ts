@@ -1,4 +1,4 @@
-import { POLICY_SEEDING_ITF as SEEDING_ITF_POLICY } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF as SEEDING_ITF_POLICY } from '@courthive/competition-catalogue';
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { eventConstants } from '@Constants/eventConstants';

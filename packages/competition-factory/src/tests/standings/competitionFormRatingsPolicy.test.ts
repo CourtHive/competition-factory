@@ -90,19 +90,21 @@ describe('the competition form rating and its ratings policy', () => {
   });
 
   it("rates by a given policy's K and actual rule: World Football Elo's K 30 and a plain win", () => {
-    const policy = withForm({ ratingsPolicy: ratingsPresets.POLICY_RATINGS_ELO_WORLD_FOOTBALL });
+    const policy = withForm({ ratingsPolicy: ratingsPresets.TEMPLATE_RATINGS_ELO_WORLD_FOOTBALL });
     expect(formOfA(policy, CLOSE)).toBeCloseTo(1515, 10); // 30 × (1 − 0.5)
   });
 
   it('refuses a preset name and a K by career matches, which a competition cannot count', () => {
     expect(formRatingsPolicy(withForm({ ratingsPolicy: 'POLICY_RATINGS_NONE' }) as any).error).toEqual(INVALID_VALUES);
-    const careerK = formRatingsPolicy(withForm({ ratingsPolicy: ratingsPresets.POLICY_RATINGS_ELO_538_TENNIS }) as any);
+    const careerK = formRatingsPolicy(
+      withForm({ ratingsPolicy: ratingsPresets.TEMPLATE_RATINGS_ELO_538_TENNIS }) as any,
+    );
     expect(careerK.error).toEqual(INVALID_VALUES);
     expect(careerK.info).toMatch(/CONSTANT K/);
   });
 
   it('refuses to start competition state under an invalid reference', () => {
-    const competition = withForm({ ratingsPolicy: ratingsPresets.POLICY_RATINGS_ELO_538_TENNIS });
+    const competition = withForm({ ratingsPolicy: ratingsPresets.TEMPLATE_RATINGS_ELO_538_TENNIS });
     const {
       tournamentRecord,
       drawIds: [drawId],

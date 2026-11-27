@@ -1188,7 +1188,7 @@ cases, as any other loser is. Only what happens to them **on arrival** differs.
 
 This **does** change behaviour for a caller passing `propagateExitStatus: true` under the default
 policy: a retirement used to carry onward there. That is the point — it is the one place the engine
-was answering a rules question on a federation's behalf. `POLICY_SCORING_USTA` sets it `true`
+was answering a rules question on a federation's behalf. `TEMPLATE_SCORING_USTA` sets it `true`
 explicitly, so its observable behaviour is unchanged. A provider with `propagateExitStatus` off —
 the factory default — is unaffected either way.
 

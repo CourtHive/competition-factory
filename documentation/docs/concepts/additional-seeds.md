@@ -19,7 +19,7 @@ that looks like it would be hard.
 
 `constructPower2Blocks` fills seed blocks in order — `[1]`, `[drawSize]`, `[3,4]`, `[5..8]`, … —
 and stops once the seed count is exceeded. Extra seeds therefore consume the **next** block, and
-every block below is untouched. Measured on a 32-draw under `POLICY_SEEDING_ITF`:
+every block below is untouched. Measured on a 32-draw under `TEMPLATE_SEEDING_ITF`:
 
 | seeds             | seedLimit | drawPositions                                |
 | ----------------- | --------- | -------------------------------------------- |
@@ -40,7 +40,7 @@ seed existed. Three pieces close that.
 ```typescript
 const policy = {
   [POLICY_TYPE_SEEDING]: {
-    ...POLICY_SEEDING_ITF[POLICY_TYPE_SEEDING],
+    ...TEMPLATE_SEEDING_ITF[POLICY_TYPE_SEEDING],
     additionalSeeds: {
       maxCount: 4,
       bases: ['PROTECTED_RANKING'], // optional; omitted means any basis

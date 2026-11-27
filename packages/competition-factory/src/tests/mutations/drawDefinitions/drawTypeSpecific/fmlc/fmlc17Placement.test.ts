@@ -1,6 +1,6 @@
 import { generateFMLC } from '@Tests/mutations/drawDefinitions/primitives/firstMatchLoserConsolation';
 import { completeMatchUp } from '@Tests/mutations/drawDefinitions/primitives/verifyMatchUps';
-import { POLICY_SEEDING_ITF as SEEDING_ITF } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF as SEEDING_ITF } from '@courthive/competition-catalogue';
 import { getDrawStructures } from '@Acquire/findStructure';
 import { chunkArray } from '@Tools/arrays';
 import { expect, it } from 'vitest';

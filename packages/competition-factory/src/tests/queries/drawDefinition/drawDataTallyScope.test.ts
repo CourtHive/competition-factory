@@ -1,4 +1,4 @@
-import { POLICY_ROUND_ROBIN_TALLY_TOC } from '@courthive/competition-catalogue';
+import { TEMPLATE_ROUND_ROBIN_TALLY_TOC } from '@courthive/competition-catalogue';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -100,7 +100,7 @@ test('a refresh applies the tally policy attached to the draw, as the stored tal
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 16, drawType: ROUND_ROBIN, structureOptions: { groupSize: 4 } }],
-    policyDefinitions: POLICY_ROUND_ROBIN_TALLY_TOC,
+    policyDefinitions: TEMPLATE_ROUND_ROBIN_TALLY_TOC,
     completeAllMatchUps: true,
     setState: true,
   });

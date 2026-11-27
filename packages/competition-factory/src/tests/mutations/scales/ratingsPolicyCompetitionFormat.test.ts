@@ -1,4 +1,4 @@
-import { POLICY_RATINGS_ELO_WORLD_FOOTBALL, ratingsPresets } from '@courthive/competition-catalogue';
+import { TEMPLATE_RATINGS_ELO_WORLD_FOOTBALL, ratingsPresets } from '@courthive/competition-catalogue';
 import { POLICY_RATINGS_DEFAULT } from '@Fixtures/policies/POLICY_RATINGS_DEFAULT';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -58,22 +58,22 @@ it('rates by the default without a competitionFormat selection', () => {
 
 it("reads the policy an event's competitionFormat holds", () => {
   const { values } = rate({
-    eventFormat: { sport: 'OTHER', ratingsPolicy: ratingsPresets.POLICY_RATINGS_ELO_538_NHL },
+    eventFormat: { sport: 'OTHER', ratingsPolicy: ratingsPresets.TEMPLATE_RATINGS_ELO_538_NHL },
   });
   expect(values).toEqual([1505, 1495]);
 });
 
 it("reads an inline policy on the structure's competitionFormat before the event's", () => {
   const { values } = rate({
-    structureFormat: { ratingsPolicy: POLICY_RATINGS_ELO_WORLD_FOOTBALL[POLICY_TYPE_RATINGS] },
-    eventFormat: { ratingsPolicy: ratingsPresets.POLICY_RATINGS_ELO_538_NHL },
+    structureFormat: { ratingsPolicy: TEMPLATE_RATINGS_ELO_WORLD_FOOTBALL[POLICY_TYPE_RATINGS] },
+    eventFormat: { ratingsPolicy: ratingsPresets.TEMPLATE_RATINGS_ELO_538_NHL },
   });
   expect(values).toEqual([1526, 1474]);
 });
 
 it("takes an attached policy, and a passed one, before the competitionFormat's", () => {
-  const eventFormat = { ratingsPolicy: ratingsPresets.POLICY_RATINGS_ELO_538_NHL };
-  expect(rate({ eventFormat, policyDefinitions: POLICY_RATINGS_ELO_WORLD_FOOTBALL }).values).toEqual([1526, 1474]);
+  const eventFormat = { ratingsPolicy: ratingsPresets.TEMPLATE_RATINGS_ELO_538_NHL };
+  expect(rate({ eventFormat, policyDefinitions: TEMPLATE_RATINGS_ELO_WORLD_FOOTBALL }).values).toEqual([1526, 1474]);
   const ratingsPolicy = POLICY_RATINGS_DEFAULT[POLICY_TYPE_RATINGS];
   expect(rate({ eventFormat, params: { ratingsPolicy } }).values).toEqual([1513, 1488]);
 });

@@ -1,6 +1,6 @@
 import { POLICY_SEEDING_DEFAULT } from '@Fixtures/policies/POLICY_SEEDING_DEFAULT';
 import { POLICY_SEEDING_BYES } from '@Fixtures/policies/POLICY_SEEDING_BYES';
-import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
 import { describe, expect, it } from 'vitest';
 
@@ -32,8 +32,8 @@ describe('the shipped seeding policies carry the values their readers branch on'
     expect(profile.positioning).toBe(SEPARATE);
   });
 
-  it('POLICY_SEEDING_ITF is CLUSTER with no overrides', () => {
-    const policy = POLICY_SEEDING_ITF[POLICY_TYPE_SEEDING];
+  it('TEMPLATE_SEEDING_ITF is CLUSTER with no overrides', () => {
+    const policy = TEMPLATE_SEEDING_ITF[POLICY_TYPE_SEEDING];
     expect(policy.seedingProfile).toEqual({ positioning: CLUSTER });
   });
 
@@ -45,7 +45,7 @@ describe('the shipped seeding policies carry the values their readers branch on'
     const members = [ADJACENT, CLUSTER, SEPARATE, WATERFALL];
     const shipped = [
       POLICY_SEEDING_DEFAULT[POLICY_TYPE_SEEDING].seedingProfile.positioning,
-      POLICY_SEEDING_ITF[POLICY_TYPE_SEEDING].seedingProfile.positioning,
+      TEMPLATE_SEEDING_ITF[POLICY_TYPE_SEEDING].seedingProfile.positioning,
       POLICY_SEEDING_BYES[POLICY_TYPE_SEEDING].seedingProfile.positioning,
       ...Object.values(POLICY_SEEDING_DEFAULT[POLICY_TYPE_SEEDING].seedingProfile.drawTypes).map(
         (o: any) => o.positioning,

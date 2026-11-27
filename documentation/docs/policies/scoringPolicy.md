@@ -270,7 +270,7 @@ const flexibleDeletionPolicy = {
 ### Limit Available Formats (USTA Example)
 
 ```js
-import { POLICY_SCORING_USTA } from '@courthive/competition-catalogue';
+import { TEMPLATE_SCORING_USTA } from '@courthive/competition-catalogue';
 import { fixtures } from 'tods-competition-factory';
 
 // USTA policy includes approved formats only
@@ -396,7 +396,7 @@ const stageSpecificPolicy = {
 ### USTA Status Codes (Comprehensive)
 
 ```js
-import { POLICY_SCORING_USTA } from '@courthive/competition-catalogue';
+import { TEMPLATE_SCORING_USTA } from '@courthive/competition-catalogue';
 import { fixtures } from 'tods-competition-factory';
 
 // USTA policy includes detailed status codes:
@@ -519,7 +519,7 @@ const ustaStatusCodes = {
 
 // UI displays status code selector
 tournamentEngine.attachPolicies({
-  policyDefinitions: POLICY_SCORING_USTA,
+  policyDefinitions: TEMPLATE_SCORING_USTA,
 });
 
 const { policy } = tournamentEngine.findPolicy({
@@ -581,7 +581,7 @@ const propagationPolicy = {
 //   a policy that SPEAKS (true or false) wins over anything on the call
 //   a policy that is SILENT leaves it to setMatchUpStatus({ ..., propagateExitStatus })
 //   absent both: undefined (no propagation); propagateRetirementAsExit: false
-//   POLICY_SCORING_DEFAULT: silent on all three   POLICY_SCORING_USTA: both exit flags true
+//   POLICY_SCORING_DEFAULT: silent on all three   TEMPLATE_SCORING_USTA: both exit flags true
 // So a director cannot pass `false` under a policy that says `true`, nor `true` under one that
 // says `false`; a provider that wants the call to decide leaves the key out of its policy.
 ```
@@ -593,12 +593,12 @@ const propagationPolicy = {
 ### USTA Tournament
 
 ```js
-import { POLICY_SCORING_USTA } from '@courthive/competition-catalogue';
+import { TEMPLATE_SCORING_USTA } from '@courthive/competition-catalogue';
 import { fixtures } from 'tods-competition-factory';
 
 // Use complete USTA policy
 tournamentEngine.attachPolicies({
-  policyDefinitions: POLICY_SCORING_USTA,
+  policyDefinitions: TEMPLATE_SCORING_USTA,
 });
 
 // Includes:
@@ -609,7 +609,7 @@ tournamentEngine.attachPolicies({
 // - Main draw position requirement
 ```
 
-A USTA tournament also attaches `POLICY_PROGRESSION_USTA`, so that a double walkover produces a
+A USTA tournament also attaches `TEMPLATE_PROGRESSION_USTA`, so that a double walkover produces a
 walkover rather than a BYE in the connected structure. See
 [Progression Policy](./progressionPolicy.md#usta-policy_progression_usta).
 
@@ -727,7 +727,7 @@ const processCodePolicy = {
 **Available Presets:**
 
 - `POLICY_SCORING_DEFAULT` - Basic policy (`fixtures.policies`)
-- `POLICY_SCORING_USTA` - Complete USTA policy with 19 formats and comprehensive status codes (the catalogue package,
+- `TEMPLATE_SCORING_USTA` - Complete USTA policy with 19 formats and comprehensive status codes (the catalogue package,
   `@courthive/competition-catalogue`)
 
 **Custom Federations:**

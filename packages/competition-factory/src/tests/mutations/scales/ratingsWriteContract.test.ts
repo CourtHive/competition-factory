@@ -1,4 +1,4 @@
-import { POLICY_RATINGS_ELO_538_TENNIS } from '@courthive/competition-catalogue';
+import { TEMPLATE_RATINGS_ELO_538_TENNIS } from '@courthive/competition-catalogue';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
@@ -15,7 +15,7 @@ import { TEAM } from '@Constants/participantConstants';
 // RATINGS-103: generateDynamicRatings validates before it writes, writes all or nothing, returns the write's error,
 // and says which matchUps it rated apart from which it processed. RATINGS-101: it sorts a copy of params.matchUps.
 
-const policy538 = POLICY_RATINGS_ELO_538_TENNIS[POLICY_TYPE_RATINGS];
+const policy538 = TEMPLATE_RATINGS_ELO_538_TENNIS[POLICY_TYPE_RATINGS];
 const outcomes = [
   { roundNumber: 1, roundPosition: 1, scoreString: '6-1 6-2', winningSide: 1 },
   { roundNumber: 1, roundPosition: 2, scoreString: '6-1 6-2', winningSide: 1 },

@@ -1,9 +1,9 @@
-import { POLICY_RANKING_POINTS_CTS } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_CTS';
+import { TEMPLATE_RANKING_POINTS_CTS } from '@courthive/competition-catalogue';
 import { validateRankingPolicy } from './validatePolicy';
 import { describe, expect, it } from 'vitest';
 
 describe('ČTS Klasifikační řád 2025 policy encoding', () => {
-  const { policy, valid, errorsText } = validateRankingPolicy(POLICY_RANKING_POINTS_CTS);
+  const { policy, valid, errorsText } = validateRankingPolicy(TEMPLATE_RANKING_POINTS_CTS);
 
   it('validates against rankingPolicy.schema.json', () => {
     if (!valid) console.error(errorsText);

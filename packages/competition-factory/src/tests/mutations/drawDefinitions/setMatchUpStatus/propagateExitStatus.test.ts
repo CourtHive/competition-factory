@@ -1,7 +1,7 @@
 import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { removeAssignment } from '@Tests/mutations/drawDefinitions/testingUtilities';
 import POLICY_SCORING_DEFAULT from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
-import { POLICY_SCORING_USTA } from '@courthive/competition-catalogue';
+import { TEMPLATE_SCORING_USTA } from '@courthive/competition-catalogue';
 import { setSubscriptions } from '@Global/state/globalState';
 import type { PolicyDefinitions } from '@Types/factoryTypes';
 import tournamentEngine from '@Engines/syncEngine';
@@ -1047,7 +1047,7 @@ function consolationHasPropagatedExit({
 
 test('scoring policy gates propagateExitStatus: USTA policy (true) propagates with no params flag', () => {
   setSubscriptions({});
-  expect(consolationHasPropagatedExit({ suffix: 'usta', policyDefinitions: POLICY_SCORING_USTA })).toEqual(true);
+  expect(consolationHasPropagatedExit({ suffix: 'usta', policyDefinitions: TEMPLATE_SCORING_USTA })).toEqual(true);
 });
 
 test('scoring policy gates propagateExitStatus: DEFAULT policy (false) does not propagate with no params flag', () => {

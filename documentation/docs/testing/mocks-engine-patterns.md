@@ -918,7 +918,7 @@ test('reproduce specific draw configuration', () => {
 Use the same seed to compare output before and after a code change:
 
 ```js
-import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { fixtures } from 'tods-competition-factory';
 const { POLICY_SEEDING_DEFAULT } = fixtures.policies;
 
@@ -935,7 +935,7 @@ test('new seeding algorithm preserves draw fairness', () => {
   const { tournamentRecord: newResult } = mocksEngine.generateTournamentRecord({
     nonRandom: seed,
     drawProfiles: [{ drawSize: 32, seedsCount: 8 }],
-    policyDefinitions: POLICY_SEEDING_ITF,
+    policyDefinitions: TEMPLATE_SEEDING_ITF,
   });
 
   // Same participants, different seeding placement

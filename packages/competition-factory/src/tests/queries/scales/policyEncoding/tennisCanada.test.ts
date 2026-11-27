@@ -1,9 +1,9 @@
-import { POLICY_RANKING_POINTS_TENNIS_CANADA } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_TENNIS_CANADA';
+import { TEMPLATE_RANKING_POINTS_TENNIS_CANADA } from '@courthive/competition-catalogue';
 import { validateRankingPolicy } from './validatePolicy';
 import { describe, expect, it } from 'vitest';
 
 describe('Tennis Canada policy encoding', () => {
-  const { policy, valid, errorsText } = validateRankingPolicy(POLICY_RANKING_POINTS_TENNIS_CANADA);
+  const { policy, valid, errorsText } = validateRankingPolicy(TEMPLATE_RANKING_POINTS_TENNIS_CANADA);
 
   it('validates against rankingPolicy.schema.json', () => {
     if (!valid) console.error(errorsText);

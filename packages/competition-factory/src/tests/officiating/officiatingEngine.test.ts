@@ -1,5 +1,5 @@
 import { getOfficiatingMethods, setOfficiatingMethods } from '@Assemblies/engines/officiating/officiatingState';
-import { POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE } from '@courthive/competition-catalogue';
+import { TEMPLATE_OFFICIATING_EVALUATION_CHAIR_UMPIRE } from '@courthive/competition-catalogue';
 import * as officiatingGovernor from '@Assemblies/governors/officiatingGovernor';
 import { officiatingEngine } from '@Assemblies/engines/officiating';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -567,7 +567,7 @@ describe('Officiating Engine — Evaluation Policy & Template', () => {
 
   it('adds an evaluation policy and generates a template', () => {
     let result: any = officiatingEngine.addEvaluationPolicy({
-      evaluationPolicy: POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE,
+      evaluationPolicy: TEMPLATE_OFFICIATING_EVALUATION_CHAIR_UMPIRE,
     });
     expect(result.success).toBe(true);
 
@@ -591,7 +591,7 @@ describe('Officiating Engine — Evaluation Policy & Template', () => {
 
   it('validates required scores on submission', () => {
     officiatingEngine.addEvaluationPolicy({
-      evaluationPolicy: POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE,
+      evaluationPolicy: TEMPLATE_OFFICIATING_EVALUATION_CHAIR_UMPIRE,
     });
 
     let result: any = officiatingEngine.addEvaluation({
@@ -612,11 +612,11 @@ describe('Officiating Engine — Evaluation Policy & Template', () => {
 
   it('allows submission when all required scores are present', () => {
     officiatingEngine.addEvaluationPolicy({
-      evaluationPolicy: POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE,
+      evaluationPolicy: TEMPLATE_OFFICIATING_EVALUATION_CHAIR_UMPIRE,
     });
 
     // Collect all required criterion IDs
-    const requiredScores = POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE.sections.flatMap((s) =>
+    const requiredScores = TEMPLATE_OFFICIATING_EVALUATION_CHAIR_UMPIRE.sections.flatMap((s) =>
       s.criteria
         .filter((c) => c.required)
         .map((c) => ({ criterionId: c.criterionId, sectionId: s.sectionId, value: 4 })),
@@ -639,7 +639,7 @@ describe('Officiating Engine — Evaluation Policy & Template', () => {
 
   it('generates template from inline policy without record', () => {
     let result: any = officiatingEngine.getEvaluationTemplate({
-      evaluationPolicy: POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE,
+      evaluationPolicy: TEMPLATE_OFFICIATING_EVALUATION_CHAIR_UMPIRE,
     });
     expect(result.success).toBe(true);
     expect(result.fields.length).toBeGreaterThan(0);

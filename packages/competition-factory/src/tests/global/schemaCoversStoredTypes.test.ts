@@ -1,4 +1,4 @@
-import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
 import { COMPASS } from '@Constants/drawDefinitionConstants';
 import tournamentEngine from '@Engines/syncEngine';
@@ -93,7 +93,7 @@ const REPORTED_TIE_FORMAT = {
  * record only by import; the first test covers their declaration.
  */
 function storedFieldsScenario() {
-  const additionalSeeds = { ...POLICY_SEEDING_ITF[POLICY_TYPE_SEEDING], additionalSeeds: { maxCount: 1 } };
+  const additionalSeeds = { ...TEMPLATE_SEEDING_ITF[POLICY_TYPE_SEEDING], additionalSeeds: { maxCount: 1 } };
   mocksEngine.generateTournamentRecord({
     venueProfiles: [{ venueId: 'venue', courtsCount: 2 }],
     participantsProfile: { participantsCount: 40 },

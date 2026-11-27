@@ -38,7 +38,7 @@ type SeasonFixture = {
   tier?: { system: string; value: string };
 };
 
-const WINNER_NEVER_LOSES = new Set(['POLICY_RATINGS_WORLD_RUGBY', 'POLICY_RATINGS_FIVB']);
+const WINNER_NEVER_LOSES = new Set(['TEMPLATE_RATINGS_WORLD_RUGBY', 'TEMPLATE_RATINGS_FIVB']);
 
 function replay(fixture: SeasonFixture) {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({

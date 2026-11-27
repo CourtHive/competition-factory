@@ -4,16 +4,16 @@ title: Rating Other Sports
 
 The [ratings policy](./ratingsPolicy.md) rates any sport the factory scores. Each preset below encodes one sport's published rating method and names it in its `source`. The presets are published by the catalogue package, `@courthive/competition-catalogue`. Every example on this page runs as written in the factory's documentation check, so its numbers are the factory's output.
 
-| Sport                             | Preset                              | Scale (`ratingType`) | Published method                                             |
-| --------------------------------- | ----------------------------------- | -------------------- | ------------------------------------------------------------ |
-| Basketball                        | `POLICY_RATINGS_ELO_538_NBA`        | `ELO`                | FiveThirtyEight, "How We Calculate NBA Elo Ratings", 2015    |
-| American football                 | `POLICY_RATINGS_ELO_538_NFL`        | `ELO`                | FiveThirtyEight, "How Our NFL Predictions Work", 2018        |
-| Ice hockey                        | `POLICY_RATINGS_ELO_538_NHL`        | `ELO`                | FiveThirtyEight, "How Our NHL Predictions Work", 2021        |
-| Football (men's national teams)   | `POLICY_RATINGS_FIFA_SUM`           | `ELO`                | FIFA, "Revision of the FIFA / Coca-Cola World Ranking", 2018 |
-| Football (women's national teams) | `POLICY_RATINGS_FIFA_WOMEN`         | `ELO`                | FIFA, "Women's ranking procedures", April 2023               |
-| Football (any)                    | `POLICY_RATINGS_ELO_WORLD_FOOTBALL` | `ELO`                | World Football Elo Ratings (eloratings.net)                  |
-| Rugby union                       | `POLICY_RATINGS_WORLD_RUGBY`        | `WORLD_RUGBY`        | World Rugby, "Rankings Explanation"                          |
-| Volleyball                        | `POLICY_RATINGS_FIVB`               | `FIVB`               | FIVB, "Volleyball World Ranking for Senior National Teams"   |
+| Sport                             | Preset                                | Scale (`ratingType`) | Published method                                             |
+| --------------------------------- | ------------------------------------- | -------------------- | ------------------------------------------------------------ |
+| Basketball                        | `TEMPLATE_RATINGS_ELO_538_NBA`        | `ELO`                | FiveThirtyEight, "How We Calculate NBA Elo Ratings", 2015    |
+| American football                 | `TEMPLATE_RATINGS_ELO_538_NFL`        | `ELO`                | FiveThirtyEight, "How Our NFL Predictions Work", 2018        |
+| Ice hockey                        | `TEMPLATE_RATINGS_ELO_538_NHL`        | `ELO`                | FiveThirtyEight, "How Our NHL Predictions Work", 2021        |
+| Football (men's national teams)   | `TEMPLATE_RATINGS_FIFA_SUM`           | `ELO`                | FIFA, "Revision of the FIFA / Coca-Cola World Ranking", 2018 |
+| Football (women's national teams) | `TEMPLATE_RATINGS_FIFA_WOMEN`         | `ELO`                | FIFA, "Women's ranking procedures", April 2023               |
+| Football (any)                    | `TEMPLATE_RATINGS_ELO_WORLD_FOOTBALL` | `ELO`                | World Football Elo Ratings (eloratings.net)                  |
+| Rugby union                       | `TEMPLATE_RATINGS_WORLD_RUGBY`        | `WORLD_RUGBY`        | World Rugby, "Rankings Explanation"                          |
+| Volleyball                        | `TEMPLATE_RATINGS_FIVB`               | `FIVB`               | FIVB, "Volleyball World Ranking for Senior National Teams"   |
 
 World Rugby and FIVB rankings are points on their own scales, not Elo ratings: rate them with `ratingType: 'WORLD_RUGBY'` or `ratingType: 'FIVB'`, and the update runs in their own points to two decimals.
 
@@ -71,10 +71,10 @@ function recordResult({
 FiveThirtyEight's NBA Elo scales K by the points margin and damps it for a favourite. A 155-104 win between two teams at 1500:
 
 ```ts
-import { POLICY_RATINGS_ELO_538_NBA } from '@courthive/competition-catalogue';
+import { TEMPLATE_RATINGS_ELO_538_NBA } from '@courthive/competition-catalogue';
 const nba = recordResult({ matchUpFormat: 'SET1A-S:T48', sets: [[155, 104]], winningSide: 1 });
 const nbaResult = scaleEngine.generateDynamicRatings({
-  ratingsPolicy: POLICY_RATINGS_ELO_538_NBA.ratings,
+  ratingsPolicy: TEMPLATE_RATINGS_ELO_538_NBA.ratings,
   matchUpIds: [nba.matchUpId],
 });
 const nbaRatings: Record<string, any> = nbaResult.modifiedScaleValues ?? {};
@@ -86,10 +86,10 @@ const nbaValues = nba.participantIds.map((id) => nbaRatings[id].scaleValue); // 
 FiveThirtyEight's NFL Elo takes the log of the margin; a tie is rated 0.5 each, with K × 1.525:
 
 ```ts
-import { POLICY_RATINGS_ELO_538_NFL } from '@courthive/competition-catalogue';
+import { TEMPLATE_RATINGS_ELO_538_NFL } from '@courthive/competition-catalogue';
 const nfl = recordResult({ matchUpFormat: 'SET1A-S:T60', sets: [[40, 0]], winningSide: 1 });
 const nflResult = scaleEngine.generateDynamicRatings({
-  ratingsPolicy: POLICY_RATINGS_ELO_538_NFL.ratings,
+  ratingsPolicy: TEMPLATE_RATINGS_ELO_538_NFL.ratings,
   matchUpIds: [nfl.matchUpId],
 });
 const nflRatings: Record<string, any> = nflResult.modifiedScaleValues ?? {};
@@ -101,7 +101,7 @@ const nflValues = nfl.participantIds.map((id) => nflRatings[id].scaleValue); // 
 World Rugby's own example: Wales (76.92, at home, so 79.92) beat Scotland (76.36), a gap of 3.56. The ratings move 0.64 each way, and would move 1.5 times as much for a win by more than 15 points:
 
 ```ts
-import { POLICY_RATINGS_WORLD_RUGBY } from '@courthive/competition-catalogue';
+import { TEMPLATE_RATINGS_WORLD_RUGBY } from '@courthive/competition-catalogue';
 const rugby = recordResult({
   matchUpFormat: 'SET1A-S:T80',
   sets: [[23, 10]],
@@ -110,7 +110,7 @@ const rugby = recordResult({
   ratings: [79.92, 76.36],
 });
 const rugbyResult = scaleEngine.generateDynamicRatings({
-  ratingsPolicy: POLICY_RATINGS_WORLD_RUGBY.ratings,
+  ratingsPolicy: TEMPLATE_RATINGS_WORLD_RUGBY.ratings,
   matchUpIds: [rugby.matchUpId],
   ratingType: 'WORLD_RUGBY',
 });
@@ -123,7 +123,7 @@ const rugbyValues = rugby.participantIds.map((id) => rugbyRatings[id].scaleValue
 FIVB's own example: Brazil (415) beat Japan (192) 3-0 at a World Championship. The preset's K is that event's weight (MWF 50 / 8); set the other events' weights in `kByTier`:
 
 ```ts
-import { POLICY_RATINGS_FIVB } from '@courthive/competition-catalogue';
+import { TEMPLATE_RATINGS_FIVB } from '@courthive/competition-catalogue';
 const volleyball = recordResult({
   matchUpFormat: 'SET5-S:TB25-F:TB15',
   sets: [
@@ -136,7 +136,7 @@ const volleyball = recordResult({
   ratings: [415, 192],
 });
 const volleyballResult = scaleEngine.generateDynamicRatings({
-  ratingsPolicy: POLICY_RATINGS_FIVB.ratings,
+  ratingsPolicy: TEMPLATE_RATINGS_FIVB.ratings,
   matchUpIds: [volleyball.matchUpId],
   ratingType: 'FIVB',
 });
@@ -151,12 +151,12 @@ FIVB prints 416.5 and 190.5: it rounds the expected result to 1.76 before multip
 FIFA's women's ranking reads the actual result from a table of goals, and K from the match's importance: a Women's World Cup match is × 4, K 60. Key K by tier, and give the tournament that tier:
 
 ```ts
-import { POLICY_RATINGS_FIFA_WOMEN } from '@courthive/competition-catalogue';
+import { TEMPLATE_RATINGS_FIFA_WOMEN } from '@courthive/competition-catalogue';
 const women = recordResult({ matchUpFormat: 'SET1A-S:T90', sets: [[2, 1]], winningSide: 1 });
 tournamentEngine.setTournamentTier({ tournamentTier: { system: 'FIFA', value: 'WOMENS_WORLD_CUP' } });
 const womenResult = scaleEngine.generateDynamicRatings({
   ratingsPolicy: {
-    ...POLICY_RATINGS_FIFA_WOMEN.ratings,
+    ...TEMPLATE_RATINGS_FIFA_WOMEN.ratings,
     kByTier: { 'FIFA:WOMENS_WORLD_CUP': 60 },
   },
   matchUpIds: [women.matchUpId],
@@ -176,7 +176,7 @@ import { ratingsPresets } from '@courthive/competition-catalogue';
 const hockey = recordResult({ matchUpFormat: 'SET1A-S:T60', sets: [[4, 1]], winningSide: 1 });
 tournamentEngine.modifyEvent({
   eventId: hockey.eventId,
-  eventUpdates: { competitionFormat: { ratingsPolicy: ratingsPresets.POLICY_RATINGS_ELO_538_NHL } },
+  eventUpdates: { competitionFormat: { ratingsPolicy: ratingsPresets.TEMPLATE_RATINGS_ELO_538_NHL } },
 });
 const hockeyResult = scaleEngine.generateDynamicRatings({ matchUpIds: [hockey.matchUpId] });
 const hockeyNames = hockeyResult.ratingsPolicyNames; // ['Elo, FiveThirtyEight NHL']

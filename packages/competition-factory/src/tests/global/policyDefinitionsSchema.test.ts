@@ -1,4 +1,4 @@
-import { POLICY_SEEDING_ITF, policies as cataloguePolicies, ratingsPresets } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF, policies as cataloguePolicies, ratingsPresets } from '@courthive/competition-catalogue';
 import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Tests/fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
 import { POLICY_COMPETITION_STANDARD } from '@Fixtures/policies/POLICY_COMPETITION_STANDARD';
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
@@ -111,9 +111,9 @@ describe('PolicyDefinitions', () => {
   });
 
   it('rejects a modelled policy carrying a member its type does not declare', () => {
-    const seeding = { ...POLICY_SEEDING_ITF.seeding, seedingPolicyTypo: true };
+    const seeding = { ...TEMPLATE_SEEDING_ITF.seeding, seedingPolicyTypo: true };
     expect(validatePolicies({ seeding })).toEqual(false);
-    expect(validatePolicies({ seeding: POLICY_SEEDING_ITF.seeding })).toEqual(true);
+    expect(validatePolicies({ seeding: TEMPLATE_SEEDING_ITF.seeding })).toEqual(true);
   });
 });
 
@@ -367,7 +367,7 @@ describe('stored policies', () => {
   it('policies attached through the engine validate, and so does the record holding them', () => {
     const scheduling = { ...POLICY_SCHEDULING_DEFAULT[POLICY_TYPE_SCHEDULING], defaultPeriodLength: 20 };
     mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawId: 'd1', drawSize: 16, seedsCount: 4, policyDefinitions: POLICY_SEEDING_ITF }],
+      drawProfiles: [{ drawId: 'd1', drawSize: 16, seedsCount: 4, policyDefinitions: TEMPLATE_SEEDING_ITF }],
       policyDefinitions: { [POLICY_TYPE_SCHEDULING]: scheduling },
       setState: true,
     });

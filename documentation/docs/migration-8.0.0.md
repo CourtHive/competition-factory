@@ -621,18 +621,18 @@ produces), whether the engine copies it (`setState(record)`, the default) or bor
 ### Packaging
 
 - **The package is `competition-factory`.** `tods-competition-factory` 7.x stays installable and is not maintained after 8.0.0.
-- **Named catalogue formats and organisation policies move to `@courthive/competition-catalogue`.** The factory keeps its own defaults and the provider-neutral presets. See [The resource catalogue](#the-resource-catalogue).
+- **Named catalogue formats and organisation policies move to `@courthive/competition-catalogue`, as templates.** Their policy exports are renamed from `POLICY_` to `TEMPLATE_`. The factory keeps its own defaults and the provider-neutral presets. See [The resource catalogue](#the-resource-catalogue).
 
 ### The resource catalogue
 
 The named tie formats, the organisation policies, the ratings presets and the league competition format leave the
-factory for a separate package, `@courthive/competition-catalogue`, which versions independently (#6663). It holds plain data
+factory, as starting templates, for a separate package, `@courthive/competition-catalogue`, which versions independently (#6663). It holds plain data
 and imports nothing from the engine:
 
 ```js
 import {
-  POLICY_SCORING_USTA,
-  POLICY_SEEDING_ITF,
+  TEMPLATE_SCORING_USTA,
+  TEMPLATE_SEEDING_ITF,
   ratingsPresets,
   resolveTieFormat,
   tieFormatConstants,
@@ -640,18 +640,81 @@ import {
 } from '@courthive/competition-catalogue';
 ```
 
-| Removed from the factory                                                                                                                                                                                                                                                                                                                                                                         | In the catalogue package                                                      |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
-| `fixtures.tieFormats` (19 named tie formats)                                                                                                                                                                                                                                                                                                                                                     | `tieFormats`; `resolveTieFormat(name)` returns a copy without `collectionId`s |
-| `tieFormatConstants` (the 19 names)                                                                                                                                                                                                                                                                                                                                                              | `tieFormatConstants`                                                          |
-| the organisation members of `fixtures.policies`: ranking points (ATP, WTA, ITF), ratings presets, standings presets (FIBA, FIVB, JTT, MLS, Premier League, TOC, USTA League), `POLICY_SANCTIONING_ITF`, `POLICY_SANCTIONING_USTA`, `POLICY_SCORING_USTA`, `POLICY_SEEDING_ITF`, `POLICY_PROGRESSION_USTA`, the officiating evaluation policies and `POLICY_OFFICIATING_CONFLICT_OF_INTEREST_ITF` | each under its own name, and all of them in `policies`                        |
-| the ratings presets by name                                                                                                                                                                                                                                                                                                                                                                      | `ratingsPresets`, each a bare ratings policy                                  |
-| `INTENNSE_STANDARD` (`fixtures.competitionFormats`, `competitionFormatConstants`)                                                                                                                                                                                                                                                                                                                | `competitionFormats`, `competitionFormatConstants`                            |
+| Removed from the factory                                                                                                                                                                                                                                                                                                                                                                         | In the catalogue package                                                                          |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| `fixtures.tieFormats` (19 named tie formats)                                                                                                                                                                                                                                                                                                                                                     | `tieFormats`; `resolveTieFormat(name)` returns a copy without `collectionId`s                     |
+| `tieFormatConstants` (the 19 names)                                                                                                                                                                                                                                                                                                                                                              | `tieFormatConstants`                                                                              |
+| the organisation members of `fixtures.policies`: ranking points (ATP, WTA, ITF), ratings presets, standings presets (FIBA, FIVB, JTT, MLS, Premier League, TOC, USTA League), `POLICY_SANCTIONING_ITF`, `POLICY_SANCTIONING_USTA`, `POLICY_SCORING_USTA`, `POLICY_SEEDING_ITF`, `POLICY_PROGRESSION_USTA`, the officiating evaluation policies and `POLICY_OFFICIATING_CONFLICT_OF_INTEREST_ITF` | each as a `TEMPLATE_` name (see [Template names](#template-names)), and all of them in `policies` |
+| the ratings presets by name (`POLICY_RATINGS_*`)                                                                                                                                                                                                                                                                                                                                                 | `ratingsPresets`, keyed by `TEMPLATE_RATINGS_*`, each a bare ratings policy                       |
+| `INTENNSE_STANDARD` (`fixtures.competitionFormats`, `competitionFormatConstants`)                                                                                                                                                                                                                                                                                                                | `competitionFormats`, `competitionFormatConstants`                                                |
 
 The factory keeps every policy it falls back to and the provider-neutral presets in `fixtures.policies`
 (`POLICY_SEEDING_DEFAULT`, `POLICY_SCORING_DEFAULT`, `POLICY_RATINGS_DEFAULT`, `POLICY_RATINGS_COMPETITION_FORM`,
 `POLICY_SANCTIONING_GENERIC`, `POLICY_RANKING_POINTS_BASIC`, `POLICY_OFFICIATING_CONFLICT_OF_INTEREST` and the others),
 `PICKLEBALL_STANDARD` and `TENNIS_STANDARD`.
+
+### Template names
+
+Every catalogue entry is a starting template modelled on a published source: copy one and own it. CourtHive does not
+maintain the templates against their sources, and the bodies they are modelled on have not reviewed or endorsed them.
+Each entry says so in `provenance` (`catalogueEntries[i].provenance`, and the exported `provenance` map by name):
+`{ status: 'template', modelledOn, sourceDocument, maintainer: 'CourtHive', maintained: false, endorsed: false }`.
+The statement is beside the entry, not in its definition, so attaching a template does not carry it onto a record.
+
+So that an import line tells an engine default from a template, the catalogue's policies are named `TEMPLATE_*`, and
+`POLICY_*` names only the factory's own defaults in `fixtures.policies`. The `policies`, `ratingsPresets` and
+`entryVersions` keys use the same names. Tie format and competition format names are unchanged. The policy
+definitions are unchanged: `policyName` and `pointsAuthority` hold what they held in 7.x.
+
+| 7.x name                                      | 8.0.0 catalogue name                            |
+| --------------------------------------------- | ----------------------------------------------- |
+| `POLICY_OFFICIATING_CONFLICT_OF_INTEREST_ITF` | `TEMPLATE_OFFICIATING_CONFLICT_OF_INTEREST_ITF` |
+| `POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE`  | `TEMPLATE_OFFICIATING_EVALUATION_CHAIR_UMPIRE`  |
+| `POLICY_OFFICIATING_EVALUATION_REFEREE`       | `TEMPLATE_OFFICIATING_EVALUATION_REFEREE`       |
+| `POLICY_PROGRESSION_USTA`                     | `TEMPLATE_PROGRESSION_USTA`                     |
+| `POLICY_RANKING_POINTS_ATP`                   | `TEMPLATE_RANKING_POINTS_ATP`                   |
+| `POLICY_RANKING_POINTS_ITF_JUNIOR`            | `TEMPLATE_RANKING_POINTS_ITF_JUNIOR`            |
+| `POLICY_RANKING_POINTS_ITF_JUNIOR_2025`       | `TEMPLATE_RANKING_POINTS_ITF_JUNIOR_2025`       |
+| `POLICY_RANKING_POINTS_ITF_WTT`               | `TEMPLATE_RANKING_POINTS_ITF_WTT`               |
+| `POLICY_RANKING_POINTS_WTA`                   | `TEMPLATE_RANKING_POINTS_WTA`                   |
+| `POLICY_RATINGS_ELO_538_NBA`                  | `TEMPLATE_RATINGS_ELO_538_NBA`                  |
+| `POLICY_RATINGS_ELO_538_NFL`                  | `TEMPLATE_RATINGS_ELO_538_NFL`                  |
+| `POLICY_RATINGS_ELO_538_NHL`                  | `TEMPLATE_RATINGS_ELO_538_NHL`                  |
+| `POLICY_RATINGS_ELO_538_TENNIS`               | `TEMPLATE_RATINGS_ELO_538_TENNIS`               |
+| `POLICY_RATINGS_ELO_WELO_TENNIS`              | `TEMPLATE_RATINGS_ELO_WELO_TENNIS`              |
+| `POLICY_RATINGS_ELO_WORLD_FOOTBALL`           | `TEMPLATE_RATINGS_ELO_WORLD_FOOTBALL`           |
+| `POLICY_RATINGS_FIFA_SUM`                     | `TEMPLATE_RATINGS_FIFA_SUM`                     |
+| `POLICY_RATINGS_FIFA_WOMEN`                   | `TEMPLATE_RATINGS_FIFA_WOMEN`                   |
+| `POLICY_RATINGS_FIVB`                         | `TEMPLATE_RATINGS_FIVB`                         |
+| `POLICY_RATINGS_WORLD_RUGBY`                  | `TEMPLATE_RATINGS_WORLD_RUGBY`                  |
+| `POLICY_ROUND_ROBIN_TALLY_FIBA`               | `TEMPLATE_ROUND_ROBIN_TALLY_FIBA`               |
+| `POLICY_ROUND_ROBIN_TALLY_FIVB`               | `TEMPLATE_ROUND_ROBIN_TALLY_FIVB`               |
+| `POLICY_ROUND_ROBIN_TALLY_JTT`                | `TEMPLATE_ROUND_ROBIN_TALLY_JTT`                |
+| `POLICY_ROUND_ROBIN_TALLY_MLS`                | `TEMPLATE_ROUND_ROBIN_TALLY_MLS`                |
+| `POLICY_ROUND_ROBIN_TALLY_PREMIER_LEAGUE`     | `TEMPLATE_ROUND_ROBIN_TALLY_PREMIER_LEAGUE`     |
+| `POLICY_ROUND_ROBIN_TALLY_TOC`                | `TEMPLATE_ROUND_ROBIN_TALLY_TOC`                |
+| `POLICY_ROUND_ROBIN_TALLY_USTA_LEAGUE`        | `TEMPLATE_ROUND_ROBIN_TALLY_USTA_LEAGUE`        |
+| `POLICY_SANCTIONING_ITF`                      | `TEMPLATE_SANCTIONING_ITF`                      |
+| `POLICY_SANCTIONING_USTA`                     | `TEMPLATE_SANCTIONING_USTA`                     |
+| `POLICY_SCORING_USTA`                         | `TEMPLATE_SCORING_USTA`                         |
+| `POLICY_SEEDING_ITF`                          | `TEMPLATE_SEEDING_ITF`                          |
+| —                                             | `TEMPLATE_RANKING_POINTS_CTS`                   |
+| —                                             | `TEMPLATE_RANKING_POINTS_LTA`                   |
+| —                                             | `TEMPLATE_RANKING_POINTS_TENNIS_AUSTRALIA`      |
+| —                                             | `TEMPLATE_RANKING_POINTS_TENNIS_CANADA`         |
+| —                                             | `TEMPLATE_RANKING_POINTS_TENNIS_EUROPE`         |
+| —                                             | `TEMPLATE_RANKING_POINTS_USTA_JUNIOR_2025`      |
+| —                                             | `TEMPLATE_RANKING_POINTS_USTA_JUNIOR_2026`      |
+
+The last seven are new in the catalogue: federation ranking-points templates that 7.x did not publish.
+
+`packages/competition-catalogue/scripts/rename-to-template.mjs` in the factory repository makes the rename across a
+checkout's tracked files. It changes only these names, skips changelogs and the migration pages for earlier versions,
+and lists every name it found as a whole quoted string, since a string can be a label stored on a record that should
+keep its 7.x name.
+
+A stored `ratingsPolicyName` is a label, so a record that names a 7.x preset reads unchanged (see [Named catalogue
+inputs](#named-catalogue-inputs)).
 
 ### Named catalogue inputs
 
@@ -692,7 +755,8 @@ unchanged; to rate it, attach the policy object (`modifyEvent` with the `competi
 a demo or mock mode): read the entries from the catalogue package, or from the host that serves your providers'
 approved formats and policies, and pass the chosen object. An application that derives a list from
 `fixtures.policies` (every `POLICY_SANCTIONING_*`, for example) finds only the factory's own entries there; add the
-catalogue's `policies` to the list where it should still offer them.
+catalogue's `policies` to the list where it should still offer them, under their `TEMPLATE_` names
+(`TEMPLATE_SANCTIONING_*`).
 
 ### The outcome pipeline selector is removed
 

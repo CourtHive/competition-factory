@@ -1,6 +1,6 @@
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { parseScoreString } from '@Scoring/parse/parseScoreString';
 import { POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
 import { policyComposer } from '@Global/policyComposer';
@@ -18,7 +18,7 @@ const { SINGLES } = eventConstants;
 // composer says so in a way a fixture never could: leaving `validSeedPositions` unset is what keeps
 // manual seed placement inside a valid seed block.
 const SEEDING_POSITIONS_ENFORCED = policyComposer(POLICY_TYPE_SEEDING)
-  .extend(POLICY_SEEDING_ITF)
+  .extend(TEMPLATE_SEEDING_ITF)
   .unset('validSeedPositions')
   .set('policyName', 'ITF SEEDING, POSITIONS ENFORCED')
   .build();

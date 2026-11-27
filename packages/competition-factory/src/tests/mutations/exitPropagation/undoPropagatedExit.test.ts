@@ -1,5 +1,5 @@
 import { getDrawDefinition, projectDraw, stableHash } from '@Tests/testHarness/exitPropagation/transitions';
-import { POLICY_SCORING_USTA } from '@courthive/competition-catalogue';
+import { TEMPLATE_SCORING_USTA } from '@courthive/competition-catalogue';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -151,11 +151,11 @@ describe.each(DRAW_TYPES)('%s', (drawType) => {
  * The POLICY route, which is where a real tournament meets this.
  *
  * Every case above passes `propagateExitStatus` and `propagateRetirementAsExit` as PARAMS. A
- * tournament sets neither: it attaches a scoring policy, and `POLICY_SCORING_USTA` turns both on.
+ * tournament sets neither: it attaches a scoring policy, and `TEMPLATE_SCORING_USTA` turns both on.
  * The same gap existed for `propagateRetirementAsExit` itself when it shipped — the param path was
  * covered and the policy path was not — so it is closed here rather than assumed to follow.
  */
-it('a retirement entered under POLICY_SCORING_USTA can be un-entered', () => {
+it('a retirement entered under TEMPLATE_SCORING_USTA can be un-entered', () => {
   setSubscriptions({});
   const drawId = 'undo-usta-policy';
   mocksEngine.generateTournamentRecord({
@@ -163,7 +163,7 @@ it('a retirement entered under POLICY_SCORING_USTA can be un-entered', () => {
     nonRandom: 1,
     setState: true,
   });
-  tournamentEngine.attachPolicies({ policyDefinitions: POLICY_SCORING_USTA });
+  tournamentEngine.attachPolicies({ policyDefinitions: TEMPLATE_SCORING_USTA });
 
   const source = firstRoundMatchUp(drawId);
   const before = stableHash(projectDraw(getDrawDefinition(drawId)));

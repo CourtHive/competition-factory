@@ -1,4 +1,4 @@
-import { POLICY_RATINGS_FIVB, POLICY_RATINGS_WORLD_RUGBY } from '@courthive/competition-catalogue';
+import { TEMPLATE_RATINGS_FIVB, TEMPLATE_RATINGS_WORLD_RUGBY } from '@courthive/competition-catalogue';
 import { calculateNewRatings } from '@Helpers/ratings/calculateNewRatings';
 import { expectedResult, normalCdf } from '@Helpers/ratings/ratingUpdate';
 import { describe, expect, it } from 'vitest';
@@ -9,8 +9,8 @@ import { FIVB, WORLD_RUGBY } from '@Constants/ratingConstants';
 
 // World Rugby and FIVB rate on their own points scales; each case is the source's own worked example
 
-const RUGBY = POLICY_RATINGS_WORLD_RUGBY[POLICY_TYPE_RATINGS];
-const VOLLEYBALL = POLICY_RATINGS_FIVB[POLICY_TYPE_RATINGS];
+const RUGBY = TEMPLATE_RATINGS_WORLD_RUGBY[POLICY_TYPE_RATINGS];
+const VOLLEYBALL = TEMPLATE_RATINGS_FIVB[POLICY_TYPE_RATINGS];
 
 describe('World Rugby, "Rankings Explanation": Wales (76.92, at home: 79.92) v Scotland (76.36), a gap of 3.56', () => {
   const rate = (params: any) => {

@@ -277,7 +277,7 @@ _Clicking a player's name asks what happened to that side: **Retired**, **Walkov
 From factory 8.0.0 the chosen reason is reported keyed, as `outcome.sideStatusCodes` (or `outcome.matchUpStatusCode`
 for an ending that belongs to the match); 7.x reported it as the positional `outcome.matchUpStatusCodes`. The codes come from the scoring
 policy attached to the tournament or event; without one, the dialog draws no reason control. Try it in the
-[live demo above](#setting-scores), which uses the factory's `POLICY_SCORING_USTA` fixture.
+[live demo above](#setting-scores), which uses the factory's `TEMPLATE_SCORING_USTA` fixture.
 
 ```js
 // Walkover

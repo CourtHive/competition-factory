@@ -1,4 +1,4 @@
-import { POLICY_RANKING_POINTS_USTA_JUNIOR_2025 } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_USTA_JUNIOR_2025';
+import { TEMPLATE_RANKING_POINTS_USTA_JUNIOR_2025 } from '@courthive/competition-catalogue';
 import { getAwardProfile } from '@Query/scales/getAwardProfile';
 import { defined } from '@Tests/helpers/defined';
 import scaleEngine from '@Engines/scaleEngine';
@@ -19,7 +19,7 @@ import {
   SINGLE_ELIMINATION,
 } from '@Constants/drawDefinitionConstants';
 
-const policyDefinitions = POLICY_RANKING_POINTS_USTA_JUNIOR_2025;
+const policyDefinitions = TEMPLATE_RANKING_POINTS_USTA_JUNIOR_2025;
 const policy = policyDefinitions[POLICY_TYPE_RANKING_POINTS];
 
 describe('USTA Junior 2025 Policy Structure', () => {

@@ -2,7 +2,7 @@
  * A deployed production `matchUpStatusCode` vocabulary — 29 codes across 5 populated categories.
  *
  * Captured 2026-09-11 from a deployed consumer's client bundle, where it drives their scoring modal.
- * It is substantially richer than `POLICY_SCORING_USTA`, which carries a handful of codes in a flat
+ * It is substantially richer than `TEMPLATE_SCORING_USTA`, which carries a handful of codes in a flat
  * map keyed by matchUpStatus: this has four fields per entry and a two-level category grouping.
  *
  * WHY IT IS HERE. These codes travel on `matchUp.matchUpStatusCodes`, the array that also carries

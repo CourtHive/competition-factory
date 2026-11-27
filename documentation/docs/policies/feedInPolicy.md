@@ -676,14 +676,14 @@ tournamentEngine.generateDrawDefinition({
 ### Using with Other Policies
 
 ```javascript
-import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { drawDefinitionConstants, fixtures, policyConstants } from 'tods-competition-factory';
 const { BOTTOM_UP, FEED_IN_CHAMPIONSHIP, TOP_DOWN } = drawDefinitionConstants;
 const { POLICY_TYPE_FEED_IN, POLICY_TYPE_SEEDING } = policyConstants;
 
 // Combine feed-in with seeding policy
 const combinedPolicies = {
-  ...POLICY_SEEDING_ITF, // ITF seeding
+  ...TEMPLATE_SEEDING_ITF, // ITF seeding
   [POLICY_TYPE_FEED_IN]: {
     roundGroupedOrder: [[1], [1], [1, 2], [1, 2, 3, 4]],
     roundFeedProfiles: [TOP_DOWN, BOTTOM_UP, BOTTOM_UP, BOTTOM_UP],
@@ -1176,14 +1176,14 @@ Feed-in policy works with:
 **Example Integration:**
 
 ```javascript
-import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { drawDefinitionConstants, fixtures, policyConstants } from 'tods-competition-factory';
 const { BOTTOM_UP, FEED_IN_CHAMPIONSHIP, TOP_DOWN } = drawDefinitionConstants;
 
 const { POLICY_TYPE_FEED_IN } = policyConstants;
 
 const fullPolicies = {
-  ...POLICY_SEEDING_ITF,
+  ...TEMPLATE_SEEDING_ITF,
   [POLICY_TYPE_FEED_IN]: {
     feedFromMainFinal: false,
     roundFeedProfiles: [TOP_DOWN, BOTTOM_UP, BOTTOM_UP],

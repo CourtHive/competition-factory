@@ -1,4 +1,4 @@
-import { POLICY_RANKING_POINTS_WTA, resolveTieFormat } from '@courthive/competition-catalogue';
+import { TEMPLATE_RANKING_POINTS_WTA, resolveTieFormat } from '@courthive/competition-catalogue';
 import { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
 import * as availabilityExport from '@Assemblies/engines/availability';
 import { officiatingEngine } from '@Assemblies/engines/officiating';
@@ -248,7 +248,7 @@ const CONFIRMED: Record<string, Case[]> = {
   generateRankingList: one(() => ({ pointAwards: clone(POINT_AWARDS), asOfDate: '2026-12-31' })),
   getAwardPoints: one(() => ({ valueObj: [{ drawSize: 32, value: 100 }, { value: 10 }], drawSize: 32 })),
   getAwardProfile: one(() => ({
-    awardProfiles: clone(POLICY_RANKING_POINTS_WTA[POLICY_TYPE_RANKING_POINTS].awardProfiles),
+    awardProfiles: clone(TEMPLATE_RANKING_POINTS_WTA[POLICY_TYPE_RANKING_POINTS].awardProfiles),
     participation: { participationOrder: 1, rankingStage: MAIN },
     eventType: SINGLES,
     level: 1,

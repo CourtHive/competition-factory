@@ -1,6 +1,6 @@
 import { POLICY_COMPETITION_STANDARD } from '@Fixtures/policies/POLICY_COMPETITION_STANDARD';
 import { formRatingsPolicy } from '@Helpers/ratings/competition/formRatingsPolicy';
-import { POLICY_RATINGS_ELO_538_NHL } from '@courthive/competition-catalogue';
+import { TEMPLATE_RATINGS_ELO_538_NHL } from '@courthive/competition-catalogue';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';
@@ -16,7 +16,7 @@ import { SINGLES_EVENT } from '@Constants/eventConstants';
 // as it always did, and a preset name, which selects nothing, is refused by name when a rating reads it.
 
 const NHL = 'POLICY_RATINGS_ELO_538_NHL';
-const NHL_POLICY = POLICY_RATINGS_ELO_538_NHL[POLICY_TYPE_RATINGS];
+const NHL_POLICY = TEMPLATE_RATINGS_ELO_538_NHL[POLICY_TYPE_RATINGS];
 const HOCKEY = 'PER3XA-S:T20P-O:1SD/T5P-F:SO5';
 const regulationWin = [
   { setNumber: 1, side1Score: 2, side2Score: 0 },

@@ -261,8 +261,8 @@ example a drawProfile's `outcomes` or a scenario's `called`) are not checked key
 
 A policy that `attachPolicies` refuses, at the top level, on an eventProfile or on a drawProfile, refuses the
 generation in the same way; it used to be dropped while generation succeeded. A policy type whose value is
-`undefined` is absent. Pass a policy under its policy type: a bare policy body such as `POLICY_SANCTIONING_USTA` is
-refused as `policyDefinitions`, and attaches as `{ sanctioning: POLICY_SANCTIONING_USTA }`:
+`undefined` is absent. Pass a policy under its policy type: a bare policy body such as `TEMPLATE_SANCTIONING_USTA` is
+refused as `policyDefinitions`, and attaches as `{ sanctioning: TEMPLATE_SANCTIONING_USTA }`:
 
 ```js
 const result = mocksGovernor.generateTournamentRecord({ policyDefinitions: { draws: {} } });

@@ -75,21 +75,21 @@ The field is **optional** — policies that don't declare it produce awards with
 default such rows to `'UNSPECIFIED'`. The published policies declare (`POLICY_RANKING_POINTS_BASIC` is the factory's;
 the others are published by the catalogue package, `@courthive/competition-catalogue`):
 
-| Policy                                  | `pointsAuthority` |
-| --------------------------------------- | ----------------- |
-| `POLICY_RANKING_POINTS_ATP`             | `ATP`             |
-| `POLICY_RANKING_POINTS_WTA`             | `WTA`             |
-| `POLICY_RANKING_POINTS_ITF_WTT`         | `ITF`             |
-| `POLICY_RANKING_POINTS_ITF_JUNIOR`      | `ITF_JUNIOR`      |
-| `POLICY_RANKING_POINTS_ITF_JUNIOR_2025` | `ITF_JUNIOR`      |
-| `POLICY_RANKING_POINTS_BASIC`           | _(unset)_         |
+| Policy                                    | `pointsAuthority` |
+| ----------------------------------------- | ----------------- |
+| `TEMPLATE_RANKING_POINTS_ATP`             | `ATP`             |
+| `TEMPLATE_RANKING_POINTS_WTA`             | `WTA`             |
+| `TEMPLATE_RANKING_POINTS_ITF_WTT`         | `ITF`             |
+| `TEMPLATE_RANKING_POINTS_ITF_JUNIOR`      | `ITF_JUNIOR`      |
+| `TEMPLATE_RANKING_POINTS_ITF_JUNIOR_2025` | `ITF_JUNIOR`      |
+| `POLICY_RANKING_POINTS_BASIC`             | _(unset)_         |
 
-`POLICY_RANKING_POINTS_ITF_JUNIOR` encodes the 2026 ITF World Tennis Tour Juniors Regulations (Reg. 10 and 31):
+`TEMPLATE_RANKING_POINTS_ITF_JUNIOR` encodes the 2026 ITF World Tennis Tour Juniors Regulations (Reg. 10 and 31):
 the six best singles results plus one quarter of the six best doubles results (the Doubles bucket's
 [`weight`](/docs/scale-engine/aggregation#weight)), with no main draw points until a round is won, round robin group places scored with
 [`groupOrderPoints`](#round-robin-group-places), and ties separated by the Reg. 11 countback (a
 [`levelPoints`](/docs/scale-engine/aggregation#levelpoints-countback) tiebreak).
-`POLICY_RANKING_POINTS_ITF_JUNIOR_2025` keeps the 2025 tables, which differ only in the ITF Junior Finals; use it to
+`TEMPLATE_RANKING_POINTS_ITF_JUNIOR_2025` keeps the 2025 tables, which differ only in the ITF Junior Finals; use it to
 score 2025 results as they were awarded. Both count only the best result from up to two editions of the same
 J100-or-higher tournament (Reg. 10) with [`bestPerSeries`](/docs/scale-engine/aggregation#bestperseries), matching
 editions by `Tournament.tournamentSeriesId`. International Team Competitions (level 3) are scored with
@@ -686,10 +686,10 @@ The factory ships with five ranking policy fixtures covering major professional,
 
 ```js
 import {
-  POLICY_RANKING_POINTS_ATP,
-  POLICY_RANKING_POINTS_ITF_JUNIOR,
-  POLICY_RANKING_POINTS_ITF_WTT,
-  POLICY_RANKING_POINTS_WTA,
+  TEMPLATE_RANKING_POINTS_ATP,
+  TEMPLATE_RANKING_POINTS_ITF_JUNIOR,
+  TEMPLATE_RANKING_POINTS_ITF_WTT,
+  TEMPLATE_RANKING_POINTS_WTA,
 } from '@courthive/competition-catalogue';
 import { fixtures } from 'tods-competition-factory';
 
@@ -703,19 +703,19 @@ const basic = scaleEngine.getEventRankingPoints({
 
 // Level-requiring policies
 const atp = scaleEngine.getEventRankingPoints({
-  policyDefinitions: POLICY_RANKING_POINTS_ATP,
+  policyDefinitions: TEMPLATE_RANKING_POINTS_ATP,
   eventId: 'event-abc',
   level: 1,
 });
 ```
 
-| Fixture                            | Levels                    | Period   | Best-of                  | Notes                                                   |
-| ---------------------------------- | ------------------------- | -------- | ------------------------ | ------------------------------------------------------- |
-| `POLICY_RANKING_POINTS_BASIC`      | None (level-independent)  | —        | —                        | Simple position-based points, no level required         |
-| `POLICY_RANKING_POINTS_ATP`        | 15 (Grand Slam → ITF M15) | 52 weeks | Singles: 19, Doubles: 18 | Mandatory counting rules, qualifying points             |
-| `POLICY_RANKING_POINTS_WTA`        | 11 (Grand Slam → ITF W15) | 52 weeks | Singles: 18, Doubles: 12 | Draw size threshold arrays                              |
-| `POLICY_RANKING_POINTS_ITF_WTT`    | 4 ($25K+H → $15K)         | 52 weeks | 14                       | Qualifying-only system (post-2020, no main draw points) |
-| `POLICY_RANKING_POINTS_ITF_JUNIOR` | 9 (Grand Slam → J30)      | —        | —                        | ITF Junior Circuit with qualifying and consolation      |
+| Fixture                              | Levels                    | Period   | Best-of                  | Notes                                                   |
+| ------------------------------------ | ------------------------- | -------- | ------------------------ | ------------------------------------------------------- |
+| `POLICY_RANKING_POINTS_BASIC`        | None (level-independent)  | —        | —                        | Simple position-based points, no level required         |
+| `TEMPLATE_RANKING_POINTS_ATP`        | 15 (Grand Slam → ITF M15) | 52 weeks | Singles: 19, Doubles: 18 | Mandatory counting rules, qualifying points             |
+| `TEMPLATE_RANKING_POINTS_WTA`        | 11 (Grand Slam → ITF W15) | 52 weeks | Singles: 18, Doubles: 12 | Draw size threshold arrays                              |
+| `TEMPLATE_RANKING_POINTS_ITF_WTT`    | 4 ($25K+H → $15K)         | 52 weeks | 14                       | Qualifying-only system (post-2020, no main draw points) |
+| `TEMPLATE_RANKING_POINTS_ITF_JUNIOR` | 9 (Grand Slam → J30)      | —        | —                        | ITF Junior Circuit with qualifying and consolation      |
 
 These fixtures can be used as-is for preview/backoffice ranking point calculations, or as starting points for custom policies.
 

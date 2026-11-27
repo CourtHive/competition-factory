@@ -3,7 +3,7 @@
 :::note Naming
 The organisation is referred to as **World Tennis (formerly the ITF)** — it rebranded on
 1 January 2026. `ITF` persists deliberately wherever it names a **policy**
-(`POLICY_SANCTIONING_ITF`), a **stored value** (`governingBodyId: 'itf'`), a **level code**
+(`TEMPLATE_SANCTIONING_ITF`), a **stored value** (`governingBodyId: 'itf'`), a **level code**
 (`ITF W15`), or a **circuit** (World Tennis Tour). See
 [the ITF and World Tennis](../data-standards.md#world-tennis).
 :::
@@ -468,8 +468,8 @@ src/
 
   fixtures/
     policies/
-      POLICY_SANCTIONING_ITF.ts           // NEW — ITF sanctioning policy
-      POLICY_SANCTIONING_USTA.ts          // NEW — USTA sanctioning policy
+      TEMPLATE_SANCTIONING_ITF.ts           // NEW — ITF sanctioning policy
+      TEMPLATE_SANCTIONING_USTA.ts          // NEW — USTA sanctioning policy
       POLICY_SANCTIONING_LTA.ts           // NEW — LTA sanctioning policy
       POLICY_SANCTIONING_GENERIC.ts       // NEW — generic/minimal policy
 ```
@@ -571,7 +571,7 @@ The attached policy ensures TMX (or any client using the factory) **cannot** dev
 **Files:**
 
 - `src/fixtures/policies/POLICY_SANCTIONING_GENERIC.ts`
-- `src/fixtures/policies/POLICY_SANCTIONING_ITF.ts`
+- `src/fixtures/policies/TEMPLATE_SANCTIONING_ITF.ts`
 - `src/validators/sanctioning/validateProposal.ts`
 - `src/validators/sanctioning/validateEventProposal.ts`
 - `src/validators/sanctioning/validateFinancials.ts`
@@ -613,7 +613,7 @@ The attached policy ensures TMX (or any client using the factory) **cannot** dev
 
 **Files:**
 
-- `src/fixtures/policies/POLICY_SANCTIONING_USTA.ts`
+- `src/fixtures/policies/TEMPLATE_SANCTIONING_USTA.ts`
 - `src/fixtures/policies/POLICY_SANCTIONING_LTA.ts`
 - Additional sport-specific policies as needed
 

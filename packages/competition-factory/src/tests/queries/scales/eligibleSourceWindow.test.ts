@@ -1,5 +1,5 @@
 import { applyEligibleSourceWindow, getAgeCategoryOrder } from '@Query/scales/eligibleSourceWindow';
-import { POLICY_RANKING_POINTS_LTA } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_LTA';
+import { TEMPLATE_RANKING_POINTS_LTA } from '@courthive/competition-catalogue';
 import { generateRankingList } from '@Query/scales/generateRankingList';
 import type { RankingListWarning } from '@Types/rankingTypes';
 import { describe, expect, it } from 'vitest';
@@ -23,7 +23,7 @@ function makeAward(ageCategoryCode: string | undefined, points: number, personId
   };
 }
 
-const ltaRules: any = POLICY_RANKING_POINTS_LTA[POLICY_TYPE_RANKING_POINTS].aggregationRules;
+const ltaRules: any = TEMPLATE_RANKING_POINTS_LTA[POLICY_TYPE_RANKING_POINTS].aggregationRules;
 const lta12U = ltaRules.categoryAggregation.find((rule) => rule.ruleName === '12U Combined Ranking pool');
 
 describe('getAgeCategoryOrder', () => {

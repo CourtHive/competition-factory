@@ -325,7 +325,7 @@ const policy = POLICY_ROUND_ROBIN_TALLY_DEFAULT[POLICY_TYPE_ROUND_ROBIN_TALLY];
 **Junior Team Tennis format:**
 
 ```javascript
-import { POLICY_ROUND_ROBIN_TALLY_JTT } from '@courthive/competition-catalogue';
+import { TEMPLATE_ROUND_ROBIN_TALLY_JTT } from '@courthive/competition-catalogue';
 import { fixtures } from 'tods-competition-factory';
 
 // {
@@ -354,7 +354,7 @@ import { fixtures } from 'tods-competition-factory';
 **Tournament of Champions format:**
 
 ```javascript
-import { POLICY_ROUND_ROBIN_TALLY_TOC } from '@courthive/competition-catalogue';
+import { TEMPLATE_ROUND_ROBIN_TALLY_TOC } from '@courthive/competition-catalogue';
 import { fixtures } from 'tods-competition-factory';
 
 // {
@@ -382,7 +382,7 @@ import { fixtures } from 'tods-competition-factory';
 The standings presets in this section and the ones below are published by the catalogue package, `@courthive/competition-catalogue`.
 The factory holds `POLICY_ROUND_ROBIN_TALLY_DEFAULT`.
 
-`POLICY_ROUND_ROBIN_TALLY_USTA_LEAGUE`: the USTA League championship tie procedure as copied into section regulations
+`TEMPLATE_ROUND_ROBIN_TALLY_USTA_LEAGUE`: the USTA League championship tie procedure as copied into section regulations
 (USTA/Midwest Section 2026, Combo section M):
 
 - the most individual matches (lines) won (`tieMatchUpsWon`);
@@ -396,7 +396,7 @@ that varies the order needs its own policy.
 
 ### FIBA Policy
 
-`POLICY_ROUND_ROBIN_TALLY_FIBA`: FIBA Official Basketball Rules 2026, Appendix D:
+`TEMPLATE_ROUND_ROBIN_TALLY_FIBA`: FIBA Official Basketball Rules 2026, Appendix D:
 
 - `resultPoints`: 2 for a win, 1 for a loss including by default, 0 for a loss by forfeit (a forfeit mapped to `WALKOVER`,
   a default to `DEFAULTED`);
@@ -408,7 +408,7 @@ The FIBA ranking step (national-team competitions) is an external value and is n
 
 ### Premier League Policy
 
-`POLICY_ROUND_ROBIN_TALLY_PREMIER_LEAGUE`: Premier League Handbook 2025/26, rules C.4 to C.7 and C.17:
+`TEMPLATE_ROUND_ROBIN_TALLY_PREMIER_LEAGUE`: Premier League Handbook 2025/26, rules C.4 to C.7 and C.17:
 
 - `resultPoints`: 3 for a win, 1 for a draw; goals are each half's score (`HAL2A-S:T45`), so goal difference is
   `gamesDiff` and goals scored `gamesWon`;
@@ -424,7 +424,7 @@ which is a match the organiser arranges.
 
 ### MLS Policy
 
-`POLICY_ROUND_ROBIN_TALLY_MLS`: MLS 2026 Competition Guidelines, regular-season tiebreaking procedures:
+`TEMPLATE_ROUND_ROBIN_TALLY_MLS`: MLS 2026 Competition Guidelines, regular-season tiebreaking procedures:
 
 - `resultPoints`: 3 for a win, 1 for a tie;
 - level clubs are separated by total wins, goal differential, goals for, then head-to-head points and goal
@@ -438,7 +438,7 @@ no home or away side.
 
 ### FIVB Policy
 
-`POLICY_ROUND_ROBIN_TALLY_FIVB`: FIVB Volleyball Nations League 2026 Competition Regulations, § 2.5:
+`TEMPLATE_ROUND_ROBIN_TALLY_FIVB`: FIVB Volleyball Nations League 2026 Competition Regulations, § 2.5:
 
 - teams are ranked on victories (`matchUpsWon`), then match points: 3 for a 3-0 or 3-1 win, 2 for a 3-2 win, 1 for a
   2-3 loss, 0 for a 0-3 or 1-3 loss, and 0 for a forfeit (a forfeit mapped to `WALKOVER`, 3 to the winner);

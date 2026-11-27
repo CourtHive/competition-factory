@@ -13,7 +13,7 @@ import { ResultType } from '@Types/factoryTypes';
 /**
  * Attaches a profile's `policyDefinitions` one policy type at a time, so that a refusal names the policy type.
  * A refusal was discarded here and generation succeeded without the policy; a bare policy body passed in place of
- * `{ [policyType]: body }` (e.g. POLICY_SANCTIONING_USTA) attached its fields as junk policy types. A policy type
+ * `{ [policyType]: body }` (e.g. TEMPLATE_SANCTIONING_USTA) attached its fields as junk policy types. A policy type
  * whose value is undefined or null is absent.
  */
 export function attachProfilePolicies({

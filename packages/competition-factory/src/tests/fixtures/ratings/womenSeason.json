@@ -1,6 +1,6 @@
 {
   "sport": "women",
-  "policy": "POLICY_RATINGS_FIFA_WOMEN",
+  "policy": "TEMPLATE_RATINGS_FIFA_WOMEN",
   "ratingType": "ELO",
   "k": 60,
   "start": 1500,

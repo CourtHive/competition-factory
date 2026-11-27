@@ -10,9 +10,9 @@ import { expect, it, describe, beforeEach } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import {
-  POLICY_RANKING_POINTS_ATP,
-  POLICY_RANKING_POINTS_ITF_WTT,
-  POLICY_RANKING_POINTS_WTA,
+  TEMPLATE_RANKING_POINTS_ATP,
+  TEMPLATE_RANKING_POINTS_ITF_WTT,
+  TEMPLATE_RANKING_POINTS_WTA,
 } from '@courthive/competition-catalogue';
 
 // constants and fixtures
@@ -52,7 +52,7 @@ describe('Basic Ranking Points — no level required', () => {
 describe('ATP Ranking Points — requires level', () => {
   it('produces no awards without a level', () => {
     const result = tournamentEngine.getEventRankingPoints({
-      policyDefinitions: POLICY_RANKING_POINTS_ATP,
+      policyDefinitions: TEMPLATE_RANKING_POINTS_ATP,
       eventId,
     });
     // Without level, no ATP profile matches (all require levels)
@@ -62,7 +62,7 @@ describe('ATP Ranking Points — requires level', () => {
 
   it('produces awards at level 1 (Grand Slam)', () => {
     const result = tournamentEngine.getEventRankingPoints({
-      policyDefinitions: POLICY_RANKING_POINTS_ATP,
+      policyDefinitions: TEMPLATE_RANKING_POINTS_ATP,
       eventId,
       level: 1,
     });
@@ -74,7 +74,7 @@ describe('ATP Ranking Points — requires level', () => {
 
   it('produces awards at level 8 (ATP 250, 32-draw)', () => {
     const result = tournamentEngine.getEventRankingPoints({
-      policyDefinitions: POLICY_RANKING_POINTS_ATP,
+      policyDefinitions: TEMPLATE_RANKING_POINTS_ATP,
       eventId,
       level: 8,
     });
@@ -86,12 +86,12 @@ describe('ATP Ranking Points — requires level', () => {
 
   it('produces different point values at different levels', () => {
     const level1 = tournamentEngine.getEventRankingPoints({
-      policyDefinitions: POLICY_RANKING_POINTS_ATP,
+      policyDefinitions: TEMPLATE_RANKING_POINTS_ATP,
       eventId,
       level: 1,
     });
     const level8 = tournamentEngine.getEventRankingPoints({
-      policyDefinitions: POLICY_RANKING_POINTS_ATP,
+      policyDefinitions: TEMPLATE_RANKING_POINTS_ATP,
       eventId,
       level: 8,
     });
@@ -102,7 +102,7 @@ describe('ATP Ranking Points — requires level', () => {
 describe('WTA Ranking Points — requires level', () => {
   it('produces no awards without a level', () => {
     const result = tournamentEngine.getEventRankingPoints({
-      policyDefinitions: POLICY_RANKING_POINTS_WTA,
+      policyDefinitions: TEMPLATE_RANKING_POINTS_WTA,
       eventId,
     });
     expect(result.success).toBe(true);
@@ -111,7 +111,7 @@ describe('WTA Ranking Points — requires level', () => {
 
   it('produces awards at level 1 (Grand Slam)', () => {
     const result = tournamentEngine.getEventRankingPoints({
-      policyDefinitions: POLICY_RANKING_POINTS_WTA,
+      policyDefinitions: TEMPLATE_RANKING_POINTS_WTA,
       eventId,
       level: 1,
     });
@@ -123,7 +123,7 @@ describe('WTA Ranking Points — requires level', () => {
 
   it('produces awards at level 5 (WTA 250)', () => {
     const result = tournamentEngine.getEventRankingPoints({
-      policyDefinitions: POLICY_RANKING_POINTS_WTA,
+      policyDefinitions: TEMPLATE_RANKING_POINTS_WTA,
       eventId,
       level: 5,
     });
@@ -182,7 +182,7 @@ describe('ITF World Tennis Tour — qualifying-only policy', () => {
     // ITF WTT policy ONLY awards points for QUALIFYING stages.
     // A standard SE tournament with no qualifying draw will never produce points.
     const result = tournamentEngine.getEventRankingPoints({
-      policyDefinitions: POLICY_RANKING_POINTS_ITF_WTT,
+      policyDefinitions: TEMPLATE_RANKING_POINTS_ITF_WTT,
       eventId,
       level: 1,
     });
@@ -209,7 +209,7 @@ describe('ITF World Tennis Tour — qualifying-only policy', () => {
     const qEventId = generated.eventIds[0];
 
     const result = tournamentEngine.getEventRankingPoints({
-      policyDefinitions: POLICY_RANKING_POINTS_ITF_WTT,
+      policyDefinitions: TEMPLATE_RANKING_POINTS_ITF_WTT,
       eventId: qEventId,
       level: 1,
     });
@@ -242,14 +242,14 @@ describe('ITF World Tennis Tour — qualifying-only policy', () => {
 
     // Level 1 ($25K +H): Qualifier = 4 pts
     const level1 = tournamentEngine.getEventRankingPoints({
-      policyDefinitions: POLICY_RANKING_POINTS_ITF_WTT,
+      policyDefinitions: TEMPLATE_RANKING_POINTS_ITF_WTT,
       eventId: qEventId,
       level: 1,
     });
 
     // Level 4 ($15K): Qualifier = 2 pts
     const level4 = tournamentEngine.getEventRankingPoints({
-      policyDefinitions: POLICY_RANKING_POINTS_ITF_WTT,
+      policyDefinitions: TEMPLATE_RANKING_POINTS_ITF_WTT,
       eventId: qEventId,
       level: 4,
     });

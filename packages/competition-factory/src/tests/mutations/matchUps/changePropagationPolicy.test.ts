@@ -1,5 +1,5 @@
 import { getDrawDefinition, projectDraw, stableHash } from '@Tests/testHarness/exitPropagation/transitions';
-import { POLICY_SCORING_USTA } from '@courthive/competition-catalogue';
+import { TEMPLATE_SCORING_USTA } from '@courthive/competition-catalogue';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -159,7 +159,7 @@ it.each([
  * and under a policy that propagates retirements it also writes a WALKOVER into a consolation
  * matchUp. Correcting it therefore has to move an exit as well as a winner.
  *
- * Run under `POLICY_SCORING_USTA`, which sets `propagateExitStatus` and `propagateRetirementAsExit`
+ * Run under `TEMPLATE_SCORING_USTA`, which sets `propagateExitStatus` and `propagateRetirementAsExit`
  * together, so the correction is exercised where the retirement actually carries.
  */
 it('a retirement entered against the wrong player can be corrected, and the carried exit follows', () => {
@@ -172,7 +172,7 @@ it('a retirement entered against the wrong player can be corrected, and the carr
   });
   tournamentEngine.attachPolicies({
     policyDefinitions: {
-      [POLICY_TYPE_SCORING]: { ...POLICY_SCORING_USTA[POLICY_TYPE_SCORING], allowChangePropagation: true },
+      [POLICY_TYPE_SCORING]: { ...TEMPLATE_SCORING_USTA[POLICY_TYPE_SCORING], allowChangePropagation: true },
     },
   });
 

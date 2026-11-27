@@ -6,8 +6,8 @@ import { mocksEngine, tournamentEngine } from '../../..';
 import { defined } from '@Tests/helpers/defined';
 import { describe, expect, it } from 'vitest';
 import {
-  POLICY_RANKING_POINTS_ITF_JUNIOR,
-  POLICY_RANKING_POINTS_ITF_JUNIOR_2025,
+  TEMPLATE_RANKING_POINTS_ITF_JUNIOR,
+  TEMPLATE_RANKING_POINTS_ITF_JUNIOR_2025,
 } from '@courthive/competition-catalogue';
 
 // constants
@@ -49,8 +49,8 @@ const JUNIOR_FINALS: Record<string, number[]> = {
 const ACCESSORS = [1, 2, 4, 8, 16, 32];
 
 const POLICIES = [
-  { year: '2025', version: '2025.02', policyDefinitions: POLICY_RANKING_POINTS_ITF_JUNIOR_2025 },
-  { year: '2026', version: '2026.01', policyDefinitions: POLICY_RANKING_POINTS_ITF_JUNIOR },
+  { year: '2025', version: '2025.02', policyDefinitions: TEMPLATE_RANKING_POINTS_ITF_JUNIOR_2025 },
+  { year: '2026', version: '2026.01', policyDefinitions: TEMPLATE_RANKING_POINTS_ITF_JUNIOR },
 ];
 
 function profileNamed(policyDefinitions: any, profileName: string) {
@@ -212,7 +212,7 @@ describe('ITF Junior points from a played draw', () => {
       setState: true,
     });
 
-    const awards = eventPoints({ policyDefinitions: POLICY_RANKING_POINTS_ITF_JUNIOR, eventId, level: 4 });
+    const awards = eventPoints({ policyDefinitions: TEMPLATE_RANKING_POINTS_ITF_JUNIOR, eventId, level: 4 });
     const points = awards.map((a) => a.positionPoints).sort((a, b) => b - a);
     // W, F, 2 SF, 4 QF, 8 R16; the 16 R32 losers never won a round, so the 45 the table lists is not awarded
     expect(points).toEqual([500, 350, 250, 250, ...Array(4).fill(150), ...Array(8).fill(90)]);
@@ -227,7 +227,7 @@ describe('ITF Junior points from a played draw', () => {
       setState: true,
     });
 
-    const awards = eventPoints({ policyDefinitions: POLICY_RANKING_POINTS_ITF_JUNIOR, eventId, level: 4 });
+    const awards = eventPoints({ policyDefinitions: TEMPLATE_RANKING_POINTS_ITF_JUNIOR, eventId, level: 4 });
     const points = awards.map((a) => a.positionPoints).sort((a, b) => b - a);
     // one award per partner: 2 W, 2 F, 4 SF, 8 QF; R16 losers never won a round
     expect(points).toEqual([375, 375, 262, 262, ...Array(4).fill(187), ...Array(8).fill(112)]);
@@ -256,7 +256,7 @@ describe('ITF Junior points from a played draw', () => {
     const [winner, ...losers] = qualifierIds;
     completeMainDraw(drawId, winner);
 
-    const awards = eventPoints({ policyDefinitions: POLICY_RANKING_POINTS_ITF_JUNIOR, eventId, level: 1 });
+    const awards = eventPoints({ policyDefinitions: TEMPLATE_RANKING_POINTS_ITF_JUNIOR, eventId, level: 1 });
     const pointsOf = (participantId: string) =>
       defined(
         awards.find((a) => a.participantId === participantId),
@@ -273,8 +273,8 @@ describe('ITF Junior points from a played draw', () => {
   });
 
   it.each([
-    ['2025', POLICY_RANKING_POINTS_ITF_JUNIOR_2025],
-    ['2026', POLICY_RANKING_POINTS_ITF_JUNIOR],
+    ['2025', TEMPLATE_RANKING_POINTS_ITF_JUNIOR_2025],
+    ['2026', TEMPLATE_RANKING_POINTS_ITF_JUNIOR],
   ])('scores the %s ITF Junior Finals by playoff place', (year, policyDefinitions) => {
     const {
       eventIds: [eventId],
@@ -320,7 +320,7 @@ describe('ITF Junior points from a played draw', () => {
       setState: true,
     });
 
-    const awards2026 = eventPoints({ policyDefinitions: POLICY_RANKING_POINTS_ITF_JUNIOR, eventId, level: 8 });
+    const awards2026 = eventPoints({ policyDefinitions: TEMPLATE_RANKING_POINTS_ITF_JUNIOR, eventId, level: 8 });
     const pointsOf = (participantId: string) =>
       awards2026.find((a) => a.participantId === participantId)?.positionPoints ?? 0;
 
@@ -343,14 +343,14 @@ describe('ITF Junior points from a played draw', () => {
     expect(thirdOrFourth.some((g) => !g.winCount)).toEqual(true);
 
     // 2025 has no Round Robin to Elimination table: the elimination table cannot read a group place
-    const awards2025 = eventPoints({ policyDefinitions: POLICY_RANKING_POINTS_ITF_JUNIOR_2025, eventId, level: 8 });
+    const awards2025 = eventPoints({ policyDefinitions: TEMPLATE_RANKING_POINTS_ITF_JUNIOR_2025, eventId, level: 8 });
     expect(awards2025.some((a) => a.positionPoints === 60)).toEqual(false);
   });
 });
 
 describe('ITF Junior 2026 J60: a Lucky Loser Round Robin (Reg. 44 g)', () => {
   const withoutRule = (() => {
-    const policy: any = structuredClone(POLICY_RANKING_POINTS_ITF_JUNIOR);
+    const policy: any = structuredClone(TEMPLATE_RANKING_POINTS_ITF_JUNIOR);
     for (const profile of policy[POLICY_TYPE_RANKING_POINTS].awardProfiles) delete profile.luckyLoserRoundRobin;
     return policy;
   })();
@@ -361,14 +361,14 @@ describe('ITF Junior 2026 J60: a Lucky Loser Round Robin (Reg. 44 g)', () => {
       eventPoints({ policyDefinitions, eventId, level: 8 }).find((a) => a.participantId === luckyLoserId)
         ?.positionPoints;
 
-    expect(pointsOf(POLICY_RANKING_POINTS_ITF_JUNIOR)).toEqual(5);
+    expect(pointsOf(TEMPLATE_RANKING_POINTS_ITF_JUNIOR)).toEqual(5);
     // the contrast: without the rule the quarterfinal loss would score
     expect(pointsOf(withoutRule)).toEqual(10);
   });
 
   it('wins the quarterfinal: earns semifinal points or better', () => {
     const { eventId, luckyLoserId } = drawWithLuckyLoser({ luckyLoserWinsQuarterfinal: true });
-    const award = eventPoints({ policyDefinitions: POLICY_RANKING_POINTS_ITF_JUNIOR, eventId, level: 8 }).find(
+    const award = eventPoints({ policyDefinitions: TEMPLATE_RANKING_POINTS_ITF_JUNIOR, eventId, level: 8 }).find(
       (a) => a.participantId === luckyLoserId,
     );
     expect([60, 36, 18]).toContain(award?.positionPoints);
@@ -427,7 +427,7 @@ describe('ITF Junior International Team Competitions (level 3)', () => {
     }
     expect(classificationWins).toBeGreaterThan(0);
 
-    const awards = eventPoints({ policyDefinitions: POLICY_RANKING_POINTS_ITF_JUNIOR, eventId, level: 3 });
+    const awards = eventPoints({ policyDefinitions: TEMPLATE_RANKING_POINTS_ITF_JUNIOR, eventId, level: 3 });
     const actual: Record<string, number> = {};
     for (const award of awards.filter((a) => a.linePoints)) {
       expect(actual[award.personId]).toBeUndefined(); // one result per player
@@ -438,7 +438,7 @@ describe('ITF Junior International Team Competitions (level 3)', () => {
   });
 
   it('counts an ITC result among the six best singles results', () => {
-    const aggregationRules = POLICY_RANKING_POINTS_ITF_JUNIOR[POLICY_TYPE_RANKING_POINTS].aggregationRules;
+    const aggregationRules = TEMPLATE_RANKING_POINTS_ITF_JUNIOR[POLICY_TYPE_RANKING_POINTS].aggregationRules;
     const pointAwards = [
       { personId: 'p', eventType: SINGLES, level: 4, positionPoints: 250, endDate: '2026-06-01' },
       { personId: 'p', eventType: TEAM_EVENT, level: 3, linePoints: 95, endDate: '2026-06-01' },
@@ -449,7 +449,7 @@ describe('ITF Junior International Team Competitions (level 3)', () => {
 });
 
 describe('ITF Junior combined ranking: doubles count at a quarter', () => {
-  const aggregationRules = POLICY_RANKING_POINTS_ITF_JUNIOR[POLICY_TYPE_RANKING_POINTS].aggregationRules;
+  const aggregationRules = TEMPLATE_RANKING_POINTS_ITF_JUNIOR[POLICY_TYPE_RANKING_POINTS].aggregationRules;
 
   function award(eventType: string, positionPoints: number, endDate = '2026-06-01') {
     return { personId: 'p1', eventType, positionPoints, points: positionPoints, level: 4, endDate };
@@ -511,7 +511,7 @@ describe('ITF Junior combined ranking: doubles count at a quarter', () => {
 });
 
 describe('ITF Junior ties: the Reg. 11 countback', () => {
-  const aggregationRules = POLICY_RANKING_POINTS_ITF_JUNIOR[POLICY_TYPE_RANKING_POINTS].aggregationRules;
+  const aggregationRules = TEMPLATE_RANKING_POINTS_ITF_JUNIOR[POLICY_TYPE_RANKING_POINTS].aggregationRules;
   const asOfDate = '2026-07-01';
 
   function award(personId: string, eventType: string, level: number, points: number) {

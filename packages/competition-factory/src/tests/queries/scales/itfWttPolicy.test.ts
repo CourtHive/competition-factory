@@ -1,4 +1,4 @@
-import { POLICY_RANKING_POINTS_ITF_WTT } from '@courthive/competition-catalogue';
+import { TEMPLATE_RANKING_POINTS_ITF_WTT } from '@courthive/competition-catalogue';
 import { getAwardProfile } from '@Query/scales/getAwardProfile';
 import { describe, expect, it } from 'vitest';
 
@@ -7,7 +7,7 @@ import { QUALIFYING, SINGLE_ELIMINATION, MAIN } from '@Constants/drawDefinitionC
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { SINGLES, DOUBLES } from '@Constants/eventConstants';
 
-const policyDefinitions = POLICY_RANKING_POINTS_ITF_WTT;
+const policyDefinitions = TEMPLATE_RANKING_POINTS_ITF_WTT;
 const policy = policyDefinitions[POLICY_TYPE_RANKING_POINTS];
 
 describe('ITF WTT 2020 Policy Structure', () => {

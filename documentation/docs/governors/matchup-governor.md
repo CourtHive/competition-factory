@@ -1149,7 +1149,7 @@ on the call. The other five are read only from a policy attached to the tourname
 **The policy governs, both ways.** A scoring policy that sets one of the first three to `true` or
 `false` overrides the value passed on the call. The call decides only where the policy is silent
 (since 7.5.0). The resolution is `policy ?? param ?? default`. `POLICY_SCORING_DEFAULT` is silent on
-all three. `POLICY_SCORING_USTA` sets both exit flags to `true`. See
+all three. `TEMPLATE_SCORING_USTA` sets both exit flags to `true`. See
 [Scoring Policy](../policies/scoringPolicy.md).
 
 #### Settings read from an attached policy
@@ -1164,7 +1164,7 @@ all three. `POLICY_SCORING_USTA` sets both exit flags to `true`. See
 
 `POLICY_SCORING_DEFAULT` sets `requireParticipantsForScoring: false`, so a tournament with it
 attached can score a matchUp that is missing a participant. `POLICY_PROGRESSION_DEFAULT` sets the
-four progression values shown in the table. `POLICY_PROGRESSION_USTA` differs from it only in
+four progression values shown in the table. `TEMPLATE_PROGRESSION_USTA` differs from it only in
 `doubleExitPropagateBye: false`: USTA requires a produced `WALKOVER`, not a BYE, in the linked structure.
 
 **How the exit settings are tested.** Since 7.0.0 an

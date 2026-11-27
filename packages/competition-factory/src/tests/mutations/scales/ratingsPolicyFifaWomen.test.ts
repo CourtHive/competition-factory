@@ -1,4 +1,4 @@
-import { POLICY_RATINGS_FIFA_WOMEN } from '@courthive/competition-catalogue';
+import { TEMPLATE_RATINGS_FIFA_WOMEN } from '@courthive/competition-catalogue';
 import { expectedResult } from '@Helpers/ratings/ratingUpdate';
 import { ratedResultOf } from '@Query/scales/ratedResult';
 import { mocksEngine } from '@Assemblies/engines/mock';
@@ -13,7 +13,7 @@ import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 // FIFA's women's ranking ("Women's ranking procedures", April 2023), against the document's own numbers
 
-const WOMEN = POLICY_RATINGS_FIFA_WOMEN[POLICY_TYPE_RATINGS];
+const WOMEN = TEMPLATE_RATINGS_FIFA_WOMEN[POLICY_TYPE_RATINGS];
 const SOCCER = 'HAL2A-S:T45';
 
 function actualsOf(side1: number, side2: number) {
