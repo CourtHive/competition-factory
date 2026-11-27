@@ -4,14 +4,14 @@ import { findMatchUp } from '@Acquire/findMatchUp';
 
 // constants and types
 import { ErrorType, MISSING_MATCHUP, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
-import { DrawDefinition, Event, Participant, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, MatchUp, Participant, Tournament } from '@Types/tournamentTypes';
 import { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';
 import { EXPLICIT, HomeParticipantBasis, HOST_ORGANISATION, NONE, VENUE } from '@Constants/homeParticipantConstants';
 
 type ResolveHomeParticipantIdArgs = {
   /** A hydrated matchUp ({ inContext: true }); when absent it is found from `matchUpId`. */
-  matchUp?: HydratedMatchUp;
+  matchUp?: MatchUp | HydratedMatchUp;
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
   matchUpId?: string;
@@ -46,8 +46,8 @@ type SideParticipant = Participant | HydratedParticipant;
 export function resolveHomeParticipantId(
   params: ResolveHomeParticipantIdArgs,
 ): (ResolvedHomeParticipant & { success: boolean }) | { error: ErrorType } {
-  const { matchUp, error } = params.matchUp?.hasContext
-    ? { matchUp: params.matchUp, error: undefined }
+  const { matchUp, error } = (params.matchUp as HydratedMatchUp | undefined)?.hasContext
+    ? { matchUp: params.matchUp as HydratedMatchUp, error: undefined }
     : resolve(params);
   if (error || !matchUp) return { error: error ?? MISSING_MATCHUP };
 

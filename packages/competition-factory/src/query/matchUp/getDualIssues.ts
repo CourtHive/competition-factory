@@ -7,7 +7,7 @@ import { findMatchUp } from '@Acquire/findMatchUp';
 
 // constants and types
 import { completedMatchUpStatuses, COMPLETED, DEFAULTED, RETIRED } from '@Constants/matchUpStatusConstants';
-import { CollectionDefinition, DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { CollectionDefinition, DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import type { HydratedMatchUp, HydratedParticipant, HydratedSide } from '@Types/hydrated';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
 import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
@@ -43,7 +43,7 @@ export type DualIssue = {
 
 type GetDualIssuesArgs = {
   /** a TEAM dual, hydrated ({ inContext: true }); when absent it is found from `matchUpId` */
-  matchUp?: HydratedMatchUp;
+  matchUp?: MatchUp | HydratedMatchUp;
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
   matchUpId?: string;
@@ -63,8 +63,8 @@ export function getDualIssues(params: GetDualIssuesArgs): {
   success?: boolean;
   error?: ErrorType;
 } {
-  const { matchUp, error } = params.matchUp?.hasContext
-    ? { matchUp: params.matchUp, error: undefined }
+  const { matchUp, error } = (params.matchUp as HydratedMatchUp | undefined)?.hasContext
+    ? { matchUp: params.matchUp as HydratedMatchUp, error: undefined }
     : resolve(params);
   if (error || !matchUp) return { error: error ?? MISSING_MATCHUP };
   if (!Array.isArray(matchUp.tieMatchUps)) return { error: INVALID_VALUES };

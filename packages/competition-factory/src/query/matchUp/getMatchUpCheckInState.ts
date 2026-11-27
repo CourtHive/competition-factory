@@ -4,7 +4,7 @@ import { findMatchUp } from '@Acquire/findMatchUp';
 
 // constants and types
 import { ErrorType, MISSING_MATCHUP, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
-import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { HydratedMatchUp, HydratedSide } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -28,7 +28,7 @@ export type MatchUpCheckInState = {
 
 type GetMatchUpCheckInStateArgs = {
   /** A hydrated matchUp ({ inContext: true }); when absent it is found from `matchUpId`. */
-  matchUp?: HydratedMatchUp;
+  matchUp?: MatchUp | HydratedMatchUp;
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
   matchUpId?: string;
@@ -49,8 +49,8 @@ type GetMatchUpCheckInStateArgs = {
 export function getMatchUpCheckInState(
   params: GetMatchUpCheckInStateArgs,
 ): (MatchUpCheckInState & { success: boolean }) | { error: ErrorType } {
-  const { matchUp, error } = params.matchUp?.hasContext
-    ? { matchUp: params.matchUp, error: undefined }
+  const { matchUp, error } = (params.matchUp as HydratedMatchUp | undefined)?.hasContext
+    ? { matchUp: params.matchUp as HydratedMatchUp, error: undefined }
     : resolve(params);
   if (error || !matchUp) return { error: error ?? MISSING_MATCHUP };
 
