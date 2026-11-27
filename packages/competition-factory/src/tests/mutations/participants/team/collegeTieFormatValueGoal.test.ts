@@ -37,13 +37,18 @@ function playDual({ tieFormat, side1Wins }: { tieFormat: any; side1Wins: number 
   const doubles = tie.tieMatchUps.filter(({ matchUpType }) => matchUpType === DOUBLES);
   const singles = tie.tieMatchUps.filter(({ matchUpType }) => matchUpType !== DOUBLES);
 
+  // the collections as the record holds them, with the collectionIds the engine minted: the tieFormat handed in
+  // carries none
+  const { event, drawDefinition } = tournamentEngine.getEvent({ drawId: 'drawId' });
+  const stored: any = drawDefinition?.tieFormat ?? event?.tieFormat;
+
   // side 1 takes the doubles point (2 of 3) plus (side1Wins - 1) singles
   const winners = new Set([...doubles.slice(0, 2), ...singles.slice(0, side1Wins - 1)].map((l: any) => l.matchUpId));
 
   for (const line of tie.tieMatchUps) {
     const winningSide = winners.has(line.matchUpId) ? 1 : 2;
     // each line is scored in its collection's format: a one-set doubles line is 6-1, a singles line 6-1 6-1
-    const { matchUpFormat } = tieFormat.collectionDefinitions.find((c: any) => c.collectionId === line.collectionId);
+    const { matchUpFormat } = stored.collectionDefinitions.find((c: any) => c.collectionId === line.collectionId);
     const { outcome } = mocksEngine.generateOutcomeFromScoreString({
       scoreString: matchUpFormat.startsWith('SET1') ? '6-1' : '6-1 6-1',
       matchUpFormat,
