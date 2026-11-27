@@ -1,6 +1,6 @@
 import asyncGlobalState from '@Server/providers/factory/engines/asyncGlobalState';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { setStateProvider, setSubscriptions } from '@Global/state/globalState';
+import { getOutcomePipeline, setStateProvider, setSubscriptions } from '@Global/state/globalState';
 import { takeUnitTally } from '@Mutate/matchUps/outcome/plan/recordedUnit';
 import { useEngineCatch } from '@Tests/testHarness/engineCatch';
 import syncGlobalState from '@Global/state/syncGlobalState';
@@ -94,11 +94,13 @@ describe('one bulk outcome is one unit', () => {
     expect(result.results.map((entry: any) => entry.success ?? entry.error)).toEqual([true, FORCED, true]);
     expect(stored(b)).toEqual(before);
     expect([stored(a).winningSide, stored(c).winningSide]).toEqual([1, 1]);
-    // under v2 the two valid items are v2's own calls (`native`); the refused one, which v2 leaves to v1, is planned on a
-    // copy and refused there. Under v1 and differential every item is planned on a copy
+    // under v2 every item is v2's own call (`native`): the refused one is refused from v1's run on a copy
+    // (`plan/recordedCall.ts`) before the stored record is written. Under v1 and differential every item is planned on
+    // a copy by the bulk writer, and the refused one is refused there
     const tally = takeUnitTally();
-    expect(tally.native + tally.owned).toEqual(2);
-    expect(tally).toMatchObject({ refused: 1, rehearsed: 0 });
+    const v2 = getOutcomePipeline() === 'v2';
+    expect(tally.native + tally.owned).toEqual(v2 ? 3 : 2);
+    expect(tally).toMatchObject({ refused: v2 ? 0 : 1, rehearsed: 0 });
   });
 
   it('the same inside an executionQueue without rollback', () => {
