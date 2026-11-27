@@ -76,9 +76,11 @@ function getEventDataUnredacted(params: GetEventDataArgs): EventDataResult {
 
   const tournamentRecord = makeDeepCopy(params.tournamentRecord, false, true);
   const foundEvent = params.event == null ? findEvent({ tournamentRecord, eventId: params.eventId }).event : undefined;
+  /* eslint-disable @typescript-eslint/prefer-nullish-coalescing -- unchanged: a falsy copy reads as undefined */
   const event = params.event
     ? makeDeepCopy(params.event, false, true)
     : (foundEvent && makeDeepCopy(foundEvent, false, true)) || undefined;
+  /* eslint-enable @typescript-eslint/prefer-nullish-coalescing */
 
   if (!event) return { error: EVENT_NOT_FOUND };
 
@@ -232,7 +234,7 @@ function getEventDataUnredacted(params: GetEventDataArgs): EventDataResult {
     endDate,
     ballType,
     discipline,
-  }) => {
+  }: Event & Pick<EventInfo, 'ballType'>) => {
     return {
       eventId,
       eventName,

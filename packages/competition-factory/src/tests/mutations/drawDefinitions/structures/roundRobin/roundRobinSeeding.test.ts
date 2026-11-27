@@ -60,7 +60,9 @@ it.each(scenarios)('can seed drawType: ROUND_ROBIN', (scenario) => {
   const structure = drawDefinition.structures[0];
   const structureId = structure.structureId;
 
-  const participantDetails = {};
+  const participantDetails: {
+    [participantId: string]: { drawPosition?: number; seedNumber?: number; seedValue?: unknown };
+  } = {};
 
   const { positionAssignments } = tournamentEngine.getPositionAssignments({
     structureId,

@@ -46,7 +46,12 @@ function seedsOnlyDraw(participantsCount = 16) {
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
     drawProfiles: [
-      { drawSize: nextPowerOf2(participantsCount), participantsCount, seedsCount: 4, automated: { seedsOnly: true } },
+      {
+        drawSize: Number(nextPowerOf2(participantsCount)),
+        participantsCount,
+        seedsCount: 4,
+        automated: { seedsOnly: true },
+      },
     ],
     participantsProfile: { participantsCount },
     setState: true,

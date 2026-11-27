@@ -5,6 +5,7 @@ import { unique } from '@Tools/arrays';
 // constants and types
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Event, Participant } from '@Types/tournamentTypes';
+import type { HydratedMatchUp } from '@Types/hydrated';
 
 type GetParticipantIdMatchUps = {
   tournamentParticipants?: Participant[];
@@ -21,19 +22,19 @@ export function getParticipantIdMatchUps({ tournamentParticipants, drawDefinitio
     event,
   });
 
-  const allMatchUps = makeDeepCopy(result.matchUps, false, true);
+  const allMatchUps: HydratedMatchUp[] = makeDeepCopy(result.matchUps, false, true)!;
 
   const participantIds = unique(
     allMatchUps.reduce((participantIds, matchUp) => {
-      return participantIds.concat(...matchUp.sides.map((side) => side.participantId).filter(Boolean));
-    }, []),
+      return participantIds.concat(...matchUp.sides!.map((side) => side.participantId!).filter(Boolean));
+    }, [] as string[]),
   );
 
   const participantIdMatchUps = Object.assign(
     {},
     ...participantIds.map((participantId) => {
       const matchUps = allMatchUps.filter((matchUp) => {
-        const participantIds = matchUp.sides.map((side) => side.participantId).filter(Boolean);
+        const participantIds = matchUp.sides!.map((side) => side.participantId).filter(Boolean);
         return participantIds.includes(participantId);
       });
       return { [participantId]: matchUps };

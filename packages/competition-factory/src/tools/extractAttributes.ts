@@ -3,7 +3,8 @@ import { getAccessorValue } from './getAccessorValue';
 // extracts targeted attributes
 // e.g. const byeAssignments = positionAssignments.filter(xa('bye')).map(xa('drawPosition'));
 // supports xa('string'), xa(['string', 'string']), xa({ attr1: true, attr2: true })
-export const extractAttributes = (accessor) => (element) =>
+type Accessor = string | string[] | { [key: string]: unknown };
+export const extractAttributes = (accessor?: Accessor) => (element: unknown) =>
   !accessor || typeof element !== 'object'
     ? undefined
     : (Array.isArray(accessor) &&

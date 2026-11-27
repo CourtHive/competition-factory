@@ -406,6 +406,13 @@ function unreadableFormat(matchUpFormat: unknown): boolean {
 }
 
 export function validateSetScore(
+  set: unknown,
+  matchUpFormat?: string,
+  isDecidingSet?: boolean,
+  allowIncomplete?: boolean,
+): { isValid: boolean; error?: string };
+// eslint-disable-next-line no-redeclare -- overload implementation
+export function validateSetScore(
   set: any,
   matchUpFormat?: string,
   isDecidingSet?: boolean,

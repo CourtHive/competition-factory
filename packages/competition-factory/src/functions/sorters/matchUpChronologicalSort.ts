@@ -1,5 +1,3 @@
-import { HydratedMatchUp } from '@Types/hydrated';
-
 /**
  * Sort matchUps by (scheduledDate, scheduledTime) when BOTH compared
  * matchUps carry the relevant field; otherwise return 0 so a stable
@@ -13,7 +11,10 @@ import { HydratedMatchUp } from '@Types/hydrated';
  * comparator must be a no-op so input order — typically the canonical
  * `matchUpSort` ordering — survives.
  */
-export function matchUpChronologicalSort(a: HydratedMatchUp, b: HydratedMatchUp): number {
+/** The fields the sort reads; a HydratedMatchUp (or any matchUp) satisfies it. */
+type ChronologicalSortKeys = { schedule?: { scheduledDate?: string; scheduledTime?: string } | null };
+
+export function matchUpChronologicalSort(a: ChronologicalSortKeys, b: ChronologicalSortKeys): number {
   const aDate = a?.schedule?.scheduledDate;
   const bDate = b?.schedule?.scheduledDate;
   const aTime = a?.schedule?.scheduledTime;

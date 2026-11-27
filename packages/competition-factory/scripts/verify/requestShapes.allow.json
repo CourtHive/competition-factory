@@ -16,9 +16,6 @@
     "CallListenerArgs.notices": "Deprecated back-compat alias for payloads, slated for removal in a future major. Typing a field on its way out is wasted motion.",
     "HandleCaughtErrorArgs.params": "The arbitrary argument object of whichever engine method threw.",
     "HandleCaughtErrorArgs.err": "A caught value. TypeScript types `catch` bindings as `unknown` or `any` by design and this is that value.",
-    "AddCourtsArgs.courtTimings": "Per-court timing overrides, indexed by court ordinal (addCourt.ts:166) and spread into a per-date availability object, so the shape is whatever the caller supplies. `addCourts` is a PUBLIC engine method (factoryEngineMethods.ts, venueGovernor/mutate.ts), so typing it would both invent a contract that was never authored and be a consumer-build break. An earlier reason here claimed the mocks surface was the only producer \u2014 that was wrong, and being public is the stronger argument for authoring the shape deliberately rather than inferring it.",
-    "BuildTournamentRecordArgs.eventDataDocs": "Raw provider documents from an external source system. The builder's contract is that it accepts whatever the source emits.",
-    "BuildTournamentRecordArgs.matchUpDocs": "Raw provider documents; see eventDataDocs.",
-    "BuildTournamentRecordArgs.participantDocs": "Raw provider documents; see eventDataDocs."
+    "AddCourtsArgs.courtTimings": "Per-court timing overrides, indexed by court ordinal (addCourt.ts:166) and spread into a per-date availability object, so the shape is whatever the caller supplies. `addCourts` is a PUBLIC engine method (factoryEngineMethods.ts, venueGovernor/mutate.ts), so typing it would both invent a contract that was never authored and be a consumer-build break. An earlier reason here claimed the mocks surface was the only producer \u2014 that was wrong, and being public is the stronger argument for authoring the shape deliberately rather than inferring it."
   }
 }

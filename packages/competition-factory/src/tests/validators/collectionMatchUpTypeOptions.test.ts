@@ -1,3 +1,4 @@
+import { defined } from '@Tests/helpers/defined';
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { validateCollectionDefinition } from '@Validators/validateCollectionDefinition';
 import { compareTieFormats } from '@Query/hierarchical/tieFormats/compareTieFormats';
@@ -106,7 +107,7 @@ it('copies and JSON-round-trips options independently of the original collection
   const json = JSON.stringify(copied);
   const reloaded = JSON.parse(json);
   expect(reloaded.collectionDefinitions[0].matchUpTypeOptions).toEqual([SINGLES, DOUBLES]);
-  copied.collectionDefinitions[0].matchUpTypeOptions.reverse();
+  defined(copied.collectionDefinitions[0].matchUpTypeOptions).reverse();
   expect(first.collectionDefinitions[0].matchUpTypeOptions).toEqual([SINGLES, DOUBLES]);
 });
 

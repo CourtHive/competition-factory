@@ -1,3 +1,4 @@
+import { defined } from '@Tests/helpers/defined';
 import { completeMatchUp, verifyMatchUps } from '@Tests/mutations/drawDefinitions/primitives/verifyMatchUps';
 import { generateFMLC } from '@Tests/mutations/drawDefinitions/primitives/firstMatchLoserConsolation';
 import { verifyStructure } from '@Tests/mutations/drawDefinitions/primitives/verifyStructure';
@@ -303,7 +304,7 @@ it('can direct winners and losers', () => {
     drawDefinition,
     matchUpId,
   });
-  const { matchUpStatus } = fetchedMatchUp;
+  const { matchUpStatus } = defined(fetchedMatchUp);
   expect(matchUpStatus).toEqual(RETIRED);
 });
 

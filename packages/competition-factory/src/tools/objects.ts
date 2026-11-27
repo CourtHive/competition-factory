@@ -2,7 +2,7 @@ export function isFunction(obj) {
   return typeof obj === 'function';
 }
 
-export function isString(obj) {
+export function isString(obj: unknown): obj is string {
   return typeof obj === 'string';
 }
 
@@ -28,6 +28,13 @@ export function objShallowEqual(o1, o2) {
   return true;
 }
 
+export function createMap<A extends readonly unknown[]>(
+  objectArray: A | null | undefined,
+  attribute: string,
+): { [key: string]: A[number] };
+// eslint-disable-next-line no-redeclare -- TypeScript overload, not a second implementation
+export function createMap(objectArray: unknown, attribute: string): { [key: string]: unknown };
+// eslint-disable-next-line no-redeclare -- overload implementation
 export function createMap(objectArray, attribute) {
   if (!Array.isArray(objectArray)) return {};
 
@@ -47,7 +54,8 @@ export function createMap(objectArray, attribute) {
 }
 
 // e.g. result.find(hav({ attr: value })) -or- result.filter(hav({ attr: value }))
-export const hasAttributeValues = (a) => (o) => Object.keys(a).every((key) => o[key] === a[key]);
+type Obj = { [key: string]: unknown };
+export const hasAttributeValues = (a: Obj) => (o: unknown) => Object.keys(a).every((key) => (o as Obj)[key] === a[key]);
 export const hav = hasAttributeValues;
 
 // useful in notifications where back end does not recognize undefined for updates
@@ -88,7 +96,7 @@ function countKeys(o) {
   return 0;
 }
 
-export function generateHashCode(o) {
+export function generateHashCode(o: unknown): string | undefined {
   if (o === null || typeof o !== 'object') return undefined;
   const str = JSON.stringify(o);
   const keyCount = countKeys(o);

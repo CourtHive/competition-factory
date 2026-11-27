@@ -151,7 +151,7 @@ function addDefinition({
   const structure = result?.structure;
   matchUp = matchUp ?? result?.matchUp;
   const existingTieFormat = matchUp?.tieFormat ?? result?.tieFormat;
-  const tieFormat = copyTieFormat(existingTieFormat);
+  const tieFormat = copyTieFormat(existingTieFormat)!;
 
   result = validateTieFormat({ tieFormat });
   if (result?.error) {

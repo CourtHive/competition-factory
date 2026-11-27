@@ -48,7 +48,7 @@ export function positionQualifiers(params) {
       });
 
     generateRange(0, unplacedRoundQualifierCounts[roundNumber]).forEach(() => {
-      const drawPosition = randomPop(unfilledDrawPositions, random);
+      const drawPosition = randomPop(unfilledDrawPositions, random)!;
       qualifierDrawPositions.push(drawPosition);
       positionAssignments?.forEach((assignment) => {
         if (assignment.drawPosition === drawPosition) {

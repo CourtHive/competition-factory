@@ -691,7 +691,7 @@ export function planScheduleItems(params: AddMatchUpScheduleItemsArgs): Schedule
           priorMatchUpIds.includes(matchUp.matchUpId),
       )
       .map(({ schedule }) => {
-        const isoDateString = getIsoDateString(schedule);
+        const isoDateString = getIsoDateString(schedule!);
         return new Date(isoDateString ?? '').getTime();
       });
 

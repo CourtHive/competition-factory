@@ -19,7 +19,7 @@ describe('stateMethods', () => {
 
       const result = setState(matchUp);
 
-      expect(result.matchUpId).toBe('m1');
+      expect(result).toHaveProperty('matchUpId', 'm1');
       expect(getMatchUp()).toEqual(matchUp);
     });
 

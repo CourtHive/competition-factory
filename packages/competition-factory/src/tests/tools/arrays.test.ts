@@ -370,7 +370,7 @@ describe('subSort', () => {
   });
 
   test('should return empty array for non-array', () => {
-    expect(subSort(null, 0, 1, (a, b) => a - b)).toEqual([]);
+    expect(subSort(null, 0, 1, (a: number, b: number) => a - b)).toEqual([]);
   });
 });
 

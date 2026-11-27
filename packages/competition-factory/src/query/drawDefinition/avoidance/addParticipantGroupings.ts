@@ -4,6 +4,7 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { GROUP, INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
 import { ParticipantsProfile } from '@Types/factoryTypes';
 import { Participant } from '@Types/tournamentTypes';
+import type { HydratedParticipant } from '@Types/hydrated';
 
 type AddParticipantGroupingsArgs = {
   participantsProfile?: ParticipantsProfile;
@@ -16,9 +17,9 @@ export function addParticipantGroupings({
   participants = [],
   deepCopy, // will skip deepCopy only if false
 }: AddParticipantGroupingsArgs) {
-  const groupMap = new Map<string, { participantId: string; participantName: string }>();
+  const groupMap = new Map<string, { participantId: string; participantName?: string }>();
 
-  const participantsWithGroupings =
+  const participantsWithGroupings: HydratedParticipant[] =
     deepCopy !== false ? makeDeepCopy(participants, participantsProfile?.convertExtensions, true) : participants;
   const teamParticipants = participantsWithGroupings.filter((participant) => participant.participantType === TEAM);
   const groupParticipants = participantsWithGroupings.filter((participant) => participant.participantType === GROUP);

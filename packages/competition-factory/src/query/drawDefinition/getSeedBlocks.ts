@@ -39,7 +39,7 @@ export function getSeedBlocks(params: GetSeedBlocksArgs): ResultType & { seedBlo
       }),
     };
 
-  const drawSize = nextPowerOf2(participantsCount);
+  const drawSize = nextPowerOf2(participantsCount) as number;
 
   if (roundRobinGroupsCount) {
     // ensure that drawSize has not already been subdivided
@@ -105,9 +105,9 @@ export function getSeedBlocks(params: GetSeedBlocksArgs): ResultType & { seedBlo
   while (remainingPositions.length) {
     // for remaining positions alternately select from bottom/top
     if (remainingPositions.length % 2 === 0) {
-      positions.push(remainingPositions.pop());
+      positions.push(remainingPositions.pop()!);
     } else {
-      positions.push(remainingPositions.shift());
+      positions.push(remainingPositions.shift()!);
     }
   }
 

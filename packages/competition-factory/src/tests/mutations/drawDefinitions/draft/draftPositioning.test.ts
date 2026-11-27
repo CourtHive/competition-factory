@@ -27,7 +27,7 @@ function getRatingForParticipant(pid: string, scaleName: string) {
 }
 
 function setupSeedsOnlyDraw({ participantsCount = 32, seedsCount = 8 } = {}) {
-  const drawSize = nextPowerOf2(participantsCount);
+  const drawSize = Number(nextPowerOf2(participantsCount));
   const drawProfiles = [{ drawSize, participantsCount, seedsCount, automated: { seedsOnly: true } }];
   const {
     tournamentRecord,
@@ -644,7 +644,7 @@ describe('Draft Positioning - Full Lifecycle', () => {
 });
 
 function setupSmallDraw({ participantsCount, seedsCount }: { participantsCount: number; seedsCount: number }) {
-  const drawSize = nextPowerOf2(participantsCount);
+  const drawSize = Number(nextPowerOf2(participantsCount));
   const drawProfiles = [{ drawSize, participantsCount, seedsCount, automated: { seedsOnly: true } }];
   const {
     tournamentRecord,
@@ -712,7 +712,7 @@ describe('Draft Positioning - Tier Methods', () => {
   it('sorts tiers by RATING when participants have scale items', () => {
     const participantsCount = 16;
     const seedsCount = 4;
-    const drawSize = nextPowerOf2(participantsCount);
+    const drawSize = Number(nextPowerOf2(participantsCount));
     const drawProfiles = [{ drawSize, participantsCount, seedsCount, automated: { seedsOnly: true } }];
     const {
       tournamentRecord,
@@ -782,7 +782,7 @@ describe('Draft Positioning - Tier Methods', () => {
   it('participants without scale values go to the last tier', () => {
     const participantsCount = 12;
     const seedsCount = 2;
-    const drawSize = nextPowerOf2(participantsCount);
+    const drawSize = Number(nextPowerOf2(participantsCount));
     const drawProfiles = [{ drawSize, participantsCount, seedsCount, automated: { seedsOnly: true } }];
     const {
       tournamentRecord,
@@ -874,7 +874,7 @@ describe('Draft Positioning - Tier Methods', () => {
   it('ascending=true puts lower values in tier 1', () => {
     const participantsCount = 12;
     const seedsCount = 2;
-    const drawSize = nextPowerOf2(participantsCount);
+    const drawSize = Number(nextPowerOf2(participantsCount));
     const drawProfiles = [{ drawSize, participantsCount, seedsCount, automated: { seedsOnly: true } }];
     const {
       tournamentRecord,
@@ -934,7 +934,7 @@ describe('Draft Positioning - Tier Methods', () => {
   it('ascending=false puts higher values in tier 1 (default for RATING)', () => {
     const participantsCount = 12;
     const seedsCount = 2;
-    const drawSize = nextPowerOf2(participantsCount);
+    const drawSize = Number(nextPowerOf2(participantsCount));
     const drawProfiles = [{ drawSize, participantsCount, seedsCount, automated: { seedsOnly: true } }];
     const {
       tournamentRecord,

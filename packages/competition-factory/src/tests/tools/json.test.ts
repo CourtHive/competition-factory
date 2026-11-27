@@ -201,7 +201,7 @@ describe('JSON2CSV', () => {
     const result = JSON2CSV(data, { returnTransformedJSON: true });
 
     expect(Array.isArray(result)).toBe(true);
-    expect(result.length).toBeGreaterThan(0);
+    expect(Array.isArray(result) && result.length).toBeGreaterThan(0);
   });
 
   test('handles removeEmptyColumns option', () => {
@@ -274,12 +274,12 @@ describe('JSON2CSV', () => {
     const data = [{ name: 'Alice' }];
 
     const result1 = JSON2CSV(data, 'invalid' as any);
-    expect(result1.error).toEqual(INVALID_VALUES);
+    expect(result1).toEqual({ error: INVALID_VALUES });
   });
 
   test('returns error for non-array input', () => {
     const result = JSON2CSV('not an array' as any);
-    expect(result.error).toEqual(INVALID_VALUES);
+    expect(result).toEqual({ error: INVALID_VALUES });
   });
 
   test('handles sortOrder option', () => {
@@ -290,7 +290,7 @@ describe('JSON2CSV', () => {
     const result = JSON2CSV(data, config);
 
     // Check that columns appear in sorted order
-    const lines = result.split('\r\n');
+    const lines = typeof result === 'string' ? result.split('\r\n') : [];
     const header = lines[0];
     const aIndex = header.indexOf('"a"');
     const bIndex = header.indexOf('"b"');

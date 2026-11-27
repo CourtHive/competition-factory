@@ -20,17 +20,17 @@ import { zeroPad } from '@Tools/dateTimeInternals';
 import { extractDate } from '@Tools/plainDate';
 
 /** Whether a value is a time (`canonicalClock.ts`: `HH:MM` and the forms that convert to it unambiguously). */
-export function isTimeString(timeString) {
+export function isTimeString(timeString: unknown): boolean {
   return canonicalTime(timeString) !== undefined;
 }
 
 /** A time as `HH:MM`, seconds discarded, a 12-hour time converted; undefined when not a time. */
-export function tidyTime(timeString): string | undefined {
+export function tidyTime(timeString: unknown): string | undefined {
   return canonicalTime(timeString);
 }
 
 /** The wall-clock part of an ISO date-time, or a bare time, as `HH:MM`; undefined when not a time. */
-export function extractTime(dateString): string | undefined {
+export function extractTime(dateString: unknown): string | undefined {
   return canonicalTime(dateString);
 }
 
@@ -52,7 +52,7 @@ export function splitTime(value) {
 }
 
 /** 12-hour display string → 24-hour `HH:MM`. */
-export function militaryTime(value?): string {
+export function militaryTime(value?: unknown): string {
   const time = splitTime(value);
   if (time.ampm && time.hours) {
     if (time.ampm.toLowerCase() === 'pm' && Number.parseInt(time.hours) < 12)
@@ -64,11 +64,11 @@ export function militaryTime(value?): string {
 }
 
 /** 24-hour `HH:MM` → 12-hour display string. */
-export function regularTime(value): string | undefined {
+export function regularTime(value: unknown): string | undefined {
   const time = splitTime(value);
   if (typeof time === 'object' && !Object.keys(time).length) return undefined;
 
-  if (time.ampm) return value;
+  if (time.ampm) return value as string;
   if (time.hours > 12) {
     time.hours -= 12;
     time.ampm = 'PM';
@@ -87,17 +87,17 @@ export function regularTime(value): string | undefined {
   return `${time.hours || '12'}:${time.minutes || '00'} ${time.ampm}`;
 }
 
-export function convertTime(value, time24?, keepDate?): string | undefined {
+export function convertTime(value: unknown, time24?: boolean, keepDate?: boolean): string | undefined {
   const hasDate = extractDate(value);
   const timeString = extractTime(value);
   const timeValue = hasDate ? timeString : value;
 
   return value
-    ? (time24 && ((hasDate && keepDate && value) || militaryTime(timeValue))) || regularTime(timeValue)
+    ? (time24 && ((hasDate && keepDate && (value as string)) || militaryTime(timeValue))) || regularTime(timeValue)
     : undefined;
 }
 
-export function validTimeValue(value) {
+export function validTimeValue(value: unknown): boolean {
   const spaceSplit = typeof value === 'string' ? value?.split(' ') : [];
   if (value && spaceSplit?.length > 1 && !['AM', 'PM'].includes(spaceSplit[1].toUpperCase())) return false;
 
@@ -119,7 +119,7 @@ export function validTimeValue(value) {
 }
 
 /** Minutes elapsed since midnight on the clock — the plainTime as a scalar. */
-export function timeStringMinutes(timeString?) {
+export function timeStringMinutes(timeString?: unknown): number {
   const validTimeString = extractTime(timeString);
   if (!validTimeString) return 0;
   const [hours, minutes] = validTimeString.split(':').map((value) => Number.parseInt(value));
@@ -127,15 +127,15 @@ export function timeStringMinutes(timeString?) {
 }
 
 /** Minutes since midnight → `HH:MM`, wrapping past 24h rather than overflowing. */
-export function dayMinutesToTimeString(totalMinutes): string {
+export function dayMinutesToTimeString(totalMinutes: number): string {
   let hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes - hours * 60;
   if (hours > 23) hours = hours % 24;
   return [zeroPad(hours), zeroPad(minutes)].join(':');
 }
 
-export function HHMMSS(s, format?): string {
-  const secondNumber = Number.parseInt(s, 10); // don't forget the second param
+export function HHMMSS(s: number | string, format?: { displaySeconds?: boolean }): string {
+  const secondNumber = Number.parseInt(s as string, 10); // don't forget the second param
   const hours = Math.floor(secondNumber / 3600);
   const minutes = Math.floor((secondNumber - hours * 3600) / 60);
   const seconds = secondNumber - hours * 3600 - minutes * 60;
@@ -145,7 +145,7 @@ export function HHMMSS(s, format?): string {
   return timeString.split(':').map(zeroPad).join(':');
 }
 
-export function timeSort(a, b) {
+export function timeSort(a: unknown, b: unknown): number {
   const as = splitTime(a);
   const bs = splitTime(b);
   if (Number.parseInt(as.hours) < Number.parseInt(bs.hours)) return -1;
@@ -157,7 +157,25 @@ export function timeSort(a, b) {
   return 0;
 }
 
-export const plainTime = {
+/** A time's parts as `splitTime` reads them, as strings; empty when the value is not a time. */
+type SplitTime = { hours?: string; minutes?: string; ampm?: string };
+
+type PlainTime = {
+  dayMinutesToTimeString: typeof dayMinutesToTimeString;
+  timeStringMinutes: typeof timeStringMinutes;
+  validTimeValue: typeof validTimeValue;
+  militaryTime: typeof militaryTime;
+  isTimeString: typeof isTimeString;
+  regularTime: typeof regularTime;
+  convertTime: typeof convertTime;
+  extractTime: typeof extractTime;
+  splitTime: (value: unknown) => SplitTime;
+  timeSort: typeof timeSort;
+  tidyTime: typeof tidyTime;
+  HHMMSS: typeof HHMMSS;
+};
+
+export const plainTime: PlainTime = {
   dayMinutesToTimeString,
   timeStringMinutes,
   validTimeValue,

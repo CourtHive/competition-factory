@@ -73,10 +73,10 @@ it('can generate H2H reports with Competitors In Common', () => {
   });
 
   // enxure code coverage
-  chunkArray(participants, 2).forEach((participants) => {
+  chunkArray(participants, 2).forEach(([participant1, participant2]) => {
     h2h = participantHeadToHead({
       mappedMatchUps,
-      participants,
+      participants: [participant1, participant2],
     }).h2h;
   });
 }, 0);

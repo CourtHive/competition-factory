@@ -14,6 +14,7 @@ import { ensureInt } from '@Tools/ensureInt';
 
 // Constants
 import { INCOMPLETE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import type { MatchUpStatusUnion, Set as SetType } from '@Types/tournamentTypes';
 import {
   SET_TIEBREAK_BRACKETS,
   MATCH_TIEBREAK_BRACKETS,
@@ -226,7 +227,35 @@ function finalizeUpdatedScore({ sets, winningSide, matchUpStatus, matchUpFormat,
   return { updated: true, scoreString, sets, winningSide, matchUpStatus, info };
 }
 
+type KeyValueScoreArgs = {
+  /** the key pressed; a key that is not a score key is refused with `info: 'invalid key'` */
+  value: unknown;
+  matchUpFormat?: string;
+  /** '' reads as no status */
+  matchUpStatus?: MatchUpStatusUnion | '';
+  winningSide?: number;
+  scoreString?: string;
+  /** the side that a plain key scores for, 1 or 2 */
+  lowSide?: number;
+  shiftFirst?: boolean;
+  sets?: SetType[];
+  auto?: boolean;
+  /** accepted and not read */
+  checkFormat?: unknown;
+};
+
+type KeyValueScoreResult = {
+  updated: boolean;
+  matchUpStatus?: MatchUpStatusUnion;
+  winningSide?: number;
+  scoreString?: string;
+  sets?: SetType[];
+  info?: string;
+};
+
 /* shiftFirst indicates that SHIFT key refers to first opponent, rather than second */
+export function keyValueScore(params: KeyValueScoreArgs): KeyValueScoreResult;
+// eslint-disable-next-line no-redeclare -- overload implementation
 export function keyValueScore(params) {
   let { lowSide = 1, value } = params;
   let { scoreString, sets, winningSide, matchUpStatus } = params;

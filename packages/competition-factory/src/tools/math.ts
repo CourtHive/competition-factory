@@ -3,6 +3,8 @@ import { randomSource } from '@Tools/prng';
 import { ensureInt } from './ensureInt';
 import { numericSort } from './sorting';
 
+export function isPowerOf2(n?: unknown): boolean;
+// eslint-disable-next-line no-redeclare -- overload implementation
 export function isPowerOf2(n?) {
   if (Number.isNaN(Number(n))) return false;
   return n > 0 && (n & (n - 1)) === 0;
@@ -32,17 +34,25 @@ export function coerceEven(n) {
   return Number.isNaN(Number(n)) ? 0 : (n % 2 && n + 1) || n;
 }
 
-export function nearestPowerOf2(val) {
+export function nearestPowerOf2(val: number): number {
   return Math.pow(2, Math.round(Math.log(val) / Math.log(2)));
 }
 
-export function isOdd(num) {
+export function isOdd(num: unknown): boolean | undefined {
   const numInt = ensureInt(num);
   if (Number.isNaN(numInt)) return undefined;
   if (numInt === 0) return false;
   return (numInt & -numInt) === 1;
 }
 
+/**
+ * The smallest power of 2 at or above `n`; false when `n` is not a number. A numeric string that is already a power of
+ * 2 is returned as given.
+ */
+export function nextPowerOf2(n: number): number | false;
+// eslint-disable-next-line no-redeclare -- TypeScript overload, not a second implementation
+export function nextPowerOf2(n?: unknown): number | string | false;
+// eslint-disable-next-line no-redeclare -- overload implementation
 export function nextPowerOf2(n?) {
   if (Number.isNaN(Number(n))) return false;
   while (!isPowerOf2(n)) {

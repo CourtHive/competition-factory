@@ -1,3 +1,4 @@
+import { defined } from '@Tests/helpers/defined';
 import { generateFMLC } from '@Tests/mutations/drawDefinitions/primitives/firstMatchLoserConsolation';
 import { completeMatchUp } from '@Tests/mutations/drawDefinitions/primitives/verifyMatchUps';
 import { POLICY_SEEDING_ITF as SEEDING_ITF } from '@courthive/competition-catalogue';
@@ -26,9 +27,11 @@ it('can support ITF Consolation BYE placement', () => {
   } = getDrawStructures({ drawDefinition, stage: MAIN, stageSequence: 1 });
   const roundPositionReadyToScore =
     Math.max(
-      ...chunkArray(mainStructure.positionAssignments, 2)
-        .find((pair) => pair.reduce((ready, assignment) => assignment.participantId && ready, true))
-        .map((pair) => pair.drawPosition),
+      ...defined(
+        chunkArray(mainStructure.positionAssignments, 2).find((pair) =>
+          pair.every((assignment) => assignment.participantId),
+        ),
+      ).map((pair) => pair.drawPosition),
     ) / 2;
 
   const testingSideIndex = roundPositionReadyToScore < 8 ? 0 : 1;
@@ -104,9 +107,11 @@ it('can support USTA Consolation BYE placement', () => {
   } = getDrawStructures({ drawDefinition, stage: MAIN, stageSequence: 1 });
   const roundPositionReadyToScore =
     Math.max(
-      ...chunkArray(mainStructure.positionAssignments, 2)
-        .find((pair) => pair.reduce((ready, assignment) => assignment.participantId && ready, true))
-        .map((pair) => pair.drawPosition),
+      ...defined(
+        chunkArray(mainStructure.positionAssignments, 2).find((pair) =>
+          pair.every((assignment) => assignment.participantId),
+        ),
+      ).map((pair) => pair.drawPosition),
     ) / 2;
 
   const testingSideIndex = roundPositionReadyToScore < 8 ? 0 : 1;

@@ -1,3 +1,4 @@
+import { defined } from '@Tests/helpers/defined';
 import { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems/addMatchUpScheduledDate';
 import { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDetails';
 import { resetMatchUpTimeItems } from '@Mutate/timeItems/matchUps/matchUpTimeItems';
@@ -45,10 +46,8 @@ legacyMode('can add schedule items', () => {
     });
     expect(result.success).toEqual(true);
 
-    let {
-      matchUp: { timeItems },
-    } = publicFindDrawMatchUp({ drawDefinition, matchUpId });
-    expect(timeItems.length).toEqual(1);
+    let { timeItems } = defined(publicFindDrawMatchUp({ drawDefinition, matchUpId }).matchUp);
+    expect(timeItems?.length).toEqual(1);
 
     let scheduledTime = '2020-01-02T08:00';
     // a date-time naming another day than the matchUp's scheduledDate is refused, never stored against it
@@ -146,20 +145,16 @@ legacyMode('can add schedule items', () => {
     result = addMatchUpStartTime({ drawDefinition, matchUpId, startTime });
     expect(result.success).toEqual(true);
 
-    ({
-      matchUp: { timeItems },
-    } = publicFindDrawMatchUp({ drawDefinition, matchUpId }));
-    expect(timeItems.length).toEqual(2);
+    ({ timeItems } = defined(publicFindDrawMatchUp({ drawDefinition, matchUpId }).matchUp));
+    expect(timeItems?.length).toEqual(2);
 
     // startTime should be replaced
     startTime = '2020-01-01T08:30:00Z';
     result = addMatchUpStartTime({ drawDefinition, matchUpId, startTime });
     expect(result.success).toEqual(true);
 
-    ({
-      matchUp: { timeItems },
-    } = publicFindDrawMatchUp({ drawDefinition, matchUpId }));
-    expect(timeItems.length).toEqual(2);
+    ({ timeItems } = defined(publicFindDrawMatchUp({ drawDefinition, matchUpId }).matchUp));
+    expect(timeItems?.length).toEqual(2);
 
     // correct time should be calculated even though end was entered before start
     ({ matchUp } = publicFindDrawMatchUp({ drawDefinition, matchUpId }));
@@ -203,10 +198,8 @@ legacyMode('can add schedule items', () => {
     result = addMatchUpResumeTime({ drawDefinition, matchUpId, resumeTime });
     expect(result).toHaveProperty(ERROR);
 
-    ({
-      matchUp: { timeItems },
-    } = publicFindDrawMatchUp({ drawDefinition, matchUpId }));
-    expect(timeItems.length).toEqual(3);
+    ({ timeItems } = defined(publicFindDrawMatchUp({ drawDefinition, matchUpId }).matchUp));
+    expect(timeItems?.length).toEqual(3);
 
     ({ matchUp } = publicFindDrawMatchUp({ drawDefinition, matchUpId }));
     ({ milliseconds, time, relevantTimeItems } = matchUpDuration({

@@ -104,7 +104,7 @@ function removeDefinition({
   const structure = result?.structure;
   matchUp = matchUp ?? result?.matchUp;
   const existingTieFormat = result?.tieFormat;
-  const tieFormat = copyTieFormat(existingTieFormat);
+  const tieFormat = copyTieFormat(existingTieFormat)!;
 
   result = validateTieFormat({ tieFormat });
   if (result.error) return decorateResult({ result, stack });
@@ -128,7 +128,7 @@ function removeDefinition({
       }
       return rest;
     });
-    tieFormat.collectionGroups = tieFormat.collectionGroups.filter(
+    tieFormat.collectionGroups = tieFormat.collectionGroups!.filter(
       ({ groupNumber }) => groupNumber !== targetCollection.collectionGroupNumber,
     );
   }

@@ -24,13 +24,13 @@ import { now } from '@Tools/clock';
 const re =
   /^([+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24:?00)([.,]\d+(?!:))?)?(\17[0-5]\d([.,]\d+)?)?([zZ]|([+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/; //NOSONAR
 
-export function isISODateString(dateString) {
+export function isISODateString(dateString: unknown): boolean {
   if (typeof dateString !== 'string') return false;
   return re.test(dateString);
 }
 
 /** Whether a value is a real calendar date, `YYYY-MM-DD` or an ISO date-time's date (`canonicalClock.ts`). */
-export function isValidDateString(scheduleDate) {
+export function isValidDateString(scheduleDate: unknown): boolean {
   return canonicalDate(scheduleDate) !== undefined;
 }
 
@@ -39,11 +39,11 @@ export function isValidDateString(scheduleDate) {
  * anything else: a day not on the calendar (`2026-02-30`), a date and time separated by a space, or another ISO shape
  * (`2026-W10`, `2026-061`, `20260302`, `2026-03`).
  */
-export function extractDate(dateString): string {
+export function extractDate(dateString: unknown): string {
   return canonicalDate(dateString) ?? '';
 }
 
-export function formatDate(date?, separator = '-', format = 'YMD'): string {
+export function formatDate(date?: string | number | Date | null, separator = '-', format = 'YMD'): string {
   if (!date) return '';
   if (typeof date === 'string' && !date.includes('T')) date = date + 'T00:00';
 
@@ -68,7 +68,7 @@ function isValidDateRange(minDate, maxDate) {
 }
 
 /** Every calendar day from `startDt` to `endDt` inclusive, capped at 300 days. */
-export function generateDateRange(startDt?, endDt?): string[] {
+export function generateDateRange(startDt?: unknown, endDt?: unknown): string[] {
   if (!isValidDateString(startDt) || !isValidDateString(endDt)) return [];
 
   const startDateString = extractDate(startDt) + 'T00:00';
@@ -93,18 +93,18 @@ export function generateDateRange(startDt?, endDt?): string[] {
   return between.map((date) => formatDate(date));
 }
 
-export function addDays(date, days = 7): string {
+export function addDays(date: string, days = 7): string {
   const universalDate = extractDate(date) + 'T00:00';
   const now = new Date(universalDate);
   const adjustedDate = new Date(now.setDate(now.getDate() + days));
   return formatDate(adjustedDate);
 }
 
-export function addWeek(date): string {
+export function addWeek(date: string): string {
   return addDays(date);
 }
 
-export function subtractWeek(date, dateFormat?): string {
+export function subtractWeek(date: string, dateFormat?: string): string {
   const universalDate = extractDate(date) + 'T00:00';
   const now = new Date(universalDate);
   // NOTE: `dateFormat` arrives in formatDate's `separator` position. Preserved
@@ -113,7 +113,7 @@ export function subtractWeek(date, dateFormat?): string {
   return formatDate(now.setDate(now.getDate() - 7), dateFormat);
 }
 
-export function getDateByWeek(week, year, dateFormat, sunday = false): string {
+export function getDateByWeek(week: number, year: number, dateFormat?: string, sunday = false): string {
   const date = new Date(year, 0, 1 + (week - 1) * 7);
   const startValue = sunday ? 0 : 1;
   date.setDate(date.getDate() + (startValue - date.getDay()));
@@ -121,20 +121,20 @@ export function getDateByWeek(week, year, dateFormat, sunday = false): string {
   return formatDate(date, dateFormat);
 }
 
-export function dateFromDay(year, day, dateFormat?): string {
+export function dateFromDay(year: number, day: number, dateFormat?: string): string {
   const date = new Date(year, 0); // initialize a date in `year-01-01`
   // NOTE: `dateFormat` in the `separator` position — see subtractWeek.
   return formatDate(new Date(date.setDate(day)), dateFormat); // add the number of days
 }
 
-export function dateStringDaysChange(dateString, daysChange): string | undefined {
+export function dateStringDaysChange(dateString: string, daysChange: number): string {
   const date = new Date(dateString);
   date.setUTCDate(date.getUTCDate() + daysChange);
   return extractDate(date.toISOString());
 }
 
 /** Omitting the date selects the current week in 7.x. Supply a date for 8.0.0. */
-export function weekdays(date: any = now(), firstDayOfWeek = 0): string[] {
+export function weekdays(date: unknown = now(), firstDayOfWeek = 0): string[] {
   if (!isDate(date)) return [];
   const dates = [0, 1, 2, 3, 4, 5, 6].map((i) => dayOfWeek(date, i + firstDayOfWeek));
   return dates;
@@ -155,6 +155,8 @@ export function weekdays(date: any = now(), firstDayOfWeek = 0): string[] {
  * `2026-03-02T20:00-05:00` are the same day everywhere. A string that is not a date is the same day as nothing. Two
  * `Date` objects are compared in the runtime's zone, as before.
  */
+export function sameDay(date1: unknown, date2: unknown): boolean;
+// eslint-disable-next-line no-redeclare -- overload implementation
 export function sameDay(date1, date2) {
   if (typeof date1 === 'string' || typeof date2 === 'string') {
     const day = canonicalDate(date1);
@@ -170,6 +172,12 @@ export function isDateInPast(dateString: string, asOf?: Date | string): boolean 
   return new Date(dateString) < asOfDate(asOf);
 }
 
+export function localizeDate(
+  submittedDate: string | number | Date,
+  dateLocalization?: Intl.DateTimeFormatOptions,
+  locale?: Intl.LocalesArgument,
+): string | undefined;
+// eslint-disable-next-line no-redeclare -- overload implementation
 export function localizeDate(submittedDate, dateLocalization, locale): string | undefined {
   const date = new Date(submittedDate);
   if (!isDate(date)) return undefined;

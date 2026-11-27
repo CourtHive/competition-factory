@@ -88,7 +88,7 @@ export const structureTemplate = ({
     structure.structures = structures;
   } else {
     structure.matchUps = matchUps;
-    structure.positionAssignments = unique(drawPositions)
+    structure.positionAssignments = unique(drawPositions as number[])
       .sort((a, b) => a - b)
       .map((drawPosition) => ({ drawPosition }));
   }

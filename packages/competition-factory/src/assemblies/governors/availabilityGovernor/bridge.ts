@@ -258,6 +258,13 @@ function aggregateAvailabilityByVenue(entries: TodsDateAvailability[]): TodsDate
  * @param config - Bridge configuration
  * @returns Updated tournament record (new object, doesn't mutate input)
  */
+export function applyAvailabilityToTournamentRecord<T extends object>(params: {
+  tournamentRecord: T;
+  timelines: VenueDayTimeline[];
+  config?: BridgeConfig;
+  engine?: AvailabilityEngine;
+}): T;
+// eslint-disable-next-line no-redeclare -- overload implementation
 export function applyAvailabilityToTournamentRecord(params: {
   tournamentRecord: any;
   timelines: VenueDayTimeline[];

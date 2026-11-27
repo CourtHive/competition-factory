@@ -17,7 +17,7 @@ export function removeLineUpSubstitutions({ lineUp }: { lineUp: LineUp }) {
         ),
       )
       .filter(Boolean),
-  );
+  ) as string[];
 
   permutations.forEach((permutation) => {
     const [collectionId, position] = permutation.split('|');

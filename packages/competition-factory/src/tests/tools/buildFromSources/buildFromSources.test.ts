@@ -246,8 +246,8 @@ describe('extractors', () => {
     const fromData = extractEventData({ data: { tournamentPublicEventData: raw } });
 
     for (const x of [fromBare, fromWrapped, fromData]) {
-      expect(x.tournamentInfo?.tournamentId).toBe(tournamentRecord.tournamentId);
-      expect(x.eventInfo?.eventId).toBe(tournamentRecord.events[0].eventId);
+      expect(x.tournamentInfo).toMatchObject({ tournamentId: tournamentRecord.tournamentId });
+      expect(x.eventInfo).toMatchObject({ eventId: tournamentRecord.events[0].eventId });
       expect(Array.isArray(x.drawsData)).toBe(true);
       expect(Array.isArray(x.participants)).toBe(true);
     }

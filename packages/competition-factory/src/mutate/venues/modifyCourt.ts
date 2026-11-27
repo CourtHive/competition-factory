@@ -52,7 +52,7 @@ export function courtModification(params: ModifyCourtArgs): ResultType & { court
   const plan = planCourtModification(params);
   if (!('commit' in plan)) return plan;
   plan.commit();
-  return { ...SUCCESS, court: makeDeepCopy(plan.court) };
+  return { ...SUCCESS, court: makeDeepCopy(plan.court) as HydratedCourt | undefined };
 }
 
 /**

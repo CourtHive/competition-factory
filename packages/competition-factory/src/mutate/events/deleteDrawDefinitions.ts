@@ -142,7 +142,7 @@ export function deleteDrawDefinitions(params: DeleteDrawDefinitionArgs) {
 
       if (flight) {
         flight.drawEntries = flight.drawEntries?.filter((entry) =>
-          STRUCTURE_SELECTED_STATUSES.includes(entry.entryStatus),
+          STRUCTURE_SELECTED_STATUSES.includes(entry.entryStatus!),
         );
       }
 

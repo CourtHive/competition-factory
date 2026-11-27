@@ -1,3 +1,4 @@
+import { defined } from '@Tests/helpers/defined';
 import { verifyMatchUps, verifySideNumbers } from '@Tests/mutations/drawDefinitions/primitives/verifyMatchUps';
 import { verifyStructure } from '@Tests/mutations/drawDefinitions/primitives/verifyStructure';
 import { getParticipantIdMatchUps } from '@Query/drawDefinition/participantIdMatchUps';
@@ -90,7 +91,9 @@ it('will vary bye distribution', () => {
     });
 
     const byesHash = byeAssignedDrawPositions?.join('|');
-    const quartersHash = filteredQuarters.map((q) => q.join('|')).join('~');
+    const quartersHash = defined(filteredQuarters)
+      .map((q) => q.join('|'))
+      .join('~');
 
     return { byesHash, quartersHash };
   });

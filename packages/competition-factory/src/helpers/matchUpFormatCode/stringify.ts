@@ -3,6 +3,14 @@ import { stringifyCombinedPointFormat } from './combinedPointFormat';
 import { stringifyOvertimeFormat } from './overtimeFormat';
 import { isObject } from '@Tools/objects';
 
+// types
+import type { ParsedFormat } from './parse';
+
+/** The matchUpFormat code of a parsed format; undefined for anything else. */
+export function stringify(matchUpFormatObject: ParsedFormat, preserveRedundant?: boolean): string | undefined;
+// eslint-disable-next-line no-redeclare -- TypeScript overload, not a second implementation
+export function stringify(matchUpFormatObject: unknown, preserveRedundant?: boolean): string | undefined;
+// eslint-disable-next-line no-redeclare -- overload implementation
 export function stringify(matchUpFormatObject, preserveRedundant?: boolean) {
   if (!isObject(matchUpFormatObject)) return undefined;
   if ((matchUpFormatObject?.bestOf || matchUpFormatObject?.exactly) && matchUpFormatObject?.setFormat) {

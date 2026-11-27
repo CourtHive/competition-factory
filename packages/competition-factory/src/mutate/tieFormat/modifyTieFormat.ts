@@ -68,7 +68,7 @@ export function modifyTieFormat({
   if (result.error) return decorateResult({ result, stack });
 
   const { matchUp, tieFormat: existingTieFormat } = result;
-  const tieFormat = copyTieFormat(existingTieFormat);
+  const tieFormat = copyTieFormat(existingTieFormat)!;
   const choiceEdit = choiceEditRefusal(existingTieFormat, modifiedTieFormat);
   if (choiceEdit) return choiceEdit;
 

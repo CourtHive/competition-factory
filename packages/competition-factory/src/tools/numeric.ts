@@ -10,17 +10,19 @@ import { isString } from './objects';
  */
 
 // does accept e.e. '1.0'
-export function isConvertableInteger(n) {
+export function isConvertableInteger(n: unknown): boolean {
   if (isString(n) && !n.trim().length) return false;
   return Number.isSafeInteger(typeof n === 'string' ? +n : n);
 }
 
-export function isNumeric(value) {
-  return !Number.isNaN(Number.parseFloat(value));
+export function isNumeric(value: unknown): boolean {
+  return !Number.isNaN(Number.parseFloat(value as string));
 }
 
 // return an object whose attributes are values and whose values are counts for values
 // e.g. values=[1,2,2,3,4,4,5] produces { 1: 1, 2: 2, 3: 1, 4: 2, 5: 1}
+export function instanceCount(values: unknown): { [key: number | string]: number };
+// eslint-disable-next-line no-redeclare -- overload implementation
 export function instanceCount(values): { [key: number | string]: number } {
   if (!Array.isArray(values)) return {};
   return values.reduce((a, c) => {

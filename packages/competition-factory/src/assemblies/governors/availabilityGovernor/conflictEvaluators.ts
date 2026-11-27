@@ -492,7 +492,7 @@ export class EvaluatorRegistry {
  * Implementation requires access to Competition Factory API.
  */
 export const createFollowByEvaluator = (
-  _factoryAPI: any, // eslint-disable-line @typescript-eslint/no-unused-vars
+  _factoryAPI: unknown, // eslint-disable-line @typescript-eslint/no-unused-vars
 ) => ({
   id: 'FOLLOW_BY',
   description: 'Player rest and follow-by conflicts using Competition Factory',

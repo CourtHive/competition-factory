@@ -455,7 +455,7 @@ function generateTimedSet({
 }) {
   const calcPoints = Math.round(minutes * pointsPerMinute); // T45 at 2.5 a minute scored 112.5
   const pointsVariation = Math.round(calcPoints * 0.2);
-  const totalPoints = calcPoints + randomPop([1, -1], random) * pointsVariation;
+  const totalPoints = calcPoints + randomPop([1, -1], random)! * pointsVariation;
   // the use of weightedRandom applies a bell curve distribution to the difference in side scores
   // the larger the second value, the more pronounced the bell curve will be
   const sidePoints = weightedRandom(totalPoints, 2, undefined, random);

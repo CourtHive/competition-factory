@@ -207,7 +207,7 @@ describe('matchUpEngine', () => {
       const spy = vi.spyOn(scoreGovernor, 'checkScoreHasValue');
       matchUpEngineSync.checkScoreHasValue({});
       const callArgs = spy.mock.calls[0][0];
-      expect(Array.isArray(callArgs.matchUps)).toBe(true);
+      expect(callArgs).toHaveProperty('matchUps', expect.any(Array));
     });
 
     it('resets engine.error and engine.success before each invoke', () => {

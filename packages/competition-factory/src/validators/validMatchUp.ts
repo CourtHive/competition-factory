@@ -1,6 +1,8 @@
 import { isConvertableInteger } from '@Tools/math';
 import { isObject } from '@Tools/objects';
 
+export function validMatchUp(matchUp: unknown): boolean;
+// eslint-disable-next-line no-redeclare -- overload implementation
 export function validMatchUp(matchUp) {
   if (!isObject(matchUp)) return false;
   const { matchUpId, drawPositions } = matchUp;
@@ -14,7 +16,7 @@ export function validMatchUp(matchUp) {
   return validMatchUpId && validDrawPositions;
 }
 
-export function validMatchUps(matchUps) {
+export function validMatchUps(matchUps: unknown): boolean {
   if (!Array.isArray(matchUps)) return false;
   return matchUps.every(validMatchUp);
 }

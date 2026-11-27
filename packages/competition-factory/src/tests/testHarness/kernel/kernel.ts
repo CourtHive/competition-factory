@@ -240,7 +240,7 @@ const clockOperations: Record<string, KernelOperation> = {
   'kernel.time.fromMinutes@1': {
     capability: 'clock',
     validate: (input) => (isCount(input.minutes) ? undefined : 'minutes must be a non-negative integer'),
-    run: (input) => ({ kind: 'value', value: dayMinutesToTimeString(input.minutes) }),
+    run: (input) => ({ kind: 'value', value: dayMinutesToTimeString(Number(input.minutes)) }),
   },
   'kernel.time.addWithinDay@1': {
     capability: 'clock',

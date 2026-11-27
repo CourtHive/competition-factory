@@ -262,7 +262,7 @@ describe('applyAvailabilityToTournamentRecord', () => {
     });
 
     expect((result.venues[0] as HydratedVenue).dateAvailability).toHaveLength(1);
-    expect(result.venues[1].dateAvailability).toHaveLength(1);
+    expect(result.venues[1]).toHaveProperty('dateAvailability.length', 1);
   });
 });
 
