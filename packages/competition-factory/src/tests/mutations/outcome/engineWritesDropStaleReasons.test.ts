@@ -15,6 +15,7 @@ import {
   OUTCOME_PIPELINE_V2,
 } from '@Constants/outcomePipelineConstants';
 import {
+  DOUBLE_ELIMINATION,
   FEED_IN_CHAMPIONSHIP_TO_SF,
   FIRST_MATCH_LOSER_CONSOLATION,
   FIRST_ROUND_LOSER_CONSOLATION,
@@ -54,7 +55,11 @@ afterEach(() => {
 });
 
 type Outcome = Record<string, unknown>;
-type Step = { at: string; outcome: Outcome } | { removeWithBye: [string, number] } | { reset: true };
+type Step =
+  | { at: string; outcome: Outcome }
+  | { removeWithBye: [string, number] }
+  | { swap: [string, number, number] }
+  | { reset: true };
 type Row = {
   drawType: string;
   drawSize: number;
@@ -64,6 +69,8 @@ type Row = {
   steps: Step[];
   /** the matchUp the last step moves off the result its reasons were given for, and the status it then holds */
   then: [string, string];
+  /** the side reasons that matchUp still holds, where the status it is left with takes one */
+  kept?: Record<number, string>;
 };
 
 const TOPICS = [MODIFY_MATCHUP, MODIFY_DRAW_DEFINITION, MODIFY_POSITION_ASSIGNMENTS];
@@ -176,6 +183,23 @@ const ROWS: [string, Row][] = [
       then: ['Consolation|2|1', TO_BE_PLAYED],
     },
   ],
+  [
+    'a produced walkover re-awarded to the other side when a swap withdraws its stale origin',
+    {
+      drawType: DOUBLE_ELIMINATION,
+      drawSize: 8,
+      participantsCount: 4,
+      nonRandom: 10853,
+      propagateExitStatus: true,
+      steps: [
+        { at: 'Main|2|2', outcome: { matchUpStatus: WALKOVER, winningSide: 1, sideStatusCodes: { 2: 'W1' } } },
+        { swap: ['Main', 1, 8] },
+        { at: 'Main|2|1', outcome: { matchUpStatus: WALKOVER, winningSide: 1, sideStatusCodes: { 2: 'W1' } } },
+      ],
+      then: ['Backdraw|3|1', WALKOVER],
+      kept: { 1: 'W1' },
+    },
+  ],
   ...(
     [
       ['a WALKOVER', { matchUpStatus: WALKOVER, winningSide: 1, sideStatusCodes: { 2: 'W1' } }],
@@ -283,6 +307,11 @@ function play(mode: OutcomePipelineMode, row: Row) {
           drawPosition,
           structureId,
         });
+      } else if ('swap' in step) {
+        const [structureName, ...drawPositions] = step.swap;
+        const { structures } = tournamentEngine.getEvent({ drawId: 'd' }).drawDefinition;
+        const { structureId } = structures.find((structure: any) => structure.structureName === structureName);
+        result = tournamentEngine.swapDrawPositionAssignments({ drawId: 'd', drawPositions, structureId });
       } else result = tournamentEngine.resetDrawDefinition({ drawId: 'd' });
       results.push(result);
       undescribedAfter.push(
@@ -318,7 +347,7 @@ describe('an engine write drops the reasons its result no longer has', () => {
     expect(v1.results.map((result: any) => result.success)).toEqual(row.steps.map(() => true));
     expect(v1.then?.matchUpStatus).toEqual(row.then[1]);
 
-    expect(v1.then?.sideStatusCodes).toBeUndefined();
+    expect(v1.then?.sideStatusCodes).toEqual(row.kept);
     expect(v1.then?.matchUpStatusCode).toBeUndefined();
     expect(v1.undescribedAfter).toEqual(row.steps.map(() => []));
 

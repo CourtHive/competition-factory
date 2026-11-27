@@ -319,7 +319,8 @@ TO_BE_PLAYED`, `score` with empty `scoreStringSide1` / `scoreStringSide2` and `s
    stamp, the reasons it holds on a status that takes none (`dropStaleStatusReasons`; v2 at the reducer's stamp fold),
    so a result undone by the engine (a produced exit withdrawn, a collapse to BYE, a removal, a reset) leaves no
    reason behind. A BYE keeps the reason of an exit its provenance still holds on that side. A re-sort under a winner
-   (`followWinnerAcrossResort`) removes a side reason that now names the winner.
+   (`followWinnerAcrossResort`) and an award re-derived when an exit is withdrawn (`withdrawFromMatchUp`) remove a side
+   reason that now names the winner.
 4. **`scoredTime`** is stamped on `schedule` the first time the matchUp becomes scored (a score with
    value, a winner, or a completed status), kept through corrections, and deleted when the result is
    removed. One exception: a DOUBLE_ELIMINATION decider made a DEAD_RUBBER was not played, so it is
