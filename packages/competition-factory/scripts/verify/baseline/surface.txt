@@ -14,6 +14,7 @@ ASSIGN_COMPLETED
 ASSIGN_CONFIRMED
 ASSIGN_DECLINED
 ASSIGN_PROPOSED
+ActionsStructurePolicy
 AddGameOptions
 AddPointConfig
 AddPointOptions
@@ -25,6 +26,7 @@ AddressProps
 AddressTypeEnum
 AddressTypeUnion
 AggregationRules
+AllowedDrawTypeDefinition
 Amendment
 AmendmentRules
 AmendmentSeverity
@@ -43,12 +45,15 @@ AsyncEngineMethod
 AsyncEngineSetup
 AsyncEngineUnsupportedFacade
 AsyncFactoryEngine
+AttributeFilterTemplate
+AuditPolicy
 AuthorityRoleEnum
 AuthorityRoleUnion
 Availability
 AvailabilityEngine
 AvailabilityPayload
 AvailabilityTimeAway
+AvoidancePolicy
 AwardProfile
 AwardProfileScope
 BLOCK_TYPES
@@ -142,6 +147,7 @@ CompetitionFormat
 CompetitionProfile
 CompetitionRef
 CompetitionScheduleMatchUpsResult
+CompetitiveBandsPolicy
 ComplianceItem
 ComplianceItemStatus
 ComplianceItemStatusEnum
@@ -207,6 +213,7 @@ DayPlan
 DayState
 DeepCopyAttributes
 DeleteNoticeArgs
+DeltaBand
 DerivedFilter
 DerivedRanking
 DevContextType
@@ -214,6 +221,7 @@ Directives
 DisciplineEnum
 DisciplineProfile
 DisciplineUnion
+DisplayPolicy
 DistributionBin
 DistributionGap
 DocumentLink
@@ -234,6 +242,7 @@ DrawStatusUnion
 DrawStub
 DrawTypeEnum
 DrawTypeUnion
+DrawsPolicy
 DryRunResult
 EDITABLE_STATUSES
 ENDORSEMENT_REQUIRED
@@ -341,6 +350,7 @@ FactoryEngineMethod
 FactoryEngineTyped
 FactoryError
 FactoryErrorOptions
+FeedInPolicy
 FinishingPositionEnum
 FinishingPositionUnion
 FixAction
@@ -565,6 +575,7 @@ MappedMatchUps
 MappedParticipant
 MatchStatistics
 MatchUp
+MatchUpActionsPolicy
 MatchUpFilters
 MatchUpFinishingPositionRange
 MatchUpHistory
@@ -574,6 +585,7 @@ MatchUpRowContext
 MatchUpRowSet
 MatchUpSchedule
 MatchUpState
+MatchUpStatusCodeDefinition
 MatchUpStatusCodeElement
 MatchUpStatusCodeRecord
 MatchUpStatusEnum
@@ -664,6 +676,7 @@ ParticipantBuildResult
 ParticipantFilters
 ParticipantMap
 ParticipantNotFoundError
+ParticipantPolicy
 ParticipantRoleEnum
 ParticipantRoleUnion
 ParticipantStatusEnum
@@ -710,9 +723,11 @@ PointResultDefinition
 PointSituation
 PointsAuthority
 PointsToDecoration
+PolicyAttribute
 PolicyComposer
 PolicyDefinitions
 PolicySeedingProfile
+PositionActionsPolicy
 PositionAssignment
 PositionDrawLink
 PositionValue
@@ -723,8 +738,12 @@ PostEventRequirement
 PracticeRegistration
 PracticeRegistrationStatusEnum
 PracticeRegistrationStatusUnion
+PredictionAnchor
+PredictionModel
+PrintPolicy
 PrizeMoney
 PrizeMoneyAward
+ProgressionPolicy
 ProposalChange
 PublicParticipant
 PublicParticipantDocument
@@ -911,12 +930,16 @@ ScoringEngine
 ScoringEngineOptions
 ScoringEngineSupplementaryState
 ScoringMatchUp
+ScoringMatchUpFormatDefinition
 ScoringMethod
 ScoringMethodEnum
 ScoringPeriod
 ScoringPhase
 ScoringPoint
+ScoringPolicy
 ScoringScore
+ScoringSequencePolicy
+ScoringStagePolicies
 ScoringType
 ScoringTypeEnum
 Season
@@ -1098,6 +1121,7 @@ VenueDayTimeline
 VenueId
 VenueProposal
 VenueTransitEntry
+VoluntaryConsolationPolicy
 WITHDRAWN
 WeekdayEnum
 WeekdayUnion

@@ -37,7 +37,7 @@ describe('getContextContent', () => {
 
     const customPolicy = {
       [POLICY_TYPE_COMPETITIVE_BANDS]: {
-        bandings: [{ min: 0, max: 100 }],
+        profileBands: { DECISIVE: 10, ROUTINE: 40 },
       },
     };
 

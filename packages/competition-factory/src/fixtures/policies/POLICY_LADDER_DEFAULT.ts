@@ -10,6 +10,7 @@
  */
 import { EITHER, RANK, SWAP } from '@Constants/ladderConstants';
 import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
+import type { LadderPolicy } from '@Types/ladderTypes';
 
 export const POLICY_LADDER_DEFAULT = {
   [POLICY_TYPE_LADDER]: {
@@ -25,7 +26,7 @@ export const POLICY_LADDER_DEFAULT = {
     acceptanceDays: 5,
     playByDays: 14,
     declineForfeitsPosition: false,
-  },
+  } satisfies LadderPolicy,
 };
 
 export default POLICY_LADDER_DEFAULT;

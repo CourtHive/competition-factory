@@ -30,7 +30,7 @@
  *   - No points for first-round loss at ATP 500, 250, Challengers, ITF events
  */
 
-import type { AggregationRules, AwardProfile } from '@Types/rankingTypes';
+import type { AggregationRules, AwardProfile, RankingPolicy } from '@Types/rankingTypes';
 import {
   ATP,
   DOUBLES,
@@ -407,7 +407,7 @@ export const POLICY_RANKING_POINTS_ATP = {
     aggregationRules,
 
     doublesAttribution: 'fullToEach' as const,
-  },
+  } satisfies RankingPolicy,
 };
 
 export default POLICY_RANKING_POINTS_ATP;

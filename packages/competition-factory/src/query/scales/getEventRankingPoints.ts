@@ -89,7 +89,7 @@ export function getEventRankingPoints({
 
   const result = getTournamentPoints({
     participantFilters: { eventIds: [eventId] },
-    policyDefinitions: effectivePolicyDefinitions,
+    policyDefinitions: effectivePolicyDefinitions as PolicyDefinitions,
     level: resolvedLevel,
     tournamentRecord,
   });

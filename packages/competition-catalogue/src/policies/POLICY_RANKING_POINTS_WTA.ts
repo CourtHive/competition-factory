@@ -27,7 +27,7 @@
  */
 
 import { DOUBLES, MAIN, POLICY_TYPE_RANKING_POINTS, QUALIFYING, SINGLES, WTA } from '../constants';
-import type { AggregationRules, AwardProfile } from '@Types/rankingTypes';
+import type { AggregationRules, AwardProfile, RankingPolicy } from '@Types/rankingTypes';
 
 // ─── Singles Main Draw Profiles ──────────────────────────────────────────────
 
@@ -432,7 +432,7 @@ export const POLICY_RANKING_POINTS_WTA = {
     aggregationRules,
 
     doublesAttribution: 'fullToEach' as const,
-  },
+  } satisfies RankingPolicy,
 };
 
 export default POLICY_RANKING_POINTS_WTA;

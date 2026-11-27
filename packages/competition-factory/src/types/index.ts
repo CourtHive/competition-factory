@@ -14,6 +14,7 @@ export * from './declarationTypes';
 export * from './tournamentTypes';
 export * from './errorCodeTypes';
 export * from './rankingTypes';
+export * from './policyShapes';
 export * from './factoryTypes';
 export * from './stateProviderTypes';
 export * from './reportTypes';

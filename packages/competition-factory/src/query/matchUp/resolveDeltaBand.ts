@@ -7,20 +7,9 @@ import {
   INVALID_VALUES,
   MISSING_VALUE,
 } from '@Constants/errorConditionConstants';
+import type { DeltaBand } from '@Types/policyShapes';
 
-/**
- * One entry in a `deltaBands` ordered boundary list.
- *
- * A boundary is `max` (absolute rating units) XOR `maxPct` (percent of the
- * scale's range). Both on one entry is a validation error, not a precedence
- * rule. The FINAL entry omits both and catches the remainder, so N entries
- * always produce exactly N bands.
- */
-export type DeltaBand = {
-  maxPct?: number;
-  max?: number;
-  key: string;
-};
+export type { DeltaBand } from '@Types/policyShapes';
 
 export type ResolvedDeltaBoundary = {
   max?: number;
