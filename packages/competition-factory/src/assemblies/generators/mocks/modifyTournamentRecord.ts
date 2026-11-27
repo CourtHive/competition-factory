@@ -364,16 +364,16 @@ function applySchedulingProfile({ schedulingProfile, autoSchedule, periodLength,
  * the record gained, read from the record itself), for a caller who would rather inspect or keep a
  * partial build than start again.
  */
-export function modifyTournamentRecord(givenParams) {
+export function modifyTournamentRecord(params) {
   // the generators write to the tieFormats they work from; the caller's stay as given
-  const params = withOwnTieFormats(givenParams);
-  if (!params?.recordMethods) return modifyRecord(params);
+  const owned = withOwnTieFormats(params);
+  if (!owned?.recordMethods) return modifyRecord(owned);
 
   // the engine calls that make these modifications to the record as it was passed, with no `newTournamentRecord`:
   // replayed onto that record they make the same modifications (see scenarioRecorder)
   startRecording();
   try {
-    const result = modifyRecord(params);
+    const result = modifyRecord(owned);
     const methods = stopRecording();
     // a refusal wrote nothing (all or nothing), so there is nothing to replay; `keepPartial` kept what was written
     return result?.error && !result.retained ? result : { ...result, methods };

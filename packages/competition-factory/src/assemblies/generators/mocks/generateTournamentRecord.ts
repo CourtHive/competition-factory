@@ -58,14 +58,14 @@ const mockTournamentNames = [
   'Stats Fail',
 ];
 
-export function generateTournamentRecord(givenParams: GenerateTournamentRecordArgs) {
+export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
   // the generators write to the tieFormats they work from; the caller's stay as given
-  const params = withOwnTieFormats(givenParams);
-  if (!params?.recordMethods) return buildTournamentRecord(params);
+  const owned = withOwnTieFormats(params);
+  if (!owned?.recordMethods) return buildTournamentRecord(owned);
 
   startRecording();
   try {
-    const result = buildTournamentRecord(params);
+    const result = buildTournamentRecord(owned);
     const methods = stopRecording();
     return result.error ? result : { ...result, methods };
   } finally {
