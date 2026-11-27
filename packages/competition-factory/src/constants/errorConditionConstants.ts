@@ -162,6 +162,10 @@ export const DRAW_POSITION_ACTIVE = {
   message: 'drawPosition is active',
   code: 'ERR_ACTIVE_DRAW_POSITION' as const,
 } satisfies ErrorType;
+export const CONTRADICTORY_POSITION_ACTION = {
+  message: 'The position action would leave the draw contradicting its results',
+  code: 'ERR_CONTRADICTORY_POSITION_ACTION' as const,
+} satisfies ErrorType;
 export const DRAW_POSITION_OCCUPIED = {
   message: 'drawPosition is occupied',
   code: 'ERR_OCCUPIED_DRAW_POSITION' as const,
@@ -1116,6 +1120,7 @@ export const errorConditionConstants = {
   EXISTING_MATCHUPS,
   DRAW_DEFINITION_NOT_FOUND,
   DRAW_ID_EXISTS,
+  CONTRADICTORY_POSITION_ACTION,
   DRAW_POSITION_ACTIVE,
   DRAW_POSITION_ASSIGNED,
   DRAW_POSITION_NOT_CLEARED,

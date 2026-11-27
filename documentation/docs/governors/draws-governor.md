@@ -1540,6 +1540,12 @@ engine.swapDrawPositionAssignments({
 });
 ```
 
+A swap that would contradict the draw's results is refused before anything is written, with
+`CONTRADICTORY_POSITION_ACTION`. That covers a seat whose occupant a result has sent on to another structure, such as
+a loser in the consolation, and a seat holding results swapped with an empty one. `context.mustClear` lists the results
+and placements to clear first, in order. See
+[Contradictory position swaps](/docs/migration-8.0.0#contradictory-position-swaps).
+
 ---
 
 ## updateTeamLineUp

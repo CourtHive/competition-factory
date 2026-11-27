@@ -4,14 +4,17 @@ import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, expect, it } from 'vitest';
 
 // constants
-import { EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT } from '@Constants/errorConditionConstants';
+import {
+  CONTRADICTORY_POSITION_ACTION,
+  EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT,
+} from '@Constants/errorConditionConstants';
 import { FIRST_ROUND_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 
 /**
  * A refusal changes nothing, even one that is only met downstream. Swapping two first-round positions whose
- * matchUps are decided leaves a participant both in the main structure and in the consolation seat they were sent to
- * as a loser. Reversing the other first-round result then sends that participant to the consolation structure a
+ * matchUps are decided left a participant both in the main structure and in the consolation seat they were sent to
+ * as a loser (8.0.0 refuses that swap; a record stored earlier can still hold it). Reversing the other first-round result then sends that participant to the consolation structure a
  * second time, and the call is refused with `ERR_EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT`.
  *
  * That seat is reached only after the result and the winner's advance are written. Under v2, the whole call is first
@@ -36,6 +39,8 @@ const played = (winningSide: 1 | 2) => ({
   },
   winningSide,
 });
+
+const recordNow = () => structuredClone(tournamentEngine.getTournament().tournamentRecord);
 
 function setUp() {
   setSubscriptions({ subscriptions: {} });
@@ -64,16 +69,25 @@ function setUp() {
 
   expect(score(4, 1).success).toEqual(true);
   expect(score(1, 2).success).toEqual(true);
+  // 8.0.0 refuses this swap (`aContradictorySwapIsRefused.test.ts`); a record stored by an earlier release can still
+  // hold its result, so the record is given that state directly
   const swapped = tournamentEngine.swapDrawPositionAssignments({
     structureId: main.structureId,
     drawPositions: [1, 7],
     drawId: 'd',
   });
-  expect(swapped.success).toEqual(true);
+  expect(swapped.error).toEqual(CONTRADICTORY_POSITION_ACTION);
+  const record = recordNow();
+  const stored = record.events[0].drawDefinitions[0].structures.find(
+    (structure: any) => structure.structureId === main.structureId,
+  );
+  const [one, seven] = [1, 7].map((drawPosition) =>
+    stored.positionAssignments.find((assignment: any) => assignment.drawPosition === drawPosition),
+  );
+  [one.participantId, seven.participantId] = [seven.participantId, one.participantId];
+  tournamentEngine.setState(record);
   return { score };
 }
-
-const recordNow = () => structuredClone(tournamentEngine.getTournament().tournamentRecord);
 
 // the suite may run under any mode; each case sets its own, the engine's default among them
 it.each([

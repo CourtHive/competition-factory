@@ -507,6 +507,59 @@ and earlier carry no tags at all.
 - **Date helpers need the instant.** Exported date helpers lose their implicit "now" in 8.0.0. In 7.x, pass a Date or ISO date string as the second argument to `tools.plainDate.isDateInPast(dateString, asOf)` and `tools.generateTimeCode(index, asOf)`. When omitted, both still read the call clock.
 - **`asOf` is required** on `tools.publishing` (`isEmbargoed`, `isVisiblyPublished`, `getRoundVisibilityState`).
 - **A policy can require every MAIN position to be assigned before scoring; the default does not.** (#6717) `requireAllPositionsAssigned` set under `scoring.stage[stage].stageSequence[n]` was never read in 7.x and now is: under a policy that sets it `true` for MAIN stage sequence 1, as the catalogue's `POLICY_SCORING_USTA` does, a MAIN matchUp is not `readyToScore` and `matchUpActions` does not offer `SCORE`, `EXIT` or `CLEAR_SCORE` for it until every position holds a participant, a BYE or a qualifier. `POLICY_SCORING_DEFAULT` now sets that flag `false`, so a draw still being positioned can be scored by default, as in 7.x. The top-level `requireAllPositionsAssigned` is unchanged.
+- **A swap that would contradict the draw's results is refused** with `CONTRADICTORY_POSITION_ACTION`, and `context.mustClear` names what to clear first. See [Contradictory position swaps](#contradictory-position-swaps).
+
+### Contradictory position swaps
+
+A structure records its results against drawPositions. A participant it has sent on, such as a loser directed to a
+consolation or backdraw, a group finisher placed in a playoff, or a qualifier placed in the main draw, is recorded in the
+target structure by who they are. Before 8.0.0, `swapDrawPositionAssignments` accepted a swap of such a seat. The
+results then moved to the other participant, but the target structure still held the first one. The draw contradicted
+itself, and a later valid call on either seat was refused, often with `ERR_EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT`
+or `ERR_OCCUPIED_DRAW_POSITION`. For example, in a `FIRST_ROUND_LOSER_CONSOLATION` draw of 16, a director could score
+Main R1P4 and R1P1, swap positions 1 and 7, and then try to reverse R1P4.
+
+8.0.0 refuses that swap before it writes anything, with `CONTRADICTORY_POSITION_ACTION`
+(`ERR_CONTRADICTORY_POSITION_ACTION`). A swap is refused when:
+
+- a swapped seat's occupant was sent across a link by a decided result in the structure, or was placed in a link's
+  target (a playoff, the main draw for a qualifier);
+- a seat holding results is swapped with a seat that holds nobody, which would leave the results on an empty
+  drawPosition.
+
+The engine does not undo the downstream results itself. The refusal lists them in `context.mustClear`, in the order they
+can be cleared, with each result before the result it depends on:
+
+```ts
+const result = tournamentEngine.swapDrawPositionAssignments({ drawId, structureId, drawPositions: [1, 7] });
+if (result.error?.code === 'ERR_CONTRADICTORY_POSITION_ACTION') {
+  for (const item of result.context.mustClear) {
+    // { matchUpId, structureId, roundNumber, roundPosition, reason }: a result to clear
+    // { structureId, drawPosition, participantId, reason }: a placement to remove
+  }
+}
+```
+
+`reason` is one of:
+
+| `reason`             | Meaning                                                                         | How it is cleared                               |
+| -------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `LOSER_DIRECTED`     | this result sent the swapped seat's occupant to a consolation or backdraw seat  | clear the result                                |
+| `WINNER_DIRECTED`    | this result sent the swapped seat's occupant on as a winner                     | clear the result                                |
+| `RESULT_ON_POSITION` | a result of the swapped seat that would be left on an empty drawPosition        | clear the result                                |
+| `DEPENDS_ON_RESULT`  | a later result that depends on a result above, so it is cleared first           | clear the result                                |
+| `PLACED_ACROSS_LINK` | the occupant was placed in a playoff or main draw, which no result there undoes | `removeDrawPositionAssignment` on that position |
+
+When every listed item is cleared, the swap is accepted.
+
+**Surfacing it in a client.** Show the refusal as a list of the matchUps (by structure, round and position) and
+placements to clear, in the order given, and offer to clear them, for example as one `executionQueue` with
+`rollbackOnError: true`, followed by the swap. Do not clear them silently: each item is a recorded result. A client that
+offers swaps from `positionActions` meets this only on positions the policy allows to move after play.
+
+Swaps that relabel nothing outside their structure are unchanged: a swap before any result, a swap of seats whose
+results stay inside the structure (for example two first-round winners in single elimination), and a swap of two
+seats in a consolation or playoff structure, whose links the swap disables.
 
 ### Records written before 8.0.0
 

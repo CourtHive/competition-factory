@@ -3,6 +3,7 @@ import { addPositionActionTelemetry } from '@Mutate/drawDefinitions/positionGove
 import { modifyDrawNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { drawPositionAssignmentRefusal } from '@Query/drawDefinition/drawPositionAssignmentRefusal';
+import { swapRefusal } from '@Query/drawDefinition/positionActionRefusal';
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { removeAssignment } from '@Mutate/drawDefinitions/removeDrawPositionAssignment';
 import { assignDrawPosition } from '@Mutate/matchUps/drawPositions/positionAssignment';
@@ -66,6 +67,15 @@ function swapAssignments({ tournamentRecord, drawDefinition, drawPositions, stru
 
   const { structure } = findStructure({ drawDefinition, structureId });
   if (!structure) return { error: STRUCTURE_NOT_FOUND };
+
+  // asked before any write: a swap that would relabel a result reaching outside the structure, or leave one on an empty seat, is refused
+  const contradiction = swapRefusal({
+    inContextDrawMatchUps: inContextDrawMatchUps ?? [],
+    drawDefinition,
+    drawPositions,
+    structure,
+  });
+  if (contradiction) return contradiction;
 
   const appliedPolicies =
     getAppliedPolicies({
