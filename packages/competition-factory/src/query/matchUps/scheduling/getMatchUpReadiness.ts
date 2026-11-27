@@ -156,8 +156,11 @@ export function individualIds(matchUp: HydratedMatchUp): string[] {
   return [...ids];
 }
 
+// a side supplied by a caller may carry its own name; hydration never writes one
+type NamedSide = { participantName?: string };
+
 function sideLabel(side: HydratedSide | undefined): string {
-  return side?.participant?.participantName ?? side?.participantName ?? 'TBD';
+  return side?.participant?.participantName ?? (side as NamedSide | undefined)?.participantName ?? 'TBD';
 }
 
 /** "R16: Alice vs Bob" — the label vocabulary the schedule surfaces already use. */
