@@ -2,9 +2,8 @@
   "name": "tods-competition-factory",
   "packageManager": "pnpm@12.21.0",
   "author": "Charles Allen <charles@CourtHive.com> (CourtHive.com)",
-  "description": "Create and mutate TODS compliant tournament objects",
+  "description": "Competition engine for creating and running tournaments. Continues as competition-factory from 8.0.0.",
   "keywords": [
-    "TODS",
     "bracket",
     "tournament",
     "advanced scheduling",
@@ -33,7 +32,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/CourtHive/competition-factory.git"
+    "url": "git+https://github.com/CourtHive/competition-factory.git",
+    "directory": "packages/competition-factory"
   },
   "main": "dist/index.js",
   "module": "dist/esm/index.mjs",
