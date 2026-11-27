@@ -8,6 +8,31 @@
 - `assignDrawPositionBye` (and `assignDrawPosition` with `bye: true`) no longer writes anything when it refuses a placement whose walk meets an exit: a loser seat downstream already filled (or active, missing, or in a structure the draw does not hold), or a record whose matchUpIds repeat. Those refusals are now found on the record as it stands, before the first write, so the record is untouched and nothing is announced. A record with a repeated matchUpId is now refused for any such placement, not only one whose walk reaches the repeated id. Accepted placements are unchanged.
 - `setMatchUpStatus` no longer changes the record when it refuses with two or more tournament records loaded. The engine hands a call every record it holds, and under `v2` the refusal was met before any write only when the call named one record; with more, the result and the winner's advance were left behind, and a call with `rollbackOnError` reported `rolledBack: true` over them. Every record the call names is now copied, and the refusal is returned before anything is written. A call made with one record loaded is unchanged.
 
+## [7.51.0](https://github.com/CourtHive/competition-factory/compare/v7.50.0...v7.51.0) (2026-11-27)
+
+
+### Features
+
+* **catalogue:** warn once on catalogue name inputs; store ratings presets by value ([#6650](https://github.com/CourtHive/competition-factory/issues/6650)) ([6232018](https://github.com/CourtHive/competition-factory/commit/6232018021a841304edf03c3c414439d621c7b9c))
+* **deprecations:** tag the decided 8.0.0 removals; migration tables by governor; pre-8.0.0 record writes ([#6658](https://github.com/CourtHive/competition-factory/issues/6658)) ([e074fcb](https://github.com/CourtHive/competition-factory/commit/e074fcbf41f74a5b2060cf9e8fc22fee6cc66b2f))
+* **policies:** stamp the engine defaults a record relies on; add getDefaultsDrift ([#6656](https://github.com/CourtHive/competition-factory/issues/6656)) ([44c2f4c](https://github.com/CourtHive/competition-factory/commit/44c2f4c634b25b71979f44dc14dd17e3368933f1))
+
+
+### Bug Fixes
+
+* **draws:** a reset keeps the disabled links of a BYE placed by hand ([#6680](https://github.com/CourtHive/competition-factory/issues/6680)) ([7ab691a](https://github.com/CourtHive/competition-factory/commit/7ab691a9c78cfa149d8a20f2ee9c93881f61ec84))
+* **engines:** setMatchUpStatus takes the rollback snapshot again outside the v2 pipeline ([#6677](https://github.com/CourtHive/competition-factory/issues/6677)) ([2ebc758](https://github.com/CourtHive/competition-factory/commit/2ebc7584d161ec07fba5cbfece7b3dd55e6f4dbe))
+* **mocks:** a profile's tieFormat is the caller's; the generators work on a copy ([#6675](https://github.com/CourtHive/competition-factory/issues/6675)) ([9b729a0](https://github.com/CourtHive/competition-factory/commit/9b729a0bbbc8831bb217e768f2eed6c38ec57fa3))
+* **outcomes:** a refusal v1 meets on the copy is returned before any write ([#6671](https://github.com/CourtHive/competition-factory/issues/6671)) ([b18167a](https://github.com/CourtHive/competition-factory/commit/b18167ab376d59ca1e4ab29525414feda3abe89f))
+* **outcomes:** a refusal with several tournament records loaded writes nothing ([#6681](https://github.com/CourtHive/competition-factory/issues/6681)) ([c0eaccb](https://github.com/CourtHive/competition-factory/commit/c0eaccbe99aedb31c67ce6cc6c2e7ff3531e425c))
+* **positions:** a BYE placement refused on the exit walk writes nothing ([#6673](https://github.com/CourtHive/competition-factory/issues/6673)) ([79661b2](https://github.com/CourtHive/competition-factory/commit/79661b25fc73f18ad1c58bb0f5de34339284ab97))
+
+
+### Documentation
+
+* **readme:** point the final tods-competition-factory release to competition-factory ([#6659](https://github.com/CourtHive/competition-factory/issues/6659)) ([67d43d7](https://github.com/CourtHive/competition-factory/commit/67d43d744bc99dafe5ce17f585a1784ef9c91bd2))
+* **readme:** recompose the final release's npm overview ([#6686](https://github.com/CourtHive/competition-factory/issues/6686)) ([f40810b](https://github.com/CourtHive/competition-factory/commit/f40810b7dae3cb7517d5969de475ed44cbb21347))
+
 ## [7.50.0](https://github.com/CourtHive/competition-factory/compare/v7.49.0...v7.50.0) (2026-11-26)
 
 ### Highlights
