@@ -7,6 +7,7 @@ import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { getTieFormat } from '@Query/hierarchical/tieFormats/getTieFormat';
 import { tieFormatTelemetry } from '@Mutate/tieFormat/tieFormatTelemetry';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { nonTeamTieFormatTargetRefusal } from '@Validators/nonTeamTieFormat';
 import { withEventChangeNotice } from '@Mutate/events/eventChangeNotice';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { writeTieFormat } from '@Mutate/tieFormat/writeTieFormat';
@@ -78,6 +79,10 @@ type AddCollectionDefinitionArgs = {
 // A tieFormat written to the event, or to event.tieFormats (where a draw's, structure's or matchUp's
 // shared tieFormat lives), modifies the event: announced with MODIFY_EVENT when it changed.
 export function addCollectionDefinition(params: AddCollectionDefinitionArgs) {
+  // a tieFormat edit on an event or draw that is not TEAM is refused, before anything is written
+  const targetRefusal = nonTeamTieFormatTargetRefusal(params);
+  if (targetRefusal)
+    return { ...targetRefusal, stack: ['addCollectionDefinition'] } as ReturnType<typeof addDefinition>;
   return withEventChangeNotice(params, () => addDefinition(params));
 }
 

@@ -466,6 +466,20 @@ and earlier carry no tags at all.
 ### Behaviour changes
 
 - _Proposed:_ **the default `stampScope` becomes `'modified'`.** The factory `{ version, timeStamp }` stamp goes on each drawDefinition a call modified, and on the tournament only when something outside its draws changed. A consumer that reads `tournament.factory` as "last write anywhere" must read the draw stamps. Opt in during 7.x with `engine.stampScope('modified')`. A custom state provider uses the optional `cycleModifiedTopics` hook.
+- **A tieFormat for an event that is not TEAM is refused.** In 7.x a `tieFormat`, `tieFormatName`, `tieFormatId` or
+  `tieFormats` supplied for a SINGLES, DOUBLES or HYBRID event or draw was accepted: `addEvent` and the mocks profiles
+  stored it on the event, and `generateDrawDefinition` dropped it, or, given a `matchUpFormat` as well, generated the
+  draw's matchUps with `tieMatchUps`, so the tieFormat outranked the format and type the caller asked for. In 8.0.0
+  these return `INVALID_TIE_FORMAT` (`context.supplied` names the inputs) and change nothing: `addEvent`,
+  `generateDrawDefinition`, `addDrawDefinition` (a draw that carries a tieFormat or `tieMatchUps`), the generators that
+  take a `tieFormat` (`generateDrawTypeAndModifyDrawDefinition`, `generateVoluntaryConsolation`,
+  `generateQualifyingStructure`, `generateDrawStructuresAndLinks`), `setMatchUpFormat`, the mocks `drawProfiles` and
+  `eventProfiles`, and the sanctioning event proposals (`createSanctioningRecord`, `addEventProposal`,
+  `updateEventProposal`, `activateFromSanctioning`). `modifyEvent` returns `INVALID_EVENT_TYPE` for a change away from
+  TEAM while the event holds a tieFormat. The tieFormat governor's edits return `INVALID_TIE_FORMAT` for a non-TEAM
+  event or draw that holds one, which only a record written by 7.x can. To migrate, pass a tieFormat only for
+  `eventType: TEAM`, and a `matchUpFormat` for SINGLES and DOUBLES. Stored records read unchanged; a tieFormat that 7.x
+  stored on a non-TEAM event cannot be edited, so remove it from the record.
 - **`addFlight` refuses a participant already in another flight** with `EXISTING_FLIGHT` (and `context.participantIds`) unless `force: true`. In 7.x it returns a `PARTICIPANT_IN_OTHER_FLIGHT` warning and still adds.
 - **`addPoint` no longer mutates the matchUp it is given.** Use its return value.
 - **Generators no longer attach.** `generateLineUps` (`attach`), `generateFlightProfile` (`attachFlightProfile`), `drawMatic` (`updateParticipantRatings`), `generateDrawTypeAndModifyDrawDefinition` (`modifyOriginal`), `generateEventsFromTieFormat` (attaching unless `addEvents: false`) and `generateTournamentRecord` through an engine return what they generate. Call the matching attach mutation to store it.

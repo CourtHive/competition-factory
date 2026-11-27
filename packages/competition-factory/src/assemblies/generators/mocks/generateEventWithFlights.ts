@@ -7,6 +7,7 @@ import { eventGeneratesOwnParticipants } from './eventGeneratesOwnParticipants';
 import { generateEventParticipants } from './generateEventParticipants';
 import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { resolveCompletionOptions } from './resolveCompletionOptions';
+import { nonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { attachProfilePolicies } from './attachProfilePolicies';
 import { getParticipantId } from '@Functions/global/extractors';
@@ -56,6 +57,13 @@ export function generateEventWithFlights(params) {
     ballType,
     category,
   } = eventProfile;
+
+  // a tieFormat, tieFormatName or tieFormatId on a profile that is not TEAM, or on one of its drawProfiles, is refused
+  // before anything is generated
+  for (const profile of [eventProfile, ...drawProfiles]) {
+    const tieFormatRefusal = nonTeamTieFormatRefusal({ ...profile, eventType });
+    if (tieFormatRefusal) return tieFormatRefusal;
+  }
 
   const eventId = eventProfile.eventId || UUID(undefined, random);
   const tieFormat =

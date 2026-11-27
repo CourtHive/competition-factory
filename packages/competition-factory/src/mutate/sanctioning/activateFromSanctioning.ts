@@ -1,5 +1,6 @@
 import { setTournamentInfoPublishState } from '@Mutate/timeItems/publishTournamentInfo';
 import { stampCreation } from '@Mutate/extensions/stampDefaults';
+import { nonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { transitionStatus } from './transitionStatus';
 import { takeUUID, UUID } from '@Tools/UUID';
 
@@ -244,6 +245,13 @@ export function activateFromSanctioning({
   }
 
   const { proposal } = sanctioningRecord;
+
+  // a tieFormat describes a TEAM tie: an event proposal of another type that carries one (an amendment can set it) is
+  // refused before the record is built or the sanctioning record moves to ACTIVE
+  for (const eventProposal of proposal.events ?? []) {
+    const tieFormatRefusal = nonTeamTieFormatRefusal(eventProposal);
+    if (tieFormatRefusal) return tieFormatRefusal;
+  }
 
   // --- Generate tournamentRecord ---
   const tournamentRecord: Tournament = {

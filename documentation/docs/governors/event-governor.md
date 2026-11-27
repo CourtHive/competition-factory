@@ -63,7 +63,8 @@ The `event` object may include:
 - `eventType` — defaults to `SINGLES_EVENT`; use `TEAM_EVENT` for team competitions
 - `tieFormat` — the TEAM event's tie format (validated); without one, a TEAM draw takes the default format when it is
   generated. A `tieFormatName` alone selects nothing and is refused with `INVALID_VALUES`: pass the `tieFormat` object
-  (named ones are published by `@courthive/competition-catalogue`)
+  (named ones are published by `@courthive/competition-catalogue`). For any other
+  `eventType`, a `tieFormat`, `tieFormatName`, `tieFormatId` or `tieFormats` is refused with `INVALID_TIE_FORMAT`
 - `startDate`, `endDate` — optional, default to tournament dates
 - `category`, `gender`, `matchUpFormat` — optional event metadata
 

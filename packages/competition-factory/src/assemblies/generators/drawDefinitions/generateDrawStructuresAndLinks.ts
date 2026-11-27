@@ -3,6 +3,7 @@ import { ownMethod } from '@Tools/ownMethod';
 import { traversesByFinishingPosition } from '@Helpers/drawTopology/linkTraversal';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { generateQualifyingLink } from './links/generateQualifyingLink';
+import { nonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { structureSort } from '@Functions/sorters/structureSort';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
@@ -67,6 +68,12 @@ export function generateDrawStructuresAndLinks(params: GenerateDrawStructuresAnd
     isMock,
     uuids,
   } = params ?? {};
+
+  const typeRefusal = nonTeamTieFormatRefusal({
+    matchUpType: params.matchUpType ?? drawDefinition?.matchUpType,
+    tieFormat,
+  });
+  if (typeRefusal) return decorateResult({ result: typeRefusal, stack: 'generateDrawStructuresAndLinks' });
 
   const drawSize = ensureInt(params.drawSize);
 

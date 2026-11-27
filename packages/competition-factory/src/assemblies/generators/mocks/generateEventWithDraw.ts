@@ -6,6 +6,7 @@ import { completeDrawMatchUps } from '@Generators/simulation/completeDrawMatchUp
 import { getQualifyingEntryPlan } from '@Helpers/entries/getQualifyingEntryPlan';
 import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { resolveCompletionOptions } from './resolveCompletionOptions';
+import { nonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { applyOutcomes } from '@Mutate/simulation/applyOutcomes';
 import { getParticipantId } from '@Functions/global/extractors';
@@ -815,6 +816,9 @@ export function generateEventWithDraw(params) {
 
   const eventId = drawProfileCopy.eventId || UUID(undefined, random);
   const eventType = drawProfile.eventType || drawProfile.matchUpType || SINGLES;
+  // a tieFormat, tieFormatName or tieFormatId on a profile that is not TEAM is refused before anything is generated
+  const tieFormatRefusal = nonTeamTieFormatRefusal({ ...drawProfile, eventType });
+  if (tieFormatRefusal) return tieFormatRefusal;
   const isHybrid = eventType === HYBRID;
   const participantType = eventType === DOUBLES ? PAIR : INDIVIDUAL;
 

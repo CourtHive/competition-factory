@@ -3,6 +3,7 @@ import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParame
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { categoryCanContain } from '@Helpers/categories/categoryCanContain';
 import { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';
+import { eventTypeChangeTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { validateEntryProfile } from '@Validators/validateEntryProfile';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import { getParticipants } from '@Query/participants/getParticipants';
@@ -98,6 +99,10 @@ export function modifyEvent(params: ModifyEventArgs): ResultType {
 
   const eventTypeResult = checkEventType({ enteredParticipantTypes, eventUpdates, stack });
   if (eventTypeResult.error) return eventTypeResult;
+
+  // a tieFormat describes a TEAM tie: an event that holds one is not changed to another type
+  const tieFormatRefusal = eventTypeChangeTieFormatRefusal({ eventType: eventUpdates.eventType, event });
+  if (tieFormatRefusal) return decorateResult({ result: tieFormatRefusal, stack });
 
   const categoryResult = checkCategoryUpdates({ ...params, ...participantsProfile, enteredParticipants, stack });
   if (categoryResult.error) return categoryResult;

@@ -4,6 +4,7 @@ import structureTemplate from '@Helpers/drawTopology/templates/structureTemplate
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { generateTieMatchUps } from '@Helpers/drawTopology/templates/tieMatchUps';
 import { getStructureGroups } from '@Query/structure/getStructureGroups';
+import { nonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { coerceEven, isConvertableInteger } from '@Tools/math';
 import { feedInQualifyingMatchUps } from '../feedInQualifying';
@@ -184,6 +185,8 @@ export function generateQualifyingStructure(params: GenerateQualifyingStructureA
   if ((structureProfile as any)?.error) return structureProfile as any;
 
   const matchUpType = drawDefinition.matchUpType;
+  const typeRefusal = nonTeamTieFormatRefusal({ matchUpType, tieFormat });
+  if (typeRefusal) return decorateResult({ result: typeRefusal, stack });
   const stageSequence = 1;
 
   const roundTargetName = roundTarget ? `${roundTarget}-` : '';

@@ -7,6 +7,7 @@ import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { nonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { definedAttributes } from '@Tools/definedAttributes';
@@ -78,6 +79,11 @@ export function generateDrawTypeAndModifyDrawDefinition(params: GenerateDrawType
   const drawDefinition = modifyOriginal ? params.drawDefinition : makeDeepCopy(params.drawDefinition, false, true);
 
   let { tieFormat, matchUpType } = params;
+  const typeRefusal = nonTeamTieFormatRefusal({
+    matchUpType: matchUpType ?? drawDefinition.matchUpType ?? params.event?.eventType,
+    tieFormat,
+  });
+  if (typeRefusal) return decorateResult({ result: typeRefusal, stack });
   if (tieFormat) {
     const result = validateTieFormat({ tieFormat, enforceValues: true });
     if (result.error) return result;

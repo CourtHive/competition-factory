@@ -1,6 +1,7 @@
 // Constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { nowIso } from '@Tools/clock';
 import {
   EDITABLE_STATUSES,
@@ -33,6 +34,9 @@ export function updateEventProposal({ sanctioningRecord, eventProposalId, update
 
   // Prevent overwriting the ID
   const { eventProposalId: _ignored, ...safeUpdates } = updates;
+  // judged as the proposal would stand after the update: a tieFormat on a proposal that is not TEAM is refused
+  const tieFormatRefusal = nonTeamTieFormatRefusal({ ...event, ...safeUpdates });
+  if (tieFormatRefusal) return tieFormatRefusal;
   Object.assign(event, safeUpdates);
 
   sanctioningRecord.updatedAt = nowIso();

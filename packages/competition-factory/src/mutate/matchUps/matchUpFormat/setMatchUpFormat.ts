@@ -5,6 +5,7 @@ import { checkDrawFormatCompatibility } from '@Validators/tiedFormatCompatibilit
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
+import { suppliedTieFormatInputs } from '@Validators/nonTeamTieFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { applyMatchUpFormat } from './applyMatchUpFormat';
@@ -18,6 +19,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 import {
   INVALID_EVENT_TYPE,
+  INVALID_TIE_FORMAT,
   INVALID_VALUES,
   MISSING_DRAW_DEFINITION,
   NO_MODIFICATIONS_APPLIED,
@@ -38,6 +40,10 @@ type SetMatchUpStatusArgs = {
   eventType?: string;
   matchUpId?: string;
   drawIds?: string[];
+  /** Refused: a matchUpFormat applies to SINGLES and DOUBLES, and a tieFormat only to a TEAM event. */
+  tieFormat?: unknown;
+  /** Refused, as `tieFormat` is. */
+  tieFormatName?: unknown;
   stages?: string[];
   eventId?: string;
   drawId?: string;
@@ -57,6 +63,16 @@ export function setMatchUpFormat(params: SetMatchUpStatusArgs) {
     },
   ]);
   if (paramsCheck.error) return decorateResult({ result: paramsCheck, stack });
+
+  // a tieFormat passed with a matchUpFormat was ignored: it is refused, since this call writes no tieFormat
+  const supplied = suppliedTieFormatInputs(params);
+  if (supplied.length)
+    return decorateResult({
+      result: { error: INVALID_TIE_FORMAT },
+      info: 'a tieFormat applies only to a TEAM event',
+      context: { supplied },
+      stack,
+    });
 
   const {
     tournamentRecord,

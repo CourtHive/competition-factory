@@ -5,6 +5,7 @@ import { generateTieMatchUps } from '@Helpers/drawTopology/templates/tieMatchUps
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { getStageEntries } from '@Query/drawDefinition/stageGetter';
+import { nonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { withDraftWrites } from '@Global/state/withDraftWrites';
 import { definedAttributes } from '@Tools/definedAttributes';
@@ -121,6 +122,11 @@ function generateVoluntaryConsolationDraft(params: GenerateVoluntaryConsolationA
     return { error: INVALID_DRAW_SIZE };
 
   let { tieFormat, matchUpType } = params;
+  const typeRefusal = nonTeamTieFormatRefusal({
+    matchUpType: matchUpType ?? drawDefinition.matchUpType ?? event?.eventType,
+    tieFormat,
+  });
+  if (typeRefusal) return typeRefusal;
   if (tieFormat) {
     const result = validateTieFormat({ tieFormat, enforceValues: true });
     if (result.error) return result;
