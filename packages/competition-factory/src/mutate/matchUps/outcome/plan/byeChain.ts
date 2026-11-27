@@ -871,8 +871,7 @@ export function unfillableByeChain(
   if (unfillable.seat.opponentBye && !standing) return undefined;
   if (unfillable.matchUpStatus !== (standing ? BYE : TO_BE_PLAYED) || unfillable.hasResult) return undefined;
   const record = indexed(view, unfillable.matchUpId);
-  if (!record || (record as { reasons?: unknown }).reasons || Object.keys(record.sideExitProvenance ?? {}).length)
-    return undefined;
+  if (!record || holdsReasons(record) || Object.keys(record.sideExitProvenance ?? {}).length) return undefined;
   const { structureId, drawPosition, matchUpId } = unfillable;
   const first = { structureId, drawPosition, matchUpId };
   return byeChain(view, first, from.levels, false, standing);
