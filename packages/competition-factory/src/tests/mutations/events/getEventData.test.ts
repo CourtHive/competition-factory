@@ -1,10 +1,10 @@
+import { competitionFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
 // constants
 import { COMPASS, CURTIS_CONSOLATION } from '@Constants/drawDefinitionConstants';
-import { INTENNSE_STANDARD } from '@Constants/competitionFormatConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { TEAM } from '@Constants/participantConstants';
 import { DOUBLES } from '@Constants/eventConstants';
@@ -12,6 +12,8 @@ import { SINGLES } from '@Constants/matchUpTypes';
 
 // Fixtures
 import { countries } from '@Fixtures/countryData';
+
+const { INTENNSE_STANDARD } = competitionFormatConstants;
 
 it('returns eventData with expected drawsData', () => {
   const drawProfiles = [{ drawSize: 4, drawType: COMPASS }];

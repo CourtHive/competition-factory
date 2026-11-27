@@ -1,5 +1,5 @@
 import { processTieFormat } from '@Assemblies/generators/mocks/processTieFormat';
-import { tieFormats } from '@Fixtures/scoring/tieFormats';
+import { tieFormats } from '@courthive/competition-catalogue';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';

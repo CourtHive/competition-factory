@@ -1,4 +1,5 @@
 import { expectPlayedParity, playCall, prepareCall } from '@Tests/testHarness/outcome/recordedCallHarness';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -8,13 +9,14 @@ import { setClock } from '@Tools/clock';
 // constants
 import { AD_HOC, FIRST_MATCH_LOSER_CONSOLATION, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
 } from '@Constants/outcomePipelineConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 /**
  * A DOUBLE EXIT STORED WITH NO `scoredTime`, ASKED AGAIN, IS STAMPED. A double exit asked for again is satisfied: v1
@@ -29,7 +31,7 @@ afterEach(() => {
 });
 
 const DRAW_ID = 'd';
-const TEAM_DRAW = { eventType: TEAM, tieFormatName: DOMINANT_DUO };
+const TEAM_DRAW = { eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO) };
 
 function storedMatchUp(record: any, matchUpId: string): any {
   let found: any;

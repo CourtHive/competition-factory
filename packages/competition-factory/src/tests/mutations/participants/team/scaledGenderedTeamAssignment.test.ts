@@ -1,15 +1,17 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { participantScaleItem } from '@Query/participant/participantScaleItem';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants and types
-import { USTA_GOLD_TEAM_CHALLENGE } from '@Constants/tieFormatConstants';
 import { SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { FEMALE, MALE } from '@Constants/genderConstants';
 import { ScaleAttributes } from '@Types/factoryTypes';
 import { RANKING } from '@Constants/scaleConstants';
+
+const { USTA_GOLD_TEAM_CHALLENGE } = tieFormatConstants;
 
 it('can generate balanced gendered teams for Mixed Gender events', () => {
   const GOLD_TEAM_SIZE = 8;
@@ -24,7 +26,7 @@ it('can generate balanced gendered teams for Mixed Gender events', () => {
     setState: true,
     drawProfiles: [
       {
-        tieFormatName: USTA_GOLD_TEAM_CHALLENGE,
+        tieFormat: resolveTieFormat(USTA_GOLD_TEAM_CHALLENGE),
         category: { ageCategoryCode: C18U },
         eventType: TEAM_EVENT,
         buildTeams: false,

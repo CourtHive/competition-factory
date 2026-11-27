@@ -1,7 +1,8 @@
-import type { Tournament } from '@Types/tournamentTypes';
+import { COMPLETED, DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { getTournamentRecords, setOutcomePipeline } from '@Global/state/globalState';
-import { COMPLETED, DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
+import type { Tournament } from '@Types/tournamentTypes';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createSeededRandom } from '@Tools/prng';
 import mocks from '@Assemblies/engines/mock';
@@ -37,7 +38,13 @@ function fixture(status: typeof WALKOVER | typeof RETIRED | typeof DEFAULTED, wi
   setOutcomePipeline('v1');
   mocks.generateTournamentRecord({
     drawProfiles: [
-      { drawId, drawType: 'FEED_IN_CHAMPIONSHIP', drawSize: 8, eventType: 'TEAM', tieFormatName: 'DOMINANT_DUO' },
+      {
+        drawId,
+        drawType: 'FEED_IN_CHAMPIONSHIP',
+        drawSize: 8,
+        eventType: 'TEAM',
+        tieFormat: resolveTieFormat('DOMINANT_DUO'),
+      },
     ],
     nonRandom: 158,
     setState: true,

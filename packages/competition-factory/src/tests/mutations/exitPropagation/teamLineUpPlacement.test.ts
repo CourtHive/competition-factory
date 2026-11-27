@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -6,8 +7,9 @@ import { expect, it } from 'vitest';
 // constants
 import { FIRST_MATCH_LOSER_CONSOLATION, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { BYE, COMPLETED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 /**
  * THREE DEFECTS THE TEAM MATRIX'S LINE ARM FOUND ON FIRST CONTACT — 2026-10-01 — each pinned alone.
@@ -46,7 +48,7 @@ const teams = (matchUp: any) => (matchUp.sides ?? []).map((side: any) => side.pa
 function generate(drawId: string, drawType: string, seed: number) {
   setSubscriptions({});
   mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawId, drawType, drawSize: 8, eventType: TEAM, tieFormatName: DOMINANT_DUO }],
+    drawProfiles: [{ drawId, drawType, drawSize: 8, eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO) }],
     nonRandom: seed,
     setState: true,
   });

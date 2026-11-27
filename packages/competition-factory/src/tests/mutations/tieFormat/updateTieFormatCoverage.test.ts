@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { updateTieFormat } from '@Mutate/tieFormat/updateTieFormat';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -6,7 +7,6 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
-import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
 import { DOUBLES } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/eventConstants';
 import {
@@ -15,6 +15,8 @@ import {
   INVALID_TIE_FORMAT,
   MISSING_DRAW_DEFINITION,
 } from '@Constants/errorConditionConstants';
+
+const { COLLEGE_D3 } = tieFormatConstants;
 
 const policyDefinitions = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };
 
@@ -38,7 +40,7 @@ describe('updateTieFormat coverage', () => {
       drawIds: [drawId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
     });
 
     tournamentEngine.setState(tournamentRecord);
@@ -55,7 +57,7 @@ describe('updateTieFormat coverage', () => {
       drawIds: [drawId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
     });
 
     tournamentEngine.setState(tournamentRecord);
@@ -72,7 +74,7 @@ describe('updateTieFormat coverage', () => {
       drawIds: [drawId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
       policyDefinitions,
     });
 
@@ -119,7 +121,7 @@ describe('updateTieFormat coverage', () => {
       drawIds: [drawId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
       policyDefinitions,
     });
 
@@ -170,7 +172,7 @@ describe('updateTieFormat coverage', () => {
       eventIds: [eventId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+      drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
     });
 
     tournamentEngine.setState(tournamentRecord);
@@ -193,7 +195,7 @@ describe('updateTieFormat coverage', () => {
       drawIds: [drawId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
     });
 
     tournamentEngine.setState(tournamentRecord);
@@ -214,7 +216,7 @@ describe('updateTieFormat coverage', () => {
       drawIds: [drawId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
     });
 
     tournamentEngine.setState(tournamentRecord);
@@ -239,7 +241,7 @@ describe('updateTieFormat coverage', () => {
       drawIds: [drawId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
       policyDefinitions,
     });
 
@@ -285,7 +287,7 @@ describe('updateTieFormat coverage', () => {
       drawIds: [drawId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
       policyDefinitions,
     });
 

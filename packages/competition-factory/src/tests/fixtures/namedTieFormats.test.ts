@@ -1,5 +1,4 @@
-import { tieFormatConstants } from '@Constants/tieFormatConstants';
-import { tieFormats } from '@Fixtures/scoring/tieFormats';
+import { tieFormatConstants, tieFormats } from '@courthive/competition-catalogue';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, test } from 'vitest';
 

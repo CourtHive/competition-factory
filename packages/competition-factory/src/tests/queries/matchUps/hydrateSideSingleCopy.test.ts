@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { POLICY_PRIVACY_DEFAULT } from '@Fixtures/policies/POLICY_PRIVACY_DEFAULT';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -6,8 +7,9 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants
 import { COMPASS, FEED_IN_CHAMPIONSHIP, ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { DOUBLES, TEAM } from '@Constants/eventConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 // hydrateSideParticipant copies a side's participant once. It used to copy the result of findParticipant, which is
 // already a fresh copy, a second time. Every read is made twice, with the single copy and with the second copy put
@@ -34,7 +36,7 @@ const DRAW_PROFILES = [
   { drawSize: 16, drawType: COMPASS },
   { drawSize: 16, drawType: ROUND_ROBIN },
   { drawSize: 8, eventType: DOUBLES },
-  { drawSize: 8, eventType: TEAM, tieFormatName: DOMINANT_DUO },
+  { drawSize: 8, eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO) },
 ];
 
 function generate({ nonRandom, completeAllMatchUps, privacy }) {

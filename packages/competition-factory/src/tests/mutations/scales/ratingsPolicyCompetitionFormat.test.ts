@@ -1,4 +1,4 @@
-import { POLICY_RATINGS_ELO_WORLD_FOOTBALL } from '@Fixtures/policies/POLICY_RATINGS_ELO_WORLD_FOOTBALL';
+import { POLICY_RATINGS_ELO_WORLD_FOOTBALL } from '@courthive/competition-catalogue';
 import { POLICY_RATINGS_DEFAULT } from '@Fixtures/policies/POLICY_RATINGS_DEFAULT';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -7,8 +7,8 @@ import { expect, it } from 'vitest';
 
 // constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_RATINGS } from '@Constants/policyConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 // ratings policy S3: a competitionFormat
 // selects a ratings policy by preset name or inline, after a passed policy and one attached to the event or tournament

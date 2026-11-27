@@ -1,4 +1,5 @@
 import { drawTypes, setupTimedPlayoff, timedScore } from './timedTeamPlayoff';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
 import { setOutcomePipeline } from '@Global/state/globalState';
 import { afterEach, describe, expect, it } from 'vitest';
 import mocks from '@Assemblies/engines/mock';
@@ -15,7 +16,7 @@ it.each(['v1', 'v2', 'differential'] as const)(
         setOutcomePipeline(mode);
         const drawId = 'team-double-exit';
         mocks.generateTournamentRecord({
-          drawProfiles: [{ drawId, drawSize: 4, eventType: 'TEAM', tieFormatName: 'DOMINANT_DUO' }],
+          drawProfiles: [{ drawId, drawSize: 4, eventType: 'TEAM', tieFormat: resolveTieFormat('DOMINANT_DUO') }],
           nonRandom: 1,
           setState: true,
         });

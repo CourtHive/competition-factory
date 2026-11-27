@@ -1,3 +1,4 @@
+import { POLICY_SEEDING_ITF as SEEDING_ITF_POLICY } from '@courthive/competition-catalogue';
 import { getStructureRoundProfile } from '@Query/structure/getStructureRoundProfile';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -7,7 +8,6 @@ import { expect, it } from 'vitest';
 import { eventConstants } from '@Constants/eventConstants';
 
 // constants and fixtures
-import SEEDING_ITF_POLICY from '@Fixtures/policies/POLICY_SEEDING_ITF';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 const { SINGLES } = eventConstants;

@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -6,10 +7,11 @@ import { expect, it } from 'vitest';
 // constants
 import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
 import { BYE, COMPLETED } from '@Constants/matchUpStatusConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import { RANKING } from '@Constants/scaleConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 // TEAM FIRST_MATCH_LOSER_CONSOLATION: 7 teams in a draw of 8, so one team has a round 1 BYE and its round 2
 // dual is its first match. DOMINANT_DUO is two singles and a doubles; two rubbers win the dual.
@@ -21,7 +23,7 @@ function setup() {
     drawProfiles: [
       {
         drawType: FIRST_MATCH_LOSER_CONSOLATION,
-        tieFormatName: DOMINANT_DUO,
+        tieFormat: resolveTieFormat(DOMINANT_DUO),
         eventType: TEAM_EVENT,
         participantsCount: 7,
         drawSize: 8,

@@ -1,3 +1,4 @@
+import { resolveTieFormat } from '@courthive/competition-catalogue';
 import { getSeasonMovement } from '@Query/season/getSeasonMovement';
 import { planNextPeriod } from '@Query/season/planNextPeriod';
 import { validateSeason } from '@Validators/validateSeason';
@@ -19,7 +20,7 @@ const seasonProfile = {
     { tierId: 'box-2', tierValue: 'Box 2', teamsCount: 4 },
     { tierId: 'box-3', tierValue: 'Box 3', teamsCount: 4 },
   ],
-  tieFormatName: 'DOMINANT_DUO',
+  tieFormat: resolveTieFormat('DOMINANT_DUO'),
   periods: [{}, {}],
 };
 

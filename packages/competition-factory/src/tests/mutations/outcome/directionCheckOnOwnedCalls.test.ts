@@ -1,4 +1,5 @@
 import { getDifferentialTally, OutcomePipelineDivergence } from '@Mutate/matchUps/outcome/differential';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { setOutcomePipeline } from '@Global/state/globalState';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -9,8 +10,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { WALKOVER } from '@Constants/matchUpStatusConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 /**
  * THE DIFFERENTIAL'S DIRECTION CHECK (§ 5 rule 1) IS THE PLANNERS': it holds a call the planners write to the direction
@@ -95,7 +97,7 @@ describe('the direction check', () => {
       drawProfiles: [
         {
           drawType: FIRST_MATCH_LOSER_CONSOLATION,
-          tieFormatName: DOMINANT_DUO,
+          tieFormat: resolveTieFormat(DOMINANT_DUO),
           drawId: DRAW_ID,
           eventType: TEAM,
           drawSize: 8,
@@ -145,7 +147,7 @@ describe("the dual's direction check, where a line's result makes its dual's cal
   // dual's own call, and the planners state the dual's direction (`planDual`)
   const generateTeam = () => {
     mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawId: DRAW_ID, drawSize: 4, eventType: TEAM, tieFormatName: DOMINANT_DUO }],
+      drawProfiles: [{ drawId: DRAW_ID, drawSize: 4, eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO) }],
       setState: true,
     });
     tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId: DRAW_ID });

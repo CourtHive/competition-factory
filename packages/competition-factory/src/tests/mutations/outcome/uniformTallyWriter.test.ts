@@ -1,5 +1,6 @@
 import { deleteNotices, setOutcomePipeline, setSchemaWriteMode, setSubscriptions } from '@Global/state/globalState';
 import { addNotice, setCapturedClock, setCapturedStamps, setDeepCopy } from '@Global/state/globalState';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
 import { notifySubscribers } from '@Global/state/notifySubscribers';
@@ -16,13 +17,14 @@ import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipe
 import { BRIDGE, NATIVE, type SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import {
   MODIFY_DRAW_DEFINITION,
   MODIFY_POSITION_ASSIGNMENTS,
   UPDATE_INCONTEXT_MATCHUP,
   MODIFY_MATCHUP,
 } from '@Constants/topicConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 const writes = vi.hoisted(() => ({ count: 0, tallyFormats: [] as (string | undefined)[] }));
 vi.mock('@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults', async (importOriginal) => {
@@ -88,7 +90,7 @@ function prepare(recipe: Recipe) {
         ...(recipe.drawType === ROUND_ROBIN ? { participantsCount: 6 } : {}),
         drawId: 'd',
         automated: true,
-        ...(recipe.eventType === 'TEAM' ? { tieFormatName: DOMINANT_DUO } : {}),
+        ...(recipe.eventType === 'TEAM' ? { tieFormat: resolveTieFormat(DOMINANT_DUO) } : {}),
       },
     ],
     policyDefinitions: { scoring: { requireParticipantsForScoring: false } },

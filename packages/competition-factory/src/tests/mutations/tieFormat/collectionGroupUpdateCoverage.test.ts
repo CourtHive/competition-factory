@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
@@ -5,9 +6,10 @@ import { expect, it, describe } from 'vitest';
 // constants
 import { INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
-import { USTA_BREWER_CUP } from '@Constants/tieFormatConstants';
 import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/eventConstants';
+
+const { USTA_BREWER_CUP } = tieFormatConstants;
 
 const policyDefinitions = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };
 
@@ -17,7 +19,7 @@ describe('collectionGroupUpdate and related operations coverage', () => {
       drawIds: [drawId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: USTA_BREWER_CUP }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(USTA_BREWER_CUP) }],
     });
 
     tournamentEngine.setState(tournamentRecord);
@@ -34,7 +36,7 @@ describe('collectionGroupUpdate and related operations coverage', () => {
       drawIds: [drawId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: USTA_BREWER_CUP }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(USTA_BREWER_CUP) }],
     });
 
     tournamentEngine.setState(tournamentRecord);
@@ -51,7 +53,7 @@ describe('collectionGroupUpdate and related operations coverage', () => {
       drawIds: [drawId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: USTA_BREWER_CUP }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(USTA_BREWER_CUP) }],
     });
 
     tournamentEngine.setState(tournamentRecord);
@@ -69,7 +71,7 @@ describe('collectionGroupUpdate and related operations coverage', () => {
       drawIds: [drawId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: USTA_BREWER_CUP }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(USTA_BREWER_CUP) }],
     });
 
     tournamentEngine.setState(tournamentRecord);
@@ -92,7 +94,7 @@ describe('collectionGroupUpdate and related operations coverage', () => {
       eventIds: [eventId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: USTA_BREWER_CUP }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(USTA_BREWER_CUP) }],
     });
 
     tournamentEngine.setState(tournamentRecord);
@@ -112,7 +114,7 @@ describe('collectionGroupUpdate and related operations coverage', () => {
       eventIds: [eventId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: USTA_BREWER_CUP }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(USTA_BREWER_CUP) }],
     });
 
     tournamentEngine.setState(tournamentRecord);
@@ -144,7 +146,7 @@ describe('collectionGroupUpdate and related operations coverage', () => {
       drawIds: [drawId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormatName: USTA_BREWER_CUP }],
+      drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormat: resolveTieFormat(USTA_BREWER_CUP) }],
     });
 
     tournamentEngine.setState(tournamentRecord);
@@ -178,7 +180,7 @@ describe('collectionGroupUpdate and related operations coverage', () => {
       drawIds: [drawId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormatName: USTA_BREWER_CUP }],
+      drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormat: resolveTieFormat(USTA_BREWER_CUP) }],
       policyDefinitions,
     });
 
@@ -218,7 +220,7 @@ describe('collectionGroupUpdate and related operations coverage', () => {
       drawIds: [drawId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: USTA_BREWER_CUP }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(USTA_BREWER_CUP) }],
     });
 
     tournamentEngine.setState(tournamentRecord);
@@ -238,7 +240,7 @@ describe('collectionGroupUpdate and related operations coverage', () => {
       drawIds: [drawId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: USTA_BREWER_CUP }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(USTA_BREWER_CUP) }],
     });
 
     tournamentEngine.setState(tournamentRecord);

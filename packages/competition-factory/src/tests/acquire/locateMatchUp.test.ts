@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { getMatchUpLocationIndex, locateMatchUp } from '@Acquire/locateMatchUp';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -10,7 +11,6 @@ import { findEvent } from '@Acquire/findEvent';
 
 // constants
 import { DRAW_DEFINITION_NOT_FOUND, MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
 import {
   AD_HOC,
@@ -22,6 +22,8 @@ import {
   ROUND_ROBIN_WITH_PLAYOFF,
   SINGLE_ELIMINATION,
 } from '@Constants/drawDefinitionConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 // every call is counted, and every call still does exactly what it did
 vi.mock('@Query/matchUps/getAllTournamentMatchUps', async (importOriginal) => {
@@ -45,8 +47,8 @@ const DRAW_PROFILES = [
   { drawSize: 16, drawType: ROUND_ROBIN },
   { drawSize: 16, drawType: ROUND_ROBIN_WITH_PLAYOFF },
   { drawSize: 8, drawType: AD_HOC, roundsCount: 2 },
-  { drawSize: 8, eventType: TEAM, tieFormatName: DOMINANT_DUO },
-  { drawSize: 8, drawType: ROUND_ROBIN, eventType: TEAM, tieFormatName: DOMINANT_DUO },
+  { drawSize: 8, eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO) },
+  { drawSize: 8, drawType: ROUND_ROBIN, eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO) },
 ];
 
 function generate(nonRandom: number, completeAllMatchUps = false) {

@@ -2,6 +2,7 @@ import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/sta
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
+import { tieFormatConstants } from '@courthive/competition-catalogue';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
@@ -14,7 +15,6 @@ import { expect } from 'vitest';
 // constants and types
 import type { DrawDefinition, Tournament, Structure, Event, Side } from '@Types/tournamentTypes';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
-import { DOMINANT_DUO, USTA_COLLEGE } from '@Constants/tieFormatConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { LINEUPS } from '@Constants/extensionConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
@@ -55,6 +55,8 @@ import {
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
 } from '@Constants/outcomePipelineConstants';
+
+const { DOMINANT_DUO, USTA_COLLEGE } = tieFormatConstants;
 
 export const TOPICS = [MODIFY_MATCHUP, MODIFY_DRAW_DEFINITION, MODIFY_POSITION_ASSIGNMENTS, UPDATE_INCONTEXT_MATCHUP];
 

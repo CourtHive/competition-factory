@@ -1,9 +1,10 @@
-import { afterEach, expect, it } from 'vitest';
 import { getOutcomePipeline, getTournamentRecords, setOutcomePipeline } from '@Global/state/globalState';
+import type { MatchUp, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
+import { afterEach, expect, it } from 'vitest';
 import mocks from '@Assemblies/engines/mock';
 import engine from '@Engines/syncEngine';
-import type { MatchUp, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
 
 const drawId = 'line-correction';
 const entryPipeline = getOutcomePipeline();
@@ -42,7 +43,7 @@ for (const hasCollectionId of [true, false]) {
     (mode) => {
       setOutcomePipeline(mode);
       mocks.generateTournamentRecord({
-        drawProfiles: [{ drawId, drawSize: 4, eventType: 'TEAM', tieFormatName: 'DOMINANT_DUO' }],
+        drawProfiles: [{ drawId, drawSize: 4, eventType: 'TEAM', tieFormat: resolveTieFormat('DOMINANT_DUO') }],
         nonRandom: 1,
         setState: true,
       });

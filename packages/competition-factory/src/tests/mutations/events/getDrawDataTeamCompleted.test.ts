@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -5,10 +6,11 @@ import { expect, it } from 'vitest';
 // constants and types
 import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DOUBLES_MATCHUP, SINGLES_MATCHUP, TEAM_MATCHUP } from '@Constants/matchUpTypes';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { PayloadProfileEnum } from '@Types/tournamentTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import { RANKING } from '@Constants/scaleConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 // A TEAM draw of 4 with DOMINANT_DUO (two singles and a doubles; two rubbers win the dual). Each dual is
 // decided 2-0 on the singles and the doubles, a dead rubber, is never played.
@@ -17,7 +19,7 @@ function decideOnSingles({ skipLastDual = false } = {}) {
     drawIds: [drawId],
     eventIds: [eventId],
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ eventType: TEAM_EVENT, tieFormatName: DOMINANT_DUO, drawSize: 4 }],
+    drawProfiles: [{ eventType: TEAM_EVENT, tieFormat: resolveTieFormat(DOMINANT_DUO), drawSize: 4 }],
     setState: true,
   });
   const result = tournamentEngine.generateLineUps({

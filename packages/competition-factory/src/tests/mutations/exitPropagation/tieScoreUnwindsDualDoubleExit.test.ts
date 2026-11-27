@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -6,8 +7,9 @@ import { expect, it } from 'vitest';
 // constants
 import { COMPLETED, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 /**
  * SCORING A LINE OF A DUAL THAT HOLDS A DOUBLE EXIT UNWINDS THE DOUBLE EXIT.
@@ -63,7 +65,9 @@ function scoreLines(drawId: string, dualMatchUp: any, count: number) {
 function generate(drawId: string) {
   setSubscriptions({});
   mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawId, drawType: SINGLE_ELIMINATION, drawSize: 8, eventType: TEAM, tieFormatName: DOMINANT_DUO }],
+    drawProfiles: [
+      { drawId, drawType: SINGLE_ELIMINATION, drawSize: 8, eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO) },
+    ],
     nonRandom: 300001,
     setState: true,
   });

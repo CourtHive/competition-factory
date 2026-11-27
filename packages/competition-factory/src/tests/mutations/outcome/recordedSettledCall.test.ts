@@ -1,4 +1,5 @@
 import { addNotice, deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
 import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { v1Writes } from '@Tests/testHarness/outcome/directionCounter';
@@ -24,7 +25,6 @@ import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { COMPLETED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import type { AbstainReason } from '@Mutate/matchUps/outcome/types';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { MODIFY_MATCHUP } from '@Constants/topicConstants';
 import type { Tournament } from '@Types/tournamentTypes';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
@@ -34,6 +34,8 @@ import {
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
 } from '@Constants/outcomePipelineConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 // counts v1's matchUp writes on the stored record (`directionCounter.ts`: a write to a recorded call's copy is not one)
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
@@ -175,7 +177,7 @@ function walkoverDualLine() {
     drawProfiles: [
       {
         drawType: FIRST_MATCH_LOSER_CONSOLATION,
-        tieFormatName: DOMINANT_DUO,
+        tieFormat: resolveTieFormat(DOMINANT_DUO),
         eventType: TEAM_EVENT,
         drawSize: 8,
         drawId: 'd',

@@ -1,5 +1,6 @@
 import { completeMatchUp, verifyMatchUps } from '@Tests/mutations/drawDefinitions/primitives/verifyMatchUps';
 import { generateFMLC } from '@Tests/mutations/drawDefinitions/primitives/firstMatchLoserConsolation';
+import { POLICY_SEEDING_ITF as SEEDING_ITF } from '@courthive/competition-catalogue';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getDrawStructures } from '@Acquire/findStructure';
@@ -12,7 +13,6 @@ import { BYE } from '@Constants/matchUpStatusConstants';
 
 // Fixtures
 import SEEDING_USTA from '@Fixtures/policies/POLICY_SEEDING_DEFAULT';
-import SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
 
 it('can direct winners and losers with ITF SEEDING POLICY; all participants with BYEs win first matchUp', () => {
   const participantsCount = 24;

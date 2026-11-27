@@ -1,10 +1,10 @@
 import { getOfficiatingMethods, setOfficiatingMethods } from '@Assemblies/engines/officiating/officiatingState';
+import { POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE } from '@courthive/competition-catalogue';
 import * as officiatingGovernor from '@Assemblies/governors/officiatingGovernor';
 import { officiatingEngine } from '@Assemblies/engines/officiating';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 // Fixtures
-import { POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE } from '@Fixtures/policies/POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE';
 
 // constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';

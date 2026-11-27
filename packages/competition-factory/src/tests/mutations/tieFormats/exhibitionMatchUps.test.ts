@@ -1,12 +1,14 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
 import { INVALID_COLLECTION_DEFINITION } from '@Constants/errorConditionConstants';
-import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
 import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/eventConstants';
+
+const { COLLEGE_D3 } = tieFormatConstants;
 
 const PRO_SET = 'SET1-S:8/TB7@7';
 
@@ -15,7 +17,7 @@ it('can add collectionDefinitions to tieFormat in a drawDefinition', () => {
     drawIds: [drawId],
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
   });
 
   tournamentEngine.setState(tournamentRecord);

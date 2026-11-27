@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -6,8 +7,9 @@ import { expect, it } from 'vitest';
 import { POLICY_TYPE_MATCHUP_ACTIONS } from '@Constants/policyConstants';
 import { INVALID_GENDER } from '@Constants/errorConditionConstants';
 import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
-import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
+
+const { COLLEGE_D3 } = tieFormatConstants;
 
 // A collection whose gender changes is checked against the event's gender, as an added collection is: a FEMALE
 // collection in a MALE TEAM event is refused whether it is added or changed.
@@ -16,7 +18,7 @@ function teamEvent(gender = MALE) {
   const {
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 2, eventType: TEAM, gender, tieFormatName: COLLEGE_D3 }],
+    drawProfiles: [{ drawSize: 2, eventType: TEAM, gender, tieFormat: resolveTieFormat(COLLEGE_D3) }],
     setState: true,
   });
   return drawId;

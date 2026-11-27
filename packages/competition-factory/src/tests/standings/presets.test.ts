@@ -1,10 +1,13 @@
-import { POLICY_ROUND_ROBIN_TALLY_USTA_LEAGUE } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_USTA_LEAGUE';
-import { POLICY_ROUND_ROBIN_TALLY_FIBA } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_FIBA';
 import { validateTallyPolicy } from '@Validators/validateTallyPolicy';
 import { runCase, type CorpusResult } from './standingsFixtures';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
+import {
+  POLICY_ROUND_ROBIN_TALLY_FIBA,
+  POLICY_ROUND_ROBIN_TALLY_USTA_LEAGUE,
+  resolveTieFormat,
+} from '@courthive/competition-catalogue';
 
 // constants
 import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
@@ -66,7 +69,9 @@ describe('USTA League championship', () => {
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, drawType: ROUND_ROBIN, eventType: TEAM_EVENT, tieFormatName: 'DOMINANT_DUO' }],
+      drawProfiles: [
+        { drawSize: 4, drawType: ROUND_ROBIN, eventType: TEAM_EVENT, tieFormat: resolveTieFormat('DOMINANT_DUO') },
+      ],
       policyDefinitions: POLICY_ROUND_ROBIN_TALLY_USTA_LEAGUE,
       completeAllMatchUps: true,
       setState: false,

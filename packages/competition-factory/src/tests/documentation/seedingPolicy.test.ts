@@ -1,4 +1,5 @@
 import { getValidSeedBlocks, isValidSeedPosition } from '@Query/drawDefinition/seedGetter';
+import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { getSeedBlocks } from '@Query/drawDefinition/getSeedBlocks';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -21,7 +22,6 @@ import {
 // Fixtures
 import { POLICY_SEEDING_DEFAULT } from '@Fixtures/policies/POLICY_SEEDING_DEFAULT';
 import { POLICY_SEEDING_BYES } from '@Fixtures/policies/POLICY_SEEDING_BYES';
-import { POLICY_SEEDING_ITF } from '@Fixtures/policies/POLICY_SEEDING_ITF';
 
 /**
  * Test suite for Seeding Policy documentation

@@ -1,5 +1,6 @@
 import { checkErrorAtomicity, observeMutation, hash } from '@Tests/testHarness/exitPropagation/transitions';
 import { prepareDraw, replayFailure as replay } from '@Tests/testHarness/exitPropagation/sweep';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -8,9 +9,10 @@ import { afterEach, expect, it, vi } from 'vitest';
 // constants and types
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import type { Tournament } from '@Types/tournamentTypes';
 import { TEAM } from '@Constants/eventConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 const config = {
   drawType: SINGLE_ELIMINATION,
@@ -120,7 +122,7 @@ it('a refused TEAM call cannot change a nested tieMatchUp outside the projection
   setSubscriptions({});
   const drawId = 'full-record-team';
   mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawId, drawSize: 8, eventType: TEAM, tieFormatName: DOMINANT_DUO }],
+    drawProfiles: [{ drawId, drawSize: 8, eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO) }],
     nonRandom: 42,
     setState: true,
   });
@@ -149,7 +151,7 @@ it('census replay catches a refusal that changes a generated TEAM line', () => {
       drawProfiles: params.drawProfiles.map((profile: Record<string, unknown>) => ({
         ...profile,
         eventType: TEAM,
-        tieFormatName: DOMINANT_DUO,
+        tieFormat: resolveTieFormat(DOMINANT_DUO),
       })),
     }),
   );

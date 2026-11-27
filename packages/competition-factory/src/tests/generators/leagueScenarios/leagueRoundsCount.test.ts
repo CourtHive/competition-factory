@@ -1,11 +1,13 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
 import { DOUBLE_ROUND_ROBIN, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
-import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
 import { unique } from '@Tools/arrays';
+
+const { COLLEGE_DEFAULT } = tieFormatConstants;
 
 const TEAMS_COUNT = 8;
 const SINGLE_ROUND_ROBIN_ROUNDS = TEAMS_COUNT - 1;
@@ -14,7 +16,7 @@ const MATCHUPS_PER_ROUND = TEAMS_COUNT / 2;
 function generateLeague(roundsCount?: any) {
   const leagueProfiles = [
     {
-      tieFormatName: COLLEGE_DEFAULT,
+      tieFormat: resolveTieFormat(COLLEGE_DEFAULT),
       leagueName: 'roundsCount league',
       teamsCount: TEAMS_COUNT,
       automated: true,
@@ -75,7 +77,7 @@ describe('leagueProfiles pairingProfile', () => {
     const leagueProfiles = [
       {
         leagueName: 'shaped league',
-        tieFormatName: COLLEGE_DEFAULT,
+        tieFormat: resolveTieFormat(COLLEGE_DEFAULT),
         teamsCount: TEAMS_COUNT,
         automated: true,
         pairingProfile,

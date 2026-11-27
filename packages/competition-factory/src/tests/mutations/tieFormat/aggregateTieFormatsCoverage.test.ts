@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { calculateWinCriteria } from '@Helpers/tieFormats/calculateWinCriteria';
 import { aggregateTieFormats } from '@Mutate/tieFormat/aggregateTieFormats';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -8,8 +9,9 @@ import { expect, it, describe } from 'vitest';
 import { TEAM_MATCHUP, SINGLES_MATCHUP, DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
-import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
+
+const { COLLEGE_D3 } = tieFormatConstants;
 
 const policyDefinitions = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };
 
@@ -33,7 +35,7 @@ describe('aggregateTieFormats additional branch coverage', () => {
       drawIds: [drawId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+      drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
       policyDefinitions,
     });
 
@@ -70,7 +72,7 @@ describe('aggregateTieFormats additional branch coverage', () => {
       drawIds: [drawId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+      drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
     });
 
     tournamentEngine.setState(tournamentRecord);
@@ -98,7 +100,7 @@ describe('aggregateTieFormats additional branch coverage', () => {
       drawIds: [drawId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
     });
 
     tournamentEngine.setState(tournamentRecord);
@@ -134,7 +136,7 @@ describe('aggregateTieFormats additional branch coverage', () => {
 
   it('identifies matching tieFormats across matchUps', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+      drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
     });
 
     tournamentEngine.setState(tournamentRecord);

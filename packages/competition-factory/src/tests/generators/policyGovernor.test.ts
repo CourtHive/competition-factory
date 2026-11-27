@@ -1,4 +1,5 @@
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
+import { POLICY_SEEDING_ITF as SEEDING_ITF } from '@courthive/competition-catalogue';
 import { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -10,7 +11,6 @@ import { POLICY_TYPE_AVOIDANCE, POLICY_TYPE_SCORING } from '@Constants/policyCon
 import POLICY_SCORING_DEFAULT from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
 import AVOIDANCE_COUNTRY from '@Fixtures/policies/POLICY_AVOIDANCE_COUNTRY';
 import { SINGLES, TEAM_EVENT } from '@Constants/eventConstants';
-import SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
 import { DEFAULTED } from '@Constants/matchUpStatusConstants';
 import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { SUCCESS } from '@Constants/resultConstants';

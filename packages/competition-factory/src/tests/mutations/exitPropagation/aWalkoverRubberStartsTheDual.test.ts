@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -5,9 +6,10 @@ import { expect, it } from 'vitest';
 
 // constants
 import { DEFAULTED, IN_PROGRESS, RETIRED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { COLLEGE_DEFAULT, DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { DOUBLES, TEAM } from '@Constants/matchUpTypes';
+
+const { COLLEGE_DEFAULT, DOMINANT_DUO } = tieFormatConstants;
 
 /**
  * A RUBBER DECIDED BY A WALKOVER OR A DEFAULT STARTS ITS DUAL, AS A PLAYED RUBBER DOES.
@@ -37,7 +39,15 @@ const drawId = 'rubber';
 const generate = (tieFormatName: string) => {
   setSubscriptions({});
   mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawId, drawType: SINGLE_ELIMINATION, drawSize: 4, eventType: TEAM, tieFormatName }],
+    drawProfiles: [
+      {
+        drawId,
+        drawType: SINGLE_ELIMINATION,
+        drawSize: 4,
+        eventType: TEAM,
+        tieFormat: resolveTieFormat(tieFormatName),
+      },
+    ],
     nonRandom: 1,
     setState: true,
   });

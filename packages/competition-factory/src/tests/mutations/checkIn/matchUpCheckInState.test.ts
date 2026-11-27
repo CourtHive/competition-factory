@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { getMatchUpCheckInState } from '@Query/matchUp/getMatchUpCheckInState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -6,8 +7,9 @@ import { describe, expect, it } from 'vitest';
 // constants
 import { MATCHUP_NOT_FOUND, MISSING_MATCHUP, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { PAIR, INDIVIDUAL } from '@Constants/participantConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { DOUBLES, TEAM } from '@Constants/eventConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 /**
  * getMatchUpCheckInState — who is at the desk for a matchUp, in one call.
@@ -65,7 +67,7 @@ describe('getMatchUpCheckInState', () => {
   });
 
   it('team: every member of each team, listed once', () => {
-    const { firstRound } = setup({ drawSize: 4, eventType: TEAM, tieFormatName: DOMINANT_DUO });
+    const { firstRound } = setup({ drawSize: 4, eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO) });
     const result: any = state(firstRound);
     const members = firstRound.sides.flatMap((side: any) => side.participant.individualParticipants);
     expect(result.total).toEqual(members.length);

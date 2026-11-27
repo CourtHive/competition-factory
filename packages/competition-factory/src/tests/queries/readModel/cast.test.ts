@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
@@ -8,8 +9,9 @@ import { SINGLES_EVENT, DOUBLES_EVENT, TEAM_EVENT } from '@Constants/eventConsta
 import { INDIVIDUAL, PAIR, TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { ROUND_ROBIN, MAIN, CONTAINER } from '@Constants/drawDefinitionConstants';
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
-import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
+
+const { COLLEGE_DEFAULT } = tieFormatConstants;
 
 describe('cast — singles (STANDARD)', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -93,7 +95,9 @@ describe('cast — doubles (per-individual PAIR grain)', () => {
 
 describe('cast — team (TIE container + RUBBER nesting)', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT, tieFormatName: COLLEGE_DEFAULT, eventName: 'Teams' }],
+    drawProfiles: [
+      { drawSize: 4, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(COLLEGE_DEFAULT), eventName: 'Teams' },
+    ],
     nonRandom: 1,
   });
 

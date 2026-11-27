@@ -1,10 +1,10 @@
 import { generateFMLC } from '@Tests/mutations/drawDefinitions/primitives/firstMatchLoserConsolation';
 import { completeMatchUp } from '@Tests/mutations/drawDefinitions/primitives/verifyMatchUps';
+import { POLICY_SEEDING_ITF as SEEDING_ITF } from '@courthive/competition-catalogue';
 import { expect, it } from 'vitest';
 
 import SEEDING_USTA from '@Fixtures/policies/POLICY_SEEDING_DEFAULT';
 import { CONSOLATION } from '@Constants/drawDefinitionConstants';
-import SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
 import { getDrawStructures } from '@Acquire/findStructure';
 
 it('can support ITF Consolation participant placement', () => {

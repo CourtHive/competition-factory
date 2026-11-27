@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { getParticipantId } from '@Functions/global/extractors';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -8,9 +9,10 @@ import { expect, it } from 'vitest';
 import { EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT } from '@Constants/errorConditionConstants';
 import { DOUBLES, TEAM, SINGLES_EVENT } from '@Constants/eventConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { UNGROUPED } from '@Constants/entryStatusConstants';
 import { MALE } from '@Constants/genderConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 it('can delete participants', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord();
@@ -53,7 +55,7 @@ it('will not delete participants in draws', () => {
 
 it('will not delete pair participants in team draws', () => {
   let result = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: DOMINANT_DUO }],
+    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO) }],
     completeAllMatchUps: true,
   });
 
@@ -80,7 +82,7 @@ it('will clean up entries when participants are deleted', () => {
   } = mocksEngine.generateTournamentRecord({
     drawProfiles: [
       {
-        tieFormatName: DOMINANT_DUO,
+        tieFormat: resolveTieFormat(DOMINANT_DUO),
         eventType: TEAM,
         generate: false,
         drawSize: 2,

@@ -1,4 +1,5 @@
 import { canPreFilter, getMissingParticipantIds } from '@Query/participants/getPreFilteredParticipants';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { POLICY_PRIVACY_DEFAULT } from '@Fixtures/policies/POLICY_PRIVACY_DEFAULT';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -9,9 +10,10 @@ import { INDIVIDUAL, PAIR, SIGNED_IN, TEAM } from '@Constants/participantConstan
 import { DIRECT_ACCEPTANCE, UNPAIRED } from '@Constants/entryStatusConstants';
 import { COMPETITOR, OFFICIAL } from '@Constants/participantRoles';
 import { DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { FEMALE, MALE } from '@Constants/genderConstants';
 import { ParticipantFilters } from '@Types/factoryTypes';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 // With returnParticipantMap: false, getParticipants builds only the participants its filters can keep. Every result
 // must be what building the whole pool returned, so each call is made twice, with pre-filtering allowed and with it
@@ -38,7 +40,7 @@ function generate({ nonRandom, completeAllMatchUps }) {
     eventProfiles: [
       { drawProfiles: [{ drawSize: 32, participantsCount: 28, alternatesCount: 2 }] },
       { eventType: DOUBLES, drawProfiles: [{ drawSize: 8 }] },
-      { eventType: TEAM_EVENT, tieFormatName: DOMINANT_DUO, drawProfiles: [{ drawSize: 4 }] },
+      { eventType: TEAM_EVENT, tieFormat: resolveTieFormat(DOMINANT_DUO), drawProfiles: [{ drawSize: 4 }] },
     ],
     completeAllMatchUps,
     nonRandom,

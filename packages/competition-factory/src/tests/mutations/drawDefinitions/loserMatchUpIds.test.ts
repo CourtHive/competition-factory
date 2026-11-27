@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngineAsync from '@Engines/asyncEngine';
 import tournamentEngineSync from '@Engines/syncEngine';
@@ -7,8 +8,9 @@ import { expect, test } from 'vitest';
 
 // constants
 import { FEED_IN_CHAMPIONSHIP_TO_R16, MAIN } from '@Constants/drawDefinitionConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 function getLoserMatchUpIdRounds(matchUps) {
   const matchUpsWithLoserMatchUpIds = matchUps.filter(({ loserMatchUpId }) => loserMatchUpId);
@@ -163,7 +165,7 @@ test.each([tournamentEngineSync, tournamentEngineAsync])(
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 32, eventType: TEAM_EVENT, tieFormatName: DOMINANT_DUO }],
+      drawProfiles: [{ drawSize: 32, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(DOMINANT_DUO) }],
     });
 
     expect(addMatchUpNotices.length).toEqual(124);

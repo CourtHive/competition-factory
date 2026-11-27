@@ -1,5 +1,6 @@
 import { getSeasonAdvancement } from '@Query/season/getSeasonAdvancement';
 import { getSeasonStandings } from '@Query/season/getSeasonStandings';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
 import { validateSeason } from '@Validators/validateSeason';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -17,7 +18,7 @@ const seasonProfile = {
     { tierId: 'A1', tierValue: 'A-1', teamsCount: 4 },
     { tierId: 'B1', tierValue: 'B-1', teamsCount: 6 },
   ],
-  tieFormatName: 'DOMINANT_DUO',
+  tieFormat: resolveTieFormat('DOMINANT_DUO'),
   periods: [{}, {}],
   seasonName: 'Spring',
 };

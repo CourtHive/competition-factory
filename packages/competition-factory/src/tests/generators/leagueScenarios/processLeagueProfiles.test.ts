@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { processLeagueProfiles } from '@Generators/mocks/processLeagueProfiles';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -6,10 +7,11 @@ import { expect, it, describe } from 'vitest';
 // constants
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { AD_HOC, MAIN } from '@Constants/drawDefinitionConstants';
-import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
 import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/participantConstants';
 import { MALE } from '@Constants/genderConstants';
+
+const { COLLEGE_DEFAULT } = tieFormatConstants;
 
 function createEmptyTournamentRecord(startDate = '2024-01-01', endDate = '2024-06-30') {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -32,7 +34,7 @@ describe('processLeagueProfiles basic generation', () => {
       tournamentRecord,
       leagueProfiles: [
         {
-          tieFormatName: COLLEGE_DEFAULT,
+          tieFormat: resolveTieFormat(COLLEGE_DEFAULT),
           leagueName: 'Test League',
           teamsCount: 4,
           gender: MALE,
@@ -77,7 +79,7 @@ describe('processLeagueProfiles basic generation', () => {
       tournamentRecord,
       leagueProfiles: [
         {
-          tieFormatName: COLLEGE_DEFAULT,
+          tieFormat: resolveTieFormat(COLLEGE_DEFAULT),
           teamProfiles: [
             { teamName: 'Eagles', venueIds: ['v1'] },
             { teamName: 'Hawks', venueIds: ['v2'] },
@@ -117,7 +119,7 @@ describe('processLeagueProfiles basic generation', () => {
       tournamentRecord,
       leagueProfiles: [
         {
-          tieFormatName: COLLEGE_DEFAULT,
+          tieFormat: resolveTieFormat(COLLEGE_DEFAULT),
           teamsCount: 3,
           gender: MALE,
         },
@@ -149,7 +151,7 @@ describe('processLeagueProfiles draw generation', () => {
       tournamentRecord,
       leagueProfiles: [
         {
-          tieFormatName: COLLEGE_DEFAULT,
+          tieFormat: resolveTieFormat(COLLEGE_DEFAULT),
           teamsCount: 4,
           roundsCount: 6,
           gender: MALE,
@@ -179,7 +181,7 @@ describe('processLeagueProfiles draw generation', () => {
       tournamentRecord,
       leagueProfiles: [
         {
-          tieFormatName: COLLEGE_DEFAULT,
+          tieFormat: resolveTieFormat(COLLEGE_DEFAULT),
           teamsCount: 5,
           gender: MALE,
         },
@@ -206,7 +208,7 @@ describe('processLeagueProfiles draw generation', () => {
       tournamentRecord,
       leagueProfiles: [
         {
-          tieFormatName: COLLEGE_DEFAULT,
+          tieFormat: resolveTieFormat(COLLEGE_DEFAULT),
           teamProfiles: [{ teamName: 'A' }, { teamName: 'B' }, { teamName: 'C' }],
           teamsCount: 5,
           gender: MALE,
@@ -236,13 +238,13 @@ describe('processLeagueProfiles multiple leagues', () => {
       tournamentRecord,
       leagueProfiles: [
         {
-          tieFormatName: COLLEGE_DEFAULT,
+          tieFormat: resolveTieFormat(COLLEGE_DEFAULT),
           leagueName: 'League A',
           teamsCount: 4,
           gender: MALE,
         },
         {
-          tieFormatName: COLLEGE_DEFAULT,
+          tieFormat: resolveTieFormat(COLLEGE_DEFAULT),
           leagueName: 'League B',
           teamsCount: 3,
           gender: MALE,
@@ -275,7 +277,7 @@ describe('processLeagueProfiles naming and IDs', () => {
       tournamentRecord,
       leagueProfiles: [
         {
-          tieFormatName: COLLEGE_DEFAULT,
+          tieFormat: resolveTieFormat(COLLEGE_DEFAULT),
           leagueName: 'My League',
           leagueId: 'custom-league-id',
           teamsCount: 2,
@@ -305,7 +307,7 @@ describe('processLeagueProfiles naming and IDs', () => {
       tournamentRecord,
       leagueProfiles: [
         {
-          tieFormatName: COLLEGE_DEFAULT,
+          tieFormat: resolveTieFormat(COLLEGE_DEFAULT),
           eventName: 'Fallback Name',
           eventId: 'fallback-id',
           teamsCount: 2,
@@ -333,8 +335,8 @@ describe('processLeagueProfiles naming and IDs', () => {
     let result: any = processLeagueProfiles({
       tournamentRecord,
       leagueProfiles: [
-        { tieFormatName: COLLEGE_DEFAULT, teamsCount: 2, gender: MALE },
-        { tieFormatName: COLLEGE_DEFAULT, teamsCount: 2, gender: MALE },
+        { tieFormat: resolveTieFormat(COLLEGE_DEFAULT), teamsCount: 2, gender: MALE },
+        { tieFormat: resolveTieFormat(COLLEGE_DEFAULT), teamsCount: 2, gender: MALE },
       ],
       eventIds,
       venueIds,
@@ -429,7 +431,7 @@ describe('processLeagueProfiles via mocksEngine integration', () => {
       endDate: '2024-06-30',
       leagueProfiles: [
         {
-          tieFormatName: COLLEGE_DEFAULT,
+          tieFormat: resolveTieFormat(COLLEGE_DEFAULT),
           leagueName: 'Integration League',
           teamsCount: 6,
           gender: MALE,

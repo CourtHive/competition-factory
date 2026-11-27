@@ -1,11 +1,13 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 // constants
-import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
+
+const { COLLEGE_DEFAULT } = tieFormatConstants;
 
 test('pruneDrawDefinition reliably triggers canBePruned on a standard draw', () => {
   // Create a standard 16-draw with all 16 participants placed (automated: true is default)
@@ -117,7 +119,7 @@ test('modifyCollectionDefinition on a TEAM draw modifies the tie format', () => 
       {
         drawSize: 4,
         eventType: TEAM_EVENT,
-        tieFormatName: COLLEGE_DEFAULT,
+        tieFormat: resolveTieFormat(COLLEGE_DEFAULT),
       },
     ],
     setState: true,

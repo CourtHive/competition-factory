@@ -1,12 +1,14 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { USTA_BREWER_CUP } from '@Constants/tieFormatConstants';
 import { DELETED_MATCHUP_IDS } from '@Constants/topicConstants';
 import { TEAM } from '@Constants/eventConstants';
+
+const { USTA_BREWER_CUP } = tieFormatConstants;
 
 it('changing value assignment of collectionDefinition that is part of collectionGroup will delete the group', () => {
   const deletedMatchUpIds: string[] = [];
@@ -24,7 +26,7 @@ it('changing value assignment of collectionDefinition that is part of collection
     eventIds: [eventId],
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: USTA_BREWER_CUP }],
+    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(USTA_BREWER_CUP) }],
   });
 
   tournamentEngine.setState(tournamentRecord);
@@ -78,7 +80,7 @@ it('changing value assignment of collectionDefinition that is part of collection
     eventIds: [eventId],
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: USTA_BREWER_CUP }],
+    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(USTA_BREWER_CUP) }],
   });
 
   tournamentEngine.setState(tournamentRecord);

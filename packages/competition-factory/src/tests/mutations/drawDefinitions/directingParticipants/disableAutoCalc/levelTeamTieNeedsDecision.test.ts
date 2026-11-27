@@ -1,15 +1,17 @@
-import INTENNSE_2026_FORMAT from '@Fixtures/scoring/tieFormats/INTENNSE_2026.json';
+import { resolveTieFormat, tieFormatConstants, tieFormats } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { COMPLETED, IN_PROGRESS, RETIRED } from '@Constants/matchUpStatusConstants';
 import { ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { COMPLETED, IN_PROGRESS, RETIRED } from '@Constants/matchUpStatusConstants';
 import { INVALID_SCORE } from '@Constants/errorConditionConstants';
-import { INTENNSE_2026 } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
+
+const { INTENNSE_2026 } = tieFormatConstants;
+const INTENNSE_2026_FORMAT = tieFormats.INTENNSE_2026;
 
 /**
  * A winner on a level TEAM tie records how it was decided, as a single
@@ -23,7 +25,7 @@ function playTie(drawType: string, { level }: { level: boolean }) {
   const {
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, drawType, eventType: TEAM_EVENT, tieFormatName: INTENNSE_2026 }],
+    drawProfiles: [{ drawSize: 4, drawType, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(INTENNSE_2026) }],
     setState: true,
   });
   // a line with a winner needs its players: lineups attached for both teams

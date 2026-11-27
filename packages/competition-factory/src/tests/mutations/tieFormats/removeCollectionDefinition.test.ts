@@ -1,16 +1,18 @@
 import disableCalcTournamentRecord from '@Mutate/tieFormat/removeCollectionDisableAutoCalc.codes.json';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
 // constants
-import { COLLEGE_D3, USTA_BREWER_CUP, USTA_COLLEGE } from '@Constants/tieFormatConstants';
 import { NO_MODIFICATIONS_APPLIED } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DELETED_MATCHUP_IDS } from '@Constants/topicConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { TEAM } from '@Constants/eventConstants';
+
+const { COLLEGE_D3, USTA_BREWER_CUP, USTA_COLLEGE } = tieFormatConstants;
 
 const policyDefinitions = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };
 
@@ -30,7 +32,7 @@ it('can remove a collectionDefinition from a drawDefinition tieFormat', () => {
     eventIds: [eventId],
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
   });
 
   tournamentEngine.setState(tournamentRecord);
@@ -76,7 +78,7 @@ it('can remove a collectionDefinition from a structure tieFormat', () => {
     eventIds: [eventId],
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
   });
 
   tournamentEngine.setState(tournamentRecord);
@@ -138,7 +140,7 @@ it('removing collectionDefinition that is part of collectionGroup will remove co
     eventIds: [eventId],
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: USTA_BREWER_CUP }],
+    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(USTA_BREWER_CUP) }],
   });
 
   tournamentEngine.setState(tournamentRecord);
@@ -196,7 +198,7 @@ it('deleted collectionDefinitions are not removed from inProgress matchUps', () 
     drawIds: [drawId],
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+    drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
     policyDefinitions,
   });
 
@@ -461,7 +463,7 @@ test('removing collectionDefinition will not recalculate score or remove advance
   const params = {
     collectionId: '9798bdd1-acc9-4b27-8730-a0f2f7c9002e',
     updateInProgressMatchUps: true,
-    tieFormatName: USTA_COLLEGE,
+    tieFormat: resolveTieFormat(USTA_COLLEGE),
     matchUpId,
     drawId,
   };

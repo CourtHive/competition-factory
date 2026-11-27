@@ -1,4 +1,4 @@
-import { POLICY_RATINGS_FIFA_WOMEN } from '@Fixtures/policies/POLICY_RATINGS_FIFA_WOMEN';
+import { POLICY_RATINGS_FIFA_WOMEN } from '@courthive/competition-catalogue';
 import { expectedResult } from '@Helpers/ratings/ratingUpdate';
 import { ratedResultOf } from '@Query/scales/ratedResult';
 import { mocksEngine } from '@Assemblies/engines/mock';

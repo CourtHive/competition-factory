@@ -1,6 +1,7 @@
 import { tallyParticipantResults as tallyParticipantResultsV1 } from './v1Reference/tallyParticipantResults';
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
 import { validateTallyPolicy } from '@Validators/validateTallyPolicy';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
 import { validateSeason } from '@Validators/validateSeason';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -10,10 +11,10 @@ import { describe, expect, it } from 'vitest';
 import { POLICY_ROUND_ROBIN_TALLY_DEFAULT } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_DEFAULT';
 import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { WALKOVER } from '@Constants/matchUpStatusConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
-import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 
 /**
@@ -27,7 +28,9 @@ describe('K10: a TEAM tie in progress credits each line to the right team', () =
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 3, drawType: ROUND_ROBIN, eventType: TEAM_EVENT, tieFormatName: 'DOMINANT_DUO' }],
+      drawProfiles: [
+        { drawSize: 3, drawType: ROUND_ROBIN, eventType: TEAM_EVENT, tieFormat: resolveTieFormat('DOMINANT_DUO') },
+      ],
       completeAllMatchUps: true,
       setState: false,
     });

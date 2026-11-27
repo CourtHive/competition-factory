@@ -8,6 +8,7 @@ import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear'
 import { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
 import { findStructure, getDrawStructures } from '@Acquire/findStructure';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { getStageEntries } from '@Query/drawDefinition/stageGetter';
 import { numericSort } from '@Tools/sorting';
 import { mocksEngine } from '../../../..';
@@ -15,14 +16,14 @@ import { expect, it } from 'vitest';
 
 import { INVALID_VALUES, MISSING_STRUCTURE_ID, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DIRECT_ACCEPTANCE, WILDCARD } from '@Constants/entryStatusConstants';
-import POLICY_SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
 import SEEDING_USTA from '@Fixtures/policies/POLICY_SEEDING_DEFAULT';
 import { POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
-import SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { EntryStatusUnion } from '@Types/tournamentTypes';
 import { policyComposer } from '@Global/policyComposer';
 import { ERROR } from '@Constants/resultConstants';
+
+const SEEDING_ITF = POLICY_SEEDING_ITF;
 
 // `POLICY_SEEDING_NATIONAL` used to supply this. It was ITF seeding with one key omitted, and the
 // composer says so in a way a fixture never could: leaving `validSeedPositions` unset is what keeps

@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -5,12 +6,13 @@ import { expect, it } from 'vitest';
 import { SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
-import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
 import { getConflicts } from './testGetConflicts';
+
+const { COLLEGE_D3 } = tieFormatConstants;
 
 it('can separate team members in an elimination structure', () => {
   // first create a tournament with a team event to mock teams with # of players
-  const drawProfiles = [{ drawSize: 8, eventType: TEAM_EVENT, tieFormatName: COLLEGE_D3 }];
+  const drawProfiles = [{ drawSize: 8, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(COLLEGE_D3) }];
   const eventProfiles = [{ eventType: SINGLES_EVENT }];
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     eventProfiles,

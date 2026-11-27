@@ -1,10 +1,11 @@
-import type { Tournament } from '@Types/tournamentTypes';
 import { getTournamentRecords, setOutcomePipeline } from '@Global/state/globalState';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
+import type { Tournament } from '@Types/tournamentTypes';
 import { createSeededRandom } from '@Tools/prng';
-import { setClock } from '@Tools/clock';
-import engine from '@Engines/syncEngine';
-import mocks from '@Assemblies/engines/mock';
 import { afterEach, expect, it } from 'vitest';
+import mocks from '@Assemblies/engines/mock';
+import engine from '@Engines/syncEngine';
+import { setClock } from '@Tools/clock';
 
 type Setup = 'produced default' | 'ordinary feeder' | 'no landing sides' | 'no draw line-ups';
 const getRecord = () => Object.values(getTournamentRecords())[0] as Tournament;
@@ -25,7 +26,7 @@ function fixture(setup: Setup) {
           participantsCount: 7,
           eventType: 'TEAM',
           drawType: 'FEED_IN_CHAMPIONSHIP',
-          tieFormatName: 'USTA_COLLEGE',
+          tieFormat: resolveTieFormat('USTA_COLLEGE'),
         },
       ],
       nonRandom: 1,

@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { setSubscriptions } from '@Global/state/globalState';
 import { getMatchUpId } from '@Functions/global/extractors';
@@ -8,7 +9,6 @@ import { defined } from '@Tests/helpers/defined';
 import { expect, it } from 'vitest';
 
 // constants
-import { COLLEGE_DEFAULT, DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { ADD_MATCHUPS, DELETED_MATCHUP_IDS } from '@Constants/topicConstants';
 import { SCORES_PRESENT } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
@@ -16,11 +16,13 @@ import { DEFAULTED } from '@Constants/matchUpStatusConstants';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
 import { SINGLES, TEAM } from '@Constants/eventConstants';
 
+const { COLLEGE_DEFAULT, DOMINANT_DUO } = tieFormatConstants;
+
 // testing for generation of addMatchUps notifications for tieMatchUps in AD_HOC TEAM events
 // each scenario generates a different number of matchUps due to different tieFormats having different collectionDefinitions
 const scenarios = [
-  { drawProfile: { tieFormatName: COLLEGE_DEFAULT, drawSize: 4 }, expectation: { added: 20 } },
-  { drawProfile: { tieFormatName: DOMINANT_DUO, drawSize: 4 }, expectation: { added: 8 } },
+  { drawProfile: { tieFormat: resolveTieFormat(COLLEGE_DEFAULT), drawSize: 4 }, expectation: { added: 20 } },
+  { drawProfile: { tieFormat: resolveTieFormat(DOMINANT_DUO), drawSize: 4 }, expectation: { added: 8 } },
 ];
 
 const policyDefinitions = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };

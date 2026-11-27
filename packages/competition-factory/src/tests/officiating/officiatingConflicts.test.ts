@@ -1,12 +1,10 @@
+import { POLICY_OFFICIATING_CONFLICT_OF_INTEREST } from '@Fixtures/policies/POLICY_OFFICIATING_CONFLICT_OF_INTEREST';
+import { POLICY_OFFICIATING_CONFLICT_OF_INTEREST_ITF } from '@courthive/competition-catalogue';
 import { removeConflictDeclaration } from '@Mutate/officiating/removeConflictDeclaration';
 import { addConflictDeclaration } from '@Mutate/officiating/addConflictDeclaration';
 import { getOfficialConflicts } from '@Query/officiating/getOfficialConflicts';
 import { assignOfficial } from '@Mutate/officiating/assignOfficial';
 import { describe, expect, it } from 'vitest';
-import {
-  POLICY_OFFICIATING_CONFLICT_OF_INTEREST_ITF,
-  POLICY_OFFICIATING_CONFLICT_OF_INTEREST,
-} from '@Fixtures/policies/POLICY_OFFICIATING_CONFLICT_OF_INTEREST';
 
 // constants
 import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';

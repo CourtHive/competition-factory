@@ -1,12 +1,14 @@
-import { POLICY_RATINGS_ELO_WORLD_FOOTBALL } from '@Fixtures/policies/POLICY_RATINGS_ELO_WORLD_FOOTBALL';
-import { POLICY_RATINGS_ELO_WELO_TENNIS } from '@Fixtures/policies/POLICY_RATINGS_ELO_WELO_TENNIS';
-import { POLICY_RATINGS_ELO_538_NHL } from '@Fixtures/policies/POLICY_RATINGS_ELO_538_NHL';
-import { POLICY_RATINGS_FIFA_SUM } from '@Fixtures/policies/POLICY_RATINGS_FIFA_SUM';
 import { ratedResultOf } from '@Query/scales/ratedResult';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';
 import { expect, it } from 'vitest';
+import {
+  POLICY_RATINGS_ELO_538_NHL,
+  POLICY_RATINGS_ELO_WELO_TENNIS,
+  POLICY_RATINGS_ELO_WORLD_FOOTBALL,
+  POLICY_RATINGS_FIFA_SUM,
+} from '@courthive/competition-catalogue';
 
 // constants
 import { ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';

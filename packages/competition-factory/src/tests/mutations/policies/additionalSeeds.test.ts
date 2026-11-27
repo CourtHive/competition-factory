@@ -1,5 +1,5 @@
 import { PROTECTED_RANKING, RATING } from '@Constants/seedingConstants';
-import POLICY_SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
+import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';

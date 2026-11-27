@@ -1,5 +1,6 @@
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { playForward } from '@Tests/testHarness/exitPropagation/driver';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
 import { setSubscriptions } from '@Global/state/globalState';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import tournamentEngine from '@Engines/syncEngine';
@@ -87,7 +88,7 @@ it.each(CELLS)(
     mocksEngine.generateTournamentRecord({
       drawProfiles: [
         {
-          ...(cell.tieFormatName ? { tieFormatName: cell.tieFormatName } : {}),
+          ...(cell.tieFormatName ? { tieFormat: resolveTieFormat(cell.tieFormatName) } : {}),
           ...(cell.eventType ? { eventType: cell.eventType } : {}),
           participantsCount: cell.participantsCount,
           drawType: cell.drawType,

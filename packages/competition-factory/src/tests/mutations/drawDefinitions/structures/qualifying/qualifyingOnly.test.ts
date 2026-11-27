@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -12,7 +13,6 @@ import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
 
 // constants
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
   COMPASS,
@@ -25,6 +25,8 @@ import {
   SINGLE_ELIMINATION,
   WINNER,
 } from '@Constants/drawDefinitionConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 it.each([ROUND_ROBIN, SINGLE_ELIMINATION, undefined])('will generate a drawDefinition with no matchUps', (drawType) => {
   const result = mocksEngine.generateTournamentRecord({
@@ -251,7 +253,7 @@ it('can generate only qualifying structure for eventType: TEAM', () => {
     drawProfiles: [
       {
         eventType: TEAM_EVENT,
-        tieFormatName: DOMINANT_DUO,
+        tieFormat: resolveTieFormat(DOMINANT_DUO),
         ignoreDefaults: true, // do not use defaults for main structure
         qualifyingProfiles: [
           {

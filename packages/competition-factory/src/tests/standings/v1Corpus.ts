@@ -1,5 +1,5 @@
 import { POLICY_ROUND_ROBIN_TALLY_DEFAULT } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_DEFAULT';
-import { POLICY_ROUND_ROBIN_TALLY_TOC } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_TOC';
+import { POLICY_ROUND_ROBIN_TALLY_TOC } from '@courthive/competition-catalogue';
 import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { CorpusCase } from './standingsFixtures';

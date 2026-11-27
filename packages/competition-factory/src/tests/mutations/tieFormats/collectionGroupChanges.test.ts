@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -5,10 +6,11 @@ import { expect, it } from 'vitest';
 
 // constants
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
-import { USTA_BREWER_CUP } from '@Constants/tieFormatConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { DOUBLES } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/eventConstants';
+
+const { USTA_BREWER_CUP } = tieFormatConstants;
 
 const policyDefinitions = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };
 
@@ -17,7 +19,7 @@ it('can remove collectionGroups from tieFormats', () => {
     tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 8, tieFormatName: USTA_BREWER_CUP, eventType: TEAM }],
+    drawProfiles: [{ drawSize: 8, tieFormat: resolveTieFormat(USTA_BREWER_CUP), eventType: TEAM }],
   });
 
   tournamentEngine.setState(tournamentRecord);
@@ -83,7 +85,7 @@ it('can remove collectionGroups and recalculate score in matchUps which are in p
     tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 8, tieFormatName: USTA_BREWER_CUP, eventType: TEAM }],
+    drawProfiles: [{ drawSize: 8, tieFormat: resolveTieFormat(USTA_BREWER_CUP), eventType: TEAM }],
     policyDefinitions,
   });
 

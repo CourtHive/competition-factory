@@ -1,4 +1,5 @@
 import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { storedGraph, storedRecord } from '@Tests/testHarness/outcome/objectGraph';
 import { v1Writes } from '@Tests/testHarness/outcome/directionCounter';
@@ -11,7 +12,6 @@ import { createSeededRandom } from '@Tools/prng';
 import { setClock } from '@Tools/clock';
 
 // constants and types
-import { DOMINANT_DUO, LAVER_CUP, USTA_COLLEGE } from '@Constants/tieFormatConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { MISSING_ASSIGNMENTS } from '@Constants/errorConditionConstants';
 import type { MatchUp, Tournament } from '@Types/tournamentTypes';
@@ -39,6 +39,8 @@ import {
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
 } from '@Constants/outcomePipelineConstants';
+
+const { DOMINANT_DUO, LAVER_CUP, USTA_COLLEGE } = tieFormatConstants;
 
 // counts v1's matchUp writes on the stored record (`directionCounter.ts`: a write to a recorded call's copy is not one)
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
@@ -160,7 +162,7 @@ describe('a recorded line tells the ledger of its own stamp', () => {
   // first call gave it. A dual's op that carried its lines with it stamped the line unseen, and the line was stamped
   // twice
   it('one engine call writing a line twice stamps it once', () => {
-    generate({ drawSize: 4, drawType: SINGLE_ELIMINATION, tieFormatName: USTA_COLLEGE });
+    generate({ drawSize: 4, drawType: SINGLE_ELIMINATION, tieFormat: resolveTieFormat(USTA_COLLEGE) });
     const line = singles(duals()[0])[0];
     expect(
       tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId: line.matchUpId, outcome: won(1) }).success,
@@ -198,7 +200,7 @@ describe("a recorded line's result holds its dual's stored score, the very objec
     ) as MatchUp;
 
   it('a line of a dual whose tieFormat declares its score REPORTED', () => {
-    generate({ drawSize: 4, drawType: SINGLE_ELIMINATION, tieFormatName: USTA_COLLEGE });
+    generate({ drawSize: 4, drawType: SINGLE_ELIMINATION, tieFormat: resolveTieFormat(USTA_COLLEGE) });
     const dual = duals()[0];
     const [first, second] = singles(dual);
     const { matchUpId } = dual;
@@ -245,7 +247,7 @@ describe("a recorded line's result holds its dual's stored score, the very objec
 describe("a TEAM call v1 refuses on the copy is not recorded, and is v1's", () => {
   // a line with no line-up assigned can be made a double exit, and v1 refuses the result entered over it
   it('a result entered over a double exit on a line with no line-up assigned (ERR_MISSING_ASSIGNMENTS)', () => {
-    generate({ drawSize: 4, drawType: SINGLE_ELIMINATION, tieFormatName: USTA_COLLEGE }, { bare: true });
+    generate({ drawSize: 4, drawType: SINGLE_ELIMINATION, tieFormat: resolveTieFormat(USTA_COLLEGE) }, { bare: true });
     const line = singles(duals()[0])[0];
     const doubleExit = { matchUpStatus: DOUBLE_WALKOVER };
     expect(
@@ -272,7 +274,7 @@ describe("a TEAM call v1 refuses on the copy is not recorded, and is v1's", () =
     ['a winner alone', { winningSide: 1 }],
     ['a WALKOVER', { matchUpStatus: WALKOVER, winningSide: 1 }],
   ])('%s on a line to be played with no line-up assigned (ERR_MISSING_ASSIGNMENTS)', (_label, outcome) => {
-    generate({ drawSize: 4, drawType: SINGLE_ELIMINATION, tieFormatName: DOMINANT_DUO }, { bare: true });
+    generate({ drawSize: 4, drawType: SINGLE_ELIMINATION, tieFormat: resolveTieFormat(DOMINANT_DUO) }, { bare: true });
     const line = singles(duals()[0])[0];
     const prepared = stored();
     const calls: Call[] = [{ matchUpId: line.matchUpId, outcome }];
@@ -293,7 +295,7 @@ describe("a TEAM call v1 refuses on the copy is not recorded, and is v1's", () =
     ['one side assigned, a single exit', { matchUpStatus: DEFAULTED, winningSide: 1 }, undefined, true],
     ['no side assigned, the scoring policy not requiring participants', { winningSide: 1 }, false, false],
   ])('%s is accepted', (_label, outcome, requireParticipantsForScoring, oneSide) => {
-    generate({ drawSize: 4, drawType: SINGLE_ELIMINATION, tieFormatName: DOMINANT_DUO }, { bare: true });
+    generate({ drawSize: 4, drawType: SINGLE_ELIMINATION, tieFormat: resolveTieFormat(DOMINANT_DUO) }, { bare: true });
     if (requireParticipantsForScoring === false)
       tournamentEngine.attachPolicies({
         policyDefinitions: { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } },
@@ -342,7 +344,7 @@ describe("a line's double exit on a dual decided by its own call is recorded, an
     [DOUBLE_WALKOVER, { matchUpStatus: WALKOVER, winningSide: 1 }],
     [DOUBLE_DEFAULT, { winningSide: 2 }],
   ])('a line %s on a dual decided by %j', (matchUpStatus, decided) => {
-    generate({ drawSize: 4, drawType: SINGLE_ELIMINATION, tieFormatName: DOMINANT_DUO });
+    generate({ drawSize: 4, drawType: SINGLE_ELIMINATION, tieFormat: resolveTieFormat(DOMINANT_DUO) });
     const dual = duals().find((each: any) => each.roundNumber === 1);
     expect(
       tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId: dual.matchUpId, outcome: decided }).success,
@@ -368,7 +370,7 @@ describe("a line's double exit on a dual decided by its own call is recorded, an
   // the next dual holds the exit a neighbouring dual's own double exit produced there, awarded to this dual's winner:
   // the dual keeps its winner (class 4), so the award stands
   it("a line's double exit on a dual decided by its own call, its winner awarded a produced exit in the next dual", () => {
-    generate({ drawSize: 8, drawType: SINGLE_ELIMINATION, tieFormatName: USTA_COLLEGE });
+    generate({ drawSize: 8, drawType: SINGLE_ELIMINATION, tieFormat: resolveTieFormat(USTA_COLLEGE) });
     const [, , third, fourth] = duals().filter((each: any) => each.roundNumber === 1);
     for (const [matchUpId, outcome] of [
       [third.matchUpId, { matchUpStatus: DOUBLE_DEFAULT }],
@@ -401,18 +403,35 @@ describe("a line's double exit on a dual decided by its own call is recorded, an
  * it holds, and the notices. A call the planners write whole is not this file's.
  */
 const WALKS: [string, Record<string, unknown>, number][] = [
-  ['SINGLE_ELIMINATION 8, USTA_COLLEGE', { drawSize: 8, tieFormatName: USTA_COLLEGE }, 1],
-  ['SINGLE_ELIMINATION 8 of 7, LAVER_CUP', { drawSize: 8, participantsCount: 7, tieFormatName: LAVER_CUP }, 2],
-  ['ROUND_ROBIN 4, USTA_COLLEGE', { drawSize: 4, drawType: ROUND_ROBIN, tieFormatName: USTA_COLLEGE }, 3],
-  ['ROUND_ROBIN_WITH_PLAYOFF 8', { drawSize: 8, drawType: ROUND_ROBIN_WITH_PLAYOFF, tieFormatName: DOMINANT_DUO }, 4],
-  ['FEED_IN_CHAMPIONSHIP 8', { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP, tieFormatName: DOMINANT_DUO }, 5],
+  ['SINGLE_ELIMINATION 8, USTA_COLLEGE', { drawSize: 8, tieFormat: resolveTieFormat(USTA_COLLEGE) }, 1],
+  [
+    'SINGLE_ELIMINATION 8 of 7, LAVER_CUP',
+    { drawSize: 8, participantsCount: 7, tieFormat: resolveTieFormat(LAVER_CUP) },
+    2,
+  ],
+  ['ROUND_ROBIN 4, USTA_COLLEGE', { drawSize: 4, drawType: ROUND_ROBIN, tieFormat: resolveTieFormat(USTA_COLLEGE) }, 3],
+  [
+    'ROUND_ROBIN_WITH_PLAYOFF 8',
+    { drawSize: 8, drawType: ROUND_ROBIN_WITH_PLAYOFF, tieFormat: resolveTieFormat(DOMINANT_DUO) },
+    4,
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP 8',
+    { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP, tieFormat: resolveTieFormat(DOMINANT_DUO) },
+    5,
+  ],
   [
     'FIRST_MATCH_LOSER_CONSOLATION 8 of 6',
-    { drawSize: 8, participantsCount: 6, drawType: FIRST_MATCH_LOSER_CONSOLATION, tieFormatName: DOMINANT_DUO },
+    {
+      drawSize: 8,
+      participantsCount: 6,
+      drawType: FIRST_MATCH_LOSER_CONSOLATION,
+      tieFormat: resolveTieFormat(DOMINANT_DUO),
+    },
     6,
   ],
-  ['COMPASS 8', { drawSize: 8, drawType: COMPASS, tieFormatName: DOMINANT_DUO }, 7],
-  ['DOUBLE_ELIMINATION 8', { drawSize: 8, drawType: DOUBLE_ELIMINATION, tieFormatName: DOMINANT_DUO }, 8],
+  ['COMPASS 8', { drawSize: 8, drawType: COMPASS, tieFormat: resolveTieFormat(DOMINANT_DUO) }, 7],
+  ['DOUBLE_ELIMINATION 8', { drawSize: 8, drawType: DOUBLE_ELIMINATION, tieFormat: resolveTieFormat(DOMINANT_DUO) }, 8],
 ];
 
 const CLEARED = { matchUpStatus: TO_BE_PLAYED, score: { scoreStringSide1: '', scoreStringSide2: '' } };
@@ -490,7 +509,7 @@ describe.each([DEFAULTED, WALKOVER, RETIRED])('replacing a stored %s', (matchUpS
   for (const matchUpType of ['SINGLES', 'DOUBLES']) {
     for (const winningSide of [1, 2]) {
       it.each([true, false])(`on a ${matchUpType} line with side ${winningSide} winning, decisive=%s`, (decisive) => {
-        generate({ drawSize: 2, tieFormatName: DOMINANT_DUO }, { bare: true });
+        generate({ drawSize: 2, tieFormat: resolveTieFormat(DOMINANT_DUO) }, { bare: true });
         const prepared = stored();
         const dual = prepared.events![0].drawDefinitions![0].structures![0].matchUps![0];
         const line = dual.tieMatchUps!.find((m) => m.matchUpType === matchUpType)!;

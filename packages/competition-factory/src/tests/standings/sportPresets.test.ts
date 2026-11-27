@@ -1,11 +1,13 @@
-import { POLICY_ROUND_ROBIN_TALLY_PREMIER_LEAGUE } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_PREMIER_LEAGUE';
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
-import { POLICY_ROUND_ROBIN_TALLY_FIVB } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_FIVB';
-import { POLICY_ROUND_ROBIN_TALLY_MLS } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_MLS';
 import { buildMatchUps, runCase, type CorpusResult } from './standingsFixtures';
 import { getSeasonStandings } from '@Query/season/getSeasonStandings';
 import { validateTallyPolicy } from '@Validators/validateTallyPolicy';
 import { describe, expect, it } from 'vitest';
+import {
+  POLICY_ROUND_ROBIN_TALLY_FIVB,
+  POLICY_ROUND_ROBIN_TALLY_MLS,
+  POLICY_ROUND_ROBIN_TALLY_PREMIER_LEAGUE,
+} from '@courthive/competition-catalogue';
 
 // constants and types
 import { STANDINGS_PURPOSE_ADVANCEMENT, SUBJECT_PERSON } from '@Constants/seasonConstants';

@@ -1,3 +1,4 @@
+import { POLICY_SCORING_USTA } from '@courthive/competition-catalogue';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -5,7 +6,6 @@ import { expect, test } from 'vitest';
 
 // constants and fixtures
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
-import POLICY_SCORING_USTA from '@Fixtures/policies/POLICY_SCORING_USTA';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { ADD_MATCHUPS } from '@Constants/topicConstants';
 import {

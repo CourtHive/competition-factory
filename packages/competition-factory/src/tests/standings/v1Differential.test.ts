@@ -1,3 +1,4 @@
+import { POLICY_ROUND_ROBIN_TALLY_JTT, POLICY_ROUND_ROBIN_TALLY_TOC } from '@courthive/competition-catalogue';
 import { tallyParticipantResults as tallyParticipantResultsV1 } from './v1Reference/tallyParticipantResults';
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
 import { buildMatchUps, type CorpusResult } from './standingsFixtures';
@@ -6,8 +7,6 @@ import { describe, expect, it } from 'vitest';
 // constants and fixtures
 import { POLICY_ROUND_ROBIN_TALLY_DEFAULT } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_DEFAULT';
 import { DEFAULTED, DOUBLE_WALKOVER, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { POLICY_ROUND_ROBIN_TALLY_JTT } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_JTT';
-import { POLICY_ROUND_ROBIN_TALLY_TOC } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_TOC';
 import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 
 // constants and types

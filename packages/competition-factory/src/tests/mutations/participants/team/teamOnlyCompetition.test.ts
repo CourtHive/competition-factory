@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
@@ -6,11 +7,12 @@ import { cast } from '@Query/readModel/cast';
 // constants and types
 import { INDIVIDUAL, PAIR, TEAM as TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
-import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { TieScoreSourceEnum } from '@Types/tournamentTypes';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/eventConstants';
+
+const { COLLEGE_DEFAULT } = tieFormatConstants;
 
 const TEAMS_COUNT = 6;
 
@@ -167,7 +169,7 @@ describe('team competitions without individual participants', () => {
   // above are about the flag rather than about leagues in general
   it('still enumerates individuals when individualParticipants is not disabled', () => {
     mocksEngine.generateTournamentRecord({
-      leagueProfiles: [{ tieFormatName: COLLEGE_DEFAULT, teamsCount: TEAMS_COUNT, automated: true }],
+      leagueProfiles: [{ tieFormat: resolveTieFormat(COLLEGE_DEFAULT), teamsCount: TEAMS_COUNT, automated: true }],
       startDate: '2026-01-01',
       endDate: '2026-04-30',
       setState: true,

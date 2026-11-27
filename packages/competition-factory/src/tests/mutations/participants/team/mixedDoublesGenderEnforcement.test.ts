@@ -1,15 +1,17 @@
 import { POLICY_MATCHUP_ACTIONS_DEFAULT } from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
 import { INVALID_PARTICIPANT } from '@Constants/errorConditionConstants';
-import { USTA_GOLD_TEAM_CHALLENGE } from '@Constants/tieFormatConstants';
 import { ASSIGN_PARTICIPANT } from '@Constants/positionActionConstants';
 import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
 import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
+
+const { USTA_GOLD_TEAM_CHALLENGE } = tieFormatConstants;
 
 // Mixed-doubles second-participant gender enforcement. Previously `assignedGender` in
 // collectionMatchUpActions was dead (gated on the never-set inContextMatchUp.sideNumber
@@ -21,7 +23,7 @@ import { TEAM_EVENT } from '@Constants/eventConstants';
 function setupMixedDoubles() {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     nonRandom: 1,
-    drawProfiles: [{ tieFormatName: USTA_GOLD_TEAM_CHALLENGE, eventType: TEAM_EVENT, drawSize: 2 }],
+    drawProfiles: [{ tieFormat: resolveTieFormat(USTA_GOLD_TEAM_CHALLENGE), eventType: TEAM_EVENT, drawSize: 2 }],
   });
   tournamentEngine.setState(tournamentRecord);
   tournamentEngine.attachPolicies({ policyDefinitions: POLICY_MATCHUP_ACTIONS_DEFAULT });

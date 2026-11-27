@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { checkIntegrity, type PropertyFailure } from './transitions';
 import { setSubscriptions } from '@Global/state/globalState';
 import { nextPlayable, playForward, step } from './driver';
@@ -6,7 +7,6 @@ import mocksEngine from '@Assemblies/engines/mock';
 
 // constants
 import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, DEFAULTED, WALKOVER, RETIRED } from '@Constants/matchUpStatusConstants';
-import { COLLEGE_DEFAULT, DOMINANT_DUO, LAVER_CUP } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
 import {
   MODIFIED_FEED_IN_CHAMPIONSHIP,
@@ -27,6 +27,8 @@ import {
   OLYMPIC,
   PLAYOFF,
 } from '@Constants/drawDefinitionConstants';
+
+const { COLLEGE_DEFAULT, DOMINANT_DUO, LAVER_CUP } = tieFormatConstants;
 
 /**
  * THE 600 EXIT-PROPAGATION MATRIX CELLS, composed once.
@@ -286,7 +288,7 @@ function generateCell(cell: MatrixCell, drawId: string, policyDefinitions?: any)
     ...(policyDefinitions ? { policyDefinitions } : {}),
     drawProfiles: [
       {
-        ...(cell.tieFormatName ? { tieFormatName: cell.tieFormatName } : {}),
+        ...(cell.tieFormatName ? { tieFormat: resolveTieFormat(cell.tieFormatName) } : {}),
         ...(cell.eventType ? { eventType: cell.eventType } : {}),
         participantsCount: cell.participantsCount,
         drawType: cell.drawType,

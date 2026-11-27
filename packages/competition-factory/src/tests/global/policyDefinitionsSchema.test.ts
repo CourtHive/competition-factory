@@ -1,7 +1,7 @@
 import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Tests/fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
 import { POLICY_COMPETITION_STANDARD } from '@Fixtures/policies/POLICY_COMPETITION_STANDARD';
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
-import POLICY_SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
+import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { ratingsPolicies } from '@Fixtures/policies/ratingsPolicies';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 import tournamentEngine from '@Engines/syncEngine';

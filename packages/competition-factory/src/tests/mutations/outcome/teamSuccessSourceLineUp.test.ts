@@ -1,10 +1,11 @@
-import type { Tournament } from '@Types/tournamentTypes';
-import { afterEach, expect, it } from 'vitest';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { getTournamentRecords, setOutcomePipeline } from '@Global/state/globalState';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
+import type { Tournament } from '@Types/tournamentTypes';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { createSeededRandom } from '@Tools/prng';
+import { afterEach, expect, it } from 'vitest';
 import { setClock } from '@Tools/clock';
 
 function fixture(creditByCall: boolean, explicitLineUp: boolean) {
@@ -14,7 +15,7 @@ function fixture(creditByCall: boolean, explicitLineUp: boolean) {
   Math.random = createSeededRandom(1);
   try {
     mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: 'TEAM', tieFormatName: 'DOMINANT_DUO', drawId: 'd' }],
+      drawProfiles: [{ drawSize: 4, eventType: 'TEAM', tieFormat: resolveTieFormat('DOMINANT_DUO'), drawId: 'd' }],
       setState: true,
       nonRandom: 1,
     });

@@ -1,12 +1,12 @@
 import { getReferencedParticipants } from '@Query/participants/getReferencedParticipants';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
 // constants
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
-import { DOUBLES, TEAM } from '@Constants/eventConstants';
 import { UNPAIRED } from '@Constants/entryStatusConstants';
+import { DOUBLES, TEAM } from '@Constants/eventConstants';
 import { PAIR } from '@Constants/participantConstants';
 import {
   AD_HOC,
@@ -19,6 +19,8 @@ import {
   ROUND_ROBIN_WITH_PLAYOFF,
   SINGLE_ELIMINATION,
 } from '@Constants/drawDefinitionConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 // matchUpActions and positionActions build only the participants their event references. Every action must be what
 // building the whole pool returned, so each call is made twice, with the scope in force and with it replaced by the
@@ -56,8 +58,12 @@ const EVENT_PROFILES = [
   { drawProfiles: [{ drawSize: 8, drawType: LUCKY_DRAW }] },
   { drawProfiles: [{ drawSize: 8, drawType: AD_HOC, roundsCount: 2 }] },
   { eventType: DOUBLES, drawProfiles: [{ drawSize: 8 }] },
-  { eventType: TEAM, tieFormatName: DOMINANT_DUO, drawProfiles: [{ drawSize: 8 }] },
-  { eventType: TEAM, tieFormatName: DOMINANT_DUO, drawProfiles: [{ drawSize: 8, drawType: ROUND_ROBIN }] },
+  { eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO), drawProfiles: [{ drawSize: 8 }] },
+  {
+    eventType: TEAM,
+    tieFormat: resolveTieFormat(DOMINANT_DUO),
+    drawProfiles: [{ drawSize: 8, drawType: ROUND_ROBIN }],
+  },
 ];
 
 /**

@@ -1,3 +1,4 @@
+import { POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE } from '@courthive/competition-catalogue';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { describe, expect, it } from 'vitest';
 import {
@@ -13,7 +14,6 @@ import {
 } from '@Constants/officiatingConstants';
 
 // Fixtures
-import { POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE } from '@Fixtures/policies/POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE';
 
 import { getOfficialCertifications } from '@Query/officiating/getOfficialCertifications';
 import { getOfficialAssignments } from '@Query/officiating/getOfficialAssignments';

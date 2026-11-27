@@ -1,18 +1,20 @@
 import { compareTieFormats } from '@Query/hierarchical/tieFormats/compareTieFormats';
-import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
+import { tieFormatConstants, tieFormats } from '@courthive/competition-catalogue';
+import { namedTieFormat } from '@Tests/testHarness/namedTieFormat';
 import { it, expect, test } from 'vitest';
 
 // constants and types
-import { COLLEGE_D3, COLLEGE_DEFAULT, COLLEGE_JUCO, DOMINANT_DUO } from '@Constants/tieFormatConstants';
-import collegeDefault from '@Fixtures/scoring/tieFormats/COLLEGE_DEFAULT.json';
-import collegeJuco from '@Fixtures/scoring/tieFormats/COLLEGE_JUCO.json';
-import collegeD3 from '@Fixtures/scoring/tieFormats/COLLEGE_D3.json';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { TieFormat } from '@Types/tournamentTypes';
 
+const { COLLEGE_D3, COLLEGE_DEFAULT, COLLEGE_JUCO, DOMINANT_DUO } = tieFormatConstants;
+const collegeDefault = tieFormats.COLLEGE_DEFAULT;
+const collegeJuco = tieFormats.COLLEGE_JUCO;
+const collegeD3 = tieFormats.COLLEGE_D3;
+
 it('can find differences in tieFormats', () => {
-  const descendant = tieFormatDefaults({ namedFormat: COLLEGE_DEFAULT });
-  const ancestor = tieFormatDefaults({ namedFormat: COLLEGE_D3 });
+  const descendant = namedTieFormat(COLLEGE_DEFAULT);
+  const ancestor = namedTieFormat(COLLEGE_D3);
 
   const result = compareTieFormats({ ancestor, descendant });
   expect(result.matchUpFormatDifferences).toEqual(['SET1-S:6/TB7', 'SET1-S:8/TB7@7']);
@@ -21,17 +23,17 @@ it('can find differences in tieFormats', () => {
 
 test('all JSON and tieFormatNames for college formats are equivalent', () => {
   let result = compareTieFormats({
-    ancestor: tieFormatDefaults({ namedFormat: COLLEGE_DEFAULT }),
+    ancestor: namedTieFormat(COLLEGE_DEFAULT),
     descendant: collegeDefault,
   });
   expect(result.matchUpFormatDifferences).toEqual([]);
   result = compareTieFormats({
-    ancestor: tieFormatDefaults({ namedFormat: COLLEGE_JUCO }),
+    ancestor: namedTieFormat(COLLEGE_JUCO),
     descendant: collegeJuco,
   });
   expect(result.matchUpFormatDifferences).toEqual([]);
   result = compareTieFormats({
-    ancestor: tieFormatDefaults({ namedFormat: COLLEGE_D3 }),
+    ancestor: namedTieFormat(COLLEGE_D3),
     descendant: collegeD3,
   });
   expect(result.matchUpFormatDifferences).toEqual([]);

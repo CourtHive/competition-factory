@@ -1,5 +1,6 @@
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { registerTestSeedIdentity } from '@Tests/testHarness/seedMathRandom';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -171,7 +172,7 @@ describe('C22 a bare TEAM winner with both teams present stays owned', () => {
       ([1, 2] as const).map((side) => [type, side] as const),
     ),
   )('C22 TEAM %s bare winner side %s with two teams', (drawType, side) => {
-    const drawProfile = { drawType, drawSize: 8, eventType: 'TEAM', tieFormatName: 'USTA_COLLEGE' };
+    const drawProfile = { drawType, drawSize: 8, eventType: 'TEAM', tieFormat: resolveTieFormat('USTA_COLLEGE') };
     setOutcomePipeline(OUTCOME_PIPELINE_V1);
     setClock('2026-10-25T00:00:00.000Z');
     setSubscriptions({ subscriptions: {} });

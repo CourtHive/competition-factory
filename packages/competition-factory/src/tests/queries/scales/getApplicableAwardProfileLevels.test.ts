@@ -1,4 +1,4 @@
-import { POLICY_RANKING_POINTS_ATP } from '@Fixtures/policies/POLICY_RANKING_POINTS_ATP';
+import { POLICY_RANKING_POINTS_ATP } from '@courthive/competition-catalogue';
 import tournamentEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';
 import { describe, expect, it } from 'vitest';

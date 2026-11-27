@@ -1,13 +1,15 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { COLLEGE_D3, DOMINANT_DUO, USTA_LEVEL_1, USTA_BREWER_CUP } from '@Constants/tieFormatConstants';
 import { TEAM_MATCHUP, SINGLES, DOUBLES } from '@Constants/matchUpTypes';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
+
+const { COLLEGE_D3, DOMINANT_DUO, USTA_BREWER_CUP, USTA_LEVEL_1 } = tieFormatConstants;
 
 const policyDefinitions = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };
 
@@ -17,7 +19,7 @@ describe('tieFormat optimisation via aggregateTieFormats', () => {
     const {
       eventIds: [eventId],
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize, eventType: TEAM_EVENT, tieFormatName: COLLEGE_D3 }],
+      drawProfiles: [{ drawSize, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(COLLEGE_D3) }],
       policyDefinitions,
       setState: true,
     });
@@ -67,7 +69,7 @@ describe('tieFormat optimisation via aggregateTieFormats', () => {
     const {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize, eventType: TEAM_EVENT, tieFormatName: DOMINANT_DUO }],
+      drawProfiles: [{ drawSize, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(DOMINANT_DUO) }],
       policyDefinitions,
       setState: true,
     });
@@ -130,7 +132,7 @@ describe('tieFormat optimisation via aggregateTieFormats', () => {
       drawIds: [drawId],
       eventIds: [eventId],
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize, eventType: TEAM_EVENT, tieFormatName: COLLEGE_D3 }],
+      drawProfiles: [{ drawSize, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(COLLEGE_D3) }],
       policyDefinitions,
       setState: true,
     });
@@ -203,7 +205,7 @@ describe('tieFormat optimisation via aggregateTieFormats', () => {
   it('aggregation is idempotent — running twice produces same result', () => {
     const drawSize = 4;
     mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize, eventType: TEAM_EVENT, tieFormatName: USTA_LEVEL_1 }],
+      drawProfiles: [{ drawSize, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(USTA_LEVEL_1) }],
       policyDefinitions,
       setState: true,
     });
@@ -235,8 +237,8 @@ describe('tieFormat optimisation via aggregateTieFormats', () => {
       eventIds: [eventId1, eventId2],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [
-        { drawSize: 4, eventType: TEAM_EVENT, tieFormatName: COLLEGE_D3 },
-        { drawSize: 4, eventType: TEAM_EVENT, tieFormatName: USTA_BREWER_CUP },
+        { drawSize: 4, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(COLLEGE_D3) },
+        { drawSize: 4, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(USTA_BREWER_CUP) },
       ],
       policyDefinitions,
       setState: true,
@@ -273,7 +275,7 @@ describe('tieFormat optimisation via aggregateTieFormats', () => {
   it('aggregation with completed matchUps preserves scores and tieMatchUp results', () => {
     const drawSize = 4;
     mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize, eventType: TEAM_EVENT, tieFormatName: DOMINANT_DUO }],
+      drawProfiles: [{ drawSize, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(DOMINANT_DUO) }],
       completeAllMatchUps: true,
       policyDefinitions,
       setState: true,
@@ -315,7 +317,7 @@ describe('tieFormat optimisation via aggregateTieFormats', () => {
   it('tieMatchUp collectionId and matchUpType survive aggregation', () => {
     const drawSize = 4;
     mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize, eventType: TEAM_EVENT, tieFormatName: USTA_LEVEL_1 }],
+      drawProfiles: [{ drawSize, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(USTA_LEVEL_1) }],
       policyDefinitions,
       setState: true,
     });
@@ -369,14 +371,14 @@ describe('tieFormat optimisation via aggregateTieFormats', () => {
     const {
       eventIds: [eventId],
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT, tieFormatName: COLLEGE_D3 }],
+      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(COLLEGE_D3) }],
       policyDefinitions,
       setState: true,
     });
 
     // Add a second draw with a different tieFormat to the same event
     const d2 = tournamentEngine.generateDrawDefinition({
-      tieFormatName: DOMINANT_DUO,
+      tieFormat: resolveTieFormat(DOMINANT_DUO),
       eventId,
     });
     expect(d2.success).toEqual(true);

@@ -1,4 +1,5 @@
 import { generateTieMatchUpScore } from '@Query/matchUp/tieMatchUpScore/generateTieMatchUpScore';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { generateTeamTournament } from './generateTestTeamTournament';
 import { setSubscriptions } from '@Global/state/globalState';
@@ -7,7 +8,6 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
 // constants
-import { TEAM_DOUBLES_3_AGGREGATION, USTA_BREWER_CUP, USTA_GOLD_TEAM_CHALLENGE } from '@Constants/tieFormatConstants';
 import { COMPLETED, DOUBLE_WALKOVER, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
 import { EXISTING_PARTICIPANT, TEAM_NOT_FOUND } from '@Constants/errorConditionConstants';
@@ -16,6 +16,8 @@ import { DOUBLES, SINGLES, TEAM } from '@Constants/matchUpTypes';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { LINEUPS } from '@Constants/extensionConstants';
+
+const { TEAM_DOUBLES_3_AGGREGATION, USTA_BREWER_CUP, USTA_GOLD_TEAM_CHALLENGE } = tieFormatConstants;
 
 // reusable
 const getMatchUp = (id, inContext?) => {
@@ -292,7 +294,7 @@ test('tieFormat with scoreValue calculation', () => {
     policyDefinitions,
     drawProfiles: [
       {
-        tieFormatName: TEAM_DOUBLES_3_AGGREGATION,
+        tieFormat: resolveTieFormat(TEAM_DOUBLES_3_AGGREGATION),
         eventType: TEAM,
         drawSize: 4,
       },
@@ -376,7 +378,7 @@ test('properly removes advanced team at 9-0 in USTA_GOLD', () => {
     policyDefinitions,
     drawProfiles: [
       {
-        tieFormatName: USTA_GOLD_TEAM_CHALLENGE,
+        tieFormat: resolveTieFormat(USTA_GOLD_TEAM_CHALLENGE),
         eventType: TEAM,
         drawSize: 4,
       },
@@ -477,7 +479,7 @@ test('properly removes lineUps when team drawPositions are swapped', () => {
   } = mocksEngine.generateTournamentRecord({
     drawProfiles: [
       {
-        tieFormatName: USTA_BREWER_CUP,
+        tieFormat: resolveTieFormat(USTA_BREWER_CUP),
         eventType: TEAM,
         drawSize: 4,
       },
@@ -588,7 +590,7 @@ test('does not propagate matchUpStatusCodes from SINGLE/DOUBLES to TEAM matchUps
     tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 8, tieFormatName: USTA_BREWER_CUP, eventType: TEAM }],
+    drawProfiles: [{ drawSize: 8, tieFormat: resolveTieFormat(USTA_BREWER_CUP), eventType: TEAM }],
   });
 
   tournamentEngine.setState(tournamentRecord);

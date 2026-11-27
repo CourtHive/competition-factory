@@ -1,18 +1,20 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/participantConstants';
 import { MALE } from '@Constants/genderConstants';
+
+const { COLLEGE_DEFAULT } = tieFormatConstants;
 
 it('can generate Teams and venues from leagueProfiles', () => {
   const startDate = '2022-01-01';
   const endDate = '2022-04-30'; // four months for league (April has 30 days)
   const leagueProfiles = [
     {
-      tieFormatName: COLLEGE_DEFAULT,
+      tieFormat: resolveTieFormat(COLLEGE_DEFAULT),
       leagueName: 'NTRP 3.5 Men', // || eventName
       leagueId: 'leagueId', // optional
       teamProfiles: [
@@ -32,7 +34,7 @@ it('can generate Teams and venues from leagueProfiles', () => {
       gender: MALE,
     },
     {
-      tieFormatName: COLLEGE_DEFAULT,
+      tieFormat: resolveTieFormat(COLLEGE_DEFAULT),
       leagueName: 'NTRP 3.5 Women',
       teamProfiles: [
         { teamName: 'Team 1 W', venueIds: ['venue1'] },
@@ -48,7 +50,7 @@ it('can generate Teams and venues from leagueProfiles', () => {
       gender: MALE,
     },
     {
-      tieFormatName: COLLEGE_DEFAULT,
+      tieFormat: resolveTieFormat(COLLEGE_DEFAULT),
       leagueName: 'NTRP 3.0 Women',
       teamsCount: 8,
       gender: MALE,

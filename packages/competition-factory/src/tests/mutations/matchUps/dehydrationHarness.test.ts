@@ -1,4 +1,5 @@
 import { buildFromSources } from '@Generators/ingestion/buildFromSources/buildFromSources';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { dehydrateMatchUps } from '@Mutate/tournaments/dehydrate';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -13,7 +14,6 @@ import {
 } from '@Tests/testHarness/dehydration';
 
 // constants
-import { COLLEGE_DEFAULT, DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { DOUBLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import {
   FIRST_MATCH_LOSER_CONSOLATION,
@@ -21,6 +21,8 @@ import {
   ROUND_ROBIN,
   COMPASS,
 } from '@Constants/drawDefinitionConstants';
+
+const { COLLEGE_DEFAULT, DOMINANT_DUO } = tieFormatConstants;
 
 /**
  * The dehydration harness: every shape below is generated (so its STORED shape is known), hydrated the way query
@@ -60,16 +62,16 @@ const SHAPES: Shape[] = [
   { name: 'compass', drawProfile: { drawSize: 16, drawType: COMPASS }, complete: true },
   {
     name: 'TEAM, college default, complete',
-    drawProfile: { drawSize: 4, eventType: TEAM_EVENT, tieFormatName: COLLEGE_DEFAULT },
+    drawProfile: { drawSize: 4, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(COLLEGE_DEFAULT) },
     complete: true,
   },
   {
     name: 'TEAM, dominant duo, partial',
-    drawProfile: { drawSize: 8, eventType: TEAM_EVENT, tieFormatName: DOMINANT_DUO },
+    drawProfile: { drawSize: 8, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(DOMINANT_DUO) },
   },
   {
     name: 'TEAM, college default, complete and scheduled',
-    drawProfile: { drawSize: 4, eventType: TEAM_EVENT, tieFormatName: COLLEGE_DEFAULT },
+    drawProfile: { drawSize: 4, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(COLLEGE_DEFAULT) },
     complete: true,
     schedule: true,
   },

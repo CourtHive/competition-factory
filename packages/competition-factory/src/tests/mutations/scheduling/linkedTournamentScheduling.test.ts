@@ -1,10 +1,10 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { formatDate } from '@Tools/dateTime';
 import { expect, test } from 'vitest';
 
 // constants
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { DOUBLES, TEAM } from '@Constants/eventConstants';
 import { FEMALE, MALE } from '@Constants/genderConstants';
 import { WTN } from '@Constants/ratingConstants';
@@ -14,6 +14,8 @@ import {
   FEED_IN_CHAMPIONSHIP,
   FIRST_MATCH_LOSER_CONSOLATION,
 } from '@Constants/drawDefinitionConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 const U18rankingsRetrieval = 'RETRIEVAL.RANKING.SINGLES.U18';
 const cpsCourt1 = 'cps-court-1';
@@ -95,7 +97,7 @@ const mockProfiles = [
     drawProfiles: [
       {
         eventName: 'Duo Draw',
-        tieFormatName: DOMINANT_DUO,
+        tieFormat: resolveTieFormat(DOMINANT_DUO),
         eventType: TEAM,
         drawSize: 8,
       },

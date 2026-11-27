@@ -1,12 +1,14 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { TEAM_DOUBLES_3_AGGREGATION } from '@Constants/tieFormatConstants';
 import { ALTERNATE } from '@Constants/entryStatusConstants';
 import { FEMALE, MALE } from '@Constants/genderConstants';
 import { TEAM } from '@Constants/eventConstants';
+
+const { TEAM_DOUBLES_3_AGGREGATION } = tieFormatConstants;
 
 const oneElevenOhOne = '1111-01-01';
 const two2222 = '2222-02-02';
@@ -31,7 +33,7 @@ it('can generate team events using participantsProfile.teamKey and personData', 
   const mockProfile = {
     drawProfiles: [
       {
-        tieFormatName: TEAM_DOUBLES_3_AGGREGATION,
+        tieFormat: resolveTieFormat(TEAM_DOUBLES_3_AGGREGATION),
         considerEventEntries: false,
         tournamentAlternates: 2,
         eventType: TEAM,

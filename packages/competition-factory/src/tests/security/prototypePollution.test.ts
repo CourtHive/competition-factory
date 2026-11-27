@@ -1,14 +1,14 @@
-import { POLICY_ROUND_ROBIN_TALLY_FIBA } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_FIBA';
-import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONING_GENERIC';
-import { calculateMatchStatistics } from '@Scoring/statistics/standalone';
 import { FEED_IN_CHAMPIONSHIP, ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONING_GENERIC';
+import { POLICY_ROUND_ROBIN_TALLY_FIBA } from '@courthive/competition-catalogue';
+import { calculateMatchStatistics } from '@Scoring/statistics/standalone';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { sanctioningEngine } from '@Assemblies/engines/sanctioning';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
+import { afterEach, describe, expect, it } from 'vitest';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';
-import { afterEach, describe, expect, it } from 'vitest';
 
 // CodeQL js/prototype-polluting-assignment, triaged 2026-11-23.
 // The factory runs in CFS on client payloads and imported records, so "__proto__" can arrive as an id, a key or a path

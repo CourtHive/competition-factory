@@ -1,6 +1,7 @@
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { generateMatchUpOutcome } from '@Tests/helpers/generateMatchUpOutcome';
+import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { setsValues } from './roundRobinSetsValues';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -11,7 +12,6 @@ import { MAIN, PLAY_OFF, POSITION, WATERFALL, ROUND_ROBIN_WITH_PLAYOFF } from '@
 import POLICY_POSITION_ACTIONS_UNRESTRICTED from '@Fixtures/policies/POLICY_POSITION_ACTIONS_UNRESTRICTED';
 import { ASSIGN_BYE, ASSIGN_PARTICIPANT, REMOVE_ASSIGNMENT } from '@Constants/positionActionConstants';
 import POLICY_SEEDING_DEFAULT from '@Fixtures/policies/POLICY_SEEDING_DEFAULT';
-import POLICY_SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { POLICY_TYPE_SEEDING } from '@Constants/policyConstants';

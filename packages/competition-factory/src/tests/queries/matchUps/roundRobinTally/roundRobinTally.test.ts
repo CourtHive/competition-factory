@@ -1,4 +1,5 @@
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
@@ -12,9 +13,10 @@ import { MISSING_DRAW_POSITION, MISSING_STRUCTURE_ID } from '@Constants/errorCon
 import { FORMAT_SHORT_SETS, FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { SINGLES, TEAM } from '@Constants/eventConstants';
 import { TALLY } from '@Constants/extensionConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 it('can recalculate participantResults when outcomes are removed', () => {
   const drawProfiles = [
@@ -849,7 +851,7 @@ it('recognize when TEAM participants are tied with position order', () => {
       eventType: TEAM,
       participantsCount: 5,
       drawType: ROUND_ROBIN,
-      tieFormatName: DOMINANT_DUO,
+      tieFormat: resolveTieFormat(DOMINANT_DUO),
       structureOptions: { groupSize: 5 },
       outcomes: [
         {

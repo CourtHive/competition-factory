@@ -1,6 +1,7 @@
 import { getReferencedParticipants } from '@Query/participants/getReferencedParticipants';
-import { findMatchUp, publicFindMatchUp } from '@Acquire/findMatchUp';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { POLICY_PRIVACY_DEFAULT } from '@Fixtures/policies/POLICY_PRIVACY_DEFAULT';
+import { findMatchUp, publicFindMatchUp } from '@Acquire/findMatchUp';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -9,7 +10,6 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 // constants
 import { COMPETITOR, OFFICIAL } from '@Constants/participantRoles';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { DOUBLES, TEAM } from '@Constants/eventConstants';
 import {
   AD_HOC,
@@ -22,6 +22,8 @@ import {
   ROUND_ROBIN_WITH_PLAYOFF,
   SINGLE_ELIMINATION,
 } from '@Constants/drawDefinitionConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 // findMatchUp hydrates only the participants its draw references. Every lookup must return what hydrating the whole
 // participant pool returned, so each matchUp is found twice, with the scope in force and with it replaced by the
@@ -53,8 +55,8 @@ const DRAW_PROFILES = [
   { drawSize: 8, drawType: LUCKY_DRAW },
   { drawSize: 8, drawType: AD_HOC, roundsCount: 2 },
   { drawSize: 8, eventType: DOUBLES },
-  { drawSize: 8, eventType: TEAM, tieFormatName: DOMINANT_DUO },
-  { drawSize: 8, drawType: ROUND_ROBIN, eventType: TEAM, tieFormatName: DOMINANT_DUO },
+  { drawSize: 8, eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO) },
+  { drawSize: 8, drawType: ROUND_ROBIN, eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO) },
 ];
 
 /**

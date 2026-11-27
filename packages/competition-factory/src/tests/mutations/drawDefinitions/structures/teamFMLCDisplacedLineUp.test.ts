@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -6,13 +7,14 @@ import { expect, it } from 'vitest';
 import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
 import { CANNOT_CHANGE_FEED_ELIGIBILITY } from '@Constants/errorConditionConstants';
 import { BYE, COMPLETED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import { RANKING } from '@Constants/scaleConstants';
 
 // Fixtures
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 // A TEAM FIRST_MATCH_LOSER_CONSOLATION draw of 8 with DOMINANT_DUO (two singles and a doubles; two rubbers win
 // the dual). A round 1 WALKOVER is not a win, so its winner losing round 2 is fed into the consolation with its
@@ -26,7 +28,7 @@ it('a TEAM withheld from the consolation leaves no lineUp on the BYE that replac
     drawProfiles: [
       {
         drawType: FIRST_MATCH_LOSER_CONSOLATION,
-        tieFormatName: DOMINANT_DUO,
+        tieFormat: resolveTieFormat(DOMINANT_DUO),
         eventType: TEAM_EVENT,
         drawSize: 8,
       },

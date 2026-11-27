@@ -1,5 +1,5 @@
-import { POLICY_RATINGS_ELO_538_TENNIS } from '@Fixtures/policies/POLICY_RATINGS_ELO_538_TENNIS';
 import { POLICY_RATINGS_DEFAULT } from '@Fixtures/policies/POLICY_RATINGS_DEFAULT';
+import { POLICY_RATINGS_ELO_538_TENNIS } from '@courthive/competition-catalogue';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';

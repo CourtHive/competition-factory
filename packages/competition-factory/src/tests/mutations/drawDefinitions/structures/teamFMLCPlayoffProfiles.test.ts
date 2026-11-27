@@ -1,11 +1,13 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
 import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 const expectedRanges = [
   { finishingPositions: [5, 6, 7, 8], finishingPositionRange: '5-8', roundNumber: 2 },
@@ -18,7 +20,12 @@ function generate({ completeAllMatchUps }) {
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
     drawProfiles: [
-      { drawType: FIRST_MATCH_LOSER_CONSOLATION, eventType: TEAM_EVENT, tieFormatName: DOMINANT_DUO, drawSize: 16 },
+      {
+        drawType: FIRST_MATCH_LOSER_CONSOLATION,
+        eventType: TEAM_EVENT,
+        tieFormat: resolveTieFormat(DOMINANT_DUO),
+        drawSize: 16,
+      },
     ],
     completeAllMatchUps,
   });

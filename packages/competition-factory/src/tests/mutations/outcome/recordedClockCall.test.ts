@@ -1,25 +1,25 @@
 import { deleteNotices, setCapturedClock, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { findTarget, R1, TOPICS, cleared, walkover, won } from '@Tests/testHarness/outcome/directionFixtures';
 import { completeDrawMatchUps } from '@Assemblies/generators/simulation/completeDrawMatchUps';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
 import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { v1Writes } from '@Tests/testHarness/outcome/directionCounter';
 import { objectGraph } from '@Tests/testHarness/outcome/objectGraph';
 import { notifySubscribers } from '@Global/state/notifySubscribers';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
+import { createSeededRandom, withRandomSource } from '@Tools/prng';
+import { nowMs, setClock, withCapturedClock } from '@Tools/clock';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { replayedInstants } from '@Tools/replayedInstants';
-import { createSeededRandom, withRandomSource } from '@Tools/prng';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
-import { nowMs, setClock, withCapturedClock } from '@Tools/clock';
 
 // constants and types
 import type { Step, Target } from '@Tests/testHarness/outcome/directionFixtures';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { DOUBLE_WALKOVER, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
+import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import type { Tournament } from '@Types/tournamentTypes';
 import { TEAM } from '@Constants/eventConstants';
 import {
@@ -33,6 +33,8 @@ import {
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
 } from '@Constants/outcomePipelineConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 // counts v1's matchUp writes on the stored record (`directionCounter.ts`: a write to a recorded call's copy is not one)
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
@@ -154,7 +156,12 @@ const ROWS: [string, Row][] = [
   [
     'a TEAM line',
     {
-      drawProfile: { drawType: SINGLE_ELIMINATION, drawSize: 4, eventType: TEAM, tieFormatName: DOMINANT_DUO },
+      drawProfile: {
+        drawType: SINGLE_ELIMINATION,
+        drawSize: 4,
+        eventType: TEAM,
+        tieFormat: resolveTieFormat(DOMINANT_DUO),
+      },
       step: { target: { roundNumber: 1, roundPosition: 1, singlesLine: 0 }, outcome: won(1) },
       lineUps: true,
     },

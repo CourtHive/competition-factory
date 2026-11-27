@@ -1,3 +1,4 @@
+import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { describe, expect, test } from 'vitest';
 
 import mocksEngine from '@Assemblies/engines/mock';
@@ -5,7 +6,6 @@ import * as governors from '@Assemblies/governors';
 import tournamentEngine from '@Engines/syncEngine';
 
 // Fixtures
-import POLICY_SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
 
 /**
  * Two reachability gaps, found by a documentation-import sweep rather than by any test.

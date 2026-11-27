@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { isPartialDualScore } from '@Scoring/analysis/isPartialDualScore';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -7,10 +8,11 @@ import { describe, expect, it } from 'vitest';
 // constants
 import { ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
-import { INTENNSE_2026 } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
-import { TALLY } from '@Constants/extensionConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
+import { TALLY } from '@Constants/extensionConstants';
+
+const { INTENNSE_2026 } = tieFormatConstants;
 
 /**
  * A level TEAM tie decided outside its score keeps the score as played (concepts/standings.md, "A level result where
@@ -21,7 +23,7 @@ const decision = { decidedIn: 'EXTERNAL', decidedBy: { method: 'OFFICIAL_DECISIO
 
 function levelTie(drawType: string) {
   mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, drawType, eventType: TEAM_EVENT, tieFormatName: INTENNSE_2026 }],
+    drawProfiles: [{ drawSize: 4, drawType, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(INTENNSE_2026) }],
     setState: true,
   });
   const { matchUps } = tournamentEngine.allTournamentMatchUps({ inContext: true });

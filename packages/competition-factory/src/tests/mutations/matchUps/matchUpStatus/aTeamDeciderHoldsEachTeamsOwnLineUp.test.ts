@@ -1,3 +1,4 @@
+import { resolveTieFormat } from '@courthive/competition-catalogue';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
@@ -50,7 +51,13 @@ function decideByLines(matchUpId: string, winningSide: number) {
 function deciderHoldsEachTeamsOwnLineUp(finalWinningSide: number, deciderStatus: string) {
   mocksEngine.generateTournamentRecord({
     drawProfiles: [
-      { drawId: DRAW_ID, drawType: DOUBLE_ELIMINATION, drawSize: 8, eventType: TEAM, tieFormatName: 'USTA_COLLEGE' },
+      {
+        drawId: DRAW_ID,
+        drawType: DOUBLE_ELIMINATION,
+        drawSize: 8,
+        eventType: TEAM,
+        tieFormat: resolveTieFormat('USTA_COLLEGE'),
+      },
     ],
     nonRandom: 7001,
     setState: true,

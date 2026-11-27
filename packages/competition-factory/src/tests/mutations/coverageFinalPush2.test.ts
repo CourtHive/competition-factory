@@ -3,6 +3,7 @@
  * to cross the 95% statement coverage threshold.
  */
 import { POLICY_RANKING_POINTS_BASIC } from '@Fixtures/policies/POLICY_RANKING_POINTS_BASIC';
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { generateParticipants } from '@Generators/mocks/generateParticipants';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { getParticipantStats } from '@Query/participant/getParticipantStats';
@@ -10,13 +11,14 @@ import { updateTieFormat } from '@Mutate/tieFormat/updateTieFormat';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
 import { DEFAULTED } from '@Constants/matchUpStatusConstants';
-import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
+
+const { COLLEGE_D3 } = tieFormatConstants;
 
 const scoringPolicy = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };
 
@@ -162,7 +164,7 @@ describe('updateTieFormat: uncovered branches', () => {
       drawIds: [drawId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT, tieFormatName: COLLEGE_D3 }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(COLLEGE_D3) }],
       policyDefinitions: scoringPolicy,
     });
 
@@ -216,7 +218,7 @@ describe('updateTieFormat: uncovered branches', () => {
       drawIds: [drawId],
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT, tieFormatName: COLLEGE_D3 }],
+      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(COLLEGE_D3) }],
       policyDefinitions: scoringPolicy,
     });
 
@@ -243,7 +245,7 @@ describe('updateTieFormat: uncovered branches', () => {
       tournamentRecord,
       eventIds: [eventId],
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT, tieFormatName: COLLEGE_D3 }],
+      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(COLLEGE_D3) }],
       policyDefinitions: scoringPolicy,
     });
 
@@ -432,7 +434,7 @@ describe('processSides: DEFAULTED counters via tournament participant map', () =
 describe('applyLineUps guard clauses via team event', () => {
   it('exercises team matchUp lineUp application', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT, tieFormatName: COLLEGE_D3 }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(COLLEGE_D3) }],
       policyDefinitions: scoringPolicy,
     });
     tournamentEngine.setState(tournamentRecord);

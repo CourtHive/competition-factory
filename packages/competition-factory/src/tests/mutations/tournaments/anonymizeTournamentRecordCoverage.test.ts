@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
@@ -5,8 +6,9 @@ import { expect, test } from 'vitest';
 // constants
 import { PAIR, TEAM_PARTICIPANT, INDIVIDUAL, GROUP } from '@Constants/participantConstants';
 import { DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
-import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
 import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
+
+const { COLLEGE_DEFAULT } = tieFormatConstants;
 
 test('anonymize DOUBLES tournament covers PAIR participant handling', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -30,7 +32,7 @@ test('anonymize DOUBLES tournament covers PAIR participant handling', () => {
 
 test('anonymize TEAM tournament covers TEAM participant handling', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT, tieFormatName: COLLEGE_DEFAULT }],
+    drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT, tieFormat: resolveTieFormat(COLLEGE_DEFAULT) }],
   });
 
   // Verify TEAM participants exist

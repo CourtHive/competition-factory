@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { xa } from '@Tools/extractAttributes';
@@ -7,7 +8,6 @@ import { expect, it } from 'vitest';
 import { DOUBLES_MATCHUP, SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { TIE_FORMAT_MODIFICATIONS } from '@Constants/extensionConstants';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
 import {
   INVALID_MATCHUP,
@@ -17,13 +17,15 @@ import {
   NOT_IMPLEMENTED,
 } from '@Constants/errorConditionConstants';
 
+const { COLLEGE_D3 } = tieFormatConstants;
+
 it('can modify collectionDefinitions for a tieFormat on a drawDefinition', () => {
   const policyDefinitions = { audit: { [TIE_FORMAT_MODIFICATIONS]: true } };
   const {
     drawIds: [drawId],
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
     policyDefinitions,
   });
 
@@ -162,7 +164,7 @@ it('can modify collectionDefinitions for a tieFormat on a structure', () => {
     drawIds: [drawId],
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
+    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
   });
 
   tournamentEngine.setState(tournamentRecord);

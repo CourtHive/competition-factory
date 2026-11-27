@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { setSchemaWriteMode } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -9,12 +10,13 @@ import { SCHEDULE_LOCKED } from '@Constants/errorConditionConstants';
 import { LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { OFFICIAL } from '@Constants/participantRoles';
 import { TEAM } from '@Constants/eventConstants';
 
 // Fixtures
 import { POLICY_OFFICIATING_CONFLICT_OF_INTEREST } from '@Fixtures/policies/POLICY_OFFICIATING_CONFLICT_OF_INTEREST';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 /**
  * Schedule locks — a director pins a marquee matchUp's placement so bulk and
@@ -357,7 +359,7 @@ it('pins allocated courts, comparing the allocation rather than the reference', 
   const {
     drawIds: [teamDrawId],
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: DOMINANT_DUO }],
+    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO) }],
     venueProfiles: [{ courtsCount: 4, startTime: '08:00', endTime: '21:00', venueId: VENUE_ID }],
     startDate: SCHEDULED_DATE,
     endDate: '2026-06-28',

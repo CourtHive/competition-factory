@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
@@ -13,7 +14,6 @@ import fs from 'node:fs';
 
 // constants
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
-import { LAVER_CUP } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
@@ -29,6 +29,8 @@ import {
   ROUND_ROBIN,
   SINGLE_ELIMINATION,
 } from '@Constants/drawDefinitionConstants';
+
+const { LAVER_CUP } = tieFormatConstants;
 
 /**
  * THE COST CURVE — outcome v2 executor plan § 6.0, G4 (S0 commits it).
@@ -148,7 +150,7 @@ function complete(config: Config, mode: string): Run {
     drawProfiles: [
       {
         ...(config.eventType ? { eventType: config.eventType } : {}),
-        ...(config.tieFormatName ? { tieFormatName: config.tieFormatName } : {}),
+        ...(config.tieFormatName ? { tieFormat: resolveTieFormat(config.tieFormatName) } : {}),
         ...qualifying,
         drawType: config.drawType,
         drawSize: config.drawSize,

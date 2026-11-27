@@ -1,3 +1,4 @@
+import { POLICY_ROUND_ROBIN_TALLY_JTT, POLICY_ROUND_ROBIN_TALLY_TOC } from '@courthive/competition-catalogue';
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -12,8 +13,6 @@ import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 
 // Policy Fixtures
 import { POLICY_ROUND_ROBIN_TALLY_DEFAULT } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_DEFAULT';
-import { POLICY_ROUND_ROBIN_TALLY_JTT } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_JTT';
-import { POLICY_ROUND_ROBIN_TALLY_TOC } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_TOC';
 
 it('POLICY_TYPE_ROUND_ROBIN_TALLY constant exists', () => {
   expect(POLICY_TYPE_ROUND_ROBIN_TALLY).toBe('roundRobinTally');

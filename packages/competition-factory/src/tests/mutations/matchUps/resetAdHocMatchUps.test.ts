@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { getMatchUpId } from '@Functions/global/extractors';
@@ -11,7 +12,6 @@ import { it, expect, vi } from 'vitest';
 import { DEFAULTED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { AD_HOC, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { SINGLES, TEAM } from '@Constants/eventConstants';
 import {
   INCOMPATIBLE_MATCHUP_STATUS,
@@ -21,6 +21,8 @@ import {
   MISSING_DRAW_DEFINITION,
   STRUCTURE_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 it('can remove scores from adHoc matchUps', () => {
   const drawId = 'drawId';
@@ -158,7 +160,7 @@ it('can reset adHoc matchUps in TEAM events', () => {
   mocksEngine.generateTournamentRecord({
     drawProfiles: [
       {
-        tieFormatName: DOMINANT_DUO,
+        tieFormat: resolveTieFormat(DOMINANT_DUO),
         eventType: TEAM,
         drawType: AD_HOC,
         automated: true,
@@ -209,7 +211,7 @@ it('can reset adHoc TEAM matchUps with removeAssignments', () => {
   mocksEngine.generateTournamentRecord({
     drawProfiles: [
       {
-        tieFormatName: DOMINANT_DUO,
+        tieFormat: resolveTieFormat(DOMINANT_DUO),
         eventType: TEAM,
         drawType: AD_HOC,
         automated: true,
@@ -299,7 +301,7 @@ it('can reset adHoc TEAM matchUps without removeAssignments', () => {
   mocksEngine.generateTournamentRecord({
     drawProfiles: [
       {
-        tieFormatName: DOMINANT_DUO,
+        tieFormat: resolveTieFormat(DOMINANT_DUO),
         eventType: TEAM,
         drawType: AD_HOC,
         automated: true,
@@ -360,7 +362,7 @@ it('returns error when resetScorecard fails for TEAM matchUps', async () => {
   mocksEngine.generateTournamentRecord({
     drawProfiles: [
       {
-        tieFormatName: DOMINANT_DUO,
+        tieFormat: resolveTieFormat(DOMINANT_DUO),
         eventType: TEAM,
         drawType: AD_HOC,
         automated: true,
@@ -398,7 +400,7 @@ it('returns error when resetMatchUpLineUps fails for TEAM matchUps with removeAs
   mocksEngine.generateTournamentRecord({
     drawProfiles: [
       {
-        tieFormatName: DOMINANT_DUO,
+        tieFormat: resolveTieFormat(DOMINANT_DUO),
         eventType: TEAM,
         drawType: AD_HOC,
         automated: true,

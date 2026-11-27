@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
@@ -6,9 +7,10 @@ import { expect, test } from 'vitest';
 import { MAIN, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/eventConstants';
+
+const { DOMINANT_DUO } = tieFormatConstants;
 
 test('changing scores after playoffs generated in team round robin with playoffs', () => {
   const policyDefinitions = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };
@@ -23,7 +25,7 @@ test('changing scores after playoffs generated in team round robin with playoffs
     drawProfiles: [
       {
         drawType: ROUND_ROBIN_WITH_PLAYOFF,
-        tieFormatName: DOMINANT_DUO,
+        tieFormat: resolveTieFormat(DOMINANT_DUO),
         structureOptions,
         eventType: TEAM,
         drawSize: 8,

@@ -1,8 +1,9 @@
 import { getTournamentRecords, setOutcomePipeline } from '@Global/state/globalState';
-import type { MatchUp } from '@Types/tournamentTypes';
-import engine from '@Engines/syncEngine';
-import mocks from '@Assemblies/engines/mock';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
 import { afterEach, describe, expect, it } from 'vitest';
+import type { MatchUp } from '@Types/tournamentTypes';
+import mocks from '@Assemblies/engines/mock';
+import engine from '@Engines/syncEngine';
 
 const drawId = 'team-seats';
 const profiles = ['bracket', 'ad-hoc'] as const;
@@ -32,7 +33,7 @@ function makeDual(profile: (typeof profiles)[number], shape: Seats) {
         drawId,
         drawSize: 4,
         eventType: 'TEAM',
-        tieFormatName: 'DOMINANT_DUO',
+        tieFormat: resolveTieFormat('DOMINANT_DUO'),
         ...(adHoc ? { drawType: 'AD_HOC' as const, automated: true, roundsCount: 1 } : {}),
       },
     ],

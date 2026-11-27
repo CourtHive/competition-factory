@@ -1,8 +1,9 @@
-import engine from '@Engines/syncEngine';
-import { mocksEngine } from '@Assemblies/engines/mock';
-import { setOutcomePipeline } from '@Global/state/globalState';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
+import { setOutcomePipeline } from '@Global/state/globalState';
 import { afterEach, describe, expect, it } from 'vitest';
+import { mocksEngine } from '@Assemblies/engines/mock';
+import engine from '@Engines/syncEngine';
 
 afterEach(() => setOutcomePipeline('v1'));
 
@@ -16,7 +17,13 @@ describe.each(['DOUBLE_DEFAULT', 'DOUBLE_WALKOVER'] as const)('%s', (matchUpStat
           eventIds: [eventId],
         } = mocksEngine.generateTournamentRecord({
           drawProfiles: [
-            { drawId, drawSize: 4, drawType: 'SINGLE_ELIMINATION', eventType: 'TEAM', tieFormatName: 'DOMINANT_DUO' },
+            {
+              drawId,
+              drawSize: 4,
+              drawType: 'SINGLE_ELIMINATION',
+              eventType: 'TEAM',
+              tieFormat: resolveTieFormat('DOMINANT_DUO'),
+            },
           ],
           nonRandom: 1,
           setState: true,

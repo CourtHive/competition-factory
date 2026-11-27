@@ -1,4 +1,4 @@
-import POLICY_SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
+import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
 import { COMPASS } from '@Constants/drawDefinitionConstants';
 import tournamentEngine from '@Engines/syncEngine';
@@ -12,8 +12,8 @@ import Ajv from 'ajv';
 // constants
 import { ABANDONED, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { PAIR, SIGNED_IN } from '@Constants/participantConstants';
-import { PRACTICE } from '@Constants/scheduleConstants';
 import { DOUBLES, TEAM } from '@Constants/eventConstants';
+import { PRACTICE } from '@Constants/scheduleConstants';
 
 /**
  * EVERY STORED FIELD THE TYPES DECLARE, THE SCHEMA DECLARES.

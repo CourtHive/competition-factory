@@ -5,8 +5,8 @@ import { describe, expect, test } from 'vitest';
 
 // constants
 import { INVALID_PARTICIPANT_TYPE, INVALID_VALUES } from '@Constants/errorConditionConstants';
-import { COMPETITOR } from '@Constants/participantRoles';
 import { INDIVIDUAL } from '@Constants/participantConstants';
+import { COMPETITOR } from '@Constants/participantRoles';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
 /**

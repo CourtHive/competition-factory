@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { getDisabledMatchUpStatuses } from '@Query/matchUps/getDisabledMatchUpStatuses';
 import { getDeciderSnapshot } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
@@ -13,7 +14,6 @@ import { outcomePipelineModes } from '@Constants/outcomePipelineConstants';
 import { matchUpStatusScopes } from '@Constants/matchUpStatusScopes';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { SINGLES, DOUBLES, TEAM } from '@Constants/matchUpTypes';
-import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
 import { SCORE } from '@Constants/matchUpActionConstants';
 import {
   SINGLE_ELIMINATION,
@@ -23,6 +23,8 @@ import {
   WINNER,
   LOSER,
 } from '@Constants/drawDefinitionConstants';
+
+const { COLLEGE_D3 } = tieFormatConstants;
 
 type Kind = 'singles' | 'doubles' | 'dual' | 'rubber' | 'decider' | 'teamDecider' | 'ladder' | 'adHoc';
 const kinds: Kind[] = ['singles', 'doubles', 'dual', 'rubber', 'decider', 'teamDecider', 'ladder', 'adHoc'];
@@ -52,7 +54,7 @@ function createFixture(kind: Kind) {
         drawSize: 8,
         drawType,
         eventType: team ? TEAM : individualEventType,
-        ...(team ? { tieFormatName: COLLEGE_D3 } : {}),
+        ...(team ? { tieFormat: resolveTieFormat(COLLEGE_D3) } : {}),
       },
     ],
     completeAllMatchUps: decider,

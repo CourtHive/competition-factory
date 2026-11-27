@@ -1,8 +1,9 @@
+import { getTournamentRecords, setOutcomePipeline } from '@Global/state/globalState';
+import { resolveTieFormat } from '@courthive/competition-catalogue';
 import type { Tournament } from '@Types/tournamentTypes';
 import { afterEach, expect, it } from 'vitest';
 import mocks from '@Assemblies/engines/mock';
 import engine from '@Engines/syncEngine';
-import { getTournamentRecords, setOutcomePipeline } from '@Global/state/globalState';
 
 afterEach(() => setOutcomePipeline('v1'));
 
@@ -10,7 +11,13 @@ it.each([true, false])('reassigns a winner passing through a BYE with a draw lin
   setOutcomePipeline('v1');
   mocks.generateTournamentRecord({
     drawProfiles: [
-      { drawId: 'd', drawSize: 8, participantsCount: 6, eventType: 'TEAM', tieFormatName: 'DOMINANT_DUO' },
+      {
+        drawId: 'd',
+        drawSize: 8,
+        participantsCount: 6,
+        eventType: 'TEAM',
+        tieFormat: resolveTieFormat('DOMINANT_DUO'),
+      },
     ],
     nonRandom: 1,
     setState: true,

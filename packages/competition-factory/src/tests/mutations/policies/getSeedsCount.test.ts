@@ -1,5 +1,5 @@
+import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { getSeedsCount } from '@Query/drawDefinition/getSeedsCount';
-import POLICY_SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';

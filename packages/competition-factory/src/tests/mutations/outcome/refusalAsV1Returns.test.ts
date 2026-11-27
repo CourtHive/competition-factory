@@ -1,3 +1,4 @@
+import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { objectGraph } from '@Tests/testHarness/outcome/objectGraph';
 import { setOutcomePipeline } from '@Global/state/globalState';
@@ -10,7 +11,6 @@ import { setClock } from '@Tools/clock';
 // constants and types
 import { CANNOT_CHANGE_WINNING_SIDE, INVALID_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
 import {
   DEFAULTED,
@@ -26,6 +26,8 @@ import {
   OUTCOME_PIPELINE_V2,
 } from '@Constants/outcomePipelineConstants';
 
+const { DOMINANT_DUO } = tieFormatConstants;
+
 /**
  * A REFUSAL IS RETURNED AS v1 RETURNS IT: the error, the info, and a context holding the same keys in the same order
  * (v1's `decorateResult` drops an attribute that is undefined), with the stored matchUp where v1 names it. And a call
@@ -38,7 +40,7 @@ afterEach(() => {
 });
 
 const MODES: OutcomePipelineMode[] = [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL];
-const TEAM_DRAW = { drawSize: 4, eventType: TEAM, tieFormatName: DOMINANT_DUO };
+const TEAM_DRAW = { drawSize: 4, eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO) };
 
 type Call = { matchUpId: string; outcome: Record<string, unknown>; params?: Record<string, unknown> };
 
