@@ -1,4 +1,5 @@
 import { getOrderedDrawPositions } from '@Query/matchUps/getOrderedDrawPositions';
+import { defined } from '@Tests/helpers/defined';
 import { buildStructuralIndex } from '@Query/matchUps/structuralIndex';
 import { compareIndex } from '@Mutate/matchUps/outcome/indexOracle';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -93,7 +94,7 @@ it("stubs a side's participant only when the tournament holds it, as hydration c
   const hydratedBare = getAllDrawMatchUps({ drawDefinition, event, inContext: true }).matchUps ?? [];
   expect(compareIndex({ hydrated: hydratedBare, index: bare.matchUps })).toEqual([]);
   expect(bare.matchUps.flatMap((matchUp) => matchUp.sides ?? []).some((side) => side?.participant)).toEqual(false);
-  expect(tournamentRecord.participants.length).toBeGreaterThan(0);
+  expect(defined(tournamentRecord.participants, 'participants').length).toBeGreaterThan(0);
 });
 
 it('declares TEAM unsupported, so its caller hydrates', () => {

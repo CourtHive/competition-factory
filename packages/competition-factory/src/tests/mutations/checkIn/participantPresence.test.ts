@@ -1,4 +1,5 @@
 import { getParticipantSignInStatus } from '@Query/participant/signInStatus';
+import { defined } from '@Tests/helpers/defined';
 import { legacyMode } from '@Tests/testHarness/legacyMode';
 
 import mocksEngine from '@Assemblies/engines/mock';
@@ -18,7 +19,7 @@ function fixture(localTimeZone?: string) {
   });
   if (localTimeZone) tournamentRecord.localTimeZone = localTimeZone;
   tournamentEngine.setState(tournamentRecord, false);
-  const participantId = tournamentRecord.participants[0].participantId;
+  const participantId = defined(tournamentRecord.participants, 'participants')[0].participantId;
   return { tournamentRecord, participantId };
 }
 
@@ -140,7 +141,7 @@ it('declares when no zone could be resolved rather than pretending UTC is the ve
 
 it('lists everyone still signed in, role-agnostically, for the end-of-day close', () => {
   const { tournamentRecord } = fixture('UTC');
-  const [a, b] = tournamentRecord.participants.map((p: any) => p.participantId);
+  const [a, b] = defined(tournamentRecord.participants, 'participants').map((p: any) => p.participantId);
 
   tournamentEngine.modifyParticipantsSignInStatus({
     occurredAt: '2026-09-18T13:00:00.000Z',
@@ -178,8 +179,10 @@ it('records who attested the sign-in', () => {
 it('reads a pre-promotion participant whose sign-ins are still timeItems', () => {
   const { tournamentRecord, participantId } = fixture('UTC');
 
-  const participant = tournamentRecord.participants.find((p: any) => p.participantId === participantId);
-  participant.timeItems = [
+  const participant = defined(tournamentRecord.participants, 'participants').find(
+    (p: any) => p.participantId === participantId,
+  );
+  defined(participant, 'participant').timeItems = [
     { itemType: SIGN_IN_STATUS, itemValue: SIGNED_IN, createdAt: '2026-09-17T13:00:00.000Z' },
     { itemType: SIGN_IN_STATUS, itemValue: SIGNED_OUT, createdAt: '2026-09-17T22:00:00.000Z' },
   ];
@@ -196,8 +199,10 @@ it('reads a pre-promotion participant whose sign-ins are still timeItems', () =>
 it('promotes a legacy sign-in log through migrateTournamentRecord', () => {
   const { tournamentRecord, participantId } = fixture();
 
-  const participant = tournamentRecord.participants.find((p: any) => p.participantId === participantId);
-  participant.timeItems = [
+  const participant = defined(tournamentRecord.participants, 'participants').find(
+    (p: any) => p.participantId === participantId,
+  );
+  defined(participant, 'participant').timeItems = [
     { itemType: SIGN_IN_STATUS, itemValue: SIGNED_IN, createdAt: '2023-09-29T13:00:00.000Z' },
     { itemType: SIGN_IN_STATUS, itemValue: SIGNED_OUT, createdAt: '2023-09-29T22:00:00.000Z' },
   ];
@@ -206,10 +211,17 @@ it('promotes a legacy sign-in log through migrateTournamentRecord', () => {
   const result: any = tournamentEngine.migrateTournamentRecord({ tournamentRecord });
   expect(result.promoted.participantPresence).toEqual(2);
 
-  const migrated = tournamentRecord.participants.find((p: any) => p.participantId === participantId);
-  expect(migrated.presence.map((a: any) => a.state)).toEqual([SIGNED_IN, SIGNED_OUT]);
-  expect(migrated.presence[0].occurredAt).toEqual('2023-09-29T13:00:00.000Z');
-  expect(migrated.timeItems.filter((t: any) => t.itemType === SIGN_IN_STATUS)).toEqual([]);
+  const migrated = defined(tournamentRecord.participants, 'participants').find(
+    (p: any) => p.participantId === participantId,
+  );
+  expect(defined(defined(migrated, 'migrated').presence, 'presence').map((a: any) => a.state)).toEqual([
+    SIGNED_IN,
+    SIGNED_OUT,
+  ]);
+  expect(defined(defined(migrated, 'migrated').presence, 'presence')[0].occurredAt).toEqual('2023-09-29T13:00:00.000Z');
+  expect(
+    defined(defined(migrated, 'migrated').timeItems, 'timeItems').filter((t: any) => t.itemType === SIGN_IN_STATUS),
+  ).toEqual([]);
 });
 
 legacyMode('sign-in attribution cannot be represented by a timeItem', () => {

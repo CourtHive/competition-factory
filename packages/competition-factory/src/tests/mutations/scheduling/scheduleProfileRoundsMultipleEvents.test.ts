@@ -41,7 +41,7 @@ it('auto schedules multiple events at multiple venues and tracks participants ac
   ];
   const startDate = '2022-01-01';
   const endDate = '2022-01-07';
-  let result = mocksEngine.generateTournamentRecord({
+  let result: any = mocksEngine.generateTournamentRecord({
     participantsProfile: { participantsCount: 100, participantType: PAIR },
     eventProfiles,
     venueProfiles,

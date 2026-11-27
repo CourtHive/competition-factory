@@ -20,7 +20,8 @@ beforeEach(() => setSubscriptions({}));
 afterEach(() => vi.restoreAllMocks());
 
 it('a refused build is build-failed rather than clean', () => {
-  vi.spyOn(mocksEngine, 'generateTournamentRecord').mockReturnValue({ error: INVALID_VALUES });
+  const refusal: any = { error: INVALID_VALUES };
+  vi.spyOn(mocksEngine, 'generateTournamentRecord').mockReturnValue(refusal);
   const result = replay(config, [step], 'build-failed');
   expect(result.verdict).toEqual('build-failed');
   expect(result.complete).toEqual(false);

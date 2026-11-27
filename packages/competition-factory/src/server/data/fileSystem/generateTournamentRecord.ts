@@ -10,7 +10,7 @@ export function generateTournamentRecord(mockProfile?: any) {
   const mockResult = governors.mocksGovernor.generateTournamentRecord(mockProfile);
 
   if (!mockResult || mockResult.error) {
-    throw new Error(mockResult?.error || 'Could not generate tournament record');
+    throw new Error((mockResult?.error ?? 'Could not generate tournament record') as string);
   }
 
   const tournamentRecord: Tournament = mockResult.tournamentRecord;

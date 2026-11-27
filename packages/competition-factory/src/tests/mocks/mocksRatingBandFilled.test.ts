@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
@@ -27,7 +28,7 @@ it.each([
       participantFilters: { participantTypes: ['INDIVIDUAL'] },
       withScaleValues: true,
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     const ineligible = (participants ?? [])
       .map((participant: any) => tournamentEngine.getParticipantEligibility({ participant, event }) as any)
       .filter((result) => !result.eligible)

@@ -1,4 +1,5 @@
 import { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue';
+import { defined } from '@Tests/helpers/defined';
 import { linkTournaments } from '@Mutate/tournaments/tournamentLinks';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { findVenue } from '@Query/venues/findVenue';
@@ -12,7 +13,7 @@ const linkedPair = () => {
   const tournamentRecords = { [first.tournamentId]: first, [second.tournamentId]: second };
   const result: any = linkTournaments({ tournamentRecords });
   expect(result.success).toEqual(true);
-  return { first, second, tournamentRecords, venueId: second.venues[0].venueId };
+  return { first, second, tournamentRecords, venueId: defined(second.venues, 'venues')[0].venueId };
 };
 
 const deepFreeze = (value: any) => {
@@ -53,8 +54,8 @@ it('findVenue writes nothing to either record', () => {
 // venue on this record, which later hydration reads it from, as its own object.
 it('assignMatchUpVenue copies a linked venue onto the record it assigns in', () => {
   const { first, second, tournamentRecords, venueId } = linkedPair();
-  const drawDefinition = first.events[0].drawDefinitions[0];
-  const matchUpId = drawDefinition.structures[0].matchUps[0].matchUpId;
+  const drawDefinition = defined(defined(first.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const matchUpId = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps')[0].matchUpId;
 
   let result: any = assignMatchUpVenue({
     tournamentRecords,
@@ -70,12 +71,12 @@ it('assignMatchUpVenue copies a linked venue onto the record it assigns in', () 
   expect(result.venue?.venueId).toEqual(venueId);
 
   // ...as its own object: the two records must not share one venue
-  expect(first.venues[0]).not.toBe(second.venues[0]);
-  first.venues[0].venueName = 'Renamed In First';
-  expect(second.venues[0].venueName).toEqual('Linked Venue');
+  expect(defined(first.venues, 'venues')[0]).not.toBe(defined(second.venues, 'venues')[0]);
+  defined(first.venues, 'venues')[0].venueName = 'Renamed In First';
+  expect(defined(second.venues, 'venues')[0].venueName).toEqual('Linked Venue');
 
   // assigning it again copies nothing more
   result = assignMatchUpVenue({ tournamentRecords, tournamentRecord: first, drawDefinition, matchUpId, venueId });
   expect(result.success).toEqual(true);
-  expect(first.venues.length).toEqual(1);
+  expect(defined(first.venues, 'venues').length).toEqual(1);
 });

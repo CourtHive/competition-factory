@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { defined } from '@Tests/helpers/defined';
 
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -73,15 +74,17 @@ describe('modifyTournamentRecord replays from its method list', () => {
   test('scheduling the existing draw: the profile and the scheduled rounds replay', () => {
     const tournamentRecord = base();
     const original = makeDeepCopy(tournamentRecord, false, true);
-    const event = tournamentRecord.events[0];
-    const { drawId, structures } = event.drawDefinitions[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const { drawId, structures } = defined(event.drawDefinitions, 'drawDefinitions')[0];
     const round = { tournamentId: tournamentRecord.tournamentId, eventId: event.eventId, drawId, roundNumber: 1 };
 
     const result: any = mocksEngine.modifyTournamentRecord({
       schedulingProfile: [
         {
           scheduleDate: '2026-06-01',
-          venues: [{ venueId: 'v1', rounds: [{ ...round, structureId: structures[0].structureId }] }],
+          venues: [
+            { venueId: 'v1', rounds: [{ ...round, structureId: defined(structures, 'structures')[0].structureId }] },
+          ],
         },
       ],
       venueProfiles: [{ venueId: 'v1', courtsCount: 4 }],

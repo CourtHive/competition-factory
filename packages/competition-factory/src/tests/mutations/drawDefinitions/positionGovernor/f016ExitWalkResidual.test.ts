@@ -1,4 +1,5 @@
 import { positionTargets } from '@Query/matchUp/positionTargets';
+import { defined } from '@Tests/helpers/defined';
 import { useEngineCatch } from '@Tests/testHarness/engineCatch';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -41,7 +42,9 @@ function exitWalk() {
   tournamentEngine.setState(tournamentRecord);
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
   const [main, consolation] = drawDefinition.structures;
-  const ids = tournamentRecord.participants.map((participant: any) => participant.participantId);
+  const ids = defined(tournamentRecord.participants, 'participants').map(
+    (participant: any) => participant.participantId,
+  );
   for (const [drawPosition, participantId] of [
     [3, ids[0]],
     [4, ids[1]],

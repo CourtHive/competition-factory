@@ -1,4 +1,5 @@
 import { projectDraw, projectRoundTrip } from '@Tests/testHarness/exitPropagation/transitions';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
@@ -14,34 +15,37 @@ import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
  * project the same; the full projection, which still sees the number, is the control.
  */
 it('the round trip renders a BYE drawPosition as BYE', () => {
-  const {
-    tournamentRecord: {
-      events: [
-        {
-          drawDefinitions: [drawDefinition],
-        },
-      ],
-    },
-  } = mocksEngine.generateTournamentRecord({
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawType: SINGLE_ELIMINATION, drawSize: 8, participantsCount: 3 }],
   });
+  const [{ drawDefinitions }] = defined(tournamentRecord.events, 'events');
+  const [drawDefinition] = defined(drawDefinitions, 'drawDefinitions');
 
-  const [structure] = drawDefinition.structures;
-  const byes = new Set(structure.positionAssignments.filter((a: any) => a.bye).map((a: any) => a.drawPosition));
-  const byeMeetsBye = structure.matchUps.find(
+  const [structure] = defined(drawDefinition.structures, 'structures');
+  const byes = new Set(
+    defined(structure.positionAssignments, 'positionAssignments')
+      .filter((a: any) => a.bye)
+      .map((a: any) => a.drawPosition),
+  );
+  const byeMeetsBye = defined(structure.matchUps, 'matchUps').find(
     (m: any) => m.roundNumber === 1 && m.drawPositions?.every((dp: any) => byes.has(dp)),
   );
   expect(byeMeetsBye).toBeDefined();
-  const [first, second] = byeMeetsBye.drawPositions;
-  const onward = structure.matchUps.find(
+  const [first, second] = defined(defined(byeMeetsBye, 'byeMeetsBye').drawPositions, 'drawPositions');
+  const onward = defined(structure.matchUps, 'matchUps').find(
     (m: any) => m.roundNumber === 2 && m.drawPositions?.some((dp: any) => dp === first || dp === second),
   );
   expect(onward).toBeDefined();
 
   const other = structuredClone(drawDefinition);
-  const otherOnward = other.structures[0].matchUps.find((m: any) => m.matchUpId === onward.matchUpId);
+  const otherOnward = defined(defined(other.structures, 'structures')[0].matchUps, 'matchUps').find(
+    (m: any) => m.matchUpId === defined(onward, 'onward').matchUpId,
+  );
   const swapped: Record<number, number> = { [first]: second, [second]: first };
-  otherOnward.drawPositions = otherOnward.drawPositions.map((dp: any) => swapped[dp] ?? dp);
+  defined(otherOnward, 'otherOnward').drawPositions = defined(
+    defined(otherOnward, 'otherOnward').drawPositions,
+    'drawPositions',
+  ).map((dp: any) => swapped[dp] ?? dp);
 
   expect(JSON.stringify(projectDraw(other))).not.toEqual(JSON.stringify(projectDraw(drawDefinition)));
   expect(projectRoundTrip(other)).toEqual(projectRoundTrip(drawDefinition));

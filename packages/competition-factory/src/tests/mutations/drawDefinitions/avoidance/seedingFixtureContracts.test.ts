@@ -1,4 +1,5 @@
 import { getAttributeGroupings } from '@Query/participants/getAttributeGrouping';
+import { defined } from '@Tests/helpers/defined';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -164,7 +165,7 @@ describe('trap 3 — seedsCount alone creates seed SLOTS and seeds nobody', () =
       setState: true,
     });
     const { event } = tournamentEngine.addEvent({ event: { eventName: 'unseeded', eventType: SINGLES_EVENT } });
-    const participantIds = tournamentRecord.participants
+    const participantIds = defined(tournamentRecord.participants, 'participants')
       .slice(0, DRAW_SIZE)
       .map(({ participantId }: any) => participantId);
     tournamentEngine.addEventEntries({ eventId: event.eventId, participantIds });

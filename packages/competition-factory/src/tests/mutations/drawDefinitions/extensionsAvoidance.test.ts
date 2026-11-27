@@ -1,4 +1,5 @@
 import { getPositionAssignments } from '@Query/structure/getPositionAssignments';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { xa } from '@Tools/extractAttributes';
@@ -15,7 +16,7 @@ test.each([2, 4, 8, 16])('avoidance policies based on extension values', (cohort
     eventIds: [eventId],
   } = mocksEngine.generateTournamentRecord(mockProfile);
 
-  expect(tournamentRecord.participants.length).toEqual(32);
+  expect(defined(tournamentRecord.participants, 'participants').length).toEqual(32);
   const cohorts = chunkArray(tournamentRecord.participants, cohortsCount);
   cohorts.forEach((cohort, i) => {
     for (const participant of cohort) {

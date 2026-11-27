@@ -1,4 +1,5 @@
 import { getEventMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getEventMatchUpFormatTiming';
+import { defined } from '@Tests/helpers/defined';
 import { getMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
@@ -118,7 +119,7 @@ describe('getEventMatchUpFormatTiming — categoryType defaults to the event cat
     const result: any = getEventMatchUpFormatTiming({
       matchUpFormats: [MATCHUP_FORMAT],
       tournamentRecord,
-      event,
+      event: defined(event, 'event'),
     });
     const timing = result.eventMatchUpFormatTiming?.find((t) => t.matchUpFormat === MATCHUP_FORMAT);
     expect(timing.recoveryMinutes).toEqual(JUNIOR_DOUBLES_RECOVERY);
@@ -129,7 +130,7 @@ describe('getEventMatchUpFormatTiming — categoryType defaults to the event cat
     const result: any = getEventMatchUpFormatTiming({
       matchUpFormats: [MATCHUP_FORMAT],
       tournamentRecord,
-      event,
+      event: defined(event, 'event'),
     });
     const timing = result.eventMatchUpFormatTiming?.find((t) => t.matchUpFormat === MATCHUP_FORMAT);
     expect(timing.recoveryMinutes).toEqual(ADULT_DOUBLES_RECOVERY);
@@ -140,7 +141,7 @@ describe('getEventMatchUpFormatTiming — categoryType defaults to the event cat
     const result: any = getEventMatchUpFormatTiming({
       matchUpFormats: [MATCHUP_FORMAT],
       tournamentRecord,
-      event,
+      event: defined(event, 'event'),
     });
     const timing = result.eventMatchUpFormatTiming?.find((t) => t.matchUpFormat === MATCHUP_FORMAT);
     expect(timing.recoveryMinutes).toEqual(JUNIOR_DOUBLES_RECOVERY);
@@ -152,7 +153,7 @@ describe('getEventMatchUpFormatTiming — categoryType defaults to the event cat
       matchUpFormats: [MATCHUP_FORMAT],
       categoryType: JUNIOR,
       tournamentRecord,
-      event,
+      event: defined(event, 'event'),
     });
     const timing = result.eventMatchUpFormatTiming?.find((t) => t.matchUpFormat === MATCHUP_FORMAT);
     expect(timing.recoveryMinutes).toEqual(JUNIOR_DOUBLES_RECOVERY);

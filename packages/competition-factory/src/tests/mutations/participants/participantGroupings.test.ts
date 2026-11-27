@@ -1,4 +1,5 @@
 import { setSubscriptions } from '@Global/state/globalState';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -290,13 +291,18 @@ it('will add individualParticipants to events as UNGROUPED when removed from TEA
 
   tournamentEngine.setState(tournamentRecord);
 
-  const teamParticipant = tournamentRecord.participants.find((participant) => participant.participantType === TEAM);
+  const teamParticipant = defined(tournamentRecord.participants, 'participants').find(
+    (participant) => participant.participantType === TEAM,
+  );
 
-  const individualParticipantIdToRemove = teamParticipant.individualParticipantIds[0];
+  const individualParticipantIdToRemove = defined(
+    defined(teamParticipant, 'teamParticipant').individualParticipantIds,
+    'individualParticipantIds',
+  )[0];
 
   const result = tournamentEngine.removeIndividualParticipantIds({
     individualParticipantIds: [individualParticipantIdToRemove],
-    groupingParticipantId: teamParticipant.participantId,
+    groupingParticipantId: defined(teamParticipant, 'teamParticipant').participantId,
     addIndividualParticipantsToEvents: true,
   });
   expect(result.success).toEqual(true);

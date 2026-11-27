@@ -1,4 +1,5 @@
 import { captureNotices, collectEntities, conformanceViolations } from './noticeConformance/harness';
+import { defined } from '@Tests/helpers/defined';
 import { announceGoesTo } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { addGoesTo, hasStoredGoesTo, holdGoesTo } from '@Query/matchUps/addGoesTo';
 import { nextPlayable } from '@Tests/testHarness/exitPropagation/driver';
@@ -33,7 +34,10 @@ function strippedDraw() {
     nonRandom: 1,
   });
   let stripped = 0;
-  for (const structure of tournamentRecord.events[0].drawDefinitions[0].structures) {
+  for (const structure of defined(
+    defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+    'structures',
+  )) {
     for (const matchUp of structure.matchUps ?? []) {
       if (matchUp.winnerMatchUpId || matchUp.loserMatchUpId) stripped += 1;
       delete matchUp.winnerMatchUpId;
@@ -155,7 +159,11 @@ describe('a call that repairs a draw’s missing edges', () => {
 
     // a draw that stores its edges holds nothing, so nothing is announced
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8 }] });
-    expect(holdGoesTo({ drawDefinition: tournamentRecord.events[0].drawDefinitions[0] })).toBeUndefined();
+    expect(
+      holdGoesTo({
+        drawDefinition: defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0],
+      }),
+    ).toBeUndefined();
   });
 
   it('the draw notice does not cover a real matchUp change: status, score or provenance still need their own', () => {

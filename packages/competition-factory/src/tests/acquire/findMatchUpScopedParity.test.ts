@@ -1,4 +1,5 @@
 import { getReferencedParticipants } from '@Query/participants/getReferencedParticipants';
+import { defined } from '@Tests/helpers/defined';
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { POLICY_PRIVACY_DEFAULT } from '@Fixtures/policies/POLICY_PRIVACY_DEFAULT';
 import { findMatchUp, publicFindMatchUp } from '@Acquire/findMatchUp';
@@ -77,7 +78,9 @@ function generate({ nonRandom, completeAllMatchUps, privacy }) {
     .allTournamentMatchUps({ inContext: true })
     .matchUps.find(
       ({ drawId, sides }) =>
-        drawId === tournamentRecord.events[0].drawDefinitions[0].drawId && sides?.[1]?.participantId,
+        drawId ===
+          defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].drawId &&
+        sides?.[1]?.participantId,
     );
   const pairIds = singles.sides.map(({ participantId }) => participantId);
   let result: any = tournamentEngine.addParticipant({

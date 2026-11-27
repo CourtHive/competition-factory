@@ -1,4 +1,5 @@
 import { findExtension } from '@Helpers/extensions/findExtension';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { intersection } from '@Tools/arrays';
 import { expect, it, test } from 'vitest';
@@ -44,15 +45,20 @@ test.each(mockProfiles)('it can anonymize tournamentRecords', (mockProfile) => {
     tournamentName,
   });
 
-  const originalPersons = tournamentRecord.participants.map((participant) => participant.person);
-
-  const originalEventEntries = tournamentRecord.events[0].entries.map(({ participantId }) => participantId);
-  const originalDrawEntries = tournamentRecord.events[0].drawDefinitions[0].entries.map(
-    ({ participantId }) => participantId,
+  const originalPersons = defined(tournamentRecord.participants, 'participants').map((participant) =>
+    defined(participant.person, 'person'),
   );
 
+  const originalEventEntries = defined(defined(tournamentRecord.events, 'events')[0].entries, 'entries').map(
+    ({ participantId }) => participantId,
+  );
+  const originalDrawEntries = defined(
+    defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].entries,
+    'entries',
+  ).map(({ participantId }) => participantId);
+
   let { extension: flightProfile } = findExtension<FlightProfile>({
-    element: tournamentRecord.events[0],
+    element: defined(tournamentRecord.events, 'events')[0],
     name: FLIGHT_PROFILE,
   });
 
@@ -62,22 +68,29 @@ test.each(mockProfiles)('it can anonymize tournamentRecords', (mockProfile) => {
   const result = mocksEngine.anonymizeTournamentRecord({ tournamentRecord });
   expect(result.success).toEqual(true);
 
-  expect(tournamentRecord.tournamentName.split(':')[0]).toEqual(`Anonymized`);
+  expect(defined(tournamentRecord.tournamentName, 'tournamentName').split(':')[0]).toEqual(`Anonymized`);
 
-  const generatedPersons = tournamentRecord.participants.map((participant) => participant.person);
+  const generatedPersons = defined(tournamentRecord.participants, 'participants').map((participant) =>
+    defined(participant.person, 'person'),
+  );
 
   const originalPersonIds = originalPersons.map(({ personId }) => personId);
   const generatedPersonIds = generatedPersons.map(({ personId }) => personId);
   expect(intersection(originalPersonIds, generatedPersonIds).length).toEqual(0);
 
-  const eventEntries = tournamentRecord.events[0].entries.map(({ participantId }) => participantId);
+  const eventEntries = defined(defined(tournamentRecord.events, 'events')[0].entries, 'entries').map(
+    ({ participantId }) => participantId,
+  );
   expect(intersection(originalEventEntries, eventEntries).length).toEqual(0);
 
-  const drawEntries = tournamentRecord.events[0].drawDefinitions[0].entries.map(({ participantId }) => participantId);
+  const drawEntries = defined(
+    defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].entries,
+    'entries',
+  ).map(({ participantId }) => participantId);
   expect(intersection(originalDrawEntries, drawEntries).length).toEqual(0);
 
   ({ extension: flightProfile } = findExtension<FlightProfile>({
-    element: tournamentRecord.events[0],
+    element: defined(tournamentRecord.events, 'events')[0],
     name: FLIGHT_PROFILE,
   }));
   const flightEntries = flightProfile?.value.flights[0].drawEntries.map(({ participantId }) => participantId);
@@ -85,7 +98,7 @@ test.each(mockProfiles)('it can anonymize tournamentRecords', (mockProfile) => {
 });
 
 test('parentOrganisation is deleted by default', () => {
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 8 }],
   });
   tournamentRecord.parentOrganisation = { organisationId: 'real-provider', organisationName: 'Real Provider Ltd' };
@@ -96,7 +109,7 @@ test('parentOrganisation is deleted by default', () => {
 });
 
 test('parentOrganisation override is attached when provided', () => {
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 8 }],
   });
   tournamentRecord.parentOrganisation = { organisationId: 'real-provider', organisationName: 'Real Provider Ltd' };
@@ -120,7 +133,7 @@ test('multi-tournament pipeline: same real provider maps to same mock provider a
     { real: realProviderB },
     { real: realProviderA },
   ].map(({ real }) => {
-    const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8 }] });
+    const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8 }] });
     tournamentRecord.parentOrganisation = real;
     return tournamentRecord;
   });

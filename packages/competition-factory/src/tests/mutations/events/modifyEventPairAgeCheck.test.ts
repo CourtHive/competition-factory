@@ -1,4 +1,5 @@
 import { modifyEvent } from '@Mutate/events/modifyEvent';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -18,14 +19,14 @@ it('modifyEvent age-checks the individual members of PAIR entries', () => {
   });
 
   // make every pair member too old for U12 (born 2010, checked in 2024)
-  for (const participant of tournamentRecord.participants) {
+  for (const participant of defined(tournamentRecord.participants, 'participants')) {
     if (participant.participantType === INDIVIDUAL) {
-      participant.person = { ...participant.person, birthDate: '2010-01-01' };
+      participant.person = { ...defined(participant.person, 'person'), birthDate: '2010-01-01' };
     }
   }
   tournamentEngine.setState(tournamentRecord);
 
-  const event = tournamentRecord.events[0];
+  const event = defined(tournamentRecord.events, 'events')[0];
   event.startDate = '2024-01-01';
   event.endDate = '2024-01-07';
 

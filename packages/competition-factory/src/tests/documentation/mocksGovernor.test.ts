@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import { expect, test } from 'vitest';
 
 // constants
@@ -16,8 +17,12 @@ test('anonymizeTournamentRecord - basic usage', () => {
     drawProfiles: [{ drawSize: 8 }],
   });
 
-  const originalParticipantIds = new Set(tournamentRecord.participants.map((p) => p.participantId));
-  const originalPersonIds = new Set(tournamentRecord.participants.map((p) => p.person?.personId));
+  const originalParticipantIds = new Set(
+    defined(tournamentRecord.participants, 'participants').map((p) => p.participantId),
+  );
+  const originalPersonIds = new Set(
+    defined(tournamentRecord.participants, 'participants').map((p) => p.person?.personId),
+  );
 
   const result = mocksEngine.anonymizeTournamentRecord({
     tournamentRecord,
@@ -28,8 +33,8 @@ test('anonymizeTournamentRecord - basic usage', () => {
   expect(tournamentRecord.tournamentName).toContain('Anonymized');
 
   // Verify all IDs changed
-  const newParticipantIds = tournamentRecord.participants.map((p) => p.participantId);
-  const newPersonIds = tournamentRecord.participants.map((p) => p.person?.personId);
+  const newParticipantIds = defined(tournamentRecord.participants, 'participants').map((p) => p.participantId);
+  const newPersonIds = defined(tournamentRecord.participants, 'participants').map((p) => p.person?.personId);
 
   expect(newParticipantIds.every((id) => !originalParticipantIds.has(id))).toEqual(true);
   expect(newPersonIds.every((id) => !originalPersonIds.has(id))).toEqual(true);
@@ -68,7 +73,7 @@ test('anonymizeTournamentRecord - with personIds array', () => {
 
   expect(result.success).toEqual(true);
 
-  const generatedPersonIds = tournamentRecord.participants.map((p) => p.person?.personId);
+  const generatedPersonIds = defined(tournamentRecord.participants, 'participants').map((p) => p.person?.personId);
   expect(generatedPersonIds).toEqual(customPersonIds);
 });
 
@@ -78,7 +83,7 @@ test('anonymizeTournamentRecord - keepExtensions parameter', () => {
   });
 
   // Add custom extension to first participant
-  tournamentRecord.participants[0].extensions = [
+  defined(tournamentRecord.participants, 'participants')[0].extensions = [
     { name: 'level', value: 'advanced' },
     { name: 'club', value: 'Tennis Club' },
   ];
@@ -90,8 +95,8 @@ test('anonymizeTournamentRecord - keepExtensions parameter', () => {
 
   expect(result.success).toEqual(true);
 
-  const firstParticipant = tournamentRecord.participants[0];
-  const extensionNames = firstParticipant.extensions?.map((e) => e.name) || [];
+  const firstParticipant = defined(tournamentRecord.participants, 'participants')[0];
+  const extensionNames = firstParticipant.extensions?.map((e) => e.name) ?? [];
 
   // Should keep 'level' but not 'club'
   expect(extensionNames.includes('level')).toEqual(true);
@@ -103,7 +108,7 @@ test('anonymizeTournamentRecord - anonymizeParticipantNames parameter', () => {
     drawProfiles: [{ drawSize: 4 }],
   });
 
-  const originalNames = tournamentRecord.participants.map((p) => p.participantName);
+  const originalNames = defined(tournamentRecord.participants, 'participants').map((p) => p.participantName);
 
   const result = mocksEngine.anonymizeTournamentRecord({
     tournamentRecord,
@@ -112,7 +117,7 @@ test('anonymizeTournamentRecord - anonymizeParticipantNames parameter', () => {
 
   expect(result.success).toEqual(true);
 
-  const newNames = tournamentRecord.participants.map((p) => p.participantName);
+  const newNames = defined(tournamentRecord.participants, 'participants').map((p) => p.participantName);
 
   // Names should be preserved when anonymizeParticipantNames is false
   // (Note: personIds still change, but names remain)
@@ -132,8 +137,8 @@ test('modifyTournamentRecord - add draw to existing tournament', () => {
     drawProfiles: [{ drawSize: 32, eventType: SINGLES }],
   });
 
-  const originalEventsCount = tournamentRecord.events.length;
-  const originalParticipantsCount = tournamentRecord.participants.length;
+  const originalEventsCount = defined(tournamentRecord.events, 'events').length;
+  const originalParticipantsCount = defined(tournamentRecord.participants, 'participants').length;
 
   const result = mocksEngine.modifyTournamentRecord({
     tournamentRecord,
@@ -145,9 +150,9 @@ test('modifyTournamentRecord - add draw to existing tournament', () => {
   expect(result.eventIds.length).toEqual(1);
 
   // Should have added a new event
-  expect(tournamentRecord.events.length).toEqual(originalEventsCount + 1);
+  expect(defined(tournamentRecord.events, 'events').length).toEqual(originalEventsCount + 1);
   // Should have added new participants
-  expect(tournamentRecord.participants.length).toBeGreaterThan(originalParticipantsCount);
+  expect(defined(tournamentRecord.participants, 'participants').length).toBeGreaterThan(originalParticipantsCount);
 });
 
 test('modifyTournamentRecord - target existing event by eventId', () => {
@@ -160,7 +165,7 @@ test('modifyTournamentRecord - target existing event by eventId', () => {
   });
 
   // Initially no draws (or empty array)
-  expect(tournamentRecord.events[0].drawDefinitions?.length || 0).toEqual(0);
+  expect(defined(tournamentRecord.events, 'events')[0].drawDefinitions?.length || 0).toEqual(0);
 
   const result = mocksEngine.modifyTournamentRecord({
     tournamentRecord,
@@ -176,8 +181,8 @@ test('modifyTournamentRecord - target existing event by eventId', () => {
   expect(result.drawIds.length).toEqual(1);
 
   // Should have added draw to existing event, not created new event
-  expect(tournamentRecord.events.length).toEqual(1);
-  expect(tournamentRecord.events[0].drawDefinitions.length).toEqual(1);
+  expect(defined(tournamentRecord.events, 'events').length).toEqual(1);
+  expect(defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions').length).toEqual(1);
 });
 
 test('modifyTournamentRecord - target existing event by eventName', () => {
@@ -192,7 +197,7 @@ test('modifyTournamentRecord - target existing event by eventName', () => {
   });
 
   // Initially no draws (or empty array)
-  expect(tournamentRecord.events[0].drawDefinitions?.length || 0).toEqual(0);
+  expect(defined(tournamentRecord.events, 'events')[0].drawDefinitions?.length || 0).toEqual(0);
 
   const result = mocksEngine.modifyTournamentRecord({
     tournamentRecord,
@@ -205,8 +210,8 @@ test('modifyTournamentRecord - target existing event by eventName', () => {
   });
 
   expect(result.success).toEqual(true);
-  expect(tournamentRecord.events.length).toEqual(1);
-  expect(tournamentRecord.events[0].drawDefinitions.length).toEqual(1);
+  expect(defined(tournamentRecord.events, 'events').length).toEqual(1);
+  expect(defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions').length).toEqual(1);
 });
 
 test('modifyTournamentRecord - target existing event by eventIndex', () => {
@@ -219,7 +224,7 @@ test('modifyTournamentRecord - target existing event by eventIndex', () => {
   });
 
   // Initially no draws (or empty array)
-  expect(tournamentRecord.events[0].drawDefinitions?.length || 0).toEqual(0);
+  expect(defined(tournamentRecord.events, 'events')[0].drawDefinitions?.length || 0).toEqual(0);
 
   const result = mocksEngine.modifyTournamentRecord({
     tournamentRecord,
@@ -232,7 +237,7 @@ test('modifyTournamentRecord - target existing event by eventIndex', () => {
   });
 
   expect(result.success).toEqual(true);
-  expect(tournamentRecord.events[0].drawDefinitions.length).toEqual(1);
+  expect(defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions').length).toEqual(1);
 });
 
 test('modifyTournamentRecord - add participants via participantsProfile', () => {
@@ -241,7 +246,7 @@ test('modifyTournamentRecord - add participants via participantsProfile', () => 
     eventProfiles: [{ eventName: 'Singles', gender: MALE }],
   });
 
-  expect(tournamentRecord.participants.length).toEqual(0);
+  expect(defined(tournamentRecord.participants, 'participants').length).toEqual(0);
 
   const result = mocksEngine.modifyTournamentRecord({
     tournamentRecord,
@@ -250,7 +255,7 @@ test('modifyTournamentRecord - add participants via participantsProfile', () => 
   });
 
   expect(result.success).toEqual(true);
-  expect(tournamentRecord.participants.length).toEqual(16);
+  expect(defined(tournamentRecord.participants, 'participants').length).toEqual(16);
 });
 
 test('modifyTournamentRecord - add venues', () => {
@@ -341,7 +346,7 @@ test('modifyTournamentRecord - progressive building', () => {
   });
 
   expect(result.success).toEqual(true);
-  expect(tournamentRecord.events.length).toEqual(1);
+  expect(defined(tournamentRecord.events, 'events').length).toEqual(1);
 
   // Step 2: Add doubles
   result = mocksEngine.modifyTournamentRecord({
@@ -350,8 +355,8 @@ test('modifyTournamentRecord - progressive building', () => {
   });
 
   expect(result.success).toEqual(true);
-  expect(tournamentRecord.events.length).toEqual(2);
+  expect(defined(tournamentRecord.events, 'events').length).toEqual(2);
 
   // Verify final state
-  expect(tournamentRecord.participants.length).toBeGreaterThan(0);
+  expect(defined(tournamentRecord.participants, 'participants').length).toBeGreaterThan(0);
 });

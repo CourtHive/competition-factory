@@ -1,4 +1,5 @@
 import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONING_GENERIC';
+import { defined } from '@Tests/helpers/defined';
 import { DOUBLES_EVENT, SINGLES_EVENT } from '@Constants/eventConstants';
 import { ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { idRecord, isIdRecord, plainRecord } from '@Tools/plainRecord';
@@ -82,7 +83,7 @@ describe('id maps handed over in place', () => {
 
   it.each(IDS)('getParticipants keeps a participant with the id "%s" in the participantMap', (id) => {
     const record = fixture();
-    const participantId = record.participants[0].participantId;
+    const participantId = defined(record.participants, 'participants')[0].participantId;
     tournamentEngine.setState(renamed(record, participantId, id));
     const result: any = tournamentEngine.getParticipants(ALL);
     expect(pollution()).toEqual([]);
@@ -99,9 +100,9 @@ describe('id maps handed over in place', () => {
 
   it.each(IDS)('getParticipants keys an event and a draw with the id "%s" as own keys', (id) => {
     const record = fixture();
-    const event = record.events[0];
+    const event = defined(record.events, 'events')[0];
     let renamedRecord = renamed(record, event.eventId, id);
-    renamedRecord = renamed(renamedRecord, event.drawDefinitions[0].drawId, `${id}`);
+    renamedRecord = renamed(renamedRecord, defined(event.drawDefinitions, 'drawDefinitions')[0].drawId, `${id}`);
     tournamentEngine.setState(renamedRecord);
     const result: any = tournamentEngine.getParticipants({ ...ALL, policyDefinitions: undefined });
     expect(pollution()).toEqual([]);
@@ -116,7 +117,7 @@ describe('id maps handed over in place', () => {
 
   it.each(IDS)('dynamic ratings key a participant with the id "%s" as an own key of a plain map', (id) => {
     const record = fixture();
-    tournamentEngine.setState(renamed(record, record.participants[0].participantId, id));
+    tournamentEngine.setState(renamed(record, defined(record.participants, 'participants')[0].participantId, id));
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
     const target = matchUps.find((m: any) => m.sides?.some((s: any) => s.participantId === id));
     const result: any = scaleEngine.generateDynamicRatings({
@@ -131,9 +132,11 @@ describe('id maps handed over in place', () => {
 
   it.each(IDS)('a round robin tally keeps a participant with the id "%s"', (id) => {
     const record = fixture();
-    tournamentEngine.setState(renamed(record, record.participants[0].participantId, id));
+    tournamentEngine.setState(renamed(record, defined(record.participants, 'participants')[0].participantId, id));
     const { matchUps } = tournamentEngine.allTournamentMatchUps({
-      matchUpFilters: { drawIds: [record.events[0].drawDefinitions[0].drawId] },
+      matchUpFilters: {
+        drawIds: [defined(defined(record.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].drawId],
+      },
     } as any);
     const group = matchUps.filter((m: any) => m.sides?.some((s: any) => s.participantId === id));
     const structureMatchUps = matchUps.filter((m: any) => m.structureId === group[0].structureId);

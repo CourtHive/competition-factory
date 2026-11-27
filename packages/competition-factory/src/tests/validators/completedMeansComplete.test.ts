@@ -1,4 +1,5 @@
 import { validateMatchUpScore } from '@Scoring/analysis/validateMatchUpScore';
+import { defined } from '@Tests/helpers/defined';
 import { parseScoreString } from '@Scoring/parse/parseScoreString';
 import { validateScore } from '@Scoring/analysis/validateScore';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -232,7 +233,7 @@ describe('an irregular or live score may leave only its LAST set unfinished', ()
   it('RETIRED at 6-3 2-1 as parseScoreString builds it — set 2 "won" by the side ahead — is recorded', () => {
     const sets = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-3 2-1', winningSide: 1 }).outcome.score
       .sets;
-    expect(sets[1].winningSide, 'the parser stamps the leader').toEqual(1);
+    expect(defined(sets, 'sets')[1].winningSide, 'the parser stamps the leader').toEqual(1);
     const { result, matchUp } = record({ score: { sets }, winningSide: 1, matchUpStatus: RETIRED });
     expect(result.success).toBe(true);
     expect(matchUp.matchUpStatus).toEqual(RETIRED);

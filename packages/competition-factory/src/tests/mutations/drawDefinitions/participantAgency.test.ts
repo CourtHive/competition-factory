@@ -1,4 +1,5 @@
 import { resolveDrawPositions } from '@Helpers/positioning/drawPositionsResolver';
+import { defined } from '@Tests/helpers/defined';
 import { getDrawPosition, getParticipantId } from '@Functions/global/extractors';
 import { generateRange, randomPop, unique } from '@Tools/arrays';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -56,7 +57,9 @@ it.each([
   expect(assignedSeedParticipantIds.length).toEqual(seedsCount);
 
   if (seedsOnly) {
-    const participantIds = tournamentRecord.participants.map(({ participantId }) => participantId);
+    const participantIds = defined(tournamentRecord.participants, 'participants').map(
+      ({ participantId }) => participantId,
+    );
     const unassignedParticipantIds = participantIds.filter(
       (participantId) => !assignedParticipantIds.includes(participantId),
     );

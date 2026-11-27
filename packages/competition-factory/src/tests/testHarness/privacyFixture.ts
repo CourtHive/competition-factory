@@ -11,6 +11,7 @@
  */
 
 import { saturateParticipants } from './privacySaturation';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
@@ -90,7 +91,7 @@ export function generatePrivacyFixture() {
     .slice(0, 3)
     .map((participant: any) => participant.participantId);
 
-  tournamentRecord.participants.push(
+  defined(tournamentRecord.participants, 'participants').push(
     {
       individualParticipantIds,
       participantId: GROUP_PARTICIPANT_ID,

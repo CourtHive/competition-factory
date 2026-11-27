@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
@@ -21,7 +22,7 @@ it('can assign all available qualified participants to the main structure qualif
     participantsProfile: { participantsCount: 100 },
     eventProfiles: [{ eventName: 'test' }],
   });
-  expect(tournamentRecord.participants.length).toEqual(100);
+  expect(defined(tournamentRecord.participants, 'participants').length).toEqual(100);
 
   tournamentEngine.setState(tournamentRecord);
 

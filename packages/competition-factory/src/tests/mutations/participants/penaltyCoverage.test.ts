@@ -1,4 +1,5 @@
 import competitionEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
@@ -23,7 +24,7 @@ describe('penalty edge cases', () => {
 
     // missing penaltyType
     let result = competitionEngine.addPenalty({
-      participantIds: [tournamentRecord.participants[0].participantId],
+      participantIds: [defined(tournamentRecord.participants, 'participants')[0].participantId],
       penaltyCode: 'X',
     });
     expect(result.error).toEqual(MISSING_PENALTY_TYPE);
@@ -43,7 +44,7 @@ describe('penalty edge cases', () => {
     });
     competitionEngine.setState(tournamentRecord);
 
-    const { participantId } = tournamentRecord.participants[0];
+    const { participantId } = defined(tournamentRecord.participants, 'participants')[0];
     const extensions = [{ name: 'testExt', value: 'testVal' }];
     const result = competitionEngine.addPenalty({
       participantIds: [participantId],
@@ -85,7 +86,7 @@ describe('penalty edge cases', () => {
     });
     competitionEngine.setState(tournamentRecord);
 
-    const { participantId } = tournamentRecord.participants[0];
+    const { participantId } = defined(tournamentRecord.participants, 'participants')[0];
     let result = competitionEngine.addPenalty({
       participantIds: [participantId],
       penaltyType: BALL_ABUSE,
@@ -138,7 +139,7 @@ describe('penalty edge cases', () => {
     });
     competitionEngine.setState(tournamentRecord);
 
-    const { participantId } = tournamentRecord.participants[0];
+    const { participantId } = defined(tournamentRecord.participants, 'participants')[0];
     let result = competitionEngine.addPenalty({
       participantIds: [participantId],
       penaltyType: BALL_ABUSE,
@@ -173,7 +174,7 @@ describe('penalty edge cases', () => {
     competitionEngine.setState([t1, t2]);
 
     // add penalty with participant from first tournament
-    const { participantId } = t1.participants[0];
+    const { participantId } = defined(t1.participants, 'participants')[0];
     let result = competitionEngine.addPenalty({
       participantIds: [participantId],
       penaltyType: BALL_ABUSE,

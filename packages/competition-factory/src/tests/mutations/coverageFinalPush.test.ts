@@ -3,6 +3,7 @@
  * to cross the 95% statement coverage threshold.
  */
 import { generateAndPopulatePlayoffStructures } from '@Generators/drawDefinitions/generateAndPopulatePlayoffStructures';
+import { defined } from '@Tests/helpers/defined';
 import { generateVoluntaryConsolation } from '@Generators/drawDefinitions/drawTypes/generateVoluntaryConsolation';
 import { BLOCK_TYPES, type CourtRef } from '@Assemblies/governors/availabilityGovernor/types';
 import { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
@@ -312,7 +313,7 @@ describe('generateAndPopulatePlayoffStructures guard branches', () => {
       drawProfiles: [{ drawSize: 8 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
     let result: any = generateAndPopulatePlayoffStructures({
       structureId: 'nonexistent-structure-id',
@@ -402,7 +403,7 @@ describe('generateVoluntaryConsolation coverage gaps', () => {
     const { drawDefinition, event } = tournamentEngine.getEvent({ drawId });
 
     // Add 4 participants as voluntary consolation entries
-    const pids = tournamentRecord.participants
+    const pids = defined(tournamentRecord.participants, 'participants')
       .filter((p) => p.participantType === TEAM_PARTICIPANT)
       .slice(0, 4)
       .map((p) => p.participantId);
@@ -442,8 +443,8 @@ describe('positionClear FMLC consolation and TEAM cleanup', () => {
     });
 
     tournamentEngine.setState(tournamentRecord);
-    const event = tournamentRecord.events[0];
-    const drawDefinition = event.drawDefinitions.find((d) => d.drawId === drawId);
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions').find((d) => d.drawId === drawId);
 
     mocksEngine.completeDrawMatchUps({
       completeAllMatchUps: '6-3 6-4',

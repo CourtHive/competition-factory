@@ -1,4 +1,5 @@
 import { PARTICIPANT_ROLE_INVALID, PARTICIPANT_ROLE_MISSING } from '@Query/tournaments/getTournamentInconsistencies';
+import { defined } from '@Tests/helpers/defined';
 import { participantRoleOf } from '@Helpers/participants/participantRoleOf';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -19,13 +20,13 @@ function loadRoleLessRecord() {
     drawProfiles: [{ drawSize: 8 }],
   });
   const roleLessIds: string[] = [];
-  for (const participant of tournamentRecord.participants) {
+  for (const participant of defined(tournamentRecord.participants, 'participants')) {
     if (participant.participantType === INDIVIDUAL) {
       delete participant.participantRole;
       roleLessIds.push(participant.participantId);
     }
   }
-  tournamentRecord.participants.push({
+  defined(tournamentRecord.participants, 'participants').push({
     participantId: OFFICIAL_ID,
     participantType: INDIVIDUAL,
     participantRole: OFFICIAL,
@@ -140,15 +141,15 @@ describe('PARTICIPANT_ROLE_INVALID', () => {
   // ParticipantRoleEnum value, and an unknown value is NOT defaulted: a misspelt staff role would
   // otherwise be counted as a player.
   function loadInvalidRoleRecord() {
-    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
       participantsProfile: { participantsCount: 4 },
     });
     const playerIds: string[] = [];
-    for (const participant of tournamentRecord.participants) {
+    for (const participant of defined(tournamentRecord.participants, 'participants')) {
       participant.participantRole = 'PLAYER';
       playerIds.push(participant.participantId);
     }
-    tournamentRecord.participants.push({
+    defined(tournamentRecord.participants, 'participants').push({
       participantId: 'misspelt-official',
       participantType: INDIVIDUAL,
       participantRole: 'OFFICAL',

@@ -9,7 +9,7 @@ import { GROUP, INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
 import { DOUBLES } from '@Constants/eventConstants';
 
 it('can generate TEAMs from attributes', () => {
-  let result = mocksEngine.generateTournamentRecord({
+  let result: any = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 64 }],
   });
   tournamentEngine.setState(result.tournamentRecord);

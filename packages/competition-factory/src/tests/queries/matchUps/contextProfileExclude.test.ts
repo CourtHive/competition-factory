@@ -1,4 +1,5 @@
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { defined } from '@Tests/helpers/defined';
 import { getDrawData } from '@Query/drawDefinition/getDrawData';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -65,8 +66,14 @@ test.each([FIRST_MATCH_LOSER_CONSOLATION, ROUND_ROBIN_WITH_PLAYOFF])(
 
 test('a direct governor call redacts at its own boundary', () => {
   const { tournamentRecord, drawId } = completedDraw(FIRST_MATCH_LOSER_CONSOLATION);
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions.find((d) => d.drawId === drawId);
-  const result: any = getDrawData({ tournamentRecord, drawDefinition, contextProfile: { exclude } });
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions').find(
+    (d) => d.drawId === drawId,
+  );
+  const result: any = getDrawData({
+    tournamentRecord,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
+    contextProfile: { exclude },
+  });
   expect(result.drawInfo.drawCompleted).toEqual(true);
   everyHydrated(result, (matchUp) => expect(matchUp.matchUpStatus).toBeUndefined());
 
@@ -113,9 +120,13 @@ test('the lines of a TEAM dual are redacted with the dual, and the record is unt
   // a caller-supplied record is read, never written
   const direct = allTournamentMatchUps({ tournamentRecord, contextProfile: { exclude } }).matchUps ?? [];
   expect(direct.length).toEqual(matchUps.length);
-  tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps.forEach((matchUp) =>
-    expect(matchUp.matchUpStatus).toBeDefined(),
-  );
+  defined(
+    defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0].matchUps,
+    'matchUps',
+  ).forEach((matchUp) => expect(matchUp.matchUpStatus).toBeDefined());
 });
 
 test('inContext: false is not redacted: exclude applies to hydrated matchUps only', () => {

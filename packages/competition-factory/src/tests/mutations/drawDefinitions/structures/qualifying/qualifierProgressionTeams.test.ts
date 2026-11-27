@@ -1,4 +1,5 @@
 import { getRandomQualifierList } from '@Query/drawDefinition/getRandomQualifierList';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -22,7 +23,7 @@ it('can assign all available qualified participants to the main structure qualif
     eventProfiles: [{ eventName: 'test', eventType: TEAM }],
     setState: true,
   });
-  expect(tournamentRecord.participants.length).toEqual(270);
+  expect(defined(tournamentRecord.participants, 'participants').length).toEqual(270);
 
   const { participants: teamParticipants } = tournamentEngine.getParticipants({
     participantFilters: { participantTypes: [TEAM] },

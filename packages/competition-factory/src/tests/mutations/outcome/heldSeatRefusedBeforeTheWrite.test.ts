@@ -1,4 +1,5 @@
 import { setOutcomePipeline } from '@Global/state/globalState';
+import { defined } from '@Tests/helpers/defined';
 import { afterEach, describe, expect, it } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -63,7 +64,10 @@ function winnerSeatHeld() {
   const { tournamentRecord, drawIds } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawType: SINGLE_ELIMINATION, drawSize: 4, completeAllMatchUps: true }],
   });
-  const matchUps = tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps;
+  const matchUps = defined(
+    defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+    'structures',
+  )[0].matchUps;
   const [source] = inRound(matchUps, 1);
   const [final] = inRound(matchUps, 2);
   source.winningSide = 3 - source.winningSide;
@@ -127,7 +131,7 @@ function fedSeatUnassigned() {
   const { tournamentRecord, drawIds } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 8, participantsCount: 4 }],
   });
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
   // every first-round matchUp holds a BYE: each participant's first match is in the second round
   const [source] = inRound(structureOf(drawDefinition, MAIN).matchUps, 2);
   const consolation = structureOf(drawDefinition, CONSOLATION);

@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { instanceCount } from '@Tools/arrays';
 import { expect, test } from 'vitest';
@@ -29,11 +30,11 @@ test('postionAction for replacing participant within PAIR', () => {
   let { drawDefinition } = tournamentEngine.getEvent({ drawId });
 
   const enteredParticipantIds = drawDefinition.entries.map(({ participantId }) => participantId);
-  const enteredIndividualParticipantIds = tournamentRecord.participants
+  const enteredIndividualParticipantIds = defined(tournamentRecord.participants, 'participants')
     .filter(({ participantId }) => enteredParticipantIds.includes(participantId))
     .map(({ individualParticipantIds }) => individualParticipantIds)
     .flat();
-  const individualParticipantsToAdd = tournamentRecord.participants
+  const individualParticipantsToAdd = defined(tournamentRecord.participants, 'participants')
     .filter(
       ({ participantId, participantType }) =>
         participantType === INDIVIDUAL && !enteredIndividualParticipantIds.includes(participantId),
@@ -186,11 +187,11 @@ test('ROUND_ROBIN postionAction for replacing participant within PAIR', () => {
   let { drawDefinition } = tournamentEngine.getEvent({ drawId });
 
   const enteredParticipantIds = drawDefinition.entries.map(({ participantId }) => participantId);
-  const enteredIndividualParticipantIds = tournamentRecord.participants
+  const enteredIndividualParticipantIds = defined(tournamentRecord.participants, 'participants')
     .filter(({ participantId }) => enteredParticipantIds.includes(participantId))
     .map(({ individualParticipantIds }) => individualParticipantIds)
     .flat();
-  const individualParticipantsToAdd = tournamentRecord.participants
+  const individualParticipantsToAdd = defined(tournamentRecord.participants, 'participants')
     .filter(
       ({ participantId, participantType }) =>
         participantType === INDIVIDUAL && !enteredIndividualParticipantIds.includes(participantId),

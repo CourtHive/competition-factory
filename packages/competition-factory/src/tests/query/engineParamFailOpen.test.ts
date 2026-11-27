@@ -1,4 +1,5 @@
 import { expect, test, describe } from 'vitest';
+import { defined } from '@Tests/helpers/defined';
 
 import { checkMatchUpIsComplete, matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
 import { getParticipantResults } from '@Query/matchUps/roundRobinTally/getParticipantResults';
@@ -28,7 +29,7 @@ describe('engine methods refuse rather than answer when their object param is ab
       drawProfiles: [{ drawSize: 8, completionGoal: 7 }],
       setState: true,
     });
-    const { drawId } = tournamentRecord.events[0].drawDefinitions[0];
+    const { drawId } = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
     const matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
     const matchUp = matchUps.find((m: any) => m.matchUpStatus === COMPLETED);
     expect(matchUp).toBeDefined();
@@ -46,7 +47,7 @@ describe('engine methods refuse rather than answer when their object param is ab
       drawProfiles: [{ drawSize: 8, completionGoal: 7 }],
       setState: true,
     });
-    const { drawId } = tournamentRecord.events[0].drawDefinitions[0];
+    const { drawId } = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
     const matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
 
     // the correct call — in-context matchUps, results attributed through sides[].participantId
@@ -112,13 +113,15 @@ describe('engine methods refuse rather than answer when their object param is ab
       drawProfiles: [{ drawSize: 4, drawType: ROUND_ROBIN }], // nothing played
       setState: true,
     });
-    const draw = tournamentRecord.events[0].drawDefinitions[0];
-    const stored = draw.structures[0].structures?.[0]?.matchUps ?? draw.structures[0].matchUps;
-    expect(stored.length).toBeGreaterThan(0);
-    expect(stored.some((matchUp: any) => matchUp.winningSide)).toEqual(false); // the control
-    expect(stored.some((matchUp: any) => matchUp.sides)).toEqual(false);
+    const draw = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+    const stored =
+      defined(draw.structures, 'structures')[0].structures?.[0]?.matchUps ??
+      defined(draw.structures, 'structures')[0].matchUps;
+    expect(defined(stored, 'stored').length).toBeGreaterThan(0);
+    expect(defined(stored, 'stored').some((matchUp: any) => matchUp.winningSide)).toEqual(false); // the control
+    expect(defined(stored, 'stored').some((matchUp: any) => matchUp.sides)).toEqual(false);
 
-    const result: any = getParticipantResults({ matchUps: stored });
+    const result: any = getParticipantResults({ matchUps: defined(stored, 'stored') });
     expect(result.error).toEqual(INVALID_MATCHUP);
   });
 

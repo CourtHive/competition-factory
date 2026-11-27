@@ -1,4 +1,5 @@
 import { setOutcomePipeline } from '@Global/state/globalState';
+import { defined } from '@Tests/helpers/defined';
 import { afterEach, describe, expect, it } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -46,7 +47,7 @@ describe.each(MODES)('pipeline %s', (mode) => {
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 8, completeAllMatchUps: true }],
     });
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
     const main = structureOf(drawDefinition, MAIN);
     const consolation = structureOf(drawDefinition, CONSOLATION);
     const secondRound = (roundPosition: number) =>

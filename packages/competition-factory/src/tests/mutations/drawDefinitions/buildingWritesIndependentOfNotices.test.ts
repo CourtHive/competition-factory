@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { defined } from '@Tests/helpers/defined';
 
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -36,7 +37,7 @@ describe('building writes do not depend on notices', () => {
   test('addEvent stores the same matchUp stamps with or without a subscriber', () => {
     const stored = (subscribed: boolean) => {
       const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 4 }] });
-      const event = makeDeepCopy(tournamentRecord.events[0], false, true);
+      const event = makeDeepCopy(defined(tournamentRecord.events, 'events')[0], false, true);
       delete tournamentRecord.events;
       for (const structure of event.drawDefinitions[0].structures) {
         for (const matchUp of structure.matchUps) delete matchUp.updatedAt;

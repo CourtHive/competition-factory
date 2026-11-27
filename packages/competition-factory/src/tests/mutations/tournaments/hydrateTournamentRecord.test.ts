@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
@@ -82,7 +83,7 @@ describe('hydrateTournamentRecord', () => {
       eventProfiles: [{ eventId }],
     });
 
-    tournamentRecord.events[0].drawDefinitions = [];
+    defined(tournamentRecord.events, 'events')[0].drawDefinitions = [];
 
     const result = tournamentEngine.setState(tournamentRecord);
     expect(result.success).toEqual(true);
@@ -100,7 +101,7 @@ describe('hydrateTournamentRecord', () => {
       eventProfiles: [{ eventId }],
     });
 
-    delete tournamentRecord.events[0].drawDefinitions;
+    delete defined(tournamentRecord.events, 'events')[0].drawDefinitions;
 
     const result = tournamentEngine.setState(tournamentRecord);
     expect(result.success).toEqual(true);

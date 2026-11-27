@@ -1,4 +1,5 @@
 import { addDays, generateDateRange } from '@Tools/dateTime';
+import { defined } from '@Tests/helpers/defined';
 import { chunkArray, intersection } from '@Tools/arrays';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -24,7 +25,12 @@ it('the profile scheduler ignores scheduled BYEs', () => {
 
   tournamentEngine.setState(tournamentRecord);
 
-  expect(tournamentRecord.venues[0].courts[0].dateAvailability[0].startTime).toEqual('07:00');
+  expect(
+    defined(
+      defined(defined(tournamentRecord.venues, 'venues')[0].courts, 'courts')[0].dateAvailability,
+      'dateAvailability',
+    )[0].startTime,
+  ).toEqual('07:00');
 
   const tournamentDateRange = generateDateRange(startDate, endDate);
   const { rounds } = tournamentEngine.getRounds();

@@ -1,4 +1,5 @@
 import { scheduleGovernor } from '@Assemblies/governors';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -16,7 +17,7 @@ it('clears a matchUp schedule given only its drawDefinition', () => {
     drawProfiles: [{ drawSize: 4 }],
     setState: true,
   });
-  const { drawId } = tournamentRecord.events[0].drawDefinitions[0];
+  const { drawId } = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
   const { matchUpId } = tournamentEngine.allTournamentMatchUps().matchUps[0];
 
   const scheduled: any = tournamentEngine.addMatchUpScheduleItems({

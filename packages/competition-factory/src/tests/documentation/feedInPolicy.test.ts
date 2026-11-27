@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import { expect, it } from 'vitest';
 
 // constants
@@ -50,23 +51,23 @@ it('can generate FEED_IN_CHAMPIONSHIP draw without policy (uses defaults)', () =
     ],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
   // Should have main and consolation structures
-  expect(drawDefinition.structures.length).toBe(2);
+  expect(defined(drawDefinition.structures, 'structures').length).toBe(2);
 
-  const mainStructure = drawDefinition.structures.find((s) => s.stage === MAIN);
-  const consolationStructure = drawDefinition.structures.find((s) => s.stage === CONSOLATION);
+  const mainStructure = defined(drawDefinition.structures, 'structures').find((s) => s.stage === MAIN);
+  const consolationStructure = defined(drawDefinition.structures, 'structures').find((s) => s.stage === CONSOLATION);
 
   expect(mainStructure).toBeDefined();
   expect(consolationStructure).toBeDefined();
 
   // Should have links between structures
   expect(drawDefinition.links).toBeDefined();
-  expect(drawDefinition.links.length).toBeGreaterThan(0);
+  expect(defined(drawDefinition.links, 'links').length).toBeGreaterThan(0);
 
   // Links should be LOSER type
-  const loserLinks = drawDefinition.links.filter((link) => link.linkType === LOSER);
+  const loserLinks = defined(drawDefinition.links, 'links').filter((link) => link.linkType === LOSER);
   expect(loserLinks.length).toBeGreaterThan(0);
 });
 
@@ -87,19 +88,19 @@ it('feedFromMainFinal: false (default) - standard behavior', () => {
     ],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  const mainStructure = drawDefinition.structures.find((s) => s.stage === MAIN);
-  const consolationStructure = drawDefinition.structures.find((s) => s.stage === CONSOLATION);
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const mainStructure = defined(drawDefinition.structures, 'structures').find((s) => s.stage === MAIN);
+  const consolationStructure = defined(drawDefinition.structures, 'structures').find((s) => s.stage === CONSOLATION);
 
   // Verify structures exist
   expect(mainStructure).toBeDefined();
   expect(consolationStructure).toBeDefined();
 
   // Check links exist
-  expect(drawDefinition.links.length).toBeGreaterThan(0);
+  expect(defined(drawDefinition.links, 'links').length).toBeGreaterThan(0);
 
   // All links should be LOSER type
-  expect(drawDefinition.links.every((link) => link.linkType === LOSER)).toBe(true);
+  expect(defined(drawDefinition.links, 'links').every((link) => link.linkType === LOSER)).toBe(true);
 });
 
 it('feedFromMainFinal: true for 4-player draws (ensures first round happens)', () => {
@@ -119,13 +120,13 @@ it('feedFromMainFinal: true for 4-player draws (ensures first round happens)', (
     ],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
   // Should have links
-  expect(drawDefinition.links.length).toBeGreaterThan(0);
+  expect(defined(drawDefinition.links, 'links').length).toBeGreaterThan(0);
 
   // Verify structure
-  expect(drawDefinition.structures.length).toBe(2);
+  expect(defined(drawDefinition.structures, 'structures').length).toBe(2);
 });
 
 it('FMLC means only first match losers go to consolation', () => {
@@ -138,13 +139,13 @@ it('FMLC means only first match losers go to consolation', () => {
     ],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
   // FMLC should have main and consolation
-  expect(drawDefinition.structures.length).toBe(2);
+  expect(defined(drawDefinition.structures, 'structures').length).toBe(2);
 
   // Should have links (only first round losers feed)
-  expect(drawDefinition.links.length).toBeGreaterThan(0);
+  expect(defined(drawDefinition.links, 'links').length).toBeGreaterThan(0);
 });
 
 it('roundFeedProfiles controls feed direction', () => {
@@ -164,20 +165,22 @@ it('roundFeedProfiles controls feed direction', () => {
     ],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  const mainStructure = drawDefinition.structures.find((s) => s.stage === MAIN);
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const mainStructure = defined(drawDefinition.structures, 'structures').find((s) => s.stage === MAIN);
 
   // Check links have feedProfile
-  const linksFromR1 = drawDefinition.links.filter(
-    (link) => link.source.structureId === mainStructure.structureId && link.source.roundNumber === 1,
+  const linksFromR1 = defined(drawDefinition.links, 'links').filter(
+    (link) =>
+      link.source.structureId === defined(mainStructure, 'mainStructure').structureId && link.source.roundNumber === 1,
   );
 
   if (linksFromR1.length > 0) {
     expect(linksFromR1[0].target.feedProfile).toBe(TOP_DOWN);
   }
 
-  const linksFromR2 = drawDefinition.links.filter(
-    (link) => link.source.structureId === mainStructure.structureId && link.source.roundNumber === 2,
+  const linksFromR2 = defined(drawDefinition.links, 'links').filter(
+    (link) =>
+      link.source.structureId === defined(mainStructure, 'mainStructure').structureId && link.source.roundNumber === 2,
   );
 
   if (linksFromR2.length > 0) {
@@ -203,14 +206,14 @@ it('roundGroupedOrder controls loser grouping', () => {
     ],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
   // Verify draw created successfully
-  expect(drawDefinition.structures.length).toBe(2);
-  expect(drawDefinition.links.length).toBeGreaterThan(0);
+  expect(defined(drawDefinition.structures, 'structures').length).toBe(2);
+  expect(defined(drawDefinition.links, 'links').length).toBeGreaterThan(0);
 
   // Check if groupedOrder is applied to links
-  const linksWithGroupedOrder = drawDefinition.links.filter((link) => link.target.groupedOrder);
+  const linksWithGroupedOrder = defined(drawDefinition.links, 'links').filter((link) => link.target.groupedOrder);
   // Some links should have groupedOrder (from rounds with [1,2] or [1,2,3,4])
   expect(linksWithGroupedOrder.length).toBeGreaterThanOrEqual(0);
 });
@@ -240,25 +243,25 @@ it('complex 64-draw with custom grouping and feed profiles', () => {
     ],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
   // Verify structure
-  expect(drawDefinition.structures.length).toBe(2);
+  expect(defined(drawDefinition.structures, 'structures').length).toBe(2);
 
-  const mainStructure = drawDefinition.structures.find((s) => s.stage === MAIN);
-  const consolationStructure = drawDefinition.structures.find((s) => s.stage === CONSOLATION);
+  const mainStructure = defined(drawDefinition.structures, 'structures').find((s) => s.stage === MAIN);
+  const consolationStructure = defined(drawDefinition.structures, 'structures').find((s) => s.stage === CONSOLATION);
 
   expect(mainStructure).toBeDefined();
   expect(consolationStructure).toBeDefined();
 
   // Verify links exist
-  expect(drawDefinition.links.length).toBeGreaterThan(0);
+  expect(defined(drawDefinition.links, 'links').length).toBeGreaterThan(0);
 
   // All links should be LOSER type
-  drawDefinition.links.forEach((link) => {
+  defined(drawDefinition.links, 'links').forEach((link) => {
     expect(link.linkType).toBe(LOSER);
-    expect(link.source.structureId).toBe(mainStructure.structureId);
-    expect(link.target.structureId).toBe(consolationStructure.structureId);
+    expect(link.source.structureId).toBe(defined(mainStructure, 'mainStructure').structureId);
+    expect(link.target.structureId).toBe(defined(consolationStructure, 'consolationStructure').structureId);
   });
 });
 
@@ -288,14 +291,14 @@ it('128-draw with professional-level feed policy', () => {
     ],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
   // Verify structure
-  expect(drawDefinition.structures.length).toBe(2);
-  expect(drawDefinition.links.length).toBeGreaterThan(0);
+  expect(defined(drawDefinition.structures, 'structures').length).toBe(2);
+  expect(defined(drawDefinition.links, 'links').length).toBeGreaterThan(0);
 
   // Verify all links are properly formed
-  drawDefinition.links.forEach((link) => {
+  defined(drawDefinition.links, 'links').forEach((link) => {
     expect(link.linkType).toBe(LOSER);
     expect(link.source).toBeDefined();
     expect(link.target).toBeDefined();
@@ -333,21 +336,21 @@ it('256-draw with complex grouping patterns', () => {
     ],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
   // Verify structure
-  expect(drawDefinition.structures.length).toBe(2);
+  expect(defined(drawDefinition.structures, 'structures').length).toBe(2);
 
-  const mainStructure = drawDefinition.structures.find((s) => s.stage === MAIN);
-  const consolationStructure = drawDefinition.structures.find((s) => s.stage === CONSOLATION);
+  const mainStructure = defined(drawDefinition.structures, 'structures').find((s) => s.stage === MAIN);
+  const consolationStructure = defined(drawDefinition.structures, 'structures').find((s) => s.stage === CONSOLATION);
 
   expect(mainStructure).toBeDefined();
   expect(consolationStructure).toBeDefined();
 
   // 256 draw should have links (adjust expectation based on actual behavior)
-  expect(drawDefinition.links.length).toBeGreaterThan(0);
+  expect(defined(drawDefinition.links, 'links').length).toBeGreaterThan(0);
   // Verify links are properly formed
-  expect(drawDefinition.links.every((link) => link.linkType === LOSER)).toBe(true);
+  expect(defined(drawDefinition.links, 'links').every((link) => link.linkType === LOSER)).toBe(true);
 });
 
 it('FEED_IN_CHAMPIONSHIP_TO_SF only feeds up to semifinals', () => {
@@ -368,13 +371,13 @@ it('FEED_IN_CHAMPIONSHIP_TO_SF only feeds up to semifinals', () => {
     ],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
   // Should have structures
-  expect(drawDefinition.structures.length).toBeGreaterThanOrEqual(2);
+  expect(defined(drawDefinition.structures, 'structures').length).toBeGreaterThanOrEqual(2);
 
   // Should have links but fewer than full feed-in
-  expect(drawDefinition.links.length).toBeGreaterThan(0);
+  expect(defined(drawDefinition.links, 'links').length).toBeGreaterThan(0);
 });
 
 it('FEED_IN_CHAMPIONSHIP_TO_QF only feeds up to quarterfinals', () => {
@@ -387,13 +390,13 @@ it('FEED_IN_CHAMPIONSHIP_TO_QF only feeds up to quarterfinals', () => {
     ],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
   // Should have structures
-  expect(drawDefinition.structures.length).toBeGreaterThanOrEqual(2);
+  expect(defined(drawDefinition.structures, 'structures').length).toBeGreaterThanOrEqual(2);
 
   // Should have links
-  expect(drawDefinition.links.length).toBeGreaterThan(0);
+  expect(defined(drawDefinition.links, 'links').length).toBeGreaterThan(0);
 });
 
 it('FEED_IN_CHAMPIONSHIP_TO_R16 only feeds up to round of 16', () => {
@@ -406,13 +409,13 @@ it('FEED_IN_CHAMPIONSHIP_TO_R16 only feeds up to round of 16', () => {
     ],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
   // Should have structures
-  expect(drawDefinition.structures.length).toBeGreaterThanOrEqual(2);
+  expect(defined(drawDefinition.structures, 'structures').length).toBeGreaterThanOrEqual(2);
 
   // Should have links
-  expect(drawDefinition.links.length).toBeGreaterThan(0);
+  expect(defined(drawDefinition.links, 'links').length).toBeGreaterThan(0);
 });
 
 it('MODIFIED_FEED_IN_CHAMPIONSHIP creates feed-in draw', () => {
@@ -425,13 +428,13 @@ it('MODIFIED_FEED_IN_CHAMPIONSHIP creates feed-in draw', () => {
     ],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
   // Should have structures
-  expect(drawDefinition.structures.length).toBeGreaterThanOrEqual(2);
+  expect(defined(drawDefinition.structures, 'structures').length).toBeGreaterThanOrEqual(2);
 
   // Should have links
-  expect(drawDefinition.links.length).toBeGreaterThan(0);
+  expect(defined(drawDefinition.links, 'links').length).toBeGreaterThan(0);
 });
 
 it('feed-in policy does NOT apply to SINGLE_ELIMINATION', () => {
@@ -451,13 +454,13 @@ it('feed-in policy does NOT apply to SINGLE_ELIMINATION', () => {
     ],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
   // Single elimination should only have one structure
-  expect(drawDefinition.structures.length).toBe(1);
+  expect(defined(drawDefinition.structures, 'structures').length).toBe(1);
 
   // Should NOT have links
-  expect(drawDefinition.links || []).toHaveLength(0);
+  expect(drawDefinition.links ?? []).toHaveLength(0);
 });
 
 it('feed-in policy does NOT apply to ROUND_ROBIN', () => {
@@ -477,11 +480,11 @@ it('feed-in policy does NOT apply to ROUND_ROBIN', () => {
     ],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
   // Round robin has container structures
   // Should NOT have LOSER links (has different structure)
-  const loserLinks = (drawDefinition.links || []).filter((link) => link.linkType === LOSER);
+  const loserLinks = (drawDefinition.links ?? []).filter((link) => link.linkType === LOSER);
   expect(loserLinks.length).toBe(0);
 });
 
@@ -511,17 +514,17 @@ it('can combine feed-in policy with seeding policy', () => {
     ],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  const mainStructure = drawDefinition.structures.find((s) => s.stage === MAIN);
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const mainStructure = defined(drawDefinition.structures, 'structures').find((s) => s.stage === MAIN);
 
   // Should have seeds
-  expect(mainStructure.seedAssignments.length).toBe(8);
+  expect(defined(defined(mainStructure, 'mainStructure').seedAssignments, 'seedAssignments').length).toBe(8);
 
   // Should have consolation
-  expect(drawDefinition.structures.length).toBe(2);
+  expect(defined(drawDefinition.structures, 'structures').length).toBe(2);
 
   // Should have links
-  expect(drawDefinition.links.length).toBeGreaterThan(0);
+  expect(defined(drawDefinition.links, 'links').length).toBeGreaterThan(0);
 });
 
 it('default feed profile alternates TOP_DOWN and BOTTOM_UP', () => {
@@ -535,14 +538,14 @@ it('default feed profile alternates TOP_DOWN and BOTTOM_UP', () => {
     ],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  const mainStructure = drawDefinition.structures.find((s) => s.stage === MAIN);
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const mainStructure = defined(drawDefinition.structures, 'structures').find((s) => s.stage === MAIN);
 
   // Check links for alternating pattern
   const linksByRound = {};
-  drawDefinition.links.forEach((link) => {
-    if (link.source.structureId === mainStructure.structureId) {
-      linksByRound[link.source.roundNumber] = link.target.feedProfile;
+  defined(drawDefinition.links, 'links').forEach((link) => {
+    if (link.source.structureId === defined(mainStructure, 'mainStructure').structureId) {
+      linksByRound[defined(link.source.roundNumber, 'roundNumber')] = link.target.feedProfile;
     }
   });
 
@@ -562,21 +565,21 @@ it('links have correct structure', () => {
     ],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  const mainStructure = drawDefinition.structures.find((s) => s.stage === MAIN);
-  const consolationStructure = drawDefinition.structures.find((s) => s.stage === CONSOLATION);
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const mainStructure = defined(drawDefinition.structures, 'structures').find((s) => s.stage === MAIN);
+  const consolationStructure = defined(drawDefinition.structures, 'structures').find((s) => s.stage === CONSOLATION);
 
   // Verify link structure
-  drawDefinition.links.forEach((link) => {
+  defined(drawDefinition.links, 'links').forEach((link) => {
     expect(link.linkType).toBe(LOSER);
 
     // Source should be main structure
-    expect(link.source.structureId).toBe(mainStructure.structureId);
+    expect(link.source.structureId).toBe(defined(mainStructure, 'mainStructure').structureId);
     expect(link.source.roundNumber).toBeDefined();
     expect(typeof link.source.roundNumber).toBe('number');
 
     // Target should be consolation structure
-    expect(link.target.structureId).toBe(consolationStructure.structureId);
+    expect(link.target.structureId).toBe(defined(consolationStructure, 'consolationStructure').structureId);
     expect(link.target.roundNumber).toBeDefined();
     expect(typeof link.target.roundNumber).toBe('number');
     expect(link.target.feedProfile).toMatch(/TOP_DOWN|BOTTOM_UP/);
@@ -594,16 +597,17 @@ it('FMLC has special link condition FIRST_MATCHUP for round 2', () => {
     ],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  const mainStructure = drawDefinition.structures.find((s) => s.stage === MAIN);
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const mainStructure = defined(drawDefinition.structures, 'structures').find((s) => s.stage === MAIN);
 
   // FMLC should have links
-  expect(drawDefinition.links.length).toBeGreaterThan(0);
+  expect(defined(drawDefinition.links, 'links').length).toBeGreaterThan(0);
 
   // Check for FIRST_MATCHUP link condition on round 2
   // This ensures only BYE holders who lose in R2 feed (first match losers)
-  const round2Links = drawDefinition.links.filter(
-    (link) => link.source.structureId === mainStructure.structureId && link.source.roundNumber === 2,
+  const round2Links = defined(drawDefinition.links, 'links').filter(
+    (link) =>
+      link.source.structureId === defined(mainStructure, 'mainStructure').structureId && link.source.roundNumber === 2,
   );
 
   // Round 2 links should exist for FMLC with BYEs
@@ -631,16 +635,16 @@ it('FIRST_ROUND_LOSER_CONSOLATION is different from FIRST_MATCH_LOSER_CONSOLATIO
     ],
   });
 
-  const frlcDraw = frlcRecord.events[0].drawDefinitions[0];
-  const fmlcDraw = fmlcRecord.events[0].drawDefinitions[0];
+  const frlcDraw = defined(defined(frlcRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const fmlcDraw = defined(defined(fmlcRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
   // Both should have consolation structures
-  expect(frlcDraw.structures.length).toBe(2);
-  expect(fmlcDraw.structures.length).toBe(2);
+  expect(defined(frlcDraw.structures, 'structures').length).toBe(2);
+  expect(defined(fmlcDraw.structures, 'structures').length).toBe(2);
 
   // Both should have links
-  expect(frlcDraw.links.length).toBeGreaterThan(0);
-  expect(fmlcDraw.links.length).toBeGreaterThan(0);
+  expect(defined(frlcDraw.links, 'links').length).toBeGreaterThan(0);
+  expect(defined(fmlcDraw.links, 'links').length).toBeGreaterThan(0);
 });
 
 it('feed-in draw has correct matchUp count', () => {
@@ -654,15 +658,15 @@ it('feed-in draw has correct matchUp count', () => {
     ],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  const mainStructure = drawDefinition.structures.find((s) => s.stage === MAIN);
-  const consolationStructure = drawDefinition.structures.find((s) => s.stage === CONSOLATION);
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const mainStructure = defined(drawDefinition.structures, 'structures').find((s) => s.stage === MAIN);
+  const consolationStructure = defined(drawDefinition.structures, 'structures').find((s) => s.stage === CONSOLATION);
 
   // Main structure: 32 draw = 31 matchUps
-  expect(mainStructure.matchUps.length).toBe(31);
+  expect(defined(defined(mainStructure, 'mainStructure').matchUps, 'matchUps').length).toBe(31);
 
   // Consolation structure should have matchUps
-  expect(consolationStructure.matchUps.length).toBeGreaterThan(0);
+  expect(defined(defined(consolationStructure, 'consolationStructure').matchUps, 'matchUps').length).toBeGreaterThan(0);
 });
 
 it('empty roundGroupedOrder allows default grouping', () => {
@@ -683,11 +687,11 @@ it('empty roundGroupedOrder allows default grouping', () => {
     ],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
   // Should still create valid draw
-  expect(drawDefinition.structures.length).toBe(2);
-  expect(drawDefinition.links.length).toBeGreaterThan(0);
+  expect(defined(drawDefinition.structures, 'structures').length).toBe(2);
+  expect(defined(drawDefinition.links, 'links').length).toBeGreaterThan(0);
 });
 
 it('all feed-in draw types exist and are distinct', () => {

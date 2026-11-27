@@ -1,4 +1,5 @@
 import { OutcomePipelineDivergence, compareDecisions } from '@Mutate/matchUps/outcome/differential';
+import { defined } from '@Tests/helpers/defined';
 import { getOutcomePipeline, setOutcomePipeline } from '@Global/state/globalState';
 import { authoredScenarios } from '../../testHarness/corpus/authoredSources';
 import { buildOutcomeView, refuseOutcome } from '@Mutate/matchUps/outcome';
@@ -41,8 +42,8 @@ it('rows 1 to 5 are decided on the request alone, before the draw is consulted',
   const view = buildOutcomeView({ request: { flags } });
   expect(refuseOutcome({ flags }, view)?.code).toEqual(MISSING_MATCHUP_ID.code);
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 4 }] });
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  const matchUpId = drawDefinition.structures[0].matchUps[0].matchUpId;
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const matchUpId = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps')[0].matchUpId;
   const request = { matchUpId, matchUpStatus: CANCELLED, winningSide: 1, flags } as const;
   const refusal = refuseOutcome(request, buildOutcomeView({ tournamentRecord, drawDefinition, request }));
   expect(refusal).toMatchObject({ code: INVALID_VALUES.code, row: 5 });

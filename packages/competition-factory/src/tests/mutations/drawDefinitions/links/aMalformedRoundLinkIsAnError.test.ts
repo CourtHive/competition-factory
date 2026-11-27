@@ -1,4 +1,5 @@
 import { getDrawDefinition, hash } from '@Tests/testHarness/exitPropagation/transitions';
+import { defined } from '@Tests/helpers/defined';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -47,15 +48,18 @@ function corruptedDraw({
     tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8, drawType }], setState: false });
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  const sourceStructureId = drawDefinition.structures.find(
-    (structure) => !structureName || structure.structureName === structureName,
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const sourceStructureId = defined(
+    defined(drawDefinition.structures, 'structures').find(
+      (structure) => !structureName || structure.structureName === structureName,
+    ),
+    'value',
   ).structureId;
-  const link = drawDefinition.links.find(
+  const link = defined(drawDefinition.links, 'links').find(
     (candidate) => candidate.linkType === linkType && candidate.source.structureId === sourceStructureId,
   );
   expect(link).toBeDefined();
-  Reflect.deleteProperty(link.source, 'roundNumber');
+  Reflect.deleteProperty(defined(link, 'link').source, 'roundNumber');
   tournamentEngine.setState(tournamentRecord);
   return { drawId, sourceStructureId };
 }
@@ -157,10 +161,14 @@ it('a links entry that is not a link is refused by setMatchUpStatus before any w
     drawProfiles: [{ drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION }],
     setState: false,
   });
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  const main = drawDefinition.structures.find((structure) => structure.stage === 'MAIN');
-  const matchUpId = main.matchUps.find((m) => m.roundNumber === 1 && m.roundPosition === 1).matchUpId;
-  drawDefinition.links.push(null);
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const main = defined(drawDefinition.structures, 'structures').find((structure) => structure.stage === 'MAIN');
+  const matchUpId = defined(
+    defined(defined(main, 'main').matchUps, 'matchUps').find((m) => m.roundNumber === 1 && m.roundPosition === 1),
+    'value',
+  ).matchUpId;
+  const links: any[] = defined(drawDefinition.links, 'links');
+  links.push(null);
   tournamentEngine.setState(tournamentRecord);
   const before = hash(getDrawDefinition(drawId));
 

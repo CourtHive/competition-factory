@@ -1,4 +1,5 @@
 import { assignDrawPositionBye as placeDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
+import { defined } from '@Tests/helpers/defined';
 import { planDrawPositionBye } from '@Mutate/matchUps/drawPositions/planDrawPositionBye';
 import { assignDrawPositionBye } from '@Mutate/drawDefinitions/assignDrawPositionBye';
 import asyncGlobalState from '@Server/providers/factory/engines/asyncGlobalState';
@@ -47,37 +48,43 @@ function unpositioned(drawType?: string, drawSize = 8) {
     drawProfiles: [{ drawSize, automated: false, ...(drawType ? { drawType } : {}) }],
     nonRandom: 1,
   });
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
   return { tournamentRecord, drawId, drawDefinition };
 }
 
 /** a record whose round-2 matchUp repeats a round-1 matchUpId (the archived finding) */
 function repeatedIdRecord() {
   const { tournamentRecord, drawId, drawDefinition } = unpositioned();
-  const [structure] = drawDefinition.structures;
+  const [structure] = defined(drawDefinition.structures, 'structures');
   const first = (roundNumber: number) =>
-    structure.matchUps.find((m: any) => m.roundNumber === roundNumber && m.roundPosition === 1);
-  first(2).matchUpId = first(1).matchUpId;
+    defined(structure.matchUps, 'matchUps').find((m: any) => m.roundNumber === roundNumber && m.roundPosition === 1);
+  defined(first(2), 'value').matchUpId = defined(first(1), 'value').matchUpId;
   return { tournamentRecord, drawId, structureId: structure.structureId };
 }
 
 /** an FMLC draw whose consolation seat for main drawPosition 1's loser already holds a participant */
 function filledLoserSeatRecord() {
   const { tournamentRecord, drawId, drawDefinition } = unpositioned(FIRST_MATCH_LOSER_CONSOLATION);
-  const [main, consolation] = drawDefinition.structures;
+  const [main, consolation] = defined(drawDefinition.structures, 'structures');
   // the consolation seat a BYE on main drawPosition 1 sends its BYE to (consolation drawPosition 3)
-  const seat = consolation.positionAssignments.find((assignment: any) => assignment.drawPosition === 3);
-  seat.participantId = tournamentRecord.participants[0].participantId;
+  const seat = defined(consolation.positionAssignments, 'positionAssignments').find(
+    (assignment: any) => assignment.drawPosition === 3,
+  );
+  defined(seat, 'seat').participantId = defined(tournamentRecord.participants, 'participants')[0].participantId;
   return { tournamentRecord, drawId, structureId: main.structureId };
 }
 
 /** a draw whose position 1 has no stored assignment, its first-round matchUp scheduled */
 function scheduledMissingAssignmentRecord() {
   const { tournamentRecord, drawId, drawDefinition } = unpositioned();
-  const [structure] = drawDefinition.structures;
-  structure.positionAssignments = structure.positionAssignments.filter((a: any) => a.drawPosition !== 1);
-  const matchUp = structure.matchUps.find((m: any) => m.roundNumber === 1 && m.drawPositions.includes(1));
-  matchUp.schedule = { scheduledDate: '2030-01-02' };
+  const [structure] = defined(drawDefinition.structures, 'structures');
+  structure.positionAssignments = defined(structure.positionAssignments, 'positionAssignments').filter(
+    (a: any) => a.drawPosition !== 1,
+  );
+  const matchUp = defined(structure.matchUps, 'matchUps').find(
+    (m: any) => m.roundNumber === 1 && m.drawPositions.includes(1),
+  );
+  defined(matchUp, 'matchUp').schedule = { scheduledDate: '2030-01-02' };
   return { tournamentRecord, drawId, structureId: structure.structureId };
 }
 
@@ -137,7 +144,10 @@ describe('a refused BYE placement changes nothing', () => {
     for (const { build, params } of refusals) {
       setClock(instant);
       const { tournamentRecord, structureId } = build();
-      const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+      const drawDefinition = defined(
+        defined(tournamentRecord.events, 'events')[0].drawDefinitions,
+        'drawDefinitions',
+      )[0];
       const before = JSON.stringify(tournamentRecord);
       let refused: boolean;
       try {
@@ -161,7 +171,7 @@ describe('a refused BYE placement changes nothing', () => {
     setStateProvider(asyncGlobalState);
     const refused = repeatedIdRecord();
     const accepted = unpositioned();
-    const acceptedStructureId = accepted.drawDefinition.structures[0].structureId;
+    const acceptedStructureId = defined(accepted.drawDefinition.structures, 'structures')[0].structureId;
     const run = (fixture: any, structureId: string) =>
       asyncGlobalState.runWithInstanceState(async () => {
         await asyncEngine.setState(structuredClone(fixture.tournamentRecord));
@@ -195,11 +205,15 @@ describe('a refused BYE placement changes nothing', () => {
 describe('an accepted BYE placement keeps borrowed plain identities', () => {
   it('commits into the stored objects of a borrowed record', () => {
     const { tournamentRecord, drawId, drawDefinition } = unpositioned(FIRST_MATCH_LOSER_CONSOLATION);
-    const [main, consolation] = drawDefinition.structures;
+    const [main, consolation] = defined(drawDefinition.structures, 'structures');
     const assignments = main.positionAssignments;
-    const seat = assignments.find((a: any) => a.drawPosition === 1);
-    const first = main.matchUps.find((m: any) => m.roundNumber === 1 && m.drawPositions.includes(1));
-    const consolationSeat = consolation.positionAssignments.find((a: any) => a.drawPosition === 3);
+    const seat = defined(assignments, 'assignments').find((a: any) => a.drawPosition === 1);
+    const first = defined(main.matchUps, 'matchUps').find(
+      (m: any) => m.roundNumber === 1 && m.drawPositions.includes(1),
+    );
+    const consolationSeat = defined(consolation.positionAssignments, 'positionAssignments').find(
+      (a: any) => a.drawPosition === 3,
+    );
     tournamentEngine.setState(tournamentRecord, false);
     const result: any = tournamentEngine.assignDrawPositionBye({
       drawId,
@@ -208,13 +222,17 @@ describe('an accepted BYE placement keeps borrowed plain identities', () => {
     });
     expect(result.success).toBe(true);
     // borrowed: the engine holds the caller's record, so the caller's own objects are the stored ones
-    const stored = tournamentRecord.events[0].drawDefinitions[0];
-    expect(stored.structures[0].positionAssignments).toBe(assignments);
-    expect(stored.structures[0].positionAssignments.find((a: any) => a.drawPosition === 1)).toBe(seat);
-    expect(seat.bye).toBe(true);
-    expect(first.matchUpStatus).toBe('BYE');
-    expect(stored.structures[0].matchUps).toContain(first);
-    expect(consolationSeat.bye).toBe(true);
+    const stored = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+    expect(defined(stored.structures, 'structures')[0].positionAssignments).toBe(assignments);
+    expect(
+      defined(defined(stored.structures, 'structures')[0].positionAssignments, 'positionAssignments').find(
+        (a: any) => a.drawPosition === 1,
+      ),
+    ).toBe(seat);
+    expect(defined(seat, 'seat').bye).toBe(true);
+    expect(defined(first, 'first').matchUpStatus).toBe('BYE');
+    expect(defined(stored.structures, 'structures')[0].matchUps).toContain(first);
+    expect(defined(consolationSeat, 'consolationSeat').bye).toBe(true);
   });
 });
 
@@ -226,8 +244,8 @@ describe('the edges of the planned domain', () => {
 
   it('keeps the writer for a call that hands in its own draw state', () => {
     const { tournamentRecord, drawDefinition } = unpositioned();
-    const event = tournamentRecord.events[0];
-    const structureId = drawDefinition.structures[0].structureId;
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const structureId = defined(drawDefinition.structures, 'structures')[0].structureId;
     const matchUpsMap = getMatchUpsMap({ drawDefinition });
     const result: any = assignDrawPositionBye({
       tournamentRecord,
@@ -238,18 +256,25 @@ describe('the edges of the planned domain', () => {
       matchUpsMap,
     });
     expect(result.success).toBe(true);
-    expect(drawDefinition.structures[0].positionAssignments.find((a: any) => a.drawPosition === 1).bye).toBe(true);
+    expect(
+      defined(
+        defined(defined(drawDefinition.structures, 'structures')[0].positionAssignments, 'positionAssignments').find(
+          (a: any) => a.drawPosition === 1,
+        ),
+        'value',
+      ).bye,
+    ).toBe(true);
   });
 
   it('leaves a round robin position with no assignment to the writer', () => {
     const { tournamentRecord, drawDefinition, drawId } = unpositioned(ROUND_ROBIN);
-    const [group] = drawDefinition.structures[0].structures;
-    group.positionAssignments = group.positionAssignments.filter(
-      (a: any) => a.drawPosition !== group.positionAssignments[0].drawPosition,
+    const [group] = defined(defined(drawDefinition.structures, 'structures')[0].structures, 'structures');
+    group.positionAssignments = defined(group.positionAssignments, 'positionAssignments').filter(
+      (a: any) => a.drawPosition !== defined(group.positionAssignments, 'positionAssignments')[0].drawPosition,
     );
     tournamentEngine.setState(tournamentRecord);
     const result: any = tournamentEngine.assignDrawPositionBye({
-      structureId: drawDefinition.structures[0].structureId,
+      structureId: defined(drawDefinition.structures, 'structures')[0].structureId,
       drawPosition: 1,
       drawId,
     });
@@ -262,7 +287,7 @@ describe('the edges of the planned domain', () => {
     tournamentEngine.setState(tournamentRecord);
     const before = record();
     const result: any = tournamentEngine.assignDrawPositionBye({
-      structureId: drawDefinition.structures[0].structureId,
+      structureId: defined(drawDefinition.structures, 'structures')[0].structureId,
       drawPosition: 1,
       drawId,
     });

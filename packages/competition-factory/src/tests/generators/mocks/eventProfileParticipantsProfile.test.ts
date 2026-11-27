@@ -1,4 +1,5 @@
 import { getParticipantId } from '@Functions/global/extractors';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
@@ -102,11 +103,11 @@ describe('eventProfile participantsProfile', () => {
       eventProfiles: [{ participantsProfile: { participantsCount: 10 }, drawProfiles: [{ drawSize: 8 }] }],
     });
     expect(result.error).toBeUndefined();
-    const individuals = result.tournamentRecord.participants.filter(
+    const individuals = defined(result.tournamentRecord.participants, 'participants').filter(
       ({ participantType }) => participantType === INDIVIDUAL,
     );
     // no event pool on top of the tournament pool the draw is sized from
     expect(individuals.length).toEqual(8);
-    expect(result.tournamentRecord.events[0].entries.length).toEqual(8);
+    expect(defined(defined(result.tournamentRecord.events, 'events')[0].entries, 'entries').length).toEqual(8);
   });
 });

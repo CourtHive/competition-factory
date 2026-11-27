@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
@@ -19,8 +20,8 @@ describe('FMLC score removal coverage for removeDirectedParticipants branches', 
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({ drawProfiles });
 
-    const event = tournamentRecord.events[0];
-    const drawDefinition = event.drawDefinitions.find((d) => d.drawId === drawId);
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions').find((d) => d.drawId === drawId);
 
     // Complete MAIN round 1
     mocksEngine.completeDrawMatchUps({
@@ -97,8 +98,8 @@ describe('FMLC score removal coverage for removeDirectedParticipants branches', 
       ],
     });
 
-    const event = tournamentRecord.events[0];
-    const drawDefinition = event.drawDefinitions.find((d) => d.drawId === drawId);
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions').find((d) => d.drawId === drawId);
 
     // Complete remaining matchUps
     mocksEngine.completeDrawMatchUps({
@@ -206,8 +207,8 @@ describe('FMLC score removal coverage for removeDirectedParticipants branches', 
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({ drawProfiles });
 
-    const event = tournamentRecord.events[0];
-    const drawDefinition = event.drawDefinitions.find((d) => d.drawId === drawId);
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions').find((d) => d.drawId === drawId);
 
     // Complete MAIN round 1
     mocksEngine.completeDrawMatchUps({

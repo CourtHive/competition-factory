@@ -6,6 +6,7 @@
 // Plus targeted unit tests for `classifySource`, the extractors, graceful
 // degradation (single-source builds), and the cleanup invariants.
 import tournamentEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
@@ -197,7 +198,7 @@ describe('classifySource', () => {
   it('classifies the raw factory `getEventData` shape (no public-API wrapper)', () => {
     const { tournamentRecord } = generateRoundRobin();
     tournamentEngine.setState(tournamentRecord);
-    const raw = tournamentEngine.getEventData({ eventId: tournamentRecord.events[0].eventId });
+    const raw = tournamentEngine.getEventData({ eventId: defined(tournamentRecord.events, 'events')[0].eventId });
     expect(classifySource(raw).kind).toBe(EVENT_DATA);
   });
 
@@ -239,7 +240,7 @@ describe('extractors', () => {
   it('extractEventData unwraps both the public-API and raw factory shapes', () => {
     const { tournamentRecord } = generateRoundRobin();
     tournamentEngine.setState(tournamentRecord);
-    const raw = tournamentEngine.getEventData({ eventId: tournamentRecord.events[0].eventId });
+    const raw = tournamentEngine.getEventData({ eventId: defined(tournamentRecord.events, 'events')[0].eventId });
 
     const fromBare = extractEventData(raw);
     const fromWrapped = extractEventData({ tournamentPublicEventData: raw });
@@ -247,7 +248,7 @@ describe('extractors', () => {
 
     for (const x of [fromBare, fromWrapped, fromData]) {
       expect(x.tournamentInfo?.tournamentId).toBe(tournamentRecord.tournamentId);
-      expect(x.eventInfo?.eventId).toBe(tournamentRecord.events[0].eventId);
+      expect(x.eventInfo?.eventId).toBe(defined(tournamentRecord.events, 'events')[0].eventId);
       expect(Array.isArray(x.drawsData)).toBe(true);
       expect(Array.isArray(x.participants)).toBe(true);
     }
@@ -670,7 +671,9 @@ describe('graceful degradation (single-source builds)', () => {
   it('event-data-only → full record minus matchUps the schedule response would have added', () => {
     const { tournamentRecord } = generateRoundRobin();
     tournamentEngine.setState(tournamentRecord);
-    const eventDataResponse = tournamentEngine.getEventData({ eventId: tournamentRecord.events[0].eventId });
+    const eventDataResponse = tournamentEngine.getEventData({
+      eventId: defined(tournamentRecord.events, 'events')[0].eventId,
+    });
 
     const rebuilt = buildTournamentRecord({
       eventDataDocs: [extractEventData(eventDataResponse)],

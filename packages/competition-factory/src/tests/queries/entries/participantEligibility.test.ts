@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
@@ -35,19 +36,25 @@ const seedU18 = ({ birthDate, birthYear }: { birthDate?: string; birthYear?: num
     nonRandom: 1,
   });
 
-  const participant = tournamentRecord.participants.find((p: any) => p.participantType === INDIVIDUAL);
-  delete participant.person.birthDate;
-  if (birthDate) participant.person.birthDate = birthDate;
-  if (birthYear) participant.person.birthYear = birthYear;
+  const participant = defined(tournamentRecord.participants, 'participants').find(
+    (p: any) => p.participantType === INDIVIDUAL,
+  );
+  delete defined(defined(participant, 'participant').person, 'person').birthDate;
+  if (birthDate) defined(defined(participant, 'participant').person, 'person').birthDate = birthDate;
+  if (birthYear) defined(defined(participant, 'participant').person, 'person').birthYear = birthYear;
 
   tournamentEngine.setState(tournamentRecord);
-  return { tournamentRecord, participant, event: tournamentRecord.events[0] };
+  return { tournamentRecord, participant, event: defined(tournamentRecord.events, 'events')[0] };
 };
 
 describe('getParticipantEligibility', () => {
   it('reports eligible for a participant inside the age range', () => {
     const { tournamentRecord, participant, event } = seedU18({ birthDate: '2010-03-04' });
-    const result: any = getParticipantEligibility({ participant, event, tournamentRecord });
+    const result: any = getParticipantEligibility({
+      participant: defined(participant, 'participant'),
+      event,
+      tournamentRecord,
+    });
     expect(result.eligible).toBe(true);
     expect(result.indeterminate).toBe(false);
     expect(result.rejectionReasons).toEqual([]);
@@ -55,7 +62,11 @@ describe('getParticipantEligibility', () => {
 
   it('reports INELIGIBLE — not indeterminate — for a real age breach', () => {
     const { tournamentRecord, participant, event } = seedU18({ birthDate: '2000-03-04' });
-    const result: any = getParticipantEligibility({ participant, event, tournamentRecord });
+    const result: any = getParticipantEligibility({
+      participant: defined(participant, 'participant'),
+      event,
+      tournamentRecord,
+    });
     expect(result.eligible).toBe(false);
     expect(result.indeterminate).toBe(false);
     expect(result.rejectionReasons[0].type).toBe('age');
@@ -63,7 +74,11 @@ describe('getParticipantEligibility', () => {
 
   it('reports INDETERMINATE when the birth date is unknown', () => {
     const { tournamentRecord, participant, event } = seedU18();
-    const result: any = getParticipantEligibility({ participant, event, tournamentRecord });
+    const result: any = getParticipantEligibility({
+      participant: defined(participant, 'participant'),
+      event,
+      tournamentRecord,
+    });
     expect(result.eligible).toBe(false);
     expect(result.indeterminate).toBe(true);
     expect(result.rejectionReasons[0].indeterminate).toBe(true);
@@ -76,10 +91,16 @@ describe('getParticipantEligibility', () => {
       participantsProfile: { participantsCount: 2 },
       nonRandom: 1,
     });
-    const participant = tournamentRecord.participants.find((p: any) => p.participantType === INDIVIDUAL);
-    const event = tournamentRecord.events[0];
+    const participant = defined(tournamentRecord.participants, 'participants').find(
+      (p: any) => p.participantType === INDIVIDUAL,
+    );
+    const event = defined(tournamentRecord.events, 'events')[0];
     delete event.category;
-    const result: any = getParticipantEligibility({ participant, event, tournamentRecord });
+    const result: any = getParticipantEligibility({
+      participant: defined(participant, 'participant'),
+      event,
+      tournamentRecord,
+    });
     expect(result.eligible).toBe(true);
     expect(result.indeterminate).toBe(false);
   });
@@ -110,31 +131,39 @@ describe('unknown birthDate: the query and the mutation deliberately disagree', 
     const { participant, event } = seedU18();
 
     tournamentEngine.addEventEntries({
-      participantIds: [participant.participantId],
+      participantIds: [defined(participant, 'participant').participantId],
       eventId: event.eventId,
     });
 
     const { event: updated }: any = tournamentEngine.getEvent({ eventId: event.eventId });
-    const entered = (updated.entries ?? []).some((e: any) => e.participantId === participant.participantId);
+    const entered = (updated.entries ?? []).some(
+      (e: any) => e.participantId === defined(participant, 'participant').participantId,
+    );
     expect(entered).toBe(true);
   });
 
   it('with enforceCategory, the query says indeterminate while the mutation still rejects', () => {
     const { tournamentRecord, participant, event } = seedU18();
 
-    const eligibility: any = getParticipantEligibility({ participant, event, tournamentRecord });
+    const eligibility: any = getParticipantEligibility({
+      participant: defined(participant, 'participant'),
+      event,
+      tournamentRecord,
+    });
     expect(eligibility.eligible).toBe(false);
     expect(eligibility.indeterminate).toBe(true);
 
     // Same participant, same event, through the mutation: still filtered out, exactly as before.
     const result: any = tournamentEngine.addEventEntries({
-      participantIds: [participant.participantId],
+      participantIds: [defined(participant, 'participant').participantId],
       eventId: event.eventId,
       enforceCategory: true,
     });
 
     const { event: updated }: any = tournamentEngine.getEvent({ eventId: event.eventId });
-    const entered = (updated.entries ?? []).some((e: any) => e.participantId === participant.participantId);
+    const entered = (updated.entries ?? []).some(
+      (e: any) => e.participantId === defined(participant, 'participant').participantId,
+    );
     expect(entered).toBe(false);
 
     // The rejection is reported on `context`, and it carries the SAME `indeterminate` flag the
@@ -157,15 +186,25 @@ describe('getEligibleEvents', () => {
       endDate: '2026-06-07',
       nonRandom: 1,
     });
-    const participant = tournamentRecord.participants.find((p: any) => p.participantType === INDIVIDUAL);
-    participant.person.birthDate = '2010-03-04';
+    const participant = defined(tournamentRecord.participants, 'participants').find(
+      (p: any) => p.participantType === INDIVIDUAL,
+    );
+    defined(defined(participant, 'participant').person, 'person').birthDate = '2010-03-04';
     tournamentEngine.setState(tournamentRecord);
 
-    const result: any = getEligibleEvents({ participant, events: tournamentRecord.events, tournamentRecord });
+    const result: any = getEligibleEvents({
+      participant: defined(participant, 'participant'),
+      events: defined(tournamentRecord.events, 'events'),
+      tournamentRecord,
+    });
     expect(result.eventEligibility).toHaveLength(2);
 
-    const u18 = result.eventEligibility.find((e: any) => e.eventId === tournamentRecord.events[0].eventId);
-    const o30 = result.eventEligibility.find((e: any) => e.eventId === tournamentRecord.events[1].eventId);
+    const u18 = result.eventEligibility.find(
+      (e: any) => e.eventId === defined(tournamentRecord.events, 'events')[0].eventId,
+    );
+    const o30 = result.eventEligibility.find(
+      (e: any) => e.eventId === defined(tournamentRecord.events, 'events')[1].eventId,
+    );
     expect(u18.eligible).toBe(true);
     expect(o30.eligible).toBe(false);
     expect(o30.indeterminate).toBe(false);
@@ -190,11 +229,18 @@ describe('combined rating categories', () => {
       participantsProfile: { participantsCount: 2 },
       nonRandom: 1,
     });
-    const participant = tournamentRecord.participants.find((p: any) => p.participantType === INDIVIDUAL);
+    const participant = defined(tournamentRecord.participants, 'participants').find(
+      (p: any) => p.participantType === INDIVIDUAL,
+    );
     // No NTRP scale item exists for this participant, so an individual bound is INDETERMINATE
     // rather than satisfied — which is itself the point: the combined bound did not suppress it.
     const category: any = { ratingType: NTRP, combinedRatingMax: 7.0, ratingMax: 5.0 };
-    const result: any = validateParticipantRating(participant, category, event as any, tournamentRecord);
+    const result: any = validateParticipantRating(
+      defined(participant, 'participant'),
+      category,
+      event as any,
+      tournamentRecord,
+    );
     expect(result.valid).toBe(false);
     expect(result.indeterminate).toBe(true);
   });

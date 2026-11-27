@@ -1,4 +1,5 @@
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
+import { defined } from '@Tests/helpers/defined';
 import { POLICY_PRIVACY_DEFAULT } from '@Fixtures/policies/POLICY_PRIVACY_DEFAULT';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -48,7 +49,7 @@ function generate({ nonRandom, completeAllMatchUps, privacy }) {
     nonRandom,
   });
   tournamentEngine.setState(tournamentRecord);
-  for (const { eventId } of tournamentRecord.events) {
+  for (const { eventId } of defined(tournamentRecord.events, 'events')) {
     expect(tournamentEngine.publishEvent({ eventId }).success).toEqual(true);
   }
   return tournamentEngine.getTournament().tournamentRecord;

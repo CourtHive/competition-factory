@@ -1,4 +1,5 @@
 import { expect, test, describe } from 'vitest';
+import { defined } from '@Tests/helpers/defined';
 
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
@@ -90,7 +91,7 @@ describe('the scope is ENFORCED, which DEAD_RUBBER never was', () => {
       drawProfiles: [{ drawSize: 4 }],
       setState: true,
     });
-    const { drawId } = tournamentRecord.events[0].drawDefinitions[0];
+    const { drawId } = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
     const matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
     const matchUpId = matchUps[0].matchUpId;
 
@@ -112,7 +113,7 @@ describe('the scope is ENFORCED, which DEAD_RUBBER never was', () => {
       drawProfiles: [{ drawSize: 4 }],
       setState: true,
     });
-    const { drawId } = tournamentRecord.events[0].drawDefinitions[0];
+    const { drawId } = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
     const matchUpId = tournamentEngine.allTournamentMatchUps().matchUps[0].matchUpId;
 
     const result: any = tournamentEngine.setMatchUpStatus({

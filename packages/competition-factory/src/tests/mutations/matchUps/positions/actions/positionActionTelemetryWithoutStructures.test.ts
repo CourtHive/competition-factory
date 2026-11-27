@@ -1,4 +1,5 @@
 import { mocksEngine } from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
@@ -14,9 +15,14 @@ it('records position action telemetry on a draw definition that has no structure
   });
 
   // the caller supplies the structure; the draw definition itself lists none
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  const structure = drawDefinition.structures[0];
-  const { drawPosition } = structure.positionAssignments.find(({ participantId, bye }) => !participantId && !bye);
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const structure = defined(drawDefinition.structures, 'structures')[0];
+  const { drawPosition } = defined(
+    defined(structure.positionAssignments, 'positionAssignments').find(
+      ({ participantId, bye }) => !participantId && !bye,
+    ),
+    'open position',
+  );
   delete drawDefinition.structures;
   tournamentEngine.setState(tournamentRecord);
 

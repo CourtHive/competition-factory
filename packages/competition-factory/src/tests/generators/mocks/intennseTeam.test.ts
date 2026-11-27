@@ -4,6 +4,7 @@
  * Singles: SET2XA-S:T10, Doubles: SET1A-S:T10
  */
 import tournamentEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
@@ -159,7 +160,7 @@ describe('INTENNSE Showdown tournament', () => {
     const tr = result.tournamentRecord;
 
     // Verify teams exist with correct names and useOtherName is false
-    const teams = tr.participants.filter((p: any) => p.participantType === TEAM_PARTICIPANT);
+    const teams = defined(tr.participants, 'participants').filter((p: any) => p.participantType === TEAM_PARTICIPANT);
     expect(teams.length).toBe(2);
     const teamNames = teams.map((t: any) => t.participantName).sort();
     expect(teamNames).toEqual(['Cauldron', 'The Authentics']);
@@ -185,10 +186,10 @@ describe('INTENNSE Showdown tournament', () => {
     expect(collectionIds).toEqual(['intennse-md', 'intennse-ms', 'intennse-wd', 'intennse-ws', 'intennse-xd']);
 
     // Verify each team has 6 members: 3 MALE + 3 FEMALE
-    const individuals = tr.participants.filter((p: any) => p.participantType === INDIVIDUAL);
+    const individuals = defined(tr.participants, 'participants').filter((p: any) => p.participantType === INDIVIDUAL);
     for (const team of teams) {
-      expect(team.individualParticipantIds.length).toBe(6);
-      const members = team.individualParticipantIds.map((id: string) =>
+      expect(defined(team.individualParticipantIds, 'individualParticipantIds').length).toBe(6);
+      const members = defined(team.individualParticipantIds, 'individualParticipantIds').map((id: string) =>
         individuals.find((p: any) => p.participantId === id),
       );
       const males = members.filter((p: any) => p.person?.sex === MALE);
@@ -198,8 +199,8 @@ describe('INTENNSE Showdown tournament', () => {
     }
 
     // Verify event and tieFormat
-    expect(tr.events[0].eventType).toBe(TEAM);
-    expect(tr.events[0].tieFormat.winCriteria.aggregateValue).toBe(true);
+    expect(defined(tr.events, 'events')[0].eventType).toBe(TEAM);
+    expect(defined(defined(tr.events, 'events')[0].tieFormat, 'tieFormat').winCriteria.aggregateValue).toBe(true);
   });
 
   it('teamGenders acts as a floor override, not a ceiling', () => {
@@ -224,13 +225,17 @@ describe('INTENNSE Showdown tournament', () => {
     });
 
     const trNoOverride = withoutOverride.tournamentRecord;
-    const teamsNoOverride = trNoOverride.participants.filter((p: any) => p.participantType === TEAM_PARTICIPANT);
-    const individualsNoOverride = trNoOverride.participants.filter((p: any) => p.participantType === INDIVIDUAL);
+    const teamsNoOverride = defined(trNoOverride.participants, 'participants').filter(
+      (p: any) => p.participantType === TEAM_PARTICIPANT,
+    );
+    const individualsNoOverride = defined(trNoOverride.participants, 'participants').filter(
+      (p: any) => p.participantType === INDIVIDUAL,
+    );
 
     // Without override: teams only have 4 members (2M + 2F) — insufficient for INTENNSE
     for (const team of teamsNoOverride) {
-      expect(team.individualParticipantIds.length).toBe(4);
-      const members = team.individualParticipantIds.map((id: string) =>
+      expect(defined(team.individualParticipantIds, 'individualParticipantIds').length).toBe(4);
+      const members = defined(team.individualParticipantIds, 'individualParticipantIds').map((id: string) =>
         individualsNoOverride.find((p: any) => p.participantId === id),
       );
       const males = members.filter((p: any) => p.person?.sex === MALE);
@@ -258,12 +263,16 @@ describe('INTENNSE Showdown tournament', () => {
     });
 
     const trOverride = withOverride.tournamentRecord;
-    const teamsOverride = trOverride.participants.filter((p: any) => p.participantType === TEAM_PARTICIPANT);
-    const individualsOverride = trOverride.participants.filter((p: any) => p.participantType === INDIVIDUAL);
+    const teamsOverride = defined(trOverride.participants, 'participants').filter(
+      (p: any) => p.participantType === TEAM_PARTICIPANT,
+    );
+    const individualsOverride = defined(trOverride.participants, 'participants').filter(
+      (p: any) => p.participantType === INDIVIDUAL,
+    );
 
     for (const team of teamsOverride) {
-      expect(team.individualParticipantIds.length).toBe(6);
-      const members = team.individualParticipantIds.map((id: string) =>
+      expect(defined(team.individualParticipantIds, 'individualParticipantIds').length).toBe(6);
+      const members = defined(team.individualParticipantIds, 'individualParticipantIds').map((id: string) =>
         individualsOverride.find((p: any) => p.participantId === id),
       );
       const males = members.filter((p: any) => p.person?.sex === MALE);

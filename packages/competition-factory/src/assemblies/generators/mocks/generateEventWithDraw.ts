@@ -50,7 +50,7 @@ import { COMPETITOR } from '@Constants/participantRoles';
 import { OBJECT } from '@Constants/attributeConstants';
 import { SEEDING } from '@Constants/timeItemConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Participant } from '@Types/tournamentTypes';
+import { Participant, DrawDefinition, Event } from '@Types/tournamentTypes';
 import { nameMocks } from './nameMocks';
 import type { ResultType } from '@Types/factoryTypes';
 
@@ -764,9 +764,19 @@ function generateAndAttachDraw({
   return { drawDefinition, drawId };
 }
 
-export function generateEventWithDraw(params) {
+/** Typed as succeeding, like `generateTournamentRecord`: a refusal still returns `{ error }` at runtime. */
+export type GenerateEventWithDrawResult = ResultType & {
+  targetParticipants: Participant[];
+  drawDefinition?: DrawDefinition;
+  uniqueParticipantIds: string[];
+  eventId: string;
+  drawId?: string;
+  event: Event;
+};
+
+export function generateEventWithDraw(params): GenerateEventWithDrawResult {
   const paramsCheck = checkRequiredParameters(params, [{ drawProfile: true, _ofType: OBJECT }]);
-  if (paramsCheck.error) return paramsCheck;
+  if (paramsCheck.error) return paramsCheck as GenerateEventWithDrawResult;
 
   const {
     allUniqueParticipantIds = [],
@@ -865,7 +875,7 @@ export function generateEventWithDraw(params) {
   // in a client's order: the event is added (public addEvent, no bypass) before it has entries or a draw, and
   // everything after is written to the stored event. Without a record to add it to it is built off the record
   const added = addToRecord ? addEventRecorded({ tournamentRecord, event: mockEvent }) : undefined;
-  if (added?.error) return added;
+  if (added?.error) return added as GenerateEventWithDrawResult;
   const event = added
     ? tournamentRecord.events.find((stored: { eventId: string }) => stored.eventId === eventId)
     : mockEvent;
@@ -913,7 +923,7 @@ export function generateEventWithDraw(params) {
       random,
       uuids,
     });
-    if (genResult.error) return genResult;
+    if (genResult.error) return genResult as GenerateEventWithDrawResult;
 
     genResult.uniqueParticipantIds!.forEach((id) => uniqueParticipantIds.push(id));
     targetParticipants = genResult.targetParticipants;

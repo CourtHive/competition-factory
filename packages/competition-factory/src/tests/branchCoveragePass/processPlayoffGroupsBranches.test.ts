@@ -1,4 +1,5 @@
 import { processPlayoffGroups } from '@Generators/drawDefinitions/drawTypes/processPlayoffGroups';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
 
@@ -62,8 +63,8 @@ test('rejects empty finishingPositions when positionRangeMap is defined (RR sour
     drawProfiles: [{ drawType: ROUND_ROBIN, drawSize: 8 }],
     setState: true,
   });
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  const sourceStructureId = drawDefinition.structures[0].structureId;
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const sourceStructureId = defined(drawDefinition.structures, 'structures')[0].structureId;
 
   let result: any = processPlayoffGroups({
     playoffGroups: [{ finishingPositions: [] }],
@@ -158,8 +159,8 @@ test('PAGE_PLAYOFF from elimination source with idPrefix and structureName', () 
     drawProfiles: [{ drawSize: 4 }],
     setState: true,
   });
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  const sourceStructureId = drawDefinition.structures[0].structureId;
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const sourceStructureId = defined(drawDefinition.structures, 'structures')[0].structureId;
 
   let result: any = processPlayoffGroups({
     playoffGroups: [{ finishingPositions: [1, 2, 3, 4], drawType: PAGE_PLAYOFF, structureName: 'Page' }],

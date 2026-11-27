@@ -1,4 +1,5 @@
 import { getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
+import { defined } from '@Tests/helpers/defined';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
@@ -41,7 +42,7 @@ const generate = () =>
 
 describe('addGoesTo inContextOnly', () => {
   it('puts the edges a stored draw would hold on the hydrated copies, and writes nothing stored', () => {
-    const intact = generate().events[0].drawDefinitions[0];
+    const intact = defined(defined(generate().events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
     const drawDefinition = structuredClone(intact);
     stripEdges(drawDefinition);
     // CONTROL: the copy really is a draw without its edges

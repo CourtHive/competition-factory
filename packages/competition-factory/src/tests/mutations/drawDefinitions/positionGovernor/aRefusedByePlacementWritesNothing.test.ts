@@ -1,4 +1,5 @@
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { defined } from '@Tests/helpers/defined';
 import { useEngineCatch } from '@Tests/testHarness/engineCatch';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -74,7 +75,9 @@ function exitWalk({ fillLoserSeat }: { fillLoserSeat: boolean }) {
   tournamentEngine.setState(tournamentRecord, false);
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
   const [main, consolation] = drawDefinition.structures;
-  const ids = tournamentRecord.participants.map((participant: any) => participant.participantId);
+  const ids = defined(tournamentRecord.participants, 'participants').map(
+    (participant: any) => participant.participantId,
+  );
   const assign = (structureId: string, drawPosition: number, participantId: string) =>
     expect(tournamentEngine.assignDrawPosition({ drawId, structureId, drawPosition, participantId }).success).toBe(
       true,
@@ -102,8 +105,11 @@ describe('a BYE placement refused past its first write leaves the record as it w
   it.each(MODES)('%s: a loser seat already filled downstream', (mode) => {
     setOutcomePipeline(mode);
     const { tournamentRecord, drawId, main } = exitWalk({ fillLoserSeat: true });
-    const draw = tournamentRecord.events[0].drawDefinitions[0];
-    const held = { structure: draw.structures[0], matchUps: [...draw.structures[0].matchUps] };
+    const draw = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+    const held = {
+      structure: defined(draw.structures, 'structures')[0],
+      matchUps: [...defined(defined(draw.structures, 'structures')[0].matchUps, 'matchUps')],
+    };
     const before = JSON.stringify(tournamentRecord);
     const notices = delivered();
 
@@ -116,8 +122,10 @@ describe('a BYE placement refused past its first write leaves the record as it w
     expect(result.error).toEqual(DRAW_POSITION_ASSIGNED);
     expect(JSON.stringify(tournamentEngine.getTournament().tournamentRecord)).toBe(before);
     expect(JSON.stringify(tournamentRecord)).toBe(before);
-    expect(draw.structures[0]).toBe(held.structure);
-    held.matchUps.forEach((matchUp, at) => expect(draw.structures[0].matchUps[at]).toBe(matchUp));
+    expect(defined(draw.structures, 'structures')[0]).toBe(held.structure);
+    held.matchUps.forEach((matchUp, at) =>
+      expect(defined(defined(draw.structures, 'structures')[0].matchUps, 'matchUps')[at]).toBe(matchUp),
+    );
     expect(notices).toEqual([]);
   });
 
@@ -153,10 +161,14 @@ describe('a BYE placement refused past its first write leaves the record as it w
 
     expect(result.success).toBe(true);
     expect(JSON.stringify(tournamentRecord)).not.toBe(before);
-    const seat = tournamentRecord.events[0].drawDefinitions[0].structures[0].positionAssignments.find(
-      (assignment: any) => assignment.drawPosition === 1,
-    );
-    expect(seat.bye).toBe(true);
+    const seat = defined(
+      defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0].positionAssignments,
+      'positionAssignments',
+    ).find((assignment: any) => assignment.drawPosition === 1);
+    expect(defined(seat, 'seat').bye).toBe(true);
     expect(notices).toContain(MODIFY_MATCHUP);
     expect(notices).toContain(MODIFY_POSITION_ASSIGNMENTS);
   });

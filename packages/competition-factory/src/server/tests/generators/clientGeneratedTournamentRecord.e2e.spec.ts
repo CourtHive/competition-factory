@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { defined } from '@Tests/helpers/defined';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '@Server/app.module';
@@ -48,7 +49,7 @@ describe('AppService', () => {
       tournamentAttributes: { tournamentId },
     });
 
-    expect(tournamentRecord.events.length).toEqual(1);
+    expect(defined(tournamentRecord.events, 'events').length).toEqual(1);
 
     result = await request(app.getHttpServer())
       .post('/factory/save')

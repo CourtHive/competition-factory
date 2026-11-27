@@ -7,7 +7,7 @@ import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefin
 import { DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 
 test('bye propagated double walkover hydration', () => {
-  let result = mocksEngine.generateTournamentRecord({
+  let result: any = mocksEngine.generateTournamentRecord({
     drawProfiles: [
       {
         drawSize: 8,
@@ -33,7 +33,7 @@ test('bye propagated double walkover hydration', () => {
 });
 
 test('bye propagated double walkover in final has correct sideNumber', () => {
-  let result = mocksEngine.generateTournamentRecord({
+  let result: any = mocksEngine.generateTournamentRecord({
     drawProfiles: [
       {
         drawSize: 8,

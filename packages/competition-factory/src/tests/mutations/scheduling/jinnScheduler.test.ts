@@ -1,4 +1,5 @@
 import { hasSchedule } from '@Query/matchUp/hasSchedule';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { constantToString } from '@Tools/strings';
@@ -112,8 +113,8 @@ it.each([
 
     tournamentEngine.setState(tournamentRecord);
 
-    const dependency = schedulerResult.dependencyDeferredMatchUpIds?.[startDate];
-    const recovery = schedulerResult.recoveryTimeDeferredMatchUpIds?.[startDate];
+    const dependency = defined(schedulerResult, 'schedulerResult').dependencyDeferredMatchUpIds?.[startDate];
+    const recovery = defined(schedulerResult, 'schedulerResult').recoveryTimeDeferredMatchUpIds?.[startDate];
 
     expect(dependency).not.toBeUndefined();
     expect(recovery).not.toBeUndefined();

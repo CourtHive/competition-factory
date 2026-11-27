@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import { describe, expect, it } from 'vitest';
 
 // constants
@@ -52,14 +53,14 @@ describe('all or nothing (the default)', () => {
 
   it('a corrected retry builds on the record as it was, not on a half-built one', () => {
     const tournamentRecord = baseRecord();
-    const participantsBefore = tournamentRecord.participants.length;
+    const participantsBefore = defined(tournamentRecord.participants, 'participants').length;
 
     mocksEngine.modifyTournamentRecord({ tournamentRecord, drawProfiles: VALID_THEN_REFUSED });
     const retry: any = mocksEngine.modifyTournamentRecord({ tournamentRecord, drawProfiles: [{ drawSize: 4 }] });
 
     expect(retry.success).toEqual(true);
-    expect(tournamentRecord.events.length).toEqual(2);
-    expect(tournamentRecord.participants.length - participantsBefore).toEqual(4);
+    expect(defined(tournamentRecord.events, 'events').length).toEqual(2);
+    expect(defined(tournamentRecord.participants, 'participants').length - participantsBefore).toEqual(4);
   });
 
   it('control: a success writes as before', () => {
@@ -67,14 +68,14 @@ describe('all or nothing (the default)', () => {
     const result: any = mocksEngine.modifyTournamentRecord({ tournamentRecord, drawProfiles: [{ drawSize: 4 }] });
     expect(result.success).toEqual(true);
     expect(result.drawIds.length).toEqual(1);
-    expect(tournamentRecord.events.length).toEqual(2);
+    expect(defined(tournamentRecord.events, 'events').length).toEqual(2);
   });
 });
 
 describe('keepPartial', () => {
   it('keeps what was written before the refusal and reports it as retained', () => {
     const tournamentRecord = baseRecord();
-    const participantsBefore = tournamentRecord.participants.length;
+    const participantsBefore = defined(tournamentRecord.participants, 'participants').length;
 
     const result: any = mocksEngine.modifyTournamentRecord({
       drawProfiles: VALID_THEN_REFUSED,
@@ -83,7 +84,7 @@ describe('keepPartial', () => {
     });
     expect(result.error).toEqual(UNRECOGNIZED_DRAW_TYPE);
 
-    const addedParticipants = tournamentRecord.participants.length - participantsBefore;
+    const addedParticipants = defined(tournamentRecord.participants, 'participants').length - participantsBefore;
     expect(addedParticipants).toBeGreaterThan(0);
     expect(result.retained.participantIds.length).toEqual(addedParticipants);
     // in a client's order the refused profile's event is added before its draw is refused, so it was written and is
@@ -91,6 +92,8 @@ describe('keepPartial', () => {
     expect(result.retained.eventIds.length).toEqual(2);
     expect(result.retained.drawIds.length).toEqual(1);
     expect(result.retained.venueIds).toEqual([]);
-    expect(tournamentRecord.events.map(({ eventId }: any) => eventId)).toContain(result.retained.eventIds[0]);
+    expect(defined(tournamentRecord.events, 'events').map(({ eventId }: any) => eventId)).toContain(
+      result.retained.eventIds[0],
+    );
   });
 });

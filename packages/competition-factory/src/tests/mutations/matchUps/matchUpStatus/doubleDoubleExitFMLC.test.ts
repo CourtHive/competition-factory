@@ -10,7 +10,7 @@ const scenarios = [{ removals: ['FMLC-1-2', 'FMLC-1-1'] }, { removals: ['FMLC-1-
 
 test.each(scenarios)('removing one of two adjacent double exits will preserve propagated BYE', (scenario) => {
   const drawId = 'did';
-  let result = mocksEngine.generateTournamentRecord({
+  let result: any = mocksEngine.generateTournamentRecord({
     drawProfiles: [
       {
         drawType: FIRST_MATCH_LOSER_CONSOLATION,

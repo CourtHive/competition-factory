@@ -1,4 +1,5 @@
 import { processAccessors } from '@Query/drawDefinition/processAccessors';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -46,7 +47,7 @@ it('truncates a numeric value to its significant characters instead of throwing'
   } = mocksEngine.generateTournamentRecord({
     eventProfiles: [{ participantsProfile: { participantsCount: 16 } }],
   });
-  tournamentRecord.participants.forEach((participant, index) => {
+  defined(tournamentRecord.participants, 'participants').forEach((participant, index) => {
     if (participant.person) participant.person.addresses = [{ postalCode: 10000 + (index % 4) * 1000 + index } as any];
   });
   tournamentEngine.setState(tournamentRecord);

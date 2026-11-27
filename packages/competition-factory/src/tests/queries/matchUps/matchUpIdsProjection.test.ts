@@ -1,4 +1,5 @@
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { defined } from '@Tests/helpers/defined';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test, vi } from 'vitest';
@@ -81,13 +82,15 @@ test('only the named matchUps are hydrated, and a named line hydrates its dual',
 
 test('roundMatchUps follows the filtered matchUps, as before', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 16 }] });
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  const structure = drawDefinition.structures[0];
-  const roundTwo = structure.matchUps.filter(({ roundNumber }) => roundNumber === 2).map(({ matchUpId }) => matchUpId);
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const structure = defined(drawDefinition.structures, 'structures')[0];
+  const roundTwo = defined(structure.matchUps, 'matchUps')
+    .filter(({ roundNumber }) => roundNumber === 2)
+    .map(({ matchUpId }) => matchUpId);
 
   const result: any = getAllStructureMatchUps({
     matchUpFilters: { matchUpIds: roundTwo },
-    event: tournamentRecord.events[0],
+    event: defined(tournamentRecord.events, 'events')[0],
     tournamentRecord,
     inContext: true,
     drawDefinition,

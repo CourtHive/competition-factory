@@ -1,4 +1,5 @@
 import { SCHEDULING_REPORT_PROPERTIES } from '../scheduling/schedulingReportProperties';
+import { defined } from '@Tests/helpers/defined';
 import { cellId, largeScaleCells, pinnedScaleCells, pinnedScaleScenario, scaleScenario } from './schedulingScale';
 import { CorpusWriteError, writeScenario, type Directive } from './writeScenario';
 import { SCHEDULING_STEP_PROPERTIES } from '../scheduling/schedulingProperties';
@@ -64,9 +65,13 @@ function generate({ drawProfile, policyDefinitions, courtsCount = 8 }: any) {
   tournamentEngine.setState(tournamentRecord);
 
   const { tournamentId } = tournamentRecord;
-  const { eventId, drawDefinitions } = tournamentRecord.events[0];
-  const { drawId, structures } = drawDefinitions[0];
-  const structureId = (stage: string) => structures.find((structure: any) => structure.stage === stage).structureId;
+  const { eventId, drawDefinitions } = defined(tournamentRecord.events, 'events')[0];
+  const { drawId, structures } = defined(drawDefinitions, 'drawDefinitions')[0];
+  const structureId = (stage: string) =>
+    defined(
+      defined(structures, 'structures').find((structure: any) => structure.stage === stage),
+      'value',
+    ).structureId;
   const round = (scheduleDate: string, stage: string, roundNumber: number): Directive => ({
     method: 'addSchedulingProfileRound',
     params: {
@@ -375,11 +380,13 @@ export function schedulingScenarios(): Authored[] {
     // strip every format a matchUp could inherit: tournament, event, draw, structures, matchUps
     const strip = (item: any) => delete item.matchUpFormat;
     strip(tournamentRecord);
-    for (const event of tournamentRecord.events) {
+    for (const event of defined(tournamentRecord.events, 'events')) {
       strip(event);
-      for (const drawDefinition of event.drawDefinitions) {
+      for (const drawDefinition of defined(event.drawDefinitions, 'drawDefinitions')) {
         strip(drawDefinition);
-        for (const structure of drawDefinition.structures) {
+        // the stored structures are stripped as plain objects, whatever their structureType
+        const structures: any[] = defined(drawDefinition.structures, 'structures');
+        for (const structure of structures) {
           strip(structure);
           structure.matchUps?.forEach(strip);
         }
@@ -408,7 +415,7 @@ export function schedulingScenarios(): Authored[] {
   // the first round of an 8 draw on one court's rows, in reverse of the order the scheduler takes them
   for (const via of ['direct', 'profile'] as const) {
     const { tournamentRecord, round, matchUpsOf, drawId } = generate({ drawProfile: { drawSize: 8 }, courtsCount: 2 });
-    const courtId = tournamentRecord.venues[0].courts[0].courtId;
+    const courtId = defined(defined(tournamentRecord.venues, 'venues')[0].courts, 'courts')[0].courtId;
     const firstRound = matchUpsOf(MAIN, 1).toSorted((a: any, b: any) => a.roundPosition - b.roundPosition);
     const matchUpIds = firstRound.map((m: any) => m.matchUpId);
     const onTheGrid: Directive[] = matchUpIds.map((matchUpId: string, index: number) => ({
@@ -499,7 +506,9 @@ export function schedulingScenarios(): Authored[] {
       drawProfile: { drawSize: 16 },
       courtsCount: 4,
     });
-    const [first, second] = tournamentRecord.venues[0].courts.map(({ courtId }: any) => courtId);
+    const [first, second] = defined(defined(tournamentRecord.venues, 'venues')[0].courts, 'courts').map(
+      ({ courtId }: any) => courtId,
+    );
     const booking = (startTime: string, endTime: string) => ({ startTime, endTime, bookingType: 'MAINTENANCE' });
     setClock(RECORD_CLOCK);
     tournamentEngine.modifyVenue({

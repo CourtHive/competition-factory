@@ -1,4 +1,5 @@
 import { generateFMLC } from '@Tests/mutations/drawDefinitions/primitives/firstMatchLoserConsolation';
+import { defined } from '@Tests/helpers/defined';
 import { verifyStructure } from '@Tests/mutations/drawDefinitions/primitives/verifyStructure';
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { assignDrawPosition } from '@Mutate/matchUps/drawPositions/positionAssignment';
@@ -49,7 +50,7 @@ it('advances paired drawPositions when BYE is assigned first', () => {
 
   const entryStatuses: EntryStatusUnion[] = [DIRECT_ACCEPTANCE, WILDCARD];
   const mainDrawEntries = getStageEntries({
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
     entryStatuses,
     stage,
   });
@@ -63,7 +64,7 @@ it('advances paired drawPositions when BYE is assigned first', () => {
 
   result = assignDrawPositionBye({
     drawPosition: unassignedPositions?.[1].drawPosition,
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
     structureId,
   });
   expect(result.success).toEqual(true);
@@ -78,7 +79,7 @@ it('advances paired drawPositions when BYE is assigned first', () => {
   assignDrawPosition({
     drawPosition: unassignedPositions?.[0].drawPosition,
     participantId: participantIds[0],
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
     structureId,
   });
   ({ matchUp } = findMatchUpByRoundNumberAndPosition({
@@ -106,7 +107,7 @@ it('advances paired drawPositions when BYE is assigned first', () => {
 
   assignDrawPositionBye({
     drawPosition: unassignedPositions?.[6].drawPosition,
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
     structureId,
   });
   ({ matchUp } = findMatchUpByRoundNumberAndPosition({
@@ -119,7 +120,7 @@ it('advances paired drawPositions when BYE is assigned first', () => {
   assignDrawPosition({
     drawPosition: unassignedPositions?.[7].drawPosition,
     participantId: participantIds[1],
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
     structureId,
   });
   ({ matchUp } = findMatchUpByRoundNumberAndPosition({
@@ -139,7 +140,7 @@ it('advances paired drawPositions when BYE is assigned first', () => {
   let { matchUpId } = matchUp;
   let { error } = setMatchUpState({
     matchUpStatus: RETIRED,
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
     matchUpId,
   });
   expect(error).not.toBeUndefined();
@@ -156,7 +157,7 @@ it('advances paired drawPositions when BYE is assigned first', () => {
   ({ error } = setMatchUpState({
     // @ts-expect-error invalid matchUpStatus
     matchUpStatus: 'BOGUS',
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
     matchUpId,
   }));
   expect(error).not.toBeUndefined();
@@ -170,7 +171,7 @@ it('advances paired drawPositions when BYE is assigned first', () => {
   ({ matchUpId } = matchUp);
   ({ error } = setMatchUpState({
     matchUpStatus: BYE,
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
     matchUpId,
   }));
   expect(error).not.toBeUndefined();
@@ -178,25 +179,25 @@ it('advances paired drawPositions when BYE is assigned first', () => {
   assignDrawPosition({
     drawPosition: unassignedPositions?.[2].drawPosition,
     participantId: participantIds[2],
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
     structureId,
   });
   assignDrawPosition({
     drawPosition: unassignedPositions?.[3].drawPosition,
     participantId: participantIds[3],
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
     structureId,
   });
   assignDrawPosition({
     drawPosition: unassignedPositions?.[4].drawPosition,
     participantId: participantIds[4],
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
     structureId,
   });
   assignDrawPosition({
     drawPosition: unassignedPositions?.[5].drawPosition,
     participantId: participantIds[5],
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
     structureId,
   });
 
@@ -234,7 +235,7 @@ it('advances paired drawPositions when BYE is assigned first', () => {
 
   setMatchUpState({
     matchUpStatus: RETIRED,
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
     matchUpId,
   });
   ({ matchUp } = findMatchUpByRoundNumberAndPosition({
@@ -251,7 +252,7 @@ it('advances paired drawPositions when BYE is assigned first', () => {
   result = setMatchUpState({
     matchUpStatus: DEFAULTED,
     winningSide: 2,
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
     matchUpId,
   });
   expect(result.success).toEqual(true);
@@ -268,7 +269,7 @@ it('advances paired drawPositions when BYE is assigned first', () => {
 
   result = setMatchUpState({
     matchUpStatus: TO_BE_PLAYED,
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
     matchUpId,
   });
   expect(result).toMatchObject(SUCCESS);
@@ -302,7 +303,7 @@ it('advances paired drawPosition if BYE is assigned second', () => {
 
   const entryStatuses: EntryStatusUnion[] = [DIRECT_ACCEPTANCE, WILDCARD];
   const mainDrawEntries = getStageEntries({
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
     entryStatuses,
     stage,
   });
@@ -318,7 +319,7 @@ it('advances paired drawPosition if BYE is assigned second', () => {
   assignDrawPosition({
     drawPosition: unassignedPositions?.[0].drawPosition,
     participantId: participantId1,
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
     structureId,
   });
   let { matchUp } = findMatchUpByRoundNumberAndPosition({
@@ -330,7 +331,7 @@ it('advances paired drawPosition if BYE is assigned second', () => {
   expect(matchUp.drawPositions?.filter(Boolean)).toMatchObject([]);
   assignDrawPositionBye({
     drawPosition: unassignedPositions?.[1].drawPosition,
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
     structureId,
   });
   ({ matchUp } = findMatchUpByRoundNumberAndPosition({
@@ -359,7 +360,7 @@ it('advances paired drawPosition if BYE is assigned second', () => {
   assignDrawPosition({
     drawPosition: unassignedPositions?.[7].drawPosition,
     participantId: participantId2,
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
     structureId,
   });
   ({ matchUp } = findMatchUpByRoundNumberAndPosition({
@@ -372,7 +373,7 @@ it('advances paired drawPosition if BYE is assigned second', () => {
 
   assignDrawPositionBye({
     drawPosition: unassignedPositions?.[6].drawPosition,
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
     structureId,
   });
   ({ matchUp } = findMatchUpByRoundNumberAndPosition({

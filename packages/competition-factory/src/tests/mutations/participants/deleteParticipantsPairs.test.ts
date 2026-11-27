@@ -1,4 +1,5 @@
 import { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
+import { defined } from '@Tests/helpers/defined';
 import { deleteParticipants } from '@Mutate/participants/deleteParticipants';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -46,7 +47,8 @@ it('refuses to delete an individual whose PAIR is positioned in a DOUBLES draw, 
     drawProfiles: [{ drawSize: 4, eventType: DOUBLES }],
   });
   const drawDefinition = tournamentRecord.events?.[0].drawDefinitions?.[0];
-  const positionedPairId = getAssignedParticipantIds({ drawDefinition }).assignedParticipantIds?.[0] as string;
+  const positionedPairId = getAssignedParticipantIds({ drawDefinition: defined(drawDefinition, 'drawDefinition') })
+    .assignedParticipantIds?.[0] as string;
   const pair = (tournamentRecord.participants ?? []).find(({ participantId }) => participantId === positionedPairId);
   const individualParticipantId = pair?.individualParticipantIds?.[0] as string;
   expect(pair?.participantType).toEqual(PAIR);

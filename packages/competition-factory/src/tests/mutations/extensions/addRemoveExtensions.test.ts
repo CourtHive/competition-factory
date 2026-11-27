@@ -1,4 +1,5 @@
 import { generateTournamentRecord } from '@Assemblies/generators/mocks/generateTournamentRecord';
+import { defined } from '@Tests/helpers/defined';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { removeExtension } from '@Mutate/extensions/removeExtension';
 import { addNotes, removeNotes } from '@Mutate/base/addRemoveNotes';
@@ -239,7 +240,7 @@ test('add and remove primitives throw appropriate errors', () => {
 
   // Test success path: add extension to a real participant
   const { tournamentRecord: trForParticipant } = generateTournamentRecord({ drawProfiles: [{ drawSize: 4 }] });
-  const participant = trForParticipant.participants[0];
+  const participant = defined(trForParticipant.participants, 'participants')[0];
   result = addParticipantExtension({
     tournamentRecord: trForParticipant,
     participantId: participant.participantId,

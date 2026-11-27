@@ -1,4 +1,5 @@
 import { getMatchUpIds } from '@Functions/global/extractors';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
@@ -21,8 +22,8 @@ function generateAndSetMultipleTournaments() {
   const tr1 = t1.tournamentRecord;
   const tr2 = t2.tournamentRecord;
 
-  const eventId1 = tr1.events[0].eventId;
-  const eventId2 = tr2.events[0].eventId;
+  const eventId1 = defined(tr1.events, 'events')[0].eventId;
+  const eventId2 = defined(tr2.events, 'events')[0].eventId;
   const drawId1 = t1.drawIds[0];
   const drawId2 = t2.drawIds[0];
   const tournamentId1 = tr1.tournamentId;

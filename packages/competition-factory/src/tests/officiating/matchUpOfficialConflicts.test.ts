@@ -1,4 +1,5 @@
 import { POLICY_OFFICIATING_CONFLICT_OF_INTEREST } from '@Fixtures/policies/POLICY_OFFICIATING_CONFLICT_OF_INTEREST';
+import { defined } from '@Tests/helpers/defined';
 import { getMatchUpOfficialConflicts } from '@Query/officiating/getMatchUpOfficialConflicts';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -87,7 +88,10 @@ describe('getMatchUpOfficialConflicts — side expansion', () => {
       setState: true,
       nonRandom: 1,
     });
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions.find((d: any) => d.drawId === drawId);
+    const drawDefinition = defined(
+      defined(tournamentRecord.events, 'events')[0].drawDefinitions,
+      'drawDefinitions',
+    ).find((d: any) => d.drawId === drawId);
 
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
     const matchUp = matchUps.find((m: any) => m.sides?.every((side: any) => side?.participantId));
@@ -97,7 +101,7 @@ describe('getMatchUpOfficialConflicts — side expansion', () => {
       officialRecord: makeOfficialRecord(),
       matchUpId: matchUp.matchUpId,
       tournamentRecord,
-      drawDefinition,
+      drawDefinition: defined(drawDefinition, 'drawDefinition'),
     });
     expect(result.success).toBe(true);
 
@@ -115,12 +119,20 @@ describe('getMatchUpOfficialConflicts — side expansion', () => {
       setState: true,
       nonRandom: 1,
     });
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions.find((d: any) => d.drawId === drawId);
+    const drawDefinition = defined(
+      defined(tournamentRecord.events, 'events')[0].drawDefinitions,
+      'drawDefinitions',
+    ).find((d: any) => d.drawId === drawId);
 
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
     const matchUp = matchUps.find((m: any) => m.sides?.every((side: any) => side?.participantId));
-    const pair = tournamentRecord.participants.find((p: any) => p.participantId === matchUp.sides[0].participantId);
-    const individualParticipantId = pair.individualParticipantIds[0];
+    const pair = defined(tournamentRecord.participants, 'participants').find(
+      (p: any) => p.participantId === matchUp.sides[0].participantId,
+    );
+    const individualParticipantId = defined(
+      defined(pair, 'pair').individualParticipantIds,
+      'individualParticipantIds',
+    )[0];
 
     const result: any = getMatchUpOfficialConflicts({
       policyDefinitions: POLICY_OFFICIATING_CONFLICT_OF_INTEREST,
@@ -129,7 +141,7 @@ describe('getMatchUpOfficialConflicts — side expansion', () => {
       }),
       matchUpId: matchUp.matchUpId,
       tournamentRecord,
-      drawDefinition,
+      drawDefinition: defined(drawDefinition, 'drawDefinition'),
     });
     expect(result.conflicts).toHaveLength(1);
     expect(result.conflicts[0].participantId).toEqual(individualParticipantId);
@@ -138,14 +150,17 @@ describe('getMatchUpOfficialConflicts — side expansion', () => {
 
   it('returns the findDrawMatchUp error when the matchUp is not in the draw', () => {
     const { tournamentRecord, drawId } = setup();
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions.find((d: any) => d.drawId === drawId);
+    const drawDefinition = defined(
+      defined(tournamentRecord.events, 'events')[0].drawDefinitions,
+      'drawDefinitions',
+    ).find((d: any) => d.drawId === drawId);
 
     const result: any = getMatchUpOfficialConflicts({
       policyDefinitions: POLICY_OFFICIATING_CONFLICT_OF_INTEREST,
       officialRecord: makeOfficialRecord(),
       matchUpId: 'no-such-matchUpId',
       tournamentRecord,
-      drawDefinition,
+      drawDefinition: defined(drawDefinition, 'drawDefinition'),
     });
     expect(result.error).toEqual(MATCHUP_NOT_FOUND);
     expect(result.conflicts).toBeUndefined();
@@ -182,12 +197,15 @@ describe('getMatchUpOfficialConflicts', () => {
 
   it('is inert with no conflict policy and does not resolve participants', () => {
     const { tournamentRecord, drawId, matchUpId } = setup();
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions.find((d: any) => d.drawId === drawId);
+    const drawDefinition = defined(
+      defined(tournamentRecord.events, 'events')[0].drawDefinitions,
+      'drawDefinitions',
+    ).find((d: any) => d.drawId === drawId);
 
     const result: any = getMatchUpOfficialConflicts({
       officialRecord: makeOfficialRecord(),
       tournamentRecord,
-      drawDefinition,
+      drawDefinition: defined(drawDefinition, 'drawDefinition'),
       matchUpId,
     });
     expect(result.success).toBe(true);
@@ -197,13 +215,16 @@ describe('getMatchUpOfficialConflicts', () => {
 
   it('checks ONLY the sides of the given matchUp, not the whole field', () => {
     const { tournamentRecord, drawId, matchUpId, sides } = setup();
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions.find((d: any) => d.drawId === drawId);
+    const drawDefinition = defined(
+      defined(tournamentRecord.events, 'events')[0].drawDefinitions,
+      'drawDefinitions',
+    ).find((d: any) => d.drawId === drawId);
 
     const result: any = getMatchUpOfficialConflicts({
       officialRecord: makeOfficialRecord(),
       policyDefinitions: POLICY_OFFICIATING_CONFLICT_OF_INTEREST,
       tournamentRecord,
-      drawDefinition,
+      drawDefinition: defined(drawDefinition, 'drawDefinition'),
       matchUpId,
     });
     expect(result.success).toBe(true);
@@ -216,7 +237,10 @@ describe('getMatchUpOfficialConflicts', () => {
 
   it('flags a declared relationship with a competitor in THIS matchUp', () => {
     const { tournamentRecord, drawId, matchUpId, sides } = setup();
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions.find((d: any) => d.drawId === drawId);
+    const drawDefinition = defined(
+      defined(tournamentRecord.events, 'events')[0].drawDefinitions,
+      'drawDefinitions',
+    ).find((d: any) => d.drawId === drawId);
 
     const officialRecord = makeOfficialRecord({
       conflictDeclarations: [{ declarationId: 'dec-1', participantId: sides[0].participantId, relationship: COACH }],
@@ -225,7 +249,7 @@ describe('getMatchUpOfficialConflicts', () => {
     const result: any = getMatchUpOfficialConflicts({
       policyDefinitions: POLICY_OFFICIATING_CONFLICT_OF_INTEREST,
       tournamentRecord,
-      drawDefinition,
+      drawDefinition: defined(drawDefinition, 'drawDefinition'),
       officialRecord,
       matchUpId,
     });
@@ -238,7 +262,10 @@ describe('getMatchUpOfficialConflicts', () => {
     // This is the whole point of the per-matchUp scope: the same declaration that
     // blocks one assignment must not block an unrelated one.
     const { tournamentRecord, drawId, matchUpId, sides } = setup();
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions.find((d: any) => d.drawId === drawId);
+    const drawDefinition = defined(
+      defined(tournamentRecord.events, 'events')[0].drawDefinitions,
+      'drawDefinitions',
+    ).find((d: any) => d.drawId === drawId);
 
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
     const otherMatchUp = matchUps.find(
@@ -256,7 +283,7 @@ describe('getMatchUpOfficialConflicts', () => {
       policyDefinitions: POLICY_OFFICIATING_CONFLICT_OF_INTEREST,
       matchUpId: otherMatchUp.matchUpId,
       tournamentRecord,
-      drawDefinition,
+      drawDefinition: defined(drawDefinition, 'drawDefinition'),
       officialRecord,
     });
     expect(result.conflicts).toEqual([]);
@@ -277,7 +304,7 @@ describe('SHARED_GROUPING — tournament-scoped relationships, no registry recor
       competitorFrom === 'matchUp'
         ? sides[0].participantId
         : // someone NOT in this matchUp
-          tournamentRecord.participants.find(
+          defined(tournamentRecord.participants, 'participants').find(
             (p: any) =>
               p.participantType === INDIVIDUAL &&
               p.participantId !== officialParticipantId &&
@@ -417,7 +444,9 @@ describe('addMatchUpOfficial conflict gate', () => {
 
     // Give the official a nationality shared with one competitor, under a policy
     // that treats nationality as WARN rather than BLOCK.
-    const competitor = tournamentRecord.participants.find((p: any) => p.participantId === sides[0].participantId);
+    const competitor = defined(tournamentRecord.participants, 'participants').find(
+      (p: any) => p.participantId === sides[0].participantId,
+    );
     const nationalityCode = competitor?.person?.nationalityCode ?? 'FRA';
     if (competitor?.person) competitor.person.nationalityCode = nationalityCode;
 

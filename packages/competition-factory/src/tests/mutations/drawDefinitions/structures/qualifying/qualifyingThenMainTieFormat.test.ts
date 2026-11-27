@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
@@ -17,8 +18,12 @@ it('can generate qualifying and main structures with different tieFormats', () =
     eventProfiles: [{ eventName: 'test', eventType: TEAM }],
   });
 
-  const individualParticipants = tournamentRecord.participants.filter((p) => p.participantType === INDIVIDUAL);
-  const teamParticipants = tournamentRecord.participants.filter((p) => p.participantType === TEAM);
+  const individualParticipants = defined(tournamentRecord.participants, 'participants').filter(
+    (p) => p.participantType === INDIVIDUAL,
+  );
+  const teamParticipants = defined(tournamentRecord.participants, 'participants').filter(
+    (p) => p.participantType === TEAM,
+  );
 
   expect(individualParticipants.length).toEqual(320);
   expect(teamParticipants.length).toEqual(40);

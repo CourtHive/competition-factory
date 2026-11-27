@@ -1,4 +1,5 @@
 import { mockLeagueTieFormat } from '@Assemblies/generators/mocks/mockLeagueTieFormat';
+import { defined } from '@Tests/helpers/defined';
 import { resolveTieFormat } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
@@ -45,7 +46,7 @@ describe('mockLeagueTieFormat', () => {
       isMock: true,
     } as any);
 
-    const event = tournamentRecord.events.find(({ eventId }) => eventId === 'L1');
-    expect(event.tieFormat).toEqual(mockLeagueTieFormat({ eventId: 'L1', isMock: true }));
+    const event = defined(tournamentRecord.events, 'events').find(({ eventId }) => eventId === 'L1');
+    expect(defined(event, 'event').tieFormat).toEqual(mockLeagueTieFormat({ eventId: 'L1', isMock: true }));
   });
 });

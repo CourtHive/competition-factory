@@ -1,4 +1,5 @@
 import asyncGlobalState from '@Server/providers/factory/engines/asyncGlobalState';
+import { defined } from '@Tests/helpers/defined';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import syncGlobalState from '@Global/state/syncGlobalState';
 import asyncEngine from '@Assemblies/engines/async';
@@ -49,11 +50,11 @@ function databaseRecord() {
     tournamentRecord,
     drawIds: [drawId],
     eventIds: [eventId],
-  } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 4 }] });
+  }: any = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 4 }] });
   // driver values as a populated `.lean()` read leaves them
   tournamentRecord._id = new ObjectId();
   tournamentRecord.parentOrganisation = new ObjectId();
-  for (const participant of tournamentRecord.participants) participant._id = new ObjectId();
+  for (const participant of defined(tournamentRecord.participants, 'participants')) participant._id = new ObjectId();
   return { tournamentRecord, drawId, eventId };
 }
 
@@ -102,7 +103,11 @@ describe('borrowed mode with a per-request provider', () => {
     expect(storedMatchUp(tournamentRecord, matchUpId).winningSide).toEqual(1);
     // driver values are untouched: nothing was copied, so `stringify` never ran on the record
     expect(tournamentRecord._id).toBe(recordId);
-    expect(tournamentRecord.participants.every((participant) => participant._id instanceof ObjectId)).toEqual(true);
+    expect(
+      defined(tournamentRecord.participants, 'participants').every(
+        (participant) => participant._id instanceof ObjectId,
+      ),
+    ).toEqual(true);
     // the subscriber heard about the matchUp it must persist
     expect(modified.map(({ matchUp }) => matchUp.matchUpId)).toContain(matchUpId);
     expect(deepCopyEnabled().enabled).toEqual(false);

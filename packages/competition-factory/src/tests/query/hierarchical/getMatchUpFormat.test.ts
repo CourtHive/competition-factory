@@ -1,4 +1,5 @@
 import { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
@@ -14,13 +15,19 @@ import { SINGLES_MATCHUP, DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 
 describe('getMatchUpFormat', () => {
   it('returns matchUpFormat from matchUp', () => {
-    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 4 }],
     });
 
     tournamentEngine.setState(tournamentRecord);
 
-    const matchUp = tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps[0];
+    const matchUp = defined(
+      defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0].matchUps,
+      'matchUps',
+    )[0];
     const matchUpFormat = { matchUpType: SINGLES_MATCHUP, bestOf: 3 };
     matchUp.matchUpFormat = matchUpFormat;
 
@@ -33,30 +40,33 @@ describe('getMatchUpFormat', () => {
   });
 
   it('returns structureDefaultMatchUpFormat when matchUp has no format', () => {
-    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 4 }],
     });
 
-    const structure = tournamentRecord.events[0].drawDefinitions[0].structures[0];
+    const structure = defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0];
     const matchUpFormat = { matchUpType: SINGLES_MATCHUP, bestOf: 5 };
     structure.matchUpFormat = matchUpFormat;
 
     const result = getMatchUpFormat({
       tournamentRecord,
       structureId: structure.structureId,
-      drawDefinition: tournamentRecord.events[0].drawDefinitions[0],
+      drawDefinition: defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0],
     });
 
     expect(result.structureDefaultMatchUpFormat).toEqual(matchUpFormat);
   });
 
   it('returns drawDefaultMatchUpFormat when structure has no format', () => {
-    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-    const structureId = drawDefinition.structures[0].structureId;
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+    const structureId = defined(drawDefinition.structures, 'structures')[0].structureId;
     const matchUpFormat = { matchUpType: DOUBLES_MATCHUP, bestOf: 3 };
     drawDefinition.matchUpFormat = matchUpFormat;
 
@@ -70,11 +80,11 @@ describe('getMatchUpFormat', () => {
   });
 
   it('returns eventDefaultMatchUpFormat when draw has no format', () => {
-    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 4 }],
     });
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     const matchUpFormat = { matchUpType: SINGLES_MATCHUP, bestOf: 3 };
     event.matchUpFormat = matchUpFormat;
 
@@ -87,12 +97,15 @@ describe('getMatchUpFormat', () => {
   });
 
   it('prioritizes matchUp format over structure format', () => {
-    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 4 }],
     });
 
-    const structure = tournamentRecord.events[0].drawDefinitions[0].structures[0];
-    const matchUp = structure.matchUps[0];
+    const structure = defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0];
+    const matchUp = defined(structure.matchUps, 'matchUps')[0];
 
     structure.matchUpFormat = { bestOf: 5 };
     matchUp.matchUpFormat = { bestOf: 3 };
@@ -106,12 +119,12 @@ describe('getMatchUpFormat', () => {
   });
 
   it('prioritizes structure format over draw format', () => {
-    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-    const structure = drawDefinition.structures[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+    const structure = defined(drawDefinition.structures, 'structures')[0];
 
     drawDefinition.matchUpFormat = { bestOf: 5 };
     structure.matchUpFormat = { bestOf: 3 };
@@ -126,13 +139,13 @@ describe('getMatchUpFormat', () => {
   });
 
   it('prioritizes draw format over event format', () => {
-    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 4 }],
     });
 
-    const event = tournamentRecord.events[0];
-    const drawDefinition = event.drawDefinitions[0];
-    const structureId = drawDefinition.structures[0].structureId;
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions')[0];
+    const structureId = defined(drawDefinition.structures, 'structures')[0].structureId;
 
     event.matchUpFormat = { bestOf: 5 };
     drawDefinition.matchUpFormat = { bestOf: 3 };
@@ -184,7 +197,10 @@ describe('getMatchUpFormat', () => {
       drawProfiles: [{ drawSize: 4 }],
     });
 
-    const structureId = tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId;
+    const structureId = defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0].structureId;
 
     const result = getMatchUpFormat({
       tournamentRecord,
@@ -199,7 +215,7 @@ describe('getMatchUpFormat', () => {
       drawProfiles: [{ drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
     const result = getMatchUpFormat({
       tournamentRecord,
@@ -217,7 +233,7 @@ describe('getMatchUpFormat', () => {
 
     const result = getMatchUpFormat({
       tournamentRecord,
-      event: tournamentRecord.events[0],
+      event: defined(tournamentRecord.events, 'events')[0],
     });
 
     // Should return undefined matchUpFormat when none are set
@@ -229,7 +245,13 @@ describe('getMatchUpFormat', () => {
       drawProfiles: [{ drawSize: 4 }],
     });
 
-    const matchUp = tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps[0];
+    const matchUp = defined(
+      defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0].matchUps,
+      'matchUps',
+    )[0];
 
     const result = getMatchUpFormat({
       tournamentRecord,
@@ -245,8 +267,8 @@ describe('getMatchUpFormat', () => {
       drawProfiles: [{ drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-    const structureId = drawDefinition.structures[0].structureId;
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+    const structureId = defined(drawDefinition.structures, 'structures')[0].structureId;
 
     const result = getMatchUpFormat({
       tournamentRecord,

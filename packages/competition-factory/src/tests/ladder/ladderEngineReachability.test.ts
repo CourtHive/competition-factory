@@ -1,4 +1,5 @@
 import { expect, test, describe } from 'vitest';
+import { defined } from '@Tests/helpers/defined';
 
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -26,8 +27,10 @@ function ladderWithFourSeated() {
     drawProfiles: [{ drawType: LADDER, drawSize: 4 }],
     setState: true,
   });
-  const { drawId } = tournamentRecord.events[0].drawDefinitions[0];
-  const participantIds = tournamentRecord.participants.slice(0, 4).map((p: any) => p.participantId);
+  const { drawId } = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const participantIds = defined(tournamentRecord.participants, 'participants')
+    .slice(0, 4)
+    .map((p: any) => p.participantId);
 
   // Seating is `addLadderParticipant`'s job, not the generator's: a ladder position is a rank, and
   // the generator has no basis on which to rank an entry list.
@@ -80,10 +83,13 @@ describe('the ladder lifecycle is reachable through the engine', () => {
       drawProfiles: [{ drawType: LADDER, drawSize: 4 }],
       setState: true,
     });
-    const structure = tournamentRecord.events[0].drawDefinitions[0].structures[0];
+    const structure = defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0];
 
     // Every ladder matchUp is created by a challenge; there is nothing to generate up front.
-    expect(structure.matchUps.length).toEqual(0);
+    expect(defined(structure.matchUps, 'matchUps').length).toEqual(0);
 
     // And NO positionAssignments: a ladder drawPosition is a rank. Pre-creating `drawSize` empty
     // ones (as SWISS does) would put phantom ranks above every real member — rank 1 held by nobody.

@@ -1,4 +1,5 @@
 import { participantScaleItem } from '@Query/participant/participantScaleItem';
+import { defined } from '@Tests/helpers/defined';
 import { getParticipantId } from '@Functions/global/extractors';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -36,7 +37,7 @@ it('can automatically assign participants to teams using individualParticipantId
     eventProfiles,
   });
 
-  const individualParticipantIds = tournamentRecord.participants.map(getParticipantId);
+  const individualParticipantIds = defined(tournamentRecord.participants, 'participants').map(getParticipantId);
 
   let result = tournamentEngine.addEventEntries({
     participantIds: individualParticipantIds,
@@ -143,7 +144,7 @@ it('can automatically assign participants to teams using scaledParticipants', ()
   tournamentEngine.setState(tournamentRecord);
 
   const individualParticipants = tournamentRecord.participants;
-  const individualParticipantIds = individualParticipants.map(getParticipantId);
+  const individualParticipantIds = defined(individualParticipants, 'individualParticipants').map(getParticipantId);
 
   let result = tournamentEngine.addEventEntries({
     participantIds: individualParticipantIds,
@@ -172,7 +173,7 @@ it('can automatically assign participants to teams using scaledParticipants', ()
     scaleName: '18U',
   };
 
-  const scaledParticipants = individualParticipants.map((participant) => ({
+  const scaledParticipants = defined(individualParticipants, 'individualParticipants').map((participant) => ({
     scaleValue: participantScaleItem({ participant, scaleAttributes })?.scaleItem?.scaleValue,
     participantId: participant.participantId,
   }));
@@ -234,7 +235,7 @@ it('will cleanup UNGROUPED participant entries if TEAM entry is added AFTER team
   tournamentEngine.setState(tournamentRecord);
 
   const individualParticipants = tournamentRecord.participants;
-  const individualParticipantIds = individualParticipants.map(getParticipantId);
+  const individualParticipantIds = defined(individualParticipants, 'individualParticipants').map(getParticipantId);
 
   let result = tournamentEngine.addEventEntries({
     participantIds: individualParticipantIds,
@@ -263,7 +264,7 @@ it('will cleanup UNGROUPED participant entries if TEAM entry is added AFTER team
     scaleName: '18U',
   };
 
-  const scaledParticipants = individualParticipants.map((participant) => ({
+  const scaledParticipants = defined(individualParticipants, 'individualParticipants').map((participant) => ({
     participantId: participant.participantId,
     scaleValue: participantScaleItem({ participant, scaleAttributes })?.scaleItem?.scaleValue,
   }));
@@ -328,7 +329,7 @@ it('will generate teams for scaledTeamAssignment when given teamsCount', () => {
   tournamentEngine.setState(tournamentRecord);
 
   const individualParticipants = tournamentRecord.participants;
-  const individualParticipantIds = individualParticipants.map(getParticipantId);
+  const individualParticipantIds = defined(individualParticipants, 'individualParticipants').map(getParticipantId);
 
   const result = tournamentEngine.addEventEntries({
     participantIds: individualParticipantIds,
@@ -346,7 +347,7 @@ it('will generate teams for scaledTeamAssignment when given teamsCount', () => {
     scaleName: '18U',
   };
 
-  const scaledParticipants = individualParticipants.map((participant) => ({
+  const scaledParticipants = defined(individualParticipants, 'individualParticipants').map((participant) => ({
     participantId: participant.participantId,
     scaleValue: participantScaleItem({ participant, scaleAttributes })?.scaleItem?.scaleValue,
   }));
@@ -397,7 +398,7 @@ it('can determine teams from DIRECT_ACCEPTANCE entries of a TEAM event', () => {
 
   tournamentEngine.setState(tournamentRecord);
 
-  const individualParticipantIds = tournamentRecord.participants.map(getParticipantId);
+  const individualParticipantIds = defined(tournamentRecord.participants, 'participants').map(getParticipantId);
 
   let result = tournamentEngine.addEventEntries({
     participantIds: individualParticipantIds,

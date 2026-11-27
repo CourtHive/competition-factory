@@ -1,4 +1,5 @@
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { defined } from '@Tests/helpers/defined';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { getDrawData } from '@Query/drawDefinition/getDrawData';
@@ -17,8 +18,8 @@ function sidesOf(matchUps: any[] = []) {
 
 function getRecord() {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8 }] });
-  const event = tournamentRecord.events[0];
-  const drawDefinition = event.drawDefinitions[0];
+  const event = defined(tournamentRecord.events, 'events')[0];
+  const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions')[0];
   return { tournamentRecord, event, drawDefinition };
 }
 
@@ -73,8 +74,8 @@ test('TEAM lines honour hydrateParticipants: false as their duals do', () => {
     drawProfiles: [{ drawSize: 4, eventType: TEAM }],
     completeAllMatchUps: true,
   });
-  const event = tournamentRecord.events[0];
-  const drawDefinition = event.drawDefinitions[0];
+  const event = defined(tournamentRecord.events, 'events')[0];
+  const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions')[0];
   const linesOf = (matchUps: any[] = []) => matchUps.filter((matchUp) => matchUp.matchUpTieId);
   const nestedLinesOf = (matchUps: any[] = []) => matchUps.flatMap((matchUp) => matchUp.tieMatchUps ?? []);
   const drawMatchUps = (params) =>

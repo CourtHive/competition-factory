@@ -1,4 +1,5 @@
 import { FEED_IN_CHAMPIONSHIP, ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { defined } from '@Tests/helpers/defined';
 import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONING_GENERIC';
 import { TEMPLATE_ROUND_ROBIN_TALLY_FIBA } from '@courthive/competition-catalogue';
 import { calculateMatchStatistics } from '@Scoring/statistics/standalone';
@@ -87,7 +88,7 @@ describe('a "__proto__" id, key or path segment cannot write onto a prototype', 
 
   it('#241 #242 #244 a round robin tally with result points treats "__proto__" as an ordinary participant', () => {
     const record = roundRobin();
-    tournamentEngine.setState(withProtoId(record, record.participants[0].participantId));
+    tournamentEngine.setState(withProtoId(record, defined(record.participants, 'participants')[0].participantId));
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
     const result: any = tournamentEngine.tallyParticipantResults({
       matchUps,
@@ -103,7 +104,7 @@ describe('a "__proto__" id, key or path segment cannot write onto a prototype', 
 
   it('#211 participant entries with an event id of "__proto__"', () => {
     const record = roundRobin({ seedsCount: 2 });
-    tournamentEngine.setState(withProtoId(record, record.events[0].eventId));
+    tournamentEngine.setState(withProtoId(record, defined(record.events, 'events')[0].eventId));
     const result: any = tournamentEngine.getParticipants({ withSeeding: true, withEvents: true, withDraws: true });
     expect(pollution()).toEqual([]);
     expect(result.participants.length).toBeGreaterThan(0);
@@ -113,7 +114,7 @@ describe('a "__proto__" id, key or path segment cannot write onto a prototype', 
 
   it('#249 #251 dynamic ratings for a participant id of "__proto__"', () => {
     const record = roundRobin();
-    tournamentEngine.setState(withProtoId(record, record.participants[0].participantId));
+    tournamentEngine.setState(withProtoId(record, defined(record.participants, 'participants')[0].participantId));
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
     const target = matchUps.find((m: any) => m.sides?.some((s: any) => s.participantId === '__proto__'));
     const result: any = scaleEngine.generateDynamicRatings({ matchUpIds: [target.matchUpId] });
@@ -154,7 +155,10 @@ describe('a "__proto__" id, key or path segment cannot write onto a prototype', 
       drawProfiles: [{ drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP }],
       setState: false,
     } as any);
-    tournamentRecord.events[0].drawDefinitions[0].links.forEach((link: any) => (link.target.roundNumber = '__proto__'));
+    defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].links,
+      'links',
+    ).forEach((link: any) => (link.target.roundNumber = '__proto__'));
     tournamentEngine.setState(tournamentRecord);
     const result: any = tournamentEngine.allTournamentMatchUps({ inContext: true });
     expect(pollution()).toEqual([]);

@@ -1,4 +1,5 @@
 import { getCompetitionFormat } from '@Query/hierarchical/getCompetitionFormat';
+import { defined } from '@Tests/helpers/defined';
 import { competitionFormats } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -24,7 +25,7 @@ describe('getCompetitionFormat', () => {
       drawProfiles: [{ drawSize: 4 }],
     });
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     event.competitionFormat = INTENNSE_STANDARD as competitionFormat;
 
     const result = getCompetitionFormat({
@@ -43,7 +44,7 @@ describe('getCompetitionFormat', () => {
       drawProfiles: [{ drawSize: 4 }],
     });
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     const drawDefinition = event.drawDefinitions![0];
     drawDefinition.competitionFormat = INTENNSE_STANDARD as competitionFormat;
 
@@ -65,7 +66,7 @@ describe('getCompetitionFormat', () => {
       drawProfiles: [{ drawSize: 4 }],
     });
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     const drawDefinition = event.drawDefinitions![0];
     const structureId = drawDefinition.structures![0].structureId;
 
@@ -90,7 +91,7 @@ describe('getCompetitionFormat', () => {
       drawProfiles: [{ drawSize: 4 }],
     });
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     const drawDefinition = event.drawDefinitions![0];
     const structure = drawDefinition.structures![0];
 
@@ -119,7 +120,7 @@ describe('getCompetitionFormat', () => {
       drawProfiles: [{ drawSize: 4 }],
     });
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     event.competitionFormat = INTENNSE_STANDARD as competitionFormat;
 
     tournamentEngine.setState(tournamentRecord);
@@ -137,7 +138,7 @@ describe('getCompetitionFormat', () => {
       drawProfiles: [{ drawSize: 4 }],
     });
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     const drawDefinition = event.drawDefinitions![0];
     drawDefinition.competitionFormat = INTENNSE_STANDARD as competitionFormat;
 
@@ -174,7 +175,7 @@ describe('getCompetitionFormat', () => {
       drawProfiles: [{ drawSize: 4 }],
     });
 
-    const structureId = tournamentRecord.events[0].drawDefinitions![0].structures![0].structureId;
+    const structureId = defined(tournamentRecord.events, 'events')[0].drawDefinitions![0].structures![0].structureId;
 
     const result = getCompetitionFormat({
       tournamentRecord,
@@ -206,7 +207,7 @@ describe('getCompetitionFormat', () => {
 
     const result = getCompetitionFormat({
       tournamentRecord,
-      event: tournamentRecord.events[0],
+      event: defined(tournamentRecord.events, 'events')[0],
     });
 
     expect(result.success).toBe(true);
@@ -218,7 +219,7 @@ describe('getCompetitionFormat', () => {
       drawProfiles: [{ drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions![0];
+    const drawDefinition = defined(tournamentRecord.events, 'events')[0].drawDefinitions![0];
     drawDefinition.competitionFormat = INTENNSE_STANDARD as competitionFormat;
 
     const matchUpId = drawDefinition.structures![0].matchUps![0].matchUpId;
@@ -238,7 +239,7 @@ describe('getCompetitionFormat', () => {
       drawProfiles: [{ drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions![0];
+    const drawDefinition = defined(tournamentRecord.events, 'events')[0].drawDefinitions![0];
 
     const result = getCompetitionFormat({
       tournamentRecord,

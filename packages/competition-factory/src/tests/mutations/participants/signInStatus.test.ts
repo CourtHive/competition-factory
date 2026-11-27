@@ -1,4 +1,5 @@
 import { modifyParticipantsSignInStatus } from '@Mutate/participants/modifyParticipantsSignInStatus';
+import { defined } from '@Tests/helpers/defined';
 import { legacyMode } from '@Tests/testHarness/legacyMode';
 
 import mocksEngine from '@Assemblies/engines/mock';
@@ -103,7 +104,7 @@ legacyMode('sign-in status storage shape', () => {
       participantsProfile: { participantsCount: 4 },
     });
     tournamentEngine.setState(tournamentRecord);
-    const participantId = tournamentRecord.participants[0].participantId;
+    const participantId = defined(tournamentRecord.participants, 'participants')[0].participantId;
 
     tournamentEngine.modifyParticipantsSignInStatus({ participantIds: [participantId], signInState: SIGNED_IN });
 

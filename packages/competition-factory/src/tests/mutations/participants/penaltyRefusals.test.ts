@@ -1,4 +1,5 @@
 import competitionEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
@@ -17,7 +18,7 @@ describe('addPenalty refusals', () => {
       participantsProfile: { participantsCount: 4 },
       setState: true,
     });
-    const { participantId } = tournamentRecord.participants[0];
+    const { participantId } = defined(tournamentRecord.participants, 'participants')[0];
 
     const result: any = competitionEngine.addPenalty({ participantIds: [participantId], penaltyCode: 'X' } as any);
     expect(result.error).toEqual(MISSING_PENALTY_TYPE);
@@ -40,7 +41,7 @@ describe('addPenalty refusals', () => {
       setState: true,
     });
     const result: any = competitionEngine.addPenalty({
-      participantIds: [tournamentRecord.participants[0].participantId],
+      participantIds: [defined(tournamentRecord.participants, 'participants')[0].participantId],
       penaltyType: penaltyConstants.BALL_ABUSE,
       penaltyCode: 'X',
     });

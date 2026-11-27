@@ -1,4 +1,5 @@
 import { setSubscriptions } from '@Global/state/globalState';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -151,21 +152,24 @@ it('a LEADING hole keeps its index through hydration — it is what holds the su
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 8, participantsCount: 6, drawType: SINGLE_ELIMINATION, drawId }],
   });
-  const structure = tournamentRecord.events[0].drawDefinitions[0].structures[0];
-  const target = structure.matchUps.find(
+  const structure = defined(
+    defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+    'structures',
+  )[0];
+  const target: any = defined(structure.matchUps, 'matchUps').find(
     (matchUp: any) =>
       matchUp.roundNumber === 2 && matchUp.roundPosition === 2 && matchUp.drawPositions?.filter(Boolean).length === 1,
   );
   // CONTROL: a BYE advanced a lone survivor into round 2 from the lower half of its pair, so side 2
   expect(target).toBeDefined();
-  const [survivor] = target.drawPositions.filter(Boolean);
+  const [survivor] = defined(defined(target, 'target').drawPositions, 'drawPositions').filter(Boolean);
   // the spelling the removal and substitution writers produce when the survivor is on side 2
-  target.drawPositions = [undefined, survivor];
+  defined(target, 'target').drawPositions = [undefined, survivor];
   tournamentEngine.setState(tournamentRecord);
 
   const hydrated: any = tournamentEngine
     .allDrawMatchUps({ inContext: true, drawId })
-    ?.matchUps?.find((matchUp: any) => matchUp.matchUpId === target.matchUpId);
+    ?.matchUps?.find((matchUp: any) => matchUp.matchUpId === defined(target, 'target').matchUpId);
   expect(hydrated.drawPositions).toEqual([undefined, survivor]);
   expect(hydrated.sides.find((side: any) => side.sideNumber === 2)?.drawPosition).toEqual(survivor);
 });

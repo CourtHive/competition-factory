@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
@@ -46,5 +47,13 @@ it('can generate AD_HOC with only 2 participants', () => {
     ],
     setState: true,
   });
-  expect(result.tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps.length).toBe(1);
+  expect(
+    defined(
+      defined(
+        defined(defined(result.tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0].matchUps,
+      'matchUps',
+    ).length,
+  ).toBe(1);
 });

@@ -16,7 +16,7 @@ import { writePlan } from './write';
 // constants and types
 import { ARRAY, OF_TYPE, SCHEDULE_DATES, TOURNAMENT_RECORDS, VALIDATE } from '@Constants/attributeConstants';
 import { EVENT_DATE_INACTIVE } from '@Constants/errorConditionConstants';
-import { TournamentRecords } from '@Types/factoryTypes';
+import { TournamentRecords, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
 /**
@@ -39,6 +39,10 @@ type ScheduleProfileVNextArgs = {
   matchUpDailyLimits?: { [matchUpType: string]: number };
   dryRun?: boolean;
 };
+
+/** A scheduling run's report: what was placed, and what was deferred or skipped and why. */
+export type ScheduledProfile = ResultType &
+  Extract<ReturnType<typeof scheduleProfileVNext>, { matchUpScheduleTimes: unknown }>;
 
 export function scheduleProfileVNext(params: ScheduleProfileVNextArgs) {
   const paramsCheck = checkRequiredParameters(params, [

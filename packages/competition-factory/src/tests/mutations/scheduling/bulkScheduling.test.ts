@@ -1,4 +1,5 @@
 import { TEMPLATE_SEEDING_ITF as SEEDING_ITF_POLICY } from '@courthive/competition-catalogue';
+import { defined } from '@Tests/helpers/defined';
 import { visualizeScheduledMatchUps } from '@Assemblies/tools/visualizeScheduledMatchUps';
 import { getStructureRoundProfile } from '@Query/structure/getStructureRoundProfile';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
@@ -44,7 +45,7 @@ it('can bulk schedule matchUps', () => {
   const { eventId } = eventResult;
   expect(success).toEqual(true);
 
-  const participantIds = participants.map((p) => p.participantId);
+  const participantIds = defined(participants, 'participants').map((p) => p.participantId);
   result = tournamentEngine.addEventEntries({ eventId, participantIds });
   expect(result.success).toEqual(true);
 

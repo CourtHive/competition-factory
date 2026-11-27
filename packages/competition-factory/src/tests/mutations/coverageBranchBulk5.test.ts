@@ -3,6 +3,7 @@
  * Each describe block targets specific uncovered conditional paths.
  */
 import { setTournamentName, setTournamentNotes, setTournamentCategories } from '@Mutate/tournaments/tournamentDetails';
+import { defined } from '@Tests/helpers/defined';
 import { getPlayoffStructures, getEventStructures, getTournamentStructures } from '@Query/structure/structureGetter';
 import { modifyEventMatchUpFormatTiming } from '@Mutate/extensions/events/modifyEventMatchUpFormatTiming';
 import { positionQualifiers, getQualifiersData } from '@Mutate/matchUps/drawPositions/positionQualifiers';
@@ -198,7 +199,7 @@ describe('structureGetter branch coverage', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 4 }],
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     const result = getEventStructures({ event, withStageGrouping: true } as any);
     expect(result.structures?.length).toBeGreaterThan(0);
   });
@@ -240,7 +241,7 @@ describe('getProfileRounds branch coverage', () => {
       venueProfiles: [{ courtsCount: 2 }],
     });
     tournamentEngine.setState(tournamentRecord);
-    const venueId = tournamentRecord.venues[0].venueId;
+    const venueId = defined(tournamentRecord.venues, 'venues')[0].venueId;
     const schedulingProfile = [
       {
         scheduleDate: '2024-01-01',
@@ -257,10 +258,10 @@ describe('getProfileRounds branch coverage', () => {
       venueProfiles: [{ courtsCount: 2 }],
     });
     tournamentEngine.setState(tournamentRecord);
-    const venueId = tournamentRecord.venues[0].venueId;
+    const venueId = defined(tournamentRecord.venues, 'venues')[0].venueId;
     const { drawDefinition } = tournamentEngine.getEvent({ drawId: drawIds[0] });
     const structureId = drawDefinition.structures[0].structureId;
-    const eventId = tournamentRecord.events[0].eventId;
+    const eventId = defined(tournamentRecord.events, 'events')[0].eventId;
     const tournamentId = tournamentRecord.tournamentId;
 
     const schedulingProfile = [
@@ -455,7 +456,7 @@ describe('eventSeeding branch coverage', () => {
       drawProfiles: [{ drawSize: 8 }],
     });
     tournamentEngine.setState(tournamentRecord);
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     const result: any = publishEventSeeding({
       tournamentRecord,
       event,
@@ -486,7 +487,7 @@ describe('eventSeeding branch coverage', () => {
       drawProfiles: [{ drawSize: 8 }],
     });
     tournamentEngine.setState(tournamentRecord);
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     // First publish with stageSeedingScaleNames so there's something to unpublish
     publishEventSeeding({
@@ -510,7 +511,7 @@ describe('eventSeeding branch coverage', () => {
       drawProfiles: [{ drawSize: 8 }],
     });
     tournamentEngine.setState(tournamentRecord);
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     publishEventSeeding({ tournamentRecord, event } as any);
 
@@ -559,7 +560,7 @@ describe('modifyEventMatchUpFormatTiming branch coverage', () => {
       drawProfiles: [{ drawSize: 4 }],
     });
     tournamentEngine.setState(tournamentRecord);
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     const result = modifyEventMatchUpFormatTiming({
       tournamentRecord,
       matchUpFormat: FORMAT_STANDARD,
@@ -574,7 +575,7 @@ describe('modifyEventMatchUpFormatTiming branch coverage', () => {
       drawProfiles: [{ drawSize: 4 }],
     });
     tournamentEngine.setState(tournamentRecord);
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     const result: any = modifyEventMatchUpFormatTiming({
       matchUpFormat: FORMAT_STANDARD,
       eventId: event.eventId,

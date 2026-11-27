@@ -1,4 +1,5 @@
 import tournamentEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
@@ -39,7 +40,7 @@ function teamDrawWithByes() {
     drawId,
   };
   const scheduleDate = tournamentRecord.startDate;
-  const venueId = tournamentRecord.venues[0].venueId;
+  const venueId = defined(tournamentRecord.venues, 'venues')[0].venueId;
   return { byeLines, playedLines, round, scheduleDate, venueId };
 }
 

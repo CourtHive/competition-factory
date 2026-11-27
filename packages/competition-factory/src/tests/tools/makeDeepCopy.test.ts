@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { expect, it, test } from 'vitest';
@@ -12,7 +13,7 @@ import { MALE } from '@Constants/genderConstants';
 const TEST_EXTENSION = 'testExtension';
 
 it('can convert extensions during deepCopy', () => {
-  let { tournamentRecord } = mocksEngine.generateTournamentRecord();
+  let { tournamentRecord }: any = mocksEngine.generateTournamentRecord();
   tournamentEngine.setState(tournamentRecord);
 
   // a tournament extension to convert (applied policies, which this used, are a first-class attribute since CODES)
@@ -21,7 +22,7 @@ it('can convert extensions during deepCopy', () => {
   expect(result.success).toEqual(true);
 
   ({ tournamentRecord } = tournamentEngine.getTournament());
-  const extensionNames = tournamentRecord.extensions.map(({ name }) => name);
+  const extensionNames = defined(tournamentRecord.extensions, 'extensions').map(({ name }) => name);
   expect(extensionNames.includes(TEST_EXTENSION)).toEqual(true);
 
   ({ tournamentRecord } = tournamentEngine.getTournament({
@@ -55,13 +56,17 @@ it('can convert extensions during deepCopy', () => {
   }));
 
   const tournamentParticipants = tournamentRecord.participants;
-  const targetParticipant = tournamentParticipants.find((participant) => participant.participantId === participantId);
-  expect(targetParticipant._anotherExtension).toEqual('anotherExtensionValue');
-  expect(targetParticipant.person._someExtension).toEqual('extensionValue');
+  const targetParticipant = defined(tournamentParticipants, 'tournamentParticipants').find(
+    (participant) => participant.participantId === participantId,
+  );
+  expect(defined(targetParticipant, 'targetParticipant')._anotherExtension).toEqual('anotherExtensionValue');
+  expect(defined(defined(targetParticipant, 'targetParticipant').person, 'person')._someExtension).toEqual(
+    'extensionValue',
+  );
 });
 
 it('can remove extensions', () => {
-  let { tournamentRecord } = mocksEngine.generateTournamentRecord();
+  let { tournamentRecord }: any = mocksEngine.generateTournamentRecord();
   tournamentEngine.setState(tournamentRecord);
 
   const extensionValue = { scoring: { policyName: 'TEST', someAttribute: 'someValue' } };
@@ -71,7 +76,7 @@ it('can remove extensions', () => {
   expect(result.success).toEqual(true);
 
   ({ tournamentRecord } = tournamentEngine.getTournament());
-  const extensionNames = tournamentRecord.extensions.map(({ name }) => name);
+  const extensionNames = defined(tournamentRecord.extensions, 'extensions').map(({ name }) => name);
   expect(extensionNames.includes(TEST_EXTENSION)).toEqual(true);
 
   ({ tournamentRecord } = tournamentEngine.getTournament({
@@ -97,7 +102,15 @@ it('can disable deepCopy without compromising source document', () => {
   expect(matchUps[0].sides).not.toBeUndefined();
 
   ({ tournamentRecord } = tournamentEngine.getTournament());
-  expect(tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps[0].sides).toBeUndefined();
+  expect(
+    defined(
+      defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0].matchUps,
+      'matchUps',
+    )[0].sides,
+  ).toBeUndefined();
 
   tournamentEngine.setState(tournamentRecord, false);
 
@@ -106,7 +119,15 @@ it('can disable deepCopy without compromising source document', () => {
 
   ({ tournamentRecord } = tournamentEngine.getTournament());
 
-  expect(tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps[0].sides).toBeUndefined();
+  expect(
+    defined(
+      defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0].matchUps,
+      'matchUps',
+    )[0].sides,
+  ).toBeUndefined();
 });
 
 it('can selectively stringify or ignore attributes when used internally', () => {
@@ -168,7 +189,7 @@ test('can throttle makeDeepCopy by setting a threshold', () => {
     eventProfiles,
   });
 
-  expect(tournamentRecord.participants.length).toEqual(0);
+  expect(defined(tournamentRecord.participants, 'participants').length).toEqual(0);
 
   const drawSize = 4;
   // prettier-ignore
@@ -182,7 +203,7 @@ test('can throttle makeDeepCopy by setting a threshold', () => {
     });
   expect(result.success).toEqual(true);
   expect(result.drawIds.length).toEqual(1);
-  expect(tournamentRecord.participants.length).toEqual(drawSize);
+  expect(defined(tournamentRecord.participants, 'participants').length).toEqual(drawSize);
 });
 
 // ============================================================================

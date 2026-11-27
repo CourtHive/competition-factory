@@ -100,7 +100,7 @@ it.each(scenarios)('supports drawProfiles which include qualifying structures', 
   const { expectation: _expectation, ...drawProfile } = scenario;
   const drawProfiles = [drawProfile];
 
-  let result = mocksEngine.generateTournamentRecord({
+  let result: any = mocksEngine.generateTournamentRecord({
     completeAllMatchUps: true,
     drawProfiles,
   });
@@ -306,7 +306,7 @@ it('supports round robin qualifying structures', () => {
     qualifiersCount: 4,
   };
 
-  let result = mocksEngine.generateTournamentRecord({
+  let result: any = mocksEngine.generateTournamentRecord({
     completeAllMatchUps: true,
     drawProfiles,
   });

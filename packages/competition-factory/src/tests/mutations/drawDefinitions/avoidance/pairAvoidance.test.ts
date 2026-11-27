@@ -1,4 +1,5 @@
 import { avoidanceTest } from './avoidanceTest';
+import { defined } from '@Tests/helpers/defined';
 import { intersection } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
@@ -22,7 +23,7 @@ it('can generate SINGLE_ELIMINATION drawDefinition using pair avoidance with Dou
     eventType: SINGLES,
   });
   const { conflicts, report, participants } = result || {};
-  const pairedParticipants = participants
+  const pairedParticipants = defined(participants, 'participants')
     .filter((p) => p.participantType === PAIR)
     .map((p) => p.individualParticipants.map((ip) => ip.participantName));
   const pairedOpponents = report.map((r) => r.names);
@@ -44,7 +45,7 @@ it('can generate SINGLE_ELIMINATION drawDefinition using pair avoidance with Dou
     avoidance: pairAvoidancePolicy,
   });
   const { conflicts, report, participants } = result || {};
-  const pairedParticipants = participants
+  const pairedParticipants = defined(participants, 'participants')
     .filter((p) => p.participantType === PAIR)
     .map((p) => p.individualParticipants.map((ip) => ip.participantName));
   const pairedOpponents = report.map((r) => r.names);
@@ -76,7 +77,7 @@ it('can generate SINGLE_ELIMINATION drawDefinition using pair and nationality av
     avoidance: pairAvoidancePolicy,
   });
   const { conflicts, report, participants } = result || {};
-  const pairedParticipants = participants
+  const pairedParticipants = defined(participants, 'participants')
     .filter((p) => p.participantType === PAIR)
     .map((p) => p.individualParticipants.map((ip) => ip.participantName));
   const pairedOpponents = report.map((r) => r.names);

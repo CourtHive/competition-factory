@@ -1,4 +1,5 @@
 import { allPlayoffPositionsFilled, isCompletedStructure } from '@Query/drawDefinition/structureActions';
+import { defined } from '@Tests/helpers/defined';
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { generateMatchUpOutcome } from '@Tests/helpers/generateMatchUpOutcome';
@@ -59,7 +60,7 @@ it('can advance players in Round Robin with Playoffs => 2 x 4 x 4', () => {
   const { eventId } = createdEvent;
   expect(success).toEqual(true);
 
-  const participantIds = participants.map((p) => p.participantId);
+  const participantIds = defined(participants, 'participants').map((p) => p.participantId);
   result = tournamentEngine.addEventEntries({ eventId, participantIds });
   expect(result.success).toEqual(true);
 
@@ -262,7 +263,7 @@ it('can advance players in Round Robin with Playoffs', () => {
   const { eventId } = createdEvent;
   expect(success).toEqual(true);
 
-  const participantIds = participants.map((p) => p.participantId);
+  const participantIds = defined(participants, 'participants').map((p) => p.participantId);
   result = tournamentEngine.addEventEntries({ eventId, participantIds });
   expect(result.success).toEqual(true);
 

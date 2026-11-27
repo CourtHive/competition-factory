@@ -1,4 +1,5 @@
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
+import { defined } from '@Tests/helpers/defined';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { getMatchUpLocationIndex, locateMatchUp } from '@Acquire/locateMatchUp';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -181,21 +182,29 @@ describe('locateMatchUp: a bare matchUpId resolves without hydrating the tournam
   it('an index built for one call sees a matchUp a later mutation adds', () => {
     const tournamentRecord = generate(51);
     const before = getMatchUpLocationIndex({ tournamentRecord }).locations.size;
-    const event = tournamentRecord.events[0];
-    const structure = event.drawDefinitions[0].structures[0];
-    structure.matchUps.push({ ...makeDeepCopy(structure.matchUps[0]), matchUpId: 'added-later' });
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const structure = defined(defined(event.drawDefinitions, 'drawDefinitions')[0].structures, 'structures')[0];
+    defined(structure.matchUps, 'matchUps').push({
+      ...makeDeepCopy(defined(structure.matchUps, 'matchUps')[0]),
+      matchUpId: 'added-later',
+    });
     expect(getMatchUpLocationIndex({ tournamentRecord }).locations.size).toEqual(before + 1);
     expect(locateMatchUp({ tournamentRecord, matchUpId: 'added-later' }).location?.drawId).toEqual(
-      event.drawDefinitions[0].drawId,
+      defined(event.drawDefinitions, 'drawDefinitions')[0].drawId,
     );
   });
 
   describe('where hydration could answer differently, hydration answers', () => {
     it('a duplicated id takes the hydrated walk and finds what it found', () => {
       const tournamentRecord = generate(61);
-      const [first, second] = tournamentRecord.events.slice(0, 2).map((e) => e.drawDefinitions[0].structures[0]);
-      const duplicate = { ...makeDeepCopy(second.matchUps[0]), matchUpId: first.matchUps[0].matchUpId };
-      second.matchUps.unshift(duplicate);
+      const [first, second] = defined(tournamentRecord.events, 'events')
+        .slice(0, 2)
+        .map((e) => defined(defined(e.drawDefinitions, 'drawDefinitions')[0].structures, 'structures')[0]);
+      const duplicate = {
+        ...makeDeepCopy(defined(second.matchUps, 'matchUps')[0]),
+        matchUpId: defined(first.matchUps, 'matchUps')[0].matchUpId,
+      };
+      defined(second.matchUps, 'matchUps').unshift(duplicate);
 
       const { matchUpId } = duplicate;
       expect(locateMatchUp({ tournamentRecord, matchUpId }).exact).toEqual(false);
@@ -207,9 +216,12 @@ describe('locateMatchUp: a bare matchUpId resolves without hydrating the tournam
 
     it('a matchUp that names its own draw takes the hydrated walk', () => {
       const tournamentRecord = generate(62);
-      const [first, second] = tournamentRecord.events.slice(0, 2);
-      const matchUp = first.drawDefinitions[0].structures[0].matchUps[0];
-      matchUp.drawId = second.drawDefinitions[0].drawId;
+      const [first, second] = defined(tournamentRecord.events, 'events').slice(0, 2);
+      const matchUp: any = defined(
+        defined(defined(first.drawDefinitions, 'drawDefinitions')[0].structures, 'structures')[0].matchUps,
+        'matchUps',
+      )[0];
+      matchUp.drawId = defined(second.drawDefinitions, 'drawDefinitions')[0].drawId;
 
       expect(locateMatchUp({ tournamentRecord, matchUpId: matchUp.matchUpId }).exact).toEqual(false);
       const result: any = findMatchUp({ tournamentRecord, matchUpId: matchUp.matchUpId });
@@ -219,10 +231,16 @@ describe('locateMatchUp: a bare matchUpId resolves without hydrating the tournam
     it('a tieMatchUp whose dual names its own event takes the hydrated walk', () => {
       const tournamentRecord = generate(63);
       const index = getMatchUpLocationIndex({ tournamentRecord });
-      const teamEvent = tournamentRecord.events.find((e) => e.eventType === TEAM);
-      const dual = teamEvent.drawDefinitions[0].structures[0].matchUps[0];
-      dual.eventId = teamEvent.eventId;
-      const tieMatchUpId = dual.tieMatchUps[0].matchUpId;
+      const teamEvent = defined(tournamentRecord.events, 'events').find((e) => e.eventType === TEAM);
+      const dual: any = defined(
+        defined(
+          defined(defined(teamEvent, 'teamEvent').drawDefinitions, 'drawDefinitions')[0].structures,
+          'structures',
+        )[0].matchUps,
+        'matchUps',
+      )[0];
+      dual.eventId = defined(teamEvent, 'teamEvent').eventId;
+      const tieMatchUpId = defined(dual.tieMatchUps, 'tieMatchUps')[0].matchUpId;
 
       expect(index.selfNamed.has(tieMatchUpId)).toEqual(false);
       expect(getMatchUpLocationIndex({ tournamentRecord }).selfNamed.has(tieMatchUpId)).toEqual(true);

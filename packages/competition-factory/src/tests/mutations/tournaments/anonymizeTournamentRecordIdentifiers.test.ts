@@ -1,4 +1,5 @@
 import { anonymizeTournamentRecord } from '@Generators/tournamentRecords/anonymizeTournamentRecord';
+import { defined } from '@Tests/helpers/defined';
 import { getTournamentInconsistencies } from '@Query/tournaments/getTournamentInconsistencies';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -65,7 +66,7 @@ describe('anonymized defined identifiers', () => {
     const record = result.tournamentRecord;
     const serialized = JSON.stringify(record);
     for (const id of collections) expect(serialized).not.toContain(id);
-    expect(serialized).not.toContain(original.events[0].eventId);
+    expect(serialized).not.toContain(defined(original.events, 'events')[0].eventId);
 
     const remappedCollections = new Set<string>();
     let references = 0;
@@ -147,13 +148,15 @@ describe('anonymized defined identifiers', () => {
   });
 
   it('remaps named tie-format definitions and pointers at multiple scopes', () => {
-    const original = structuredClone(generatedTeam());
+    const original: any = structuredClone(generatedTeam());
     const oldId = 'original-format-private-001';
-    const format = original.events[0].tieFormat ?? original.events[0].drawDefinitions[0].tieFormat;
+    const format =
+      defined(original.events, 'events')[0].tieFormat ??
+      defined(defined(original.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].tieFormat;
     expect(format).toBeDefined();
-    format.tieFormatId = oldId;
+    defined(format, 'format').tieFormatId = oldId;
     original.tieFormats = [structuredClone(format)];
-    original.events[0].tieFormatId = oldId;
+    defined(original.events, 'events')[0].tieFormatId = oldId;
     let result: any = anonymizeTournamentRecord({ tournamentRecord: original, random: createSeededRandom(10) });
     expect(result.success).toBe(true);
     expect(JSON.stringify(result.tournamentRecord)).not.toContain(oldId);
@@ -161,8 +164,10 @@ describe('anonymized defined identifiers', () => {
   });
 
   it('remaps repeated definitions consistently and reproduces them with the same seed', () => {
-    const original = structuredClone(generatedTeam());
-    const format = original.events[0].tieFormat ?? original.events[0].drawDefinitions[0].tieFormat;
+    const original: any = structuredClone(generatedTeam());
+    const format =
+      defined(original.events, 'events')[0].tieFormat ??
+      defined(defined(original.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].tieFormat;
     original.tieFormats = [structuredClone(format), structuredClone(format)];
     let result: any = anonymizeTournamentRecord({
       tournamentRecord: structuredClone(original),

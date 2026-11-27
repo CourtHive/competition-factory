@@ -3,6 +3,7 @@
  * to cross the 95% statement-coverage threshold.
  */
 import { anonymizeTournamentRecord } from '@Generators/tournamentRecords/anonymizeTournamentRecord';
+import { defined } from '@Tests/helpers/defined';
 import { processPlayoffGroups } from '@Generators/drawDefinitions/drawTypes/processPlayoffGroups';
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { keyValueScore } from '@Scoring/entry/keyValueScore/keyValueScore';
@@ -345,7 +346,9 @@ describe('anonymizeTournamentRecord uncovered branches', () => {
 
     // Remove sex from one participant to trigger the OTHER path at L217
     // (coercedGender(undefined) returns OTHER, isGendered(undefined) returns false)
-    const individual = tournamentRecord.participants.find((p: any) => p.participantType === INDIVIDUAL);
+    const individual = defined(tournamentRecord.participants, 'participants').find(
+      (p: any) => p.participantType === INDIVIDUAL,
+    );
     if (individual?.person) {
       delete individual.person.sex;
     }
@@ -363,12 +366,14 @@ describe('anonymizeTournamentRecord uncovered branches', () => {
     const structure = tournamentRecord.events?.[0]?.drawDefinitions?.[0]?.structures?.[0];
     const matchUp = structure?.matchUps?.[0];
     if (matchUp) {
-      const participant = tournamentRecord.participants.find((p: any) => p.participantType === INDIVIDUAL);
-      if (!matchUp.sides) matchUp.sides = [];
+      const participant = defined(tournamentRecord.participants, 'participants').find(
+        (p: any) => p.participantType === INDIVIDUAL,
+      );
+      matchUp.sides ??= [];
       matchUp.sides.push({
         lineUp: [
           {
-            participantId: participant?.participantId,
+            participantId: defined(participant?.participantId, 'participantId'),
             collectionAssignments: [],
           },
         ],
@@ -376,11 +381,11 @@ describe('anonymizeTournamentRecord uncovered branches', () => {
     }
 
     // Ensure at least one participant has a birthDate (for L283-285)
-    const indiv = tournamentRecord.participants.find(
+    const indiv = defined(tournamentRecord.participants, 'participants').find(
       (p: any) => p.participantType === INDIVIDUAL && p.person?.birthDate,
     );
-    if (indiv && !indiv.person.birthDate) {
-      indiv.person.birthDate = '1990-05-15';
+    if (indiv && !defined(indiv.person, 'person').birthDate) {
+      defined(indiv.person, 'person').birthDate = '1990-05-15';
     }
 
     let result: any = anonymizeTournamentRecord({ tournamentRecord } as any);

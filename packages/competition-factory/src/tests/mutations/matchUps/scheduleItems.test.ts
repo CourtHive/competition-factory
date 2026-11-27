@@ -1,4 +1,5 @@
 import { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems/addMatchUpScheduledDate';
+import { defined } from '@Tests/helpers/defined';
 import { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDetails';
 import { resetMatchUpTimeItems } from '@Mutate/timeItems/matchUps/matchUpTimeItems';
 import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
@@ -31,7 +32,7 @@ legacyMode('can add schedule items', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 32, eventType: DOUBLES }],
     });
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
     const { matchUps } = getAllDrawMatchUps({ drawDefinition, inContext: true });
     let matchUp = matchUps?.[0];

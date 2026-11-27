@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
@@ -100,8 +101,8 @@ it('supports adding onlineResources', () => {
   expect(result.success).toEqual(true);
   expect(result.venue.onlineResources.length).toEqual(1);
 
-  const participantId = tournamentRecord.participants[0].participantId;
-  const personId = tournamentRecord.participants[0].person.personId;
+  const participantId = defined(tournamentRecord.participants, 'participants')[0].participantId;
+  const personId = defined(defined(tournamentRecord.participants, 'participants')[0].person, 'person').personId;
 
   result = tournamentEngine.addOnlineResource({
     onlineResource,
@@ -123,8 +124,8 @@ it('supports adding onlineResources', () => {
 
   // Edge case: both personId and participantId with mismatch
   result = tournamentEngine.addOnlineResource({
-    participantId: tournamentRecord.participants[1].participantId, // Different participant
-    personId: tournamentRecord.participants[0].person.personId, // First participant's person
+    participantId: defined(tournamentRecord.participants, 'participants')[1].participantId, // Different participant
+    personId: defined(defined(tournamentRecord.participants, 'participants')[0].person, 'person').personId, // First participant's person
     onlineResource,
   });
   expect(result.error).toEqual(INVALID_PARTICIPANT);

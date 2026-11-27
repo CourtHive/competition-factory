@@ -3,6 +3,7 @@
  * Targets ~145 uncovered statements to push toward 95% statement coverage.
  */
 import { generateVoluntaryConsolation } from '@Generators/drawDefinitions/drawTypes/generateVoluntaryConsolation';
+import { defined } from '@Tests/helpers/defined';
 import { setParticipantScaleItems, addParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
 import { initializeDraft, defaultTierCount } from '@Mutate/drawDefinitions/draft/initializeDraft';
 import { getParticipantIdFinishingPositions } from '@Query/drawDefinition/finishingPositions';
@@ -435,7 +436,7 @@ describe('addScaleItems uncovered paths', () => {
     });
     tournamentEngine.setState(tournamentRecord);
     const participants = tournamentRecord.participants;
-    const pid = participants[0].participantId;
+    const pid = defined(participants, 'participants')[0].participantId;
 
     const result = setParticipantScaleItems({
       tournamentRecord,
@@ -460,7 +461,7 @@ describe('addScaleItems uncovered paths', () => {
       drawProfiles: [{ drawSize: 4 }],
     });
     tournamentEngine.setState(tournamentRecord);
-    const pid = tournamentRecord.participants[0].participantId;
+    const pid = defined(tournamentRecord.participants, 'participants')[0].participantId;
 
     const result = setParticipantScaleItems({
       tournamentRecord,
@@ -480,7 +481,9 @@ describe('addScaleItems uncovered paths', () => {
       drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT }],
     });
     tournamentEngine.setState(tournamentRecord);
-    const teamParticipant = tournamentRecord.participants.find((p) => p.participantType === TEAM_PARTICIPANT);
+    const teamParticipant = defined(tournamentRecord.participants, 'participants').find(
+      (p) => p.participantType === TEAM_PARTICIPANT,
+    );
 
     if (teamParticipant) {
       const result = setParticipantScaleItems({
@@ -579,7 +582,10 @@ describe('generateVoluntaryConsolation uncovered paths', () => {
     // Add only 2 voluntary consolation entries
     const participants = tournamentRecord.participants;
     tournamentEngine.addEventEntries({
-      participantIds: [participants[0].participantId, participants[1].participantId],
+      participantIds: [
+        defined(participants, 'participants')[0].participantId,
+        defined(participants, 'participants')[1].participantId,
+      ],
       entryStage: VOLUNTARY_CONSOLATION,
       drawId,
     });
@@ -603,7 +609,9 @@ describe('generateVoluntaryConsolation uncovered paths', () => {
     const { drawDefinition } = tournamentEngine.getEvent({ drawId });
 
     // Add enough entries
-    const pids = tournamentRecord.participants.slice(0, 4).map((p) => p.participantId);
+    const pids = defined(tournamentRecord.participants, 'participants')
+      .slice(0, 4)
+      .map((p) => p.participantId);
     tournamentEngine.addEventEntries({
       participantIds: pids,
       entryStage: VOLUNTARY_CONSOLATION,
@@ -628,7 +636,9 @@ describe('generateVoluntaryConsolation uncovered paths', () => {
     tournamentEngine.setState(tournamentRecord);
     const { drawDefinition, event } = tournamentEngine.getEvent({ drawId });
 
-    const pids = tournamentRecord.participants.slice(0, 4).map((p) => p.participantId);
+    const pids = defined(tournamentRecord.participants, 'participants')
+      .slice(0, 4)
+      .map((p) => p.participantId);
     tournamentEngine.addEventEntries({
       participantIds: pids,
       entryStage: VOLUNTARY_CONSOLATION,
@@ -655,7 +665,9 @@ describe('generateVoluntaryConsolation uncovered paths', () => {
     tournamentEngine.setState(tournamentRecord);
     const { drawDefinition, event } = tournamentEngine.getEvent({ drawId });
 
-    const pids = tournamentRecord.participants.slice(0, 4).map((p) => p.participantId);
+    const pids = defined(tournamentRecord.participants, 'participants')
+      .slice(0, 4)
+      .map((p) => p.participantId);
     tournamentEngine.addEventEntries({
       participantIds: pids,
       entryStage: VOLUNTARY_CONSOLATION,

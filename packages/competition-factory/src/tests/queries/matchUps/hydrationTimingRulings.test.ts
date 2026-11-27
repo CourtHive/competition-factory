@@ -1,4 +1,5 @@
 import { addMinutesToTimeString } from '@Tools/dateTime';
+import { defined } from '@Tests/helpers/defined';
 import { addDaysToDate } from '@Tools/civilDateTime';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -58,14 +59,14 @@ describe('a wall-clock addition is arithmetic, not a Date', () => {
 describe('a recovery carries its date across midnight', () => {
   it('within the day: the date of play', () => {
     const { firstRound, startDate } = singleDraw();
-    schedule(firstRound[0], { scheduledDate: startDate, scheduledTime: '10:00' });
+    schedule(firstRound[0], { scheduledDate: defined(startDate, 'startDate'), scheduledTime: '10:00' });
     const { schedule: hydratedSchedule } = hydrated(firstRound[0].matchUpId);
     expect([hydratedSchedule.timeAfterRecovery, hydratedSchedule.dateAfterRecovery]).toEqual(['12:30', startDate]);
   });
 
   it('past midnight: the next day', () => {
     const { firstRound, startDate } = singleDraw();
-    schedule(firstRound[0], { scheduledDate: startDate, scheduledTime: '22:30' });
+    schedule(firstRound[0], { scheduledDate: defined(startDate, 'startDate'), scheduledTime: '22:30' });
     const { schedule: hydratedSchedule } = hydrated(firstRound[0].matchUpId);
     // 22:30 + 90 + 60 = 01:00 the next day
     expect([hydratedSchedule.timeAfterRecovery, hydratedSchedule.dateAfterRecovery]).toEqual([
@@ -76,7 +77,11 @@ describe('a recovery carries its date across midnight', () => {
 
   it('a recorded end of play earlier than the start was after midnight', () => {
     const { firstRound, startDate } = singleDraw();
-    schedule(firstRound[0], { scheduledDate: startDate, scheduledTime: '22:30', endTime: '00:30' });
+    schedule(firstRound[0], {
+      scheduledDate: defined(startDate, 'startDate'),
+      scheduledTime: '22:30',
+      endTime: '00:30',
+    });
     const { schedule: hydratedSchedule } = hydrated(firstRound[0].matchUpId);
     // 00:30 the next day + 60
     expect([hydratedSchedule.timeAfterRecovery, hydratedSchedule.dateAfterRecovery]).toEqual([
@@ -88,10 +93,10 @@ describe('a recovery carries its date across midnight', () => {
   it('a conflict compares the date too: later the same night is before a recovery ending at 01:00', () => {
     const { firstRound, startDate } = singleDraw();
     const next = (firstRoundMatchUp: any) => hydrated(firstRoundMatchUp.matchUpId).winnerTo;
-    schedule(firstRound[0], { scheduledDate: startDate, scheduledTime: '22:30' });
+    schedule(firstRound[0], { scheduledDate: defined(startDate, 'startDate'), scheduledTime: '22:30' });
     const { matchUp: targetMatchUp } = tournamentEngine.findMatchUp({ matchUpId: next(firstRound[0]).matchUpId });
     // 23:45 on the same night: by the clock alone it looks later than 01:00's recovery, by the date it is before it
-    schedule(targetMatchUp, { scheduledDate: startDate, scheduledTime: '23:45' });
+    schedule(targetMatchUp, { scheduledDate: defined(startDate, 'startDate'), scheduledTime: '23:45' });
     expect(next(firstRound[0]).schedule.scheduleConflict).toEqual(firstRound[0].matchUpId);
     // the next morning is after it
     schedule(targetMatchUp, { scheduledDate: addDaysToDate(startDate, 1) as string, scheduledTime: '09:00' });
@@ -102,7 +107,7 @@ describe('a recovery carries its date across midnight', () => {
 describe('endTime reads as every schedule attribute does', () => {
   it('a first-class schedule.endTime is read', () => {
     const { firstRound, startDate, drawId } = singleDraw();
-    schedule(firstRound[0], { scheduledDate: startDate, scheduledTime: '10:00' });
+    schedule(firstRound[0], { scheduledDate: defined(startDate, 'startDate'), scheduledTime: '10:00' });
     const record = tournamentEngine.getTournament().tournamentRecord;
     const stored = record.events[0].drawDefinitions[0].structures[0].matchUps.find(
       (m: any) => m.matchUpId === firstRound[0].matchUpId,
@@ -141,7 +146,7 @@ describe('a draw’s scheduling policy times its matchUps', () => {
       },
     };
     expect(tournamentEngine.attachPolicies({ drawId, policyDefinitions: drawPolicy }).success).toEqual(true);
-    schedule(firstRound[0], { scheduledDate: startDate, scheduledTime: '10:00' });
+    schedule(firstRound[0], { scheduledDate: defined(startDate, 'startDate'), scheduledTime: '10:00' });
     // 10:00 + 90 + 30
     expect(hydrated(firstRound[0].matchUpId).schedule.timeAfterRecovery).toEqual('12:00');
   });

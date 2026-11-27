@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { defined } from '@Tests/helpers/defined';
 
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -25,7 +26,9 @@ function factoryStampAfter(subscribed: boolean, topic: string, write: (ids: any)
   } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 4 }] });
   tournamentEngine.reset();
   tournamentEngine.setState(tournamentRecord);
-  const participantIds = tournamentRecord.participants.map(({ participantId }) => participantId);
+  const participantIds = defined(tournamentRecord.participants, 'participants').map(
+    ({ participantId }) => participantId,
+  );
   const participantId = participantIds[0];
   const groupingParticipantId = 'group';
   tournamentEngine.addParticipant({

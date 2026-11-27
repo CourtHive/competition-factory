@@ -1,4 +1,5 @@
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
+import { defined } from '@Tests/helpers/defined';
 import { getDrawStructures } from '@Acquire/findStructure';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -28,7 +29,7 @@ it('correctly assigns BYE positions in consolation structure', () => {
   const { event: createdEvent } = result;
   const { eventId } = createdEvent;
 
-  const participantIds = participants.map((p) => p.participantId);
+  const participantIds = defined(participants, 'participants').map((p) => p.participantId);
   tournamentEngine.addEventEntries({ eventId, participantIds });
 
   const { drawDefinition } = tournamentEngine.generateDrawDefinition({

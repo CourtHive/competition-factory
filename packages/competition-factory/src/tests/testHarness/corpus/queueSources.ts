@@ -1,4 +1,5 @@
 import { CorpusWriteError, EXECUTION_QUEUE, writeScenario, type Directive } from './writeScenario';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { setRandomSource } from '@Tools/prng';
 import { RECORD_CLOCK } from './recordClock';
@@ -37,7 +38,9 @@ function participantsOnly() {
       startDate: '2026-10-01',
       endDate: '2026-10-03',
     });
-    const participantIds = tournamentRecord.participants.map(({ participantId }: any) => participantId);
+    const participantIds = defined(tournamentRecord.participants, 'participants').map(
+      ({ participantId }: any) => participantId,
+    );
     return { tournamentRecord, participantIds };
   } finally {
     setClock();

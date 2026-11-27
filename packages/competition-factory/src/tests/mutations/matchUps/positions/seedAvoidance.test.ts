@@ -1,4 +1,5 @@
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { defined } from '@Tests/helpers/defined';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { getDrawStructures } from '@Acquire/findStructure';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -37,18 +38,22 @@ describe('seed placement avoidance', () => {
     // algorithm may legitimately fail to put our two seeds in different
     // halves. Reset every participant to a unique synthetic code so the
     // only conflict group is the one we declare below (seeds 3 + 4).
-    participants.forEach((p, i) => {
+    defined(participants, 'participants').forEach((p, i) => {
       if (p.person) p.person.nationalityCode = `Z${String(i).padStart(2, '0')}`;
     });
 
     // Assign the same nationality to seeds 3 and 4 to create a conflict scenario
     const targetNationality = 'USA';
-    if (participants[2]?.person) participants[2].person.nationalityCode = targetNationality;
-    if (participants[3]?.person) participants[3].person.nationalityCode = targetNationality;
+    if (defined(participants, 'participants')[2]?.person)
+      defined(defined(participants, 'participants')[2].person, 'person').nationalityCode = targetNationality;
+    if (defined(participants, 'participants')[3]?.person)
+      defined(defined(participants, 'participants')[3].person, 'person').nationalityCode = targetNationality;
 
     // Use different nationalities for seeds 1 and 2
-    if (participants[0]?.person) participants[0].person.nationalityCode = 'GBR';
-    if (participants[1]?.person) participants[1].person.nationalityCode = 'FRA';
+    if (defined(participants, 'participants')[0]?.person)
+      defined(defined(participants, 'participants')[0].person, 'person').nationalityCode = 'GBR';
+    if (defined(participants, 'participants')[1]?.person)
+      defined(defined(participants, 'participants')[1].person, 'person').nationalityCode = 'FRA';
 
     tournamentEngine.setState(tournamentRecord);
 
@@ -58,7 +63,9 @@ describe('seed placement avoidance', () => {
     const { event } = result;
     const eventId = event.eventId;
 
-    const participantIds = participants.slice(0, drawSize).map((p) => p.participantId);
+    const participantIds = defined(participants, 'participants')
+      .slice(0, drawSize)
+      .map((p) => p.participantId);
     tournamentEngine.addEventEntries({ eventId, participantIds });
 
     result = tournamentEngine.generateDrawDefinition({
@@ -79,10 +86,10 @@ describe('seed placement avoidance', () => {
 
     // Find draw positions of the two USA seeds (participants[2] and participants[3])
     const seed3Position = positionAssignments?.find(
-      (pa) => pa.participantId === participants[2].participantId,
+      (pa) => pa.participantId === defined(participants, 'participants')[2].participantId,
     )?.drawPosition;
     const seed4Position = positionAssignments?.find(
-      (pa) => pa.participantId === participants[3].participantId,
+      (pa) => pa.participantId === defined(participants, 'participants')[3].participantId,
     )?.drawPosition;
 
     if (seed3Position && seed4Position) {
@@ -108,7 +115,7 @@ describe('seed placement avoidance', () => {
 
     const participants = tournamentRecord.participants;
     // All seeds same nationality
-    participants.forEach((p) => {
+    defined(participants, 'participants').forEach((p) => {
       if (p.person) p.person.nationalityCode = 'USA';
     });
 
@@ -119,7 +126,9 @@ describe('seed placement avoidance', () => {
     });
     const eventId = result.event.eventId;
 
-    const participantIds = participants.slice(0, drawSize).map((p) => p.participantId);
+    const participantIds = defined(participants, 'participants')
+      .slice(0, drawSize)
+      .map((p) => p.participantId);
     tournamentEngine.addEventEntries({ eventId, participantIds });
 
     // Should succeed without error — best effort, no crash
@@ -143,7 +152,7 @@ describe('seed placement avoidance', () => {
     const participants = tournamentRecord.participants;
     // All seeds have unique nationalities
     const countries = ['USA', 'GBR', 'FRA', 'AUS', 'GER', 'ESP', 'ITA', 'JPN'];
-    participants.forEach((p, i) => {
+    defined(participants, 'participants').forEach((p, i) => {
       if (p.person) p.person.nationalityCode = countries[i % countries.length];
     });
 
@@ -154,7 +163,9 @@ describe('seed placement avoidance', () => {
     });
     const eventId = result.event.eventId;
 
-    const participantIds = participants.slice(0, drawSize).map((p) => p.participantId);
+    const participantIds = defined(participants, 'participants')
+      .slice(0, drawSize)
+      .map((p) => p.participantId);
     tournamentEngine.addEventEntries({ eventId, participantIds });
 
     result = tournamentEngine.generateDrawDefinition({
@@ -185,13 +196,14 @@ describe('seed placement avoidance', () => {
     // Unique synthetic codes for every participant so the only conflict
     // groups are the ones we declare below. See top test for the flake-mode
     // this defends against.
-    participants.forEach((p, i) => {
+    defined(participants, 'participants').forEach((p, i) => {
       if (p.person) p.person.nationalityCode = `Z${String(i).padStart(2, '0')}`;
     });
     // Seeds 1,5 = USA, Seeds 2,6 = GBR, Seeds 3,7 = FRA, Seeds 4,8 = AUS
     const seedNationalities = ['USA', 'GBR', 'FRA', 'AUS', 'USA', 'GBR', 'FRA', 'AUS'];
     for (let i = 0; i < 8; i++) {
-      if (participants[i]?.person) participants[i].person.nationalityCode = seedNationalities[i];
+      if (defined(participants, 'participants')[i]?.person)
+        defined(defined(participants, 'participants')[i].person, 'person').nationalityCode = seedNationalities[i];
     }
 
     tournamentEngine.setState(tournamentRecord);
@@ -201,7 +213,9 @@ describe('seed placement avoidance', () => {
     });
     const eventId = result.event.eventId;
 
-    const participantIds = participants.slice(0, drawSize).map((p) => p.participantId);
+    const participantIds = defined(participants, 'participants')
+      .slice(0, drawSize)
+      .map((p) => p.participantId);
     tournamentEngine.addEventEntries({ eventId, participantIds });
 
     result = tournamentEngine.generateDrawDefinition({

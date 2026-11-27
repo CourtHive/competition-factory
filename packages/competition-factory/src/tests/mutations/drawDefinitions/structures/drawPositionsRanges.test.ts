@@ -1,4 +1,5 @@
 import { feedInChampionship } from '@Tests/mutations/drawDefinitions/primitives/feedIn';
+import { defined } from '@Tests/helpers/defined';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -27,7 +28,7 @@ it('can add drawPositionsRange to inContext matchUps in a SINGLE_ELIMINATION str
   const { eventId } = eventResult;
   expect(success).toEqual(true);
 
-  const participantIds = participants.map((p) => p.participantId);
+  const participantIds = defined(participants, 'participants').map((p) => p.participantId);
   result = tournamentEngine.addEventEntries({ eventId, participantIds });
   expect(result.success).toEqual(true);
   result = tournamentEngine.addEventEntries({ eventId, participantIds });

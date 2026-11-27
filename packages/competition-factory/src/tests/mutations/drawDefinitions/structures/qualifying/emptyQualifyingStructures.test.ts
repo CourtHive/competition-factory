@@ -12,7 +12,7 @@ import { DRAW_ID_EXISTS } from '@Constants/errorConditionConstants';
 it('can specify qualifiersCount when no qualifying draws are generated', () => {
   const qualifiersCount = 4;
   const participantsCount = 44;
-  let result = mocksEngine.generateTournamentRecord({
+  let result: any = mocksEngine.generateTournamentRecord({
     participantsProfile: { participantsCount },
     drawProfiles: [
       {

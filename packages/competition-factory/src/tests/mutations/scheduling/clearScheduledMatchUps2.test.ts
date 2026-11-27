@@ -1,4 +1,5 @@
 import { TEMPLATE_SEEDING_ITF as SEEDING_ITF_POLICY } from '@courthive/competition-catalogue';
+import { defined } from '@Tests/helpers/defined';
 import { getStructureRoundProfile } from '@Query/structure/getStructureRoundProfile';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -38,7 +39,7 @@ it('can clear matchUp schedules', () => {
   const { eventId } = eventResult;
   expect(success).toEqual(true);
 
-  const participantIds = participants.map((p) => p.participantId);
+  const participantIds = defined(participants, 'participants').map((p) => p.participantId);
   result = tournamentEngine.addEventEntries({ eventId, participantIds });
   expect(result.success).toEqual(true);
 

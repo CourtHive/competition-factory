@@ -1,4 +1,5 @@
 import competitionEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
@@ -48,10 +49,24 @@ const scheduledInRound = (drawId, roundNumber) =>
 it('applies a participant override from the scheduling policy on top of the defaults', () => {
   const venueId = 'venue';
   const firstRecord = generate({ tournamentId: 'probe', venueId });
-  const [firstMatchUp] = firstRecord.events[0].drawDefinitions[0].structures[0].matchUps;
+  const [firstMatchUp] = defined(
+    defined(
+      defined(defined(firstRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0].matchUps,
+    'matchUps',
+  );
   const firstPositions = firstMatchUp.drawPositions;
-  const { positionAssignments } = firstRecord.events[0].drawDefinitions[0].structures[0];
-  const protectedId = positionAssignments.find(({ drawPosition }) => drawPosition === firstPositions[0]).participantId;
+  const { positionAssignments } = defined(
+    defined(defined(firstRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+    'structures',
+  )[0];
+  const protectedId = defined(
+    defined(positionAssignments, 'positionAssignments').find(
+      ({ drawPosition }) => drawPosition === defined(firstPositions, 'firstPositions')[0],
+    ),
+    'value',
+  ).participantId;
 
   const policyDefinitions = {
     [POLICY_TYPE_SCHEDULING]: {

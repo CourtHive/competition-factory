@@ -21,7 +21,7 @@ it('can handle RR playoffs which are only BYEs', () => {
     structureOptions,
     drawSize: 12,
   };
-  let result = mocksEngine.generateTournamentRecord({
+  let result: any = mocksEngine.generateTournamentRecord({
     drawProfiles: [drawProfile],
   });
 

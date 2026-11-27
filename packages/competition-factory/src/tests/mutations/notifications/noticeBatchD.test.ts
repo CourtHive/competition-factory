@@ -1,4 +1,5 @@
 import { setSubscriptions } from '@Global/state/globalState';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, test } from 'vitest';
@@ -314,7 +315,7 @@ describe('engine addExtension / removeExtension', () => {
 
   test('an event element is announced with MODIFY_EVENT, and a copy of it is not', () => {
     const tournamentRecord = storedRecord();
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     const onCopy = capture(() => tournamentEngine.addExtension({ element: structuredClone(event), extension }));
     expect(onCopy.result.success).toEqual(true);
@@ -336,7 +337,7 @@ describe('engine addExtension / removeExtension', () => {
 
   test('a venue element is announced with MODIFY_VENUE', () => {
     const tournamentRecord = storedRecord();
-    const venue = tournamentRecord.venues[0];
+    const venue = defined(tournamentRecord.venues, 'venues')[0];
 
     const added = capture(() => tournamentEngine.addExtension({ element: venue, extension }));
     expect(added.result.success).toEqual(true);
@@ -349,7 +350,7 @@ describe('engine addExtension / removeExtension', () => {
 
   test('a participant element is announced with MODIFY_PARTICIPANTS', () => {
     const tournamentRecord = storedRecord();
-    const participant = tournamentRecord.participants[0];
+    const participant = defined(tournamentRecord.participants, 'participants')[0];
     const idsOf = (payloads: any[]) => payloads.flatMap((p) => p.participants.map((x: any) => x.participantId));
 
     const added = capture(() => tournamentEngine.addExtension({ element: participant, extension }));
@@ -446,7 +447,7 @@ describe('addEventEntryPairs', () => {
       participantsProfile: { participantsCount: 8 },
       setState: true,
     });
-    const individualIds = tournamentRecord.participants
+    const individualIds = defined(tournamentRecord.participants, 'participants')
       .filter((participant: any) => participant.participantType === 'INDIVIDUAL')
       .slice(0, 4)
       .map((participant: any) => participant.participantId);

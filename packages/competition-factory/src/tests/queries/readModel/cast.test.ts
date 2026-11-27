@@ -1,4 +1,5 @@
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
@@ -247,7 +248,7 @@ describe('cast — order of play + scheduling profile', () => {
     venueProfiles: [{ venueId: 'v1', venueName: 'Club', courtsCount: 2, idPrefix: 'v1c' }],
     nonRandom: 1,
   });
-  const drawId = tournamentRecord.events[0].drawDefinitions[0].drawId;
+  const drawId = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].drawId;
   // publish the order of play (PUBLIC) and set a scheduling plan directly on the record
   tournamentRecord.timeItems = [
     {

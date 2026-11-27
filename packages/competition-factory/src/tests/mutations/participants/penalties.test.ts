@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
@@ -15,7 +16,7 @@ it('can add, remove, and edit penalties for participants', () => {
 
   const participants = tournamentRecord.participants;
 
-  const { participantId } = participants[0];
+  const { participantId } = defined(participants, 'participants')[0];
   const { participant } = tournamentEngine.findParticipant({ participantId });
   expect(participant.participantId).toEqual(participantId);
 

@@ -1,4 +1,5 @@
 import { buildSchedulingView } from '@Mutate/matchUps/schedule/pipeline/view';
+import { defined } from '@Tests/helpers/defined';
 import { planSchedule } from '@Mutate/matchUps/schedule/pipeline/plan';
 import { chunkArray, shuffleArray } from '@Tools/arrays';
 import tournamentEngine from '@Engines/syncEngine';
@@ -79,7 +80,7 @@ function fixture() {
       venueId,
     });
   };
-  const [fic, se] = tournamentRecord.events;
+  const [fic, se] = defined(tournamentRecord.events, 'events');
   const plan: [string, any, string, number[], string][] = [
     [DAYS[0], fic, MAIN, [1, 2], 'venue-1'],
     [DAYS[0], fic, CONSOLATION, [1, 2], 'venue-1'],
@@ -159,7 +160,7 @@ function compassFixture({ doubles }: { doubles: boolean }) {
 
     // the singles players, paired by a seeded shuffle, entered in a COMPASS 64 DOUBLES
     tournamentEngine.setState(tournamentRecord);
-    const individualIds = tournamentRecord.participants
+    const individualIds = defined(tournamentRecord.participants, 'participants')
       .filter(({ participantType }) => participantType === INDIVIDUAL)
       .map(({ participantId }) => participantId);
     const shuffled = shuffleArray(individualIds);

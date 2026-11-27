@@ -1,4 +1,5 @@
 import { isUngrouped } from '@Query/entries/isUngrouped';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -29,7 +30,7 @@ it('can add doubles events to a tournament record', () => {
   const { eventId } = eventResult;
   expect(success).toEqual(true);
 
-  const participantIds = participants
+  const participantIds = defined(participants, 'participants')
     .filter((participant) => participant.participantType === PAIR)
     .map((p) => p.participantId);
   result = tournamentEngine.addEventEntries({ eventId, participantIds });

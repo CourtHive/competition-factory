@@ -1,4 +1,5 @@
 import { getSwapOptions } from '@Query/drawDefinition/avoidance/getSwapOptions';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
@@ -64,12 +65,15 @@ describe('round robin avoidance swaps', () => {
       });
 
       const nationality = Object.fromEntries(
-        tournamentRecord.participants.map((participant) => [
+        defined(tournamentRecord.participants, 'participants').map((participant) => [
           participant.participantId,
           participant.person?.nationalityCode,
         ]),
       );
-      const container = tournamentRecord.events[0].drawDefinitions[0].structures[0];
+      const container = defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0];
       for (const group of container.structures ?? []) {
         const codes = (group.positionAssignments ?? [])
           .map(({ participantId }) => participantId && nationality[participantId])

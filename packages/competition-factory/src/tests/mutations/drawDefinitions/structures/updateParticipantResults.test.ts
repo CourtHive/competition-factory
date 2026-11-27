@@ -7,6 +7,7 @@
  * no tally.
  */
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
@@ -37,7 +38,7 @@ function buildCompletedRRTournament() {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles });
   tournamentEngine.setState(tournamentRecord);
 
-  const drawId = tournamentRecord.events[0].drawDefinitions[0].drawId;
+  const drawId = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].drawId;
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
 
   const containerStructure = drawDefinition.structures[0];

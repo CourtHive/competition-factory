@@ -11,6 +11,7 @@
  * 8 structures, 7 LOSER links, 72 matchUps total.
  */
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
@@ -438,19 +439,22 @@ describe('mocksEngine drawProfiles with recursive withPlayoffs', () => {
     const { tournamentRecord } = result;
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
-    const drawDefinition = event.drawDefinitions[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions')[0];
 
-    expect(drawDefinition.structures.length).toEqual(8);
-    expect(drawDefinition.links.filter((l) => l.linkType === LOSER).length).toEqual(7);
+    expect(defined(drawDefinition.structures, 'structures').length).toEqual(8);
+    expect(defined(drawDefinition.links, 'links').filter((l) => l.linkType === LOSER).length).toEqual(7);
 
-    const totalMatchUps = drawDefinition.structures.reduce((sum, s) => sum + (s.matchUps?.length || 0), 0);
+    const totalMatchUps = defined(drawDefinition.structures, 'structures').reduce(
+      (sum, s) => sum + (s.matchUps?.length || 0),
+      0,
+    );
     expect(totalMatchUps).toEqual(72);
 
     // Verify playoff structures are in PLAY_OFF stage
-    const playoffStructures = drawDefinition.structures.filter((s) => s.stage === PLAY_OFF);
+    const playoffStructures = defined(drawDefinition.structures, 'structures').filter((s) => s.stage === PLAY_OFF);
     expect(playoffStructures.length).toEqual(7);
-    const mainStructures = drawDefinition.structures.filter((s) => s.stage === MAIN);
+    const mainStructures = defined(drawDefinition.structures, 'structures').filter((s) => s.stage === MAIN);
     expect(mainStructures.length).toEqual(1);
   });
 });

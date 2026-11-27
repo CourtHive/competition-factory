@@ -1,4 +1,5 @@
 import { validatePresenceAttribution, getPresenceExpectation } from '@Query/participant/presencePolicy';
+import { defined } from '@Tests/helpers/defined';
 
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -79,7 +80,9 @@ function seeded({ presence, ageCategoryCode }: { presence?: PresenceRules; ageCa
 
 it('reports the expectation without enforcing it', () => {
   const { tournamentRecord, participantId } = seeded({ presence: U10_RULES });
-  const participant = tournamentRecord.participants.find((p: any) => p.participantId === participantId);
+  const participant = defined(tournamentRecord.participants, 'participants').find(
+    (p: any) => p.participantId === participantId,
+  );
 
   const expectation: any = getPresenceExpectation({ tournamentRecord, participant, fact: 'matchCheckIn' });
   expect(expectation.expectation).toEqual('required');
@@ -89,7 +92,7 @@ it('reports the expectation without enforcing it', () => {
 
 it('distinguishes "notUsed" from "nobody said" — the ambiguity D4h exists to remove', () => {
   const declared = seeded({ presence: U10_RULES });
-  const official = declared.tournamentRecord.participants[0];
+  const official = defined(declared.tournamentRecord.participants, 'participants')[0];
   official.participantRole = OFFICIAL;
 
   const notUsed: any = getPresenceExpectation({
@@ -105,7 +108,7 @@ it('distinguishes "notUsed" from "nobody said" — the ambiguity D4h exists to r
   const silent = seeded();
   const undeclared: any = getPresenceExpectation({
     tournamentRecord: silent.tournamentRecord,
-    participant: silent.tournamentRecord.participants[0],
+    participant: defined(silent.tournamentRecord.participants, 'participants')[0],
     fact: 'matchCheckIn',
   });
   expect(undeclared.declared).toEqual(false);
@@ -132,7 +135,7 @@ it('permits a PARENT at a U10 event and refuses one otherwise', () => {
   const openEvent = seeded({ presence: U10_RULES });
   const openResult: any = validatePresenceAttribution({
     tournamentRecord: openEvent.tournamentRecord,
-    participant: openEvent.tournamentRecord.participants[0],
+    participant: defined(openEvent.tournamentRecord.participants, 'participants')[0],
     fact: 'matchCheckIn',
     attributedTo: parent,
   });
@@ -142,8 +145,8 @@ it('permits a PARENT at a U10 event and refuses one otherwise', () => {
   const juniorEvent = seeded({ presence: U10_RULES, ageCategoryCode: 'U10' });
   const juniorResult: any = validatePresenceAttribution({
     tournamentRecord: juniorEvent.tournamentRecord,
-    participant: juniorEvent.tournamentRecord.participants[0],
-    event: juniorEvent.tournamentRecord.events[0],
+    participant: defined(juniorEvent.tournamentRecord.participants, 'participants')[0],
+    event: defined(juniorEvent.tournamentRecord.events, 'events')[0],
     fact: 'matchCheckIn',
     attributedTo: parent,
   });
@@ -156,7 +159,7 @@ it('refuses an attester who states no relationship when the policy enumerates th
 
   const result: any = validatePresenceAttribution({
     attributedTo: { attributionType: DECLARED_ATTRIBUTION, name: 'Somebody' } as any,
-    participant: tournamentRecord.participants[0],
+    participant: defined(tournamentRecord.participants, 'participants')[0],
     fact: 'matchCheckIn',
     tournamentRecord,
   });
@@ -171,7 +174,7 @@ it('is silent where nothing is declared', () => {
 
   const result: any = validatePresenceAttribution({
     attributedTo: { attributionType: DECLARED_ATTRIBUTION, name: 'Anyone' } as any,
-    participant: tournamentRecord.participants[0],
+    participant: defined(tournamentRecord.participants, 'participants')[0],
     fact: 'matchCheckIn',
     tournamentRecord,
   });

@@ -1,4 +1,5 @@
 import { MISSING_VALUE, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { defined } from '@Tests/helpers/defined';
 import { deriveElement } from '@Query/base/deriveElement';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
@@ -9,7 +10,7 @@ describe('deriveElement', () => {
       participantsProfile: { participantsCount: 4 },
     });
 
-    const participantId = tournamentRecord.participants[0].participantId;
+    const participantId = defined(tournamentRecord.participants, 'participants')[0].participantId;
     const result = deriveElement({ tournamentRecord, participantId });
 
     expect(result.participantId).toEqual(participantId);
@@ -21,10 +22,10 @@ describe('deriveElement', () => {
       participantsProfile: { participantsCount: 2 },
     });
 
-    const participantId = tournamentRecord.participants[0].participantId;
+    const participantId = defined(tournamentRecord.participants, 'participants')[0].participantId;
     const result = deriveElement({ tournamentRecord, participantId });
 
-    expect(result).toMatchObject(tournamentRecord.participants[0]);
+    expect(result).toMatchObject(defined(tournamentRecord.participants, 'participants')[0]);
   });
 
   it('returns error result when participantId not found', () => {
@@ -49,7 +50,7 @@ describe('deriveElement', () => {
       drawProfiles: [{ drawSize: 8 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
     const result = deriveElement({ drawDefinition });
 
     expect(result).toEqual(drawDefinition);
@@ -60,7 +61,7 @@ describe('deriveElement', () => {
       drawProfiles: [{ drawSize: 4 }],
     });
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     const result = deriveElement({ event });
 
     expect(result).toEqual(event);
@@ -175,7 +176,7 @@ describe('deriveElement', () => {
       participantsProfile: { participantsCount: 2 },
     });
 
-    const participantId = tournamentRecord.participants[0].participantId;
+    const participantId = defined(tournamentRecord.participants, 'participants')[0].participantId;
     const element = { id: 'direct' };
     const drawDefinition = { drawId: 'draw' };
 

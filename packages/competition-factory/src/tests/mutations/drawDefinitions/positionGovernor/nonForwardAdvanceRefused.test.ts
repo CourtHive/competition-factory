@@ -1,4 +1,5 @@
 import { useEngineCatch } from '@Tests/testHarness/engineCatch';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
@@ -20,11 +21,14 @@ function unpositionedDraw(repeatId: boolean) {
     tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8, automated: false }], nonRandom: 1 });
-  const [structure] = tournamentRecord.events[0].drawDefinitions[0].structures;
+  const [structure] = defined(
+    defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+    'structures',
+  );
   const firstOfRound = (roundNumber: number) =>
-    structure.matchUps.find((m: any) => m.roundNumber === roundNumber && m.roundPosition === 1);
+    defined(structure.matchUps, 'matchUps').find((m: any) => m.roundNumber === roundNumber && m.roundPosition === 1);
   // the round-2 matchUp that drawPositions 1 and 2 advance into takes the id of their round-1 matchUp
-  if (repeatId) firstOfRound(2).matchUpId = firstOfRound(1).matchUpId;
+  if (repeatId) defined(firstOfRound(2), 'value').matchUpId = defined(firstOfRound(1), 'value').matchUpId;
   tournamentEngine.setState(tournamentRecord);
   return { drawId, structureId: structure.structureId };
 }

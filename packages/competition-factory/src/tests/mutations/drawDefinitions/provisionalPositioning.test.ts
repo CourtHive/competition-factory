@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
@@ -179,10 +180,13 @@ test.each([
     const matchUps = tournamentEngine.tournamentMatchUps().completedMatchUps;
     expect(matchUps.length).toEqual(completionGoal);
 
-    const assignedPositionsCount =
-      tournamentRecord.events[0].drawDefinitions[0].structures[1].positionAssignments.filter(
-        (assignment) => assignment.participantId || assignment.bye,
-      ).length;
+    const assignedPositionsCount = defined(
+      defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[1].positionAssignments,
+      'positionAssignments',
+    ).filter((assignment) => assignment.participantId || assignment.bye).length;
 
     expect(assignedPositionsCount).toEqual(playoffAssignmentsCount);
   },

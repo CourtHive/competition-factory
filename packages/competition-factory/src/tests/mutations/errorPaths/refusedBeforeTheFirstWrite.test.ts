@@ -1,4 +1,5 @@
 import { setSubscriptions } from '@Global/state/globalState';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -126,17 +127,21 @@ it('a winner with no drawPositions to direct from is refused before the score is
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8 }], setState: false });
   // a record the factory did not produce: a first-round matchUp stored without its drawPositions
-  const matchUp = tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps.find(
-    (candidate) => candidate.roundNumber === 1 && candidate.roundPosition === 1,
-  );
-  Reflect.deleteProperty(matchUp, 'drawPositions');
+  const matchUp = defined(
+    defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0].matchUps,
+    'matchUps',
+  ).find((candidate) => candidate.roundNumber === 1 && candidate.roundPosition === 1);
+  Reflect.deleteProperty(defined(matchUp, 'matchUp'), 'drawPositions');
   tournamentEngine.setState(tournamentRecord);
   const before = record();
 
   // with participants not required, nothing above the write refused it, and `directParticipants` did, after the score
   const policyDefinitions = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };
   const result: any = tournamentEngine.setMatchUpStatus({
-    matchUpId: matchUp.matchUpId,
+    matchUpId: defined(matchUp, 'matchUp').matchUpId,
     policyDefinitions,
     outcome,
     drawId,

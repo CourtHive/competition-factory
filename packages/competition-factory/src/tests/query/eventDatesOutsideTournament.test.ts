@@ -1,4 +1,5 @@
 import { getEventInconsistencies, EVENT_DATES_OUTSIDE_TOURNAMENT } from '@Query/event/getEventInconsistencies';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
@@ -11,7 +12,7 @@ function seedRecord() {
     drawProfiles: [{ drawSize: 4 }],
     tournamentAttributes: { startDate, endDate },
   });
-  return { tournamentRecord, event: tournamentRecord.events[0] };
+  return { tournamentRecord, event: defined(tournamentRecord.events, 'events')[0] };
 }
 
 test('an event range inside the tournament range is not reported', () => {

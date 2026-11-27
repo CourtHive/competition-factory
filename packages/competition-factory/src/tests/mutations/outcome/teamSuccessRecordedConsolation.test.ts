@@ -53,7 +53,7 @@ function fixture(status: typeof WALKOVER | typeof RETIRED | typeof DEFAULTED, wi
   const { source, adjacent, consolation } = draw();
   const apply = (
     matchUpId: string,
-    outcome: { winningSide: number; matchUpStatus?: string },
+    outcome: { winningSide?: number; matchUpStatus?: string },
     propagateExitStatus = false,
   ) => {
     expect(engine.setMatchUpStatus({ drawId, matchUpId, outcome, propagateExitStatus }).success).toBe(true);

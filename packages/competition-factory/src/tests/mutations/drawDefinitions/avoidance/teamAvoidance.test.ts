@@ -1,4 +1,5 @@
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -31,11 +32,11 @@ it('can separate team members in an elimination structure', () => {
   );
   expect(individualParticipantIds.length).toEqual(32);
 
-  const singlesEvent = tournamentRecord.events.find(({ eventType }) => eventType === SINGLES_EVENT);
+  const singlesEvent = defined(tournamentRecord.events, 'events').find(({ eventType }) => eventType === SINGLES_EVENT);
 
   const result = tournamentEngine.addEventEntries({
     participantIds: individualParticipantIds,
-    eventId: singlesEvent.eventId,
+    eventId: defined(singlesEvent, 'singlesEvent').eventId,
   });
   expect(result.success).toEqual(true);
 
@@ -49,13 +50,13 @@ it('can separate team members in an elimination structure', () => {
   const policyDefinitions = { [POLICY_TYPE_AVOIDANCE]: avoidancePolicy };
 
   const drawDefinition = tournamentEngine.generateDrawDefinition({
-    eventId: singlesEvent.eventId,
+    eventId: defined(singlesEvent, 'singlesEvent').eventId,
     policyDefinitions,
   }).drawDefinition;
   expect(drawDefinition.entries.length).toEqual(32);
 
   const addResult = tournamentEngine.addDrawDefinition({
-    eventId: singlesEvent.eventId,
+    eventId: defined(singlesEvent, 'singlesEvent').eventId,
     drawDefinition,
   });
   expect(addResult.success).toEqual(true);

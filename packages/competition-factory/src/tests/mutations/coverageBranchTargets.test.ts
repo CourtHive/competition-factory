@@ -3,6 +3,7 @@
  * Tests call functions directly to hit uncovered conditional paths.
  */
 import { mergePersonRequests } from '@Mutate/matchUps/schedule/scheduleMatchUps/personRequests/mergePersonRequests';
+import { defined } from '@Tests/helpers/defined';
 import { savePersonRequests } from '@Mutate/matchUps/schedule/scheduleMatchUps/personRequests/savePersonRequests';
 import { setDrawPositionPreferences } from '@Mutate/drawDefinitions/draft/setDrawPositionPreferences';
 import { auditAutoScheduling } from '@Mutate/matchUps/schedule/schedulers/auditAutoScheduling';
@@ -246,7 +247,7 @@ function setupWithPersonRequests() {
     participantsProfile: { participantsCount: 10 },
   });
   tournamentEngine.setState(tournamentRecord);
-  const personId = tournamentRecord.participants[0].person?.personId;
+  const personId = defined(defined(tournamentRecord.participants, 'participants')[0].person?.personId, 'personId');
   return { tournamentRecord, personId };
 }
 
@@ -473,7 +474,7 @@ describe('savePersonRequests branch coverage', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       participantsProfile: { participantsCount: 5 },
     });
-    const personId = tournamentRecord.participants[0].person?.personId;
+    const personId = defined(defined(tournamentRecord.participants, 'participants')[0].person?.personId, 'personId');
     if (!personId) return;
 
     const result = savePersonRequests({
@@ -607,7 +608,7 @@ describe('getDraftState branch coverage', () => {
     });
     tournamentEngine.setState(tournamentRecord);
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
     // Initialize draft to create the extension
     const initResult = tournamentEngine.initializeDraft({

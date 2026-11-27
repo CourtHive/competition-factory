@@ -1,4 +1,5 @@
 import { getParticipantId } from '@Functions/global/extractors';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
 
@@ -17,8 +18,10 @@ test('with uniqueParticipants: false draw entries will overlap', () => {
   expect(error).toBeUndefined();
   expect(eventIds.length).toEqual(2);
 
-  const eventEnteredParticipantIds = tournamentRecord.events.map(({ entries }) =>
-    entries.filter(({ entryStatus }) => entryStatus === DIRECT_ACCEPTANCE).map(getParticipantId),
+  const eventEnteredParticipantIds = defined(tournamentRecord.events, 'events').map(({ entries }) =>
+    defined(entries, 'entries')
+      .filter(({ entryStatus }) => entryStatus === DIRECT_ACCEPTANCE)
+      .map(getParticipantId),
   );
   const overlap = eventEnteredParticipantIds[0].find((participantId) =>
     eventEnteredParticipantIds[1].includes(participantId),
@@ -37,8 +40,10 @@ test('drawProfiles can specify unique participants', () => {
   expect(error).toBeUndefined();
   expect(eventIds.length).toEqual(2);
 
-  const eventEnteredParticipantIds = tournamentRecord.events.map(({ entries }) =>
-    entries.filter(({ entryStatus }) => entryStatus === DIRECT_ACCEPTANCE).map(getParticipantId),
+  const eventEnteredParticipantIds = defined(tournamentRecord.events, 'events').map(({ entries }) =>
+    defined(entries, 'entries')
+      .filter(({ entryStatus }) => entryStatus === DIRECT_ACCEPTANCE)
+      .map(getParticipantId),
   );
   const overlap = eventEnteredParticipantIds[0].find((participantId) =>
     eventEnteredParticipantIds[1].includes(participantId),
@@ -73,8 +78,10 @@ test('event entries will overlap if uniqueParticipants is not true', () => {
   expect(error).toBeUndefined();
   expect(eventIds.length).toEqual(2);
 
-  const eventEnteredParticipantIds = tournamentRecord.events.map(({ entries }) =>
-    entries.filter(({ entryStatus }) => entryStatus === DIRECT_ACCEPTANCE).map(getParticipantId),
+  const eventEnteredParticipantIds = defined(tournamentRecord.events, 'events').map(({ entries }) =>
+    defined(entries, 'entries')
+      .filter(({ entryStatus }) => entryStatus === DIRECT_ACCEPTANCE)
+      .map(getParticipantId),
   );
   const overlap = eventEnteredParticipantIds[0].find((participantId) =>
     eventEnteredParticipantIds[1].includes(participantId),
@@ -110,8 +117,10 @@ test('drawProfiles within eventProfiles can specify unique participants', () => 
   expect(error).toBeUndefined();
   expect(eventIds.length).toEqual(2);
 
-  const eventEnteredParticipantIds = tournamentRecord.events.map(({ entries }) =>
-    entries.filter(({ entryStatus }) => entryStatus === DIRECT_ACCEPTANCE).map(getParticipantId),
+  const eventEnteredParticipantIds = defined(tournamentRecord.events, 'events').map(({ entries }) =>
+    defined(entries, 'entries')
+      .filter(({ entryStatus }) => entryStatus === DIRECT_ACCEPTANCE)
+      .map(getParticipantId),
   );
   const overlap = eventEnteredParticipantIds[0].find((participantId) =>
     eventEnteredParticipantIds[1].includes(participantId),

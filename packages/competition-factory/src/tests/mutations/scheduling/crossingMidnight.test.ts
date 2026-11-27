@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
@@ -246,7 +247,7 @@ it("a participant's recovery past midnight holds them in another event the next 
     },
   });
   // the same two players in a second event
-  const participantIds = participants.map(({ participantId }) => participantId);
+  const participantIds = defined(participants, 'participants').map(({ participantId }) => participantId);
   let result: any = tournamentEngine.addEvent({ event: { eventId: 'next', eventName: 'Next' } });
   expect(result.success).toEqual(true);
   result = tournamentEngine.addEventEntries({ eventId: 'next', participantIds });

@@ -1,4 +1,5 @@
 import { POLICY_TYPE_COMPETITIVE_BANDS } from '@Constants/policyConstants';
+import { defined } from '@Tests/helpers/defined';
 import { getContextContent } from '@Query/hierarchical/getContextContent';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
@@ -69,7 +70,7 @@ describe('getContextContent', () => {
 
     const result = getContextContent({
       tournamentRecord,
-      drawDefinition: tournamentRecord.events[0].drawDefinitions[0],
+      drawDefinition: defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0],
       contextProfile: { withCompetitiveness: true },
     });
 
@@ -83,7 +84,7 @@ describe('getContextContent', () => {
 
     const result = getContextContent({
       tournamentRecord,
-      event: tournamentRecord.events[0],
+      event: defined(tournamentRecord.events, 'events')[0],
       contextProfile: { withCompetitiveness: true },
     });
 
@@ -97,8 +98,8 @@ describe('getContextContent', () => {
 
     const result = getContextContent({
       tournamentRecord,
-      drawDefinition: tournamentRecord.events[0].drawDefinitions[0],
-      event: tournamentRecord.events[0],
+      drawDefinition: defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0],
+      event: defined(tournamentRecord.events, 'events')[0],
       contextProfile: { withCompetitiveness: true },
     });
 
@@ -153,7 +154,7 @@ describe('getContextContent', () => {
 
   it('uses default policy when no policies found', () => {
     // Create tournament with no policies
-    const { tournamentRecord } = mocksEngine.generateTournamentRecord();
+    const { tournamentRecord }: any = mocksEngine.generateTournamentRecord();
     delete tournamentRecord.policyDefinitions;
 
     const result = getContextContent({

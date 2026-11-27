@@ -1,4 +1,5 @@
 import { getParticipantId } from '@Functions/global/extractors';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { mockProfile } from './mockScaleProfile';
@@ -205,7 +206,9 @@ it('can assess predictive accuracy of scaleValues', () => {
   tournamentEngine.setState(tournamentRecord);
 
   const participants = tournamentRecord.participants;
-  const participantsWithTimeItemsCount = participants.filter(({ timeItems }) => timeItems?.length).length;
+  const participantsWithTimeItemsCount = defined(participants, 'participants').filter(
+    ({ timeItems }) => timeItems?.length,
+  ).length;
 
   expect(participantsWithTimeItemsCount).toEqual(drawSize - 4);
 

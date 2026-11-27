@@ -1,4 +1,5 @@
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
+import { defined } from '@Tests/helpers/defined';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { TEMPLATE_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { parseScoreString } from '@Scoring/parse/parseScoreString';
@@ -42,7 +43,7 @@ it('can generate a tournament with events and draws', () => {
   const { eventId } = eventResult;
   expect(success).toEqual(true);
 
-  const participantIds = participants.map((p) => p.participantId);
+  const participantIds = defined(participants, 'participants').map((p) => p.participantId);
   result = tournamentEngine.addEventEntries({ eventId, participantIds });
   expect(result.success).toEqual(true);
 

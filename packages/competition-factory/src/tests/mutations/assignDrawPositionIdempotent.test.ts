@@ -1,4 +1,5 @@
 import { tournamentEngine } from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { defined } from '@Tests/helpers/defined';
 import { expect, test } from 'vitest';
@@ -32,9 +33,12 @@ test('assignDrawPosition is idempotent for the same participant at the same draw
   expect(gen.success).toEqual(true);
 
   const drawId = gen.drawIds[0];
-  const drawDefinition = gen.tournamentRecord.events[0].drawDefinitions[0];
-  const structureId = drawDefinition.structures[0].structureId;
-  const participantId = gen.tournamentRecord.events[0].entries[0].participantId;
+  const drawDefinition = defined(
+    defined(gen.tournamentRecord.events, 'events')[0].drawDefinitions,
+    'drawDefinitions',
+  )[0];
+  const structureId = defined(drawDefinition.structures, 'structures')[0].structureId;
+  const participantId = defined(defined(gen.tournamentRecord.events, 'events')[0].entries, 'entries')[0].participantId;
 
   // first placement succeeds
   let result: any = tournamentEngine.assignDrawPosition({ drawId, structureId, drawPosition: 1, participantId });
@@ -70,9 +74,12 @@ test('a re-asserting executionQueue batch commits instead of rolling back', asyn
   expect(gen.success).toEqual(true);
 
   const drawId = gen.drawIds[0];
-  const structure = gen.tournamentRecord.events[0].drawDefinitions[0].structures[0];
+  const structure = defined(
+    defined(defined(gen.tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+    'structures',
+  )[0];
   const structureId = structure.structureId;
-  const assigned = structure.positionAssignments.filter((a: any) => a.participantId);
+  const assigned = defined(structure.positionAssignments, 'positionAssignments').filter((a: any) => a.participantId);
   expect(assigned.length).toBeGreaterThan(0);
 
   // re-push every already-correct assignment (mirrors the integration re-sync)

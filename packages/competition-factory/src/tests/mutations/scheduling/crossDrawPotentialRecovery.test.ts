@@ -1,4 +1,5 @@
 import competitionEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
@@ -31,9 +32,9 @@ it('does not book a potential SINGLES R2 participant into DOUBLES at the same ti
   competitionEngine.setState(tournamentRecord);
 
   const { tournamentId } = tournamentRecord;
-  const [singles, doubles] = tournamentRecord.events.map((event) => ({
-    structureId: event.drawDefinitions[0].structures[0].structureId,
-    drawId: event.drawDefinitions[0].drawId,
+  const [singles, doubles] = defined(tournamentRecord.events, 'events').map((event) => ({
+    structureId: defined(defined(event.drawDefinitions, 'drawDefinitions')[0].structures, 'structures')[0].structureId,
+    drawId: defined(event.drawDefinitions, 'drawDefinitions')[0].drawId,
     eventId: event.eventId,
     tournamentId,
   }));

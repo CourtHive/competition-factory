@@ -1,4 +1,5 @@
 import { TEMPLATE_SEEDING_ITF as SEEDING_ITF_POLICY } from '@courthive/competition-catalogue';
+import { defined } from '@Tests/helpers/defined';
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { eventConstants } from '@Constants/eventConstants';
@@ -29,7 +30,7 @@ it('generates correct finishingPositionRanges for SINGLE_ELIMINATION draws', () 
   const { eventId } = eventResult;
   expect(success).toEqual(true);
 
-  const participantIds = participants.map((p) => p.participantId);
+  const participantIds = defined(participants, 'participants').map((p) => p.participantId);
   result = tournamentEngine.addEventEntries({ eventId, participantIds });
   expect(result.success).toEqual(true);
 

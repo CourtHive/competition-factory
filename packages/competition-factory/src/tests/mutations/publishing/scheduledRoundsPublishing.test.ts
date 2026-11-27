@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { defined } from '@Tests/helpers/defined';
 import { getMatchUpIds } from '@Functions/global/extractors';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -120,7 +121,10 @@ describe('scheduledRounds publishing', () => {
     const matchUpIds = getMatchUpIds(allMatchUps);
     tournamentEngine.scheduleMatchUps({ scheduleDate: START_DATE, matchUpIds });
 
-    const structureId = tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId;
+    const structureId = defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0].structureId;
 
     // Publish event with roundLimit: 2
     tournamentEngine.publishEvent({
@@ -172,7 +176,10 @@ describe('scheduledRounds publishing', () => {
     const matchUpIds = getMatchUpIds(allMatchUps);
     tournamentEngine.scheduleMatchUps({ scheduleDate: START_DATE, matchUpIds });
 
-    const structureId = tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId;
+    const structureId = defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0].structureId;
 
     // Publish with scheduledRounds: rounds 2 and 3 explicitly unpublished
     // Round 1 is unlisted → passes through normally
@@ -227,7 +234,10 @@ describe('scheduledRounds publishing', () => {
     const matchUpIds = getMatchUpIds(allMatchUps);
     tournamentEngine.scheduleMatchUps({ scheduleDate: START_DATE, matchUpIds });
 
-    const structureId = tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId;
+    const structureId = defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0].structureId;
 
     // Publish with scheduledRounds: round 1 published, round 2 embargoed
     // Round 3 is unlisted → passes through normally
@@ -311,7 +321,10 @@ describe('scheduledRounds publishing', () => {
     const matchUpIds = getMatchUpIds(allMatchUps);
     tournamentEngine.scheduleMatchUps({ scheduleDate: START_DATE, matchUpIds });
 
-    const structureId = tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId;
+    const structureId = defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0].structureId;
 
     // roundLimit: 2 caps at round 2; scheduledRounds explicitly unpublishes round 2
     // Only round 1 should appear (round 3 blocked by roundLimit, round 2 explicitly unpublished)
@@ -367,7 +380,10 @@ describe('scheduledRounds publishing', () => {
     const matchUpIds = getMatchUpIds(allMatchUps);
     tournamentEngine.scheduleMatchUps({ scheduleDate: START_DATE, matchUpIds });
 
-    const structureId = tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId;
+    const structureId = defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0].structureId;
 
     // roundLimit: 2, no scheduledRounds → rounds 1-2 in schedule
     tournamentEngine.publishEvent({
@@ -461,7 +477,10 @@ describe('scheduledRounds publishing', () => {
     const matchUpIds = getMatchUpIds(allMatchUps);
     tournamentEngine.scheduleMatchUps({ scheduleDate: START_DATE, matchUpIds });
 
-    const structureId = tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId;
+    const structureId = defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0].structureId;
 
     // Step 1: Publish with roundLimit: 2 and round 2 explicitly unpublished
     // Round 1 is unlisted → passes through; round 2 is explicitly hidden; round 3 blocked by roundLimit
@@ -578,7 +597,10 @@ describe('scheduledRounds publishing', () => {
     const matchUpIds = getMatchUpIds(allMatchUps);
     tournamentEngine.scheduleMatchUps({ scheduleDate: START_DATE, matchUpIds });
 
-    const structureId = tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId;
+    const structureId = defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0].structureId;
 
     // Only round 3 has an override (embargoed); rounds 1-2 are unlisted → pass through
     tournamentEngine.publishEvent({
@@ -663,7 +685,10 @@ describe('scheduledRounds publishing', () => {
     const matchUpIds = getMatchUpIds(allMatchUps);
     tournamentEngine.scheduleMatchUps({ scheduleDate: START_DATE, matchUpIds });
 
-    const structureId = tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId;
+    const structureId = defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0].structureId;
 
     // Publish with round 2 schedule embargoed
     tournamentEngine.publishEvent({
@@ -736,7 +761,10 @@ describe('scheduledRounds publishing', () => {
     const matchUpIds = getMatchUpIds(allMatchUps);
     tournamentEngine.scheduleMatchUps({ scheduleDate: START_DATE, matchUpIds });
 
-    const structureId = tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId;
+    const structureId = defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0].structureId;
 
     tournamentEngine.publishEvent({
       removePriorValues: true,
@@ -864,7 +892,10 @@ describe('scheduledRounds publishing', () => {
     const matchUpIds = getMatchUpIds(allMatchUps);
     tournamentEngine.scheduleMatchUps({ scheduleDate: START_DATE, matchUpIds });
 
-    const structureId = tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId;
+    const structureId = defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0].structureId;
 
     tournamentEngine.publishEvent({
       removePriorValues: true,
@@ -916,7 +947,10 @@ describe('scheduledRounds publishing', () => {
     const matchUpIds = getMatchUpIds(allMatchUps);
     tournamentEngine.scheduleMatchUps({ scheduleDate: START_DATE, matchUpIds });
 
-    const structureId = tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId;
+    const structureId = defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0].structureId;
 
     // Embargo round 2
     tournamentEngine.publishEvent({

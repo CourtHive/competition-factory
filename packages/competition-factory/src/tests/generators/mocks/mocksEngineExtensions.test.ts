@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
@@ -19,8 +20,8 @@ describe('Extension 1: completeDrawMatchUps stage/roundNumber filters', () => {
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({ drawProfiles });
 
-    const event = tournamentRecord.events[0];
-    const drawDefinition = event.drawDefinitions.find((d) => d.drawId === drawId);
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions').find((d) => d.drawId === drawId);
 
     mocksEngine.completeDrawMatchUps({
       tournamentRecord,
@@ -56,8 +57,8 @@ describe('Extension 1: completeDrawMatchUps stage/roundNumber filters', () => {
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({ drawProfiles });
 
-    const event = tournamentRecord.events[0];
-    const drawDefinition = event.drawDefinitions.find((d) => d.drawId === drawId);
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions').find((d) => d.drawId === drawId);
 
     // First complete all MAIN matchUps
     mocksEngine.completeDrawMatchUps({
@@ -95,8 +96,8 @@ describe('Extension 1: completeDrawMatchUps stage/roundNumber filters', () => {
       tournamentRecord,
     } = mocksEngine.generateTournamentRecord({ drawProfiles });
 
-    const event = tournamentRecord.events[0];
-    const drawDefinition = event.drawDefinitions.find((d) => d.drawId === drawId);
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions').find((d) => d.drawId === drawId);
 
     const result = mocksEngine.completeDrawMatchUps({
       tournamentRecord,
@@ -171,8 +172,8 @@ describe('Extension 3: drawProfile outcomes with double exit status', () => {
     expect(tournamentRecord).toBeDefined();
 
     // Now complete remaining matchUps using the new stage/round filters
-    const event = tournamentRecord.events[0];
-    const drawDefinition = event.drawDefinitions.find((d) => d.drawId === drawId);
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions').find((d) => d.drawId === drawId);
 
     mocksEngine.completeDrawMatchUps({
       tournamentRecord,

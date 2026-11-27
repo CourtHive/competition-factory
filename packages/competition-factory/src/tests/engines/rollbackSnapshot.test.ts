@@ -4,6 +4,7 @@ import {
   queueCannotPartlyCommit,
   WRITES_BEFORE_REFUSING,
 } from '@Assemblies/engines/parts/rollbackSnapshot';
+import { defined } from '@Tests/helpers/defined';
 import { addNotice, getNoticeBuffer, getTournamentRecords, setOutcomePipeline } from '@Global/state/globalState';
 import { setStateProvider } from '@Global/state/globalState';
 import { deleteNotices, readMutationStatus, setSubscriptions } from '@Global/state/globalState';
@@ -238,7 +239,11 @@ describe('sync engine', () => {
     const placements: [string, object, boolean][] = [
       ['assignDrawPositionBye', params, true],
       ['assignDrawPosition', { ...params, bye: true }, true],
-      ['assignDrawPosition', { ...params, participantId: tournamentRecord.participants[0].participantId }, false],
+      [
+        'assignDrawPosition',
+        { ...params, participantId: defined(tournamentRecord.participants, 'participants')[0].participantId },
+        false,
+      ],
     ];
     for (const [method, placement, snapshot] of placements) {
       const record = held();

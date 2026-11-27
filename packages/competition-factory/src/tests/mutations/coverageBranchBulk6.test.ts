@@ -3,6 +3,7 @@
  * Each describe block targets specific uncovered conditional paths.
  */
 import { dehydrateMatchUps, getMatchUpFormatMap, removeExtraneousAttributes } from '@Mutate/tournaments/dehydrate';
+import { defined } from '@Tests/helpers/defined';
 import { findMatchupFormatAverageTimes, findMatchupFormatRecoveryTimes } from '@Acquire/findMatchUpFormatTimes';
 import { organizeDrawPositionOptions } from '@Query/drawDefinition/avoidance/organizeDrawPositionOptions';
 import { assignDrawPositionQualifier } from '@Mutate/matchUps/drawPositions/assignDrawPositionQualifier';
@@ -30,6 +31,7 @@ import {
   VENUE_NOT_FOUND,
   MISSING_POLICY_DEFINITION,
 } from '@Constants/errorConditionConstants';
+import type { OnlineResource } from '@Types/tournamentTypes';
 
 // ----------------------------------------------------------------
 // 1. mapNumbersToIndexes — uncovered branches
@@ -304,7 +306,7 @@ describe('dehydrate branch coverage', () => {
 // 5. removeOnlineResource — uncovered branches
 // ----------------------------------------------------------------
 describe('removeOnlineResource branch coverage', () => {
-  const makeResource = () => ({
+  const makeResource = (): OnlineResource => ({
     identifier: 'test-id',
     resourceType: 'URL',
     resourceSubType: 'STREAM',
@@ -332,7 +334,7 @@ describe('removeOnlineResource branch coverage', () => {
   });
 
   it('removes from parentOrganisation when organisationId matches', () => {
-    const { tournamentRecord } = mocksEngine.generateTournamentRecord();
+    const { tournamentRecord }: any = mocksEngine.generateTournamentRecord();
     tournamentRecord.parentOrganisation = {
       parentOrganisationId: 'org1',
       organisationName: 'Test Org',
@@ -344,7 +346,7 @@ describe('removeOnlineResource branch coverage', () => {
       organisationId: 'org1',
     } as any);
     expect(result.success).toBe(true);
-    expect(tournamentRecord.parentOrganisation.onlineResources).toHaveLength(0);
+    expect(defined(tournamentRecord.parentOrganisation, 'parentOrganisation').onlineResources).toHaveLength(0);
   });
 
   it('returns PARTICIPANT_NOT_FOUND when participantId is not found', () => {
@@ -371,7 +373,7 @@ describe('removeOnlineResource branch coverage', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 4 }],
     });
-    const participant = tournamentRecord.participants[0];
+    const participant = defined(tournamentRecord.participants, 'participants')[0];
     participant.onlineResources = [makeResource()];
     const result = removeOnlineResource({
       tournamentRecord,
@@ -386,7 +388,7 @@ describe('removeOnlineResource branch coverage', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 4 }],
     });
-    const participant = tournamentRecord.participants.find((p) => p.person?.personId);
+    const participant = defined(tournamentRecord.participants, 'participants').find((p) => p.person?.personId);
     if (participant?.person) {
       participant.person.onlineResources = [makeResource()];
       const result = removeOnlineResource({
@@ -428,7 +430,7 @@ describe('removeOnlineResource branch coverage', () => {
       venueId: 'v1',
     } as any);
     expect(result.success).toBe(true);
-    expect(tournamentRecord.venues[0].onlineResources).toHaveLength(0);
+    expect(defined(tournamentRecord.venues, 'venues')[0].onlineResources).toHaveLength(0);
   });
 
   it('removes from court when courtId and venueId match', () => {
@@ -441,7 +443,7 @@ describe('removeOnlineResource branch coverage', () => {
       venueId: 'v1',
     } as any);
     expect(result.success).toBe(true);
-    expect(tournamentRecord.venues[0].courts[0].onlineResources).toHaveLength(0);
+    expect(defined(defined(tournamentRecord.venues, 'venues')[0].courts, 'courts')[0].onlineResources).toHaveLength(0);
   });
 });
 

@@ -35,7 +35,7 @@ it('can assign SINGLE_ELIMINATION draw drawPositions', () => {
 
   const entryStatuses: EntryStatusUnion[] = [DIRECT_ACCEPTANCE, WILDCARD];
   const mainDrawEntries = getStageEntries({
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
     entryStatuses,
     stage,
   });
@@ -111,7 +111,7 @@ it('can assign ROUND_ROBIN draw drawPositions', () => {
 
   const entryStatuses: EntryStatusUnion[] = [DIRECT_ACCEPTANCE, WILDCARD];
   const mainDrawEntries = getStageEntries({
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
     entryStatuses,
     stage,
   });
@@ -142,10 +142,10 @@ it('can assign ROUND_ROBIN draw drawPositions', () => {
   });
   expect(assignedPositions?.length).toEqual(16);
 
-  const groups = drawDefinition.structures[0].structures;
-  groups.forEach((group, i) => {
+  const groups = defined(defined(drawDefinition, 'drawDefinition').structures, 'structures')[0].structures;
+  defined(groups, 'groups').forEach((group, i) => {
     const positionAssignments = group.positionAssignments;
-    positionAssignments.forEach((assignment, j) => {
+    defined(positionAssignments, 'positionAssignments').forEach((assignment, j) => {
       const expectedParticipant = (i * 4 + j) * 2;
       const expectedUUID = `uuid${expectedParticipant}`;
       expect(expectedUUID).not.toBeUndefined();

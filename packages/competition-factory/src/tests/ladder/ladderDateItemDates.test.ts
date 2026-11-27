@@ -1,4 +1,5 @@
 import { expect, test } from 'vitest';
+import { defined } from '@Tests/helpers/defined';
 
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -22,8 +23,8 @@ function seatedLadder() {
     drawProfiles: [{ drawType: LADDER, drawSize: 4 }],
     setState: true,
   });
-  const { drawId } = tournamentRecord.events[0].drawDefinitions[0];
-  for (const participant of tournamentRecord.participants.slice(0, 4)) {
+  const { drawId } = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  for (const participant of defined(tournamentRecord.participants, 'participants').slice(0, 4)) {
     const result: any = tournamentEngine.addLadderParticipant({
       participantId: participant.participantId,
       addedAt: ISO(1),

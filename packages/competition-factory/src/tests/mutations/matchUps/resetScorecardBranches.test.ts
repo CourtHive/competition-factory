@@ -1,4 +1,5 @@
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
+import { defined } from '@Tests/helpers/defined';
 import { resetScorecard } from '@Mutate/matchUps/resetScorecard';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -336,7 +337,7 @@ describe('resetScorecard branch coverage', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
     const result = resetScorecard({
       tournamentRecord,
@@ -351,7 +352,7 @@ describe('resetScorecard branch coverage', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
     const result = resetScorecard({
       tournamentRecord,
@@ -366,7 +367,7 @@ describe('resetScorecard branch coverage', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
     const result = resetScorecard({
       tournamentRecord,

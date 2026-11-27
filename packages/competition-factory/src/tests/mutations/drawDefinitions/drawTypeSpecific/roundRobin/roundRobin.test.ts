@@ -1,4 +1,5 @@
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { defined } from '@Tests/helpers/defined';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -121,9 +122,12 @@ it.each(scenarios)('can generate and verify', (scenario) => {
     expect(p.participantMap[participantId].draws[drawId].seedAssignments[MAIN].seedValue).toBeDefined();
   }
 
-  const structure = result.tournamentRecord.events[0].drawDefinitions[0].structures[0];
+  const structure = defined(
+    defined(defined(result.tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+    'structures',
+  )[0];
   const containedStructures = structure.structures;
-  expect(containedStructures.length).toEqual(expectation.groups);
+  expect(defined(containedStructures, 'containedStructures').length).toEqual(expectation.groups);
 
   const seedAssignments = structure.seedAssignments;
   const { positionAssignments } = getPositionAssignments({ structure });
@@ -134,7 +138,9 @@ it.each(scenarios)('can generate and verify', (scenario) => {
     .map(({ drawPosition }) => drawPosition);
   expect(byePositions?.length).toEqual(expectation.byesCount);
 
-  const assignedSeedPositions = seedAssignments.filter((assignment) => assignment.participantId);
+  const assignedSeedPositions = defined(seedAssignments, 'seedAssignments').filter(
+    (assignment) => assignment.participantId,
+  );
   expect(assignedSeedPositions.length).toEqual(drawProfile.seedsCount);
 
   const matchUps = getAllStructureMatchUps({ structure }).matchUps;
@@ -143,10 +149,10 @@ it.each(scenarios)('can generate and verify', (scenario) => {
   const roundMatchUpCounts = rmArr.map((value) => value.length);
   expect(roundMatchUpCounts).toEqual(expectation.roundMatchUpCounts);
 
-  const groupedDrawPositions = structure.structures.map(({ positionAssignments }) =>
-    positionAssignments.map(({ drawPosition }) => drawPosition),
+  const groupedDrawPositions = defined(structure.structures, 'structures').map(({ positionAssignments }) =>
+    defined(positionAssignments, 'positionAssignments').map(({ drawPosition }) => drawPosition),
   );
-  const seedMapping = seedAssignments.map((seedAssignment) => {
+  const seedMapping = defined(seedAssignments, 'seedAssignments').map((seedAssignment) => {
     const position = assignedPositions?.find((assignment) => assignment.participantId === seedAssignment.participantId);
     return {
       drawPosition: position?.drawPosition,
@@ -155,7 +161,9 @@ it.each(scenarios)('can generate and verify', (scenario) => {
   });
 
   const seededByes = seedMapping.map(({ drawPosition, seedNumber }) => {
-    const groupedPositions = groupedDrawPositions.find((group) => group.includes(drawPosition));
+    const groupedPositions = groupedDrawPositions.find((group) =>
+      group.includes(defined(drawPosition, 'drawPosition')),
+    );
     const groupByes = intersection(byePositions, groupedPositions).length;
     return [seedNumber, groupByes];
   });

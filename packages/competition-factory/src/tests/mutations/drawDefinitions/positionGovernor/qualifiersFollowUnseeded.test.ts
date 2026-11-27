@@ -1,4 +1,5 @@
 import * as candidates from '@Query/drawDefinition/avoidance/generatePositioningCandidate';
+import { defined } from '@Tests/helpers/defined';
 import * as qualifiers from '@Mutate/matchUps/drawPositions/positionQualifiers';
 import { setSubscriptions } from '@Global/state/globalState';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -90,8 +91,12 @@ describe('anonymous qualifier placeholders follow unseeded entrants', () => {
         },
       ],
     });
-    const structureId = tournamentRecord.events[0].drawDefinitions[0].structures.find(
-      (s) => s.stage === MAIN,
+    const structureId = defined(
+      defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      ).find((s) => s.stage === MAIN),
+      'value',
     ).structureId;
     const position = (drawSize?: number) => {
       tournamentEngine.setState(structuredClone(tournamentRecord));
@@ -129,8 +134,12 @@ describe('anonymous qualifier placeholders follow unseeded entrants', () => {
         },
       ],
     });
-    const structureId = tournamentRecord.events[0].drawDefinitions[0].structures.find(
-      (s) => s.stage === MAIN,
+    const structureId = defined(
+      defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      ).find((s) => s.stage === MAIN),
+      'value',
     ).structureId;
     const positions = [
       [0.9, 0.1, 0.2],

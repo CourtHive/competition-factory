@@ -13,7 +13,7 @@ it.each([
 ])('byes count the qualifier positions a qualifiersCount reserves: %j', (scenario) => {
   const { participantsCount, qualifiersCount, byes } = scenario;
   const {
-    tournamentId,
+    tournamentRecord: { tournamentId },
     eventIds: [eventId],
   } = mocksEngine.generateTournamentRecord({
     eventProfiles: [{ participantsProfile: { participantsCount } }],

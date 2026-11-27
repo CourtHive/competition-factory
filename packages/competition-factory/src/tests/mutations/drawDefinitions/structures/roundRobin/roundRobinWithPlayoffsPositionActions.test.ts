@@ -1,4 +1,5 @@
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
+import { defined } from '@Tests/helpers/defined';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { generateMatchUpOutcome } from '@Tests/helpers/generateMatchUpOutcome';
 import { TEMPLATE_SEEDING_ITF } from '@courthive/competition-catalogue';
@@ -63,7 +64,7 @@ it('disables placement actions for Round Robin Playoffs until all groups are com
   const { eventId } = createdEvent;
   expect(success).toEqual(true);
 
-  const participantIds = participants.map((p) => p.participantId);
+  const participantIds = defined(participants, 'participants').map((p) => p.participantId);
   result = tournamentEngine.addEventEntries({ eventId, participantIds });
   expect(result.success).toEqual(true);
 

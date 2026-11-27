@@ -1,4 +1,5 @@
 import { getSeedValue } from '@Query/participant/getSeedValue';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
@@ -90,7 +91,7 @@ describe('getSeedValue', () => {
       participantFilters: { participantIds: [participant.participantId] },
     }).participants[0];
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     const result = getSeedValue({ participant: updatedParticipant, event, drawId });
 
     expect(result.seedValue).toBe(3);
@@ -103,8 +104,8 @@ describe('getSeedValue', () => {
 
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
-    const drawDefinition = event.drawDefinitions[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions')[0];
     const drawId = drawDefinition.drawId;
 
     // Get participants with seeds

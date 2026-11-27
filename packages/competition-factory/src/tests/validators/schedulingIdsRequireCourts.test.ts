@@ -1,4 +1,5 @@
 import { tournamentRelevantSchedulingIds } from '@Query/scheduling/validateSchedulingProfile';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
@@ -12,7 +13,7 @@ it('requireCourts leaves a courtless venue out of venueIds rather than holding a
     venueProfiles: [{ courtsCount: 2 }, { courtsCount: 1 }],
     setState: true,
   });
-  const [withCourts, courtless] = tournamentRecord.venues;
+  const [withCourts, courtless] = defined(tournamentRecord.venues, 'venues');
   courtless.courts = [];
 
   const { venueIds } = tournamentRelevantSchedulingIds({ tournamentRecord, requireCourts: true });

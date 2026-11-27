@@ -1,4 +1,5 @@
 import { translateAvailabilityToPersonRequests } from '@Mutate/matchUps/schedule/scheduleMatchUps/personRequests/translateAvailabilityToPersonRequests';
+import { defined } from '@Tests/helpers/defined';
 import { getMatchUpId } from '@Functions/global/extractors';
 import competitionEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -102,7 +103,7 @@ it('produces personRequests that the real scheduler honors (end-to-end shape pro
     participantsProfile: { participantsCount },
   });
 
-  const personId = tournamentRecord.participants[0].person.personId;
+  const personId = defined(defined(tournamentRecord.participants, 'participants')[0].person, 'person').personId;
   competitionEngine.setState([tournamentRecord]);
   const { startDate } = competitionEngine.getCompetitionDateRange();
 

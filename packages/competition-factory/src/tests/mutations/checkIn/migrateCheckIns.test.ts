@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
@@ -17,8 +18,11 @@ function legacyRecord() {
     drawProfiles: [{ drawSize: 4, eventType: DOUBLES }],
   });
 
-  const structure = tournamentRecord.events[0].drawDefinitions[0].structures[0];
-  const matchUp = structure.matchUps[0];
+  const structure = defined(
+    defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+    'structures',
+  )[0];
+  const matchUp = defined(structure.matchUps, 'matchUps')[0];
   matchUp.timeItems = [
     { itemType: CHECK_IN, itemValue: 'player-a', createdAt: '2023-09-29T16:47:00.398Z' },
     { itemType: CHECK_IN, itemValue: 'player-b', createdAt: '2023-09-29T16:48:00.000Z' },

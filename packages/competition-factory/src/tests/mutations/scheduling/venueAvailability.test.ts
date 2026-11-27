@@ -1,4 +1,5 @@
 import tournamentEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import { extractDate } from '@Tools/dateTime';
 import { mocksEngine } from '../../..';
 import { expect, test } from 'vitest';
@@ -293,7 +294,7 @@ test('scheduling integration: auto-schedule respects venue constraints', () => {
   tournamentEngine.setState(tournamentRecord);
 
   // All scheduled matchUps should be within venue constraints (10:00-14:00)
-  const scheduleTimes = Object.values(schedulerResult.matchUpScheduleTimes) as string[];
+  const scheduleTimes = Object.values(defined(schedulerResult, 'schedulerResult').matchUpScheduleTimes) as string[];
   for (const time of scheduleTimes) {
     expect(time >= '10:00').toBe(true);
     expect(time < '14:00').toBe(true);

@@ -1,4 +1,5 @@
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
@@ -70,7 +71,7 @@ describe('a score with no format is refused (ruling X1)', () => {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 4 }] });
     // strip every level of format the mocks wrote, so nothing resolves
-    for (const event of tournamentRecord.events) {
+    for (const event of defined(tournamentRecord.events, 'events')) {
       delete event.matchUpFormat;
       for (const drawDefinition of event.drawDefinitions ?? []) {
         delete drawDefinition.matchUpFormat;

@@ -1,7 +1,7 @@
 import { publishEventRecorded, scheduleProfileRoundsRecorded, setSchedulingProfileRecorded } from './recordedWrites';
 import { checkProfileKeys, ENGINE_SUPPLIED_KEYS, MODIFY_TOURNAMENT_RECORD_KEYS } from './profileKeys';
 import { getStageParticipantsCount } from '@Query/drawDefinition/getStageParticipantsCount';
-import { startRecording, stopRecording } from '@Mutate/simulation/scenarioRecorder';
+import { startRecording, stopRecording, RecordedMethod } from '@Mutate/simulation/scenarioRecorder';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getStageParticipants } from '@Query/drawDefinition/getStageParticipants';
 import { generateFlightDrawDefinitions } from './generateFlightDrawDefinitions';
@@ -29,6 +29,8 @@ import type { Event, Tournament } from '@Types/tournamentTypes';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import type { ResultType } from '@Types/factoryTypes';
+import type { generateScheduledRounds } from './generateScheduledRounds';
+import type { ScheduledProfile } from '@Mutate/matchUps/schedule/pipeline/scheduleProfile';
 
 const COMPLETED_STATUSES = new Set<string | undefined>(completedMatchUpStatuses);
 
@@ -368,7 +370,19 @@ function applySchedulingProfile({ schedulingProfile, autoSchedule, periodLength,
  * the record gained, read from the record itself), for a caller who would rather inspect or keep a
  * partial build than start again.
  */
-export function modifyTournamentRecord(params) {
+/** Typed as succeeding, like `generateTournamentRecord`: a refusal still returns `{ error }` at runtime. */
+export type ModifyTournamentRecordResult = ResultType & {
+  totalParticipantsCount: number;
+  methods?: RecordedMethod[];
+  scheduledRounds?: ReturnType<typeof generateScheduledRounds>['scheduledRounds'];
+  schedulerResult?: ScheduledProfile;
+  retained?: boolean;
+  eventIds: string[];
+  venueIds: string[];
+  drawIds: string[];
+};
+
+export function modifyTournamentRecord(params): ModifyTournamentRecordResult {
   // the generators write to the tieFormats they work from; the caller's stay as given
   const owned = withOwnTieFormats(params);
   if (!owned?.recordMethods) return modifyRecord(owned);
@@ -505,7 +519,7 @@ function applyModifications(params) {
       drawIds,
       params: generationParams,
     });
-    if (drawResult.error) return drawResult;
+    if ((drawResult as ResultType).error) return drawResult;
   }
 
   const venueIds = venueProfiles?.length ? generateVenues({ tournamentRecord, venueProfiles }) : [];

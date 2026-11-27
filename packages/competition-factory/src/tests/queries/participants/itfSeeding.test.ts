@@ -1,4 +1,5 @@
 import { generateRange, unique } from '@Tools/arrays';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -36,7 +37,15 @@ it('can generate draw with appropriate ITF seeding', () => {
   };
 
   let { tournamentRecord } = mocksEngine.generateTournamentRecord(mockProfile);
-  expect(tournamentRecord.events[0].drawDefinitions[0].structures[0].seedAssignments.length).toEqual(8);
+  expect(
+    defined(
+      defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0].seedAssignments,
+      'seedAssignments',
+    ).length,
+  ).toEqual(8);
 
   mockProfile = {
     drawProfiles: [
@@ -52,7 +61,15 @@ it('can generate draw with appropriate ITF seeding', () => {
   };
 
   tournamentRecord = mocksEngine.generateTournamentRecord(mockProfile).tournamentRecord;
-  expect(tournamentRecord.events[0].drawDefinitions[0].structures[0].seedAssignments.length).toEqual(4);
+  expect(
+    defined(
+      defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0].seedAssignments,
+      'seedAssignments',
+    ).length,
+  ).toEqual(4);
 
   mockProfile = {
     drawProfiles: [
@@ -68,7 +85,15 @@ it('can generate draw with appropriate ITF seeding', () => {
   };
 
   tournamentRecord = mocksEngine.generateTournamentRecord(mockProfile).tournamentRecord;
-  expect(tournamentRecord.events[0].drawDefinitions[0].structures[0].seedAssignments.length).toEqual(16);
+  expect(
+    defined(
+      defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0].seedAssignments,
+      'seedAssignments',
+    ).length,
+  ).toEqual(16);
 
   mockProfile = {
     drawProfiles: [
@@ -84,7 +109,15 @@ it('can generate draw with appropriate ITF seeding', () => {
   };
 
   tournamentRecord = mocksEngine.generateTournamentRecord(mockProfile).tournamentRecord;
-  expect(tournamentRecord.events[0].drawDefinitions[0].structures[0].seedAssignments.length).toEqual(32);
+  expect(
+    defined(
+      defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0].seedAssignments,
+      'seedAssignments',
+    ).length,
+  ).toEqual(32);
 
   tournamentEngine.setState(tournamentRecord);
   const { participants } = tournamentEngine.getParticipants({

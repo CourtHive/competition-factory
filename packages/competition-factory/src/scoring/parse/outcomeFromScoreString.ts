@@ -8,6 +8,8 @@ import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+import type { ResultType } from '@Types/factoryTypes';
+import type { Score, MatchUpStatusUnion, MatchUp } from '@Types/tournamentTypes';
 
 type ParsedSets = ReturnType<typeof parseScoreString>;
 
@@ -91,10 +93,25 @@ function generateScoreForWinnerOrder(neutralParsedSets, inferredWinningSide, mat
   };
 }
 
+/** The outcome a score string describes, as `setMatchUpStatus` takes it. */
+export type GeneratedOutcome = {
+  sideStatusCodes?: MatchUp['sideStatusCodes'];
+  matchUpStatusCode?: string;
+  matchUpStatus?: MatchUpStatusUnion;
+  winningSide?: number;
+  score: Score;
+};
+
+/**
+ * Typed as succeeding, like the mocks it serves: an invalid `winningSide` or an unreadable overtime score still returns
+ * `{ error }` at runtime.
+ */
+export type GenerateOutcomeFromScoreStringResult = ResultType & { outcome: GeneratedOutcome; winningSide?: number };
+
 /**
  * Generates TODS score object from parseable score string
  */
-export function generateOutcomeFromScoreString(params) {
+export function generateOutcomeFromScoreString(params): GenerateOutcomeFromScoreStringResult {
   const { matchUpFormat, matchUpStatus, winningSide, scoreString, setTBlast, preserveSideOrder = false } = params;
   if (!scoreString)
     return {
@@ -104,14 +121,14 @@ export function generateOutcomeFromScoreString(params) {
         matchUpStatus,
       },
     };
-  if (winningSide && ![1, 2, undefined].includes(winningSide)) return { error: INVALID_VALUES, winningSide };
+  if (winningSide && ![1, 2, undefined].includes(winningSide)) return { error: INVALID_VALUES, winningSide } as never;
 
   const neutralParsedSets = scoreString && parseScoreString({ scoreString, matchUpFormat });
   // an overtime format's labelled scoreboard (`1-1 (Decider: 4-3)`) parses into NaN sets: refuse it rather than
   // build an outcome from them. Only overtime formats: elsewhere a status word (`6-1 RET`) parses the same way and
   // the outcome has always been built around it
   if (parse(matchUpFormat)?.overtimeFormat && Array.isArray(neutralParsedSets) && neutralParsedSets.some(hasNaNScore))
-    return { error: INVALID_VALUES, info: 'the score string could not be read' };
+    return { error: INVALID_VALUES, info: 'the score string could not be read' } as never;
   const isBracketNotation = scoreString?.trim().startsWith('[');
   const inferredWinningSide = inferWinningSide(winningSide, matchUpFormat, neutralParsedSets);
 

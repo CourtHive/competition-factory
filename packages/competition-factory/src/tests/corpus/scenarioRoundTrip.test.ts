@@ -123,8 +123,14 @@ it('a tampered patch is caught by the reader and a tampered hash by the engine r
 });
 
 it('refuses to write a scenario whose initial record fails the CODES schema', () => {
-  const record = generate();
-  record.events[0].drawDefinitions[0].structures[0].matchUps[0].notAField = true;
+  const record: any = generate();
+  defined(
+    defined(
+      defined(defined(record.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0].matchUps,
+    'matchUps',
+  )[0].notAField = true;
   expect(() =>
     writeScenario({
       scenarioId: 'scoring/bad/record',

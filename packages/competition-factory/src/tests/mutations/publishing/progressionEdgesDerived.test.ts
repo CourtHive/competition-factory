@@ -1,4 +1,5 @@
 import { applyProgressionEdges } from '@Query/readModel/progressionEdges';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
@@ -86,7 +87,7 @@ describe('cast() derives progression edges rather than only reading stored ones'
   it('applyProgressionEdges prefers DERIVED over a stale stored edge', () => {
     const record = seed(FIRST_ROUND_LOSER_CONSOLATION);
     tournamentEngine.setState(record);
-    const drawDefinition = record.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(record.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
     const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId: drawDefinition.drawId, inContext: true });
     const target = matchUps.find((m: any) => m.loserMatchUpId);
     expect(target).toBeDefined();

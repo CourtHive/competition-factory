@@ -1,4 +1,5 @@
 import competitionEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
@@ -29,9 +30,13 @@ function setup(participantsCount: number) {
   competitionEngine.setState(tournamentRecord);
 
   const { tournamentId } = tournamentRecord;
-  const { eventId, drawDefinitions } = tournamentRecord.events[0];
-  const { drawId, structures } = drawDefinitions[0];
-  const structureId = (stage) => structures.find((structure) => structure.stage === stage).structureId;
+  const { eventId, drawDefinitions } = defined(tournamentRecord.events, 'events')[0];
+  const { drawId, structures } = defined(drawDefinitions, 'drawDefinitions')[0];
+  const structureId = (stage) =>
+    defined(
+      defined(structures, 'structures').find((structure) => structure.stage === stage),
+      'value',
+    ).structureId;
 
   const addRound = (scheduleDate, stage, roundNumber) => {
     const result: any = competitionEngine.addSchedulingProfileRound({

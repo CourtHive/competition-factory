@@ -1,4 +1,5 @@
 import { updateCourtAvailability } from '@Mutate/venues/updateCourtAvailability';
+import { defined } from '@Tests/helpers/defined';
 import { removeCourtGridBooking } from '@Mutate/venues/removeCourtGridBooking';
 import { addCourtGridBooking } from '@Mutate/venues/addCourtGridBooking';
 import { deleteVenue, deleteVenues } from '@Mutate/venues/deleteVenue';
@@ -256,7 +257,7 @@ describe('deleteVenues', () => {
       endDate,
     });
 
-    expect(tournamentRecord.venues.length).toEqual(3);
+    expect(defined(tournamentRecord.venues, 'venues').length).toEqual(3);
 
     let result: any = deleteVenues({
       tournamentRecord,
@@ -264,8 +265,8 @@ describe('deleteVenues', () => {
     });
     expect(result.success).toEqual(true);
 
-    expect(tournamentRecord.venues.length).toEqual(1);
-    expect(tournamentRecord.venues[0].venueId).toEqual('v3');
+    expect(defined(tournamentRecord.venues, 'venues').length).toEqual(1);
+    expect(defined(tournamentRecord.venues, 'venues')[0].venueId).toEqual('v3');
   });
 });
 
@@ -422,7 +423,7 @@ describe('generateVenues ignoreExistingVenues', () => {
     expect(result.length).toEqual(1);
     expect(result[0]).toEqual('new-id');
 
-    expect(tournamentRecord.venues.length).toEqual(2);
+    expect(defined(tournamentRecord.venues, 'venues').length).toEqual(2);
   });
 });
 

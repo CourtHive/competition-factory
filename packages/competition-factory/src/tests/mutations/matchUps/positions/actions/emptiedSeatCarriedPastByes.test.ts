@@ -1,4 +1,5 @@
 import tournamentEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 import {
@@ -36,7 +37,9 @@ function generatedRoute() {
   });
   tournamentEngine.setState(tournamentRecord);
   const [main, consolation] = tournamentEngine.getEvent({ drawId }).drawDefinition.structures;
-  const participantIds = tournamentRecord.participants.map((participant: any) => participant.participantId);
+  const participantIds = defined(tournamentRecord.participants, 'participants').map(
+    (participant: any) => participant.participantId,
+  );
 
   for (const drawPosition of [1, 8, 2, 5, 6]) {
     const result: any = tournamentEngine.assignDrawPosition({

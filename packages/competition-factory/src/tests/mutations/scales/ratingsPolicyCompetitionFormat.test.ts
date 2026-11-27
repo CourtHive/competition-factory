@@ -1,4 +1,5 @@
 import { TEMPLATE_RATINGS_ELO_WORLD_FOOTBALL, ratingsPresets } from '@courthive/competition-catalogue';
+import { defined } from '@Tests/helpers/defined';
 import { POLICY_RATINGS_DEFAULT } from '@Fixtures/policies/POLICY_RATINGS_DEFAULT';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -35,9 +36,11 @@ function rate({
     drawProfiles: [{ drawSize: 2, matchUpFormat: HOCKEY }],
     policyDefinitions,
   });
-  const event = tournamentRecord.events[0];
+  const event = defined(tournamentRecord.events, 'events')[0];
   if (eventFormat) event.competitionFormat = eventFormat;
-  if (structureFormat) event.drawDefinitions[0].structures[0].competitionFormat = structureFormat;
+  if (structureFormat)
+    defined(defined(event.drawDefinitions, 'drawDefinitions')[0].structures, 'structures')[0].competitionFormat =
+      structureFormat;
   tournamentEngine.setState(tournamentRecord);
 
   const { matchUpId, drawId } = tournamentEngine.allTournamentMatchUps().matchUps[0];
