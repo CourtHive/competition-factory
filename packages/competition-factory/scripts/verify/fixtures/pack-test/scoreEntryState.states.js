@@ -30,7 +30,7 @@ function exerciseScoreStates(entry) {
   if (outcome.matchUpStatus !== 'COMPLETED' || outcome.winningSide !== 2 || outcome.score.sets.length !== 2)
     fail(`outcome ${JSON.stringify(outcome)}`);
   const clear = entry.toEngineOutcome({ cleared: true });
-  if (JSON.stringify(clear) !== '{"score":{"sets":[]},"matchUpStatusCodes":[]}') fail('clear outcome');
+  if (JSON.stringify(clear) !== '{"score":{"sets":[]},"clearStatusCodes":true}') fail('clear outcome');
   // The format editor and free-score adapter consume these narrow operations in both module formats.
   const code = 'SET3-S:6NOAD/TB7-F:TB10';
   const format = entry.parseMatchUpFormat(code);

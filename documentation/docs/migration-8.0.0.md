@@ -451,7 +451,7 @@ Status reasons travel side-keyed:
 A scoring policy's reason codes (`W1`, `DM`, `RJ`, ...) are stored where they are attributed: `sideStatusCodes`,
 keyed by side, for a reason a side gave (`DEFAULTED`, `WALKOVER`, `RETIRED`, and both sides of a double exit), and
 `matchUpStatusCode` for a reason that belongs to the match (`ABANDONED`, `CANCELLED`, `INCOMPLETE`). Both fields exist
-in 7.x. 8.0.0 removes the positional `matchUpStatusCodes` array that carried a copy of them.
+in 7.x. 8.0.0 removes the positional `matchUpStatusCodes` array that carried a copy of them (#6664).
 
 **Writing a reason.** Submit it keyed, as it is stored:
 
