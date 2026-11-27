@@ -348,10 +348,12 @@ it('invalid tally preserves the score and rebuilt assignment prefix through v1',
   const v1 = play(OUTCOME_PIPELINE_V1, fixture, NATIVE, 'draw-only');
   const v2 = play(OUTCOME_PIPELINE_V2, fixture, NATIVE, 'draw-only');
   expect(v1.result.error).toBeDefined();
+  // v2 runs v1 whole on a copy, where the same refusal is met: it is returned, and the draw is left as it was
   expect(v2.result).toEqual(v1.result);
-  expect(JSON.parse(v2.record)).toEqual(JSON.parse(v1.record));
+  expect(JSON.parse(v2.record)).toEqual(JSON.parse(canonicalJson(fixture.prepared)));
   expect(v2.notices).toEqual(v1.notices);
-  expect(v2.writes, JSON.stringify(v1.result)).toEqual(v1.writes);
+  expect(v2.writes).toEqual(0);
+  // v1 refuses after writing (a residual): the score stands and the assignment prefix is rebuilt
   const written = JSON.parse(v1.record).events[0].drawDefinitions[0].structures[0];
   expect(written.positionAssignments).not.toEqual(structure.positionAssignments);
   expect(written.matchUps.find((matchUp) => matchUp.matchUpId === fixture.matchUpId).winningSide).toEqual(1);

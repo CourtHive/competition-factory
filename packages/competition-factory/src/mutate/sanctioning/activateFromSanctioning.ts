@@ -1,4 +1,5 @@
 import { setTournamentInfoPublishState } from '@Mutate/timeItems/publishTournamentInfo';
+import { stampCreation } from '@Mutate/extensions/stampDefaults';
 import { transitionStatus } from './transitionStatus';
 import { takeUUID, UUID } from '@Tools/UUID';
 
@@ -420,6 +421,9 @@ export function activateFromSanctioning({
     sanctioningRecord.sanctioningId,
   );
   if (venueTransits.length) tournamentRecord.scheduling = { ...tournamentRecord.scheduling, venueTransits };
+
+  // a new tournament: the creating factory and the defaults it relies on are on file from the start, as for any other
+  stampCreation(tournamentRecord);
 
   return { ...SUCCESS, tournamentRecord, ...(unresolvedTransits.length ? { unresolvedTransits } : {}) };
 }

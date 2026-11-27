@@ -48,7 +48,6 @@ const first = (copy: RecordCopy): MatchUp => matchUpsOf(copy.drawDefinition.stru
 type Writer = (copy: RecordCopy, args: BuildViewArgs) => unknown;
 const refused: [string, Writer][] = [
   ['the call cannot be run on a copy', () => undefined],
-  ['v1 returns an error', () => ({ error: { code: 'ERR', message: 'refused' } })],
   [
     'v1 throws',
     () => {
@@ -108,6 +107,28 @@ it.each(refused)('is not made where %s', (_label, writer) => {
   const { args, before } = prepare();
   const writeOnCopy = (copy: RecordCopy) => writer(copy, args) as ReturnType<NonNullable<BuildViewArgs['writeOnCopy']>>;
   expect(recordWholeCall({ ...args, writeOnCopy })).toBeUndefined();
+  expect(canonicalJson(args.tournamentRecord)).toEqual(before);
+});
+
+/**
+ * v1 refusing the call on the copy is the call's refusal: no recording is made, the stored record is as it was, and
+ * an object of the copy the refusal holds is returned as the stored object it was copied from.
+ */
+it('returns the refusal where v1 returns an error, holding the stored objects, and leaves the stored record', () => {
+  const { args, before } = prepare();
+  const stored = matchUpsOf(args.drawDefinition?.structures?.[0])?.[0];
+  const writeOnCopy = (copy: RecordCopy) => {
+    first(copy).notes = 'written before the refusal';
+    return { error: { code: 'ERR', message: 'refused' }, context: { matchUp: first(copy) } };
+  };
+  const refusals: any[] = [];
+  const recorded = recordWholeCall({ ...args, writeOnCopy } as BuildViewArgs, undefined, (refusal) =>
+    refusals.push(refusal),
+  );
+  expect(recorded).toBeUndefined();
+  expect(refusals).toHaveLength(1);
+  expect(refusals[0].error).toEqual({ code: 'ERR', message: 'refused' });
+  expect(refusals[0].context?.matchUp).toBe(stored);
   expect(canonicalJson(args.tournamentRecord)).toEqual(before);
 });
 

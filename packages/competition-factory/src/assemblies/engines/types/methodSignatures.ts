@@ -481,6 +481,7 @@ import type { buildReportContext } from '@Query/reports/buildReportContext';
 import type { getEligibleTiers } from '@Query/sanctioning/getEligibleTiers';
 import type { getStatusHistory } from '@Query/sanctioning/getStatusHistory';
 import type { getStructureReports } from '@Query/structure/structureReport';
+import type { getDefaultsDrift } from '@Query/tournaments/getDefaultsDrift';
 import type { getMutationLocks } from '@Query/tournaments/getMutationLocks';
 import type { getTournamentIds } from '@Query/tournaments/getTournamentIds';
 import type { validMatchUp, validMatchUps } from '@Validators/validMatchUp';
@@ -1015,6 +1016,7 @@ export interface MethodSignatures {
   getCompleteness: EngineMethod<typeof getCompleteness>;
   getCourtInfo: EngineMethod<typeof getCourtInfo>;
   getCourts: EngineMethod<typeof getCourts>;
+  getDefaultsDrift: EngineMethod<typeof getDefaultsDrift>;
   getDraftState: EngineMethod<typeof getDraftState>;
   /** @deprecated Removed from the governors and engines in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals */
   getDrawCompleteness: EngineMethod<typeof getDrawCompleteness>;

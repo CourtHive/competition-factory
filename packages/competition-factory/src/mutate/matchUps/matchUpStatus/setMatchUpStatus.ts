@@ -292,6 +292,8 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     event,
   });
   if (v2.refused) return decorateResult({ result: v2.refused, stack });
+  // refused by v1 itself, on a copy: its result has been through `runV1`, and is returned as v1 returns it
+  if (v2.refusedOnCopy) return v2.refusedOnCopy;
   // S2: a call v2 owns has been written by it (`outcome/apply.ts`); v1 is not asked, and the warnings are v1's own
   // a call recorded whole returns what v1 returned for it on the copy, its warnings among them
   if (v2.owned)

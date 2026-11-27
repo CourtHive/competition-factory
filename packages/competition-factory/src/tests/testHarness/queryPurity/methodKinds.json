@@ -286,6 +286,7 @@
   "getCompleteness": "query",
   "getCourtInfo": "query",
   "getCourts": "query",
+  "getDefaultsDrift": "query",
   "getDevContext": "engine",
   "getDraftState": "query",
   "getDrawCompleteness": "query",
