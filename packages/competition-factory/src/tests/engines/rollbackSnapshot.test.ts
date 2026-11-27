@@ -4,7 +4,8 @@ import {
   queueCannotPartlyCommit,
   WRITES_BEFORE_REFUSING,
 } from '@Assemblies/engines/parts/rollbackSnapshot';
-import { addNotice, getNoticeBuffer, getTournamentRecords, setStateProvider } from '@Global/state/globalState';
+import { addNotice, getNoticeBuffer, getTournamentRecords, setOutcomePipeline } from '@Global/state/globalState';
+import { setStateProvider } from '@Global/state/globalState';
 import { deleteNotices, readMutationStatus, setSubscriptions } from '@Global/state/globalState';
 import asyncGlobalState from '@Server/providers/factory/engines/asyncGlobalState';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -21,6 +22,11 @@ import { join, relative } from 'node:path';
 // constants
 import { COURT_NOT_FOUND, MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { MODIFY_MATCHUP, MODIFY_VENUE } from '@Constants/topicConstants';
+import {
+  OUTCOME_PIPELINE_DIFFERENTIAL,
+  OUTCOME_PIPELINE_V1,
+  OUTCOME_PIPELINE_V2,
+} from '@Constants/outcomePipelineConstants';
 
 /**
  * WHEN A ROLLBACK NEEDS A SNAPSHOT (engines/parts/rollbackSnapshot.ts). A call or queue that is one directive of a
@@ -30,6 +36,9 @@ import { MODIFY_MATCHUP, MODIFY_VENUE } from '@Constants/topicConstants';
  *
  * Which path ran is observable on a refusal: a restored snapshot is installed as the engine's records, so the record
  * object the engine holds afterwards is a different object; with no snapshot it is the same one.
+ *
+ * `setMatchUpStatus` cannot partly commit under the v2 outcome pipeline only, so the cases that use it as a method
+ * taking no snapshot run under v2 (the suite's setup restores its own mode before each test).
  */
 useEngineCatch();
 
@@ -90,6 +99,7 @@ describe('which calls take a snapshot', () => {
   const builtin = (name: string) => (governors as any).matchUpGovernor[name];
 
   it('one factory method that cannot partly commit takes none', () => {
+    setOutcomePipeline(OUTCOME_PIPELINE_V2);
     expect(cannotPartlyCommit('setMatchUpStatus', builtin('setMatchUpStatus'), {})).toBe(true);
     const assignDrawPosition = (governors as any).drawsGovernor.assignDrawPosition;
     expect(cannotPartlyCommit('assignDrawPosition', assignDrawPosition, { participantId: 'p' })).toBe(true);
@@ -108,7 +118,22 @@ describe('which calls take a snapshot', () => {
     expect(cannotPartlyCommit('setMatchUpStatus', customRefusal, {})).toBe(false);
   });
 
+  it('setMatchUpStatus keeps the snapshot under any outcome pipeline but v2', () => {
+    // v1, which the differential also runs on the stored record, can refuse after writing
+    for (const [pipeline, snapshot] of [
+      [OUTCOME_PIPELINE_V1, true],
+      [OUTCOME_PIPELINE_DIFFERENTIAL, true],
+      [OUTCOME_PIPELINE_V2, false],
+    ] as const) {
+      setOutcomePipeline(pipeline);
+      expect(cannotPartlyCommit('setMatchUpStatus', builtin('setMatchUpStatus'), {})).toBe(!snapshot);
+      const methods = { setMatchUpStatus: builtin('setMatchUpStatus') };
+      expect(queueCannotPartlyCommit([{ method: 'setMatchUpStatus', params: {} }], methods)).toBe(!snapshot);
+    }
+  });
+
   it('a queue of more than one directive keeps the snapshot', () => {
+    setOutcomePipeline(OUTCOME_PIPELINE_V2);
     const methods = { setMatchUpStatus: builtin('setMatchUpStatus') };
     const directive = { method: 'setMatchUpStatus', params: {} };
     expect(queueCannotPartlyCommit([directive], methods)).toBe(true);
@@ -149,6 +174,7 @@ describe('which calls take a snapshot', () => {
 
 describe('sync engine', () => {
   it('a refused single directive takes no snapshot and returns what the snapshot path returns', () => {
+    setOutcomePipeline(OUTCOME_PIPELINE_V2);
     const { drawId, outcome } = setup();
     const params = { drawId, matchUpId: 'unknown', outcome };
     const before = stored();
@@ -324,6 +350,7 @@ describe('async engine', () => {
   const name = async () => (await asyncEngine.getTournament()).tournamentRecord?.tournamentName;
 
   it('a refused single directive takes no snapshot; a queue of two does; both return the same refusal', async () => {
+    setOutcomePipeline(OUTCOME_PIPELINE_V2);
     const outcomes = await request(async ({ drawId, matchUps, outcome }) => {
       const params = { drawId, matchUpId: 'unknown', outcome };
       const record = held();
