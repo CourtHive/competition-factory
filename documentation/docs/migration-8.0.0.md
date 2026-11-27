@@ -6,6 +6,41 @@ title: Migration to 8.0.0 (preparation)
 
 This guide describes preparation for the next major release. **The engine routes described below remain available in 7.x.**
 
+## Before you upgrade
+
+### Release order
+
+- **`@courthive/competition-catalogue` is on npm before factory 8.0.0, or with it.** 8.0.0 no longer bundles the named
+  tie formats and organisation policies, so a consumer that uses them installs the catalogue in the same upgrade.
+- **courthive-components 7.x does not work with factory 8.0.0.** Its peer range is factory 7.x, and a matching
+  components release ships with 8.0.0. Upgrade the two together.
+- **The package manifest is exported.** `require('competition-factory/package.json')` (or an import of it) resolves
+  through the `exports` map, as it does for the catalogue, so a tool that reads the installed version needs no deep
+  path.
+
+### Reads of moved catalogue entries return `undefined`
+
+`fixtures.tieFormats` is removed, and so are the organisation members of `fixtures.policies`. In TypeScript a plain
+read of one fails to compile against the 8.0.0 declarations. A read the compiler does not check fails silently: in
+JavaScript, behind a cast such as `(fixtures as any)`, through a computed key, or along an optional chain (`?.`), it
+returns `undefined`, and a list built from the object's keys has fewer entries. Nothing raises an error:
+
+```js
+import { fixtures } from 'competition-factory';
+
+// 8.0.0: undefined, no error
+const scoring = fixtures.policies?.POLICY_SCORING_USTA;
+const college = fixtures.tieFormats?.COLLEGE_D3;
+
+// 8.0.0: only POLICY_SANCTIONING_GENERIC; the organisation rulebooks are not in the factory
+const rulebooks = Object.keys(fixtures.policies).filter((name) => name.startsWith('POLICY_SANCTIONING_'));
+```
+
+Import a moved entry from `@courthive/competition-catalogue`, and build a list such as the one above from the
+catalogue's `policies` together with the factory's own. Search a codebase for `fixtures.policies`,
+`fixtures.tieFormats` and `tieFormatConstants` before upgrading; each read of a moved name needs the catalogue. See
+[named catalogue inputs](#named-catalogue-inputs) for the inputs that took a name in 7.x.
+
 ## Governor and engine route removals
 
 See the [engine API transition manifest and per-method guidance](/docs/implementation/engine-api-transition-8). Selected methods are removal candidates pending symbol-aware consumer review and external-integrator confirmation. Their full references have moved outside the governor API listings, with migration stubs at old anchors.
@@ -481,12 +516,26 @@ engine.setMatchUpStatus({ drawId, matchUpId, outcome: { matchUpStatus: ABANDONED
 - **A write that submits no reason keeps the reasons the matchUp holds**, where they still describe the result it
   writes: the status still takes a reason, and the side a reason names still exited. A result corrected to a played
   win, or removed, keeps none. In 7.x an absent or empty array cleared them.
-- **Clearing is explicit.** `outcome.clearStatusCodes: true` removes the reasons. A clear of the result that should
-  also clear its reasons, as a scoring dialog's clear does, sends it: `{ score: { sets: [] }, clearStatusCodes: true }`.
+- **Clearing a result removes its reasons.** A result cleared or removed leaves the matchUp `TO_BE_PLAYED`, a status
+  that takes no reason, so the matchUp keeps none, with or without `clearStatusCodes`. The same holds for a result
+  corrected to a played win or to a live score. A clear does not keep the reason for a later re-entry: enter the
+  reason again with the result.
+- **`clearStatusCodes` removes reasons the result would otherwise keep.** `outcome.clearStatusCodes: true` matters
+  where the status written still takes a reason: a `WALKOVER` re-entered for the same winner keeps the reason it held,
+  and with `clearStatusCodes: true` keeps none. With submitted reasons beside it, the clear goes first and the
+  submitted reasons are stored. It must be a boolean; anything else is refused with `INVALID_VALUES`. The score-entry
+  clear, `{ score: { sets: [] }, clearStatusCodes: true }`, carries it; the cleared matchUp holds no reasons either
+  way.
+- **A server that checks client outcomes against an allow-list of keys** replaces `matchUpStatusCodes` in that list
+  with `sideStatusCodes` (an object keyed `1` or `2`, each a non-empty string), `matchUpStatusCode` (a non-empty
+  string) and `clearStatusCodes` (a boolean). It rejects an outcome that still carries `matchUpStatusCodes`, as the
+  engine does.
 - **Mocks and simulation.** Authored outcomes (`drawProfiles[].outcomes`, `applyOutcomes`) take `sideStatusCodes` and
   `matchUpStatusCode` in place of `matchUpStatusCodes`.
-- **Score entry state.** `toEngineOutcome` emits the keyed input and the explicit clear. `positionalCodes` is replaced
-  by `keyedStatusCodes`.
+- **Score entry state.** `toEngineOutcome` emits the keyed input and the explicit clear. **`positionalCodes` is removed
+  from the `score-entry-state` export**, and `keyedStatusCodes` replaces it: it returns `{ sideStatusCodes }` for a
+  side's exit, `{ matchUpStatusCode }` for an ending that belongs to the match, and `undefined` when there is no
+  reason. A package that imports or re-exports `positionalCodes` fails to compile against 8.0.0.
 
 **Reading a reason.** Read `sideStatusCodes[sideNumber]` and `matchUpStatusCode`. Nothing in 8.x reads the array to
 decide anything. Which side exited, and where an exit came from, is `sideExitProvenance`.
