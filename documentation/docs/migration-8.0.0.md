@@ -563,7 +563,7 @@ engine; the separate record migration does that.
 ### Records are plain data
 
 A record handed to the engine must be **plain data** (objects, arrays and primitive values, as `JSON.parse`
-produces), whether the engine copies it (`setState(record)`, the default) or borrows it (`setState(record, false)`).
+produces), whether the engine copies it (`setState(record)`, the default) or borrows it (`setState(record, false)`) (#6665).
 
 - **Hydrated documents are not supported.** A document from a mapping library (a Mongoose document, or anything with
   getters, setters, casts or change tracking) passed to `setState`, or installed by a state provider, is not handled
