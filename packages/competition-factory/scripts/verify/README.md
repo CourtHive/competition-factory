@@ -55,6 +55,8 @@ The baselines live under `scripts/verify/baseline/`:
 - **`coverage-headroom.json`** — items of margin per metric before the coverage floor. A change may spend 25 by default (`--budget=N`); accept a new margin with `node scripts/verify/coverage-headroom.mjs --update-baseline`. Percentages hide how close the floor is — 95.09 % against a 95 floor was **39 statements** out of 43,284 — so this tracks the number in items.
 - **`hydrations.json`** — v1's draw hydrations and `getMatchUpsMap` builds per census arm (`calls`, `total`, `worst`); may only fall. Lower it with `PIPELINE_HYDRATIONS=1 HYDRATIONS_UPDATE=1 OUTCOME_PIPELINE=v1 TZ=UTC npx vitest run src/tests/mutations/exitPropagation/pipelineCost.test.ts`; a rise is written only with `HYDRATIONS_ACCEPT_RISE=1` as well.
 - **`any-count.json`** — `any` per directory in non-test `src`; it may only fall (`verify:any-count`, below).
+- **`public-types.json`** — per public member (engine method, `tools` / `availability` function, exported model type), its
+  count of `any` and index signatures by category; it may only fall (`verify:public-types`, below).
 - **`tsc-implicit-any.json`** — implicit `any` (TS7xxx) per directory in non-test `src`; may only fall (`verify:implicit-any`, below).
 - **`tsc-hard-union.json`** — tsc errors per directory under the 8.0.0 hard `Structure`/`DrawLink` unions; may only fall (`verify:hard-union`, below).
 
@@ -181,6 +183,21 @@ this ratchet is the only thing holding the count.
 - It refuses to write a rise. `--accept-rise` records one deliberately, so it shows up as a reviewed line
   in the baseline diff, never silently.
 - `pnpm verify:any-count --self-test` proves it fires on a rise and stays quiet on a fall.
+
+## `verify:public-types` — the public type surface may only get tighter
+
+`scripts/verify/publicTypes.mjs`, run by `verify:types`. It reads what a consumer sees, through the type checker: every
+member of `FactoryEngineTyped`, every function of `tools` and `availability` (one namespace level deep) and every
+exported interface and type alias of `src/types`. Each loose member gets a count per category: the
+`(...args: any[]) => any` `fallback`; `param:any`, `param:keys` and `param:index` for the first parameter (depth 1);
+`ret:any`, `ret:keys` and `ret:index` for the result (depth 2, through arrays and unions); `type:any` and `type:index`
+for a model type (depth 1). It fails when a count rises above `baseline/public-types.json`, or a member absent from it
+is loose at all. A fall passes; lower the baseline with `node scripts/verify/publicTypes.mjs --update-baseline`, which
+refuses a rise unless `--accept-rise` is also given. `--self-test` plants a program with one looseness per category.
+
+`verify:any-count` cannot see this: one shared shape (a result's `info: any`, an index signature on a hydrated
+matchUp) reaches hundreds of methods from one line of source, and a public type loosened after a major can only be
+tightened again in the next one.
 
 ## `verify:layers` — imports into a higher layer may only go down
 
