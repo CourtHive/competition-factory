@@ -69,10 +69,11 @@ export function generateDrawStructuresAndLinks(params: GenerateDrawStructuresAnd
     uuids,
   } = params ?? {};
 
-  const typeRefusal = nonTeamTieFormatRefusal({
-    matchUpType: params.matchUpType ?? drawDefinition?.matchUpType,
-    tieFormat,
-  });
+  const typeRefusal = nonTeamTieFormatRefusal(
+    { tieFormat },
+    undefined,
+    params.matchUpType ?? drawDefinition?.matchUpType,
+  );
   if (typeRefusal) return decorateResult({ result: typeRefusal, stack: 'generateDrawStructuresAndLinks' });
 
   const drawSize = ensureInt(params.drawSize);

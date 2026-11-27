@@ -26,7 +26,7 @@ export function addEventProposal({ sanctioningRecord, eventProposal }: AddEventP
   if (!eventProposal.eventName) return { error: INVALID_VALUES, context: { message: 'Missing eventName' } };
   if (!eventProposal.eventType) return { error: INVALID_VALUES, context: { message: 'Missing eventType' } };
   // a tieFormat describes a TEAM tie: an event proposal of another type that carries one is refused
-  const tieFormatRefusal = nonTeamTieFormatRefusal(eventProposal);
+  const tieFormatRefusal = nonTeamTieFormatRefusal(eventProposal, eventProposal.eventType);
   if (tieFormatRefusal) return tieFormatRefusal;
 
   if (!EDITABLE_STATUSES.includes(sanctioningRecord.status)) {

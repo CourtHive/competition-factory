@@ -79,10 +79,11 @@ export function generateDrawTypeAndModifyDrawDefinition(params: GenerateDrawType
   const drawDefinition = modifyOriginal ? params.drawDefinition : makeDeepCopy(params.drawDefinition, false, true);
 
   let { tieFormat, matchUpType } = params;
-  const typeRefusal = nonTeamTieFormatRefusal({
-    matchUpType: matchUpType ?? drawDefinition.matchUpType ?? params.event?.eventType,
-    tieFormat,
-  });
+  const typeRefusal = nonTeamTieFormatRefusal(
+    { tieFormat },
+    undefined,
+    matchUpType ?? drawDefinition.matchUpType ?? params.event?.eventType,
+  );
   if (typeRefusal) return decorateResult({ result: typeRefusal, stack });
   if (tieFormat) {
     const result = validateTieFormat({ tieFormat, enforceValues: true });

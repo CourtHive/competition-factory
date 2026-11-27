@@ -76,7 +76,7 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
   };
 
   // a tieFormat describes a TEAM tie: on any other event it is refused, not stored beside the event's matchUpFormat
-  const tieFormatRefusal = nonTeamTieFormatRefusal({ ...event, eventType: eventRecord.eventType });
+  const tieFormatRefusal = nonTeamTieFormatRefusal(event, eventRecord.eventType);
   if (tieFormatRefusal) return tieFormatRefusal;
 
   // normalize accepted TODS short codes (M/F/X/A) to the canonical extended form

@@ -45,11 +45,7 @@ export function generateDrawDefinition(
   // a tieFormat, tieFormatName or tieFormatId for a draw that is not TEAM is refused: it neither outranks the
   // matchUpFormat nor is silently dropped
   const eventType = params.event?.eventType;
-  const tieFormatRefusal = nonTeamTieFormatRefusal({
-    ...params,
-    eventType,
-    matchUpType: params.matchUpType ?? eventType,
-  });
+  const tieFormatRefusal = nonTeamTieFormatRefusal(params, eventType, params.matchUpType ?? eventType);
   if (tieFormatRefusal) return decorateResult({ result: tieFormatRefusal, stack: 'generateDrawDefinition' });
 
   const resolution = resolveDrawCompositionOverrides(params);

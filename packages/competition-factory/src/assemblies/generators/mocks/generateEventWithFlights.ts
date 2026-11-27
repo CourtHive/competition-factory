@@ -61,7 +61,7 @@ export function generateEventWithFlights(params) {
   // a tieFormat, tieFormatName or tieFormatId on a profile that is not TEAM, or on one of its drawProfiles, is refused
   // before anything is generated
   for (const profile of [eventProfile, ...drawProfiles]) {
-    const tieFormatRefusal = nonTeamTieFormatRefusal({ ...profile, eventType });
+    const tieFormatRefusal = nonTeamTieFormatRefusal(profile, eventType);
     if (tieFormatRefusal) return tieFormatRefusal;
   }
 

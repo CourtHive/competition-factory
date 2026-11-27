@@ -185,7 +185,7 @@ export function generateQualifyingStructure(params: GenerateQualifyingStructureA
   if ((structureProfile as any)?.error) return structureProfile as any;
 
   const matchUpType = drawDefinition.matchUpType;
-  const typeRefusal = nonTeamTieFormatRefusal({ matchUpType, tieFormat });
+  const typeRefusal = nonTeamTieFormatRefusal({ tieFormat }, undefined, matchUpType);
   if (typeRefusal) return decorateResult({ result: typeRefusal, stack });
   const stageSequence = 1;
 

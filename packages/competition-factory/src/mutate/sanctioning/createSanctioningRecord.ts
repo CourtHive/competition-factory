@@ -46,7 +46,7 @@ export function createSanctioningRecord({
 
   // a tieFormat describes a TEAM tie: an event proposal of another type that carries one is refused
   for (const eventProposal of proposal.events) {
-    const tieFormatRefusal = nonTeamTieFormatRefusal(eventProposal);
+    const tieFormatRefusal = nonTeamTieFormatRefusal(eventProposal, eventProposal.eventType);
     if (tieFormatRefusal) return tieFormatRefusal as any;
   }
 

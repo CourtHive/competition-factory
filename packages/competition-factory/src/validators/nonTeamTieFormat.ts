@@ -43,13 +43,14 @@ export function suppliedTieFormatInputs(inputs: TieFormatInputs): string[] {
 
 /**
  * The refusal for tieFormat inputs supplied where the event type or matchUpType is not TEAM, or undefined when nothing
- * was supplied or the target is TEAM. An undefined type is not judged here: the caller resolves it first.
+ * was supplied or the target is TEAM. An undefined type is not judged here: the caller resolves it first. `inputs` is
+ * read, never copied, so a caller passes its own event, params or profile object.
  */
-export function nonTeamTieFormatRefusal({
-  matchUpType,
-  eventType,
-  ...inputs
-}: TieFormatInputs & { eventType?: unknown; matchUpType?: unknown }): TieFormatRefusal | undefined {
+export function nonTeamTieFormatRefusal(
+  inputs: TieFormatInputs,
+  eventType?: unknown,
+  matchUpType?: unknown,
+): TieFormatRefusal | undefined {
   if (!isNonTeam(eventType) && !isNonTeam(matchUpType)) return undefined;
   const supplied = suppliedTieFormatInputs(inputs);
   if (!supplied.length) return undefined;

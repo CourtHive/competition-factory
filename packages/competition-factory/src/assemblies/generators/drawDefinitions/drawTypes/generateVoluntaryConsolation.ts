@@ -122,10 +122,11 @@ function generateVoluntaryConsolationDraft(params: GenerateVoluntaryConsolationA
     return { error: INVALID_DRAW_SIZE };
 
   let { tieFormat, matchUpType } = params;
-  const typeRefusal = nonTeamTieFormatRefusal({
-    matchUpType: matchUpType ?? drawDefinition.matchUpType ?? event?.eventType,
-    tieFormat,
-  });
+  const typeRefusal = nonTeamTieFormatRefusal(
+    { tieFormat },
+    undefined,
+    matchUpType ?? drawDefinition.matchUpType ?? event?.eventType,
+  );
   if (typeRefusal) return typeRefusal;
   if (tieFormat) {
     const result = validateTieFormat({ tieFormat, enforceValues: true });

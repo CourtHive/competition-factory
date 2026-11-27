@@ -35,7 +35,8 @@ export function updateEventProposal({ sanctioningRecord, eventProposalId, update
   // Prevent overwriting the ID
   const { eventProposalId: _ignored, ...safeUpdates } = updates;
   // judged as the proposal would stand after the update: a tieFormat on a proposal that is not TEAM is refused
-  const tieFormatRefusal = nonTeamTieFormatRefusal({ ...event, ...safeUpdates });
+  const updated = { ...event, ...safeUpdates };
+  const tieFormatRefusal = nonTeamTieFormatRefusal(updated, updated.eventType);
   if (tieFormatRefusal) return tieFormatRefusal;
   Object.assign(event, safeUpdates);
 

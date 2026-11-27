@@ -249,7 +249,7 @@ export function activateFromSanctioning({
   // a tieFormat describes a TEAM tie: an event proposal of another type that carries one (an amendment can set it) is
   // refused before the record is built or the sanctioning record moves to ACTIVE
   for (const eventProposal of proposal.events ?? []) {
-    const tieFormatRefusal = nonTeamTieFormatRefusal(eventProposal);
+    const tieFormatRefusal = nonTeamTieFormatRefusal(eventProposal, eventProposal.eventType);
     if (tieFormatRefusal) return tieFormatRefusal;
   }
 
