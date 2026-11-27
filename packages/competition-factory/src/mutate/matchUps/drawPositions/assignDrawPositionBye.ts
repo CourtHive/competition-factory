@@ -117,6 +117,11 @@ export type AssignDrawPositionByeArgs = {
    * stores its edges): the activity check, a hydration of the whole draw, is then not asked
    */
   drawPositionsInactive?: boolean;
+  /**
+   * set by the public placement, whose planner asked this seat's activity of the record as it stands, with nothing
+   * written since: the answer was "not active", so it is not asked again
+   */
+  activityAsked?: boolean;
   structure?: Structure;
   drawPosition: number;
   structureId?: string;
@@ -218,6 +223,7 @@ export function assignDrawPositionBye({
   const drawPositionIsActive =
     !isPropagationPlacement &&
     !params.drawPositionsInactive &&
+    !params.activityAsked &&
     getStructureDrawPositionProfiles({ drawDefinition, structureId }).activeDrawPositions?.includes(drawPosition);
   if (drawPositionIsActive) {
     return { error: DRAW_POSITION_ACTIVE };
