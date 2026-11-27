@@ -41,6 +41,20 @@ catalogue's `policies` together with the factory's own. Search a codebase for `f
 `fixtures.tieFormats` and `tieFormatConstants` before upgrading; each read of a moved name needs the catalogue. See
 [named catalogue inputs](#named-catalogue-inputs) for the inputs that took a name in 7.x.
 
+### Pass `tieFormat` for TEAM draws only
+
+`generateDrawDefinition` reads a `tieFormatName` only for a TEAM draw of a TEAM event; on any other draw the name is
+ignored, in 7.x and in 8.0.0. A `tieFormat` object is not ignored the same way. On a draw that is not TEAM:
+
+- **Beside a `matchUpFormat`, the `tieFormat` is kept and the `matchUpFormat` is not.** The draw definition stores the
+  `tieFormat`, takes no `matchUpFormat`, and its SINGLES or DOUBLES matchUps are generated with tie matchUps.
+- **Without a `matchUpFormat`, the `tieFormat` is dropped** and the draw takes the event's `matchUpFormat`, or the
+  standard format.
+
+A draw form that sent a scorecard name with every event relied on the name being ignored outside TEAM events. When
+it moves from the name to the object, it sends `tieFormat` only when the event and the draw are TEAM, and
+`matchUpFormat` otherwise.
+
 ## Governor and engine route removals
 
 See the [engine API transition manifest and per-method guidance](/docs/implementation/engine-api-transition-8). Selected methods are removal candidates pending symbol-aware consumer review and external-integrator confirmation. Their full references have moved outside the governor API listings, with migration stubs at old anchors.
