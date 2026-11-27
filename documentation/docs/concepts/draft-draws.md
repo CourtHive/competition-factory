@@ -56,7 +56,7 @@ The draft progresses through these statuses:
 | ------------------------ | ---------------------------------------------- |
 | `SEEDS_PLACED`           | Draft initialized, ready to accept preferences |
 | `COLLECTING_PREFERENCES` | At least one preference has been submitted     |
-| `COMPLETE`               | Draft has been resolved and positions assigned |
+| `COMPLETED`              | Draft has been resolved and positions assigned |
 
 ## Data Storage
 
@@ -64,7 +64,7 @@ Draft state is stored as an extension on the draw definition with the name `draf
 
 ```typescript
 {
-  status: 'SEEDS_PLACED' | 'COLLECTING_PREFERENCES' | 'COMPLETE';
+  status: 'SEEDS_PLACED' | 'COLLECTING_PREFERENCES' | 'COMPLETED';
   structureId: string;
   preferencesCount: number;           // max preferences per participant
   tiers: Array<{
@@ -145,7 +145,7 @@ Validation rules:
 - The participant must belong to a tier in the active draft
 - All positions must be valid unassigned draw positions
 - Preferences exceeding `preferencesCount` are silently trimmed
-- The draft must not be in `COMPLETE` status
+- The draft must not be in `COMPLETED` status
 
 ### Querying Draft State
 
@@ -198,7 +198,7 @@ The return value includes:
 | `tierReports`             | `array`                  | Per-tier resolution details                                                   |
 | `transparencyReport`      | `array`                  | Per-participant audit trail (see [Transparency Report](#transparency-report)) |
 
-When `applyResults` is `true`, each resolution calls `assignDrawPosition` to place the participant, the draft status is set to `COMPLETE`, and the transparency report is persisted on the extension.
+When `applyResults` is `true`, each resolution calls `assignDrawPosition` to place the participant, the draft status is set to `COMPLETED`, and the transparency report is persisted on the extension.
 
 ### Resetting a Draw with a Draft
 
