@@ -16,6 +16,7 @@ import {
 } from '@Constants/outcomePipelineConstants';
 import {
   DOUBLE_ELIMINATION,
+  FEED_IN_CHAMPIONSHIP,
   FEED_IN_CHAMPIONSHIP_TO_SF,
   FIRST_MATCH_LOSER_CONSOLATION,
   FIRST_ROUND_LOSER_CONSOLATION,
@@ -66,6 +67,7 @@ type Row = {
   participantsCount: number;
   nonRandom: number;
   propagateExitStatus?: boolean;
+  allowChangePropagation?: boolean;
   steps: Step[];
   /** the matchUp the last step moves off the result its reasons were given for, and the status it then holds */
   then: [string, string];
@@ -292,6 +294,7 @@ function play(mode: OutcomePipelineMode, row: Row) {
       if ('at' in step) {
         const target = matchUps.find((m) => m.key === step.at);
         result = tournamentEngine.setMatchUpStatus({
+          allowChangePropagation: row.allowChangePropagation,
           propagateExitStatus: row.propagateExitStatus,
           matchUpId: target?.matchUpId,
           outcome: step.outcome,
@@ -325,6 +328,7 @@ function play(mode: OutcomePipelineMode, row: Row) {
   const last = drawMatchUps().find((m) => m.key === row.then[0])?.stored;
   return {
     record: canonicalJson(tournamentEngine.getTournament().tournamentRecord),
+    thenMatchUpId: drawMatchUps().find((m) => m.key === row.then[0])?.matchUpId,
     results: results.map(({ stack: _stack, ...result }: any) => result),
     then: last && {
       matchUpStatus: last.matchUpStatus,
@@ -350,6 +354,133 @@ describe('an engine write drops the reasons its result no longer has', () => {
     expect(v1.then?.sideStatusCodes).toEqual(row.kept);
     expect(v1.then?.matchUpStatusCode).toBeUndefined();
     expect(v1.undescribedAfter).toEqual(row.steps.map(() => []));
+
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.undescribedAfter).toEqual(v1.undescribedAfter);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+    expect(differential.divergence).toBeUndefined();
+    expect(differential.record).toEqual(v1.record);
+  });
+});
+
+/**
+ * A DECIDED MATCHUP RE-SORTED UNDER ITS WINNER KEEPS ITS REASON ON THE SIDE THAT EXITED.
+ *
+ * Correcting a consolation quarterfinal with `allowChangePropagation` puts the other participant on the path, and the
+ * decided semifinal they reach is re-sorted: `[3, 4]` becomes `[4, 6]`, so the participant on drawPosition 4 moves to
+ * side 1. The winner, the score and the provenance follow the re-sort, and so does the reason: it stays with the side
+ * that exited. Where the participant replaced on the path is the one who exited (the last row), the reason goes to the
+ * participant who now holds that exit, as the result itself does. Each row is also run without its reason: the two
+ * records differ only in the reason.
+ */
+/** a best-of-three played win, as the draw's format scores it */
+const played = (winningSide: 1 | 2) => ({
+  winningSide,
+  score: {
+    sets: [1, 2].map((setNumber) => ({
+      setNumber,
+      side1Score: winningSide === 1 ? 6 : 2,
+      side2Score: winningSide === 1 ? 2 : 6,
+      winningSide,
+    })),
+  },
+});
+const RESORT_STEPS: Step[] = [
+  { at: 'Main|1|1', outcome: played(2) },
+  { at: 'Main|1|2', outcome: played(1) },
+  { at: 'Main|1|3', outcome: played(2) },
+  { at: 'Main|1|4', outcome: played(1) },
+  { at: 'Main|2|1', outcome: played(2) },
+  { at: 'Main|2|2', outcome: played(1) },
+  { at: 'Consolation|1|1', outcome: played(1) },
+  { at: 'Consolation|1|2', outcome: played(1) },
+  { at: 'Consolation|2|1', outcome: played(2) },
+  { at: 'Consolation|2|2', outcome: played(1) },
+];
+const resortRow = (exit: Outcome, then: [string, string], kept: Record<number, string>): Row => ({
+  drawType: FEED_IN_CHAMPIONSHIP,
+  drawSize: 8,
+  participantsCount: 8,
+  nonRandom: 1005,
+  allowChangePropagation: true,
+  steps: [...RESORT_STEPS, { at: 'Consolation|3|1', outcome: exit }, { at: 'Consolation|2|2', outcome: played(2) }],
+  then,
+  kept,
+});
+const retired = (winningSide: 1 | 2) => ({
+  winningSide,
+  score: {
+    sets: [
+      { setNumber: 1, side1Score: winningSide === 1 ? 6 : 2, side2Score: winningSide === 1 ? 2 : 6, winningSide },
+      { setNumber: 2, side1Score: winningSide === 1 ? 2 : 1, side2Score: winningSide === 1 ? 1 : 2 },
+    ],
+  },
+});
+const RESORT_ROWS: [string, Row][] = [
+  [
+    'a walkover whose walked-over side moves to side 1',
+    resortRow(
+      { matchUpStatus: WALKOVER, winningSide: 1, sideStatusCodes: { 2: 'W1' } },
+      ['Consolation|3|1', WALKOVER],
+      {
+        1: 'W1',
+      },
+    ),
+  ],
+  [
+    'a retirement with a score whose retiring side moves to side 1',
+    resortRow({ matchUpStatus: RETIRED, ...retired(1), sideStatusCodes: { 2: 'RJ' } }, ['Consolation|3|1', RETIRED], {
+      1: 'RJ',
+    }),
+  ],
+  [
+    'a retirement by the participant the correction replaces',
+    resortRow({ matchUpStatus: RETIRED, ...retired(2), sideStatusCodes: { 1: 'RJ' } }, ['Consolation|3|1', RETIRED], {
+      2: 'RJ',
+    }),
+  ],
+];
+
+const withoutReasons = (row: Row): Row => ({
+  ...row,
+  steps: row.steps.map((step) => {
+    if (!('at' in step)) return step;
+    const { sideStatusCodes: _reasons, ...outcome } = step.outcome;
+    return { ...step, outcome };
+  }),
+});
+
+/** the record with one matchUp's side reasons removed */
+function recordWithoutReasons(record: string, matchUpId?: string) {
+  const strip = (value: any) => {
+    if (Array.isArray(value)) value.forEach(strip);
+    else if (value && typeof value === 'object') {
+      if (value.matchUpId === matchUpId) delete value.sideStatusCodes;
+      Object.values(value).forEach(strip);
+    }
+  };
+  const parsed = JSON.parse(record);
+  strip(parsed);
+  return canonicalJson(parsed);
+}
+
+describe('a re-sort under the winner keeps the reason on the side that exited', () => {
+  it.each(RESORT_ROWS)('%s', (_label, row) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, row);
+    const v2 = play(OUTCOME_PIPELINE_V2, row);
+    const differential = play(OUTCOME_PIPELINE_DIFFERENTIAL, row);
+    const bare = play(OUTCOME_PIPELINE_V1, withoutReasons(row));
+
+    expect(v1.results.map((result: any) => result.success)).toEqual(row.steps.map(() => true));
+    expect(v1.then?.matchUpStatus).toEqual(row.then[1]);
+
+    // the reason is on the side that exited, under the code it was given
+    expect(v1.then?.sideStatusCodes).toEqual(row.kept);
+    expect(v1.undescribedAfter).toEqual(row.steps.map(() => []));
+    // ...and nothing else in the record depends on it
+    expect(bare.then?.sideStatusCodes).toBeUndefined();
+    expect(recordWithoutReasons(v1.record, v1.thenMatchUpId)).toEqual(bare.record);
 
     expect(v2.results).toEqual(v1.results);
     expect(v2.undescribedAfter).toEqual(v1.undescribedAfter);

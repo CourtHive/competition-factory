@@ -224,9 +224,10 @@ export function dropStaleStatusReasons(matchUp?: MatchUp | null): void {
 }
 
 /**
- * Remove the side reasons a decided matchUp holds that no longer name the side that exited: its sides were re-sorted
- * under its winner (`followWinnerAcrossResort`), and a reason keyed to the side that exited now names the winner.
- * The rule a call that submits no reason is written with (`writeStatusReasons`).
+ * Remove the side reasons a decided matchUp holds that no longer name the side that exited: a withdrawn exit's award
+ * was re-derived to the other side (`withdrawFromMatchUp`), and the withdrawn exit's reason now names the winner.
+ * The rule a call that submits no reason is written with (`writeStatusReasons`). A re-sort under the winner
+ * (`followWinnerAcrossResort`) does not drop: the exit stays with the same participant, so it re-keys the reason.
  */
 export function dropUndescribedStatusReasons(matchUp: MatchUp): void {
   if (!matchUp.matchUpStatusCode && !matchUp.sideStatusCodes) return;
