@@ -3,7 +3,7 @@ import { activateFromSanctioning } from '@Mutate/sanctioning/activateFromSanctio
 import { createSanctioningRecord } from '@Mutate/sanctioning/createSanctioningRecord';
 import { updateEventProposal } from '@Mutate/sanctioning/updateEventProposal';
 import { addEventProposal } from '@Mutate/sanctioning/addEventProposal';
-import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
+import { tieFormats } from '@courthive/competition-catalogue';
 import { canonicalJson } from '@Tools/canonicalJson';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -13,7 +13,6 @@ import { describe, expect, it } from 'vitest';
 import { INVALID_EVENT_TYPE, INVALID_TIE_FORMAT } from '@Constants/errorConditionConstants';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/eventConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { APPROVED } from '@Constants/sanctioningConstants';
 
 /**
@@ -24,7 +23,16 @@ import { APPROVED } from '@Constants/sanctioningConstants';
 
 const NON_TEAM = [SINGLES, DOUBLES] as const;
 const CODE = INVALID_TIE_FORMAT.code;
-const tieFormat = () => tieFormatDefaults({ namedFormat: DOMINANT_DUO });
+const DOMINANT_DUO = 'DOMINANT_DUO';
+// a full tieFormat object, with collectionIds, as a caller holds one
+const tieFormat = () => {
+  const copy = structuredClone(tieFormats.DOMINANT_DUO) as any;
+  copy.collectionDefinitions = copy.collectionDefinitions.map((cd, i) => ({
+    ...cd,
+    collectionId: cd.collectionId ?? `c${i}`,
+  }));
+  return copy;
+};
 
 // an event e1 with an 8-draw d1 of the given type
 function recordWith(eventType: string) {
@@ -242,7 +250,8 @@ describe.each(OUTCOME_MODES)('a tieFormat for a non-TEAM target is refused, reco
 
 describe('mocks refuse a tieFormat on a non-TEAM profile', () => {
   for (const eventType of NON_TEAM) {
-    for (const profile of [{ tieFormat: tieFormat() }, { tieFormatName: DOMINANT_DUO }]) {
+    // a mocks profile takes no tieFormatName in 8.0.0 (an unknown option), so only the object is a case here
+    for (const profile of [{ tieFormat: tieFormat() }]) {
       const key = Object.keys(profile)[0];
       it(`${eventType} drawProfiles ${key}`, () => {
         const result: any = mocksEngine.generateTournamentRecord({
@@ -351,9 +360,7 @@ describe('TEAM still accepts a tieFormat', () => {
     tournamentEngine.setState(recordWith(TEAM));
     let result: any = tournamentEngine.addEvent({ event: { eventType: TEAM, eventId: 't2', tieFormat: tieFormat() } });
     expect(result.success).toBe(true);
-    result = tournamentEngine.addEvent({ event: { eventType: TEAM, eventId: 't3', tieFormatName: DOMINANT_DUO } });
-    expect(result.success).toBe(true);
-    expect(tournamentEngine.getEvent({ eventId: 't3' }).event.tieFormat.collectionDefinitions.length).toBeGreaterThan(
+    expect(tournamentEngine.getEvent({ eventId: 't2' }).event.tieFormat.collectionDefinitions.length).toBeGreaterThan(
       0,
     );
 
@@ -388,7 +395,7 @@ describe('TEAM still accepts a tieFormat', () => {
   it('mocks and sanctioning', () => {
     expect(
       mocksEngine.generateTournamentRecord({
-        drawProfiles: [{ eventType: TEAM, drawSize: 4, tieFormatName: DOMINANT_DUO }],
+        drawProfiles: [{ eventType: TEAM, drawSize: 4, tieFormat: tieFormat() }],
       }).tournamentRecord,
     ).toBeDefined();
     const sanctioningRecord = sanctioningRecordWith([proposed(TEAM, { tieFormat: tieFormat() })]);

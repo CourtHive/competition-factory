@@ -31,6 +31,16 @@ function typesContext(eventType: unknown, matchUpType: unknown): { [key: string]
   return context;
 }
 
+/** Whether any tieFormat input was supplied. Allocates nothing: it runs on every accepted call. */
+export function hasTieFormatInput(inputs: TieFormatInputs): boolean {
+  return (
+    !!inputs.tieFormat ||
+    !!inputs.tieFormatName ||
+    !!inputs.tieFormatId ||
+    (Array.isArray(inputs.tieFormats) && inputs.tieFormats.length > 0)
+  );
+}
+
 /** Which of the tieFormat inputs were supplied: a tieFormat, a tieFormatName, a tieFormatId or a non-empty tieFormats. */
 export function suppliedTieFormatInputs(inputs: TieFormatInputs): string[] {
   const supplied: string[] = [];
@@ -52,8 +62,8 @@ export function nonTeamTieFormatRefusal(
   matchUpType?: unknown,
 ): TieFormatRefusal | undefined {
   if (!isNonTeam(eventType) && !isNonTeam(matchUpType)) return undefined;
+  if (!hasTieFormatInput(inputs)) return undefined;
   const supplied = suppliedTieFormatInputs(inputs);
-  if (!supplied.length) return undefined;
   return {
     error: INVALID_TIE_FORMAT,
     info: NOT_TEAM_INFO,

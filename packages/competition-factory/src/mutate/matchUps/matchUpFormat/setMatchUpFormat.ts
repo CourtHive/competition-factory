@@ -5,7 +5,7 @@ import { checkDrawFormatCompatibility } from '@Validators/tiedFormatCompatibilit
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
-import { suppliedTieFormatInputs } from '@Validators/nonTeamTieFormat';
+import { hasTieFormatInput, suppliedTieFormatInputs } from '@Validators/nonTeamTieFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { applyMatchUpFormat } from './applyMatchUpFormat';
@@ -65,12 +65,11 @@ export function setMatchUpFormat(params: SetMatchUpStatusArgs) {
   if (paramsCheck.error) return decorateResult({ result: paramsCheck, stack });
 
   // a tieFormat passed with a matchUpFormat was ignored: it is refused, since this call writes no tieFormat
-  const supplied = suppliedTieFormatInputs(params);
-  if (supplied.length)
+  if (hasTieFormatInput(params))
     return decorateResult({
       result: { error: INVALID_TIE_FORMAT },
       info: 'a tieFormat applies only to a TEAM event',
-      context: { supplied },
+      context: { supplied: suppliedTieFormatInputs(params) },
       stack,
     });
 
