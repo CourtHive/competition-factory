@@ -2,6 +2,7 @@ import { getDrawPositionSideNumber, getWinningSideDrawPosition } from '@Query/ma
 import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
 import { relabelWithoutDirection } from '@Mutate/matchUps/drawPositions/relabelLoserExit';
 import { refreshArrivalsFrom } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { swapSideFacts } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { getDownstreamStructureIds } from '@Query/matchUps/getDownstreamStructureIds';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
@@ -431,7 +432,10 @@ export function swapWinnerLoser(params) {
  * WINNING_SIDE_ADVANCEMENT_MISMATCH on DOUBLE_ELIMINATION 9305122.
  *
  * Re-sided together, because each is addressed by side and would otherwise contradict the others:
- * `winningSide`, the score (`reverseScore`), `sideExitProvenance` (keyed by side) and TEAM `sides`.
+ * `winningSide`, the score (`reverseScore`), `sideExitProvenance` and `sideStatusCodes` (keyed by side) and TEAM
+ * `sides`. The keyed facts are re-sided by `swapSideFacts`, the re-keying `setMatchUpDrawPositions` applies when a
+ * position write moves the occupant, so the two cannot drift: a reason stays with the participant whose exit it
+ * describes.
  */
 function followWinnerAcrossResort({
   matchUp,
@@ -465,19 +469,12 @@ function followWinnerAcrossResort({
   if (!followedSide || followedSide === matchUp.winningSide) return;
 
   const otherSide = (sideNumber) => (sideNumber === 1 ? 2 : 1);
-  matchUp.winningSide = followedSide;
+  // winningSide, sideExitProvenance and sideStatusCodes: the winner is on the other side, so each moves to it
+  swapSideFacts(matchUp, true);
 
   if (matchUp.score?.sets?.length) {
     const { reversedScore } = reverseScore({ score: matchUp.score });
     if (reversedScore) matchUp.score = { ...matchUp.score, ...reversedScore };
-  }
-
-  if (matchUp.sideExitProvenance) {
-    const provenance = {};
-    for (const [sideNumber, entry] of Object.entries(matchUp.sideExitProvenance)) {
-      provenance[otherSide(Number(sideNumber))] = entry;
-    }
-    matchUp.sideExitProvenance = provenance;
   }
 
   if (Array.isArray(matchUp.sides)) {

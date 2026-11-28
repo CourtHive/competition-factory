@@ -1,5 +1,6 @@
 import { arrivedByResult, carriedExitStatus, getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
 import { getSideDrawPosition, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
+import { dropUndescribedStatusReasons } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { cameDownLoserLink } from '@Mutate/matchUps/drawPositions/cameDownLoserLink';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
@@ -835,6 +836,9 @@ function withdrawFromMatchUp(
       if (derived.winningSide && !awardsEmptySeat({ derived, exitsRetained, drawDefinition, structureId, matchUp }))
         matchUp.winningSide = derived.winningSide;
       else delete matchUp.winningSide;
+      // an award re-derived to the other side leaves the withdrawn exit's reason on the winner: it goes, as a write that
+      // submits no reason removes it (`dropUndescribedStatusReasons`)
+      if (matchUp.winningSide) dropUndescribedStatusReasons(matchUp);
       return {
         winnerDrawPosition: previousWinnerDrawPosition,
         roundNumber: matchUp.roundNumber,
