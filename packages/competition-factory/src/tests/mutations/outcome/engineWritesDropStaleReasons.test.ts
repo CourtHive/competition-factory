@@ -36,6 +36,7 @@ import {
   TO_BE_PLAYED,
   WALKOVER,
 } from '@Constants/matchUpStatusConstants';
+import { CONTRADICTORY_POSITION_ACTION } from '@Constants/errorConditionConstants';
 
 /**
  * AN ENGINE WRITE KEEPS ONLY THE REASONS THAT STILL DESCRIBE THE RESULT IT LEAVES.
@@ -327,6 +328,20 @@ function play(mode: OutcomePipelineMode, row: Row) {
         const { structures } = tournamentEngine.getEvent({ drawId: 'd' }).drawDefinition;
         const { structureId } = structures.find((structure: any) => structure.structureName === structureName);
         result = tournamentEngine.swapDrawPositionAssignments({ drawId: 'd', drawPositions, structureId });
+        // 8.0.0 refuses a swap that would contradict the draw's results (aContradictorySwapIsRefused.test.ts); a record
+        // stored by an earlier release can still hold its result, so the record is given that state directly
+        if (result.error?.code === CONTRADICTORY_POSITION_ACTION.code) {
+          const record = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+          const stored = record.events[0].drawDefinitions[0].structures.find(
+            (structure: any) => structure.structureId === structureId,
+          );
+          const [a, b] = drawPositions.map((drawPosition: number) =>
+            stored.positionAssignments.find((assignment: any) => assignment.drawPosition === drawPosition),
+          );
+          [a.participantId, b.participantId] = [b.participantId, a.participantId];
+          tournamentEngine.setState(record);
+          result = { success: true };
+        }
       } else result = tournamentEngine.resetDrawDefinition({ drawId: 'd' });
       results.push(result);
       undescribedAfter.push(
