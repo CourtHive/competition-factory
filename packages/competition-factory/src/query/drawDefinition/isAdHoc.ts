@@ -16,6 +16,7 @@ type IsAdHocArgs = {
 export function isAdHoc({ structure }: IsAdHocArgs): boolean {
   if (!structure) return false;
 
+  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- a falsy matchUps value falls back to roundMatchUps too
   const matchUps = structure.matchUps || (structure.roundMatchUps && Object.values(structure.roundMatchUps).flat());
 
   const hasRoundPosition = !!matchUps?.find((matchUp) => matchUp?.roundPosition);

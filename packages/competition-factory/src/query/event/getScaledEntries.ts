@@ -68,6 +68,7 @@ export function getScaledEntries({
       });
     })
     .sort(
+      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- any falsy scaleSortMethod falls back to the default sort
       scaleSortMethod ||
         (sortDescending || processingAttributes?.ascending === false
           ? defaultScaleValueSortDescending
