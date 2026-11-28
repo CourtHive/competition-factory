@@ -32,7 +32,7 @@
  * a tiebreaker only.
  */
 
-import type { AggregationRules, AwardProfile, QualityWinProfile } from '@Types/rankingTypes';
+import type { AggregationRules, AwardProfile, QualityWinProfile, RankingPolicy } from '@Types/rankingTypes';
 import {
   COMPASS,
   CONSOLATION,
@@ -628,5 +628,5 @@ export const TEMPLATE_RANKING_POINTS_USTA_JUNIOR_2025 = {
 
     doublesAttribution: 'fullToEach' as const,
     categoryResolution: 'eventCategory' as const,
-  },
+  } satisfies RankingPolicy,
 };

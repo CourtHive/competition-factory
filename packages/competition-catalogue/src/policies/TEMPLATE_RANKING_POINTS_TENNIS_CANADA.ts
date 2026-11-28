@@ -26,11 +26,12 @@
  * Verify against official Tennis Canada documentation when available.
  */
 
+import type { AggregationRules, AwardProfile, RankingPolicy } from '@Types/rankingTypes';
 import { CONSOLATION, DOUBLES, MAIN, POLICY_TYPE_RANKING_POINTS, QUALIFYING, SINGLES } from '../constants';
 
 // ─── Singles Main Draw Profiles ──────────────────────────────────────────────
 
-const standardSingles = {
+const standardSingles: AwardProfile = {
   profileName: 'Standard Singles',
   levels: [1, 2, 3, 4, 5],
   eventTypes: [SINGLES],
@@ -49,7 +50,7 @@ const standardSingles = {
 // ─── Singles Qualifying Profile ──────────────────────────────────────────────
 
 // Qualifying draws at National Championships and National Selection Events
-const qualifyingSingles = {
+const qualifyingSingles: AwardProfile = {
   profileName: 'Qualifying Singles',
   levels: [1, 2, 3],
   eventTypes: [SINGLES],
@@ -64,7 +65,7 @@ const qualifyingSingles = {
 // ─── Singles Consolation Profile ─────────────────────────────────────────────
 
 // First-match consolation draws used at National Pathway events
-const consolationSingles = {
+const consolationSingles: AwardProfile = {
   profileName: 'Consolation Singles',
   levels: [1, 2, 3],
   eventTypes: [SINGLES],
@@ -78,7 +79,7 @@ const consolationSingles = {
 
 // ─── Doubles Main Draw Profile ───────────────────────────────────────────────
 
-const standardDoubles = {
+const standardDoubles: AwardProfile = {
   profileName: 'Standard Doubles',
   levels: [1, 2, 3, 4, 5],
   eventTypes: [DOUBLES],
@@ -97,7 +98,7 @@ const standardDoubles = {
 // age-eligible ranking list the participant qualifies for, with no
 // cross-category contribution rules (categoryAggregation is empty and not
 // evaluated under pointPoolModel: 'shared').
-const aggregationRules = {
+const aggregationRules: AggregationRules = {
   rollingPeriodDays: 365,
   separateByGender: true,
   perCategory: true, // Separate rankings per age group (U12, U14, U16, U18)
@@ -142,5 +143,5 @@ export const TEMPLATE_RANKING_POINTS_TENNIS_CANADA = {
     requireWinForPoints: true, // Tennis Canada: "Players only receive points if they win a match"
     doublesAttribution: 'fullToEach' as const,
     categoryResolution: 'eventCategory' as const,
-  },
+  } satisfies RankingPolicy,
 };

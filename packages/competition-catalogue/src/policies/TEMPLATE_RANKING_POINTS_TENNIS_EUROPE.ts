@@ -42,12 +42,13 @@
  * Rolling period: 365 days (52-week ranking).
  */
 
+import type { AggregationRules, AwardProfile, RankingPolicy } from '@Types/rankingTypes';
 import { CONSOLATION, DOUBLES, MAIN, POLICY_TYPE_RANKING_POINTS, QUALIFYING, SINGLES } from '../constants';
 
 // ─── 14&U Singles Main Draw (base = 100%) ────────────────────────────────────
 
 // European Championships 14&U (Level 1)
-const eurChps14U = {
+const eurChps14U: AwardProfile = {
   profileName: 'TE 14&U European Championships',
   levels: [1],
   eventTypes: [SINGLES],
@@ -66,7 +67,7 @@ const eurChps14U = {
 };
 
 // Super Category 14&U (Level 2)
-const super14U = {
+const super14U: AwardProfile = {
   profileName: 'TE 14&U Super',
   levels: [2],
   eventTypes: [SINGLES],
@@ -84,7 +85,7 @@ const super14U = {
 };
 
 // Category 1 14&U (Level 3)
-const cat1_14U = {
+const cat1_14U: AwardProfile = {
   profileName: 'TE 14&U Category 1',
   levels: [3],
   eventTypes: [SINGLES],
@@ -102,7 +103,7 @@ const cat1_14U = {
 };
 
 // Category 2 14&U (Level 4)
-const cat2_14U = {
+const cat2_14U: AwardProfile = {
   profileName: 'TE 14&U Category 2',
   levels: [4],
   eventTypes: [SINGLES],
@@ -119,7 +120,7 @@ const cat2_14U = {
 };
 
 // Category 3 14&U (Level 5)
-const cat3_14U = {
+const cat3_14U: AwardProfile = {
   profileName: 'TE 14&U Category 3',
   levels: [5],
   eventTypes: [SINGLES],
@@ -137,7 +138,7 @@ const cat3_14U = {
 
 // ─── 16&U Singles Main Draw (200% of base) ───────────────────────────────────
 
-const eurChps16U = {
+const eurChps16U: AwardProfile = {
   profileName: 'TE 16&U European Championships',
   levels: [1],
   eventTypes: [SINGLES],
@@ -155,7 +156,7 @@ const eurChps16U = {
   },
 };
 
-const super16U = {
+const super16U: AwardProfile = {
   profileName: 'TE 16&U Super',
   levels: [2],
   eventTypes: [SINGLES],
@@ -172,7 +173,7 @@ const super16U = {
   },
 };
 
-const cat1_16U = {
+const cat1_16U: AwardProfile = {
   profileName: 'TE 16&U Category 1',
   levels: [3],
   eventTypes: [SINGLES],
@@ -189,7 +190,7 @@ const cat1_16U = {
   },
 };
 
-const cat2_16U = {
+const cat2_16U: AwardProfile = {
   profileName: 'TE 16&U Category 2',
   levels: [4],
   eventTypes: [SINGLES],
@@ -205,7 +206,7 @@ const cat2_16U = {
   },
 };
 
-const cat3_16U = {
+const cat3_16U: AwardProfile = {
   profileName: 'TE 16&U Category 3',
   levels: [5],
   eventTypes: [SINGLES],
@@ -223,7 +224,7 @@ const cat3_16U = {
 
 // ─── Qualifying Singles ──────────────────────────────────────────────────────
 
-const qualifying14U = {
+const qualifying14U: AwardProfile = {
   profileName: 'TE 14&U Qualifying',
   levels: [1, 2, 3, 4, 5],
   eventTypes: [SINGLES],
@@ -235,7 +236,7 @@ const qualifying14U = {
   },
 };
 
-const qualifying16U = {
+const qualifying16U: AwardProfile = {
   profileName: 'TE 16&U Qualifying',
   levels: [1, 2, 3, 4, 5],
   eventTypes: [SINGLES],
@@ -249,7 +250,7 @@ const qualifying16U = {
 
 // ─── Bonus Draw (Consolation) Singles ────────────────────────────────────────
 
-const bonus14U = {
+const bonus14U: AwardProfile = {
   profileName: 'TE 14&U Bonus Draw',
   levels: [1, 2, 3, 4, 5],
   eventTypes: [SINGLES],
@@ -263,7 +264,7 @@ const bonus14U = {
   },
 };
 
-const bonus16U = {
+const bonus16U: AwardProfile = {
   profileName: 'TE 16&U Bonus Draw',
   levels: [1, 2, 3, 4, 5],
   eventTypes: [SINGLES],
@@ -279,7 +280,7 @@ const bonus16U = {
 
 // ─── Doubles ────────────────────────────────────────────────────────────────
 
-const doubles14U = {
+const doubles14U: AwardProfile = {
   profileName: 'TE 14&U Doubles',
   levels: [1, 2, 3, 4, 5],
   eventTypes: [DOUBLES],
@@ -294,7 +295,7 @@ const doubles14U = {
   },
 };
 
-const doubles16U = {
+const doubles16U: AwardProfile = {
   profileName: 'TE 16&U Doubles',
   levels: [1, 2, 3, 4, 5],
   eventTypes: [DOUBLES],
@@ -314,7 +315,7 @@ const doubles16U = {
 // 12&U Cat 1 starting points — used at the 14&U scale via emission-time rerate.
 // Profile name is what the categoryAggregation rule and any future
 // startingPointsEmission rule reference (`profileName: 'TE 12 Cat 1 starting points'`).
-const te12Cat1Starting = {
+const te12Cat1Starting: AwardProfile = {
   profileName: 'TE 12 Cat 1 starting points',
   levels: [6],
   eventTypes: [SINGLES],
@@ -328,7 +329,7 @@ const te12Cat1Starting = {
   },
 };
 
-const te12Cat2Starting = {
+const te12Cat2Starting: AwardProfile = {
   profileName: 'TE 12 Cat 2 starting points',
   levels: [7],
   eventTypes: [SINGLES],
@@ -343,7 +344,7 @@ const te12Cat2Starting = {
 };
 
 // 12&U Cat 1 qualifying / bonus / doubles — also for starting-points use
-const te12Cat1Qualifying = {
+const te12Cat1Qualifying: AwardProfile = {
   profileName: 'TE 12 Cat 1 starting points - Qualifying',
   levels: [6],
   eventTypes: [SINGLES],
@@ -352,7 +353,7 @@ const te12Cat1Qualifying = {
   finishingPositionRanges: { 1: 4 }, // Qualifier
 };
 
-const te12Cat2Qualifying = {
+const te12Cat2Qualifying: AwardProfile = {
   profileName: 'TE 12 Cat 2 starting points - Qualifying',
   levels: [7],
   eventTypes: [SINGLES],
@@ -361,7 +362,7 @@ const te12Cat2Qualifying = {
   finishingPositionRanges: { 1: 2 },
 };
 
-const te12Cat1Doubles = {
+const te12Cat1Doubles: AwardProfile = {
   profileName: 'TE 12 Cat 1 starting points - Doubles',
   levels: [6],
   eventTypes: [DOUBLES],
@@ -370,7 +371,7 @@ const te12Cat1Doubles = {
   finishingPositionRanges: { 1: 11, 2: 7 },
 };
 
-const te12Cat2Doubles = {
+const te12Cat2Doubles: AwardProfile = {
   profileName: 'TE 12 Cat 2 starting points - Doubles',
   levels: [7],
   eventTypes: [DOUBLES],
@@ -385,7 +386,7 @@ const te12Cat2Doubles = {
 // Cross-category contribution rules per TE 2026 regulations (p. 80):
 //   "The six best Singles results, two of these may be from 14&Under events,
 //    and the two best Doubles results from either 12 or 14 & Under events..."
-const aggregationRules = {
+const aggregationRules: AggregationRules = {
   rollingPeriodDays: 365,
   separateByGender: true,
   perCategory: true,
@@ -492,5 +493,5 @@ export const TEMPLATE_RANKING_POINTS_TENNIS_EUROPE = {
 
     doublesAttribution: 'fullToEach' as const,
     categoryResolution: 'eventCategory' as const,
-  },
+  } satisfies RankingPolicy,
 };

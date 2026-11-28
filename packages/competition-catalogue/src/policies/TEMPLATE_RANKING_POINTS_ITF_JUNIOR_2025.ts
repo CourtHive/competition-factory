@@ -40,7 +40,7 @@
  *     results. Only the best 8 teams reach those rounds; a 5th–8th classification tie earns nothing
  */
 
-import type { AggregationRules, AwardProfile } from '@Types/rankingTypes';
+import type { AggregationRules, AwardProfile, RankingPolicy } from '@Types/rankingTypes';
 import {
   DOUBLES,
   ITF_JUNIOR,
@@ -248,7 +248,7 @@ export const TEMPLATE_RANKING_POINTS_ITF_JUNIOR_2025 = {
     aggregationRules,
 
     doublesAttribution: 'fullToEach' as const,
-  },
+  } satisfies RankingPolicy,
 };
 
 export default TEMPLATE_RANKING_POINTS_ITF_JUNIOR_2025;

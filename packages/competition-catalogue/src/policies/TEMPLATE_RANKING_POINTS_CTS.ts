@@ -29,6 +29,7 @@
  * 365 within each period.
  */
 
+import type { AggregationRules, AwardProfile, RankingPolicy } from '@Types/rankingTypes';
 import { DOUBLES, MAIN, POLICY_TYPE_RANKING_POINTS, QUALIFYING, SINGLES, SINGLE_ELIMINATION } from '../constants';
 
 // ─── Tabulka IV ──────────────────────────────────────────────────────────────
@@ -197,7 +198,7 @@ function buildQualifyingProfile(level: number, qDrawSize: number): object | unde
 // QUALIFYING (SINGLES only — doubles has no qualifying in CZE): one profile per
 // (level, Q drawSize) where Tabulka IV has enough columns to support the shift.
 
-const awardProfiles = [
+const awardProfiles: AwardProfile[] = [
   ...CATEGORIES.map((cat) => buildProfile(cat, 'SINGLES')),
   ...CATEGORIES.map((cat) => buildProfile(cat, 'DOUBLES')),
   ...CATEGORIES.flatMap((cat) =>
@@ -230,7 +231,7 @@ const tierToLevel = {
 
 // ─── Aggregation Rules ───────────────────────────────────────────────────────
 
-const aggregationRules = {
+const aggregationRules: AggregationRules = {
   // 12-month classification period within each of the two season windows
   // (winter Oct-Sep, summer Apr-Mar). See note above.
   rollingPeriodDays: 365,
@@ -285,5 +286,5 @@ export const TEMPLATE_RANKING_POINTS_CTS = {
 
     doublesAttribution: 'fullToEach' as const,
     categoryResolution: 'eventCategory' as const,
-  },
+  } satisfies RankingPolicy,
 };

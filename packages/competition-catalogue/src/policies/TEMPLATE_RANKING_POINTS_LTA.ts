@@ -23,13 +23,14 @@
  *   - Team events award per-win points by player line position
  */
 
+import type { AggregationRules, AwardProfile, RankingPolicy } from '@Types/rankingTypes';
 import { CONSOLATION, DOUBLES, MAIN, POLICY_TYPE_RANKING_POINTS, QUALIFYING, SINGLES, TEAM_EVENT } from '../constants';
 
 // ─── Singles Main Draw Profiles ──────────────────────────────────────────────
 
 // ── British Tour – Premier (Level 1) ─────────────────────────────────────────
 // Grade 1 with enhanced W/F/SF: W=6000, RU=4500, SF=3300
-const premierSingles = {
+const premierSingles: AwardProfile = {
   profileName: 'British Tour Premier Singles',
   levels: [1],
   eventTypes: [SINGLES],
@@ -46,7 +47,7 @@ const premierSingles = {
 };
 
 // ── Standard Singles (Grades 1-5, Levels 2-6) ────────────────────────────────
-const standardSingles = {
+const standardSingles: AwardProfile = {
   profileName: 'Standard Singles',
   levels: [2, 3, 4, 5, 6],
   eventTypes: [SINGLES],
@@ -67,7 +68,7 @@ const standardSingles = {
 // Qualifying positions mapped from the LTA unified position table.
 // Qualifier (won qualifying) aligns with main-draw 5th position equivalent.
 // Qualifying final-round loss aligns with main-draw QF equivalent.
-const qualifyingSingles = {
+const qualifyingSingles: AwardProfile = {
   profileName: 'Qualifying Singles',
   levels: [2, 3, 4, 5, 6],
   eventTypes: [SINGLES],
@@ -82,7 +83,7 @@ const qualifyingSingles = {
 };
 
 // Premier qualifying uses Grade 1 values
-const premierQualifyingSingles = {
+const premierQualifyingSingles: AwardProfile = {
   profileName: 'Premier Qualifying Singles',
   levels: [1],
   eventTypes: [SINGLES],
@@ -100,7 +101,7 @@ const premierQualifyingSingles = {
 
 // Consolation draw positions from the LTA table.
 // Consolation Winner aligns with main-draw R16 equivalent points.
-const consolationSingles = {
+const consolationSingles: AwardProfile = {
   profileName: 'Consolation Singles',
   levels: [1, 2, 3, 4, 5, 6],
   eventTypes: [SINGLES],
@@ -119,7 +120,7 @@ const consolationSingles = {
 
 // The LTA uses the same individual points table for doubles as singles.
 // Combined ranking = best 6 singles + 25% of best 6 doubles.
-const standardDoubles = {
+const standardDoubles: AwardProfile = {
   profileName: 'Standard Doubles',
   levels: [1, 2, 3, 4, 5, 6],
   eventTypes: [DOUBLES],
@@ -141,7 +142,7 @@ const standardDoubles = {
 // Per-line values are expressible (`level: { N: { line: [...] } }`, keyed by the tie
 // matchUp's collectionPosition rather than the opponent's line), but this fixture uses
 // the average of the top 3 line positions as a representative per-win value.
-const teamSingles = {
+const teamSingles: AwardProfile = {
   profileName: 'Team Singles',
   levels: [2, 3, 4, 5, 6],
   eventTypes: [TEAM_EVENT],
@@ -151,7 +152,7 @@ const teamSingles = {
 };
 
 // Team doubles: per-win points for doubles matches within team events
-const teamDoubles = {
+const teamDoubles: AwardProfile = {
   profileName: 'Team Doubles',
   levels: [2, 3, 4, 5, 6],
   eventTypes: [TEAM_EVENT],
@@ -171,7 +172,7 @@ const teamDoubles = {
 // TODO: AggregationRules.countingBuckets does not yet model a doubles weight
 // (0.25 per spec). Until the type is extended, the weight is documented here
 // in the bucketName / category comment and applied client-side by consumers.
-const aggregationRules = {
+const aggregationRules: AggregationRules = {
   rollingPeriodDays: 364, // 52 weeks
   separateByGender: true,
   perCategory: true, // Separate rankings per age group
@@ -282,5 +283,5 @@ export const TEMPLATE_RANKING_POINTS_LTA = {
 
     doublesAttribution: 'fullToEach' as const,
     categoryResolution: 'eventCategory' as const,
-  },
+  } satisfies RankingPolicy,
 };

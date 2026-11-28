@@ -20,11 +20,12 @@
  * across Australian provincial and national systems.
  */
 
+import type { AggregationRules, AwardProfile, RankingPolicy } from '@Types/rankingTypes';
 import { DOUBLES, MAIN, POLICY_TYPE_RANKING_POINTS, SINGLES } from '../constants';
 
 // ─── Singles Main Draw Profiles ──────────────────────────────────────────────
 
-const standardSingles = {
+const standardSingles: AwardProfile = {
   profileName: 'Standard Singles',
   levels: [1, 2, 3, 4],
   eventTypes: [SINGLES],
@@ -41,7 +42,7 @@ const standardSingles = {
 
 // ─── Doubles Main Draw Profiles ──────────────────────────────────────────────
 
-const standardDoubles = {
+const standardDoubles: AwardProfile = {
   profileName: 'Standard Doubles',
   levels: [1, 2, 3, 4],
   eventTypes: [DOUBLES],
@@ -63,7 +64,7 @@ const standardDoubles = {
 //     participant is aging up to the 16u Finals (excludedSourceFilters).
 //   - J125 events use an 18u rating band: results in J125 18u events count
 //     in BOTH the 12u and 14u lists for J125-RATED participants.
-const aggregationRules = {
+const aggregationRules: AggregationRules = {
   rollingPeriodDays: 365,
   separateByGender: true,
   perCategory: true, // Separate rankings per age group (12U, 14U, 16U)
@@ -144,5 +145,5 @@ export const TEMPLATE_RANKING_POINTS_TENNIS_AUSTRALIA = {
 
     doublesAttribution: 'fullToEach' as const,
     categoryResolution: 'eventCategory' as const,
-  },
+  } satisfies RankingPolicy,
 };
