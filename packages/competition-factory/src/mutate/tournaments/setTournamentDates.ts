@@ -158,6 +158,18 @@ export function setTournamentDates(params: SetTournamentDatesArgs): ResultType &
     if (activeDatesError) return activeDatesError;
   }
 
+  // a forced change unschedules the matchUps outside the new range first: a schedule that cannot be cleared (a locked
+  // one) refuses the call before its dates are written, and a clear that clears nothing writes nothing
+  let unscheduledMatchUpIds: string[] | undefined;
+  if (forcedUnscheduling) {
+    const cleared = clearScheduledMatchUps({
+      scheduledDates: forcedUnscheduling.scheduledDates,
+      tournamentRecord,
+    });
+    if (!cleared.clearedScheduleCount) return { error: SCHEDULE_NOT_CLEARED };
+    unscheduledMatchUpIds = forcedUnscheduling.matchUpIds;
+  }
+
   const previousStartDate = tournamentRecord.startDate;
   const previousEndDate = tournamentRecord.endDate;
   const initialDateRange = generateDateRange(tournamentRecord.startDate, tournamentRecord.endDate);
@@ -175,16 +187,6 @@ export function setTournamentDates(params: SetTournamentDatesArgs): ResultType &
 
   // a change of range leaves no active date or scheduling-profile date outside the new ranges
   const trims = trimToTournamentRange({ tournamentRecord, startDate, endDate });
-
-  let unscheduledMatchUpIds: string[] | undefined;
-  if (forcedUnscheduling) {
-    const cleared = clearScheduledMatchUps({
-      scheduledDates: forcedUnscheduling.scheduledDates,
-      tournamentRecord,
-    });
-    if (!cleared.clearedScheduleCount) return { error: SCHEDULE_NOT_CLEARED };
-    unscheduledMatchUpIds = forcedUnscheduling.matchUpIds;
-  }
 
   // courts' dateAvailability follows the tournament dates: each venue whose courts changed is announced
   const venuesBefore = venueSnapshot(tournamentRecord);
