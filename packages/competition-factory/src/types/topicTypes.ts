@@ -19,7 +19,17 @@
  */
 
 // constants and types
-import type { MatchUp, Event, DrawDefinition } from '@Types/tournamentTypes';
+import type {
+  DrawDefinition,
+  Entry,
+  Event,
+  MatchUp,
+  Organisation,
+  Participant,
+  PositionAssignment,
+  SeedAssignment,
+} from '@Types/tournamentTypes';
+import type { EventData } from '@Types/viewTypes';
 
 // ============================================================================
 // Identity envelope
@@ -95,7 +105,8 @@ export interface ModifyMatchUpPayload extends NoticeIdentity {
   matchUp: MatchUp;
   /** `drawDefinition` is optional at the emit site, so this is best-effort. */
   drawId?: string;
-  context?: { [key: string]: any };
+  /** What the mutation passed to describe itself: a label, or a stack of labels. */
+  context?: unknown;
 }
 
 export interface DeletedMatchUpIdsPayload {
@@ -108,12 +119,12 @@ export interface DeletedMatchUpIdsPayload {
 export interface AddParticipantsPayload {
   /** Some emit sites (e.g. mergeParticipants) omit tournamentId. */
   tournamentId?: string;
-  participants: any[];
+  participants: Participant[];
 }
 
 export interface ModifyParticipantsPayload {
   tournamentId?: string;
-  participants: any[];
+  participants: Participant[];
 }
 
 export interface DeleteParticipantsPayload {
@@ -126,7 +137,8 @@ export interface PublishEventPayload extends NoticeIdentity {
   /** On the envelope, not only inside `eventData.eventInfo` — a subscriber needing just the id
    *  should not have to reach through the payload for it. */
   eventId?: string;
-  eventData: any;
+  /** Undefined when the event data could not be built. */
+  eventData: EventData | undefined;
 }
 
 /**
@@ -142,7 +154,7 @@ export interface PublishEventPayload extends NoticeIdentity {
  */
 export interface ModifyTournamentDetailPayload {
   tournamentId: string;
-  parentOrganisation?: any;
+  parentOrganisation?: Organisation;
   /** Detail-specific — which key arrives depends on which mutation fired. */
   [detail: string]: unknown;
 }
@@ -152,7 +164,7 @@ export interface ModifyPositionAssignmentsPayload extends NoticeIdentity {
   eventId: string;
   drawId: string;
   structureId: string;
-  positionAssignments: any[];
+  positionAssignments: PositionAssignment[];
 }
 
 export interface ModifySeedAssignmentsPayload extends NoticeIdentity {
@@ -160,20 +172,21 @@ export interface ModifySeedAssignmentsPayload extends NoticeIdentity {
   eventId: string;
   drawId: string;
   structureId: string;
-  seedAssignments: any[];
+  /** The structure's own `seedAssignments`: absent when it has none. */
+  seedAssignments?: SeedAssignment[];
 }
 
 export interface ModifyDrawEntriesPayload extends NoticeIdentity {
   tournamentId: string;
   eventId: string;
   drawId: string;
-  drawEntries: any[];
+  drawEntries: Entry[];
 }
 
 export interface ModifyEventEntriesPayload extends NoticeIdentity {
   tournamentId: string;
   eventId: string;
-  entries: any[];
+  entries: Entry[];
 }
 
 export interface UnPublishEventPayload extends NoticeIdentity {

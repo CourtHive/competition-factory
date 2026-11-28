@@ -13,12 +13,13 @@ import {
   getTournamentRecords,
 } from '@Global/state/globalState';
 
-import type { Directives, TournamentRecords } from '@Types/factoryTypes';
+import type { TournamentRecords } from '@Types/factoryTypes';
+import type { Directives } from '@Assemblies/engines/types/engineTypes';
 import { originalNoticeValue } from '@Global/state/noticePayloadAudit';
 
 export type PrivateState = {
   before: TournamentRecords;
-  directives: Directives;
+  directives: Directives<string>;
   topics: string[];
   isCurrent: () => boolean;
 };
@@ -27,7 +28,7 @@ const subscribe = () => undefined;
 
 /** Only the child store receives writes. A legacy request provider can identify its child by its own records map. */
 export function withPreviewState<T>(
-  directives: Directives,
+  directives: Directives<string>,
   asyncEngine: boolean,
   clocks: { record: number; competition?: number },
   run: (state: PrivateState) => T,
@@ -49,7 +50,7 @@ export function withPreviewState<T>(
   const copy = privateCopier(getCapturedStamps(), stamps);
   let before: TournamentRecords;
   let records: TournamentRecords;
-  let privateDirectives: Directives;
+  let privateDirectives: Directives<string>;
   let buffer: ReturnType<typeof getNoticeBuffer>;
   try {
     const projection = provider.makeDeepCopy

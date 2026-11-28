@@ -18,7 +18,7 @@ import {
   getTournamentId,
   getTournamentRecords,
 } from '@Global/state/globalState';
-import type { Directives } from '@Types/factoryTypes';
+import type { Directives } from '@Assemblies/engines/types/engineTypes';
 
 type Bindings = NonNullable<ReturnType<typeof resolvePreviewDirectives>['methods']>;
 
@@ -48,7 +48,7 @@ export function runPrivatePreview(
     },
     executionQueue(nested) {
       checkScope();
-      let owned: Directives;
+      let owned: Directives<string>;
       try {
         owned = copyPreviewValue(nested);
       } catch {
@@ -77,7 +77,7 @@ export function runPrivatePreview(
     },
   };
 
-  function runDirectives(queue: Directives, bindings: Bindings) {
+  function runDirectives(queue: Directives<string>, bindings: Bindings) {
     const results: any[] = [];
     function dispatch(start: number): QueueOutcome | Promise<QueueOutcome> {
       for (let i = start; i < queue.length; i++) {

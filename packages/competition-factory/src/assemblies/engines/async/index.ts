@@ -5,14 +5,15 @@ import { asyncExecutionQueue } from './asyncExecutionQueue';
 import { asyncEngineInvoke } from './asyncEngineInvoke';
 
 // types
-import { Directives, FactoryEngine } from '@Types/factoryTypes';
+import { FactoryEngine } from '@Types/factoryTypes';
+import type { Directives } from '@Assemblies/engines/types/engineTypes';
 
 export function asyncEngine(test?: boolean): FactoryEngine & { error?: any } {
   const result = createInstanceState();
   if (result.error && !test) return result;
 
   const engine: FactoryEngine = {
-    executionQueue: (directives: Directives, rollbackOnError?: boolean) =>
+    executionQueue: (directives: Directives<string>, rollbackOnError?: boolean) =>
       asyncExecutionQueue(engine, directives, rollbackOnError),
     execute: (args: any) => asyncEngineInvoke(engine, args),
   };

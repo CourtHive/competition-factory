@@ -3,11 +3,12 @@ import { executionQueue } from './executionQueue';
 import { engineInvoke } from './engineInvoke';
 
 // types
-import { Directives, FactoryEngine } from '@Types/factoryTypes';
+import { FactoryEngine } from '@Types/factoryTypes';
+import type { Directives } from '@Assemblies/engines/types/engineTypes';
 
 export const syncEngine = ((): FactoryEngine => {
   const engine: FactoryEngine = {
-    executionQueue: (directives: Directives, rollbackOnError?: boolean) =>
+    executionQueue: (directives: Directives<string>, rollbackOnError?: boolean) =>
       executionQueue(engine, directives, rollbackOnError),
     execute: (args: any) => engineInvoke(engine, args),
   };

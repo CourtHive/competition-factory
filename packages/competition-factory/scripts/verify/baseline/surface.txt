@@ -210,6 +210,8 @@ DeleteNoticeArgs
 DerivedFilter
 DerivedRanking
 DevContextType
+Directive
+DirectivePipe
 Directives
 DisciplineEnum
 DisciplineProfile
@@ -734,6 +736,7 @@ QUALIFYING_CAPACITY_EXCEEDED
 QualityWinProfile
 QualityWinRange
 QueryFacade
+QueueDirectives
 QueueMethod
 READ_MODEL_COLUMNS
 READ_MODEL_TABLES

@@ -8,7 +8,8 @@ import { runPreview } from './previewRunner';
 
 // types
 import type { AsyncFactoryEngine } from '@Assemblies/engines/types/asyncEngineTypes';
-import { Directives, FactoryEngine } from '@Types/factoryTypes';
+import { FactoryEngine } from '@Types/factoryTypes';
+import type { Directives, QueueDirectives } from '@Assemblies/engines/types/engineTypes';
 
 export type EmittedNotice = {
   topic: string;
@@ -39,11 +40,17 @@ export function registerAsyncPreviewEngine(engine: FactoryEngine): void {
   asyncPreviewEngines.add(engine);
 }
 
-export function dryRun(engine: AsyncFactoryEngine, directives: Directives): DryRunResult | Promise<DryRunResult>;
+export function dryRun<Custom extends string = never>(
+  engine: AsyncFactoryEngine,
+  directives: QueueDirectives<Custom>,
+): DryRunResult | Promise<DryRunResult>;
 // eslint-disable-next-line no-redeclare -- a synchronous engine always returns the result immediately
-export function dryRun(engine: FactoryEngine, directives: Directives): DryRunResult;
+export function dryRun<Custom extends string = never>(
+  engine: FactoryEngine,
+  directives: QueueDirectives<Custom>,
+): DryRunResult;
 // eslint-disable-next-line no-redeclare -- overload implementation
-export function dryRun(engine: FactoryEngine | AsyncFactoryEngine, directives: Directives) {
+export function dryRun(engine: FactoryEngine | AsyncFactoryEngine, directives: Directives<string>) {
   const awaitMethods = asyncPreviewEngines.has(engine);
   const clocks = readPreviewClocks();
   if ('error' in clocks) return refused({ ...clocks.error, message: clocks.message });

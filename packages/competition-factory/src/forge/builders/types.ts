@@ -7,7 +7,8 @@
  */
 
 import type { ErrorType } from '@Constants/errorConditionConstants';
-import type { Directives } from '@Types/factoryTypes';
+import type { DrawTypeUnion } from '@Types/tournamentTypes';
+import type { Directives } from '@Assemblies/engines/types/engineTypes';
 
 export type GenderInput = 'MALE' | 'FEMALE' | 'MIXED' | 'ANY' | 'OTHER';
 
@@ -26,7 +27,7 @@ export interface EventSeed {
 }
 
 export interface DrawOpts {
-  drawType?: string;
+  drawType?: DrawTypeUnion;
   drawName?: string;
   seedsCount?: number;
   matchUpFormat?: string;

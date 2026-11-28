@@ -688,7 +688,7 @@
       "ret:keys": 3
     },
     "dryRun": {
-      "param:index": 2,
+      "param:index": 6,
       "ret:keys": 2
     },
     "enableCourts": {
@@ -723,7 +723,7 @@
       "param:index": 1
     },
     "executionQueue": {
-      "param:index": 2,
+      "param:index": 6,
       "ret:index": 1,
       "ret:keys": 1
     },
@@ -1218,8 +1218,7 @@
       "ret:keys": 2
     },
     "getMatchUpDailyLimitsUpdate": {
-      "param:keys": 1,
-      "ret:index": 1
+      "param:keys": 1
     },
     "getMatchUpDependencies": {
       "param:index": 3,
@@ -1234,8 +1233,7 @@
       "ret:keys": 1
     },
     "getMatchUpFormatTimingUpdate": {
-      "param:keys": 1,
-      "ret:index": 1
+      "param:keys": 1
     },
     "getMatchUpFormatVariance": {
       "ret:index": 1,
@@ -3281,9 +3279,6 @@
     "CourtData": {
       "type:index": 3
     },
-    "Directives": {
-      "type:index": 2
-    },
     "DrawDefinition": {
       "type:any": 3
     },
@@ -3418,9 +3413,6 @@
     },
     "PublicParticipant": {
       "type:index": 2
-    },
-    "QueueMethod": {
-      "type:index": 1
     },
     "RankingListAward": {
       "type:index": 1

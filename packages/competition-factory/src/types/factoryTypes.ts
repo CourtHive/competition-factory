@@ -59,12 +59,6 @@ export type TournamentRecords = {
   [key: string]: Tournament;
 };
 
-export type Directives = {
-  pipe?: { [key: string]: boolean };
-  params?: { [key: string]: any };
-  method: string;
-}[];
-
 export type CheckInOutParticipantArgs = {
   tournamentRecord: Tournament;
   drawDefinition: DrawDefinition;
@@ -351,10 +345,10 @@ export type PolicyDefinitions = {
   [POLICY_TYPE_SCORING]?: { rotatingPartners?: RotatingPartnerScoringPolicies; [key: string]: unknown };
 };
 
-export type QueueMethod = {
-  params: { [key: string]: any };
-  method: string;
-};
+/** A directive `getExtensionUpdate` returns, to replay an extension on another engine through `executionQueue`. */
+export type QueueMethod =
+  | { method: 'addExtension'; params: { extension: Extension; discover: boolean } }
+  | { method: 'addEventExtension'; params: { eventId: string; extension: Extension } };
 
 export type RoundProfile = {
   [key: number]: {

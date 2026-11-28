@@ -21,7 +21,8 @@ import { MAIN } from '@Constants/drawDefinitionConstants';
 import { UUID } from '@Tools/UUID';
 
 import type { DrawOpts, EntriesOpts, EventSeed, GenderInput, BuildResult } from './types';
-import type { Directives, FactoryEngine } from '@Types/factoryTypes';
+import type { FactoryEngine } from '@Types/factoryTypes';
+import type { Directives } from '@Assemblies/engines/types/engineTypes';
 import type { TieFormat } from '@Types/tournamentTypes';
 
 type DrawSpec = { drawId: string; drawSize: number; opts: DrawOpts };

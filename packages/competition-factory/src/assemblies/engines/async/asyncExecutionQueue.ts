@@ -14,12 +14,17 @@ import { withCallRandomSourceAsync } from '@Tools/prng';
 import { withCapturedClockAsync } from '@Tools/clock';
 
 // constants and types
-import { Directives, FactoryEngine } from '@Types/factoryTypes';
+import { FactoryEngine } from '@Types/factoryTypes';
+import type { Directives } from '@Assemblies/engines/types/engineTypes';
 import { PARTIAL_COMMIT } from '@Constants/resultConstants';
 
 let asyncQueueReentry = false;
 
-export async function asyncExecutionQueue(engine: FactoryEngine, directives: Directives, rollbackOnError?: boolean) {
+export async function asyncExecutionQueue(
+  engine: FactoryEngine,
+  directives: Directives<string>,
+  rollbackOnError?: boolean,
+) {
   const observe = engineBoundaryObservers.asyncQueue;
   if (observe) {
     // an installed observer (a test harness) is handed the call; it re-enters once, past this check

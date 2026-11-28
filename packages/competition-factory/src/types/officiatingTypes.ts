@@ -427,7 +427,7 @@ export type OfficialRecords = {
 
 export type OfficiatingDirective = {
   pipe?: { [key: string]: boolean };
-  params?: { [key: string]: any };
+  params?: Record<string, unknown>;
   method: string;
 };
 
