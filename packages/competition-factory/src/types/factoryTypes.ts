@@ -1,6 +1,23 @@
-import type { AvoidancePolicy, MatchUpActionsPolicy } from './policyShapes';
+import type {
+  VoluntaryConsolationPolicy,
+  CompetitiveBandsPolicy,
+  PositionActionsPolicy,
+  MatchUpActionsPolicy,
+  ParticipantPolicy,
+  ProgressionPolicy,
+  AvoidancePolicy,
+  DisplayPolicy,
+  ScoringPolicy,
+  FeedInPolicy,
+  AuditPolicy,
+  DrawsPolicy,
+  PrintPolicy,
+} from './policyShapes';
+import type { ConflictOfInterestPolicy } from './officiatingTypes';
+import type { CompetitionPolicy } from './competitionPolicyTypes';
+import type { SanctioningPolicy } from './sanctioningTypes';
+import type { RankingPolicy } from './rankingTypes';
 import { DOUBLES_EVENT, SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
-import type { RotatingPartnerScoringPolicies } from './rotatingPartnerScoring';
 import type { RotatingPartnerTallyPolicy } from './rotatingPartnerTally';
 import { SignedInStatusUnion } from '@Constants/participantConstants';
 import type { RoundRobinTallyPolicy } from './roundRobinTallyPolicy';
@@ -36,17 +53,30 @@ import {
   MatchUp,
 } from './tournamentTypes';
 import {
-  ValidPolicyTypes,
   POLICY_TYPE_SEEDING,
   POLICY_TYPE_SCORING,
   POLICY_TYPE_ROTATING_PARTNER_TALLY,
+  POLICY_TYPE_VOLUNTARY_CONSOLATION,
+  POLICY_TYPE_OFFICIATING_CONFLICT,
+  POLICY_TYPE_COMPETITIVE_BANDS,
   POLICY_TYPE_ROUND_ROBIN_TALLY,
+  POLICY_TYPE_POSITION_ACTIONS,
+  POLICY_TYPE_RANKING_POINTS,
   POLICY_TYPE_SCHEDULING,
   POLICY_TYPE_ROUND_NAMING,
   POLICY_TYPE_MATCHUP_ACTIONS,
+  POLICY_TYPE_PARTICIPANT,
+  POLICY_TYPE_PROGRESSION,
+  POLICY_TYPE_COMPETITION,
+  POLICY_TYPE_SANCTIONING,
   POLICY_TYPE_AVOIDANCE,
+  POLICY_TYPE_DISPLAY,
+  POLICY_TYPE_FEED_IN,
   POLICY_TYPE_LADDER,
   POLICY_TYPE_RATINGS,
+  POLICY_TYPE_AUDIT,
+  POLICY_TYPE_DRAWS,
+  POLICY_TYPE_PRINT,
 } from '@Constants/policyConstants';
 
 export type FactoryEngine = {
@@ -336,19 +366,35 @@ export type RoundNamingPolicy = {
   stageConstants?: { [stage: string]: string };
 };
 
+/**
+ * Policies keyed by policy type: what `attachPolicies` takes and `getAppliedPolicies` / `getPolicyDefinitions` return.
+ * Each policy type carries its own body; `display` and the retired `print` are defined by the client, not the factory.
+ */
 export type PolicyDefinitions = {
-  [key in ValidPolicyTypes]?: { [key: string]: any };
-} & {
   [POLICY_TYPE_ROTATING_PARTNER_TALLY]?: RotatingPartnerTallyPolicy;
-  [POLICY_TYPE_SEEDING]?: SeedingPolicy;
-  [POLICY_TYPE_SCHEDULING]?: SchedulingPolicy;
-  [POLICY_TYPE_ROUND_NAMING]?: RoundNamingPolicy;
-  [POLICY_TYPE_MATCHUP_ACTIONS]?: MatchUpActionsPolicy;
-  [POLICY_TYPE_AVOIDANCE]?: AvoidancePolicy;
-  [POLICY_TYPE_LADDER]?: LadderPolicy;
+  [POLICY_TYPE_VOLUNTARY_CONSOLATION]?: VoluntaryConsolationPolicy;
+  [POLICY_TYPE_OFFICIATING_CONFLICT]?: ConflictOfInterestPolicy;
+  [POLICY_TYPE_COMPETITIVE_BANDS]?: CompetitiveBandsPolicy;
   [POLICY_TYPE_ROUND_ROBIN_TALLY]?: RoundRobinTallyPolicy;
+  [POLICY_TYPE_POSITION_ACTIONS]?: PositionActionsPolicy;
+  [POLICY_TYPE_MATCHUP_ACTIONS]?: MatchUpActionsPolicy;
+  [POLICY_TYPE_RANKING_POINTS]?: RankingPolicy;
+  [POLICY_TYPE_ROUND_NAMING]?: RoundNamingPolicy;
+  [POLICY_TYPE_PARTICIPANT]?: ParticipantPolicy;
+  [POLICY_TYPE_PROGRESSION]?: ProgressionPolicy;
+  [POLICY_TYPE_COMPETITION]?: CompetitionPolicy;
+  [POLICY_TYPE_SANCTIONING]?: SanctioningPolicy;
+  [POLICY_TYPE_SCHEDULING]?: SchedulingPolicy;
+  [POLICY_TYPE_AVOIDANCE]?: AvoidancePolicy;
+  [POLICY_TYPE_DISPLAY]?: DisplayPolicy;
+  [POLICY_TYPE_FEED_IN]?: FeedInPolicy;
+  [POLICY_TYPE_SCORING]?: ScoringPolicy;
   [POLICY_TYPE_RATINGS]?: RatingsPolicy;
-  [POLICY_TYPE_SCORING]?: { rotatingPartners?: RotatingPartnerScoringPolicies; [key: string]: unknown };
+  [POLICY_TYPE_SEEDING]?: SeedingPolicy;
+  [POLICY_TYPE_LADDER]?: LadderPolicy;
+  [POLICY_TYPE_AUDIT]?: AuditPolicy;
+  [POLICY_TYPE_DRAWS]?: DrawsPolicy;
+  [POLICY_TYPE_PRINT]?: PrintPolicy;
 };
 
 export type QueueMethod = {

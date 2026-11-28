@@ -121,7 +121,7 @@ describe('allowedTypes branch coverage', () => {
       categoryName: undefined,
       categoryType: undefined,
     });
-    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
+    expect(result).toEqual({ error: MISSING_TOURNAMENT_RECORD });
   });
 
   it('getAllowedMatchUpFormats returns empty array when no scoring policy', () => {
@@ -140,7 +140,7 @@ describe('allowedTypes branch coverage', () => {
       categoryName: undefined,
       categoryType: undefined,
     });
-    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
+    expect(result).toEqual({ error: MISSING_TOURNAMENT_RECORD });
   });
 
   it('getAllowedDrawTypes returns empty array when no draws policy', () => {

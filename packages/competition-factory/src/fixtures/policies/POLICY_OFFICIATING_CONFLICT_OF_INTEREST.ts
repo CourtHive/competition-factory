@@ -9,6 +9,7 @@ import {
   CONFLICT_BLOCK,
   CONFLICT_WARN,
 } from '@Constants/officiatingConstants';
+import type { ConflictOfInterestPolicy, ConflictSeverity } from '@Types/officiatingTypes';
 
 /**
  * GROUP participantRoles that represent a relationship close enough to disqualify an official.
@@ -20,7 +21,7 @@ const DISQUALIFYING_GROUP_ROLES = {
   [MEDICAL]: CONFLICT_BLOCK,
   [PHYSIO]: CONFLICT_BLOCK,
   [TRAINER]: CONFLICT_BLOCK,
-};
+} satisfies Record<string, ConflictSeverity>;
 
 /**
  * Default conflict-of-interest policy for official assignment.
@@ -54,5 +55,5 @@ export const POLICY_OFFICIATING_CONFLICT_OF_INTEREST = {
         roleSeverity: DISQUALIFYING_GROUP_ROLES,
       },
     },
-  },
+  } satisfies ConflictOfInterestPolicy,
 };

@@ -11,6 +11,7 @@ import {
   POLICY_TYPE_OFFICIATING_CONFLICT,
   TRAINER,
 } from '../constants';
+import type { ConflictOfInterestPolicy, ConflictSeverity } from '@Types/officiatingTypes';
 
 /**
  * GROUP participantRoles that represent a relationship close enough to disqualify an official.
@@ -22,7 +23,7 @@ const DISQUALIFYING_GROUP_ROLES = {
   [MEDICAL]: CONFLICT_BLOCK,
   [PHYSIO]: CONFLICT_BLOCK,
   [TRAINER]: CONFLICT_BLOCK,
-};
+} satisfies Record<string, ConflictSeverity>;
 
 /**
  * ITF-oriented variant: nationality is an active, blocking consideration for
@@ -42,5 +43,5 @@ export const POLICY_OFFICIATING_CONFLICT_OF_INTEREST_ITF = {
         roleSeverity: DISQUALIFYING_GROUP_ROLES,
       },
     },
-  },
+  } satisfies ConflictOfInterestPolicy,
 };

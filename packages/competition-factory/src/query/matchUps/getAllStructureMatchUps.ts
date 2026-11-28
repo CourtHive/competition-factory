@@ -24,6 +24,7 @@ import { MISSING_STRUCTURE } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_ROUND_NAMING } from '@Constants/policyConstants';
 import type { ErrorType } from '@Constants/errorConditionConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
+import type { ScoringSequencePolicy } from '@Types/policyShapes';
 import {
   ContextContent,
   ContextProfile,
@@ -185,7 +186,7 @@ function getAllStructureMatchUpsUnredacted(params: GetAllStructureMatchUps): All
   const requireAllPositionsAssigned =
     appliedPolicies?.scoring?.requireAllPositionsAssigned ||
     stageSpecificPolicies?.requireAllPositionsAssigned ||
-    sequenceSpecificPolicies?.requireAllPositionsAssigned;
+    (sequenceSpecificPolicies as ScoringSequencePolicy | undefined)?.requireAllPositionsAssigned;
 
   matchUpsMap ??= getMatchUpsMap({ drawDefinition, structure });
 

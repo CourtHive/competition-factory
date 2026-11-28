@@ -597,6 +597,7 @@ produces), whether the engine copies it (`setState(record)`, the default) or bor
 - **`Structure` and `DrawLink` become hard unions.** Narrow on `structureType` (or use `matchUpsOf`, `positionAssignmentsOf`, `structuresOf`) before reading `matchUps`, `structures` or `positionAssignments`. `tournament.schema.json` gains the matching `oneOf`/`if`.
 - **Declaration corrections:** `TallyResultType.report`, `automatedPositioning`'s `conflicts`, `ApplyLineUps.lineUps` and `matchUpDailyLimits` now describe what they hold.
 - **Stricter types** across the package (the `implicit-any` campaign). Some loosely typed call sites may need annotations.
+- **`PolicyDefinitions` is typed per policy type.** Each key now carries its policy's body (`ScoringPolicy`, `PositionActionsPolicy`, `ParticipantPolicy`, `RankingPolicy`, `SanctioningPolicy`, ...) instead of `{ [key: string]: any }`, for what `attachPolicies` takes and what `getAppliedPolicies` and `getPolicyDefinitions` return. Only `display` and the retired `print` stay open (`Record<string, unknown>`). A policy held in a widened variable may need `satisfies PolicyDefinitions` (or the body type) so its literal values keep their types, and a read of a key the policy does not declare no longer type-checks. The new body types are exported. (#6701)
 
 ### Packaging
 

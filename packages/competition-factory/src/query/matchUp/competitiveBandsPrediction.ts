@@ -1,15 +1,9 @@
 // Pure logistic-fit utilities for the competitive-bands predictor.
 // Two anchor points (delta, probability) → fitted logistic curve.
 
-export type PredictionAnchor = {
-  probability: number;
-  delta: number;
-};
+import type { PredictionAnchor, PredictionModel } from '@Types/policyShapes';
 
-export type PredictionModel = {
-  competitiveAnchors: PredictionAnchor[];
-  decisiveAnchors: PredictionAnchor[];
-};
+export type { PredictionAnchor, PredictionModel } from '@Types/policyShapes';
 
 export type BandPrediction = {
   competitive: number;
